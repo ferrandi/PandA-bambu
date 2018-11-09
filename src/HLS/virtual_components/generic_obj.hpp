@@ -205,7 +205,7 @@ class GenericObjSorter : std::binary_function<generic_objRef, generic_objRef, bo
        * @param y is the second generic_obj
        * @return true if index of x is less than y
        */
-      bool operator()(const generic_objRef x, const generic_objRef y) const;
+      bool operator()(const generic_objRef& x, const generic_objRef& y) const;
 
 };
 

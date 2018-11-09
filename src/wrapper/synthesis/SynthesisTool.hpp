@@ -160,7 +160,7 @@ class SynthesisTool
       /**
        * Constructor
        */
-      SynthesisTool(const ParameterConstRef Param, std::string  tool_exec, const target_deviceRef device, const std::string& output_dir, std::string  default_output_dir);
+      SynthesisTool(const ParameterConstRef& Param, std::string  tool_exec, const target_deviceRef& device, const std::string& output_dir, std::string  default_output_dir);
 
       /**
        * Destructor
@@ -226,7 +226,7 @@ class SynthesisTool
        * Factory method
        */
       static
-      SynthesisToolRef create_synthesis_tool(type_t type, const ParameterConstRef Param, const std::string& output_dir, const target_deviceRef device);
+      SynthesisToolRef create_synthesis_tool(type_t type, const ParameterConstRef& Param, const std::string& output_dir, const target_deviceRef& device);
 
       /**
        * Actual parsing of parameters and script nodes

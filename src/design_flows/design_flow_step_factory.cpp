@@ -50,7 +50,7 @@
 ///utility include
 #include "exceptions.hpp"
 
-DesignFlowStepFactory::DesignFlowStepFactory(const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
+DesignFlowStepFactory::DesignFlowStepFactory(const DesignFlowManagerConstRef& _design_flow_manager, const ParameterConstRef& _parameters) :
    design_flow_manager(_design_flow_manager),
    parameters(_parameters),
    debug_level(_parameters->getOption<int>(OPT_debug_level))

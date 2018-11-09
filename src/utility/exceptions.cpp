@@ -60,18 +60,12 @@
 bool IsError(const int error_value)
 {
    int status =  WEXITSTATUS(error_value);
-   if (status == -1 or (not WIFEXITED(status) or status == EXIT_FAILURE) or (WIFSIGNALED(status)))
-      return true;
-   else
-      return false;
+   return status == -1 or (not WIFEXITED(status) or status == EXIT_FAILURE) or (WIFSIGNALED(status));
 }
 
 bool is_failure(const int error_value)
 {
    int status =  WEXITSTATUS(error_value);
-   if(status == EXIT_FAILURE)
-      return true;
-   else
-      return false;
+   return status == EXIT_FAILURE;
 }
 

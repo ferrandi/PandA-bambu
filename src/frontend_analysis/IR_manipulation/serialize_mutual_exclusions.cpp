@@ -212,7 +212,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
             for(boost::tie(ie, ie_end) = boost::in_edges(end_if, *cfg_bb_graph); ie != ie_end; ie++)
             {
                const auto source = boost::source(*ie, *cfg_bb_graph);
-               if(function_behavior->CheckBBReachability(basic_block, source) == false)
+               if(!function_behavior->CheckBBReachability(basic_block, source))
                   continue;
                if(source == true_bb or function_behavior->CheckBBReachability(true_bb, source))
                {

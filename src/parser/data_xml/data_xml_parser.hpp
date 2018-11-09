@@ -73,7 +73,7 @@ class DataXmlParser
        * Constructor
        * @param parameters is the set of input parameters
        */
-      explicit DataXmlParser(const ParameterConstRef parameters);
+      explicit DataXmlParser(const ParameterConstRef& parameters);
 
       /**
        * Destructor

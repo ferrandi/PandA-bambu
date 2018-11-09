@@ -224,7 +224,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec ()
          continue;
       }
       const auto last_stmt = GET_NODE(block->CGetStmtList().back());
-      if((not parameters->IsParameter("MEIR_y") or parameters->GetParameter<bool>("MEIR_y") == false) and last_stmt->get_kind() != gimple_cond_K and last_stmt->get_kind() != gimple_multi_way_if_K)
+      if((not parameters->IsParameter("MEIR_y") or !parameters->GetParameter<bool>("MEIR_y")) and last_stmt->get_kind() != gimple_cond_K and last_stmt->get_kind() != gimple_multi_way_if_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because does not end with a condition");
          continue;

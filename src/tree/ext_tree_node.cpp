@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file ext_tree_node.cpp
  * @brief Class implementation of the tree_node structures not present in gcc intermediate representation
@@ -39,200 +39,202 @@
  * $Date$
  * Last modified by $
  *
-*/
+ */
 
 #include "ext_tree_node.hpp"
 
-void null_node::visit(tree_node_visitor * const v) const
+void null_node::visit(tree_node_visitor* const v) const
 {
-   unsigned int mask=ALL_VISIT;
+   unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
-   VISIT_SC(mask,tree_node,visit(v));
+   VISIT_SC(mask, tree_node, visit(v));
 }
 
-void gimple_pragma::visit(tree_node_visitor * const v) const
+void gimple_pragma::visit(tree_node_visitor* const v) const
 {
-   unsigned int mask=ALL_VISIT;
+   unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
-   VISIT_SC(mask,gimple_node,visit(v));
+   VISIT_SC(mask, gimple_node, visit(v));
    VISIT_MEMBER(mask, scope, visit(v));
    VISIT_MEMBER(mask, directive, visit(v));
 }
 
-void call_hw_pragma::visit(tree_node_visitor * const v) const
+void call_hw_pragma::visit(tree_node_visitor* const v) const
 {
-   unsigned int mask=ALL_VISIT;
+   unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
    VISIT_SC(mask, map_pragma, visit(v));
 }
 
-void call_point_hw_pragma::visit(tree_node_visitor * const v) const
+void call_point_hw_pragma::visit(tree_node_visitor* const v) const
 {
-   unsigned int mask=ALL_VISIT;
+   unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
    VISIT_SC(mask, map_pragma, visit(v));
 }
 
-void profiling_pragma::visit(tree_node_visitor * const v) const
+void profiling_pragma::visit(tree_node_visitor* const v) const
 {
-   unsigned int mask=ALL_VISIT;
+   unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
-   VISIT_SC(mask,tree_node,visit(v));
+   VISIT_SC(mask, tree_node, visit(v));
 }
 
-void statistical_profiling::visit(tree_node_visitor * const v) const
+void statistical_profiling::visit(tree_node_visitor* const v) const
 {
-   unsigned int mask=ALL_VISIT;
+   unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
-   VISIT_SC(mask,profiling_pragma,visit(v));
+   VISIT_SC(mask, profiling_pragma, visit(v));
 }
 
-void omp_parallel_pragma::visit(tree_node_visitor * const v) const
+void omp_parallel_pragma::visit(tree_node_visitor* const v) const
 {
-   unsigned int mask=ALL_VISIT;
-   (*v)(this, mask);
-   VISIT_SC(mask,omp_pragma,visit(v));
-}
-
-void omp_sections_pragma::visit(tree_node_visitor * const v) const
-{
-   unsigned int mask=ALL_VISIT;
-   (*v)(this, mask);
-   VISIT_SC(mask,omp_pragma,visit(v));
-}
-
-void omp_parallel_sections_pragma::visit(tree_node_visitor * const v) const
-{
-   unsigned int mask=ALL_VISIT;
-   (*v)(this, mask);
-   VISIT_SC(mask,omp_pragma,visit(v));
-   VISIT_MEMBER(mask,op0,visit(v));
-   VISIT_MEMBER(mask,op1,visit(v));
-}
-
-void omp_section_pragma::visit(tree_node_visitor * const v) const
-{
-   unsigned int mask=ALL_VISIT;
-   (*v)(this, mask);
-   VISIT_SC(mask,omp_pragma,visit(v));
-}
-
-omp_target_pragma::omp_target_pragma(unsigned int i) :
-   omp_pragma(i)
-{}
-
-void omp_target_pragma::visit(tree_node_visitor * const v) const
-{
-   unsigned int mask=ALL_VISIT;
+   unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
    VISIT_SC(mask, omp_pragma, visit(v));
 }
 
-omp_critical_pragma::omp_critical_pragma(unsigned int i) :
-   omp_pragma(i)
-{}
-
-void omp_critical_pragma::visit(tree_node_visitor * const v) const
+void omp_sections_pragma::visit(tree_node_visitor* const v) const
 {
-   unsigned int mask=ALL_VISIT;
+   unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
    VISIT_SC(mask, omp_pragma, visit(v));
 }
 
-omp_task_pragma::omp_task_pragma(unsigned int i) :
-   omp_pragma(i)
-{}
-
-void omp_task_pragma::visit(tree_node_visitor * const v) const
+void omp_parallel_sections_pragma::visit(tree_node_visitor* const v) const
 {
-   unsigned int mask=ALL_VISIT;
+   unsigned int mask = ALL_VISIT;
+   (*v)(this, mask);
+   VISIT_SC(mask, omp_pragma, visit(v));
+   VISIT_MEMBER(mask, op0, visit(v));
+   VISIT_MEMBER(mask, op1, visit(v));
+}
+
+void omp_section_pragma::visit(tree_node_visitor* const v) const
+{
+   unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
    VISIT_SC(mask, omp_pragma, visit(v));
 }
 
-void omp_atomic_pragma::visit(tree_node_visitor * const v) const
+omp_target_pragma::omp_target_pragma(unsigned int i) : omp_pragma(i)
 {
-   unsigned int mask=ALL_VISIT;
-   (*v)(this, mask);
-   VISIT_SC(mask,omp_pragma,visit(v));
 }
 
-void omp_for_pragma::visit(tree_node_visitor * const v) const
+void omp_target_pragma::visit(tree_node_visitor* const v) const
 {
-   unsigned int mask=ALL_VISIT;
+   unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
-   VISIT_SC(mask,omp_pragma,visit(v));
+   VISIT_SC(mask, omp_pragma, visit(v));
 }
 
-void omp_simd_pragma::visit(tree_node_visitor * const v) const
+omp_critical_pragma::omp_critical_pragma(unsigned int i) : omp_pragma(i)
 {
-   unsigned int mask=ALL_VISIT;
-   (*v)(this, mask);
-   VISIT_SC(mask,omp_pragma,visit(v));
 }
 
-void omp_declare_simd_pragma::visit(tree_node_visitor * const v) const
+void omp_critical_pragma::visit(tree_node_visitor* const v) const
 {
-   unsigned int mask=ALL_VISIT;
+   unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
-   VISIT_SC(mask,omp_pragma,visit(v));
+   VISIT_SC(mask, omp_pragma, visit(v));
 }
 
-void map_pragma::visit(tree_node_visitor * const v) const
+omp_task_pragma::omp_task_pragma(unsigned int i) : omp_pragma(i)
 {
-   unsigned int mask=ALL_VISIT;
-   (*v)(this, mask);
-   VISIT_SC(mask,tree_node,visit(v));
 }
 
-void issue_pragma::visit(tree_node_visitor * const v) const
+void omp_task_pragma::visit(tree_node_visitor* const v) const
 {
-   unsigned int mask=ALL_VISIT;
+   unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
-   VISIT_SC(mask,tree_node,visit(v));
+   VISIT_SC(mask, omp_pragma, visit(v));
 }
 
-void blackbox_pragma::visit(tree_node_visitor * const v) const
+void omp_atomic_pragma::visit(tree_node_visitor* const v) const
 {
-   unsigned int mask=ALL_VISIT;
+   unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
-   VISIT_SC(mask,issue_pragma,visit(v));
+   VISIT_SC(mask, omp_pragma, visit(v));
 }
 
-void omp_pragma::visit(tree_node_visitor * const v) const
+void omp_for_pragma::visit(tree_node_visitor* const v) const
 {
-   unsigned int mask=ALL_VISIT;
+   unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
-   VISIT_SC(mask,tree_node,visit(v));
+   VISIT_SC(mask, omp_pragma, visit(v));
 }
 
-void gimple_while::visit(tree_node_visitor * const v) const
+void omp_simd_pragma::visit(tree_node_visitor* const v) const
 {
-   unsigned int mask=ALL_VISIT;
+   unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
-   VISIT_SC(mask,gimple_node,visit(v));
-   VISIT_MEMBER(mask,op0,visit(v));
+   VISIT_SC(mask, omp_pragma, visit(v));
 }
 
-void gimple_for::visit(tree_node_visitor * const v) const
+void omp_declare_simd_pragma::visit(tree_node_visitor* const v) const
 {
-   unsigned int mask=ALL_VISIT;
+   unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
-   VISIT_SC(mask,gimple_while,visit(v));
-   VISIT_MEMBER(mask,op1,visit(v));
-   VISIT_MEMBER(mask,op2,visit(v));
+   VISIT_SC(mask, omp_pragma, visit(v));
 }
 
-void gimple_multi_way_if::add_cond(const tree_nodeRef cond, unsigned int bb_ind)
+void map_pragma::visit(tree_node_visitor* const v) const
 {
-   list_of_cond.push_back(std::pair< tree_nodeRef, unsigned int>(cond, bb_ind));
+   unsigned int mask = ALL_VISIT;
+   (*v)(this, mask);
+   VISIT_SC(mask, tree_node, visit(v));
 }
 
-void gimple_multi_way_if::visit(tree_node_visitor * const v) const
+void issue_pragma::visit(tree_node_visitor* const v) const
 {
-   unsigned int mask=ALL_VISIT;
+   unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
-   VISIT_SC(mask,gimple_node,visit(v));
+   VISIT_SC(mask, tree_node, visit(v));
+}
+
+void blackbox_pragma::visit(tree_node_visitor* const v) const
+{
+   unsigned int mask = ALL_VISIT;
+   (*v)(this, mask);
+   VISIT_SC(mask, issue_pragma, visit(v));
+}
+
+void omp_pragma::visit(tree_node_visitor* const v) const
+{
+   unsigned int mask = ALL_VISIT;
+   (*v)(this, mask);
+   VISIT_SC(mask, tree_node, visit(v));
+}
+
+void gimple_while::visit(tree_node_visitor* const v) const
+{
+   unsigned int mask = ALL_VISIT;
+   (*v)(this, mask);
+   VISIT_SC(mask, gimple_node, visit(v));
+   VISIT_MEMBER(mask, op0, visit(v));
+}
+
+void gimple_for::visit(tree_node_visitor* const v) const
+{
+   unsigned int mask = ALL_VISIT;
+   (*v)(this, mask);
+   VISIT_SC(mask, gimple_while, visit(v));
+   VISIT_MEMBER(mask, op1, visit(v));
+   VISIT_MEMBER(mask, op2, visit(v));
+}
+
+void gimple_multi_way_if::add_cond(const tree_nodeRef& cond, unsigned int bb_ind)
+{
+   list_of_cond.emplace_back(cond, bb_ind);
+}
+
+void gimple_multi_way_if::visit(tree_node_visitor* const v) const
+{
+   unsigned int mask = ALL_VISIT;
+   (*v)(this, mask);
+   VISIT_SC(mask, gimple_node, visit(v));
    for(auto cond : list_of_cond)
+   {
       VISIT_MEMBER_NAMED(list_of_cond, mask, cond.first, visit(v));
+   }
 }

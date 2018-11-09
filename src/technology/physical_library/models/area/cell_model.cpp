@@ -52,14 +52,14 @@
 
 #include <cmath>
 
-cell_model::cell_model(const ParameterConstRef _Param) :
+cell_model::cell_model(const ParameterConstRef& _Param) :
       area_model(_Param),
       area(area_model::area_DEFAULT)
 {
 
 }
 
-cell_model::cell_model(const ParameterConstRef _Param, const double &_area_) :
+cell_model::cell_model(const ParameterConstRef& _Param, const double &_area_) :
       area_model(_Param),
       area(_area_)
 {

@@ -190,9 +190,9 @@ class library_manager
        */
       //@{
       ///Constructor.
-      library_manager(const ParameterConstRef Param, bool std = true);
+      library_manager(const ParameterConstRef& Param, bool std = true);
 
-      library_manager(std::string  library_name, const ParameterConstRef Param, bool std = true);
+      library_manager(std::string  library_name, const ParameterConstRef& Param, bool std = true);
 
       ///Destructor.
       ~library_manager();
@@ -230,7 +230,7 @@ class library_manager
       void erase_info();
 
       static
-      void xload(const xml_element* node, const library_managerRef LM, const ParameterConstRef Param, const target_deviceRef device);
+      void xload(const xml_element* node, const library_managerRef& LM, const ParameterConstRef& Param, const target_deviceRef& device);
 
       void xwrite(xml_element* rootnode, TargetDevice_Type dv_type);
 

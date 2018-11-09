@@ -51,5 +51,5 @@ NodeInfo::NodeInfo()
 NodeInfo::~NodeInfo()
 = default;
 
-void NodeInfo::print(std::ostream& ) const
+void NodeInfo::print(std::ostream& , int) const
 {}

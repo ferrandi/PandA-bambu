@@ -59,7 +59,7 @@ class Quartus13Wrapper: public AlteraWrapper
        * @param Param is the set of parameters
        * @param output_dir is the directory where to save all the results
        */
-      Quartus13Wrapper(const ParameterConstRef Param, const std::string& _output_dir, const target_deviceRef _device);
+      Quartus13Wrapper(const ParameterConstRef& Param, const std::string& _output_dir, const target_deviceRef& _device);
 
       /**
        * Destructor

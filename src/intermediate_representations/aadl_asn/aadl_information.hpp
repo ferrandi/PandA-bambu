@@ -140,7 +140,7 @@ class AadlInformation
        * @param name is the name of the type
        * @param type is the type
        */
-      void AddAsnType(const std::string&name, const AsnTypeRef asn_type);
+      void AddAsnType(const std::string&name, const AsnTypeRef& asn_type);
 
       /**
        * Get an asn_type

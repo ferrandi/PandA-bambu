@@ -100,7 +100,7 @@ struct raw_writer : public tree_node_visitor
        * @param type is the type of point to solution (i.e., use or clb)
        * @param solution is the solution to be printed
        */
-      void write_when_not_null_point_to(const std::string&type, const PointToSolutionRef solution) const;
+      void write_when_not_null_point_to(const std::string&type, const PointToSolutionRef& solution) const;
 
       ///tree_node visitors
       BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO_DECL, BOOST_PP_EMPTY, OBJ_SPECIALIZED_SEQ)

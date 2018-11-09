@@ -71,7 +71,7 @@
 ///utility include
 #include "simple_indent.hpp"
 
-void StateInfo::print(std::ostream& os) const
+void StateInfo::print(std::ostream& os, const int detail_level) const
 {
    const auto function_behavior = HLSMgr.lock()->CGetFunctionBehavior(funId);
    const auto schedule = HLSMgr.lock()->get_HLS(funId)->Rsch;
@@ -101,16 +101,23 @@ void StateInfo::print(std::ostream& os) const
    for (const auto & op : executing_operations)
    {
       const auto first_index = op_function_graph->CGetOpNodeInfo(op)->GetNodeId();
+
       const bool critical = critical_paths.find(first_index) != critical_paths.end();
-      if (std::find(ending_operations.begin(), ending_operations.end(), op) == ending_operations.end())
-         os << "<font color=\"gold2\">";
-      else if (critical)
-         os << "<font color=\"red3\">";
-      else if(GET_TYPE(op_function_graph, op) & TYPE_STORE)
-         os << "<font color=\"blue\">";
+      if(detail_level==0)
+      {
+         if (std::find(ending_operations.begin(), ending_operations.end(), op) == ending_operations.end())
+            os << "<font color=\"gold2\">";
+         else if (critical)
+            os << "<font color=\"red3\">";
+         else if(GET_TYPE(op_function_graph, op) & TYPE_STORE)
+            os << "<font color=\"blue\">";
+      }
       const auto first_starting_time = schedule->GetStartingTime(first_index);
       const auto first_ending_time = schedule->GetEndingTime(first_index);
-      os << GET_NAME(op_function_graph, op) << " [" << NumberToString(first_starting_time,2,7) << "---" << NumberToString(first_ending_time,2,7) << "("<< NumberToString(first_ending_time-first_starting_time,2,7) << ")" << "] --&gt; ";
+      if(detail_level==0)
+      {
+         os << GET_NAME(op_function_graph, op) << " [" << NumberToString(first_starting_time,2,7) << "---" << NumberToString(first_ending_time,2,7) << "("<< NumberToString(first_ending_time-first_starting_time,2,7) << ")" << "] --&gt; ";
+      }
       std::string vertex_print = BH->print_vertex(op_function_graph, op, vpp, true);
       boost::replace_all(vertex_print, "&", "&amp;");
       boost::replace_all(vertex_print, "|", "\\|");
@@ -123,39 +130,45 @@ void StateInfo::print(std::ostream& os) const
       boost::replace_all(vertex_print, "{", "\\{");
       boost::replace_all(vertex_print, "}", "\\}");
       os << vertex_print;
-      if (critical or std::find(ending_operations.begin(), ending_operations.end(), op) == ending_operations.end() or GET_TYPE(op_function_graph, op) & TYPE_STORE)
-         os << " </font>";
+      if(detail_level==0)
+      {
+         if (critical or std::find(ending_operations.begin(), ending_operations.end(), op) == ending_operations.end() or GET_TYPE(op_function_graph, op) & TYPE_STORE)
+            os << " </font>";
+      }
       os << "<br align=\"left\"/>";
    }
-   os << " | ";
-   for (const auto & op : ending_operations)
+   if(!detail_level)
    {
-      const auto first_index = op_function_graph->CGetOpNodeInfo(op)->GetNodeId();
-      const auto critical = critical_paths.find(first_index) != critical_paths.end();
-      if (std::find(executing_operations.begin(), executing_operations.end(), op) == executing_operations.end())
-         os << "<font color=\"green2\">";
-      else if (critical)
-         os << "<font color=\"red3\">";
-      else if (GET_TYPE(op_function_graph, op) & TYPE_STORE)
-         os << "<font color=\"blue\">";
-      const auto first_starting_time = schedule->GetStartingTime(first_index);
-      const auto first_ending_time = schedule->GetEndingTime(first_index);
-      os << GET_NAME(op_function_graph, op) << " [" << NumberToString(first_starting_time,2,7) << "---" << NumberToString(first_ending_time,2,7) << "("<< NumberToString(first_ending_time-first_starting_time,2,7) << ")" << "] --&gt; ";
-      std::string vertex_print = BH->print_vertex(op_function_graph, op, vpp, true);
-      boost::replace_all(vertex_print, "&", "&amp;");
-      boost::replace_all(vertex_print, "|", "\\|");
-      boost::replace_all(vertex_print, ">", "&gt;");
-      boost::replace_all(vertex_print, "<", "&lt;");
-      boost::replace_all(vertex_print, "\\\\\"", "&#92;&quot;");
-      boost::replace_all(vertex_print, "\\\"", "&quot;");
-      boost::replace_all(vertex_print, "\\n", "");
-      boost::replace_all(vertex_print, ":", "&#58;");
-      boost::replace_all(vertex_print, "{", "\\{");
-      boost::replace_all(vertex_print, "}", "\\}");
-      os << vertex_print;
-      if (critical or std::find(executing_operations.begin(), executing_operations.end(), op) == executing_operations.end() or GET_TYPE(op_function_graph, op) & TYPE_STORE)
-         os << " </font>";
-      os << "<br align=\"left\"/>";
+      os << " | ";
+      for (const auto & op : ending_operations)
+      {
+         const auto first_index = op_function_graph->CGetOpNodeInfo(op)->GetNodeId();
+         const auto critical = critical_paths.find(first_index) != critical_paths.end();
+         if (std::find(executing_operations.begin(), executing_operations.end(), op) == executing_operations.end())
+            os << "<font color=\"green2\">";
+         else if (critical)
+            os << "<font color=\"red3\">";
+         else if (GET_TYPE(op_function_graph, op) & TYPE_STORE)
+            os << "<font color=\"blue\">";
+         const auto first_starting_time = schedule->GetStartingTime(first_index);
+         const auto first_ending_time = schedule->GetEndingTime(first_index);
+         os << GET_NAME(op_function_graph, op) << " [" << NumberToString(first_starting_time,2,7) << "---" << NumberToString(first_ending_time,2,7) << "("<< NumberToString(first_ending_time-first_starting_time,2,7) << ")" << "] --&gt; ";
+         std::string vertex_print = BH->print_vertex(op_function_graph, op, vpp, true);
+         boost::replace_all(vertex_print, "&", "&amp;");
+         boost::replace_all(vertex_print, "|", "\\|");
+         boost::replace_all(vertex_print, ">", "&gt;");
+         boost::replace_all(vertex_print, "<", "&lt;");
+         boost::replace_all(vertex_print, "\\\\\"", "&#92;&quot;");
+         boost::replace_all(vertex_print, "\\\"", "&quot;");
+         boost::replace_all(vertex_print, "\\n", "");
+         boost::replace_all(vertex_print, ":", "&#58;");
+         boost::replace_all(vertex_print, "{", "\\{");
+         boost::replace_all(vertex_print, "}", "\\}");
+         os << vertex_print;
+         if (critical or std::find(executing_operations.begin(), executing_operations.end(), op) == executing_operations.end() or GET_TYPE(op_function_graph, op) & TYPE_STORE)
+            os << " </font>";
+         os << "<br align=\"left\"/>";
+      }
    }
 
    os << " } | ";
@@ -171,7 +184,7 @@ void StateInfo::print(std::ostream& os) const
       os << "none";
    }
 #if HAVE_HOST_PROFILING_BUILT
-   if(function_behavior->CGetProfilingInformation() and BB_ids.size() == 1)
+   if(function_behavior->CGetProfilingInformation() and BB_ids.size() == 1 && detail_level==0)
    {
       const auto BB_id = *(BB_ids.begin());
       const auto BB_vertex = function_behavior->CGetBBGraph(FunctionBehavior::BB)->CGetBBGraphInfo()->bb_index_map.find(BB_id)->second;
@@ -229,7 +242,7 @@ StateTransitionGraph::StateTransitionGraph(const StateTransitionGraphsCollection
 StateTransitionGraph::~StateTransitionGraph()
 = default;
 
-void StateTransitionGraph::WriteDot(const std::string& file_name, const int) const
+void StateTransitionGraph::WriteDot(const std::string& file_name, const int detail_level) const
 {
    const std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory);
    CustomSet<unsigned int> critical_paths;
@@ -247,7 +260,7 @@ void StateTransitionGraph::WriteDot(const std::string& file_name, const int) con
    const std::string complete_file_name = output_directory + function_name +"/";
    if (!boost::filesystem::exists(complete_file_name))
       boost::filesystem::create_directories(complete_file_name);
-   const VertexWriterConstRef state_writer(new StateWriter(this, op_function_graph));
+   const VertexWriterConstRef state_writer(new StateWriter(this, op_function_graph, detail_level));
    const EdgeWriterConstRef transition_writer(new TransitionWriter(this, op_function_graph));
    InternalWriteDot<const StateWriter, const TransitionWriter>(complete_file_name+file_name, state_writer, transition_writer);
    for(boost::tie(state, state_end) = boost::vertices(*this); state != state_end; state++)
@@ -266,8 +279,9 @@ void StateTransitionGraph::WriteDot(const std::string& file_name, const int) con
    }
 }
 
-StateWriter::StateWriter(const graph* _stg, const OpGraphConstRef _op_function_graph) :
-   VertexWriter(_stg, 0),
+
+StateWriter::StateWriter(const graph* _stg, const OpGraphConstRef _op_function_graph, int _detail_level) :
+   VertexWriter(_stg, _detail_level),
    BH(_op_function_graph->CGetOpGraphInfo()->BH),
    op_function_graph(_op_function_graph),
    entry_node(GetPointer<const StateTransitionGraphInfo>(_stg->CGetGraphInfo())->entry_node),
@@ -283,7 +297,7 @@ void StateWriter::operator()(std::ostream& out, const vertex& v) const
    else
       out << "shape=record,";
    out << "label=";
-   temp->print(out);
+   temp->print(out, detail_level);
    out << "]";
 }
 

@@ -94,7 +94,7 @@ class SimulationTool
       /**
        * Constructor
        */
-      explicit SimulationTool(const ParameterConstRef Param);
+      explicit SimulationTool(const ParameterConstRef& Param);
 
       /**
        * Destructor
@@ -105,7 +105,7 @@ class SimulationTool
        * Factory method
        */
       static
-      SimulationToolRef CreateSimulationTool(type_t type, const ParameterConstRef Param, const std::string& suffix);
+      SimulationToolRef CreateSimulationTool(type_t type, const ParameterConstRef& Param, const std::string& suffix);
 
       /**
        * Checks if the current specification can be executed or not

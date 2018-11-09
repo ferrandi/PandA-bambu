@@ -69,7 +69,7 @@ class DesignFlowStepFactory
        * @param design_flow_manager is the design flow manager
        * @param parameters is the set of input parameters
        */
-      DesignFlowStepFactory(const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+      DesignFlowStepFactory(const DesignFlowManagerConstRef& design_flow_manager, const ParameterConstRef& parameters);
 
       /**
        * Destructor

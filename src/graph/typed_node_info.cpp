@@ -52,7 +52,7 @@ TypedNodeInfo::TypedNodeInfo() :
 TypedNodeInfo::~TypedNodeInfo()
 = default;
 
-void TypedNodeInfo::print(std::ostream& os) const
+void TypedNodeInfo::print(std::ostream& os, int) const
 {
    os << node_type << " " << node_operation << " " << vertex_name << "\n";
 }

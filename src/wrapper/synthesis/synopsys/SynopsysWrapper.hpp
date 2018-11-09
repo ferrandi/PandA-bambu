@@ -70,7 +70,7 @@ class SynopsysWrapper : public SynthesisTool
        * @param output_dir is the directory where to save all the results
        * @param default_output_dir is the default output directory
        */
-      SynopsysWrapper(const ParameterConstRef Param, const std::string& tool_exec, const target_deviceRef device, const std::string& output_dir, const std::string& default_output_dir);
+      SynopsysWrapper(const ParameterConstRef& Param, const std::string& tool_exec, const target_deviceRef& device, const std::string& output_dir, const std::string& default_output_dir);
 
       /**
        * Destructor
@@ -101,7 +101,7 @@ class SynopsysWrapper : public SynthesisTool
        * Factory method
        */
       static
-      SynthesisToolRef CreateWrapper(wrapper_t type, const ParameterConstRef Param, const target_deviceRef _device, const std::string& output_dir);
+      SynthesisToolRef CreateWrapper(wrapper_t type, const ParameterConstRef& Param, const target_deviceRef& _device, const std::string& output_dir);
 
 };
 ///Refcount definition for the class

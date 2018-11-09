@@ -85,9 +85,9 @@ struct cg_node_info : public TypedNodeInfo
     * Print the information associated with the current node of the graph.
     * @param os is the output stream.
     */
-   void print(std::ostream& os) const override
+   void print(std::ostream& os, int detail_level=0) const override
    {
-      TypedNodeInfo::print(os);
+      TypedNodeInfo::print(os, detail_level);
       os << " " << reference << std::endl;
    }
 

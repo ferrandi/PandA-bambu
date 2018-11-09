@@ -231,12 +231,12 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
       }
 
       // Check if both pilot complex operations
-      auto P0cond = op_succ_of_v1_port0.empty() == false &&
-                    op_succ_of_v2_port0.empty() == false;
-      auto P1cond = (op_succ_of_v1_port1.empty() == false &&
-                     op_succ_of_v2_port1.empty() == false);
-      auto P2cond = (op_succ_of_v1_port2.empty() == false &&
-                     op_succ_of_v2_port2.empty() == false);
+      auto P0cond = !op_succ_of_v1_port0.empty() &&
+                    !op_succ_of_v2_port0.empty();
+      auto P1cond = (!op_succ_of_v1_port1.empty() &&
+                     !op_succ_of_v2_port1.empty());
+      auto P2cond = (!op_succ_of_v1_port2.empty() &&
+                     !op_succ_of_v2_port2.empty());
       const bool both_pilot_complex_ops = P0cond || P1cond || P2cond;
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0,

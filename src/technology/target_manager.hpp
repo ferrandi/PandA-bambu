@@ -72,7 +72,7 @@ class target_manager
        * Constructor
        * @param _Param is the reference to the class containing all the parameters
        */
-      target_manager(const ParameterConstRef _Param, const technology_managerRef _TM, const target_deviceRef device);
+      target_manager(const ParameterConstRef& _Param, const technology_managerRef& _TM, const target_deviceRef& device);
 
       /**
        * Destructor
@@ -82,7 +82,7 @@ class target_manager
       /**
        * Sets the technology manager
        */
-      void set_technology_manager(const technology_managerRef _TM);
+      void set_technology_manager(const technology_managerRef& _TM);
 
       /**
        * Returns the current technology manager
@@ -92,7 +92,7 @@ class target_manager
       /**
        * Sets the reference to the target technology manager class
        */
-      void set_target_technology(const target_technologyRef _target);
+      void set_target_technology(const target_technologyRef& _target);
 
       /**
        * Returns the reference to the class representing the target technology
@@ -102,7 +102,7 @@ class target_manager
       /**
        * Sets the reference to the target device class
        */
-      void set_target_device(const target_deviceRef _device);
+      void set_target_device(const target_deviceRef& _device);
 
       /**
        * Returns the reference to the class containing information about the target device

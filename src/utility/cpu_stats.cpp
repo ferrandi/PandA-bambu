@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file cpu_stats.cpp
  * @brief Utility managing CPU statistics.
@@ -40,20 +40,19 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "cpu_stats.hpp"
 #include "string_manipulation.hpp"
 #ifdef _WIN32
-#include <windows.h>
 #include <psapi.h>
+#include <windows.h>
 #include <winsock2.h>
 #else
-#include <sys/resource.h>
 #include <bits/types/struct_rusage.h>
 #include <bits/types/struct_timeval.h>
+#include <sys/resource.h>
 #endif
 #include <unistd.h>
-
 
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 
@@ -66,18 +65,17 @@ std::string PrintVirtualDataMemoryUsage()
    long vm_init_data, vm_uninit_data, vm_sbrk_data;
    long int temp;
    /* Get the virtual memory sizes */
-   temp = (long) (&edata) - (long) (&etext);
-   vm_init_data = temp/1024 + (((temp%1024)>512) ? 1 : 0);
-   temp = (long) (&end) - (long) (&edata);
-   vm_uninit_data = temp/1024 + (((temp%1024)>512) ? 1 : 0);
-   temp = (long) sbrk(0) - (long) (&end);
-   vm_sbrk_data = temp/1024 + (((temp%1024)>512) ? 1 : 0);
-   return STR((vm_init_data + vm_uninit_data + vm_sbrk_data)/1024) + "MB";
+   temp = (long)(&edata) - (long)(&etext);
+   vm_init_data = temp / 1024 + (((temp % 1024) > 512) ? 1 : 0);
+   temp = (long)(&end) - (long)(&edata);
+   vm_uninit_data = temp / 1024 + (((temp % 1024) > 512) ? 1 : 0);
+   temp = (long)sbrk(0) - (long)(&end);
+   vm_sbrk_data = temp / 1024 + (((temp % 1024) > 512) ? 1 : 0);
+   return STR((vm_init_data + vm_uninit_data + vm_sbrk_data) / 1024) + "MB";
 #endif
 }
 
-void
-util_print_cpu_stats(std::ostream& os)
+void util_print_cpu_stats(std::ostream& os)
 {
 #ifdef _WIN32
    char hostname[257];
@@ -92,37 +90,38 @@ util_print_cpu_stats(std::ostream& os)
 
    /* Get the hostname */
    WSAStartup(MAKEWORD(2, 2), &wsaData);
-   (void) gethostname(hostname, sizeof(hostname));
-   hostname[sizeof(hostname)-1] = '\0';	/* just in case */
+   (void)gethostname(hostname, sizeof(hostname));
+   hostname[sizeof(hostname) - 1] = '\0'; /* just in case */
    WSACleanup();
 
    /* Get usage stats */
-   if (GetProcessTimes(GetCurrentProcess(), &creationTime, &exitTime,
-                       &kernelTime, &userTime))
+   if(GetProcessTimes(GetCurrentProcess(), &creationTime, &exitTime, &kernelTime, &userTime))
    {
       ULARGE_INTEGER integerSystemTime, integerUserTime;
       integerUserTime.u.LowPart = userTime.dwLowDateTime;
       integerUserTime.u.HighPart = userTime.dwHighDateTime;
-      user = (double) integerUserTime.QuadPart * 1e-7;
+      user = (double)integerUserTime.QuadPart * 1e-7;
       integerSystemTime.u.LowPart = kernelTime.dwLowDateTime;
       integerSystemTime.u.HighPart = kernelTime.dwHighDateTime;
-      system = (double) integerSystemTime.QuadPart * 1e-7;
+      system = (double)integerSystemTime.QuadPart * 1e-7;
    }
    else
    {
       user = system = 0.0;
    }
    statex.dwLength = sizeof(statex);
-   if (GlobalMemoryStatusEx(&statex))
+   if(GlobalMemoryStatusEx(&statex))
    {
-      vm_limit = (size_t) (statex.ullTotalVirtual / 1024.0 + 0.5);
-   } else {
+      vm_limit = (size_t)(statex.ullTotalVirtual / 1024.0 + 0.5);
+   }
+   else
+   {
       vm_limit = 0;
    }
-   if (GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc)))
+   if(GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc)))
    {
-      peak_working_set = (size_t) (pmc.PeakWorkingSetSize / 1024.0 + 0.5);
-      page_faults = (long) pmc.PageFaultCount;
+      peak_working_set = (size_t)(pmc.PeakWorkingSetSize / 1024.0 + 0.5);
+      page_faults = (long)pmc.PageFaultCount;
    }
    else
    {
@@ -135,16 +134,16 @@ util_print_cpu_stats(std::ostream& os)
    os << "User time   " << user << " seconds\n";
    os << "System time " << system << " seconds\n\n";
    os << "Maximum resident size            = ";
-   if (peak_working_set == 0)
+   if(peak_working_set == 0)
       os << "unavailable\n";
    else
       os << peak_working_set << "\n";
    os << "Virtual memory limit             = ";
-   if (vm_limit == 0)
+   if(vm_limit == 0)
       os << "unavailable\n";
    else
       os << vm_limit << "\n";
-   os <<  "Page faults       = " << page_faults << "\n";
+   os << "Page faults       = " << page_faults << "\n";
 #else
    extern int end, etext, edata;
    struct rusage rusage;
@@ -157,30 +156,33 @@ util_print_cpu_stats(std::ostream& os)
    long vm_text, vm_init_data, vm_uninit_data, vm_sbrk_data;
 
    /* Get the hostname */
-   (void) gethostname(hostname, 256);
-   hostname[256] = '\0';		/* just in case */
+   (void)gethostname(hostname, 256);
+   hostname[256] = '\0'; /* just in case */
 
    /* Get the virtual memory sizes */
-   temp = (long) (&etext);
-   vm_text = temp/1024 + (((temp%1024)>512) ? 1 : 0);
-   temp = (long) (&edata) - (long) (&etext);
-   vm_init_data = temp/1024 + (((temp%1024)>512) ? 1 : 0);
-   temp = (long) (&end) - (long) (&edata);
-   vm_uninit_data = temp/1024 + (((temp%1024)>512) ? 1 : 0);
-   temp = (long) sbrk(0) - (long) (&end);
-   vm_sbrk_data = temp/1024 + (((temp%1024)>512) ? 1 : 0);
+   temp = (long)(&etext);
+   vm_text = temp / 1024 + (((temp % 1024) > 512) ? 1 : 0);
+   temp = (long)(&edata) - (long)(&etext);
+   vm_init_data = temp / 1024 + (((temp % 1024) > 512) ? 1 : 0);
+   temp = (long)(&end) - (long)(&edata);
+   vm_uninit_data = temp / 1024 + (((temp % 1024) > 512) ? 1 : 0);
+   temp = (long)sbrk(0) - (long)(&end);
+   vm_sbrk_data = temp / 1024 + (((temp % 1024) > 512) ? 1 : 0);
 
    /* Get virtual memory limits */
-   (void) getrlimit(RLIMIT_DATA, &rlp);
-   vm_limit = rlp.rlim_max / 1024 + (((rlp.rlim_max%1024)>512) ? 1 : 0);
-   vm_soft_limit = rlp.rlim_cur/1024 + (((rlp.rlim_cur%1024)>512) ? 1 : 0);
+   (void)getrlimit(RLIMIT_DATA, &rlp);
+   vm_limit = rlp.rlim_max / 1024 + (((rlp.rlim_max % 1024) > 512) ? 1 : 0);
+   vm_soft_limit = rlp.rlim_cur / 1024 + (((rlp.rlim_cur % 1024) > 512) ? 1 : 0);
 
    /* Get usage stats */
-   (void) getrusage(RUSAGE_SELF, &rusage);
-   user = rusage.ru_utime.tv_sec + rusage.ru_utime.tv_usec/1000000;
-   system = rusage.ru_stime.tv_sec + rusage.ru_stime.tv_usec/1000000;
-   scale = (user + system)*100.0L;
-   if (scale == 0.0L) scale = 0.001L;
+   (void)getrusage(RUSAGE_SELF, &rusage);
+   user = rusage.ru_utime.tv_sec + rusage.ru_utime.tv_usec / 1000000;
+   system = rusage.ru_stime.tv_sec + rusage.ru_stime.tv_usec / 1000000;
+   scale = (user + system) * 100.0L;
+   if(scale == 0.0L)
+   {
+      scale = 0.001L;
+   }
 
    os << "Runtime Statistics\n";
    os << "------------------\n";
@@ -188,33 +190,41 @@ util_print_cpu_stats(std::ostream& os)
    os << "User time   " << user << " seconds\n";
    os << "System time " << system << " seconds\n\n";
 
-   text = (int) (rusage.ru_ixrss / scale + 0.5L);
-   data = (int) ((rusage.ru_idrss + rusage.ru_isrss) / scale + 0.5L);
+   text = (int)(rusage.ru_ixrss / scale + 0.5L);
+   data = (int)((rusage.ru_idrss + rusage.ru_isrss) / scale + 0.5L);
    os << "Average resident text size       = " << text << "K\n";
    os << "Average resident data + stack size = " << data << "K\n";
-   os << "Maximum resident size            = " << rusage.ru_maxrss/2 << "K\n\n";
+   os << "Maximum resident size            = " << rusage.ru_maxrss / 2 << "K\n\n";
    os << "Virtual text size                = " << vm_text << "K\n";
    os << "Virtual data size                = " << vm_init_data + vm_uninit_data + vm_sbrk_data << "K\n";
    os << "    data size initialized        = " << vm_init_data << "K\n";
    os << "    data size uninitialized      = " << vm_uninit_data << "K\n";
    os << "    data size sbrk               = " << vm_sbrk_data << "K\n";
    os << "Virtual memory limit             = ";
-   if(rlp.rlim_cur==RLIM_INFINITY)
+   if(rlp.rlim_cur == RLIM_INFINITY)
+   {
       os << "unlimited";
+   }
    else
+   {
       os << vm_soft_limit << "K";
+   }
    os << " (";
-   if (rlp.rlim_max==RLIM_INFINITY)
+   if(rlp.rlim_max == RLIM_INFINITY)
+   {
       os << "unlimited";
+   }
    else
+   {
       os << vm_limit << "K";
+   }
    os << ")\n\n";
 
    os << "Major page faults = " << rusage.ru_majflt << "\n";
    os << "Minor page faults = " << rusage.ru_minflt << "\n";
    os << "Swaps = " << rusage.ru_nswap << "\n";
    os << "Input blocks = " << rusage.ru_inblock << "\n";
-   os << "Output blocks = "<< rusage.ru_oublock << "\n";
+   os << "Output blocks = " << rusage.ru_oublock << "\n";
    os << "Context switch (voluntary) = " << rusage.ru_nvcsw << "\n";
    os << "Context switch (involuntary) = " << rusage.ru_nivcsw << "\n";
 #endif

@@ -179,8 +179,9 @@ main(int argc, char *argv[])
                { err_no = EN4; goto error; }
 
             {
-               for (long vi = 0; vi < VERTICES; ++vi)
+               for (long vi = 0; vi < VERTICES; ++vi) {
                   verts.push_back(add_vertex(g1));
+}
             }
             break;
          }

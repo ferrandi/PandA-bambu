@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file IcarusWrapper.cpp
  * @brief Implementation of the wrapper to Icarus for Verilog sources.
@@ -40,30 +40,30 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 /// Includes the class definition
 #include "IcarusWrapper.hpp"
 
 #include "config_HAVE_ICARUS.hpp"
 
-///Constants include
+/// Constants include
 #include "file_IO_constants.hpp"
 
 /// Standard PandA include
 #include "dbgPrintHelper.hpp"
-#include "utility.hpp"
 #include "exceptions.hpp"
+#include "utility.hpp"
 
 /// includes all needed Boost.Filesystem declarations
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 
+#include <cerrno>
 #include <fstream>
 #include <unistd.h>
-#include <cerrno>
 
-///STL include
+/// STL include
 #include <unordered_set>
 #include <utility>
 
@@ -73,23 +73,20 @@
 
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
-#include "utility.hpp"
 #include "fileIO.hpp"
+#include "utility.hpp"
 
-#define SIM_SUBDIR       (Param->getOption<std::string>(OPT_output_directory) + std::string("/icarus"))
+#define SIM_SUBDIR (Param->getOption<std::string>(OPT_output_directory) + std::string("/icarus"))
 
-//constructor
-IcarusWrapper::IcarusWrapper(const ParameterConstRef _Param, std::string  _suffix) :
-   SimulationTool(_Param),
-   suffix(std::move(_suffix))
+// constructor
+IcarusWrapper::IcarusWrapper(const ParameterConstRef& _Param, std::string _suffix) : SimulationTool(_Param), suffix(std::move(_suffix))
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating the Icarus wrapper...");
-   boost::filesystem::create_directory(SIM_SUBDIR + suffix + "/" );
+   boost::filesystem::create_directory(SIM_SUBDIR + suffix + "/");
 }
 
-//destructor
-IcarusWrapper::~IcarusWrapper()
-= default;
+// destructor
+IcarusWrapper::~IcarusWrapper() = default;
 
 void IcarusWrapper::CheckExecution()
 {
@@ -98,13 +95,15 @@ void IcarusWrapper::CheckExecution()
 #endif
 }
 
-void IcarusWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string> & file_list)
+void IcarusWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list)
 {
    log_file = SIM_SUBDIR + suffix + "/" + top_filename + "_icarus.log";
    script << "#IVERILOG" << std::endl; //-gstrict-expr-width
    script << IVERILOG;
    for(const auto& file : file_list)
+   {
       script << " " << file;
+   }
    script << " -g2001-noconfig";
    script << " -gstrict-ca-eval";
    script << " -v >& " << log_file;
@@ -118,16 +117,16 @@ void IcarusWrapper::GenerateScript(std::ostringstream& script, const std::string
 #if HAVE_EXPERIMENTAL
 unsigned int IcarusWrapper::convert_to_xml(const std::string& SourceFileName, const std::string& LibraryName, const std::string& TargetFileName)
 {
-   std::string output_file =  Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_output_file;
+   std::string output_file = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_output_file;
    unsigned int icarus_debug_level = Param->getOption<unsigned int>(OPT_icarus_debug_level);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Converting file \"" + SourceFileName + "\" into \"" + TargetFileName + "\"");
    std::string command = std::string(IVL);
-   if (LibraryName.size())
+   if(LibraryName.size())
       command += " -X \"" + LibraryName + "\"";
    std::vector<std::string> FileList = convert_string_to_vector<std::string>(SourceFileName, ";");
    std::string TmpFileName;
    bool temp_file = false;
-   if (FileList.size() > 1)
+   if(FileList.size() > 1)
    {
       TmpFileName = "__temp__.v";
       std::ostringstream TmpFileStream;
@@ -148,8 +147,9 @@ unsigned int IcarusWrapper::convert_to_xml(const std::string& SourceFileName, co
    }
    command += " -x " + TargetFileName + " -d " + boost::lexical_cast<std::string>(icarus_debug_level) + std::string(" ") + TmpFileName;
    int err = PandaSystem(Param, command, output_file);
-   if (temp_file) boost::filesystem::remove_all(TmpFileName);
-   if (!err)
+   if(temp_file)
+      boost::filesystem::remove_all(TmpFileName);
+   if(!err)
    {
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "File \"" + SourceFileName + "\" converted without errors into \"" + TargetFileName + "\"");
       if(output_level >= OUTPUT_LEVEL_VERBOSE)
@@ -162,12 +162,12 @@ unsigned int IcarusWrapper::convert_to_xml(const std::string& SourceFileName, co
 
 unsigned int IcarusWrapper::compile_verilog(const std::string& FileName)
 {
-   std::string output_file =  Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_output_file;
+   std::string output_file = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_output_file;
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Compiling file \"" + FileName + "\"");
    std::string IncludeList, Include;
-   if (Param->isOption("include"))
+   if(Param->isOption("include"))
       IncludeList = Param->getOption<std::string>("include");
-   if (IncludeList.size())
+   if(IncludeList.size())
    {
       std::vector<std::string> splitted;
       boost::algorithm::split(splitted, IncludeList, boost::algorithm::is_any_of(";"));
@@ -176,10 +176,10 @@ unsigned int IcarusWrapper::compile_verilog(const std::string& FileName)
          Include += " -y " + splitted[i];
       }
    }
-	std::string command = IVERILOG;
+   std::string command = IVERILOG;
    command += " " + FileName + Include + " -g2001-noconfig -gstrict-ca-eval -gstrict-expr-width -v -o /dev/null";
    int err = PandaSystem(Param, command, output_file);
-   if (!err)
+   if(!err)
    {
       if(output_level >= OUTPUT_LEVEL_VERBOSE)
          CopyStdout(output_file);

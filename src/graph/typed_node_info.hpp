@@ -144,7 +144,7 @@ struct TypedNodeInfo : public NodeInfo
     * Print the information associated with the node of the graph.
     * @param os is the output stream.
    */
-   void print(std::ostream& ) const override;
+   void print(std::ostream& , int detail_level=0) const override;
 
    /**
     * Friend definition of the << operator.

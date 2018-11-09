@@ -59,7 +59,7 @@
 
 const double area_model::area_DEFAULT = 1.0;
 
-area_model::area_model(const ParameterConstRef _Param_) :
+area_model::area_model(const ParameterConstRef& _Param_) :
    Param(_Param_)
 {
 
@@ -68,7 +68,7 @@ area_model::area_model(const ParameterConstRef _Param_) :
 area_model::~area_model()
 = default;
 
-area_modelRef area_model::create_model(const TargetDevice_Type type, const ParameterConstRef Param)
+area_modelRef area_model::create_model(const TargetDevice_Type type, const ParameterConstRef& Param)
 {
    switch(type)
    {

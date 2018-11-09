@@ -126,7 +126,7 @@ class language_writer
       /**
        * Constructor
        */
-      language_writer(char open_char, char close_char, const ParameterConstRef parameters);
+      language_writer(char open_char, char close_char, const ParameterConstRef& parameters);
 
       /**
        * Destructor
@@ -140,7 +140,7 @@ class language_writer
        * @param parameters is the set of input parameters
        */
       static
-      language_writerRef create_writer(HDLWriter_Language language, const technology_managerConstRef TM, const ParameterConstRef parameters);
+      language_writerRef create_writer(HDLWriter_Language language, const technology_managerConstRef& TM, const ParameterConstRef& parameters);
 
       /**
        * Returns the name of the language writer.

@@ -154,7 +154,7 @@ struct bloc
        * Add a value to list of pred.
        * @param a is a pred.
        */
-      void add_pred(const unsigned int a)
+      void add_pred(const unsigned int &a)
       {
          list_of_pred.push_back(a);
       }
@@ -163,7 +163,7 @@ struct bloc
        * Add a value to list of succ.
        * @param a is a succ.
        */
-      void add_succ(const unsigned int a)
+      void add_succ(const unsigned int &a)
       {
          list_of_succ.push_back(a);
       }

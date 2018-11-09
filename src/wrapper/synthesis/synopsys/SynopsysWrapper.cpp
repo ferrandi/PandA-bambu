@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file SynopsysWrapper.cpp
  * @brief Implementation of the wrapper to synopsys tools
@@ -40,8 +40,8 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
-///Header include
+ */
+/// Header include
 #include "SynopsysWrapper.hpp"
 
 #include "DesignCompilerWrapper.hpp"
@@ -55,20 +55,17 @@
 
 #include "utility.hpp"
 
-#include <fstream>
 #include <boost/filesystem/operations.hpp>
+#include <fstream>
 
-
-SynopsysWrapper::SynopsysWrapper(const ParameterConstRef _Param, const std::string& _tool_exec, const target_deviceRef _device, const std::string& _output_dir, const std::string& _default_output_dir) :
-   SynthesisTool(_Param, _tool_exec, _device, _output_dir, _default_output_dir)
+SynopsysWrapper::SynopsysWrapper(const ParameterConstRef& _Param, const std::string& _tool_exec, const target_deviceRef& _device, const std::string& _output_dir, const std::string& _default_output_dir)
+    : SynthesisTool(_Param, _tool_exec, _device, _output_dir, _default_output_dir)
 {
-
 }
 
-SynopsysWrapper::~SynopsysWrapper()
-= default;
+SynopsysWrapper::~SynopsysWrapper() = default;
 
-SynthesisToolRef SynopsysWrapper::CreateWrapper(wrapper_t type, const ParameterConstRef Param, const target_deviceRef device, const std::string& output_dir)
+SynthesisToolRef SynopsysWrapper::CreateWrapper(wrapper_t type, const ParameterConstRef& Param, const target_deviceRef& device, const std::string& output_dir)
 {
    switch(type)
    {
@@ -92,14 +89,14 @@ SynthesisToolRef SynopsysWrapper::CreateWrapper(wrapper_t type, const ParameterC
       default:
          THROW_ERROR("Synopsys's tool not yet supported");
    }
-   ///this point should neven be reached
+   /// this point should neven be reached
    return SynthesisToolRef();
 }
 
 void SynopsysWrapper::generate_synthesis_script(const DesignParametersRef& dp, const std::string& file_name)
 {
    // Export reserved (constant) values to design parameters
-   for (std::vector<xml_set_variable_tRef>::const_iterator it = xml_reserved_vars.begin(); it != xml_reserved_vars.end(); ++it)
+   for(auto it = xml_reserved_vars.begin(); it != xml_reserved_vars.end(); ++it)
    {
       const xml_set_variable_tRef& var = (*it);
       dp->assign(var->name, getStringValue(var, dp), false);
@@ -117,7 +114,10 @@ void SynopsysWrapper::generate_synthesis_script(const DesignParametersRef& dp, c
    replace_parameters(dp, script_string);
 
    // Save the generated script
-   if (boost::filesystem::exists(file_name)) boost::filesystem::remove_all(file_name);
+   if(boost::filesystem::exists(file_name))
+   {
+      boost::filesystem::remove_all(file_name);
+   }
    script_name = file_name;
    std::ofstream file_stream(file_name.c_str());
    file_stream << script_string << std::endl;
@@ -128,10 +128,12 @@ std::string SynopsysWrapper::get_command_line(const DesignParametersRef& dp) con
 {
    std::ostringstream s;
    s << get_tool_exec() << " -f " << script_name;
-   for (const auto & option : xml_tool_options)
+   for(const auto& option : xml_tool_options)
    {
-      if (option->checkCondition(dp))
+      if(option->checkCondition(dp))
+      {
          s << " " << toString(option, dp) << std::endl;
+      }
    }
    return s.str();
 }
@@ -144,22 +146,28 @@ std::string SynopsysWrapper::getStringValue(const xml_script_node_tRef node, con
       {
          std::string result;
          const xml_set_variable_t* var = GetPointer<xml_set_variable_t>(node);
-         if (var->singleValue)
+         if(var->singleValue)
+         {
             result += *(var->singleValue);
-         else if (var->multiValues.size())
+         }
+         else if(!var->multiValues.empty())
          {
             result += "{";
-            for (auto it = var->multiValues.begin(); it != var->multiValues.end(); ++it)
+            for(auto it = var->multiValues.begin(); it != var->multiValues.end(); ++it)
             {
                const xml_set_entry_tRef e = *it;
-               if (it != var->multiValues.begin())
+               if(it != var->multiValues.begin())
+               {
                   result += " ";
+               }
                result += toString(e, dp);
             }
             result += "}";
          }
          else
+         {
             result += "\"\"";
+         }
          return result;
       }
       case NODE_COMMAND:
@@ -172,7 +180,7 @@ std::string SynopsysWrapper::getStringValue(const xml_script_node_tRef node, con
       default:
          THROW_ERROR("Not supported node type: " + STR(node->nodeType));
    }
-   ///this point should never be reached
+   /// this point should never be reached
    return "";
 }
 
@@ -194,20 +202,28 @@ std::string SynopsysWrapper::toString(const xml_script_node_tRef node, const Des
       {
          const xml_parameter_t* par = GetPointer<xml_parameter_t>(node);
          std::string result;
-         if (par->name)
+         if(par->name)
+         {
             result += *(par->name);
-         if (par->name && (par->singleValue || par->multiValues.size()))
+         }
+         if(par->name && (par->singleValue || !par->multiValues.empty()))
+         {
             result += par->separator;
-         if (par->singleValue)
+         }
+         if(par->singleValue)
+         {
             result += *(par->singleValue);
-         else if (par->multiValues.size())
+         }
+         else if(!par->multiValues.empty())
          {
             result += par->curlyBrackets ? "{" : "\"";
-            for (auto it = par->multiValues.begin(); it != par->multiValues.end(); ++it)
+            for(auto it = par->multiValues.begin(); it != par->multiValues.end(); ++it)
             {
                const xml_set_entry_tRef p = *it;
-               if (it != par->multiValues.begin())
+               if(it != par->multiValues.begin())
+               {
                   result += " ";
+               }
                result += toString(p, dp);
             }
             result += par->curlyBrackets ? "}" : "\"";
@@ -219,18 +235,26 @@ std::string SynopsysWrapper::toString(const xml_script_node_tRef node, const Des
          const xml_command_t* comm = GetPointer<xml_command_t>(node);
          // TODO: Evaluate the condition
          std::string result;
-         if (comm->name)
+         if(comm->name)
+         {
             result += *(comm->name);
-         if (comm->name && comm->value)
+         }
+         if(comm->name && comm->value)
+         {
             result += " ";
-         if (comm->value)
+         }
+         if(comm->value)
+         {
             result += *(comm->value);
-         if (comm->parameters.size())
-            for (auto p : comm->parameters)
+         }
+         if(!comm->parameters.empty())
+         {
+            for(const auto& p : comm->parameters)
             {
                result += " " + toString(p, dp);
             }
-         if (comm->output)
+         }
+         if(comm->output)
          {
             result += " >> " + *(comm->output);
          }
@@ -241,18 +265,26 @@ std::string SynopsysWrapper::toString(const xml_script_node_tRef node, const Des
          const xml_shell_t* sh = GetPointer<xml_shell_t>(node);
          // TODO: Evaluate the condition
          std::string result = "sh ";
-         if (sh->name)
+         if(sh->name)
+         {
             result += *(sh->name);
-         if (sh->name && sh->value)
+         }
+         if(sh->name && sh->value)
+         {
             result += " ";
-         if (sh->value)
+         }
+         if(sh->value)
+         {
             result += *(sh->value);
-         if (sh->parameters.size())
-            for (auto p : sh->parameters)
+         }
+         if(!sh->parameters.empty())
+         {
+            for(const auto& p : sh->parameters)
             {
                result += " " + toString(p, dp);
             }
-         if (sh->output)
+         }
+         if(sh->output)
          {
             result += " >> " + *(sh->output);
          }
@@ -262,14 +294,16 @@ std::string SynopsysWrapper::toString(const xml_script_node_tRef node, const Des
       {
          const xml_ite_block_t* ite = GetPointer<xml_ite_block_t>(node);
          std::string result;
-         bool conditionValue = ite->evaluate_condition(&(ite->condition), dp), first = true;
+         bool conditionValue = xml_ite_block_t::evaluate_condition(&(ite->condition), dp), first = true;
          const std::vector<xml_script_node_tRef>& block = conditionValue ? ite->thenNodes : ite->elseNodes;
-         for (auto n : block)
+         for(const auto& n : block)
          {
-            if (n->checkCondition(dp))
+            if(n->checkCondition(dp))
             {
-               if (!first)
+               if(!first)
+               {
                   result += "\n";
+               }
                first = false;
                result += toString(n, dp);
             }
@@ -281,6 +315,6 @@ std::string SynopsysWrapper::toString(const xml_script_node_tRef node, const Des
       default:
          THROW_ERROR("Not supported node type: " + STR(node->nodeType));
    }
-   ///this point should never be reached
+   /// this point should never be reached
    return "";
 }

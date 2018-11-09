@@ -180,7 +180,7 @@ class tree_node
        * @param os is the output stream
        * @param tn is the tree_node to be printed
        */
-      friend std::ostream& operator<<(std::ostream& os, const tree_nodeRef tn);
+      friend std::ostream& operator<<(std::ostream& os, const tree_nodeRef& tn);
 
       /**
        * Print this node as string in gimple format
@@ -259,7 +259,7 @@ class TreeNodeConstSorter : std::binary_function<tree_nodeConstRef, tree_nodeCon
        * @param y is the second tree node
        * @return true if index of x is less than y
        */
-      bool operator()(const tree_nodeConstRef x, const tree_nodeConstRef y) const;
+      bool operator()(const tree_nodeConstRef& x, const tree_nodeConstRef& y) const;
 
 };
 
@@ -303,7 +303,7 @@ class TreeNodeSorter : std::binary_function<tree_nodeRef, tree_nodeRef, bool>
        * @param y is the second tree node
        * @return true if index of x is less than y
        */
-      bool operator()(const tree_nodeRef x, const tree_nodeRef y) const;
+      bool operator()(const tree_nodeRef& x, const tree_nodeRef& y) const;
 
 };
 
@@ -1035,7 +1035,7 @@ struct PointToSolution
     * Add a variable to this point to set
     * @param variable is the variable to be added
     */
-   void Add(const tree_nodeRef variable);
+   void Add(const tree_nodeRef& variable);
 
    /**
     * this function check if the point-to set is a singleton or not
@@ -1090,7 +1090,7 @@ struct gimple_node : public srcp, public WeightedNode
     * Add a vuse
     * @param vuse is the vuse
     */
-   void AddVuse(const tree_nodeRef vuse);
+   void AddVuse(const tree_nodeRef& vuse);
 
    /// vdef of this statement
    tree_nodeRef vdef;
@@ -1099,7 +1099,7 @@ struct gimple_node : public srcp, public WeightedNode
     * Add a vdef
     * @param vdef is the vdef
     */
-   void AddVdef(const tree_nodeRef vdef);
+   void AddVdef(const tree_nodeRef& vdef);
 
    /// vovers of this statement
    TreeNodeSet vovers;
@@ -1108,7 +1108,7 @@ struct gimple_node : public srcp, public WeightedNode
     * Add a vover
     * @param vover is the vover
     */
-   void AddVover(const tree_nodeRef vover);
+   void AddVover(const tree_nodeRef& vover);
 
    /// list of pragmas associated to the function
    std::vector<tree_nodeRef> pragmas;
@@ -1583,7 +1583,7 @@ struct gimple_bind : public expr_node
     * Add a var to list of vars.
     * @param a is a NODE_ID.
    */
-   void add_vars(const tree_nodeRef a)
+   void add_vars(const tree_nodeRef& a)
    {
       list_of_vars.push_back(a);
    }
@@ -1646,7 +1646,7 @@ struct binfo : public tree_node
     * @param binf is the binf.
     * @param access is a token between PROTECTED, PRIVATE and PUBLIC
    */
-   void add_access_binf(const tree_nodeRef binf, TreeVocabularyTokenTypes_TokenEnum access);
+   void add_access_binf(const tree_nodeRef& binf, TreeVocabularyTokenTypes_TokenEnum access);
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(binfo)
@@ -1775,7 +1775,7 @@ struct call_expr : public expr_node
     * Add an argument to the list of arguments
     * @param arg is the argument to be added
     */
-   void AddArg(const tree_nodeRef arg);
+   void AddArg(const tree_nodeRef& arg);
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(call_expr)
@@ -1850,7 +1850,7 @@ struct gimple_call : public gimple_node
     * Add an argument to the list of arguments
     * @param arg is the argument to be added
     */
-   void AddArg(const tree_nodeRef arg);
+   void AddArg(const tree_nodeRef& arg);
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(gimple_call)
@@ -2272,7 +2272,7 @@ struct constructor : public tree_node
     * @param idx is the index.
     * @param val is the value.
     */
-   void add_idx_valu(const tree_nodeRef idx, const tree_nodeRef valu)
+   void add_idx_valu(const tree_nodeRef &idx, const tree_nodeRef &valu)
    {
       list_of_idx_valu.push_back(std::pair< tree_nodeRef, tree_nodeRef>(idx, valu));
    }
@@ -2281,7 +2281,7 @@ struct constructor : public tree_node
     * Add a pair <null, value> to the list of idx_val.
     * @param val is the value.
     */
-   void add_valu(const tree_nodeRef valu)
+   void add_valu(const tree_nodeRef& valu)
    {
       list_of_idx_valu.push_back(std::pair< tree_nodeRef, tree_nodeRef>(tree_nodeRef(), valu));
    }
@@ -2665,7 +2665,7 @@ struct function_decl : public decl_node, public attr
     * Add a parameter to the list of the paramters.
     * @param a is the parameter to be added.
    */
-   void AddArg(const tree_nodeRef a);
+   void AddArg(const tree_nodeRef& a);
 
    /// return true if is a declaration of constructor
    bool is_constructor();
@@ -3476,7 +3476,7 @@ struct gimple_phi : public gimple_node
        * @param def_edge is the def edge to be removed
        * @param update_uses specifies if the uses have to be updated
        */
-      void RemoveDefEdge(const tree_managerRef TM, const DefEdge& def_edge);
+      void RemoveDefEdge(const tree_managerRef& TM, const DefEdge& def_edge);
 
       /**
        * Add a defedge
@@ -3484,7 +3484,7 @@ struct gimple_phi : public gimple_node
        * @param def_edge is the def edge to be added
        * @param update_uses specifies if the uses have to be updated
        */
-      void AddDefEdge(const tree_managerRef TM, const DefEdge& def_edge);
+      void AddDefEdge(const tree_managerRef& TM, const DefEdge& def_edge);
 
       /**
        * Replace a defedge
@@ -3492,7 +3492,7 @@ struct gimple_phi : public gimple_node
        * @param new_def_edge is the def edge to be added
        * @param update_uses specifies if the uses have to be updated
        */
-      void ReplaceDefEdge(const tree_managerRef TM, const DefEdge& old_def_edge, const DefEdge& new_def_edge);
+      void ReplaceDefEdge(const tree_managerRef& TM, const DefEdge& old_def_edge, const DefEdge& new_def_edge);
 
       /**
        * Set the def edge list removing the ond one
@@ -3500,7 +3500,7 @@ struct gimple_phi : public gimple_node
        * @param new_def_edge_list is the new def edge list
        * @param update_uses specifies if the uses have to be updated
        */
-      void SetDefEdgeList(const tree_managerRef TM, DefEdgeList new_list_of_def_edge);
+      void SetDefEdgeList(const tree_managerRef& TM, DefEdgeList new_list_of_def_edge);
 
       /// Redefinition of get_kind_text.
       GET_KIND_TEXT(gimple_phi)
@@ -3807,7 +3807,7 @@ struct record_type :  public type_node
     * Add a field_decl to list of flds.
     * @param a is a NODE_ID.
    */
-   void add_flds(const tree_nodeRef a)
+   void add_flds(const tree_nodeRef& a)
    {
       list_of_flds.push_back(a);
    }
@@ -3816,7 +3816,7 @@ struct record_type :  public type_node
     * Add a methods_decl to list of fncs.
     * @param a is a NODE_ID.
    */
-   void add_fncs(const tree_nodeRef a)
+   void add_fncs(const tree_nodeRef& a)
    {
       list_of_fncs.push_back(a);
    }
@@ -4192,7 +4192,7 @@ struct ssa_name : public tree_node
        * Add use of this ssa
        * @param statement is the statement which used this ssa
        */
-      void AddUseStmt(const tree_nodeRef use_stmt);
+      void AddUseStmt(const tree_nodeRef& use_stmt);
 
       /**
        * Return the use stmts
@@ -4210,7 +4210,7 @@ struct ssa_name : public tree_node
        * Remove a use of this ssa
        * @param use_stmt is the statement which uses this ssa
        */
-      void RemoveUse(const tree_nodeRef use_stmt);
+      void RemoveUse(const tree_nodeRef& use_stmt);
 
       /// minimum values this ssa may reach
       tree_nodeRef min;
@@ -4231,13 +4231,13 @@ struct ssa_name : public tree_node
        * Set the def stmt erasing the old definitions
        * @param a is a def statement.
        */
-      void SetDefStmt(const tree_nodeRef def);
+      void SetDefStmt(const tree_nodeRef& def);
 
       /**
        * Add a def stmt
        * @param def is a def statement.
        */
-      void AddDefStmt(const tree_nodeRef def);
+      void AddDefStmt(const tree_nodeRef& def);
 
       /// Redefinition of get_kind_text.
       GET_KIND_TEXT(ssa_name)
@@ -4289,13 +4289,13 @@ struct statement_list : public tree_node
     * Add a value to list of basic block.
     * @param a is a NODE_ID.
    */
-   void add_bloc(const blocRef a);
+   void add_bloc(const blocRef& a);
 
    /**
     * Add a value to list of stmt.
     * @param a is a NODE_ID.
    */
-   void add_stmt(const tree_nodeRef a)
+   void add_stmt(const tree_nodeRef& a)
    {
       list_of_stmt.push_back(a);
    }
@@ -4843,7 +4843,7 @@ struct tree_vec : public tree_node
     * Add a value to list of operands.
     * @param a is a NODE_ID.
    */
-   void add_op(const tree_nodeRef a)
+   void add_op(const tree_nodeRef& a)
    {
       list_of_op.push_back(a);
    }
@@ -5080,7 +5080,7 @@ struct union_type : public type_node
     * Add a field_decl to list of flds.
     * @param a is a NODE_ID.
    */
-   void add_flds(const tree_nodeRef a)
+   void add_flds(const tree_nodeRef& a)
    {
       list_of_flds.push_back(a);
    }
@@ -5089,7 +5089,7 @@ struct union_type : public type_node
     * Add a methods_decl to list of fncs.
     * @param a is a NODE_ID.
    */
-   void add_fncs(const tree_nodeRef a)
+   void add_fncs(const tree_nodeRef& a)
    {
       list_of_fncs.push_back(a);
    }
@@ -5398,7 +5398,7 @@ struct vector_cst : public cst_node
     * Add a value to list of value.
     * @param a is a NODE_ID.
    */
-   void add_valu(const tree_nodeRef a)
+   void add_valu(const tree_nodeRef& a)
    {
       list_of_valu.push_back(a);
    }

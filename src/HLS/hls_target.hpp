@@ -66,7 +66,7 @@ class HLS_target : public target_manager
       /**
        * Constructor
        */
-      HLS_target(const ParameterConstRef Param, const technology_managerRef TM, const target_deviceRef _target);
+      HLS_target(const ParameterConstRef& Param, const technology_managerRef& TM, const target_deviceRef& _target);
 
       /**
        * Destructor
@@ -76,7 +76,7 @@ class HLS_target : public target_manager
       /**
        * Factory method from XML file
        */
-      static HLS_targetRef create_target(const ParameterRef Param);
+      static HLS_targetRef create_target(const ParameterRef& Param);
 
 };
 ///refcount definition of class

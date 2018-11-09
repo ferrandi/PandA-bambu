@@ -69,7 +69,7 @@ class QuartusReportWrapper : public AlteraWrapper
        * Constructor
        * @param Param is the set of parameters
        */
-      QuartusReportWrapper(const ParameterConstRef Param, const std::string& _output_dir, const target_deviceRef _device);
+      QuartusReportWrapper(const ParameterConstRef& Param, const std::string& _output_dir, const target_deviceRef& _device);
 
       /**
        * Destructor

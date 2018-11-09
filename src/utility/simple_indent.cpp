@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file simple_indent.cpp
  * @brief Implementation of the simple pretty print functor.
@@ -40,75 +40,82 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #include <iostream>
 #include <string>
 
 #include "dbgPrintHelper.hpp"
-///Utility include
+/// Utility include
 #include "exceptions.hpp"
-///Header include
+/// Header include
 #include "simple_indent.hpp"
 
-simple_indent::simple_indent(char o, char c, unsigned int d) :
-      indent_spaces(0),
-      opening_char(o), closing_char(c), delta(d), is_line_start(true)
+simple_indent::simple_indent(char o, char c, unsigned int d) : indent_spaces(0), opening_char(o), closing_char(c), delta(d), is_line_start(true)
 {
 }
 
 simple_indent::~simple_indent()
 {
 #ifndef NDEBUG
-   ///This corresponds to a THROW_ASSERT, however it is against C++ rules throw an error inside a destructor
+   /// This corresponds to a THROW_ASSERT, however it is against C++ rules throw an error inside a destructor
    if(indent_spaces != 0)
    {
-      std::cerr << "Not all indentations have been closed: " << indentation <<  std::endl;
+      std::cerr << "Not all indentations have been closed: " << indentation << std::endl;
    }
 #endif
 }
 
-void simple_indent::operator() (std::ostream& os, const std::string&str)
+void simple_indent::operator()(std::ostream& os, const std::string& str)
 {
    std::string::const_iterator it_end = str.end();
-   ///Specified whether the first character of the string
-   ///we are going to write must be indented or not
-   bool needToInd=false;
+   /// Specified whether the first character of the string
+   /// we are going to write must be indented or not
+   bool needToInd = false;
 
-   if (*(str.begin()) == closing_char)
+   if(*(str.begin()) == closing_char)
    {
       deindent();
    }
 
-   if (is_line_start) write_indent(os);
+   if(is_line_start)
+   {
+      write_indent(os);
+   }
 
-   for (std::string::const_iterator it = str.begin(); it != it_end; ++it)
+   for(std::string::const_iterator it = str.begin(); it != it_end; ++it)
    {
       is_line_start = false;
-      if (*it == '\n')
+      if(*it == '\n')
       {
          os << *it;
          if((it + 1) != it_end)
          {
             if(*(it + 1) != closing_char)
             {
-                write_indent(os);
+               write_indent(os);
             }
             else
+            {
                needToInd = true;
+            }
          }
          else
+         {
             is_line_start = true;
+         }
       }
-      else if (*it == opening_char)
+      else if(*it == opening_char)
       {
          indent();
-         if (opening_char != STD_OPENING_CHAR)
+         if(opening_char != STD_OPENING_CHAR)
+         {
             write_char(os, *it);
+         }
       }
-      else if (*it == closing_char)
+      else if(*it == closing_char)
       {
-         if (*(str.begin()) != closing_char and it != str.begin())
+         if(*(str.begin()) != closing_char and it != str.begin())
          {
             deindent();
          }
@@ -117,13 +124,16 @@ void simple_indent::operator() (std::ostream& os, const std::string&str)
             write_indent(os);
             needToInd = false;
          }
-         if (STD_CLOSING_CHAR != closing_char)
+         if(STD_CLOSING_CHAR != closing_char)
+         {
             write_char(os, *it);
+         }
       }
       else
+      {
          write_char(os, *it);
+      }
    }
-
 }
 
 void simple_indent::indent()
@@ -139,12 +149,13 @@ void simple_indent::deindent()
 
 void simple_indent::write_indent(std::ostream& os)
 {
-   for (unsigned int i = 0; i < indent_spaces; i++)
+   for(unsigned int i = 0; i < indent_spaces; i++)
+   {
       os << " ";
+   }
 }
 
 void simple_indent::write_char(std::ostream& os, const char& c)
 {
    os << c;
 }
-

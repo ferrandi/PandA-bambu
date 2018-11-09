@@ -29,65 +29,73 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file aadl_information.cpp
  * @brief The information collected from aadl file
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "aadl_information.hpp"
 
-///boost include
-#include <boost/algorithm/string/replace.hpp>
+/// boost include
 #include "exceptions.hpp"
+#include <boost/algorithm/string/replace.hpp>
 
-AadlInformation::AadlParameter::AadlParameter() :
-   endianess(NATIVE_ENDIANESS),
-   direction(INOUT),
-   num_registers(0),
-   bambu_address(0),
-   pointer(false)
-{}
+AadlInformation::AadlParameter::AadlParameter() : endianess(NATIVE_ENDIANESS), direction(INOUT), num_registers(0), bambu_address(0), pointer(false)
+{
+}
 
-AadlInformation::AadlParameter::EndianessType AadlInformation::AadlParameter::Endianess(const std::string&endianess_string)
+AadlInformation::AadlParameter::EndianessType AadlInformation::AadlParameter::Endianess(const std::string& endianess_string)
 {
    if(endianess_string == "UPER")
+   {
       return BIG_ENDIANESS;
+   }
    if(endianess_string == "LOWER")
+   {
       return LITTLE_ENDIANESS;
+   }
    if(endianess_string == "NATIVE")
+   {
       return NATIVE_ENDIANESS;
+   }
    THROW_UNREACHABLE(endianess_string);
    return BIG_ENDIANESS;
 }
 
-AadlInformation::AadlParameter::Direction AadlInformation::AadlParameter::GetDirection(const std::string&direction_string)
+AadlInformation::AadlParameter::Direction AadlInformation::AadlParameter::GetDirection(const std::string& direction_string)
 {
    if(direction_string == "IN")
+   {
       return IN;
+   }
    if(direction_string == "OUT")
+   {
       return OUT;
+   }
    if(direction_string == "IN OUT")
+   {
       return INOUT;
+   }
    THROW_UNREACHABLE(direction_string);
    return IN;
 }
 
-std::string AadlInformation::Normalize(const std::string&name) const
+std::string AadlInformation::Normalize(const std::string& name) const
 {
    return boost::replace_all_copy(name, "-", "_");
 }
 
-void AadlInformation::AddAsnType(const std::string&name, const AsnTypeRef asn_type)
+void AadlInformation::AddAsnType(const std::string& name, const AsnTypeRef& asn_type)
 {
    asn_types[Normalize(name)] = asn_type;
 }
 
-AsnTypeRef AadlInformation::CGetAsnType(const std::string&name) const
+AsnTypeRef AadlInformation::CGetAsnType(const std::string& name) const
 {
    const auto normalized = Normalize(name);
    THROW_ASSERT(asn_types.find(normalized) != asn_types.end(), name);

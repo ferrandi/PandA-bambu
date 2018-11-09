@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file library_manager.cpp
  * @brief Class implementation of the manager of the specific technology library.
@@ -43,7 +43,7 @@
  *
  */
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
 #include "config_HAVE_FROM_LIBERTY.hpp"
 #include "config_HAVE_KOALA_BUILT.hpp"
@@ -58,41 +58,49 @@
 #endif
 #include "parse_technology.hpp"
 
-#include "polixml.hpp"
-#include "exceptions.hpp"
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
+#include "exceptions.hpp"
+#include "polixml.hpp"
 
 #include "target_device.hpp"
 
+#include "clb_model.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include <iosfwd>
 #include <utility>
-#include "clb_model.hpp"
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 attribute::attribute(const std::vector<attributeRef>& _content)
 {
    content_list = _content;
 }
 
-attribute::attribute(const std::string& _value_type, std::string  _content) : content(std::move(_content))
+attribute::attribute(const std::string& _value_type, std::string _content) : content(std::move(_content))
 {
    xml_node::convert_escaped(content);
-   if (_value_type == "float64")
+   if(_value_type == "float64")
+   {
       value_type = FLOAT64;
-   else if (_value_type == "boolean")
+   }
+   else if(_value_type == "boolean")
+   {
       value_type = BOOLEAN;
-   else if (_value_type == "int32")
+   }
+   else if(_value_type == "int32")
+   {
       value_type = INT32;
-   else if (_value_type == "string")
+   }
+   else if(_value_type == "string")
+   {
       value_type = STRING;
+   }
    else
+   {
       THROW_ERROR("Not supported attribute type: " + _value_type);
+   }
 }
 
-attribute::attribute(const value_t  _value_type, std::string  _content) :
-   content(std::move(_content)),
-   value_type(_value_type)
+attribute::attribute(const value_t _value_type, std::string _content) : content(std::move(_content)), value_type(_value_type)
 {
    xml_node::convert_escaped(content);
    value_type = static_cast<value_t>(_value_type);
@@ -100,28 +108,38 @@ attribute::attribute(const value_t  _value_type, std::string  _content) :
 
 std::string attribute::get_value_type_str() const
 {
-   if (value_type == FLOAT64)
+   if(value_type == FLOAT64)
+   {
       return "float64";
-   else if (value_type == BOOLEAN)
+   }
+   else if(value_type == BOOLEAN)
+   {
       return "boolean";
-   else if (value_type == INT32)
+   }
+   else if(value_type == INT32)
+   {
       return "int32";
-   else if (value_type == STRING)
+   }
+   else if(value_type == STRING)
+   {
       return "string";
+   }
    else
+   {
       THROW_ERROR("Not supported attribute type: " + boost::lexical_cast<std::string>(value_type));
+   }
    return "<unknown>";
 }
 
 std::string attribute::get_content_str() const
 {
-   ///fix for content_list
+   /// fix for content_list
    return content;
 }
 
 bool attribute::has_list() const
 {
-   return content_list.size() > 0;
+   return !content_list.empty();
 }
 
 unsigned int attribute::get_value_type() const
@@ -134,16 +152,21 @@ void attribute::xload(const xml_element* EnodeC, std::vector<std::string>& order
    const xml_attribute* att_name = EnodeC->get_attribute("name");
    const xml_node::node_list& list_att = EnodeC->get_children();
    std::vector<attributeRef> _content;
-   for (const auto & iter_int : list_att)
+   for(const auto& iter_int : list_att)
    {
       const auto* EnodeC1 = GetPointer<const xml_element>(iter_int);
-      if(!EnodeC1) continue;
+      if(!EnodeC1)
+      {
+         continue;
+      }
       const xml_text_node* txt_node = EnodeC1->get_child_text();
       _content.push_back(attributeRef(new attribute(EnodeC1->get_name(), txt_node->get_content())));
    }
-   if (std::find(ordered_attributes.begin(), ordered_attributes.end(), att_name->get_value()) == ordered_attributes.end())
+   if(std::find(ordered_attributes.begin(), ordered_attributes.end(), att_name->get_value()) == ordered_attributes.end())
+   {
       ordered_attributes.push_back(att_name->get_value());
-   if(_content.size())
+   }
+   if(!_content.empty())
    {
       attributes[att_name->get_value()] = attributeRef(new attribute(_content));
    }
@@ -153,21 +176,20 @@ void attribute::xload(const xml_element* EnodeC, std::vector<std::string>& order
       const xml_text_node* txt_node = EnodeC->get_child_text();
       attributes[att_name->get_value()] = attributeRef(new attribute(value_type_node->get_value(), txt_node->get_content()));
    }
-
 }
 
 void attribute::xwrite(xml_element* xml_node, const std::string& name)
 {
    xml_element* attr_name = xml_node->add_child_element("attribute");
    attr_name->set_attribute("name", name);
-   if (!has_list())
+   if(!has_list())
    {
       attr_name->set_attribute("value_type", get_value_type_str());
       attr_name->add_child_text(get_content_str());
    }
    else
    {
-      for(auto & v : content_list)
+      for(auto& v : content_list)
       {
          xml_element* el = attr_name->add_child_element(v->get_value_type_str());
          el->add_child_text(v->get_content_str());
@@ -207,37 +229,33 @@ void library_manager::set_default_attributes()
 #endif
 }
 
-library_manager::library_manager(const ParameterConstRef _Param, bool std) :
-   Param(_Param),
-   is_std(std)
+library_manager::library_manager(const ParameterConstRef& _Param, bool std) : Param(_Param), is_std(std)
 {
    set_default_attributes();
 }
 
-library_manager::library_manager(std::string  library_name, const ParameterConstRef _Param, bool std) :
-      Param(_Param),
-      name(std::move(library_name)),
-      is_std(std)
+library_manager::library_manager(std::string library_name, const ParameterConstRef& _Param, bool std) : Param(_Param), name(std::move(library_name)), is_std(std)
 {
    set_default_attributes();
 }
 
+library_manager::~library_manager() = default;
 
-library_manager::~library_manager()
-= default;
-
-void library_manager::xload(const xml_element* node, const library_managerRef LM, const ParameterConstRef Param, const target_deviceRef device)
+void library_manager::xload(const xml_element* node, const library_managerRef& LM, const ParameterConstRef& Param, const target_deviceRef& device)
 {
 #ifndef NDEBUG
    int debug_level = Param->get_class_debug_level("library_manager");
 #endif
    auto output_level = Param->getOption<int>(OPT_output_level);
-   const xml_node::node_list list_int = node->get_children();
-   for (const auto & iter_int : list_int)
+   const xml_node::node_list& list_int = node->get_children();
+   for(const auto& iter_int : list_int)
    {
       const auto* EnodeC = GetPointer<const xml_element>(iter_int);
-      if(!EnodeC) continue;
-      if (EnodeC->get_name() == "information")
+      if(!EnodeC)
+      {
+         continue;
+      }
+      if(EnodeC->get_name() == "information")
       {
 #if HAVE_FROM_LIBERTY
          const attribute_sequence::attribute_list& attr_list = EnodeC->get_attributes();
@@ -245,78 +263,83 @@ void library_manager::xload(const xml_element* node, const library_managerRef LM
          {
             std::string key = (*a)->get_name();
             std::string value = (*a)->get_value();
-            if (key == "liberty_file") LM->info[LIBERTY] = value;
+            if(key == "liberty_file")
+               LM->info[LIBERTY] = value;
          }
 #endif
       }
-      if (EnodeC->get_name() == "name")
+      if(EnodeC->get_name() == "name")
       {
          const xml_text_node* text = EnodeC->get_child_text();
          LM->name = text->get_content();
       }
-      else if (EnodeC->get_name() == "attribute")
+      else if(EnodeC->get_name() == "attribute")
       {
          attribute::xload(EnodeC, LM->ordered_attributes, LM->attributes);
       }
-      else if (EnodeC->get_name() == "operating_conditions")
+      else if(EnodeC->get_name() == "operating_conditions")
       {
-
       }
-      else if (EnodeC->get_name() == "wire_load")
+      else if(EnodeC->get_name() == "wire_load")
       {
-
       }
-      else if (EnodeC->get_name() == "power_lut_template")
+      else if(EnodeC->get_name() == "power_lut_template")
       {
-
       }
-      else if (EnodeC->get_name() == "lu_table_template")
+      else if(EnodeC->get_name() == "lu_table_template")
       {
-
       }
-      else if (EnodeC->get_name() == "output_current_template")
+      else if(EnodeC->get_name() == "output_current_template")
       {
-
       }
-      else if (EnodeC->get_name() == "cell")
+      else if(EnodeC->get_name() == "cell")
       {
          technology_nodeRef fu_curr = technology_nodeRef(new functional_unit(iter_int));
          fu_curr->xload(EnodeC, fu_curr, Param, device);
 
          const auto cell_name = fu_curr->get_name();
 
-         ///Check if a more recently characterized version of the same cell already exists in the library
+         /// Check if a more recently characterized version of the same cell already exists in the library
          THROW_ASSERT(not LM->is_fu(cell_name), cell_name + " already present");
          LM->add(fu_curr);
       }
-      else if (EnodeC->get_name() == "template")
+      else if(EnodeC->get_name() == "template")
       {
          technology_nodeRef fut_curr = technology_nodeRef(new functional_unit_template(iter_int));
          fut_curr->xload(EnodeC, fut_curr, Param, device);
          LM->add(fut_curr);
       }
 #ifndef NDEBUG
-      else if (debug_level >= DEBUG_LEVEL_VERBOSE)
+      else if(debug_level >= DEBUG_LEVEL_VERBOSE)
+      {
          THROW_WARNING("library_manager - not yet supported: " + EnodeC->get_name());
+      }
 #endif
    }
 
-   if (output_level >= OUTPUT_LEVEL_MINIMUM)
+   if(output_level >= OUTPUT_LEVEL_MINIMUM)
    {
       unsigned int combinational = 0;
       unsigned int others = 0;
       unsigned int total = 0;
-      for(auto & l : LM->fu_map)
+      for(auto& l : LM->fu_map)
       {
          /*
           * If the functional unit is a template skip the counting.
           */
-         if (GetPointer<functional_unit>(l.second) == nullptr && GetPointer<functional_unit_template>(l.second)) continue;
+         if(GetPointer<functional_unit>(l.second) == nullptr && GetPointer<functional_unit_template>(l.second))
+         {
+            continue;
+         }
          total++;
-         if (GetPointer<functional_unit>(l.second)->logical_type == functional_unit::COMBINATIONAL)
+         if(GetPointer<functional_unit>(l.second)->logical_type == functional_unit::COMBINATIONAL)
+         {
             combinational++;
+         }
          else
+         {
             others++;
+         }
       }
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Library Name     : " << LM->name);
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "  Total cells    : " << total);
@@ -334,7 +357,7 @@ void library_manager::xwrite(xml_element* node, TargetDevice_Type dv_type)
    xml_element* info_xml = library->add_child_element("information");
    for(std::map<unsigned int, std::string>::iterator i = info.begin(); i != info.end(); ++i)
    {
-      if (i->first == LIBERTY)
+      if(i->first == LIBERTY)
          info_xml->set_attribute("liberty_file", i->second);
    }
 #endif
@@ -342,22 +365,25 @@ void library_manager::xwrite(xml_element* node, TargetDevice_Type dv_type)
    xml_element* xml_name = library->add_child_element("name");
    xml_name->add_child_text(name);
 
-   for(const auto & ordered_attribute : ordered_attributes)
+   for(const auto& ordered_attribute : ordered_attributes)
    {
       const attributeRef& attr = attributes[ordered_attribute];
       attr->xwrite(library, ordered_attribute);
    }
 
-   for(fu_map_type::const_iterator f = fu_map.begin(); f != fu_map.end(); ++f)
+   for(auto f = fu_map.begin(); f != fu_map.end(); ++f)
    {
       xml_element* xml_cell;
       if(GetPointer<functional_unit>(f->second))
-          xml_cell = library->add_child_element("cell");
+      {
+         xml_cell = library->add_child_element("cell");
+      }
       else
-          xml_cell = library->add_child_element("template");
+      {
+         xml_cell = library->add_child_element("template");
+      }
       f->second->xwrite(xml_cell, f->second, Param, dv_type);
    }
-
 }
 
 std::string library_manager::get_library_name() const
@@ -367,7 +393,7 @@ std::string library_manager::get_library_name() const
 
 void library_manager::add(const technology_nodeRef& node)
 {
-   ///adding a cells invalidates the library view currently stored
+   /// adding a cells invalidates the library view currently stored
    erase_info();
    std::string _name = node->get_name();
    fu_map[_name] = node;
@@ -375,57 +401,97 @@ void library_manager::add(const technology_nodeRef& node)
 
 void library_manager::update(const technology_nodeRef& fu_node)
 {
-
-   ///adding a cells invalidates the library view currently stored
+   /// adding a cells invalidates the library view currently stored
    erase_info();
    std::string _name = fu_node->get_name();
    technology_nodeRef fu = fu_map[_name];
    technology_nodeRef node = fu_node;
-   if(!GetPointer<functional_unit>(node)) node = GetPointer<functional_unit_template>(node)->FU;
-   auto * current_fu = GetPointer<functional_unit>(fu);
-   if (!current_fu) current_fu = GetPointer<functional_unit>(GetPointer<functional_unit_template>(fu)->FU);
-   if (current_fu)
+   if(!GetPointer<functional_unit>(node))
    {
-      current_fu->ordered_attributes  = GetPointer<functional_unit>(node)->ordered_attributes;
+      node = GetPointer<functional_unit_template>(node)->FU;
+   }
+   auto* current_fu = GetPointer<functional_unit>(fu);
+   if(!current_fu)
+   {
+      current_fu = GetPointer<functional_unit>(GetPointer<functional_unit_template>(fu)->FU);
+   }
+   if(current_fu)
+   {
+      current_fu->ordered_attributes = GetPointer<functional_unit>(node)->ordered_attributes;
       current_fu->attributes = GetPointer<functional_unit>(node)->attributes;
    }
-   if (GetPointer<functional_unit>(node)->area_m)
+   if(GetPointer<functional_unit>(node)->area_m)
    {
       current_fu->area_m = GetPointer<functional_unit>(node)->area_m;
    }
 #if HAVE_EXPERIMENTAL
-   if (GetPointer<functional_unit>(node)->layout_m) current_fu->layout_m = GetPointer<functional_unit>(node)->layout_m;
+   if(GetPointer<functional_unit>(node)->layout_m)
+      current_fu->layout_m = GetPointer<functional_unit>(node)->layout_m;
 #endif
    const functional_unit::operation_vec& operations = GetPointer<functional_unit>(node)->get_operations();
-   for(const auto & o : operations)
+   for(const auto& o : operations)
    {
       const operation* op = GetPointer<operation>(o);
       const technology_nodeRef op_fu = current_fu->get_operation(op->operation_name);
       THROW_ASSERT(op_fu, "Missing operation: " + op->operation_name + "-" + _name);
-      if (op->time_m) GetPointer<operation>(op_fu)->time_m = op->time_m;
-      if(GetPointer<functional_unit_template>(fu_node)) GetPointer<operation>(op_fu)->pipe_parameters = op->pipe_parameters;
-      if(GetPointer<functional_unit_template>(fu_node)) GetPointer<operation>(op_fu)->portsize_parameters = op->portsize_parameters;
+      if(op->time_m)
+      {
+         GetPointer<operation>(op_fu)->time_m = op->time_m;
+      }
+      if(GetPointer<functional_unit_template>(fu_node))
+      {
+         GetPointer<operation>(op_fu)->pipe_parameters = op->pipe_parameters;
+      }
+      if(GetPointer<functional_unit_template>(fu_node))
+      {
+         GetPointer<operation>(op_fu)->portsize_parameters = op->portsize_parameters;
+      }
       GetPointer<operation>(op_fu)->bounded = op->bounded;
 #if HAVE_EXPERIMENTAL
-      if (op->power_m) GetPointer<operation>(op_fu)->power_m = op->power_m;
+      if(op->power_m)
+         GetPointer<operation>(op_fu)->power_m = op->power_m;
 #endif
    }
 
 #if HAVE_CIRCUIT_BUILT
-   ///update the structural description, if specified
-   if (GetPointer<functional_unit>(node)->CM)
+   /// update the structural description, if specified
+   if(GetPointer<functional_unit>(node)->CM)
    {
       current_fu->CM = GetPointer<functional_unit>(node)->CM;
    }
 #endif
-   if (GetPointer<functional_unit_template>(fu_node) && GetPointer<functional_unit_template>(fu_node)->specialized != "") GetPointer<functional_unit_template>(fu)->specialized = GetPointer<functional_unit_template>(fu_node)->specialized;
-   if (GetPointer<functional_unit>(node)->fu_template_name != "" || GetPointer<functional_unit_template>(fu_node)) current_fu->fu_template_name = GetPointer<functional_unit>(node)->fu_template_name;
-   if (GetPointer<functional_unit>(node)->fu_template_parameters != "" || GetPointer<functional_unit_template>(fu_node)) current_fu->fu_template_parameters = GetPointer<functional_unit>(node)->fu_template_parameters;
-   if (GetPointer<functional_unit>(node)->characterizing_constant_value != "" || GetPointer<functional_unit_template>(fu_node)) current_fu->characterizing_constant_value = GetPointer<functional_unit>(node)->characterizing_constant_value;
-   if (GetPointer<functional_unit>(node)->memory_type != "" || GetPointer<functional_unit_template>(fu_node)) current_fu->memory_type = GetPointer<functional_unit>(node)->memory_type;
-   if (GetPointer<functional_unit>(node)->channels_type != "" || GetPointer<functional_unit_template>(fu_node)) current_fu->channels_type = GetPointer<functional_unit>(node)->channels_type;
-   if (GetPointer<functional_unit>(node)->memory_ctrl_type != "" || GetPointer<functional_unit_template>(fu_node)) current_fu->memory_ctrl_type = GetPointer<functional_unit>(node)->memory_ctrl_type;
-   if (GetPointer<functional_unit>(node)->bram_load_latency != "" || GetPointer<functional_unit_template>(fu_node)) current_fu->bram_load_latency = GetPointer<functional_unit>(node)->bram_load_latency;
+   if(GetPointer<functional_unit_template>(fu_node) && !GetPointer<functional_unit_template>(fu_node)->specialized.empty())
+   {
+      GetPointer<functional_unit_template>(fu)->specialized = GetPointer<functional_unit_template>(fu_node)->specialized;
+   }
+   if(!GetPointer<functional_unit>(node)->fu_template_name.empty() || GetPointer<functional_unit_template>(fu_node))
+   {
+      current_fu->fu_template_name = GetPointer<functional_unit>(node)->fu_template_name;
+   }
+   if(!GetPointer<functional_unit>(node)->fu_template_parameters.empty() || GetPointer<functional_unit_template>(fu_node))
+   {
+      current_fu->fu_template_parameters = GetPointer<functional_unit>(node)->fu_template_parameters;
+   }
+   if(!GetPointer<functional_unit>(node)->characterizing_constant_value.empty() || GetPointer<functional_unit_template>(fu_node))
+   {
+      current_fu->characterizing_constant_value = GetPointer<functional_unit>(node)->characterizing_constant_value;
+   }
+   if(!GetPointer<functional_unit>(node)->memory_type.empty() || GetPointer<functional_unit_template>(fu_node))
+   {
+      current_fu->memory_type = GetPointer<functional_unit>(node)->memory_type;
+   }
+   if(!GetPointer<functional_unit>(node)->channels_type.empty() || GetPointer<functional_unit_template>(fu_node))
+   {
+      current_fu->channels_type = GetPointer<functional_unit>(node)->channels_type;
+   }
+   if(!GetPointer<functional_unit>(node)->memory_ctrl_type.empty() || GetPointer<functional_unit_template>(fu_node))
+   {
+      current_fu->memory_ctrl_type = GetPointer<functional_unit>(node)->memory_ctrl_type;
+   }
+   if(!GetPointer<functional_unit>(node)->bram_load_latency.empty() || GetPointer<functional_unit_template>(fu_node))
+   {
+      current_fu->bram_load_latency = GetPointer<functional_unit>(node)->bram_load_latency;
+   }
 
    THROW_ASSERT(current_fu->characterization_timestamp <= GetPointer<functional_unit>(node)->characterization_timestamp, STR(current_fu->characterization_timestamp) + " vs " + STR(GetPointer<functional_unit>(node)->characterization_timestamp));
    current_fu->characterization_timestamp = GetPointer<functional_unit>(node)->characterization_timestamp;
@@ -459,7 +525,7 @@ void library_manager::erase_info()
 
 std::string library_manager::get_info(info_t type, const TargetDevice_Type dv_type)
 {
-   if (!is_info(type))
+   if(!is_info(type))
    {
       switch(static_cast<info_t>(type))
       {
@@ -517,14 +583,20 @@ bool library_manager::is_virtual() const
 
 void library_manager::remove_fu(const std::string& _name)
 {
-   if (fu_map.find(_name) == fu_map.end()) return;
+   if(fu_map.find(_name) == fu_map.end())
+   {
+      return;
+   }
    fu_map.erase(_name);
    erase_info();
 }
 
 void library_manager::set_dont_use(const std::string& _name)
 {
-   if (fu_map.find(_name) == fu_map.end()) return;
+   if(fu_map.find(_name) == fu_map.end())
+   {
+      return;
+   }
    dont_use.insert(_name);
 }
 
@@ -542,4 +614,3 @@ void library_manager::remove_dont_use(const std::string& _name)
 {
    dont_use.erase(_name);
 }
-

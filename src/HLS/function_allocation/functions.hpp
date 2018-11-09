@@ -77,7 +77,7 @@ class functions
        * @param funID_scope if the function id where the shared function is allocated
        * @param fun is the shared function
        */
-      void map_shared_function(unsigned int funID_scope, std::string fun);
+      void map_shared_function(unsigned int funID_scope, const std::string& fun);
 
       /**
        * return the set of shared functions allocated in a given function.
@@ -99,14 +99,14 @@ class functions
        * @param fun is the shared function
        * @return true when fun is a shared function in funID_scope, false otherwise
        */
-      bool is_a_shared_function(unsigned int funID_scope, std::string fun) const;
+      bool is_a_shared_function(unsigned int funID_scope, const std::string& fun) const;
 
       /**
        * allocate a proxy for the function referred within a given function
        * @param funID_scope is the function id
        * @param fun is the proxy function
        */
-      void add_shared_function_proxy(unsigned int funID_scope, std::string fun);
+      void add_shared_function_proxy(unsigned int funID_scope, const std::string& fun);
 
       /**
        * return the proxied internal functions associated with the function
@@ -128,21 +128,21 @@ class functions
        * @param fun is the proxied shared function
        * @return true when fun is a proxied shared in funID_scope, false otherwise
        */
-      bool is_a_proxied_shared_function(unsigned int funID_scope, std::string fun) const;
+      bool is_a_proxied_shared_function(unsigned int funID_scope, const std::string& fun) const;
 
       /**
        * return true if the function is a proxied function
        * @param fun is the id of the function
        * @return true when fun is a proxied functions
        */
-      bool is_a_proxied_function(std::string fun) const;
+      bool is_a_proxied_function(const std::string& fun) const;
 
       /**
        * in case the function is a proxy function, it returns where the function is actually instantiated
        * @param fun is the proxy function
        * @return the function ID of the function having the instance of proxy function fun
        */
-      unsigned int get_proxy_mapping(std::string fun) const;
+      unsigned int get_proxy_mapping(const std::string& fun) const;
 
 };
 ///refcount definition of the class

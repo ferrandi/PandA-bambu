@@ -84,12 +84,12 @@ class clb_model : public area_model
       /**
        * Constructor
        */
-      explicit clb_model(const ParameterConstRef Param);
+      explicit clb_model(const ParameterConstRef& Param);
 
       /**
        * Constructor with specified area value
        */
-      clb_model(const ParameterConstRef Param, const double& _area_);
+      clb_model(const ParameterConstRef& Param, const double& _area_);
 
       /**
        * Destructor

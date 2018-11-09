@@ -107,7 +107,7 @@ class HLS_constraints
       /**
        * Constructor.
        */
-      HLS_constraints(const ParameterConstRef Param, std::string  function_name);
+      HLS_constraints(const ParameterConstRef& Param, std::string  function_name);
 
       /**
        * Gets the name of the function which the constraints are associated with

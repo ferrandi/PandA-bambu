@@ -139,7 +139,7 @@ class BitLatticeManipulator
        * @param ssa_node_id is the ssa node id of the lattice destination
        */
       std::deque<bit_lattice> constructor_bitstring(
-            const tree_nodeRef ctor_tn,
+            const tree_nodeRef& ctor_tn,
             unsigned int ssa_node_id) const;
 
       /**
@@ -148,7 +148,7 @@ class BitLatticeManipulator
        * @param ssa_node_id is the ssa node id of the lattice destination
        */
       std::deque<bit_lattice> string_cst_bitstring(
-            const tree_nodeRef strcst_tn,
+            const tree_nodeRef& strcst_tn,
             unsigned int ssa_node_id) const;
 
       /**
@@ -181,7 +181,7 @@ class BitLatticeManipulator
       /**
        * Constructor
        */
-      explicit BitLatticeManipulator(const tree_managerConstRef _TM);
+      explicit BitLatticeManipulator(const tree_managerConstRef& _TM);
 
       /**
        * Destructor

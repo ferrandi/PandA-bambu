@@ -206,7 +206,7 @@ DesignFlowStep_Status add_library::InternalExec()
       {
          op->time_m->set_stage_period(call_delay);
          ///FIXME: identification of pipelined functions is disabled since liveness analysis of parameters have not yet been added
-         if(false and HLS->Rreg->is_all_regs_without_enable() and not HLS->Rfu->has_resource_sharing())
+         if(false and not HLS->Rfu->has_resource_sharing())
          {
             const ControlStep ii(1);
             op->time_m->set_initiation_time(ii);

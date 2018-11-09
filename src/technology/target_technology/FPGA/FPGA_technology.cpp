@@ -57,7 +57,7 @@
 
 #include <cmath>
 
-FPGA_technology::FPGA_technology(const ParameterConstRef param) :
+FPGA_technology::FPGA_technology(const ParameterConstRef& param) :
    target_technology(param)
 {
    type = FPGA;

@@ -121,7 +121,7 @@ DesignFlowStep_Status SynthesisEvaluation::InternalExec()
    bool printed_area = false;
    for(const auto& objective : objective_vector)
    {
-      if ((objective == "AREA" or objective == "AREAxTIME") and printed_area == false)
+      if ((objective == "AREA" or objective == "AREAxTIME") and !printed_area)
       {
          printed_area = true;
          ///get the used resources from the wrapper

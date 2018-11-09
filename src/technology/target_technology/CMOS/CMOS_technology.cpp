@@ -58,7 +58,7 @@
 #include "polixml.hpp"
 #include "xml_dom_parser.hpp"
 
-CMOS_technology::CMOS_technology(const ParameterConstRef param) :
+CMOS_technology::CMOS_technology(const ParameterConstRef& param) :
       target_technology(param)
 {
    type = CMOS;

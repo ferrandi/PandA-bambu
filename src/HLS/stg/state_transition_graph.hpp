@@ -151,7 +151,7 @@ struct StateInfo : public NodeInfo
     * state
     * @param os is the stream reference where you want to print
     */
-   void print(std::ostream& os) const override;
+   void print(std::ostream& os, const int detail_level) const override;
 
    /**
     * Constructor
@@ -418,7 +418,7 @@ class StateWriter : public VertexWriter
       /**
        * Constructor. It initialize reference to the graph provided as parameter
        */
-      StateWriter(const graph* _stg, const OpGraphConstRef _op_function_graph);
+      StateWriter(const graph* _stg, const OpGraphConstRef _op_function_graph, int _detail_level);
 
       /**
        * Functor actually called by the boost library to perform the writing

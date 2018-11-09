@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file xst_wrapper.cpp
  * @brief Implementation of the wrapper to XST
@@ -41,12 +41,12 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 /// Includes the class definition
 #include "xst_wrapper.hpp"
 
-#include "config_XILINX_SETTINGS.hpp"
 #include "config_HAVE_XILINX.hpp"
+#include "config_XILINX_SETTINGS.hpp"
 
 #include "ToolManager.hpp"
 #include "xml_script_command.hpp"
@@ -54,20 +54,18 @@
 #include "Parameter.hpp"
 
 #include "fileIO.hpp"
-#include "string_manipulation.hpp"          // for GET_CLASS
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "utility.hpp"
 
-//constructor
-xst_wrapper::xst_wrapper(const ParameterConstRef _Param, const std::string& _output_dir, const target_deviceRef _device) :
-   XilinxWrapper(_Param, XST_TOOL_ID, _device, _output_dir, "xst")
+// constructor
+xst_wrapper::xst_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir, const target_deviceRef& _device) : XilinxWrapper(_Param, XST_TOOL_ID, _device, _output_dir, "xst")
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the XST wrapper...");
 }
 
-//destructor
-xst_wrapper::~xst_wrapper()
-= default;
+// destructor
+xst_wrapper::~xst_wrapper() = default;
 
 void xst_wrapper::init_reserved_vars()
 {
@@ -75,7 +73,7 @@ void xst_wrapper::init_reserved_vars()
    ADD_RES_VAR(PARAM_xst_log_file);
 }
 
-void xst_wrapper::GenerateProjectFile(const DesignParametersRef dp)
+void xst_wrapper::GenerateProjectFile(const DesignParametersRef& dp)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Generating project file for xst");
    std::string HDL_files = dp->get_value(PARAM_HDL_files);
@@ -94,13 +92,21 @@ void xst_wrapper::GenerateProjectFile(const DesignParametersRef dp)
       std::string filename;
       std::string language;
       if(extension == "vhd" || extension == "vhdl" || extension == "VHD" || extension == "VHDL")
+      {
          language = "VHDL";
+      }
       else if(extension == "v" || extension == "V" || extension == "sv" || extension == "SV")
+      {
          language = "VERILOG";
+      }
       else
-         THROW_ERROR("Extension not recognized! "+extension);
+      {
+         THROW_ERROR("Extension not recognized! " + extension);
+      }
       filename = file_path.string();
-      prj_file << language << " " << "work" << " " << filename << std::endl;
+      prj_file << language << " "
+               << "work"
+               << " " << filename << std::endl;
    }
    prj_file.close();
    dp->assign(PARAM_xst_prj_file, project_filename, false);
@@ -121,9 +127,9 @@ std::string xst_wrapper::get_command_line(const DesignParametersRef& dp) const
 {
    std::ostringstream s;
    s << get_tool_exec() << " -ifn " << dp->parameter_values[SCRIPT_FILENAME];
-   for (const auto & option : xml_tool_options)
+   for(const auto& option : xml_tool_options)
    {
-      if (option->checkCondition(dp))
+      if(option->checkCondition(dp))
       {
          std::string value = toString(option, dp);
          replace_parameters(dp, value);

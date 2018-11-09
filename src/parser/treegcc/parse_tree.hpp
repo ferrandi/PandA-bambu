@@ -65,6 +65,6 @@ REF_FORWARD_DECL(tree_manager);
  * @return the tree manager associated to the raw file.
 
 */
-tree_managerRef ParseTreeFile(const ParameterConstRef Param, const std::string& f);
+tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string& f);
 
 #endif

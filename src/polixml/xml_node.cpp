@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file xml_node.cpp
  * @brief
@@ -40,12 +40,12 @@
  */
 
 #include "xml_node.hpp"
+#include "xml_att_decl_node.hpp"
+#include "xml_comment_node.hpp"
 #include "xml_element.hpp"
 #include "xml_text_node.hpp"
-#include "xml_comment_node.hpp"
-#include "xml_att_decl_node.hpp"
 
-///Boost include
+/// Boost include
 #include <boost/algorithm/string.hpp>
 #include <vector>
 
@@ -63,12 +63,13 @@ xml_element* xml_child::add_child_element(const xml_nodeRef& node)
    return GetPointer<xml_element>(node);
 }
 
-
 xml_text_node* xml_child::add_child_text(const std::string& content)
 {
    auto* new_el = new xml_text_node(content);
    if(!first_text)
+   {
       first_text = new_el;
+   }
    xml_nodeRef new_ref(new_el);
    child_list.push_back(new_ref);
    return new_el;
@@ -90,7 +91,7 @@ xml_att_decl_node* xml_child::add_child_attribute_declaration(const std::string&
    return new_el;
 }
 
-void xml_node::set_line(int _line) 
+void xml_node::set_line(int _line)
 {
    line = _line;
 }
@@ -110,7 +111,9 @@ const CustomSet<xml_nodeRef> xml_child::CGetDescendants(const std::string& path)
    {
       const auto* child_xml = GetPointer<const xml_element>(child);
       if(not child_xml)
+      {
          continue;
+      }
       iteration_input_nodes.insert(child);
    }
    for(size_t level = 0; level < splitted.size(); level++)
@@ -128,9 +131,11 @@ const CustomSet<xml_nodeRef> xml_child::CGetDescendants(const std::string& path)
             {
                for(const auto& child : GetPointer<xml_child>(iteration_input_node)->get_children())
                {
-                  const auto * child_xml = GetPointer<const xml_element>(child);
+                  const auto* child_xml = GetPointer<const xml_element>(child);
                   if(not child_xml)
+                  {
                      continue;
+                  }
                   iteration_output_nodes.insert(child);
                }
             }

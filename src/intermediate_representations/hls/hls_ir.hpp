@@ -60,7 +60,7 @@ class HLSIR : public IntermediateRepresentation
        * @param hls_manager is the HLS manager
        * @param parameters is the set of input parameters
        */
-      HLSIR(const HLS_managerRef hls_manager, const ParameterConstRef parameters);
+      HLSIR(const HLS_managerRef& hls_manager, const ParameterConstRef& parameters);
 
       /**
        * Destructor

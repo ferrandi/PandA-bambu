@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file VerilatorWrapper.cpp
  * @brief Wrapper to Verilator simulator.
@@ -39,54 +39,54 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 /// Includes the class definition
 #include "VerilatorWrapper.hpp"
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
-#include "config_HAVE_VERILATOR.hpp"
 #include "config_HAVE_L2_NAME.hpp"
+#include "config_HAVE_VERILATOR.hpp"
 
-///Constants include
+/// Constants include
 #include "file_IO_constants.hpp"
 
 /// Standard PandA include
 #include "dbgPrintHelper.hpp"
-#include "utility.hpp"
 #include "exceptions.hpp"
+#include "utility.hpp"
 
 /// includes all needed Boost.Filesystem declarations
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 
+#include <cerrno>
 #include <fstream>
 #include <unistd.h>
-#include <cerrno>
 #include <utility>
 
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
-#include "utility.hpp"
 #include "fileIO.hpp"
+#include "utility.hpp"
 
-#define SIM_SUBDIR       (Param->getOption<std::string>(OPT_output_directory) + std::string("/verilator"))
+#define SIM_SUBDIR (Param->getOption<std::string>(OPT_output_directory) + std::string("/verilator"))
 
-//constructor
-VerilatorWrapper::VerilatorWrapper(const ParameterConstRef _Param, std::string  _suffix) :
-   SimulationTool(_Param),
-   suffix(std::move(_suffix))
+// constructor
+VerilatorWrapper::VerilatorWrapper(const ParameterConstRef& _Param, std::string _suffix) : SimulationTool(_Param), suffix(std::move(_suffix))
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating the VERILATOR wrapper...");
    std::string verilator_beh_dir = SIM_SUBDIR + suffix;
-   if (boost::filesystem::exists(verilator_beh_dir)) boost::filesystem::remove_all(verilator_beh_dir);
-   boost::filesystem::create_directory(verilator_beh_dir + "/" );
+   if(boost::filesystem::exists(verilator_beh_dir))
+   {
+      boost::filesystem::remove_all(verilator_beh_dir);
+   }
+   boost::filesystem::create_directory(verilator_beh_dir + "/");
 }
 
-//destructor
-VerilatorWrapper::~VerilatorWrapper()
-= default;
+// destructor
+VerilatorWrapper::~VerilatorWrapper() = default;
 
 void VerilatorWrapper::CheckExecution()
 {
@@ -95,19 +95,22 @@ void VerilatorWrapper::CheckExecution()
 #endif
 }
 
-void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string> & file_list)
+void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list)
 {
    for(const auto& file : file_list)
+   {
       if(file.find(".vhd") != std::string::npos)
+      {
          THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Mixed simulation not supported by Verilator");
-   bool generate_vcd_output = (Param->isOption(OPT_generate_vcd) && Param->getOption<bool>(OPT_generate_vcd)) ||
-      (Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy));
+      }
+   }
+   bool generate_vcd_output = (Param->isOption(OPT_generate_vcd) && Param->getOption<bool>(OPT_generate_vcd)) || (Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy));
 
    const std::string output_directory = Param->getOption<std::string>(OPT_output_directory);
    log_file = SIM_SUBDIR + suffix + "/" + top_filename + "_verilator.log";
 #if HAVE_EXPERIMENTAL
 #ifdef _WIN32
-/// this removes the dependency from perl on MinGW32
+   /// this removes the dependency from perl on MinGW32
    script << "verilator_bin";
 #else
    script << "verilator";
@@ -115,7 +118,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    script << " --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wall -Wno-DECLFILENAME -Wno-WIDTH -Wno-UNUSED -Wno-CASEINCOMPLETE -Wno-UNOPTFLAT -Wno-PINMISSING -Wno-UNDRIVEN -Wno-SYNCASYNCNET -sv";
 #else
 #ifdef _WIN32
-/// this removes the dependency from perl on MinGW32
+   /// this removes the dependency from perl on MinGW32
    script << "verilator_bin";
 #else
    script << "verilator";
@@ -131,7 +134,9 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
 #endif
    }
    for(const auto& file : file_list)
+   {
       script << " " << file;
+   }
    script << " " << output_directory + "/simulation/testbench_" + top_filename << "_tb.v";
    script << " --top-module " << top_filename << "_tb";
    script << std::endl;
@@ -139,16 +144,16 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    script << "   exit 1;" << std::endl;
    script << "fi" << std::endl;
    script << std::endl << std::endl;
-   script << "ln -s ../../../"+ output_directory +" " + SIM_SUBDIR + suffix + "/verilator_obj\n";
+   script << "ln -s ../../../" + output_directory + " " + SIM_SUBDIR + suffix + "/verilator_obj\n";
 
-   script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj -j4 OPT_FAST=\"-O1 -fstrict-aliasing\" -f V"+ top_filename +"_tb.mk V"+ top_filename << "_tb";
+   script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj -j4 OPT_FAST=\"-O1 -fstrict-aliasing\" -f V" + top_filename + "_tb.mk V" + top_filename << "_tb";
 #ifdef _WIN32
-/// VM_PARALLEL_BUILDS=1 removes the dependency from perl
+   /// VM_PARALLEL_BUILDS=1 removes the dependency from perl
    script << " VM_PARALLEL_BUILDS=1 CFG_CXXFLAGS_NO_UNUSED=\"\"";
 #endif
    script << std::endl << std::endl;
 
-   script << SIM_SUBDIR + suffix + "/verilator_obj/V"+top_filename+"_tb";
+   script << SIM_SUBDIR + suffix + "/verilator_obj/V" + top_filename + "_tb";
    script << " 2>&1 | tee " << log_file << std::endl << std::endl;
 }
 

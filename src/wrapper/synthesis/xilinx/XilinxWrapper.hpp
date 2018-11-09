@@ -86,7 +86,7 @@ class XilinxWrapper : public SynthesisTool
        * @param out_dir is the directory where to save all the results
        * @param default_out_dir is the default output directory
        */
-      XilinxWrapper(const ParameterConstRef Param, const std::string& tool_exec, const target_deviceRef device, const std::string& out_dir, const std::string& default_out_dir);
+      XilinxWrapper(const ParameterConstRef& Param, const std::string& tool_exec, const target_deviceRef& device, const std::string& out_dir, const std::string& default_out_dir);
 
       /**
        * Destructor

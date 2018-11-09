@@ -56,7 +56,7 @@
 class vivado_flow_wrapper : public XilinxWrapper
 {
    private:
-      void create_sdc(const DesignParametersRef dp);
+      void create_sdc(const DesignParametersRef& dp);
 
    protected:
 
@@ -77,7 +77,7 @@ class vivado_flow_wrapper : public XilinxWrapper
        * Constructor
        * @param Param is the set of parameters
        */
-      vivado_flow_wrapper(const ParameterConstRef Param, const std::string& _output_dir, const target_deviceRef _device);
+      vivado_flow_wrapper(const ParameterConstRef& Param, const std::string& _output_dir, const target_deviceRef& _device);
 
       /**
        * Destructor

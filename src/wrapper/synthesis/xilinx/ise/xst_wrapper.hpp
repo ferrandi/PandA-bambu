@@ -76,7 +76,7 @@ class xst_wrapper : public XilinxWrapper
       /**
        * Generates project file
        */
-      void GenerateProjectFile(const DesignParametersRef dp);
+      void GenerateProjectFile(const DesignParametersRef& dp);
 
       /**
        * Initializes the reserved variables
@@ -99,7 +99,7 @@ class xst_wrapper : public XilinxWrapper
        * Constructor
        * @param Param is the set of parameters
        */
-      xst_wrapper(const ParameterConstRef Param, const std::string& _output_dir, const target_deviceRef _device);
+      xst_wrapper(const ParameterConstRef& Param, const std::string& _output_dir, const target_deviceRef& _device);
 
       /**
        * Destructor

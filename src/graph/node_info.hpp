@@ -64,7 +64,7 @@ struct NodeInfo
     * Print the information associated with the node of the graph.
     * @param os is the output stream.
    */
-   virtual void print(std::ostream& ) const;
+   virtual void print(std::ostream&, int detail_level=0) const;
 
    /**
     * Friend definition of the << operator.

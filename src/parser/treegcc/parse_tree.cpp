@@ -64,7 +64,7 @@
 //exit_code is stored in zebu.cpp
 extern int exit_code;
 
-tree_managerRef ParseTreeFile(const ParameterConstRef Param, const std::string& f)
+tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string& f)
 {
    try
    {

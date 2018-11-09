@@ -83,7 +83,7 @@ class area_model
        */
       //@{
       ///Constructor.
-      explicit area_model(const ParameterConstRef _Param_);
+      explicit area_model(const ParameterConstRef& _Param_);
 
       ///Destructor.
       virtual ~area_model();
@@ -98,7 +98,7 @@ class area_model
        * Factory method.
        */
       static
-      area_modelRef create_model(const TargetDevice_Type type, const ParameterConstRef Param);
+      area_modelRef create_model(const TargetDevice_Type type, const ParameterConstRef& Param);
 
       /**
        * Set the nominal value for the area of the component

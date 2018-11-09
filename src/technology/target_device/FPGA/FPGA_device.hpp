@@ -55,7 +55,7 @@ class FPGA_device : public target_device
        * @param Param is the reference to the class that contains all the parameters
        * @param TM is the reference to the class containing all the technology libraries
        */
-      FPGA_device(const ParameterConstRef Param, const technology_managerRef TM);
+      FPGA_device(const ParameterConstRef& Param, const technology_managerRef& TM);
 
       /**
        * Destructor

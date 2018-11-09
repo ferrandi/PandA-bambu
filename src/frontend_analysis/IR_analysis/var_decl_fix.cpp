@@ -199,7 +199,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
                if(curr_tn->get_kind() == var_decl_K)
                {  /* this is a variable declaration */
                   auto *cast_res = GetPointer<var_decl>(curr_tn);
-                  if(cast_res->static_flag == true)
+                  if(cast_res->static_flag)
                   {
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Found a static variable with identifier <" + GetPointer<identifier_node>(GET_NODE(dn->name))->strg + "> within function #" + STR(function_id));
                   }

@@ -40,7 +40,7 @@
 ///Header include
 #include "hls_ir.hpp"
 
-HLSIR::HLSIR(const HLS_managerRef _hls_manager, const ParameterConstRef _parameters) :
+HLSIR::HLSIR(const HLS_managerRef& _hls_manager, const ParameterConstRef& _parameters) :
    IntermediateRepresentation(_parameters),
    hls_manager(HLS_managerRef(_hls_manager.get(), null_deleter()))
 {}

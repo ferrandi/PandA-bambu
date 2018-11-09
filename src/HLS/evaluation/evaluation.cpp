@@ -247,7 +247,7 @@ DesignFlowStep_Status Evaluation::Exec()
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Number of executions     : " + STR(num_executions));
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Average execution        : " + STR(avg_cycles) + " cycles");
       }
-      else if ((objective == "AREA" or objective == "AREAxTIME") and printed_area == false)
+      else if ((objective == "AREA" or objective == "AREAxTIME") and !printed_area)
       {
          printed_area = true;
 //         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Area                     : " + STR(evaluations.at("AREA").at(0) ));

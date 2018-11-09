@@ -871,7 +871,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit * fu, const unsigned int p
             e_port = SM->add_constant("constant_" + STR(constPort), circuit, port_in->get_typeRef(), fu->characterizing_constant_value);
             SM->add_connection(port_in, e_port);
          }
-         else if(false && GetPointer<port_o>(port_in)->get_is_size_bus())
+         else if(false)
          {
             if(port_in->get_kind() == port_vector_o_K)
             {

@@ -153,7 +153,7 @@ void vcd_utility::ComputeRelationships
 {
    HLS_step::ComputeRelationships(relationship, relationship_type);
    if (parameters->isOption(OPT_discrepancy) and
-         parameters->getOption<bool>(OPT_discrepancy) == true and
+         parameters->getOption<bool>(OPT_discrepancy) and
          relationship_type == DEPENDENCE_RELATIONSHIP)
    {
       const auto * frontend_step_factory =
@@ -351,9 +351,9 @@ DesignFlowStep_Status vcd_utility::Exec()
    if (c_op_trace.empty())
    {
       THROW_WARNING("Discrepancy Analysis: the trace of the C execution is empty. Discrepancy Analysis cannot be performed");
-      if ((not parameters->isOption(OPT_no_clean)) or (parameters->getOption<bool>(OPT_no_clean) == false))
+      if ((not parameters->isOption(OPT_no_clean)) or (!parameters->getOption<bool>(OPT_no_clean)))
       {
-         if ((not parameters->isOption(OPT_generate_vcd)) or (parameters->getOption<bool>(OPT_generate_vcd) == false))
+         if ((not parameters->isOption(OPT_generate_vcd)) or (!parameters->getOption<bool>(OPT_generate_vcd)))
          {
             boost::filesystem::remove(vcd_filename);
          }
@@ -592,9 +592,9 @@ DesignFlowStep_Status vcd_utility::Exec()
    else
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "DISCREPANCY NOT FOUND");
-      if ((not parameters->isOption(OPT_no_clean)) or (parameters->getOption<bool>(OPT_no_clean) == false))
+      if ((not parameters->isOption(OPT_no_clean)) or (!parameters->getOption<bool>(OPT_no_clean)))
       {
-         if ((not parameters->isOption(OPT_generate_vcd)) or (parameters->getOption<bool>(OPT_generate_vcd) == false))
+         if ((not parameters->isOption(OPT_generate_vcd)) or (!parameters->getOption<bool>(OPT_generate_vcd)))
          {
             boost::filesystem::remove(vcd_filename);
          }

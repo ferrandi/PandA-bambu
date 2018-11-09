@@ -45,7 +45,7 @@
 
 #include "target_device.hpp"
 
-target_manager::target_manager(const ParameterConstRef _Param, const technology_managerRef _TM, const target_deviceRef _device) :
+target_manager::target_manager(const ParameterConstRef& _Param, const technology_managerRef& _TM, const target_deviceRef& _device) :
    Param(_Param),
    TM(_TM),
    device(_device)
@@ -59,7 +59,7 @@ target_manager::target_manager(const ParameterConstRef _Param, const technology_
 target_manager::~target_manager()
 = default;
 
-void target_manager::set_technology_manager(const technology_managerRef _TM)
+void target_manager::set_technology_manager(const technology_managerRef& _TM)
 {
    TM = _TM;
 }
@@ -69,7 +69,7 @@ const technology_managerRef target_manager::get_technology_manager() const
    return TM;
 }
 
-void target_manager::set_target_technology(const target_technologyRef _target)
+void target_manager::set_target_technology(const target_technologyRef& _target)
 {
    target = _target;
 }
@@ -79,7 +79,7 @@ const target_technologyRef target_manager::get_target_technology() const
    return target;
 }
 
-void target_manager::set_target_device(const target_deviceRef _device)
+void target_manager::set_target_device(const target_deviceRef& _device)
 {
    device = _device;
    set_target_technology(device->get_target_technology());

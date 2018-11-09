@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file XilinxWrapper.cpp
  * @brief Implementation of the wrapper to Xilinx tools
@@ -40,37 +40,39 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
-///Header include
+ */
+/// Header include
 #include "XilinxWrapper.hpp"
 
-#include "xml_script_command.hpp"
 #include "xml_dom_parser.hpp"
+#include "xml_script_command.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 
 #include "Parameter.hpp"
+#include "constant_strings.hpp"
 #include "fileIO.hpp"
 #include "utility.hpp"
-#include "constant_strings.hpp"
 
 #include <fstream>
 
-XilinxWrapper::XilinxWrapper(const ParameterConstRef _Param, const std::string& _tool_exec, const target_deviceRef _device, const std::string& _output_dir, const std::string& _default_output_dir) :
-   SynthesisTool(_Param, _tool_exec, _device, _output_dir, _default_output_dir)
+XilinxWrapper::XilinxWrapper(const ParameterConstRef& _Param, const std::string& _tool_exec, const target_deviceRef& _device, const std::string& _output_dir, const std::string& _default_output_dir)
+    : SynthesisTool(_Param, _tool_exec, _device, _output_dir, _default_output_dir)
 {
 }
 
-XilinxWrapper::~XilinxWrapper()
-= default;
+XilinxWrapper::~XilinxWrapper() = default;
 
 void XilinxWrapper::generate_synthesis_script(const DesignParametersRef& dp, const std::string& file_name)
 {
-   if (xml_script_nodes.size() == 0) return;
+   if(xml_script_nodes.empty())
+   {
+      return;
+   }
 
    // Export reserved (constant) values to design parameters
-   for (std::vector<xml_set_variable_tRef>::const_iterator it = xml_reserved_vars.begin(); it != xml_reserved_vars.end(); ++it)
+   for(auto it = xml_reserved_vars.begin(); it != xml_reserved_vars.end(); ++it)
    {
       const xml_set_variable_tRef& var = (*it);
       std::cerr << "setting = " << var->name << " #" << getStringValue(var, dp) << "#" << std::endl;
@@ -88,7 +90,10 @@ void XilinxWrapper::generate_synthesis_script(const DesignParametersRef& dp, con
    remove_escaped(script_string);
 
    // Save the generated script
-   if (boost::filesystem::exists(file_name)) boost::filesystem::remove_all(file_name);
+   if(boost::filesystem::exists(file_name))
+   {
+      boost::filesystem::remove_all(file_name);
+   }
    dp->parameter_values[SCRIPT_FILENAME] = file_name;
    script_name = file_name;
    std::ofstream file_stream(file_name.c_str());
@@ -104,22 +109,28 @@ std::string XilinxWrapper::getStringValue(const xml_script_node_tRef node, const
       {
          std::string result;
          const xml_set_variable_t* var = GetPointer<xml_set_variable_t>(node);
-         if (var->singleValue)
+         if(var->singleValue)
+         {
             result += *(var->singleValue);
-         else if (var->multiValues.size())
+         }
+         else if(!var->multiValues.empty())
          {
             result += "{";
-            for (auto it = var->multiValues.begin(); it != var->multiValues.end(); ++it)
+            for(auto it = var->multiValues.begin(); it != var->multiValues.end(); ++it)
             {
                const xml_set_entry_tRef e = *it;
-               if (it != var->multiValues.begin())
+               if(it != var->multiValues.begin())
+               {
                   result += " ";
+               }
                result += toString(e, dp);
             }
             result += "}";
          }
          else
+         {
             result += "\"\"";
+         }
          return result;
       }
       case NODE_COMMAND:
@@ -153,14 +164,23 @@ std::string XilinxWrapper::toString(const xml_script_node_tRef node, const Desig
       {
          const xml_parameter_t* par = GetPointer<xml_parameter_t>(node);
          std::string result;
-         if (par->condition && !xml_script_node_t::evaluate_condition(par->condition, dp)) return result;
-         if (par->name)
+         if(par->condition && !xml_script_node_t::evaluate_condition(par->condition, dp))
+         {
+            return result;
+         }
+         if(par->name)
+         {
             result += "-" + *(par->name);
-         if (par->name && (par->singleValue || par->multiValues.size()))
+         }
+         if(par->name && (par->singleValue || !par->multiValues.empty()))
+         {
             result += par->separator;
-         if (par->singleValue)
+         }
+         if(par->singleValue)
+         {
             result += *(par->singleValue);
-         else if (par->multiValues.size())
+         }
+         else if(!par->multiValues.empty())
          {
             NOT_YET_IMPLEMENTED();
          }
@@ -170,15 +190,22 @@ std::string XilinxWrapper::toString(const xml_script_node_tRef node, const Desig
       {
          const xml_command_t* comm = GetPointer<xml_command_t>(node);
          std::string result;
-         if (comm->name)
+         if(comm->name)
+         {
             result += *(comm->name);
-         if (comm->parameters.size())
-            for (auto p : comm->parameters)
+         }
+         if(!comm->parameters.empty())
+         {
+            for(const auto& p : comm->parameters)
             {
-               if (p->condition && !xml_script_node_t::evaluate_condition(p->condition, dp)) continue;
+               if(p->condition && !xml_script_node_t::evaluate_condition(p->condition, dp))
+               {
+                  continue;
+               }
                result += "\n" + toString(p, dp);
             }
-         if (comm->output)
+         }
+         if(comm->output)
          {
             THROW_ERROR("Not supported");
          }
@@ -193,4 +220,3 @@ std::string XilinxWrapper::toString(const xml_script_node_tRef node, const Desig
    }
    return "";
 }
-

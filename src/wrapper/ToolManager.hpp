@@ -124,7 +124,7 @@ class ToolManager
        * Constructor
        * @param Param is the set of parameters
        */
-      explicit ToolManager(const ParameterConstRef Param);
+      explicit ToolManager(const ParameterConstRef& Param);
 
       /**
        * Destructor

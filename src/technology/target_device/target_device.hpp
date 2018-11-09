@@ -111,7 +111,7 @@ class target_device
        * @param TM is the reference to the current technology library
        * @param target is the reference to the current target technology
        */
-      target_device(const ParameterConstRef Param, const technology_managerRef TM, const TargetDevice_Type type);
+      target_device(const ParameterConstRef& Param, const technology_managerRef& TM, const TargetDevice_Type type);
 
       /**
        * Destructor of the class
@@ -122,7 +122,7 @@ class target_device
        * Method to read an XML file and identify the section containing device-related parameters
        * @param node is the root node for the analysis
        */
-      void xload(const target_deviceRef device, const xml_element* node);
+      void xload(const target_deviceRef& device, const xml_element* node);
 
       /**
        * Method to write an XML node
@@ -143,7 +143,7 @@ class target_device
        * @param target is the reference to the current target technology
        */
       static
-      target_deviceRef create_device(const TargetDevice_Type type, const ParameterConstRef Param, const technology_managerRef TM);
+      target_deviceRef create_device(const TargetDevice_Type type, const ParameterConstRef& Param, const technology_managerRef& TM);
 
       /**
        * Returns the value of the specified parameter, if any. Otherwise, it throws an exception.

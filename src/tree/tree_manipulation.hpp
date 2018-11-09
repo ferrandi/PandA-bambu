@@ -133,7 +133,7 @@ class tree_manipulation
        * @param TreeM is the tree manager.
        * @param parameters is the set of input parameters 
       */
-      tree_manipulation(const tree_managerRef TreeM, const ParameterConstRef parameters);
+      tree_manipulation(const tree_managerRef& TreeM, const ParameterConstRef& parameters);
 
       /**
        * This is the destructor of the tree_manipulation.
@@ -152,7 +152,7 @@ class tree_manipulation
        * @param  operation_kind is the kind of unary expression to create (bit_not_expr_K, nop_expr_K,...).
        * @return the tree_reindex node of the operation created.
        */
-      tree_nodeRef create_unary_operation(const tree_nodeRef & type, const tree_nodeRef & op, std::string srcp, enum kind operation_kind) const;
+      tree_nodeRef create_unary_operation(const tree_nodeRef & type, const tree_nodeRef & op, const std::string& srcp, enum kind operation_kind) const;
 
       /**
        * Function used to create a binary expression.
@@ -163,7 +163,7 @@ class tree_manipulation
        * @param  operation_kind is the kind of binary expression to create (bit_and_expr_K, plus_expr_K,...).
        * @return the tree_reindex node of the operation created.
        */
-      tree_nodeRef create_binary_operation(const tree_nodeRef & type, const tree_nodeRef & op0, const tree_nodeRef & op1, std::string srcp, enum kind operation_kind) const;
+      tree_nodeRef create_binary_operation(const tree_nodeRef & type, const tree_nodeRef & op0, const tree_nodeRef & op1, const std::string& srcp, enum kind operation_kind) const;
 
       /**
        * Function used to create a ternary expression.
@@ -175,7 +175,7 @@ class tree_manipulation
        * @param  operation_kind is the kind of ternary expression to create (component_ref_K, gimple_switch_K,...).
        * @return the tree_reindex node of the operation created.
        */
-      tree_nodeRef create_ternary_operation(const tree_nodeRef & type, const tree_nodeRef & op0, const tree_nodeRef & op1, const tree_nodeRef & op2, std::string srcp, enum kind operation_kind) const;
+      tree_nodeRef create_ternary_operation(const tree_nodeRef & type, const tree_nodeRef & op0, const tree_nodeRef & op1, const tree_nodeRef & op2, const std::string& srcp, enum kind operation_kind) const;
 
       /**
        * Function used to create a quaternary expression.
@@ -188,7 +188,7 @@ class tree_manipulation
        * @param  operation_kind is the kind of quaternary expression to create (array_range_ref_K, array_ref_K).
        * @return the tree_reindex node of the operation created.
        */
-      tree_nodeRef create_quaternary_operation(const tree_nodeRef & type, const tree_nodeRef & op0, const tree_nodeRef & op1, const tree_nodeRef & op2, const tree_nodeRef & op3, std::string srcp, enum kind operation_kind) const;
+      tree_nodeRef create_quaternary_operation(const tree_nodeRef & type, const tree_nodeRef & op0, const tree_nodeRef & op1, const tree_nodeRef & op2, const tree_nodeRef & op3, const std::string& srcp, enum kind operation_kind) const;
 
       ///CONST_OBJ_TREE_NODES
       /** Function used to create a integer_cst node.
@@ -197,7 +197,7 @@ class tree_manipulation
        * @param  integer_cst_nid is the index node of the object to be created
        * @return the tree_reindex node of the integer_cst created.
        */
-      tree_nodeRef CreateIntegerCst(const tree_nodeConstRef type, const long long int value, const unsigned int integer_cst_nid) const;
+      tree_nodeRef CreateIntegerCst(const tree_nodeConstRef& type, const long long int value, const unsigned int integer_cst_nid) const;
 
       ///IDENTIFIER_TREE_NODE
       /**
@@ -234,7 +234,7 @@ class tree_manipulation
             const tree_nodeRef & argt,
             const tree_nodeRef & smt_ann,
             const tree_nodeRef & init,
-            std::string srcp,
+            const std::string& srcp,
             unsigned int algn,
             int used,
             bool register_flag = false,
@@ -257,7 +257,7 @@ class tree_manipulation
        * @return the tree_reindex node of the result_decl created.
        */
       tree_nodeRef create_result_decl(const tree_nodeRef & name, const tree_nodeRef & type, const tree_nodeRef & scpe, const tree_nodeRef & size, const tree_nodeRef &  smt_ann,
-               const tree_nodeRef & init, std::string srcp,  unsigned int algn, bool artificial_flag = false) const;
+               const tree_nodeRef & init, const std::string& srcp,  unsigned int algn, bool artificial_flag = false) const;
 
 
       /**
@@ -286,7 +286,7 @@ class tree_manipulation
             const tree_nodeRef & size,
             const tree_nodeRef & smt_ann,
             const tree_nodeRef & init,
-            std::string srcp,
+            const std::string& srcp,
             unsigned int algn,
             int used,
             bool artificial_flag = false,
@@ -348,7 +348,7 @@ class tree_manipulation
        * @param  ptd type pointed by the pointer type (tree_reindex).
        * @return the tree_reindex node of the pointer type.
        */
-      tree_nodeRef create_pointer_type(const tree_nodeConstRef ptd) const;
+      tree_nodeRef create_pointer_type(const tree_nodeConstRef& ptd) const;
 
       /**
        * @brief create an integer type starting from a given prec
@@ -373,7 +373,7 @@ class tree_manipulation
        * @return the tree_reindex node of the ssa_name.
        *
        */
-      tree_nodeRef create_ssa_name(const tree_nodeConstRef var, const tree_nodeConstRef type, bool volatile_flag = false, bool virtual_flag = false) const;
+      tree_nodeRef create_ssa_name(const tree_nodeConstRef& var, const tree_nodeConstRef& type, bool volatile_flag = false, bool virtual_flag = false) const;
 
       ///GIMPLE_PHI
 
@@ -398,7 +398,7 @@ class tree_manipulation
        * @param  bb_index is the basic block index associated with the gimple statement
        * @return the tree_reindex node of the gimple_assign.
        */
-      tree_nodeRef create_gimple_modify_stmt(const tree_nodeRef op0, const tree_nodeRef op1, const std::string& srcp, const unsigned int bb_index) const;
+      tree_nodeRef create_gimple_modify_stmt(const tree_nodeRef& op0, const tree_nodeRef& op1, const std::string& srcp, const unsigned int bb_index) const;
 
       /**
        * Create gimple assignment
@@ -407,10 +407,10 @@ class tree_manipulation
        * @param bb_index is the index of the basic block index
        * @param srcp is the srcp to be assigned
        */
-      tree_nodeRef CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, unsigned int bb_index, const std::string& srcp) const;
+      tree_nodeRef CreateGimpleAssign(const tree_nodeRef& type, const tree_nodeRef& op, unsigned int bb_index, const std::string& srcp) const;
 
       ///GIMPLE_CALL
-      tree_nodeRef create_gimple_call(const tree_nodeConstRef called_function, const std::vector<tree_nodeRef>& args, const std::string&srcp, const unsigned int bb_index) const;
+      tree_nodeRef create_gimple_call(const tree_nodeConstRef& called_function, const std::vector<tree_nodeRef>& args, const std::string&srcp, const unsigned int bb_index) const;
 
       ///GIMPLE_COND
 
@@ -422,7 +422,7 @@ class tree_manipulation
        * @param  bb_index is the basic block index associated with the gimple statement
        * @return the tree_reindex node of the gimple_cond created.
        */
-      tree_nodeRef create_gimple_cond(const tree_nodeRef & expr, std::string srcp, unsigned int bb_index) const;
+      tree_nodeRef create_gimple_cond(const tree_nodeRef & expr, const std::string& srcp, unsigned int bb_index) const;
 
       ///GIMPLE_RETURN
 
@@ -434,14 +434,14 @@ class tree_manipulation
        * @param  bb_index is the basic block index associated with the gimple statement
        * @return the tree_reindex node of the gimple_return created.
        */
-      tree_nodeRef create_gimple_return(const tree_nodeRef& type, const tree_nodeRef & expr, std::string srcp, unsigned int bb_index) const;
+      tree_nodeRef create_gimple_return(const tree_nodeRef& type, const tree_nodeRef & expr, const std::string& srcp, unsigned int bb_index) const;
 
       /**
        * create a label expression in a header of a loop.
        * @param block is the basic block where the label expression has to be inserted.
        * @param function_decl_nid is the node id of the function where the label expression is defined.
        */
-      void create_label(const blocRef block, unsigned int function_decl_nid) const;
+      void create_label(const blocRef& block, unsigned int function_decl_nid) const;
 
       /**
        * create a goto expression.
@@ -449,7 +449,7 @@ class tree_manipulation
        * @param function_decl_nid is the node id of the function where the goto expression is defined.
        * @param label_expr_nid is the node id of the label expression associated with the goto expression.
        */
-      void create_goto(const blocRef block, unsigned int function_decl_nid, unsigned int label_expr_nid) const;
+      void create_goto(const blocRef& block, unsigned int function_decl_nid, unsigned int label_expr_nid) const;
 
       /**
        * @brief create the declaration of a function without its body
@@ -460,7 +460,7 @@ class tree_manipulation
        * @param with_body when true a stub of the body is created
        * @return is the the tree_reindex associated with the function_decl created.
        */
-      tree_nodeRef create_function_decl(const std::string& function_name, const tree_nodeRef& scpe, const std::vector<tree_nodeRef>& argsT, const tree_nodeRef& returnType, std::string srcp, bool with_body) const;
+      tree_nodeRef create_function_decl(const std::string& function_name, const tree_nodeRef& scpe, const std::vector<tree_nodeRef>& argsT, const tree_nodeRef& returnType, const std::string& srcp, bool with_body) const;
 
       ///BASIC BLOCK
 
@@ -584,7 +584,7 @@ class tree_manipulation
        * @param block is the basic block in which new statement has tobe added
        * @return the ssa in the left part of the created statement
        */
-      tree_nodeRef CreateNotExpr(const tree_nodeConstRef condition, const blocRef block) const;
+      tree_nodeRef CreateNotExpr(const tree_nodeConstRef& condition, const blocRef& block) const;
 
       /**
        * Create an or expression
@@ -593,7 +593,7 @@ class tree_manipulation
        * @param block is the basic block in which new statement has to be added
        * @return the ssa in the left part of the created statement
        */
-      tree_nodeRef CreateAndExpr(const tree_nodeConstRef first_condition, const tree_nodeConstRef second_condition, const blocRef block) const;
+      tree_nodeRef CreateAndExpr(const tree_nodeConstRef& first_condition, const tree_nodeConstRef& second_condition, const blocRef& block) const;
 
       /**
        * Create an or expression
@@ -602,7 +602,7 @@ class tree_manipulation
        * @param block is the basic block in which new statement has to be added
        * @return the ssa in the left part of the created statement
        */
-      tree_nodeRef CreateOrExpr(const tree_nodeConstRef first_condition, const tree_nodeConstRef second_condition, const blocRef block) const;
+      tree_nodeRef CreateOrExpr(const tree_nodeConstRef& first_condition, const tree_nodeConstRef& second_condition, const blocRef& block) const;
 
       /**
        * Extract computation of condition from a gimple_cond
@@ -610,7 +610,7 @@ class tree_manipulation
        * @param block is the basic block in which new statement has to be added
        * @return the ssa in the left part of the created statement
        */
-      tree_nodeRef ExtractCondition(const tree_nodeRef gc, const blocRef block) const;
+      tree_nodeRef ExtractCondition(const tree_nodeRef& gc, const blocRef& block) const;
 
       /**
        * Create a nop_expr to perform a conversion
@@ -618,12 +618,12 @@ class tree_manipulation
        * @param type is the destination type
        * @return the gimple assignemnt containing the nop expr as right part
        */
-      tree_nodeRef CreateNopExpr(const tree_nodeConstRef operand, const tree_nodeConstRef type) const;
+      tree_nodeRef CreateNopExpr(const tree_nodeConstRef& operand, const tree_nodeConstRef& type) const;
 
       /**
        * Create an unsigned integer type starting from signed type
        */
-      tree_nodeRef CreateUnsigned(const tree_nodeConstRef signed_type) const;
+      tree_nodeRef CreateUnsigned(const tree_nodeConstRef& signed_type) const;
 
       /**
        * Create an eq_expr
@@ -632,7 +632,7 @@ class tree_manipulation
        * @param block is the basic block in which new statement has to be added
        * @return the ssa in the left part of the created statement
        */
-      tree_nodeRef CreateEqExpr(const tree_nodeConstRef first_operand, const tree_nodeConstRef second_operand, const blocRef block) const;
+      tree_nodeRef CreateEqExpr(const tree_nodeConstRef& first_operand, const tree_nodeConstRef& second_operand, const blocRef& block) const;
 
       /**
        * Create a call_expr
@@ -641,7 +641,7 @@ class tree_manipulation
        * @param srcp is the srcp to be associated with the call
        * @return the tree reindex of the created node
        */
-      tree_nodeRef CreateCallExpr(const tree_nodeConstRef called_function, const std::vector<tree_nodeRef>& args, const std::string& srcp) const;
+      tree_nodeRef CreateCallExpr(const tree_nodeConstRef& called_function, const std::vector<tree_nodeRef>& args, const std::string& srcp) const;
 
       /**
        * Create an addr_expr
@@ -649,7 +649,7 @@ class tree_manipulation
        * @param srcp is the srcp to be associated with the call
        * @return the tree reindex of the created node
        */
-      tree_nodeRef CreateAddrExpr(const tree_nodeConstRef tn, const std::string& srcp) const;
+      tree_nodeRef CreateAddrExpr(const tree_nodeConstRef& tn, const std::string& srcp) const;
 
       /**
        * Create a gimple_assign with op0 a new ssa_name, and op1 an addr_expr
@@ -659,7 +659,7 @@ class tree_manipulation
        * @param srcp is the srcp to be associated with the call
        * @return the tree reindex of the created node
        */
-      tree_nodeRef CreateGimpleAssignAddrExpr(const tree_nodeConstRef tn, const unsigned int bb_index, const std::string& srcp) const;
+      tree_nodeRef CreateGimpleAssignAddrExpr(const tree_nodeConstRef& tn, const unsigned int bb_index, const std::string& srcp) const;
 
       /**
        * Create a vector bool type

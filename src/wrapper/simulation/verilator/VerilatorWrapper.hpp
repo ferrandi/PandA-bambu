@@ -69,7 +69,7 @@ class VerilatorWrapper : public SimulationTool
        * Constructor
        * @param Param is the set of parameters
        */
-      VerilatorWrapper(const ParameterConstRef Param, std::string  suffix);
+      VerilatorWrapper(const ParameterConstRef& Param, std::string  suffix);
 
       /**
        * Destructor

@@ -99,7 +99,7 @@ class target_technology
       /**
        * Constructor.
        */
-      explicit target_technology(const ParameterConstRef param);
+      explicit target_technology(const ParameterConstRef& param);
 
       /**
        * Destructor.
@@ -118,7 +118,7 @@ class target_technology
        * @return a reference to the specialization of the target technology datastructure
        */
       static
-      target_technologyRef create_technology(const target_t type, const ParameterConstRef param);
+      target_technologyRef create_technology(const target_t type, const ParameterConstRef& param);
 
       /**
        * Returns the type of the technology currently implemented.

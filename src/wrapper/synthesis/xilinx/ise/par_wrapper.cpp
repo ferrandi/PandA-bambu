@@ -53,7 +53,7 @@
 #include <iostream>
 
 //constructor
-par_wrapper::par_wrapper(const ParameterConstRef _Param, const std::string& _output_dir, const target_deviceRef _device) :
+par_wrapper::par_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir, const target_deviceRef& _device) :
    XilinxWrapper(_Param, PAR_TOOL_ID, _device, _output_dir, "par")
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the PAR wrapper...");

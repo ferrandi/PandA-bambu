@@ -65,7 +65,7 @@ class AlteraWrapper : public SynthesisTool
        * @param output_dir is the directory where to save all the results
        * @param default_output_dir is the default output directory
        */
-      AlteraWrapper(const ParameterConstRef Param, const std::string& tool_exec, const target_deviceRef device, const std::string& output_dir, const std::string& default_output_dir);
+      AlteraWrapper(const ParameterConstRef& Param, const std::string& tool_exec, const target_deviceRef& device, const std::string& output_dir, const std::string& default_output_dir);
 
       /**
        * Destructor

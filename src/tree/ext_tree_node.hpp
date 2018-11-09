@@ -643,7 +643,7 @@ struct gimple_multi_way_if :public gimple_node
     * @param cond is the condition.
     * @param bb_ind is the basic block index.
     */
-   void add_cond(const tree_nodeRef cond, unsigned int bb_ind);
+   void add_cond(const tree_nodeRef& cond, unsigned int bb_ind);
 
 
    /// Redefinition of get_kind_text.

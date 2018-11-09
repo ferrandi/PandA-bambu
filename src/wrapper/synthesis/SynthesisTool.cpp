@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file SynthesisTool.cpp
  * @brief Implementation of some methods for the interface to synthesis tools
@@ -38,40 +38,39 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "SynthesisTool.hpp"
 
 #include <utility>
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
-///wrapper/synthesis/altera includes
+/// wrapper/synthesis/altera includes
 #include "quartus_13_report_wrapper.hpp"
 #include "quartus_13_wrapper.hpp"
 #include "quartus_report_wrapper.hpp"
 #include "quartus_wrapper.hpp"
 
-
-///supported synthesis tools
+/// supported synthesis tools
 #include "DesignCompilerWrapper.hpp"
-#include "xst_wrapper.hpp"
-#include "ngdbuild_wrapper.hpp"
-#include "map_wrapper.hpp"
-#include "trce_wrapper.hpp"
-#include "par_wrapper.hpp"
-#include "vivado_flow_wrapper.hpp"
 #include "lattice_flow_wrapper.hpp"
+#include "map_wrapper.hpp"
+#include "ngdbuild_wrapper.hpp"
+#include "par_wrapper.hpp"
+#include "trce_wrapper.hpp"
+#include "vivado_flow_wrapper.hpp"
+#include "xst_wrapper.hpp"
 
 #if HAVE_EXPERIMENTAL
 #if 0
+#include "DesignOptimizerWrapper.hpp"
 #include "FormalityWrapper.hpp"
 #include "LibraryCompilerWrapper.hpp"
-#include "PrimeTimeWrapper.hpp"
-#include "xpwr_wrapper.hpp"
 #include "LibraryCreatorWrapper.hpp"
-#include "DesignOptimizerWrapper.hpp"
+#include "PrimeTimeWrapper.hpp"
 #include "SocEncounterWrapper.hpp"
+#include "xpwr_wrapper.hpp"
 #endif
 #endif
 
@@ -81,40 +80,33 @@
 
 #include "exceptions.hpp"
 
-#include "xml_helper.hpp"
 #include "fileIO.hpp"
 #include "utility.hpp"
 #include "xml_dom_parser.hpp"
+#include "xml_helper.hpp"
 
-#include "xml_script_command.hpp"
 #include "DesignParameters.hpp"
+#include "xml_script_command.hpp"
 
-
-SynthesisTool::SynthesisTool(const ParameterConstRef _Param, std::string  _tool_exec, const target_deviceRef _device, const std::string& _flow_name, std::string  _output_dir) :
-   device(_device),
-   Param(_Param),
-   debug_level(Param->getOption<int>(OPT_debug_level)),
-   output_level(Param->getOption<unsigned int>(OPT_output_level)),
-   tool_exec(std::move(_tool_exec)),
-   output_dir(std::move(_output_dir))
+SynthesisTool::SynthesisTool(const ParameterConstRef& _Param, std::string _tool_exec, const target_deviceRef& _device, const std::string& _flow_name, std::string _output_dir)
+    : device(_device), Param(_Param), debug_level(Param->getOption<int>(OPT_debug_level)), output_level(Param->getOption<unsigned int>(OPT_output_level)), tool_exec(std::move(_tool_exec)), output_dir(std::move(_output_dir))
 {
-   ///creating the output directory
+   /// creating the output directory
    create_output_directory(_flow_name);
 
    init_reserved_vars();
 }
 
-SynthesisTool::~SynthesisTool()
-= default;
+SynthesisTool::~SynthesisTool() = default;
 
 bool SynthesisTool::has_scripts() const
 {
-   return script_map.size() || xml_script_nodes.size() > 0;
+   return !script_map.empty() || !xml_script_nodes.empty();
 }
 
-SynthesisToolRef SynthesisTool::create_synthesis_tool(type_t type, const ParameterConstRef _Param, const std::string& _output_dir, const target_deviceRef _device)
+SynthesisToolRef SynthesisTool::create_synthesis_tool(type_t type, const ParameterConstRef& _Param, const std::string& _output_dir, const target_deviceRef& _device)
 {
-   switch (type)
+   switch(type)
    {
       case UNKNOWN:
          THROW_ERROR("Synthesis tool not specified");
@@ -161,7 +153,7 @@ SynthesisToolRef SynthesisTool::create_synthesis_tool(type_t type, const Paramet
       case LATTICE_FLOW:
          return SynthesisToolRef(new lattice_flow_wrapper(_Param, _output_dir, _device));
          break;
-#if (0 && HAVE_EXPERIMENTAL)
+#if(0 && HAVE_EXPERIMENTAL)
       case PRIME_TIME:
          return SynthesisToolRef(new PrimeTimeWrapper(_Param, _device, _output_dir));
          break;
@@ -197,18 +189,16 @@ SynthesisToolRef SynthesisTool::create_synthesis_tool(type_t type, const Paramet
       default:
          THROW_ERROR("Synthesis tool currently not supported");
    }
-   ///this point should never be reached
+   /// this point should never be reached
    return SynthesisToolRef();
 }
 
 void SynthesisTool::CheckExecution()
 {
-
 }
 
 void SynthesisTool::init_reserved_vars()
 {
-
 }
 
 std::string SynthesisTool::get_output_directory() const
@@ -218,19 +208,21 @@ std::string SynthesisTool::get_output_directory() const
 
 void SynthesisTool::create_output_directory(const std::string& sub_dir)
 {
-   std::string general_output_dir = Param->getOption<std::string>(OPT_output_directory);
-   if (sub_dir.size()) general_output_dir += "/" + sub_dir;
+   auto general_output_dir = Param->getOption<std::string>(OPT_output_directory);
+   if(!sub_dir.empty())
+   {
+      general_output_dir += "/" + sub_dir;
+   }
    output_dir = general_output_dir + std::string("/") + output_dir;
 
    std::string candidate_dir;
-   if (boost::filesystem::exists(output_dir))
+   if(boost::filesystem::exists(output_dir))
    {
       unsigned int progressive = 0;
       do
       {
          candidate_dir = output_dir + "_" + boost::lexical_cast<std::string>(progressive++);
-      }
-      while (boost::filesystem::exists(candidate_dir));
+      } while(boost::filesystem::exists(candidate_dir));
       output_dir = candidate_dir;
    }
    boost::filesystem::create_directories(output_dir);
@@ -244,15 +236,20 @@ void SynthesisTool::xload_scripts(const xml_element* child)
    xml_tool_options.clear();
 
    bool nodes_found = false;
-   const xml_node::node_list lines = child->get_children();
-   for (const auto & line : lines)
+   const xml_node::node_list& lines = child->get_children();
+   for(const auto& line : lines)
    {
       const xml_element* script_element = GetPointer<xml_element>(line);
-      if (!script_element) continue;
-      if (xml_script_node_t::find_type(script_element) == NODE_PARAMETER)
+      if(!script_element)
       {
-         if (nodes_found)
+         continue;
+      }
+      if(xml_script_node_t::find_type(script_element) == NODE_PARAMETER)
+      {
+         if(nodes_found)
+         {
             THROW_ERROR("Cannot instantiate tool options after script nodes");
+         }
          xml_parameter_tRef option = xml_parameter_tRef(new xml_parameter_t(script_element));
          xml_tool_options.push_back(option);
       }
@@ -268,19 +265,32 @@ void SynthesisTool::xload_scripts(const xml_element* child)
 void SynthesisTool::xload(const xml_element* node, const std::string& tool_config)
 {
    bool node_found = false;
-   const xml_node::node_list list = node->get_children();
-   for (const auto & l : list)
+   const xml_node::node_list& list = node->get_children();
+   for(const auto& l : list)
    {
       const xml_element* child = GetPointer<xml_element>(l);
-      if (!child) continue;
-      if (child->get_name() != get_tool_exec()) continue;
+      if(!child)
+      {
+         continue;
+      }
+      if(child->get_name() != get_tool_exec())
+      {
+         continue;
+      }
       std::string config;
-      if (!CE_XVM(config, child))
+      if(!CE_XVM(config, child))
+      {
          THROW_ERROR("missing configuration for the tool: " + get_tool_exec());
+      }
       LOAD_XVM(config, child);
-      if (config != tool_config) continue;
-      if (node_found)
+      if(config != tool_config)
+      {
+         continue;
+      }
+      if(node_found)
+      {
          THROW_ERROR("double configuration for <" + get_tool_exec() + "," + tool_config);
+      }
       node_found = true;
 
       xload_scripts(child);
@@ -290,11 +300,11 @@ void SynthesisTool::xload(const xml_element* node, const std::string& tool_confi
 xml_nodeRef SynthesisTool::xwrite() const
 {
    xml_elementRef root = xml_elementRef(new xml_element(get_tool_exec()));
-   for (const auto & node : xml_tool_options)
+   for(const auto& node : xml_tool_options)
    {
       root->add_child_element(node->create_xml_node());
    }
-   for (const auto & node : xml_script_nodes)
+   for(const auto& node : xml_script_nodes)
    {
       root->add_child_element(node->create_xml_node());
    }
@@ -303,10 +313,10 @@ xml_nodeRef SynthesisTool::xwrite() const
 
 std::string SynthesisTool::generate_bare_script(const std::vector<xml_script_node_tRef>& nodes, const DesignParametersRef& dp)
 {
-   std::string script = "";
-   for (auto node : nodes)
+   std::string script;
+   for(const auto& node : nodes)
    {
-      if (node->checkCondition(dp) || node->nodeType == NODE_ITE_BLOCK)
+      if(node->checkCondition(dp) || node->nodeType == NODE_ITE_BLOCK)
       {
          script += toString(node, dp);
          script += "\n";
@@ -317,20 +327,22 @@ std::string SynthesisTool::generate_bare_script(const std::vector<xml_script_nod
 
 xml_set_variable_tRef SynthesisTool::get_reserved_parameter(const std::string& name)
 {
-   for (std::vector<xml_set_variable_tRef>::const_iterator i = xml_reserved_vars.begin(); i != xml_reserved_vars.end(); ++i)
+   for(auto i = xml_reserved_vars.begin(); i != xml_reserved_vars.end(); ++i)
    {
-      const xml_set_variable_tRef & node = *i;
-      if (name == node->name)
+      const xml_set_variable_tRef& node = *i;
+      if(name == node->name)
+      {
          return node;
+      }
    }
-   THROW_ERROR("\""+ name + "\" is not a reserved tool parameter");
+   THROW_ERROR("\"" + name + "\" is not a reserved tool parameter");
    return xml_set_variable_tRef(new xml_set_variable_t(nullptr));
 }
 
 void SynthesisTool::replace_parameters(const DesignParametersRef& dp, std::string& script) const
 {
    const DesignParameters::map_t map = dp->parameter_values;
-   for (const auto & it : map)
+   for(const auto& it : map)
    {
       const std::string& name = it.first;
       const std::string& value = it.second;
@@ -341,7 +353,6 @@ void SynthesisTool::replace_parameters(const DesignParametersRef& dp, std::strin
 
 void SynthesisTool::EvaluateVariables(const DesignParametersRef /*dp*/)
 {
-
 }
 
 std::string SynthesisTool::get_tool_exec() const
