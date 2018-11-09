@@ -415,22 +415,22 @@ void MinimalInterfaceTestbench::write_interface_handler() const
          auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
          if(InterfaceType != port_o::port_interface::PI_DEFAULT)
          {
-            if(InterfaceType == port_o::port_interface::PI_RVALID)
+            if(InterfaceType == port_o::port_interface::PI_RVALID||InterfaceType == port_o::port_interface::PI_WACK)
             {
                if(firstValid)
                {
                   firstValid = false;
-                  writer->write("reg __vld_port_state = 0;\n");
+                  writer->write(InterfaceType == port_o::port_interface::PI_RVALID ? "reg __vld_port_state = 0;\n":"reg __ack_port_state = 0;\n");
                }
-               writer->write_comment("RVALID handler\n");
+               writer->write_comment(InterfaceType == port_o::port_interface::PI_RVALID ? "RVALID handler\n":"WACK handler\n");
                writer->write("always @ (posedge "+std::string(CLOCK_PORT_NAME)+")\n");
                writer->write(STR(STD_OPENING_CHAR));
                writer->write("begin\n");
-               writer->write("if(__state == 3 && __vld_port_state == 0)");
+               writer->write(InterfaceType == port_o::port_interface::PI_RVALID ? "if(__state == 3 && __vld_port_state == 0)":"if(__state == 3 && __ack_port_state == 0)");
                writer->write(STR(STD_OPENING_CHAR));
                writer->write("begin\n");
                writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + " = 1'b1;");
-               writer->write("__vld_port_state <= 1;");
+               writer->write(InterfaceType == port_o::port_interface::PI_RVALID ? "__vld_port_state <= 1;" : "__ack_port_state <= 1;");
                writer->write(STR(STD_CLOSING_CHAR));
                writer->write("end\n");
                writer->write("else");
