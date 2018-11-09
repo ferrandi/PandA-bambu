@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file pragma_analysis.hpp
  * @brief Analysis step that recognizes the pragma calls in the specification
@@ -40,14 +40,14 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef PRAGMA_ANALYSIS_HPP
 #define PRAGMA_ANALYSIS_HPP
 
-///Superclass include
+/// Superclass include
 #include "application_frontend_flow_step.hpp"
 
-///Utility include
+/// Utility include
 #include "refcount.hpp"
 
 /**
@@ -57,57 +57,55 @@
 REF_FORWARD_DECL(tree_node);
 //@}
 
-
 /**
  * Restructure the tree control flow graph
  */
 class PragmaAnalysis : public ApplicationFrontendFlowStep
 {
-   private:
+ private:
+   /**
+    * Given the index of a function replacing a pragma, returns a parameter
+    * @param tree_node is the index of the call
+    * @param param is the index of the parameter (starting from 1)
+    */
+   std::string get_call_parameter(const unsigned int tree_node, const unsigned int param) const;
 
-      /**
-       * Given the index of a function replacing a pragma, returns a parameter
-       * @param tree_node is the index of the call
-       * @param param is the index of the parameter (starting from 1)
-       */
-      std::string get_call_parameter(const unsigned int tree_node, const unsigned int param) const;
+   /**
+    * Create a map pragma
+    * @param index_node is the tree index of the gimple containing the call which will be directly replaced by the pragma
+    */
+   void create_map_pragma(const unsigned int tree_node) const;
 
-      /**
-       * Create a map pragma
-       * @param index_node is the tree index of the gimple containing the call which will be directly replaced by the pragma
-       */
-      void create_map_pragma(const unsigned int tree_node) const;
+   /**
+    * Create an omp pragma
+    * @param index_node is the tree index of the gimple containing the call which will be directly replaced by the pragma
+    */
+   void create_omp_pragma(const unsigned int tree_node) const;
 
-      /**
-       * Create an omp pragma
-       * @param index_node is the tree index of the gimple containing the call which will be directly replaced by the pragma
-       */
-      void create_omp_pragma(const unsigned int tree_node) const;
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+ public:
+   /**
+    * Constructor.
+    * @param AppM is the application manager
+    * @param design_flow_manager is the design flow manager
+    * @param parameters is the set of input parameters
+    */
+   PragmaAnalysis(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-   public:
-      /**
-       * Constructor.
-       * @param AppM is the application manager
-       * @param design_flow_manager is the design flow manager
-       * @param parameters is the set of input parameters
-       */
-      PragmaAnalysis(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   /**
+    *  Destructor
+    */
+   ~PragmaAnalysis() override;
 
-      /**
-       *  Destructor
-       */
-      ~PragmaAnalysis() override;
-
-      /**
-       * Performes the analysis of the pragmas
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status Exec() override;
+   /**
+    * Performes the analysis of the pragmas
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status Exec() override;
 };
 #endif

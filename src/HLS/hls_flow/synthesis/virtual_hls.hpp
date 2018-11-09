@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file virtual_hls.hpp
  * @brief Basic HLS flow
@@ -39,7 +39,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef VIRTUAL_HLS_HPP
 #define VIRTUAL_HLS_HPP
 
@@ -47,31 +47,30 @@
 
 class virtual_hls : public HLSFunctionStep
 {
-   protected:
-      /**
-       * Compute the relationship of this step
-       * @param relationship_type is the type of relationship to be considered
-       * @return the steps in relationship with this
-       */
-      const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+ protected:
+   /**
+    * Compute the relationship of this step
+    * @param relationship_type is the type of relationship to be considered
+    * @return the steps in relationship with this
+    */
+   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
+ public:
+   /**
+    * Constructor
+    * @param DesignFlowManagerConstRef is the design flow manager
+    */
+   virtual_hls(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Constructor
-       * @param DesignFlowManagerConstRef is the design flow manager
-       */
-      virtual_hls(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   /**
+    * Destructor
+    */
+   ~virtual_hls() override;
 
-      /**
-       * Destructor
-       */
-      ~virtual_hls() override;
-
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status InternalExec() override;
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 };
 #endif

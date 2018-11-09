@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file load_builtin_technology.hpp
  * @brief This class load builtin components in technology manager
@@ -37,37 +37,37 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
-*/
+ */
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_KOALA_BUILT.hpp"
 
-///Header include
+/// Header include
 #include "load_builtin_technology.hpp"
 
-///circuit include
+/// circuit include
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 
-///parser/polixml include
+/// parser/polixml include
 #include "xml_dom_parser.hpp"
 
-///polixml include
+/// polixml include
 #include "xml_document.hpp"
 
-///technology includes
+/// technology includes
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 
-///utility include
+/// utility include
 #include "fileIO.hpp"
 
-LoadBuiltinTechnology::LoadBuiltinTechnology(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)  :
-   TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_BUILTIN_TECHNOLOGY, _parameters)
-{}
+LoadBuiltinTechnology::LoadBuiltinTechnology(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_BUILTIN_TECHNOLOGY, _parameters)
+{
+}
 
-LoadBuiltinTechnology::~LoadBuiltinTechnology()
-= default;
+LoadBuiltinTechnology::~LoadBuiltinTechnology() = default;
 
 const std::unordered_set<TechnologyFlowStep_Type> LoadBuiltinTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType) const
 {
@@ -76,7 +76,6 @@ const std::unordered_set<TechnologyFlowStep_Type> LoadBuiltinTechnology::Compute
 
 DesignFlowStep_Status LoadBuiltinTechnology::Exec()
 {
-
    std::string fu_name;
    structural_objectRef top;
    structural_managerRef CM;
@@ -86,7 +85,7 @@ DesignFlowStep_Status LoadBuiltinTechnology::Exec()
    std::string Library;
 
 #if HAVE_KOALA_BUILT
-   //LUT
+   // LUT
    CM = structural_managerRef(new structural_manager(parameters));
    fu_name = LUT_GATE_STD;
    module_type = structural_type_descriptorRef(new structural_type_descriptor(fu_name));
@@ -98,7 +97,7 @@ DesignFlowStep_Status LoadBuiltinTechnology::Exec()
    CM->add_NP_functionality(top, NP_functionality::LIBRARY, NP_parameters);
    TM->add_resource(FPGA_LIBRARY, fu_name, CM, true);
 
-   //IBUF
+   // IBUF
    CM = structural_managerRef(new structural_manager(parameters));
    fu_name = IBUF_GATE_STD;
    module_type = structural_type_descriptorRef(new structural_type_descriptor(fu_name));
@@ -110,7 +109,7 @@ DesignFlowStep_Status LoadBuiltinTechnology::Exec()
    CM->add_NP_functionality(top, NP_functionality::LIBRARY, NP_parameters);
    TM->add_resource(FPGA_LIBRARY, fu_name, CM, true);
 
-   //OBUF
+   // OBUF
    CM = structural_managerRef(new structural_manager(parameters));
    fu_name = OBUF_GATE_STD;
    module_type = structural_type_descriptorRef(new structural_type_descriptor(fu_name));
@@ -125,7 +124,7 @@ DesignFlowStep_Status LoadBuiltinTechnology::Exec()
 
    Library = LIBRARY_STD;
 
-   //AND
+   // AND
    CM = structural_managerRef(new structural_manager(parameters));
    fu_name = AND_GATE_STD;
    module_type = structural_type_descriptorRef(new structural_type_descriptor(fu_name));
@@ -138,7 +137,7 @@ DesignFlowStep_Status LoadBuiltinTechnology::Exec()
    CM->add_NP_functionality(top, NP_functionality::EQUATION, "out1=[*]");
    TM->add_resource(Library, fu_name, CM, true);
 
-   //NAND
+   // NAND
    CM = structural_managerRef(new structural_manager(parameters));
    fu_name = NAND_GATE_STD;
    module_type = structural_type_descriptorRef(new structural_type_descriptor(fu_name));
@@ -151,7 +150,7 @@ DesignFlowStep_Status LoadBuiltinTechnology::Exec()
    CM->add_NP_functionality(top, NP_functionality::EQUATION, "out1=![*]");
    TM->add_resource(Library, fu_name, CM, true);
 
-   //OR
+   // OR
    CM = structural_managerRef(new structural_manager(parameters));
    fu_name = OR_GATE_STD;
    module_type = structural_type_descriptorRef(new structural_type_descriptor(fu_name));
@@ -164,7 +163,7 @@ DesignFlowStep_Status LoadBuiltinTechnology::Exec()
    CM->add_NP_functionality(top, NP_functionality::EQUATION, "out1=[+]");
    TM->add_resource(Library, fu_name, CM, true);
 
-   //NOR
+   // NOR
    CM = structural_managerRef(new structural_manager(parameters));
    fu_name = NOR_GATE_STD;
    module_type = structural_type_descriptorRef(new structural_type_descriptor(fu_name));
@@ -177,7 +176,7 @@ DesignFlowStep_Status LoadBuiltinTechnology::Exec()
    CM->add_NP_functionality(top, NP_functionality::EQUATION, "out1=![+]");
    TM->add_resource(Library, fu_name, CM, true);
 
-   //XOR
+   // XOR
    CM = structural_managerRef(new structural_manager(parameters));
    fu_name = XOR_GATE_STD;
    module_type = structural_type_descriptorRef(new structural_type_descriptor(fu_name));
@@ -190,7 +189,7 @@ DesignFlowStep_Status LoadBuiltinTechnology::Exec()
    CM->add_NP_functionality(top, NP_functionality::EQUATION, "out1=[^]");
    TM->add_resource(Library, fu_name, CM, true);
 
-   //XNOR
+   // XNOR
    CM = structural_managerRef(new structural_manager(parameters));
    fu_name = XNOR_GATE_STD;
    module_type = structural_type_descriptorRef(new structural_type_descriptor(fu_name));
@@ -203,7 +202,7 @@ DesignFlowStep_Status LoadBuiltinTechnology::Exec()
    CM->add_NP_functionality(top, NP_functionality::EQUATION, "out1=![^]");
    TM->add_resource(Library, fu_name, CM, true);
 
-   //NOT
+   // NOT
    CM = structural_managerRef(new structural_manager(parameters));
    fu_name = NOT_GATE_STD;
    module_type = structural_type_descriptorRef(new structural_type_descriptor(fu_name));
@@ -216,7 +215,7 @@ DesignFlowStep_Status LoadBuiltinTechnology::Exec()
    CM->add_NP_functionality(top, NP_functionality::EQUATION, "out1=!in1");
    TM->add_resource(Library, fu_name, CM, true);
 
-   //DFF
+   // DFF
    CM = structural_managerRef(new structural_manager(parameters));
    fu_name = DFF_GATE_STD;
    module_type = structural_type_descriptorRef(new structural_type_descriptor(fu_name));
@@ -228,7 +227,7 @@ DesignFlowStep_Status LoadBuiltinTechnology::Exec()
    CM->add_NP_functionality(top, NP_functionality::LIBRARY, NP_parameters);
    TM->add_resource(Library, fu_name, CM, true);
 
-   //BUFF
+   // BUFF
    CM = structural_managerRef(new structural_manager(parameters));
    fu_name = BUFF_GATE_STD;
    module_type = structural_type_descriptorRef(new structural_type_descriptor(fu_name));

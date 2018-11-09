@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file mem_xml_allocation.cpp
  * @brief Parsing of memory allocation described in XML
@@ -39,46 +39,44 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "mem_xml_allocation.hpp"
 
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
-#include "target_device.hpp"
 #include "memory.hpp"
 #include "memory_symbol.hpp"
+#include "target_device.hpp"
 
 #include "polixml.hpp"
-#include "xml_helper.hpp"
 #include "xml_dom_parser.hpp"
+#include "xml_helper.hpp"
 
 #include "Parameter.hpp"
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "fileIO.hpp"
 
-mem_xml_allocation::mem_xml_allocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) :
-   memory_allocation(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::XML_MEMORY_ALLOCATOR)
+mem_xml_allocation::mem_xml_allocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
+    : memory_allocation(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::XML_MEMORY_ALLOCATOR)
 {
-
 }
 
-mem_xml_allocation::~mem_xml_allocation()
-= default;
+mem_xml_allocation::~mem_xml_allocation() = default;
 
 DesignFlowStep_Status mem_xml_allocation::Exec()
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Reading memory allocation from XML file...");
    std::string xml_file;
-   if (parameters->isOption(OPT_xml_memory_allocation))
+   if(parameters->isOption(OPT_xml_memory_allocation))
       xml_file = parameters->getOption<std::string>(OPT_xml_memory_allocation);
-   else if (parameters->isOption(OPT_xml_input_configuration))
+   else if(parameters->isOption(OPT_xml_input_configuration))
       xml_file = parameters->getOption<std::string>(OPT_xml_input_configuration);
    else
       THROW_ERROR("Memory configuration file not specified");
-   if (!boost::filesystem::exists(xml_file))
+   if(!boost::filesystem::exists(xml_file))
       THROW_ERROR("Memory configuration file \"" + xml_file + "\" does not exist");
-   if (!parse_xml_allocation(xml_file))
+   if(!parse_xml_allocation(xml_file))
       THROW_ERROR("Memory configuration not found in file \"" + xml_file + "\"");
    already_executed = true;
    return DesignFlowStep_Status::SUCCESS;
@@ -94,21 +92,22 @@ bool mem_xml_allocation::parse_xml_allocation(const std::string& xml_file)
    bool null_pointer_check = true;
    if(parameters->isOption(OPT_gcc_optimizations))
    {
-      const auto gcc_parameters= parameters->getOption<const CustomSet<std::string> >(OPT_gcc_optimizations);
+      const auto gcc_parameters = parameters->getOption<const CustomSet<std::string>>(OPT_gcc_optimizations);
       if(gcc_parameters.find("no-delete-null-pointer-checks") != gcc_parameters.end())
          null_pointer_check = false;
    }
    XMLDomParser parser(xml_file);
    parser.Exec();
-   if (parser)
+   if(parser)
    {
-      const xml_element* node = parser.get_document()->get_root_node(); //deleted by DomParser.
+      const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
       const xml_node::node_list list = node->get_children();
-      for (const auto & l : list)
+      for(const auto& l : list)
       {
          const xml_element* child = GetPointer<xml_element>(l);
-         if (!child) continue;
-         if (child->get_name() == "HLS_memory")
+         if(!child)
+            continue;
+         if(child->get_name() == "HLS_memory")
          {
             unsigned int base_address = 0;
             LOAD_XVM(base_address, child);
@@ -117,15 +116,16 @@ bool mem_xml_allocation::parse_xml_allocation(const std::string& xml_file)
             setup_memory_allocation();
 
             const xml_node::node_list mem_list = child->get_children();
-            for (const auto & it : mem_list)
+            for(const auto& it : mem_list)
             {
                const xml_element* mem_node = GetPointer<xml_element>(it);
-               if (!mem_node) continue;
-               if (mem_node->get_name() == "external_memory")
+               if(!mem_node)
+                  continue;
+               if(mem_node->get_name() == "external_memory")
                {
                   parse_external_allocation(mem_node);
                }
-               else if (mem_node->get_name() == "internal_memory")
+               else if(mem_node->get_name() == "internal_memory")
                {
                   parse_internal_allocation(mem_node);
                }
@@ -144,18 +144,19 @@ bool mem_xml_allocation::parse_xml_allocation(const std::string& xml_file)
 
 unsigned int get_id(const std::string& var_string)
 {
-   std::string var_id = var_string.substr(var_string.find("@")+1, var_string.size());
+   std::string var_id = var_string.substr(var_string.find("@") + 1, var_string.size());
    return boost::lexical_cast<unsigned int>(var_id);
 }
 
 void mem_xml_allocation::parse_external_allocation(const xml_element* node)
 {
    const xml_node::node_list mem_list = node->get_children();
-   for (const auto & it : mem_list)
+   for(const auto& it : mem_list)
    {
       const xml_element* mem_node = GetPointer<xml_element>(it);
-      if (!mem_node) continue;
-      if (mem_node->get_name() == "variable")
+      if(!mem_node)
+         continue;
+      if(mem_node->get_name() == "variable")
       {
          std::string var_id;
          LOAD_XVFM(var_id, mem_node, id);
@@ -164,7 +165,7 @@ void mem_xml_allocation::parse_external_allocation(const xml_element* node)
          LOAD_XVM(address, mem_node);
          ext_variables[tree_id] = memory_symbolRef(new memory_symbol(tree_id, address, 0));
          std::string symbol;
-         if (CE_XVM(symbol, mem_node))
+         if(CE_XVM(symbol, mem_node))
          {
             LOAD_XVM(symbol, mem_node);
             ext_variables[tree_id]->set_symbol_name(symbol);
@@ -176,21 +177,23 @@ void mem_xml_allocation::parse_external_allocation(const xml_element* node)
 void mem_xml_allocation::parse_internal_allocation(const xml_element* node)
 {
    const xml_node::node_list mem_list = node->get_children();
-   for (const auto & it : mem_list)
+   for(const auto& it : mem_list)
    {
       const xml_element* mem_node = GetPointer<xml_element>(it);
-      if (!mem_node) continue;
-      if (mem_node->get_name() == "scope")
+      if(!mem_node)
+         continue;
+      if(mem_node->get_name() == "scope")
       {
          std::string scope_id;
          LOAD_XVFM(scope_id, mem_node, id);
          unsigned int scp_id = get_id(scope_id);
          const xml_node::node_list var_list = mem_node->get_children();
-         for (const auto & v : var_list)
+         for(const auto& v : var_list)
          {
             const xml_element* var_node = GetPointer<xml_element>(v);
-            if (!var_node) continue;
-            if (var_node->get_name() == "variable")
+            if(!var_node)
+               continue;
+            if(var_node->get_name() == "variable")
             {
                std::string var_id;
                LOAD_XVFM(var_id, var_node, id);
@@ -199,13 +202,13 @@ void mem_xml_allocation::parse_internal_allocation(const xml_element* node)
                LOAD_XVM(address, var_node);
                int_variables[scp_id][tree_id] = memory_symbolRef(new memory_symbol(tree_id, address, scp_id));
                std::string symbol;
-               if (CE_XVM(symbol, mem_node))
+               if(CE_XVM(symbol, mem_node))
                {
                   LOAD_XVM(symbol, mem_node);
                   int_variables[scp_id][tree_id]->set_symbol_name(symbol);
                }
             }
-            else if (var_node->get_name() == "parameter")
+            else if(var_node->get_name() == "parameter")
             {
                std::string var_id;
                LOAD_XVFM(var_id, var_node, id);
@@ -214,7 +217,7 @@ void mem_xml_allocation::parse_internal_allocation(const xml_element* node)
                LOAD_XVM(address, var_node);
                param_variables[scp_id][tree_id] = memory_symbolRef(new memory_symbol(tree_id, address, scp_id));
                std::string symbol;
-               if (CE_XVM(symbol, mem_node))
+               if(CE_XVM(symbol, mem_node))
                {
                   LOAD_XVM(symbol, mem_node);
                   param_variables[scp_id][tree_id]->set_symbol_name(symbol);
@@ -231,18 +234,18 @@ void mem_xml_allocation::parse_internal_allocation(const xml_element* node)
 
 void mem_xml_allocation::finalize_memory_allocation()
 {
-   for(auto & ext_variable : ext_variables)
+   for(auto& ext_variable : ext_variables)
    {
       HLSMgr->Rmem->add_external_symbol(ext_variable.first, ext_variable.second);
    }
-   for(auto & int_variable : int_variables)
+   for(auto& int_variable : int_variables)
    {
       for(auto vIt = int_variable.second.begin(); vIt != int_variable.second.end(); ++vIt)
       {
          HLSMgr->Rmem->add_internal_symbol(int_variable.first, vIt->first, vIt->second);
       }
    }
-   for(auto & param_variable : param_variables)
+   for(auto& param_variable : param_variables)
    {
       for(auto vIt = param_variable.second.begin(); vIt != param_variable.second.end(); ++vIt)
       {

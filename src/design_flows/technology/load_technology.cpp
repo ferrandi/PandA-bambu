@@ -29,45 +29,44 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file load_technology.cpp
  * @brief Pseudo step to force dependencies from all load_*_technology steps
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "load_technology.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///technology include
+/// technology include
 #include "parse_technology.hpp"
 
-///technology/target_device include
+/// technology/target_device include
+#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "target_device.hpp"
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
-#include "string_manipulation.hpp"          // for GET_CLASS
 
-LoadTechnology::LoadTechnology(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_TECHNOLOGY, _parameters)
+LoadTechnology::LoadTechnology(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_TECHNOLOGY, _parameters)
 {
    composed = true;
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-LoadTechnology::~LoadTechnology()
-= default;
+LoadTechnology::~LoadTechnology() = default;
 
 const std::unordered_set<TechnologyFlowStep_Type> LoadTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    std::unordered_set<TechnologyFlowStep_Type> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(TechnologyFlowStep_Type::LOAD_DEFAULT_TECHNOLOGY);
 #if HAVE_CIRCUIT_BUILT
@@ -86,8 +85,8 @@ const std::unordered_set<TechnologyFlowStep_Type> LoadTechnology::ComputeTechnol
 #endif
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -103,4 +102,3 @@ DesignFlowStep_Status LoadTechnology::Exec()
 {
    return DesignFlowStep_Status::EMPTY;
 }
-

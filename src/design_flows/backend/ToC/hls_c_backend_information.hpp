@@ -67,7 +67,7 @@ class HLSCBackendInformation : public CBackendInformation
     * @param HLSMgr A reference to the HLS_manager where the information on
     * the HLS can be found
     */
-   HLSCBackendInformation(std::string  results_filename, const HLS_managerConstRef& HLSMgr);
+   HLSCBackendInformation(std::string results_filename, const HLS_managerConstRef& HLSMgr);
 
    /**
     * Destructor

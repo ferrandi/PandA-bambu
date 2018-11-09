@@ -271,11 +271,23 @@ namespace ac_math
       {
          int step = shift_dist<LW>(j);
          dp_t table;
-         if(scale == HCordicConstants::SCALE_1) { table = hcordic_table_function<LW>(step - 1); }
-         if(scale == HCordicConstants::SCALE_LN2) { table = hcordic_table_inv_ln2_function<LW>(step - 1); }
+         if(scale == HCordicConstants::SCALE_1)
+         {
+            table = hcordic_table_function<LW>(step - 1);
+         }
+         if(scale == HCordicConstants::SCALE_LN2)
+         {
+            table = hcordic_table_inv_ln2_function<LW>(step - 1);
+         }
          bool dir = false; // true -> +, false -> -
-         if(mode == HCordicConstants::ROT_Y) { dir = yi < 0; }
-         if(mode == HCordicConstants::ROT_Z) { dir = zi >= 0; }
+         if(mode == HCordicConstants::ROT_Y)
+         {
+            dir = yi < 0;
+         }
+         if(mode == HCordicConstants::ROT_Z)
+         {
+            dir = zi >= 0;
+         }
          xi_d = xi >> step;
          yi_d = yi >> step;
          if(dir)
@@ -520,7 +532,10 @@ namespace ac_math
       // Only slice out the fractional part if the input has a fractional component.
       // If the input doesn't have a fractional part, the default value of m, i.e. 0,
       // is suitable to be used in later calculations.
-      if(AW > AI) { m.set_slc(0, x.template slc<AC_MAX(AW - AI, 1)>(0)); }
+      if(AW > AI)
+      {
+         m.set_slc(0, x.template slc<AC_MAX(AW - AI, 1)>(0));
+      }
       const int MW = ZW - ZI > AW - AI ? ZW - ZI : AW - AI;
       ac_fixed<MW + QWE, 0, false> mw = m; // Widen m if required.
       mw *= ln2_function<MW + QWE>();

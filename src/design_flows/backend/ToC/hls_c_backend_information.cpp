@@ -46,6 +46,8 @@
 
 #include <utility>
 
-HLSCBackendInformation::HLSCBackendInformation(std::string  _results_filename, const HLS_managerConstRef& _HLSMgr) : results_filename(std::move(_results_filename)), HLSMgr(_HLSMgr) {}
+HLSCBackendInformation::HLSCBackendInformation(std::string _results_filename, const HLS_managerConstRef& _HLSMgr) : results_filename(std::move(_results_filename)), HLSMgr(_HLSMgr)
+{
+}
 
 HLSCBackendInformation::~HLSCBackendInformation() = default;

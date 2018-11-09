@@ -29,76 +29,76 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file sdc_scheduling.cpp
  * @brief Implementation of the sdc scheduling
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "sdc_scheduling.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///algorithms/loops_detection includes
+/// algorithms/loops_detection includes
 #include "loop.hpp"
 #include "loops.hpp"
 
-///behavior include
+/// behavior include
 #include "basic_block.hpp"
 #include "op_graph.hpp"
 #include "operations_graph_constructor.hpp"
 
-///boost include
+/// boost include
 #include <boost/range/adaptor/reversed.hpp>
 
-///design_flow includes
+/// design_flow includes
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 
-///frontend_analysis includes
+/// frontend_analysis includes
 #include "frontend_flow_step.hpp"
 #include "frontend_flow_step_factory.hpp"
 #include "function_frontend_flow_step.hpp"
 
-///frontend_analysis/IR_analysis include
+/// frontend_analysis/IR_analysis include
 #include "simple_code_motion.hpp"
 
-///HLS include
+/// HLS include
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 
-///HLS/binding/module_binding
+/// HLS/binding/module_binding
 #include "fu_binding.hpp"
 
-///HLS/memory include
+/// HLS/memory include
 #include "memory.hpp"
 
-///HLS/module_allocation includes
+/// HLS/module_allocation includes
 #include "allocation.hpp"
 #include "allocation_information.hpp"
 
-///HLS/scheduling include
+/// HLS/scheduling include
 #include "ASLAP.hpp"
 #include "schedule.hpp"
 
-///ilp include
+/// ilp include
 #include "meilp_solver.hpp"
 
-///STD include
+/// STD include
 #include <list>
 
-///tree include
+/// tree include
 #include "behavioral_helper.hpp"
 #include "tree_basic_block.hpp"
 
-///utility include
+/// utility include
 #include "cpu_time.hpp"
-#include "string_manipulation.hpp"          // for GET_CLASS
+#include "string_manipulation.hpp" // for GET_CLASS
 
 CONSTREF_FORWARD_DECL(Schedule);
 
@@ -107,49 +107,49 @@ CONSTREF_FORWARD_DECL(Schedule);
  */
 class SDCSorter : std::binary_function<vertex, vertex, bool>
 {
-   private:
-      ///ASAP
-      const ScheduleConstRef asap;
+ private:
+   /// ASAP
+   const ScheduleConstRef asap;
 
-      ///ALAP
-      const ScheduleConstRef alap;
+   /// ALAP
+   const ScheduleConstRef alap;
 
-      ///The function behavior
-      const FunctionBehaviorConstRef function_behavior;
+   /// The function behavior
+   const FunctionBehaviorConstRef function_behavior;
 
-      ///The basic block graph
-      const BBGraphConstRef basic_block_graph;
+   /// The basic block graph
+   const BBGraphConstRef basic_block_graph;
 
-      ///The operation graph
-      const OpGraphConstRef op_graph;
+   /// The operation graph
+   const OpGraphConstRef op_graph;
 
-      ///The reachability map built on the basis of dependencies, consolidated choices and current choice
-      CustomMap<vertex, CustomSet<vertex> > reachability_map;
+   /// The reachability map built on the basis of dependencies, consolidated choices and current choice
+   CustomMap<vertex, CustomSet<vertex>> reachability_map;
 
-      ///The index basic block map
-      const std::unordered_map<unsigned int, vertex> & bb_index_map;
+   /// The index basic block map
+   const std::unordered_map<unsigned int, vertex>& bb_index_map;
 
-      ///For each operation its level
-      CustomMap<vertex, size_t> op_levels;
+   /// For each operation its level
+   CustomMap<vertex, size_t> op_levels;
 
-      ///The set of input parameters
-      const ParameterConstRef parameters;
+   /// The set of input parameters
+   const ParameterConstRef parameters;
 
-      ///The debug level
-      const int debug_level;
+   /// The debug level
+   const int debug_level;
 
-   public:
-      /**
-       * Constructor
-       * @param _asap is the asap information
-       * @param _alap is the alap information
-       * @param _function_behavior is the function behavior
-       * @param _op_graph is the operation graph
-       * @param _statements_list is the list of the statements of the basic block
-       * @param _parameters is the set of input parameters
-       */
-      SDCSorter(const ScheduleConstRef _asap, const ScheduleConstRef _alap, const FunctionBehaviorConstRef _function_behavior, const OpGraphConstRef _op_graph, std::set<vertex, bb_vertex_order_by_map> loop_bbs,  const ParameterConstRef _parameters) :
-         asap(_asap),
+ public:
+   /**
+    * Constructor
+    * @param _asap is the asap information
+    * @param _alap is the alap information
+    * @param _function_behavior is the function behavior
+    * @param _op_graph is the operation graph
+    * @param _statements_list is the list of the statements of the basic block
+    * @param _parameters is the set of input parameters
+    */
+   SDCSorter(const ScheduleConstRef _asap, const ScheduleConstRef _alap, const FunctionBehaviorConstRef _function_behavior, const OpGraphConstRef _op_graph, std::set<vertex, bb_vertex_order_by_map> loop_bbs, const ParameterConstRef _parameters)
+       : asap(_asap),
          alap(_alap),
          function_behavior(_function_behavior),
          basic_block_graph(_function_behavior->CGetBBGraph(FunctionBehavior::BB)),
@@ -157,108 +157,106 @@ class SDCSorter : std::binary_function<vertex, vertex, bool>
          bb_index_map(basic_block_graph->CGetBBGraphInfo()->bb_index_map),
          parameters(_parameters),
          debug_level(_parameters->get_class_debug_level(GET_CLASS(*this)))
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->SDC sorter constructor");
+
+      for(const auto loop_bb : loop_bbs)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->SDC sorter constructor");
-
-         for(const auto loop_bb : loop_bbs)
+         const auto& statements_list = basic_block_graph->CGetBBNodeInfo(loop_bb)->statements_list;
+         /// The position in the basic block
+         for(const auto vertex_to_be_analyzed : boost::adaptors::reverse(statements_list))
          {
-            const auto & statements_list = basic_block_graph->CGetBBNodeInfo(loop_bb)->statements_list;
-            ///The position in the basic block
-            for(const auto vertex_to_be_analyzed : boost::adaptors::reverse(statements_list))
+            OutEdgeIterator eo, eo_end;
+            for(boost::tie(eo, eo_end) = boost::out_edges(vertex_to_be_analyzed, *op_graph); eo != eo_end; eo++)
             {
-               OutEdgeIterator eo, eo_end;
-               for(boost::tie(eo, eo_end) = boost::out_edges(vertex_to_be_analyzed, *op_graph); eo != eo_end; eo++)
+               vertex target = boost::target(*eo, *op_graph);
+               reachability_map[vertex_to_be_analyzed].insert(target);
+               reachability_map[vertex_to_be_analyzed].insert(reachability_map[target].begin(), reachability_map[target].end());
+            }
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Computed reachability");
+
+         /// We cluster candidate operations according to alap and asap - must be maps since we exploit order
+         std::map<ControlStep, std::map<ControlStep, CustomSet<vertex>>> alap_asap_cluster;
+
+         VertexIterator op, op_end;
+         for(boost::tie(op, op_end) = boost::vertices(*op_graph); op != op_end; op++)
+         {
+            alap_asap_cluster[alap->get_cstep(*op).second][asap->get_cstep(*op).second].insert(*op);
+         }
+
+         /// For each cluster
+         for(const auto& alap_cluster : alap_asap_cluster)
+         {
+            for(const auto& asap_cluster : alap_cluster.second)
+            {
+               std::set<vertex, op_vertex_order_by_map> to_process = std::set<vertex, op_vertex_order_by_map>(op_vertex_order_by_map(function_behavior->get_map_levels(), op_graph.get()));
+               for(const auto cluster_op : asap_cluster.second)
                {
-                  vertex target = boost::target(*eo, *op_graph);
-                  reachability_map[vertex_to_be_analyzed].insert(target);
-                  reachability_map[vertex_to_be_analyzed].insert(reachability_map[target].begin(), reachability_map[target].end());
+                  to_process.insert(cluster_op);
                }
-            }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Computed reachability");
-
-            ///We cluster candidate operations according to alap and asap - must be maps since we exploit order
-            std::map<ControlStep, std::map<ControlStep, CustomSet<vertex> > >alap_asap_cluster;
-
-            VertexIterator op, op_end;
-            for(boost::tie(op, op_end) = boost::vertices(*op_graph); op != op_end; op++)
-            {
-               alap_asap_cluster[alap->get_cstep(*op).second][asap->get_cstep(*op).second].insert(*op);
-            }
-
-            ///For each cluster
-            for(const auto& alap_cluster : alap_asap_cluster)
-            {
-               for(const auto& asap_cluster : alap_cluster.second)
+               for(const auto cluster_op : to_process)
                {
-                  std::set<vertex, op_vertex_order_by_map> to_process = std::set<vertex, op_vertex_order_by_map> (op_vertex_order_by_map(function_behavior->get_map_levels(), op_graph.get()));
-                  for(const auto cluster_op : asap_cluster.second)
-                  {
-                     to_process.insert(cluster_op);
-                  }
-                  for(const auto cluster_op : to_process)
-                  {
-                     op_levels[cluster_op] = op_levels.size();
-                  }
+                  op_levels[cluster_op] = op_levels.size();
                }
             }
          }
       }
+   }
 
-      /**
-       * Compare position of two vertices
-       * @param x is the first vertex
-       * @param y is the second vertex
-       * @return true if x precedes y in topological sort, false otherwise
-       */
-      bool operator()(const vertex x, const vertex y) const
+   /**
+    * Compare position of two vertices
+    * @param x is the first vertex
+    * @param y is the second vertex
+    * @return true if x precedes y in topological sort, false otherwise
+    */
+   bool operator()(const vertex x, const vertex y) const
+   {
+      const unsigned int first_bb_index = op_graph->CGetOpNodeInfo(x)->bb_index;
+      const unsigned int second_bb_index = op_graph->CGetOpNodeInfo(y)->bb_index;
+      const vertex first_bb_vertex = bb_index_map.find(first_bb_index)->second;
+      const vertex second_bb_vertex = bb_index_map.find(second_bb_index)->second;
+      if(function_behavior->CheckBBReachability(first_bb_vertex, second_bb_vertex))
       {
-         const unsigned int first_bb_index = op_graph->CGetOpNodeInfo(x)->bb_index;
-         const unsigned int second_bb_index = op_graph->CGetOpNodeInfo(y)->bb_index;
-         const vertex first_bb_vertex = bb_index_map.find(first_bb_index)->second;
-         const vertex second_bb_vertex = bb_index_map.find(second_bb_index)->second;
-         if(function_behavior->CheckBBReachability(first_bb_vertex, second_bb_vertex))
-         {
-            return true;
-         }
-         if(function_behavior->CheckBBReachability(second_bb_vertex, first_bb_vertex))
-         {
-            return false;
-         }
-         THROW_ASSERT(op_levels.find(x) != op_levels.end(), "");
-         THROW_ASSERT(op_levels.find(y) != op_levels.end(), "");
-         return op_levels.find(x)->second < op_levels.find(y)->second;
+         return true;
       }
+      if(function_behavior->CheckBBReachability(second_bb_vertex, first_bb_vertex))
+      {
+         return false;
+      }
+      THROW_ASSERT(op_levels.find(x) != op_levels.end(), "");
+      THROW_ASSERT(op_levels.find(y) != op_levels.end(), "");
+      return op_levels.find(x)->second < op_levels.find(y)->second;
+   }
 };
 
-SDCScheduling::SDCScheduling(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization) :
-   Scheduling(_parameters, _HLSMgr, _function_id, _design_flow_manager, HLSFlowStep_Type::SDC_SCHEDULING, _hls_flow_step_specialization),
-   clock_period(0.0)
+SDCScheduling::SDCScheduling(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
+    : Scheduling(_parameters, _HLSMgr, _function_id, _design_flow_manager, HLSFlowStep_Type::SDC_SCHEDULING, _hls_flow_step_specialization), clock_period(0.0)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-SDCScheduling::~SDCScheduling()
-= default;
+SDCScheduling::~SDCScheduling() = default;
 
 void SDCScheduling::AddDelayConstraints(const meilp_solverRef solver, const OpGraphConstRef filtered_op_graph,
 #ifndef NDEBUG
-   const OpGraphConstRef debug_filtered_op_graph,
+                                        const OpGraphConstRef debug_filtered_op_graph,
 #endif
-      const std::set<vertex, bb_vertex_order_by_map> & loop_bbs)
+                                        const std::set<vertex, bb_vertex_order_by_map>& loop_bbs)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding delay constraints");
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
 
-   ///The asap starting and ending time
+   /// The asap starting and ending time
    CustomMap<vertex, double> starting_times, ending_times;
 
-   ///Reverse reachability
+   /// Reverse reachability
    OpVertexMap<OpVertexSet> reverse_reachability(filtered_op_graph);
 
-   ///For each vertex the set of "live" operations; an operation is live if its distance is less than the clock period
+   /// For each vertex the set of "live" operations; an operation is live if its distance is less than the clock period
    OpVertexMap<OpVertexSet> live_operations(filtered_op_graph);
 
-   ///For each vertex the operation for which a constraint has to be added
+   /// For each vertex the operation for which a constraint has to be added
    OpVertexMap<OpVertexSet> constraints(filtered_op_graph);
 
    std::list<vertex> basic_blocks;
@@ -269,24 +267,25 @@ void SDCScheduling::AddDelayConstraints(const meilp_solverRef solver, const OpGr
       if(loop_bbs.find(basic_block) != loop_bbs.end())
       {
          const auto bb_node_info = basic_block_graph->CGetBBNodeInfo(basic_block);
-         const auto & statements_list = bb_node_info->statements_list;
+         const auto& statements_list = bb_node_info->statements_list;
          for(const auto current : statements_list)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Processing " + GET_NAME(filtered_op_graph, current));
-            ///The execution time of the current operation - for the current operation we must consider last stage
-            ///NOTE:: Chaining after unbound operation is not allowed
-            const double current_op_execution_time = [&] () -> double
-            {
+            /// The execution time of the current operation - for the current operation we must consider last stage
+            /// NOTE:: Chaining after unbound operation is not allowed
+            const double current_op_execution_time = [&]() -> double {
                if(not allocation_information->is_operation_bounded(filtered_op_graph, current, allocation_information->GetFuType(current)))
                   return clock_period;
                if(GET_TYPE(filtered_op_graph, current) & TYPE_PHI)
                   return allocation_information->GetCondExprTimeLatency(filtered_op_graph->CGetOpNodeInfo(current)->GetNodeId());
-               auto timeLatency = allocation_information->GetTimeLatency(current, fu_binding::UNKNOWN, allocation_information->GetCycleLatency(current) -1);
-               ///Stage period of first cycle of operations with registered inputs is 0
-               return allocation_information->get_initiation_time(allocation_information->GetFuType(current),current)>0 ? (allocation_information->is_operation_PI_registered(filtered_op_graph, current, allocation_information->GetFuType(current)) ? 0.0 : timeLatency.second): timeLatency.first;
+               auto timeLatency = allocation_information->GetTimeLatency(current, fu_binding::UNKNOWN, allocation_information->GetCycleLatency(current) - 1);
+               /// Stage period of first cycle of operations with registered inputs is 0
+               return allocation_information->get_initiation_time(allocation_information->GetFuType(current), current) > 0 ?
+                          (allocation_information->is_operation_PI_registered(filtered_op_graph, current, allocation_information->GetFuType(current)) ? 0.0 : timeLatency.second) :
+                          timeLatency.first;
             }();
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Its execution time is " + STR(current_op_execution_time));
-            ///Computing starting time
+            /// Computing starting time
             starting_times[current] = 0.0;
             InEdgeIterator ie, ie_end;
             reverse_reachability.insert(std::pair<vertex, OpVertexSet>(current, OpVertexSet(filtered_op_graph)));
@@ -320,10 +319,9 @@ void SDCScheduling::AddDelayConstraints(const meilp_solverRef solver, const OpGr
                {
                   continue;
                }
-               auto CheckChaining = [&] (const vertex other) -> bool
-               {
+               auto CheckChaining = [&](const vertex other) -> bool {
                   bool constraint_to_be_added = false;
-                  ///Operations cannot be chained if the chain is longer than clock period
+                  /// Operations cannot be chained if the chain is longer than clock period
                   if(ending_times.find(current)->second - starting_times.find(other)->second > clock_period - margin)
                   {
                      constraint_to_be_added = true;
@@ -356,7 +354,7 @@ void SDCScheduling::AddDelayConstraints(const meilp_solverRef solver, const OpGr
                         {
                            continue;
                         }
-                        ///Another predecessor (source2) has already a constraint with (other), so we can skip this constraint
+                        /// Another predecessor (source2) has already a constraint with (other), so we can skip this constraint
                         skip = true;
                      }
                      if(not skip)
@@ -406,7 +404,7 @@ void SDCScheduling::AddDelayConstraints(const meilp_solverRef solver, const OpGr
          const unsigned int source_cycle_latency = allocation_information->GetCycleLatency(constraint.first);
          const std::string name = "Path_" + GET_NAME(op_graph, constraint.first) + "-" + GET_NAME(op_graph, second);
          std::map<int, double> coeffs;
-         coeffs[static_cast<int>(operation_to_varindex.find(std::pair<vertex, unsigned int>(constraint.first, source_cycle_latency-1))->second)] = 1.0;
+         coeffs[static_cast<int>(operation_to_varindex.find(std::pair<vertex, unsigned int>(constraint.first, source_cycle_latency - 1))->second)] = 1.0;
          coeffs[static_cast<int>(operation_to_varindex.find(std::pair<vertex, unsigned int>(second, 0))->second)] = -1.0;
          solver->add_row(coeffs, -1.0, meilp_solver::L, name);
 #ifndef NDEBUG
@@ -421,22 +419,22 @@ void SDCScheduling::AddDelayConstraints(const meilp_solverRef solver, const OpGr
                   std::list<vertex> vertices;
                   debug_filtered_op_graph->TopologicalSort(vertices);
                }
-               catch (const char* msg)
+               catch(const char* msg)
                {
                   debug_filtered_op_graph->WriteDot("Error.dot");
                   THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, constraint.first) + "-->" + GET_NAME(op_graph, second));
                }
-               catch (const std::string& msg)
+               catch(const std::string& msg)
                {
                   debug_filtered_op_graph->WriteDot("Error.dot");
                   THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, constraint.first) + "-->" + GET_NAME(op_graph, second));
                }
-               catch (const std::exception& ex)
+               catch(const std::exception& ex)
                {
                   debug_filtered_op_graph->WriteDot("Error.dot");
                   THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, constraint.first) + "-->" + GET_NAME(op_graph, second));
                }
-               catch ( ... )
+               catch(...)
                {
                   debug_filtered_op_graph->WriteDot("Error.dot");
                   THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, constraint.first) + "-->" + GET_NAME(op_graph, second));
@@ -454,7 +452,7 @@ void SDCScheduling::AddDependenceConstraint(const meilp_solverRef solver, const 
    const unsigned int source_cycle_latency = allocation_information->GetCycleLatency(source);
    const std::string name = GET_NAME(op_graph, source) + "-" + GET_NAME(op_graph, target);
    std::map<int, double> coeffs;
-   coeffs[static_cast<int>(operation_to_varindex.find(std::pair<vertex, unsigned int>(source, source_cycle_latency-1))->second)] = 1.0;
+   coeffs[static_cast<int>(operation_to_varindex.find(std::pair<vertex, unsigned int>(source, source_cycle_latency - 1))->second)] = 1.0;
    coeffs[static_cast<int>(operation_to_varindex.find(std::pair<vertex, unsigned int>(target, 0))->second)] = -1.0;
    solver->add_row(coeffs, simultaneous ? 0.0 : -1.0, meilp_solver::L, name);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added dependence constraint " + name);
@@ -465,65 +463,69 @@ void SDCScheduling::AddStageConstraints(const meilp_solverRef solver, const vert
    const unsigned int cycle_latency = allocation_information->GetCycleLatency(operation);
    for(unsigned int stage = 1; stage < cycle_latency; stage++)
    {
-      const std::string name = "Stage_" + GET_NAME(op_graph, operation) + "_" + STR(stage-1) + "-" + STR(stage);
+      const std::string name = "Stage_" + GET_NAME(op_graph, operation) + "_" + STR(stage - 1) + "-" + STR(stage);
       std::map<int, double> coeffs;
       coeffs[static_cast<int>(operation_to_varindex.find(std::pair<vertex, unsigned int>(operation, stage))->second)] = 1.0;
-      coeffs[static_cast<int>(operation_to_varindex.find(std::pair<vertex, unsigned int>(operation, stage-1))->second)] = -1.0;
+      coeffs[static_cast<int>(operation_to_varindex.find(std::pair<vertex, unsigned int>(operation, stage - 1))->second)] = -1.0;
       solver->add_row(coeffs, 1.0, meilp_solver::E, name);
    }
 }
 
-void SDCScheduling::ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type)
+void SDCScheduling::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
 {
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    if(HLS && bb_version == FB->GetBBVersion())
    {
       if(relationship_type == INVALIDATION_RELATIONSHIP)
       {
-          {
-              vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::SDC_CODE_MOTION, funId));
-              const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-              const DesignFlowStepRef design_flow_step = frontend_step != NULL_VERTEX ? design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step : GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateFunctionFrontendFlowStep(FrontendFlowStepType::SDC_CODE_MOTION, funId);
-              relationship.insert(design_flow_step);
-          }
-          {
-              vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, funId));
-              const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-              const DesignFlowStepRef design_flow_step = frontend_step != NULL_VERTEX ? design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step : GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE, funId);
-              relationship.insert(design_flow_step);
-          }
+         {
+            vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::SDC_CODE_MOTION, funId));
+            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+            const DesignFlowStepRef design_flow_step = frontend_step != NULL_VERTEX ?
+                                                           design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step :
+                                                           GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateFunctionFrontendFlowStep(FrontendFlowStepType::SDC_CODE_MOTION, funId);
+            relationship.insert(design_flow_step);
+         }
+         {
+            vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, funId));
+            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+            const DesignFlowStepRef design_flow_step = frontend_step != NULL_VERTEX ?
+                                                           design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step :
+                                                           GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE, funId);
+            relationship.insert(design_flow_step);
+         }
       }
    }
    Scheduling::ComputeRelationships(relationship, relationship_type);
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > SDCScheduling::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> SDCScheduling::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ret = Scheduling::ComputeHLSRelationships(relationship_type);
+   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret = Scheduling::ComputeHLSRelationships(relationship_type);
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       case INVALIDATION_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       case PRECEDENCE_RELATIONSHIP:
-         {
+      {
 #if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-            if(parameters->getOption<bool>(OPT_parse_pragma))
-            {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::CALLED_FUNCTIONS));
-            }
-            else
-#endif
-            {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::CALLED_FUNCTIONS));
-            }
-            break;
+         if(parameters->getOption<bool>(OPT_parse_pragma))
+         {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::CALLED_FUNCTIONS));
          }
+         else
+#endif
+         {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::CALLED_FUNCTIONS));
+         }
+         break;
+      }
       default:
          THROW_UNREACHABLE("");
    }
@@ -543,7 +545,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const BBGraphConstRef dominators = FB->CGetBBGraph(FunctionBehavior::DOM_TREE);
    const LoopsConstRef loops = FB->CGetLoops();
-   const std::map<vertex, unsigned int> & bb_map_levels = FB->get_bb_map_levels();
+   const std::map<vertex, unsigned int>& bb_map_levels = FB->get_bb_map_levels();
    ControlStep initial_ctrl_step = ControlStep(0u);
    for(const auto& loop : loops->GetList())
    {
@@ -551,7 +553,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
       operation_to_varindex.clear();
       const unsigned int loop_id = loop->GetId();
 
-      ///Vertices not yet added to any tree
+      /// Vertices not yet added to any tree
       const bb_vertex_order_by_map comp_i(bb_map_levels);
       std::set<vertex, bb_vertex_order_by_map> loop_bbs(comp_i);
       OpVertexSet loop_operations(op_graph);
@@ -564,14 +566,14 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
             loop_operations.insert(basic_block_graph->CGetBBNodeInfo(*bb)->statements_list.begin(), basic_block_graph->CGetBBNodeInfo(*bb)->statements_list.end());
          }
       }
-      ///FIXME: for the moment the considered graph contains control dependence edges
+      /// FIXME: for the moment the considered graph contains control dependence edges
       const OpGraphConstRef filtered_op_graph = FB->CGetOpGraph(FunctionBehavior::FLSAODG, loop_operations);
 #ifndef NDEBUG
       const OpGraphConstRef debug_filtered_op_graph = FB->CGetOpGraph(FunctionBehavior::FLSAODDG, loop_operations);
 #endif
-      ///Create the solver
+      /// Create the solver
       meilp_solverRef solver(meilp_solver::create_solver(static_cast<meilp_solver::supported_solvers>(parameters->getOption<int>(OPT_ilp_solver))));
-      if (parameters->getOption<int>(OPT_ilp_max_time))
+      if(parameters->getOption<int>(OPT_ilp_max_time))
          solver->setMaximumSeconds(parameters->getOption<int>(OPT_ilp_max_time));
 
       if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
@@ -579,22 +581,24 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
          filtered_op_graph->WriteDot("Loop_" + STR(loop_id) + "_to_be_scheduled.dot");
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing variables");
-      ///Compute variables
-      ///Map real operation-stage to variable index
+      /// Compute variables
+      /// Map real operation-stage to variable index
       unsigned int next_var_index = 0;
       for(const auto loop_operation : loop_operations)
       {
          const unsigned int cycle_latency = allocation_information->GetCycleLatency(loop_operation);
          for(unsigned int stage = 0; stage < cycle_latency; stage++)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Creating variables for " + GET_NAME(filtered_op_graph, loop_operation)  + " (executed by " + " " + allocation_information->get_fu_name(allocation_information->GetFuType(loop_operation)).first + ")  stage " + STR(stage) + ": " + STR(next_var_index + 1));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Creating variables for " + GET_NAME(filtered_op_graph, loop_operation) + " (executed by " + " " + allocation_information->get_fu_name(allocation_information->GetFuType(loop_operation)).first + ")  stage " + STR(stage) +
+                               ": " + STR(next_var_index + 1));
             operation_to_varindex[std::pair<vertex, unsigned int>(loop_operation, stage)] = next_var_index;
             next_var_index++;
          }
       }
 
-      ///Create the variables representing the ending of a path
-      ///Map tree leaf to variable index
+      /// Create the variables representing the ending of a path
+      /// Map tree leaf to variable index
       CustomMap<vertex, unsigned int> path_end_to_varindex;
       for(const auto basic_block : loop_bbs)
       {
@@ -623,12 +627,12 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
          }
       }
 #endif
-      ///next_var_index has been incremented but the + 1 is the makespan
+      /// next_var_index has been incremented but the + 1 is the makespan
       const size_t num_variables = next_var_index;
 
       solver->make(static_cast<int>(num_variables));
 
-      ///Set integer variables and lower bound
+      /// Set integer variables and lower bound
       for(size_t var_index = 0; var_index < num_variables; var_index++)
       {
          solver->set_int(static_cast<int>(var_index));
@@ -638,7 +642,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed " + STR(num_variables) + " variables");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding consecutive stages constraints");
 
-      ///Add consecutive stages constraints
+      /// Add consecutive stages constraints
       for(auto const operation : loop_operations)
       {
          AddStageConstraints(solver, operation);
@@ -646,19 +650,19 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added consecutive stages constraints");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding dependencies constraints");
 
-      ///Add dependence constraints: target can start in the same clock cycle in which source ends
+      /// Add dependence constraints: target can start in the same clock cycle in which source ends
       for(const auto operation : loop_operations)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding dependencies starting from " + GET_NAME(filtered_op_graph, operation));
          OutEdgeIterator oe, oe_end;
          for(boost::tie(oe, oe_end) = boost::out_edges(operation, *filtered_op_graph); oe != oe_end; oe++)
          {
-            ///Not control dependence
+            /// Not control dependence
             if(filtered_op_graph->GetSelector(*oe) & ~CDG_SELECTOR)
             {
                AddDependenceConstraint(solver, boost::source(*oe, *filtered_op_graph), boost::target(*oe, *filtered_op_graph), true);
             }
-            ///Non speculable operation
+            /// Non speculable operation
             else if(not behavioral_helper->CanBeSpeculated(filtered_op_graph->CGetOpNodeInfo(boost::target(*oe, *filtered_op_graph))->GetNodeId()))
             {
                AddDependenceConstraint(solver, boost::source(*oe, *filtered_op_graph), boost::target(*oe, *filtered_op_graph), false);
@@ -672,12 +676,12 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added dependencies constraints");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding delay constraint");
-      ///Add timing constraints: target can start in the same clock cycle in which source ends only with chaining
+      /// Add timing constraints: target can start in the same clock cycle in which source ends only with chaining
       AddDelayConstraints(solver, filtered_op_graph,
 #ifndef NDEBUG
-         debug_filtered_op_graph,
+                          debug_filtered_op_graph,
 #endif
-         loop_bbs);
+                          loop_bbs);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added delay constraint");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding sorting constraint");
       const ASLAPRef aslap(new ASLAP(HLSMgr, HLS, true, loop_operations, parameters, 1000));
@@ -685,21 +689,21 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
       aslap->compute_ALAP(ASLAP::ALAP_fast);
       SDCSorter sdc_sorter = SDCSorter(aslap->CGetASAP(), aslap->CGetALAP(), FB, filtered_op_graph, loop_bbs, parameters);
 
-      ///For each basic block, the set of unbounded operations found on the paths to it
+      /// For each basic block, the set of unbounded operations found on the paths to it
       CustomMap<vertex, OpVertexSet> loop_unbounded_operations;
 
-      ///For each basic block, the set of pipelined operations found on the paths to it
+      /// For each basic block, the set of pipelined operations found on the paths to it
       CustomMap<vertex, OpVertexSet> loop_pipelined_operations;
 
-      ///For each basic block, for each functional unit fu, the list of the last n operations executed (n is the number of resource of type fu) - Value is a set since there can be different paths reaching current basic block
-      CustomMap<vertex, CustomMap<unsigned int, std::set<std::list<vertex> > > > constrained_operations_sequences;
+      /// For each basic block, for each functional unit fu, the list of the last n operations executed (n is the number of resource of type fu) - Value is a set since there can be different paths reaching current basic block
+      CustomMap<vertex, CustomMap<unsigned int, std::set<std::list<vertex>>>> constrained_operations_sequences;
       for(const auto basic_block : loop_bbs)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding sorting constraints for BB" + STR(basic_block_graph->CGetBBNodeInfo(basic_block)->block->number));
          loop_unbounded_operations.insert(std::pair<vertex, OpVertexSet>(basic_block, OpVertexSet(filtered_op_graph)));
          loop_pipelined_operations.insert(std::pair<vertex, OpVertexSet>(basic_block, OpVertexSet(filtered_op_graph)));
          InEdgeIterator ie, ie_end;
-         for(boost::tie(ie,ie_end) = boost::in_edges(basic_block, *basic_block_graph); ie != ie_end; ie++)
+         for(boost::tie(ie, ie_end) = boost::in_edges(basic_block, *basic_block_graph); ie != ie_end; ie++)
          {
             const auto source = boost::source(*ie, *basic_block_graph);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering source BB" + STR(basic_block_graph->CGetBBNodeInfo(source)->block->number));
@@ -720,7 +724,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Inserting operation " + GET_NAME(filtered_op_graph, operation));
             basic_block_sorted_operations.insert(operation);
 #ifndef NDEBUG
-            for(const auto debug_operation: basic_block_sorted_operations)
+            for(const auto debug_operation : basic_block_sorted_operations)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + GET_NAME(filtered_op_graph, debug_operation));
             }
@@ -731,7 +735,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Ordered statements");
 #ifndef NDEBUG
-            for(const auto debug_operation: basic_block_sorted_operations)
+            for(const auto debug_operation : basic_block_sorted_operations)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + GET_NAME(filtered_op_graph, debug_operation));
             }
@@ -766,22 +770,22 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                               std::list<vertex> vertices;
                               debug_filtered_op_graph->TopologicalSort(vertices);
                            }
-                           catch (const char* msg)
+                           catch(const char* msg)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, other_unbounded_operation) + "-->" + GET_NAME(op_graph, operation));
                            }
-                           catch (const std::string& msg)
+                           catch(const std::string& msg)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, other_unbounded_operation) + "-->" + GET_NAME(op_graph, operation));
                            }
-                           catch (const std::exception& ex)
+                           catch(const std::exception& ex)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, other_unbounded_operation) + "-->" + GET_NAME(op_graph, operation));
                            }
-                           catch ( ... )
+                           catch(...)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, other_unbounded_operation) + "-->" + GET_NAME(op_graph, operation));
@@ -792,7 +796,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                   }
                   else
                   {
-                     ///NOTE: unbounded operation can start during last stage of multi cycle operation
+                     /// NOTE: unbounded operation can start during last stage of multi cycle operation
                      const std::string name = "UU2_" + GET_NAME(op_graph, operation) + "_" + GET_NAME(op_graph, other_unbounded_operation);
                      coeffs[static_cast<int>(operation_to_varindex.find(std::pair<vertex, unsigned int>(other_unbounded_operation, 0))->second)] = 1.0;
                      coeffs[static_cast<int>(operation_to_varindex.find(std::pair<vertex, unsigned int>(operation, 0))->second)] = -1.0;
@@ -803,28 +807,28 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                         if(not op_graph->ExistsEdge(operation, other_unbounded_operation))
                         {
                            temp_edges.insert(FB->ogc->AddEdge(operation, other_unbounded_operation, DEBUG_SELECTOR));
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding edge " + GET_NAME(filtered_op_graph, operation) + "-->" + GET_NAME(filtered_op_graph , other_unbounded_operation));
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding edge " + GET_NAME(filtered_op_graph, operation) + "-->" + GET_NAME(filtered_op_graph, other_unbounded_operation));
                            try
                            {
                               std::list<vertex> vertices;
                               debug_filtered_op_graph->TopologicalSort(vertices);
                            }
-                           catch (const char* msg)
+                           catch(const char* msg)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, operation) + "-->" + GET_NAME(op_graph, other_unbounded_operation));
                            }
-                           catch (const std::string& msg)
+                           catch(const std::string& msg)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, operation) + "-->" + GET_NAME(op_graph, other_unbounded_operation));
                            }
-                           catch (const std::exception& ex)
+                           catch(const std::exception& ex)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, operation) + "-->" + GET_NAME(op_graph, other_unbounded_operation));
                            }
-                           catch ( ... )
+                           catch(...)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, operation) + "-->" + GET_NAME(op_graph, other_unbounded_operation));
@@ -857,22 +861,22 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                               std::list<vertex> vertices;
                               debug_filtered_op_graph->TopologicalSort(vertices);
                            }
-                           catch (const char* msg)
+                           catch(const char* msg)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, loop_pipelined_operation) + "-->" + GET_NAME(op_graph, operation));
                            }
-                           catch (const std::string& msg)
+                           catch(const std::string& msg)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, loop_pipelined_operation) + "-->" + GET_NAME(op_graph, operation));
                            }
-                           catch (const std::exception& ex)
+                           catch(const std::exception& ex)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, loop_pipelined_operation) + "-->" + GET_NAME(op_graph, operation));
                            }
-                           catch ( ... )
+                           catch(...)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, loop_pipelined_operation) + "-->" + GET_NAME(op_graph, operation));
@@ -883,7 +887,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                   }
                   else
                   {
-                     ///NOTE: unbounded operation can start during last stage of multi cycle operation
+                     /// NOTE: unbounded operation can start during last stage of multi cycle operation
                      const std::string name = "UP_" + GET_NAME(op_graph, operation) + "_" + GET_NAME(op_graph, loop_pipelined_operation);
                      coeffs[static_cast<int>(operation_to_varindex.find(std::pair<vertex, unsigned int>(loop_pipelined_operation, 0))->second)] = 1.0;
                      coeffs[static_cast<int>(operation_to_varindex.find(std::pair<vertex, unsigned int>(operation, 0))->second)] = -1.0;
@@ -900,22 +904,22 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                               std::list<vertex> vertices;
                               debug_filtered_op_graph->TopologicalSort(vertices);
                            }
-                           catch (const char* msg)
+                           catch(const char* msg)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, operation) + "-->" + GET_NAME(op_graph, loop_pipelined_operation));
                            }
-                           catch (const std::string& msg)
+                           catch(const std::string& msg)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, operation) + "-->" + GET_NAME(op_graph, loop_pipelined_operation));
                            }
-                           catch (const std::exception& ex)
+                           catch(const std::exception& ex)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, operation) + "-->" + GET_NAME(op_graph, loop_pipelined_operation));
                            }
-                           catch ( ... )
+                           catch(...)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, operation) + "-->" + GET_NAME(op_graph, loop_pipelined_operation));
@@ -927,7 +931,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added constraints for unbounded operations");
             }
-            if (allocation_information->GetCycleLatency(operation) > 1)
+            if(allocation_information->GetCycleLatency(operation) > 1)
             {
                loop_pipelined_operations.find(basic_block)->second.insert(operation);
                for(const auto loop_unbounded_operation : loop_unbounded_operations.find(basic_block)->second)
@@ -952,22 +956,22 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                               std::list<vertex> vertices;
                               debug_filtered_op_graph->TopologicalSort(vertices);
                            }
-                           catch (const char* msg)
+                           catch(const char* msg)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, loop_unbounded_operation) + "-->" + GET_NAME(op_graph, operation));
                            }
-                           catch (const std::string& msg)
+                           catch(const std::string& msg)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, loop_unbounded_operation) + "-->" + GET_NAME(op_graph, operation));
                            }
-                           catch (const std::exception& ex)
+                           catch(const std::exception& ex)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, loop_unbounded_operation) + "-->" + GET_NAME(op_graph, operation));
                            }
-                           catch ( ... )
+                           catch(...)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, loop_unbounded_operation) + "-->" + GET_NAME(op_graph, operation));
@@ -978,7 +982,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                   }
                   else
                   {
-                     ///NOTE: unbounded operation can start during last stage of multi cycle operation
+                     /// NOTE: unbounded operation can start during last stage of multi cycle operation
                      const std::string name = "MU_" + GET_NAME(op_graph, operation) + "_" + GET_NAME(op_graph, loop_unbounded_operation);
                      coeffs[static_cast<int>(operation_to_varindex.find(std::pair<vertex, unsigned int>(loop_unbounded_operation, 0))->second)] = 1.0;
                      coeffs[static_cast<int>(operation_to_varindex.find(std::pair<vertex, unsigned int>(operation, allocation_information->GetCycleLatency(operation) - 1))->second)] = -1.0;
@@ -995,22 +999,22 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                               std::list<vertex> vertices;
                               debug_filtered_op_graph->TopologicalSort(vertices);
                            }
-                           catch (const char* msg)
+                           catch(const char* msg)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, operation) + "-->" + GET_NAME(op_graph, loop_unbounded_operation));
                            }
-                           catch (const std::string& msg)
+                           catch(const std::string& msg)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, operation) + "-->" + GET_NAME(op_graph, loop_unbounded_operation));
                            }
-                           catch (const std::exception& ex)
+                           catch(const std::exception& ex)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, operation) + "-->" + GET_NAME(op_graph, loop_unbounded_operation));
                            }
-                           catch ( ... )
+                           catch(...)
                            {
                               debug_filtered_op_graph->WriteDot("Error.dot");
                               THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, operation) + "-->" + GET_NAME(op_graph, loop_unbounded_operation));
@@ -1021,16 +1025,16 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                   }
                }
             }
-            ///Resource constraints
+            /// Resource constraints
             const auto fu_type = allocation_information->GetFuType(operation);
             const unsigned int resources_number = allocation_information->get_number_fu(fu_type);
             if(limited_resources.find(fu_type) != limited_resources.end())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Mapped on a shared resource");
-               const auto & old_sequences = constrained_operations_sequences[basic_block][fu_type];
+               const auto& old_sequences = constrained_operations_sequences[basic_block][fu_type];
                if(old_sequences.size())
                {
-                  std::set<std::list<vertex> > new_sequences;
+                  std::set<std::list<vertex>> new_sequences;
                   for(auto old_sequence : old_sequences)
                   {
                      if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
@@ -1064,22 +1068,22 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                                  std::list<vertex> vertices;
                                  debug_filtered_op_graph->TopologicalSort(vertices);
                               }
-                              catch (const char* msg)
+                              catch(const char* msg)
                               {
                                  debug_filtered_op_graph->WriteDot("Error.dot");
                                  THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, front) + "-->" + GET_NAME(op_graph, operation));
                               }
-                              catch (const std::string& msg)
+                              catch(const std::string& msg)
                               {
                                  debug_filtered_op_graph->WriteDot("Error.dot");
                                  THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, front) + "-->" + GET_NAME(op_graph, operation));
                               }
-                              catch (const std::exception& ex)
+                              catch(const std::exception& ex)
                               {
                                  debug_filtered_op_graph->WriteDot("Error.dot");
                                  THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, front) + "-->" + GET_NAME(op_graph, operation));
                               }
-                              catch ( ... )
+                              catch(...)
                               {
                                  debug_filtered_op_graph->WriteDot("Error.dot");
                                  THROW_UNREACHABLE("Edge " + GET_NAME(op_graph, front) + "-->" + GET_NAME(op_graph, operation));
@@ -1113,7 +1117,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added sorting constraints for BB" + STR(basic_block_graph->CGetBBNodeInfo(basic_block)->block->number));
       }
 
-      ///Adding last operation constraint: return must be executed after all the other operations.
+      /// Adding last operation constraint: return must be executed after all the other operations.
       for(const auto operation : loop_operations)
       {
          if((GET_TYPE(filtered_op_graph, operation) & (TYPE_RET)) != 0)
@@ -1127,7 +1131,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                std::map<int, double> coeffs;
                coeffs[static_cast<int>(operation_to_varindex.find(std::pair<vertex, unsigned int>(operation, 0))->second)] = 1.0;
                coeffs[static_cast<int>(operation_to_varindex.find(std::pair<vertex, unsigned int>(other_operation, allocation_information->GetCycleLatency(other_operation) - 1))->second)] = -1.0;
-               ///last cannot be scheduleded with unbounded operations
+               /// last cannot be scheduleded with unbounded operations
                if(not allocation_information->is_operation_bounded(filtered_op_graph, other_operation, allocation_information->GetFuType(other_operation)))
                {
                   solver->add_row(coeffs, 1.0, meilp_solver::G, name);
@@ -1142,7 +1146,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added sorting constraints");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Forcing path end");
-      ///Setting path end to be the real end
+      /// Setting path end to be the real end
       for(auto const path_end : path_end_to_varindex)
       {
          for(auto const operation : basic_block_graph->CGetBBNodeInfo(path_end.first)->statements_list)
@@ -1152,7 +1156,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding constraint " + name);
             std::map<int, double> coeffs;
             coeffs[static_cast<int>(path_end.second)] = 1.0;
-            coeffs[static_cast<int>(operation_to_varindex.find(std::pair<vertex, unsigned int>(operation, source_cycle_latency-1))->second)] = -1.0;
+            coeffs[static_cast<int>(operation_to_varindex.find(std::pair<vertex, unsigned int>(operation, source_cycle_latency - 1))->second)] = -1.0;
             solver->add_row(coeffs, 0.0, meilp_solver::G, name);
          }
       }
@@ -1197,7 +1201,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
          }
       }
 #endif
-      ///Setting objective function
+      /// Setting objective function
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Setting objective function");
       std::map<int, double> objective_coeffs;
       for(auto const& path_end : path_end_to_varindex)
@@ -1235,29 +1239,29 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
          const unsigned int begin_variable = operation_to_varindex[std::pair<vertex, unsigned int>(operation, 0)];
          ControlStep current_control_step = ControlStep(static_cast<unsigned int>(vals[static_cast<int>(begin_variable)]));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + GET_NAME(filtered_op_graph, operation) + " scheduled at relative step " + STR(current_control_step));
-         HLS->Rsch->set_execution(operation,  current_control_step + initial_ctrl_step);
-         HLS->Rsch->set_execution_end(operation,  current_control_step + initial_ctrl_step + allocation_information->GetCycleLatency(operation) - 1);
+         HLS->Rsch->set_execution(operation, current_control_step + initial_ctrl_step);
+         HLS->Rsch->set_execution_end(operation, current_control_step + initial_ctrl_step + allocation_information->GetCycleLatency(operation) - 1);
          const unsigned int cycle_latency = allocation_information->GetCycleLatency(operation);
          if(last_relative_step < current_control_step + cycle_latency)
             last_relative_step = current_control_step + cycle_latency;
-         ///set the binding information
-         if (HLS->HLS_C->has_binding_to_fu(GET_NAME(filtered_op_graph, operation)))
+         /// set the binding information
+         if(HLS->HLS_C->has_binding_to_fu(GET_NAME(filtered_op_graph, operation)))
             res_binding->bind(operation, allocation_information->GetFuType(operation), 0);
          else
             res_binding->bind(operation, allocation_information->GetFuType(operation));
       }
       initial_ctrl_step = last_relative_step + 1u;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-      ///Check which statements have to be moved
-      ///For each statement the basic blocks above which it cannot be moved.
-      ///Phi cannot be moved
-      ///Operations which depend from the phi cannot be moved before the phi and so on
+      /// Check which statements have to be moved
+      /// For each statement the basic blocks above which it cannot be moved.
+      /// Phi cannot be moved
+      /// Operations which depend from the phi cannot be moved before the phi and so on
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking which operations have to be moved");
-      CustomMap<vertex, CustomSet<vertex> > bb_barrier;
+      CustomMap<vertex, CustomSet<vertex>> bb_barrier;
       for(const auto loop_bb : loop_bbs)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking if operations of BB" + STR(basic_block_graph->CGetBBNodeInfo(loop_bb)->block->number) + " can be moved");
-         ///Set of operations which cannot be moved (at the moment) because of dependencies from gimple phi
+         /// Set of operations which cannot be moved (at the moment) because of dependencies from gimple phi
          OpVertexSet blocked_ops = OpVertexSet(filtered_op_graph);
 
          for(const auto loop_operation : basic_block_graph->CGetBBNodeInfo(loop_bb)->statements_list)
@@ -1265,7 +1269,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checking if " + GET_NAME(filtered_op_graph, loop_operation) + " has to be moved");
             if((GET_TYPE(filtered_op_graph, loop_operation) & (TYPE_IF | TYPE_MULTIIF)) != 0)
             {
-               ///IF is not a barrier for controlled operations
+               /// IF is not a barrier for controlled operations
                continue;
             }
             if((GET_TYPE(filtered_op_graph, loop_operation) & TYPE_PHI) != 0)
@@ -1288,7 +1292,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                bb_barrier[loop_operation].insert(loop_bb);
                continue;
             }
-            ///Loads which do not have resource limitation can be moved but not speculated; speculation should be prevented by control edges
+            /// Loads which do not have resource limitation can be moved but not speculated; speculation should be prevented by control edges
             if(((GET_TYPE(filtered_op_graph, loop_operation) & TYPE_LOAD) != 0) and limited_resources.find(allocation_information->GetFuType(loop_operation)) != limited_resources.end())
             {
                bb_barrier[loop_operation].insert(loop_bb);
@@ -1311,7 +1315,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Type is ok");
 
-            ///Computing bb barrier starting from bb barrier of predecesso
+            /// Computing bb barrier starting from bb barrier of predecesso
             InEdgeIterator ie, ie_end;
             for(boost::tie(ie, ie_end) = boost::in_edges(loop_operation, *filtered_op_graph); ie != ie_end; ie++)
             {
@@ -1340,7 +1344,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
             while(true)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checking if it can be bemove in BB" + STR(basic_block_graph->CGetBBNodeInfo(candidate_bb)->block->number));
-               if(candidate_bb == basic_block_graph->CGetBBGraphInfo()->entry_vertex or loop_bbs.find(candidate_bb)== loop_bbs.end())
+               if(candidate_bb == basic_block_graph->CGetBBGraphInfo()->entry_vertex or loop_bbs.find(candidate_bb) == loop_bbs.end())
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "No because it is in other loop");
                   break;
@@ -1350,7 +1354,9 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                {
                   if((HLS->Rsch->get_cstep(dominator_op).second + (allocation_information->GetCycleLatency(dominator_op) - 1u)) >= operation_step)
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + GET_NAME(filtered_op_graph, dominator_op) + " ends at " + STR(HLS->Rsch->get_cstep(dominator_op).second + (allocation_information->GetCycleLatency(dominator_op) - 1u)) + " - " + GET_NAME(filtered_op_graph, loop_operation) + " ends at " + STR(operation_step));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---" + GET_NAME(filtered_op_graph, dominator_op) + " ends at " + STR(HLS->Rsch->get_cstep(dominator_op).second + (allocation_information->GetCycleLatency(dominator_op) - 1u)) + " - " +
+                                        GET_NAME(filtered_op_graph, loop_operation) + " ends at " + STR(operation_step));
                      overlapping = true;
                      break;
                   }
@@ -1359,13 +1365,13 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                {
                   break;
                }
-               ///Update dominator
+               /// Update dominator
                current_bb_dominator = candidate_bb;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Updating dominator to BB" + STR(basic_block_graph->CGetBBNodeInfo(current_bb_dominator)->block->number));
                THROW_ASSERT(boost::in_degree(current_bb_dominator, *dominators) == 1, "Dominator is not a tree or entry was reached");
                boost::tie(ie, ie_end) = boost::in_edges(current_bb_dominator, *dominators);
                candidate_bb = boost::source(*ie, *dominators);
-               ///If the current is in the barrier, do not check for the candidate
+               /// If the current is in the barrier, do not check for the candidate
                if(bb_barrier.find(loop_operation) != bb_barrier.end() and bb_barrier.find(loop_operation)->second.find(current_bb_dominator) != bb_barrier.find(loop_operation)->second.end())
                {
                   break;
@@ -1411,7 +1417,7 @@ void SDCScheduling::Initialize()
    res_binding = HLS->Rfu;
    clock_period = HLS->HLS_C->get_clock_period() * HLS->HLS_C->get_clock_period_resource_fraction();
    margin = allocation_information->GetClockPeriodMargin();
-   ///Build the full reachability map
+   /// Build the full reachability map
    full_reachability_map.clear();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating reachability map");
    std::deque<vertex> vertices_to_be_analyzed;
@@ -1461,7 +1467,7 @@ void SDCScheduling::Initialize()
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Computed limited resources");
    sharing_operations.clear();
-   ///For the limited resource, the operations assigned to it
+   /// For the limited resource, the operations assigned to it
    for(boost::tie(basic_block, basic_block_end) = boost::vertices(*basic_block_graph); basic_block != basic_block_end; basic_block++)
    {
       OpVertexSet filtered_operations(op_graph);
@@ -1480,7 +1486,7 @@ void SDCScheduling::Initialize()
       }
    }
 
-   ///If number of resources is limited but larger than number of operations
+   /// If number of resources is limited but larger than number of operations
    CustomSet<unsigned int> not_limited_resources;
 
    for(auto limited_resource : limited_resources)
@@ -1491,7 +1497,7 @@ void SDCScheduling::Initialize()
       }
    }
 
-   ///Removing not actually limited resources
+   /// Removing not actually limited resources
    for(auto not_limited_resource : not_limited_resources)
    {
       sharing_operations.erase(not_limited_resource);
@@ -1501,7 +1507,7 @@ void SDCScheduling::Initialize()
    if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Shared resources:");
-      for(const auto& shared_resource :sharing_operations)
+      for(const auto& shared_resource : sharing_operations)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->" + STR(allocation_information->get_number_fu(shared_resource.first)) + " " + allocation_information->get_fu_name(shared_resource.first).first);
          for(const auto operation : shared_resource.second)

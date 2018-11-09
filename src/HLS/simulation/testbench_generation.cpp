@@ -86,6 +86,12 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    return ret;
 }
 
-DesignFlowStep_Status TestbenchGeneration::Exec() { return DesignFlowStep_Status::EMPTY; }
+DesignFlowStep_Status TestbenchGeneration::Exec()
+{
+   return DesignFlowStep_Status::EMPTY;
+}
 
-bool TestbenchGeneration::HasToBeExecuted() const { return true; }
+bool TestbenchGeneration::HasToBeExecuted() const
+{
+   return true;
+}

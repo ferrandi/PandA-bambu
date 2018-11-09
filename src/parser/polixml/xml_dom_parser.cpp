@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file xml_dom_parser.cpp
  * @brief XML DOM parser.
@@ -39,24 +39,22 @@
  *
  */
 
-///Header include
+/// Header include
 #include "xml_dom_parser.hpp"
 
 #include <utility>
 
-///Utility include
+/// Utility include
 #include "fileIO.hpp"
 
-XMLDomParser::XMLDomParser(std::string  _name, std::string  string_to_be_parsed) :
-   name(std::move(_name)),
-   to_be_parsed(std::move(string_to_be_parsed))
+XMLDomParser::XMLDomParser(std::string _name, std::string string_to_be_parsed) : name(std::move(_name)), to_be_parsed(std::move(string_to_be_parsed))
 
-{}
+{
+}
 
-XMLDomParser::XMLDomParser(const std::string&filename) :
-   name(filename),
-   to_be_parsed(filename)
-{}
+XMLDomParser::XMLDomParser(const std::string& filename) : name(filename), to_be_parsed(filename)
+{
+}
 
 XMLDomParser::operator bool() const
 {
@@ -72,4 +70,3 @@ const xml_documentRef XMLDomParser::get_document() const
 {
    return doc;
 }
-

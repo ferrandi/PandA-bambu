@@ -29,72 +29,71 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file hls_synthesis_flow.cpp
  * @brief Definition of the class to create the structural description of a function
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "hls_synthesis_flow.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior include
+/// behavior include
 #include "function_behavior.hpp"
 
-///HLS include
+/// HLS include
 #include "hls_manager.hpp"
 
-///tree include
+/// tree include
 #include "behavioral_helper.hpp"
 
-HLSSynthesisFlow::HLSSynthesisFlow(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
-   HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::HLS_SYNTHESIS_FLOW)
+HLSSynthesisFlow::HLSSynthesisFlow(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
+    : HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::HLS_SYNTHESIS_FLOW)
 {
    composed = true;
 }
 
-HLSSynthesisFlow::~HLSSynthesisFlow()
-= default;
+HLSSynthesisFlow::~HLSSynthesisFlow() = default;
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > HLSSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> HLSSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ret;
+   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
-         {
+      {
 #if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
-            const auto function_behavior = HLSMgr->GetFunctionBehavior(funId);
-            const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
-            if(behavioral_helper->IsOmpBodyLoop())
-            {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            }
-            else if(behavioral_helper->GetOmpForDegree())
-            {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_FOR_WRAPPER_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            }
-            else
+         const auto function_behavior = HLSMgr->GetFunctionBehavior(funId);
+         const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
+         if(behavioral_helper->IsOmpBodyLoop())
+         {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         }
+         else if(behavioral_helper->GetOmpForDegree())
+         {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_FOR_WRAPPER_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         }
+         else
 #endif
-            {
-               ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_hls_flow), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            }
-            break;
+         {
+            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_hls_flow), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          }
+         break;
+      }
       case INVALIDATION_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       case PRECEDENCE_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       default:
          THROW_UNREACHABLE("");
    }

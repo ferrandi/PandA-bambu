@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -51,24 +51,24 @@
 ///. include
 #include "Parameter.hpp"
 
-///behavior includes
+/// behavior includes
 #if HAVE_HOST_PROFILING_BUILT
 #include "profiling_information.hpp"
 #endif
 #include "op_graph.hpp"
 #include "var_pp_functor.hpp"
 
-///hls include
+/// hls include
 #include "hls.hpp"
 #include "hls_manager.hpp"
 
-///hls/scheduling
+/// hls/scheduling
 #include "schedule.hpp"
 
-///tree include
+/// tree include
 #include "behavioral_helper.hpp"
 
-///utility include
+/// utility include
 #include "simple_indent.hpp"
 
 void StateInfo::print(std::ostream& os, const int detail_level) const
@@ -84,13 +84,13 @@ void StateInfo::print(std::ostream& os, const int detail_level) const
    i_end = executing_operations.end();
    i = executing_operations.begin();
 
-   if (i != i_end && GET_TYPE(op_function_graph, *i) == TYPE_ENTRY)
+   if(i != i_end && GET_TYPE(op_function_graph, *i) == TYPE_ENTRY)
    {
       os << "START";
       return;
    }
 
-   if (i != i_end && GET_TYPE(op_function_graph, *i) == TYPE_EXIT)
+   if(i != i_end && GET_TYPE(op_function_graph, *i) == TYPE_EXIT)
    {
       os << "END";
       return;
@@ -98,25 +98,26 @@ void StateInfo::print(std::ostream& os, const int detail_level) const
 
    os << "< " << name << " | { ";
 
-   for (const auto & op : executing_operations)
+   for(const auto& op : executing_operations)
    {
       const auto first_index = op_function_graph->CGetOpNodeInfo(op)->GetNodeId();
 
       const bool critical = critical_paths.find(first_index) != critical_paths.end();
-      if(detail_level==0)
+      if(detail_level == 0)
       {
-         if (std::find(ending_operations.begin(), ending_operations.end(), op) == ending_operations.end())
+         if(std::find(ending_operations.begin(), ending_operations.end(), op) == ending_operations.end())
             os << "<font color=\"gold2\">";
-         else if (critical)
+         else if(critical)
             os << "<font color=\"red3\">";
          else if(GET_TYPE(op_function_graph, op) & TYPE_STORE)
             os << "<font color=\"blue\">";
       }
       const auto first_starting_time = schedule->GetStartingTime(first_index);
       const auto first_ending_time = schedule->GetEndingTime(first_index);
-      if(detail_level==0)
+      if(detail_level == 0)
       {
-         os << GET_NAME(op_function_graph, op) << " [" << NumberToString(first_starting_time,2,7) << "---" << NumberToString(first_ending_time,2,7) << "("<< NumberToString(first_ending_time-first_starting_time,2,7) << ")" << "] --&gt; ";
+         os << GET_NAME(op_function_graph, op) << " [" << NumberToString(first_starting_time, 2, 7) << "---" << NumberToString(first_ending_time, 2, 7) << "(" << NumberToString(first_ending_time - first_starting_time, 2, 7) << ")"
+            << "] --&gt; ";
       }
       std::string vertex_print = BH->print_vertex(op_function_graph, op, vpp, true);
       boost::replace_all(vertex_print, "&", "&amp;");
@@ -130,9 +131,9 @@ void StateInfo::print(std::ostream& os, const int detail_level) const
       boost::replace_all(vertex_print, "{", "\\{");
       boost::replace_all(vertex_print, "}", "\\}");
       os << vertex_print;
-      if(detail_level==0)
+      if(detail_level == 0)
       {
-         if (critical or std::find(ending_operations.begin(), ending_operations.end(), op) == ending_operations.end() or GET_TYPE(op_function_graph, op) & TYPE_STORE)
+         if(critical or std::find(ending_operations.begin(), ending_operations.end(), op) == ending_operations.end() or GET_TYPE(op_function_graph, op) & TYPE_STORE)
             os << " </font>";
       }
       os << "<br align=\"left\"/>";
@@ -140,19 +141,20 @@ void StateInfo::print(std::ostream& os, const int detail_level) const
    if(!detail_level)
    {
       os << " | ";
-      for (const auto & op : ending_operations)
+      for(const auto& op : ending_operations)
       {
          const auto first_index = op_function_graph->CGetOpNodeInfo(op)->GetNodeId();
          const auto critical = critical_paths.find(first_index) != critical_paths.end();
-         if (std::find(executing_operations.begin(), executing_operations.end(), op) == executing_operations.end())
+         if(std::find(executing_operations.begin(), executing_operations.end(), op) == executing_operations.end())
             os << "<font color=\"green2\">";
-         else if (critical)
+         else if(critical)
             os << "<font color=\"red3\">";
-         else if (GET_TYPE(op_function_graph, op) & TYPE_STORE)
+         else if(GET_TYPE(op_function_graph, op) & TYPE_STORE)
             os << "<font color=\"blue\">";
          const auto first_starting_time = schedule->GetStartingTime(first_index);
          const auto first_ending_time = schedule->GetEndingTime(first_index);
-         os << GET_NAME(op_function_graph, op) << " [" << NumberToString(first_starting_time,2,7) << "---" << NumberToString(first_ending_time,2,7) << "("<< NumberToString(first_ending_time-first_starting_time,2,7) << ")" << "] --&gt; ";
+         os << GET_NAME(op_function_graph, op) << " [" << NumberToString(first_starting_time, 2, 7) << "---" << NumberToString(first_ending_time, 2, 7) << "(" << NumberToString(first_ending_time - first_starting_time, 2, 7) << ")"
+            << "] --&gt; ";
          std::string vertex_print = BH->print_vertex(op_function_graph, op, vpp, true);
          boost::replace_all(vertex_print, "&", "&amp;");
          boost::replace_all(vertex_print, "|", "\\|");
@@ -165,7 +167,7 @@ void StateInfo::print(std::ostream& os, const int detail_level) const
          boost::replace_all(vertex_print, "{", "\\{");
          boost::replace_all(vertex_print, "}", "\\}");
          os << vertex_print;
-         if (critical or std::find(executing_operations.begin(), executing_operations.end(), op) == executing_operations.end() or GET_TYPE(op_function_graph, op) & TYPE_STORE)
+         if(critical or std::find(executing_operations.begin(), executing_operations.end(), op) == executing_operations.end() or GET_TYPE(op_function_graph, op) & TYPE_STORE)
             os << " </font>";
          os << "<br align=\"left\"/>";
       }
@@ -173,10 +175,10 @@ void StateInfo::print(std::ostream& os, const int detail_level) const
 
    os << " } | ";
 
-   if (BB_ids.size())
+   if(BB_ids.size())
    {
-         os << "BB_ids = ";
-      for (const auto & bb_i : BB_ids)
+      os << "BB_ids = ";
+      for(const auto& bb_i : BB_ids)
          os << bb_i << " <br align=\"left\"/>";
    }
    else
@@ -184,7 +186,7 @@ void StateInfo::print(std::ostream& os, const int detail_level) const
       os << "none";
    }
 #if HAVE_HOST_PROFILING_BUILT
-   if(function_behavior->CGetProfilingInformation() and BB_ids.size() == 1 && detail_level==0)
+   if(function_behavior->CGetProfilingInformation() and BB_ids.size() == 1 && detail_level == 0)
    {
       const auto BB_id = *(BB_ids.begin());
       const auto BB_vertex = function_behavior->CGetBBGraph(FunctionBehavior::BB)->CGetBBGraphInfo()->bb_index_map.find(BB_id)->second;
@@ -197,20 +199,20 @@ void StateInfo::print(std::ostream& os, const int detail_level) const
    os << ">";
 }
 
-const unsigned int TransitionInfo::DONTCARE  = 1 << 0;
+const unsigned int TransitionInfo::DONTCARE = 1 << 0;
 
 void TransitionInfo::print(std::ostream& os) const
 {
    const BehavioralHelperConstRef BH = op_function_graph->CGetOpGraphInfo()->BH;
-   for (auto it = conditions.begin(); it != conditions.end(); ++it)
+   for(auto it = conditions.begin(); it != conditions.end(); ++it)
    {
-      if (it->second == T_COND)
+      if(it->second == T_COND)
          os << GET_NAME(op_function_graph, it->first) << "(T)\\n";
-      else if (it->second == F_COND)
+      else if(it->second == F_COND)
          os << GET_NAME(op_function_graph, it->first) << "(F)\\n";
-      else if (it->second == DONTCARE)
+      else if(it->second == DONTCARE)
          os << GET_NAME(op_function_graph, it->first) << "(-)\\n";
-      else if (it->second == default_COND)
+      else if(it->second == default_COND)
          os << GET_NAME(op_function_graph, it->first) << "(default)\\n";
       else
       {
@@ -220,27 +222,25 @@ void TransitionInfo::print(std::ostream& os) const
    }
 }
 
-StateTransitionGraphInfo::StateTransitionGraphInfo(const OpGraphConstRef _op_function_graph) :
-   op_function_graph(_op_function_graph), is_a_dag(true), min_cycles(0), max_cycles(0)
-{}
+StateTransitionGraphInfo::StateTransitionGraphInfo(const OpGraphConstRef _op_function_graph) : op_function_graph(_op_function_graph), is_a_dag(true), min_cycles(0), max_cycles(0)
+{
+}
 
-StateTransitionGraphsCollection::StateTransitionGraphsCollection(const StateTransitionGraphInfoRef state_transition_graph_info, const ParameterConstRef _parameters) :
-   graphs_collection(state_transition_graph_info, _parameters)
-{}
+StateTransitionGraphsCollection::StateTransitionGraphsCollection(const StateTransitionGraphInfoRef state_transition_graph_info, const ParameterConstRef _parameters) : graphs_collection(state_transition_graph_info, _parameters)
+{
+}
 
-StateTransitionGraphsCollection::~StateTransitionGraphsCollection()
-= default;
+StateTransitionGraphsCollection::~StateTransitionGraphsCollection() = default;
 
-StateTransitionGraph::StateTransitionGraph(const StateTransitionGraphsCollectionRef state_transition_graphs_collection, int _selector) :
-   graph(state_transition_graphs_collection.get(), _selector)
-{}
+StateTransitionGraph::StateTransitionGraph(const StateTransitionGraphsCollectionRef state_transition_graphs_collection, int _selector) : graph(state_transition_graphs_collection.get(), _selector)
+{
+}
 
-StateTransitionGraph::StateTransitionGraph(const StateTransitionGraphsCollectionRef state_transition_graphs_collection, int _selector, std::unordered_set<vertex>& _sub) :
-   graph(state_transition_graphs_collection.get(), _selector, _sub)
-{}
+StateTransitionGraph::StateTransitionGraph(const StateTransitionGraphsCollectionRef state_transition_graphs_collection, int _selector, std::unordered_set<vertex>& _sub) : graph(state_transition_graphs_collection.get(), _selector, _sub)
+{
+}
 
-StateTransitionGraph::~StateTransitionGraph()
-= default;
+StateTransitionGraph::~StateTransitionGraph() = default;
 
 void StateTransitionGraph::WriteDot(const std::string& file_name, const int detail_level) const
 {
@@ -253,16 +253,16 @@ void StateTransitionGraph::WriteDot(const std::string& file_name, const int deta
       const auto critical_path = si->HLSMgr.lock()->get_HLS(si->funId)->Rsch->ComputeCriticalPath(CGetStateInfo(*state));
       critical_paths.insert(critical_path.begin(), critical_path.end());
    }
-   if (!boost::filesystem::exists(output_directory))
+   if(!boost::filesystem::exists(output_directory))
       boost::filesystem::create_directories(output_directory);
    const OpGraphConstRef op_function_graph = CGetStateTransitionGraphInfo()->op_function_graph;
    const std::string function_name = op_function_graph->CGetOpGraphInfo()->BH->get_function_name();
-   const std::string complete_file_name = output_directory + function_name +"/";
-   if (!boost::filesystem::exists(complete_file_name))
+   const std::string complete_file_name = output_directory + function_name + "/";
+   if(!boost::filesystem::exists(complete_file_name))
       boost::filesystem::create_directories(complete_file_name);
    const VertexWriterConstRef state_writer(new StateWriter(this, op_function_graph, detail_level));
    const EdgeWriterConstRef transition_writer(new TransitionWriter(this, op_function_graph));
-   InternalWriteDot<const StateWriter, const TransitionWriter>(complete_file_name+file_name, state_writer, transition_writer);
+   InternalWriteDot<const StateWriter, const TransitionWriter>(complete_file_name + file_name, state_writer, transition_writer);
    for(boost::tie(state, state_end) = boost::vertices(*this); state != state_end; state++)
    {
       if(*state == CGetStateTransitionGraphInfo()->entry_node or *state == CGetStateTransitionGraphInfo()->exit_node)
@@ -279,20 +279,20 @@ void StateTransitionGraph::WriteDot(const std::string& file_name, const int deta
    }
 }
 
-
-StateWriter::StateWriter(const graph* _stg, const OpGraphConstRef _op_function_graph, int _detail_level) :
-   VertexWriter(_stg, _detail_level),
-   BH(_op_function_graph->CGetOpGraphInfo()->BH),
-   op_function_graph(_op_function_graph),
-   entry_node(GetPointer<const StateTransitionGraphInfo>(_stg->CGetGraphInfo())->entry_node),
-   exit_node(GetPointer<const StateTransitionGraphInfo>(_stg->CGetGraphInfo())->exit_node)
-{}
+StateWriter::StateWriter(const graph* _stg, const OpGraphConstRef _op_function_graph, int _detail_level)
+    : VertexWriter(_stg, _detail_level),
+      BH(_op_function_graph->CGetOpGraphInfo()->BH),
+      op_function_graph(_op_function_graph),
+      entry_node(GetPointer<const StateTransitionGraphInfo>(_stg->CGetGraphInfo())->entry_node),
+      exit_node(GetPointer<const StateTransitionGraphInfo>(_stg->CGetGraphInfo())->exit_node)
+{
+}
 
 void StateWriter::operator()(std::ostream& out, const vertex& v) const
 {
-   const auto *temp = Cget_node_info< StateInfo > (v, *printing_graph);
+   const auto* temp = Cget_node_info<StateInfo>(v, *printing_graph);
    out << "[";
-   if (v == entry_node or v == exit_node)
+   if(v == entry_node or v == exit_node)
       out << "color=blue,shape=Msquare,";
    else
       out << "shape=record,";
@@ -301,20 +301,18 @@ void StateWriter::operator()(std::ostream& out, const vertex& v) const
    out << "]";
 }
 
-TransitionWriter::TransitionWriter(const graph* _stg, const OpGraphConstRef _op_function_graph) :
-   EdgeWriter(_stg, 0),
-   BH(_op_function_graph->CGetOpGraphInfo()->BH),
-   op_function_graph(_op_function_graph)
-{}
+TransitionWriter::TransitionWriter(const graph* _stg, const OpGraphConstRef _op_function_graph) : EdgeWriter(_stg, 0), BH(_op_function_graph->CGetOpGraphInfo()->BH), op_function_graph(_op_function_graph)
+{
+}
 
 void TransitionWriter::operator()(std::ostream& out, const EdgeDescriptor& e) const
 {
-   const auto *temp = Cget_edge_info<TransitionInfo>(e, *printing_graph);
-   if (ST_EDGE_NORMAL_T & printing_graph->GetSelector(e))
+   const auto* temp = Cget_edge_info<TransitionInfo>(e, *printing_graph);
+   if(ST_EDGE_NORMAL_T & printing_graph->GetSelector(e))
    {
       out << "[color=red3";
    }
-   else if (ST_EDGE_FEEDBACK_T & printing_graph->GetSelector(e))
+   else if(ST_EDGE_FEEDBACK_T & printing_graph->GetSelector(e))
    {
       out << "[color=green2";
    }

@@ -29,54 +29,53 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file hash_helper.hpp
  * @brief This file collects some hash functors
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
-*/
+ */
 #ifndef HASH_HELPER_HPP
 #define HASH_HELPER_HPP
 #include <boost/functional/hash/hash.hpp>
 
-///Hash function for std::vector
+/// Hash function for std::vector
 namespace std
 {
-   template<typename T>
-      struct hash<std::vector<T> > : public std::unary_function<std::vector<T>, std::size_t>
+   template <typename T>
+   struct hash<std::vector<T>> : public std::unary_function<std::vector<T>, std::size_t>
+   {
+      std::size_t operator()(const std::vector<T>& val) const
       {
-         std::size_t operator()(const std::vector<T> &val) const
-         {
-            return boost::hash_range<typename std::vector<T>::const_iterator>(val.begin(), val.end());
-         }
-      };
-}
+         return boost::hash_range<typename std::vector<T>::const_iterator>(val.begin(), val.end());
+      }
+   };
+} // namespace std
 
-///Hash function for std::pair<T, U>
+/// Hash function for std::pair<T, U>
 namespace std
 {
-   template<typename T, typename U>
-      struct hash<std::pair<T, U> > : public std::unary_function<std::pair<T, U>, std::size_t>
+   template <typename T, typename U>
+   struct hash<std::pair<T, U>> : public std::unary_function<std::pair<T, U>, std::size_t>
+   {
+    private:
+      const hash<T> Th;
+      const hash<U> Uh;
+
+    public:
+      /**
+       * Constructor
+       */
+      hash() : Th(), Uh()
       {
-         private:
-            const hash<T> Th;
-            const hash<U> Uh;
+      }
 
-         public:
-            /**
-             * Constructor
-             */
-            hash() :
-               Th(),
-               Uh()
-            {}
-
-            std::size_t operator()(const std::pair<T, U> &val) const
-            {
-               return Th(val.first) ^ Uh(val.second);
-            }
-      };
-}
+      std::size_t operator()(const std::pair<T, U>& val) const
+      {
+         return Th(val.first) ^ Uh(val.second);
+      }
+   };
+} // namespace std
 #endif

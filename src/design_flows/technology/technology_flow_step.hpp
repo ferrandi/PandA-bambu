@@ -29,27 +29,27 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file technology_flow_step.hpp
  * @brief Base class for technology flow steps
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef TECHNOLOGY_FLOW_STEP_HPP
 #define TECHNOLOGY_FLOW_STEP_HPP
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
 
-///Superclass include
+/// Superclass include
 #include "design_flow_step.hpp"
 
-///STD include
+/// STD include
 #include <string>
 
-///utility include
+/// utility include
 #include "refcount.hpp"
 
 REF_FORWARD_DECL(target_device);
@@ -74,90 +74,87 @@ enum class TechnologyFlowStep_Type
 namespace std
 {
    template <>
-      struct hash<TechnologyFlowStep_Type> : public unary_function<TechnologyFlowStep_Type, size_t>
+   struct hash<TechnologyFlowStep_Type> : public unary_function<TechnologyFlowStep_Type, size_t>
+   {
+      size_t operator()(TechnologyFlowStep_Type design_flow_step) const
       {
-         size_t operator()(TechnologyFlowStep_Type design_flow_step) const
-         {
-            hash<int> hasher;
-            return hasher(static_cast<int>(design_flow_step));
-         }
-      };
-}
-
+         hash<int> hasher;
+         return hasher(static_cast<int>(design_flow_step));
+      }
+   };
+} // namespace std
 
 class TechnologyFlowStep : public DesignFlowStep
 {
-   protected:
-      ///The type of step
-      TechnologyFlowStep_Type technology_flow_step_type;
+ protected:
+   /// The type of step
+   TechnologyFlowStep_Type technology_flow_step_type;
 
-      ///The technology manager
-      const technology_managerRef TM;
+   /// The technology manager
+   const technology_managerRef TM;
 
-      ///The target device
-      const target_deviceRef target;
+   /// The target device
+   const target_deviceRef target;
 
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      virtual const std::unordered_set<TechnologyFlowStep_Type> ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const = 0;
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   virtual const std::unordered_set<TechnologyFlowStep_Type> ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const = 0;
 
-   public:
-      /**
-       * Constructor
-       * @param TM is the technology manager
-       * @param target is the target device
-       * @param design_flow_manager is the design flow manager
-       * @param technology_flow_step_type is the type of this step
-       * @param parameters is the set of input parameters
-       */
-      TechnologyFlowStep(const technology_managerRef _TM, const target_deviceRef target, const DesignFlowManagerConstRef design_flow_manager, const TechnologyFlowStep_Type technology_flow_step_type, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor
+    * @param TM is the technology manager
+    * @param target is the target device
+    * @param design_flow_manager is the design flow manager
+    * @param technology_flow_step_type is the type of this step
+    * @param parameters is the set of input parameters
+    */
+   TechnologyFlowStep(const technology_managerRef _TM, const target_deviceRef target, const DesignFlowManagerConstRef design_flow_manager, const TechnologyFlowStep_Type technology_flow_step_type, const ParameterConstRef parameters);
 
-      /**
-       * Return a unified identifier of this design step
-       * @return the signature of the design step
-       */
-      const std::string GetSignature() const override;
+   /**
+    * Return a unified identifier of this design step
+    * @return the signature of the design step
+    */
+   const std::string GetSignature() const override;
 
-      /**
-       * Given a technology flow step type, return the name of the type
-       * @param technology_flow_step_type is the type to be considered
-       * @return the name of the type
-       */
-      static
-      const std::string EnumToName(const TechnologyFlowStep_Type technology_flow_step_type);
+   /**
+    * Given a technology flow step type, return the name of the type
+    * @param technology_flow_step_type is the type to be considered
+    * @return the name of the type
+    */
+   static const std::string EnumToName(const TechnologyFlowStep_Type technology_flow_step_type);
 
-      /**
-       * Compute the signature of a technology flow step
-       * @param technology_flow_step_type is the type of the step
-       * @return the corresponding signature
-       */
-      static
-      const std::string ComputeSignature(const TechnologyFlowStep_Type technology_flow_step_type);
+   /**
+    * Compute the signature of a technology flow step
+    * @param technology_flow_step_type is the type of the step
+    * @return the corresponding signature
+    */
+   static const std::string ComputeSignature(const TechnologyFlowStep_Type technology_flow_step_type);
 
-      /**
-       * Return the name of this design step
-       * @return the name of the pass (for debug purpose)
-       */
-      const std::string GetName() const override;
+   /**
+    * Return the name of this design step
+    * @return the name of the pass (for debug purpose)
+    */
+   const std::string GetName() const override;
 
-      /**
-       * Compute the relationships of a step with other steps
-       * @param dependencies is where relationships will be stored
-       * @param relationship_type is the type of relationship to be computed
-       */
-      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   /**
+    * Compute the relationships of a step with other steps
+    * @param dependencies is where relationships will be stored
+    * @param relationship_type is the type of relationship to be computed
+    */
+   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 
-      /**
-       * Return the factory to create this type of steps
-       */
-      const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
+   /**
+    * Return the factory to create this type of steps
+    */
+   const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
 
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      bool HasToBeExecuted() const override;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 };
 #endif

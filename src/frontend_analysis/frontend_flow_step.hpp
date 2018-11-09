@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file frontend_flow_step.hpp
  * @brief This class contains the base representation for a generic frontend flow step
@@ -40,12 +40,12 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef FRONTEND_FLOW_STEP_HPP
 #define FRONTEND_FLOW_STEP_HPP
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
@@ -57,16 +57,16 @@
 #include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_HAVE_ZEBU_BUILT.hpp"
 
-#include <cstddef>                                   // for size_t
-#include <string>                                    // for string
-#include <typeindex>                                 // for hash
-#include <unordered_set>                             // for unordered_set
-#include <utility>                                   // for pair
+#include <cstddef>       // for size_t
+#include <string>        // for string
+#include <typeindex>     // for hash
+#include <unordered_set> // for unordered_set
+#include <utility>       // for pair
 
-#include "design_flow_step.hpp"                      // for DesignFlowStep
-#include "refcount.hpp"                              // for REF_FORWARD_DECL
+#include "design_flow_step.hpp" // for DesignFlowStep
+#include "refcount.hpp"         // for REF_FORWARD_DECL
 
-///Forward declaration
+/// Forward declaration
 CONSTREF_FORWARD_DECL(application_manager);
 REF_FORWARD_DECL(application_manager);
 REF_FORWARD_DECL(ArchManager);
@@ -74,7 +74,7 @@ REF_FORWARD_DECL(DesignFlowManager);
 
 typedef enum
 {
-///Application frontend flow steps
+/// Application frontend flow steps
 #if HAVE_HOST_PROFILING_BUILT
    BASIC_BLOCKS_PROFILING,
 #endif
@@ -82,7 +82,7 @@ typedef enum
 #if HAVE_BAMBU_BUILT
    FIND_MAX_CFG_TRANSFORMATIONS,
 #endif
-   FUNCTION_ANALYSIS,                  //! Creation of the call graph
+   FUNCTION_ANALYSIS, //! Creation of the call graph
 #if HAVE_ZEBU_BUILT
    FUNCTION_POINTER_CALLGRAPH_COMPUTATION,
 #endif
@@ -99,7 +99,7 @@ typedef enum
    SIZEOF_SUBSTITUTION,
 #endif
    SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP,
-   ///Function frontend flow steps
+   /// Function frontend flow steps
    ADD_BB_ECFG_EDGES,
 #if HAVE_ZEBU_BUILT
    ADD_OP_ECFG_EDGES,
@@ -144,7 +144,7 @@ typedef enum
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
    CHECK_CRITICAL_SESSION,
 #endif
-   CHECK_SYSTEM_TYPE,                  //! Set the system flag to variables and types
+   CHECK_SYSTEM_TYPE, //! Set the system flag to variables and types
    CLEAN_VIRTUAL_PHI,
    COMPLETE_BB_GRAPH,
    COMPLETE_CALL_GRAPH,
@@ -226,7 +226,7 @@ typedef enum
    LOOPS_REBUILDING,
 #endif
 #if HAVE_BAMBU_BUILT
-    LUT_TRANSFORMATION,
+   LUT_TRANSFORMATION,
 #endif
    MEMORY_DATA_FLOW_ANALYSIS,
    MEM_CG_EXT,
@@ -349,110 +349,109 @@ typedef enum
 namespace std
 {
    template <>
-      struct hash<FrontendFlowStepType> : public unary_function<FrontendFlowStepType, size_t>
+   struct hash<FrontendFlowStepType> : public unary_function<FrontendFlowStepType, size_t>
+   {
+      size_t operator()(FrontendFlowStepType algorithm) const
       {
-         size_t operator()(FrontendFlowStepType algorithm) const
-         {
-            hash<int> hasher;
-            return hasher(static_cast<int>(algorithm));
-         }
-      };
-}
+         hash<int> hasher;
+         return hasher(static_cast<int>(algorithm));
+      }
+   };
+} // namespace std
 
 class FrontendFlowStep : public DesignFlowStep
 {
-   public:
-      ///The different relationship type between function analysis
-      typedef enum
-      {
-         ALL_FUNCTIONS,     /**! All the functions composing the application */
-         CALLED_FUNCTIONS,  /**! All the functions called by the current one */
-         CALLING_FUNCTIONS, /**! All the functions which call the current one */
-         SAME_FUNCTION,     /**! Same function */
-         WHOLE_APPLICATION  /**! The whole application */
-      } FunctionRelationship;
+ public:
+   /// The different relationship type between function analysis
+   typedef enum
+   {
+      ALL_FUNCTIONS,     /**! All the functions composing the application */
+      CALLED_FUNCTIONS,  /**! All the functions called by the current one */
+      CALLING_FUNCTIONS, /**! All the functions which call the current one */
+      SAME_FUNCTION,     /**! Same function */
+      WHOLE_APPLICATION  /**! The whole application */
+   } FunctionRelationship;
 
-   protected:
-      ///The application manager
-      const application_managerRef AppM;
+ protected:
+   /// The application manager
+   const application_managerRef AppM;
 
-      ///The type of this step
-      const FrontendFlowStepType frontend_flow_step_type;
+   /// The type of this step
+   const FrontendFlowStepType frontend_flow_step_type;
 
-      ///Print counter
-      unsigned int print_counter;
+   /// Print counter
+   unsigned int print_counter;
 
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      virtual const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const = 0;
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   virtual const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const = 0;
 
-   public:
-      /**
-       * Constructor
-       * @param AppM is the application manager
-       * @param design_flow_manager is the design flow manager
-       * @param frontend_flow_step_type is the type of the analysis
-       * @param _Param is the set of the parameters
-       */
-      FrontendFlowStep(const application_managerRef AppM, const FrontendFlowStepType frontend_flow_step_type, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor
+    * @param AppM is the application manager
+    * @param design_flow_manager is the design flow manager
+    * @param frontend_flow_step_type is the type of the analysis
+    * @param _Param is the set of the parameters
+    */
+   FrontendFlowStep(const application_managerRef AppM, const FrontendFlowStepType frontend_flow_step_type, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-      /**
-       * Destructor
-       */
-      ~FrontendFlowStep() override;
+   /**
+    * Destructor
+    */
+   ~FrontendFlowStep() override;
 
-      /**
-       * Compute the relationships of a step with other steps
-       * @param dependencies is where relationships will be stored
-       * @param relationship_type is the type of relationship to be computed
-       */
-      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   /**
+    * Compute the relationships of a step with other steps
+    * @param dependencies is where relationships will be stored
+    * @param relationship_type is the type of relationship to be computed
+    */
+   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 
-      /**
-       * Create the relationship steps of a step with other steps starting from already specified dependencies between frontend flow steps
-       * @param design_flow_manager is the design flow manager
-       * @param frontend_relationships describes the set of relationships to be created
-       * @param application_manager is the application manager
-       * @param relationships is the output of the function
-       */
-      static
-      void CreateSteps(const DesignFlowManagerConstRef design_flow_manager, const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > & frontend_relationships, const application_managerConstRef application_manager, DesignFlowStepSet & relationships);
+   /**
+    * Create the relationship steps of a step with other steps starting from already specified dependencies between frontend flow steps
+    * @param design_flow_manager is the design flow manager
+    * @param frontend_relationships describes the set of relationships to be created
+    * @param application_manager is the application manager
+    * @param relationships is the output of the function
+    */
+   static void CreateSteps(const DesignFlowManagerConstRef design_flow_manager, const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>>& frontend_relationships, const application_managerConstRef application_manager,
+                           DesignFlowStepSet& relationships);
 
-      /**
-       * Return the name of the type of this frontend flow step
-       */
-      virtual const std::string GetKindText() const;
+   /**
+    * Return the name of the type of this frontend flow step
+    */
+   virtual const std::string GetKindText() const;
 
-      /**
-       * Given a frontend flow step type, return the name of the type
-       * @param type is the type to be considered
-       * @return the name of the type
-       */
-      static
-      const std::string EnumToKindText(const FrontendFlowStepType frontend_flow_step_type);
+   /**
+    * Given a frontend flow step type, return the name of the type
+    * @param type is the type to be considered
+    * @return the name of the type
+    */
+   static const std::string EnumToKindText(const FrontendFlowStepType frontend_flow_step_type);
 
-      /**
-       * Return the factory to create this type of steps
-       * @return the factory to create frontend flow step
-       */
-      const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
+   /**
+    * Return the factory to create this type of steps
+    * @return the factory to create frontend flow step
+    */
+   const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
 
-      /**
-       * Dump the tree manager
-       * @param before specifies if printing is performed before execution of this step"
-       */
-      void PrintTreeManager(const bool before) const;
-      /**
-       * Dump the initial intermediate representation
-       */
-      void PrintInitialIR() const override;
+   /**
+    * Dump the tree manager
+    * @param before specifies if printing is performed before execution of this step"
+    */
+   void PrintTreeManager(const bool before) const;
+   /**
+    * Dump the initial intermediate representation
+    */
+   void PrintInitialIR() const override;
 
-      /**
-       * Dump the final intermediate representation
-       */
-      void PrintFinalIR() const override;
+   /**
+    * Dump the final intermediate representation
+    */
+   void PrintFinalIR() const override;
 };
 
 /**
@@ -461,14 +460,14 @@ class FrontendFlowStep : public DesignFlowStep
 namespace std
 {
    template <>
-      struct hash<FrontendFlowStep::FunctionRelationship> : public unary_function<FrontendFlowStep::FunctionRelationship, size_t>
+   struct hash<FrontendFlowStep::FunctionRelationship> : public unary_function<FrontendFlowStep::FunctionRelationship, size_t>
+   {
+      size_t operator()(FrontendFlowStep::FunctionRelationship relationship) const
       {
-         size_t operator()(FrontendFlowStep::FunctionRelationship relationship) const
-         {
-            hash<int> hasher;
-            return hasher(static_cast<int>(relationship));
-         }
-      };
-}
+         hash<int> hasher;
+         return hasher(static_cast<int>(relationship));
+      }
+   };
+} // namespace std
 
 #endif

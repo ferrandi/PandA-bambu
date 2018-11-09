@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file node_info.cpp
  * @brief Base class description of data information associated with each node of a graph.
@@ -40,16 +40,15 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "node_info.hpp"
 
-NodeInfo::NodeInfo()
-= default;
+NodeInfo::NodeInfo() = default;
 
-NodeInfo::~NodeInfo()
-= default;
+NodeInfo::~NodeInfo() = default;
 
-void NodeInfo::print(std::ostream& , int) const
-{}
+void NodeInfo::print(std::ostream&, int) const
+{
+}

@@ -11,19 +11,19 @@
  *  Copyright , Mentor Graphics Corporation,                     *
  *                                                                        *
  *  All Rights Reserved.                                                  *
- *  
+ *
  **************************************************************************
  *  Licensed under the Apache License, Version 2.0 (the "License");       *
- *  you may not use this file except in compliance with the License.      * 
+ *  you may not use this file except in compliance with the License.      *
  *  You may obtain a copy of the License at                               *
  *                                                                        *
  *      http://www.apache.org/licenses/LICENSE-2.0                        *
  *                                                                        *
- *  Unless required by applicable law or agreed to in writing, software   * 
- *  distributed under the License is distributed on an "AS IS" BASIS,     * 
+ *  Unless required by applicable law or agreed to in writing, software   *
+ *  distributed under the License is distributed on an "AS IS" BASIS,     *
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or       *
- *  implied.                                                              * 
- *  See the License for the specific language governing permissions and   * 
+ *  implied.                                                              *
+ *  See the License for the specific language governing permissions and   *
  *  limitations under the License.                                        *
  **************************************************************************
  *                                                                        *
@@ -36,11 +36,11 @@
 // results in a text file ac_sincos_lut_values.txt which can be pasted into
 // a locally modified version of ac_sincos_lut.h.
 
-#include<iostream>
-#include<cstring>
-#include<cstdlib>
-#include<stdio.h>
-#include<math.h>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <math.h>
+#include <stdio.h>
 
 //==========================================================================================
 // Note:
@@ -53,31 +53,31 @@
 
 int main()
 {
+   FILE* f = fopen("ac_sincos_lut.txt", "w");
+   if(f == NULL)
+   {
+      printf("Error opening file!\n");
+      exit(1);
+   }
 
-  FILE *f = fopen("ac_sincos_lut.txt", "w");
-  if (f == NULL) {
-    printf("Error opening file!\n");
-    exit(1);
-  }
+   const int input_width = 12;
+   const int input_int = 0;
 
-  const int input_width = 12;
-  const int input_int = 0;
+   unsigned int NTE = 1 << (input_width - input_int - 3); // No of table entries
+   double step = M_PI / (4 * NTE);                        // Interval between angles
+   double y = 0;
+   double scaled_angle = 0;
 
-  unsigned int NTE = 1<<(input_width - input_int -3); //No of table entries
-  double step = M_PI/(4*NTE);                         //Interval between angles
-  double y = 0;
-  double scaled_angle = 0;
+   fprintf(f, "static const luttype sincos[%d] = { \n", NTE);
 
-  fprintf(f, "static const luttype sincos[%d] = { \n", NTE);
+   for(unsigned int i = 0; i < NTE; i++)
+   {
+      fprintf(f, "  {%23.22f, %23.22f}, //index = %d, scaled angle = %13.12f \n", cos(y), sin(y), i, scaled_angle);
+      y += step;
+      scaled_angle = y / (2 * M_PI);
+   }
 
-  for (unsigned int i=0; i < NTE; i++) {
-    fprintf(f, "  {%23.22f, %23.22f}, //index = %d, scaled angle = %13.12f \n", cos(y), sin(y), i, scaled_angle);
-    y += step;
-    scaled_angle = y/(2*M_PI);
-  }
+   fclose(f);
 
-  fclose(f);
-
-  return 0;
-
+   return 0;
 }

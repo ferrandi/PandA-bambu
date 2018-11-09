@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file bb_order_computation.cpp
  * @brief Analysis step computing a topological order of the basic_block.
@@ -37,48 +37,46 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "bb_order_computation.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior include
+/// behavior include
+#include "basic_block.hpp"
 #include "function_behavior.hpp"
 #include "level_constructor.hpp"
-#include "basic_block.hpp"
 
-///tree include
+/// tree include
 #include "behavioral_helper.hpp"
-#include "tree_basic_block.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "hash_helper.hpp"
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
-#include "string_manipulation.hpp"          // for GET_CLASS
+#include "string_manipulation.hpp" // for GET_CLASS
+#include "tree_basic_block.hpp"
 
-BBOrderComputation::BBOrderComputation(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
-   FunctionFrontendFlowStep(_AppM, _function_id, BB_ORDER_COMPUTATION, _design_flow_manager, _Param)
+BBOrderComputation::BBOrderComputation(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, BB_ORDER_COMPUTATION, _design_flow_manager, _Param)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
+BBOrderComputation::~BBOrderComputation() = default;
 
-BBOrderComputation::~BBOrderComputation()
-= default;
-
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > BBOrderComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BBOrderComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -102,7 +100,7 @@ void BBOrderComputation::Initialize()
 DesignFlowStep_Status BBOrderComputation::InternalExec()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Starting order computation on function " + function_behavior->CGetBehavioralHelper()->get_function_name());
-   const BBGraphConstRef  ebb = function_behavior->CGetBBGraph(FunctionBehavior::EBB);
+   const BBGraphConstRef ebb = function_behavior->CGetBBGraph(FunctionBehavior::EBB);
    VertexIterator bb_v, bb_v_end;
    /// Mark for visit in different functions.
    std::list<vertex> to_visit;
@@ -110,11 +108,11 @@ DesignFlowStep_Status BBOrderComputation::InternalExec()
    std::map<graph::vertex_descriptor, bool> MARK;
 
    /// MARK initialization
-   for (boost::tie(bb_v, bb_v_end) = boost::vertices(*ebb); bb_v != bb_v_end; ++bb_v)
+   for(boost::tie(bb_v, bb_v_end) = boost::vertices(*ebb); bb_v != bb_v_end; ++bb_v)
    {
       MARK[*bb_v] = false;
    }
-   ///Vertex list to be visited
+   /// Vertex list to be visited
    to_visit.push_front(ebb->CGetBBGraphInfo()->entry_vertex);
    index = 0;
    while(!to_visit.empty())
@@ -127,14 +125,14 @@ DesignFlowStep_Status BBOrderComputation::InternalExec()
       graph::out_edge_iterator o, o_end;
       graph::in_edge_iterator i, i_end;
       vertex then = NULL_VERTEX;
-      ///Examining successors
-      for(boost::tie(o, o_end) = boost::out_edges(actual, *ebb);o != o_end;o++)
+      /// Examining successors
+      for(boost::tie(o, o_end) = boost::out_edges(actual, *ebb); o != o_end; o++)
       {
          bool toadd = true;
          vertex next = boost::target(*o, *ebb);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking successor vertex BB" + boost::lexical_cast<std::string>(ebb->CGetBBNodeInfo(next)->block->number));
-         ///Checking if all successor's predecessors have been examinated
-         for(boost::tie(i, i_end) = boost::in_edges(next, *ebb); i!= i_end; i++)
+         /// Checking if all successor's predecessors have been examinated
+         for(boost::tie(i, i_end) = boost::in_edges(next, *ebb); i != i_end; i++)
          {
             if(!MARK[boost::source(*i, *ebb)])
             {
@@ -148,7 +146,7 @@ DesignFlowStep_Status BBOrderComputation::InternalExec()
          {
             if(ebb->CGetBBEdgeInfo(*o)->cfg_edge_T())
                then = next;
-            ///Vertex can be added to list
+            /// Vertex can be added to list
             if(next != then)
             {
                to_visit.push_front(next);
@@ -163,8 +161,8 @@ DesignFlowStep_Status BBOrderComputation::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    }
 
-   ///Checking if EXIT has been added
-   const std::map<vertex, unsigned int> & bb_map_levels = function_behavior->get_bb_map_levels();
+   /// Checking if EXIT has been added
+   const std::map<vertex, unsigned int>& bb_map_levels = function_behavior->get_bb_map_levels();
    if(bb_map_levels.find(ebb->CGetBBGraphInfo()->exit_vertex) == bb_map_levels.end())
    {
       function_behavior->bb_lm->add(ebb->CGetBBGraphInfo()->exit_vertex, index++);
@@ -172,4 +170,3 @@ DesignFlowStep_Status BBOrderComputation::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    return DesignFlowStep_Status::SUCCESS;
 }
-

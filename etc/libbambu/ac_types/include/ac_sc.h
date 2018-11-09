@@ -217,7 +217,8 @@ namespace __AC_NAMESPACE
       else if(V == AC_VAL_0 || V == AC_VAL_MIN || V == AC_VAL_QUANTUM)
       {
          r = 0;
-         if(V == AC_VAL_QUANTUM) r[0] = 1;
+         if(V == AC_VAL_QUANTUM)
+            r[0] = 1;
       }
       else if(AC_VAL_MAX)
          r = -1;
@@ -261,7 +262,8 @@ namespace __AC_NAMESPACE
       else if(V == AC_VAL_0 || V == AC_VAL_MIN || V == AC_VAL_QUANTUM)
       {
          r = 0;
-         if(V == AC_VAL_QUANTUM) r[0] = 1;
+         if(V == AC_VAL_QUANTUM)
+            r[0] = 1;
       }
       else if(AC_VAL_MAX)
          r = -1;
@@ -306,7 +308,8 @@ namespace __AC_NAMESPACE
       else if(V == AC_VAL_0 || V == AC_VAL_MIN || V == AC_VAL_QUANTUM)
       {
          r = 0;
-         if(V == AC_VAL_QUANTUM) r[0] = 1;
+         if(V == AC_VAL_QUANTUM)
+            r[0] = 1;
       }
       else if(AC_VAL_MAX)
          r = ~(sc_dt::sc_ufixed<W, I>)0;
@@ -322,28 +325,32 @@ namespace __AC_NAMESPACE
       inline bool init_array(sc_dt::sc_int<W>* a, int n)
       {
          sc_dt::sc_int<W> t = value<V>(*a);
-         for(int i = 0; i < n; i++) a[i] = t;
+         for(int i = 0; i < n; i++)
+            a[i] = t;
          return true;
       }
       template <ac_special_val V, int W>
       inline bool init_array(sc_dt::sc_uint<W>* a, int n)
       {
          sc_dt::sc_uint<W> t = value<V>(*a);
-         for(int i = 0; i < n; i++) a[i] = t;
+         for(int i = 0; i < n; i++)
+            a[i] = t;
          return true;
       }
       template <ac_special_val V, int W>
       inline bool init_array(sc_dt::sc_bigint<W>* a, int n)
       {
          sc_dt::sc_bigint<W> t = value<V>(*a);
-         for(int i = 0; i < n; i++) a[i] = t;
+         for(int i = 0; i < n; i++)
+            a[i] = t;
          return true;
       }
       template <ac_special_val V, int W>
       inline bool init_array(sc_dt::sc_biguint<W>* a, int n)
       {
          sc_dt::sc_biguint<W> t = value<V>(*a);
-         for(int i = 0; i < n; i++) a[i] = t;
+         for(int i = 0; i < n; i++)
+            a[i] = t;
          return true;
       }
 #ifdef SC_INCLUDE_FX
@@ -351,14 +358,16 @@ namespace __AC_NAMESPACE
       inline bool init_array(sc_dt::sc_fixed<W, I, Q, O, nbits>* a, int n)
       {
          sc_dt::sc_fixed<W, I> t = value<V>(*a);
-         for(int i = 0; i < n; i++) a[i] = t;
+         for(int i = 0; i < n; i++)
+            a[i] = t;
          return true;
       }
       template <ac_special_val V, int W, int I, sc_dt::sc_q_mode Q, sc_dt::sc_o_mode O, int nbits>
       inline bool init_array(sc_dt::sc_ufixed<W, I, Q, O, nbits>* a, int n)
       {
          sc_dt::sc_ufixed<W, I> t = value<V>(*a);
-         for(int i = 0; i < n; i++) a[i] = t;
+         for(int i = 0; i < n; i++)
+            a[i] = t;
          return true;
       }
 #endif
@@ -444,10 +453,9 @@ static void remove_vcd_name_problems(std::string& name)
 
    if(braces_removed && !warned)
    {
-      std::sprintf(message,
-                   "Traced objects found with name containing [], which may be\n"
-                   "interpreted by the waveform viewer in unexpected ways.\n"
-                   "So the [] is automatically replaced by ().");
+      std::sprintf(message, "Traced objects found with name containing [], which may be\n"
+                            "interpreted by the waveform viewer in unexpected ways.\n"
+                            "So the [] is automatically replaced by ().");
 #if(SYSTEMC_VERSION <= 20120701)
       put_error_message(message, true);
 #endif
@@ -496,12 +504,20 @@ namespace __AC_NAMESPACE
             old_value = object;
          }
 
-         virtual void set_width() { bit_width = W; }
+         virtual void set_width()
+         {
+            bit_width = W;
+         }
 
          // Comparison function needs to be pure virtual too
-         virtual bool changed() { return !(object == old_value); }
+         virtual bool changed()
+         {
+            return !(object == old_value);
+         }
 
-         virtual ~vcd_ac_int_trace() {}
+         virtual ~vcd_ac_int_trace()
+         {
+         }
 
        protected:
          const ac_int<W, S>& object;
@@ -569,12 +585,20 @@ namespace __AC_NAMESPACE
             old_value = object;
          }
 
-         virtual void set_width() { bit_width = W; }
+         virtual void set_width()
+         {
+            bit_width = W;
+         }
 
          // Comparison function needs to be pure virtual too
-         virtual bool changed() { return !(object == old_value); }
+         virtual bool changed()
+         {
+            return !(object == old_value);
+         }
 
-         virtual ~vcd_ac_fixed_trace() {}
+         virtual ~vcd_ac_fixed_trace()
+         {
+         }
 
        protected:
          const ac_fixed<W, I, S, Q, O>& object;
@@ -640,12 +664,20 @@ namespace __AC_NAMESPACE
             old_value = object;
          }
 
-         virtual void set_width() { bit_width = W; }
+         virtual void set_width()
+         {
+            bit_width = W;
+         }
 
          // Comparison function needs to be pure virtual too
-         virtual bool changed() { return !(object == old_value); }
+         virtual bool changed()
+         {
+            return !(object == old_value);
+         }
 
-         virtual ~vcd_ac_float_trace() {}
+         virtual ~vcd_ac_float_trace()
+         {
+         }
 
        protected:
          const ac_float<W, I, E, Q>& object;

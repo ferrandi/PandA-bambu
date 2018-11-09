@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file loops.hpp
  * @brief interface of loops finding algorithm
@@ -44,25 +44,24 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef LOOPS_HPP
 #define LOOPS_HPP
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-#include <cstddef>                                  // for size_t
-#include <list>                                      // for list
-#include <set>                                       // for set
-#include <string>                                    // for string
-#include <unordered_map>                             // for unordered_map
-#include <unordered_set>                             // for unordered_set
-#include <utility>                                   // for pair
-#include <vector>                                    // for vector
+#include <cstddef>       // for size_t
+#include <list>          // for list
+#include <set>           // for set
+#include <string>        // for string
+#include <unordered_map> // for unordered_map
+#include <unordered_set> // for unordered_set
+#include <utility>       // for pair
+#include <vector>        // for vector
 
 #include "graph.hpp"
 #include "refcount.hpp"
-
 
 /**
  * @name forward declarations
@@ -89,116 +88,109 @@ CONSTREF_FORWARD_DECL(ProfilingInformation);
 //
 class Loops
 {
-   private:
+ private:
+   /// The function behavior
+   const FunctionBehaviorRef FB;
 
-      ///The function behavior
-      const FunctionBehaviorRef FB;
+   /// class containing all the parameters
+   const ParameterConstRef Param;
 
-      ///class containing all the parameters
-      const ParameterConstRef Param;
+   /// Debug level
+   int debug_level;
 
-      ///Debug level
-      int debug_level;
+   /// Maps between basic block and loop to which it belongs
+   std::unordered_map<vertex, LoopRef> block_to_loop;
 
-      ///Maps between basic block and loop to which it belongs
-      std::unordered_map<vertex, LoopRef> block_to_loop;
+   /// List of found loops
+   std::list<LoopRef> modifiable_loops_list;
+   std::list<LoopConstRef> const_loops_list;
 
-      ///List of found loops
-      std::list<LoopRef> modifiable_loops_list;
-      std::list<LoopConstRef> const_loops_list;
+   typedef std::pair<vertex, vertex> vertex_pair;
 
-      typedef std::pair<vertex, vertex> vertex_pair;
+   bool is_edge_in_list(std::unordered_set<vertex_pair>& l, vertex source, vertex target);
 
-      bool is_edge_in_list(std::unordered_set<vertex_pair>& l, vertex source, vertex target);
+   Loops();
 
-      Loops();
+   /**
+    * Computes the loops of the control flow graph
+    */
+   void DetectLoops();
 
-      /**
-       * Computes the loops of the control flow graph
-       */
-      void DetectLoops();
+   /**
+    * Reducible loop construction
+    * @param djg is the DJ graph
+    * @param visited is the set of vertex visited
+    * @param loop is the current loop
+    * @param node is current vertex
+    * @param header is the entry of the reducible loop
+    */
+   void DetectReducibleLoop(const BBGraphRef djg, std::set<vertex>& visited, LoopRef loop, vertex node, vertex header);
 
-      /**
-       * Reducible loop construction
-       * @param djg is the DJ graph
-       * @param visited is the set of vertex visited
-       * @param loop is the current loop
-       * @param node is current vertex
-       * @param header is the entry of the reducible loop
-       */
-      void DetectReducibleLoop(const BBGraphRef djg, std::set<vertex> &visited, LoopRef loop, vertex node, vertex header);
+   void DetectIrreducibleLoop(const BBGraphRef djg, unsigned int min_level, unsigned int max_level, std::vector<std::list<vertex>>& level_vertices_rel);
 
-      void DetectIrreducibleLoop(const BBGraphRef djg, unsigned int min_level, unsigned int max_level, std::vector<std::list<vertex>>&level_vertices_rel);
+   void tarjan_scc(const BBGraphRef djg, vertex v, std::unordered_map<vertex, unsigned int>& dfs_order, std::unordered_map<vertex, unsigned int>& lowlink, std::list<vertex>& s, std::set<vertex>& u, unsigned int& max_dfs);
 
-      void tarjan_scc(const BBGraphRef djg, vertex v,
-                      std::unordered_map<vertex, unsigned int>& dfs_order,
-                      std::unordered_map<vertex, unsigned int>& lowlink,
-                      std::list<vertex>& s,
-                      std::set<vertex> &u,
-                      unsigned int& max_dfs);
+   bool stack_contains(std::list<vertex> stack, vertex v);
 
+   /**
+    * Creates Loop zero data structure
+    */
+   void BuildZeroLoop();
 
-      bool stack_contains(std::list<vertex> stack, vertex v);
+   /**
+    * Sets depth for each loop in the forest starting from loop
+    * @param loop is the root of the loop forest
+    */
+   void computeDepth(const LoopConstRef loop);
 
-      /**
-       * Creates Loop zero data structure
-       */
-      void BuildZeroLoop();
+ public:
+   /**
+    * The constructor builds the loop forest for the given method
+    * @param FB is the function behavior of the control flow graph to be analyzed
+    * @param parameter is the set of input parameters
+    */
+   Loops(const FunctionBehaviorRef FB, const ParameterConstRef parameter);
 
-      /**
-       * Sets depth for each loop in the forest starting from loop
-       * @param loop is the root of the loop forest
-       */
-      void computeDepth(const LoopConstRef loop);
+   /**
+    * Returns the number of loops
+    */
+   size_t NumLoops() const;
 
-   public:
+   /**
+    * Returns the list of loops (const)
+    * @param return the const list of loops
+    */
+   const std::list<LoopConstRef>& GetList() const;
 
-      /**
-       * The constructor builds the loop forest for the given method
-       * @param FB is the function behavior of the control flow graph to be analyzed
-       * @param parameter is the set of input parameters
-       */
-      Loops(const FunctionBehaviorRef FB, const ParameterConstRef parameter);
+   /**
+    * Return the list of loops
+    * @param return the const list of loops
+    */
+   const std::list<LoopRef>& GetModifiableList() const;
 
-      /**
-       * Returns the number of loops
-       */
-      size_t NumLoops() const;
+   /**
+    * Returns a loop given the id
+    * @param id is the id of the loop
+    */
+   const LoopConstRef CGetLoop(unsigned int id) const;
 
-      /**
-       * Returns the list of loops (const)
-       * @param return the const list of loops
-       */
-      const std::list<LoopConstRef>& GetList() const;
+   /**
+    * Returns a loop given the id
+    * @param id is the id of the loop
+    */
+   const LoopRef GetLoop(unsigned int id);
 
-      /**
-       * Return the list of loops 
-       * @param return the const list of loops
-       */
-      const std::list<LoopRef>& GetModifiableList() const;
-
-      /**
-       * Returns a loop given the id 
-       * @param id is the id of the loop
-       */
-      const LoopConstRef CGetLoop(unsigned int id) const;
-
-      /**
-       * Returns a loop given the id 
-       * @param id is the id of the loop
-       */
-      const LoopRef GetLoop(unsigned int id);
-
-      /**
-       * Write dot files representing the loop forest
-       * @param file_name is the file name to be produced
-       * @param profiling_information is the profiling information used to print data about loop iterations
-       */
-      void WriteDot(const std::string& file_name
+   /**
+    * Write dot files representing the loop forest
+    * @param file_name is the file name to be produced
+    * @param profiling_information is the profiling information used to print data about loop iterations
+    */
+   void WriteDot(const std::string& file_name
 #if HAVE_HOST_PROFILING_BUILT
-         ,const ProfilingInformationConstRef profiling_information = ProfilingInformationConstRef()
+                 ,
+                 const ProfilingInformationConstRef profiling_information = ProfilingInformationConstRef()
 #endif
-      ) const;
+                     ) const;
 };
 
 #endif // LOOPS_HPP

@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file dom_post_dom_computation.cpp
  * @brief Analysis step performing dominators and post dominators computation.
@@ -38,60 +38,57 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
-*/
-///Header include
+ */
+/// Header include
 #include "dom_post_dom_computation.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///algorithms/dominance include
+/// algorithms/dominance include
 #include "Dominance.hpp"
 
-///behavior includes
+/// behavior includes
 #include "application_manager.hpp"
 #include "basic_block.hpp"
 #include "basic_blocks_graph_constructor.hpp"
 #include "function_behavior.hpp"
 
-///design_flows includes
+/// design_flows includes
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 
-///graph include
+/// graph include
 #include "graph.hpp"
 
-///tree include
+/// tree include
 #include "behavioral_helper.hpp"
 
-///utility include
-#include <unordered_map>
+/// utility include
 #include "hash_helper.hpp"
-#include "string_manipulation.hpp"          // for GET_CLASS
+#include "string_manipulation.hpp" // for GET_CLASS
+#include <unordered_map>
 
-dom_post_dom_computation::dom_post_dom_computation(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
-   FunctionFrontendFlowStep(_AppM, _function_id, DOM_POST_DOM_COMPUTATION, _design_flow_manager,  _parameters),
-   bb_cfg_computation_bb_version(0)
+dom_post_dom_computation::dom_post_dom_computation(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, DOM_POST_DOM_COMPUTATION, _design_flow_manager, _parameters), bb_cfg_computation_bb_version(0)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
+dom_post_dom_computation::~dom_post_dom_computation() = default;
 
-dom_post_dom_computation::~dom_post_dom_computation()
-= default;
-
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > dom_post_dom_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> dom_post_dom_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BASIC_BLOCKS_CFG_COMPUTATION, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -120,15 +117,15 @@ DesignFlowStep_Status dom_post_dom_computation::InternalExec()
 
    const BBGraphConstRef fbb = function_behavior->CGetBBGraph(FunctionBehavior::FBB);
 
-   const BehavioralHelperConstRef  helper = function_behavior->CGetBehavioralHelper();
-   ///dominators computation
+   const BehavioralHelperConstRef helper = function_behavior->CGetBehavioralHelper();
+   /// dominators computation
    THROW_ASSERT(!function_behavior->dominators, "Dominators already built");
    const vertex bbentry = fbb->CGetBBGraphInfo()->entry_vertex;
    const vertex bbexit = fbb->CGetBBGraphInfo()->exit_vertex;
    function_behavior->dominators = new dominance<BBGraph>(*fbb, bbentry, bbexit, parameters);
    function_behavior->dominators->calculate_dominance_info(dominance<BBGraph>::CDI_DOMINATORS);
    std::unordered_map<vertex, vertex> dominator_map = function_behavior->dominators->get_dominator_map();
-   for(auto & it : dominator_map)
+   for(auto& it : dominator_map)
    {
       if(it.first != bbentry)
       {
@@ -140,12 +137,12 @@ DesignFlowStep_Status dom_post_dom_computation::InternalExec()
    {
       function_behavior->GetBBGraph(FunctionBehavior::DOM_TREE)->WriteDot("BB_dom_tree.dot");
    }
-   ///post-dominators computation
+   /// post-dominators computation
    THROW_ASSERT(!function_behavior->post_dominators, "Post dominators yet built");
    function_behavior->post_dominators = new dominance<BBGraph>(*fbb, bbentry, bbexit, parameters);
    function_behavior->post_dominators->calculate_dominance_info(dominance<BBGraph>::CDI_POST_DOMINATORS);
    std::unordered_map<vertex, vertex> post_dominator_map = function_behavior->post_dominators->get_dominator_map();
-   for(auto & it : post_dominator_map)
+   for(auto& it : post_dominator_map)
    {
       if(it.first != bbexit)
       {
@@ -176,5 +173,4 @@ bool dom_post_dom_computation::HasToBeExecuted() const
    {
       return FunctionFrontendFlowStep::HasToBeExecuted();
    }
-
 }

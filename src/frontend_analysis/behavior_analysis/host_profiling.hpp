@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,25 +29,25 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file host_profiling.hpp
  * @brief Abstract class for passes performing a dynamic profiling of loops, paths or both by means of predependence
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Marco Lattuada <marco.lattuada@polimi.it>
-*/
+ */
 #ifndef HOST_PROFILING_HPP
 #define HOST_PROFILING_HPP
 
-///Superclass include
+/// Superclass include
 #include "application_frontend_flow_step.hpp"
 
-///STL include
+/// STL include
 #include <map>
 #include <unordered_map>
 
-///Utility include
+/// Utility include
 #include "refcount.hpp"
 
 /**
@@ -61,56 +61,55 @@ REF_FORWARD_DECL(loop);
 /// Different profiling method
 enum class HostProfiling_Method
 {
-   PM_NONE                =  0, /**< None profiling method selected */
-   PM_BBP                 =  1, /**< Basic blocks profiling  */
-   PM_HPP                 =  2, /**< Hierarchical Path Profiling */
-   PM_TP                  =  4, /**< Tree based Path Profiling */
-   PM_MAX_LOOP_ITERATIONS =  8, /**< Maximum number of iteration profiling */
-   PM_PATH_PROBABILITY    = 16 , /**< Probability based path */
-   PM_XML_FILE            = 32  /**< Data read from XML file */
+   PM_NONE = 0,                /**< None profiling method selected */
+   PM_BBP = 1,                 /**< Basic blocks profiling  */
+   PM_HPP = 2,                 /**< Hierarchical Path Profiling */
+   PM_TP = 4,                  /**< Tree based Path Profiling */
+   PM_MAX_LOOP_ITERATIONS = 8, /**< Maximum number of iteration profiling */
+   PM_PATH_PROBABILITY = 16,   /**< Probability based path */
+   PM_XML_FILE = 32            /**< Data read from XML file */
 };
 
 HostProfiling_Method operator&(const HostProfiling_Method first, const HostProfiling_Method second);
 
 /**
  * Class to perform profiling
-*/
+ */
 class HostProfiling : public ApplicationFrontendFlowStep
 {
-   private:
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+ private:
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor.
-       * @param AppM is the application manager
-       * @param design_flow_manager is the design flow manager
-       * @param parameters is the set of the parameters
-       */
-      HostProfiling(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor.
+    * @param AppM is the application manager
+    * @param design_flow_manager is the design flow manager
+    * @param parameters is the set of the parameters
+    */
+   HostProfiling(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-      /**
-       *  Destructor
-       */
-      ~HostProfiling() override;
+   /**
+    *  Destructor
+    */
+   ~HostProfiling() override;
 
-      /**
-       * Do nothing
-       */
-      DesignFlowStep_Status Exec() override;
+   /**
+    * Do nothing
+    */
+   DesignFlowStep_Status Exec() override;
 
-      /**
-       * Normalize path frequency according to execution times of whole function_id
-       * @param AppM is the application manger
-       * @param loop_instances is how many times each loop is executed
-       * @param Parameters is the set of input parameters
-       */
-      static
-      void normalize(const application_managerRef app_man, const std::unordered_map<unsigned int, std::unordered_map<unsigned int, long long unsigned int> > & loop_instances, const ParameterConstRef parameters);
+   /**
+    * Normalize path frequency according to execution times of whole function_id
+    * @param AppM is the application manger
+    * @param loop_instances is how many times each loop is executed
+    * @param Parameters is the set of input parameters
+    */
+   static void normalize(const application_managerRef app_man, const std::unordered_map<unsigned int, std::unordered_map<unsigned int, long long unsigned int>>& loop_instances, const ParameterConstRef parameters);
 };
 
 #endif

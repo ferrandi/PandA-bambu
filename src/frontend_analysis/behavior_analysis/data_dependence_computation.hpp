@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file data_dependence_computation.hpp
  * @brief Base class for different data dependence computation
@@ -40,69 +40,69 @@
 #ifndef DATA_DEPENDENCE_COMPUTATION_HPP
 #define DATA_DEPENDENCE_COMPUTATION_HPP
 
-///Autoheader
+/// Autoheader
 #include "config_HAVE_STDCXX_11.hpp"
 
-///Superclass include
+/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
-///utility include
+/// utility include
 #include "custom_set.hpp"
 
-///Forward declaration
+/// Forward declaration
 enum class FunctionBehavior_VariableAccessType;
 
 class DataDependenceComputation : public FunctionFrontendFlowStep
 {
-   protected:
-      /**
-       * Compute the dependencies
-       * @param dfg_selector is the selector to be used for DFG dependence
-       * @param fb_dfg_selector is the selector to be used for DFG feedback dependence
-       * @param adg_selector is the selector to be used for ADG dependence
-       * @param fb_adg_selector is the selector to be used for ADG feedback dependence
-       */
-      template <typename type>
-      DesignFlowStep_Status Computedependencies(const int dfg_selector, const int fb_dfg_selector, const int adg_selector, const int fb_adg_selector);
+ protected:
+   /**
+    * Compute the dependencies
+    * @param dfg_selector is the selector to be used for DFG dependence
+    * @param fb_dfg_selector is the selector to be used for DFG feedback dependence
+    * @param adg_selector is the selector to be used for ADG dependence
+    * @param fb_adg_selector is the selector to be used for ADG feedback dependence
+    */
+   template <typename type>
+   DesignFlowStep_Status Computedependencies(const int dfg_selector, const int fb_dfg_selector, const int adg_selector, const int fb_adg_selector);
 
-      /**
-       * Return the variables accessed in a node
-       * It is specialized in the different subclasses of this
-       * @param statement is the statement to be considered
-       * @param variable_access_type is the type of accesses to be considered
-       */
-      template <typename type>
-      CustomSet<type> GetVariables(const vertex statement, const FunctionBehavior_VariableAccessType variable_access_type) const;
+   /**
+    * Return the variables accessed in a node
+    * It is specialized in the different subclasses of this
+    * @param statement is the statement to be considered
+    * @param variable_access_type is the type of accesses to be considered
+    */
+   template <typename type>
+   CustomSet<type> GetVariables(const vertex statement, const FunctionBehavior_VariableAccessType variable_access_type) const;
 
-   public:
-      /**
-       * Constructor.
-       * @param AppM is the application manager
-       * @param function_id is the node id of the function analyzed.
-       * @param frontend_flow_step_type is the type of data flow analysis
-       * @param design_flow_manager is the design flow manager
-       * @param parameters is the set of input parameters
-       * */
-      DataDependenceComputation(const application_managerRef _AppM, unsigned int function_id, const FrontendFlowStepType frontend_flow_step_type, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor.
+    * @param AppM is the application manager
+    * @param function_id is the node id of the function analyzed.
+    * @param frontend_flow_step_type is the type of data flow analysis
+    * @param design_flow_manager is the design flow manager
+    * @param parameters is the set of input parameters
+    * */
+   DataDependenceComputation(const application_managerRef _AppM, unsigned int function_id, const FrontendFlowStepType frontend_flow_step_type, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-      /**
-       *  Destructor
-       */
-      ~DataDependenceComputation() override;
+   /**
+    *  Destructor
+    */
+   ~DataDependenceComputation() override;
 
-      /**
-       * Cleans the fake data dependencies
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status InternalExec()
+   /**
+    * Cleans the fake data dependencies
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec()
 #if HAVE_STDCXX_11
-         final
+       final
 #endif
-      ;
+       ;
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      void Initialize() override = 0;
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override = 0;
 };
 #endif

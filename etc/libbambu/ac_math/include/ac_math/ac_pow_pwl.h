@@ -137,7 +137,10 @@ namespace ac_math
       // Only carry out slicing if the input has a fractional component.
       // If the input doesn't have a fractional part, the default value of input_frac_part, i.e. 0,
       // is suitable to be used in later calculations.
-      if(W > I) { input_frac_part.set_slc(0, input.template slc<AC_MAX(W - I, 1)>(0)); }
+      if(W > I)
+      {
+         input_frac_part.set_slc(0, input.template slc<AC_MAX(W - I, 1)>(0));
+      }
 
       // Start of code outputted by ac_pow_pwl_lutgen.cpp
       // Note that the LUT generator file also outputs values for x_min_lut (lower limit of PWL domain), x_max_lut (upper limit of PWL domain)

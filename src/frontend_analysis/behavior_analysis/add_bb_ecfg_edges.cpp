@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file add_bb_ecfg_edges.cpp
  * @brief Analysis step which extends basic blocks cfg
@@ -39,59 +39,58 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
-///Header include
+ */
+/// Header include
 #include "add_bb_ecfg_edges.hpp"
 
-///Behavior include
+/// Behavior include
+#include "application_manager.hpp"
 #include "basic_block.hpp"
 #include "basic_blocks_graph_constructor.hpp"
 #include "behavioral_helper.hpp"
-#include "application_manager.hpp"
 #include "function_behavior.hpp"
 #include "loop.hpp"
 #include "loops.hpp"
 #include "tree_basic_block.hpp"
 
-///Graph include
+/// Graph include
 #include "graph.hpp"
 
-///Parameter include
+/// Parameter include
 #include "Parameter.hpp"
 
-///STL include
+/// STL include
 #include <list>
 #include <unordered_set>
 
-///Utility include
+/// Utility include
 #include "boost/lexical_cast.hpp"
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "hash_helper.hpp"
-#include "string_manipulation.hpp"          // for GET_CLASS
+#include "string_manipulation.hpp" // for GET_CLASS
 
-AddBbEcfgEdges::AddBbEcfgEdges(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   FunctionFrontendFlowStep(_AppM, _function_id, ADD_BB_ECFG_EDGES, _design_flow_manager, _parameters)
+AddBbEcfgEdges::AddBbEcfgEdges(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, ADD_BB_ECFG_EDGES, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-AddBbEcfgEdges::~AddBbEcfgEdges()
-= default;
+AddBbEcfgEdges::~AddBbEcfgEdges() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > AddBbEcfgEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> AddBbEcfgEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BB_ORDER_COMPUTATION, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -105,20 +104,20 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 DesignFlowStep_Status AddBbEcfgEdges::InternalExec()
 {
-   ///The behavioral helper
+   /// The behavioral helper
    const BehavioralHelperConstRef behavioral_helper = function_behavior->CGetBehavioralHelper();
 
-   ///The function name
+   /// The function name
 #ifndef NDEBUG
    const std::string function_name = behavioral_helper->get_function_name();
 #endif
-   ///The control flow graph with feedback of basic blocks
-   const BBGraphRef  fbb = function_behavior->GetBBGraph(FunctionBehavior::FBB);
+   /// The control flow graph with feedback of basic blocks
+   const BBGraphRef fbb = function_behavior->GetBBGraph(FunctionBehavior::FBB);
 
-   ///The loop structure
-   const std::list<LoopConstRef> & loops = function_behavior->CGetLoops()->GetList();
+   /// The loop structure
+   const std::list<LoopConstRef>& loops = function_behavior->CGetLoops()->GetList();
 
-   ///Adding edges in basic block graphs from sources of feedback edges to landing pads
+   /// Adding edges in basic block graphs from sources of feedback edges to landing pads
    std::list<LoopConstRef>::const_iterator loop, loop_end = loops.end();
    for(loop = loops.begin(); loop != loop_end; ++loop)
    {
@@ -151,19 +150,19 @@ DesignFlowStep_Status AddBbEcfgEdges::InternalExec()
                            std::list<vertex> vertices;
                            ebb_graph->TopologicalSort(vertices);
                         }
-                        catch (const char* msg)
+                        catch(const char* msg)
                         {
                            THROW_UNREACHABLE("ecfg graph of function " + function_name + " is not acyclic");
                         }
-                        catch (const std::string& msg)
+                        catch(const std::string& msg)
                         {
                            THROW_UNREACHABLE("ecfg graph of function " + function_name + " is not acyclic");
                         }
-                        catch (const std::exception& ex)
+                        catch(const std::exception& ex)
                         {
                            THROW_UNREACHABLE("ecfg graph of function " + function_name + " is not acyclic");
                         }
-                        catch ( ... )
+                        catch(...)
                         {
                            THROW_UNREACHABLE("ecfg graph of function " + function_name + " is not acyclic");
                         }
@@ -175,60 +174,60 @@ DesignFlowStep_Status AddBbEcfgEdges::InternalExec()
          }
       }
 
-      ///Sources of feedback loop
+      /// Sources of feedback loop
       std::unordered_set<vertex> sources;
 
-      ///The targets of the flow edges they can be different from landing_pads of this loop if the edge which connects a block
-      ///of the loop to a landing_pads is the feedback edge of an external loop. In this case the block must be connected to the
-      ///landing pads of the external loop
+      /// The targets of the flow edges they can be different from landing_pads of this loop if the edge which connects a block
+      /// of the loop to a landing_pads is the feedback edge of an external loop. In this case the block must be connected to the
+      /// landing pads of the external loop
       std::unordered_set<vertex> targets;
 
-      ///compute sources
-      for(auto sp_back_edge: (*loop)->get_sp_back_edges())
+      /// compute sources
+      for(auto sp_back_edge : (*loop)->get_sp_back_edges())
       {
-         ///Check if the target belongs to the current loop
+         /// Check if the target belongs to the current loop
          if(fbb->CGetBBNodeInfo(sp_back_edge.second)->loop_id == (*loop)->GetId())
          {
             sources.insert(sp_back_edge.first);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found source BB" + boost::lexical_cast<std::string>(fbb->CGetBBNodeInfo(sp_back_edge.first)->block->number) + " (Target is BB" + STR(fbb->CGetBBNodeInfo(sp_back_edge.second)->block->number) + ")");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Found source BB" + boost::lexical_cast<std::string>(fbb->CGetBBNodeInfo(sp_back_edge.first)->block->number) + " (Target is BB" + STR(fbb->CGetBBNodeInfo(sp_back_edge.second)->block->number) + ")");
          }
       }
-      ///Landing pads
+      /// Landing pads
       std::unordered_set<vertex> landing_pads = (*loop)->GetLandingPadBlocks();
       LoopConstRef other_loop = *loop;
-      ///While at least one landing pad of the current loop or of one of its ancestor is reached with a feedback edge
-      while([&] () -> bool {
-            for(const auto landing_pad : landing_pads)
+      /// While at least one landing pad of the current loop or of one of its ancestor is reached with a feedback edge
+      while([&]() -> bool {
+         for(const auto landing_pad : landing_pads)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing landing pad " + STR(fbb->CGetBBNodeInfo(landing_pad)->block->number));
+            InEdgeIterator ie, ie_end;
+            for(boost::tie(ie, ie_end) = boost::in_edges(landing_pad, *fbb); ie != ie_end; ie++)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing landing pad " + STR(fbb->CGetBBNodeInfo(landing_pad)->block->number));
-               InEdgeIterator ie, ie_end;
-               for(boost::tie(ie, ie_end) = boost::in_edges(landing_pad, *fbb); ie != ie_end; ie++)
+               const auto source = boost::source(*ie, *fbb);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing Edge BB" + STR(fbb->CGetBBNodeInfo(source)->block->number) + "-->BB" + STR(fbb->CGetBBNodeInfo(landing_pad)->block->number));
+               if(fbb->GetSelector(*ie) & FB_CFG_SELECTOR)
                {
-                  const auto source = boost::source(*ie, *fbb);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing Edge BB" + STR(fbb->CGetBBNodeInfo(source)->block->number) + "-->BB" + STR(fbb->CGetBBNodeInfo(landing_pad)->block->number));
-                  if(fbb->GetSelector(*ie) & FB_CFG_SELECTOR)
+                  if(fbb->CGetBBNodeInfo(source)->loop_id == other_loop->GetId())
                   {
-                     if(fbb->CGetBBNodeInfo(source)->loop_id == other_loop->GetId())
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Going to landing pad BB" + STR(fbb->CGetBBNodeInfo(landing_pad)->block->number) + " of loop " + STR(other_loop->GetId()) + " is feedback edge. Going up one level");
+                     return true;
+                  }
+                  else
+                  {
+                     std::unordered_set<vertex> bb_loops;
+                     other_loop->get_recursively_bb(bb_loops);
+                     if(bb_loops.find(source) != bb_loops.end())
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Going to landing pad BB" + STR(fbb->CGetBBNodeInfo(landing_pad)->block->number) + " of loop " + STR(other_loop->GetId()) + " is feedback edge. Going up one level");
                         return true;
                      }
-                     else
-                     {
-                        std::unordered_set<vertex> bb_loops;
-                        other_loop->get_recursively_bb(bb_loops);
-                        if(bb_loops.find(source) != bb_loops.end())
-                        {
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Going to landing pad BB" + STR(fbb->CGetBBNodeInfo(landing_pad)->block->number) + " of loop " + STR(other_loop->GetId()) + " is feedback edge. Going up one level");
-                           return true;
-                        }
-                     }
                   }
                }
             }
-            return false;
-         }()
-      )
+         }
+         return false;
+      }())
       {
          other_loop = other_loop->Parent();
          landing_pads = other_loop->GetLandingPadBlocks();
@@ -251,19 +250,19 @@ DesignFlowStep_Status AddBbEcfgEdges::InternalExec()
                   std::list<vertex> vertices;
                   ebb_graph->TopologicalSort(vertices);
                }
-               catch (const char* msg)
+               catch(const char* msg)
                {
                   THROW_UNREACHABLE("ecfg graph of function " + function_name + " is not acyclic");
                }
-               catch (const std::string& msg)
+               catch(const std::string& msg)
                {
                   THROW_UNREACHABLE("ecfg graph of function " + function_name + " is not acyclic");
                }
-               catch (const std::exception& ex)
+               catch(const std::exception& ex)
                {
                   THROW_UNREACHABLE("ecfg graph of function " + function_name + " is not acyclic");
                }
-               catch ( ... )
+               catch(...)
                {
                   THROW_UNREACHABLE("ecfg graph of function " + function_name + " is not acyclic");
                }
@@ -286,19 +285,19 @@ DesignFlowStep_Status AddBbEcfgEdges::InternalExec()
       std::list<vertex> vertices;
       ebb_graph->TopologicalSort(vertices);
    }
-   catch (const char* msg)
+   catch(const char* msg)
    {
       THROW_UNREACHABLE("ecfg graph of function " + function_name + " is not acyclic");
    }
-   catch (const std::string& msg)
+   catch(const std::string& msg)
    {
       THROW_UNREACHABLE("ecfg graph of function " + function_name + " is not acyclic");
    }
-   catch (const std::exception& ex)
+   catch(const std::exception& ex)
    {
       THROW_UNREACHABLE("ecfg graph of function " + function_name + " is not acyclic");
    }
-   catch ( ... )
+   catch(...)
    {
       THROW_UNREACHABLE("ecfg graph of function " + function_name + " is not acyclic");
    }

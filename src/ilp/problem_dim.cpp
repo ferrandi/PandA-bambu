@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,10 +29,10 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file problem_dim.cpp
- * @brief This file implements the problem_dim struct. 
+ * @brief This file implements the problem_dim struct.
  *
  * Only the constructors and the distructor are provided.
  *
@@ -41,15 +41,14 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "problem_dim.hpp"
 
-#include <utility>
 #include "meilp_solver.hpp"
+#include <utility>
 
-problem_dim::problem_dim(meilp_solverRef  ms): MS(std::move(ms))
-{}
+problem_dim::problem_dim(meilp_solverRef ms) : MS(std::move(ms))
+{
+}
 
-problem_dim::~problem_dim() 
-= default;
-
+problem_dim::~problem_dim() = default;

@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file DesignParameters.hpp
  * @brief This file contains the definition of the parameters for the synthesis tools
@@ -38,19 +38,19 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef _DESIGN_PARAMETERS_HPP_
 #define _DESIGN_PARAMETERS_HPP_
 
-///Autoheader include
-#include "config_HAVE_LIBRARY_COMPILER.hpp"
-#include "config_HAVE_LIBRARY_CREATOR.hpp"
+/// Autoheader include
 #include "config_HAVE_DESIGN_COMPILER.hpp"
 #include "config_HAVE_FORMALITY.hpp"
 #include "config_HAVE_IPXACT_BUILT.hpp"
+#include "config_HAVE_LIBRARY_COMPILER.hpp"
+#include "config_HAVE_LIBRARY_CREATOR.hpp"
 
-#include <string>
 #include <map>
+#include <string>
 
 #include "refcount.hpp"
 CONSTREF_FORWARD_DECL(Parameter);
@@ -103,7 +103,7 @@ struct DesignParameters
     */
    inline void assign(const std::string& name, const std::string& value, bool checkExisting)
    {
-      if (checkExisting && parameter_values.find(name) == parameter_values.end())
+      if(checkExisting && parameter_values.find(name) == parameter_values.end())
       {
          THROW_ERROR("Parameter \"" + name + "\" not yet defined");
       }
@@ -119,15 +119,14 @@ struct DesignParameters
     */
    inline std::string get_value(const std::string& name) const
    {
-      if (parameter_values.find(name) == parameter_values.end())
+      if(parameter_values.find(name) == parameter_values.end())
       {
          THROW_ERROR("Parameter \"" + name + "\" not yet defined");
       }
       return parameter_values.find(name)->second;
    }
-
 };
-///refcount definition of the class
+/// refcount definition of the class
 typedef refcount<DesignParameters> DesignParametersRef;
 
 #endif

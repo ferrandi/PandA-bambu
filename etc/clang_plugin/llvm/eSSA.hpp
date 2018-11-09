@@ -48,16 +48,21 @@
 
 #define DEBUG_ESSA 0
 
-namespace llvm {
+namespace llvm
+{
    class Function;
    class ModulePass;
-}
-class eSSA 
+} // namespace llvm
+class eSSA
 {
-  public:
-      eSSA() {}
-      ~eSSA() {}
-    bool runOnFunction(llvm::Function&fun, llvm::ModulePass* modulePass);
+ public:
+   eSSA()
+   {
+   }
+   ~eSSA()
+   {
+   }
+   bool runOnFunction(llvm::Function& fun, llvm::ModulePass* modulePass);
 };
 
 #endif

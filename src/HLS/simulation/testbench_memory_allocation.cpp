@@ -82,17 +82,20 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
    // get the mapping between variables in external memory and their external
    // base address
    std::map<unsigned int, unsigned int> address;
-   for(const auto& m : mem_vars) address[HLSMgr->Rmem->get_external_base_address(m.first)] = m.first;
+   for(const auto& m : mem_vars)
+      address[HLSMgr->Rmem->get_external_base_address(m.first)] = m.first;
 
    std::list<unsigned int> mem;
-   for(const auto& ma : address) mem.push_back(ma.second);
+   for(const auto& ma : address)
+      mem.push_back(ma.second);
 
    const std::list<unsigned int>& func_parameters = behavioral_helper->get_parameters();
    for(const auto& p : func_parameters)
    {
       // if the function has some pointer func_parameters some memory needs to be
       // reserved for the place where they point to
-      if(behavioral_helper->is_a_pointer(p) && mem_vars.find(p) == mem_vars.end()) mem.push_back(p);
+      if(behavioral_helper->is_a_pointer(p) && mem_vars.find(p) == mem_vars.end())
+         mem.push_back(p);
    }
 
    // loop on the test vectors
@@ -104,7 +107,8 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
       for(std::list<unsigned int>::const_iterator l = mem.begin(); l != mem.end(); ++l)
       {
          std::string param = behavioral_helper->PrintVariable(*l);
-         if(param[0] == '"') param = "@" + STR(*l);
+         if(param[0] == '"')
+            param = "@" + STR(*l);
 
          bool is_memory = false;
          std::string test_v = "0";
@@ -118,10 +122,12 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
             test_v = curr_test_vector.find(param)->second;
          }
 
-         if(v_idx > 0 && is_memory) continue; // memory has been already initialized
+         if(v_idx > 0 && is_memory)
+            continue; // memory has been already initialized
 
          unsigned int reserved_bytes = tree_helper::size(TM, *l) / 8;
-         if(reserved_bytes == 0) reserved_bytes = 1;
+         if(reserved_bytes == 0)
+            reserved_bytes = 1;
 
          if(tree_helper::is_a_pointer(TM, *l) && !is_memory)
          {
@@ -145,7 +151,8 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
             else
                base_type_byte_size = tree_helper::size(TM, ptd_base_type) / 8;
 
-            if(base_type_byte_size == 0) base_type_byte_size = 1;
+            if(base_type_byte_size == 0)
+               base_type_byte_size = 1;
 
             std::vector<std::string> splitted;
             boost::algorithm::split(splitted, test_v, boost::algorithm::is_any_of(","));
@@ -172,7 +179,10 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          ++l_next;
          unsigned int next_object_offset = 0;
          /// check the next free aligned address
-         if(l_next != mem.end() && mem_vars.find(*l_next) != mem_vars.end() && mem_vars.find(*l) != mem_vars.end()) { next_object_offset = HLSMgr->Rmem->get_base_address(*l_next, function_id) - HLSMgr->Rmem->get_base_address(*l, function_id); }
+         if(l_next != mem.end() && mem_vars.find(*l_next) != mem_vars.end() && mem_vars.find(*l) != mem_vars.end())
+         {
+            next_object_offset = HLSMgr->Rmem->get_base_address(*l_next, function_id) - HLSMgr->Rmem->get_base_address(*l, function_id);
+         }
          else if(mem_vars.find(*l) != mem_vars.end() && (l_next == mem.end() || HLSMgr->RSim->param_address.at(v_idx).find(*l_next) == HLSMgr->RSim->param_address.at(v_idx).end()))
          {
             next_object_offset = HLSMgr->Rmem->get_memory_address() - HLSMgr->Rmem->get_base_address(*l, function_id);
@@ -226,4 +236,7 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    return ret;
 }
 
-bool TestbenchMemoryAllocation::HasToBeExecuted() const { return true; }
+bool TestbenchMemoryAllocation::HasToBeExecuted() const
+{
+   return true;
+}

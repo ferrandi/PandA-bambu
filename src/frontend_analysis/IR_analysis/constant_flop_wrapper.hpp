@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,24 +29,24 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file constant_flop_wrapper.cpp
- * @brief Step that recognizes when there's a floating point operation 
+ * @brief Step that recognizes when there's a floating point operation
  *        with a constant and optimize it.
  *
  * @author Nicolas Tagliabue
  * @author Lorenzo Porro
-*/
+ */
 
-///Superclass include
+/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
-///STL include
+/// STL include
 #include <set>
 #include <unordered_set>
 
-///Utility include
+/// Utility include
 #include "custom_set.hpp"
 #include "refcount.hpp"
 
@@ -62,53 +62,52 @@ CONSTREF_FORWARD_DECL(tree_node);
 
 class constant_flop_wrapper : public FunctionFrontendFlowStep
 {
-   protected:
-      ///The set of already created functions
-      static  std::set<std::string> operations;
+ protected:
+   /// The set of already created functions
+   static std::set<std::string> operations;
 
-      ///Tree manager
-      const tree_managerRef TreeM;
+   /// Tree manager
+   const tree_managerRef TreeM;
 
-      ///tree manipulation
-      const tree_manipulationRef tree_man;
+   /// tree manipulation
+   const tree_manipulationRef tree_man;
 
-      /**
-       * Integrate the tree manager with the soft float functions with a constant parameter
-       * @param functions_to_be_created is the set of functions to be generated
-       */
-      void SoftFloatWriter(CustomSet<std::pair<std::string, tree_nodeConstRef> > functions_to_be_created);
+   /**
+    * Integrate the tree manager with the soft float functions with a constant parameter
+    * @param functions_to_be_created is the set of functions to be generated
+    */
+   void SoftFloatWriter(CustomSet<std::pair<std::string, tree_nodeConstRef>> functions_to_be_created);
 
-      /**
-       * Compute the name of a function with implicit constant operand
-       * @param function_name is the name of the function
-       * @param constant is the tree node storing the constant
-       */
-      std::string GenerateFunctionName(const std::string&function_name, const tree_nodeConstRef constant);
+   /**
+    * Compute the name of a function with implicit constant operand
+    * @param function_name is the name of the function
+    * @param constant is the tree node storing the constant
+    */
+   std::string GenerateFunctionName(const std::string& function_name, const tree_nodeConstRef constant);
 
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor.
-       * @param Param is the set of the parameters
-       * @param AppM is the application manager
-       * @param fun_id is the function index
-       * @param design_flow_manager is the design flow manager
-       */
-      constant_flop_wrapper(const ParameterConstRef Param, const application_managerRef AppM, unsigned int fun_id, const DesignFlowManagerConstRef design_flow_manager);
+ public:
+   /**
+    * Constructor.
+    * @param Param is the set of the parameters
+    * @param AppM is the application manager
+    * @param fun_id is the function index
+    * @param design_flow_manager is the design flow manager
+    */
+   constant_flop_wrapper(const ParameterConstRef Param, const application_managerRef AppM, unsigned int fun_id, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Destructor
-       */
-      ~constant_flop_wrapper() override;
+   /**
+    * Destructor
+    */
+   ~constant_flop_wrapper() override;
 
-      /**
-       * Fixes the var_decl duplication.
-       */
-      DesignFlowStep_Status InternalExec() override;
-
+   /**
+    * Fixes the var_decl duplication.
+    */
+   DesignFlowStep_Status InternalExec() override;
 };

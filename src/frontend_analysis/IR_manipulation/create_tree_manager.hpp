@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file create_tree_manager.hpp
  * @brief Class that creates the tree_manager starting from the source code files
@@ -39,14 +39,14 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef _CREATE_TREE_MANAGER_HPP_
 #define _CREATE_TREE_MANAGER_HPP_
 
-///Superclass include
+/// Superclass include
 #include "application_frontend_flow_step.hpp"
 
-///Utility include
+/// Utility include
 #include "refcount.hpp"
 REF_FORWARD_DECL(application_manager);
 REF_FORWARD_DECL(GccWrapper);
@@ -56,47 +56,47 @@ REF_FORWARD_DECL(GccWrapper);
  */
 class create_tree_manager : public ApplicationFrontendFlowStep
 {
-   private:
-      ///The gcc wrapper
-      const GccWrapperRef gcc_wrapper;
+ private:
+   /// The gcc wrapper
+   const GccWrapperRef gcc_wrapper;
 
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      /**
-       * Compute the relationships of a step with other steps
-       * @param dependencies is where relationships will be stored
-       * @param relationship_type is the type of relationship to be computed
-       */
-      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   /**
+    * Compute the relationships of a step with other steps
+    * @param dependencies is where relationships will be stored
+    * @param relationship_type is the type of relationship to be computed
+    */
+   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 
-   public:
-      /**
-       * Constructor
-       * @param Param is the set of the parameters
-       * @param AppM is the reference to the application manager
-       * @param design_flow_manager is the design flow manager
-       */
-      create_tree_manager(const ParameterConstRef Param, const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager);
+ public:
+   /**
+    * Constructor
+    * @param Param is the set of the parameters
+    * @param AppM is the reference to the application manager
+    * @param design_flow_manager is the design flow manager
+    */
+   create_tree_manager(const ParameterConstRef Param, const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Destructor
-       */
-      ~create_tree_manager() override;
+   /**
+    * Destructor
+    */
+   ~create_tree_manager() override;
 
-      /**
-       * Creates the tree_manager data structure by invoking the GCC wrapper
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status Exec() override;
+   /**
+    * Creates the tree_manager data structure by invoking the GCC wrapper
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status Exec() override;
 
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      bool HasToBeExecuted() const override;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 };
 #endif

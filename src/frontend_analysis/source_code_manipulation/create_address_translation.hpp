@@ -29,21 +29,21 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file  create_address_translation.hpp
  * @brief Writes source code of hdl module to translate addresses from pci address space to bambu address space
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef CREATE_ADDRESS_TRANSLATION_HPP
 #define CREATE_ADDRESS_TRANSLATION_HPP
 
-///Superclass include
+/// Superclass include
 #include "application_frontend_flow_step.hpp"
 
-///utility include
+/// utility include
 #include "utility.hpp"
 
 REF_FORWARD_DECL(AadlInformation);
@@ -56,75 +56,75 @@ CONSTREF_FORWARD_DECL(tree_manager);
  */
 class CreateAddressTranslation : public ApplicationFrontendFlowStep
 {
-   protected:
-      ///The address translation stream
-      IndentedOutputStreamRef address_translation;
+ protected:
+   /// The address translation stream
+   IndentedOutputStreamRef address_translation;
 
-      ///The memory enabling stream
-      IndentedOutputStreamRef memory_enabling;
+   /// The memory enabling stream
+   IndentedOutputStreamRef memory_enabling;
 
-      ///The data size stream
-      IndentedOutputStreamRef data_size;
+   /// The data size stream
+   IndentedOutputStreamRef data_size;
 
-      ///The endianess check stream
-      IndentedOutputStreamRef endianess_check;
+   /// The endianess check stream
+   IndentedOutputStreamRef endianess_check;
 
-      ///The tree manager
-      tree_managerConstRef TreeM;
+   /// The tree manager
+   tree_managerConstRef TreeM;
 
-      ///The asn information
-      const AadlInformationRef aadl_information;
+   /// The asn information
+   const AadlInformationRef aadl_information;
 
-      ///True if it was already executed
-      bool already_executed;
+   /// True if it was already executed
+   bool already_executed;
 
-      /**
-       * Compute the addresses and add them to the writers
-       * @param asn_type is the type of the asn parameter
-       * @param tree_parameter_type is the index of the type
-       * @param bambu_address is the current starting address for bambu interface
-       * @param taste_address is the current starting address for taste interface
-       * @param registers is the number of registers to be allocated for this parameter
-       * @param first_level is true if we are analyzing a parameter and not something inside a parameter
-       * @param little_endianess tells if the parameter has little endianess
-       */
-      void ComputeAddress(const AsnTypeRef asn_type, const unsigned int tree_parameter_type, unsigned int & bambu_address, unsigned int & taste_address, unsigned int & registers, const bool first_level, const bool little_endianess);
+   /**
+    * Compute the addresses and add them to the writers
+    * @param asn_type is the type of the asn parameter
+    * @param tree_parameter_type is the index of the type
+    * @param bambu_address is the current starting address for bambu interface
+    * @param taste_address is the current starting address for taste interface
+    * @param registers is the number of registers to be allocated for this parameter
+    * @param first_level is true if we are analyzing a parameter and not something inside a parameter
+    * @param little_endianess tells if the parameter has little endianess
+    */
+   void ComputeAddress(const AsnTypeRef asn_type, const unsigned int tree_parameter_type, unsigned int& bambu_address, unsigned int& taste_address, unsigned int& registers, const bool first_level, const bool little_endianess);
 
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      void Initialize() override;
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      bool HasToBeExecuted() const override;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 
-   public:
-      /**
-       * Constructor
-       * @param AppM is the application manager
-       * @param design_flow_manager is the design flow manager
-       * @param parameters is the set of input parameters
-       */
-      CreateAddressTranslation(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor
+    * @param AppM is the application manager
+    * @param design_flow_manager is the design flow manager
+    * @param parameters is the set of input parameters
+    */
+   CreateAddressTranslation(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-      /**
-       * Destructor
-       */
-      ~CreateAddressTranslation() override;
+   /**
+    * Destructor
+    */
+   ~CreateAddressTranslation() override;
 
-      /**
-       * Execute this step
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status Exec() override;
+   /**
+    * Execute this step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status Exec() override;
 };
 #endif

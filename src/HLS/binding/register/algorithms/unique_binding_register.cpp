@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file unique_binding_register.cpp
  * @brief Class implementation of unique binding register allocation algorithm
@@ -44,30 +44,28 @@
 #include "hls.hpp"
 #include "hls_manager.hpp"
 
-#include "reg_binding.hpp"
 #include "liveness.hpp"
+#include "reg_binding.hpp"
 
 #include "Parameter.hpp"
-#include "dbgPrintHelper.hpp"
 #include "boost/lexical_cast.hpp"
+#include "dbgPrintHelper.hpp"
 
-///HLS/binding/storage_value_insertion includes
+/// HLS/binding/storage_value_insertion includes
 #include "storage_value_information.hpp"
 
-///tree include
+/// tree include
 #include "behavioral_helper.hpp"
 
-///utility include
+/// utility include
 #include "cpu_time.hpp"
 
-unique_binding_register::unique_binding_register(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
-   reg_binding_creator(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::UNIQUE_REGISTER_BINDING)
+unique_binding_register::unique_binding_register(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
+    : reg_binding_creator(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::UNIQUE_REGISTER_BINDING)
 {
-
 }
 
-unique_binding_register::~unique_binding_register()
-= default;
+unique_binding_register::~unique_binding_register() = default;
 
 DesignFlowStep_Status unique_binding_register::InternalExec()
 {
@@ -75,7 +73,7 @@ DesignFlowStep_Status unique_binding_register::InternalExec()
    START_TIME(step_time);
    THROW_ASSERT(HLS->Rliv, "Liveness analysis not yet computed");
    HLS->Rreg = reg_bindingRef(new reg_binding(HLS, HLSMgr));
-   const std::list<vertex> & support = HLS->Rliv->get_support();
+   const std::list<vertex>& support = HLS->Rliv->get_support();
 
    const std::list<vertex>::const_iterator vEnd = support.end();
    for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
@@ -93,7 +91,7 @@ DesignFlowStep_Status unique_binding_register::InternalExec()
    if(output_level == OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "-->Register binding information for function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
-   if (output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+   if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
       HLS->Rreg->print();
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Time to perform register binding: " + print_cpu_time(step_time) + " seconds");

@@ -40,74 +40,67 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "fanout_opt.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///boost include
+/// boost include
 #include <boost/graph/topological_sort.hpp>
 
-///behavior includes
+/// behavior includes
 #include "application_manager.hpp"
 #include "function_behavior.hpp"
 
-///HLS include
+/// HLS include
 #include "hls_manager.hpp"
 #if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
-///HLS includes
+/// HLS includes
 #include "hls.hpp"
 
-///HLS/scheduling include
+/// HLS/scheduling include
 #include "schedule.hpp"
 #endif
 
-///STD include
-#include <fstream>
+/// STD include
 #include <cmath>
+#include <fstream>
 #include <string>
 
-
+#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
-#include "string_manipulation.hpp"          // for GET_CLASS
 
-
-
-
-fanout_opt::fanout_opt (const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
-   FunctionFrontendFlowStep (_AppM, _function_id, FANOUT_OPT, _design_flow_manager, _parameters),
-   TM(_AppM->get_tree_manager())
+fanout_opt::fanout_opt(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, FANOUT_OPT, _design_flow_manager, _parameters), TM(_AppM->get_tree_manager())
 {
-   debug_level = parameters->get_class_debug_level (GET_CLASS(*this),
-                                                    DEBUG_LEVEL_NONE);
+   debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-fanout_opt::~fanout_opt ()
-= default;
+fanout_opt::~fanout_opt() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > fanout_opt::ComputeFrontendRelationships (const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> fanout_opt::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
-   switch (relationship_type)
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   switch(relationship_type)
    {
-      case(INVALIDATION_RELATIONSHIP) :
-      case (PRECEDENCE_RELATIONSHIP):
+      case(INVALIDATION_RELATIONSHIP):
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
       case DEPENDENCE_RELATIONSHIP:
       {
-         relationships.insert (std::pair<FrontendFlowStepType, FunctionRelationship> (CSE_STEP, SAME_FUNCTION));
-         relationships.insert (std::pair<FrontendFlowStepType, FunctionRelationship> (EXTRACT_PATTERNS, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CSE_STEP, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_PATTERNS, SAME_FUNCTION));
          break;
       }
       default:
@@ -116,37 +109,31 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-bool fanout_opt::is_dest_relevant(tree_nodeRef t, bool )
+bool fanout_opt::is_dest_relevant(tree_nodeRef t, bool)
 {
    THROW_ASSERT(t->get_kind() == tree_reindex_K, "t is not a tree_reindex node");
    if(GET_NODE(t)->get_kind() == gimple_assign_K)
    {
-       auto * temp_assign = GetPointer<gimple_assign>(GET_NODE(t));
-       if(
-             GET_NODE(temp_assign->op1)->get_kind() == mult_expr_K ||
-             GET_NODE(temp_assign->op1)->get_kind() == widen_mult_expr_K ||
-             GET_NODE(temp_assign->op1)->get_kind() == ternary_plus_expr_K ||
-             GET_NODE(temp_assign->op1)->get_kind() == ternary_mm_expr_K ||
-             GET_NODE(temp_assign->op1)->get_kind() == ternary_pm_expr_K ||
-             GET_NODE(temp_assign->op1)->get_kind() == ternary_mp_expr_K
-             )
-          return true;
+      auto* temp_assign = GetPointer<gimple_assign>(GET_NODE(t));
+      if(GET_NODE(temp_assign->op1)->get_kind() == mult_expr_K || GET_NODE(temp_assign->op1)->get_kind() == widen_mult_expr_K || GET_NODE(temp_assign->op1)->get_kind() == ternary_plus_expr_K || GET_NODE(temp_assign->op1)->get_kind() == ternary_mm_expr_K ||
+         GET_NODE(temp_assign->op1)->get_kind() == ternary_pm_expr_K || GET_NODE(temp_assign->op1)->get_kind() == ternary_mp_expr_K)
+         return true;
    }
    return false;
 }
 
-DesignFlowStep_Status
-fanout_opt::InternalExec ()
+DesignFlowStep_Status fanout_opt::InternalExec()
 {
-   if(parameters->IsParameter("disable-fanout_opt")) return DesignFlowStep_Status::SKIPPED;
+   if(parameters->IsParameter("disable-fanout_opt"))
+      return DesignFlowStep_Status::SKIPPED;
    bool IR_changed = false;
 
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
-   auto * fd = GetPointer<function_decl>(temp);
-   auto *sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto* fd = GetPointer<function_decl>(temp);
+   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
    const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
 
-   for (auto block : sl->list_of_bloc)
+   for(auto block : sl->list_of_bloc)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
       for(const auto& stmt : block.second->CGetStmtList())
@@ -159,14 +146,13 @@ fanout_opt::InternalExec ()
          }
 #endif
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(stmt)->ToString());
-         if (GET_NODE(stmt)->get_kind() == gimple_assign_K)
+         if(GET_NODE(stmt)->get_kind() == gimple_assign_K)
          {
-            auto * ga =  GetPointer<gimple_assign>(GET_NODE(stmt));
-            const std::string srcp_default =
-               ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
-            if (GET_NODE(ga->op0)->get_kind() == ssa_name_K)
+            auto* ga = GetPointer<gimple_assign>(GET_NODE(stmt));
+            const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
+            if(GET_NODE(ga->op0)->get_kind() == ssa_name_K)
             {
-               auto *ssa_defined = GetPointer<ssa_name> (GET_NODE(ga->op0));
+               auto* ssa_defined = GetPointer<ssa_name>(GET_NODE(ga->op0));
                if(ssa_defined->CGetNumberUses() > 1)
                {
                   unsigned assigned_ssa_type_index;
@@ -178,37 +164,36 @@ fanout_opt::InternalExec ()
                   {
                      if(is_first_stmt)
                         is_first_stmt = false;
-                     else  if(is_dest_relevant(dest_statement.first, false))
+                     else if(is_dest_relevant(dest_statement.first, false))
                         list_of_dest_statements.push_back(dest_statement.first);
                   }
                   for(auto dest_statement : list_of_dest_statements)
                   {
-                        tree_nodeRef temp_assign = tree_man->CreateGimpleAssign(assigned_ssa_type_node, ga->op0, block.first, srcp_default);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---create a temporary assignment " + temp_assign->ToString());
-                        block.second->PushAfter(temp_assign, stmt);
-                        tree_nodeRef temp_ssa_var = GetPointer<gimple_assign>(GET_NODE(temp_assign))->op0;
-                        GetPointer<gimple_assign>(GET_NODE(temp_assign))->keep = true;
-                        GetPointer<gimple_assign>(GET_NODE(temp_assign))->temporary_address = ga->temporary_address;
-                        GetPointer<ssa_name>(GET_NODE(temp_ssa_var))->SetDefStmt(temp_assign);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dest statement before replacement " + dest_statement->ToString());
-                        TM->ReplaceTreeNode(dest_statement, ga->op0, temp_ssa_var);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dest statement after replacement " + dest_statement->ToString());
-                        IR_changed = true;
+                     tree_nodeRef temp_assign = tree_man->CreateGimpleAssign(assigned_ssa_type_node, ga->op0, block.first, srcp_default);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---create a temporary assignment " + temp_assign->ToString());
+                     block.second->PushAfter(temp_assign, stmt);
+                     tree_nodeRef temp_ssa_var = GetPointer<gimple_assign>(GET_NODE(temp_assign))->op0;
+                     GetPointer<gimple_assign>(GET_NODE(temp_assign))->keep = true;
+                     GetPointer<gimple_assign>(GET_NODE(temp_assign))->temporary_address = ga->temporary_address;
+                     GetPointer<ssa_name>(GET_NODE(temp_ssa_var))->SetDefStmt(temp_assign);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dest statement before replacement " + dest_statement->ToString());
+                     TM->ReplaceTreeNode(dest_statement, ga->op0, temp_ssa_var);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dest statement after replacement " + dest_statement->ToString());
+                     IR_changed = true;
                   }
                }
             }
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Statement examined " + GET_NODE(stmt)->ToString());
-
       }
 #if 1
-      ///fanout duplication may prevent openmp simd detection
+      /// fanout duplication may prevent openmp simd detection
       if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
       {
          for(auto phi : block.second->CGetPhiList())
          {
             auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
-            auto *ssa_defined = GetPointer<ssa_name> (GET_NODE(gp->res));
+            auto* ssa_defined = GetPointer<ssa_name>(GET_NODE(gp->res));
 
             if(ssa_defined->CGetNumberUses() > 1)
             {
@@ -223,8 +208,8 @@ fanout_opt::InternalExec ()
                }
                for(auto dest_statement : list_of_dest_statements)
                {
-                  ///Copy the list of def edges
-                  std::vector<std::pair<tree_nodeRef, unsigned int> > list_of_def_edge;
+                  /// Copy the list of def edges
+                  std::vector<std::pair<tree_nodeRef, unsigned int>> list_of_def_edge;
                   for(const auto& def_edge : gp->CGetDefEdgesList())
                   {
                      list_of_def_edge.push_back(std::pair<tree_nodeRef, unsigned int>(def_edge.first, def_edge.second));
@@ -248,7 +233,7 @@ fanout_opt::InternalExec ()
       if(IR_changed && schedule)
       {
          for(const auto stmt : block.second->CGetStmtList())
-          schedule->UpdateTime(GET_INDEX_NODE(stmt));
+            schedule->UpdateTime(GET_INDEX_NODE(stmt));
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered BB" + STR(block.first));
    }

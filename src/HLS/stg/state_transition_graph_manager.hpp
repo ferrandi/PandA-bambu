@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file state_transition_graph_manager.hpp
  * @brief This file contains the structures needed to manage a graph that will represent the state transition graph
@@ -43,10 +43,10 @@
 #ifndef STATE_TRANSITION_GRAPH_MANAGER_HPP
 #define STATE_TRANSITION_GRAPH_MANAGER_HPP
 
-///Graph include
+/// Graph include
 #include "graph.hpp"
 
-///Refcount include
+/// Refcount include
 #include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(FunctionBehavior);
@@ -65,109 +65,113 @@ REF_FORWARD_DECL(StateTransitionGraphsCollection);
  */
 class StateTransitionGraphManager
 {
-   private:
-      ///The bulk graph
-      const StateTransitionGraphsCollectionRef state_transition_graphs_collection;
+ private:
+   /// The bulk graph
+   const StateTransitionGraphsCollectionRef state_transition_graphs_collection;
 
-      ///The acyclic version of stg
-      const StateTransitionGraphRef ACYCLIC_STG_graph;
+   /// The acyclic version of stg
+   const StateTransitionGraphRef ACYCLIC_STG_graph;
 
-      ///The complete version of std
-      const StateTransitionGraphRef STG_graph;
+   /// The complete version of std
+   const StateTransitionGraphRef STG_graph;
 
-      /// reference to operation graph
-      const OpGraphConstRef op_function_graph;
+   /// reference to operation graph
+   const OpGraphConstRef op_function_graph;
 
-      /// class containing all the parameters
-      const ParameterConstRef Param;
+   /// class containing all the parameters
+   const ParameterConstRef Param;
 
-      /// verbosity level
-      int output_level;
+   /// verbosity level
+   int output_level;
 
-      /// debugging level
-      int debug_level;
+   /// debugging level
+   int debug_level;
 
-      // Tells to the get_states method which states you are looking for
-      enum StateTypes { EXECUTING, STARTING, ENDING };
-      
-      // helper method to retrieve states
-      std::set<vertex> get_states(const vertex& op, StateTypes statetypes) const;
+   // Tells to the get_states method which states you are looking for
+   enum StateTypes
+   {
+      EXECUTING,
+      STARTING,
+      ENDING
+   };
 
-   public:
-      /// reference to the class for building the graph
-      const StateTransitionGraph_constructorRef STG_builder;
+   // helper method to retrieve states
+   std::set<vertex> get_states(const vertex& op, StateTypes statetypes) const;
 
-      /**
-       * Constructor of the class. It creates a new empty graph and it sets reference to hls class
-       * @param HLS is the HLS data structure
-       */
-      StateTransitionGraphManager(const HLS_managerConstRef HLSMgr, const hlsConstRef HLS, const ParameterConstRef parameters);
+ public:
+   /// reference to the class for building the graph
+   const StateTransitionGraph_constructorRef STG_builder;
 
-      /**
-       * Destructor
-       */
-      ~StateTransitionGraphManager();
+   /**
+    * Constructor of the class. It creates a new empty graph and it sets reference to hls class
+    * @param HLS is the HLS data structure
+    */
+   StateTransitionGraphManager(const HLS_managerConstRef HLSMgr, const hlsConstRef HLS, const ParameterConstRef parameters);
 
-      /* States retrievers */
-      std::set<vertex> get_execution_states(const vertex& op) const;
-      std::set<vertex> get_ending_states(const vertex& op) const;
-      std::set<vertex> get_starting_states(const vertex& op) const;
+   /**
+    * Destructor
+    */
+   ~StateTransitionGraphManager();
 
-      /// compute the minimum and maximum number of cycles when possible
-      void compute_min_max();
+   /* States retrievers */
+   std::set<vertex> get_execution_states(const vertex& op) const;
+   std::set<vertex> get_ending_states(const vertex& op) const;
+   std::set<vertex> get_starting_states(const vertex& op) const;
 
-      /**
-       * Returns pointer to state transition graph created.
-       * @return reference to a graph that contains informations about operations to be executed and control edges
-       */
-      StateTransitionGraphRef GetStg();
+   /// compute the minimum and maximum number of cycles when possible
+   void compute_min_max();
 
-      /**
-       * Returns pointer to state transition graph created.
-       * @return reference to a graph that contains informations about operations to be executed and control edges
-       */
-      const StateTransitionGraphConstRef CGetStg() const;
+   /**
+    * Returns pointer to state transition graph created.
+    * @return reference to a graph that contains informations about operations to be executed and control edges
+    */
+   StateTransitionGraphRef GetStg();
 
-      /**
-       * Returns pointer to state transition graph created.
-       * @return reference to a graph that contains informations about operations to be executed and control edges
-       */
-      StateTransitionGraphRef GetAstg();
+   /**
+    * Returns pointer to state transition graph created.
+    * @return reference to a graph that contains informations about operations to be executed and control edges
+    */
+   const StateTransitionGraphConstRef CGetStg() const;
 
-      /**
-       * Returns pointer to state transition graph created.
-       * @return reference to a graph that contains informations about operations to be executed and control edges
-       */
-      const StateTransitionGraphConstRef CGetAstg() const;
+   /**
+    * Returns pointer to state transition graph created.
+    * @return reference to a graph that contains informations about operations to be executed and control edges
+    */
+   StateTransitionGraphRef GetAstg();
 
-      void print_statistics() const;
+   /**
+    * Returns pointer to state transition graph created.
+    * @return reference to a graph that contains informations about operations to be executed and control edges
+    */
+   const StateTransitionGraphConstRef CGetAstg() const;
 
-      /**
-       * Gets vertex that represents state that contains entry node
-       * @return the vertex of state associated to entry node
-       */
-      vertex get_entry_state() const;
+   void print_statistics() const;
 
-      /**
-       * Get the name of a state
-       * @param state is the state
-       * @return the name of the state
-       */
-      std::string get_state_name(vertex state) const;
+   /**
+    * Gets vertex that represents state that contains entry node
+    * @return the vertex of state associated to entry node
+    */
+   vertex get_entry_state() const;
 
-      /**
-       * Gets vertex that represents state that contains exit node
-       * @return the vertex of state associated to exit node
-       */
-      vertex get_exit_state() const;
+   /**
+    * Get the name of a state
+    * @param state is the state
+    * @return the name of the state
+    */
+   std::string get_state_name(vertex state) const;
 
-      std::set<std::pair<vertex, unsigned int> > get_conditions(const vertex& v) const;
+   /**
+    * Gets vertex that represents state that contains exit node
+    * @return the vertex of state associated to exit node
+    */
+   vertex get_exit_state() const;
 
-      /**
-       * @return the number of states of the FSM
-       */
-      unsigned int get_number_of_states() const;
+   std::set<std::pair<vertex, unsigned int>> get_conditions(const vertex& v) const;
 
+   /**
+    * @return the number of states of the FSM
+    */
+   unsigned int get_number_of_states() const;
 };
 /// refcount definition to allocate the class
 typedef refcount<StateTransitionGraphManager> StateTransitionGraphManagerRef;

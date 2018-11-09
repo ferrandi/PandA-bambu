@@ -1,5 +1,5 @@
 #include "ef_rem_pio2.c"
-#include "sf_sin.c"
 #include "sf_cos.c"
+#include "sf_sin.c"
 #include "sf_tan.c"
 #include "wf_sincos.c"

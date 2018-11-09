@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,10 +29,10 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file global_variables.cpp
- * @brief global variables used by each tool 
+ * @brief global variables used by each tool
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * $Date$
@@ -40,9 +40,9 @@
  *
  */
 
-///NOTE: this file must be included only by source code of the executable (i.e., the file with the main)
+/// NOTE: this file must be included only by source code of the executable (i.e., the file with the main)
 
-///STD include
+/// STD include
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -50,14 +50,14 @@
 /// Exit code
 int exit_code = EXIT_FAILURE;
 
-///The current indentation for debug messages
+/// The current indentation for debug messages
 size_t indentation = 0;
 
-///Mull stream
+/// Mull stream
 std::ostream null_stream(nullptr);
 
-///The current message to be printed
+/// The current message to be printed
 std::string panda_message;
 
-///Transform warning into errors
+/// Transform warning into errors
 bool error_on_warning = false;

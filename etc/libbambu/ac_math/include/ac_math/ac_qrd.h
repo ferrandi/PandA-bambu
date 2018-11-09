@@ -269,7 +269,10 @@ namespace ac_math
       ROW:
          for(unsigned row = M - 1; row > 0; row--)
          {
-            if(row == column) { break; }
+            if(row == column)
+            {
+               break;
+            }
             diagonal_PE<input_type, intermediate_type, sin_cosine_type, ispwl>(A1(row, column), A1(row - 1, column), c, s);
             offdiagonal_PE<M, intermediate_type, sin_cosine_type>(A1, row, c, s, column);
          }
@@ -313,7 +316,10 @@ namespace ac_math
 
       for(unsigned i = 0; i < M; i++)
       {
-         for(unsigned j = 0; j < M; j++) { input_mat(i, j) = A[i][j]; }
+         for(unsigned j = 0; j < M; j++)
+         {
+            input_mat(i, j) = A[i][j];
+         }
       }
 
       ac_qrd<ispwl>(input_mat, Q_mat, R_mat);
@@ -337,7 +343,10 @@ namespace ac_math
 
       for(unsigned i = 0; i < M; i++)
       {
-         for(unsigned j = 0; j < M; j++) { input_mat(i, j) = A[i][j]; }
+         for(unsigned j = 0; j < M; j++)
+         {
+            input_mat(i, j) = A[i][j];
+         }
       }
 
       ac_qrd<ispwl>(input_mat, Q_mat, R_mat);

@@ -33,93 +33,83 @@
 /**
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  */
-#include "config_HAVE_ASSERTS.hpp"                   // for HAVE_ASSERTS
-#include "config_HAVE_FROM_DISCREPANCY_BUILT.hpp"    // for HAVE_FROM_DISCRE...
+#include "config_HAVE_ASSERTS.hpp"                // for HAVE_ASSERTS
+#include "config_HAVE_FROM_DISCREPANCY_BUILT.hpp" // for HAVE_FROM_DISCRE...
 
-#include <cstring>                                  // for memset, size_t
-#include <algorithm>                                 // for max, min
-#include <iterator>                                  // for next
-#include <map>                                       // for map, _Rb_tree_it...
-#include <string>                                    // for operator+, alloc...
-#include <utility>                                   // for pair
-#include <vector>                                    // for vector
-#include "Discrepancy.hpp"                           // for Discrepancy
-#include "IR_lowering.hpp"                           // for IR_lowering, blo...
-#include "Parameter.hpp"                             // for Parameter, OPT_d...
-#include "application_manager.hpp"                   // for application_manager
-#include "dbgPrintHelper.hpp"                        // for INDENT_DBG_MEX
-#include "design_flow_step.hpp"                      // for ParameterConstRef
-#include "exceptions.hpp"                            // for THROW_ASSERT
-#include "frontend_flow_step.hpp"                    // for application_mana...
-#include "function_behavior.hpp"                     // for FunctionBehavior
-#include "function_frontend_flow_step.hpp"           // for FunctionBehaviorRef
-#include "math_function.hpp"                         // for resize_to_1_8_16...
-#include "refcount.hpp"                              // for GetPointer
-#include "string_manipulation.hpp"                   // for STR
-#include "tree_basic_block.hpp"                      // for bloc
-#include "tree_common.hpp"                           // for addr_expr_K, mem...
-#include "tree_helper.hpp"                           // for tree_helper
-#include "tree_manager.hpp"                          // for tree_manager
-#include "tree_manipulation.hpp"                     // for tree_nodeRef
-#include "tree_node.hpp"                             // for gimple_assign
+#include "Discrepancy.hpp"                 // for Discrepancy
+#include "IR_lowering.hpp"                 // for IR_lowering, blo...
+#include "Parameter.hpp"                   // for Parameter, OPT_d...
+#include "application_manager.hpp"         // for application_manager
+#include "dbgPrintHelper.hpp"              // for INDENT_DBG_MEX
+#include "design_flow_step.hpp"            // for ParameterConstRef
+#include "exceptions.hpp"                  // for THROW_ASSERT
+#include "frontend_flow_step.hpp"          // for application_mana...
+#include "function_behavior.hpp"           // for FunctionBehavior
+#include "function_frontend_flow_step.hpp" // for FunctionBehaviorRef
+#include "math_function.hpp"               // for resize_to_1_8_16...
+#include "refcount.hpp"                    // for GetPointer
+#include "string_manipulation.hpp"         // for STR
+#include "tree_basic_block.hpp"            // for bloc
+#include "tree_common.hpp"                 // for addr_expr_K, mem...
+#include "tree_helper.hpp"                 // for tree_helper
+#include "tree_manager.hpp"                // for tree_manager
+#include "tree_manipulation.hpp"           // for tree_nodeRef
+#include "tree_node.hpp"                   // for gimple_assign
 #include "tree_reindex.hpp"
-
+#include <algorithm> // for max, min
+#include <cstring>   // for memset, size_t
+#include <iterator>  // for next
+#include <map>       // for map, _Rb_tree_it...
+#include <string>    // for operator+, alloc...
+#include <utility>   // for pair
+#include <vector>    // for vector
 
 /// Compute the inverse of X mod 2**n, i.e., find Y such that X * Y is
 /// congruent to 1 (mod 2**N).
-static unsigned long long int
-invert_mod2n (unsigned long long int x, unsigned int n)
+static unsigned long long int invert_mod2n(unsigned long long int x, unsigned int n)
 {
-  /* Solve x*y == 1 (mod 2^n), where x is odd.  Return y.  */
+   /* Solve x*y == 1 (mod 2^n), where x is odd.  Return y.  */
 
-  /* The algorithm notes that the choice y = x satisfies
-     x*y == 1 mod 2^3, since x is assumed odd.
-     Each iteration doubles the number of bits of significance in y.  */
+   /* The algorithm notes that the choice y = x satisfies
+      x*y == 1 mod 2^3, since x is assumed odd.
+      Each iteration doubles the number of bits of significance in y.  */
 
-  unsigned long long int mask;
-  unsigned long long int y = x;
-  unsigned int nbit = 3;
+   unsigned long long int mask;
+   unsigned long long int y = x;
+   unsigned int nbit = 3;
 
-  mask = (n == sizeof(long long int)*8
-      ? ~static_cast<unsigned long long int>(0)
-      : (static_cast<unsigned long long int>(1) << n) - 1);
+   mask = (n == sizeof(long long int) * 8 ? ~static_cast<unsigned long long int>(0) : (static_cast<unsigned long long int>(1) << n) - 1);
 
-  while (nbit < n)
-    {
-      y = y * (2 - x*y) & mask;		/* Modulo 2^N */
+   while(nbit < n)
+   {
+      y = y * (2 - x * y) & mask; /* Modulo 2^N */
       nbit *= 2;
-    }
-  return y;
+   }
+   return y;
 }
 
-
-#define LOWPART(x) \
-  (static_cast<unsigned long long int>(x) & ((1ULL << 32) - 1))
-#define HIGHPART(x) \
-  (static_cast<unsigned long long int>(x) >> 32)
+#define LOWPART(x) (static_cast<unsigned long long int>(x) & ((1ULL << 32) - 1))
+#define HIGHPART(x) (static_cast<unsigned long long int>(x) >> 32)
 #define BASE (1LL << 32)
 
 /* Unpack a two-word integer into 4 words.
    LOW and HI are the integer, as two `HOST_WIDE_INT' pieces.
    WORDS points to the array of HOST_WIDE_INTs.  */
-static void
-encode (long long int  *words, unsigned long long int  low, long long int  hi)
+static void encode(long long int* words, unsigned long long int low, long long int hi)
 {
-  words[0] = static_cast<long long int>(LOWPART (low));
-  words[1] = static_cast<long long int>(HIGHPART (low));
-  words[2] = static_cast<long long int>(LOWPART (hi));
-  words[3] = static_cast<long long int>(HIGHPART (hi));
+   words[0] = static_cast<long long int>(LOWPART(low));
+   words[1] = static_cast<long long int>(HIGHPART(low));
+   words[2] = static_cast<long long int>(LOWPART(hi));
+   words[3] = static_cast<long long int>(HIGHPART(hi));
 }
 
 /* Pack an array of 4 words into a two-word integer.
    WORDS points to the array of words.
    The integer is stored into *LOW and *HI as two `HOST_WIDE_INT' pieces.  */
-static void
-decode (long long int  *words, unsigned long long int  *low,
-    long long int  *hi)
+static void decode(long long int* words, unsigned long long int* low, long long int* hi)
 {
-  *low = static_cast<unsigned long long int>(words[0] + words[1] * BASE);
-  *hi = words[2] + words[3] * BASE;
+   *low = static_cast<unsigned long long int>(words[0] + words[1] * BASE);
+   *hi = words[2] + words[3] * BASE;
 }
 
 /* Divide doubleword integer LNUM, HNUM by doubleword integer LDEN, HDEN
@@ -130,17 +120,13 @@ decode (long long int  *words, unsigned long long int  *low,
    It controls how the quotient is rounded to an integer.
    Return nonzero if the operation overflows.
    UNS nonzero says do unsigned division.  */
-static int
-div_and_round_double_cprop (
-                      /* num == numerator == dividend */
-                      unsigned long long int lnum_orig,
-                      long long int hnum_orig,
-                      /* den == denominator == divisor */
-                      unsigned long long int lden_orig,
-                      unsigned long long int *lquo,
-                      long long int *hquo)
+static int div_and_round_double_cprop(
+    /* num == numerator == dividend */
+    unsigned long long int lnum_orig, long long int hnum_orig,
+    /* den == denominator == divisor */
+    unsigned long long int lden_orig, unsigned long long int* lquo, long long int* hquo)
 {
-   long long int num[4 + 1];	/* extra element for scaling.  */
+   long long int num[4 + 1]; /* extra element for scaling.  */
    long long int den[4], quo[4];
    int i, j;
    unsigned long long int work;
@@ -150,39 +136,38 @@ div_and_round_double_cprop (
    unsigned long long int lden = lden_orig;
    int overflow = 0;
 
-   if (lden == 0)
+   if(lden == 0)
       overflow = 1, lden = 1;
 
-
-   if (hnum == 0)
-   {				/* single precision */
+   if(hnum == 0)
+   { /* single precision */
       *hquo = 0;
       /* This unsigned division rounds toward zero.  */
       *lquo = lnum / lden;
       goto finish_up;
    }
 
-   if (hnum == 0)
-   {				/* trivial case: dividend < divisor */
+   if(hnum == 0)
+   { /* trivial case: dividend < divisor */
       *hquo = 0;
       *lquo = 0;
 
       goto finish_up;
    }
 
-   memset (quo, 0, sizeof quo);
+   memset(quo, 0, sizeof quo);
 
-   memset (num, 0, sizeof num);	/* to zero 9th element */
-   memset (den, 0, sizeof den);
+   memset(num, 0, sizeof num); /* to zero 9th element */
+   memset(den, 0, sizeof den);
 
-   encode (num, lnum, hnum);
-   encode (den, lden, 0);
+   encode(num, lnum, hnum);
+   encode(den, lden, 0);
 
    /* Special code for when the divisor < BASE.  */
-   if (lden < static_cast<unsigned long long int>(BASE))
+   if(lden < static_cast<unsigned long long int>(BASE))
    {
       /* hnum != 0 already checked.  */
-      for (i = 4 - 1; i >= 0; i--)
+      for(i = 4 - 1; i >= 0; i--)
       {
          work = static_cast<unsigned long long int>(num[i]) + carry * BASE;
          quo[i] = static_cast<long long int>(work / lden);
@@ -197,8 +182,8 @@ div_and_round_double_cprop (
       unsigned long long int quo_est, scale;
 
       /* Find the highest nonzero divisor digit.  */
-      for (i = 4 - 1;; i--)
-         if (den[i] != 0)
+      for(i = 4 - 1;; i--)
+         if(den[i] != 0)
          {
             den_hi_sig = i;
             break;
@@ -208,31 +193,32 @@ div_and_round_double_cprop (
      This is required by the quotient digit estimation algorithm.  */
 
       scale = static_cast<unsigned long long int>(BASE / (den[den_hi_sig] + 1));
-      if (scale > 1)
-      {		/* scale divisor and dividend */
+      if(scale > 1)
+      { /* scale divisor and dividend */
          carry = 0;
-         for (i = 0; i <= 4 - 1; i++)
+         for(i = 0; i <= 4 - 1; i++)
          {
             work = (static_cast<unsigned long long int>(num[i]) * scale) + carry;
-            num[i] = LOWPART (work);
-            carry = HIGHPART (work);
+            num[i] = LOWPART(work);
+            carry = HIGHPART(work);
          }
 
          num[4] = static_cast<long long int>(carry);
          carry = 0;
-         for (i = 0; i <= 4 - 1; i++)
+         for(i = 0; i <= 4 - 1; i++)
          {
             work = (static_cast<unsigned long long int>(den[i]) * scale) + carry;
-            den[i] = LOWPART (work);
-            carry = HIGHPART (work);
-            if (den[i] != 0) den_hi_sig = i;
+            den[i] = LOWPART(work);
+            carry = HIGHPART(work);
+            if(den[i] != 0)
+               den_hi_sig = i;
          }
       }
 
       num_hi_sig = 4;
 
       /* Main loop */
-      for (i = num_hi_sig - den_hi_sig - 1; i >= 0; i--)
+      for(i = num_hi_sig - den_hi_sig - 1; i >= 0; i--)
       {
          /* Guess the next quotient digit, quo_est, by dividing the first
          two remaining dividend digits by the high order quotient digit.
@@ -241,16 +227,14 @@ div_and_round_double_cprop (
 
          num_hi_sig = i + den_hi_sig + 1;
          work = static_cast<unsigned long long int>(num[num_hi_sig]) * BASE + static_cast<unsigned long long int>(num[num_hi_sig - 1]);
-         if (num[num_hi_sig] != den[den_hi_sig])
+         if(num[num_hi_sig] != den[den_hi_sig])
             quo_est = work / static_cast<unsigned long long int>(den[den_hi_sig]);
          else
             quo_est = BASE - 1;
 
          /* Refine quo_est so it's usually correct, and at most one high.  */
          tmp = work - quo_est * static_cast<unsigned long long int>(den[den_hi_sig]);
-         if (tmp < BASE
-             && (static_cast<unsigned long long int>(den[den_hi_sig - 1]) * quo_est
-                 > (tmp * BASE + static_cast<unsigned long long int>(num[num_hi_sig - 2]))))
+         if(tmp < BASE && (static_cast<unsigned long long int>(den[den_hi_sig - 1]) * quo_est > (tmp * BASE + static_cast<unsigned long long int>(num[num_hi_sig - 2]))))
             quo_est--;
 
          /* Try QUO_EST as the quotient digit, by multiplying the
@@ -258,29 +242,29 @@ div_and_round_double_cprop (
          Keep in mind that QUO_EST is the I - 1st digit.  */
 
          carry = 0;
-         for (j = 0; j <= den_hi_sig; j++)
+         for(j = 0; j <= den_hi_sig; j++)
          {
             work = quo_est * static_cast<unsigned long long int>(den[j]) + carry;
-            carry = HIGHPART (work);
-            work = static_cast<unsigned long long int>(num[i + j]) - LOWPART (work);
-            num[i + j] = LOWPART (work);
-            carry += HIGHPART (work) != 0;
+            carry = HIGHPART(work);
+            work = static_cast<unsigned long long int>(num[i + j]) - LOWPART(work);
+            num[i + j] = LOWPART(work);
+            carry += HIGHPART(work) != 0;
          }
 
          /* If quo_est was high by one, then num[i] went negative and
          we need to correct things.  */
-         if (num[num_hi_sig] < static_cast<long long int>(carry))
+         if(num[num_hi_sig] < static_cast<long long int>(carry))
          {
             quo_est--;
-            carry = 0;		/* add divisor back in */
-            for (j = 0; j <= den_hi_sig; j++)
+            carry = 0; /* add divisor back in */
+            for(j = 0; j <= den_hi_sig; j++)
             {
                work = static_cast<unsigned long long int>(num[i + j]) + static_cast<unsigned long long int>(den[j]) + carry;
-               carry = HIGHPART (work);
-               num[i + j] = LOWPART (work);
+               carry = HIGHPART(work);
+               num[i + j] = LOWPART(work);
             }
 
-            num [num_hi_sig] = num [num_hi_sig] + static_cast<long long int>(carry);
+            num[num_hi_sig] = num[num_hi_sig] + static_cast<long long int>(carry);
          }
 
          /* Store the quotient digit.  */
@@ -288,10 +272,9 @@ div_and_round_double_cprop (
       }
    }
 
-   decode (quo, lquo, hquo);
+   decode(quo, lquo, hquo);
 
 finish_up:
-
 
    return overflow;
 }
@@ -311,11 +294,7 @@ finish_up:
 
    Using this function, x/D will be equal to (x * m) >> (*POST_SHIFT_PTR),
    where m is the full HOST_BITS_PER_WIDE_INT + 1 bit multiplier.  */
-static
-unsigned long long int
-choose_multiplier (unsigned long long int d, int n, int precision,
-                   unsigned long long int *multiplier_ptr,
-                   int *post_shift_ptr, int *lgup_ptr)
+static unsigned long long int choose_multiplier(unsigned long long int d, int n, int precision, unsigned long long int* multiplier_ptr, int* post_shift_ptr, int* lgup_ptr)
 {
    long long int mhigh_hi, mlow_hi;
    unsigned long long int mhigh_lo, mlow_lo;
@@ -325,9 +304,9 @@ choose_multiplier (unsigned long long int d, int n, int precision,
    long long int nh;
 
    /* lgup = ceil(log2(divisor)); */
-   lgup = ceil_log2 (d);
+   lgup = ceil_log2(d);
 
-   THROW_ASSERT (lgup <= n, "unexpected condition");
+   THROW_ASSERT(lgup <= n, "unexpected condition");
 
    pow = n + lgup;
    pow2 = n + lgup - precision;
@@ -335,12 +314,12 @@ choose_multiplier (unsigned long long int d, int n, int precision,
    /* We could handle this with some effort, but this case is much
      better handled directly with a scc insn, so rely on caller using
      that.  */
-   THROW_ASSERT (pow != 128, "unexpected condition");
+   THROW_ASSERT(pow != 128, "unexpected condition");
 
    /* mlow = 2^(N + lgup)/d */
-   if (pow >= 64)
+   if(pow >= 64)
    {
-      nh =  1LL << (pow - 64);
+      nh = 1LL << (pow - 64);
       nl = 0;
    }
    else
@@ -349,34 +328,30 @@ choose_multiplier (unsigned long long int d, int n, int precision,
       nl = 1ULL << pow;
    }
 
-   div_and_round_double_cprop (nl, nh, d,
-                               &mlow_lo, &mlow_hi);
-
+   div_and_round_double_cprop(nl, nh, d, &mlow_lo, &mlow_hi);
 
    /* mhigh = (2^(N + lgup) + 2^(N + lgup - precision))/d */
-   if (pow2 >= 64)
+   if(pow2 >= 64)
       nh |= 1LL << (pow2 - 64);
    else
       nl |= 1ULL << pow2;
 
-   div_and_round_double_cprop (nl, nh, d,
-                               &mhigh_lo, &mhigh_hi);
+   div_and_round_double_cprop(nl, nh, d, &mhigh_lo, &mhigh_hi);
 
-   THROW_ASSERT (!mhigh_hi || static_cast<unsigned long long int>(nh) - d < d, "unexpected condition");
-   THROW_ASSERT (mhigh_hi <= 1 && mlow_hi <= 1, "unexpected condition");
+   THROW_ASSERT(!mhigh_hi || static_cast<unsigned long long int>(nh) - d < d, "unexpected condition");
+   THROW_ASSERT(mhigh_hi <= 1 && mlow_hi <= 1, "unexpected condition");
    /* Assert that mlow < mhigh.  */
-   THROW_ASSERT (mlow_hi < mhigh_hi
-                 || (mlow_hi == mhigh_hi && mlow_lo < mhigh_lo), "unexpected condition");
+   THROW_ASSERT(mlow_hi < mhigh_hi || (mlow_hi == mhigh_hi && mlow_lo < mhigh_lo), "unexpected condition");
 
    /* If precision == N, then mlow, mhigh exceed 2^N
      (but they do not exceed 2^(N+1)).  */
 
    /* Reduce to lowest terms.  */
-   for (post_shift = lgup; post_shift > 0; post_shift--)
+   for(post_shift = lgup; post_shift > 0; post_shift--)
    {
       unsigned long long int ml_lo = static_cast<unsigned long long int>((static_cast<unsigned long long int>(mlow_hi)) << (64 - 1)) | (mlow_lo >> 1);
       unsigned long long int mh_lo = static_cast<unsigned long long int>((static_cast<unsigned long long int>(mhigh_hi)) << (64 - 1)) | (mhigh_lo >> 1);
-      if (ml_lo >= mh_lo)
+      if(ml_lo >= mh_lo)
          break;
 
       mlow_hi = 0;
@@ -387,7 +362,7 @@ choose_multiplier (unsigned long long int d, int n, int precision,
 
    *post_shift_ptr = post_shift;
    *lgup_ptr = lgup;
-   if (n < 64)
+   if(n < 64)
    {
       unsigned long long int mask = (1ULL << n) - 1;
       *multiplier_ptr = mhigh_lo & mask;
@@ -400,9 +375,10 @@ choose_multiplier (unsigned long long int d, int n, int precision,
    }
 }
 
-void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>& block, std::list<tree_nodeRef>::const_iterator& it_los, gimple_assign *ga, tree_nodeRef op1, enum kind code1, bool& restart_analysis, const std::string &srcp_default, const std::string& 
+void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>& block, std::list<tree_nodeRef>::const_iterator& it_los, gimple_assign* ga, tree_nodeRef op1, enum kind code1, bool& restart_analysis, const std::string& srcp_default,
+                                         const std::string&
 #ifndef NDEBUG
-step_name
+                                             step_name
 #endif
 )
 {
@@ -443,395 +419,381 @@ step_name
    }
    else
    {
-      bool op1_is_pow2 = ((EXACT_POWER_OF_2_OR_ZERO_P (ext_op1)
-               || (! unsignedp && EXACT_POWER_OF_2_OR_ZERO_P (-ext_op1))));
-      //long long int last_div_const = ! rem_flag ? ext_op1 : 0;
+      bool op1_is_pow2 = ((EXACT_POWER_OF_2_OR_ZERO_P(ext_op1) || (!unsignedp && EXACT_POWER_OF_2_OR_ZERO_P(-ext_op1))));
+      // long long int last_div_const = ! rem_flag ? ext_op1 : 0;
 
-      if (code1 == exact_div_expr_K && op1_is_pow2)
+      if(code1 == exact_div_expr_K && op1_is_pow2)
          code1 = trunc_div_expr_K;
-
 
       if(ext_op1 != 0)
       {
-         switch (code1)
+         switch(code1)
          {
             case trunc_div_expr_K:
             case trunc_mod_expr_K:
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Trunc_div or trunc_mod");
+               if(unsignedp)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Trunc_div or trunc_mod");
-                  if (unsignedp)
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---unsigned");
+                  int pre_shift;
+                  auto d = static_cast<unsigned long long int>(ext_op1);
+                  if(EXACT_POWER_OF_2_OR_ZERO_P(d))
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---unsigned");
-                     int pre_shift;
-                     auto d = static_cast<unsigned long long int>(ext_op1);
-                     if (EXACT_POWER_OF_2_OR_ZERO_P (d))
+                     pre_shift = floor_log2(d);
+                     tree_nodeRef new_op1;
+                     if(rem_flag)
                      {
-                        pre_shift = floor_log2 (d);
-                        tree_nodeRef new_op1;
-                        if (rem_flag)
-                        {
-                           tree_nodeRef mask = TM->CreateUniqueIntegerCst((static_cast<long long int>(1) << pre_shift) - 1, GET_INDEX_NODE(type_expr));
-                           new_op1 = tree_man->create_binary_operation(type_expr, op0, mask, srcp_default, bit_and_expr_K);
-                        }
-                        else
-                        {
-                           tree_nodeRef shift = TM->CreateUniqueIntegerCst(pre_shift, GET_INDEX_NODE(type_expr));
-                           new_op1 = tree_man->create_binary_operation(type_expr, op0, shift, srcp_default, rshift_expr_K);
-                        }
-                        ga->op1 = new_op1;
-                        restart_analysis = true;
+                        tree_nodeRef mask = TM->CreateUniqueIntegerCst((static_cast<long long int>(1) << pre_shift) - 1, GET_INDEX_NODE(type_expr));
+                        new_op1 = tree_man->create_binary_operation(type_expr, op0, mask, srcp_default, bit_and_expr_K);
                      }
                      else
                      {
-                        int data_bitsize = static_cast<int>(tree_helper::size(TM, tree_helper::get_type_index(TM,GET_INDEX_NODE(type_expr))));
-                        if(d<(1ull << (data_bitsize-1)))
-                        {
-                           unsigned long long int mh, ml;
-                           int post_shift;
-                           int dummy;
-                           int previous_precision = data_bitsize;
-                           int precision;
-                           if(code1 == trunc_mod_expr_K)
-                              precision = static_cast<int>(std::min(static_cast<unsigned long long>(data_bitsize), std::max(tree_helper::Size(GET_NODE(ga->op0)), tree_helper::Size(GET_NODE(op0))) + 1 +static_cast<unsigned long long int>(ceil_log2(d))) );
-                           else
-                              precision = static_cast<int>(std::min(static_cast<unsigned long long>(data_bitsize), tree_helper::Size(GET_NODE(ga->op0)) + 1 +static_cast<unsigned long long int>(ceil_log2(d))) );
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---correct rounding: precision=" + STR(data_bitsize) + " vs precision=" + STR(precision));
-                           if (previous_precision > precision)
-                           {
-                              INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Decreased precision keeping correct rounding to value "
-                                    + STR(precision) + ". Gained " + STR(previous_precision - precision) + " bits.");
-                              INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
-                           }
-                           /// Find a suitable multiplier and right shift count
-                           /// instead of multiplying with D.
-                           mh = choose_multiplier (d, data_bitsize, precision,
-                                 &ml, &post_shift, &dummy);
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---ml = " + STR(ml) + " mh =" + STR(mh));
-                           /* If the suggested multiplier is more than SIZE bits,
-                              we can do better for even divisors, using an
-                              initial right shift.  */
-                           if (mh != 0 && (d & 1) == 0)
-                           {
-                              pre_shift = floor_log2 (d & -d);
-                              mh = choose_multiplier (d >> pre_shift, data_bitsize,
-                                    precision - pre_shift,
-                                    &ml, &post_shift, &dummy);
-                              THROW_ASSERT (!mh, "unexpected condition");
-                           }
-                           else
-                              pre_shift = 0;
-                           tree_nodeRef quotient_expr;
-                           if (mh != 0)
-                           {
-                              THROW_ASSERT (post_shift - 1 < 64, "fail1");
-
-                              tree_nodeRef t1_ga_var = expand_mult_highpart(op0, ml, type_expr, data_bitsize, it_los, block.second,  srcp_default);
-                              THROW_ASSERT (t1_ga_var, "fail1");
-
-                              tree_nodeRef t2_expr = tree_man->create_binary_operation(type_expr, op0, t1_ga_var, srcp_default, minus_expr_K);
-                              tree_nodeRef t2_ga = CreateGimpleAssign(type_expr, t2_expr, block.first, srcp_default);
-                              block.second->PushBefore(t2_ga, *it_los);
-                              tree_nodeRef t2_ga_var = GetPointer<gimple_assign>(GET_NODE(t2_ga))->op0;
-
-                              tree_nodeRef const1_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(1), GET_INDEX_NODE(type_expr));
-                              tree_nodeRef t3_expr = tree_man->create_binary_operation(type_expr, t2_ga_var, const1_node, srcp_default, rshift_expr_K);
-                              tree_nodeRef t3_ga = CreateGimpleAssign(type_expr, t3_expr, block.first, srcp_default);
-                              block.second->PushBefore(t3_ga, *it_los);
-                              tree_nodeRef t3_ga_var = GetPointer<gimple_assign>(GET_NODE(t3_ga))->op0;
-
-                              tree_nodeRef t4_expr = tree_man->create_binary_operation(type_expr, t1_ga_var, t3_ga_var, srcp_default, plus_expr_K);
-                              tree_nodeRef t4_ga = CreateGimpleAssign(type_expr, t4_expr, block.first, srcp_default);
-                              block.second->PushBefore(t4_ga, *it_los);
-                              tree_nodeRef t4_ga_var = GetPointer<gimple_assign>(GET_NODE(t4_ga))->op0;
-
-                              THROW_ASSERT(post_shift>0, "unexpected condition");
-
-                              if(post_shift >1)
-                              {
-                                 tree_nodeRef post_shift_minusone_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(post_shift-1), GET_INDEX_NODE(type_expr));
-                                 quotient_expr = tree_man->create_binary_operation(type_expr, t4_ga_var, post_shift_minusone_node, srcp_default, rshift_expr_K);
-                              }
-                              else
-                                 quotient_expr = t4_ga_var;
-                           }
-                           else
-                           {
-                              THROW_ASSERT (pre_shift < 64 && post_shift < 64, "fail1");
-                              tree_nodeRef t1_ga_var;
-                              if(pre_shift!=0)
-                              {
-                                 tree_nodeRef pre_shift_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(pre_shift), GET_INDEX_NODE(type_expr));
-                                 tree_nodeRef t1_expr = tree_man->create_binary_operation(type_expr, op0, pre_shift_node, srcp_default, rshift_expr_K);
-                                 tree_nodeRef t1_ga = CreateGimpleAssign(type_expr, t1_expr, block.first, srcp_default);
-                                 block.second->PushBefore(t1_ga, *it_los);
-                                 t1_ga_var = GetPointer<gimple_assign>(GET_NODE(t1_ga))->op0;
-                              }
-                              else
-                                 t1_ga_var = op0;
-
-                              tree_nodeRef t2_ga_var = expand_mult_highpart(t1_ga_var, ml, type_expr, data_bitsize, it_los, block.second, srcp_default);
-
-                              if(post_shift != 0)
-                              {
-                                 tree_nodeRef post_shift_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(post_shift), GET_INDEX_NODE(type_expr));
-                                 quotient_expr = tree_man->create_binary_operation(type_expr, t2_ga_var, post_shift_node, srcp_default, rshift_expr_K);
-                              }
-                              else
-                                 quotient_expr = t2_ga_var;
-                           }
-#ifndef NDEBUG
-                           AppM->RegisterTransformation(step_name, *it_los);
-#endif
-                           if(rem_flag)
-                           {
-                              tree_nodeRef quotient_ga = CreateGimpleAssign(type_expr, quotient_expr, block.first, srcp_default);
-                              block.second->PushBefore(quotient_ga, *it_los);
-                              tree_nodeRef quotient_ga_var = GetPointer<gimple_assign>(GET_NODE(quotient_ga))->op0;
-                              tree_nodeRef mul_expr = tree_man->create_binary_operation(type_expr, quotient_ga_var, op1, srcp_default, mult_expr_K);
-                              tree_nodeRef mul_ga = CreateGimpleAssign(type_expr, mul_expr, block.first, srcp_default);
-                              block.second->PushBefore(mul_ga, *it_los);
-                              tree_nodeRef mul_ga_var = GetPointer<gimple_assign>(GET_NODE(mul_ga))->op0;
-                              /// restrict if needed the input bit-widths
-                              tree_nodeRef sub_expr;
-                              if(
-#ifndef NDEBUG
-                                    AppM->ApplyNewTransformation() and
-#endif
-                                    static_cast<unsigned int>(data_bitsize) > tree_helper::Size(GET_NODE(ga->op0)))
-                              {
-                                 unsigned long long int  masklow = (static_cast<unsigned long long int>(1) << tree_helper::Size(GET_NODE(ga->op0))) - 1;
-                                 tree_nodeRef Constmasklow = TM->CreateUniqueIntegerCst(static_cast<long long int>(masklow), GET_INDEX_NODE(type_expr));
-                                 tree_nodeRef temp_op0_expr = tree_man->create_binary_operation(type_expr, op0, Constmasklow, srcp_default, bit_and_expr_K);
-                                 tree_nodeRef temp_op0_ga = CreateGimpleAssign(type_expr, temp_op0_expr, block.first, srcp_default);
-                                 block.second->PushBefore(temp_op0_ga, *it_los);
-                                 tree_nodeRef temp_op0_ga_var = GetPointer<gimple_assign>(GET_NODE(temp_op0_ga))->op0;
-                                 tree_nodeRef temp_op1_expr = tree_man->create_binary_operation(type_expr, mul_ga_var, Constmasklow, srcp_default, bit_and_expr_K);
-                                 tree_nodeRef temp_op1_ga = CreateGimpleAssign(type_expr, temp_op1_expr, block.first, srcp_default);
-                                 block.second->PushBefore(temp_op1_ga, *it_los);
-                                 tree_nodeRef temp_op1_ga_var = GetPointer<gimple_assign>(GET_NODE(temp_op1_ga))->op0;
-                                 tree_nodeRef temp_sub_expr = tree_man->create_binary_operation(type_expr, temp_op0_ga_var, temp_op1_ga_var, srcp_default, minus_expr_K);
-                                 tree_nodeRef temp_sub_expr_ga = CreateGimpleAssign(type_expr, temp_sub_expr, block.first, srcp_default);
-#ifndef NDEBUG
-                                 AppM->RegisterTransformation(step_name, temp_sub_expr_ga);
-#endif
-                                 block.second->PushBefore(temp_sub_expr_ga, *it_los);
-                                 tree_nodeRef temp_sub_expr_ga_var = GetPointer<gimple_assign>(GET_NODE(temp_sub_expr_ga))->op0;
-                                 sub_expr = tree_man->create_binary_operation(type_expr, temp_sub_expr_ga_var, Constmasklow, srcp_default, bit_and_expr_K);
-
-                              }
-                              else
-                              {
-                                 sub_expr = tree_man->create_binary_operation(type_expr, op0, mul_ga_var, srcp_default, minus_expr_K);
-                              }
-                              ga->op1 = sub_expr;
-                           }
-                           else
-                              ga->op1 = quotient_expr;
-                           restart_analysis = true;
-                        }
+                        tree_nodeRef shift = TM->CreateUniqueIntegerCst(pre_shift, GET_INDEX_NODE(type_expr));
+                        new_op1 = tree_man->create_binary_operation(type_expr, op0, shift, srcp_default, rshift_expr_K);
                      }
+                     ga->op1 = new_op1;
+                     restart_analysis = true;
                   }
                   else
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---signed");
-                     tree_nodeRef new_op1;
-                     long long int d = ext_op1;
-                     unsigned long long int abs_d;
-
-                     /* Since d might be INT_MIN, we have to cast to
-                        unsigned long long before negating to avoid
-                        undefined signed overflow.  */
-                     abs_d = (d >= 0
-                           ? static_cast<unsigned long long int>(d)
-                           : static_cast<unsigned long long int>(-d));
-
-                     /* n rem d = n rem -d */
-                     if (rem_flag && d < 0)
+                     int data_bitsize = static_cast<int>(tree_helper::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(type_expr))));
+                     if(d < (1ull << (data_bitsize - 1)))
                      {
-                        d = static_cast<long long int>(abs_d);
-                     }
+                        unsigned long long int mh, ml;
+                        int post_shift;
+                        int dummy;
+                        int previous_precision = data_bitsize;
+                        int precision;
+                        if(code1 == trunc_mod_expr_K)
+                           precision = static_cast<int>(std::min(static_cast<unsigned long long>(data_bitsize), std::max(tree_helper::Size(GET_NODE(ga->op0)), tree_helper::Size(GET_NODE(op0))) + 1 + static_cast<unsigned long long int>(ceil_log2(d))));
+                        else
+                           precision = static_cast<int>(std::min(static_cast<unsigned long long>(data_bitsize), tree_helper::Size(GET_NODE(ga->op0)) + 1 + static_cast<unsigned long long int>(ceil_log2(d))));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---correct rounding: precision=" + STR(data_bitsize) + " vs precision=" + STR(precision));
+                        if(previous_precision > precision)
+                        {
+                           INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Decreased precision keeping correct rounding to value " + STR(precision) + ". Gained " + STR(previous_precision - precision) + " bits.");
+                           INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
+                        }
+                        /// Find a suitable multiplier and right shift count
+                        /// instead of multiplying with D.
+                        mh = choose_multiplier(d, data_bitsize, precision, &ml, &post_shift, &dummy);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---ml = " + STR(ml) + " mh =" + STR(mh));
+                        /* If the suggested multiplier is more than SIZE bits,
+                           we can do better for even divisors, using an
+                           initial right shift.  */
+                        if(mh != 0 && (d & 1) == 0)
+                        {
+                           pre_shift = floor_log2(d & -d);
+                           mh = choose_multiplier(d >> pre_shift, data_bitsize, precision - pre_shift, &ml, &post_shift, &dummy);
+                           THROW_ASSERT(!mh, "unexpected condition");
+                        }
+                        else
+                           pre_shift = 0;
+                        tree_nodeRef quotient_expr;
+                        if(mh != 0)
+                        {
+                           THROW_ASSERT(post_shift - 1 < 64, "fail1");
 
-                     unsigned int size = tree_helper::size(TM, tree_helper::get_type_index(TM,GET_INDEX_NODE(type_expr)));
-                     if(abs_d == static_cast<unsigned long long int>(1) << (size - 1))
-                     {
-                        tree_nodeRef quotient_expr = tree_man->create_binary_operation(type_expr, op0, op1, srcp_default, eq_expr_K);
-                        if(
+                           tree_nodeRef t1_ga_var = expand_mult_highpart(op0, ml, type_expr, data_bitsize, it_los, block.second, srcp_default);
+                           THROW_ASSERT(t1_ga_var, "fail1");
+
+                           tree_nodeRef t2_expr = tree_man->create_binary_operation(type_expr, op0, t1_ga_var, srcp_default, minus_expr_K);
+                           tree_nodeRef t2_ga = CreateGimpleAssign(type_expr, t2_expr, block.first, srcp_default);
+                           block.second->PushBefore(t2_ga, *it_los);
+                           tree_nodeRef t2_ga_var = GetPointer<gimple_assign>(GET_NODE(t2_ga))->op0;
+
+                           tree_nodeRef const1_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(1), GET_INDEX_NODE(type_expr));
+                           tree_nodeRef t3_expr = tree_man->create_binary_operation(type_expr, t2_ga_var, const1_node, srcp_default, rshift_expr_K);
+                           tree_nodeRef t3_ga = CreateGimpleAssign(type_expr, t3_expr, block.first, srcp_default);
+                           block.second->PushBefore(t3_ga, *it_los);
+                           tree_nodeRef t3_ga_var = GetPointer<gimple_assign>(GET_NODE(t3_ga))->op0;
+
+                           tree_nodeRef t4_expr = tree_man->create_binary_operation(type_expr, t1_ga_var, t3_ga_var, srcp_default, plus_expr_K);
+                           tree_nodeRef t4_ga = CreateGimpleAssign(type_expr, t4_expr, block.first, srcp_default);
+                           block.second->PushBefore(t4_ga, *it_los);
+                           tree_nodeRef t4_ga_var = GetPointer<gimple_assign>(GET_NODE(t4_ga))->op0;
+
+                           THROW_ASSERT(post_shift > 0, "unexpected condition");
+
+                           if(post_shift > 1)
+                           {
+                              tree_nodeRef post_shift_minusone_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(post_shift - 1), GET_INDEX_NODE(type_expr));
+                              quotient_expr = tree_man->create_binary_operation(type_expr, t4_ga_var, post_shift_minusone_node, srcp_default, rshift_expr_K);
+                           }
+                           else
+                              quotient_expr = t4_ga_var;
+                        }
+                        else
+                        {
+                           THROW_ASSERT(pre_shift < 64 && post_shift < 64, "fail1");
+                           tree_nodeRef t1_ga_var;
+                           if(pre_shift != 0)
+                           {
+                              tree_nodeRef pre_shift_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(pre_shift), GET_INDEX_NODE(type_expr));
+                              tree_nodeRef t1_expr = tree_man->create_binary_operation(type_expr, op0, pre_shift_node, srcp_default, rshift_expr_K);
+                              tree_nodeRef t1_ga = CreateGimpleAssign(type_expr, t1_expr, block.first, srcp_default);
+                              block.second->PushBefore(t1_ga, *it_los);
+                              t1_ga_var = GetPointer<gimple_assign>(GET_NODE(t1_ga))->op0;
+                           }
+                           else
+                              t1_ga_var = op0;
+
+                           tree_nodeRef t2_ga_var = expand_mult_highpart(t1_ga_var, ml, type_expr, data_bitsize, it_los, block.second, srcp_default);
+
+                           if(post_shift != 0)
+                           {
+                              tree_nodeRef post_shift_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(post_shift), GET_INDEX_NODE(type_expr));
+                              quotient_expr = tree_man->create_binary_operation(type_expr, t2_ga_var, post_shift_node, srcp_default, rshift_expr_K);
+                           }
+                           else
+                              quotient_expr = t2_ga_var;
+                        }
 #ifndef NDEBUG
-                              AppM->ApplyNewTransformation() and
+                        AppM->RegisterTransformation(step_name, *it_los);
 #endif
-                              rem_flag)
+                        if(rem_flag)
                         {
                            tree_nodeRef quotient_ga = CreateGimpleAssign(type_expr, quotient_expr, block.first, srcp_default);
-#ifndef NDEBUG
-                           AppM->RegisterTransformation(step_name, quotient_ga);
-#endif
                            block.second->PushBefore(quotient_ga, *it_los);
                            tree_nodeRef quotient_ga_var = GetPointer<gimple_assign>(GET_NODE(quotient_ga))->op0;
                            tree_nodeRef mul_expr = tree_man->create_binary_operation(type_expr, quotient_ga_var, op1, srcp_default, mult_expr_K);
                            tree_nodeRef mul_ga = CreateGimpleAssign(type_expr, mul_expr, block.first, srcp_default);
-#ifndef NDEBUG
-                           AppM->RegisterTransformation(step_name, mul_ga);
-#endif
                            block.second->PushBefore(mul_ga, *it_los);
                            tree_nodeRef mul_ga_var = GetPointer<gimple_assign>(GET_NODE(mul_ga))->op0;
-                           tree_nodeRef sub_expr = tree_man->create_binary_operation(type_expr, op0, mul_ga_var, srcp_default, minus_expr_K);
-                           ga->op1 = sub_expr;
+                           /// restrict if needed the input bit-widths
+                           tree_nodeRef sub_expr;
+                           if(
 #ifndef NDEBUG
-                           AppM->RegisterTransformation(step_name, *it_los);
+                               AppM->ApplyNewTransformation() and
 #endif
+                               static_cast<unsigned int>(data_bitsize) > tree_helper::Size(GET_NODE(ga->op0)))
+                           {
+                              unsigned long long int masklow = (static_cast<unsigned long long int>(1) << tree_helper::Size(GET_NODE(ga->op0))) - 1;
+                              tree_nodeRef Constmasklow = TM->CreateUniqueIntegerCst(static_cast<long long int>(masklow), GET_INDEX_NODE(type_expr));
+                              tree_nodeRef temp_op0_expr = tree_man->create_binary_operation(type_expr, op0, Constmasklow, srcp_default, bit_and_expr_K);
+                              tree_nodeRef temp_op0_ga = CreateGimpleAssign(type_expr, temp_op0_expr, block.first, srcp_default);
+                              block.second->PushBefore(temp_op0_ga, *it_los);
+                              tree_nodeRef temp_op0_ga_var = GetPointer<gimple_assign>(GET_NODE(temp_op0_ga))->op0;
+                              tree_nodeRef temp_op1_expr = tree_man->create_binary_operation(type_expr, mul_ga_var, Constmasklow, srcp_default, bit_and_expr_K);
+                              tree_nodeRef temp_op1_ga = CreateGimpleAssign(type_expr, temp_op1_expr, block.first, srcp_default);
+                              block.second->PushBefore(temp_op1_ga, *it_los);
+                              tree_nodeRef temp_op1_ga_var = GetPointer<gimple_assign>(GET_NODE(temp_op1_ga))->op0;
+                              tree_nodeRef temp_sub_expr = tree_man->create_binary_operation(type_expr, temp_op0_ga_var, temp_op1_ga_var, srcp_default, minus_expr_K);
+                              tree_nodeRef temp_sub_expr_ga = CreateGimpleAssign(type_expr, temp_sub_expr, block.first, srcp_default);
+#ifndef NDEBUG
+                              AppM->RegisterTransformation(step_name, temp_sub_expr_ga);
+#endif
+                              block.second->PushBefore(temp_sub_expr_ga, *it_los);
+                              tree_nodeRef temp_sub_expr_ga_var = GetPointer<gimple_assign>(GET_NODE(temp_sub_expr_ga))->op0;
+                              sub_expr = tree_man->create_binary_operation(type_expr, temp_sub_expr_ga_var, Constmasklow, srcp_default, bit_and_expr_K);
+                           }
+                           else
+                           {
+                              sub_expr = tree_man->create_binary_operation(type_expr, op0, mul_ga_var, srcp_default, minus_expr_K);
+                           }
+                           ga->op1 = sub_expr;
                         }
                         else
                            ga->op1 = quotient_expr;
                         restart_analysis = true;
                      }
-                     else if (EXACT_POWER_OF_2_OR_ZERO_P (abs_d))
+                  }
+               }
+               else
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---signed");
+                  tree_nodeRef new_op1;
+                  long long int d = ext_op1;
+                  unsigned long long int abs_d;
+
+                  /* Since d might be INT_MIN, we have to cast to
+                     unsigned long long before negating to avoid
+                     undefined signed overflow.  */
+                  abs_d = (d >= 0 ? static_cast<unsigned long long int>(d) : static_cast<unsigned long long int>(-d));
+
+                  /* n rem d = n rem -d */
+                  if(rem_flag && d < 0)
+                  {
+                     d = static_cast<long long int>(abs_d);
+                  }
+
+                  unsigned int size = tree_helper::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(type_expr)));
+                  if(abs_d == static_cast<unsigned long long int>(1) << (size - 1))
+                  {
+                     tree_nodeRef quotient_expr = tree_man->create_binary_operation(type_expr, op0, op1, srcp_default, eq_expr_K);
+                     if(
+#ifndef NDEBUG
+                         AppM->ApplyNewTransformation() and
+#endif
+                         rem_flag)
                      {
-                        if (rem_flag)
+                        tree_nodeRef quotient_ga = CreateGimpleAssign(type_expr, quotient_expr, block.first, srcp_default);
+#ifndef NDEBUG
+                        AppM->RegisterTransformation(step_name, quotient_ga);
+#endif
+                        block.second->PushBefore(quotient_ga, *it_los);
+                        tree_nodeRef quotient_ga_var = GetPointer<gimple_assign>(GET_NODE(quotient_ga))->op0;
+                        tree_nodeRef mul_expr = tree_man->create_binary_operation(type_expr, quotient_ga_var, op1, srcp_default, mult_expr_K);
+                        tree_nodeRef mul_ga = CreateGimpleAssign(type_expr, mul_expr, block.first, srcp_default);
+#ifndef NDEBUG
+                        AppM->RegisterTransformation(step_name, mul_ga);
+#endif
+                        block.second->PushBefore(mul_ga, *it_los);
+                        tree_nodeRef mul_ga_var = GetPointer<gimple_assign>(GET_NODE(mul_ga))->op0;
+                        tree_nodeRef sub_expr = tree_man->create_binary_operation(type_expr, op0, mul_ga_var, srcp_default, minus_expr_K);
+                        ga->op1 = sub_expr;
+#ifndef NDEBUG
+                        AppM->RegisterTransformation(step_name, *it_los);
+#endif
+                     }
+                     else
+                        ga->op1 = quotient_expr;
+                     restart_analysis = true;
+                  }
+                  else if(EXACT_POWER_OF_2_OR_ZERO_P(abs_d))
+                  {
+                     if(rem_flag)
+                     {
+                        new_op1 = expand_smod_pow2(op0, abs_d, *it_los, block.second, type_expr, srcp_default);
+                        ga->op1 = new_op1;
+                     }
+                     else
+                     {
+                        new_op1 = expand_sdiv_pow2(op0, abs_d, *it_los, block.second, type_expr, srcp_default);
+                        /// We have computed OP0 / abs(OP1).  If OP1 is negative, negate the quotient.
+                        if(d < 0)
                         {
-                           new_op1 = expand_smod_pow2 (op0, abs_d, *it_los, block.second, type_expr, srcp_default);
-                           ga->op1 = new_op1;
+                           tree_nodeRef sdiv_pow2_ga = CreateGimpleAssign(type_expr, new_op1, block.first, srcp_default);
+#ifndef NDEBUG
+                           AppM->RegisterTransformation(step_name, sdiv_pow2_ga);
+#endif
+                           block.second->PushBefore(sdiv_pow2_ga, *it_los);
+                           tree_nodeRef sdiv_pow2_ga_var = GetPointer<gimple_assign>(GET_NODE(sdiv_pow2_ga))->op0;
+                           new_op1 = tree_man->create_unary_operation(type_expr, sdiv_pow2_ga_var, srcp_default, negate_expr_K);
+                        }
+                        ga->op1 = new_op1;
+                     }
+#ifndef NDEBUG
+                     AppM->RegisterTransformation(step_name, *it_los);
+#endif
+                     restart_analysis = true;
+                  }
+                  else
+                  {
+                     int data_bitsize = static_cast<int>(tree_helper::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(type_expr))));
+                     if(data_bitsize <= 64)
+                     {
+                        unsigned long long int ml;
+                        int post_shift;
+                        int lgup;
+                        choose_multiplier(abs_d, data_bitsize, data_bitsize - 1, &ml, &post_shift, &lgup);
+                        tree_nodeRef quotient_expr;
+                        THROW_ASSERT(post_shift < 64 && size - 1 < 64, "unexpected condition");
+                        if(ml < 1ULL << (data_bitsize - 1))
+                        {
+                           tree_nodeRef t1_ga_var = expand_mult_highpart(op0, ml, type_expr, data_bitsize, it_los, block.second, srcp_default);
+                           THROW_ASSERT(t1_ga_var, "fail1");
+
+                           tree_nodeRef t2_ga_var;
+                           if(post_shift != 0)
+                           {
+                              tree_nodeRef post_shift_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(post_shift), GET_INDEX_NODE(type_expr));
+
+                              tree_nodeRef t2_expr = tree_man->create_binary_operation(type_expr, t1_ga_var, post_shift_node, srcp_default, rshift_expr_K);
+                              tree_nodeRef t2_ga = CreateGimpleAssign(type_expr, t2_expr, block.first, srcp_default);
+                              block.second->PushBefore(t2_ga, *it_los);
+                              t2_ga_var = GetPointer<gimple_assign>(GET_NODE(t2_ga))->op0;
+                           }
+                           else
+                              t2_ga_var = t1_ga_var;
+
+                           tree_nodeRef data_bitsize_minusone_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(data_bitsize - 1), GET_INDEX_NODE(type_expr));
+                           tree_nodeRef t3_expr = tree_man->create_binary_operation(type_expr, op0, data_bitsize_minusone_node, srcp_default, rshift_expr_K);
+                           tree_nodeRef t3_ga = CreateGimpleAssign(type_expr, t3_expr, block.first, srcp_default);
+                           block.second->PushBefore(t3_ga, *it_los);
+                           tree_nodeRef t3_ga_var = GetPointer<gimple_assign>(GET_NODE(t3_ga))->op0;
+
+                           if(d < 0)
+                              quotient_expr = tree_man->create_binary_operation(type_expr, t3_ga_var, t2_ga_var, srcp_default, minus_expr_K);
+                           else
+                              quotient_expr = tree_man->create_binary_operation(type_expr, t2_ga_var, t3_ga_var, srcp_default, minus_expr_K);
                         }
                         else
                         {
-                           new_op1 = expand_sdiv_pow2 (op0, abs_d, *it_los, block.second, type_expr, srcp_default);
-                           /// We have computed OP0 / abs(OP1).  If OP1 is negative, negate the quotient.
-                           if (d < 0)
-                           {
-                              tree_nodeRef sdiv_pow2_ga = CreateGimpleAssign(type_expr, new_op1, block.first, srcp_default);
-#ifndef NDEBUG
-                              AppM->RegisterTransformation(step_name, sdiv_pow2_ga);
-#endif
-                              block.second->PushBefore(sdiv_pow2_ga, *it_los);
-                              tree_nodeRef sdiv_pow2_ga_var = GetPointer<gimple_assign>(GET_NODE(sdiv_pow2_ga))->op0;
-                              new_op1 = tree_man->create_unary_operation(type_expr, sdiv_pow2_ga_var, srcp_default, negate_expr_K);
-                           }
-                           ga->op1 = new_op1;
+                           ml |= (~0ULL) << (data_bitsize - 1);
+                           tree_nodeRef t1_ga_var = expand_mult_highpart(op0, ml, type_expr, data_bitsize, it_los, block.second, srcp_default);
+                           THROW_ASSERT(t1_ga_var, "fail1");
+                           tree_nodeRef t2_expr = tree_man->create_binary_operation(type_expr, t1_ga_var, op0, srcp_default, plus_expr_K);
+                           tree_nodeRef t2_ga = CreateGimpleAssign(type_expr, t2_expr, block.first, srcp_default);
+                           block.second->PushBefore(t2_ga, *it_los);
+                           tree_nodeRef t2_ga_var = GetPointer<gimple_assign>(GET_NODE(t2_ga))->op0;
+
+                           tree_nodeRef post_shift_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(post_shift), GET_INDEX_NODE(type_expr));
+
+                           tree_nodeRef t3_expr = tree_man->create_binary_operation(type_expr, t2_ga_var, post_shift_node, srcp_default, rshift_expr_K);
+                           tree_nodeRef t3_ga = CreateGimpleAssign(type_expr, t3_expr, block.first, srcp_default);
+                           block.second->PushBefore(t3_ga, *it_los);
+                           tree_nodeRef t3_ga_var = GetPointer<gimple_assign>(GET_NODE(t3_ga))->op0;
+
+                           tree_nodeRef data_bitsize_minusone_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(data_bitsize - 1), GET_INDEX_NODE(type_expr));
+                           tree_nodeRef t4_expr = tree_man->create_binary_operation(type_expr, op0, data_bitsize_minusone_node, srcp_default, rshift_expr_K);
+                           tree_nodeRef t4_ga = CreateGimpleAssign(type_expr, t4_expr, block.first, srcp_default);
+                           block.second->PushBefore(t4_ga, *it_los);
+                           tree_nodeRef t4_ga_var = GetPointer<gimple_assign>(GET_NODE(t4_ga))->op0;
+
+                           if(d < 0)
+                              quotient_expr = tree_man->create_binary_operation(type_expr, t4_ga_var, t3_ga_var, srcp_default, minus_expr_K);
+                           else
+                              quotient_expr = tree_man->create_binary_operation(type_expr, t3_ga_var, t4_ga_var, srcp_default, minus_expr_K);
                         }
+                        if(rem_flag)
+                        {
+                           tree_nodeRef quotient_ga = CreateGimpleAssign(type_expr, quotient_expr, block.first, srcp_default);
+                           block.second->PushBefore(quotient_ga, *it_los);
+                           tree_nodeRef quotient_ga_var = GetPointer<gimple_assign>(GET_NODE(quotient_ga))->op0;
+                           tree_nodeRef mul_expr = tree_man->create_binary_operation(type_expr, quotient_ga_var, op1, srcp_default, mult_expr_K);
+                           tree_nodeRef mul_ga = CreateGimpleAssign(type_expr, mul_expr, block.first, srcp_default);
+                           block.second->PushBefore(mul_ga, *it_los);
+                           tree_nodeRef mul_ga_var = GetPointer<gimple_assign>(GET_NODE(mul_ga))->op0;
+                           tree_nodeRef sub_expr = tree_man->create_binary_operation(type_expr, op0, mul_ga_var, srcp_default, minus_expr_K);
+                           ga->op1 = sub_expr;
+                        }
+                        else
+                           ga->op1 = quotient_expr;
 #ifndef NDEBUG
                         AppM->RegisterTransformation(step_name, *it_los);
 #endif
                         restart_analysis = true;
                      }
-                     else
-                     {
-                        int data_bitsize = static_cast<int>(tree_helper::size(TM, tree_helper::get_type_index(TM,GET_INDEX_NODE(type_expr))));
-                        if(data_bitsize<=64)
-                        {
-                           unsigned long long int ml;
-                           int post_shift;
-                           int lgup;
-                           choose_multiplier (abs_d, data_bitsize, data_bitsize - 1,
-                                 &ml, &post_shift, &lgup);
-                           tree_nodeRef quotient_expr;
-                           THROW_ASSERT (post_shift < 64 && size - 1 < 64, "unexpected condition");
-                           if (ml < 1ULL << (data_bitsize - 1))
-                           {
-                              tree_nodeRef t1_ga_var = expand_mult_highpart(op0, ml, type_expr, data_bitsize, it_los, block.second, srcp_default);
-                              THROW_ASSERT (t1_ga_var, "fail1");
-
-                              tree_nodeRef t2_ga_var;
-                              if(post_shift != 0)
-                              {
-                                 tree_nodeRef post_shift_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(post_shift), GET_INDEX_NODE(type_expr));
-
-                                 tree_nodeRef t2_expr = tree_man->create_binary_operation(type_expr, t1_ga_var, post_shift_node, srcp_default, rshift_expr_K);
-                                 tree_nodeRef t2_ga = CreateGimpleAssign(type_expr, t2_expr, block.first, srcp_default);
-                                 block.second->PushBefore(t2_ga, *it_los);
-                                 t2_ga_var = GetPointer<gimple_assign>(GET_NODE(t2_ga))->op0;
-                              }
-                              else
-                                 t2_ga_var = t1_ga_var;
-
-
-                              tree_nodeRef data_bitsize_minusone_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(data_bitsize-1), GET_INDEX_NODE(type_expr));
-                              tree_nodeRef t3_expr = tree_man->create_binary_operation(type_expr, op0, data_bitsize_minusone_node, srcp_default, rshift_expr_K);
-                              tree_nodeRef t3_ga = CreateGimpleAssign(type_expr, t3_expr, block.first, srcp_default);
-                              block.second->PushBefore(t3_ga, *it_los);
-                              tree_nodeRef t3_ga_var = GetPointer<gimple_assign>(GET_NODE(t3_ga))->op0;
-
-
-                              if (d < 0)
-                                 quotient_expr = tree_man->create_binary_operation(type_expr, t3_ga_var, t2_ga_var, srcp_default, minus_expr_K);
-                              else
-                                 quotient_expr = tree_man->create_binary_operation(type_expr, t2_ga_var, t3_ga_var, srcp_default, minus_expr_K);
-                           }
-                           else
-                           {
-
-                              ml |= (~ 0ULL) << (data_bitsize - 1);
-                              tree_nodeRef t1_ga_var = expand_mult_highpart(op0, ml, type_expr, data_bitsize, it_los, block.second, srcp_default);
-                              THROW_ASSERT (t1_ga_var, "fail1");
-                              tree_nodeRef t2_expr = tree_man->create_binary_operation(type_expr, t1_ga_var, op0, srcp_default, plus_expr_K);
-                              tree_nodeRef t2_ga = CreateGimpleAssign(type_expr, t2_expr, block.first, srcp_default);
-                              block.second->PushBefore(t2_ga, *it_los);
-                              tree_nodeRef t2_ga_var = GetPointer<gimple_assign>(GET_NODE(t2_ga))->op0;
-
-                              tree_nodeRef post_shift_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(post_shift), GET_INDEX_NODE(type_expr));
-
-                              tree_nodeRef t3_expr = tree_man->create_binary_operation(type_expr, t2_ga_var, post_shift_node, srcp_default, rshift_expr_K);
-                              tree_nodeRef t3_ga = CreateGimpleAssign(type_expr, t3_expr, block.first, srcp_default);
-                              block.second->PushBefore(t3_ga, *it_los);
-                              tree_nodeRef t3_ga_var = GetPointer<gimple_assign>(GET_NODE(t3_ga))->op0;
-
-                              tree_nodeRef data_bitsize_minusone_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(data_bitsize-1), GET_INDEX_NODE(type_expr));
-                              tree_nodeRef t4_expr = tree_man->create_binary_operation(type_expr, op0, data_bitsize_minusone_node, srcp_default, rshift_expr_K);
-                              tree_nodeRef t4_ga = CreateGimpleAssign(type_expr, t4_expr, block.first, srcp_default);
-                              block.second->PushBefore(t4_ga, *it_los);
-                              tree_nodeRef t4_ga_var = GetPointer<gimple_assign>(GET_NODE(t4_ga))->op0;
-
-                              if (d < 0)
-                                 quotient_expr = tree_man->create_binary_operation(type_expr, t4_ga_var, t3_ga_var, srcp_default, minus_expr_K);
-                              else
-                                 quotient_expr = tree_man->create_binary_operation(type_expr, t3_ga_var, t4_ga_var, srcp_default, minus_expr_K);
-
-                           }
-                           if(rem_flag)
-                           {
-                              tree_nodeRef quotient_ga = CreateGimpleAssign(type_expr, quotient_expr, block.first, srcp_default);
-                              block.second->PushBefore(quotient_ga, *it_los);
-                              tree_nodeRef quotient_ga_var = GetPointer<gimple_assign>(GET_NODE(quotient_ga))->op0;
-                              tree_nodeRef mul_expr = tree_man->create_binary_operation(type_expr, quotient_ga_var, op1, srcp_default, mult_expr_K);
-                              tree_nodeRef mul_ga = CreateGimpleAssign(type_expr, mul_expr, block.first, srcp_default);
-                              block.second->PushBefore(mul_ga, *it_los);
-                              tree_nodeRef mul_ga_var = GetPointer<gimple_assign>(GET_NODE(mul_ga))->op0;
-                              tree_nodeRef sub_expr = tree_man->create_binary_operation(type_expr, op0, mul_ga_var, srcp_default, minus_expr_K);
-                              ga->op1 = sub_expr;
-                           }
-                           else
-                              ga->op1 = quotient_expr;
-#ifndef NDEBUG
-                           AppM->RegisterTransformation(step_name, *it_los);
-#endif
-                           restart_analysis = true;
-                        }
-                     }
                   }
-                  break;
                }
+               break;
+            }
             case exact_div_expr_K:
-               {
-                  int pre_shift;
-                  long long int d = ext_op1;
-                  unsigned long long int ml;
-                  unsigned int size = tree_helper::size(TM, tree_helper::get_type_index(TM,GET_INDEX_NODE(type_expr)));
+            {
+               int pre_shift;
+               long long int d = ext_op1;
+               unsigned long long int ml;
+               unsigned int size = tree_helper::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(type_expr)));
 
-                  pre_shift = floor_log2 (static_cast<unsigned long long int>(d & -d));
-                  ml = invert_mod2n (static_cast<unsigned long long int>(d >> pre_shift), size);
-                  tree_nodeRef pre_shift_node = TM->CreateUniqueIntegerCst(pre_shift, GET_INDEX_NODE(type_expr));
-                  tree_nodeRef ml_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(ml), GET_INDEX_NODE(type_expr));
-                  tree_nodeRef t1_expr = tree_man->create_binary_operation(type_expr, op0, pre_shift_node, srcp_default, rshift_expr_K);
-                  tree_nodeRef t1_ga = CreateGimpleAssign(type_expr, t1_expr, block.first, srcp_default);
-                  block.second->PushBefore(t1_ga, *it_los);
-                  tree_nodeRef t1_ga_var = GetPointer<gimple_assign>(GET_NODE(t1_ga))->op0;
-                  tree_nodeRef quotient_expr = tree_man->create_binary_operation(type_expr, t1_ga_var, ml_node, srcp_default, mult_expr_K);
+               pre_shift = floor_log2(static_cast<unsigned long long int>(d & -d));
+               ml = invert_mod2n(static_cast<unsigned long long int>(d >> pre_shift), size);
+               tree_nodeRef pre_shift_node = TM->CreateUniqueIntegerCst(pre_shift, GET_INDEX_NODE(type_expr));
+               tree_nodeRef ml_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(ml), GET_INDEX_NODE(type_expr));
+               tree_nodeRef t1_expr = tree_man->create_binary_operation(type_expr, op0, pre_shift_node, srcp_default, rshift_expr_K);
+               tree_nodeRef t1_ga = CreateGimpleAssign(type_expr, t1_expr, block.first, srcp_default);
+               block.second->PushBefore(t1_ga, *it_los);
+               tree_nodeRef t1_ga_var = GetPointer<gimple_assign>(GET_NODE(t1_ga))->op0;
+               tree_nodeRef quotient_expr = tree_man->create_binary_operation(type_expr, t1_ga_var, ml_node, srcp_default, mult_expr_K);
 
-                  ga->op1 = quotient_expr;
+               ga->op1 = quotient_expr;
 #ifndef NDEBUG
-                  AppM->RegisterTransformation(step_name, *it_los);
+               AppM->RegisterTransformation(step_name, *it_los);
 #endif
-                  restart_analysis = true;
-                  break;
-               }
+               restart_analysis = true;
+               break;
+            }
             case assert_expr_K:
             case bit_and_expr_K:
             case bit_ior_expr_K:
@@ -932,10 +894,10 @@ step_name
             case CASE_TYPE_NODES:
             case CASE_UNARY_EXPRESSION:
             default:
-               {
-                  THROW_ERROR("not yet supported code: " + GET_NODE(ga->op1)->get_kind_text());
-                  break;
-               }
+            {
+               THROW_ERROR("not yet supported code: " + GET_NODE(ga->op1)->get_kind_text());
+               break;
+            }
          }
       }
    }
@@ -943,19 +905,19 @@ step_name
 DesignFlowStep_Status IR_lowering::InternalExec()
 {
    tree_nodeRef tn = TM->get_tree_node_const(function_id);
-   auto * fd = GetPointer<function_decl>(tn);
+   auto* fd = GetPointer<function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
-   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement_list");
-   ///first analyze phis
+   /// first analyze phis
    for(auto block : sl->list_of_bloc)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining PHI of BB" + STR(block.first));
       for(const auto& phi : block.second->CGetPhiList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---phi operation");
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---phi index: "+ STR(GET_INDEX_NODE(phi)));
-         auto * pn = GetPointer<gimple_phi>(GET_NODE(phi));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---phi index: " + STR(GET_INDEX_NODE(phi)));
+         auto* pn = GetPointer<gimple_phi>(GET_NODE(phi));
          const std::string srcp_default = pn->include_name + ":" + STR(pn->line_number) + ":" + STR(pn->column_number);
 
          bool is_virtual = pn->virtual_flag;
@@ -964,11 +926,8 @@ DesignFlowStep_Status IR_lowering::InternalExec()
             gimple_phi::DefEdgeList to_be_replaced;
             for(const auto& def_edge : pn->CGetDefEdgesList())
             {
-               if(GET_NODE(def_edge.first)->get_kind() == addr_expr_K ||
-                     GET_NODE(def_edge.first)->get_kind() == view_convert_expr_K ||
-                     GET_NODE(def_edge.first)->get_kind() == nop_expr_K ||
-                     GET_NODE(def_edge.first)->get_kind() == pointer_plus_expr_K ||
-                     GET_NODE(def_edge.first)->get_kind() == minus_expr_K)
+               if(GET_NODE(def_edge.first)->get_kind() == addr_expr_K || GET_NODE(def_edge.first)->get_kind() == view_convert_expr_K || GET_NODE(def_edge.first)->get_kind() == nop_expr_K || GET_NODE(def_edge.first)->get_kind() == pointer_plus_expr_K ||
+                  GET_NODE(def_edge.first)->get_kind() == minus_expr_K)
                {
                   to_be_replaced.push_back(def_edge);
                }
@@ -979,7 +938,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                tree_nodeRef op_ga;
                if(ue)
                {
-                  tree_nodeRef ue_expr = tree_man->create_unary_operation(ue->type,ue->op, srcp_default, GET_NODE(def_edge.first)->get_kind());///It is required to de-share some IR nodes
+                  tree_nodeRef ue_expr = tree_man->create_unary_operation(ue->type, ue->op, srcp_default, GET_NODE(def_edge.first)->get_kind()); /// It is required to de-share some IR nodes
                   op_ga = CreateGimpleAssign(ue->type, ue_expr, def_edge.second, srcp_default);
                }
                else
@@ -995,11 +954,8 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                else
                {
                   auto last_statement = pred_block->CGetStmtList().back();
-                  if(GET_NODE(last_statement)->get_kind() == gimple_cond_K ||
-                        GET_NODE(last_statement)->get_kind() == gimple_multi_way_if_K ||
-                        GET_NODE(last_statement)->get_kind() == gimple_return_K ||
-                        GET_NODE(last_statement)->get_kind() == gimple_switch_K ||
-                        GET_NODE(last_statement)->get_kind() == gimple_goto_K)
+                  if(GET_NODE(last_statement)->get_kind() == gimple_cond_K || GET_NODE(last_statement)->get_kind() == gimple_multi_way_if_K || GET_NODE(last_statement)->get_kind() == gimple_return_K ||
+                     GET_NODE(last_statement)->get_kind() == gimple_switch_K || GET_NODE(last_statement)->get_kind() == gimple_goto_K)
                      pred_block->PushBefore(op_ga, last_statement);
                   else
                   {
@@ -1018,9 +974,10 @@ DesignFlowStep_Status IR_lowering::InternalExec()
    for(auto block : sl->list_of_bloc)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
-      const auto & list_of_stmt = block.second->CGetStmtList();
+      const auto& list_of_stmt = block.second->CGetStmtList();
       bool restart_analysis;
-      do {
+      do
+      {
          restart_analysis = false;
          auto it_los_end = list_of_stmt.end();
          auto it_los = list_of_stmt.begin();
@@ -1041,7 +998,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(*it_los)->ToString());
             if(GET_NODE(*it_los)->get_kind() == gimple_assign_K)
             {
-               auto * ga =  GetPointer<gimple_assign>(GET_NODE(*it_los));
+               auto* ga = GetPointer<gimple_assign>(GET_NODE(*it_los));
                const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Left part is " + GET_CONST_NODE(ga->op0)->get_kind_text() + " - Right part is " + GET_CONST_NODE(ga->op1)->get_kind_text());
                enum kind code0 = GET_NODE(ga->op0)->get_kind();
@@ -1055,17 +1012,16 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   it_los++;
                   continue;
                }
-               if(GetPointer<binary_expr>(GET_NODE(ga->op1)))/// required by the CLANG/LLVM plugin
+               if(GetPointer<binary_expr>(GET_NODE(ga->op1))) /// required by the CLANG/LLVM plugin
                {
-                  auto binaryNormalize = [&]
-                  {
+                  auto binaryNormalize = [&] {
                      auto be = GetPointer<binary_expr>(GET_NODE(ga->op1));
                      if(GetPointer<unary_expr>(GET_NODE(be->op0)))
                      {
-                        if (GET_NODE(be->op0)->get_kind() == addr_expr_K)
+                        if(GET_NODE(be->op0)->get_kind() == addr_expr_K)
                         {
                            auto* ae = GetPointer<addr_expr>(GET_NODE(be->op0));
-                           tree_nodeRef ae_expr = tree_man->create_unary_operation(ae->type,ae->op, srcp_default, addr_expr_K);///It is required to de-share some IR nodes
+                           tree_nodeRef ae_expr = tree_man->create_unary_operation(ae->type, ae->op, srcp_default, addr_expr_K); /// It is required to de-share some IR nodes
                            tree_nodeRef ae_ga = CreateGimpleAssign(ae->type, ae_expr, block.first, srcp_default);
                            tree_nodeRef ae_vd = GetPointer<gimple_assign>(GET_NODE(ae_ga))->op0;
                            if(ga->temporary_address || code1 == mem_ref_K)
@@ -1076,7 +1032,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         }
                         else
                         {
-                           auto * ue = GetPointer<unary_expr>(GET_NODE(be->op0));
+                           auto* ue = GetPointer<unary_expr>(GET_NODE(be->op0));
                            tree_nodeRef new_ga = CreateGimpleAssign(ue->type, be->op0, block.first, srcp_default);
                            tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
                            if(ga->temporary_address || code1 == mem_ref_K)
@@ -1089,7 +1045,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      }
                      if(GetPointer<unary_expr>(GET_NODE(be->op1)))
                      {
-                        auto * ue = GetPointer<unary_expr>(GET_NODE(be->op1));
+                        auto* ue = GetPointer<unary_expr>(GET_NODE(be->op1));
                         tree_nodeRef new_ga = CreateGimpleAssign(ue->type, be->op1, block.first, srcp_default);
                         tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
                         be->op1 = ssa_vd;
@@ -1099,7 +1055,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      }
                      if(GetPointer<binary_expr>(GET_NODE(be->op0)))
                      {
-                        auto * op = GetPointer<binary_expr>(GET_NODE(be->op0));
+                        auto* op = GetPointer<binary_expr>(GET_NODE(be->op0));
                         tree_nodeRef new_ga = CreateGimpleAssign(op->type, be->op0, block.first, srcp_default);
                         tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
                         if(ga->temporary_address || code1 == mem_ref_K)
@@ -1111,7 +1067,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      }
                      if(GetPointer<binary_expr>(GET_NODE(be->op1)))
                      {
-                        auto * op = GetPointer<binary_expr>(GET_NODE(be->op1));
+                        auto* op = GetPointer<binary_expr>(GET_NODE(be->op1));
                         tree_nodeRef new_ga = CreateGimpleAssign(op->type, be->op1, block.first, srcp_default);
                         tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
                         be->op1 = ssa_vd;
@@ -1122,89 +1078,87 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   };
                   binaryNormalize();
                }
-               if(GetPointer<ternary_expr>(GET_NODE(ga->op1)))/// required by the CLANG/LLVM plugin
+               if(GetPointer<ternary_expr>(GET_NODE(ga->op1))) /// required by the CLANG/LLVM plugin
                {
-                  auto ternaryNormalize = [&]
-                  {
+                  auto ternaryNormalize = [&] {
                      if(GET_NODE(ga->op1)->get_kind() == cond_expr_K)
-                  {
-                     auto te = GetPointer<ternary_expr>(GET_NODE(ga->op1));
-                     if(GetPointer<unary_expr>(GET_NODE(te->op0)))
                      {
-                        auto * ue = GetPointer<unary_expr>(GET_NODE(te->op0));
-                        tree_nodeRef new_ga = CreateGimpleAssign(ue->type, te->op0, block.first, srcp_default);
-                        tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
-                        te->op0 = ssa_vd;
-                        block.second->PushBefore(new_ga, *it_los);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
-                        restart_analysis = true;
+                        auto te = GetPointer<ternary_expr>(GET_NODE(ga->op1));
+                        if(GetPointer<unary_expr>(GET_NODE(te->op0)))
+                        {
+                           auto* ue = GetPointer<unary_expr>(GET_NODE(te->op0));
+                           tree_nodeRef new_ga = CreateGimpleAssign(ue->type, te->op0, block.first, srcp_default);
+                           tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                           te->op0 = ssa_vd;
+                           block.second->PushBefore(new_ga, *it_los);
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
+                           restart_analysis = true;
+                        }
+                        if(GetPointer<unary_expr>(GET_NODE(te->op1)))
+                        {
+                           auto* ue = GetPointer<unary_expr>(GET_NODE(te->op1));
+                           tree_nodeRef new_ga = CreateGimpleAssign(ue->type, te->op1, block.first, srcp_default);
+                           tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                           te->op1 = ssa_vd;
+                           block.second->PushBefore(new_ga, *it_los);
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
+                           restart_analysis = true;
+                        }
+                        if(te->op2 && GetPointer<unary_expr>(GET_NODE(te->op2)))
+                        {
+                           auto* ue = GetPointer<unary_expr>(GET_NODE(te->op2));
+                           tree_nodeRef new_ga = CreateGimpleAssign(ue->type, te->op2, block.first, srcp_default);
+                           tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                           te->op2 = ssa_vd;
+                           block.second->PushBefore(new_ga, *it_los);
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
+                           restart_analysis = true;
+                        }
+                        if(GetPointer<binary_expr>(GET_NODE(te->op0)))
+                        {
+                           auto* op = GetPointer<binary_expr>(GET_NODE(te->op0));
+                           tree_nodeRef new_ga = CreateGimpleAssign(op->type, te->op0, block.first, srcp_default);
+                           tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                           te->op0 = ssa_vd;
+                           block.second->PushBefore(new_ga, *it_los);
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
+                           restart_analysis = true;
+                        }
+                        if(GetPointer<binary_expr>(GET_NODE(te->op1)))
+                        {
+                           auto* op = GetPointer<binary_expr>(GET_NODE(te->op1));
+                           tree_nodeRef new_ga = CreateGimpleAssign(op->type, te->op1, block.first, srcp_default);
+                           tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                           te->op1 = ssa_vd;
+                           block.second->PushBefore(new_ga, *it_los);
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
+                           restart_analysis = true;
+                        }
+                        if(te->op2 && GetPointer<binary_expr>(GET_NODE(te->op2)))
+                        {
+                           auto* op = GetPointer<binary_expr>(GET_NODE(te->op2));
+                           tree_nodeRef new_ga = CreateGimpleAssign(op->type, te->op2, block.first, srcp_default);
+                           tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                           te->op2 = ssa_vd;
+                           block.second->PushBefore(new_ga, *it_los);
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
+                           restart_analysis = true;
+                        }
                      }
-                     if(GetPointer<unary_expr>(GET_NODE(te->op1)))
-                     {
-                        auto * ue = GetPointer<unary_expr>(GET_NODE(te->op1));
-                        tree_nodeRef new_ga = CreateGimpleAssign(ue->type, te->op1, block.first, srcp_default);
-                        tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
-                        te->op1 = ssa_vd;
-                        block.second->PushBefore(new_ga, *it_los);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
-                        restart_analysis = true;
-                     }
-                     if(te->op2 && GetPointer<unary_expr>(GET_NODE(te->op2)))
-                     {
-                        auto * ue = GetPointer<unary_expr>(GET_NODE(te->op2));
-                        tree_nodeRef new_ga = CreateGimpleAssign(ue->type, te->op2, block.first, srcp_default);
-                        tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
-                        te->op2 = ssa_vd;
-                        block.second->PushBefore(new_ga, *it_los);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
-                        restart_analysis = true;
-                     }
-                     if(GetPointer<binary_expr>(GET_NODE(te->op0)))
-                     {
-                        auto * op = GetPointer<binary_expr>(GET_NODE(te->op0));
-                        tree_nodeRef new_ga = CreateGimpleAssign(op->type, te->op0, block.first, srcp_default);
-                        tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
-                        te->op0 = ssa_vd;
-                        block.second->PushBefore(new_ga, *it_los);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
-                        restart_analysis = true;
-                     }
-                     if(GetPointer<binary_expr>(GET_NODE(te->op1)))
-                     {
-                        auto * op = GetPointer<binary_expr>(GET_NODE(te->op1));
-                        tree_nodeRef new_ga = CreateGimpleAssign(op->type, te->op1, block.first, srcp_default);
-                        tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
-                        te->op1 = ssa_vd;
-                        block.second->PushBefore(new_ga, *it_los);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
-                        restart_analysis = true;
-                     }
-                     if(te->op2 && GetPointer<binary_expr>(GET_NODE(te->op2)))
-                     {
-                        auto * op = GetPointer<binary_expr>(GET_NODE(te->op2));
-                        tree_nodeRef new_ga = CreateGimpleAssign(op->type, te->op2, block.first, srcp_default);
-                        tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
-                        te->op2 = ssa_vd;
-                        block.second->PushBefore(new_ga, *it_los);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
-                        restart_analysis = true;
-                     }
-                  }
                   };
                   ternaryNormalize();
                }
 
-               if(GetPointer<binary_expr>(GET_NODE(ga->op0)))/// required by the CLANG/LLVM plugin
+               if(GetPointer<binary_expr>(GET_NODE(ga->op0))) /// required by the CLANG/LLVM plugin
                {
-                  auto binaryNormalize = [&]
-                  {
+                  auto binaryNormalize = [&] {
                      auto be = GetPointer<binary_expr>(GET_NODE(ga->op0));
                      if(GetPointer<unary_expr>(GET_NODE(be->op0)))
                      {
-                        if (GET_NODE(be->op0)->get_kind() == addr_expr_K)
+                        if(GET_NODE(be->op0)->get_kind() == addr_expr_K)
                         {
                            auto* ae = GetPointer<addr_expr>(GET_NODE(be->op0));
-                           tree_nodeRef ae_expr = tree_man->create_unary_operation(ae->type,ae->op, srcp_default, addr_expr_K);///It is required to de-share some IR nodes
+                           tree_nodeRef ae_expr = tree_man->create_unary_operation(ae->type, ae->op, srcp_default, addr_expr_K); /// It is required to de-share some IR nodes
                            tree_nodeRef ae_ga = CreateGimpleAssign(ae->type, ae_expr, block.first, srcp_default);
                            tree_nodeRef ae_vd = GetPointer<gimple_assign>(GET_NODE(ae_ga))->op0;
                            if(code0 == mem_ref_K)
@@ -1215,7 +1169,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         }
                         else
                         {
-                           auto * ue = GetPointer<unary_expr>(GET_NODE(be->op0));
+                           auto* ue = GetPointer<unary_expr>(GET_NODE(be->op0));
                            tree_nodeRef new_ga = CreateGimpleAssign(ue->type, be->op0, block.first, srcp_default);
                            tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
                            if(code0 == mem_ref_K)
@@ -1228,7 +1182,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      }
                      if(GetPointer<unary_expr>(GET_NODE(be->op1)))
                      {
-                        auto * ue = GetPointer<unary_expr>(GET_NODE(be->op1));
+                        auto* ue = GetPointer<unary_expr>(GET_NODE(be->op1));
                         tree_nodeRef new_ga = CreateGimpleAssign(ue->type, be->op1, block.first, srcp_default);
                         tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
                         be->op1 = ssa_vd;
@@ -1238,7 +1192,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      }
                      if(GetPointer<binary_expr>(GET_NODE(be->op0)))
                      {
-                        auto * op = GetPointer<binary_expr>(GET_NODE(be->op0));
+                        auto* op = GetPointer<binary_expr>(GET_NODE(be->op0));
                         tree_nodeRef new_ga = CreateGimpleAssign(op->type, be->op0, block.first, srcp_default);
                         tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
                         if(code0 == mem_ref_K)
@@ -1250,7 +1204,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      }
                      if(GetPointer<binary_expr>(GET_NODE(be->op1)))
                      {
-                        auto * op = GetPointer<binary_expr>(GET_NODE(be->op1));
+                        auto* op = GetPointer<binary_expr>(GET_NODE(be->op1));
                         tree_nodeRef new_ga = CreateGimpleAssign(op->type, be->op1, block.first, srcp_default);
                         tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
                         be->op1 = ssa_vd;
@@ -1264,25 +1218,24 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                if(code1 == array_ref_K)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---expand array_ref 1 " + STR(GET_INDEX_NODE(ga->op1)));
-                  auto * AR = GetPointer<array_ref>(GET_NODE(ga->op1));
+                  auto* AR = GetPointer<array_ref>(GET_NODE(ga->op1));
                   ga->op1 = array_ref_lowering(AR, srcp_default, block, it_los, true);
                   restart_analysis = true;
                }
                else if(code1 == addr_expr_K)
                {
-                  auto addr_exprNormalize = [&]
-                  {
-                     auto * ae =  GetPointer<addr_expr>(GET_NODE(ga->op1));
+                  auto addr_exprNormalize = [&] {
+                     auto* ae = GetPointer<addr_expr>(GET_NODE(ga->op1));
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Op of addr expr is " + GET_CONST_NODE(ae->op)->get_kind_text());
                      enum kind ae_code = GET_NODE(ae->op)->get_kind();
                      if(ae_code == mem_ref_K)
                      {
-                        ///normalize op0
-                        auto * MR =  GetPointer<mem_ref>(GET_NODE(ae->op));
+                        /// normalize op0
+                        auto* MR = GetPointer<mem_ref>(GET_NODE(ae->op));
                         if(GET_NODE(MR->op0)->get_kind() == addr_expr_K)
                         {
                            auto* ae0 = GetPointer<addr_expr>(GET_NODE(MR->op0));
-                           tree_nodeRef ae_expr = tree_man->create_unary_operation(ae0->type,ae0->op, srcp_default, addr_expr_K);///It is required to de-share some IR nodes
+                           tree_nodeRef ae_expr = tree_man->create_unary_operation(ae0->type, ae0->op, srcp_default, addr_expr_K); /// It is required to de-share some IR nodes
                            tree_nodeRef ae_ga = CreateGimpleAssign(ae0->type, ae_expr, block.first, srcp_default);
                            GetPointer<gimple_assign>(GET_NODE(ae_ga))->temporary_address = ga->temporary_address;
                            tree_nodeRef ae_vd = GetPointer<gimple_assign>(GET_NODE(ae_ga))->op0;
@@ -1290,7 +1243,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ae_ga)->ToString());
                            MR->op0 = ae_vd;
                         }
-                        else if(GET_NODE(MR->op0)->get_kind() == pointer_plus_expr_K)///required by the CLANG/LLVM plugin
+                        else if(GET_NODE(MR->op0)->get_kind() == pointer_plus_expr_K) /// required by the CLANG/LLVM plugin
                         {
                            auto* pp0 = GetPointer<pointer_plus_expr>(GET_NODE(MR->op0));
                            tree_nodeRef pp_ga = CreateGimpleAssign(pp0->type, MR->op0, block.first, srcp_default);
@@ -1300,7 +1253,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(pp_ga)->ToString());
                            MR->op0 = pp_vd;
                         }
-                        else if(GET_NODE(MR->op0)->get_kind() == view_convert_expr_K)///required by the CLANG/LLVM plugin
+                        else if(GET_NODE(MR->op0)->get_kind() == view_convert_expr_K) /// required by the CLANG/LLVM plugin
                         {
                            auto* vc0 = GetPointer<view_convert_expr>(GET_NODE(MR->op0));
                            tree_nodeRef vc_ga = CreateGimpleAssign(vc0->type, MR->op0, block.first, srcp_default);
@@ -1363,13 +1316,13 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      }
                      else if(ae_code == array_ref_K)
                      {
-                        auto * AR = GetPointer<array_ref>(GET_NODE(ae->op));
+                        auto* AR = GetPointer<array_ref>(GET_NODE(ae->op));
                         ae->op = array_ref_lowering(AR, srcp_default, block, it_los, ga->temporary_address);
                         restart_analysis = true;
                      }
                      else if(ae_code == target_mem_ref461_K)
                      {
-                        auto * tmr = GetPointer<target_mem_ref461>(GET_NODE(ae->op));
+                        auto* tmr = GetPointer<target_mem_ref461>(GET_NODE(ae->op));
                         /// expose some part of the target_mem_ref statement
                         expand_target_mem_ref(tmr, *it_los, block.second, srcp_default, ga->temporary_address);
                         tree_nodeRef pt = tree_man->create_pointer_type(tmr->type);
@@ -1381,10 +1334,10 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      else if(ae_code == component_ref_K)
                      {
                         auto* cr = GetPointer<component_ref>(GET_NODE(ae->op));
-                        auto * field_d = GetPointer<field_decl>(GET_NODE(cr->op1));
+                        auto* field_d = GetPointer<field_decl>(GET_NODE(cr->op1));
                         THROW_ASSERT(field_d, "expected an field_decl but got something of different");
                         tree_nodeRef pt = tree_man->create_pointer_type(cr->type);
-                        tree_nodeRef ae_cr = tree_man->create_unary_operation(pt,cr->op0, srcp_default, addr_expr_K);
+                        tree_nodeRef ae_cr = tree_man->create_unary_operation(pt, cr->op0, srcp_default, addr_expr_K);
                         tree_nodeRef ae_cr_ga = CreateGimpleAssign(pt, ae_cr, block.first, srcp_default);
                         tree_nodeRef ae_cr_vd = GetPointer<gimple_assign>(GET_NODE(ae_cr_ga))->op0;
                         GetPointer<gimple_assign>(GET_NODE(ae_cr_ga))->temporary_address = ga->temporary_address;
@@ -1394,7 +1347,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         auto* curr_int = GetPointer<integer_cst>(GET_NODE(field_d->bpos));
                         THROW_ASSERT(curr_int, "expected an integer_cst but got something of different");
                         auto op1_val = static_cast<unsigned int>(tree_helper::get_integer_cst_value(curr_int));
-                        tree_nodeRef offset = TM->CreateUniqueIntegerCst(op1_val/8, GET_INDEX_NODE(tree_man->create_size_type()));
+                        tree_nodeRef offset = TM->CreateUniqueIntegerCst(op1_val / 8, GET_INDEX_NODE(tree_man->create_size_type()));
                         tree_nodeRef pp = tree_man->create_binary_operation(pt, ae_cr_vd, offset, srcp_default, pointer_plus_expr_K);
                         tree_nodeRef pp_ga = CreateGimpleAssign(pt, pp, block.first, srcp_default);
                         GetPointer<gimple_assign>(GET_NODE(pp_ga))->temporary_address = ga->temporary_address;
@@ -1405,13 +1358,12 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         tree_nodeRef mr = tree_man->create_binary_operation(cr->type, ssa_vd, zero_offset, srcp_default, mem_ref_K);
                         ae->op = mr;
                         restart_analysis = true;
-
                      }
                      else if(ae_code == bit_field_ref_K)
                      {
                         auto* bfr = GetPointer<bit_field_ref>(GET_NODE(ae->op));
                         tree_nodeRef pt = tree_man->create_pointer_type(bfr->type);
-                        tree_nodeRef ae_cr = tree_man->create_unary_operation(pt,bfr->op0, srcp_default, addr_expr_K);
+                        tree_nodeRef ae_cr = tree_man->create_unary_operation(pt, bfr->op0, srcp_default, addr_expr_K);
                         tree_nodeRef ae_cr_ga = CreateGimpleAssign(pt, ae_cr, block.first, srcp_default);
                         tree_nodeRef ae_cr_vd = GetPointer<gimple_assign>(GET_NODE(ae_cr_ga))->op0;
                         GetPointer<gimple_assign>(GET_NODE(ae_cr_ga))->temporary_address = ga->temporary_address;
@@ -1421,7 +1373,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         auto* curr_int = GetPointer<integer_cst>(GET_NODE(bfr->op2));
                         THROW_ASSERT(curr_int, "expected an integer_cst but got something of different");
                         auto op1_val = static_cast<unsigned int>(tree_helper::get_integer_cst_value(curr_int));
-                        tree_nodeRef offset = TM->CreateUniqueIntegerCst(op1_val/8, GET_INDEX_NODE(tree_man->create_size_type()));
+                        tree_nodeRef offset = TM->CreateUniqueIntegerCst(op1_val / 8, GET_INDEX_NODE(tree_man->create_size_type()));
                         tree_nodeRef pp = tree_man->create_binary_operation(pt, ae_cr_vd, offset, srcp_default, pointer_plus_expr_K);
                         tree_nodeRef pp_ga = CreateGimpleAssign(pt, pp, block.first, srcp_default);
                         GetPointer<gimple_assign>(GET_NODE(pp_ga))->temporary_address = ga->temporary_address;
@@ -1449,7 +1401,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(rpe->op));
                         tree_nodeRef op_type = TM->GetTreeReindex(type_index);
                         tree_nodeRef pt = tree_man->create_pointer_type(op_type);
-                        tree_nodeRef ae_cr = tree_man->create_unary_operation(pt,rpe->op, srcp_default, addr_expr_K);
+                        tree_nodeRef ae_cr = tree_man->create_unary_operation(pt, rpe->op, srcp_default, addr_expr_K);
                         tree_nodeRef ae_cr_ga = CreateGimpleAssign(pt, ae_cr, block.first, srcp_default);
                         tree_nodeRef ae_cr_vd = GetPointer<gimple_assign>(GET_NODE(ae_cr_ga))->op0;
                         GetPointer<gimple_assign>(GET_NODE(ae_cr_ga))->temporary_address = ga->temporary_address;
@@ -1471,7 +1423,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ipe->op));
                         tree_nodeRef op_type = TM->GetTreeReindex(type_index);
                         tree_nodeRef pt = tree_man->create_pointer_type(op_type);
-                        tree_nodeRef ae_cr = tree_man->create_unary_operation(pt,ipe->op, srcp_default, addr_expr_K);
+                        tree_nodeRef ae_cr = tree_man->create_unary_operation(pt, ipe->op, srcp_default, addr_expr_K);
                         tree_nodeRef ae_cr_ga = CreateGimpleAssign(pt, ae_cr, block.first, srcp_default);
                         tree_nodeRef ae_cr_vd = GetPointer<gimple_assign>(GET_NODE(ae_cr_ga))->op0;
                         GetPointer<gimple_assign>(GET_NODE(ae_cr_ga))->temporary_address = ga->temporary_address;
@@ -1482,16 +1434,16 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         tree_nodeRef ga_nop_vd = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
                         block.second->PushBefore(ga_nop, *it_los);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ga_nop)->ToString());
-                        unsigned int offset_value = tree_helper::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(ipe->op))) /16;
+                        unsigned int offset_value = tree_helper::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(ipe->op))) / 16;
                         tree_nodeRef offset = TM->CreateUniqueIntegerCst(offset_value, GET_INDEX_NODE(ae->type));
                         tree_nodeRef mr = tree_man->create_binary_operation(ipe->type, ga_nop_vd, offset, srcp_default, mem_ref_K);
                         ae->op = mr;
                         restart_analysis = true;
                      }
-                     else if (ae_code != var_decl_K && ae_code != parm_decl_K && ae_code != function_decl_K && ae_code != string_cst_K)
+                     else if(ae_code != var_decl_K && ae_code != parm_decl_K && ae_code != function_decl_K && ae_code != string_cst_K)
                         THROW_ERROR("not supported " + GET_NODE(ae->op)->get_kind_text());
 
-                     /// check missing cast
+                        /// check missing cast
 #if 1
                      auto* pt_ae = GetPointer<pointer_type>(GET_NODE(ae->type));
                      unsigned int ptd_index = GET_INDEX_CONST_NODE(pt_ae->ptd);
@@ -1501,7 +1453,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fix missing cast");
                         tree_nodeRef ae_new_node = tree_man->CreateAddrExpr(GET_NODE(ae->op), srcp_default);
-                        auto * ae_new =  GetPointer<addr_expr>(GET_NODE(ae_new_node));
+                        auto* ae_new = GetPointer<addr_expr>(GET_NODE(ae_new_node));
                         tree_nodeRef a_ga = CreateGimpleAssign(ae_new->type, ae_new_node, block.first, srcp_default);
                         GetPointer<gimple_assign>(GET_NODE(a_ga))->temporary_address = ga->temporary_address;
                         block.second->PushBefore(a_ga, *it_los);
@@ -1519,12 +1471,12 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                }
                else if(code1 == target_mem_ref461_K)
                {
-                  auto * tmr = GetPointer<target_mem_ref461>(GET_NODE(ga->op1));
+                  auto* tmr = GetPointer<target_mem_ref461>(GET_NODE(ga->op1));
                   /// split the target_mem_ref in a address computation statement and in a load statement
                   tree_nodeRef type = tmr->type;
 
                   tree_nodeRef pt = tree_man->create_pointer_type(type);
-                  tree_nodeRef ae = tree_man->create_unary_operation(pt,ga->op1, srcp_default, addr_expr_K);
+                  tree_nodeRef ae = tree_man->create_unary_operation(pt, ga->op1, srcp_default, addr_expr_K);
                   tree_nodeRef new_ga = CreateGimpleAssign(pt, ae, block.first, srcp_default);
                   GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = true;
 
@@ -1541,11 +1493,11 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                else if(code1 == mem_ref_K)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---expand mem_ref 1 " + STR(GET_INDEX_NODE(ga->op1)));
-                  auto * MR = GetPointer<mem_ref>(GET_NODE(ga->op1));
+                  auto* MR = GetPointer<mem_ref>(GET_NODE(ga->op1));
                   if(GET_NODE(MR->op0)->get_kind() == addr_expr_K)
                   {
                      auto* ae = GetPointer<addr_expr>(GET_NODE(MR->op0));
-                     tree_nodeRef ae_expr = tree_man->create_unary_operation(ae->type,ae->op, srcp_default, addr_expr_K);///It is required to de-share some IR nodes
+                     tree_nodeRef ae_expr = tree_man->create_unary_operation(ae->type, ae->op, srcp_default, addr_expr_K); /// It is required to de-share some IR nodes
                      tree_nodeRef ae_ga = CreateGimpleAssign(ae->type, ae_expr, block.first, srcp_default);
                      GetPointer<gimple_assign>(GET_NODE(ae_ga))->temporary_address = true;
                      tree_nodeRef ae_vd = GetPointer<gimple_assign>(GET_NODE(ae_ga))->op0;
@@ -1554,7 +1506,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      MR->op0 = ae_vd;
                      restart_analysis = true;
                   }
-                  else if(GET_NODE(MR->op0)->get_kind() == pointer_plus_expr_K)///required by the CLANG/LLVM plugin
+                  else if(GET_NODE(MR->op0)->get_kind() == pointer_plus_expr_K) /// required by the CLANG/LLVM plugin
                   {
                      auto* pp0 = GetPointer<pointer_plus_expr>(GET_NODE(MR->op0));
                      tree_nodeRef pp_ga = CreateGimpleAssign(pp0->type, MR->op0, block.first, srcp_default);
@@ -1565,7 +1517,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      MR->op0 = pp_vd;
                      restart_analysis = true;
                   }
-                  else if(GET_NODE(MR->op0)->get_kind() == view_convert_expr_K)///required by the CLANG/LLVM plugin
+                  else if(GET_NODE(MR->op0)->get_kind() == view_convert_expr_K) /// required by the CLANG/LLVM plugin
                   {
                      auto* vc0 = GetPointer<view_convert_expr>(GET_NODE(MR->op0));
                      tree_nodeRef vc_ga = CreateGimpleAssign(vc0->type, MR->op0, block.first, srcp_default);
@@ -1584,12 +1536,12 @@ DesignFlowStep_Status IR_lowering::InternalExec()
 
                      /// check if there is a misaligned access
                      unsigned int obj_size = tree_helper::Size(tree_helper::CGetType(GET_NODE(ga->op1)));
-                     unsigned int bram_size = std::max(8u,obj_size/2);
-                     if((((op1_val*8))%bram_size) != 0)
+                     unsigned int bram_size = std::max(8u, obj_size / 2);
+                     if((((op1_val * 8)) % bram_size) != 0)
                         function_behavior->set_unaligned_accesses(true);
 
                      tree_nodeRef pt = tree_man->create_pointer_type(type);
-                     tree_nodeRef ae = tree_man->create_unary_operation(pt,ga->op1, srcp_default, addr_expr_K);
+                     tree_nodeRef ae = tree_man->create_unary_operation(pt, ga->op1, srcp_default, addr_expr_K);
                      tree_nodeRef new_ga = CreateGimpleAssign(pt, ae, block.first, srcp_default);
                      GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = true;
                      tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
@@ -1603,16 +1555,14 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      restart_analysis = true;
                   }
                }
-               else if(code1 == le_expr_K or code1 == eq_expr_K or
-                     code1 == ne_expr_K or code1 == gt_expr_K or
-                     code1 == lt_expr_K or code1 == ge_expr_K)
+               else if(code1 == le_expr_K or code1 == eq_expr_K or code1 == ne_expr_K or code1 == gt_expr_K or code1 == lt_expr_K or code1 == ge_expr_K)
                {
-                  if (code0 == ssa_name_K and not tree_helper::is_bool(TM, GET_INDEX_NODE(ga->op0)) and not (tree_helper::is_a_vector(TM, ga->op0->index) and tree_helper::is_bool(TM, tree_helper::GetElements(TM, tree_helper::get_type_index(TM, ga->op0->index)))))
+                  if(code0 == ssa_name_K and not tree_helper::is_bool(TM, GET_INDEX_NODE(ga->op0)) and
+                     not(tree_helper::is_a_vector(TM, ga->op0->index) and tree_helper::is_bool(TM, tree_helper::GetElements(TM, tree_helper::get_type_index(TM, ga->op0->index)))))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fix lhs to be bool");
                      // fix the left hand side to be a bool
-                     const auto new_left_type = [&]() -> tree_nodeRef
-                     {
+                     const auto new_left_type = [&]() -> tree_nodeRef {
                         if(not tree_helper::is_a_vector(TM, ga->op0->index))
                         {
                            return tree_man->create_boolean_type();
@@ -1638,8 +1588,8 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                else if(code1 == truth_not_expr_K)
                {
                   const auto lhs = GET_NODE(ga->op1);
-                  auto * e = GetPointer<truth_not_expr>(lhs);
-                  if (not tree_helper::is_bool(TM, GET_INDEX_NODE(e->op)))
+                  auto* e = GetPointer<truth_not_expr>(lhs);
+                  if(not tree_helper::is_bool(TM, GET_INDEX_NODE(e->op)))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fix first operand to be bool");
                      const tree_nodeConstRef operand_type = tree_helper::CGetType(GET_NODE(e->op));
@@ -1653,7 +1603,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Fixed first operand to be bool");
                      restart_analysis = true;
                   }
-                  if (code0 == ssa_name_K and not tree_helper::is_bool(TM, GET_INDEX_NODE(ga->op0)))
+                  if(code0 == ssa_name_K and not tree_helper::is_bool(TM, GET_INDEX_NODE(ga->op0)))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fix lhs to be bool");
                      // fix the left hand side to be a bool
@@ -1669,13 +1619,11 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      restart_analysis = true;
                   }
                }
-               else if(code1 == truth_and_expr_K or code1 == truth_andif_expr_K or
-                     code1 == truth_or_expr_K or code1 == truth_orif_expr_K or
-                     code1 == truth_xor_expr_K)
+               else if(code1 == truth_and_expr_K or code1 == truth_andif_expr_K or code1 == truth_or_expr_K or code1 == truth_orif_expr_K or code1 == truth_xor_expr_K)
                {
                   const auto lhs = GET_NODE(ga->op1);
-                  auto * e = GetPointer<binary_expr>(lhs);
-                  if (not tree_helper::is_bool(TM, GET_INDEX_NODE(e->op0)))
+                  auto* e = GetPointer<binary_expr>(lhs);
+                  if(not tree_helper::is_bool(TM, GET_INDEX_NODE(e->op0)))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fix first operand to be bool");
                      const tree_nodeConstRef operand_type = tree_helper::CGetType(GET_NODE(e->op0));
@@ -1689,7 +1637,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Fixed first operand to be bool");
                      restart_analysis = true;
                   }
-                  if (not tree_helper::is_bool(TM, GET_INDEX_NODE(e->op1)))
+                  if(not tree_helper::is_bool(TM, GET_INDEX_NODE(e->op1)))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fix second operand to be bool");
                      const tree_nodeConstRef operand_type = tree_helper::CGetType(GET_NODE(e->op1));
@@ -1703,7 +1651,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Fixed second operand to be bool");
                      restart_analysis = true;
                   }
-                  if (code0 == ssa_name_K and not tree_helper::is_bool(TM, GET_INDEX_NODE(ga->op0)))
+                  if(code0 == ssa_name_K and not tree_helper::is_bool(TM, GET_INDEX_NODE(ga->op0)))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fix lhs to be bool");
                      // fix the left hand side to be a bool
@@ -1723,12 +1671,12 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                {
                   auto* ce = GetPointer<call_expr>(GET_NODE(ga->op1));
                   bool changed = false;
-                  for (auto & arg : ce->args)
+                  for(auto& arg : ce->args)
                   {
-                     if (GET_NODE(arg)->get_kind() == addr_expr_K)
+                     if(GET_NODE(arg)->get_kind() == addr_expr_K)
                      {
                         auto* ae = GetPointer<addr_expr>(GET_NODE(arg));
-                        tree_nodeRef ae_expr = tree_man->create_unary_operation(ae->type,ae->op, srcp_default, addr_expr_K);///It is required to de-share some IR nodes
+                        tree_nodeRef ae_expr = tree_man->create_unary_operation(ae->type, ae->op, srcp_default, addr_expr_K); /// It is required to de-share some IR nodes
                         tree_nodeRef ae_ga = CreateGimpleAssign(ae->type, ae_expr, block.first, srcp_default);
                         tree_nodeRef ae_vd = GetPointer<gimple_assign>(GET_NODE(ae_ga))->op0;
                         block.second->PushBefore(ae_ga, *it_los);
@@ -1736,7 +1684,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         arg = ae_vd;
                         changed = true;
                      }
-                     else if(GetPointer<unary_expr>(GET_NODE(arg)))/// required by the CLANG/LLVM plugin
+                     else if(GetPointer<unary_expr>(GET_NODE(arg))) /// required by the CLANG/LLVM plugin
                      {
                         auto* ue = GetPointer<unary_expr>(GET_NODE(arg));
                         tree_nodeRef new_ga = CreateGimpleAssign(ue->type, arg, block.first, srcp_default);
@@ -1746,7 +1694,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         arg = ssa_vd;
                         changed = true;
                      }
-                     else if(GetPointer<binary_expr>(GET_NODE(arg)))/// required by the CLANG/LLVM plugin
+                     else if(GetPointer<binary_expr>(GET_NODE(arg))) /// required by the CLANG/LLVM plugin
                      {
                         auto* be = GetPointer<binary_expr>(GET_NODE(arg));
                         tree_nodeRef new_ga = CreateGimpleAssign(be->type, arg, block.first, srcp_default);
@@ -1764,7 +1712,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                }
                else if(code1 == pointer_plus_expr_K)
                {
-                  auto * ppe = GetPointer<pointer_plus_expr>(GET_NODE(ga->op1));
+                  auto* ppe = GetPointer<pointer_plus_expr>(GET_NODE(ga->op1));
                   THROW_ASSERT(ppe->op0 && ppe->op1, "expected two parameters");
                   if(GetPointer<addr_expr>(GET_NODE(ppe->op0)))
                   {
@@ -1777,7 +1725,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
                      restart_analysis = true;
                   }
-                  else if(GetPointer<pointer_plus_expr>(GET_NODE(ppe->op0)))/// required by CLANG/LLVM plugin
+                  else if(GetPointer<pointer_plus_expr>(GET_NODE(ppe->op0))) /// required by CLANG/LLVM plugin
                   {
                      auto* pp = GetPointer<pointer_plus_expr>(GET_NODE(ppe->op0));
                      tree_nodeRef new_ga = CreateGimpleAssign(pp->type, ppe->op0, block.first, srcp_default);
@@ -1788,7 +1736,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
                      restart_analysis = true;
                   }
-                  else if(GetPointer<mult_expr>(GET_NODE(ppe->op1)))/// required by CLANG/LLVM plugin
+                  else if(GetPointer<mult_expr>(GET_NODE(ppe->op1))) /// required by CLANG/LLVM plugin
                   {
                      auto* me = GetPointer<mult_expr>(GET_NODE(ppe->op1));
                      tree_nodeRef new_ga = CreateGimpleAssign(me->type, ppe->op1, block.first, srcp_default);
@@ -1798,12 +1746,12 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
                      restart_analysis = true;
                   }
-                  else if (GetPointer<var_decl>(GET_NODE(ppe->op0)))
+                  else if(GetPointer<var_decl>(GET_NODE(ppe->op0)))
                   {
-                     auto *vd = GetPointer<var_decl>(GET_NODE(ppe->op0));
+                     auto* vd = GetPointer<var_decl>(GET_NODE(ppe->op0));
                      tree_nodeRef type = vd->type;
                      tree_nodeRef pt = tree_man->create_pointer_type(type);
-                     tree_nodeRef ae = tree_man->create_unary_operation(pt,ppe->op0, srcp_default, addr_expr_K);
+                     tree_nodeRef ae = tree_man->create_unary_operation(pt, ppe->op0, srcp_default, addr_expr_K);
                      tree_nodeRef new_ga = CreateGimpleAssign(pt, ae, block.first, srcp_default);
                      GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = true;
                      tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
@@ -1826,7 +1774,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                               auto prev_val = static_cast<size_t>(tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(prev_ppe->op1))));
                               auto curr_val = static_cast<size_t>(tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(ppe->op1))));
                               unsigned int type_ppe_op1_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ppe->op1));
-                              ppe->op1 = TM->CreateUniqueIntegerCst(static_cast<long long int>(prev_val+curr_val), type_ppe_op1_index);
+                              ppe->op1 = TM->CreateUniqueIntegerCst(static_cast<long long int>(prev_val + curr_val), type_ppe_op1_index);
                               ppe->op0 = prev_ppe->op0;
                               restart_analysis = true;
                            }
@@ -1845,7 +1793,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            enum kind prev_ae_code = GET_NODE(prev_ae->op)->get_kind();
                            if(prev_ae_code == mem_ref_K)
                            {
-                              auto * prev_MR =  GetPointer<mem_ref>(GET_NODE(prev_ae->op));
+                              auto* prev_MR = GetPointer<mem_ref>(GET_NODE(prev_ae->op));
                               long long int prev_op1_val = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(prev_MR->op1)));
                               if(prev_op1_val == 0)
                               {
@@ -1863,23 +1811,23 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                else if(code1 == component_ref_K)
                {
                   auto* cr = GetPointer<component_ref>(GET_NODE(ga->op1));
-                  auto * field_d = GetPointer<field_decl>(GET_NODE(cr->op1));
+                  auto* field_d = GetPointer<field_decl>(GET_NODE(cr->op1));
                   tree_nodeRef type;
                   if(field_d->is_bitfield())
                   {
                      auto* curr_int = GetPointer<integer_cst>(GET_NODE(field_d->bpos));
                      THROW_ASSERT(curr_int, "expected an integer_cst but got something of different");
                      auto op1_val = static_cast<unsigned int>(tree_helper::get_integer_cst_value(curr_int));
-                     unsigned int right_shift_val = op1_val%8;
+                     unsigned int right_shift_val = op1_val % 8;
                      if(GET_NODE(cr->type)->get_kind() == boolean_type_K)
                      {
-                        type = tree_man->create_integer_type_with_prec(std::max(8u,resize_to_1_8_16_32_64_128_256_512(1+right_shift_val)), true);
+                        type = tree_man->create_integer_type_with_prec(std::max(8u, resize_to_1_8_16_32_64_128_256_512(1 + right_shift_val)), true);
                      }
                      else
                      {
                         auto* it = GetPointer<integer_type>(GET_NODE(cr->type));
                         THROW_ASSERT(it, "unexpected pattern");
-                        type = tree_man->create_integer_type_with_prec(std::max(8u,resize_to_1_8_16_32_64_128_256_512(it->prec+right_shift_val)), it->unsigned_flag);
+                        type = tree_man->create_integer_type_with_prec(std::max(8u, resize_to_1_8_16_32_64_128_256_512(it->prec + right_shift_val)), it->unsigned_flag);
                      }
                   }
                   else
@@ -1889,7 +1837,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   THROW_ASSERT(type, "unexpected condition");
                   tree_nodeRef pt = tree_man->create_pointer_type(type);
                   THROW_ASSERT(pt, "unexpected condition");
-                  tree_nodeRef ae = tree_man->create_unary_operation(pt,ga->op1, srcp_default, addr_expr_K);
+                  tree_nodeRef ae = tree_man->create_unary_operation(pt, ga->op1, srcp_default, addr_expr_K);
                   tree_nodeRef new_ga = CreateGimpleAssign(pt, ae, block.first, srcp_default);
                   GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = true;
 
@@ -1906,11 +1854,11 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      auto* curr_int = GetPointer<integer_cst>(GET_NODE(field_d->bpos));
                      THROW_ASSERT(curr_int, "expected an integer_cst but got something of different");
                      auto op1_val = static_cast<unsigned int>(tree_helper::get_integer_cst_value(curr_int));
-                     unsigned int right_shift_val = op1_val%8;
+                     unsigned int right_shift_val = op1_val % 8;
                      unsigned int size_tp = tree_helper::Size(GET_NODE(type));
                      unsigned int size_field_decl = tree_helper::Size(GET_NODE(cr->op1));
 
-                     if (right_shift_val == 0 and size_field_decl == size_tp)
+                     if(right_shift_val == 0 and size_field_decl == size_tp)
                      {
                         ga->op1 = mr;
                      }
@@ -1934,22 +1882,17 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                          * not been resized yet and it may also load
                          * inconsistent stuff from other bitfields nearby
                          */
-                        if (parameters->isOption(OPT_discrepancy) and
-                              parameters->getOption<bool>(OPT_discrepancy) and
-                              (not parameters->isOption(OPT_discrepancy_force) or
-                               not parameters->getOption<bool>(OPT_discrepancy_force)))
+                        if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy) and (not parameters->isOption(OPT_discrepancy_force) or not parameters->getOption<bool>(OPT_discrepancy_force)))
                         {
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---skip discrepancy of ssa " + GET_NODE(mr_vd)->ToString() +
-                                 " assigned in new stmt: " + GET_NODE(mr_ga)->ToString());
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---skip discrepancy of ssa " + GET_NODE(mr_vd)->ToString() + " assigned in new stmt: " + GET_NODE(mr_ga)->ToString());
                            AppM->RDiscr->ssa_to_skip.insert(GET_NODE(mr_vd));
                         }
 #endif
-                        if (right_shift_val)
+                        if(right_shift_val)
                         {
                            tree_nodeRef rshift_value = TM->CreateUniqueIntegerCst(right_shift_val, GET_INDEX_NODE(type));
                            tree_nodeRef rsh_node = tree_man->create_binary_operation(type, mr_vd, rshift_value, srcp_default, rshift_expr_K);
-                           if (size_field_decl == size_tp)
+                           if(size_field_decl == size_tp)
                            {
                               ga->op1 = rsh_node;
                            }
@@ -1966,24 +1909,19 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                                * not been resized yet and it may also load
                                * inconsistent stuff from other bitfields nearby
                                */
-                              if (parameters->isOption(OPT_discrepancy) and
-                                    parameters->getOption<bool>(OPT_discrepancy) and
-                                    (not parameters->isOption(OPT_discrepancy_force) or
-                                     not parameters->getOption<bool>(OPT_discrepancy_force)))
+                              if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy) and (not parameters->isOption(OPT_discrepancy_force) or not parameters->getOption<bool>(OPT_discrepancy_force)))
                               {
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---skip discrepancy of ssa " + GET_NODE(rsh_vd)->ToString() +
-                                       " assigned in new stmt: " + GET_NODE(rsh_ga)->ToString());
+                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---skip discrepancy of ssa " + GET_NODE(rsh_vd)->ToString() + " assigned in new stmt: " + GET_NODE(rsh_ga)->ToString());
                                  AppM->RDiscr->ssa_to_skip.insert(GET_NODE(rsh_vd));
                               }
 #endif
-                              tree_nodeRef and_mask_value = TM->CreateUniqueIntegerCst(static_cast<long long int>((1ULL<<size_field_decl)-1), GET_INDEX_NODE(type));
+                              tree_nodeRef and_mask_value = TM->CreateUniqueIntegerCst(static_cast<long long int>((1ULL << size_field_decl) - 1), GET_INDEX_NODE(type));
                               ga->op1 = tree_man->create_binary_operation(type, rsh_vd, and_mask_value, srcp_default, bit_and_expr_K);
                            }
                         }
                         else
                         {
-                           tree_nodeRef and_mask_value = TM->CreateUniqueIntegerCst(static_cast<long long int>((1ULL<<size_field_decl)-1), GET_INDEX_NODE(type));
+                           tree_nodeRef and_mask_value = TM->CreateUniqueIntegerCst(static_cast<long long int>((1ULL << size_field_decl) - 1), GET_INDEX_NODE(type));
                            ga->op1 = tree_man->create_binary_operation(type, mr_vd, and_mask_value, srcp_default, bit_and_expr_K);
                         }
                      }
@@ -1996,7 +1934,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                }
                else if(code1 == vec_cond_expr_K)
                {
-                  auto * vce = GetPointer<vec_cond_expr>(GET_NODE(ga->op1));
+                  auto* vce = GetPointer<vec_cond_expr>(GET_NODE(ga->op1));
                   THROW_ASSERT(vce->op1 && vce->op2, "expected three parameters");
                   if(GetPointer<binary_expr>(GET_NODE(vce->op0)))
                   {
@@ -2027,7 +1965,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                {
                   if(code1 == cond_expr_K)
                   {
-                     auto * ce = GetPointer<cond_expr>(GET_NODE(ga->op1));
+                     auto* ce = GetPointer<cond_expr>(GET_NODE(ga->op1));
                      THROW_ASSERT(ce->op1 && ce->op2, "expected three parameters");
                      if(GetPointer<binary_expr>(GET_NODE(ce->op0)))
                      {
@@ -2046,11 +1984,11 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   }
                   else if(code1 == view_convert_expr_K || code1 == nop_expr_K)
                   {
-                     auto * ue = GetPointer<unary_expr>(GET_NODE(ga->op1));
+                     auto* ue = GetPointer<unary_expr>(GET_NODE(ga->op1));
                      if(GET_NODE(ue->op)->get_kind() != ssa_name_K && !GetPointer<cst_node>(GET_NODE(ue->op)))
                      {
                         unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ue->op));
-                        tree_nodeRef op_type= TM->GetTreeReindex(type_index);
+                        tree_nodeRef op_type = TM->GetTreeReindex(type_index);
                         tree_nodeRef op_ga = CreateGimpleAssign(op_type, ue->op, block.first, srcp_default);
                         tree_nodeRef op_vd = GetPointer<gimple_assign>(GET_NODE(op_ga))->op0;
                         if(ga->temporary_address)
@@ -2069,15 +2007,15 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         auto* curr_int = GetPointer<integer_cst>(GET_NODE(bfr->op2));
                         THROW_ASSERT(curr_int, "expected an integer_cst but got something of different");
                         auto op1_val = static_cast<unsigned int>(tree_helper::get_integer_cst_value(curr_int));
-                        unsigned int right_shift_val = op1_val%8;
+                        unsigned int right_shift_val = op1_val % 8;
                         tree_nodeRef type;
                         if(GET_NODE(bfr->type)->get_kind() == boolean_type_K)
-                           type = tree_man->create_integer_type_with_prec(std::max(8u,resize_to_1_8_16_32_64_128_256_512(1+right_shift_val)), true);
+                           type = tree_man->create_integer_type_with_prec(std::max(8u, resize_to_1_8_16_32_64_128_256_512(1 + right_shift_val)), true);
                         else
                         {
                            auto* it = GetPointer<integer_type>(GET_NODE(bfr->type));
                            THROW_ASSERT(it, "unexpected pattern");
-                           type = tree_man->create_integer_type_with_prec(std::max(8u,resize_to_1_8_16_32_64_128_256_512(it->prec+right_shift_val)), it->unsigned_flag);
+                           type = tree_man->create_integer_type_with_prec(std::max(8u, resize_to_1_8_16_32_64_128_256_512(it->prec + right_shift_val)), it->unsigned_flag);
                         }
                         tree_nodeRef pt = tree_man->create_pointer_type(type);
                         tree_nodeRef ae = tree_man->create_unary_operation(pt, ga->op1, srcp_default, addr_expr_K);
@@ -2118,22 +2056,17 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                             * not been resized yet and it may also load
                             * inconsistent stuff from other bitfields nearby
                             */
-                           if (parameters->isOption(OPT_discrepancy) and
-                                 parameters->getOption<bool>(OPT_discrepancy) and
-                                 (not parameters->isOption(OPT_discrepancy_force) or
-                                  not parameters->getOption<bool>(OPT_discrepancy_force)))
+                           if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy) and (not parameters->isOption(OPT_discrepancy_force) or not parameters->getOption<bool>(OPT_discrepancy_force)))
                            {
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---skip discrepancy of ssa " + GET_NODE(mr_vd)->ToString() +
-                                    " assigned in new stmt: " + GET_NODE(mr_ga)->ToString());
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---skip discrepancy of ssa " + GET_NODE(mr_vd)->ToString() + " assigned in new stmt: " + GET_NODE(mr_ga)->ToString());
                               AppM->RDiscr->ssa_to_skip.insert(GET_NODE(mr_vd));
                            }
 #endif
-                           if (right_shift_val)
+                           if(right_shift_val)
                            {
                               tree_nodeRef rshift_value = TM->CreateUniqueIntegerCst(right_shift_val, GET_INDEX_NODE(type));
                               tree_nodeRef rsh_node = tree_man->create_binary_operation(type, mr_vd, rshift_value, srcp_default, rshift_expr_K);
-                              if (size_field_decl == size_tp)
+                              if(size_field_decl == size_tp)
                               {
                                  ga->op1 = rsh_node;
                               }
@@ -2150,24 +2083,19 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                                   * not been resized yet and it may also load
                                   * inconsistent stuff from other bitfields nearby
                                   */
-                                 if (parameters->isOption(OPT_discrepancy) and
-                                       parameters->getOption<bool>(OPT_discrepancy) and
-                                       (not parameters->isOption(OPT_discrepancy_force) or
-                                        not parameters->getOption<bool>(OPT_discrepancy_force)))
+                                 if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy) and (not parameters->isOption(OPT_discrepancy_force) or not parameters->getOption<bool>(OPT_discrepancy_force)))
                                  {
-                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                          "---skip discrepancy of ssa " + GET_NODE(rsh_vd)->ToString() +
-                                          " assigned in new stmt: " + GET_NODE(rsh_ga)->ToString());
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---skip discrepancy of ssa " + GET_NODE(rsh_vd)->ToString() + " assigned in new stmt: " + GET_NODE(rsh_ga)->ToString());
                                     AppM->RDiscr->ssa_to_skip.insert(GET_NODE(rsh_vd));
                                  }
 #endif
-                                 tree_nodeRef and_mask_value = TM->CreateUniqueIntegerCst(static_cast<long long int>((1ULL<<size_field_decl)-1), GET_INDEX_NODE(type));
+                                 tree_nodeRef and_mask_value = TM->CreateUniqueIntegerCst(static_cast<long long int>((1ULL << size_field_decl) - 1), GET_INDEX_NODE(type));
                                  ga->op1 = tree_man->create_binary_operation(type, rsh_vd, and_mask_value, srcp_default, bit_and_expr_K);
                               }
                            }
                            else
                            {
-                              tree_nodeRef and_mask_value = TM->CreateUniqueIntegerCst(static_cast<long long int>((1ULL<<size_field_decl)-1), GET_INDEX_NODE(type));
+                              tree_nodeRef and_mask_value = TM->CreateUniqueIntegerCst(static_cast<long long int>((1ULL << size_field_decl) - 1), GET_INDEX_NODE(type));
                               ga->op1 = tree_man->create_binary_operation(type, mr_vd, and_mask_value, srcp_default, bit_and_expr_K);
                            }
                         }
@@ -2181,7 +2109,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         if(is_scalar)
                         {
                            unsigned int data_size = tree_helper::Size(type_node);
-                           tree_nodeRef type_vc = tree_man->create_integer_type_with_prec(std::max(8u,resize_to_1_8_16_32_64_128_256_512(data_size)), true);
+                           tree_nodeRef type_vc = tree_man->create_integer_type_with_prec(std::max(8u, resize_to_1_8_16_32_64_128_256_512(data_size)), true);
                            tree_nodeRef vc_expr = tree_man->create_unary_operation(type_vc, bfr->op0, srcp_default, view_convert_expr_K);
                            tree_nodeRef vc_ga = CreateGimpleAssign(type_vc, vc_expr, block.first, srcp_default);
                            block.second->PushBefore(vc_ga, *it_los);
@@ -2192,7 +2120,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            tree_nodeRef vc_shift_ga = CreateGimpleAssign(type_vc, vc_shift_expr, block.first, srcp_default);
                            block.second->PushBefore(vc_shift_ga, *it_los);
                            tree_nodeRef vc_shift_ga_var = GetPointer<gimple_assign>(GET_NODE(vc_shift_ga))->op0;
-                           tree_nodeRef sel_type = tree_man->create_integer_type_with_prec(std::max(8u,resize_to_1_8_16_32_64_128_256_512(sel_size)), true);
+                           tree_nodeRef sel_type = tree_man->create_integer_type_with_prec(std::max(8u, resize_to_1_8_16_32_64_128_256_512(sel_size)), true);
                            tree_nodeRef vc_nop_expr = tree_man->create_unary_operation(sel_type, vc_shift_ga_var, srcp_default, nop_expr_K);
                            tree_nodeRef vc_nop_ga = CreateGimpleAssign(sel_type, vc_nop_expr, block.first, srcp_default);
                            block.second->PushBefore(vc_nop_ga, *it_los);
@@ -2243,14 +2171,14 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         bool realp = tree_helper::is_real(TM, GET_INDEX_NODE(type_expr));
                         if(!realp)
                         {
-                           ///check if a mult_expr may become a widen_mult_expr
+                           /// check if a mult_expr may become a widen_mult_expr
                            unsigned int data_bitsize_out = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(GET_NODE(ga->op0)));
                            unsigned int data_bitsize_in0 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(GET_NODE(GetPointer<binary_expr>(GET_NODE(ga->op1))->op0)));
                            unsigned int data_bitsize_in1 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(GET_NODE(GetPointer<binary_expr>(GET_NODE(ga->op1))->op1)));
-                           if(std::max(data_bitsize_in0, data_bitsize_in1)*2== data_bitsize_out)
+                           if(std::max(data_bitsize_in0, data_bitsize_in1) * 2 == data_bitsize_out)
                            {
                               unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0));
-                              tree_nodeRef op0_type= TM->GetTreeReindex(type_index);
+                              tree_nodeRef op0_type = TM->GetTreeReindex(type_index);
                               ga->op1 = tree_man->create_binary_operation(op0_type, GetPointer<binary_expr>(GET_NODE(ga->op1))->op0, GetPointer<binary_expr>(GET_NODE(ga->op1))->op1, srcp_default, widen_mult_expr_K);
                               restart_analysis = true;
 #ifndef NDEBUG
@@ -2331,10 +2259,10 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   }
                   else if(code1 == var_decl_K && !ga->init_assignment)
                   {
-                     auto *vd = GetPointer<var_decl>(GET_NODE(ga->op1));
+                     auto* vd = GetPointer<var_decl>(GET_NODE(ga->op1));
                      tree_nodeRef type = vd->type;
                      tree_nodeRef pt = tree_man->create_pointer_type(type);
-                     tree_nodeRef ae = tree_man->create_unary_operation(pt,ga->op1, srcp_default, addr_expr_K);
+                     tree_nodeRef ae = tree_man->create_unary_operation(pt, ga->op1, srcp_default, addr_expr_K);
                      tree_nodeRef new_ga = CreateGimpleAssign(pt, ae, block.first, srcp_default);
                      GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = true;
                      tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
@@ -2366,8 +2294,8 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            if(op1_value == 0)
                            {
                               unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(op0));
-                              tree_nodeRef op0_type= TM->GetTreeReindex(type_index);
-                              tree_nodeRef right_shift_value = TM->CreateUniqueIntegerCst(tree_helper::Size(GET_NODE(op0))-1, GET_INDEX_NODE(op0_type));
+                              tree_nodeRef op0_type = TM->GetTreeReindex(type_index);
+                              tree_nodeRef right_shift_value = TM->CreateUniqueIntegerCst(tree_helper::Size(GET_NODE(op0)) - 1, GET_INDEX_NODE(op0_type));
                               tree_nodeRef rshift1 = tree_man->create_binary_operation(op0_type, op0, right_shift_value, srcp_default, rshift_expr_K);
                               tree_nodeRef rshift1_ga = CreateGimpleAssign(op0_type, rshift1, block.first, srcp_default);
                               block.second->PushBefore(rshift1_ga, *it_los);
@@ -2403,8 +2331,6 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Not expanded");
                      }
-
-
                   }
                   else if(code1 == ge_expr_K)
                   {
@@ -2421,8 +2347,8 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            if(op1_value == 0)
                            {
                               unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(op0));
-                              tree_nodeRef op0_type= TM->GetTreeReindex(type_index);
-                              tree_nodeRef right_shift_value = TM->CreateUniqueIntegerCst(tree_helper::Size(GET_NODE(op0))-1, GET_INDEX_NODE(op0_type));
+                              tree_nodeRef op0_type = TM->GetTreeReindex(type_index);
+                              tree_nodeRef right_shift_value = TM->CreateUniqueIntegerCst(tree_helper::Size(GET_NODE(op0)) - 1, GET_INDEX_NODE(op0_type));
                               tree_nodeRef rshift1 = tree_man->create_binary_operation(op0_type, op0, right_shift_value, srcp_default, rshift_expr_K);
                               tree_nodeRef rshift1_ga = CreateGimpleAssign(op0_type, rshift1, block.first, srcp_default);
                               block.second->PushBefore(rshift1_ga, *it_los);
@@ -2508,10 +2434,10 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   }
                   else if(code1 == parm_decl_K)
                   {
-                     auto *pd = GetPointer<parm_decl>(GET_NODE(ga->op1));
+                     auto* pd = GetPointer<parm_decl>(GET_NODE(ga->op1));
                      tree_nodeRef type = pd->type;
                      tree_nodeRef pt = tree_man->create_pointer_type(type);
-                     tree_nodeRef ae = tree_man->create_unary_operation(pt,ga->op1, srcp_default, addr_expr_K);
+                     tree_nodeRef ae = tree_man->create_unary_operation(pt, ga->op1, srcp_default, addr_expr_K);
                      tree_nodeRef new_ga = CreateGimpleAssign(pt, ae, block.first, srcp_default);
                      GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = true;
                      tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
@@ -2532,18 +2458,18 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                if(code0 == array_ref_K)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---expand array_ref 2 " + STR(GET_INDEX_NODE(ga->op0)));
-                  auto * AR = GetPointer<array_ref>(GET_NODE(ga->op0));
+                  auto* AR = GetPointer<array_ref>(GET_NODE(ga->op0));
                   ga->op0 = array_ref_lowering(AR, srcp_default, block, it_los, true);
                   restart_analysis = true;
                }
                else if(code0 == mem_ref_K)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---expand mem_ref 2 " + STR(GET_INDEX_NODE(ga->op0)));
-                  auto * MR = GetPointer<mem_ref>(GET_NODE(ga->op0));
+                  auto* MR = GetPointer<mem_ref>(GET_NODE(ga->op0));
                   if(GET_NODE(MR->op0)->get_kind() == addr_expr_K)
                   {
                      auto* ae = GetPointer<addr_expr>(GET_NODE(MR->op0));
-                     tree_nodeRef ae_expr = tree_man->create_unary_operation(ae->type,ae->op, srcp_default, addr_expr_K);///It is required to de-share some IR nodes
+                     tree_nodeRef ae_expr = tree_man->create_unary_operation(ae->type, ae->op, srcp_default, addr_expr_K); /// It is required to de-share some IR nodes
                      tree_nodeRef ae_ga = CreateGimpleAssign(ae->type, ae_expr, block.first, srcp_default);
                      GetPointer<gimple_assign>(GET_NODE(ae_ga))->temporary_address = true;
                      tree_nodeRef ae_vd = GetPointer<gimple_assign>(GET_NODE(ae_ga))->op0;
@@ -2552,7 +2478,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      MR->op0 = ae_vd;
                      restart_analysis = true;
                   }
-                  else if(GET_NODE(MR->op0)->get_kind() == pointer_plus_expr_K)///required by the CLANG/LLVM plugin
+                  else if(GET_NODE(MR->op0)->get_kind() == pointer_plus_expr_K) /// required by the CLANG/LLVM plugin
                   {
                      auto* pp0 = GetPointer<pointer_plus_expr>(GET_NODE(MR->op0));
                      tree_nodeRef pp_ga = CreateGimpleAssign(pp0->type, MR->op0, block.first, srcp_default);
@@ -2563,7 +2489,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      MR->op0 = pp_vd;
                      restart_analysis = true;
                   }
-                  else if(GET_NODE(MR->op0)->get_kind() == view_convert_expr_K)///required by the CLANG/LLVM plugin
+                  else if(GET_NODE(MR->op0)->get_kind() == view_convert_expr_K) /// required by the CLANG/LLVM plugin
                   {
                      auto* vc0 = GetPointer<view_convert_expr>(GET_NODE(MR->op0));
                      tree_nodeRef vc_ga = CreateGimpleAssign(vc0->type, MR->op0, block.first, srcp_default);
@@ -2583,7 +2509,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
 
                      /// check if there is a misaligned access
                      unsigned int obj_size = tree_helper::Size(tree_helper::CGetType(GET_NODE(ga->op0)));
-                     unsigned int bram_size = std::max(8u,obj_size/2);
+                     unsigned int bram_size = std::max(8u, obj_size / 2);
                      /// chech if the mem_ref corresponds to an implicit memset and then it will be lowered to simple loop initializing the variable
                      bool implicit_memset = GET_NODE(ga->op1)->get_kind() == constructor_K && GetPointer<constructor>(GET_NODE(ga->op1)) && GetPointer<constructor>(GET_NODE(ga->op1))->list_of_idx_valu.size() == 0;
                      if(implicit_memset)
@@ -2597,11 +2523,11 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            implicit_memset = type_node->get_kind() == array_type_K;
                         }
                      }
-                     if(!implicit_memset && ((((op1_val*8))%bram_size) != 0))
+                     if(!implicit_memset && ((((op1_val * 8)) % bram_size) != 0))
                         function_behavior->set_unaligned_accesses(true);
 
                      tree_nodeRef pt = tree_man->create_pointer_type(type);
-                     tree_nodeRef ae = tree_man->create_unary_operation(pt,ga->op0, srcp_default, addr_expr_K);
+                     tree_nodeRef ae = tree_man->create_unary_operation(pt, ga->op0, srcp_default, addr_expr_K);
                      tree_nodeRef new_ga = CreateGimpleAssign(pt, ae, block.first, srcp_default);
                      GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = true;
                      tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
@@ -2614,13 +2540,10 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
                      restart_analysis = true;
                   }
-                  if(GET_NODE(ga->op1)->get_kind() != ssa_name_K &&
-                        !GetPointer<cst_node>(GET_NODE(ga->op1)) &&
-                        GET_NODE(ga->op1)->get_kind() != mem_ref_K &&
-                        GET_NODE(ga->op1)->get_kind() != constructor_K)
+                  if(GET_NODE(ga->op1)->get_kind() != ssa_name_K && !GetPointer<cst_node>(GET_NODE(ga->op1)) && GET_NODE(ga->op1)->get_kind() != mem_ref_K && GET_NODE(ga->op1)->get_kind() != constructor_K)
                   {
                      unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op1));
-                     tree_nodeRef op_type= TM->GetTreeReindex(type_index);
+                     tree_nodeRef op_type = TM->GetTreeReindex(type_index);
                      tree_nodeRef op_ga = CreateGimpleAssign(op_type, ga->op1, block.first, srcp_default);
                      tree_nodeRef op_vd = GetPointer<gimple_assign>(GET_NODE(op_ga))->op0;
                      block.second->PushBefore(op_ga, *it_los);
@@ -2632,23 +2555,23 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                else if(code0 == component_ref_K)
                {
                   auto* cr = GetPointer<component_ref>(GET_NODE(ga->op0));
-                  auto * field_d = GetPointer<field_decl>(GET_NODE(cr->op1));
+                  auto* field_d = GetPointer<field_decl>(GET_NODE(cr->op1));
                   tree_nodeRef type;
-                  if (field_d->is_bitfield())
+                  if(field_d->is_bitfield())
                   {
                      auto* curr_int = GetPointer<integer_cst>(GET_NODE(field_d->bpos));
                      THROW_ASSERT(curr_int, "expected an integer_cst but got something of different");
                      auto op1_val = static_cast<unsigned int>(tree_helper::get_integer_cst_value(curr_int));
-                     unsigned int right_shift_val = op1_val%8;
+                     unsigned int right_shift_val = op1_val % 8;
                      if(GET_NODE(cr->type)->get_kind() == boolean_type_K)
                      {
-                        type = tree_man->create_integer_type_with_prec(std::max(8u,resize_to_1_8_16_32_64_128_256_512(1+right_shift_val)), true);
+                        type = tree_man->create_integer_type_with_prec(std::max(8u, resize_to_1_8_16_32_64_128_256_512(1 + right_shift_val)), true);
                      }
                      else
                      {
                         auto* it = GetPointer<integer_type>(GET_NODE(cr->type));
                         THROW_ASSERT(it, "unexpected pattern");
-                        type = tree_man->create_integer_type_with_prec(std::max(8u,resize_to_1_8_16_32_64_128_256_512(it->prec+right_shift_val)), it->unsigned_flag);
+                        type = tree_man->create_integer_type_with_prec(std::max(8u, resize_to_1_8_16_32_64_128_256_512(it->prec + right_shift_val)), it->unsigned_flag);
                      }
                   }
                   else
@@ -2656,7 +2579,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      type = cr->type;
                   }
                   tree_nodeRef pt = tree_man->create_pointer_type(type);
-                  tree_nodeRef ae = tree_man->create_unary_operation(pt,ga->op0, srcp_default, addr_expr_K);
+                  tree_nodeRef ae = tree_man->create_unary_operation(pt, ga->op0, srcp_default, addr_expr_K);
                   tree_nodeRef new_ga = CreateGimpleAssign(pt, ae, block.first, srcp_default);
                   GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = true;
 
@@ -2674,11 +2597,11 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      auto* curr_int = GetPointer<integer_cst>(GET_NODE(field_d->bpos));
                      THROW_ASSERT(curr_int, "expected an integer_cst but got something of different");
                      auto op1_val = static_cast<unsigned int>(tree_helper::get_integer_cst_value(curr_int));
-                     unsigned int right_shift_val = op1_val%8;
+                     unsigned int right_shift_val = op1_val % 8;
                      unsigned int size_tp = tree_helper::Size(GET_NODE(type));
                      unsigned int size_field_decl = tree_helper::Size(GET_NODE(cr->op1));
 
-                     if (right_shift_val == 0 and size_field_decl == size_tp)
+                     if(right_shift_val == 0 and size_field_decl == size_tp)
                      {
                         ga->op0 = mr;
                      }
@@ -2697,7 +2620,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(load_ga)->ToString());
 
                         tree_nodeRef load_var;
-                        if (size_field_decl != size_tp)
+                        if(size_field_decl != size_tp)
                         {
 #if HAVE_FROM_DISCREPANCY_BUILT
                            /*
@@ -2706,18 +2629,13 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                             * not been resized yet and it may also load
                             * inconsistent stuff from other bitfields nearby
                             */
-                           if (parameters->isOption(OPT_discrepancy) and
-                                 parameters->getOption<bool>(OPT_discrepancy) and
-                                 (not parameters->isOption(OPT_discrepancy_force) or
-                                  not parameters->getOption<bool>(OPT_discrepancy_force)))
+                           if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy) and (not parameters->isOption(OPT_discrepancy_force) or not parameters->getOption<bool>(OPT_discrepancy_force)))
                            {
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---skip discrepancy of ssa " + GET_NODE(load_vd)->ToString() +
-                                    " assigned in new stmt: " + GET_NODE(load_ga)->ToString());
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---skip discrepancy of ssa " + GET_NODE(load_vd)->ToString() + " assigned in new stmt: " + GET_NODE(load_ga)->ToString());
                               AppM->RDiscr->ssa_to_skip.insert(GET_NODE(load_vd));
                            }
 #endif
-                           tree_nodeRef nmask_value = TM->CreateUniqueIntegerCst(static_cast<long long int>(~(((1ULL<<size_field_decl)-1)<<right_shift_val)), GET_INDEX_NODE(type));
+                           tree_nodeRef nmask_value = TM->CreateUniqueIntegerCst(static_cast<long long int>(~(((1ULL << size_field_decl) - 1) << right_shift_val)), GET_INDEX_NODE(type));
                            tree_nodeRef nmask_node = tree_man->create_binary_operation(type, load_vd, nmask_value, srcp_default, bit_and_expr_K);
                            tree_nodeRef nmask_ga = CreateGimpleAssign(type, nmask_node, block.first, srcp_default);
                            block.second->PushBefore(nmask_ga, *it_los);
@@ -2730,27 +2648,22 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                             * not been resized yet and it may also load
                             * inconsistent stuff from other bitfields nearby
                             */
-                           if (parameters->isOption(OPT_discrepancy) and
-                                 parameters->getOption<bool>(OPT_discrepancy) and
-                                 (not parameters->isOption(OPT_discrepancy_force) or
-                                  not parameters->getOption<bool>(OPT_discrepancy_force)))
+                           if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy) and (not parameters->isOption(OPT_discrepancy_force) or not parameters->getOption<bool>(OPT_discrepancy_force)))
                            {
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---skip discrepancy of ssa " + GET_NODE(load_var)->ToString() +
-                                    " assigned in new stmt: " + GET_NODE(nmask_ga)->ToString());
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---skip discrepancy of ssa " + GET_NODE(load_var)->ToString() + " assigned in new stmt: " + GET_NODE(nmask_ga)->ToString());
                               AppM->RDiscr->ssa_to_skip.insert(GET_NODE(load_var));
                            }
 #endif
                         }
                         else
                         {
-                           THROW_ASSERT(right_shift_val==0, "unexpected pattern");
+                           THROW_ASSERT(right_shift_val == 0, "unexpected pattern");
                            load_var = load_vd;
                         }
                         tree_nodeRef written_var;
-                        if (size_field_decl != size_tp)
+                        if(size_field_decl != size_tp)
                         {
-                           tree_nodeRef and_mask_value = TM->CreateUniqueIntegerCst(static_cast<long long int>((1ULL<<size_field_decl)-1), GET_INDEX_NODE(type));
+                           tree_nodeRef and_mask_value = TM->CreateUniqueIntegerCst(static_cast<long long int>((1ULL << size_field_decl) - 1), GET_INDEX_NODE(type));
                            tree_nodeRef and_mask_node = tree_man->create_binary_operation(type, ga->op1, and_mask_value, srcp_default, bit_and_expr_K);
                            tree_nodeRef and_mask_ga = CreateGimpleAssign(type, and_mask_node, block.first, srcp_default);
                            block.second->PushBefore(and_mask_ga, *it_los);
@@ -2762,7 +2675,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            written_var = ga->op1;
                         }
                         tree_nodeRef lshifted_var;
-                        if (right_shift_val)
+                        if(right_shift_val)
                         {
                            tree_nodeRef lsh_value = TM->CreateUniqueIntegerCst(right_shift_val, GET_INDEX_NODE(type));
                            tree_nodeRef lsh_node = tree_man->create_binary_operation(type, written_var, lsh_value, srcp_default, lshift_expr_K);
@@ -2790,15 +2703,10 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                          * not been resized yet and it may also load
                          * inconsistent stuff from other bitfields nearby
                          */
-                        if (size_field_decl != size_tp and
-                              parameters->isOption(OPT_discrepancy) and
-                              parameters->getOption<bool>(OPT_discrepancy) and
-                              (not parameters->isOption(OPT_discrepancy_force) or
-                               not parameters->getOption<bool>(OPT_discrepancy_force)))
+                        if(size_field_decl != size_tp and parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy) and
+                           (not parameters->isOption(OPT_discrepancy_force) or not parameters->getOption<bool>(OPT_discrepancy_force)))
                         {
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---skip discrepancy of ssa " + GET_NODE(res_vd)->ToString() +
-                                 " assigned in new stmt: " + GET_NODE(res_ga)->ToString());
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---skip discrepancy of ssa " + GET_NODE(res_vd)->ToString() + " assigned in new stmt: " + GET_NODE(res_ga)->ToString());
                            AppM->RDiscr->ssa_to_skip.insert(GET_NODE(res_vd));
                         }
 #endif
@@ -2814,12 +2722,12 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---expand target_mem_ref 2 " + STR(GET_INDEX_NODE(ga->op0)));
 
-                  auto * tmr = GetPointer<target_mem_ref461>(GET_NODE(ga->op0));
+                  auto* tmr = GetPointer<target_mem_ref461>(GET_NODE(ga->op0));
                   /// split the target_mem_ref in a address computation statement and in a store statement
                   tree_nodeRef type = tmr->type;
 
                   tree_nodeRef pt = tree_man->create_pointer_type(type);
-                  tree_nodeRef ae = tree_man->create_unary_operation(pt,ga->op0, srcp_default, addr_expr_K);
+                  tree_nodeRef ae = tree_man->create_unary_operation(pt, ga->op0, srcp_default, addr_expr_K);
                   tree_nodeRef new_ga = CreateGimpleAssign(pt, ae, block.first, srcp_default);
                   GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = true;
                   tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
@@ -2834,10 +2742,10 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                }
                else if(code0 == var_decl_K && !ga->init_assignment)
                {
-                  auto *vd = GetPointer<var_decl>(GET_NODE(ga->op0));
+                  auto* vd = GetPointer<var_decl>(GET_NODE(ga->op0));
                   tree_nodeRef type = vd->type;
                   tree_nodeRef pt = tree_man->create_pointer_type(type);
-                  tree_nodeRef ae = tree_man->create_unary_operation(pt,ga->op0, srcp_default, addr_expr_K);
+                  tree_nodeRef ae = tree_man->create_unary_operation(pt, ga->op0, srcp_default, addr_expr_K);
                   tree_nodeRef new_ga = CreateGimpleAssign(pt, ae, block.first, srcp_default);
                   GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = true;
                   tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
@@ -2850,16 +2758,16 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
                   restart_analysis = true;
 
-//                  {
-//                     /// check if volatile attribute is missing
-//                     /// it may happen with gcc v4.8 or greater
-//                     if(vd->scpe && GET_NODE(vd->scpe)->get_kind() != translation_unit_decl_K && !vd->static_flag && !tree_helper::is_volatile(TM,GET_INDEX_NODE(ga->op1)) &&
-//                           GET_NODE(vd->type)->get_kind() != array_type_K && GET_NODE(vd->type)->get_kind() != record_type_K && GET_NODE(vd->type)->get_kind() != union_type_K)
-//                     {
-//                        /// w.r.t. bambu this kind of non-ssa variable is equivalent to a static local variable
-//                        vd->static_flag = true;
-//                     }
-//                  }
+                  //                  {
+                  //                     /// check if volatile attribute is missing
+                  //                     /// it may happen with gcc v4.8 or greater
+                  //                     if(vd->scpe && GET_NODE(vd->scpe)->get_kind() != translation_unit_decl_K && !vd->static_flag && !tree_helper::is_volatile(TM,GET_INDEX_NODE(ga->op1)) &&
+                  //                           GET_NODE(vd->type)->get_kind() != array_type_K && GET_NODE(vd->type)->get_kind() != record_type_K && GET_NODE(vd->type)->get_kind() != union_type_K)
+                  //                     {
+                  //                        /// w.r.t. bambu this kind of non-ssa variable is equivalent to a static local variable
+                  //                        vd->static_flag = true;
+                  //                     }
+                  //                  }
                }
                else if(code0 == indirect_ref_K)
                {
@@ -2873,7 +2781,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                }
                else if(code0 == misaligned_indirect_ref_K)
                {
-                  auto * MIR = GetPointer<misaligned_indirect_ref>(GET_NODE(ga->op0));
+                  auto* MIR = GetPointer<misaligned_indirect_ref>(GET_NODE(ga->op0));
                   function_behavior->set_unaligned_accesses(true);
                   tree_nodeRef type = MIR->type;
                   tree_nodeRef pt = tree_man->create_pointer_type(type);
@@ -2898,18 +2806,18 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   auto* curr_int = GetPointer<integer_cst>(GET_NODE(bfr->op2));
                   THROW_ASSERT(curr_int, "expected an integer_cst but got something of different");
                   auto op1_val = static_cast<unsigned int>(tree_helper::get_integer_cst_value(curr_int));
-                  unsigned int right_shift_val = op1_val%8;
+                  unsigned int right_shift_val = op1_val % 8;
                   tree_nodeRef type;
                   if(GET_NODE(bfr->type)->get_kind() == boolean_type_K)
-                     type = tree_man->create_integer_type_with_prec(std::max(8u,resize_to_1_8_16_32_64_128_256_512(1+right_shift_val)), true);
+                     type = tree_man->create_integer_type_with_prec(std::max(8u, resize_to_1_8_16_32_64_128_256_512(1 + right_shift_val)), true);
                   else
                   {
                      auto* it = GetPointer<integer_type>(GET_NODE(bfr->type));
                      THROW_ASSERT(it, "unexpected pattern");
-                     type = tree_man->create_integer_type_with_prec(std::max(8u,resize_to_1_8_16_32_64_128_256_512(it->prec+right_shift_val)), it->unsigned_flag);
+                     type = tree_man->create_integer_type_with_prec(std::max(8u, resize_to_1_8_16_32_64_128_256_512(it->prec + right_shift_val)), it->unsigned_flag);
                   }
                   tree_nodeRef pt = tree_man->create_pointer_type(type);
-                  tree_nodeRef ae = tree_man->create_unary_operation(pt,ga->op0, srcp_default, addr_expr_K);
+                  tree_nodeRef ae = tree_man->create_unary_operation(pt, ga->op0, srcp_default, addr_expr_K);
                   tree_nodeRef new_ga = CreateGimpleAssign(pt, ae, block.first, srcp_default);
                   GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = true;
 
@@ -2926,7 +2834,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   unsigned int size_tp = tree_helper::Size(GET_NODE(type));
                   unsigned int size_field_decl = tree_helper::Size(GET_NODE(bfr->op1));
 
-                  if (right_shift_val == 0 and size_field_decl == size_tp)
+                  if(right_shift_val == 0 and size_field_decl == size_tp)
                   {
                      ga->op0 = mr;
                   }
@@ -2937,7 +2845,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      tree_nodeRef load_vd = GetPointer<gimple_assign>(GET_NODE(load_ga))->op0;
                      GetPointer<gimple_assign>(GET_NODE(load_ga))->memuse = ga->memuse;
                      GetPointer<gimple_assign>(GET_NODE(load_ga))->vuses = ga->vuses;
-                     for (auto vd : bitfield_vuses)
+                     for(auto vd : bitfield_vuses)
                         GetPointer<gimple_assign>(GET_NODE(load_ga))->vuses.insert(vd);
                      THROW_ASSERT(ga->vdef, "unexpected condition");
                      bitfield_vdefs.insert(ga->vdef);
@@ -2945,7 +2853,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(load_ga)->ToString());
 
                      tree_nodeRef load_var;
-                     if (size_field_decl != size_tp)
+                     if(size_field_decl != size_tp)
                      {
 #if HAVE_FROM_DISCREPANCY_BUILT
                         /*
@@ -2954,18 +2862,13 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                          * not been resized yet and it may also load
                          * inconsistent stuff from other bitfields nearby
                          */
-                        if (parameters->isOption(OPT_discrepancy) and
-                           parameters->getOption<bool>(OPT_discrepancy) and
-                           (not parameters->isOption(OPT_discrepancy_force) or
-                            not parameters->getOption<bool>(OPT_discrepancy_force)))
+                        if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy) and (not parameters->isOption(OPT_discrepancy_force) or not parameters->getOption<bool>(OPT_discrepancy_force)))
                         {
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---skip discrepancy of ssa " + GET_NODE(load_vd)->ToString() +
-                                 " assigned in new stmt: " + GET_NODE(load_ga)->ToString());
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---skip discrepancy of ssa " + GET_NODE(load_vd)->ToString() + " assigned in new stmt: " + GET_NODE(load_ga)->ToString());
                            AppM->RDiscr->ssa_to_skip.insert(GET_NODE(load_vd));
                         }
 #endif
-                        tree_nodeRef nmask_value = TM->CreateUniqueIntegerCst(static_cast<long long int>(~(((1ULL<<size_field_decl)-1)<<right_shift_val)), GET_INDEX_NODE(type));
+                        tree_nodeRef nmask_value = TM->CreateUniqueIntegerCst(static_cast<long long int>(~(((1ULL << size_field_decl) - 1) << right_shift_val)), GET_INDEX_NODE(type));
                         tree_nodeRef nmask_node = tree_man->create_binary_operation(type, load_vd, nmask_value, srcp_default, bit_and_expr_K);
                         tree_nodeRef nmask_ga = CreateGimpleAssign(type, nmask_node, block.first, srcp_default);
                         block.second->PushBefore(nmask_ga, *it_los);
@@ -2978,14 +2881,9 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                          * not been resized yet and it may also load
                          * inconsistent stuff from other bitfields nearby
                          */
-                        if (parameters->isOption(OPT_discrepancy) and
-                           parameters->getOption<bool>(OPT_discrepancy) and
-                           (not parameters->isOption(OPT_discrepancy_force) or
-                            not parameters->getOption<bool>(OPT_discrepancy_force)))
+                        if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy) and (not parameters->isOption(OPT_discrepancy_force) or not parameters->getOption<bool>(OPT_discrepancy_force)))
                         {
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---skip discrepancy of ssa " + GET_NODE(load_var)->ToString() +
-                                 " assigned in new stmt: " + GET_NODE(nmask_ga)->ToString());
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---skip discrepancy of ssa " + GET_NODE(load_var)->ToString() + " assigned in new stmt: " + GET_NODE(nmask_ga)->ToString());
                            AppM->RDiscr->ssa_to_skip.insert(GET_NODE(load_var));
                         }
 #endif
@@ -2996,9 +2894,9 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         load_var = load_vd;
                      }
                      tree_nodeRef written_var;
-                     if (size_field_decl != size_tp)
+                     if(size_field_decl != size_tp)
                      {
-                        tree_nodeRef and_mask_value = TM->CreateUniqueIntegerCst(static_cast<long long int>((1ULL<<size_field_decl)-1), GET_INDEX_NODE(type));
+                        tree_nodeRef and_mask_value = TM->CreateUniqueIntegerCst(static_cast<long long int>((1ULL << size_field_decl) - 1), GET_INDEX_NODE(type));
                         tree_nodeRef and_mask_node = tree_man->create_binary_operation(type, ga->op1, and_mask_value, srcp_default, bit_and_expr_K);
                         tree_nodeRef and_mask_ga = CreateGimpleAssign(type, and_mask_node, block.first, srcp_default);
                         block.second->PushBefore(and_mask_ga, *it_los);
@@ -3010,7 +2908,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         written_var = ga->op1;
                      }
                      tree_nodeRef lshifted_var;
-                     if (right_shift_val)
+                     if(right_shift_val)
                      {
                         tree_nodeRef lsh_value = TM->CreateUniqueIntegerCst(right_shift_val, GET_INDEX_NODE(type));
                         tree_nodeRef lsh_node = tree_man->create_binary_operation(type, written_var, lsh_value, srcp_default, lshift_expr_K);
@@ -3038,15 +2936,9 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                       * not been resized yet and it may also load
                       * inconsistent stuff from other bitfields nearby
                       */
-                     if (size_field_decl != size_tp and
-                           parameters->isOption(OPT_discrepancy) and
-                           parameters->getOption<bool>(OPT_discrepancy) and
-                           (not parameters->isOption(OPT_discrepancy_force) or
-                            not parameters->getOption<bool>(OPT_discrepancy_force)))
+                     if(size_field_decl != size_tp and parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy) and (not parameters->isOption(OPT_discrepancy_force) or not parameters->getOption<bool>(OPT_discrepancy_force)))
                      {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---skip discrepancy of ssa " + GET_NODE(res_vd)->ToString() +
-                              " assigned in new stmt: " + GET_NODE(res_ga)->ToString());
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---skip discrepancy of ssa " + GET_NODE(res_vd)->ToString() + " assigned in new stmt: " + GET_NODE(res_ga)->ToString());
                         AppM->RDiscr->ssa_to_skip.insert(GET_NODE(res_vd));
                      }
 #endif
@@ -3055,10 +2947,10 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                }
                else if(code0 == parm_decl_K)
                {
-                  auto *pd = GetPointer<parm_decl>(GET_NODE(ga->op0));
+                  auto* pd = GetPointer<parm_decl>(GET_NODE(ga->op0));
                   tree_nodeRef type = pd->type;
                   tree_nodeRef pt = tree_man->create_pointer_type(type);
-                  tree_nodeRef ae = tree_man->create_unary_operation(pt,ga->op0, srcp_default, addr_expr_K);
+                  tree_nodeRef ae = tree_man->create_unary_operation(pt, ga->op0, srcp_default, addr_expr_K);
                   tree_nodeRef new_ga = CreateGimpleAssign(pt, ae, block.first, srcp_default);
                   GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = true;
                   tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
@@ -3083,7 +2975,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      auto it_los_next = std::next(it_los);
                      if(it_los_next != it_los_end && GET_NODE(*it_los_next)->get_kind() == gimple_return_K)
                      {
-                        auto *gr = GetPointer<gimple_return>(GET_NODE(*it_los_next));
+                        auto* gr = GetPointer<gimple_return>(GET_NODE(*it_los_next));
                         gr->op = ga->op1;
                         block.second->RemoveStmt(*it_los);
                         it_los = list_of_stmt.begin();
@@ -3096,7 +2988,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                else if(code0 == result_decl_K)
                {
                   unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0));
-                  tree_nodeRef op_type= TM->GetTreeReindex(type_index);
+                  tree_nodeRef op_type = TM->GetTreeReindex(type_index);
                   tree_nodeRef new_ga = CreateGimpleAssign(op_type, ga->op1, block.first, srcp_default);
                   tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
                   ga->op1 = ssa_vd;
@@ -3117,7 +3009,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   continue;
                }
 #endif
-               auto * gc =  GetPointer<gimple_cond>(GET_NODE(*it_los));
+               auto* gc = GetPointer<gimple_cond>(GET_NODE(*it_los));
                const std::string srcp_default = gc->include_name + ":" + STR(gc->line_number) + ":" + STR(gc->column_number);
                /// manage something as binary operand
                if(GetPointer<binary_expr>(GET_NODE(gc->op0)))
@@ -3127,7 +3019,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   if(GET_NODE(be->op0)->get_kind() == addr_expr_K)
                   {
                      auto* ae = GetPointer<addr_expr>(GET_NODE(be->op0));
-                     tree_nodeRef ae_expr = tree_man->create_unary_operation(ae->type,ae->op, srcp_default, addr_expr_K);///It is required to de-share some IR nodes
+                     tree_nodeRef ae_expr = tree_man->create_unary_operation(ae->type, ae->op, srcp_default, addr_expr_K); /// It is required to de-share some IR nodes
                      tree_nodeRef ae_ga = CreateGimpleAssign(ae->type, ae_expr, block.first, srcp_default);
                      tree_nodeRef ae_vd = GetPointer<gimple_assign>(GET_NODE(ae_ga))->op0;
                      block.second->PushBefore(ae_ga, *it_los);
@@ -3137,24 +3029,22 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   if(GET_NODE(be->op1)->get_kind() == addr_expr_K)
                   {
                      auto* ae = GetPointer<addr_expr>(GET_NODE(be->op1));
-                     tree_nodeRef ae_expr = tree_man->create_unary_operation(ae->type,ae->op, srcp_default, addr_expr_K);///It is required to de-share some IR nodes
+                     tree_nodeRef ae_expr = tree_man->create_unary_operation(ae->type, ae->op, srcp_default, addr_expr_K); /// It is required to de-share some IR nodes
                      tree_nodeRef ae_ga = CreateGimpleAssign(ae->type, ae_expr, block.first, srcp_default);
                      tree_nodeRef ae_vd = GetPointer<gimple_assign>(GET_NODE(ae_ga))->op0;
                      block.second->PushBefore(ae_ga, *it_los);
                      be->op1 = ae_vd;
                      changed = true;
                   }
-                  if(GetPointer<unary_expr>(GET_NODE(be->op0)) ||
-                        GetPointer<binary_expr>(GET_NODE(be->op0)) ||
-                        GetPointer<ternary_expr>(GET_NODE(be->op0)))/// required by the CLANG/LLVM plugin
+                  if(GetPointer<unary_expr>(GET_NODE(be->op0)) || GetPointer<binary_expr>(GET_NODE(be->op0)) || GetPointer<ternary_expr>(GET_NODE(be->op0))) /// required by the CLANG/LLVM plugin
                   {
                      tree_nodeRef type;
-                     if (GetPointer<unary_expr>(GET_NODE(be->op0)))
-                        type= GetPointer<unary_expr>(GET_NODE(be->op0))->type;
+                     if(GetPointer<unary_expr>(GET_NODE(be->op0)))
+                        type = GetPointer<unary_expr>(GET_NODE(be->op0))->type;
                      else if(GetPointer<binary_expr>(GET_NODE(be->op0)))
-                        type= GetPointer<binary_expr>(GET_NODE(be->op0))->type;
+                        type = GetPointer<binary_expr>(GET_NODE(be->op0))->type;
                      else if(GetPointer<ternary_expr>(GET_NODE(be->op0)))
-                        type= GetPointer<ternary_expr>(GET_NODE(be->op0))->type;
+                        type = GetPointer<ternary_expr>(GET_NODE(be->op0))->type;
                      else
                         THROW_ERROR("not managed condition");
 
@@ -3165,17 +3055,15 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
                      changed = true;
                   }
-                  if(GetPointer<unary_expr>(GET_NODE(be->op1)) ||
-                        GetPointer<binary_expr>(GET_NODE(be->op1)) ||
-                        GetPointer<ternary_expr>(GET_NODE(be->op1)))/// required by the CLANG/LLVM plugin
+                  if(GetPointer<unary_expr>(GET_NODE(be->op1)) || GetPointer<binary_expr>(GET_NODE(be->op1)) || GetPointer<ternary_expr>(GET_NODE(be->op1))) /// required by the CLANG/LLVM plugin
                   {
                      tree_nodeRef type;
-                     if (GetPointer<unary_expr>(GET_NODE(be->op1)))
-                        type= GetPointer<unary_expr>(GET_NODE(be->op1))->type;
+                     if(GetPointer<unary_expr>(GET_NODE(be->op1)))
+                        type = GetPointer<unary_expr>(GET_NODE(be->op1))->type;
                      else if(GetPointer<binary_expr>(GET_NODE(be->op1)))
-                        type= GetPointer<binary_expr>(GET_NODE(be->op1))->type;
+                        type = GetPointer<binary_expr>(GET_NODE(be->op1))->type;
                      else if(GetPointer<ternary_expr>(GET_NODE(be->op1)))
-                        type= GetPointer<ternary_expr>(GET_NODE(be->op1))->type;
+                        type = GetPointer<ternary_expr>(GET_NODE(be->op1))->type;
                      else
                         THROW_ERROR("not managed condition");
                      tree_nodeRef new_ga = CreateGimpleAssign(type, be->op1, block.first, srcp_default);
@@ -3190,10 +3078,10 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      restart_analysis = true;
                   }
                }
-               else if(tree_helper::Size(GET_NODE(gc->op0))!=1)
+               else if(tree_helper::Size(GET_NODE(gc->op0)) != 1)
                {
                   auto bt = tree_man->create_boolean_type();
-                  tree_nodeRef ne = tree_man->create_unary_operation(bt,gc->op0, srcp_default, nop_expr_K);
+                  tree_nodeRef ne = tree_man->create_unary_operation(bt, gc->op0, srcp_default, nop_expr_K);
                   tree_nodeRef nga = CreateGimpleAssign(bt, ne, block.first, srcp_default);
                   tree_nodeRef n_vd = GetPointer<gimple_assign>(GET_NODE(nga))->op0;
                   block.second->PushBefore(nga, *it_los);
@@ -3231,15 +3119,15 @@ DesignFlowStep_Status IR_lowering::InternalExec()
             }
             else if(GET_NODE(*it_los)->get_kind() == gimple_call_K)
             {
-               auto * gc =  GetPointer<gimple_call>(GET_NODE(*it_los));
+               auto* gc = GetPointer<gimple_call>(GET_NODE(*it_los));
                const std::string srcp_default = gc->include_name + ":" + STR(gc->line_number) + ":" + STR(gc->column_number);
                bool changed = false;
-               for (auto & arg : gc->args)
+               for(auto& arg : gc->args)
                {
-                  if (GET_NODE(arg)->get_kind() == addr_expr_K)
+                  if(GET_NODE(arg)->get_kind() == addr_expr_K)
                   {
                      auto* ae = GetPointer<addr_expr>(GET_NODE(arg));
-                     tree_nodeRef ae_expr = tree_man->create_unary_operation(ae->type,ae->op, srcp_default, addr_expr_K);///It is required to de-share some IR nodes
+                     tree_nodeRef ae_expr = tree_man->create_unary_operation(ae->type, ae->op, srcp_default, addr_expr_K); /// It is required to de-share some IR nodes
                      tree_nodeRef ae_ga = CreateGimpleAssign(ae->type, ae_expr, block.first, srcp_default);
                      tree_nodeRef ae_vd = GetPointer<gimple_assign>(GET_NODE(ae_ga))->op0;
                      block.second->PushBefore(ae_ga, *it_los);
@@ -3247,7 +3135,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      arg = ae_vd;
                      changed = true;
                   }
-                  else if(GetPointer<unary_expr>(GET_NODE(arg)))/// required by the CLANG/LLVM plugin
+                  else if(GetPointer<unary_expr>(GET_NODE(arg))) /// required by the CLANG/LLVM plugin
                   {
                      auto* ue = GetPointer<unary_expr>(GET_NODE(arg));
                      tree_nodeRef new_ga = CreateGimpleAssign(ue->type, arg, block.first, srcp_default);
@@ -3257,7 +3145,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      arg = ssa_vd;
                      changed = true;
                   }
-                  else if(GetPointer<binary_expr>(GET_NODE(arg)))/// required by the CLANG/LLVM plugin
+                  else if(GetPointer<binary_expr>(GET_NODE(arg))) /// required by the CLANG/LLVM plugin
                   {
                      auto* be = GetPointer<binary_expr>(GET_NODE(arg));
                      tree_nodeRef new_ga = CreateGimpleAssign(be->type, arg, block.first, srcp_default);
@@ -3275,11 +3163,11 @@ DesignFlowStep_Status IR_lowering::InternalExec()
             }
             else if(GET_NODE(*it_los)->get_kind() == gimple_return_K)
             {
-               auto * gr =  GetPointer<gimple_return>(GET_NODE(*it_los));
+               auto* gr = GetPointer<gimple_return>(GET_NODE(*it_los));
                const std::string srcp_default = gr->include_name + ":" + STR(gr->line_number) + ":" + STR(gr->column_number);
                if(gr->op && GetPointer<unary_expr>(GET_NODE(gr->op)))
                {
-                  auto * ue = GetPointer<unary_expr>(GET_NODE(gr->op));
+                  auto* ue = GetPointer<unary_expr>(GET_NODE(gr->op));
                   tree_nodeRef new_ga = CreateGimpleAssign(ue->type, gr->op, block.first, srcp_default);
                   tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
                   gr->op = ssa_vd;
@@ -3289,7 +3177,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                }
                else if(gr->op && GetPointer<binary_expr>(GET_NODE(gr->op)))
                {
-                  auto * be = GetPointer<binary_expr>(GET_NODE(gr->op));
+                  auto* be = GetPointer<binary_expr>(GET_NODE(gr->op));
                   tree_nodeRef new_ga = CreateGimpleAssign(be->type, gr->op, block.first, srcp_default);
                   tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
                   gr->op = ssa_vd;

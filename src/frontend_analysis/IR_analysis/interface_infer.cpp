@@ -92,24 +92,24 @@
 #include "copyrights_strings.hpp"
 
 #define EPSILON 0.000000001
-#define ENCODE_FDNAME(argName_string,MODE,interfaceType) (argName_string + STR_CST_interface_parameter_keyword + (MODE) + interfaceType)
+#define ENCODE_FDNAME(argName_string, MODE, interfaceType) (argName_string + STR_CST_interface_parameter_keyword + (MODE) + interfaceType)
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> interface_infer::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
-   switch (relationship_type)
+   switch(relationship_type)
    {
-      case (DEPENDENCE_RELATIONSHIP):
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          break;
       }
-      case (INVALIDATION_RELATIONSHIP):
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case (PRECEDENCE_RELATIONSHIP):
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -123,9 +123,9 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 void interface_infer::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
 {
-   switch (relationship_type)
+   switch(relationship_type)
    {
-      case (PRECEDENCE_RELATIONSHIP):
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -158,38 +158,40 @@ interface_infer::interface_infer(const application_managerRef _AppM, unsigned in
 
 interface_infer::~interface_infer() = default;
 
-void interface_infer::classifyArgRecurse(std::set<unsigned>&Visited, ssa_name*argSSA, unsigned int destBB, statement_list*sl, bool &canBeMovedToBB2, bool &isRead, bool &isWrite, bool &unkwown_pattern, std::list<tree_nodeRef> &writeStmt, std::list<tree_nodeRef> &readStmt)
+void interface_infer::classifyArgRecurse(std::set<unsigned>& Visited, ssa_name* argSSA, unsigned int destBB, statement_list* sl, bool& canBeMovedToBB2, bool& isRead, bool& isWrite, bool& unkwown_pattern, std::list<tree_nodeRef>& writeStmt,
+                                         std::list<tree_nodeRef>& readStmt)
 {
    tree_nodeRef readType;
-   for (auto par_use : argSSA->CGetUseStmts())
+   for(auto par_use : argSSA->CGetUseStmts())
    {
       auto use_stmt = GET_NODE(par_use.first);
-      if(Visited.find(GET_INDEX_NODE(par_use.first)) != Visited.end()) continue;
+      if(Visited.find(GET_INDEX_NODE(par_use.first)) != Visited.end())
+         continue;
       Visited.insert(GET_INDEX_NODE(par_use.first));
       std::cerr << "STMT: " << use_stmt->ToString() << std::endl;
       auto gn = GetPointer<gimple_node>(use_stmt);
-      if (auto ga = GetPointer<gimple_assign>(use_stmt))
+      if(auto ga = GetPointer<gimple_assign>(use_stmt))
       {
-         if (GET_NODE(ga->op0)->get_kind() == mem_ref_K)
+         if(GET_NODE(ga->op0)->get_kind() == mem_ref_K)
          {
-            if (GET_NODE(ga->op1)->get_kind() == mem_ref_K)
+            if(GET_NODE(ga->op1)->get_kind() == mem_ref_K)
             {
                unkwown_pattern = true;
                THROW_WARNING("Pattern currently not supported: *x=*y; " + use_stmt->ToString());
             }
             else
             {
-               THROW_ASSERT(GET_NODE(ga->op1)->get_kind()==ssa_name_K, "unexpected condition");
-               if(GetPointer<ssa_name>(GET_NODE(ga->op1))!=argSSA)
+               THROW_ASSERT(GET_NODE(ga->op1)->get_kind() == ssa_name_K, "unexpected condition");
+               if(GetPointer<ssa_name>(GET_NODE(ga->op1)) != argSSA)
                {
                   isWrite = true;
                   writeStmt.push_back(par_use.first);
                }
             }
          }
-         else if (GET_NODE(ga->op1)->get_kind() == mem_ref_K)
+         else if(GET_NODE(ga->op1)->get_kind() == mem_ref_K)
          {
-            if (ga->vdef)
+            if(ga->vdef)
             {
                unkwown_pattern = true;
                canBeMovedToBB2 = false;
@@ -197,16 +199,18 @@ void interface_infer::classifyArgRecurse(std::set<unsigned>&Visited, ssa_name*ar
             }
             else
             {
-               if (sl->list_of_bloc.find(gn->bb_index)->second->loop_id != 0) canBeMovedToBB2 = false;
+               if(sl->list_of_bloc.find(gn->bb_index)->second->loop_id != 0)
+                  canBeMovedToBB2 = false;
                isRead = true;
-               if (readType && GET_INDEX_NODE(GetPointer<mem_ref>(GET_NODE(ga->op1))->type) != GET_INDEX_NODE(readType)) canBeMovedToBB2 = false; /// reading different objects
+               if(readType && GET_INDEX_NODE(GetPointer<mem_ref>(GET_NODE(ga->op1))->type) != GET_INDEX_NODE(readType))
+                  canBeMovedToBB2 = false; /// reading different objects
                readType = GetPointer<mem_ref>(GET_NODE(ga->op1))->type;
                readStmt.push_back(par_use.first);
                if(ga->bb_index == destBB)
                   canBeMovedToBB2 = false;
             }
          }
-         else if (GET_NODE(ga->op1)->get_kind() == call_expr_K)
+         else if(GET_NODE(ga->op1)->get_kind() == call_expr_K)
          {
             unkwown_pattern = true;
             canBeMovedToBB2 = false;
@@ -230,13 +234,14 @@ void interface_infer::classifyArgRecurse(std::set<unsigned>&Visited, ssa_name*ar
       }
    }
 }
-void interface_infer::classifyArg(statement_list*sl, tree_nodeRef argSSANode, bool &canBeMovedToBB2, bool &isRead, bool &isWrite, bool &unkwown_pattern, std::list<tree_nodeRef> &writeStmt, std::list<tree_nodeRef> &readStmt)
+void interface_infer::classifyArg(statement_list* sl, tree_nodeRef argSSANode, bool& canBeMovedToBB2, bool& isRead, bool& isWrite, bool& unkwown_pattern, std::list<tree_nodeRef>& writeStmt, std::list<tree_nodeRef>& readStmt)
 {
    unsigned int destBB = bloc::ENTRY_BLOCK_ID;
-   for (auto bb_succ : sl->list_of_bloc[bloc::ENTRY_BLOCK_ID]->list_of_succ)
+   for(auto bb_succ : sl->list_of_bloc[bloc::ENTRY_BLOCK_ID]->list_of_succ)
    {
-      if (bb_succ == bloc::EXIT_BLOCK_ID) continue;
-      if (destBB == bloc::ENTRY_BLOCK_ID)
+      if(bb_succ == bloc::EXIT_BLOCK_ID)
+         continue;
+      if(destBB == bloc::ENTRY_BLOCK_ID)
          destBB = bb_succ;
       else
          THROW_ERROR("unexpected pattern");
@@ -244,11 +249,12 @@ void interface_infer::classifyArg(statement_list*sl, tree_nodeRef argSSANode, bo
    THROW_ASSERT(destBB != bloc::ENTRY_BLOCK_ID, "unexpected condition");
    auto argSSA = GetPointer<ssa_name>(GET_NODE(argSSANode));
    THROW_ASSERT(argSSA, "unexpected condition");
-   std::set<unsigned>Visited;
+   std::set<unsigned> Visited;
    classifyArgRecurse(Visited, argSSA, destBB, sl, canBeMovedToBB2, isRead, isWrite, unkwown_pattern, writeStmt, readStmt);
 }
 
-void interface_infer::create_Read_function(const std::string& argName_string, tree_nodeRef origStmt, unsigned int destBB, statement_list*sl, function_decl* fd, const std::string &fdName, tree_nodeRef argSSANode, parm_decl* a, tree_nodeRef readType, const std::list<tree_nodeRef> &usedStmt_defs, const tree_manipulationRef tree_man, const tree_managerRef TM)
+void interface_infer::create_Read_function(const std::string& argName_string, tree_nodeRef origStmt, unsigned int destBB, statement_list* sl, function_decl* fd, const std::string& fdName, tree_nodeRef argSSANode, parm_decl* a, tree_nodeRef readType,
+                                           const std::list<tree_nodeRef>& usedStmt_defs, const tree_manipulationRef tree_man, const tree_managerRef TM)
 {
    /// create the function_decl
    std::vector<tree_nodeRef> argsT;
@@ -259,9 +265,9 @@ void interface_infer::create_Read_function(const std::string& argName_string, tr
    std::vector<tree_nodeRef> args;
    if(origStmt)
    {
-      THROW_ASSERT(GET_NODE(origStmt)->get_kind()==gimple_assign_K, "unexpected condition");
+      THROW_ASSERT(GET_NODE(origStmt)->get_kind() == gimple_assign_K, "unexpected condition");
       auto ga = GetPointer<gimple_assign>(GET_NODE(origStmt));
-      THROW_ASSERT(GET_NODE(ga->op1)->get_kind()==mem_ref_K, "unexpected condition");
+      THROW_ASSERT(GET_NODE(ga->op1)->get_kind() == mem_ref_K, "unexpected condition");
       auto mr = GetPointer<mem_ref>(GET_NODE(ga->op1));
       args.push_back(mr->op0);
    }
@@ -270,13 +276,19 @@ void interface_infer::create_Read_function(const std::string& argName_string, tr
    auto call_expr_node = tree_man->CreateCallExpr(function_decl_node, args, srcp);
    auto new_assignment = tree_man->CreateGimpleAssign(readType, call_expr_node, destBB, srcp);
    tree_nodeRef temp_ssa_var = GetPointer<gimple_assign>(GET_NODE(new_assignment))->op0;
-   for (auto defSSA : usedStmt_defs)
+   for(auto defSSA : usedStmt_defs)
    {
       auto ssaDefVar = GetPointer<ssa_name>(GET_NODE(defSSA));
       THROW_ASSERT(ssaDefVar, "unexpected condition");
       std::list<tree_nodeRef> varUses;
-      for (auto used : ssaDefVar->CGetUseStmts()) { varUses.push_back(used.first); }
-      for (auto used : varUses) { TM->ReplaceTreeNode(used, defSSA, temp_ssa_var); }
+      for(auto used : ssaDefVar->CGetUseStmts())
+      {
+         varUses.push_back(used.first);
+      }
+      for(auto used : varUses)
+      {
+         TM->ReplaceTreeNode(used, defSSA, temp_ssa_var);
+      }
    }
    if(origStmt)
       sl->list_of_bloc[destBB]->PushBefore(new_assignment, origStmt);
@@ -288,7 +300,8 @@ void interface_infer::create_Read_function(const std::string& argName_string, tr
    AppM->GetCallGraphManager()->AddFunctionAndCallPoint(function_id, GET_INDEX_NODE(function_decl_node), new_assignment->index, FB, FunctionEdgeInfo::CallType::direct_call);
 }
 
-void interface_infer::create_Write_function(const std::string& argName_string, tree_nodeRef origStmt, unsigned int destBB, statement_list*sl, function_decl* fd, const std::string &fdName, tree_nodeRef argSSANode, tree_nodeRef writeValue, parm_decl* a, tree_nodeRef writeType, const tree_manipulationRef tree_man, const tree_managerRef TM)
+void interface_infer::create_Write_function(const std::string& argName_string, tree_nodeRef origStmt, unsigned int destBB, statement_list* sl, function_decl* fd, const std::string& fdName, tree_nodeRef argSSANode, tree_nodeRef writeValue, parm_decl* a,
+                                            tree_nodeRef writeType, const tree_manipulationRef tree_man, const tree_managerRef TM)
 {
    const auto size_value_id = TM->new_tree_node_id();
    const auto bit_size_type = tree_man->create_bit_size_type();
@@ -307,9 +320,9 @@ void interface_infer::create_Write_function(const std::string& argName_string, t
    args.push_back(writeValue);
    if(origStmt)
    {
-      THROW_ASSERT(GET_NODE(origStmt)->get_kind()==gimple_assign_K, "unexpected condition");
+      THROW_ASSERT(GET_NODE(origStmt)->get_kind() == gimple_assign_K, "unexpected condition");
       auto ga = GetPointer<gimple_assign>(GET_NODE(origStmt));
-      THROW_ASSERT(GET_NODE(ga->op0)->get_kind()==mem_ref_K, "unexpected condition");
+      THROW_ASSERT(GET_NODE(ga->op0)->get_kind() == mem_ref_K, "unexpected condition");
       auto mr = GetPointer<mem_ref>(GET_NODE(ga->op0));
       args.push_back(mr->op0);
    }
@@ -321,19 +334,19 @@ void interface_infer::create_Write_function(const std::string& argName_string, t
    THROW_ASSERT(origStmt, "unexpected condition");
    sl->list_of_bloc[destBB]->PushBefore(new_writecall, origStmt);
    GetPointer<HLS_manager>(AppM)->design_interface_stores[destBB][argName_string].push_back(GET_INDEX_NODE(new_writecall));
-   addGimpleNOPxVirtual(origStmt,sl,TM);
+   addGimpleNOPxVirtual(origStmt, sl, TM);
    BehavioralHelperRef helper = BehavioralHelperRef(new BehavioralHelper(AppM, GET_INDEX_NODE(function_decl_node), false, parameters));
    FunctionBehaviorRef FB = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
    AppM->GetCallGraphManager()->AddFunctionAndCallPoint(function_id, GET_INDEX_NODE(function_decl_node), new_writecall->index, FB, FunctionEdgeInfo::CallType::direct_call);
 }
 
-void interface_infer::create_resource_Read_simple(const std::vector<std::string> & operations, const std::string& argName_string, const std::string &interfaceType, unsigned int inputBitWidth, bool IO_port)
+void interface_infer::create_resource_Read_simple(const std::vector<std::string>& operations, const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool IO_port)
 {
-   const std::string ResourceName = ENCODE_FDNAME(argName_string,"_Read_",interfaceType);
+   const std::string ResourceName = ENCODE_FDNAME(argName_string, "_Read_", interfaceType);
    auto HLSMgr = GetPointer<HLS_manager>(AppM);
    auto HLS_T = HLSMgr->get_HLS_target();
    auto TechMan = HLS_T->get_technology_manager();
-   if (!TechMan->is_library_manager(INTERFACE_LIBRARY) || !TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName))
+   if(!TechMan->is_library_manager(INTERFACE_LIBRARY) || !TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Creating interface resource: " + INTERFACE_LIBRARY + ":" + ResourceName);
       structural_objectRef interface_top;
@@ -346,8 +359,8 @@ void interface_infer::create_resource_Read_simple(const std::vector<std::string>
       GetPointer<module>(interface_top)->set_copyright(GENERATED_COPYRIGHT);
       GetPointer<module>(interface_top)->set_authors("Component automatically generated by bambu");
       GetPointer<module>(interface_top)->set_license(GENERATED_LICENSE);
-      bool isMultipleResource=interfaceType=="acknowledge" || interfaceType=="valid" || interfaceType=="handshake";
-      auto nOps=static_cast<unsigned>(operations.size());
+      bool isMultipleResource = interfaceType == "acknowledge" || interfaceType == "valid" || interfaceType == "handshake";
+      auto nOps = static_cast<unsigned>(operations.size());
       if(isMultipleResource)
          GetPointer<module>(interface_top)->set_multi_unit_multiplicity(nOps);
 
@@ -356,7 +369,7 @@ void interface_infer::create_resource_Read_simple(const std::vector<std::string>
       structural_type_descriptorRef Intype = structural_type_descriptorRef(new structural_type_descriptor("bool", inputBitWidth));
       structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
       structural_type_descriptorRef rwtype = structural_type_descriptorRef(new structural_type_descriptor("bool", 1));
-      if(interfaceType=="valid" || interfaceType=="handshake")
+      if(interfaceType == "valid" || interfaceType == "handshake")
       {
          CM->add_port(CLOCK_PORT_NAME, port_o::IN, interface_top, bool_type);
          CM->add_port(RESET_PORT_NAME, port_o::IN, interface_top, bool_type);
@@ -365,39 +378,39 @@ void interface_infer::create_resource_Read_simple(const std::vector<std::string>
       {
          CM->add_port_vector(START_PORT_NAME, port_o::IN, nOps, interface_top, bool_type);
       }
-      structural_objectRef rwPort,writePort,addrPort;
+      structural_objectRef rwPort, writePort, addrPort;
       if(isMultipleResource)
          addrPort = CM->add_port_vector("in1", port_o::IN, nOps, interface_top, word_bool_type);
       else
          addrPort = CM->add_port("in1", port_o::IN, interface_top, word_bool_type); // this port has a fixed name
       GetPointer<port_o>(addrPort)->set_is_addr_bus(true);
       GetPointer<port_o>(addrPort)->set_is_var_args(true); /// required to activate the module generation
-      if(interfaceType=="valid" || interfaceType=="handshake")
+      if(interfaceType == "valid" || interfaceType == "handshake")
       {
-         auto inPort_o_vld = CM->add_port_vector(DONE_PORT_NAME, port_o::OUT,  nOps, interface_top, bool_type);
+         auto inPort_o_vld = CM->add_port_vector(DONE_PORT_NAME, port_o::OUT, nOps, interface_top, bool_type);
       }
       if(isMultipleResource)
-         CM->add_port_vector("out1", port_o::OUT,  nOps, interface_top, rwtype);
+         CM->add_port_vector("out1", port_o::OUT, nOps, interface_top, rwtype);
       else
          CM->add_port("out1", port_o::OUT, interface_top, rwtype);
 
-      auto inPort = CM->add_port("_"+argName_string+(IO_port?"_i":""), port_o::IN, interface_top, Intype);
+      auto inPort = CM->add_port("_" + argName_string + (IO_port ? "_i" : ""), port_o::IN, interface_top, Intype);
       GetPointer<port_o>(inPort)->set_port_interface(port_o::port_interface::PI_RNONE);
-      if(interfaceType=="acknowledge" || interfaceType=="handshake")
+      if(interfaceType == "acknowledge" || interfaceType == "handshake")
       {
-         auto inPort_o_ack = CM->add_port("_"+argName_string+(IO_port?"_i":"")+"_ack", port_o::OUT, interface_top, bool_type);
+         auto inPort_o_ack = CM->add_port("_" + argName_string + (IO_port ? "_i" : "") + "_ack", port_o::OUT, interface_top, bool_type);
          GetPointer<port_o>(inPort_o_ack)->set_port_interface(port_o::port_interface::PI_RACK);
       }
-      if(interfaceType=="valid" || interfaceType=="handshake")
+      if(interfaceType == "valid" || interfaceType == "handshake")
       {
-         auto inPort_o_vld = CM->add_port("_"+argName_string+(IO_port?"_i":"")+"_vld", port_o::IN, interface_top, bool_type);
+         auto inPort_o_vld = CM->add_port("_" + argName_string + (IO_port ? "_i" : "") + "_vld", port_o::IN, interface_top, bool_type);
          GetPointer<port_o>(inPort_o_vld)->set_port_interface(port_o::port_interface::PI_RVALID);
       }
 
       CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "out1");
       CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR, "Read_" + interfaceType + ".cpp");
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
-      for(auto fdName: operations)
+      for(auto fdName : operations)
          TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
       auto* fu = GetPointer<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
       const target_deviceRef device = HLS_T->get_target_device();
@@ -406,14 +419,14 @@ void interface_infer::create_resource_Read_simple(const std::vector<std::string>
       if(!isMultipleResource)
          fu->logical_type = functional_unit::COMBINATIONAL;
 
-      for(auto fdName: operations)
+      for(auto fdName : operations)
       {
          auto* op = GetPointer<operation>(fu->get_operation(fdName));
          op->time_m = time_model::create_model(device->get_type(), parameters);
-         if(interfaceType=="valid" || interfaceType=="handshake")
+         if(interfaceType == "valid" || interfaceType == "handshake")
          {
             op->bounded = false;
-            op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime()+EPSILON, 0);
+            op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
          }
          else
          {
@@ -424,19 +437,19 @@ void interface_infer::create_resource_Read_simple(const std::vector<std::string>
          }
       }
       if(isMultipleResource)
-         HLSMgr->design_interface_constraints[function_id][INTERFACE_LIBRARY][ResourceName]=nOps;
+         HLSMgr->design_interface_constraints[function_id][INTERFACE_LIBRARY][ResourceName] = nOps;
       /// otherwise no constraints are required for this resource
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created: ");
    }
 }
 
-void interface_infer::create_resource_Write_simple(const std::vector<std::string> & operations, const std::string& argName_string, const std::string &interfaceType, unsigned int inputBitWidth, bool IO_port, bool isDiffSize)
+void interface_infer::create_resource_Write_simple(const std::vector<std::string>& operations, const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool IO_port, bool isDiffSize)
 {
-   const std::string ResourceName = ENCODE_FDNAME(argName_string,"_Write_",interfaceType);
+   const std::string ResourceName = ENCODE_FDNAME(argName_string, "_Write_", interfaceType);
    auto HLSMgr = GetPointer<HLS_manager>(AppM);
    auto HLS_T = HLSMgr->get_HLS_target();
    auto TechMan = HLS_T->get_technology_manager();
-   if (!TechMan->is_library_manager(INTERFACE_LIBRARY) || !TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName))
+   if(!TechMan->is_library_manager(INTERFACE_LIBRARY) || !TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Creating interface resource: " + INTERFACE_LIBRARY + ":" + ResourceName);
       structural_objectRef interface_top;
@@ -449,9 +462,9 @@ void interface_infer::create_resource_Write_simple(const std::vector<std::string
       GetPointer<module>(interface_top)->set_copyright(GENERATED_COPYRIGHT);
       GetPointer<module>(interface_top)->set_authors("Component automatically generated by bambu");
       GetPointer<module>(interface_top)->set_license(GENERATED_LICENSE);
-      bool isAVH = interfaceType=="acknowledge" || interfaceType=="valid" || interfaceType=="handshake";
-      bool isMultipleResource=isDiffSize || isAVH;
-      auto nOps=static_cast<unsigned>(operations.size());
+      bool isAVH = interfaceType == "acknowledge" || interfaceType == "valid" || interfaceType == "handshake";
+      bool isMultipleResource = isDiffSize || isAVH;
+      auto nOps = static_cast<unsigned>(operations.size());
       if(isMultipleResource)
          GetPointer<module>(interface_top)->set_multi_unit_multiplicity(nOps);
 
@@ -461,7 +474,7 @@ void interface_infer::create_resource_Write_simple(const std::vector<std::string
       structural_type_descriptorRef rwsize = structural_type_descriptorRef(new structural_type_descriptor("bool", 1));
       structural_type_descriptorRef rwtype = structural_type_descriptorRef(new structural_type_descriptor("bool", 1));
       structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
-      if(interfaceType=="acknowledge" || interfaceType=="handshake")
+      if(interfaceType == "acknowledge" || interfaceType == "handshake")
       {
          CM->add_port(CLOCK_PORT_NAME, port_o::IN, interface_top, bool_type);
          CM->add_port(RESET_PORT_NAME, port_o::IN, interface_top, bool_type);
@@ -470,7 +483,7 @@ void interface_infer::create_resource_Write_simple(const std::vector<std::string
       {
          CM->add_port_vector(START_PORT_NAME, port_o::IN, nOps, interface_top, bool_type);
       }
-      structural_objectRef rwPort,writePort,addrPort;
+      structural_objectRef rwPort, writePort, addrPort;
       if(isMultipleResource)
       {
          rwPort = CM->add_port_vector("in1", port_o::IN, nOps, interface_top, rwsize);
@@ -485,28 +498,28 @@ void interface_infer::create_resource_Write_simple(const std::vector<std::string
       }
       GetPointer<port_o>(addrPort)->set_is_addr_bus(true);
       GetPointer<port_o>(addrPort)->set_is_var_args(true); /// required to activate the module generation
-      if(interfaceType=="acknowledge" || interfaceType=="handshake")
+      if(interfaceType == "acknowledge" || interfaceType == "handshake")
       {
          auto inPort_o_done = CM->add_port(DONE_PORT_NAME, port_o::OUT, interface_top, bool_type);
       }
 
-      auto inPort_o = CM->add_port("_"+argName_string+(IO_port?"_o":""), port_o::OUT, interface_top, Intype);
+      auto inPort_o = CM->add_port("_" + argName_string + (IO_port ? "_o" : ""), port_o::OUT, interface_top, Intype);
       GetPointer<port_o>(inPort_o)->set_port_interface(port_o::port_interface::PI_WNONE);
-      if(interfaceType=="acknowledge" || interfaceType=="handshake")
+      if(interfaceType == "acknowledge" || interfaceType == "handshake")
       {
-         auto inPort_o_ack = CM->add_port("_"+argName_string+(IO_port?"_o":"")+"_ack", port_o::IN, interface_top, bool_type);
+         auto inPort_o_ack = CM->add_port("_" + argName_string + (IO_port ? "_o" : "") + "_ack", port_o::IN, interface_top, bool_type);
          GetPointer<port_o>(inPort_o_ack)->set_port_interface(port_o::port_interface::PI_WACK);
       }
-      if(interfaceType=="valid" || interfaceType=="handshake")
+      if(interfaceType == "valid" || interfaceType == "handshake")
       {
-         auto inPort_o_vld = CM->add_port("_"+argName_string+(IO_port?"_o":"")+"_vld", port_o::OUT, interface_top, bool_type);
+         auto inPort_o_vld = CM->add_port("_" + argName_string + (IO_port ? "_o" : "") + "_vld", port_o::OUT, interface_top, bool_type);
          GetPointer<port_o>(inPort_o_vld)->set_port_interface(port_o::port_interface::PI_WVALID);
       }
 
       CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "in1 in2");
-      CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR, "Write_" + interfaceType + ((isDiffSize&&!isAVH)?"DS":"") +".cpp");
+      CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR, "Write_" + interfaceType + ((isDiffSize && !isAVH) ? "DS" : "") + ".cpp");
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
-      for(auto fdName: operations)
+      for(auto fdName : operations)
          TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
       auto* fu = GetPointer<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
       const target_deviceRef device = HLS_T->get_target_device();
@@ -515,14 +528,14 @@ void interface_infer::create_resource_Write_simple(const std::vector<std::string
       if(!isMultipleResource)
          fu->logical_type = functional_unit::COMBINATIONAL;
 
-      for(auto fdName: operations)
+      for(auto fdName : operations)
       {
          auto* op = GetPointer<operation>(fu->get_operation(fdName));
          op->time_m = time_model::create_model(device->get_type(), parameters);
-         if(interfaceType=="acknowledge" || interfaceType=="handshake")
+         if(interfaceType == "acknowledge" || interfaceType == "handshake")
          {
             op->bounded = false;
-            op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime()+EPSILON, 0);
+            op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
          }
          else
          {
@@ -533,14 +546,14 @@ void interface_infer::create_resource_Write_simple(const std::vector<std::string
          op->time_m->set_synthesis_dependent(true);
       }
       /// add constraint on resource
-      HLSMgr->design_interface_constraints[function_id][INTERFACE_LIBRARY][ResourceName]=isMultipleResource?nOps:1;
+      HLSMgr->design_interface_constraints[function_id][INTERFACE_LIBRARY][ResourceName] = isMultipleResource ? nOps : 1;
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created: ");
    }
 }
 
-void interface_infer::create_resource(const std::vector<std::string> & operationsR, const std::vector<std::string> & operationsW, const std::string& argName_string, const std::string &interfaceType, unsigned int inputBitWidth, bool isDiffSize)
+void interface_infer::create_resource(const std::vector<std::string>& operationsR, const std::vector<std::string>& operationsW, const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool isDiffSize)
 {
-   if(interfaceType=="none" || interfaceType=="acknowledge" || interfaceType=="valid" || interfaceType=="handshake")
+   if(interfaceType == "none" || interfaceType == "acknowledge" || interfaceType == "valid" || interfaceType == "handshake")
    {
       THROW_ASSERT(!operationsR.empty() || !operationsW.empty(), "unexpected condition");
       bool IO_P = !operationsR.empty() && !operationsW.empty();
@@ -555,11 +568,9 @@ void interface_infer::create_resource(const std::vector<std::string> & operation
    }
    else
       THROW_ERROR("interface not supported: " + interfaceType);
-
 }
 
-
-void interface_infer::addGimpleNOPxVirtual(tree_nodeRef origStmt, statement_list*sl, const tree_managerRef TM)
+void interface_infer::addGimpleNOPxVirtual(tree_nodeRef origStmt, statement_list* sl, const tree_managerRef TM)
 {
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
    gimple_nop_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
@@ -568,8 +579,8 @@ void interface_infer::addGimpleNOPxVirtual(tree_nodeRef origStmt, statement_list
    auto gimple_nop_Node = TM->GetTreeReindex(gimple_node_id);
    auto newGN = GetPointer<gimple_node>(GET_NODE(gimple_nop_Node));
    auto origGN = GetPointer<gimple_node>(GET_NODE(origStmt));
-   newGN->memdef=origGN->memdef;
-   newGN->memuse=origGN->memuse;
+   newGN->memdef = origGN->memdef;
+   newGN->memuse = origGN->memuse;
    for(auto vUse : origGN->vuses)
    {
       auto sn = GetPointer<ssa_name>(GET_NODE(vUse));
@@ -581,73 +592,85 @@ void interface_infer::addGimpleNOPxVirtual(tree_nodeRef origStmt, statement_list
    if(origGN->vdef)
    {
       auto snDef = GetPointer<ssa_name>(GET_NODE(origGN->vdef));
-      newGN->vdef=origGN->vdef;
+      newGN->vdef = origGN->vdef;
       snDef->SetDefStmt(gimple_nop_Node);
    }
    sl->list_of_bloc[origGN->bb_index]->PushBefore(gimple_nop_Node, origStmt);
    sl->list_of_bloc[origGN->bb_index]->RemoveStmt(origStmt);
 }
 
-
 DesignFlowStep_Status interface_infer::InternalExec()
 {
-   if (GetPointer<const HLS_manager>(AppM))
+   if(GetPointer<const HLS_manager>(AppM))
    {
       const auto top_functions = AppM->CGetCallGraphManager()->GetRootFunctions();
       bool is_top = top_functions.find(function_id) != top_functions.end();
-      if (is_top)
+      if(is_top)
       {
          auto HLSMgr = GetPointer<HLS_manager>(AppM);
          /// load xml interface specification file
-         for (auto source_file : AppM->input_files)
+         for(auto source_file : AppM->input_files)
          {
             const std::string output_temporary_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
             std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
             auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".interface.xml";
-            if ((boost::filesystem::exists(boost::filesystem::path(XMLfilename))))
+            if((boost::filesystem::exists(boost::filesystem::path(XMLfilename))))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
                XMLDomParser parser(XMLfilename);
                parser.Exec();
-               if (parser)
+               if(parser)
                {
                   // Walk the tree:
                   const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
-                  for (const auto& iter : node->get_children())
+                  for(const auto& iter : node->get_children())
                   {
                      const auto* Enode = GetPointer<const xml_element>(iter);
-                     if (!Enode) continue;
-                     if (Enode->get_name() == "function")
+                     if(!Enode)
+                        continue;
+                     if(Enode->get_name() == "function")
                      {
                         std::string fname;
-                        for (auto attr : Enode->get_attributes())
+                        for(auto attr : Enode->get_attributes())
                         {
                            std::string key = attr->get_name();
                            std::string value = attr->get_value();
-                           if (key == "id") fname = value;
+                           if(key == "id")
+                              fname = value;
                         }
-                        if (fname == "") THROW_ERROR("malformed interface file");
-                        for (const auto& iterArg : Enode->get_children())
+                        if(fname == "")
+                           THROW_ERROR("malformed interface file");
+                        for(const auto& iterArg : Enode->get_children())
                         {
                            const auto* EnodeArg = GetPointer<const xml_element>(iterArg);
-                           if (!EnodeArg) continue;
-                           if (EnodeArg->get_name() == "arg")
+                           if(!EnodeArg)
+                              continue;
+                           if(EnodeArg->get_name() == "arg")
                            {
                               std::string argName;
                               std::string interfaceType;
                               std::string interfaceTypename;
                               std::string interfaceTypenameInclude;
-                              for (auto attrArg : EnodeArg->get_attributes())
+                              for(auto attrArg : EnodeArg->get_attributes())
                               {
                                  std::string key = attrArg->get_name();
                                  std::string value = attrArg->get_value();
-                                 if (key == "id") argName = value;
-                                 if (key == "interface_type") interfaceType = value;
-                                 if (key == "interface_typename") {interfaceTypename = value; xml_node::convert_escaped(interfaceTypename);}
-                                 if (key == "interface_typename_include") interfaceTypenameInclude = value;
+                                 if(key == "id")
+                                    argName = value;
+                                 if(key == "interface_type")
+                                    interfaceType = value;
+                                 if(key == "interface_typename")
+                                 {
+                                    interfaceTypename = value;
+                                    xml_node::convert_escaped(interfaceTypename);
+                                 }
+                                 if(key == "interface_typename_include")
+                                    interfaceTypenameInclude = value;
                               }
-                              if (argName == "") THROW_ERROR("malformed interface file");
-                              if (interfaceType == "") THROW_ERROR("malformed interface file");
+                              if(argName == "")
+                                 THROW_ERROR("malformed interface file");
+                              if(interfaceType == "")
+                                 THROW_ERROR("malformed interface file");
                               std::cerr << "|" << argName << "|" << interfaceType << "|\n";
                               HLSMgr->design_interface[fname][argName] = interfaceType;
                               HLSMgr->design_interface_typename[fname][argName] = interfaceTypename;
@@ -674,25 +697,28 @@ DesignFlowStep_Status interface_infer::InternalExec()
          auto fd = GetPointer<function_decl>(fnode);
          std::string fname;
          tree_helper::get_mangled_fname(fd, fname);
-         if (DesignInterface.find(fname) != DesignInterface.end())
+         if(DesignInterface.find(fname) != DesignInterface.end())
          {
             const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
             /// pre-process the list of statements to bind parm_decl and ssa variables
             std::map<unsigned, unsigned> par2ssa;
             auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
-            for (auto block : sl->list_of_bloc)
+            for(auto block : sl->list_of_bloc)
             {
-               for (const auto& stmt : block.second->CGetStmtList())
+               for(const auto& stmt : block.second->CGetStmtList())
                {
                   TreeNodeMap<size_t> used_ssa = tree_helper::ComputeSsaUses(stmt);
-                  for (const auto& s : used_ssa)
+                  for(const auto& s : used_ssa)
                   {
                      const tree_nodeRef ssa_tn = GET_NODE(s.first);
                      const auto* ssa = GetPointer<const ssa_name>(ssa_tn);
-                     if (ssa->var != nullptr and GET_NODE(ssa->var)->get_kind() == parm_decl_K)
+                     if(ssa->var != nullptr and GET_NODE(ssa->var)->get_kind() == parm_decl_K)
                      {
                         auto par_id = GET_INDEX_NODE(ssa->var);
-                        if (par2ssa.find(par_id) != par2ssa.end()) { THROW_ASSERT(par2ssa.find(par_id)->second == GET_INDEX_NODE(s.first), "unexpected condition"); }
+                        if(par2ssa.find(par_id) != par2ssa.end())
+                        {
+                           THROW_ASSERT(par2ssa.find(par_id)->second == GET_INDEX_NODE(s.first), "unexpected condition");
+                        }
                         else
                            par2ssa[par_id] = GET_INDEX_NODE(s.first);
                      }
@@ -703,7 +729,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing function " + fname);
             auto& DesignInterfaceArgs = DesignInterface.find(fname)->second;
             auto& DesignInterfaceTypenameArgs = DesignInterfaceTypename.find(fname)->second;
-            for (auto arg : fd->list_of_args)
+            for(auto arg : fd->list_of_args)
             {
                auto arg_id = GET_INDEX_NODE(arg);
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---parm_decl id: " + STR(arg_id));
@@ -715,28 +741,28 @@ DesignFlowStep_Status interface_infer::InternalExec()
                THROW_ASSERT(DesignInterfaceArgs.find(argName_string) != DesignInterfaceArgs.end(), "unexpected condition");
                auto interfaceType = DesignInterfaceArgs.find(argName_string)->second;
                auto interfaceTypename = DesignInterfaceTypenameArgs.find(argName_string)->second;
-               if (interfaceType != "default")
-               {                  
+               if(interfaceType != "default")
+               {
                   if(par2ssa.find(arg_id) == par2ssa.end())
                   {
                      THROW_WARNING("parameter not used by any statement");
-                     if (tree_helper::is_a_pointer(TM, GET_INDEX_NODE(a->type)))
-                        DesignInterfaceArgs[argName_string]="none";
+                     if(tree_helper::is_a_pointer(TM, GET_INDEX_NODE(a->type)))
+                        DesignInterfaceArgs[argName_string] = "none";
                      else
                         THROW_ERROR("parameter not used: specified interface does not make sense - " + interfaceType);
                      continue;
                   }
                   if(interfaceType == "bus") /// TO BE FIXED
                   {
-                     DesignInterfaceArgs[argName_string]="default";
+                     DesignInterfaceArgs[argName_string] = "default";
                      continue;
                   }
-                  if (tree_helper::is_a_pointer(TM, GET_INDEX_NODE(a->type)))
+                  if(tree_helper::is_a_pointer(TM, GET_INDEX_NODE(a->type)))
                   {
                      std::cerr << "is a pointer\n";
                      std::cerr << "list of statement that use this parameter\n";
                      auto inputBitWidth = tree_helper::size(TM, tree_helper::get_pointed_type(TM, GET_INDEX_NODE(a->type)));
-                     auto acTypeBw=ac_type_bitwidth(interfaceTypename);
+                     auto acTypeBw = ac_type_bitwidth(interfaceTypename);
                      if(acTypeBw)
                         inputBitWidth = acTypeBw;
                      THROW_ASSERT(inputBitWidth, "unexpected condition");
@@ -753,54 +779,56 @@ DesignFlowStep_Status interface_infer::InternalExec()
                      if(writeStmt.empty() && readStmt.empty())
                         THROW_ERROR("parameter " + argName_string + " cannot have interface " + interfaceType + " (no load or write is associated with it)");
 
-                     if (unkwown_pattern)
+                     if(unkwown_pattern)
                         std::cerr << "unknown pattern identified\n";
                      else
                      {
-                        if (canBeMovedToBB2 && isRead) std::cerr << "YES can be moved\n";
-                        if (isRead && isWrite)
+                        if(canBeMovedToBB2 && isRead)
+                           std::cerr << "YES can be moved\n";
+                        if(isRead && isWrite)
                         {
                            std::cerr << "IO arg\n";
                            if(interfaceType == "ptrdefault")
                            {
-                              DesignInterfaceArgs[argName_string]="valid";
-                              interfaceType="valid";
+                              DesignInterfaceArgs[argName_string] = "valid";
+                              interfaceType = "valid";
                            }
                         }
-                        else if (isRead)
+                        else if(isRead)
                         {
                            if(interfaceType == "ptrdefault")
                            {
-                              DesignInterfaceArgs[argName_string]="none";
-                              interfaceType="none";
+                              DesignInterfaceArgs[argName_string] = "none";
+                              interfaceType = "none";
                            }
                            std::cerr << "I arg\n";
                         }
-                        else if (isWrite)
+                        else if(isWrite)
                         {
                            std::cerr << "O arg\n";
                            if(interfaceType == "ptrdefault")
                            {
-                              DesignInterfaceArgs[argName_string]="valid";
-                              interfaceType="valid";
+                              DesignInterfaceArgs[argName_string] = "valid";
+                              interfaceType = "valid";
                            }
                         }
                         else
                            THROW_ERROR("pattern not yet supported: unused arg");
-                        if (canBeMovedToBB2 && isRead && !isWrite)
+                        if(canBeMovedToBB2 && isRead && !isWrite)
                         {
                            unsigned int destBB = bloc::ENTRY_BLOCK_ID;
-                           for (auto bb_succ : sl->list_of_bloc[bloc::ENTRY_BLOCK_ID]->list_of_succ)
+                           for(auto bb_succ : sl->list_of_bloc[bloc::ENTRY_BLOCK_ID]->list_of_succ)
                            {
-                              if (bb_succ == bloc::EXIT_BLOCK_ID) continue;
-                              if (destBB == bloc::ENTRY_BLOCK_ID)
+                              if(bb_succ == bloc::EXIT_BLOCK_ID)
+                                 continue;
+                              if(destBB == bloc::ENTRY_BLOCK_ID)
                                  destBB = bb_succ;
                               else
                                  THROW_ERROR("unexpected pattern");
                            }
                            THROW_ASSERT(destBB != bloc::ENTRY_BLOCK_ID, "unexpected condition");
-                           std::string fdName = ENCODE_FDNAME(argName_string,"_Read_",interfaceType);
-                           std::vector<std::string> operationsR,operationsW;
+                           std::string fdName = ENCODE_FDNAME(argName_string, "_Read_", interfaceType);
+                           std::vector<std::string> operationsR, operationsW;
                            operationsR.push_back(fdName);
                            std::list<tree_nodeRef> usedStmt_defs;
                            tree_nodeRef readType;
@@ -810,49 +838,50 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               auto rs_ga = GetPointer<gimple_assign>(rs_node);
                               usedStmt_defs.push_back(rs_ga->op0);
                               if(!readType)
-                                 readType=GetPointer<mem_ref>(GET_NODE(rs_ga->op1))->type;
+                                 readType = GetPointer<mem_ref>(GET_NODE(rs_ga->op1))->type;
                            }
                            create_Read_function(argName_string, tree_nodeRef(), destBB, sl, fd, fdName, argSSANode, a, readType, usedStmt_defs, tree_man, TM);
-                           for(auto rs: readStmt)
-                              addGimpleNOPxVirtual(rs,sl,TM);
+                           for(auto rs : readStmt)
+                              addGimpleNOPxVirtual(rs, sl, TM);
                            create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, false);
                            modified = true;
                         }
                         else if(isRead && !isWrite)
                         {
-                           std::string fdName = ENCODE_FDNAME(argName_string,"_Read_",interfaceType);
-                           std::vector<std::string> operationsR,operationsW;
-                           unsigned int loadIdIndex=0;
+                           std::string fdName = ENCODE_FDNAME(argName_string, "_Read_", interfaceType);
+                           std::vector<std::string> operationsR, operationsW;
+                           unsigned int loadIdIndex = 0;
                            for(auto rs : readStmt)
                            {
                               std::list<tree_nodeRef> usedStmt_defs;
                               auto rs_node = GET_NODE(rs);
                               auto rs_ga = GetPointer<gimple_assign>(rs_node);
                               usedStmt_defs.push_back(rs_ga->op0);
-                              std::string instanceFname = fdName+STR(loadIdIndex);
+                              std::string instanceFname = fdName + STR(loadIdIndex);
                               operationsR.push_back(instanceFname);
                               create_Read_function(argName_string, rs, rs_ga->bb_index, sl, fd, instanceFname, argSSANode, a, GetPointer<mem_ref>(GET_NODE(rs_ga->op1))->type, usedStmt_defs, tree_man, TM);
-                              addGimpleNOPxVirtual(rs,sl,TM);
+                              addGimpleNOPxVirtual(rs, sl, TM);
                               usedStmt_defs.clear();
                               ++loadIdIndex;
                            }
                            create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, false);
                            modified = true;
                         }
-                        else if (canBeMovedToBB2 && isRead && isWrite)
+                        else if(canBeMovedToBB2 && isRead && isWrite)
                         {
                            unsigned int destBB = bloc::ENTRY_BLOCK_ID;
-                           for (auto bb_succ : sl->list_of_bloc[bloc::ENTRY_BLOCK_ID]->list_of_succ)
+                           for(auto bb_succ : sl->list_of_bloc[bloc::ENTRY_BLOCK_ID]->list_of_succ)
                            {
-                              if (bb_succ == bloc::EXIT_BLOCK_ID) continue;
-                              if (destBB == bloc::ENTRY_BLOCK_ID)
+                              if(bb_succ == bloc::EXIT_BLOCK_ID)
+                                 continue;
+                              if(destBB == bloc::ENTRY_BLOCK_ID)
                                  destBB = bb_succ;
                               else
                                  THROW_ERROR("unexpected pattern");
                            }
                            THROW_ASSERT(destBB != bloc::ENTRY_BLOCK_ID, "unexpected condition");
-                           std::string fdName = ENCODE_FDNAME(argName_string,"_Read_",interfaceType);
-                           std::vector<std::string> operationsR,operationsW;
+                           std::string fdName = ENCODE_FDNAME(argName_string, "_Read_", interfaceType);
+                           std::vector<std::string> operationsR, operationsW;
                            operationsR.push_back(fdName);
                            std::list<tree_nodeRef> usedStmt_defs;
                            tree_nodeRef readType;
@@ -862,70 +891,70 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               auto rs_ga = GetPointer<gimple_assign>(rs_node);
                               usedStmt_defs.push_back(rs_ga->op0);
                               if(!readType)
-                                 readType=GetPointer<mem_ref>(GET_NODE(rs_ga->op1))->type;
+                                 readType = GetPointer<mem_ref>(GET_NODE(rs_ga->op1))->type;
                            }
                            create_Read_function(argName_string, tree_nodeRef(), destBB, sl, fd, fdName, argSSANode, a, readType, usedStmt_defs, tree_man, TM);
-                           for(auto rs: readStmt)
-                              addGimpleNOPxVirtual(rs,sl,TM);
-                           unsigned int IdIndex=0;
-                           fdName = ENCODE_FDNAME(argName_string,"_Write_",interfaceType);
-                           bool isDiffSize=false;
-                           unsigned WrittenSize=0;
+                           for(auto rs : readStmt)
+                              addGimpleNOPxVirtual(rs, sl, TM);
+                           unsigned int IdIndex = 0;
+                           fdName = ENCODE_FDNAME(argName_string, "_Write_", interfaceType);
+                           bool isDiffSize = false;
+                           unsigned WrittenSize = 0;
                            for(auto ws : writeStmt)
                            {
                               auto ws_node = GET_NODE(ws);
                               auto ws_ga = GetPointer<gimple_assign>(ws_node);
-                              if(WrittenSize==0)
+                              if(WrittenSize == 0)
                               {
-                                 WrittenSize=tree_helper::Size(ws_ga->op1);
-                                 if(WrittenSize<inputBitWidth)
-                                    isDiffSize=true;
+                                 WrittenSize = tree_helper::Size(ws_ga->op1);
+                                 if(WrittenSize < inputBitWidth)
+                                    isDiffSize = true;
                               }
-                              else if(WrittenSize!=tree_helper::Size(ws_ga->op1) || WrittenSize<inputBitWidth)
-                                 isDiffSize=true;
-                              std::string instanceFname = fdName+STR(IdIndex);
+                              else if(WrittenSize != tree_helper::Size(ws_ga->op1) || WrittenSize < inputBitWidth)
+                                 isDiffSize = true;
+                              std::string instanceFname = fdName + STR(IdIndex);
                               operationsW.push_back(instanceFname);
                               create_Write_function(argName_string, ws, ws_ga->bb_index, sl, fd, instanceFname, argSSANode, ws_ga->op1, a, GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM);
                               ++IdIndex;
                            }
-                           create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth,isDiffSize);
+                           create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, isDiffSize);
                            modified = true;
                         }
                         else if(isRead && isWrite)
                         {
-                           std::string fdName = ENCODE_FDNAME(argName_string,"_Read_",interfaceType);
-                           std::vector<std::string> operationsR,operationsW;
-                           unsigned int IdIndex=0;
+                           std::string fdName = ENCODE_FDNAME(argName_string, "_Read_", interfaceType);
+                           std::vector<std::string> operationsR, operationsW;
+                           unsigned int IdIndex = 0;
                            std::list<tree_nodeRef> usedStmt_defs;
                            for(auto rs : readStmt)
                            {
                               auto rs_node = GET_NODE(rs);
                               auto rs_ga = GetPointer<gimple_assign>(rs_node);
                               usedStmt_defs.push_back(rs_ga->op0);
-                              std::string instanceFname = fdName+STR(IdIndex);
+                              std::string instanceFname = fdName + STR(IdIndex);
                               operationsR.push_back(instanceFname);
                               create_Read_function(argName_string, rs, rs_ga->bb_index, sl, fd, instanceFname, argSSANode, a, GetPointer<mem_ref>(GET_NODE(rs_ga->op1))->type, usedStmt_defs, tree_man, TM);
-                              addGimpleNOPxVirtual(rs,sl,TM);
+                              addGimpleNOPxVirtual(rs, sl, TM);
                               usedStmt_defs.clear();
                               ++IdIndex;
                            }
-                           IdIndex=0;
-                           fdName = ENCODE_FDNAME(argName_string,"_Write_",interfaceType);
-                           bool isDiffSize=false;
-                           unsigned WrittenSize=0;
+                           IdIndex = 0;
+                           fdName = ENCODE_FDNAME(argName_string, "_Write_", interfaceType);
+                           bool isDiffSize = false;
+                           unsigned WrittenSize = 0;
                            for(auto ws : writeStmt)
                            {
                               auto ws_node = GET_NODE(ws);
                               auto ws_ga = GetPointer<gimple_assign>(ws_node);
-                              if(WrittenSize==0)
+                              if(WrittenSize == 0)
                               {
-                                 WrittenSize=tree_helper::Size(ws_ga->op1);
-                                 if(WrittenSize<inputBitWidth)
-                                    isDiffSize=true;
+                                 WrittenSize = tree_helper::Size(ws_ga->op1);
+                                 if(WrittenSize < inputBitWidth)
+                                    isDiffSize = true;
                               }
-                              else if(WrittenSize!=tree_helper::Size(ws_ga->op1) || WrittenSize<inputBitWidth)
-                                 isDiffSize=true;
-                              std::string instanceFname = fdName+STR(IdIndex);
+                              else if(WrittenSize != tree_helper::Size(ws_ga->op1) || WrittenSize < inputBitWidth)
+                                 isDiffSize = true;
+                              std::string instanceFname = fdName + STR(IdIndex);
                               operationsW.push_back(instanceFname);
                               create_Write_function(argName_string, ws, ws_ga->bb_index, sl, fd, instanceFname, argSSANode, ws_ga->op1, a, GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM);
                               ++IdIndex;
@@ -935,24 +964,24 @@ DesignFlowStep_Status interface_infer::InternalExec()
                         }
                         else if(!isRead && isWrite)
                         {
-                           std::vector<std::string> operationsR,operationsW;
-                           unsigned int IdIndex=0;
-                           std::string fdName = ENCODE_FDNAME(argName_string,"_Write_",interfaceType);
-                           bool isDiffSize=false;
-                           unsigned WrittenSize=0;
+                           std::vector<std::string> operationsR, operationsW;
+                           unsigned int IdIndex = 0;
+                           std::string fdName = ENCODE_FDNAME(argName_string, "_Write_", interfaceType);
+                           bool isDiffSize = false;
+                           unsigned WrittenSize = 0;
                            for(auto ws : writeStmt)
                            {
                               auto ws_node = GET_NODE(ws);
                               auto ws_ga = GetPointer<gimple_assign>(ws_node);
-                              if(WrittenSize==0)
+                              if(WrittenSize == 0)
                               {
-                                 WrittenSize=tree_helper::Size(ws_ga->op1);
-                                 if(WrittenSize<inputBitWidth)
-                                    isDiffSize=true;
+                                 WrittenSize = tree_helper::Size(ws_ga->op1);
+                                 if(WrittenSize < inputBitWidth)
+                                    isDiffSize = true;
                               }
-                              else if(WrittenSize!=tree_helper::Size(ws_ga->op1) || WrittenSize<inputBitWidth)
-                                 isDiffSize=true;
-                              std::string instanceFname = fdName+STR(IdIndex);
+                              else if(WrittenSize != tree_helper::Size(ws_ga->op1) || WrittenSize < inputBitWidth)
+                                 isDiffSize = true;
+                              std::string instanceFname = fdName + STR(IdIndex);
                               operationsW.push_back(instanceFname);
                               create_Write_function(argName_string, ws, ws_ga->bb_index, sl, fd, instanceFname, argSSANode, ws_ga->op1, a, GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM);
                               ++IdIndex;
@@ -966,24 +995,31 @@ DesignFlowStep_Status interface_infer::InternalExec()
                   }
                   else if(interfaceType == "none")
                   {
-                     THROW_ERROR("unexpected interface ("+interfaceType+") for parameter " + argName_string);
+                     THROW_ERROR("unexpected interface (" + interfaceType + ") for parameter " + argName_string);
                   }
                   else
                   {
-                     THROW_ERROR("not yet supported interface ("+interfaceType+") for parameter " + argName_string);
+                     THROW_ERROR("not yet supported interface (" + interfaceType + ") for parameter " + argName_string);
                   }
                }
             }
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed function " + fname);
          }
-         if (modified) function_behavior->UpdateBBVersion();
+         if(modified)
+            function_behavior->UpdateBBVersion();
          return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
       }
    }
    return DesignFlowStep_Status::UNCHANGED;
 }
 
-void interface_infer::Initialize() { FunctionFrontendFlowStep::Initialize(); }
+void interface_infer::Initialize()
+{
+   FunctionFrontendFlowStep::Initialize();
+}
 
-bool interface_infer::HasToBeExecuted() const { return bb_version == 0; }
+bool interface_infer::HasToBeExecuted() const
+{
+   return bb_version == 0;
+}

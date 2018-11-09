@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file minimal_interface.hpp
  * @brief Class to generate minimal interfaces for high-level synthesis
@@ -42,7 +42,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef _MINIMAL_INTERFACE_HPP_
 #define _MINIMAL_INTERFACE_HPP_
 
@@ -53,26 +53,23 @@
  */
 class minimal_interface : public module_interface
 {
-   public:
+ public:
+   /**
+    * Constructor
+    */
+   minimal_interface(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION);
 
-      /**
-       * Constructor
-       */
-      minimal_interface(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION);
+   void build_wrapper(structural_objectRef wrappedObj, structural_objectRef interfaceObj, structural_managerRef SM_minimal_interface);
+   /**
+    * Destructor
+    */
+   ~minimal_interface() override;
 
-      void build_wrapper(structural_objectRef wrappedObj,
-                         structural_objectRef interfaceObj,
-                         structural_managerRef SM_minimal_interface);
-      /**
-       * Destructor
-       */
-      ~minimal_interface() override;
-
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status InternalExec() override;
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 };
 
 #endif

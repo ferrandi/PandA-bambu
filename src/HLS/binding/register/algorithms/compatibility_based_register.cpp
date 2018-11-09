@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file compatibility_based_register.cpp
  * @brief Base class specification for register allocation algorithm based on a compatibility graph
@@ -38,8 +38,8 @@
  * $Revision$
  * $Date$
  * Last modified by $Author$
- * 
-*/
+ *
+ */
 #include "compatibility_based_register.hpp"
 
 #include "hls.hpp"
@@ -55,17 +55,16 @@
 #endif
 #include <boost/numeric/ublas/matrix.hpp>
 
-///HLS/binding/storage_value_insertion includes
+/// HLS/binding/storage_value_insertion includes
 #include "storage_value_information.hpp"
 
-compatibility_based_register::compatibility_based_register(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type, const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization) :
-   reg_binding_creator(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type, _hls_flow_step_specialization)
+compatibility_based_register::compatibility_based_register(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type,
+                                                           const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
+    : reg_binding_creator(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type, _hls_flow_step_specialization)
 {
-
 }
 
-compatibility_based_register::~compatibility_based_register()
-= default;
+compatibility_based_register::~compatibility_based_register() = default;
 
 void compatibility_based_register::create_compatibility_graph()
 {
@@ -75,18 +74,18 @@ void compatibility_based_register::create_compatibility_graph()
    unsigned int CG_num_vertices = HLS->storage_value_information->get_number_of_storage_values();
    boost::numeric::ublas::matrix<bool> conflict_map(CG_num_vertices, CG_num_vertices);
 
-   boost::numeric::ublas::noalias(conflict_map)=boost::numeric::ublas::zero_matrix<bool>(CG_num_vertices,CG_num_vertices);
-   for (unsigned int vi = 0; vi < CG_num_vertices; ++vi)
+   boost::numeric::ublas::noalias(conflict_map) = boost::numeric::ublas::zero_matrix<bool>(CG_num_vertices, CG_num_vertices);
+   for(unsigned int vi = 0; vi < CG_num_vertices; ++vi)
       verts.push_back(boost::add_vertex(CG));
 
    /// compatibility graph creation
-   const std::list<vertex> & support = HLS->Rliv->get_support();
+   const std::list<vertex>& support = HLS->Rliv->get_support();
    const std::list<vertex>::const_iterator vEnd = support.end();
    for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
    {
       const std::set<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
       register_lower_bound = std::max(static_cast<unsigned int>(live.size()), register_lower_bound);
-      const std::set<unsigned int>::const_iterator k_end = live.end(); 
+      const std::set<unsigned int>::const_iterator k_end = live.end();
       for(auto k = live.begin(); k != k_end; ++k)
       {
          auto k_inner = k;
@@ -97,10 +96,10 @@ void compatibility_based_register::create_compatibility_graph()
             THROW_ASSERT(tail < CG_num_vertices, "wrong compatibility graph index");
             unsigned int head = HLS->storage_value_information->get_storage_value_index(*vIt, *k_inner);
             THROW_ASSERT(head < CG_num_vertices, "wrong compatibility graph index");
-            if(tail<head)
-               conflict_map(tail,head)= true;
-            else if(tail>head)
-               conflict_map(head,tail)= true;
+            if(tail < head)
+               conflict_map(tail, head) = true;
+            else if(tail > head)
+               conflict_map(head, tail) = true;
             ++k_inner;
          }
       }
@@ -108,12 +107,12 @@ void compatibility_based_register::create_compatibility_graph()
    for(unsigned int vj = 1; vj < CG_num_vertices; ++vj)
       for(unsigned int vi = 0; vi < vj; ++vi)
       {
-         if(!conflict_map(vi,vj) && HLS->storage_value_information->are_value_bitsize_compatible(vi,vj))
+         if(!conflict_map(vi, vj) && HLS->storage_value_information->are_value_bitsize_compatible(vi, vj))
          {
             boost::graph_traits<compatibility_graph>::edge_descriptor e1;
-            int edge_weight = HLS->storage_value_information->get_compatibility_weight(vi,vj);
+            int edge_weight = HLS->storage_value_information->get_compatibility_weight(vi, vj);
             /// we consider only valuable sharing between registers
-            if(edge_weight>1)
+            if(edge_weight > 1)
             {
                bool in1;
                boost::tie(e1, in1) = boost::add_edge(verts[vi], verts[vj], edge_compatibility_property(edge_weight), CG);

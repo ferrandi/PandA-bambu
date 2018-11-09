@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file op_order_computation.cpp
  * @brief Analysis step computing a topological order of the operations.
@@ -37,45 +37,43 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "op_order_computation.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior include
+/// behavior include
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "function_behavior.hpp"
+#include "hash_helper.hpp"
 #include "level_constructor.hpp"
 #include "op_graph.hpp"
 #include "operations_graph_constructor.hpp"
-#include "hash_helper.hpp"
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
-#include "string_manipulation.hpp"          // for GET_CLASS
+#include "string_manipulation.hpp" // for GET_CLASS
 
-OpOrderComputation::OpOrderComputation(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
-   FunctionFrontendFlowStep(_AppM, _function_id, OP_ORDER_COMPUTATION, _design_flow_manager, _Param)
+OpOrderComputation::OpOrderComputation(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, OP_ORDER_COMPUTATION, _design_flow_manager, _Param)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
+OpOrderComputation::~OpOrderComputation() = default;
 
-OpOrderComputation::~OpOrderComputation()
-= default;
-
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > OpOrderComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> OpOrderComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OP_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -107,11 +105,11 @@ DesignFlowStep_Status OpOrderComputation::InternalExec()
    std::map<graph::vertex_descriptor, bool> MARK;
 
    /// MARK initialization
-   for (boost::tie(v, v_end) = boost::vertices(*cfg); v != v_end; ++v)
+   for(boost::tie(v, v_end) = boost::vertices(*cfg); v != v_end; ++v)
    {
       MARK[*v] = false;
    }
-   //Vertex list to be visited
+   // Vertex list to be visited
    to_visit.push_front(function_behavior->ogc->CgetIndex(ENTRY));
    index = 0;
    while(!to_visit.empty())
@@ -124,14 +122,14 @@ DesignFlowStep_Status OpOrderComputation::InternalExec()
       graph::out_edge_iterator o, o_end;
       graph::in_edge_iterator i, i_end;
       vertex then = NULL_VERTEX;
-      ///Examining successors
-      for(boost::tie(o, o_end) = boost::out_edges(actual, *cfg);o != o_end;o++)
+      /// Examining successors
+      for(boost::tie(o, o_end) = boost::out_edges(actual, *cfg); o != o_end; o++)
       {
          bool toadd = true;
          vertex next = boost::target(*o, *cfg);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering successor " + GET_NAME(cfg, next));
-         ///Checking if all successor's predecessors have been examinated
-         for(boost::tie(i, i_end) = boost::in_edges(next, *cfg); i!= i_end; i++)
+         /// Checking if all successor's predecessors have been examinated
+         for(boost::tie(i, i_end) = boost::in_edges(next, *cfg); i != i_end; i++)
          {
             if(!MARK[boost::source(*i, *cfg)])
             {
@@ -144,7 +142,7 @@ DesignFlowStep_Status OpOrderComputation::InternalExec()
          {
             if(Cget_edge_info<OpEdgeInfo>(*o, *cfg) && CFG_TRUE_CHECK(cfg, *o))
                then = next;
-            ///Vertex can be added to list
+            /// Vertex can be added to list
             if(next != then)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding next " + GET_NAME(cfg, next));
@@ -160,8 +158,8 @@ DesignFlowStep_Status OpOrderComputation::InternalExec()
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    }
-   ///Checking if EXIT has been added
-   const std::map<vertex, unsigned int> &map_levels = function_behavior->get_map_levels();
+   /// Checking if EXIT has been added
+   const std::map<vertex, unsigned int>& map_levels = function_behavior->get_map_levels();
    if(map_levels.find(function_behavior->ogc->CgetIndex(EXIT)) == map_levels.end())
    {
       function_behavior->lm->add(function_behavior->ogc->CgetIndex(EXIT), index++);
@@ -178,4 +176,3 @@ DesignFlowStep_Status OpOrderComputation::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    return DesignFlowStep_Status::SUCCESS;
 }
-

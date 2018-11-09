@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file eucalyptus.cpp
  * @brief Tool for estimation of RTL descriptions.
@@ -38,31 +38,31 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-#include "config_HAVE_XILINX.hpp"
+/// Autoheader include
 #include "config_HAVE_ALTERA.hpp"
 #include "config_HAVE_DESIGN_COMPILER.hpp"
+#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_LATTICE.hpp"
+#include "config_HAVE_XILINX.hpp"
 
 #include <boost/filesystem/operations.hpp>
 
-///design_flows include
+/// design_flows include
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "design_flow_step.hpp"
 
-///design_flows/technology include
+/// design_flows/technology include
 #include "technology_flow_step_factory.hpp"
 
 #include "EucalyptusParameter.hpp"
 
-#include "technology_manager.hpp"
 #include "parse_technology.hpp"
 #include "target_device.hpp"
 #include "target_manager.hpp"
+#include "technology_manager.hpp"
 
 #if HAVE_XILINX || HAVE_ALTERA || HAVE_LATTICE || HAVE_DESIGN_COMPILER
 #include "RTL_characterization.hpp"
@@ -74,11 +74,11 @@
 #include "cpu_time.hpp"
 #include "utility.hpp"
 
-///technology include
+/// technology include
 #include "load_builtin_technology.hpp"
 #include "load_default_technology.hpp"
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
    // Program name
 
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
          }
          case EXIT_SUCCESS:
          {
-            if(not (parameters->getOption<bool>(OPT_no_clean)))
+            if(not(parameters->getOption<bool>(OPT_no_clean)))
             {
                boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
             }
@@ -137,8 +137,7 @@ int main(int argc, char *argv[])
       // Technology library manager
       technology_managerRef TM = technology_managerRef(new technology_manager(parameters));
 
-
-      ///creating the datastructure representing the target device
+      /// creating the datastructure representing the target device
       const auto target_device = static_cast<TargetDevice_Type>(parameters->getOption<unsigned int>(OPT_target_device_type));
       target_deviceRef device = target_device::create_device(target_device, parameters, TM);
       device->set_parameter("clock_period", parameters->getOption<double>(OPT_clock_period));
@@ -152,9 +151,9 @@ int main(int argc, char *argv[])
 
       const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
       const vertex technology_flow_step = design_flow_manager->GetDesignFlowStep(technology_flow_signature);
-      const DesignFlowStepRef technology_design_flow_step = technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : GetPointer<const TechnologyFlowStepFactory>(technology_flow_step_factory)->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+      const DesignFlowStepRef technology_design_flow_step = technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
+                                                                                   GetPointer<const TechnologyFlowStepFactory>(technology_flow_step_factory)->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
       design_flow_manager->AddStep(technology_design_flow_step);
-
 
 #if HAVE_XILINX || HAVE_ALTERA || HAVE_LATTICE || HAVE_DESIGN_COMPILER
       if(parameters->isOption(OPT_component_name))
@@ -166,7 +165,7 @@ int main(int argc, char *argv[])
       design_flow_manager->Exec();
 
 #if HAVE_EXPERIMENTAL
-      if (parameters->isOption(OPT_import_ip_core))
+      if(parameters->isOption(OPT_import_ip_core))
       {
          START_TIME(cpu_time);
          std::string core_hdl = parameters->getOption<std::string>(OPT_import_ip_core);
@@ -176,7 +175,7 @@ int main(int argc, char *argv[])
          PRINT_OUT_MEX(DEBUG_LEVEL_MINIMUM, output_level, " ==== Core generation performed in " + print_cpu_time(cpu_time) + " seconds; ====\n");
       }
 
-      if (parameters->isOption(OPT_export_ip_core))
+      if(parameters->isOption(OPT_export_ip_core))
       {
          START_TIME(cpu_time);
          std::string core_name = parameters->getOption<std::string>(OPT_export_ip_core);
@@ -189,7 +188,7 @@ int main(int argc, char *argv[])
       STOP_TIME(total_time);
       PRINT_MSG(" ==== Total Execution Time: " + print_cpu_time(total_time) + " seconds; ====\n");
 
-      if(not (parameters->getOption<bool>(OPT_no_clean)))
+      if(not(parameters->getOption<bool>(OPT_no_clean)))
       {
          boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
       }
@@ -197,19 +196,19 @@ int main(int argc, char *argv[])
    }
 
    // exception catching
-   catch (const char * str)
+   catch(const char* str)
    {
       std::cerr << str << std::endl;
    }
-   catch (const std::string& str)
+   catch(const std::string& str)
    {
       std::cerr << str << std::endl;
    }
-   catch (std::exception &e)
+   catch(std::exception& e)
    {
       std::cerr << e.what() << std::endl;
    }
-   catch (...)
+   catch(...)
    {
       std::cerr << "Unknown error type" << std::endl;
    }
@@ -228,14 +227,11 @@ int main(int argc, char *argv[])
       }
       default:
       {
-
       }
    }
-   if(parameters and not (parameters->getOption<bool>(OPT_no_clean)))
+   if(parameters and not(parameters->getOption<bool>(OPT_no_clean)))
    {
       boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
    }
    return exit_code;
-
 }
-

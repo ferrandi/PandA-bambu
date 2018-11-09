@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file NI_SSA_liveness.hpp
  * @brief Non-Iterative liveness analysis for SSA based gimple descriptions.
@@ -39,11 +39,11 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef NI_SSA_LIVENESS_HPP
 #define NI_SSA_LIVENESS_HPP
 
-///Superclass include
+/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
 #include "refcount.hpp"
@@ -65,41 +65,39 @@ REF_FORWARD_DECL(tree_node);
  */
 class NI_SSA_liveness : public FunctionFrontendFlowStep
 {
-   private:
+ private:
+   /// Algorithm 5: Explore all paths from a variable’s use to its definition.
+   void Up_and_Mark(blocRef B, tree_nodeRef v, statement_list* sl);
 
-      /// Algorithm 5: Explore all paths from a variable’s use to its definition.
-      void Up_and_Mark(blocRef B, tree_nodeRef v, statement_list * sl);
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+ public:
+   /**
+    * Constructor
+    * @param Param is the set of the parameters
+    * @param AppM is the application manager
+    * @param function_id is the index of the function
+    * @param design_flow_manager is the design flow manager
+    */
+   NI_SSA_liveness(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
-   public:
+   /**
+    * Destructor
+    */
+   ~NI_SSA_liveness() override;
 
-      /**
-       * Constructor
-       * @param Param is the set of the parameters
-       * @param AppM is the application manager
-       * @param function_id is the index of the function
-       * @param design_flow_manager is the design flow manager
-       */
-      NI_SSA_liveness(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   /**
+    * Performes the liveness analysis.
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /**
-       * Destructor
-       */
-      ~NI_SSA_liveness() override;
-
-      /**
-       * Performes the liveness analysis.
-       */
-      DesignFlowStep_Status InternalExec() override;
-
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      void Initialize() override;
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 };
 #endif

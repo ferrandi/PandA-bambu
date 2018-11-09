@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file taste_constants.hpp
  * @brief constants used in taste
@@ -38,27 +38,27 @@
  *
  */
 
-///The suffix of the address translation function
+/// The suffix of the address translation function
 #define STR_CST_taste_address_translation "panda_address_translation_"
 
-///The suffix of the data size function
+/// The suffix of the data size function
 #define STR_CST_taste_data_size "panda_data_size_"
 
-///The suffix of the endianess check function
+/// The suffix of the endianess check function
 #define STR_CST_taste_endianess_check "panda_endianess_check_"
 
-///The suffix of the endianess inversion function
+/// The suffix of the endianess inversion function
 #if 0
 #define STR_CST_taste_endianess_inversion "panda_endianess_inversion_"
 #else
 #define STR_CST_taste_endianess_inversion "bswap32"
 #endif
 
-///The suffix of the memory enabling function
+/// The suffix of the memory enabling function
 #define STR_CST_taste_memory_enabling "panda_memory_enabling_"
 
-///The suffix of the output multiplexer function
+/// The suffix of the output multiplexer function
 #define STR_CST_taste_output_multiplexer "panda_output_multiplexer_"
 
-///The suffix of the reg_status value computation function
+/// The suffix of the reg_status value computation function
 #define STR_CST_taste_reg_status "panda_reg_status"

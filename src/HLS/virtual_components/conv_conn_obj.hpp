@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file conv_conn_obj.hpp
  * @brief Class implementation of the connection module converting the type and the size of connection objects
@@ -39,7 +39,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef CONV_CONN_OBJ_HPP
 #define CONV_CONN_OBJ_HPP
 
@@ -51,31 +51,37 @@
  */
 class uu_conv_conn_obj : public generic_obj
 {
+   /// number of bit of in/out ports
+   unsigned int bitsize;
 
-      /// number of bit of in/out ports
-      unsigned int bitsize;
+ public:
+   /**
+    * Constructor
+    */
+   uu_conv_conn_obj(const std::string& _name) : generic_obj(UU_CONV_CONN_OBJ, _name), bitsize(0)
+   {
+   }
 
-   public:
+   /**
+    * Destructor.
+    */
+   ~uu_conv_conn_obj() override = default;
 
-      /**
-       * Constructor
-       */
-      uu_conv_conn_obj(const std::string& _name) : generic_obj(UU_CONV_CONN_OBJ, _name), bitsize(0) {}
+   /**
+    * add a size to the component
+    */
+   void add_bitsize(unsigned int _bitsize)
+   {
+      bitsize = _bitsize > bitsize ? _bitsize : bitsize;
+   }
 
-      /**
-       * Destructor.
-       */
-      ~uu_conv_conn_obj() override = default;
-
-      /**
-       * add a size to the component
-       */
-      void add_bitsize(unsigned int _bitsize) {bitsize = _bitsize>bitsize?_bitsize:bitsize;}
-
-      /**
-       * return the maximum bitsize associated with the component
-       */
-      unsigned int get_bitsize() const {return bitsize;}
+   /**
+    * return the maximum bitsize associated with the component
+    */
+   unsigned int get_bitsize() const
+   {
+      return bitsize;
+   }
 };
 
 /**
@@ -84,31 +90,37 @@ class uu_conv_conn_obj : public generic_obj
  */
 class ui_conv_conn_obj : public generic_obj
 {
+   /// number of bit of in/out ports
+   unsigned int bitsize;
 
-      /// number of bit of in/out ports
-      unsigned int bitsize;
+ public:
+   /**
+    * Constructor
+    */
+   ui_conv_conn_obj(const std::string& _name) : generic_obj(UI_CONV_CONN_OBJ, _name), bitsize(0)
+   {
+   }
 
-   public:
+   /**
+    * Destructor.
+    */
+   ~ui_conv_conn_obj() override = default;
 
-      /**
-       * Constructor
-       */
-      ui_conv_conn_obj(const std::string& _name) : generic_obj(UI_CONV_CONN_OBJ, _name), bitsize(0) {}
+   /**
+    * add a size to the component
+    */
+   void add_bitsize(unsigned int _bitsize)
+   {
+      bitsize = _bitsize > bitsize ? _bitsize : bitsize;
+   }
 
-      /**
-       * Destructor.
-       */
-      ~ui_conv_conn_obj() override = default;
-
-      /**
-       * add a size to the component
-       */
-      void add_bitsize(unsigned int _bitsize) {bitsize = _bitsize>bitsize?_bitsize:bitsize;}
-
-      /**
-       * return the maximum bitsize associated with the component
-       */
-      unsigned int get_bitsize() const {return bitsize;}
+   /**
+    * return the maximum bitsize associated with the component
+    */
+   unsigned int get_bitsize() const
+   {
+      return bitsize;
+   }
 };
 
 /**
@@ -117,31 +129,37 @@ class ui_conv_conn_obj : public generic_obj
  */
 class iu_conv_conn_obj : public generic_obj
 {
+   /// number of bit of in/out ports
+   unsigned int bitsize;
 
-      /// number of bit of in/out ports
-      unsigned int bitsize;
+ public:
+   /**
+    * Constructor
+    */
+   iu_conv_conn_obj(const std::string& _name) : generic_obj(IU_CONV_CONN_OBJ, _name), bitsize(0)
+   {
+   }
 
-   public:
+   /**
+    * Destructor.
+    */
+   ~iu_conv_conn_obj() override = default;
 
-      /**
-       * Constructor
-       */
-      iu_conv_conn_obj(const std::string& _name) : generic_obj(IU_CONV_CONN_OBJ, _name), bitsize(0) {}
+   /**
+    * add a size to the component
+    */
+   void add_bitsize(unsigned int _bitsize)
+   {
+      bitsize = _bitsize > bitsize ? _bitsize : bitsize;
+   }
 
-      /**
-       * Destructor.
-       */
-      ~iu_conv_conn_obj() override = default;
-
-      /**
-       * add a size to the component
-       */
-      void add_bitsize(unsigned int _bitsize) {bitsize = _bitsize>bitsize?_bitsize:bitsize;}
-
-      /**
-       * return the maximum bitsize associated with the component
-       */
-      unsigned int get_bitsize() const {return bitsize;}
+   /**
+    * return the maximum bitsize associated with the component
+    */
+   unsigned int get_bitsize() const
+   {
+      return bitsize;
+   }
 };
 
 /**
@@ -150,31 +168,37 @@ class iu_conv_conn_obj : public generic_obj
  */
 class ii_conv_conn_obj : public generic_obj
 {
+   /// number of bit of in/out ports
+   unsigned int bitsize;
 
-      /// number of bit of in/out ports
-      unsigned int bitsize;
+ public:
+   /**
+    * Constructor
+    */
+   ii_conv_conn_obj(const std::string& _name) : generic_obj(II_CONV_CONN_OBJ, _name), bitsize(0)
+   {
+   }
 
-   public:
+   /**
+    * Destructor.
+    */
+   ~ii_conv_conn_obj() override = default;
 
-      /**
-       * Constructor
-       */
-      ii_conv_conn_obj(const std::string& _name) : generic_obj(II_CONV_CONN_OBJ, _name), bitsize(0) {}
+   /**
+    * add a size to the component
+    */
+   void add_bitsize(unsigned int _bitsize)
+   {
+      bitsize = _bitsize > bitsize ? _bitsize : bitsize;
+   }
 
-      /**
-       * Destructor.
-       */
-      ~ii_conv_conn_obj() override = default;
-
-      /**
-       * add a size to the component
-       */
-      void add_bitsize(unsigned int _bitsize) {bitsize = _bitsize>bitsize?_bitsize:bitsize;}
-
-      /**
-       * return the maximum bitsize associated with the component
-       */
-      unsigned int get_bitsize() const {return bitsize;}
+   /**
+    * return the maximum bitsize associated with the component
+    */
+   unsigned int get_bitsize() const
+   {
+      return bitsize;
+   }
 };
 
 /**
@@ -183,42 +207,54 @@ class ii_conv_conn_obj : public generic_obj
  */
 class ff_conv_conn_obj : public generic_obj
 {
+   /// number of bit of in ports
+   unsigned int bitsize_in;
+   /// number of bit of out ports
+   unsigned int bitsize_out;
 
-      /// number of bit of in ports
-      unsigned int bitsize_in;
-      /// number of bit of out ports
-      unsigned int bitsize_out;
+ public:
+   /**
+    * Constructor
+    */
+   ff_conv_conn_obj(const std::string& _name) : generic_obj(FF_CONV_CONN_OBJ, _name), bitsize_in(0), bitsize_out(0)
+   {
+   }
 
-   public:
+   /**
+    * Destructor.
+    */
+   ~ff_conv_conn_obj() override = default;
 
-      /**
-       * Constructor
-       */
-      ff_conv_conn_obj(const std::string& _name) : generic_obj(FF_CONV_CONN_OBJ, _name), bitsize_in(0), bitsize_out(0) {}
+   /**
+    * add a size in to the component
+    */
+   void add_bitsize_in(unsigned int _bitsize)
+   {
+      bitsize_in = _bitsize > bitsize_in ? _bitsize : bitsize_in;
+   }
 
-      /**
-       * Destructor.
-       */
-      ~ff_conv_conn_obj() override = default;
+   /**
+    * add a size in to the component
+    */
+   void add_bitsize_out(unsigned int _bitsize)
+   {
+      bitsize_out = _bitsize > bitsize_out ? _bitsize : bitsize_out;
+   }
 
-      /**
-       * add a size in to the component
-       */
-      void add_bitsize_in(unsigned int _bitsize) {bitsize_in = _bitsize>bitsize_in?_bitsize:bitsize_in;}
-
-      /**
-       * add a size in to the component
-       */
-      void add_bitsize_out(unsigned int _bitsize) {bitsize_out = _bitsize>bitsize_out?_bitsize:bitsize_out;}
-
-      /**
-       * return the input bitsize associated with the component
-       */
-      unsigned int get_bitsize_in() const {return bitsize_in;}
-      /**
-       * return the output bitsize associated with the component
-       */
-      unsigned int get_bitsize_out() const {return bitsize_out;}
+   /**
+    * return the input bitsize associated with the component
+    */
+   unsigned int get_bitsize_in() const
+   {
+      return bitsize_in;
+   }
+   /**
+    * return the output bitsize associated with the component
+    */
+   unsigned int get_bitsize_out() const
+   {
+      return bitsize_out;
+   }
 };
 
 /**
@@ -227,31 +263,37 @@ class ff_conv_conn_obj : public generic_obj
  */
 class i_assign_conn_obj : public generic_obj
 {
+   /// number of bit of in/out ports
+   unsigned int bitsize;
 
-      /// number of bit of in/out ports
-      unsigned int bitsize;
+ public:
+   /**
+    * Constructor
+    */
+   i_assign_conn_obj(const std::string& _name) : generic_obj(I_ASSIGN_CONN_OBJ, _name), bitsize(0)
+   {
+   }
 
-   public:
+   /**
+    * Destructor.
+    */
+   ~i_assign_conn_obj() override = default;
 
-      /**
-       * Constructor
-       */
-      i_assign_conn_obj(const std::string& _name) : generic_obj(I_ASSIGN_CONN_OBJ, _name), bitsize(0) {}
+   /**
+    * add a size to the component
+    */
+   void add_bitsize(unsigned int _bitsize)
+   {
+      bitsize = _bitsize > bitsize ? _bitsize : bitsize;
+   }
 
-      /**
-       * Destructor.
-       */
-      ~i_assign_conn_obj() override = default;
-
-      /**
-       * add a size to the component
-       */
-      void add_bitsize(unsigned int _bitsize) {bitsize = _bitsize>bitsize?_bitsize:bitsize;}
-
-      /**
-       * return the maximum bitsize associated with the component
-       */
-      unsigned int get_bitsize() const {return bitsize;}
+   /**
+    * return the maximum bitsize associated with the component
+    */
+   unsigned int get_bitsize() const
+   {
+      return bitsize;
+   }
 };
 
 /**
@@ -260,31 +302,37 @@ class i_assign_conn_obj : public generic_obj
  */
 class u_assign_conn_obj : public generic_obj
 {
+   /// number of bit of in/out ports
+   unsigned int bitsize;
 
-      /// number of bit of in/out ports
-      unsigned int bitsize;
+ public:
+   /**
+    * Constructor
+    */
+   u_assign_conn_obj(const std::string& _name) : generic_obj(U_ASSIGN_CONN_OBJ, _name), bitsize(0)
+   {
+   }
 
-   public:
+   /**
+    * Destructor.
+    */
+   ~u_assign_conn_obj() override = default;
 
-      /**
-       * Constructor
-       */
-      u_assign_conn_obj(const std::string& _name) : generic_obj(U_ASSIGN_CONN_OBJ, _name), bitsize(0) {}
+   /**
+    * add a size to the component
+    */
+   void add_bitsize(unsigned int _bitsize)
+   {
+      bitsize = _bitsize > bitsize ? _bitsize : bitsize;
+   }
 
-      /**
-       * Destructor.
-       */
-      ~u_assign_conn_obj() override = default;
-
-      /**
-       * add a size to the component
-       */
-      void add_bitsize(unsigned int _bitsize) {bitsize = _bitsize>bitsize?_bitsize:bitsize;}
-
-      /**
-       * return the maximum bitsize associated with the component
-       */
-      unsigned int get_bitsize() const {return bitsize;}
+   /**
+    * return the maximum bitsize associated with the component
+    */
+   unsigned int get_bitsize() const
+   {
+      return bitsize;
+   }
 };
 
 /**
@@ -293,31 +341,37 @@ class u_assign_conn_obj : public generic_obj
  */
 class vb_assign_conn_obj : public generic_obj
 {
+   /// number of bit of in/out ports
+   unsigned int bitsize;
 
-      /// number of bit of in/out ports
-      unsigned int bitsize;
+ public:
+   /**
+    * Constructor
+    */
+   vb_assign_conn_obj(const std::string& _name) : generic_obj(VB_ASSIGN_CONN_OBJ, _name), bitsize(0)
+   {
+   }
 
-   public:
+   /**
+    * Destructor.
+    */
+   ~vb_assign_conn_obj() override = default;
 
-      /**
-       * Constructor
-       */
-      vb_assign_conn_obj(const std::string& _name) : generic_obj(VB_ASSIGN_CONN_OBJ, _name), bitsize(0) {}
+   /**
+    * add a size to the component
+    */
+   void add_bitsize(unsigned int _bitsize)
+   {
+      bitsize = _bitsize > bitsize ? _bitsize : bitsize;
+   }
 
-      /**
-       * Destructor.
-       */
-      ~vb_assign_conn_obj() override = default;
-
-      /**
-       * add a size to the component
-       */
-      void add_bitsize(unsigned int _bitsize) {bitsize = _bitsize>bitsize?_bitsize:bitsize;}
-
-      /**
-       * return the maximum bitsize associated with the component
-       */
-      unsigned int get_bitsize() const {return bitsize;}
+   /**
+    * return the maximum bitsize associated with the component
+    */
+   unsigned int get_bitsize() const
+   {
+      return bitsize;
+   }
 };
 
 /**
@@ -326,31 +380,37 @@ class vb_assign_conn_obj : public generic_obj
  */
 class f_assign_conn_obj : public generic_obj
 {
+   /// number of bit of in/out ports
+   unsigned int bitsize;
 
-      /// number of bit of in/out ports
-      unsigned int bitsize;
+ public:
+   /**
+    * Constructor
+    */
+   f_assign_conn_obj(const std::string& _name) : generic_obj(F_ASSIGN_CONN_OBJ, _name), bitsize(0)
+   {
+   }
 
-   public:
+   /**
+    * Destructor.
+    */
+   ~f_assign_conn_obj() override = default;
 
-      /**
-       * Constructor
-       */
-      f_assign_conn_obj(const std::string& _name) : generic_obj(F_ASSIGN_CONN_OBJ, _name), bitsize(0) {}
+   /**
+    * add a size to the component
+    */
+   void add_bitsize(unsigned int _bitsize)
+   {
+      bitsize = _bitsize > bitsize ? _bitsize : bitsize;
+   }
 
-      /**
-       * Destructor.
-       */
-      ~f_assign_conn_obj() override = default;
-
-      /**
-       * add a size to the component
-       */
-      void add_bitsize(unsigned int _bitsize) {bitsize = _bitsize>bitsize?_bitsize:bitsize;}
-
-      /**
-       * return the maximum bitsize associated with the component
-       */
-      unsigned int get_bitsize() const {return bitsize;}
+   /**
+    * return the maximum bitsize associated with the component
+    */
+   unsigned int get_bitsize() const
+   {
+      return bitsize;
+   }
 };
 
 #endif // CONV_CONN_OBJ_HPP

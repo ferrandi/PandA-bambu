@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file multiple_entry_if_reduction.hpp
  * @brief Class performing the reduction of  n input - m output BB by duplicating
@@ -71,7 +71,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef MULTIPLE_ENTRY_IF_REDUCTION_HPP
 #define MULTIPLE_ENTRY_IF_REDUCTION_HPP
@@ -94,72 +94,67 @@ REF_FORWARD_DECL(tree_manipulation);
 REF_FORWARD_DECL(tree_node);
 //@}
 
-
 /**
  * @brief Class performing some optimizations exploiting the reduction of BB with n inputs and m outputs.
  * The block have to contain only phi or conditional statements (such as if and multi way if)
  */
 class MultipleEntryIfReduction : public FunctionFrontendFlowStep
 {
+ private:
+   /// The tree manager
+   tree_managerRef TM;
 
-   private:
-      ///The tree manager
-      tree_managerRef TM;
+   /// The tree manipulation
+   tree_manipulationRef tree_man;
 
-      ///The tree manipulation
-      tree_manipulationRef tree_man;
+   /// The statement list
+   statement_list* sl;
 
-      ///The statement list
-      statement_list * sl;
+   /// Modified file
+   bool bb_modified;
 
-      ///Modified file
-      bool bb_modified;
+   /// The scheduling solution
+   ScheduleRef schedule;
 
-      ///The scheduling solution
-      ScheduleRef schedule;
+   /// The allocation information
+   AllocationInformationConstRef allocation_information;
 
-      ///The allocation information
-      AllocationInformationConstRef allocation_information;
+   /// Estimate the area cost of the statements of a basic block
+   double GetAreaCost(const std::list<tree_nodeRef>& list_of_stmt) const;
 
-      ///Estimate the area cost of the statements of a basic block
-      double GetAreaCost(const std::list<tree_nodeRef> & list_of_stmt) const;
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
+ public:
+   /**
+    * Constructor.
+    * @param _Param is the set of the parameters
+    * @param _AppM is the application manager
+    * @param function_id is the identifier of the function
+    * @param design_flow_manager is the design flow manager
+    */
+   MultipleEntryIfReduction(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
-      const std::unordered_set< std::pair<FrontendFlowStepType, FunctionRelationship> >
-      ComputeFrontendRelationships (const DesignFlowStep::RelationshipType relationship_type) const override;
+   /**
+    *  Destructor
+    */
+   ~MultipleEntryIfReduction() override;
 
-   public:
-      /**
-       * Constructor.
-       * @param _Param is the set of the parameters
-       * @param _AppM is the application manager
-       * @param function_id is the identifier of the function
-       * @param design_flow_manager is the design flow manager
-      */
-      MultipleEntryIfReduction (const ParameterConstRef _Param,
-                 const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   /**
+    * Extract patterns from the GCC IR.
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /**
-       *  Destructor
-      */
-      ~MultipleEntryIfReduction () override;
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 
-      /**
-       * Extract patterns from the GCC IR.
-       * @return the exit status of this step
-      */
-      DesignFlowStep_Status InternalExec () override;
-
-      /**
-      * Initialize the step (i.e., like a constructor, but executed just before exec
-      */
-      void Initialize() override;
-
-      /**
-      * Check if this step has actually to be executed
-      * @return true if the step has to be executed
-      */
-      bool HasToBeExecuted() const override;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 };
 
 #endif /* MultipleEntryIfReductionHPP */

@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file mem_dominator_allocation.hpp
  * @brief Class to allocate memories in HLS based on dominators
@@ -39,7 +39,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef MEMORY_DOMINATOR_ALLOCATION_HPP
 #define MEMORY_DOMINATOR_ALLOCATION_HPP
@@ -48,31 +48,31 @@
 
 class mem_dominator_allocation : public memory_allocation
 {
-   protected:
-      std::vector<unsigned int> getFunctionAllocationOrder(std::set<unsigned int> top_functions);
+ protected:
+   std::vector<unsigned int> getFunctionAllocationOrder(std::set<unsigned int> top_functions);
 
-   public:
-      /**
-       * Constructor
-       * @param design_flow_manager is the design flow manager
-       */
-      mem_dominator_allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
+ public:
+   /**
+    * Constructor
+    * @param design_flow_manager is the design flow manager
+    */
+   mem_dominator_allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
 
-      /**
-       * Destructor
-       */
-      ~mem_dominator_allocation() override;
+   /**
+    * Destructor
+    */
+   ~mem_dominator_allocation() override;
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status Exec() override;
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status Exec() override;
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      void Initialize() override;
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 };
 
 #endif

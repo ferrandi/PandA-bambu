@@ -349,7 +349,10 @@ namespace ac_math
       ac_float<W2, I2, E2, q2> output_temp(output2_mant, e2, true);
 
       // If input is zero, set output to max possible value.
-      if(input.m == 0) { output_temp.template set_val<AC_VAL_MAX>(); }
+      if(input.m == 0)
+      {
+         output_temp.template set_val<AC_VAL_MAX>();
+      }
 
       output = output_temp;
 

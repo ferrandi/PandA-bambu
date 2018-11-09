@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,53 +29,52 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file op_cdg_computation.cpp
  * @brief Analysis step performing operation control dependence computation.
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
-///Header include
+ */
+/// Header include
 #include "op_cdg_computation.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///algorithms/dominance include
+/// algorithms/dominance include
 #include "Dominance.hpp"
 
-///behavior include
+/// behavior include
 #include "basic_block.hpp"
 #include "function_behavior.hpp"
+#include "hash_helper.hpp"
 #include "op_graph.hpp"
 #include "operations_graph_constructor.hpp"
-#include "hash_helper.hpp"
-#include "string_manipulation.hpp"          // for GET_CLASS
+#include "string_manipulation.hpp" // for GET_CLASS
 
-OpCdgComputation::OpCdgComputation(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
-   FunctionFrontendFlowStep(_AppM, _function_id, OP_CONTROL_DEPENDENCE_COMPUTATION, _design_flow_manager, _Param)
+OpCdgComputation::OpCdgComputation(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, OP_CONTROL_DEPENDENCE_COMPUTATION, _design_flow_manager, _Param)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-OpCdgComputation::~OpCdgComputation()
-= default;
+OpCdgComputation::~OpCdgComputation() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > OpCdgComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> OpCdgComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BB_CONTROL_DEPENDENCE_COMPUTATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OPERATIONS_CFG_COMPUTATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OP_ORDER_COMPUTATION, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       case(PRECEDENCE_RELATIONSHIP):
       {
          break;
@@ -148,5 +147,3 @@ DesignFlowStep_Status OpCdgComputation::InternalExec()
    }
    return DesignFlowStep_Status::SUCCESS;
 }
-
-

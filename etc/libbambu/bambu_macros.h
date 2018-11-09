@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file bambu_macros.h
  * @brief macros to restrict the bitsize of a variable.
@@ -39,7 +39,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef BAMBU_MACROS_H
 #define BAMBU_MACROS_H
 
@@ -47,10 +47,10 @@
 #include <boost/preprocessor/arithmetic/mod.hpp>
 #include <boost/preprocessor/arithmetic/sub.hpp>
 #include <boost/preprocessor/comparison/equal.hpp>
-#include <boost/preprocessor/comparison/greater_equal.hpp>
 #include <boost/preprocessor/comparison/greater.hpp>
-#include <boost/preprocessor/comparison/less_equal.hpp>
+#include <boost/preprocessor/comparison/greater_equal.hpp>
 #include <boost/preprocessor/comparison/less.hpp>
+#include <boost/preprocessor/comparison/less_equal.hpp>
 #include <boost/preprocessor/comparison/not_equal.hpp>
 #include <boost/preprocessor/debug/assert.hpp>
 #include <boost/preprocessor/empty.hpp>
@@ -189,12 +189,12 @@
 #define CEIL_LOG2_60 6
 #define CEIL_LOG2_61 6
 #define CEIL_LOG2_62 6
-#define CEIL_LOG2_63 6 
-#define CEIL_LOG2_64 6 
+#define CEIL_LOG2_63 6
+#define CEIL_LOG2_64 6
 #define CEIL_LOG2(exp) BOOST_PP_CAT(CEIL_LOG2_, exp)
 
 #define CHECK_N(x, n, ...) n
-#define CHECK(...) CHECK_N(__VA_ARGS__, 0,)
+#define CHECK(...) CHECK_N(__VA_ARGS__, 0, )
 #define PROBE(x) x, 1,
 #define IS_CONSTANT(x) CHECK(BOOST_PP_CAT(IS_CONSTANT_, x))
 #define IS_CONSTANT_0 PROBE(~)
@@ -467,117 +467,109 @@
 
 #define UDATATYPE unsigned long long
 #define BOOLTYPE _Bool
-#define VAL_RESIZE(VAR, nbit) ((UDATATYPE) (BOOST_PP_IF(\
-      BOOST_PP_LESS(nbit, UDATATYPE_BITSIZE),\
-      ((VAR)&((UDATATYPE)(BOOST_PP_CAT(POW2(nbit),ULL)-1))),\
-      VAR)))
+#define VAL_RESIZE(VAR, nbit) ((UDATATYPE)(BOOST_PP_IF(BOOST_PP_LESS(nbit, UDATATYPE_BITSIZE), ((VAR) & ((UDATATYPE)(BOOST_PP_CAT(POW2(nbit), ULL) - 1))), VAR)))
 
-#define MACRO_BIT_RESIZE(VAR, nbit) VAR=VAL_RESIZE(VAR, nbit)
+#define MACRO_BIT_RESIZE(VAR, nbit) VAR = VAL_RESIZE(VAR, nbit)
 #define BIT_RESIZE(VAR, nbit) WHEN(BOOST_PP_NOT(IS_CONSTANT(VAR)))(MACRO_BIT_RESIZE(VAR, nbit))
-#define SELECT_BIT(VAR, bit) (((VAR)>>(bit))&1)
-#define SET_BIT(VAR, bit, value) VAR = \
-   ((UDATATYPE) ((VAR)&~(BOOST_PP_CAT(POW2(bit),ULL)))) | \
-   ((UDATATYPE) ((((UDATATYPE)(value)) & 1ULL) << (bit)))
-#define SELECT_RANGE(var, high, low) VAL_RESIZE(((UDATATYPE)(var))>>(low), BOOST_PP_ADD(BOOST_PP_SUB(high,low),1))
-#define SET_RANGE(VAR, val, high, low) VAR = \
-   BOOST_PP_IF( \
-      BOOST_PP_LESS(BITSIZE(high, low), UDATATYPE_BITSIZE), \
-      (VAR & ~(UDATATYPE)((BOOST_PP_CAT(POW2(BITSIZE(high, low)),ULL)-1) << low)) | \
-         ((VAL_RESIZE(val, BITSIZE(high, low))) << low), \
-      val \
-   )
-#define CONCAT(var1, var2, var2bitsize) ((((UDATATYPE)(var1))<<(var2bitsize))|VAL_RESIZE(var2,var2bitsize))
+#define SELECT_BIT(VAR, bit) (((VAR) >> (bit)) & 1)
+#define SET_BIT(VAR, bit, value) VAR = ((UDATATYPE)((VAR) & ~(BOOST_PP_CAT(POW2(bit), ULL)))) | ((UDATATYPE)((((UDATATYPE)(value)) & 1ULL) << (bit)))
+#define SELECT_RANGE(var, high, low) VAL_RESIZE(((UDATATYPE)(var)) >> (low), BOOST_PP_ADD(BOOST_PP_SUB(high, low), 1))
+#define SET_RANGE(VAR, val, high, low) VAR = BOOST_PP_IF(BOOST_PP_LESS(BITSIZE(high, low), UDATATYPE_BITSIZE), (VAR & ~(UDATATYPE)((BOOST_PP_CAT(POW2(BITSIZE(high, low)), ULL) - 1) << low)) | ((VAL_RESIZE(val, BITSIZE(high, low))) << low), val)
+#define CONCAT(var1, var2, var2bitsize) ((((UDATATYPE)(var1)) << (var2bitsize)) | VAL_RESIZE(var2, var2bitsize))
 
-#define MACRO_DEVECTORIZE_VALUE(z, n, text) _Bool BOOST_PP_CAT(text,BOOST_PP_CAT(_,n)) = (text >> n)&1;
+#define MACRO_DEVECTORIZE_VALUE(z, n, text) _Bool BOOST_PP_CAT(text, BOOST_PP_CAT(_, n)) = (text >> n) & 1;
 #define DEVECTORIZE_VALUE(var, nbits) BOOST_PP_REPEAT_FROM_TO(0, nbits, MACRO_DEVECTORIZE_VALUE, var)
 
-#define MACRO_VECTORIZE_VALUE(z, n, text) text = text | (((UDATATYPE)(BOOST_PP_CAT(text,BOOST_PP_CAT(_,n)))) << n);
+#define MACRO_VECTORIZE_VALUE(z, n, text) text = text | (((UDATATYPE)(BOOST_PP_CAT(text, BOOST_PP_CAT(_, n)))) << n);
 #define VECTORIZE_VALUE(var, nbits) BOOST_PP_REPEAT_FROM_TO(0, nbits, MACRO_VECTORIZE_VALUE, var)
 
-#define MACRO_VECTORIZE_DECL(z, n, text) _Bool BOOST_PP_CAT(text,BOOST_PP_CAT(_,n));
+#define MACRO_VECTORIZE_DECL(z, n, text) _Bool BOOST_PP_CAT(text, BOOST_PP_CAT(_, n));
 #define VECTORIZE_DECL(var, nbits) BOOST_PP_REPEAT_FROM_TO(0, nbits, MACRO_VECTORIZE_DECL, var)
 
+#define count_leading_zero_macro(man_bits, MAN_IN_ORIG, SHIFT)                                                                                                                                            \
+   {                                                                                                                                                                                                      \
+      BOOLTYPE _result_5 = 0;                                                                                                                                                                             \
+      BOOLTYPE _result_4, _result_3, _result_2, _result_1, _result_0;                                                                                                                                     \
+      UDATATYPE _val4, _val8;                                                                                                                                                                             \
+      UDATATYPE _result = 0;                                                                                                                                                                              \
+      UDATATYPE MAN_IN;                                                                                                                                                                                   \
+      if(man_bits <= 32)                                                                                                                                                                                  \
+      {                                                                                                                                                                                                   \
+         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << BOOST_PP_SUB(32, man_bits);                                                                                                                                 \
+         BIT_RESIZE(MAN_IN, 32);                                                                                                                                                                          \
+      }                                                                                                                                                                                                   \
+      else                                                                                                                                                                                                \
+      {                                                                                                                                                                                                   \
+         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << BOOST_PP_SUB(64, man_bits);                                                                                                                                 \
+      }                                                                                                                                                                                                   \
+      _result_5 = man_bits <= 32 || SELECT_RANGE(MAN_IN, 63, 32) == 0;                                                                                                                                    \
+      _result_4 = (_result_5 ? SELECT_RANGE(MAN_IN, 31, 16) : SELECT_RANGE(MAN_IN, 63, 48)) == 0;                                                                                                         \
+      _result_3 = (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 8) : SELECT_RANGE(MAN_IN, 47, 40)) : (_result_5 ? SELECT_RANGE(MAN_IN, 31, 24) : SELECT_RANGE(MAN_IN, 63, 56))) == 0;                \
+      _result_2 = (_result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 7, 4) : SELECT_RANGE(MAN_IN, 39, 36)) : (_result_5 ? SELECT_RANGE(MAN_IN, 23, 20) : SELECT_RANGE(MAN_IN, 55, 52))) :        \
+                               (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 12) : SELECT_RANGE(MAN_IN, 47, 44)) : (_result_5 ? SELECT_RANGE(MAN_IN, 31, 28) : SELECT_RANGE(MAN_IN, 63, 60)))) == 0; \
+      _val8 = _result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 7, 0) : SELECT_RANGE(MAN_IN, 39, 32)) : (_result_5 ? SELECT_RANGE(MAN_IN, 23, 16) : SELECT_RANGE(MAN_IN, 55, 48))) :             \
+                          (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 8) : SELECT_RANGE(MAN_IN, 47, 40)) : (_result_5 ? SELECT_RANGE(MAN_IN, 31, 24) : SELECT_RANGE(MAN_IN, 63, 56)));             \
+      _val4 = _result_2 ? _val8 & 15 : (_val8 >> 4) & 15;                                                                                                                                                 \
+      _result_1 = _val4 >> 2 == 0;                                                                                                                                                                        \
+      _result_0 = _result_1 ? (~((_val4 & 2) >> 1)) & 1 : (~((_val4 & 8) >> 3)) & 1;                                                                                                                      \
+      if(man_bits <= 32)                                                                                                                                                                                  \
+      {                                                                                                                                                                                                   \
+         VECTORIZE_VALUE(_result, 5)                                                                                                                                                                      \
+         SHIFT = _result;                                                                                                                                                                                 \
+      }                                                                                                                                                                                                   \
+      else                                                                                                                                                                                                \
+      {                                                                                                                                                                                                   \
+         VECTORIZE_VALUE(_result, 6)                                                                                                                                                                      \
+         SHIFT = _result;                                                                                                                                                                                 \
+      }                                                                                                                                                                                                   \
+      BIT_RESIZE(SHIFT, CEIL_LOG2(man_bits));                                                                                                                                                             \
+   }
 
-#define count_leading_zero_macro(man_bits,MAN_IN_ORIG,SHIFT)\
-{\
-  BOOLTYPE _result_5=0;\
-  BOOLTYPE _result_4, _result_3, _result_2, _result_1, _result_0;\
-  UDATATYPE _val4, _val8;\
-  UDATATYPE _result=0;\
-  UDATATYPE MAN_IN;\
-  if(man_bits<=32)\
-  {\
-    MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << BOOST_PP_SUB(32,man_bits);\
-    BIT_RESIZE(MAN_IN,32);\
-  }\
-  else\
-  {\
-    MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << BOOST_PP_SUB(64,man_bits);\
-  }\
-  _result_5 = man_bits<=32 || SELECT_RANGE(MAN_IN,63,32) == 0;\
-  _result_4 = (_result_5 ? SELECT_RANGE(MAN_IN,31,16) : SELECT_RANGE(MAN_IN,63,48)) == 0;\
-  _result_3 = (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN,15,8) : SELECT_RANGE(MAN_IN,47,40)) : (_result_5 ? SELECT_RANGE(MAN_IN,31,24) : SELECT_RANGE(MAN_IN,63,56))) == 0;\
-  _result_2 = (_result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN,7,4) : SELECT_RANGE(MAN_IN,39,36)) : (_result_5 ? SELECT_RANGE(MAN_IN,23,20) : SELECT_RANGE(MAN_IN,55,52))) : (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN,15,12) : SELECT_RANGE(MAN_IN,47,44)) : (_result_5 ? SELECT_RANGE(MAN_IN,31,28) : SELECT_RANGE(MAN_IN,63,60)))) == 0;\
-  _val8 = _result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN,7,0) : SELECT_RANGE(MAN_IN,39,32)) : (_result_5 ? SELECT_RANGE(MAN_IN,23,16) : SELECT_RANGE(MAN_IN,55,48))) : (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN,15,8) : SELECT_RANGE(MAN_IN,47,40)) : (_result_5 ? SELECT_RANGE(MAN_IN,31,24) : SELECT_RANGE(MAN_IN,63,56)));\
-  _val4 = _result_2 ? _val8&15 : (_val8>>4)&15;\
-  _result_1 = _val4 >> 2 == 0;\
-  _result_0 = _result_1 ? (~((_val4 & 2)>>1))&1 : (~((_val4&8)>>3))&1;\
-  if(man_bits<=32)\
-  {\
-    VECTORIZE_VALUE(_result,5)\
-    SHIFT = _result;\
-  }\
-  else\
-  {\
-    VECTORIZE_VALUE(_result,6)\
-    SHIFT = _result;\
-  }\
-  BIT_RESIZE(SHIFT,CEIL_LOG2(man_bits));\
-}
-
-#define count_leading_zero_macro_lshift(man_bits,MAN_IN_ORIG,COUNT,SHIFTED)\
-{\
-  BOOLTYPE _result_5=0;\
-  BOOLTYPE _result_4, _result_3, _result_2, _result_1, _result_0;\
-  UDATATYPE _val4, _val8;\
-  UDATATYPE _result=0, _result_lshifted;\
-  UDATATYPE MAN_IN;\
-  if(man_bits<=32)\
-  {\
-    MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << BOOST_PP_SUB(32,man_bits);\
-    BIT_RESIZE(MAN_IN,32);\
-  }\
-  else\
-  {\
-    MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << BOOST_PP_SUB(64,man_bits);\
-  }\
-  _result_lshifted=MAN_IN;\
-  _result_5 = man_bits<=32 || SELECT_RANGE(MAN_IN,63,32) == 0;\
-  _result_lshifted = _result_5 ? (_result_lshifted<<32) : _result_lshifted;\
-  _result_4 = (_result_5 ? SELECT_RANGE(MAN_IN,31,16) : SELECT_RANGE(MAN_IN,63,48)) == 0;\
-  _result_lshifted = _result_4 ? _result_lshifted<<16 : _result_lshifted;\
-  _result_3 = (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN,15,8) : SELECT_RANGE(MAN_IN,47,40)) : (_result_5 ? SELECT_RANGE(MAN_IN,31,24) : SELECT_RANGE(MAN_IN,63,56))) == 0;\
-  _result_lshifted = _result_3 ? _result_lshifted<<8 : _result_lshifted;\
-  _result_2 = (_result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN,7,4) : SELECT_RANGE(MAN_IN,39,36)) : (_result_5 ? SELECT_RANGE(MAN_IN,23,20) : SELECT_RANGE(MAN_IN,55,52))) : (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN,15,12) : SELECT_RANGE(MAN_IN,47,44)) : (_result_5 ? SELECT_RANGE(MAN_IN,31,28) : SELECT_RANGE(MAN_IN,63,60)))) == 0;\
-  _result_lshifted = _result_2 ? _result_lshifted<<4 : _result_lshifted;\
-  _val8 = _result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN,7,0) : SELECT_RANGE(MAN_IN,39,32)) : (_result_5 ? SELECT_RANGE(MAN_IN,23,16) : SELECT_RANGE(MAN_IN,55,48))) : (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN,15,8) : SELECT_RANGE(MAN_IN,47,40)) : (_result_5 ? SELECT_RANGE(MAN_IN,31,24) : SELECT_RANGE(MAN_IN,63,56)));\
-  _val4 = _result_2 ? _val8&15 : (_val8>>4)&15;\
-  _result_1 = _val4 >> 2 == 0;\
-  _result_lshifted = _result_1 ? _result_lshifted<<2 : _result_lshifted;\
-  _result_0 = _result_1 ? (~((_val4 & 2)>>1))&1 : (~((_val4&8)>>3))&1;\
-  _result_lshifted = _result_0 ? _result_lshifted<<1 : _result_lshifted;\
-  if(man_bits<=32)\
-  {\
-    VECTORIZE_VALUE(_result,5)\
-    COUNT = _result;\
-  }\
-  else\
-  {\
-    VECTORIZE_VALUE(_result,6)\
-    COUNT = _result;\
-  }\
-  SHIFTED = _result_lshifted>>(BOOST_PP_SUB(64,man_bits));\
-  BIT_RESIZE(COUNT,CEIL_LOG2(man_bits));\
-}
+#define count_leading_zero_macro_lshift(man_bits, MAN_IN_ORIG, COUNT, SHIFTED)                                                                                                                            \
+   {                                                                                                                                                                                                      \
+      BOOLTYPE _result_5 = 0;                                                                                                                                                                             \
+      BOOLTYPE _result_4, _result_3, _result_2, _result_1, _result_0;                                                                                                                                     \
+      UDATATYPE _val4, _val8;                                                                                                                                                                             \
+      UDATATYPE _result = 0, _result_lshifted;                                                                                                                                                            \
+      UDATATYPE MAN_IN;                                                                                                                                                                                   \
+      if(man_bits <= 32)                                                                                                                                                                                  \
+      {                                                                                                                                                                                                   \
+         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << BOOST_PP_SUB(32, man_bits);                                                                                                                                 \
+         BIT_RESIZE(MAN_IN, 32);                                                                                                                                                                          \
+      }                                                                                                                                                                                                   \
+      else                                                                                                                                                                                                \
+      {                                                                                                                                                                                                   \
+         MAN_IN = ((UDATATYPE)MAN_IN_ORIG) << BOOST_PP_SUB(64, man_bits);                                                                                                                                 \
+      }                                                                                                                                                                                                   \
+      _result_lshifted = MAN_IN;                                                                                                                                                                          \
+      _result_5 = man_bits <= 32 || SELECT_RANGE(MAN_IN, 63, 32) == 0;                                                                                                                                    \
+      _result_lshifted = _result_5 ? (_result_lshifted << 32) : _result_lshifted;                                                                                                                         \
+      _result_4 = (_result_5 ? SELECT_RANGE(MAN_IN, 31, 16) : SELECT_RANGE(MAN_IN, 63, 48)) == 0;                                                                                                         \
+      _result_lshifted = _result_4 ? _result_lshifted << 16 : _result_lshifted;                                                                                                                           \
+      _result_3 = (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 8) : SELECT_RANGE(MAN_IN, 47, 40)) : (_result_5 ? SELECT_RANGE(MAN_IN, 31, 24) : SELECT_RANGE(MAN_IN, 63, 56))) == 0;                \
+      _result_lshifted = _result_3 ? _result_lshifted << 8 : _result_lshifted;                                                                                                                            \
+      _result_2 = (_result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 7, 4) : SELECT_RANGE(MAN_IN, 39, 36)) : (_result_5 ? SELECT_RANGE(MAN_IN, 23, 20) : SELECT_RANGE(MAN_IN, 55, 52))) :        \
+                               (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 12) : SELECT_RANGE(MAN_IN, 47, 44)) : (_result_5 ? SELECT_RANGE(MAN_IN, 31, 28) : SELECT_RANGE(MAN_IN, 63, 60)))) == 0; \
+      _result_lshifted = _result_2 ? _result_lshifted << 4 : _result_lshifted;                                                                                                                            \
+      _val8 = _result_3 ? (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 7, 0) : SELECT_RANGE(MAN_IN, 39, 32)) : (_result_5 ? SELECT_RANGE(MAN_IN, 23, 16) : SELECT_RANGE(MAN_IN, 55, 48))) :             \
+                          (_result_4 ? (_result_5 ? SELECT_RANGE(MAN_IN, 15, 8) : SELECT_RANGE(MAN_IN, 47, 40)) : (_result_5 ? SELECT_RANGE(MAN_IN, 31, 24) : SELECT_RANGE(MAN_IN, 63, 56)));             \
+      _val4 = _result_2 ? _val8 & 15 : (_val8 >> 4) & 15;                                                                                                                                                 \
+      _result_1 = _val4 >> 2 == 0;                                                                                                                                                                        \
+      _result_lshifted = _result_1 ? _result_lshifted << 2 : _result_lshifted;                                                                                                                            \
+      _result_0 = _result_1 ? (~((_val4 & 2) >> 1)) & 1 : (~((_val4 & 8) >> 3)) & 1;                                                                                                                      \
+      _result_lshifted = _result_0 ? _result_lshifted << 1 : _result_lshifted;                                                                                                                            \
+      if(man_bits <= 32)                                                                                                                                                                                  \
+      {                                                                                                                                                                                                   \
+         VECTORIZE_VALUE(_result, 5)                                                                                                                                                                      \
+         COUNT = _result;                                                                                                                                                                                 \
+      }                                                                                                                                                                                                   \
+      else                                                                                                                                                                                                \
+      {                                                                                                                                                                                                   \
+         VECTORIZE_VALUE(_result, 6)                                                                                                                                                                      \
+         COUNT = _result;                                                                                                                                                                                 \
+      }                                                                                                                                                                                                   \
+      SHIFTED = _result_lshifted >> (BOOST_PP_SUB(64, man_bits));                                                                                                                                         \
+      BIT_RESIZE(COUNT, CEIL_LOG2(man_bits));                                                                                                                                                             \
+   }
 
 #endif

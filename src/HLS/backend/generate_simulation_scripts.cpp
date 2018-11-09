@@ -29,14 +29,14 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file generate_simulation_scripts.cpp
  * @brief Wrapper used to generate simulation scripts
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
 // include class header
 #include "generate_simulation_scripts.hpp"
@@ -44,17 +44,17 @@
 // include Autoheaders
 #include "config_headers/config_HAVE_LATTICE.hpp"
 #if HAVE_LATTICE
-#include "config_headers/config_LATTICE_PMI_TDPBE.hpp"
 #include "config_headers/config_LATTICE_PMI_MUL.hpp"
+#include "config_headers/config_LATTICE_PMI_TDPBE.hpp"
 #endif
 
 // include from ./
 #include "Parameter.hpp"
 
-///behavior include
+/// behavior include
 #include "call_graph_manager.hpp"
 
-///circuit include
+/// circuit include
 #include "structural_manager.hpp"
 
 // include from HLS
@@ -73,34 +73,34 @@
 
 // include from tree
 #include "behavioral_helper.hpp"
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 
-GenerateSimulationScripts::GenerateSimulationScripts(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) :
-   HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::GENERATE_SIMULATION_SCRIPT)
-{}
-
-GenerateSimulationScripts::~GenerateSimulationScripts()
-= default;
-
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > GenerateSimulationScripts::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+GenerateSimulationScripts::GenerateSimulationScripts(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
+    : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::GENERATE_SIMULATION_SCRIPT)
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ret;
+}
+
+GenerateSimulationScripts::~GenerateSimulationScripts() = default;
+
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> GenerateSimulationScripts::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+{
+   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
-         {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_HDL, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
-            ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_GENERATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
-            break;
-         }
+      {
+         ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_HDL, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_GENERATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         break;
+      }
       case INVALIDATION_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       case PRECEDENCE_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       default:
          THROW_UNREACHABLE("");
    }
@@ -126,7 +126,7 @@ DesignFlowStep_Status GenerateSimulationScripts::Exec()
       full_list.push_back(hdl_file);
    }
 #if HAVE_LATTICE
-   if (BackendFlow::DetermineBackendFlowType(HLSMgr->get_HLS_target()->get_target_device(), parameters) == BackendFlow::LATTICE_FPGA)
+   if(BackendFlow::DetermineBackendFlowType(HLSMgr->get_HLS_target()->get_target_device(), parameters) == BackendFlow::LATTICE_FPGA)
    {
       full_list.push_back(std::string(LATTICE_PMI_TDPBE));
       full_list.push_back(std::string(LATTICE_PMI_MUL));
@@ -135,23 +135,23 @@ DesignFlowStep_Status GenerateSimulationScripts::Exec()
    THROW_ASSERT(HLSMgr->RSim->filename_bench != "", "Testbench not yet set");
    full_list.push_back(HLSMgr->RSim->filename_bench);
 
-   if (parameters->getOption<std::string>(OPT_simulator) == "MODELSIM")
+   if(parameters->getOption<std::string>(OPT_simulator) == "MODELSIM")
    {
       HLSMgr->RSim->sim_tool = SimulationTool::CreateSimulationTool(SimulationTool::MODELSIM, parameters, suffix);
    }
-   else if (parameters->getOption<std::string>(OPT_simulator) == "ISIM")
+   else if(parameters->getOption<std::string>(OPT_simulator) == "ISIM")
    {
       HLSMgr->RSim->sim_tool = SimulationTool::CreateSimulationTool(SimulationTool::ISIM, parameters, suffix);
    }
-   else if (parameters->getOption<std::string>(OPT_simulator) == "XSIM")
+   else if(parameters->getOption<std::string>(OPT_simulator) == "XSIM")
    {
       HLSMgr->RSim->sim_tool = SimulationTool::CreateSimulationTool(SimulationTool::XSIM, parameters, suffix);
    }
-   else if (parameters->getOption<std::string>(OPT_simulator) == "ICARUS")
+   else if(parameters->getOption<std::string>(OPT_simulator) == "ICARUS")
    {
       HLSMgr->RSim->sim_tool = SimulationTool::CreateSimulationTool(SimulationTool::ICARUS, parameters, suffix);
    }
-   else if (parameters->getOption<std::string>(OPT_simulator) == "VERILATOR")
+   else if(parameters->getOption<std::string>(OPT_simulator) == "VERILATOR")
    {
       HLSMgr->RSim->sim_tool = SimulationTool::CreateSimulationTool(SimulationTool::VERILATOR, parameters, suffix);
    }

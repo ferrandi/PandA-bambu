@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file prettyPrintVertex.cpp
  * @brief Helper class supporting the printing of vertexes of a graph.
@@ -42,25 +42,24 @@
  *
 
 */
-///Header include
+/// Header include
 #include "prettyPrintVertex.hpp"
 
-///Behavior include
+/// Behavior include
 #include "behavioral_helper.hpp"
 #include "op_graph.hpp"
 
-///utility include
+/// utility include
+#include "simple_indent.hpp" // for simple_indent
 #include "var_pp_functor.hpp"
-#include "simple_indent.hpp"      // for simple_indent
 
-void prettyPrintVertex::get_internal_vars(const vertex &v, const OpGraphConstRef g, std::unordered_set<unsigned int> &list_of_variables, const BehavioralHelperConstRef BH)
+void prettyPrintVertex::get_internal_vars(const vertex& v, const OpGraphConstRef g, std::unordered_set<unsigned int>& list_of_variables, const BehavioralHelperConstRef BH)
 {
    const unsigned int node_id = g->CGetOpNodeInfo(v)->GetNodeId();
    if(node_id)
    {
       unsigned intermediate_var = BH->get_intermediate_var(node_id);
-      if(intermediate_var && !BH->is_an_indirect_ref(intermediate_var) && !BH->is_a_constant(intermediate_var) &&
-            !BH->is_a_component_ref(intermediate_var) && !BH->is_an_array_ref(intermediate_var) && !BH->is_an_addr_expr(intermediate_var))
+      if(intermediate_var && !BH->is_an_indirect_ref(intermediate_var) && !BH->is_a_constant(intermediate_var) && !BH->is_a_component_ref(intermediate_var) && !BH->is_an_array_ref(intermediate_var) && !BH->is_an_addr_expr(intermediate_var))
       {
          list_of_variables.insert(intermediate_var);
       }
@@ -69,17 +68,17 @@ void prettyPrintVertex::get_internal_vars(const vertex &v, const OpGraphConstRef
          unsigned int var = BH->get_operand_from_unary_expr(intermediate_var);
          while(true)
          {
-            if (BH->is_a_component_ref(var))
+            if(BH->is_a_component_ref(var))
             {
                var = BH->get_component_ref_record(var);
                continue;
             }
-            if (BH->is_an_array_ref(var))
+            if(BH->is_an_array_ref(var))
             {
                var = BH->get_array_ref_array(var);
                continue;
             }
-            if (BH->is_an_indirect_ref(var))
+            if(BH->is_an_indirect_ref(var))
             {
                var = BH->get_indirect_ref_var(var);
                continue;
@@ -92,7 +91,7 @@ void prettyPrintVertex::get_internal_vars(const vertex &v, const OpGraphConstRef
    }
 }
 
-void prettyPrintVertex::print_forward_declaration(std::ostream &os, unsigned int type, simple_indent &PP, const BehavioralHelperConstRef BH)
+void prettyPrintVertex::print_forward_declaration(std::ostream& os, unsigned int type, simple_indent& PP, const BehavioralHelperConstRef BH)
 {
-   PP(os, BH->print_forward_declaration(type)+";\n");
+   PP(os, BH->print_forward_declaration(type) + ";\n");
 }

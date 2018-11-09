@@ -184,7 +184,10 @@ namespace ac_math
       ac_fixed<W, 0, false> normalized_fixed;
 
       // If input is signed, take absolute value and assign to intermediate variable.
-      if(S) { input_abs_value = ((input >= 0) ? (ac_fixed<W, I, false>)input : (ac_fixed<W, I, false>)(-input)); }
+      if(S)
+      {
+         input_abs_value = ((input >= 0) ? (ac_fixed<W, I, false>)input : (ac_fixed<W, I, false>)(-input));
+      }
       // If input is unsigned, assign value of input to intermediate variable.
       else
       {
@@ -215,7 +218,10 @@ namespace ac_math
       if(input != 0)
       { // If input is non-zero, De-normalize output by shifting right by expret_temp
          // If input and output are signed, change sign of output_pwl based on whether input is positive or negative.
-         if(S && outS) { output_pwl = (input < 0) ? (output_pwl_type)(-output_pwl) : output_pwl; }
+         if(S && outS)
+         {
+            output_pwl = (input < 0) ? (output_pwl_type)(-output_pwl) : output_pwl;
+         }
          // ac_shift_right function used for denormalization so as to ensure saturation and rounding.
          ac_math::ac_shift_right(output_pwl, expret_temp, output_temp);
       }
@@ -306,7 +312,10 @@ namespace ac_math
       ac_float<outW, outI, outE, outQ> output_temp(recip_mantissa, -input.exp(), true);
 
       // If the input is zero, set the temp output to the max. possible value.
-      if(input.m == 0) { output_temp.template set_val<AC_VAL_MAX>(); }
+      if(input.m == 0)
+      {
+         output_temp.template set_val<AC_VAL_MAX>();
+      }
 
       output = output_temp;
 

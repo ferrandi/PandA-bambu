@@ -167,7 +167,10 @@ namespace ac_math
          i_s_t sum_Ajj_Ljk_sq;
          sum_Ajj_Ljk_sq = A[j][j];
       ARRAY_AC_FIXED_LJJ_K:
-         for(unsigned k = 0; k < M; k++) { sum_Ajj_Ljk_sq -= (k < j) ? L_int[j][k] * L_int[j][k] : 0; }
+         for(unsigned k = 0; k < M; k++)
+         {
+            sum_Ajj_Ljk_sq -= (k < j) ? L_int[j][k] * L_int[j][k] : 0;
+         }
 
          // Use a macro to activate the AC_ASSERT
 #ifdef ASSERT_ON_INVALID_INPUT
@@ -176,7 +179,10 @@ namespace ac_math
          // input matrix is positive definite
          AC_ASSERT(sum_Ajj_Ljk_sq > 0, "Input matrix is not positive definite");
 #endif
-         if(sum_Ajj_Ljk_sq <= 0) { pos_def = false; }
+         if(sum_Ajj_Ljk_sq <= 0)
+         {
+            pos_def = false;
+         }
          i_s_t_u recip_Ljj;
          T_out_u int_Ljj;
          // Compute values for and initialize diagonal elements using PWL/accurate math functions, as may be the case.
@@ -212,11 +218,17 @@ namespace ac_math
             i_s_t sum_Aij_Lik_Ljk;
             sum_Aij_Lik_Ljk = A[i][j];
          ARRAY_AC_FIXED_LIJ_K:
-            for(unsigned k = 0; k < M; k++) { sum_Aij_Lik_Ljk -= (k < j) ? L_int[i][k] * L_int[j][k] : 0; }
+            for(unsigned k = 0; k < M; k++)
+            {
+               sum_Aij_Lik_Ljk -= (k < j) ? L_int[i][k] * L_int[j][k] : 0;
+            }
             // Keep diagonal elements as they are
             // Initialize non-diagonal elements above diagonal to 0
             // Initialize non-diagonal elements below diagonal to appropriate calculated value.
-            if(i != j) { L_int[i][j] = (i > j) ? (T_out)(recip_Ljj * sum_Aij_Lik_Ljk) : 0; }
+            if(i != j)
+            {
+               L_int[i][j] = (i > j) ? (T_out)(recip_Ljj * sum_Aij_Lik_Ljk) : 0;
+            }
          }
       }
 
@@ -228,7 +240,10 @@ namespace ac_math
          for(unsigned i = 0; i < M; i++)
          {
          ARRAY_AC_FIXED_SET_OUTPUT_ZERO_COL:
-            for(unsigned j = 0; j < M; j++) { L[i][j] = 0; }
+            for(unsigned j = 0; j < M; j++)
+            {
+               L[i][j] = 0;
+            }
          }
       }
       else
@@ -239,7 +254,10 @@ namespace ac_math
          for(unsigned i = 0; i < M; i++)
          {
          ARRAY_AC_FIXED_COPY_INT_COL:
-            for(unsigned j = 0; j < M; j++) { L[i][j] = L_int[i][j]; }
+            for(unsigned j = 0; j < M; j++)
+            {
+               L[i][j] = L_int[i][j];
+            }
          }
       }
    }
@@ -320,7 +338,10 @@ namespace ac_math
          i_s_t sum_Ajj_Ljk_sq;
          sum_Ajj_Ljk_sq = A[j][j].r();
       ARRAY_AC_COMP_AC_FIXED_LJJ_K:
-         for(unsigned k = 0; k < M; k++) { sum_Ajj_Ljk_sq -= (k < j) ? L_int[j][k].mag_sqr() : 0; }
+         for(unsigned k = 0; k < M; k++)
+         {
+            sum_Ajj_Ljk_sq -= (k < j) ? L_int[j][k].mag_sqr() : 0;
+         }
 
          // Use a macro to activate the AC_ASSERT
 #ifdef ASSERT_ON_INVALID_INPUT
@@ -330,7 +351,10 @@ namespace ac_math
          AC_ASSERT(sum_Ajj_Ljk_sq > 0, "Input matrix is not positive definite");
 #endif
 
-         if(sum_Ajj_Ljk_sq <= 0) { pos_def = false; }
+         if(sum_Ajj_Ljk_sq <= 0)
+         {
+            pos_def = false;
+         }
 
          i_s_t_u recip_Ljj;
          T_out_fixed_u int_Ljj;
@@ -374,7 +398,10 @@ namespace ac_math
             ac_complex<i_s_t> sum_Aij_Lik_Ljk;
             sum_Aij_Lik_Ljk = A[i][j];
          ARRAY_AC_COMP_AC_FIXED_LIJ_K:
-            for(unsigned k = 0; k < M; k++) { sum_Aij_Lik_Ljk -= (k < j) ? L_int[i][k] * L_int[j][k].conj() : 0; }
+            for(unsigned k = 0; k < M; k++)
+            {
+               sum_Aij_Lik_Ljk -= (k < j) ? L_int[i][k] * L_int[j][k].conj() : 0;
+            }
             // Keep diagonal elements as they are
             // Initialize non-diagonal elements above diagonal to 0
             // Initialize non-diagonal elements below diagonal to appropriate calculated value.
@@ -409,7 +436,10 @@ namespace ac_math
          for(unsigned i = 0; i < M; i++)
          {
          ARRAY_AC_COMP_AC_FIXED_COPY_INT_COL:
-            for(unsigned j = 0; j < M; j++) { L[i][j] = L_int[i][j]; }
+            for(unsigned j = 0; j < M; j++)
+            {
+               L[i][j] = L_int[i][j];
+            }
          }
       }
    }

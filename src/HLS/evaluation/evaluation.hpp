@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file evaluation.hpp
  * @brief Class to compute evaluations about high-level synthesis
@@ -68,45 +68,45 @@ enum class Evaluation_Mode
  * Real evaluations or lower-bound/upper-bound evaluations can be provided.
  */
 class Evaluation
-#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
-final
+#if(__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
+    final
 #endif
-: public HLS_step
+    : public HLS_step
 {
-   private:
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+ private:
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor
-       * @param design_flow_manager is the design flow manager
-       * @param hls_flow_step_type is the type of evaluation
-       */
-      Evaluation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+ public:
+   /**
+    * Constructor
+    * @param design_flow_manager is the design flow manager
+    * @param hls_flow_step_type is the type of evaluation
+    */
+   Evaluation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Destructor
-       */
-      ~Evaluation() override;
+   /**
+    * Destructor
+    */
+   ~Evaluation() override;
 
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      bool HasToBeExecuted() const override;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status Exec() override
-#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
-         final
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status Exec() override
+#if(__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
+       final
 #endif
-         ;
+       ;
 };
 #endif

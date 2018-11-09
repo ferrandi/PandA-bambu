@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file SimulationTool.cpp
  * @brief Implementation of some methods for the interface with simulation tools
@@ -38,37 +38,32 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "SimulationTool.hpp"
-#include "config_HAVE_ASSERTS.hpp"           // for HAVE_ASSERTS
+#include "config_HAVE_ASSERTS.hpp" // for HAVE_ASSERTS
 
 #include "ToolManager.hpp"
 
-#include "modelsimWrapper.hpp"
 #include "ISE_isim_wrapper.hpp"
-#include "VIVADO_xsim_wrapper.hpp"
 #include "IcarusWrapper.hpp"
+#include "VIVADO_xsim_wrapper.hpp"
 #include "VerilatorWrapper.hpp"
+#include "modelsimWrapper.hpp"
 
 #include "Parameter.hpp"
 #include "fileIO.hpp"
+#include "string_manipulation.hpp" // for Trimspaces
 #include <cmath>
-#include "string_manipulation.hpp"          // for Trimspaces
 
-SimulationTool::SimulationTool(const ParameterConstRef& _Param) :
-   Param(_Param),
-   debug_level(Param->getOption<int>(OPT_debug_level)),
-   output_level(Param->getOption<unsigned int>(OPT_output_level))
+SimulationTool::SimulationTool(const ParameterConstRef& _Param) : Param(_Param), debug_level(Param->getOption<int>(OPT_debug_level)), output_level(Param->getOption<unsigned int>(OPT_output_level))
 {
-
 }
 
-SimulationTool::~SimulationTool()
-= default;
+SimulationTool::~SimulationTool() = default;
 
 SimulationToolRef SimulationTool::CreateSimulationTool(type_t type, const ParameterConstRef& _Param, const std::string& suffix)
 {
-   switch (type)
+   switch(type)
    {
       case UNKNOWN:
          THROW_ERROR("Simulation tool not specified");
@@ -91,43 +86,47 @@ SimulationToolRef SimulationTool::CreateSimulationTool(type_t type, const Parame
       default:
          THROW_ERROR("Simulation tool currently not supported");
    }
-   ///this point should never be reached
+   /// this point should never be reached
    return SimulationToolRef();
 }
 
 void SimulationTool::CheckExecution()
 {
-   ///for default, nothing to do
+   /// for default, nothing to do
 }
 
-unsigned long long int SimulationTool::Simulate(unsigned long long int &accum_cycles, unsigned int &n_testcases)
+unsigned long long int SimulationTool::Simulate(unsigned long long int& accum_cycles, unsigned int& n_testcases)
 {
-   if (generated_script.empty()) {
+   if(generated_script.empty())
+   {
       THROW_ERROR("Simulation script not yet generated");
-}
+   }
 
    /// remove previous simulation results
    auto result_file = Param->getOption<std::string>(OPT_simulation_output);
-   if (boost::filesystem::exists(result_file)) {
+   if(boost::filesystem::exists(result_file))
+   {
       boost::filesystem::remove_all(result_file);
-}
+   }
    auto profiling_result_file = Param->getOption<std::string>(OPT_profiling_output);
-   if (boost::filesystem::exists(profiling_result_file)) {
+   if(boost::filesystem::exists(profiling_result_file))
+   {
       boost::filesystem::remove_all(profiling_result_file);
-}
+   }
    ToolManagerRef tool(new ToolManager(Param));
    tool->configure("./" + generated_script, "");
    std::vector<std::string> parameters, input_files, output_files;
    tool->execute(parameters, input_files, output_files, Param->getOption<std::string>(OPT_output_temporary_directory) + "/simulation_output");
 
-   if(!log_file.empty() && output_level == OUTPUT_LEVEL_VERBOSE) {
+   if(!log_file.empty() && output_level == OUTPUT_LEVEL_VERBOSE)
+   {
       CopyStdout(log_file);
-}
+   }
 
    return DetermineCycles(accum_cycles, n_testcases);
 }
 
-unsigned long long int SimulationTool::DetermineCycles(unsigned long long int &accum_cycles, unsigned int &n_testcases)
+unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& accum_cycles, unsigned int& n_testcases)
 {
    unsigned long long int num_cycles = 0;
    unsigned int i = 0;
@@ -135,72 +134,84 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int &a
    auto profiling_result_file = Param->getOption<std::string>(OPT_profiling_output);
    if(!boost::filesystem::exists(profiling_result_file))
    {
-      if (!boost::filesystem::exists(result_file))
+      if(!boost::filesystem::exists(result_file))
       {
-         if(output_level != OUTPUT_LEVEL_VERBOSE) {
+         if(output_level != OUTPUT_LEVEL_VERBOSE)
+         {
             CopyStdout(log_file);
-}
+         }
          THROW_ERROR("The simulation does not end correctly");
       }
       std::ifstream res_file(result_file.c_str());
-      if (res_file.is_open())
+      if(res_file.is_open())
       {
          PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "File \"" + result_file + "\" opened");
          while(!res_file.eof())
          {
             std::string line;
-            getline (res_file, line);
-            if (line.empty()) { continue;
-}
+            getline(res_file, line);
+            if(line.empty())
+            {
+               continue;
+            }
             line = TrimSpaces(line);
             std::vector<std::string> filevalues;
             boost::algorithm::split(filevalues, line, boost::algorithm::is_any_of("\t "));
-            if (filevalues[0] == "X")
+            if(filevalues[0] == "X")
             {
                CopyStdout(log_file);
                if(not Param->isOption(OPT_discrepancy) or not Param->getOption<bool>(OPT_discrepancy))
                {
                   THROW_ERROR("Simulation not terminated!");
                }
-               else { break;
-}
+               else
+               {
+                  break;
+               }
             }
-            else if (filevalues[0] == "0")
+            else if(filevalues[0] == "0")
             {
                CopyStdout(log_file);
                if(not Param->isOption(OPT_discrepancy) or not Param->getOption<bool>(OPT_discrepancy))
                {
                   THROW_ERROR("Simulation not correct!");
                }
-               else { break;
-}
+               else
+               {
+                  break;
+               }
             }
-            else if (filevalues[0] == "-")
+            else if(filevalues[0] == "-")
             {
                THROW_WARNING("Simulation completed but it is not possible to determine if it is correct!");
             }
-            else if (filevalues[0] != "1")
+            else if(filevalues[0] != "1")
             {
                CopyStdout(log_file);
                THROW_ERROR("String not valid: " + line);
             }
             auto sim_cycles = boost::lexical_cast<unsigned long long int>(filevalues[1]);
-            ///Remove one cycle if primary input are registered
+            /// Remove one cycle if primary input are registered
             if(Param->getOption<std::string>(OPT_registered_inputs) == "top")
             {
                sim_cycles -= 1;
             }
             if(filevalues.size() == 3)
             {
-               if(filevalues[2] == "ns") {
+               if(filevalues[2] == "ns")
+               {
                   sim_cycles = static_cast<unsigned long long int>(static_cast<long double>(sim_cycles) / Param->getOption<long double>(OPT_clock_period));
-               } else if(filevalues[2] == "ps") {
+               }
+               else if(filevalues[2] == "ps")
+               {
                   sim_cycles = static_cast<unsigned long long int>(static_cast<long double>(sim_cycles) / 1000 / Param->getOption<long double>(OPT_clock_period));
-               } else {
+               }
+               else
+               {
                   THROW_ERROR("Unexpected time unit: " + filevalues[2]);
-}
+               }
             }
-            PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, (i+1) << ". Simulation completed with SUCCESS; Execution time " << sim_cycles << " cycles;");
+            PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, (i + 1) << ". Simulation completed with SUCCESS; Execution time " << sim_cycles << " cycles;");
             num_cycles += sim_cycles;
             i++;
          }
@@ -214,47 +225,54 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int &a
    else
    {
       /// check for Not correct termination
-      if (!boost::filesystem::exists(result_file))
+      if(!boost::filesystem::exists(result_file))
       {
-         if(output_level != OUTPUT_LEVEL_VERBOSE) {
+         if(output_level != OUTPUT_LEVEL_VERBOSE)
+         {
             CopyStdout(log_file);
-}
+         }
          THROW_ERROR("The simulation does not end correctly");
       }
       std::ifstream res_file(result_file.c_str());
-      if (res_file.is_open())
+      if(res_file.is_open())
       {
          PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "File \"" + result_file + "\" opened");
          while(!res_file.eof())
          {
             std::string line;
-            getline (res_file, line);
-            if (line.empty()) { continue;
-}
+            getline(res_file, line);
+            if(line.empty())
+            {
+               continue;
+            }
             line = TrimSpaces(line);
             std::vector<std::string> filevalues;
             boost::algorithm::split(filevalues, line, boost::algorithm::is_any_of("\t "));
-            if (filevalues[0] == "X")
+            if(filevalues[0] == "X")
             {
                CopyStdout(log_file);
                if(not Param->isOption(OPT_discrepancy) or not Param->getOption<bool>(OPT_discrepancy))
                {
                   THROW_ERROR("Simulation not terminated!");
                }
-               else { break;
-}
+               else
+               {
+                  break;
+               }
             }
-            else if (filevalues[0] == "0")
+            else if(filevalues[0] == "0")
             {
                CopyStdout(log_file);
                if(not Param->isOption(OPT_discrepancy) or not Param->getOption<bool>(OPT_discrepancy))
                {
                   THROW_ERROR("Simulation not correct!");
                }
-               else { break;
-}
+               else
+               {
+                  break;
+               }
             }
-            else if (filevalues[0] != "1")
+            else if(filevalues[0] != "1")
             {
                CopyStdout(log_file);
                THROW_ERROR("String not valid: " + line);
@@ -267,25 +285,27 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int &a
          THROW_ERROR("Result file not correctly created");
       }
       std::ifstream profiling_res_file(profiling_result_file.c_str());
-      if (profiling_res_file.is_open())
+      if(profiling_res_file.is_open())
       {
          PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "File \"" + profiling_result_file + "\" opened");
          double clock_period = Param->isOption(OPT_clock_period) ? Param->getOption<double>(OPT_clock_period) : 10;
-         double time_stamp = 0.0 ;
+         double time_stamp = 0.0;
 #if HAVE_ASSERTS
          unsigned int prev_state = 3;
 #endif
          while(!profiling_res_file.eof())
          {
             std::string line;
-            getline (profiling_res_file, line);
-            if (line.empty()) { continue;
-}
+            getline(profiling_res_file, line);
+            if(line.empty())
+            {
+               continue;
+            }
             std::vector<std::string> filevalues;
             boost::algorithm::split(filevalues, line, boost::algorithm::is_any_of("\t"));
             boost::trim(filevalues[0]);
             boost::trim(filevalues[1]);
-            if (filevalues[0] != "2" && filevalues[0] != "3")
+            if(filevalues[0] != "2" && filevalues[0] != "3")
             {
                CopyStdout(log_file);
                THROW_ERROR("String not valid: " + line);
@@ -308,7 +328,7 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int &a
             }
             i++;
          }
-         num_cycles = static_cast<unsigned long long int>(std::round(time_stamp/clock_period));
+         num_cycles = static_cast<unsigned long long int>(std::round(time_stamp / clock_period));
          i = i / 2;
          PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Simulation completed with SUCCESS; Total Execution time " << num_cycles << " cycles; Number of executions " << i << ";");
       }
@@ -321,18 +341,21 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int &a
 
    if(i == 0)
    {
-      if(not Param->isOption(OPT_discrepancy) or not Param->getOption<bool>(OPT_discrepancy)) {
+      if(not Param->isOption(OPT_discrepancy) or not Param->getOption<bool>(OPT_discrepancy))
+      {
          THROW_ERROR("Expected a number of cycles different from zero. Something wrong happened during the simulation!");
-      } else {
-         num_cycles=i=1;
-}
+      }
+      else
+      {
+         num_cycles = i = 1;
+      }
    }
    accum_cycles = num_cycles;
    n_testcases = i;
-   return num_cycles/i;
+   return num_cycles / i;
 }
 
-std::string SimulationTool::GenerateSimulationScript(const std::string& top_filename, const std::list<std::string> & file_list)
+std::string SimulationTool::GenerateSimulationScript(const std::string& top_filename, const std::list<std::string>& file_list)
 {
    std::ostringstream script;
    script << "#!/bin/bash" << std::endl;
@@ -348,7 +371,7 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
       script << "cat " << log_file << std::endl << std::endl;
    }
 
-   //Create the simulation script
+   // Create the simulation script
    generated_script = std::string("simulate_") + top_filename + std::string(".sh");
    std::ofstream file_stream(generated_script.c_str());
    file_stream << script.str() << std::endl;

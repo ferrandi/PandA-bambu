@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
@@ -47,35 +47,30 @@ CONSTREF_FORWARD_DECL(Parameter);
 
 class HWCallPathCalculator : public boost::default_dfs_visitor
 {
-   protected:
+ protected:
+   const HLS_managerRef HLSMgr;
 
-      const HLS_managerRef HLSMgr;
+   const ParameterConstRef parameters;
 
-      const ParameterConstRef parameters;
+   std::map<unsigned int, vertex>& call_id_to_OpVertex;
 
-      std::map<unsigned int, vertex> & call_id_to_OpVertex;
+   std::stack<std::string> scope;
 
-      std::stack<std::string> scope;
+   std::stack<vertex> caller;
 
-      std::stack<vertex> caller;
+   // The key is the name of a shared function, the mapped value is the HW
+   // scope of that shared function
+   std::map<std::string, std::string> shared_fun_scope;
 
-      // The key is the name of a shared function, the mapped value is the HW
-      // scope of that shared function
-      std::map<std::string, std::string > shared_fun_scope;
+   std::string top_fun_scope;
 
-      std::string top_fun_scope;
+ public:
+   HWCallPathCalculator(HLS_managerRef _HLSMgr, ParameterConstRef _parameters, std::map<unsigned int, vertex>& _call_id_to_OpVertex);
 
-   public:
+   ~HWCallPathCalculator();
 
-      HWCallPathCalculator(
-         HLS_managerRef _HLSMgr,
-         ParameterConstRef _parameters,
-         std::map<unsigned int, vertex> & _call_id_to_OpVertex);
-
-      ~HWCallPathCalculator();
-
-      void start_vertex(const UnfoldedVertexDescriptor & v, const UnfoldedCallGraph & ucg);
-      void discover_vertex(const UnfoldedVertexDescriptor & v, const UnfoldedCallGraph & ucg);
-      void finish_vertex(const UnfoldedVertexDescriptor & v, const UnfoldedCallGraph &);
-      void examine_edge(const EdgeDescriptor & e, const UnfoldedCallGraph & cg);
+   void start_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph& ucg);
+   void discover_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph& ucg);
+   void finish_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph&);
+   void examine_edge(const EdgeDescriptor& e, const UnfoldedCallGraph& cg);
 };

@@ -29,51 +29,51 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file intermediate_representation.hpp
  * @brief Base class for intermediate representation
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef INTERMEDIATE_REPRESENTATION_HPP
 #define INTERMEDIATE_REPRESENTATION_HPP
 
-///utility include
+/// utility include
 #include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(Parameter);
 
 class IntermediateRepresentation
 {
-   protected:
-      ///The set of input parameters
-      const ParameterConstRef parameters;
+ protected:
+   /// The set of input parameters
+   const ParameterConstRef parameters;
 
-      ///The debug level
-      int debug_level;
+   /// The debug level
+   int debug_level;
 
-   public:
-      /**
-       * Constructor
-       * @param parameters is the set of input parameters
-       */
-      explicit IntermediateRepresentation(const ParameterConstRef& parameters);
+ public:
+   /**
+    * Constructor
+    * @param parameters is the set of input parameters
+    */
+   explicit IntermediateRepresentation(const ParameterConstRef& parameters);
 
-      /**
-       * Destructor
-       */
-      virtual ~IntermediateRepresentation();
+   /**
+    * Destructor
+    */
+   virtual ~IntermediateRepresentation();
 
-      /**
-       * Initialize all the data structure
-       */
-      virtual void Initialize() = 0;
+   /**
+    * Initialize all the data structure
+    */
+   virtual void Initialize() = 0;
 
-      /**
-       * Clear all the data structure
-       */
-      virtual void Clear() = 0;
+   /**
+    * Clear all the data structure
+    */
+   virtual void Clear() = 0;
 };
 #endif

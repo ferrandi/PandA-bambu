@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file par_wrapper.hpp
  * @brief Wrapper to par by XILINX
@@ -41,15 +41,15 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef _XILINX_PAR_WRAPPER_HPP_
 #define _XILINX_PAR_WRAPPER_HPP_
 
 #include "XilinxWrapper.hpp"
 
-#define PAR_TOOL_ID    "par"
+#define PAR_TOOL_ID "par"
 
-#define PARAM_par_tmpdir    "par_tmpdir"
+#define PARAM_par_tmpdir "par_tmpdir"
 
 /**
  * @class par_wrapper
@@ -57,38 +57,35 @@
  */
 class par_wrapper : public XilinxWrapper
 {
-   protected:
+ protected:
+   /**
+    * Initializes the reserved variables
+    */
+   void init_reserved_vars() override;
 
-      /**
-       * Initializes the reserved variables
-       */
-      void init_reserved_vars() override;
+   /**
+    * Evaluates the design variables
+    */
+   void EvaluateVariables(const DesignParametersRef dp) override;
 
-      /**
-       * Evaluates the design variables
-       */
-      void EvaluateVariables(const DesignParametersRef dp) override;
+   /**
+    * Returns the proper command line
+    */
+   std::string get_command_line(const DesignParametersRef& dp) const override;
 
-      /**
-       * Returns the proper command line
-       */
-      std::string get_command_line(const DesignParametersRef& dp) const override;
+ public:
+   /**
+    * Constructor
+    * @param Param is the set of parameters
+    */
+   par_wrapper(const ParameterConstRef& Param, const std::string& _output_dir, const target_deviceRef& _device);
 
-   public:
-
-      /**
-       * Constructor
-       * @param Param is the set of parameters
-       */
-      par_wrapper(const ParameterConstRef& Param, const std::string& _output_dir, const target_deviceRef& _device);
-
-      /**
-       * Destructor
-       */
-      ~par_wrapper() override;
-
+   /**
+    * Destructor
+    */
+   ~par_wrapper() override;
 };
-///Refcount definition for the class
+/// Refcount definition for the class
 typedef refcount<par_wrapper> par_wrapperRef;
 
 #endif

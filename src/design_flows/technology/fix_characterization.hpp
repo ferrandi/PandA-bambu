@@ -29,22 +29,22 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file fix_characterization.hpp
  * @brief Step to fix components characterization
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
 #ifndef FIX_CHARACTERIZATION_HPP
 #define FIX_CHARACTERIZATION_HPP
 
-///Superclass include
+/// Superclass include
 #include "technology_flow_step.hpp"
 
-///utility include
+/// utility include
 #include "refcount.hpp"
 #include "utility.hpp"
 
@@ -56,46 +56,45 @@ REF_FORWARD_DECL(technology_manager);
  */
 class FixCharacterization : public TechnologyFlowStep
 {
-   protected:
-      ///The execution time of the assignment
-      double assignment_execution_time;
+ protected:
+   /// The execution time of the assignment
+   double assignment_execution_time;
 
-      ///The estimated execution time of connection
-      double connection_time;
+   /// The estimated execution time of connection
+   double connection_time;
 
-      ///The timestamp of the assignment
-      TimeStamp assignment_characterization_timestamp;
+   /// The timestamp of the assignment
+   TimeStamp assignment_characterization_timestamp;
 
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<TechnologyFlowStep_Type> ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<TechnologyFlowStep_Type> ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor.
-       * @param TM is the technology manager
-       * @param design_flow_manager is the design flow manager
-       * @param parameters is the set of input parameters
-       */
-      FixCharacterization(const technology_managerRef TM, const target_deviceRef target, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor.
+    * @param TM is the technology manager
+    * @param design_flow_manager is the design flow manager
+    * @param parameters is the set of input parameters
+    */
+   FixCharacterization(const technology_managerRef TM, const target_deviceRef target, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-      /**
-       * Destructor
-       */
-      ~FixCharacterization() override;
+   /**
+    * Destructor
+    */
+   ~FixCharacterization() override;
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status Exec() override;
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status Exec() override;
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      void Initialize() override;
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 };
 #endif
-

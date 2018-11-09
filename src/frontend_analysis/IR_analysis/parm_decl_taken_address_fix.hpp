@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file parm_decl_taken_address_fix.cpp
  *
@@ -44,33 +44,29 @@
 
 class parm_decl_taken_address_fix : public FunctionFrontendFlowStep
 {
-   protected:
+ protected:
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status InternalExec() override;
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const
-      std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> >
-      ComputeFrontendRelationships( const DesignFlowStep::RelationshipType relationship_type) const override;
+ public:
+   /**
+    * Constructor
+    */
+   parm_decl_taken_address_fix(const ParameterConstRef params, const application_managerRef AM, unsigned int fun_id, const DesignFlowManagerConstRef dfm);
 
-   public :
-
-      /**
-       * Constructor
-       */
-      parm_decl_taken_address_fix(const ParameterConstRef params, const application_managerRef AM,unsigned int fun_id, const DesignFlowManagerConstRef dfm);
-
-      /**
-       * Destructor
-       */
-      ~parm_decl_taken_address_fix() override;
+   /**
+    * Destructor
+    */
+   ~parm_decl_taken_address_fix() override;
 };
 
 #endif

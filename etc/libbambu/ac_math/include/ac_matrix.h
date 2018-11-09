@@ -113,16 +113,26 @@ class ac_matrix
    };
 
    // Constructor: new (empty) MxN matrix
-   ac_matrix() {}
+   ac_matrix()
+   {
+   }
 
    // Constructor: new MxN matrix initialized with value v
-   ac_matrix(const T& v) { initialize(v); }
+   ac_matrix(const T& v)
+   {
+      initialize(v);
+   }
 
    // Copy constructor
-   ac_matrix(const ac_matrix<T, M, N>& other) { copy_contents(other); }
+   ac_matrix(const ac_matrix<T, M, N>& other)
+   {
+      copy_contents(other);
+   }
 
    // Destructor
-   ~ac_matrix() {}
+   ~ac_matrix()
+   {
+   }
 
    inline static std::string type_name()
    {
@@ -179,7 +189,10 @@ class ac_matrix
       // assert(col+S<N);
       for(unsigned i = 0; i < R; i++)
       {
-         for(unsigned j = 0; j < S; j++) { submatrix(i, j) = (*this)(i + row, j + col); }
+         for(unsigned j = 0; j < S; j++)
+         {
+            submatrix(i, j) = (*this)(i + row, j + col);
+         }
       }
       return submatrix;
    }
@@ -190,13 +203,22 @@ class ac_matrix
    template <class T2, unsigned M2, unsigned N2>
    bool operator!=(const ac_matrix<T2, M2, N2>& other) const
    {
-      if(M2 != M) { return true; }
-      if(N2 != N) { return true; }
+      if(M2 != M)
+      {
+         return true;
+      }
+      if(N2 != N)
+      {
+         return true;
+      }
       for(unsigned i = 0; i < M; i++)
       {
          for(unsigned j = 0; j < N; j++)
          {
-            if((*this)(i, j) != other(i, j)) { return true; }
+            if((*this)(i, j) != other(i, j))
+            {
+               return true;
+            }
          }
       }
       return false;
@@ -219,7 +241,10 @@ class ac_matrix
       ac_matrix<typename ac::rt_2T<T, T2>::plus, M, N> result;
       for(unsigned i = 0; i < M; i++)
       {
-         for(unsigned j = 0; j < N; j++) { result(i, j) = (*this)(i, j) + op2(i, j); }
+         for(unsigned j = 0; j < N; j++)
+         {
+            result(i, j) = (*this)(i, j) + op2(i, j);
+         }
       }
       return result;
    }
@@ -230,7 +255,10 @@ class ac_matrix
    {
       for(unsigned i = 0; i < M; i++)
       {
-         for(unsigned j = 0; j < N; j++) { (*this)(i, j) += op2(i, j); }
+         for(unsigned j = 0; j < N; j++)
+         {
+            (*this)(i, j) += op2(i, j);
+         }
       }
       return *this;
    }
@@ -243,7 +271,10 @@ class ac_matrix
       ac_matrix<typename ac::rt_2T<T, T2>::minus, M, N> result;
       for(unsigned i = 0; i < M; i++)
       {
-         for(unsigned j = 0; j < N; j++) { result(i, j) = (*this)(i, j) - op2(i, j); }
+         for(unsigned j = 0; j < N; j++)
+         {
+            result(i, j) = (*this)(i, j) - op2(i, j);
+         }
       }
       return result;
    }
@@ -254,7 +285,10 @@ class ac_matrix
    {
       for(unsigned i = 0; i < M; i++)
       {
-         for(unsigned j = 0; j < N; j++) { (*this)(i, j) -= op2(i, j); }
+         for(unsigned j = 0; j < N; j++)
+         {
+            (*this)(i, j) -= op2(i, j);
+         }
       }
       return *this;
    }
@@ -270,7 +304,10 @@ class ac_matrix
       ac_matrix<typename ac::rt_2T<T, T2>::mult, M, N> result;
       for(unsigned i = 0; i < M; i++)
       {
-         for(unsigned j = 0; j < N; j++) { result(i, j) = (*this)(i, j) * op2(i, j); }
+         for(unsigned j = 0; j < N; j++)
+         {
+            result(i, j) = (*this)(i, j) * op2(i, j);
+         }
       }
       return result;
    }
@@ -289,7 +326,10 @@ class ac_matrix
          for(unsigned j = 0; j < Q; j++)
          {
             T tsum = 0;
-            for(unsigned k = 0; k < N; k++) { tsum += (*this)(i, k) * op2(k, j); }
+            for(unsigned k = 0; k < N; k++)
+            {
+               tsum += (*this)(i, k) * op2(k, j);
+            }
             result(i, j) = tsum;
          }
       }
@@ -305,7 +345,10 @@ class ac_matrix
       ac_matrix<T, N, M> result;
       for(unsigned i = 0; i < M; i++)
       {
-         for(unsigned j = 0; j < N; j++) { result(i, j) = (*this)(i, j); }
+         for(unsigned j = 0; j < N; j++)
+         {
+            result(i, j) = (*this)(i, j);
+         }
       }
       return result;
    }
@@ -319,7 +362,10 @@ class ac_matrix
       T t = (T)0;
       for(unsigned i = 0; i < M; i++)
       {
-         for(unsigned j = 0; j < N; j++) { t += (*this)(i, j); }
+         for(unsigned j = 0; j < N; j++)
+         {
+            t += (*this)(i, j);
+         }
       }
       return t;
    }
@@ -334,7 +380,10 @@ class ac_matrix
       ac_matrix<T, M, N> result;
       for(unsigned i = 0; i < M; i++)
       {
-         for(unsigned j = 0; j < N; j++) { result(i, j) = (T)(scale * (*this)(i, j)); }
+         for(unsigned j = 0; j < N; j++)
+         {
+            result(i, j) = (T)(scale * (*this)(i, j));
+         }
       }
       return result;
    }
@@ -365,7 +414,10 @@ class ac_matrix
    {
       for(unsigned x = 0; x < M; x++)
       {
-         for(unsigned y = 0; y < N; y++) { (*this)(x, y) = other(x, y); }
+         for(unsigned y = 0; y < N; y++)
+         {
+            (*this)(x, y) = other(x, y);
+         }
       }
    }
 
@@ -373,7 +425,10 @@ class ac_matrix
    {
       for(unsigned x = 0; x < M; x++)
       {
-         for(unsigned y = 0; y < N; y++) { (*this)(x, y) = v; }
+         for(unsigned y = 0; y < N; y++)
+         {
+            (*this)(x, y) = v;
+         }
       }
    }
 };
@@ -422,12 +477,18 @@ std::ostream& operator<<(std::ostream& os, const ac_matrix<T, M, N>& m)
 {
    // column header
    os << "   ";
-   for(unsigned j = 0; j < N; j++) { os << "[" << j << "]  "; }
+   for(unsigned j = 0; j < N; j++)
+   {
+      os << "[" << j << "]  ";
+   }
    os << std::endl;
    for(unsigned i = 0; i < M; i++)
    {
       os << "[" << i << "] ";
-      for(unsigned j = 0; j < N; j++) { os << m(i, j) << "  "; }
+      for(unsigned j = 0; j < N; j++)
+      {
+         os << m(i, j) << "  ";
+      }
       os << std::endl;
    }
    return os;

@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file quartus_13_wrapper.hpp
  * @brief Wrapper to quartus 13.x and newer
@@ -38,40 +38,35 @@
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef QUARTUS_13_WRAPPER_HPP
 #define QUARTUS_13_WRAPPER_HPP
 
-///superclass include
+/// superclass include
 #include "AlteraWrapper.hpp"
 
-#define QUARTUS_SETUP_TOOL_ID     "quartus_setup"
-#define QUARTUS_FLOW_TOOL_ID      "quartus_flow"
-#define QUARTUS_FLOW_TOOL_EXEC    "quartus_sh"
+#define QUARTUS_SETUP_TOOL_ID "quartus_setup"
+#define QUARTUS_FLOW_TOOL_ID "quartus_flow"
+#define QUARTUS_FLOW_TOOL_EXEC "quartus_sh"
 
-
-class Quartus13Wrapper: public AlteraWrapper
+class Quartus13Wrapper : public AlteraWrapper
 {
-   public:
+ public:
+   /**
+    * Constructor
+    * @param Param is the set of parameters
+    * @param output_dir is the directory where to save all the results
+    */
+   Quartus13Wrapper(const ParameterConstRef& Param, const std::string& _output_dir, const target_deviceRef& _device);
 
-      /**
-       * Constructor
-       * @param Param is the set of parameters
-       * @param output_dir is the directory where to save all the results
-       */
-      Quartus13Wrapper(const ParameterConstRef& Param, const std::string& _output_dir, const target_deviceRef& _device);
+   /**
+    * Destructor
+    */
+   ~Quartus13Wrapper() override;
 
-      /**
-       * Destructor
-       */
-      ~Quartus13Wrapper() override;
-
-      /**
-       * Returns the proper command line
-       */
-      std::string get_command_line(const DesignParametersRef& dp) const override;
-
+   /**
+    * Returns the proper command line
+    */
+   std::string get_command_line(const DesignParametersRef& dp) const override;
 };
 #endif
-
-

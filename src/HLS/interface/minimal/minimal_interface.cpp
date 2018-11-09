@@ -84,7 +84,8 @@ minimal_interface::~minimal_interface() = default;
 DesignFlowStep_Status minimal_interface::InternalExec()
 {
    const structural_managerRef SM = HLS->top;
-   if(!SM) THROW_ERROR("Top component has not been created yet!");
+   if(!SM)
+      THROW_ERROR("Top component has not been created yet!");
 
    structural_objectRef wrappedObj = SM->get_circ();
    std::string module_name = wrappedObj->get_id() + "_minimal_interface";
@@ -115,7 +116,8 @@ DesignFlowStep_Status minimal_interface::InternalExec()
 static bool compareMemVarsPair(std::pair<unsigned int, memory_symbolRef>& first, std::pair<unsigned int, memory_symbolRef>& second)
 {
    bool result = false;
-   if(first.second->get_address() < second.second->get_address()) result = true;
+   if(first.second->get_address() < second.second->get_address())
+      result = true;
 
    return result;
 }
@@ -198,7 +200,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                   param_renamed.insert(argName_string);
                }
                else
-                  THROW_ERROR("unexpected parameter type for "+argName_string + "(" + interfaceType+")");
+                  THROW_ERROR("unexpected parameter type for " + argName_string + "(" + interfaceType + ")");
             }
          }
       }
@@ -273,7 +275,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             structural_objectRef shared_memory;
             bool is_memory_splitted;
             std::string latency_postfix = "";
-            if(parameters->getOption<std::string>(OPT_bram_high_latency) != "") latency_postfix = parameters->getOption<std::string>(OPT_bram_high_latency);
+            if(parameters->getOption<std::string>(OPT_bram_high_latency) != "")
+               latency_postfix = parameters->getOption<std::string>(OPT_bram_high_latency);
             if(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_11 or parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_N1)
             {
                is_memory_splitted = false;
@@ -319,7 +322,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             for(unsigned int i = 0; i < shared_memory_module->get_in_port_size(); i++)
             {
                structural_objectRef port = shared_memory_module->get_in_port(i);
-               if(GetPointer<port_o>(port)->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0) GetPointer<port_o>(port)->add_n_ports(n_ports, port);
+               if(GetPointer<port_o>(port)->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
+                  GetPointer<port_o>(port)->add_n_ports(n_ports, port);
                if(GetPointer<port_o>(port) && GetPointer<port_o>(port)->get_is_data_bus())
                   port->type_resize(bus_data_bitsize);
                else if(GetPointer<port_o>(port) && GetPointer<port_o>(port)->get_is_addr_bus())
@@ -330,7 +334,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             for(unsigned int i = 0; i < shared_memory_module->get_out_port_size(); i++)
             {
                structural_objectRef port = shared_memory_module->get_out_port(i);
-               if(GetPointer<port_o>(port)->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0) GetPointer<port_o>(port)->add_n_ports(n_ports, port);
+               if(GetPointer<port_o>(port)->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
+                  GetPointer<port_o>(port)->add_n_ports(n_ports, port);
                if(GetPointer<port_o>(port) && GetPointer<port_o>(port)->get_is_data_bus())
                   port->type_resize(bus_data_bitsize);
                else if(GetPointer<port_o>(port) && GetPointer<port_o>(port)->get_is_addr_bus())
@@ -347,7 +352,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             unsigned int counter = 0;
             bool is_even = true;
             std::list<std::pair<unsigned int, memory_symbolRef>> mem_variables;
-            for(const auto& mem_var : mem_vars) mem_variables.push_back(std::make_pair(mem_var.first, mem_var.second));
+            for(const auto& mem_var : mem_vars)
+               mem_variables.push_back(std::make_pair(mem_var.first, mem_var.second));
             mem_variables.sort(compareMemVarsPair);
 
             std::list<std::pair<unsigned int, memory_symbolRef>>::const_iterator m_next;
@@ -361,7 +367,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                for(const auto& i : splitted)
                {
                   current_bits = i;
-                  for(unsigned int base_index = 0; base_index < current_bits.size(); base_index = base_index + 8, ++byte_allocated) eightbit_string.push_back(current_bits.substr(current_bits.size() - 8 - base_index, 8));
+                  for(unsigned int base_index = 0; base_index < current_bits.size(); base_index = base_index + 8, ++byte_allocated)
+                     eightbit_string.push_back(current_bits.substr(current_bits.size() - 8 - base_index, 8));
                }
                std::string str_bit;
                str_bit = "";
@@ -405,7 +412,10 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                m_next = m;
                ++m_next;
                unsigned int object_offset;
-               if(m_next != mem_variables.end()) { object_offset = HLSMgr->Rmem->get_base_address(m_next->first, HLS->functionId) - HLSMgr->Rmem->get_base_address(m->first, HLS->functionId); }
+               if(m_next != mem_variables.end())
+               {
+                  object_offset = HLSMgr->Rmem->get_base_address(m_next->first, HLS->functionId) - HLSMgr->Rmem->get_base_address(m->first, HLS->functionId);
+               }
                else
                {
                   object_offset = HLSMgr->Rmem->get_memory_address() - HLSMgr->Rmem->get_base_address(m->first, HLS->functionId);
@@ -669,7 +679,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             }
             else if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_WNONE)
             {
-               THROW_ASSERT(GetPointer<port_o>(int_port)->get_port_direction()==port_o::port_direction::OUT, "unexpected condition");
+               THROW_ASSERT(GetPointer<port_o>(int_port)->get_port_direction() == port_o::port_direction::OUT, "unexpected condition");
             }
             else if(GetPointer<port_o>(int_port)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
                THROW_ERROR("not yet supported port interface");
@@ -677,16 +687,16 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
          else
          {
             /// Check if we have an I/O interface
-            int_port = wrappedObj->find_member("_" + port_name+"_i", port_o_K, wrappedObj);
+            int_port = wrappedObj->find_member("_" + port_name + "_i", port_o_K, wrappedObj);
             if(int_port)
             {
                if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_RNONE)
                {
                   portsToSkip.insert(int_port);
                   if(port_in->get_kind() == port_vector_o_K)
-                     ext_port = SM_minimal_interface->add_port_vector(port_name+"_i", port_o::IN, GetPointer<port_o>(int_port)->get_ports_size(), interfaceObj, int_port->get_typeRef());
+                     ext_port = SM_minimal_interface->add_port_vector(port_name + "_i", port_o::IN, GetPointer<port_o>(int_port)->get_ports_size(), interfaceObj, int_port->get_typeRef());
                   else
-                     ext_port = SM_minimal_interface->add_port(port_name+"_i", port_o::IN, interfaceObj, int_port->get_typeRef());
+                     ext_port = SM_minimal_interface->add_port(port_name + "_i", port_o::IN, interfaceObj, int_port->get_typeRef());
                   port_o::fix_port_properties(int_port, ext_port);
                   SM_minimal_interface->add_connection(int_port, ext_port);
                }
@@ -699,7 +709,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                THROW_ASSERT(int_port, "unexpected condition");
                auto tnIndex = int_port->get_typeRef()->treenode;
                auto TreeM = HLSMgr->get_tree_manager();
-               if(tnIndex> 0&& tree_helper::is_a_pointer(TreeM, tnIndex))
+               if(tnIndex > 0 && tree_helper::is_a_pointer(TreeM, tnIndex))
                {
                   unsigned int pt_type_index = tree_helper::get_pointed_type(TreeM, tree_helper::get_type_index(TreeM, tnIndex));
                   tree_nodeRef pt_node = TreeM->get_tree_node_const(pt_type_index);
@@ -761,9 +771,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       structural_objectRef port_out = GetPointer<module>(wrappedObj)->get_out_port(i);
       if(GetPointer<port_o>(port_out)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
       {
-         if(GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WNONE ||
-               GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WVALID ||
-               GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_RACK)
+         if(GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WNONE || GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WVALID ||
+            GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_RACK)
          {
             portsToSkip.insert(port_out);
             auto port_name = GetPointer<port_o>(port_out)->get_id();

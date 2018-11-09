@@ -180,11 +180,17 @@ namespace ac_math
          ac_fixed<XW, XI, false> mask = ~(ac_fixed<XW, XI, false>)m1;
          if(n >= 0)
          {
-            if(R_HALF) { t2[0] = !!(x & mask); }
+            if(R_HALF)
+            {
+               t2[0] = !!(x & mask);
+            }
          }
          else
          {
-            if(S_OVER) { t2[TW + R_HALF + S_OVER - 1] = !!(x & mask); }
+            if(S_OVER)
+            {
+               t2[TW + R_HALF + S_OVER - 1] = !!(x & mask);
+            }
          }
       }
       sr = t2;
@@ -254,12 +260,18 @@ namespace ac_math
          ac_fixed<XW, XI, true> mask = ~(ac_fixed<XW, XI, true>)m1;
          if(n >= 0)
          {
-            if(R_HALF) { t2[0] = !!(x & mask); }
+            if(R_HALF)
+            {
+               t2[0] = !!(x & mask);
+            }
          }
          else
          {
             t2[TW + R_HALF + S_OVER - 1] = x[XW - 1];
-            if(S_OVER == 2 && !!mask) { t2[TW + R_HALF + S_OVER - 2] = !!(x & mask) && !(!!(~x & mask) && x[XW - 1]); }
+            if(S_OVER == 2 && !!mask)
+            {
+               t2[TW + R_HALF + S_OVER - 2] = !!(x & mask) && !(!!(~x & mask) && x[XW - 1]);
+            }
          }
       }
       sr = t2;
@@ -327,11 +339,17 @@ namespace ac_math
          ac_fixed<XW, XI, false> mask = ~(ac_fixed<XW, XI, false>)m1;
          if(n < 0)
          {
-            if(R_HALF) { t2[0] = !!(x & mask); }
+            if(R_HALF)
+            {
+               t2[0] = !!(x & mask);
+            }
          }
          else
          {
-            if(S_OVER) { t2[TW + R_HALF + S_OVER - 1] = !!(x & mask); }
+            if(S_OVER)
+            {
+               t2[TW + R_HALF + S_OVER - 1] = !!(x & mask);
+            }
          }
       }
       sl = t2;
@@ -365,7 +383,10 @@ namespace ac_math
          m1 >>= n;
          ac_fixed<XW, XI, true> mask = ~(ac_fixed<XW, XI, true>)m1;
          t2[TW + S_OVER - 1] = x[XW - 1];
-         if(mask != 0) { t2[TW + S_OVER - 2] = !!(x & mask) && !(!!(~x & mask) && x[XW - 1]); }
+         if(mask != 0)
+         {
+            t2[TW + S_OVER - 2] = !!(x & mask) && !(!!(~x & mask) && x[XW - 1]);
+         }
       }
       sl = t2;
    }
@@ -400,12 +421,18 @@ namespace ac_math
          ac_fixed<XW, XI, true> mask = ~(ac_fixed<XW, XI, true>)m1;
          if(n < 0)
          {
-            if(R_HALF) { t2[0] = !!(x & mask); }
+            if(R_HALF)
+            {
+               t2[0] = !!(x & mask);
+            }
          }
          else
          {
             t2[TW + R_HALF + S_OVER - 1] = x[XW - 1];
-            if(S_OVER == 2 && !!mask) { t2[TW + R_HALF + S_OVER - 2] = !!(x & mask) && !(!!(~x & mask) && x[XW - 1]); }
+            if(S_OVER == 2 && !!mask)
+            {
+               t2[TW + R_HALF + S_OVER - 2] = !!(x & mask) && !(!!(~x & mask) && x[XW - 1]);
+            }
          }
       }
       sl = t2;

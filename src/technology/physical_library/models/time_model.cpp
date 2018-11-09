@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file time_model.hpp
  * @brief Class specification for time_model
@@ -39,13 +39,13 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_CMOS_BUILT.hpp"
 
-#include "time_model.hpp"
 #include "Statistics.hpp"
+#include "time_model.hpp"
 
 #if HAVE_CMOS_BUILT
 #include "liberty_model.hpp"
@@ -59,28 +59,26 @@
 
 #include "exceptions.hpp"
 
-///HLS/scheduling include
+/// HLS/scheduling include
 #include "schedule.hpp"
 
 const double time_model::execution_time_DEFAULT = 0;
 const ControlStep time_model::initiation_time_DEFAULT = ControlStep(0u); /// zero means that the operation is not pipelined
-const unsigned int time_model::cycles_time_DEFAULT = 0; /// zero means that the operation last in ceil(execution_time/clock_period)
-const double time_model::stage_period_DEFAULT = 0; /// zero means a non-pipelined operation
+const unsigned int time_model::cycles_time_DEFAULT = 0;                  /// zero means that the operation last in ceil(execution_time/clock_period)
+const double time_model::stage_period_DEFAULT = 0;                       /// zero means a non-pipelined operation
 
-time_model::time_model(const ParameterConstRef _Param_)  :
-   statistical_delay(ComputeStatisticalDelay(execution_time_DEFAULT, 250)),
-   Param(_Param_),
-   initiation_time(initiation_time_DEFAULT),
-   cycles(cycles_time_DEFAULT),
-   synthesis_dependent(false),
-   stage_period(stage_period_DEFAULT),
-   execution_time(execution_time_DEFAULT)
+time_model::time_model(const ParameterConstRef _Param_)
+    : statistical_delay(ComputeStatisticalDelay(execution_time_DEFAULT, 250)),
+      Param(_Param_),
+      initiation_time(initiation_time_DEFAULT),
+      cycles(cycles_time_DEFAULT),
+      synthesis_dependent(false),
+      stage_period(stage_period_DEFAULT),
+      execution_time(execution_time_DEFAULT)
 {
-
 }
 
-time_model::~time_model()
-= default;
+time_model::~time_model() = default;
 
 void time_model::set_execution_time(double _execution_time, unsigned int _cycles)
 {
@@ -149,11 +147,11 @@ unsigned int time_model::xload_timing_path(xml_element* node)
    std::string type;
    LOAD_XVM(type, node);
    unsigned int path_type = 0;
-   if (type == "POST_SYNTHESIS")
+   if(type == "POST_SYNTHESIS")
    {
       path_type = POST_SYNTHESIS;
    }
-   else if (type == "POST_LAYOUT")
+   else if(type == "POST_LAYOUT")
    {
       path_type = POST_LAYOUT;
    }
@@ -168,12 +166,13 @@ unsigned int time_model::xload_timing_path(xml_element* node)
    path_elements.resize(number_of_elements);
 
    xml_node::node_list infos = node->get_children();
-   for (auto & info : infos)
+   for(auto& info : infos)
    {
       auto* Enode = GetPointer<xml_element>(info);
-      if(!Enode) continue;
+      if(!Enode)
+         continue;
 
-      if (Enode->get_name() == "path_element")
+      if(Enode->get_name() == "path_element")
       {
          std::string path;
          LOAD_XVM(path, Enode);

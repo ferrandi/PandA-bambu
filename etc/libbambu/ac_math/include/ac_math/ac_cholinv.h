@@ -156,7 +156,10 @@ namespace ac_math
    L_Linv_COL:
       for(unsigned i = 0; i < M; i++)
       {
-         if(use_pwl2) { ac_math::ac_reciprocal_pwl(L[i][i], recip_L); }
+         if(use_pwl2)
+         {
+            ac_math::ac_reciprocal_pwl(L[i][i], recip_L);
+         }
          else
          {
             static const ac_fixed<1 + T_out::sign, 1 + T_out::sign, T_out::sign> unity = 1;
@@ -174,9 +177,15 @@ namespace ac_math
                for(unsigned k = 0; k < M; k++)
                {
                   sum += (k < j & k >= i) ? L[j][k] * Linv[k][i] : 0;
-                  if(k >= j) { break; }
+                  if(k >= j)
+                  {
+                     break;
+                  }
                }
-               if(use_pwl2) { ac_math::ac_reciprocal_pwl(L[j][j], recip_L); }
+               if(use_pwl2)
+               {
+                  ac_math::ac_reciprocal_pwl(L[j][j], recip_L);
+               }
                else
                {
                   static const ac_fixed<1 + T_out::sign, 1 + T_out::sign, T_out::sign> unity = 1;
@@ -195,7 +204,10 @@ namespace ac_math
          {
             sum = 0;
          Linv_Linvtrans_COL:
-            for(unsigned k = 0; k < M; k++) { sum += (k < j | k < i) ? 0 : Linv[k][i] * Linv[k][j]; }
+            for(unsigned k = 0; k < M; k++)
+            {
+               sum += (k < j | k < i) ? 0 : Linv[k][i] * Linv[k][j];
+            }
             Ainv[i][j] = sum;
          }
    }
@@ -266,7 +278,10 @@ namespace ac_math
    L_Linv_COL:
       for(unsigned i = 0; i < M; i++)
       {
-         if(use_pwl2) { ac_math::ac_reciprocal_pwl(L[i][i], recip_L); }
+         if(use_pwl2)
+         {
+            ac_math::ac_reciprocal_pwl(L[i][i], recip_L);
+         }
          else
          {
             static const ac_fixed<1 + T_out::sign, 1 + T_out::sign, T_out::sign> unity = 1;
@@ -285,9 +300,15 @@ namespace ac_math
                for(unsigned k = 0; k < M; k++)
                {
                   sum += (k < j & k >= i) ? L[j][k] * Linv[k][i] : 0;
-                  if(k >= j) { break; }
+                  if(k >= j)
+                  {
+                     break;
+                  }
                }
-               if(use_pwl2) { ac_math::ac_reciprocal_pwl(L[j][j], recip_L); }
+               if(use_pwl2)
+               {
+                  ac_math::ac_reciprocal_pwl(L[j][j], recip_L);
+               }
                else
                {
                   static const ac_fixed<1 + T_out::sign, 1 + T_out::sign, T_out::sign> unity = 1;
@@ -306,7 +327,10 @@ namespace ac_math
          {
             sum = 0;
          Linv_Linvtrans_COL:
-            for(unsigned k = 0; k < M; k++) { sum += (k < j | k < i) ? 0 : Linv[k][i].conj() * Linv[k][j]; }
+            for(unsigned k = 0; k < M; k++)
+            {
+               sum += (k < j | k < i) ? 0 : Linv[k][i].conj() * Linv[k][j];
+            }
             Ainv[i][j] = sum;
          }
    }

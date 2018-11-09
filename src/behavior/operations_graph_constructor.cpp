@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file operations_graph_constructor.cpp
  * @brief This class provides methods to build a operations graph.
@@ -40,32 +40,29 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "operations_graph_constructor.hpp"
-#include <boost/lexical_cast.hpp>                 // for lexical_cast
-#include <boost/tuple/tuple.hpp>                  // for tie
-#include <list>                                   // for list
-#include <unordered_set>                          // for unordered_set
-#include <utility>                                // for pair
-#include "custom_map.hpp"                         // for CustomMap
-#include "custom_set.hpp"                         // for CustomSet
-#include "exceptions.hpp"                         // for THROW_ASSERT
-#include "function_behavior.hpp"                  // for tree_nodeRef, Funct...
+#include "custom_map.hpp"        // for CustomMap
+#include "custom_set.hpp"        // for CustomSet
+#include "exceptions.hpp"        // for THROW_ASSERT
+#include "function_behavior.hpp" // for tree_nodeRef, Funct...
 #include "op_graph.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "typed_node_info.hpp"                    // for GET_NAME, ENTRY, EXIT
+#include "typed_node_info.hpp"    // for GET_NAME, ENTRY, EXIT
+#include <boost/lexical_cast.hpp> // for lexical_cast
+#include <boost/tuple/tuple.hpp>  // for tie
+#include <list>                   // for list
+#include <unordered_set>          // for unordered_set
+#include <utility>                // for pair
 
-operations_graph_constructor::operations_graph_constructor(OpGraphsCollectionRef _og) :
-   og(std::move(_og)),
-   op_graph(new OpGraph(og, -1))
-{}
+operations_graph_constructor::operations_graph_constructor(OpGraphsCollectionRef _og) : og(std::move(_og)), op_graph(new OpGraph(og, -1))
+{
+}
 
-
-operations_graph_constructor::~operations_graph_constructor()
-= default;
+operations_graph_constructor::~operations_graph_constructor() = default;
 
 void operations_graph_constructor::Clear()
 {
@@ -73,9 +70,9 @@ void operations_graph_constructor::Clear()
    index_map.clear();
 }
 
-vertex operations_graph_constructor::getIndex(const std::string&source)
+vertex operations_graph_constructor::getIndex(const std::string& source)
 {
-   if (index_map.find(source) != index_map.end())
+   if(index_map.find(source) != index_map.end())
       return index_map.find(source)->second;
    NodeInfoRef node_info(new OpNodeInfo());
    GetPointer<OpNodeInfo>(node_info)->vertex_name = source;
@@ -84,8 +81,7 @@ vertex operations_graph_constructor::getIndex(const std::string&source)
    return index_map[source];
 }
 
-
-vertex operations_graph_constructor::CgetIndex(const std::string&source) const
+vertex operations_graph_constructor::CgetIndex(const std::string& source) const
 {
    THROW_ASSERT(index_map.find(source) != index_map.end(), "Index with name " + source + " doesn't exist");
    return index_map.find(source)->second;
@@ -95,7 +91,6 @@ EdgeDescriptor operations_graph_constructor::AddEdge(const vertex source, const 
 {
    return og->AddEdge(source, dest, selector);
 }
-
 
 void operations_graph_constructor::RemoveEdge(const vertex source, const vertex dest, int selector)
 {
@@ -116,18 +111,21 @@ void operations_graph_constructor::add_edge_info(const vertex src, const vertex 
    get_edge_info<OpEdgeInfo>(e, *(og))->add_nodeID(NodeID, selector);
 }
 
-void operations_graph_constructor::AddOperation(const tree_managerRef TM, const std::string&src, const std::string&
+void operations_graph_constructor::AddOperation(const tree_managerRef TM, const std::string& src,
+                                                const std::string&
 #if HAVE_BAMBU_BUILT
-   operation_t
+                                                    operation_t
 #endif
-   , unsigned int bb_index, const unsigned int node_id)
+                                                ,
+                                                unsigned int bb_index, const unsigned int node_id)
 {
    THROW_ASSERT(src != "", "Vertex name empty");
 #if HAVE_BAMBU_BUILT
    THROW_ASSERT(operation_t != "", "Operation empty");
 #endif
    vertex current = getIndex(src);
-   THROW_ASSERT(not op_graph->CGetOpNodeInfo(current)->node or node_id == 0 or node_id == op_graph->CGetOpNodeInfo(current)->GetNodeId(), "Trying to set node_id " + boost::lexical_cast<std::string>(node_id) + " to vertex " + src + " that has already node_id " + boost::lexical_cast<std::string>(op_graph->CGetOpNodeInfo(current)->GetNodeId()));
+   THROW_ASSERT(not op_graph->CGetOpNodeInfo(current)->node or node_id == 0 or node_id == op_graph->CGetOpNodeInfo(current)->GetNodeId(),
+                "Trying to set node_id " + boost::lexical_cast<std::string>(node_id) + " to vertex " + src + " that has already node_id " + boost::lexical_cast<std::string>(op_graph->CGetOpNodeInfo(current)->GetNodeId()));
    if(node_id > 0 and node_id != ENTRY_ID and node_id != EXIT_ID)
    {
       op_graph->GetOpNodeInfo(current)->node = TM->GetTreeReindex(node_id);
@@ -140,14 +138,14 @@ void operations_graph_constructor::AddOperation(const tree_managerRef TM, const 
    }
 #endif
    GET_NODE_INFO(og, OpNodeInfo, current)->bb_index = bb_index;
-   if (src == ENTRY)
+   if(src == ENTRY)
       op_graph->GetOpGraphInfo()->entry_vertex = current;
-   if (src == EXIT)
+   if(src == EXIT)
       op_graph->GetOpGraphInfo()->exit_vertex = current;
    op_graph->GetOpGraphInfo()->tree_node_to_operation[node_id] = current;
 }
 
-void operations_graph_constructor::add_type(const std::string&src, unsigned int type_t)
+void operations_graph_constructor::add_type(const std::string& src, unsigned int type_t)
 {
    THROW_ASSERT(src != "", "Vertex name empty");
    THROW_ASSERT(type_t != 0, "Type of vertex " + src + " is zero");
@@ -175,7 +173,7 @@ void operations_graph_constructor::add_parameter(const vertex& Ver, unsigned int
    op_graph->GetOpNodeInfo(Ver)->actual_parameters.push_back(Var);
 }
 
-void operations_graph_constructor::add_called_function(const std::string&source, unsigned int called_function)
+void operations_graph_constructor::add_called_function(const std::string& source, unsigned int called_function)
 {
    op_graph->GetOpNodeInfo(getIndex(source))->called.insert(called_function);
 }

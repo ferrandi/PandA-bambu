@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file vertex_coloring_register.hpp
  * @brief Class specification of a coloring based register allocation algorithm
@@ -39,7 +39,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef VERTEX_COLORING_REGISTER_HPP
 #define VERTEX_COLORING_REGISTER_HPP
 
@@ -47,25 +47,23 @@
 
 class vertex_coloring_register : public conflict_based_register
 {
-   public:
+ public:
+   /**
+    * Constructor of the class.
+    * @param design_flow_manager is the design flow manager
+    */
+   vertex_coloring_register(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Constructor of the class.
-       * @param design_flow_manager is the design flow manager
-       */
-      vertex_coloring_register(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   /**
+    * Destructor of the class.
+    */
+   ~vertex_coloring_register() override;
 
-      /**
-       * Destructor of the class.
-       */
-      ~vertex_coloring_register() override;
-
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status InternalExec() override;
-
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 };
 
 #endif

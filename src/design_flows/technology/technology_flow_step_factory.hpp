@@ -29,22 +29,22 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file technology_flow_step_factory.hpp
  * @brief Factory for technology flow step
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
 #ifndef TECHNOLOGY_FLOW_STEP_FACTORY_HPP
 #define TECHNOLOGY_FLOW_STEP_FACTORY_HPP
 
-///Superclass include
+/// Superclass include
 #include "design_flow_step_factory.hpp"
 
-///utility include
+/// utility include
 #include "refcount.hpp"
 
 enum class TechnologyFlowStep_Type;
@@ -55,38 +55,37 @@ REF_FORWARD_DECL(technology_manager);
 
 class TechnologyFlowStepFactory : public DesignFlowStepFactory
 {
-   protected:
-      ///The technology manager
-      const technology_managerRef TM;
+ protected:
+   /// The technology manager
+   const technology_managerRef TM;
 
-      ///The target device
-      const target_deviceRef target;
+   /// The target device
+   const target_deviceRef target;
 
-   public:
-      /**
-       * Constructor
-       * @param TM is the technology manager
-       * @param target is the target device
-       * @param design_flow_manager is the design flow manager
-       * @param parameters is the set of input parameters
-       */
-      TechnologyFlowStepFactory(const technology_managerRef TM, const target_deviceRef target, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor
+    * @param TM is the technology manager
+    * @param target is the target device
+    * @param design_flow_manager is the design flow manager
+    * @param parameters is the set of input parameters
+    */
+   TechnologyFlowStepFactory(const technology_managerRef TM, const target_deviceRef target, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-      /**
-       * Destructor
-       */
-      ~TechnologyFlowStepFactory() override;
+   /**
+    * Destructor
+    */
+   ~TechnologyFlowStepFactory() override;
 
-      /**
-       * Return the prefix of the steps created by the factory
-       */
-      const std::string GetPrefix() const override;
+   /**
+    * Return the prefix of the steps created by the factory
+    */
+   const std::string GetPrefix() const override;
 
-      /**
-       * Create a scheduling design flow step
-       * @param technology_design_flow_step_type is the type of step to be created
-       */
-      DesignFlowStepRef CreateTechnologyFlowStep(const TechnologyFlowStep_Type hls_flow_step_type) const;
+   /**
+    * Create a scheduling design flow step
+    * @param technology_design_flow_step_type is the type of step to be created
+    */
+   DesignFlowStepRef CreateTechnologyFlowStep(const TechnologyFlowStep_Type hls_flow_step_type) const;
 };
 #endif
-

@@ -120,7 +120,9 @@ namespace __AC_NAMESPACE
          };
       };
 
-      ac_complex() {}
+      ac_complex()
+      {
+      }
       template <typename T2>
       ac_complex(const ac_complex<T2>& c)
       {
@@ -139,14 +141,38 @@ namespace __AC_NAMESPACE
          _r = r;
          _i = i;
       }
-      const T& r() const { return _r; }
-      const T& i() const { return _i; }
-      T& r() { return _r; }
-      T& i() { return _i; }
-      const T& real() const { return _r; }
-      const T& imag() const { return _i; }
-      T& real() { return _r; }
-      T& imag() { return _i; }
+      const T& r() const
+      {
+         return _r;
+      }
+      const T& i() const
+      {
+         return _i;
+      }
+      T& r()
+      {
+         return _r;
+      }
+      T& i()
+      {
+         return _i;
+      }
+      const T& real() const
+      {
+         return _r;
+      }
+      const T& imag() const
+      {
+         return _i;
+      }
+      T& real()
+      {
+         return _r;
+      }
+      T& imag()
+      {
+         return _i;
+      }
       template <typename T2>
       void set_r(const T2& r)
       {
@@ -227,7 +253,10 @@ namespace __AC_NAMESPACE
       }
 
       // Arithmetic Unary --------------------------------------------------------
-      ac_complex operator+() { return *this; }
+      ac_complex operator+()
+      {
+         return *this;
+      }
       typename rt_unary::neg operator-() const
       {
          typename rt_unary::neg res(-_r, -_i);
@@ -235,7 +264,10 @@ namespace __AC_NAMESPACE
       }
 
       // ! ------------------------------------------------------------------------
-      bool operator!() const { return !_r && !_i; }
+      bool operator!() const
+      {
+         return !_r && !_i;
+      }
 
       typename rt_unary::neg conj() const
       {
@@ -243,9 +275,15 @@ namespace __AC_NAMESPACE
          return res;
       }
 
-      typename rt_unary::mag_sqr mag_sqr() const { return _r * _r + _i * _i; }
+      typename rt_unary::mag_sqr mag_sqr() const
+      {
+         return _r * _r + _i * _i;
+      }
 
-      ac_complex<ac_int<2, true>> sign_conj() const { return ac_complex<ac_int<2, true>>(_r ? (_r < 0 ? -1 : 1) : 0, _i ? (_i < 0 ? 1 : -1) : 0); }
+      ac_complex<ac_int<2, true>> sign_conj() const
+      {
+         return ac_complex<ac_int<2, true>>(_r ? (_r < 0 ? -1 : 1) : 0, _i ? (_i < 0 ? 1 : -1) : 0);
+      }
 
       inline static std::string type_name()
       {
@@ -492,7 +530,8 @@ namespace __AC_NAMESPACE
       inline bool init_array(ac_complex<T>* a, int n)
       {
          ac_complex<T> t = value<V>(*a);
-         for(int i = 0; i < n; i++) a[i] = t;
+         for(int i = 0; i < n; i++)
+            a[i] = t;
          return true;
       }
    } // namespace ac

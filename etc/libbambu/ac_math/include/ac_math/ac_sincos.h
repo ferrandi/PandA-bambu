@@ -659,7 +659,10 @@ namespace ac_math
       {
          // Lookup table index for input whose width is greater than 12 bits
          lut_index = lut_index1 / (1 << (AC_MAX(T_in::width - 12, 0)));
-         if((lut_index1 % (1 << (AC_MAX(T_in::width - 12, 0)))) > (1 << (AC_MAX(T_in::width - 13, 0)))) { lut_index = lut_index + 1; }
+         if((lut_index1 % (1 << (AC_MAX(T_in::width - 12, 0)))) > (1 << (AC_MAX(T_in::width - 13, 0))))
+         {
+            lut_index = lut_index + 1;
+         }
       }
 
       if(T_in::width - T_in::i_width >= 3)

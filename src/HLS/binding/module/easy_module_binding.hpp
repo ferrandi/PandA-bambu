@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file easy_module_binding.hpp
  * @brief Partial module binding based on simple conditions
@@ -37,12 +37,12 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @version $Revision$
  * @date $Date$
-*/
+ */
 
 #ifndef EASY_MODULE_BINDING_HPP
 #define EASY_MODULE_BINDING_HPP
 
-///superclass include
+/// superclass include
 #include "hls_function_step.hpp"
 
 /**
@@ -50,35 +50,35 @@
  */
 class easy_module_binding : public HLSFunctionStep
 {
-   protected:
-      /**
-       * Compute the relationship of this step
-       * @param relationship_type is the type of relationship to be considered
-       * @return the steps in relationship with this
-       */
-      const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+ protected:
+   /**
+    * Compute the relationship of this step
+    * @param relationship_type is the type of relationship to be considered
+    * @return the steps in relationship with this
+    */
+   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor
-       * @param design_flow_manager is the design flow manager
-       */
-      easy_module_binding(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+ public:
+   /**
+    * Constructor
+    * @param design_flow_manager is the design flow manager
+    */
+   easy_module_binding(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Destructor.
-       */
-      ~easy_module_binding() override;
+   /**
+    * Destructor.
+    */
+   ~easy_module_binding() override;
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status InternalExec() override;
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      void Initialize() override;
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 };
 #endif

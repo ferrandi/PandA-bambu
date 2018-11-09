@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file values_scheme.hpp
  * @brief Class specification of values scheme for the storage value insertion phase
@@ -41,16 +41,16 @@
  * $Locker:  $
  * $State: Exp $
  *
-*/
+ */
 #ifndef VALUES_SCHEME_HPP
 #define VALUES_SCHEME_HPP
 
-#include "storage_value_insertion.hpp"
 #include "refcount.hpp"
+#include "storage_value_insertion.hpp"
 
 /**
  * @name Forward declarations.
-*/
+ */
 //@{
 REF_FORWARD_DECL(dataflow_analysis);
 REF_FORWARD_DECL(fu_binding);
@@ -64,27 +64,27 @@ REF_FORWARD_DECL(Parameter);
 
 class values_scheme : public storage_value_insertion
 {
-   public:
-      /**
-       * Constructor of the class.
-       * @param design_flow_manager is the design flow manager
-       */
-      values_scheme(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+ public:
+   /**
+    * Constructor of the class.
+    * @param design_flow_manager is the design flow manager
+    */
+   values_scheme(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Destructor of the class.
-       */
-      ~values_scheme() override;
+   /**
+    * Destructor of the class.
+    */
+   ~values_scheme() override;
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status InternalExec() override;
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      void Initialize() override;
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 };
 #endif

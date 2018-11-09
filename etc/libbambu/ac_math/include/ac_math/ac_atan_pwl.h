@@ -150,8 +150,14 @@ namespace ac_math
       // atan(x) = pi/2 - atan(1 / x) to find the arctangent of the original input.
       // Also, keep in mind that the input can only exceed 1 if the number of integer bits are greater than or equal to 1.
       bool input_exceeds_1 = false;
-      if(I >= 1) { input_exceeds_1 = input > 1 ? true : false; }
-      if((I >= 1) && input_exceeds_1) { ac_math::ac_reciprocal_pwl<pwl_Q>(input, normalized_input); }
+      if(I >= 1)
+      {
+         input_exceeds_1 = input > 1 ? true : false;
+      }
+      if((I >= 1) && input_exceeds_1)
+      {
+         ac_math::ac_reciprocal_pwl<pwl_Q>(input, normalized_input);
+      }
       // If input is lesser than 1, then it is within the domain of the PWL function. Hence, no reciprocal operation is required.
       else
       {
@@ -176,7 +182,10 @@ namespace ac_math
       ac_fixed<f_b_n_i - int_bits + n_frac_bits + 1, 1, false, pwl_Q> output_pwl = m_lut[index] * x_in_sc_frac + c_lut[index];
 
       // If the input exceeds 1, apply the previously mentioned formula.
-      if((I >= 1) && input_exceeds_1) { output_pwl = pi_by_2 - output_pwl; }
+      if((I >= 1) && input_exceeds_1)
+      {
+         output_pwl = pi_by_2 - output_pwl;
+      }
 
       output = output_pwl;
 

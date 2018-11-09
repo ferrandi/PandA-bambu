@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file evaluation_base_step.cpp
  * @brief Base class to compute evaluations about high-level synthesis
@@ -38,17 +38,17 @@
  *
  */
 
-///Header include
+/// Header include
 #include "evaluation_base_step.hpp"
 
-EvaluationBaseStep::EvaluationBaseStep(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const unsigned _function_id, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
-   HLSFunctionStep(_parameters, _HLSMgr, _function_id, _design_flow_manager, _hls_flow_step_type)
-{}
+EvaluationBaseStep::EvaluationBaseStep(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const unsigned _function_id, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+    : HLSFunctionStep(_parameters, _HLSMgr, _function_id, _design_flow_manager, _hls_flow_step_type)
+{
+}
 
-EvaluationBaseStep::~EvaluationBaseStep()
-= default;
+EvaluationBaseStep::~EvaluationBaseStep() = default;
 
-const std::vector<double> & EvaluationBaseStep::GetEvaluations() const
+const std::vector<double>& EvaluationBaseStep::GetEvaluations() const
 {
    return evaluations;
 }

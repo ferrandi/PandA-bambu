@@ -238,13 +238,19 @@ namespace ac_math
 
    static table_tSINCOS atan_pi_2mi(int i)
    {
-      if(i >= TE) { return 0; }
+      if(i >= TE)
+      {
+         return 0;
+      }
       return atan_pi_pow2_table[i];
    }
 
    static table_tSINCOS K(int n)
    {
-      if(n >= TE) { return 0; }
+      if(n >= TE)
+      {
+         return 0;
+      }
       return K_table[n];
    }
 

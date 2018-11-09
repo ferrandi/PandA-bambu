@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file c_backend_step_factory.hpp
  * @brief Factory class to create c backend
@@ -39,25 +39,25 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef C_BACKEND_STEP_FACTORY_HPP
 #define C_BACKEND_STEP_FACTORY_HPP
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_GRAPH_PARTITIONING_BUILT.hpp"
 #include "config_HAVE_TARGET_PROFILING.hpp"
 
-///Superclass include
+/// Superclass include
 #include "design_flow_step_factory.hpp"
 
-///design_flows/backend/ToC/progModels
+/// design_flows/backend/ToC/progModels
 #include "c_backend.hpp"
 
-///graph include
+/// graph include
 #include "graph.hpp"
 
-///utility include
+/// utility include
 #include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(application_manager);
@@ -66,33 +66,33 @@ REF_FORWARD_DECL(DesignFlowStep);
 
 class CBackendStepFactory : public DesignFlowStepFactory
 {
-   private:
-      const application_managerConstRef application_manager;
+ private:
+   const application_managerConstRef application_manager;
 
-   public:
-      /**
-       * Constructor
-       * @param design_flow_manager is the design flow manager
-       * @param parameters is the set of input parameters
-       */
-      CBackendStepFactory(const DesignFlowManagerConstRef design_flow_manager, const application_managerConstRef application_manager, const ParameterConstRef param);
+ public:
+   /**
+    * Constructor
+    * @param design_flow_manager is the design flow manager
+    * @param parameters is the set of input parameters
+    */
+   CBackendStepFactory(const DesignFlowManagerConstRef design_flow_manager, const application_managerConstRef application_manager, const ParameterConstRef param);
 
-      /**
-       * Destructor
-       */
-      ~CBackendStepFactory() override;
+   /**
+    * Destructor
+    */
+   ~CBackendStepFactory() override;
 
-      /**
-       * Return the prefix of the steps created by the factory
-       */
-      const std::string GetPrefix() const override;
+   /**
+    * Return the prefix of the steps created by the factory
+    */
+   const std::string GetPrefix() const override;
 
-      /**
-       * Create a backend c step
-       * @param c_backend_type is the type of c backend to be created
-       * @param file_name is the name of the file to be written
-       * @param c_backend_information is the information about the frontend to be generated
-       */
-      const DesignFlowStepRef CreateCBackendStep(const CBackend::Type c_backend_type, const std::string&file_name, const CBackendInformationConstRef c_backend_information) const;
+   /**
+    * Create a backend c step
+    * @param c_backend_type is the type of c backend to be created
+    * @param file_name is the name of the file to be written
+    * @param c_backend_information is the information about the frontend to be generated
+    */
+   const DesignFlowStepRef CreateCBackendStep(const CBackend::Type c_backend_type, const std::string& file_name, const CBackendInformationConstRef c_backend_information) const;
 };
 #endif

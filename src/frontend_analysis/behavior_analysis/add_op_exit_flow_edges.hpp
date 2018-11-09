@@ -29,24 +29,24 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file add_op_exit_flow_edges.hpp
- * @brief Analysis step which adds flow edges to exit and abort operations 
+ * @brief Analysis step which adds flow edges to exit and abort operations
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef ADD_OP_EXIT_FLOW_EDGES_HPP
 #define ADD_OP_EXIT_FLOW_EDGES_HPP
 
-///Superclass include
+/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
-///Utility include
+/// Utility include
 #include "refcount.hpp"
 
 /**
@@ -56,44 +56,42 @@
 REF_FORWARD_DECL(tree_manager);
 //@}
 
-
 /**
  * Class to perform adding of flow edges to operation graph
-*/
+ */
 class AddOpExitFlowEdges : public FunctionFrontendFlowStep
 {
-   private:
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+ private:
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor.
-       * @param Param is the set of the parameters
-       * @param AppM is the application manager
-       * @param function_id is the node id of the function analyzed.
-       */
-      AddOpExitFlowEdges(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+ public:
+   /**
+    * Constructor.
+    * @param Param is the set of the parameters
+    * @param AppM is the application manager
+    * @param function_id is the node id of the function analyzed.
+    */
+   AddOpExitFlowEdges(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       *  Destructor
-       */
-      ~AddOpExitFlowEdges() override;
+   /**
+    *  Destructor
+    */
+   ~AddOpExitFlowEdges() override;
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      void Initialize() override;
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 
-      /**
-       * Performs the adding of flow edges to operation graphs
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status InternalExec() override;
+   /**
+    * Performs the adding of flow edges to operation graphs
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 };
 
 #endif
-

@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file treeLexer.hpp
  * @brief header file for LEX based lexer for GCC raw files.
@@ -40,42 +40,42 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef TREELEXER_HPP
 #define TREELEXER_HPP
 
-#define LN_CONCAT(name)Tree##name
+#define LN_CONCAT(name) Tree##name
 
 #define LCLASS_SPECIALIZED
 
 #include "Lexer_utilities.hpp"
 
-///Tree include
+/// Tree include
 #include "token_interface.hpp"
 
-///Utility include
+/// Utility include
 #include "exceptions.hpp"
 
 class treeVocabularyTokenTypes;
 
-struct TreeFlexLexer:public yyFlexLexer
+struct TreeFlexLexer : public yyFlexLexer
 {
-   YYSTYPE *lvalp;
+   YYSTYPE* lvalp;
    int yylex() override;
 
-   TreeFlexLexer( std::istream* argin, std::ostream* argout);
+   TreeFlexLexer(std::istream* argin, std::ostream* argout);
 
    ~TreeFlexLexer() override;
 
-   void yyerror(const char *msg)
+   void yyerror(const char* msg)
    {
       LexerError(msg);
    }
 
-   void LexerError(const char *msg) override
+   void LexerError(const char* msg) override
    {
-      std::cout << msg << " at line number |" << lineno() << "|\t" ;
-      std::cout << "text is |" << YYText() << "|" << std::endl ;
+      std::cout << msg << " at line number |" << lineno() << "|\t";
+      std::cout << "text is |" << YYText() << "|" << std::endl;
       THROW_ERROR("Parse error");
    }
 
@@ -84,7 +84,7 @@ struct TreeFlexLexer:public yyFlexLexer
       return 1;
    }
 
-   treeVocabularyTokenTypes *tokens;
+   treeVocabularyTokenTypes* tokens;
 
    TreeVocabularyTokenTypes_TokenEnum bison2token(int) const;
 };

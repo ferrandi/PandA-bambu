@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  * @author Michele Castellana <michele.castellana@mail.polimi.it>
@@ -46,87 +46,70 @@ REF_FORWARD_DECL(Discrepancy);
 
 class DiscrepancyAnalysisCWriter : public HLSCWriter
 {
-   protected:
+ protected:
+   const DiscrepancyRef Discrepancy;
 
-      const DiscrepancyRef Discrepancy;
+   /**
+    * Writes the global declarations
+    */
+   void WriteGlobalDeclarations() override;
 
-      /**
-       * Writes the global declarations
-       */
-      void WriteGlobalDeclarations() override;
+   /**
+    * Write additional initialization code needed by subclasses
+    */
+   void WriteExtraInitCode() override;
 
-      /**
-       * Write additional initialization code needed by subclasses
-       */
-      void WriteExtraInitCode() override;
+   void WriteExtraCodeBeforeEveryMainCall() override;
 
-      void WriteExtraCodeBeforeEveryMainCall() override;
+   void WriteBBHeader(unsigned int bb_number) override;
 
-      void WriteBBHeader(unsigned int bb_number) override;
+   /**
+    * Write extra information on the given statement vertex, before the
+    * statement itself
+    */
+   void writePreInstructionInfo(const FunctionBehaviorConstRef FB, const vertex v) override;
 
-      /**
-       * Write extra information on the given statement vertex, before the
-       * statement itself
-       */
-      void writePreInstructionInfo
-      (const FunctionBehaviorConstRef FB, const vertex v) override;
+   /**
+    * Write extra information on the given statement vertex, after the
+    * statement itself
+    */
+   void writePostInstructionInfo(const FunctionBehaviorConstRef fun_behavior, const vertex) override;
 
-      /**
-       * Write extra information on the given statement vertex, after the
-       * statement itself
-       */
-      void writePostInstructionInfo
-      (const FunctionBehaviorConstRef fun_behavior, const vertex) override;
+   /**
+    * Write function implementation
+    * @param function_id is the index of the function to be written
+    */
+   void WriteFunctionImplementation(unsigned int function_index) override;
 
-      /**
-       * Write function implementation
-       * @param function_id is the index of the function to be written
-       */
-      void WriteFunctionImplementation(unsigned int function_index) override;
+ public:
+   /**
+    * Constructor
+    */
+   DiscrepancyAnalysisCWriter(const HLSCBackendInformationConstRef _hls_c_backend_information, const application_managerConstRef _AppM, const InstructionWriterRef _instruction_writer, const IndentedOutputStreamRef _indented_output_stream,
+                              const ParameterConstRef _parameters, bool _verbose);
 
-   public:
+   /**
+    * Destructor
+    */
+   ~DiscrepancyAnalysisCWriter() override;
 
-      /**
-       * Constructor
-       */
-      DiscrepancyAnalysisCWriter
-      (
-         const HLSCBackendInformationConstRef _hls_c_backend_information,
-         const application_managerConstRef _AppM,
-         const InstructionWriterRef _instruction_writer,
-         const IndentedOutputStreamRef _indented_output_stream,
-         const ParameterConstRef _parameters,
-         bool _verbose
-      );
+   /**
+    * Declares the local variable; in case the variable used in the intialization of
+    * curVar hasn't been declared yet it get declared
+    * @param to_be_declared is the set of variables which have to be declared
+    * @param already_decl_variables is the set of already declared variables
+    * @param locally_declared_type is the set of already declared types
+    * @param helper is the behavioral helper associated with the function
+    * @param varFunc is the printer functor
+    */
+   void DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declared, CustomSet<unsigned int>& already_declared_variables, CustomSet<std::string>& locally_declared_type, const BehavioralHelperConstRef BH,
+                              const var_pp_functorConstRef varFunc) override;
 
-      /**
-       * Destructor
-       */
-      ~DiscrepancyAnalysisCWriter() override;
+   void WriteFunctionDeclaration(const unsigned int funId) override;
 
-      /**
-       * Declares the local variable; in case the variable used in the intialization of
-       * curVar hasn't been declared yet it get declared
-       * @param to_be_declared is the set of variables which have to be declared
-       * @param already_decl_variables is the set of already declared variables
-       * @param locally_declared_type is the set of already declared types
-       * @param helper is the behavioral helper associated with the function
-       * @param varFunc is the printer functor
-       */
-      void DeclareLocalVariables
-      (
-         const CustomSet<unsigned int> & to_be_declared,
-         CustomSet<unsigned int> & already_declared_variables,
-         CustomSet<std::string> & locally_declared_type,
-         const BehavioralHelperConstRef BH,
-         const var_pp_functorConstRef varFunc
-      ) override;
-
-      void WriteFunctionDeclaration(const unsigned int funId) override;
-
-      /**
-       * Writes implementation of __builtin_wait_call
-       */
-      void WriteBuiltinWaitCall() override;
+   /**
+    * Writes implementation of __builtin_wait_call
+    */
+   void WriteBuiltinWaitCall() override;
 };
 #endif

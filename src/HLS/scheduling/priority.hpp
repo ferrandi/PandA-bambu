@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,10 +29,10 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file priority.hpp
- * @brief This package is used to drive the list based algorithm with different type 
+ * @brief This package is used to drive the list based algorithm with different type
  * of priority schemes.
  *
  * @defgroup Priority Priority Package
@@ -43,7 +43,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef PRIORITY_HPP
 #define PRIORITY_HPP
 
@@ -56,100 +56,110 @@
 
 /**
  * @name Forward declarations.
-*/
+ */
 //@{
 REF_FORWARD_DECL(ASLAP);
 //@}
 
-
 /**
- * Base class used to define the priority associated 
+ * Base class used to define the priority associated
  * with each vertex of a list base scheduling problem.
-*/
+ */
 template <class dataType>
 struct priority_data
 {
-      /**
-       * this function updates the value of the priority at 
-       * the end of the control step analysis.
-      */
-      virtual bool update() = 0;
-      /**
-       * Return the priority associated with the vertex. Constant version
-       * @param _a is the vertex
-      */
-      virtual dataType operator()(const vertex& _a) const {return priority_values(_a);}
-      /**
-       * return the priority associated with the vertex. Constant version
-       * @param _a is the vertex
-      */
-      virtual dataType& operator[](const vertex& _a) {return priority_values[_a];}
-      /**
-       * Destructor.
-      */
-      virtual ~priority_data()= default;
-   private:
-      /// data structure storing the priority values.
-      vertex2obj<dataType> priority_values;
+   /**
+    * this function updates the value of the priority at
+    * the end of the control step analysis.
+    */
+   virtual bool update() = 0;
+   /**
+    * Return the priority associated with the vertex. Constant version
+    * @param _a is the vertex
+    */
+   virtual dataType operator()(const vertex& _a) const
+   {
+      return priority_values(_a);
+   }
+   /**
+    * return the priority associated with the vertex. Constant version
+    * @param _a is the vertex
+    */
+   virtual dataType& operator[](const vertex& _a)
+   {
+      return priority_values[_a];
+   }
+   /**
+    * Destructor.
+    */
+   virtual ~priority_data() = default;
+
+ private:
+   /// data structure storing the priority values.
+   vertex2obj<dataType> priority_values;
 };
 
 /**
- * This is a specialization based on mobility. 
+ * This is a specialization based on mobility.
  * The update function does not change the priority at the end of the control step analysis.
-*/
+ */
 struct priority_static_mobility : public priority_data<int>
 {
    /**
     * Constructor.
-   */
-   explicit priority_static_mobility(const ASLAPRef &aslap);
-   
+    */
+   explicit priority_static_mobility(const ASLAPRef& aslap);
+
    /**
     * This specialization does not update the priorities at the end of the control step.
-   */
-   bool update() override {return false;}
-
+    */
+   bool update() override
+   {
+      return false;
+   }
 };
 
 /**
- * This is a specialization based on mobility. 
+ * This is a specialization based on mobility.
  * The update function does change the priority at the end of the control step analysis only of ready nodes.
  */
 struct priority_dynamic_mobility : public priority_data<int>
 {
-      /**
-       * Constructor.
-      */
-      priority_dynamic_mobility(const ASLAPRef &aslap, const OpVertexSet &_ready_nodes, unsigned int _ctrl_step_multiplier);
-   
-      /**
-       * This specialization does update the priorities at the end of the control step only of ready nodes.
-      */
-      bool update() override;
-   
-   private:
-      /// set of ready vertices.
-      const OpVertexSet &ready_nodes;
-      /// multiplier used to take into account chaining during asap/alap computation
-      unsigned int ctrl_step_multiplier;
+   /**
+    * Constructor.
+    */
+   priority_dynamic_mobility(const ASLAPRef& aslap, const OpVertexSet& _ready_nodes, unsigned int _ctrl_step_multiplier);
+
+   /**
+    * This specialization does update the priorities at the end of the control step only of ready nodes.
+    */
+   bool update() override;
+
+ private:
+   /// set of ready vertices.
+   const OpVertexSet& ready_nodes;
+   /// multiplier used to take into account chaining during asap/alap computation
+   unsigned int ctrl_step_multiplier;
 };
 
 /**
- * This is a specialization based on a given fixed priority value. 
+ * This is a specialization based on a given fixed priority value.
  * The update function does not change the priority at the end of the control step analysis.
-*/
+ */
 struct priority_fixed : public priority_data<int>
 {
    /**
     * Constructor.
-   */
-   explicit priority_fixed(const std::unordered_map<vertex,int>& priority_value);
-   
+    */
+   explicit priority_fixed(const std::unordered_map<vertex, int>& priority_value);
+
    /**
     * This specialization does not update the priorities at the end of the control step.
-   */
-   bool update() override {return false;}
-
+    */
+   bool update() override
+   {
+      return false;
+   }
 };
 
 /**
@@ -158,46 +168,48 @@ struct priority_fixed : public priority_data<int>
 template <class Type>
 struct priority_compare_functor
 {
-      /**
-       * functor function used to compare two vertices with respect to the priority data structure.
-       * @param a is the first vertex
-       * @param b is the second vertex
-       * @return true when priority(a) < priority(b)
-       */
-      bool operator() (const vertex & a, const vertex & b) const 
-      {
-         return priority_values->operator()(a) < priority_values->operator()(b) || (priority_values->operator()(a) == priority_values->operator()(b) && a > b);
-      }
+   /**
+    * functor function used to compare two vertices with respect to the priority data structure.
+    * @param a is the first vertex
+    * @param b is the second vertex
+    * @return true when priority(a) < priority(b)
+    */
+   bool operator()(const vertex& a, const vertex& b) const
+   {
+      return priority_values->operator()(a) < priority_values->operator()(b) || (priority_values->operator()(a) == priority_values->operator()(b) && a > b);
+   }
 
-      /**
-       * Constructor
-       * @param pri is the priority data structure which associate at each vertex a priority value of type Type.
-       */
-      priority_compare_functor(const refcount<priority_data<Type>> pri) : priority_values(pri) {}
+   /**
+    * Constructor
+    * @param pri is the priority data structure which associate at each vertex a priority value of type Type.
+    */
+   priority_compare_functor(const refcount<priority_data<Type>> pri) : priority_values(pri)
+   {
+   }
 
-      /**
-       * Copy assignment
-      */
-      priority_compare_functor& operator=(const priority_compare_functor&in)
-      {
-         priority_values = in.priority_values;
-         return *this;
-      }
-      /**
-       * Copy constructor
-      */
-      priority_compare_functor(const priority_compare_functor&in) : priority_values(in.priority_values)
-      {}
+   /**
+    * Copy assignment
+    */
+   priority_compare_functor& operator=(const priority_compare_functor& in)
+   {
+      priority_values = in.priority_values;
+      return *this;
+   }
+   /**
+    * Copy constructor
+    */
+   priority_compare_functor(const priority_compare_functor& in) : priority_values(in.priority_values)
+   {
+   }
 
-      /**
-       * Destructor
-       */
-      ~priority_compare_functor() = default;
+   /**
+    * Destructor
+    */
+   ~priority_compare_functor() = default;
 
-   private:
-
-      ///copy of the priority values
-      const refcount<priority_data<Type>> priority_values;
+ private:
+   /// copy of the priority values
+   const refcount<priority_data<Type>> priority_values;
 };
 
 #endif

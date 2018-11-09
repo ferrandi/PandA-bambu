@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file split_return.cpp
  * @brief Simple transformations that remove almost empty basic blocks having a single phi and a return statement.
@@ -41,22 +41,22 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "split_return.hpp"
 
 #include "phi_opt.hpp"
 
-///Behavior include
+/// Behavior include
 #include "application_manager.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
 
-///Parameter include
+/// Parameter include
 #include "Parameter.hpp"
 
-///HLS include
+/// HLS include
 #include "hls.hpp"
 #include "hls_manager.hpp"
 
@@ -64,54 +64,52 @@
 #include "hls_step.hpp"
 #endif
 
-///parser/treegcc include
+/// parser/treegcc include
 #include "token_interface.hpp"
 
-///STD include
+/// STD include
 #include <fstream>
 
-///STL include
+/// STL include
 #include <unordered_set>
 
-///tree includes
+/// tree includes
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "ext_tree_node.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
+#include "tree_basic_block.hpp"
+#include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include "tree_basic_block.hpp"
-#include "tree_helper.hpp"
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
-#include "string_manipulation.hpp"          // for GET_CLASS
 
-SplitReturn::SplitReturn(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
-   FunctionFrontendFlowStep(_AppM, _function_id, SPLIT_RETURN, _design_flow_manager, _parameters)
+SplitReturn::SplitReturn(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, SPLIT_RETURN, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-SplitReturn::~SplitReturn()
-= default;
+SplitReturn::~SplitReturn() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > SplitReturn::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> SplitReturn::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BLOCK_FIX, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SWITCH_FIX, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP):
       {
-         if (parameters->isOption(OPT_bitvalue_ipa) and
-               parameters->getOption<bool>(OPT_bitvalue_ipa))
+         if(parameters->isOption(OPT_bitvalue_ipa) and parameters->getOption<bool>(OPT_bitvalue_ipa))
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_IPA, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REMOVE_CLOBBER_GA, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
@@ -137,8 +135,7 @@ bool SplitReturn::HasToBeExecuted() const
       return FunctionFrontendFlowStep::HasToBeExecuted();
 }
 
-static
-void create_return_and_fix_cfg(const tree_managerRef TM, std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> &gimple_return_schema, statement_list * sl, blocRef pred_block, blocRef bb_block, int DEBUG_PARAMETER(debug_level))
+static void create_return_and_fix_cfg(const tree_managerRef TM, std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>& gimple_return_schema, statement_list* sl, blocRef pred_block, blocRef bb_block, int DEBUG_PARAMETER(debug_level))
 {
    auto bb_index = bb_block->number;
    const auto gimple_node_id = TM->new_tree_node_id();
@@ -152,7 +149,7 @@ void create_return_and_fix_cfg(const tree_managerRef TM, std::map<TreeVocabulary
    }
    else
    {
-      const auto new_basic_block_index  = (sl->list_of_bloc.rbegin())->first + 1;
+      const auto new_basic_block_index = (sl->list_of_bloc.rbegin())->first + 1;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created BB" + STR(new_basic_block_index) + " as new successor of BB" + STR(pred_block->number));
       auto new_block = blocRef(new bloc(new_basic_block_index));
       sl->list_of_bloc[new_basic_block_index] = new_block;
@@ -160,25 +157,25 @@ void create_return_and_fix_cfg(const tree_managerRef TM, std::map<TreeVocabulary
       new_block->SetSSAUsesComputed();
       new_block->schedule = bb_block->schedule;
       new_block->PushBack(TM->GetTreeReindex(gimple_node_id));
-      ///Add predecessor as pred basic block
+      /// Add predecessor as pred basic block
       new_block->list_of_pred.push_back(pred_block->number);
-      ///Add successor as succ basic block
+      /// Add successor as succ basic block
       new_block->list_of_succ.push_back(bb_block->list_of_succ.front());
-      ///Fix successor of predecessor
+      /// Fix successor of predecessor
       pred_block->list_of_succ.erase(std::find(pred_block->list_of_succ.begin(), pred_block->list_of_succ.end(), bb_index));
       pred_block->list_of_succ.push_back(new_basic_block_index);
       if(pred_block->true_edge == bb_index)
          pred_block->true_edge = new_basic_block_index;
       if(pred_block->false_edge == bb_index)
          pred_block->false_edge = new_basic_block_index;
-      ///Fix gimple_multi_way_if
+      /// Fix gimple_multi_way_if
       if(pred_block->CGetStmtList().size())
       {
          auto pred_last_stmt = GET_NODE(pred_block->CGetStmtList().back());
          if(pred_last_stmt->get_kind() == gimple_multi_way_if_K)
          {
             auto gmwi = GetPointer<gimple_multi_way_if>(pred_last_stmt);
-            for(auto & cond : gmwi->list_of_cond)
+            for(auto& cond : gmwi->list_of_cond)
             {
                if(cond.second == bb_index)
                {
@@ -192,96 +189,97 @@ void create_return_and_fix_cfg(const tree_managerRef TM, std::map<TreeVocabulary
 
 DesignFlowStep_Status SplitReturn::InternalExec()
 {
-    const tree_managerRef TM = AppM->get_tree_manager();
-    bool isChanged = false;
-    tree_nodeRef temp = TM->get_tree_node_const(function_id);
-    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_return_schema;
-    auto * fd = GetPointer<function_decl>(temp);
-    auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
-    std::map<unsigned int, blocRef> & list_of_bloc = sl->list_of_bloc;
-    std::map<unsigned int, blocRef>::iterator iit, iit_end = list_of_bloc.end();
-    std::list<unsigned int> to_be_erase;
-    for(iit = list_of_bloc.begin(); iit != iit_end ; ++iit)
-    {
-       blocRef& bb_block = iit->second;
-       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- Considering BB" + STR(bb_block->number) + " " + STR(bb_block->CGetPhiList().size()) + " " + STR(bb_block->CGetStmtList().size()));
-       if (bb_block->list_of_pred.size()>1 && bb_block->CGetPhiList().size() == 1 &&
-               bb_block->CGetStmtList().size() == 1)
-       {
-          auto bb_index = bb_block->number;
-          const auto gp = GetPointer<const gimple_phi>(GET_NODE(bb_block->CGetPhiList().front()));
-          const auto gr = GetPointer<const gimple_return>(GET_NODE(bb_block->CGetStmtList().front()));
-          if(gr && gr->op && GET_INDEX_NODE(gp->res) == GET_INDEX_NODE(gr->op))
-          {
-             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- There is a split return possible at BB" + STR(bb_index));
-             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- Create return statement based of def edges");
-             for(auto def_edge : gp->CGetDefEdgesList())
-             {
-                unsigned int op_node_nid = GET_INDEX_NODE(def_edge.first);
-                gimple_return_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
-                gimple_return_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(gr->scpe));
-                gimple_return_schema[TOK(TOK_OP)] = STR(op_node_nid);
-                auto pred_block = sl->list_of_bloc[def_edge.second];
-                create_return_and_fix_cfg(TM, gimple_return_schema, sl, pred_block, bb_block, debug_level);
-             }
-             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing BB" + STR(bb_index));
-             bb_block->RemovePhi(bb_block->CGetPhiList().front());
-             bb_block->RemoveStmt(bb_block->CGetStmtList().front());
-             to_be_erase.push_back(bb_index);
-             isChanged = true;
-          }
-          else if(gr && gp->virtual_flag && GET_INDEX_NODE(gp->res) == GET_INDEX_NODE(gr->memuse))
-          {
-             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- There is a split return possible at BB" + STR(bb_index));
-             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- Create return statement based of def edges");
-             for(auto def_edge : gp->CGetDefEdgesList())
-             {
-                unsigned int op_node_nid = GET_INDEX_NODE(def_edge.first);
-                gimple_return_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
-                gimple_return_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(gr->scpe));
-                if(gr->op)
-                   gimple_return_schema[TOK(TOK_OP)] = STR(GET_INDEX_NODE(gr->op));
-                gimple_return_schema[TOK(TOK_MEMUSE)] = STR(op_node_nid);
-                auto pred_block = sl->list_of_bloc[def_edge.second];
-                create_return_and_fix_cfg(TM, gimple_return_schema, sl, pred_block, bb_block, debug_level);
-             }
-             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing BB" + STR(bb_index));
-             bb_block->RemovePhi(bb_block->CGetPhiList().front());
-             bb_block->RemoveStmt(bb_block->CGetStmtList().front());
-             to_be_erase.push_back(bb_index);
-             isChanged = true;
-          }
-       }
-       else if (bb_block->list_of_pred.size()>1 && bb_block->CGetPhiList().size() == 0 &&
-                bb_block->CGetStmtList().size() == 1)
-       {
-           auto bb_index = bb_block->number;
-           const auto gr = GetPointer<const gimple_return>(GET_NODE(bb_block->CGetStmtList().front()));
-           if(gr)
-           {
-              for(auto pred_block_index : bb_block->list_of_pred)
-              {
-                 auto pred_block = sl->list_of_bloc[pred_block_index];
-                 gimple_return_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
-                 gimple_return_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(gr->scpe));
-                 if(gr->op)
-                    gimple_return_schema[TOK(TOK_OP)] = STR(GET_INDEX_NODE(gr->op));
-                 create_return_and_fix_cfg(TM, gimple_return_schema, sl, pred_block, bb_block, debug_level);
-              }
-              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing BB" + STR(bb_index));
-              bb_block->RemoveStmt(bb_block->CGetStmtList().front());
-              to_be_erase.push_back(bb_index);
-              isChanged = true;
-           }
-       }
-    }
-    for(auto bb_index : to_be_erase)
-       list_of_bloc.erase(bb_index);
+   const tree_managerRef TM = AppM->get_tree_manager();
+   bool isChanged = false;
+   tree_nodeRef temp = TM->get_tree_node_const(function_id);
+   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_return_schema;
+   auto* fd = GetPointer<function_decl>(temp);
+   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   std::map<unsigned int, blocRef>& list_of_bloc = sl->list_of_bloc;
+   std::map<unsigned int, blocRef>::iterator iit, iit_end = list_of_bloc.end();
+   std::list<unsigned int> to_be_erase;
+   for(iit = list_of_bloc.begin(); iit != iit_end; ++iit)
+   {
+      blocRef& bb_block = iit->second;
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- Considering BB" + STR(bb_block->number) + " " + STR(bb_block->CGetPhiList().size()) + " " + STR(bb_block->CGetStmtList().size()));
+      if(bb_block->list_of_pred.size() > 1 && bb_block->CGetPhiList().size() == 1 && bb_block->CGetStmtList().size() == 1)
+      {
+         auto bb_index = bb_block->number;
+         const auto gp = GetPointer<const gimple_phi>(GET_NODE(bb_block->CGetPhiList().front()));
+         const auto gr = GetPointer<const gimple_return>(GET_NODE(bb_block->CGetStmtList().front()));
+         if(gr && gr->op && GET_INDEX_NODE(gp->res) == GET_INDEX_NODE(gr->op))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- There is a split return possible at BB" + STR(bb_index));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- Create return statement based of def edges");
+            for(auto def_edge : gp->CGetDefEdgesList())
+            {
+               unsigned int op_node_nid = GET_INDEX_NODE(def_edge.first);
+               gimple_return_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+               gimple_return_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(gr->scpe));
+               gimple_return_schema[TOK(TOK_OP)] = STR(op_node_nid);
+               auto pred_block = sl->list_of_bloc[def_edge.second];
+               create_return_and_fix_cfg(TM, gimple_return_schema, sl, pred_block, bb_block, debug_level);
+            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing BB" + STR(bb_index));
+            bb_block->RemovePhi(bb_block->CGetPhiList().front());
+            bb_block->RemoveStmt(bb_block->CGetStmtList().front());
+            to_be_erase.push_back(bb_index);
+            isChanged = true;
+         }
+         else if(gr && gp->virtual_flag && GET_INDEX_NODE(gp->res) == GET_INDEX_NODE(gr->memuse))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- There is a split return possible at BB" + STR(bb_index));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- Create return statement based of def edges");
+            for(auto def_edge : gp->CGetDefEdgesList())
+            {
+               unsigned int op_node_nid = GET_INDEX_NODE(def_edge.first);
+               gimple_return_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+               gimple_return_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(gr->scpe));
+               if(gr->op)
+                  gimple_return_schema[TOK(TOK_OP)] = STR(GET_INDEX_NODE(gr->op));
+               gimple_return_schema[TOK(TOK_MEMUSE)] = STR(op_node_nid);
+               auto pred_block = sl->list_of_bloc[def_edge.second];
+               create_return_and_fix_cfg(TM, gimple_return_schema, sl, pred_block, bb_block, debug_level);
+            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing BB" + STR(bb_index));
+            bb_block->RemovePhi(bb_block->CGetPhiList().front());
+            bb_block->RemoveStmt(bb_block->CGetStmtList().front());
+            to_be_erase.push_back(bb_index);
+            isChanged = true;
+         }
+      }
+      else if(bb_block->list_of_pred.size() > 1 && bb_block->CGetPhiList().size() == 0 && bb_block->CGetStmtList().size() == 1)
+      {
+         auto bb_index = bb_block->number;
+         const auto gr = GetPointer<const gimple_return>(GET_NODE(bb_block->CGetStmtList().front()));
+         if(gr)
+         {
+            for(auto pred_block_index : bb_block->list_of_pred)
+            {
+               auto pred_block = sl->list_of_bloc[pred_block_index];
+               gimple_return_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+               gimple_return_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(gr->scpe));
+               if(gr->op)
+                  gimple_return_schema[TOK(TOK_OP)] = STR(GET_INDEX_NODE(gr->op));
+               create_return_and_fix_cfg(TM, gimple_return_schema, sl, pred_block, bb_block, debug_level);
+            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing BB" + STR(bb_index));
+            bb_block->RemoveStmt(bb_block->CGetStmtList().front());
+            to_be_erase.push_back(bb_index);
+            isChanged = true;
+         }
+      }
+   }
+   for(auto bb_index : to_be_erase)
+      list_of_bloc.erase(bb_index);
 
-    if(isChanged) {
-       function_behavior->UpdateBBVersion();
-       return DesignFlowStep_Status::SUCCESS;
-    } else {
-       return DesignFlowStep_Status::UNCHANGED;
-    }
+   if(isChanged)
+   {
+      function_behavior->UpdateBBVersion();
+      return DesignFlowStep_Status::SUCCESS;
+   }
+   else
+   {
+      return DesignFlowStep_Status::UNCHANGED;
+   }
 }

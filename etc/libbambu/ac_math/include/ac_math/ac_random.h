@@ -114,13 +114,19 @@ void ac_random_c_builtin_s<T, size>::operator()(T& v)
 template <typename T>
 struct ac_random_c_builtin_s<T, 0>
 {
-   void operator()(T& v) { v = rand(); }
+   void operator()(T& v)
+   {
+      v = rand();
+   }
 };
 
 template <typename T>
 struct ac_random_c_builtin_s<T, 1>
 {
-   void operator()(T& v) { v = rand(); }
+   void operator()(T& v)
+   {
+      v = rand();
+   }
 };
 
 template <typename T>
@@ -133,18 +139,54 @@ inline void ac_random_c_builtin(T& v)
    ac_random_c_builtin_s<T, size>()(v);
 }
 
-inline void ac_random(long long int& v) { ac_random_c_builtin(v); }
-inline void ac_random(long long unsigned& v) { ac_random_c_builtin(v); }
-inline void ac_random(long int& v) { ac_random_c_builtin(v); }
-inline void ac_random(long unsigned& v) { ac_random_c_builtin(v); }
-inline void ac_random(int& v) { ac_random_c_builtin(v); }
-inline void ac_random(unsigned& v) { ac_random_c_builtin(v); }
-inline void ac_random(short int& v) { ac_random_c_builtin(v); }
-inline void ac_random(short unsigned& v) { ac_random_c_builtin(v); }
-inline void ac_random(char& v) { ac_random_c_builtin(v); }
-inline void ac_random(signed char& v) { ac_random_c_builtin(v); }
-inline void ac_random(unsigned char& v) { ac_random_c_builtin(v); }
-inline void ac_random(bool& v) { v = rand() & 1; }
+inline void ac_random(long long int& v)
+{
+   ac_random_c_builtin(v);
+}
+inline void ac_random(long long unsigned& v)
+{
+   ac_random_c_builtin(v);
+}
+inline void ac_random(long int& v)
+{
+   ac_random_c_builtin(v);
+}
+inline void ac_random(long unsigned& v)
+{
+   ac_random_c_builtin(v);
+}
+inline void ac_random(int& v)
+{
+   ac_random_c_builtin(v);
+}
+inline void ac_random(unsigned& v)
+{
+   ac_random_c_builtin(v);
+}
+inline void ac_random(short int& v)
+{
+   ac_random_c_builtin(v);
+}
+inline void ac_random(short unsigned& v)
+{
+   ac_random_c_builtin(v);
+}
+inline void ac_random(char& v)
+{
+   ac_random_c_builtin(v);
+}
+inline void ac_random(signed char& v)
+{
+   ac_random_c_builtin(v);
+}
+inline void ac_random(unsigned char& v)
+{
+   ac_random_c_builtin(v);
+}
+inline void ac_random(bool& v)
+{
+   v = rand() & 1;
+}
 #endif // AC_RANDOM_H_INC
 
 #if(defined(SYSTEMC_INCLUDED) || defined(SYSTEMC_H)) && !defined(MC_SYSTEMC)
@@ -159,14 +201,32 @@ void ac_systemc_builtin_it(T& v, const int size)
    const int long mask = 0xffff;
    int lo = 0;
    int hi = 15;
-   for(; hi < size; lo += 16, hi += 16) { v.range(hi, lo) = (rand() & mask); }
-   if(lo < size) { v.range(size - 1, lo) = (rand() & mask); }
+   for(; hi < size; lo += 16, hi += 16)
+   {
+      v.range(hi, lo) = (rand() & mask);
+   }
+   if(lo < size)
+   {
+      v.range(size - 1, lo) = (rand() & mask);
+   }
 }
 
-inline void ac_random(sc_int_base& v) { ac_systemc_builtin_it(v, v.length()); }
-inline void ac_random(sc_uint_base& v) { ac_systemc_builtin_it(v, v.length()); }
-inline void ac_random(sc_signed& v) { ac_systemc_builtin_it(v, v.length()); }
-inline void ac_random(sc_unsigned& v) { ac_systemc_builtin_it(v, v.length()); }
+inline void ac_random(sc_int_base& v)
+{
+   ac_systemc_builtin_it(v, v.length());
+}
+inline void ac_random(sc_uint_base& v)
+{
+   ac_systemc_builtin_it(v, v.length());
+}
+inline void ac_random(sc_signed& v)
+{
+   ac_systemc_builtin_it(v, v.length());
+}
+inline void ac_random(sc_unsigned& v)
+{
+   ac_systemc_builtin_it(v, v.length());
+}
 template <int Tlen>
 inline void ac_random(sc_bv<Tlen>& v)
 {
@@ -182,7 +242,10 @@ inline void ac_random(sc_lv<Tlen>& v)
 #if defined(SC_INCLUDE_FX) && defined(AC_SYSTEMC) && !defined(AC_RANDOM_H_INC_SC_INCLUDE_FX)
 #define AC_RANDOM_H_INC_SC_INCLUDE_FX
 
-void ac_random(sc_fxnum& v) { ac_systemc_builtin_it(v, v.wl()); }
+void ac_random(sc_fxnum& v)
+{
+   ac_systemc_builtin_it(v, v.wl());
+}
 
 #endif // AC_RANDOM_H_INC_SC_INCLUDE_FX
 
@@ -212,7 +275,10 @@ void ac_random_ac_s<T, SIZE, SMALL>::operator()(T& v)
 template <class T, int SIZE>
 struct ac_random_ac_s<T, SIZE, true>
 {
-   void operator()(T& v) { v.set_slc(0, ac_int<SIZE>(rand())); }
+   void operator()(T& v)
+   {
+      v.set_slc(0, ac_int<SIZE>(rand()));
+   }
 };
 
 template <int W, bool S>

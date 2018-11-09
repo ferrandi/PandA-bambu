@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file memory_data_flow_analysis.hpp
  * @brief Data flow analysis based on sequential chain of virtual memory accesses computed by gcc
@@ -37,12 +37,12 @@
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
-*/
+ */
 
 #ifndef MEMORY_DATA_FLOW_ANALYSIS_HPP
-#define MEMORY_DATA_FLOW_ANALYSIS_HPP 
+#define MEMORY_DATA_FLOW_ANALYSIS_HPP
 
-///Superclass include
+/// Superclass include
 #include "data_dependence_computation.hpp"
 
 #include "refcount.hpp"
@@ -54,38 +54,36 @@
 REF_FORWARD_DECL(tree_manager);
 //@}
 
-
 /**
  * ssa data flow analysis step
-*/
+ */
 class MemoryDataFlowAnalysis : public DataDependenceComputation
 {
-   private:
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+ private:
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor
-       * @param AppM is the application manager
-       * @param design_flow_manager is the design flow manager
-       * @param function_index is the index of the function
-       * @param parameters is the set of the parameters
-       */
-      MemoryDataFlowAnalysis(const application_managerRef AppM, const unsigned int function_index, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor
+    * @param AppM is the application manager
+    * @param design_flow_manager is the design flow manager
+    * @param function_index is the index of the function
+    * @param parameters is the set of the parameters
+    */
+   MemoryDataFlowAnalysis(const application_managerRef AppM, const unsigned int function_index, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-      /**
-       *  Destructor
-       */
-      ~MemoryDataFlowAnalysis() override;
+   /**
+    *  Destructor
+    */
+   ~MemoryDataFlowAnalysis() override;
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      void Initialize() override;
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 };
 #endif
-

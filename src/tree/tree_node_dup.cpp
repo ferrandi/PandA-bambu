@@ -1007,11 +1007,14 @@ void tree_node_dup::operator()(const constructor* obj, unsigned int& mask)
          node_id1 = node_id1 ? remap.find(node_id1)->second : 0;
          THROW_ASSERT(remap.find(node_id2) != remap.end(), "missing an index");
          node_id2 = remap.find(node_id2)->second;
-         if(node_id1) {
+         if(node_id1)
+         {
             dynamic_cast<constructor*>(curr_tree_node_ptr)->add_idx_valu(TM->GetTreeReindex(node_id1), TM->GetTreeReindex(node_id2));
-         } else {
+         }
+         else
+         {
             dynamic_cast<constructor*>(curr_tree_node_ptr)->add_valu(TM->GetTreeReindex(node_id2));
-}
+         }
       }
    }
 }
@@ -1209,9 +1212,10 @@ void tree_node_dup::operator()(const gimple_phi* obj, unsigned int& mask)
    for(const auto& def_edge : GetPointer<gimple_phi>(source_tn)->CGetDefEdgesList())
    {
       unsigned int node_id = GET_INDEX_NODE(def_edge.first);
-      if(remap.find(node_id) != remap.end()) {
+      if(remap.find(node_id) != remap.end())
+      {
          node_id = remap.find(node_id)->second;
-}
+      }
       dynamic_cast<gimple_phi*>(curr_tree_node_ptr)->AddDefEdge(TM, gimple_phi::DefEdge(TM->GetTreeReindex(node_id), def_edge.second));
    }
    SET_VALUE(virtual_flag, gimple_phi);

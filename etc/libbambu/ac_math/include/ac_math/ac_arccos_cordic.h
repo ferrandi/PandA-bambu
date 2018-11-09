@@ -96,7 +96,9 @@ namespace ac_math
    template <>
    struct MgcAcItrigAssertCOS<true>
    {
-      static void test() {}
+      static void test()
+      {
+      }
    };
 
    // Multi-precision approximation of 2*tan(2^-i)/pi
@@ -173,7 +175,10 @@ namespace ac_math
    {
       MgcAcItrigAssertCOS<ZW <= 128>::test();
       // Assume no more than 130 entries.
-      if(i > 129) { return 0; }
+      if(i > 129)
+      {
+         return 0;
+      }
       return x2_atan_pi_pow2_tableCOS[i];
    }
 
@@ -198,7 +203,10 @@ namespace ac_math
 
       dp_t arg_t = t;
       dp_t abs_t;
-      if(t < 0) { abs_t = -t; }
+      if(t < 0)
+      {
+         abs_t = -t;
+      }
       else
       {
          abs_t = t;
@@ -231,13 +239,19 @@ namespace ac_math
          }
          tn += tn_d;
       }
-      if(theta < 0) { theta = -theta; }
+      if(theta < 0)
+      {
+         theta = -theta;
+      }
       else
       {
          theta = theta;
       }
       dp_theta_t one(1);
-      if(t < 0) { arccos = one - theta; }
+      if(t < 0)
+      {
+         arccos = one - theta;
+      }
       else
       {
          arccos = theta;

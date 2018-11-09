@@ -229,7 +229,10 @@ namespace ac_math
 #pragma unroll yes
 #endif
             COLUMN:
-               for(unsigned q = 1; q < M; q++) { b(p - 1, q - 1) = A(p, q - (q <= j)); }
+               for(unsigned q = 1; q < M; q++)
+               {
+                  b(p - 1, q - 1) = A(p, q - (q <= j));
+               }
             }
             // Change sign every alternate time
             pr = (-1) * pr;
@@ -245,7 +248,10 @@ namespace ac_math
 #if defined(__clang__)
 #pragma clang loop unroll(full)
 #endif
-         for(unsigned j = 0; j < M; j++) { d = d + A(0, j) * c[j]; }
+         for(unsigned j = 0; j < M; j++)
+         {
+            d = d + A(0, j) * c[j];
+         }
          return d;
       }
    };
@@ -446,7 +452,10 @@ namespace ac_math
 #if defined(__clang__)
 #pragma clang loop unroll(full)
 #endif
-         for(unsigned j = 0; j < M; j++) { a_temp(i, j) = a[i][j]; }
+         for(unsigned j = 0; j < M; j++)
+         {
+            a_temp(i, j) = a[i][j];
+         }
       }
       ac_determinant<override, internal_width, internal_int, internal_sign, internal_rnd, internal_sat>(a_temp, result);
    }
@@ -472,7 +481,10 @@ namespace ac_math
 #if defined(__clang__)
 #pragma clang loop unroll(full)
 #endif
-         for(unsigned j = 0; j < M; j++) { a_temp(i, j) = a[i][j]; }
+         for(unsigned j = 0; j < M; j++)
+         {
+            a_temp(i, j) = a[i][j];
+         }
       }
       ac_determinant<override, internal_width, internal_int, internal_sign, internal_rnd, internal_sat>(a_temp, result);
    }

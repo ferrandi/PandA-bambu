@@ -29,21 +29,21 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file interface_infer.hpp
  * @brief Restructure the top level function to adhere the specified interface.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
-*/
+ */
 #ifndef INTERFACE_INFER_HPP
 #define INTERFACE_INFER_HPP
 
-///Superclass include
+/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
-///utility includes
+/// utility includes
 #include "refcount.hpp"
 
 REF_FORWARD_DECL(tree_node);
@@ -58,62 +58,63 @@ class ssa_name;
 
 class interface_infer : public FunctionFrontendFlowStep
 {
-   private:
+ private:
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   void classifyArgRecurse(std::set<unsigned>& Visited, ssa_name* argSSA, unsigned int destBB, statement_list* sl, bool& canBeMovedToBB2, bool& isRead, bool& isWrite, bool& unkwown_pattern, std::list<tree_nodeRef>& writeStmt,
+                           std::list<tree_nodeRef>& readStmt);
+   void classifyArg(statement_list* sl, tree_nodeRef argSSANode, bool& canBeMovedToBB2, bool& isRead, bool& isWrite, bool& unkwown_pattern, std::list<tree_nodeRef>& writeStmt, std::list<tree_nodeRef>& readStmt);
+   void addGimpleNOPxVirtual(tree_nodeRef origStmt, statement_list* sl, const tree_managerRef TM);
 
-      void classifyArgRecurse(std::set<unsigned>&Visited, ssa_name*argSSA, unsigned int destBB, statement_list*sl, bool &canBeMovedToBB2, bool &isRead, bool &isWrite, bool &unkwown_pattern, std::list<tree_nodeRef> &writeStmt, std::list<tree_nodeRef> &readStmt);
-      void classifyArg(statement_list*sl, tree_nodeRef argSSANode, bool &canBeMovedToBB2, bool &isRead, bool &isWrite, bool &unkwown_pattern, std::list<tree_nodeRef> &writeStmt, std::list<tree_nodeRef> &readStmt);
-      void addGimpleNOPxVirtual(tree_nodeRef origStmt, statement_list*sl, const tree_managerRef TM);
+   void create_Read_function(const std::string& argName_string, tree_nodeRef origStmt, unsigned int destBB, statement_list* sl, function_decl* fd, const std::string& fdName, tree_nodeRef argSSANode, parm_decl* a, tree_nodeRef readType,
+                             const std::list<tree_nodeRef>& usedStmt_defs, const tree_manipulationRef tree_man, const tree_managerRef TM);
+   void create_Write_function(const std::string& argName_string, tree_nodeRef origStmt, unsigned int destBB, statement_list* sl, function_decl* fd, const std::string& fdName, tree_nodeRef argSSANode, tree_nodeRef writeValue, parm_decl* a,
+                              tree_nodeRef writeType, const tree_manipulationRef tree_man, const tree_managerRef TM);
 
-      void create_Read_function(const std::string& argName_string, tree_nodeRef origStmt, unsigned int destBB, statement_list*sl, function_decl* fd, const std::string &fdName, tree_nodeRef argSSANode, parm_decl* a, tree_nodeRef readType, const std::list<tree_nodeRef> &usedStmt_defs, const tree_manipulationRef tree_man, const tree_managerRef TM);
-      void create_Write_function(const std::string& argName_string, tree_nodeRef origStmt, unsigned int destBB, statement_list*sl, function_decl* fd, const std::string &fdName, tree_nodeRef argSSANode, tree_nodeRef writeValue, parm_decl* a, tree_nodeRef writeType, const tree_manipulationRef tree_man, const tree_managerRef TM);
+   void create_resource_Read_simple(const std::vector<std::string>& operations, const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool IO_port);
+   void create_resource_Write_simple(const std::vector<std::string>& operations, const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool IO_port, bool isDiffSize);
+   void create_resource(const std::vector<std::string>& operationsR, const std::vector<std::string>& operationsW, const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool isDiffSize);
 
-      void create_resource_Read_simple(const std::vector<std::string> &operations, const std::string &argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool IO_port);
-      void create_resource_Write_simple(const std::vector<std::string> & operations, const std::string& argName_string, const std::string &interfaceType, unsigned int inputBitWidth, bool IO_port, bool isDiffSize);
-      void create_resource(const std::vector<std::string> & operationsR, const std::vector<std::string> & operationsW, const std::string& argName_string, const std::string &interfaceType, unsigned int inputBitWidth, bool isDiffSize);
+ public:
+   /**
+    * Constructor.
+    * @param AppM is the application manager
+    * @param function_id is the node id of the function analyzed.
+    * @param design_flow_manager is the design flow manager
+    * @param parameters is the set of input parameters
+    */
+   interface_infer(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-   public:
-      /**
-       * Constructor.
-       * @param AppM is the application manager
-       * @param function_id is the node id of the function analyzed.
-       * @param design_flow_manager is the design flow manager
-       * @param parameters is the set of input parameters
-       */
-      interface_infer(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   /**
+    *  Destructor
+    */
+   ~interface_infer() override;
 
-      /**
-       *  Destructor
-       */
-      ~interface_infer() override;
+   /**
+    * Performs the loops analysis
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /**
-       * Performs the loops analysis
-       */
-      DesignFlowStep_Status InternalExec() override;
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      void Initialize() override;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      bool HasToBeExecuted() const override;
-
-      /**
-       * Compute the relationships of a step with other steps
-       * @param dependencies is where relationships will be stored
-       * @param relationship_type is the type of relationship to be computed
-       */
-      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
-
+   /**
+    * Compute the relationships of a step with other steps
+    * @param dependencies is where relationships will be stored
+    * @param relationship_type is the type of relationship to be computed
+    */
+   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 };
 #endif

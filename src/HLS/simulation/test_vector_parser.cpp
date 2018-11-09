@@ -110,7 +110,10 @@ void TestVectorParser::ParseUserString(std::vector<std::map<std::string, std::st
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Examining " + parameter);
       std::vector<std::string> temp;
       boost::algorithm::split(temp, parameter, boost::algorithm::is_any_of("="));
-      if(temp.size() != 2) { THROW_ERROR("Error in processing --simulate arg"); }
+      if(temp.size() != 2)
+      {
+         THROW_ERROR("Error in processing --simulate arg");
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + temp[0] + "=" + temp[1]);
       test_vectors.back()[temp[0]] = temp[1];
       ++index;
@@ -138,7 +141,8 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
 
       for(const auto function_parameter : behavioral_helper->get_parameters())
       {
-         if(behavioral_helper->is_a_pointer(function_parameter)) continue;
+         if(behavioral_helper->is_a_pointer(function_parameter))
+            continue;
          std::string param = behavioral_helper->PrintVariable(function_parameter);
 
          long long int value = (rand() % 20);
@@ -160,7 +164,8 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
          {
             const auto* Enode = GetPointer<const xml_element>(iter);
 
-            if(!Enode || Enode->get_name() != "testbench") continue;
+            if(!Enode || Enode->get_name() != "testbench")
+               continue;
 
             std::map<std::string, std::string> test_vector;
 
@@ -168,7 +173,10 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
             {
                std::string param = behavioral_helper->PrintVariable(function_parameter);
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Parameter: " + param + (behavioral_helper->is_a_pointer(function_parameter) ? " (memory access)" : " (input value)"));
-               if((Enode)->get_attribute(param)) { test_vector[param] = boost::lexical_cast<std::string>((Enode)->get_attribute(param)->get_value()); }
+               if((Enode)->get_attribute(param))
+               {
+                  test_vector[param] = boost::lexical_cast<std::string>((Enode)->get_attribute(param)->get_value());
+               }
                else if(!behavioral_helper->is_a_pointer(function_parameter))
                {
                   THROW_ERROR("Missing input value for parameter: " + param);
@@ -201,7 +209,10 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
 
 size_t TestVectorParser::ParseTestVectors(std::vector<std::map<std::string, std::string>>& test_vectors) const
 {
-   if(not input_xml_filename.empty()) { ParseXMLFile(test_vectors); }
+   if(not input_xml_filename.empty())
+   {
+      ParseXMLFile(test_vectors);
+   }
    else if(not user_input_string.empty())
    {
       ParseUserString(test_vectors);
@@ -269,4 +280,7 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    return ret;
 }
 
-bool TestVectorParser::HasToBeExecuted() const { return true; }
+bool TestVectorParser::HasToBeExecuted() const
+{
+   return true;
+}

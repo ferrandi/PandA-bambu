@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file experimental_setup_xml.hpp
  * @brief xml nodes used in file specifying experimental setup
@@ -41,22 +41,21 @@
 #ifndef EXPERIMENTAL_SETUP_XML
 #define EXPERIMENTAL_SETUP_XML
 
-///The root node
+/// The root node
 #define STR_XML_experimental_setup_root "experimental_setup"
 
-///The node containing the bambu argments
+/// The node containing the bambu argments
 #define STR_XML_experimental_setup_bambu_arguments "bambu_arguments"
 
-///The node containing the list of benchmarks
+/// The node containing the list of benchmarks
 #define STR_XML_experimental_setup_benchmarks "benchmarks"
 
-///The node containing the timestamp of the data generation
+/// The node containing the timestamp of the data generation
 #define STR_XML_experimental_setup_timestamp "timestamp"
 
-///The attribute containing the actual value of a node
+/// The attribute containing the actual value of a node
 #define STR_XML_experimental_setup_value "value"
 
-///The node containing the version of bambu
+/// The node containing the version of bambu
 #define STR_XML_experimental_setup_bambu_version "bambu_version"
 #endif
-

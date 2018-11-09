@@ -103,8 +103,11 @@ class simple_indent;
 /**
  * Macro which defines the get_kind_text function that returns the parameter as a string.
  */
-#define GET_SO_KIND_TEXT(meth) \
-   std::string get_kind_text() const override { return std::string(#meth); }
+#define GET_SO_KIND_TEXT(meth)                \
+   std::string get_kind_text() const override \
+   {                                          \
+      return std::string(#meth);              \
+   }
 
 /**
  * Structure representing the most relevant information about the type of a structural object.
@@ -150,7 +153,9 @@ struct structural_type_descriptor
    /**
     * Constructor
     */
-   structural_type_descriptor() : type(UNKNOWN), size(size_DEFAULT), vector_size(vector_size_DEFAULT), treenode(treenode_DEFAULT) {}
+   structural_type_descriptor() : type(UNKNOWN), size(size_DEFAULT), vector_size(vector_size_DEFAULT), treenode(treenode_DEFAULT)
+   {
+   }
 
    /**
     * Object factory.
@@ -165,7 +170,9 @@ struct structural_type_descriptor
     * Object factory for module objects.
     * @param treenode is the treenode descriptor of the type.
     */
-   explicit structural_type_descriptor(std::string  module_name) : type(OTHER), size(size_DEFAULT), vector_size(vector_size_DEFAULT), id_type(std::move(module_name)), treenode(treenode_DEFAULT) {}
+   explicit structural_type_descriptor(std::string module_name) : type(OTHER), size(size_DEFAULT), vector_size(vector_size_DEFAULT), id_type(std::move(module_name)), treenode(treenode_DEFAULT)
+   {
+   }
 
 #if HAVE_TUCANO_BUILT
    /**
@@ -230,14 +237,18 @@ struct structural_type_descriptor
    /**
     * Definition of get_kind_text()
     */
-   std::string get_kind_text() const { return std::string("structural_type_descriptor"); }
+   std::string get_kind_text() const
+   {
+      return std::string("structural_type_descriptor");
+   }
 
    /**
     * Friend definition of the << operator.
     */
    friend std::ostream& operator<<(std::ostream& os, const structural_type_descriptorRef o)
    {
-      if(o) o->print(os);
+      if(o)
+         o->print(os);
       return os;
    }
 
@@ -297,8 +308,11 @@ enum so_kind
 /**
  * Macro used to implement get_kind() function in structural_object hyerarchy classes
  */
-#define GET_SO_KIND(meth) \
-   enum so_kind get_kind() const override { return (meth##_K); }
+#define GET_SO_KIND(meth)                 \
+   enum so_kind get_kind() const override \
+   {                                      \
+      return (meth##_K);                  \
+   }
 
 /**
  * Base object for all the structural objects.
@@ -475,10 +489,16 @@ class structural_object
    std::string get_parameter(std::string name) const;
 
    /// return the whole parameter list
-   std::map<std::string, std::string> get_parameters() { return parameters_list; }
+   std::map<std::string, std::string> get_parameters()
+   {
+      return parameters_list;
+   }
 
    /// set the whole parameter list
-   void set_parameters(std::map<std::string, std::string>& p) { parameters_list = p; }
+   void set_parameters(std::map<std::string, std::string>& p)
+   {
+      parameters_list = p;
+   }
 
    /**
     * Return a unique identifier of the structural object.
@@ -540,7 +560,8 @@ class structural_object
     */
    friend std::ostream& operator<<(std::ostream& os, const structural_objectRef o)
    {
-      if(o) o->print(os);
+      if(o)
+         o->print(os);
       return os;
    }
 
@@ -950,7 +971,10 @@ struct port_o : public structural_object
    /**
     * return the index of the least significant port
     */
-   unsigned int get_lsb() const { return lsb; }
+   unsigned int get_lsb() const
+   {
+      return lsb;
+   }
 
    /**
     * auxiliary function used to resize the bus ports with respect to their associated bus size
@@ -996,7 +1020,10 @@ struct port_o : public structural_object
    /**
     * return the type of the class
     */
-   enum so_kind get_kind() const override { return port_type; }
+   enum so_kind get_kind() const override
+   {
+      return port_type;
+   }
 
  private:
    /// The list of connections associated with the port.
@@ -1420,7 +1447,7 @@ class constant_o : public structural_object
     * @param o is the owner of the value
     * @param value is the constant value
     */
-   constant_o(int debug_level, const structural_objectRef o, std::string  value);
+   constant_o(int debug_level, const structural_objectRef o, std::string value);
 
    /// Destructor
    ~constant_o() override = default;
@@ -1599,7 +1626,10 @@ class signal_o : public structural_object
    /**
     * return the index of the least significant port
     */
-   unsigned int get_lsb() const { return lsb; }
+   unsigned int get_lsb() const
+   {
+      return lsb;
+   }
 
    /**
     * Perform a copy of the signal.
@@ -1654,7 +1684,10 @@ class signal_o : public structural_object
    /**
     * return the type of the class
     */
-   enum so_kind get_kind() const override { return signal_type; }
+   enum so_kind get_kind() const override
+   {
+      return signal_type;
+   }
 
  private:
    /// List of ports bound to the signal object.
@@ -2054,53 +2087,83 @@ class module : public structural_object
    /**
     * Return the description associated with the module
     */
-   const std::string get_description() const { return description; }
+   const std::string get_description() const
+   {
+      return description;
+   }
 
    /**
     * Set the description associated with the module
     */
-   void set_description(const std::string& d) { description = d; }
+   void set_description(const std::string& d)
+   {
+      description = d;
+   }
 
    /**
     * Return the copyright associated with the module
     */
-   const std::string get_copyright() const { return copyright; }
+   const std::string get_copyright() const
+   {
+      return copyright;
+   }
 
    /**
     * Set the copyright associated with the module
     */
-   void set_copyright(const std::string& c) { copyright = c; }
+   void set_copyright(const std::string& c)
+   {
+      copyright = c;
+   }
 
    /**
     * Return the authors of the functional description of the module
     */
-   const std::string get_authors() const { return authors; }
+   const std::string get_authors() const
+   {
+      return authors;
+   }
 
    /**
     * Set the authors associated with the module
     */
-   void set_authors(const std::string& a) { authors = a; }
+   void set_authors(const std::string& a)
+   {
+      authors = a;
+   }
 
    /**
     * Return the license of the functional description of the module
     */
-   const std::string get_license() const { return license; }
+   const std::string get_license() const
+   {
+      return license;
+   }
 
    /**
     * Set the license associated with the module
     */
-   void set_license(const std::string& l) { license = l; }
+   void set_license(const std::string& l)
+   {
+      license = l;
+   }
 
    /**
     * Return a non-empty string when the component has been specialized.
     * The string identify with respect what the component has been specialized (e.g., target_device, behavior...)
     */
-   const std::string get_specialized() const { return specialized; }
+   const std::string get_specialized() const
+   {
+      return specialized;
+   }
 
    /**
     * Set the specialization string
     */
-   void set_specialized(const std::string& s) { specialized = s; }
+   void set_specialized(const std::string& s)
+   {
+      specialized = s;
+   }
 
 #if HAVE_TECHNOLOGY_BUILT
    /**

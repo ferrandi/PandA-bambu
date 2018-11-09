@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file load_device_technology.cpp
  * @brief This class loads device dependent technology information
@@ -37,47 +37,47 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "load_device_technology.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///parser/polixml include
+/// parser/polixml include
 #include "xml_dom_parser.hpp"
 
-///polixml include
+/// polixml include
 #include "xml_document.hpp"
 
-///technology/target_device include
+/// technology/target_device include
 #include "target_device.hpp"
 
-///utility include
+/// utility include
 #include "fileIO.hpp"
 
-LoadDeviceTechnology::LoadDeviceTechnology(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY, _parameters)
-{}
+LoadDeviceTechnology::LoadDeviceTechnology(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY, _parameters)
+{
+}
 
-LoadDeviceTechnology::~LoadDeviceTechnology()
-= default;
+LoadDeviceTechnology::~LoadDeviceTechnology() = default;
 
 const std::unordered_set<TechnologyFlowStep_Type> LoadDeviceTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    std::unordered_set<TechnologyFlowStep_Type> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP):
       {
 #if HAVE_CIRCUIT_BUILT
          relationships.insert(TechnologyFlowStep_Type::LOAD_BUILTIN_TECHNOLOGY);
@@ -97,7 +97,7 @@ const std::unordered_set<TechnologyFlowStep_Type> LoadDeviceTechnology::ComputeT
 DesignFlowStep_Status LoadDeviceTechnology::Exec()
 {
    // if configuration file is given, it is parsed to check for technology information
-   if (parameters->isOption(OPT_xml_input_configuration))
+   if(parameters->isOption(OPT_xml_input_configuration))
    {
       std::string fn = parameters->getOption<std::string>(OPT_xml_input_configuration);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "checking for technology information in the configuration file...");
@@ -105,24 +105,24 @@ DesignFlowStep_Status LoadDeviceTechnology::Exec()
       {
          XMLDomParser parser(fn);
          parser.Exec();
-         if (parser)
+         if(parser)
          {
             target->xload(target, parser.get_document()->get_root_node());
          }
       }
-      catch (const char * msg)
+      catch(const char* msg)
       {
          THROW_ERROR("Error during technology file parsing: " + std::string(msg));
       }
-      catch (const std::string& msg)
+      catch(const std::string& msg)
       {
          THROW_ERROR("Error during technology file parsing: " + msg);
       }
-      catch (const std::exception& ex)
+      catch(const std::exception& ex)
       {
          THROW_ERROR("Error during technology file parsing: " + std::string(ex.what()));
       }
-      catch ( ... )
+      catch(...)
       {
          THROW_ERROR("Error during technology file parsing");
       }
@@ -133,5 +133,3 @@ DesignFlowStep_Status LoadDeviceTechnology::Exec()
    target->load_devices(target);
    return DesignFlowStep_Status::SUCCESS;
 }
-
-

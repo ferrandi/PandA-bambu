@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file fsm_controller.hpp
  * @brief Header class for the creation of the classical FSM controller.
@@ -41,7 +41,7 @@
  * $Locker:  $
  * $State: Exp $
  *
-*/
+ */
 
 #ifndef FSM_CONTROLLER_HPP
 #define FSM_CONTROLLER_HPP
@@ -52,35 +52,33 @@ CONSTREF_FORWARD_DECL(OpGraph);
 
 class fsm_controller : public ControllerCreatorBaseStep
 {
-      /**
-       * Generates the string representation of the FSM
-       */
-      void create_state_machine(std::string &parse);
+   /**
+    * Generates the string representation of the FSM
+    */
+   void create_state_machine(std::string& parse);
 
-      /**
-       * Returns the value of the guard value of a case_label_expr
-       * default is not managed
-      */
-      std::string get_guard_value(const tree_managerRef TM, const unsigned int index, vertex op, const OpGraphConstRef data);
+   /**
+    * Returns the value of the guard value of a case_label_expr
+    * default is not managed
+    */
+   std::string get_guard_value(const tree_managerRef TM, const unsigned int index, vertex op, const OpGraphConstRef data);
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status InternalExec() override;
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-   public:
+ public:
+   /**
+    * Constructor.
+    * @param design_flow_manager is the design flow manager
+    */
+   fsm_controller(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Constructor.
-       * @param design_flow_manager is the design flow manager
-       */
-      fsm_controller(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
-
-      /**
-       * Destructor.
-       */
-      ~fsm_controller() override;
-
+   /**
+    * Destructor.
+    */
+   ~fsm_controller() override;
 };
 #endif

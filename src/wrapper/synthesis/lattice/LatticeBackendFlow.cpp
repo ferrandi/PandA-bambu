@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file LatticeBackendFlow.cpp
  * @brief Implementation of the wrapper to Lattice tools
@@ -40,8 +40,8 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
-///Header include
+ */
+/// Header include
 #include "LatticeBackendFlow.hpp"
 
 #include "config_HAVE_LATTICE.hpp"
@@ -49,42 +49,42 @@
 #if HAVE_LATTICE
 #include "config_LATTICE_PMI_DEF.hpp"
 #endif
-#include "LatticeWrapper.hpp"
-#include "target_manager.hpp"
-#include "target_device.hpp"
-#include "area_model.hpp"
-#include "time_model.hpp"
 #include "LUT_model.hpp"
+#include "LatticeWrapper.hpp"
+#include "area_model.hpp"
 #include "clb_model.hpp"
+#include "target_device.hpp"
+#include "target_manager.hpp"
+#include "time_model.hpp"
 
-#include "xml_script_command.hpp"
-#include "xml_dom_parser.hpp"
 #include "Parameter.hpp"
 #include "fileIO.hpp"
+#include "xml_dom_parser.hpp"
+#include "xml_script_command.hpp"
 
-///circuit include
+/// circuit include
 #include "structural_objects.hpp"
 
-#define LATTICE_SLICE            "LATTICE_SLICE"
-#define LATTICE_DELAY            "LATTICE_DELAY"
-#define LATTICE_REGISTERS        "LATTICE_REGISTERS"
-#define LATTICE_IOPIN            "LATTICE_IOPIN"
-#define LATTICE_DSP              "LATTICE_DSPS"
-#define LATTICE_MEM              "LATTICE_MEM"
+#define LATTICE_SLICE "LATTICE_SLICE"
+#define LATTICE_DELAY "LATTICE_DELAY"
+#define LATTICE_REGISTERS "LATTICE_REGISTERS"
+#define LATTICE_IOPIN "LATTICE_IOPIN"
+#define LATTICE_DSP "LATTICE_DSPS"
+#define LATTICE_MEM "LATTICE_MEM"
 
-LatticeBackendFlow::LatticeBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _target) :
-   BackendFlow(_Param, _flow_name, _target)
+LatticeBackendFlow::LatticeBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _target) : BackendFlow(_Param, _flow_name, _target)
 {
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " .:: Creating Lattice Backend Flow ::.");
 
    default_data["LatticeECP3"] =
-      #include "LatticeECP3.data"
-         ;
+#include "LatticeECP3.data"
+       ;
    XMLDomParserRef parser;
-   if (Param->isOption(OPT_target_device_script))
+   if(Param->isOption(OPT_target_device_script))
    {
       std::string xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
-      if (!boost::filesystem::exists(xml_file_path)) THROW_ERROR("File \"" + xml_file_path + "\" does not exist!");
+      if(!boost::filesystem::exists(xml_file_path))
+         THROW_ERROR("File \"" + xml_file_path + "\" does not exist!");
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Importing scripts from file: " + xml_file_path);
       parser = XMLDomParserRef(new XMLDomParser(xml_file_path));
    }
@@ -96,17 +96,15 @@ LatticeBackendFlow::LatticeBackendFlow(const ParameterConstRef _Param, const std
          device_string = device->get_parameter<std::string>("family");
       else
          device_string = "LatticeECP3";
-      if (default_data.find(device_string) == default_data.end())
+      if(default_data.find(device_string) == default_data.end())
          THROW_ERROR("Device family \"" + device_string + "\" not supported!");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Importing default scripts for target device family: " + device_string);
       parser = XMLDomParserRef(new XMLDomParser(device_string, default_data[device_string]));
    }
    parse_flow(parser);
-
 }
 
-LatticeBackendFlow::~LatticeBackendFlow()
-= default;
+LatticeBackendFlow::~LatticeBackendFlow() = default;
 
 void LatticeBackendFlow::xparse_utilization(const std::string& fn)
 {
@@ -114,39 +112,44 @@ void LatticeBackendFlow::xparse_utilization(const std::string& fn)
    {
       XMLDomParser parser(fn);
       parser.Exec();
-      if (parser)
+      if(parser)
       {
-         //Walk the tree:
-         const xml_element* node = parser.get_document()->get_root_node(); //deleted by DomParser.
+         // Walk the tree:
+         const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
          THROW_ASSERT(node->get_name() == "document", "Wrong root name: " + node->get_name());
 
          const xml_node::node_list list_int = node->get_children();
-         for (const auto & iter_int : list_int)
+         for(const auto& iter_int : list_int)
          {
             const auto* EnodeC = GetPointer<const xml_element>(iter_int);
-            if(!EnodeC) continue;
+            if(!EnodeC)
+               continue;
 
-            if (EnodeC->get_name() == "application")
+            if(EnodeC->get_name() == "application")
             {
                const xml_node::node_list list_sec = EnodeC->get_children();
-               for (const auto & iter_sec : list_sec)
+               for(const auto& iter_sec : list_sec)
                {
                   const auto* nodeS = GetPointer<const xml_element>(iter_sec);
-                  if(!nodeS) continue;
+                  if(!nodeS)
+                     continue;
 
-                  if (nodeS->get_name() == "section")
+                  if(nodeS->get_name() == "section")
                   {
                      std::string stringID;
-                     if(CE_XVM(stringID, nodeS)) LOAD_XVM(stringID, nodeS);
-                     if (stringID == "LATTICE_SYNTHESIS_SUMMARY")
+                     if(CE_XVM(stringID, nodeS))
+                        LOAD_XVM(stringID, nodeS);
+                     if(stringID == "LATTICE_SYNTHESIS_SUMMARY")
                      {
                         const xml_node::node_list list_item = nodeS->get_children();
-                        for (const auto & it_item : list_item)
+                        for(const auto& it_item : list_item)
                         {
                            const auto* nodeIt = GetPointer<const xml_element>(it_item);
-                           if(!nodeIt or nodeIt->get_name() != "item") continue;
+                           if(!nodeIt or nodeIt->get_name() != "item")
+                              continue;
 
-                           if(CE_XVM(stringID, nodeIt)) LOAD_XVM(stringID, nodeIt);
+                           if(CE_XVM(stringID, nodeIt))
+                              LOAD_XVM(stringID, nodeIt);
 
                            std::string value;
                            if(CE_XVM(value, nodeIt))
@@ -164,19 +167,19 @@ void LatticeBackendFlow::xparse_utilization(const std::string& fn)
          return;
       }
    }
-   catch (const char * msg)
+   catch(const char* msg)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string& msg)
+   catch(const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::exception& ex)
+   catch(const std::exception& ex)
    {
       std::cout << "Exception caught: " << ex.what() << std::endl;
    }
-   catch ( ... )
+   catch(...)
    {
       std::cerr << "unknown exception" << std::endl;
    }
@@ -213,7 +216,7 @@ void LatticeBackendFlow::WriteFlowConfiguration(std::ostream& script)
    if(setupscr.size() and setupscr != "0")
    {
       script << "#configuration" << std::endl;
-      if(boost::algorithm::starts_with(setupscr,"export"))
+      if(boost::algorithm::starts_with(setupscr, "export"))
          script << setupscr + " >& /dev/null; ";
       else
          script << ". " << setupscr << " >& /dev/null; ";
@@ -225,12 +228,12 @@ void LatticeBackendFlow::create_sdc(const DesignParametersRef dp)
 {
    std::string clock = dp->parameter_values[PARAM_clk_name];
 
-   std::string sdc_filename = out_dir + "/"  + dp->component_name + ".ldc";
+   std::string sdc_filename = out_dir + "/" + dp->component_name + ".ldc";
    std::ofstream sdc_file(sdc_filename.c_str());
    if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
-      sdc_file << "create_clock -period "+ dp->parameter_values[PARAM_clk_period] + " -name "+ clock + " [get_ports " + clock + "]\n";
+      sdc_file << "create_clock -period " + dp->parameter_values[PARAM_clk_period] + " -name " + clock + " [get_ports " + clock + "]\n";
    else
-      sdc_file << "set_max_delay "+ dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_outputs]\n";
+      sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_outputs]\n";
    if(Param->isOption(OPT_backend_sdc_extensions))
       sdc_file << "source " + Param->getOption<std::string>(OPT_backend_sdc_extensions) + "\n";
 
@@ -250,13 +253,13 @@ void LatticeBackendFlow::InitDesignParameters()
    actual_parameters->parameter_values[PARAM_target_device] = device->get_parameter<std::string>("model");
    std::string device_family = device->get_parameter<std::string>("family");
    if(device_family.find('-') != std::string::npos)
-         device_family = device_family.substr(0, device_family.find('-'));
+      device_family = device_family.substr(0, device_family.find('-'));
    actual_parameters->parameter_values[PARAM_target_family] = device_family;
 
    std::string HDL_files = actual_parameters->parameter_values[PARAM_HDL_files];
    std::vector<std::string> file_list = convert_string_to_vector<std::string>(HDL_files, ";");
    std::string sources_macro_list;
-   for(auto & v : file_list)
+   for(auto& v : file_list)
    {
       boost::filesystem::path file_path(v);
       std::string extension = GetExtension(file_path);
@@ -265,8 +268,7 @@ void LatticeBackendFlow::InitDesignParameters()
       else if(extension == "v" || extension == "V" || extension == "sv" || extension == "SV")
          sources_macro_list += "prj_src add -format VERILOG " + v + "\n";
       else
-         THROW_ERROR("Extension not recognized! "+extension);
-
+         THROW_ERROR("Extension not recognized! " + extension);
    }
 #if HAVE_LATTICE
    sources_macro_list += "prj_src add -format VERILOG " + std::string(LATTICE_PMI_DEF) + "\n";
@@ -283,7 +285,7 @@ void LatticeBackendFlow::InitDesignParameters()
 
    create_sdc(actual_parameters);
 
-   for (auto & step : steps)
+   for(auto& step : steps)
    {
       step->tool->EvaluateVariables(actual_parameters);
    }

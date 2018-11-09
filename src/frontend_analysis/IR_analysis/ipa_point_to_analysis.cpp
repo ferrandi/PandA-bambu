@@ -29,62 +29,63 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file ipa_point_to_analysis.cpp
  * @brief Perform an inter-procedural flow sensitive point-to analysis.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "ipa_point_to_analysis.hpp"
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 
-///Behavior include
+/// Behavior include
 #include "application_manager.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
 
-///Parameter include
+/// Parameter include
 #include "Parameter.hpp"
 #include "module_interface.hpp"
 
-///Tree include
+/// Tree include
 #include "behavioral_helper.hpp"
+#include "ext_tree_node.hpp"
+#include "op_graph.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "ext_tree_node.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include "op_graph.hpp"
 
-///boost include
+/// boost include
+#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "string_manipulation.hpp" // for GET_CLASS
 #include <boost/range/adaptors.hpp>
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
-#include "string_manipulation.hpp"          // for GET_CLASS
 
 REF_FORWARD_DECL(function_information);
 
 struct function_information
 {
-      /// topological order identifier
-      unsigned int topo_id;
-      /// a function is non-preserving if it operates on pointer-type
-      /// variables or passes them to another function
-      bool preserving;
-      ///called functions, directly or through function pointers
-      std::set<unsigned int> called_functions;
-      /// list of statements to be processed
-      std::list<unsigned int> stmts_list;
-      explicit function_information(unsigned int _topo_id) : topo_id(_topo_id), preserving(true) {}
+   /// topological order identifier
+   unsigned int topo_id;
+   /// a function is non-preserving if it operates on pointer-type
+   /// variables or passes them to another function
+   bool preserving;
+   /// called functions, directly or through function pointers
+   std::set<unsigned int> called_functions;
+   /// list of statements to be processed
+   std::list<unsigned int> stmts_list;
+   explicit function_information(unsigned int _topo_id) : topo_id(_topo_id), preserving(true)
+   {
+   }
 };
 
-
-void ipa_point_to_analysis::compute_function_topological_order(std::list<unsigned int> &sort_list)
+void ipa_point_to_analysis::compute_function_topological_order(std::list<unsigned int>& sort_list)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "compute function topological order...");
    std::list<vertex> topology_sorted_vertex;
@@ -120,7 +121,7 @@ void ipa_point_to_analysis::compute_function_topological_order(std::list<unsigne
    else
       reachable_functions = CG->GetReachedBodyFunctions();
 
-   for (auto v : topology_sorted_vertex)
+   for(auto v : topology_sorted_vertex)
    {
       auto fun_id = CG->get_function(v);
       if(reachable_functions.find(fun_id) != reachable_functions.end())
@@ -128,46 +129,42 @@ void ipa_point_to_analysis::compute_function_topological_order(std::list<unsigne
    }
 }
 
-
-
-ipa_point_to_analysis::ipa_point_to_analysis(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters):
-   ApplicationFrontendFlowStep(_AppM, IPA_POINT_TO_ANALYSIS, _design_flow_manager, _parameters),
-   TM(_AppM->get_tree_manager())
+ipa_point_to_analysis::ipa_point_to_analysis(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : ApplicationFrontendFlowStep(_AppM, IPA_POINT_TO_ANALYSIS, _design_flow_manager, _parameters), TM(_AppM->get_tree_manager())
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-ipa_point_to_analysis::~ipa_point_to_analysis()
-= default;
+ipa_point_to_analysis::~ipa_point_to_analysis() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > ipa_point_to_analysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> ipa_point_to_analysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship> (IR_LOWERING, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship> (USE_COUNTING, ALL_FUNCTIONS));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(IR_LOWERING, WHOLE_APPLICATION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, ALL_FUNCTIONS));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert (std::pair<FrontendFlowStepType, FunctionRelationship> (BUILD_VIRTUAL_PHI, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship> (CSE_STEP, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship> (FANOUT_OPT, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship> (HLS_DIV_CG_EXT, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship> (MEM_CG_EXT, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship> (SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship> (BIT_VALUE_OPT, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship> (LUT_TRANSFORMATION, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship> (EXTRACT_PATTERNS, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship> (FUNCTION_CALL_TYPE_CLEANUP, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship> (SPLIT_RETURN, ALL_FUNCTIONS));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BUILD_VIRTUAL_PHI, ALL_FUNCTIONS));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CSE_STEP, ALL_FUNCTIONS));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FANOUT_OPT, ALL_FUNCTIONS));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(HLS_DIV_CG_EXT, ALL_FUNCTIONS));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MEM_CG_EXT, ALL_FUNCTIONS));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, ALL_FUNCTIONS));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LUT_TRANSFORMATION, ALL_FUNCTIONS));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_PATTERNS, ALL_FUNCTIONS));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FUNCTION_CALL_TYPE_CLEANUP, ALL_FUNCTIONS));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SPLIT_RETURN, ALL_FUNCTIONS));
          break;
       }
       default:
@@ -180,58 +177,56 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 class worklist_queue
 {
-   public:
+ public:
+   worklist_queue() = default;
+   ~worklist_queue() = default;
 
-      worklist_queue() = default;
-      ~worklist_queue() = default;
+   /**
+    * @brief insert a statement in the priority queue
+    * @param statement_id
+    * @param priority_value
+    */
+   void insert(unsigned int statement_id, unsigned int priority_value)
+   {
+      priority_queue_data.push(std::make_pair(statement_id, priority_value));
+   }
 
-      /**
-       * @brief insert a statement in the priority queue
-       * @param statement_id
-       * @param priority_value
-       */
-      void insert(unsigned int statement_id, unsigned int priority_value)
-      {
-         priority_queue_data.push(std::make_pair(statement_id,priority_value));
-      }
+   /// return the first element in the priority queue
+   unsigned int get()
+   {
+      THROW_ASSERT(!empty(), "work list is empty");
 
-      /// return the first element in the priority queue
-      unsigned int get()
-      {
-         THROW_ASSERT(!empty(), "work list is empty");
-
-         std::pair<unsigned int,unsigned int> el = priority_queue_data.top();
+      std::pair<unsigned int, unsigned int> el = priority_queue_data.top();
+      priority_queue_data.pop();
+      while(!priority_queue_data.empty() && el.second == priority_queue_data.top().second)
          priority_queue_data.pop();
-         while (!priority_queue_data.empty() && el.second == priority_queue_data.top().second)
-            priority_queue_data.pop();
 
-         return el.first;
-      }
+      return el.first;
+   }
 
-      /// check if the priority queue is empty
-      bool empty() const
+   /// check if the priority queue is empty
+   bool empty() const
+   {
+      return priority_queue_data.empty();
+   }
+
+ private:
+   struct comp_functor : std::binary_function<const std::pair<unsigned int, unsigned int>, const std::pair<unsigned int, unsigned int>, bool>
+   {
+      bool operator()(const std::pair<unsigned int, unsigned int>& a, const std::pair<unsigned int, unsigned int>& b) const
       {
-         return priority_queue_data.empty();
+         return (a.second < b.second);
       }
+   };
 
-   private:
-
-      struct comp_functor : std::binary_function<const std::pair<unsigned int,unsigned int>, const std::pair<unsigned int,unsigned int>, bool>
-      {
-            bool operator()(const std::pair<unsigned int,unsigned int>& a, const std::pair<unsigned int,unsigned int>& b) const
-            {
-               return (a.second < b.second);
-            }
-      };
-
-      std::priority_queue<std::pair<unsigned int,unsigned int>, std::vector<std::pair<unsigned int,unsigned int>>,comp_functor> priority_queue_data;
+   std::priority_queue<std::pair<unsigned int, unsigned int>, std::vector<std::pair<unsigned int, unsigned int>>, comp_functor> priority_queue_data;
 };
 
 DesignFlowStep_Status ipa_point_to_analysis::Exec()
 {
    std::unordered_set<unsigned int> pointing_to_ssa_vars;
-   std::unordered_map<unsigned int,unsigned int> topo_stmt_order;
-   //std::unordered_map<unsigned int,unsigned int> topo_func_parameter_order;
+   std::unordered_map<unsigned int, unsigned int> topo_stmt_order;
+   // std::unordered_map<unsigned int,unsigned int> topo_func_parameter_order;
    unsigned int curr_topo_order = 0;
    /// array storing the functions for which the address has been taken by some gimple node.
    std::set<unsigned int> addr_taken_functions;
@@ -246,11 +241,11 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
    /// first compute seeds
    std::list<unsigned int> functions;
    compute_function_topological_order(functions);
-   unsigned int topo_func_order=0;
+   unsigned int topo_func_order = 0;
    for(const auto function : functions)
    {
       const tree_nodeRef curr_tn = TM->get_tree_node_const(function);
-      auto * fd = GetPointer<function_decl>(curr_tn);
+      auto* fd = GetPointer<function_decl>(curr_tn);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining function " + tree_helper::name_function(TM, function));
       function_information_map[function] = function_informationRef(new function_information(topo_func_order));
       topo_func_order++;
@@ -267,31 +262,21 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
             std::string fun_name = tree_helper::name_function(TM, called_id);
             if(fun_name == "open") /// may use pointers
             {
-               function_information_map[function]->preserving &= false;//check if this is actually equal to true
+               function_information_map[function]->preserving &= false; // check if this is actually equal to true
             }
-            else if(fun_name != "signbit" &&  fun_name != "__builtin_signbit" &&
-                    fun_name != "signbitf" && fun_name != "__builtin_signbitf" &&
-                    fun_name != "fabs" &&
-                    fun_name != "fabsf" &&
-                    fun_name != "llabs" &&
-                    fun_name != "labs" &&
-                    fun_name != "abs" &&
-                    fun_name != "putchar" && fun_name != "__builtin_putchar" &&
-                    fun_name != "__bambu_read4c" &&
-                    fun_name != "__bambu_readc" &&
-                    fun_name != "abort" &&
-                    fun_name != "exit")
+            else if(fun_name != "signbit" && fun_name != "__builtin_signbit" && fun_name != "signbitf" && fun_name != "__builtin_signbitf" && fun_name != "fabs" && fun_name != "fabsf" && fun_name != "llabs" && fun_name != "labs" && fun_name != "abs" &&
+                    fun_name != "putchar" && fun_name != "__builtin_putchar" && fun_name != "__bambu_read4c" && fun_name != "__bambu_readc" && fun_name != "abort" && fun_name != "exit")
                function_information_map[function]->preserving = false;
          }
       }
 
       /// reserve priorities for the function parameters
-      //for(auto par : fd->list_of_args)
+      // for(auto par : fd->list_of_args)
       //{
       //   topo_func_parameter_order[GET_INDEX_NODE(par)] = curr_topo_order++;
       //}
-      auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
-      std::map<unsigned int, blocRef> &blocks = sl->list_of_bloc;
+      auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+      std::map<unsigned int, blocRef>& blocks = sl->list_of_bloc;
       std::map<unsigned int, blocRef>::iterator it, it_end;
       it_end = blocks.end();
       for(it = blocks.begin(); it != it_end; ++it)
@@ -303,10 +288,10 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
             topo_stmt_order[GET_INDEX_NODE(stmt)] = curr_topo_order++;
             if(GET_NODE(stmt)->get_kind() == gimple_assign_K)
             {
-               auto * ga =  GetPointer<gimple_assign>(GET_NODE(stmt));
+               auto* ga = GetPointer<gimple_assign>(GET_NODE(stmt));
                unsigned int output_uid = GET_INDEX_NODE(ga->op0);
-               auto *ssa = GetPointer<ssa_name> (GET_NODE(ga->op0));
-               if (ssa)
+               auto* ssa = GetPointer<ssa_name>(GET_NODE(ga->op0));
+               if(ssa)
                {
                   if(GET_NODE(ga->op1)->get_kind() == addr_expr_K)
                   {
@@ -320,43 +305,41 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
                         if(GET_NODE(ae->op)->get_kind() == function_decl_K)
                            addr_taken_functions.insert(GET_INDEX_NODE(ae->op));
                      }
-                     else if(GET_NODE(ae->op)->get_kind()== mem_ref_K)
+                     else if(GET_NODE(ae->op)->get_kind() == mem_ref_K)
                      {
-                        auto * MR =  GetPointer<mem_ref>(GET_NODE(ae->op));
-                        THROW_ASSERT(
-                              GET_NODE(MR->op0)->get_kind() == ssa_name_K && GetPointer<integer_cst>(GET_NODE(MR->op1)) &&
-                              tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(MR->op1))) == 0,
-                              "expected a ssa_name as first operand of a mem_ref " + GET_NODE(stmt)->ToString() +
-                              " but " + STR(GET_NODE(MR->op0)) + " is a " + GET_NODE(MR->op0)->get_kind_text() + "; "
-                              "second operand " + STR(GET_NODE(MR->op1)) + " is a " + GET_NODE(MR->op1)->get_kind_text());
+                        auto* MR = GetPointer<mem_ref>(GET_NODE(ae->op));
+                        THROW_ASSERT(GET_NODE(MR->op0)->get_kind() == ssa_name_K && GetPointer<integer_cst>(GET_NODE(MR->op1)) && tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(MR->op1))) == 0,
+                                     "expected a ssa_name as first operand of a mem_ref " + GET_NODE(stmt)->ToString() + " but " + STR(GET_NODE(MR->op0)) + " is a " + GET_NODE(MR->op0)->get_kind_text() +
+                                         "; "
+                                         "second operand " +
+                                         STR(GET_NODE(MR->op1)) + " is a " + GET_NODE(MR->op1)->get_kind_text());
                         pointing_to_ssa_vars.insert(GET_INDEX_NODE(MR->op0));
                      }
                      else
                      {
-                        THROW_ERROR("unexpected pattern: addr_expr " + STR(ga) +
-                           " takes address of " + GET_NODE(ae->op)->get_kind_text());
+                        THROW_ERROR("unexpected pattern: addr_expr " + STR(ga) + " takes address of " + GET_NODE(ae->op)->get_kind_text());
                      }
                   }
                   else if(GET_NODE(ga->op1)->get_kind() == pointer_plus_expr_K)
                   {
                      pointing_to_ssa_vars.insert(output_uid);
                      wl.insert(GET_INDEX_NODE(stmt), topo_stmt_order.find(GET_INDEX_NODE(stmt))->second);
-                     THROW_ASSERT(GET_NODE(GetPointer<pointer_plus_expr>(GET_NODE(ga->op1))->op0)->get_kind() == ssa_name_K || GET_NODE(GetPointer<pointer_plus_expr>(GET_NODE(ga->op1))->op0)->get_kind() == integer_cst_K, "expected a ssa_name as first operand of a pointer plus expression" + GET_NODE(stmt)->ToString());
+                     THROW_ASSERT(GET_NODE(GetPointer<pointer_plus_expr>(GET_NODE(ga->op1))->op0)->get_kind() == ssa_name_K || GET_NODE(GetPointer<pointer_plus_expr>(GET_NODE(ga->op1))->op0)->get_kind() == integer_cst_K,
+                                  "expected a ssa_name as first operand of a pointer plus expression" + GET_NODE(stmt)->ToString());
                      if(GET_NODE(GetPointer<pointer_plus_expr>(GET_NODE(ga->op1))->op0)->get_kind() == ssa_name_K)
                         pointing_to_ssa_vars.insert(GET_INDEX_NODE(GetPointer<pointer_plus_expr>(GET_NODE(ga->op1))->op0));
                   }
                   else if(GET_NODE(ga->op1)->get_kind() == mem_ref_K)
                   {
-                     auto * MR =  GetPointer<mem_ref>(GET_NODE(ga->op1));
+                     auto* MR = GetPointer<mem_ref>(GET_NODE(ga->op1));
                      THROW_ASSERT(MR, STR(GET_NODE(ga->op1)) + " is not a mem_ref but a " + GET_NODE(ga->op1)->get_kind_text());
                      if(GET_NODE(MR->op0)->get_kind() != integer_cst_K)
                      {
-                        THROW_ASSERT(
-                           GET_NODE(MR->op0)->get_kind() == ssa_name_K && GetPointer<integer_cst>(GET_NODE(MR->op1)) &&
-                           tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(MR->op1))) == 0,
-                           "expected a ssa_name as first operand of a mem_ref " + GET_NODE(stmt)->ToString() +
-                           " but " + STR(GET_NODE(MR->op0)) + " is a " + GET_NODE(MR->op0)->get_kind_text() + "; "
-                           "second operand " + STR(GET_NODE(MR->op1)) + " is a " + GET_NODE(MR->op1)->get_kind_text());
+                        THROW_ASSERT(GET_NODE(MR->op0)->get_kind() == ssa_name_K && GetPointer<integer_cst>(GET_NODE(MR->op1)) && tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(MR->op1))) == 0,
+                                     "expected a ssa_name as first operand of a mem_ref " + GET_NODE(stmt)->ToString() + " but " + STR(GET_NODE(MR->op0)) + " is a " + GET_NODE(MR->op0)->get_kind_text() +
+                                         "; "
+                                         "second operand " +
+                                         STR(GET_NODE(MR->op1)) + " is a " + GET_NODE(MR->op1)->get_kind_text());
                         pointing_to_ssa_vars.insert(GET_INDEX_NODE(MR->op0));
                      }
                   }
@@ -375,7 +358,7 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
                         {
                            if(GET_NODE(par)->get_kind() == ssa_name_K)
                            {
-                              if(tree_helper::is_a_pointer(TM,GET_INDEX_NODE(par)))
+                              if(tree_helper::is_a_pointer(TM, GET_INDEX_NODE(par)))
                               {
                                  function_information_map[function]->preserving = false;
                                  break;
@@ -390,20 +373,12 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
                         std::string fun_name = tree_helper::print_function_name(TM, called_fd);
                         if(fun_name == "open") /// may use pointers
                         {
-                           THROW_ASSERT(ce->args.size()>=1, "unexpected pattern");
+                           THROW_ASSERT(ce->args.size() >= 1, "unexpected pattern");
                            THROW_ASSERT(GET_NODE(ce->args.at(0))->get_kind() == ssa_name_K, "unexpected pattern");
                            pointing_to_ssa_vars.insert(GET_INDEX_NODE(ce->args.at(0)));
                         }
-                        else if(fun_name != "signbit" && fun_name != "__builtin_signbit" &&
-                                fun_name != "signbitf" && fun_name != "__builtin_signbitf" &&
-                                fun_name != "fabs" &&
-                                fun_name != "fabsf" &&
-                                fun_name != "llabs" &&
-                                fun_name != "labs" &&
-                                fun_name != "abs" &&
-                                fun_name != "putchar" && fun_name != "__builtin_putchar" &&
-                                fun_name != "__bambu_read4c" &&
-                                fun_name != "__bambu_readc")
+                        else if(fun_name != "signbit" && fun_name != "__builtin_signbit" && fun_name != "signbitf" && fun_name != "__builtin_signbitf" && fun_name != "fabs" && fun_name != "fabsf" && fun_name != "llabs" && fun_name != "labs" &&
+                                fun_name != "abs" && fun_name != "putchar" && fun_name != "__builtin_putchar" && fun_name != "__bambu_read4c" && fun_name != "__bambu_readc")
                         {
                            if(output_level > OUTPUT_LEVEL_VERBOSE)
                               THROW_WARNING("function " + fun_name + " does not have a source C body so we have to be very restrictive on its parameters and on the usage of the value returned...");
@@ -414,7 +389,7 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
                               }
                            pointing_to_ssa_vars.insert(GET_INDEX_NODE(ga->op0));
                         }
-                     }                     
+                     }
                   }
                   else if(GET_NODE(ga->op1)->get_kind() == target_mem_ref461_K)
                   {
@@ -423,20 +398,17 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
                }
                else if(GET_NODE(ga->op0)->get_kind() == mem_ref_K)
                {
-                  auto * MR =  GetPointer<mem_ref>(GET_NODE(ga->op0));
+                  auto* MR = GetPointer<mem_ref>(GET_NODE(ga->op0));
                   THROW_ASSERT(MR, STR(GET_NODE(ga->op0)) + " is not a mem_ref but a " + GET_NODE(ga->op0)->get_kind_text());
                   if(GET_NODE(MR->op0)->get_kind() != integer_cst_K)
                   {
-                    THROW_ASSERT(
-                        GET_NODE(MR->op0)->get_kind() == ssa_name_K && GetPointer<integer_cst>(GET_NODE(MR->op1)) &&
-                        tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(MR->op1))) == 0,
-                        "expected a ssa_name as first operand of a mem_ref" + GET_NODE(stmt)->ToString() +
-                        " but it's a " + GET_NODE(MR->op0)->get_kind_text());
-                    pointing_to_ssa_vars.insert(GET_INDEX_NODE(MR->op0));
+                     THROW_ASSERT(GET_NODE(MR->op0)->get_kind() == ssa_name_K && GetPointer<integer_cst>(GET_NODE(MR->op1)) && tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(MR->op1))) == 0,
+                                  "expected a ssa_name as first operand of a mem_ref" + GET_NODE(stmt)->ToString() + " but it's a " + GET_NODE(MR->op0)->get_kind_text());
+                     pointing_to_ssa_vars.insert(GET_INDEX_NODE(MR->op0));
                   }
                   function_information_map[function]->preserving = false;
                }
-               else if(GET_NODE(ga->op0)->get_kind() == imagpart_expr_K || GET_NODE(ga->op0)->get_kind() == realpart_expr_K )
+               else if(GET_NODE(ga->op0)->get_kind() == imagpart_expr_K || GET_NODE(ga->op0)->get_kind() == realpart_expr_K)
                {
                   /// do nothing
                }
@@ -446,8 +418,7 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
                }
                else if(!ga->init_assignment)
                {
-                     THROW_ERROR("unexpected pattern: lhs of gimple_assign " + STR(ga) +
-                           " is a " + GET_NODE(ga->op0)->get_kind_text());
+                  THROW_ERROR("unexpected pattern: lhs of gimple_assign " + STR(ga) + " is a " + GET_NODE(ga->op0)->get_kind_text());
                }
             }
             else if(GET_NODE(stmt)->get_kind() == gimple_call_K)
@@ -463,7 +434,7 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
                   {
                      if(GET_NODE(par)->get_kind() == ssa_name_K)
                      {
-                        if(tree_helper::is_a_pointer(TM,GET_INDEX_NODE(par)))
+                        if(tree_helper::is_a_pointer(TM, GET_INDEX_NODE(par)))
                         {
                            function_information_map[function]->preserving = false;
                            break;
@@ -483,10 +454,10 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
    {
       /// print all ssa vars pointing to something
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->SSA vars pointing to something (size:" + STR(pointing_to_ssa_vars.size()) + "):");
-      for(auto var: pointing_to_ssa_vars)
+      for(auto var : pointing_to_ssa_vars)
       {
          const tree_nodeRef curr_tn = TM->get_tree_node_const(var);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Var " + curr_tn->ToString() + ((GetPointer<ssa_name>(curr_tn) && GetPointer<ssa_name>(curr_tn)->use_set) ? (" { " + GetPointer<ssa_name>(curr_tn)->use_set->ToString() + "}"): ""));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Var " + curr_tn->ToString() + ((GetPointer<ssa_name>(curr_tn) && GetPointer<ssa_name>(curr_tn)->use_set) ? (" { " + GetPointer<ssa_name>(curr_tn)->use_set->ToString() + "}") : ""));
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    }

@@ -145,9 +145,15 @@ namespace ac_math
 
       bool is_input_negative = false;
 
-      if(S && (input < 0)) { is_input_negative = true; }
+      if(S && (input < 0))
+      {
+         is_input_negative = true;
+      }
 
-      if(S) { input_pwl = ((!is_input_negative) ? (ac_fixed<W, I, false>)input : (ac_fixed<W, I, false>)(-input)); }
+      if(S)
+      {
+         input_pwl = ((!is_input_negative) ? (ac_fixed<W, I, false>)input : (ac_fixed<W, I, false>)(-input));
+      }
 
       else
       {
@@ -173,11 +179,17 @@ namespace ac_math
       ac_fixed<n_frac_bits * 2, 0, false, pwl_Q> output_pwl = m_lut[index] * x_in_sc_frac + c_lut[index];
 
       // If the input is outside the pwl domain then saturate output
-      if(input_pwl >= x_max_lut) { output_pwl.template set_val<AC_VAL_MAX>(); }
+      if(input_pwl >= x_max_lut)
+      {
+         output_pwl.template set_val<AC_VAL_MAX>();
+      }
 
       // As the sigmoid function is symmetrical, for negative inputs from -5 to 0 (pwl domain is [0, 5) )
       // the output would be 1 - output_pwl
-      if(is_input_negative) { output_pwl = 1 - output_pwl; }
+      if(is_input_negative)
+      {
+         output_pwl = 1 - output_pwl;
+      }
 
       output = output_pwl;
 

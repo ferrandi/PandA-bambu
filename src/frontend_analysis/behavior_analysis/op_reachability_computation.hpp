@@ -29,18 +29,18 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file op_reachability_computation.hpp
  * @brief Analysis step computing reachability between operations
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
-*/
+ */
 #ifndef OP_REACHABILITY_COMPUTATION_HPP
 #define OP_REACHABILITY_COMPUTATION_HPP
 
-///Superclass include
+/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
 /**
@@ -48,40 +48,39 @@
  * An operation inside a loop reaches all the operation after the loop
  * An operation inside a loop does not reach all the operation inside the loop but which are not reachable without crossing a feedback edge
  */
-class OpReachabilityComputation: public FunctionFrontendFlowStep
+class OpReachabilityComputation : public FunctionFrontendFlowStep
 {
-   private:
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+ private:
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor.
-       * @param Param is the set of the parameters
-       * @param AppM is the application manager
-       * @param function_id is the identifier of the function
-       * @param design_flow_manager is the design flow manager
-       */
-      OpReachabilityComputation(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+ public:
+   /**
+    * Constructor.
+    * @param Param is the set of the parameters
+    * @param AppM is the application manager
+    * @param function_id is the identifier of the function
+    * @param design_flow_manager is the design flow manager
+    */
+   OpReachabilityComputation(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       *  Destructor
-       */
-      ~OpReachabilityComputation() override;
+   /**
+    *  Destructor
+    */
+   ~OpReachabilityComputation() override;
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      void Initialize() override;
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 
-      /**
-       * Computes the reachability between operations according to the control flow graph WITHOUT feedback
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status InternalExec() override;
+   /**
+    * Computes the reachability between operations according to the control flow graph WITHOUT feedback
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 };
 #endif
-

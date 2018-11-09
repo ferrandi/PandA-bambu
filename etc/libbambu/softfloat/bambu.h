@@ -56,7 +56,7 @@ typedef signed long long int __sbits64;
 | name for the 64-bit integer type.  Some compilers may allow `LIT64' to be
 | defined as the identity macro:  `#define LIT64( a ) a'.
 *----------------------------------------------------------------------------*/
-#define LIT64( a ) a##LL
+#define LIT64(a) a##LL
 #endif
 
 /*----------------------------------------------------------------------------
@@ -65,4 +65,3 @@ typedef signed long long int __sbits64;
 | to be `static'.
 *----------------------------------------------------------------------------*/
 #define INLINE extern inline
-

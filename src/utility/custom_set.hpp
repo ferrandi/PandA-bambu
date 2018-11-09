@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 
 /**
  * @file custom_set.hpp
@@ -45,13 +45,13 @@
 #ifndef CUSTOM_SET_HPP
 #define CUSTOM_SET_HPP
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_UNORDERED.hpp"
 
-#include <algorithm>                  // for set_difference
-#include <iterator>                   // for inserter
+#include <algorithm> // for set_difference
+#include <iterator>  // for inserter
 
-///STL include
+/// STL include
 #if HAVE_UNORDERED
 #include <unordered_set>
 #else
@@ -62,89 +62,89 @@
 template <typename T>
 class CustomSet : public std::unordered_set<T>
 {
-   public:
-      void operator+=(const CustomSet & other)
+ public:
+   void operator+=(const CustomSet& other)
+   {
+      typename CustomSet<T>::const_iterator other_element, other_element_end = other.end();
+      for(other_element = other.begin(); other_element != other_element_end; ++other_element)
       {
-         typename CustomSet<T>::const_iterator other_element, other_element_end = other.end();
-         for(other_element = other.begin(); other_element != other_element_end; ++other_element)
+         this->insert(*other_element);
+      }
+   }
+
+   void operator-=(const CustomSet& other)
+   {
+      typename CustomSet<T>::const_iterator other_element, other_element_end = other.end();
+      for(other_element = other.begin(); other_element != other_element_end; ++other_element)
+      {
+         this->erase(*other_element);
+      }
+   }
+
+   CustomSet operator-(const CustomSet& other) const
+   {
+      CustomSet return_value = *this;
+      return_value -= other;
+      return return_value;
+   }
+
+   CustomSet Intersect(const CustomSet& other) const
+   {
+      CustomSet return_value;
+      typename CustomSet<T>::const_iterator other_element, other_element_end = other.end();
+      for(other_element = other.begin(); other_element != other_element_end; ++other_element)
+      {
+         if(this->find(*other_element) != this->end())
          {
-            this->insert(*other_element);
+            return_value.insert(*other_element);
          }
       }
-
-      void operator-=(const CustomSet & other)
-      {
-         typename CustomSet<T>::const_iterator other_element, other_element_end = other.end();
-         for(other_element = other.begin(); other_element != other_element_end; ++other_element)
-         {
-            this->erase(*other_element);
-         }
-      }
-
-      CustomSet operator-(const CustomSet & other) const
-      {
-         CustomSet return_value = *this;
-         return_value -= other;
-         return return_value;
-      }
-
-      CustomSet Intersect(const CustomSet & other) const
-      {
-         CustomSet return_value;
-         typename CustomSet<T>::const_iterator other_element, other_element_end = other.end();
-         for(other_element = other.begin(); other_element != other_element_end; ++other_element)
-         {
-            if(this->find(*other_element) != this->end())
-            {
-               return_value.insert(*other_element);
-            }
-         }
-         return return_value;
-      }
+      return return_value;
+   }
 };
 #else
 template <typename T>
 class CustomSet : public std::set<T>
 {
-   public:
-      void operator+=(const CustomSet & other)
+ public:
+   void operator+=(const CustomSet& other)
+   {
+      typename CustomSet<T>::const_iterator other_element, other_element_end = other.end();
+      for(other_element = other.begin(); other_element != other_element_end; ++other_element)
       {
-         typename CustomSet<T>::const_iterator other_element, other_element_end = other.end();
-         for(other_element = other.begin(); other_element != other_element_end; ++other_element)
+         this->insert(*other_element);
+      }
+   }
+
+   void operator-=(const CustomSet& other)
+   {
+      typename CustomSet<T>::const_iterator other_element, other_element_end = other.end();
+      for(other_element = other.begin(); other_element != other_element_end; ++other_element)
+      {
+         this->erase(*other_element);
+      }
+   }
+
+   CustomSet operator-(const CustomSet& other) const
+   {
+      CustomSet return_value;
+      std::set_difference(this->begin(), this->end(), other.begin(), other.end(), std::inserter(return_value, return_value.begin()));
+      return return_value;
+   }
+
+   CustomSet Intersect(const CustomSet& other) const
+   {
+      CustomSet return_value;
+      typename CustomSet<T>::const_iterator other_element, other_element_end = other.end();
+      for(other_element = other.begin(); other_element != other_element_end; ++other_element)
+      {
+         if(this->find(*other_element) != this->end())
          {
-            this->insert(*other_element);
+            return_value.insert(*other_element);
          }
       }
-
-      void operator-=(const CustomSet & other)
-      {
-         typename CustomSet<T>::const_iterator other_element, other_element_end = other.end();
-         for(other_element = other.begin(); other_element != other_element_end; ++other_element)
-         {
-            this->erase(*other_element);
-         }
-      }
-
-      CustomSet operator-(const CustomSet & other) const
-      {
-         CustomSet return_value;
-         std::set_difference(this->begin(), this->end(), other.begin(), other.end(), std::inserter(return_value, return_value.begin()));
-         return return_value;
-      }
-
-      CustomSet Intersect(const CustomSet & other) const
-      {
-         CustomSet return_value;
-         typename CustomSet<T>::const_iterator other_element, other_element_end = other.end();
-         for(other_element = other.begin(); other_element != other_element_end; ++other_element)
-         {
-            if(this->find(*other_element) != this->end())
-            {
-               return_value.insert(*other_element);
-            }
-         }
-         return return_value;
-      }
+      return return_value;
+   }
 };
 #endif
 #endif

@@ -134,10 +134,14 @@ namespace __AC_NAMESPACE
       mant_t m;
       exp_t e;
 
-      void set_mantissa(const ac_fixed<W, I, S>& man) { m = man; }
+      void set_mantissa(const ac_fixed<W, I, S>& man)
+      {
+         m = man;
+      }
       void set_exp(const ac_int<E, true>& exp)
       {
-         if(E) e = exp;
+         if(E)
+            e = exp;
       }
 
     private:
@@ -337,7 +341,8 @@ namespace __AC_NAMESPACE
             m_1[W - 2] = m_1[W - 2] || rnd_ovfl;
          }
          m.set_slc(0, m_1.template slc<W>(0));
-         if(fx_t::width > W && assert_on_rounding) AC_ASSERT(m == t, "Loss of precision due to Rounding in ac_float constructor");
+         if(fx_t::width > W && assert_on_rounding)
+            AC_ASSERT(m == t, "Loss of precision due to Rounding in ac_float constructor");
          ac_int<ET, true> exp = !m ? ac_int<ET, true>(0) : ac_int<ET, true>(op.e + I_DIFF + (RND & rnd_ovfl));
          adjust(exp, false, assert_on_overflow);
       }
@@ -352,7 +357,8 @@ namespace __AC_NAMESPACE
             else
             {
                e = e2;
-               if(normalize) m.normalize(e);
+               if(normalize)
+                  m.normalize(e);
             }
          }
       }
@@ -396,18 +402,54 @@ namespace __AC_NAMESPACE
          *this = ac_fixed<WI, WI, SI>(op);
       }
 
-      inline ac_float(bool b) { *this = (ac_int<1, false>)b; }
-      inline ac_float(char b) { *this = (ac_int<8, true>)b; }
-      inline ac_float(signed char b) { *this = (ac_int<8, true>)b; }
-      inline ac_float(unsigned char b) { *this = (ac_int<8, false>)b; }
-      inline ac_float(signed short b) { *this = (ac_int<16, true>)b; }
-      inline ac_float(unsigned short b) { *this = (ac_int<16, false>)b; }
-      inline ac_float(signed int b) { *this = (ac_int<32, true>)b; }
-      inline ac_float(unsigned int b) { *this = (ac_int<32, false>)b; }
-      inline ac_float(signed long b) { *this = (ac_int<ac_private::long_w, true>)b; }
-      inline ac_float(unsigned long b) { *this = (ac_int<ac_private::long_w, false>)b; }
-      inline ac_float(Slong b) { *this = (ac_int<64, true>)b; }
-      inline ac_float(Ulong b) { *this = (ac_int<64, false>)b; }
+      inline ac_float(bool b)
+      {
+         *this = (ac_int<1, false>)b;
+      }
+      inline ac_float(char b)
+      {
+         *this = (ac_int<8, true>)b;
+      }
+      inline ac_float(signed char b)
+      {
+         *this = (ac_int<8, true>)b;
+      }
+      inline ac_float(unsigned char b)
+      {
+         *this = (ac_int<8, false>)b;
+      }
+      inline ac_float(signed short b)
+      {
+         *this = (ac_int<16, true>)b;
+      }
+      inline ac_float(unsigned short b)
+      {
+         *this = (ac_int<16, false>)b;
+      }
+      inline ac_float(signed int b)
+      {
+         *this = (ac_int<32, true>)b;
+      }
+      inline ac_float(unsigned int b)
+      {
+         *this = (ac_int<32, false>)b;
+      }
+      inline ac_float(signed long b)
+      {
+         *this = (ac_int<ac_private::long_w, true>)b;
+      }
+      inline ac_float(unsigned long b)
+      {
+         *this = (ac_int<ac_private::long_w, false>)b;
+      }
+      inline ac_float(Slong b)
+      {
+         *this = (ac_int<64, true>)b;
+      }
+      inline ac_float(Ulong b)
+      {
+         *this = (ac_int<64, false>)b;
+      }
 
       // Explicit conversion functions to ac_int and ac_fixed
       inline typename rt_unary::to_ac_fixed_t to_ac_fixed() const
@@ -416,24 +458,58 @@ namespace __AC_NAMESPACE
          r <<= e;
          return r;
       }
-      inline typename rt_unary::to_ac_int_t to_ac_int() const { return to_ac_fixed().to_ac_int(); }
+      inline typename rt_unary::to_ac_int_t to_ac_int() const
+      {
+         return to_ac_fixed().to_ac_int();
+      }
 
       // Explicit conversion functions to C built-in types -------------
-      inline int to_int() const { return to_ac_int().to_int(); }
-      inline unsigned to_uint() const { return to_ac_int().to_uint(); }
-      inline long to_long() const { return (signed long)to_ac_int().to_int64(); }
-      inline unsigned long to_ulong() const { return (unsigned long)to_ac_int().to_uint64(); }
-      inline Slong to_int64() const { return to_ac_int().to_int64(); }
-      inline Ulong to_uint64() const { return to_ac_int().to_uint64(); }
-      inline float to_float() const { return ldexpf(m.to_double(), exp()); }
-      inline double to_double() const { return ldexp(m.to_double(), exp()); }
+      inline int to_int() const
+      {
+         return to_ac_int().to_int();
+      }
+      inline unsigned to_uint() const
+      {
+         return to_ac_int().to_uint();
+      }
+      inline long to_long() const
+      {
+         return (signed long)to_ac_int().to_int64();
+      }
+      inline unsigned long to_ulong() const
+      {
+         return (unsigned long)to_ac_int().to_uint64();
+      }
+      inline Slong to_int64() const
+      {
+         return to_ac_int().to_int64();
+      }
+      inline Ulong to_uint64() const
+      {
+         return to_ac_int().to_uint64();
+      }
+      inline float to_float() const
+      {
+         return ldexpf(m.to_double(), exp());
+      }
+      inline double to_double() const
+      {
+         return ldexp(m.to_double(), exp());
+      }
 
-      const ac_fixed<W, I, S> mantissa() const { return m; }
-      const ac_int<E, true> exp() const { return e; }
+      const ac_fixed<W, I, S> mantissa() const
+      {
+         return m;
+      }
+      const ac_int<E, true> exp() const
+      {
+         return e;
+      }
       bool normalize()
       {
          bool normalized = operator!() || !S && m[W - 1] || S && (m[W - 1] ^ m[W - 2]);
-         if(E && !normalized) normalized = m.normalize(e);
+         if(E && !normalized)
+            normalized = m.normalize(e);
          return normalized;
       }
 
@@ -443,7 +519,8 @@ namespace __AC_NAMESPACE
          if(E >= ET)
          {
             e = new_e;
-            if(E && normalize) m.normalize(e);
+            if(E && normalize)
+               m.normalize(e);
          }
          else
          {
@@ -460,7 +537,8 @@ namespace __AC_NAMESPACE
                // break down:  bits( (1<<E) -1 + W-1 ) + 1 is max bit for normalization
                // other bits can be tested separetely
                ac_int<ET, false> e_u = e_s;
-               if(ET && normalize) m.normalize(e_u);
+               if(ET && normalize)
+                  m.normalize(e_u);
                e_u -= offset;
                if(e_u[ET - 1] | !(e_u >> (E - 1))) // what about E == 0 or ET == 0 ???
                   e = e_u;
@@ -468,7 +546,8 @@ namespace __AC_NAMESPACE
                {
                   e = MAX_EXP;
                   m = m < 0 ? value<AC_VAL_MIN>(m) : value<AC_VAL_MAX>(m);
-                  if(assert_on_overflow) AC_ASSERT(0, "OVERFLOW ON ASSIGNMENT TO AC_FLOAT");
+                  if(assert_on_overflow)
+                     AC_ASSERT(0, "OVERFLOW ON ASSIGNMENT TO AC_FLOAT");
                }
             }
          }
@@ -567,7 +646,8 @@ namespace __AC_NAMESPACE
          ac_fixed<mt_t::width, I2 + 1, mt_t::sign> op2_m_0 = op2.m;
          mt_t op2_m = 0;
          op2_m.set_slc(0, op2_m_0.template slc<mt_t::width>(0));
-         if(sub) op2_m = -op2_m;
+         if(sub)
+            op2_m = -op2_m;
          int op2_e = op2.exp() + I2 - IT + (SR & !S2);
 
          bool op1_zero = operator!();
@@ -677,7 +757,10 @@ namespace __AC_NAMESPACE
       {
          *this = *this / op2;
       }
-      ac_float operator+() const { return *this; }
+      ac_float operator+() const
+      {
+         return *this;
+      }
       typename rt_unary::neg operator-() const
       {
          typename rt_unary::neg r;
@@ -685,7 +768,10 @@ namespace __AC_NAMESPACE
          r.e = e;
          return r;
       }
-      bool operator!() const { return !m; }
+      bool operator!() const
+      {
+         return !m;
+      }
 
       // Shift --------------------------------------------------------------------
       template <int WI, bool SI>
@@ -769,9 +855,11 @@ namespace __AC_NAMESPACE
          else
          {
             std::string r = m.to_string(base_rep, sign_mag);
-            if(base_rep != AC_DEC) r += "_";
+            if(base_rep != AC_DEC)
+               r += "_";
             r += "e2";
-            if(base_rep != AC_DEC) r += "_";
+            if(base_rep != AC_DEC)
+               r += "_";
             if(E)
                r += e.to_string(base_rep, sign_mag | base_rep == AC_DEC);
             else
@@ -1239,7 +1327,8 @@ namespace __AC_NAMESPACE
       inline bool init_array(AC_FL() * a, int n)
       {
          AC_FL0() t = value<V>(*a);
-         for(int i = 0; i < n; i++) a[i] = t;
+         for(int i = 0; i < n; i++)
+            a[i] = t;
          return true;
       }
    } // namespace ac

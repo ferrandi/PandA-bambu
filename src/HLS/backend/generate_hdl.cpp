@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file generate_hdl.cpp
  * @brief Implementation of the class to generate HDL code
@@ -39,62 +39,59 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "generate_hdl.hpp"
 
-#include "structural_manager.hpp"
 #include "behavioral_helper.hpp"
+#include "structural_manager.hpp"
 
 #include "hls.hpp"
-#include "hls_manager.hpp"
 #include "hls_constraints.hpp"
+#include "hls_manager.hpp"
 
 #include "BackendFlow.hpp"
 
 #include "Parameter.hpp"
 
-///behavior include
+/// behavior include
 #include "call_graph_manager.hpp"
 
-///design_flow_manager/backend/ToHDL includes
+/// design_flow_manager/backend/ToHDL includes
 #include "HDL_manager.hpp"
 
-///HLS includes
+/// HLS includes
 #include "hls_flow_step_factory.hpp"
 #include "hls_target.hpp"
 
-generate_hdl::generate_hdl(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager):
-   HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::GENERATE_HDL)
+generate_hdl::generate_hdl(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::GENERATE_HDL)
 {
-
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > generate_hdl::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> generate_hdl::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ret;
+   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
-         {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
-            break;
-         }
+      {
+         ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
+         break;
+      }
       case INVALIDATION_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       case PRECEDENCE_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       default:
          THROW_UNREACHABLE("");
    }
    return ret;
 }
 
-generate_hdl::~generate_hdl()
-= default;
+generate_hdl::~generate_hdl() = default;
 
 DesignFlowStep_Status generate_hdl::Exec()
 {

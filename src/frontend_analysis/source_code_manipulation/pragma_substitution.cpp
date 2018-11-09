@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file pragma_substitution.cpp
  * @brief Analysis step that replaces the pragmas in the specification with calls
@@ -39,47 +39,46 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
-///Header include
+ */
+/// Header include
 #include "pragma_substitution.hpp"
 
-///Behavior include
+/// Behavior include
 #include "application_manager.hpp"
 
-///Parameter include
+/// Parameter include
 #include "Parameter.hpp"
 
-///Parser include
+/// Parser include
 #include "PragmaParser.hpp"
 
 #include "hash_helper.hpp"
-#include "string_manipulation.hpp"          // for GET_CLASS
-#include <boost/filesystem/path.hpp>
+#include "string_manipulation.hpp" // for GET_CLASS
 #include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
 
-PragmaSubstitution::PragmaSubstitution(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   ApplicationFrontendFlowStep(_AppM, PRAGMA_SUBSTITUTION, _design_flow_manager, _parameters)
+PragmaSubstitution::PragmaSubstitution(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : ApplicationFrontendFlowStep(_AppM, PRAGMA_SUBSTITUTION, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-PragmaSubstitution::~PragmaSubstitution()
-= default;
+PragmaSubstitution::~PragmaSubstitution() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > PragmaSubstitution::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> PragmaSubstitution::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }

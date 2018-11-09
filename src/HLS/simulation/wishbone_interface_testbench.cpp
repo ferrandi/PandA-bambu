@@ -358,7 +358,10 @@ void WishboneInterfaceTestbench::write_call(bool hasMultiIrq) const
    writer->write("stb_fsm = 1'b0;\n");
    writer->write("we_fsm = 1'b0;\n");
    writer->write("done_port = 1'b1;\n");
-   if(has_return) { writer->write("registered_" + std::string(RETURN_PORT_NAME) + " = dat_os;\n"); }
+   if(has_return)
+   {
+      writer->write("registered_" + std::string(RETURN_PORT_NAME) + " = dat_os;\n");
+   }
    writer->write(STR(STD_CLOSING_CHAR));
    writer->write("end\n");
 
@@ -422,16 +425,18 @@ void WishboneInterfaceTestbench::write_memory_handler() const
       writer->write(boost::lexical_cast<std::string>(dataBusByteSize) + "'d" + boost::lexical_cast<std::string>(caseValue) + ":\n");
       writer->write(STR(STD_OPENING_CHAR));
       writer->write("begin\n");
-      for(unsigned int i = 0; i <= j; ++i) { writer->write("_bambu_testbench_mem_[(addr_om - base_addr) + " + STR(i) + "] = dat_om[" + STR((i * 8) + 7) + ":" + STR((i * 8)) + "];\n"); }
+      for(unsigned int i = 0; i <= j; ++i)
+      {
+         writer->write("_bambu_testbench_mem_[(addr_om - base_addr) + " + STR(i) + "] = dat_om[" + STR((i * 8) + 7) + ":" + STR((i * 8)) + "];\n");
+      }
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n");
    }
    writer->write("default:\n");
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
-   writer->write(
-       "$display(\"ERROR - Unsupported sel value.\");\n"
-       "$fclose(res_file);\n$fclose(file);\n$finish;\n");
+   writer->write("$display(\"ERROR - Unsupported sel value.\");\n"
+                 "$fclose(res_file);\n$fclose(file);\n$finish;\n");
    writer->write(STR(STD_CLOSING_CHAR));
    writer->write("end\n");
    writer->write(STR(STD_CLOSING_CHAR));
@@ -450,16 +455,18 @@ void WishboneInterfaceTestbench::write_memory_handler() const
       writer->write(boost::lexical_cast<std::string>(dataBusByteSize) + "'d" + boost::lexical_cast<std::string>(caseValue) + ":\n");
       writer->write(STR(STD_OPENING_CHAR));
       writer->write("begin\n");
-      for(unsigned int i = 0; i <= j; ++i) { writer->write("dat_im[" + STR((i * 8) + 7) + ":" + STR((i * 8)) + "] = _bambu_testbench_mem_[(addr_om - base_addr) + " + STR(i) + "];\n"); }
+      for(unsigned int i = 0; i <= j; ++i)
+      {
+         writer->write("dat_im[" + STR((i * 8) + 7) + ":" + STR((i * 8)) + "] = _bambu_testbench_mem_[(addr_om - base_addr) + " + STR(i) + "];\n");
+      }
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n");
    }
    writer->write("default:\n");
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
-   writer->write(
-       "$display(\"ERROR - Unsupported sel value.\");\n"
-       "$fclose(res_file);\n$fclose(file);\n$finish;\n");
+   writer->write("$display(\"ERROR - Unsupported sel value.\");\n"
+                 "$fclose(res_file);\n$fclose(file);\n$finish;\n");
    writer->write(STR(STD_CLOSING_CHAR));
    writer->write("end\n");
    writer->write(STR(STD_CLOSING_CHAR));
@@ -484,7 +491,8 @@ void WishboneInterfaceTestbench::write_wishbone_output_signal_declaration(bool& 
       {
          std::string portId = mod->get_out_port(i)->get_id();
          writer->write("wire " + writer->type_converter(mod->get_out_port(i)->get_typeRef()) + writer->type_converter_size(mod->get_out_port(i)));
-         if(portId == "irq" && mod->get_out_port(i)->get_kind() == port_vector_o_K) hasMultiIrq |= GetPointer<port_o>(mod->get_out_port(i))->get_ports_size() > 1;
+         if(portId == "irq" && mod->get_out_port(i)->get_kind() == port_vector_o_K)
+            hasMultiIrq |= GetPointer<port_o>(mod->get_out_port(i))->get_ports_size() > 1;
 
          if(mod->get_out_port(i)->get_kind() != port_o_K && mod->get_out_port(i)->get_typeRef()->type != structural_type_descriptor::VECTOR_BOOL)
          {
@@ -548,12 +556,18 @@ void WishboneInterfaceTestbench::write_signals(const tree_managerConstRef TreeM,
          writer->write_comment(variableName + " -> " + STR(var) + "\n");
          writer->write("reg [" + STR(variableBitSize) + "-1:0] " + HDL_manager::convert_to_identifier(writer.get(), variableName) + ";\n");
          writer->write("parameter ADDRESS_OFFSET_" + variableName + " = " + STR(mem->get_parameter_base_address(topFunctionId, var)) + ";\n");
-         if(tree_helper::is_a_pointer(TreeM, var)) { writer->write("reg [" + STR(expectedVariableBitSize) + "-1:0] ex_" + variableName + ";\n"); }
+         if(tree_helper::is_a_pointer(TreeM, var))
+         {
+            writer->write("reg [" + STR(expectedVariableBitSize) + "-1:0] ex_" + variableName + ";\n");
+         }
       }
    }
 }
 
-void WishboneInterfaceTestbench::write_slave_initializations(bool) const { return; }
+void WishboneInterfaceTestbench::write_slave_initializations(bool) const
+{
+   return;
+}
 
 void WishboneInterfaceTestbench::write_file_reading_operations() const
 {
@@ -581,7 +595,10 @@ void WishboneInterfaceTestbench::write_file_reading_operations() const
          read_input_value_from_file(input_name, first_valid_input);
       }
    }
-   if(not first_valid_input) writer->write("_ch_ = $fgetc(file);\n");
+   if(not first_valid_input)
+      writer->write("_ch_ = $fgetc(file);\n");
 }
 
-void WishboneInterfaceTestbench::init_extra_signals(bool) const {}
+void WishboneInterfaceTestbench::init_extra_signals(bool) const
+{
+}

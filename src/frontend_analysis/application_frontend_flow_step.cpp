@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file application_frontend_flow_step.cpp
  * @brief This class contains the base representation for a generic frontend flow step which works on the whole function
@@ -39,34 +39,32 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "application_frontend_flow_step.hpp"
 
-#include "config_HAVE_BAMBU_BUILT.hpp"                  // for HAVE_BAMBU_BUILT
-#include "config_HAVE_EXPERIMENTAL.hpp"                 // for HAVE_EXPERIME...
-#include "config_HAVE_FROM_PRAGMA_BUILT.hpp"            // for HAVE_FROM_PRA...
-#include "config_HAVE_HOST_PROFILING_BUILT.hpp"         // for HAVE_HOST_PRO...
-#include "config_HAVE_ILP_BUILT.hpp"                    // for HAVE_ILP_BUILT
-#include "config_HAVE_RTL_BUILT.hpp"                    // for HAVE_RTL_BUILT
-#include "config_HAVE_TASTE.hpp"                        // for HAVE_TASTE
-#include "config_HAVE_ZEBU_BUILT.hpp"                   // for HAVE_ZEBU_BUILT
+#include "config_HAVE_BAMBU_BUILT.hpp"          // for HAVE_BAMBU_BUILT
+#include "config_HAVE_EXPERIMENTAL.hpp"         // for HAVE_EXPERIME...
+#include "config_HAVE_FROM_PRAGMA_BUILT.hpp"    // for HAVE_FROM_PRA...
+#include "config_HAVE_HOST_PROFILING_BUILT.hpp" // for HAVE_HOST_PRO...
+#include "config_HAVE_ILP_BUILT.hpp"            // for HAVE_ILP_BUILT
+#include "config_HAVE_RTL_BUILT.hpp"            // for HAVE_RTL_BUILT
+#include "config_HAVE_TASTE.hpp"                // for HAVE_TASTE
+#include "config_HAVE_ZEBU_BUILT.hpp"           // for HAVE_ZEBU_BUILT
 
-#include <boost/lexical_cast.hpp>                       // for lexical_cast
-#include <iostream>                                     // for ios_base::fai...
-#include "Parameter.hpp"                                // for Parameter
-#include "exceptions.hpp"                               // for THROW_UNREACH...
-#include "symbolic_application_frontend_flow_step.hpp"  // for SymbolicAppli...
-#include "string_manipulation.hpp"                      // for GET_CLASS
+#include "Parameter.hpp"                               // for Parameter
+#include "exceptions.hpp"                              // for THROW_UNREACH...
+#include "string_manipulation.hpp"                     // for GET_CLASS
+#include "symbolic_application_frontend_flow_step.hpp" // for SymbolicAppli...
+#include <boost/lexical_cast.hpp>                      // for lexical_cast
+#include <iostream>                                    // for ios_base::fai...
 
-
-ApplicationFrontendFlowStep::ApplicationFrontendFlowStep(const application_managerRef _AppM, const FrontendFlowStepType _frontend_flow_step_type, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   FrontendFlowStep(_AppM, _frontend_flow_step_type, _design_flow_manager, _parameters)
+ApplicationFrontendFlowStep::ApplicationFrontendFlowStep(const application_managerRef _AppM, const FrontendFlowStepType _frontend_flow_step_type, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : FrontendFlowStep(_AppM, _frontend_flow_step_type, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-ApplicationFrontendFlowStep::~ApplicationFrontendFlowStep()
-= default;
+ApplicationFrontendFlowStep::~ApplicationFrontendFlowStep() = default;
 
 const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFlowStepType frontend_flow_step_type)
 {
@@ -130,7 +128,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #endif
       case DOM_POST_DOM_COMPUTATION:
 #if HAVE_BAMBU_BUILT
-      case (FANOUT_OPT):
+      case(FANOUT_OPT):
       case MULTIPLE_ENTRY_IF_REDUCTION:
 #endif
 #if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
@@ -176,7 +174,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case LOOPS_ANALYSIS_BAMBU:
 #endif
 #if HAVE_ZEBU_BUILT
-      case LOOPS_ANALYSIS_ZEBU :
+      case LOOPS_ANALYSIS_ZEBU:
 #endif
       case LOOPS_IDENTIFICATION:
 #if HAVE_ZEBU_BUILT
@@ -292,9 +290,9 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_BAMBU_BUILT
       case VIRTUAL_PHI_NODES_SPLIT:
 #endif
-         {
-            return SymbolicApplicationFrontendFlowStep::ComputeSignature(frontend_flow_step_type);
-         }
+      {
+         return SymbolicApplicationFrontendFlowStep::ComputeSignature(frontend_flow_step_type);
+      }
 #if HAVE_BAMBU_BUILT
       case(BAMBU_FRONTEND_FLOW):
       case BIT_VALUE_IPA:
@@ -302,20 +300,20 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_HOST_PROFILING_BUILT
       case BASIC_BLOCKS_PROFILING:
 #endif
-      case(COMPLETE_CALL_GRAPH) :
+      case(COMPLETE_CALL_GRAPH):
 #if HAVE_TASTE
       case CREATE_ADDRESS_TRANSLATION:
 #endif
-      case(CREATE_TREE_MANAGER) :
+      case(CREATE_TREE_MANAGER):
 #if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
       case DYNAMIC_VAR_COMPUTATION:
 #endif
 #if HAVE_BAMBU_BUILT
       case FIND_MAX_CFG_TRANSFORMATIONS:
 #endif
-      case(FUNCTION_ANALYSIS) :
+      case(FUNCTION_ANALYSIS):
 #if HAVE_ZEBU_BUILT
-      case(FUNCTION_POINTER_CALLGRAPH_COMPUTATION) :
+      case(FUNCTION_POINTER_CALLGRAPH_COMPUTATION):
 #endif
 #if HAVE_BAMBU_BUILT
       case HDL_FUNCTION_DECL_FIX:
@@ -331,10 +329,10 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case POINTED_DATA_EVALUATION:
 #endif
 #if HAVE_FROM_PRAGMA_BUILT
-      case(PRAGMA_ANALYSIS) :
+      case(PRAGMA_ANALYSIS):
 #endif
 #if HAVE_FROM_PRAGMA_BUILT
-      case(PRAGMA_SUBSTITUTION) :
+      case(PRAGMA_SUBSTITUTION):
 #endif
 #if HAVE_ZEBU_BUILT
       case(SIZEOF_SUBSTITUTION):
@@ -342,15 +340,14 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_ZEBU_BUILT
       case(SOURCE_CODE_STATISTICS):
 #endif
-      case (STRING_CST_FIX):
-      case(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP) :
-         {
-            return "Frontend::" + boost::lexical_cast<std::string>(frontend_flow_step_type);
-         }
+      case(STRING_CST_FIX):
+      case(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP):
+      {
+         return "Frontend::" + boost::lexical_cast<std::string>(frontend_flow_step_type);
+      }
 
       default:
          THROW_UNREACHABLE("Frontend flow step type does not exist");
-
    }
    return "";
 }

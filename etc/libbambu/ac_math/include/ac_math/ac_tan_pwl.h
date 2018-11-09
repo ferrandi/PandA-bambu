@@ -145,9 +145,15 @@ namespace ac_math
       ac_fixed<W_int, I_int, false, Q, O> input_int;
       bool input_exceeds_pi_by_4;
       // Keep in mind that the input will only exceed pi/4 if the number of integer bits is greater than or equal to zero.
-      if(I >= 0) { input_exceeds_pi_by_4 = (input >= x_max_lut) ? true : false; }
+      if(I >= 0)
+      {
+         input_exceeds_pi_by_4 = (input >= x_max_lut) ? true : false;
+      }
 
-      if((I >= 0) && input_exceeds_pi_by_4) { input_int = (ac_fixed<W + 1, I, false, Q, O>)input >> 1; }
+      if((I >= 0) && input_exceeds_pi_by_4)
+      {
+         input_int = (ac_fixed<W + 1, I, false, Q, O>)input >> 1;
+      }
       else
       {
          input_int = input;
@@ -188,7 +194,10 @@ namespace ac_math
       }
 
       // If input crosses or equals 89.17 degrees (roughly), set the output to saturate
-      if(input >= sat_limit) { output_temp.template set_val<AC_VAL_MAX>(); }
+      if(input >= sat_limit)
+      {
+         output_temp.template set_val<AC_VAL_MAX>();
+      }
 
       output = output_temp;
 

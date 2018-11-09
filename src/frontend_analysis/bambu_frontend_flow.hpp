@@ -29,62 +29,62 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file bambu_frontend_flow.hpp
  * @brief The step representing the frontend flow for bambu
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
-*/
+ */
 
 #ifndef BAMBU_FRONTEND_FLOW_HPP
 #define BAMBU_FRONTEND_FLOW_HPP
-#include <unordered_set>                       // for unordered_set
-#include <utility>                             // for pair
-#include "application_frontend_flow_step.hpp"  // for ApplicationFrontendFlo...
-#include "design_flow_step.hpp"                // for DesignFlowStep, Design...
-#include "frontend_flow_step.hpp"              // for FrontendFlowStep::Func...
+#include "application_frontend_flow_step.hpp" // for ApplicationFrontendFlo...
+#include "design_flow_step.hpp"               // for DesignFlowStep, Design...
+#include "frontend_flow_step.hpp"             // for FrontendFlowStep::Func...
+#include <unordered_set>                      // for unordered_set
+#include <utility>                            // for pair
 
 class BambuFrontendFlow : public ApplicationFrontendFlowStep
 {
-   protected:
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+ protected:
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor
-       * @param AppM is the application manager
-       * @param design_flow_manager is the design flow manager
-       * @param parameters is the set of input parameters
-       */
-      BambuFrontendFlow(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor
+    * @param AppM is the application manager
+    * @param design_flow_manager is the design flow manager
+    * @param parameters is the set of input parameters
+    */
+   BambuFrontendFlow(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-      /**
-       * Destructor
-       */
-     ~BambuFrontendFlow() override;
+   /**
+    * Destructor
+    */
+   ~BambuFrontendFlow() override;
 
-      /**
-       * Execute this step
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status Exec() override;
+   /**
+    * Execute this step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status Exec() override;
 
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      bool HasToBeExecuted() const override;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 
-      /**
-       * Compute the relationships of a step with other steps
-       * @param dependencies is where relationships will be stored
-       * @param relationship_type is the type of relationship to be computed
-       */
-      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   /**
+    * Compute the relationships of a step with other steps
+    * @param dependencies is where relationships will be stored
+    * @param relationship_type is the type of relationship to be computed
+    */
+   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 };
 #endif

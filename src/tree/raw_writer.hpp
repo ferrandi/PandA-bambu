@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file raw_writer.hpp
  * @brief tree node writer. This class exploiting the visitor design pattern write a tree node according to the raw format.
@@ -39,11 +39,11 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef RAW_WRITER_HPP
 #define RAW_WRITER_HPP
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_MAPPING_BUILT.hpp"
 #include "config_HAVE_RTL_BUILT.hpp"
 
@@ -51,16 +51,16 @@
 #include "rtl_common.hpp"
 #endif
 
-///STD include
+/// STD include
 #include <ostream>
 
-///Tree include
+/// Tree include
 #include "tree_node.hpp"
 
-///Utility include
+/// Utility include
+#include "refcount.hpp"
 #include <boost/preprocessor/facilities/empty.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
-#include "refcount.hpp"
 
 /**
  * @name forward declarations
@@ -72,48 +72,46 @@ REF_FORWARD_DECL(raw_writer);
 
 struct raw_writer : public tree_node_visitor
 {
-
-      ///default constructor
-      explicit raw_writer(
+   /// default constructor
+   explicit raw_writer(
 #if HAVE_MAPPING_BUILT
-         const ComponentTypeRef & _driving_component,
+       const ComponentTypeRef& _driving_component,
 #endif
-         std::ostream& _os
-      );
+       std::ostream& _os);
 
-      /**
-       * Write the field when t is not null
-       * @param str is the string key associated to t
-       * @param t is the tree_nodeRef
-       */
-      void write_when_not_null(const std::string&str, const tree_nodeRef & t) const;
+   /**
+    * Write the field when t is not null
+    * @param str is the string key associated to t
+    * @param t is the tree_nodeRef
+    */
+   void write_when_not_null(const std::string& str, const tree_nodeRef& t) const;
 
-      /**
-       * Write the field when t is not null
-       * @param str is the string key associated to t
-       * @param t is the blocRef
-       */
-      void write_when_not_null_bloc(const std::string&str, const blocRef & t);
+   /**
+    * Write the field when t is not null
+    * @param str is the string key associated to t
+    * @param t is the blocRef
+    */
+   void write_when_not_null_bloc(const std::string& str, const blocRef& t);
 
-      /**
-       * Write a point to solution when is not null
-       * @param type is the type of point to solution (i.e., use or clb)
-       * @param solution is the solution to be printed
-       */
-      void write_when_not_null_point_to(const std::string&type, const PointToSolutionRef& solution) const;
+   /**
+    * Write a point to solution when is not null
+    * @param type is the type of point to solution (i.e., use or clb)
+    * @param solution is the solution to be printed
+    */
+   void write_when_not_null_point_to(const std::string& type, const PointToSolutionRef& solution) const;
 
-      ///tree_node visitors
-      BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO_DECL, BOOST_PP_EMPTY, OBJ_SPECIALIZED_SEQ)
-      BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO, BOOST_PP_EMPTY, OBJ_NOT_SPECIALIZED_SEQ)
+   /// tree_node visitors
+   BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO_DECL, BOOST_PP_EMPTY, OBJ_SPECIALIZED_SEQ)
+   BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO, BOOST_PP_EMPTY, OBJ_NOT_SPECIALIZED_SEQ)
 
-   private:
+ private:
 #if HAVE_MAPPING_BUILT
-      ///The driving component
-      const ComponentTypeRef & driving_component;
+   /// The driving component
+   const ComponentTypeRef& driving_component;
 #endif
 
-      ///output stream
-      std::ostream& os;
+   /// output stream
+   std::ostream& os;
 };
 
 #endif

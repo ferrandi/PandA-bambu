@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file cell_model.hpp
  * @brief Class specification for cell_model
@@ -39,7 +39,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "cell_model.hpp"
 
 #include "library_manager.hpp"
@@ -52,22 +52,15 @@
 
 #include <cmath>
 
-cell_model::cell_model(const ParameterConstRef& _Param) :
-      area_model(_Param),
-      area(area_model::area_DEFAULT)
+cell_model::cell_model(const ParameterConstRef& _Param) : area_model(_Param), area(area_model::area_DEFAULT)
 {
-
 }
 
-cell_model::cell_model(const ParameterConstRef& _Param, const double &_area_) :
-      area_model(_Param),
-      area(_area_)
+cell_model::cell_model(const ParameterConstRef& _Param, const double& _area_) : area_model(_Param), area(_area_)
 {
-
 }
 
-cell_model::~cell_model()
-= default;
+cell_model::~cell_model() = default;
 
 void cell_model::print(std::ostream& os) const
 {

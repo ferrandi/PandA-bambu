@@ -29,34 +29,34 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file serialize_mutual_exclusions.cpp
- * @brief This class contains the methods for remove mutual exclusions from simd loops 
+ * @brief This class contains the methods for remove mutual exclusions from simd loops
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "serialize_mutual_exclusions.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior includes
+/// behavior includes
 #include "application_manager.hpp"
 #include "basic_block.hpp"
 #include "function_behavior.hpp"
 
-///design_flows include
+/// design_flows include
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 
-///parser/treegcc include
+/// parser/treegcc include
 #include "token_interface.hpp"
 
-///tree includes
+/// tree includes
 #include "ext_tree_node.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
@@ -65,26 +65,24 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-///utility include
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
-#include "string_manipulation.hpp"          // for GET_CLASS
+/// utility include
+#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "string_manipulation.hpp" // for GET_CLASS
 
-SerializeMutualExclusions::SerializeMutualExclusions(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   FunctionFrontendFlowStep(_AppM, _function_id, FrontendFlowStepType::SERIALIZE_MUTUAL_EXCLUSIONS, _design_flow_manager, _parameters)
+SerializeMutualExclusions::SerializeMutualExclusions(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, FrontendFlowStepType::SERIALIZE_MUTUAL_EXCLUSIONS, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
+SerializeMutualExclusions::~SerializeMutualExclusions() = default;
 
-SerializeMutualExclusions::~SerializeMutualExclusions()
-= default;
-
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > SerializeMutualExclusions::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> SerializeMutualExclusions::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BB_CONTROL_DEPENDENCE_COMPUTATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BB_REACHABILITY_COMPUTATION, SAME_FUNCTION));
@@ -92,7 +90,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DOM_POST_DOM_COMPUTATION, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          if(design_flow_manager.lock()->GetStatus(GetSignature()) == DesignFlowStep_Status::SUCCESS)
          {
@@ -100,7 +98,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          }
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -129,7 +127,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
 
    std::deque<vertex> basic_blocks;
    cdg_bb_graph->ReverseTopologicalSort(basic_blocks);
-   ///Check if the control flow graph is structured
+   /// Check if the control flow graph is structured
    for(const auto basic_block : basic_blocks)
    {
       if(boost::in_degree(basic_block, *cdg_bb_graph) > 1)
@@ -138,7 +136,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
       }
    }
 
-   ///Analyzing basic blocks starting from the leaves
+   /// Analyzing basic blocks starting from the leaves
    for(const auto& basic_block : basic_blocks)
    {
       if(bb_modified)
@@ -146,7 +144,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
       if(basic_block == cfg_bb_graph->CGetBBGraphInfo()->entry_vertex or basic_block == cfg_bb_graph->CGetBBGraphInfo()->exit_vertex)
          continue;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(cfg_bb_graph->CGetBBNodeInfo(basic_block)->block->number));
-      ///NOTE: here cfg_bb_graph is correct
+      /// NOTE: here cfg_bb_graph is correct
       if(boost::out_degree(basic_block, *cfg_bb_graph) == 2 and GET_CONST_NODE(cfg_bb_graph->CGetBBNodeInfo(basic_block)->block->CGetStmtList().back())->get_kind() == gimple_cond_K)
       {
          OutEdgeIterator oe, oe_end;
@@ -174,7 +172,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
          {
             const auto bb_node_info = cfg_bb_graph->CGetBBNodeInfo(basic_block)->block;
             std::swap(bb_node_info->true_edge, bb_node_info->false_edge);
-            auto last_stmt  = bb_node_info->CGetStmtList().back();
+            auto last_stmt = bb_node_info->CGetStmtList().back();
             bb_node_info->RemoveStmt(last_stmt);
             auto gc = GetPointer<gimple_cond>(GET_NODE(last_stmt));
             THROW_ASSERT(gc, "");
@@ -270,8 +268,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
             new_block->PushBack(TM->GetTreeReindex(new_tree_node_index));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Fixed basic blocks connections");
 
-
-            ///Fix the phi in end if and create the phi in new block
+            /// Fix the phi in end if and create the phi in new block
             for(const auto& phi : end_if_block->CGetPhiList())
             {
                auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
@@ -301,8 +298,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                auto new_gp = GetPointer<gimple_phi>(TM->get_tree_node_const(gimple_phi_id));
                new_gp->SetSSAUsesComputed();
 
-               const auto zero = [&] () -> tree_nodeRef
-               {
+               const auto zero = [&]() -> tree_nodeRef {
                   if(type->get_kind() == integer_type_K)
                   {
                      return tree_man->CreateIntegerCst(TM->GetTreeReindex(type->index), 0, TM->new_tree_node_id());
@@ -337,7 +333,6 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                new_block->AddPhi(TM->GetTreeReindex(gimple_phi_id));
                gp->SetDefEdgeList(TM, end_if_new_def_edge_list);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added phi " + STR(TM->CGetTreeNode(gimple_phi_id)) + " - Fixed phi " + gp->ToString());
-
             }
             bb_modified = true;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -364,4 +359,3 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
    bb_modified ? function_behavior->UpdateBBVersion() : 0;
    return bb_modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
-

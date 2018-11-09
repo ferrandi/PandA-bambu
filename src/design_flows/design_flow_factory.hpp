@@ -29,56 +29,55 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file design_flow_factory.hpp
  * @brief Factory for creating design flows
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
-*/
+ */
 
 #ifndef DESIGN_FLOW_FACTORY_HPP
 #define DESIGN_FLOW_FACTORY_HPP
 
-#include <string>                        // for string
-#include "design_flow_step_factory.hpp"  // for DesignFlowStepRef, DesignFlo...
+#include "design_flow_step_factory.hpp" // for DesignFlowStepRef, DesignFlo...
+#include <string>                       // for string
 
 enum class DesignFlow_Type;
 
 class DesignFlowFactory : public DesignFlowStepFactory
 {
-   public:
-      /**
-       * Constructor
-       * @param design_flow_manager is the design flow manager
-       * @param parameters is the set of input parameters
-       */
-      DesignFlowFactory(const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor
+    * @param design_flow_manager is the design flow manager
+    * @param parameters is the set of input parameters
+    */
+   DesignFlowFactory(const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-      /**
-       * Destructor
-       */
-      ~DesignFlowFactory() override;
+   /**
+    * Destructor
+    */
+   ~DesignFlowFactory() override;
 
-      /**
-       * Return the prefix of the steps created by the factory
-       */
-      const std::string GetPrefix() const override;
+   /**
+    * Return the prefix of the steps created by the factory
+    */
+   const std::string GetPrefix() const override;
 
-      /**
-       * Return a step given the signature
-       * @param signature is the signature of the step to be created
-       * @return the created step
-       */
-      DesignFlowStepRef CreateFlowStep(const std::string&signature) const override;
+   /**
+    * Return a step given the signature
+    * @param signature is the signature of the step to be created
+    * @return the created step
+    */
+   DesignFlowStepRef CreateFlowStep(const std::string& signature) const override;
 
-      /**
-       * Create a design flow
-       * @param design_flow_type is the type of design flow to be created
-       * @return the step corresponding to the design flow
-       */
-      const DesignFlowStepRef CreateDesignFlow(const DesignFlow_Type design_flow_type) const;
+   /**
+    * Create a design flow
+    * @param design_flow_type is the type of design flow to be created
+    * @return the step corresponding to the design flow
+    */
+   const DesignFlowStepRef CreateDesignFlow(const DesignFlow_Type design_flow_type) const;
 };
 #endif
-

@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,10 +29,10 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file polixml.hpp
- * @brief 
+ * @brief
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
@@ -43,11 +43,11 @@
 #ifndef POLIXML_HPP
 #define POLIXML_HPP
 
-#include "xml_node.hpp"
-#include "xml_element.hpp"
-#include "xml_text_node.hpp"
-#include "xml_comment_node.hpp"
 #include "xml_att_decl_node.hpp"
+#include "xml_comment_node.hpp"
 #include "xml_document.hpp"
+#include "xml_element.hpp"
+#include "xml_node.hpp"
+#include "xml_text_node.hpp"
 
 #endif

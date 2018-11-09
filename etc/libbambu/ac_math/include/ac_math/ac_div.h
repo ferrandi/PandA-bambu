@@ -158,10 +158,16 @@ namespace ac_math
          Q = (Q << 1) | ((R >= 0) & 1);
          dividend <<= 1;
       }
-      if(R < 0) { R += divisor; }
+      if(R < 0)
+      {
+         R += divisor;
+      }
 
       // In case the AC_ASSERT isn't activated and the divisor is still zero, saturate the quotient output.
-      if(divisor == 0) { Q.template set_val<AC_VAL_MAX>(); }
+      if(divisor == 0)
+      {
+         Q.template set_val<AC_VAL_MAX>();
+      }
 
       quotient = Q;
       remainder = R;
@@ -220,7 +226,10 @@ namespace ac_math
       // on whether the dividend is negative or positive.
       if(divisor == 0)
       {
-         if(neg_dividend) { quotient_temp.template set_val<AC_VAL_MIN>(); }
+         if(neg_dividend)
+         {
+            quotient_temp.template set_val<AC_VAL_MIN>();
+         }
          else
          {
             quotient_temp.template set_val<AC_VAL_MAX>();
@@ -308,17 +317,26 @@ namespace ac_math
          Q = (Q << 1) | ((R >= 0) & 1);
          N <<= 1;
       }
-      if(R < 0) { R += D; }
+      if(R < 0)
+      {
+         R += D;
+      }
 
       bool rem = (R != 0) || ((N >> ZW) != 0);
 
       ac_fixed<ZW + 1, ZW, false> Q_fx = (ac_fixed<ZW + 1, ZW, false>)Q;
-      if(QQ == AC_RND_ZERO || QQ == AC_RND_MIN_INF || QQ == AC_RND_CONV || QQ == AC_RND_CONV_ODD) { Q_fx[0] = rem; }
+      if(QQ == AC_RND_ZERO || QQ == AC_RND_MIN_INF || QQ == AC_RND_CONV || QQ == AC_RND_CONV_ODD)
+      {
+         Q_fx[0] = rem;
+      }
 
       ac_math::ac_shift_right(Q_fx, (NW - NI) - (DW - DI) + (ZW - NW), quotient_temp);
 
       // In case the AC_ASSERT isn't activated and the divisor is still zero, saturate the quotient output.
-      if(divisor == 0) { quotient_temp.template set_val<AC_VAL_MAX>(); }
+      if(divisor == 0)
+      {
+         quotient_temp.template set_val<AC_VAL_MAX>();
+      }
 
       quotient = quotient_temp;
 
@@ -362,7 +380,10 @@ namespace ac_math
          ac_fixed<ZW, ZI, false, QQ> uQ;
          ac_fixed<ZW + 1, ZI + 1, true, QQ> Q;
          has_rem = ac_div(uN, uD, uQ);
-         if(neg_N == neg_D) { Q = uQ; }
+         if(neg_N == neg_D)
+         {
+            Q = uQ;
+         }
          else
          {
             Q = -uQ;
@@ -378,7 +399,10 @@ namespace ac_math
          if(neg_N == neg_D)
          {
             Q = uQ;
-            if(QQ == AC_RND_MIN_INF) { Q[0] = has_rem ? 1 : 0; }
+            if(QQ == AC_RND_MIN_INF)
+            {
+               Q[0] = has_rem ? 1 : 0;
+            }
          }
          else
          {
@@ -394,7 +418,10 @@ namespace ac_math
       // on whether the dividend is negative or positive.
       if(divisor == 0)
       {
-         if(neg_N) { quotient.template set_val<AC_VAL_MIN>(); }
+         if(neg_N)
+         {
+            quotient.template set_val<AC_VAL_MIN>();
+         }
          else
          {
             quotient.template set_val<AC_VAL_MAX>();
@@ -436,7 +463,10 @@ namespace ac_math
       // on whether the dividend is negative or positive.
       if(divisor.m == 0)
       {
-         if(dividend.m < 0) { quotient.template set_val<AC_VAL_MIN>(); }
+         if(dividend.m < 0)
+         {
+            quotient.template set_val<AC_VAL_MIN>();
+         }
          else
          {
             quotient.template set_val<AC_VAL_MAX>();
@@ -490,12 +520,18 @@ namespace ac_math
       // whether the real/imaginary parts of "prod" are negative or positive.
       if(D.r() == 0 && D.i() == 0)
       {
-         if(prod.r() < 0) { Q.r().template set_val<AC_VAL_MIN>(); }
+         if(prod.r() < 0)
+         {
+            Q.r().template set_val<AC_VAL_MIN>();
+         }
          else
          {
             Q.r().template set_val<AC_VAL_MAX>();
          }
-         if(prod.i() < 0) { Q.i().template set_val<AC_VAL_MIN>(); }
+         if(prod.i() < 0)
+         {
+            Q.i().template set_val<AC_VAL_MIN>();
+         }
          else
          {
             Q.i().template set_val<AC_VAL_MAX>();

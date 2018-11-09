@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file memory.cpp
  * @brief Datastructure to describe functions allocation in high-level synthesis
@@ -40,16 +40,14 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "functions.hpp"
 #include "exceptions.hpp"
-#include "string_manipulation.hpp"    //STR
+#include "string_manipulation.hpp" //STR
 
-functions::functions() 
-= default;
+functions::functions() = default;
 
-functions::~functions()
-= default;
+functions::~functions() = default;
 
 void functions::map_shared_function(unsigned int funID_scope, const std::string& fun)
 {

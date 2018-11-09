@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file SimulationTool.hpp
  * @brief Abstract class for a generic simulation tool
@@ -38,7 +38,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef _SIMULATION_TOOL_HPP_
 #define _SIMULATION_TOOL_HPP_
 
@@ -46,96 +46,91 @@
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(SimulationTool);
 
-///STD include
+/// STD include
 #include <string>
 
-///STL include
+/// STL include
 #include <list>
 
 class SimulationTool
 {
-   public:
+ public:
+   /// supported synthesis tools
+   typedef enum
+   {
+      UNKNOWN = 0,
+      MODELSIM,
+      ISIM,
+      XSIM,
+      ICARUS,
+      VERILATOR
+   } type_t;
 
-      ///supported synthesis tools
-      typedef enum
-      {
-         UNKNOWN = 0,
-         MODELSIM,
-         ISIM,
-         XSIM,
-         ICARUS,
-         VERILATOR
-      } type_t;
+ protected:
+   /// class containing all the parameters
+   const ParameterConstRef Param;
 
-   protected:
+   /// debug level of the class
+   int debug_level;
 
-      ///class containing all the parameters
-      const ParameterConstRef Param;
+   /// verbosity level of the class
+   unsigned int output_level;
 
-      ///debug level of the class
-      int debug_level;
+   /// generated script
+   std::string generated_script;
 
-      ///verbosity level of the class
-      unsigned int output_level;
+   /// log file
+   std::string log_file;
 
-      ///generated script
-      std::string generated_script;
+   /**
+    * Performs the actual writing
+    */
+   virtual void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list) = 0;
 
-      ///log file
-      std::string log_file;
+ public:
+   /**
+    * Constructor
+    */
+   explicit SimulationTool(const ParameterConstRef& Param);
 
-      /**
-       * Performs the actual writing
-       */
-      virtual void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string> & file_list) = 0;
+   /**
+    * Destructor
+    */
+   virtual ~SimulationTool();
 
-   public:
+   /**
+    * Factory method
+    */
+   static SimulationToolRef CreateSimulationTool(type_t type, const ParameterConstRef& Param, const std::string& suffix);
 
-      /**
-       * Constructor
-       */
-      explicit SimulationTool(const ParameterConstRef& Param);
+   /**
+    * Checks if the current specification can be executed or not
+    */
+   virtual void CheckExecution();
 
-      /**
-       * Destructor
-       */
-      virtual ~SimulationTool();
+   /**
+    * Generates the proper simulation script
+    */
+   virtual std::string GenerateSimulationScript(const std::string& top_filename, const std::list<std::string>& file_list);
 
-      /**
-       * Factory method
-       */
-      static
-      SimulationToolRef CreateSimulationTool(type_t type, const ParameterConstRef& Param, const std::string& suffix);
+   /**
+    * Performs the simulation and returns the number of cycles
+    */
+   virtual unsigned long long int Simulate(unsigned long long& accum_cycles, unsigned int& n_testcases);
 
-      /**
-       * Checks if the current specification can be executed or not
-       */
-      virtual void CheckExecution();
+   /**
+    * Determines the average number of cycles for the simulation(s)
+    * @param accum_cycles is the total number of accumulated cycles
+    * @param n_testcases is the number of testcases simulated
+    */
+   unsigned long long int DetermineCycles(unsigned long long int& accum_cycles, unsigned int& n_testcases);
 
-      /**
-       * Generates the proper simulation script
-       */
-      virtual std::string GenerateSimulationScript(const std::string& top_filename, const std::list<std::string> & file_list);
-
-      /**
-       * Performs the simulation and returns the number of cycles
-       */
-      virtual unsigned long long int Simulate(unsigned long long &accum_cycles, unsigned int &n_testcases);
-
-      /**
-       * Determines the average number of cycles for the simulation(s)
-       * @param accum_cycles is the total number of accumulated cycles
-       * @param n_testcases is the number of testcases simulated
-       */
-      unsigned long long int DetermineCycles(unsigned long long int &accum_cycles, unsigned int &n_testcases);
-
-      /**
-       * Remove files created during simulation
-       * FIXME: this should become pure virtual
-       */
-      virtual void Clean() const;
-
+   /**
+    * Remove files created during simulation
+    * FIXME: this should become pure virtual
+    */
+   virtual void Clean() const;
 };
-///refcount definition of the class
+/// refcount definition of the class
 typedef refcount<SimulationTool> SimulationToolRef;
 #endif

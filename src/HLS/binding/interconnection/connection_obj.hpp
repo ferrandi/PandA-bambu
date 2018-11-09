@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file Object.hpp
  * @brief Base class for all resources into datapath
@@ -41,15 +41,15 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef CONN_ELEMENT_HPP
 #define CONN_ELEMENT_HPP
 
 #include <utility>
 
-#include "refcount.hpp"
 #include "conn_binding.hpp"
+#include "refcount.hpp"
 class graph;
 
 /**
@@ -58,60 +58,59 @@ class graph;
  */
 class connection_obj
 {
-   public:
+ public:
+   /// resource type
+   typedef enum
+   {
+      DIRECT_CONN,
+      BY_MUX
+   } element_t;
 
-      ///resource type
-      typedef enum
-      {
-         DIRECT_CONN,
-         BY_MUX
-      } element_t;
+ protected:
+   /// type of the connection
+   element_t type;
 
-   protected:
+   /// Set of variables that cross the connection
+   std::set<data_transfer> live_variable;
 
-      ///type of the connection
-      element_t type;
+ public:
+   /**
+    * Constructor.
+    * @param _type is the type of the interconnection
+    * @param _live_variable is the set of variables crossing the connection
+    */
+   connection_obj(element_t _type, std::set<data_transfer> _live_variable) : type(_type), live_variable(std::move(_live_variable))
+   {
+   }
 
-      ///Set of variables that cross the connection
-      std::set<data_transfer> live_variable;
-      
-   public:
+   /**
+    * Destructor.
+    */
+   virtual ~connection_obj() = default;
 
-      /**
-       * Constructor.
-       * @param _type is the type of the interconnection
-       * @param _live_variable is the set of variables crossing the connection
-       */
-      connection_obj(element_t _type, std::set<data_transfer>  _live_variable) :
-         type(_type),
-         live_variable(std::move(_live_variable))
-      {}
+   /**
+    * Returns the name associated with the element
+    * @return a string containing the name associated to element.
+    */
+   virtual const std::string get_string() const = 0;
 
-      /**
-       * Destructor.
-       */
-      virtual ~connection_obj() = default;
+   /**
+    * Gets the temporary set
+    * @return the set of temporary that could cross the connection
+    */
+   const std::set<data_transfer>& get_variables() const
+   {
+      return live_variable;
+   }
 
-      /**
-       * Returns the name associated with the element
-       * @return a string containing the name associated to element.
-       */
-      virtual const std::string get_string() const = 0;
-
-      /**
-       * Gets the temporary set
-       * @return the set of temporary that could cross the connection
-       */
-      const std::set<data_transfer>& get_variables() const
-      {
-         return live_variable;
-      }
-
-      /**
-       * Returns type of object used to perform connection
-       * @return an integer associated to object type
-       */
-      unsigned int get_type() const { return type; }
+   /**
+    * Returns type of object used to perform connection
+    * @return an integer associated to object type
+    */
+   unsigned int get_type() const
+   {
+      return type;
+   }
 };
 
 /// RefCount definition for connection_obj class

@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file structuralIO.hpp
  * @brief Input and output functions used to read and write the structural data structures.
@@ -40,16 +40,16 @@
  * @warning This file is still in a work in progress state
  * @warning Last modified by $Author$
  *
-*/
+ */
 #ifndef STRUCTURALIO_HPP
 #define STRUCTURALIO_HPP
 
-#include <string>
 #include "refcount.hpp"
+#include <string>
 
 /**
  * @name forward declarations
-*/
+ */
 //@{
 /// RefCount type definition of the structural_manager class structure
 REF_FORWARD_DECL(structural_manager);
@@ -60,15 +60,14 @@ REF_FORWARD_DECL(Parameter);
  * Read an xml file describing the structural data structures.
  * @param f the input file name
  * @return the structural manager.
-*/
+ */
 structural_managerRef read_structural_File(const std::string& f, const ParameterRef& Param);
 
 /**
  * Write an xml file describing the structural data structures.
  * @param f the output file name
  * @param CM is the structural manager.
-*/
-void write_structural_File(const std::string& f, structural_managerRef const & CM);
+ */
+void write_structural_File(const std::string& f, structural_managerRef const& CM);
 
 #endif
-

@@ -663,12 +663,21 @@ namespace ac_math
       {
          // Lookup table index for the scaled inputs whose number of bits are greater than 12
          lut_index = lut_index1 / (1 << (AC_MAX(T_in::width - T_in::i_width - 12, 0)));
-         if((lut_index1 % (1 << (AC_MAX(T_in::width - T_in::i_width - 12, 0)))) > (1 << (AC_MAX(T_in::width - T_in::i_width - 13, 0)))) { lut_index = lut_index + 1; }
+         if((lut_index1 % (1 << (AC_MAX(T_in::width - T_in::i_width - 12, 0)))) > (1 << (AC_MAX(T_in::width - T_in::i_width - 13, 0))))
+         {
+            lut_index = lut_index + 1;
+         }
          typedef ac_fixed<AC_MAX((AC_MAX(T_in::width - T_in::i_width - 3, 1) + T_in::width - T_in::i_width - 12), 1), AC_MAX(T_in::width - T_in::i_width - 3, 1), false> datatype;
          datatype x = (datatype)lut_index1;
          x = x >> AC_MAX(T_in::width - T_in::i_width - 12, 0);
-         if(x > 511.5) { lut_index = 511; }
-         if(lut_index1 <= 1 << (AC_MAX(T_in::width - T_in::i_width - 13, 0)) && lut_index1 != 0) { lut_index = 1; }
+         if(x > 511.5)
+         {
+            lut_index = 511;
+         }
+         if(lut_index1 <= 1 << (AC_MAX(T_in::width - T_in::i_width - 13, 0)) && lut_index1 != 0)
+         {
+            lut_index = 1;
+         }
       }
 
       if(T_in::width - T_in::i_width >= 3)

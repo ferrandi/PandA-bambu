@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 
 /**
  * @file FPGA_technology.hpp
@@ -47,35 +47,29 @@
 
 #include "target_technology.hpp"
 
-
 class FPGA_technology : public target_technology
 {
+ public:
+   /**
+    * Constructor of the class
+    */
+   explicit FPGA_technology(const ParameterConstRef& param);
 
-   public:
+   /**
+    * Destructor of the class
+    */
+   ~FPGA_technology() override;
 
-      /**
-       * Constructor of the class
-       */
-      explicit FPGA_technology(const ParameterConstRef& param);
+   /**
+    * Initializes the current technology
+    */
+   void initialize() override;
 
-      /**
-       * Destructor of the class
-       */
-      ~FPGA_technology() override;
-
-      /**
-       * Initializes the current technology
-       */
-      void initialize() override;
-
-      /**
-       * Returns the type of the technology currently implemented in a string format.
-       * @return a string representing the type of the technology
-       */
-      std::string get_string_type() const override;
-
+   /**
+    * Returns the type of the technology currently implemented in a string format.
+    * @return a string representing the type of the technology
+    */
+   std::string get_string_type() const override;
 };
 
 #endif
-
-

@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file lattice_flow_wrapper.cpp
  * @brief Implementation of the wrapper to lattice_flow
@@ -40,32 +40,28 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
-///Header include
+ */
+/// Header include
 #include "lattice_flow_wrapper.hpp"
-
 
 #include "ToolManager.hpp"
 #include "xml_script_command.hpp"
 
 #include "Parameter.hpp"
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 
-//constructor
-lattice_flow_wrapper::lattice_flow_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir, const target_deviceRef& _device) :
-   LatticeWrapper(_Param, LATTICE_FLOW_TOOL_EXEC, _device, _output_dir, LATTICE_FLOW_TOOL_ID)
+// constructor
+lattice_flow_wrapper::lattice_flow_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir, const target_deviceRef& _device) : LatticeWrapper(_Param, LATTICE_FLOW_TOOL_EXEC, _device, _output_dir, LATTICE_FLOW_TOOL_ID)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the LATTICE_FLOW wrapper...");
 }
 
-//destructor
-lattice_flow_wrapper::~lattice_flow_wrapper()
-= default;
+// destructor
+lattice_flow_wrapper::~lattice_flow_wrapper() = default;
 
 void lattice_flow_wrapper::EvaluateVariables(const DesignParametersRef dp)
 {
    dp->assign(PARAM_lattice_outdir, output_dir, false);
    std::string top_id = dp->component_name;
-   dp->parameter_values[PARAM_lattice_report] = output_dir + "/" + top_id+"_report.xml";
-
+   dp->parameter_values[PARAM_lattice_report] = output_dir + "/" + top_id + "_report.xml";
 }

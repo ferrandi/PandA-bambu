@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file allocation.cpp
  * @brief Wrapper for technology used by the high-level synthesis flow.
@@ -39,52 +39,52 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "allocation.hpp"
-#include <cstddef>                      // for size_t
-#include <limits>                        // for numeric_limits
-#include "HDL_manager.hpp"               // for structural_managerRef, langu...
-#include "NP_functionality.hpp"          // for NP_functionalityRef
-#include "Parameter.hpp"                 // for ParameterConstRef
-#include "allocation_information.hpp"    // for technology_nodeRef, node_kin...
-#include "config_HAVE_EXPERIMENTAL.hpp"  // for HAVE_EXPERIMENTAL
-#include "config_HAVE_FLOPOCO.hpp"       // for HAVE_FLOPOCO
-#include "cpu_time.hpp"                  // for START_TIME, STOP_TIME
-#include "dbgPrintHelper.hpp"            // for DEBUG_LEVEL_VERY_PEDANTIC
-#include "design_flow_step_factory.hpp"  // for DesignFlowManagerConstRef
-#include "exceptions.hpp"                // for THROW_ASSERT, THROW_ERROR
-#include "hls.hpp"                       // for HLS_constraintsRef
-#include "hls_constraints.hpp"           // for ENCODE_FU_LIB
-#include "hls_flow_step_factory.hpp"     // for HLS_managerRef
-#include "library_manager.hpp"           // for library_managerRef, library_...
-#include "moduleGenerator.hpp"           // for structural_objectRef, struct...
-#include "op_graph.hpp"                  // for STORE, ADDR_EXPR, ASSERT_EXPR
-#include "schedule.hpp"                  // for FunctionBehaviorConstRef
-#include "string_manipulation.hpp"       // for STR GET_CLASS
-#include "structural_objects.hpp"        // for PROXY_PREFIX, module, CLOCK_...
-#include "technology_manager.hpp"        // for PROXY_LIBRARY, WORK_LIBRARY
-#include "technology_node.hpp"           // for functional_unit, operation
-#include "time_model.hpp"                // for ParameterConstRef
-#include "tree_node.hpp"                 // for GET_NODE, GET_INDEX_NODE
-#include "typed_node_info.hpp"           // for GET_NAME, ENTRY, EXIT, GET_TYPE
-#include "utility.hpp"                   // for INFINITE_UINT, ASSERT_PARAMETER
-#include "tree_reindex.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
+#include "HDL_manager.hpp"            // for structural_managerRef, langu...
+#include "NP_functionality.hpp"       // for NP_functionalityRef
+#include "Parameter.hpp"              // for ParameterConstRef
+#include "allocation_information.hpp" // for technology_nodeRef, node_kin...
+#include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
 #include "clb_model.hpp"
+#include "config_HAVE_EXPERIMENTAL.hpp" // for HAVE_EXPERIMENTAL
+#include "config_HAVE_FLOPOCO.hpp"      // for HAVE_FLOPOCO
+#include "cpu_time.hpp"                 // for START_TIME, STOP_TIME
+#include "dbgPrintHelper.hpp"           // for DEBUG_LEVEL_VERY_PEDANTIC
+#include "design_flow_step_factory.hpp" // for DesignFlowManagerConstRef
+#include "exceptions.hpp"               // for THROW_ASSERT, THROW_ERROR
+#include "functions.hpp"
+#include "hls.hpp"                   // for HLS_constraintsRef
+#include "hls_constraints.hpp"       // for ENCODE_FU_LIB
+#include "hls_flow_step_factory.hpp" // for HLS_managerRef
+#include "hls_target.hpp"
+#include "language_writer.hpp"
+#include "library_manager.hpp" // for library_managerRef, library_...
 #include "memory.hpp"
 #include "memory_allocation.hpp"
-#include "hls_target.hpp"
+#include "moduleGenerator.hpp"     // for structural_objectRef, struct...
+#include "op_graph.hpp"            // for STORE, ADDR_EXPR, ASSERT_EXPR
+#include "schedule.hpp"            // for FunctionBehaviorConstRef
+#include "string_manipulation.hpp" // for STR GET_CLASS
 #include "structural_manager.hpp"
-#include "behavioral_helper.hpp"
-#include "functions.hpp"
+#include "structural_objects.hpp" // for PROXY_PREFIX, module, CLOCK_...
 #include "target_device.hpp"
-#include "language_writer.hpp"
-#include "call_graph_manager.hpp"
+#include "technology_manager.hpp" // for PROXY_LIBRARY, WORK_LIBRARY
+#include "technology_node.hpp"    // for functional_unit, operation
+#include "time_model.hpp"         // for ParameterConstRef
+#include "tree_helper.hpp"
+#include "tree_manager.hpp"
+#include "tree_node.hpp" // for GET_NODE, GET_INDEX_NODE
+#include "tree_reindex.hpp"
+#include "typed_node_info.hpp" // for GET_NAME, ENTRY, EXIT, GET_TYPE
+#include "utility.hpp"         // for INFINITE_UINT, ASSERT_PARAMETER
+#include <cstddef>             // for size_t
+#include <limits>              // for numeric_limits
 
-static bool is_other_port (const structural_objectRef & port)
+static bool is_other_port(const structural_objectRef& port)
 {
    const auto p = GetPointer<port_o>(port);
    return p->get_is_memory() or p->get_is_global() or p->get_is_extern() or p->get_port_interface() != port_o::port_interface::PI_DEFAULT;
@@ -92,11 +92,7 @@ static bool is_other_port (const structural_objectRef & port)
 
 static bool is_a_skip_operation(const std::string& op_name)
 {
-   if(
-         op_name == "mult_expr" ||
-         op_name == "widen_mult_expr" ||
-         op_name == "dot_prod_expr"
-         )
+   if(op_name == "mult_expr" || op_name == "widen_mult_expr" || op_name == "dot_prod_expr")
       return true;
    else
       return false;
@@ -111,28 +107,27 @@ static inline std::string encode_op_type_prec(const std::string& op_name, const 
 {
    std::string op_type = encode_op_type(op_name, fu_supported_types);
    const size_t n_ins = node_info->input_prec.size();
-   for (size_t ind=0; ind < n_ins; ++ind)
+   for(size_t ind = 0; ind < n_ins; ++ind)
    {
-      if(node_info->base128_input_nelem[ind]==0)
+      if(node_info->base128_input_nelem[ind] == 0)
          op_type += ":" + STR(node_info->input_prec[ind]);
       else
          op_type += ":" + STR(node_info->input_prec[ind]) + ":" + STR(node_info->base128_input_nelem[ind]);
    }
-   if(node_info->base128_output_nelem==0)
+   if(node_info->base128_output_nelem == 0)
       op_type += ":" + STR(node_info->output_prec);
    else
       op_type += ":" + STR(node_info->output_prec) + ":" + STR(node_info->base128_output_nelem);
    return op_type;
 }
 
-allocation::allocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type):
-   HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
+allocation::allocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+    : HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-allocation::~allocation()
-= default;
+allocation::~allocation() = default;
 
 void allocation::Initialize()
 {
@@ -152,36 +147,33 @@ void allocation::Initialize()
    TM = HLS_T->get_technology_manager();
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > allocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> allocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ret;
+   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
-         {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::CALLED_FUNCTIONS));
-            ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            break;
-         }
+      {
+         ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::CALLED_FUNCTIONS));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         break;
+      }
       case INVALIDATION_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       case PRECEDENCE_RELATIONSHIP:
-         {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_BIT_VALUE, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            break;
-         }
+      {
+         ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_BIT_VALUE, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         break;
+      }
       default:
          THROW_UNREACHABLE("");
    }
    return ret;
 }
 
-technology_nodeRef allocation::extract_bambu_provided(
-      const std::string& library_name,
-      operation* curr_op,
-      const std::string& bambu_provided_resource)
+technology_nodeRef allocation::extract_bambu_provided(const std::string& library_name, operation* curr_op, const std::string& bambu_provided_resource)
 {
    technology_nodeRef current_fu;
    std::string function_name;
@@ -197,7 +189,7 @@ technology_nodeRef allocation::extract_bambu_provided(
       else
       {
          THROW_ASSERT(HLSMgr->Rfuns->is_a_proxied_shared_function(funId, bambu_provided_resource), "expected a proxy module");
-         function_name = PROXY_PREFIX+bambu_provided_resource;
+         function_name = PROXY_PREFIX + bambu_provided_resource;
          build_proxy = true;
       }
    }
@@ -209,19 +201,19 @@ technology_nodeRef allocation::extract_bambu_provided(
    THROW_ASSERT(libraryManager->is_fu(function_name), "functional unit not yet synthesized: " + function_name + "(" + library_name + ")");
    current_fu = libraryManager->get_fu(function_name);
    THROW_ASSERT(current_fu, "functional unit not yet synthesized: " + function_name + "(" + library_name + ")");
-   const std::vector<technology_nodeRef> &op_vec=GetPointer<functional_unit>(current_fu)->get_operations();
+   const std::vector<technology_nodeRef>& op_vec = GetPointer<functional_unit>(current_fu)->get_operations();
    bool has_current_op = false;
 
    std::string op_name = curr_op->get_name();
-   for(const auto & op_it : op_vec)
+   for(const auto& op_it : op_vec)
       if(GetPointer<operation>(op_it)->get_name() == op_name)
          has_current_op = true;
 
    if(!has_current_op)
    {
       technology_nodeRef op = technology_nodeRef(new operation());
-      auto * cop = GetPointer<operation>(op);
-      auto * ref_op = GetPointer<operation>(op_vec[0]);
+      auto* cop = GetPointer<operation>(op);
+      auto* ref_op = GetPointer<operation>(op_vec[0]);
       cop->operation_name = op_name;
       cop->time_m = ref_op->time_m;
 #if HAVE_EXPERIMENTAL
@@ -235,7 +227,7 @@ technology_nodeRef allocation::extract_bambu_provided(
    }
    else
    {
-      for(const auto & op_it : op_vec)
+      for(const auto& op_it : op_vec)
          if(GetPointer<operation>(op_it)->get_name() == op_name)
          {
             auto* fu_ob = GetPointer<functional_unit>(TM->get_fu(bambu_provided_resource, WORK_LIBRARY));
@@ -258,15 +250,12 @@ static std::string fix_identifier(std::string port_name, language_writerRef writ
    return name;
 }
 
-static void connectClockAndReset(
-      structural_managerRef & SM,
-      structural_objectRef & interfaceObj,
-      structural_objectRef & component)
+static void connectClockAndReset(structural_managerRef& SM, structural_objectRef& interfaceObj, structural_objectRef& component)
 {
    // Clock and Reset connection
    structural_objectRef port_ck = component->find_member(CLOCK_PORT_NAME, port_o_K, component);
    structural_objectRef clock = interfaceObj->find_member(CLOCK_PORT_NAME, port_o_K, interfaceObj);
-   if (port_ck and clock)
+   if(port_ck and clock)
    {
       SM->add_connection(port_ck, clock);
    }
@@ -277,7 +266,7 @@ static void connectClockAndReset(
 
    structural_objectRef port_rst = component->find_member(RESET_PORT_NAME, port_o_K, component);
    structural_objectRef reset = interfaceObj->find_member(RESET_PORT_NAME, port_o_K, interfaceObj);
-   if (port_rst and reset)
+   if(port_rst and reset)
       SM->add_connection(port_rst, reset);
 }
 
@@ -291,7 +280,7 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
    structural_managerRef orig_fu_SM = GetPointer<functional_unit>(orig_fun)->CM;
    structural_objectRef orig_top_obj = orig_fu_SM->get_circ();
    orig_top_obj->set_id(orig_fun_name + "_i");
-   const module * orig_fu_module = GetPointer<module>(orig_top_obj);
+   const module* orig_fu_module = GetPointer<module>(orig_top_obj);
 
    structural_managerRef wrapper_SM = current_fu->CM;
    structural_objectRef wrapper_obj = wrapper_SM->get_circ();
@@ -299,12 +288,12 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
    // create the selector signal to tell proxied and unproxied calls apart
    structural_type_descriptorRef bool_signal_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    // select the operations mode of the functional unit, used to drive the proxy selector
-   const functional_unit::operation_vec & ops = current_fu->get_operations();
+   const functional_unit::operation_vec& ops = current_fu->get_operations();
    std::vector<structural_objectRef> op_ports;
-   for (const auto & o : ops)
+   for(const auto& o : ops)
    {
       const std::string op_name = GetPointer<operation>(o)->get_name();
-      if (!boost::algorithm::starts_with(op_name,WRAPPED_PROXY_PREFIX))
+      if(!boost::algorithm::starts_with(op_name, WRAPPED_PROXY_PREFIX))
       {
          const std::string sel_port_name = "sel_" + op_name;
          structural_objectRef new_sel_port = wrapper_obj->find_member(sel_port_name, port_o_K, wrapper_obj);
@@ -314,7 +303,7 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
           * __builtin_abort.
           * In this case there is no need to add the new port.
           */
-         if (not new_sel_port)
+         if(not new_sel_port)
          {
             wrapper_SM->add_port(sel_port_name, port_o::IN, wrapper_obj, bool_signal_type);
             new_sel_port = wrapper_obj->find_member(sel_port_name, port_o_K, wrapper_obj);
@@ -324,17 +313,14 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
    }
    // build a binary tree of ors to drive the proxy selector
    structural_objectRef selector_signal = wrapper_SM->add_sign("proxy_selector____out_sel", wrapper_obj, bool_signal_type);
-   if (not op_ports.empty())
+   if(not op_ports.empty())
    {
-      structural_objectRef or_gate = wrapper_SM->add_module_from_technology_library(
-            "proxy_selector____or_gate", OR_GATE_STD,
-            HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD),
-            wrapper_obj, HLS->HLS_T->get_technology_manager());
+      structural_objectRef or_gate = wrapper_SM->add_module_from_technology_library("proxy_selector____or_gate", OR_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD), wrapper_obj, HLS->HLS_T->get_technology_manager());
       structural_objectRef or_in = or_gate->find_member("in", port_vector_o_K, or_gate);
-      auto * port = GetPointer<port_o>(or_in);
+      auto* port = GetPointer<port_o>(or_in);
       port->add_n_ports(static_cast<unsigned int>(op_ports.size()), or_in);
       unsigned int port_n = 0;
-      for (const auto & p : op_ports)
+      for(const auto& p : op_ports)
       {
          wrapper_SM->add_connection(p, port->get_port(port_n));
          port_n++;
@@ -344,13 +330,13 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
    }
 
    auto inPortSize = static_cast<unsigned int>(orig_fu_module->get_in_port_size());
-   for (unsigned int port_id = 0; port_id < inPortSize; port_id++)
+   for(unsigned int port_id = 0; port_id < inPortSize; port_id++)
    {
       structural_objectRef curr_port = orig_fu_module->get_in_port(port_id);
       const std::string port_name = curr_port->get_id();
-      if (port_name != CLOCK_PORT_NAME and port_name != RESET_PORT_NAME)
+      if(port_name != CLOCK_PORT_NAME and port_name != RESET_PORT_NAME)
       {
-         if (is_other_port(curr_port))
+         if(is_other_port(curr_port))
          {
             structural_objectRef wrapper_mem_port = wrapper_obj->find_member(port_name, port_o_K, wrapper_obj);
             structural_objectRef wrapped_mem_port = orig_top_obj->find_member(port_name, port_o_K, orig_top_obj);
@@ -359,10 +345,7 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
          }
          const std::string proxy_port_name = PROXY_PREFIX + port_name;
          // insert wDataMux
-         structural_objectRef mux = wrapper_SM->add_module_from_technology_library(
-               "proxy_mux_____" + port_name, MUX_GATE_STD,
-               HLS->HLS_T->get_technology_manager()->get_library(MUX_GATE_STD),
-               wrapper_obj, HLS->HLS_T->get_technology_manager());
+         structural_objectRef mux = wrapper_SM->add_module_from_technology_library("proxy_mux_____" + port_name, MUX_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(MUX_GATE_STD), wrapper_obj, HLS->HLS_T->get_technology_manager());
 
          structural_objectRef mux_in1 = mux->find_member("in1", port_o_K, mux);
          structural_objectRef mux_in2 = mux->find_member("in2", port_o_K, mux);
@@ -388,11 +371,11 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
       }
    }
    auto outPortSize = static_cast<unsigned int>(orig_fu_module->get_out_port_size());
-   for (unsigned int currentPort = 0; currentPort < outPortSize; ++currentPort)
+   for(unsigned int currentPort = 0; currentPort < outPortSize; ++currentPort)
    {
       structural_objectRef curr_port = orig_fu_module->get_out_port(currentPort);
       const std::string port_name = curr_port->get_id();
-      if (is_other_port(curr_port))
+      if(is_other_port(curr_port))
       {
          structural_objectRef wrapper_mem_port = wrapper_obj->find_member(port_name, port_o_K, wrapper_obj);
          structural_objectRef wrapped_mem_port = orig_top_obj->find_member(port_name, port_o_K, orig_top_obj);
@@ -416,35 +399,31 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
    memory::propagate_memory_parameters(orig_top_obj, wrapper_SM);
 }
 
-void allocation::add_proxy_function_wrapper(
-      technology_nodeRef wrapper_tn,
-      const std::string& library_name,
-      technology_nodeRef techNode_obj,
-      const std::string& orig_fun_name)
+void allocation::add_proxy_function_wrapper(technology_nodeRef wrapper_tn, const std::string& library_name, technology_nodeRef techNode_obj, const std::string& orig_fun_name)
 {
    const std::string wrapped_fu_name = WRAPPED_PROXY_PREFIX + orig_fun_name;
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - adding proxy function wrapper " + wrapped_fu_name);
    structural_managerRef structManager_obj = GetPointer<functional_unit>(techNode_obj)->CM;
    structural_objectRef fu_obj = structManager_obj->get_circ();
-   auto * fu_module = GetPointer<module>(fu_obj);
+   auto* fu_module = GetPointer<module>(fu_obj);
 
    structural_objectRef wrapper_top;
    structural_managerRef CM = structural_managerRef(new structural_manager(parameters));
    structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor(wrapped_fu_name));
    CM->set_top_info(wrapped_fu_name, module_type);
    wrapper_top = CM->get_circ();
-   ///add description and license
+   /// add description and license
    GetPointer<module>(wrapper_top)->set_description("Proxy wrapper for function: " + wrapped_fu_name);
    GetPointer<module>(wrapper_top)->set_copyright(fu_module->get_copyright());
    GetPointer<module>(wrapper_top)->set_authors(fu_module->get_authors());
    GetPointer<module>(wrapper_top)->set_license(fu_module->get_license());
-   if (fu_module->is_parameter(MEMORY_PARAMETER))
+   if(fu_module->is_parameter(MEMORY_PARAMETER))
    {
       GetPointer<module>(wrapper_top)->set_parameter(MEMORY_PARAMETER, fu_module->get_parameter(MEMORY_PARAMETER));
    }
    // handle input ports
    auto inPortSize = static_cast<unsigned int>(fu_module->get_in_port_size());
-   for (unsigned int currentPort = 0; currentPort < inPortSize; ++currentPort)
+   for(unsigned int currentPort = 0; currentPort < inPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_in_port(currentPort);
       const std::string port_name = curr_port->get_id();
@@ -457,10 +436,10 @@ void allocation::add_proxy_function_wrapper(
          curr_port->copy(generated_port);
       }
    }
-   for (unsigned int currentPort = 0; currentPort < inPortSize; ++currentPort)
+   for(unsigned int currentPort = 0; currentPort < inPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_in_port(currentPort);
-      if (not is_other_port(curr_port))
+      if(not is_other_port(curr_port))
       {
          const std::string port_name = curr_port->get_id();
          if(port_name != CLOCK_PORT_NAME && port_name != RESET_PORT_NAME)
@@ -478,7 +457,7 @@ void allocation::add_proxy_function_wrapper(
    }
    // handle output ports
    auto outPortSize = static_cast<unsigned int>(fu_module->get_out_port_size());
-   for (unsigned int currentPort = 0; currentPort < outPortSize; ++currentPort)
+   for(unsigned int currentPort = 0; currentPort < outPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_out_port(currentPort);
       const std::string port_name = curr_port->get_id();
@@ -491,10 +470,10 @@ void allocation::add_proxy_function_wrapper(
          curr_port->copy(generated_port);
       }
    }
-   for (unsigned int currentPort = 0; currentPort < outPortSize; ++currentPort)
+   for(unsigned int currentPort = 0; currentPort < outPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_out_port(currentPort);
-      if (not is_other_port(curr_port))
+      if(not is_other_port(curr_port))
       {
          structural_objectRef proxy_generated_port;
          const std::string proxy_port_name = PROXY_PREFIX + curr_port->get_id();
@@ -507,7 +486,7 @@ void allocation::add_proxy_function_wrapper(
       }
    }
 
-   const NP_functionalityRef & np = fu_module->get_NP_functionality();
+   const NP_functionalityRef& np = fu_module->get_NP_functionality();
    std::string orig_np_library = np->get_NP_functionality(NP_functionality::LIBRARY);
    orig_np_library.replace(0, orig_fun_name.size(), wrapped_fu_name);
    CM->add_NP_functionality(wrapper_top, NP_functionality::LIBRARY, orig_np_library);
@@ -518,7 +497,7 @@ void allocation::add_proxy_function_wrapper(
 
    wrapper_tn = TM->get_fu(wrapped_fu_name, PROXY_LIBRARY);
    auto* wrapper_fu = GetPointer<functional_unit>(wrapper_tn);
-   auto* orig_fu =GetPointer<functional_unit>(techNode_obj);
+   auto* orig_fu = GetPointer<functional_unit>(techNode_obj);
    wrapper_fu->ordered_attributes = orig_fu->ordered_attributes;
    wrapper_fu->attributes = orig_fu->attributes;
    wrapper_fu->clock_period = orig_fu->clock_period;
@@ -531,10 +510,10 @@ void allocation::add_proxy_function_wrapper(
    wrapper_fu->channels_type = orig_fu->channels_type;
    wrapper_fu->memory_ctrl_type = orig_fu->memory_ctrl_type;
    wrapper_fu->bram_load_latency = orig_fu->bram_load_latency;
-   const functional_unit::operation_vec &ops = orig_fu->get_operations();
-   for(const auto & op : ops)
+   const functional_unit::operation_vec& ops = orig_fu->get_operations();
+   for(const auto& op : ops)
    {
-      auto * current_op = GetPointer<operation>(op);
+      auto* current_op = GetPointer<operation>(op);
       std::string op_name = current_op->get_name();
       TM->add_operation(PROXY_LIBRARY, wrapped_fu_name, op_name);
       auto* proxy_op = GetPointer<operation>(wrapper_fu->get_operation(op_name));
@@ -544,33 +523,34 @@ void allocation::add_proxy_function_wrapper(
       proxy_op->supported_types = current_op->supported_types;
       proxy_op->pipe_parameters = current_op->pipe_parameters;
    }
-   ///add a fictious operation to allow bus merging
+   /// add a fictious operation to allow bus merging
    TM->add_operation(PROXY_LIBRARY, wrapped_fu_name, wrapped_fu_name);
    auto* wrapper_fictious_op = GetPointer<operation>(wrapper_fu->get_operation(wrapped_fu_name));
    wrapper_fictious_op->time_m = time_model::create_model(HLS_T->get_target_device()->get_type(), parameters);
 
-   ///automatically build proxy wrapper HDL description
+   /// automatically build proxy wrapper HDL description
    BuildProxyWrapper(wrapper_fu, orig_fun_name, library_name);
 }
 
 void allocation::BuildProxyFunctionVerilog(functional_unit* current_fu)
 {
-   const functional_unit::operation_vec &ops = current_fu->get_operations();
+   const functional_unit::operation_vec& ops = current_fu->get_operations();
    structural_managerRef CM = current_fu->CM;
    structural_objectRef top = CM->get_circ();
-   auto *fu_module = GetPointer<module>(top);
-   auto inPortSize=static_cast<unsigned int>(fu_module->get_in_port_size());
-   auto outPortSize=static_cast<unsigned int>(fu_module->get_out_port_size());
-   language_writerRef writer =language_writer::create_writer(HDLWriter_Language::VERILOG, HLSMgr->get_HLS_target()->get_technology_manager(), parameters);
+   auto* fu_module = GetPointer<module>(top);
+   auto inPortSize = static_cast<unsigned int>(fu_module->get_in_port_size());
+   auto outPortSize = static_cast<unsigned int>(fu_module->get_out_port_size());
+   language_writerRef writer = language_writer::create_writer(HDLWriter_Language::VERILOG, HLSMgr->get_HLS_target()->get_technology_manager(), parameters);
 
    structural_type_descriptorRef b_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    std::string sel_guard;
-   for(const auto & op : ops)
+   for(const auto& op : ops)
    {
-      auto * current_op = GetPointer<operation>(op);
+      auto* current_op = GetPointer<operation>(op);
       std::string op_name = current_op->get_name();
-      if(boost::algorithm::starts_with(op_name,PROXY_PREFIX)) continue;
-      std::string sel_port_name = "sel_"+op_name;
+      if(boost::algorithm::starts_with(op_name, PROXY_PREFIX))
+         continue;
+      std::string sel_port_name = "sel_" + op_name;
       structural_objectRef sel_port = fu_module->find_member(sel_port_name, port_o_K, top);
       if(!sel_port)
       {
@@ -579,35 +559,35 @@ void allocation::BuildProxyFunctionVerilog(functional_unit* current_fu)
       if(sel_guard == "")
          sel_guard = sel_port_name;
       else
-         sel_guard = "("+sel_guard+"|"+sel_port_name+")";
+         sel_guard = "(" + sel_guard + "|" + sel_port_name + ")";
    }
 
    std::string verilog_description;
-   for(unsigned int currentPort=0; currentPort<inPortSize; ++currentPort)
+   for(unsigned int currentPort = 0; currentPort < inPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_in_port(currentPort);
-      if (is_other_port(curr_port))
+      if(is_other_port(curr_port))
          continue;
-      std::string port_name=curr_port->get_id();
+      std::string port_name = curr_port->get_id();
       if(port_name != CLOCK_PORT_NAME && port_name != RESET_PORT_NAME)
       {
          if(verilog_description != "")
             verilog_description += "\n";
          if(port_name == START_PORT_NAME)
-            verilog_description = verilog_description + "assign " + PROXY_PREFIX+port_name + " = " + fix_identifier( port_name, writer) + ";";
-         else if(fu_module->find_member(PROXY_PREFIX+port_name, port_o_K, top))
-            verilog_description = verilog_description + "assign " + PROXY_PREFIX+port_name + " = " + sel_guard + " ? " + fix_identifier( port_name, writer) + " : 0;";
+            verilog_description = verilog_description + "assign " + PROXY_PREFIX + port_name + " = " + fix_identifier(port_name, writer) + ";";
+         else if(fu_module->find_member(PROXY_PREFIX + port_name, port_o_K, top))
+            verilog_description = verilog_description + "assign " + PROXY_PREFIX + port_name + " = " + sel_guard + " ? " + fix_identifier(port_name, writer) + " : 0;";
       }
    }
-   for(unsigned int currentPort=0; currentPort<outPortSize; ++currentPort)
+   for(unsigned int currentPort = 0; currentPort < outPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_out_port(currentPort);
-      if (is_other_port(curr_port))
+      if(is_other_port(curr_port))
          continue;
-      std::string port_name=curr_port->get_id();
+      std::string port_name = curr_port->get_id();
       if(verilog_description != "")
          verilog_description += "\n";
-      verilog_description = verilog_description + "assign " + fix_identifier( port_name, writer) + " = " + PROXY_PREFIX+port_name + ";";
+      verilog_description = verilog_description + "assign " + fix_identifier(port_name, writer) + " = " + PROXY_PREFIX + port_name + ";";
    }
    add_escape(verilog_description, "\\");
    CM->add_NP_functionality(top, NP_functionality::VERILOG_PROVIDED, verilog_description);
@@ -615,22 +595,23 @@ void allocation::BuildProxyFunctionVerilog(functional_unit* current_fu)
 
 void allocation::BuildProxyFunctionVHDL(functional_unit* current_fu)
 {
-   const functional_unit::operation_vec &ops = current_fu->get_operations();
+   const functional_unit::operation_vec& ops = current_fu->get_operations();
    structural_managerRef CM = current_fu->CM;
    structural_objectRef top = CM->get_circ();
-   auto *fu_module = GetPointer<module>(top);
-   auto inPortSize=static_cast<unsigned int>(fu_module->get_in_port_size());
-   auto outPortSize=static_cast<unsigned int>(fu_module->get_out_port_size());
-   language_writerRef writer =language_writer::create_writer(HDLWriter_Language::VHDL, HLSMgr->get_HLS_target()->get_technology_manager(), parameters);
+   auto* fu_module = GetPointer<module>(top);
+   auto inPortSize = static_cast<unsigned int>(fu_module->get_in_port_size());
+   auto outPortSize = static_cast<unsigned int>(fu_module->get_out_port_size());
+   language_writerRef writer = language_writer::create_writer(HDLWriter_Language::VHDL, HLSMgr->get_HLS_target()->get_technology_manager(), parameters);
 
    structural_type_descriptorRef b_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    std::string sel_guard;
-   for(const auto & op : ops)
+   for(const auto& op : ops)
    {
-      auto * current_op = GetPointer<operation>(op);
+      auto* current_op = GetPointer<operation>(op);
       std::string op_name = current_op->get_name();
-      if(boost::algorithm::starts_with(op_name,PROXY_PREFIX)) continue;
-      std::string sel_port_name = "sel_"+op_name;
+      if(boost::algorithm::starts_with(op_name, PROXY_PREFIX))
+         continue;
+      std::string sel_port_name = "sel_" + op_name;
       structural_objectRef sel_port = fu_module->find_member(sel_port_name, port_o_K, top);
       if(!sel_port)
       {
@@ -646,31 +627,31 @@ void allocation::BuildProxyFunctionVHDL(functional_unit* current_fu)
 
    std::string VHDL_description;
    VHDL_description += "begin";
-   for(unsigned int currentPort=0; currentPort<inPortSize; ++currentPort)
+   for(unsigned int currentPort = 0; currentPort < inPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_in_port(currentPort);
-      if (is_other_port(curr_port))
+      if(is_other_port(curr_port))
          continue;
-      std::string port_name=curr_port->get_id();
+      std::string port_name = curr_port->get_id();
       if(port_name != CLOCK_PORT_NAME && port_name != RESET_PORT_NAME)
       {
          if(VHDL_description != "")
             VHDL_description += "\n";
          if(port_name == START_PORT_NAME)
-            VHDL_description = VHDL_description + fix_identifier(PROXY_PREFIX+port_name, writer) + " <= " + fix_identifier( port_name, writer) + ";";
-         else if(fu_module->find_member(PROXY_PREFIX+port_name, port_o_K, top))
-            VHDL_description = VHDL_description + fix_identifier(PROXY_PREFIX+port_name,writer ) + " <= " + fix_identifier( port_name, writer) + " when (" + sel_guard + ") else " + (GET_TYPE_SIZE(curr_port) == 1 ? "'0'" : "(others => '0')")+ ";";
+            VHDL_description = VHDL_description + fix_identifier(PROXY_PREFIX + port_name, writer) + " <= " + fix_identifier(port_name, writer) + ";";
+         else if(fu_module->find_member(PROXY_PREFIX + port_name, port_o_K, top))
+            VHDL_description = VHDL_description + fix_identifier(PROXY_PREFIX + port_name, writer) + " <= " + fix_identifier(port_name, writer) + " when (" + sel_guard + ") else " + (GET_TYPE_SIZE(curr_port) == 1 ? "'0'" : "(others => '0')") + ";";
       }
    }
-   for(unsigned int currentPort=0; currentPort<outPortSize; ++currentPort)
+   for(unsigned int currentPort = 0; currentPort < outPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_out_port(currentPort);
-      if (is_other_port(curr_port))
+      if(is_other_port(curr_port))
          continue;
-      std::string port_name=curr_port->get_id();
+      std::string port_name = curr_port->get_id();
       if(VHDL_description != "")
          VHDL_description += "\n";
-      VHDL_description = VHDL_description + fix_identifier( port_name, writer) + " <= " + fix_identifier(PROXY_PREFIX + port_name,writer) + ";";
+      VHDL_description = VHDL_description + fix_identifier(port_name, writer) + " <= " + fix_identifier(PROXY_PREFIX + port_name, writer) + ";";
    }
    add_escape(VHDL_description, "\\");
    CM->add_NP_functionality(top, NP_functionality::VHDL_PROVIDED, VHDL_description);
@@ -682,15 +663,15 @@ void allocation::BuildProxyFunction(functional_unit* current_fu)
    switch(writer)
    {
       case HDLWriter_Language::VHDL:
-         {
-            BuildProxyFunctionVHDL(current_fu);
-            break;
-         }
+      {
+         BuildProxyFunctionVHDL(current_fu);
+         break;
+      }
       case HDLWriter_Language::VERILOG:
-         {
-            BuildProxyFunctionVerilog(current_fu);
-            break;
-         }
+      {
+         BuildProxyFunctionVerilog(current_fu);
+         break;
+      }
       case HDLWriter_Language::SYSTEM_VERILOG:
 #if HAVE_EXPERIMENTAL
       case HDLWriter_Language::SYSTEMC:
@@ -702,24 +683,20 @@ void allocation::BuildProxyFunction(functional_unit* current_fu)
    }
 }
 
-void allocation::add_proxy_function_module(
-      technology_nodeRef proxy_tn,
-      const HLS_constraintsRef HLS_C,
-      technology_nodeRef techNode_obj,
-      const std::string& orig_fun_name)
+void allocation::add_proxy_function_module(technology_nodeRef proxy_tn, const HLS_constraintsRef HLS_C, technology_nodeRef techNode_obj, const std::string& orig_fun_name)
 {
    const std::string proxied_fu_name = PROXY_PREFIX + orig_fun_name;
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - adding proxied function " + proxied_fu_name);
    structural_managerRef structManager_obj = GetPointer<functional_unit>(techNode_obj)->CM;
    structural_objectRef fu_obj = structManager_obj->get_circ();
-   auto * fu_module = GetPointer<module>(fu_obj);
+   auto* fu_module = GetPointer<module>(fu_obj);
 
    structural_objectRef top;
    structural_managerRef CM = structural_managerRef(new structural_manager(parameters));
    structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor(proxied_fu_name));
-   CM->set_top_info(proxied_fu_name,module_type);
+   CM->set_top_info(proxied_fu_name, module_type);
    top = CM->get_circ();
-   ///add description and license
+   /// add description and license
    GetPointer<module>(top)->set_description("Proxy module for function: " + proxied_fu_name);
    GetPointer<module>(top)->set_copyright(fu_module->get_copyright());
    GetPointer<module>(top)->set_authors(fu_module->get_authors());
@@ -756,22 +733,22 @@ void allocation::add_proxy_function_module(
    auto inPortSize = static_cast<unsigned int>(fu_module->get_in_port_size());
    auto outPortSize = static_cast<unsigned int>(fu_module->get_out_port_size());
    // analyze the input signals of the proxed function, i.e. the function called through the proxy
-   for (unsigned int currentPort = 0; currentPort < inPortSize; ++currentPort)
+   for(unsigned int currentPort = 0; currentPort < inPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_in_port(currentPort);
-      if (is_other_port(curr_port))
+      if(is_other_port(curr_port))
          continue;
 
       const std::string port_name = curr_port->get_id();
       // clock and reset are not propagated because the proxied functions have their own
-      if (port_name != CLOCK_PORT_NAME and port_name != RESET_PORT_NAME)
+      if(port_name != CLOCK_PORT_NAME and port_name != RESET_PORT_NAME)
       {
          /*
           * add an input port to the proxy for every input port of the proxied function.
           * This connects the caller layer to the proxy
           */
          structural_objectRef generated_port;
-         if (curr_port->get_kind() == port_vector_o_K)
+         if(curr_port->get_kind() == port_vector_o_K)
             generated_port = CM->add_port_vector(port_name, port_o::IN, port_o::PARAMETRIC_PORT, top, curr_port->get_typeRef());
          else
             generated_port = CM->add_port(port_name, port_o::IN, top, curr_port->get_typeRef());
@@ -779,10 +756,10 @@ void allocation::add_proxy_function_module(
       }
    }
    // analyze the output signals of the proxied function
-   for (unsigned int currentPort = 0; currentPort < outPortSize; ++currentPort)
+   for(unsigned int currentPort = 0; currentPort < outPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_out_port(currentPort);
-      if (is_other_port(curr_port))
+      if(is_other_port(curr_port))
          continue;
       /*
        * Add an output port to the proxy for every output port of the proxied function.
@@ -790,22 +767,22 @@ void allocation::add_proxy_function_module(
        */
       structural_objectRef generated_port;
       const std::string port_name = curr_port->get_id();
-      if (curr_port->get_kind() == port_vector_o_K)
+      if(curr_port->get_kind() == port_vector_o_K)
          generated_port = CM->add_port_vector(port_name, port_o::OUT, port_o::PARAMETRIC_PORT, top, curr_port->get_typeRef());
       else
          generated_port = CM->add_port(port_name, port_o::OUT, top, curr_port->get_typeRef());
       curr_port->copy(generated_port);
    }
    // analyze the input signals of the proxed function, i.e. the function called through the proxy
-   for (unsigned int currentPort = 0; currentPort < inPortSize; ++currentPort)
+   for(unsigned int currentPort = 0; currentPort < inPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_in_port(currentPort);
-      if (is_other_port(curr_port))
+      if(is_other_port(curr_port))
          continue;
 
       const std::string port_name = curr_port->get_id();
       // clock and reset are not propagated because the proxied functions have their own
-      if (port_name != CLOCK_PORT_NAME and port_name != RESET_PORT_NAME)
+      if(port_name != CLOCK_PORT_NAME and port_name != RESET_PORT_NAME)
       {
          /*
           * add an output port to the proxy for every input port of the proxied function.
@@ -814,7 +791,7 @@ void allocation::add_proxy_function_module(
           */
          structural_objectRef proxy_generated_port;
          const std::string proxied_port_name = PROXY_PREFIX + port_name;
-         if (curr_port->get_kind() == port_vector_o_K)
+         if(curr_port->get_kind() == port_vector_o_K)
             proxy_generated_port = CM->add_port_vector(proxied_port_name, port_o::OUT, port_o::PARAMETRIC_PORT, top, curr_port->get_typeRef());
          else
             proxy_generated_port = CM->add_port(proxied_port_name, port_o::OUT, top, curr_port->get_typeRef());
@@ -825,10 +802,10 @@ void allocation::add_proxy_function_module(
       }
    }
    // analyze the output signals of the proxied function
-   for (unsigned int currentPort = 0; currentPort < outPortSize; ++currentPort)
+   for(unsigned int currentPort = 0; currentPort < outPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_out_port(currentPort);
-      if (is_other_port(curr_port))
+      if(is_other_port(curr_port))
          continue;
       /*
        * add an input port to the proxy for every output port of the proxied function.
@@ -837,7 +814,7 @@ void allocation::add_proxy_function_module(
        */
       const std::string proxied_port_name = PROXY_PREFIX + curr_port->get_id();
       structural_objectRef proxy_generated_port;
-      if (curr_port->get_kind() == port_vector_o_K)
+      if(curr_port->get_kind() == port_vector_o_K)
          proxy_generated_port = CM->add_port_vector(proxied_port_name, port_o::IN, port_o::PARAMETRIC_PORT, top, curr_port->get_typeRef());
       else
          proxy_generated_port = CM->add_port(proxied_port_name, port_o::IN, top, curr_port->get_typeRef());
@@ -847,7 +824,7 @@ void allocation::add_proxy_function_module(
       GetPointer<port_o>(proxy_generated_port)->set_id(proxied_port_name);
    }
 
-   const NP_functionalityRef & np = fu_module->get_NP_functionality();
+   const NP_functionalityRef& np = fu_module->get_NP_functionality();
    std::string orig_np_library = np->get_NP_functionality(NP_functionality::LIBRARY);
    orig_np_library.replace(0, orig_fun_name.size(), proxied_fu_name);
    CM->add_NP_functionality(top, NP_functionality::LIBRARY, orig_np_library);
@@ -856,7 +833,7 @@ void allocation::add_proxy_function_module(
 
    proxy_tn = TM->get_fu(proxied_fu_name, PROXY_LIBRARY);
    auto* proxy_fu = GetPointer<functional_unit>(proxy_tn);
-   auto* orig_fu =GetPointer<functional_unit>(techNode_obj);
+   auto* orig_fu = GetPointer<functional_unit>(techNode_obj);
    proxy_fu->ordered_attributes = orig_fu->ordered_attributes;
    proxy_fu->attributes = orig_fu->attributes;
    proxy_fu->clock_period = orig_fu->clock_period;
@@ -869,10 +846,10 @@ void allocation::add_proxy_function_module(
    proxy_fu->channels_type = orig_fu->channels_type;
    proxy_fu->memory_ctrl_type = orig_fu->memory_ctrl_type;
    proxy_fu->bram_load_latency = orig_fu->bram_load_latency;
-   const functional_unit::operation_vec &ops = orig_fu->get_operations();
-   for (const auto & op : ops)
+   const functional_unit::operation_vec& ops = orig_fu->get_operations();
+   for(const auto& op : ops)
    {
-      auto * current_op = GetPointer<operation>(op);
+      auto* current_op = GetPointer<operation>(op);
       std::string op_name = current_op->get_name();
       TM->add_operation(PROXY_LIBRARY, proxied_fu_name, op_name);
       auto* proxy_op = GetPointer<operation>(proxy_fu->get_operation(op_name));
@@ -882,12 +859,12 @@ void allocation::add_proxy_function_module(
       proxy_op->supported_types = current_op->supported_types;
       proxy_op->pipe_parameters = current_op->pipe_parameters;
    }
-   ///add a fictious operation to allow bus merging
+   /// add a fictious operation to allow bus merging
    TM->add_operation(PROXY_LIBRARY, proxied_fu_name, proxied_fu_name);
    auto* proxy_fictious_op = GetPointer<operation>(proxy_fu->get_operation(proxied_fu_name));
    proxy_fictious_op->time_m = time_model::create_model(HLS_T->get_target_device()->get_type(), parameters);
 
-   ///automatically build proxy description
+   /// automatically build proxy description
    BuildProxyFunction(proxy_fu);
 
    std::string key_new = ENCODE_FU_LIB(proxied_fu_name, PROXY_LIBRARY);
@@ -896,12 +873,12 @@ void allocation::add_proxy_function_module(
 
 void allocation::add_tech_constraint(technology_nodeRef cur_fu, unsigned int tech_constrain_value, unsigned int pos, bool proxy_constrained)
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Specialized unit: "+(cur_fu->get_name())+" in position: "+STR(pos) + (proxy_constrained ? "(proxy)" : ""));
-   ///check resource constraints for indirect memory accesses
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Specialized unit: " + (cur_fu->get_name()) + " in position: " + STR(pos) + (proxy_constrained ? "(proxy)" : ""));
+   /// check resource constraints for indirect memory accesses
    auto last_fu = static_cast<unsigned int>(allocation_information->list_of_FU.size());
    allocation_information->list_of_FU.push_back(cur_fu);
    bool is_memory_ctrl = allocation_information->is_indirect_access_memory_unit(last_fu);
-   if(is_memory_ctrl || allocation_information->get_number_channels(pos)>=1)
+   if(is_memory_ctrl || allocation_information->get_number_channels(pos) >= 1)
    {
       allocation_information->tech_constraints.push_back(allocation_information->get_number_channels(pos));
    }
@@ -911,7 +888,7 @@ void allocation::add_tech_constraint(technology_nodeRef cur_fu, unsigned int tec
    }
    else
    {
-      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Constrained "+STR(pos) + "=" + cur_fu->get_name() + "->"<< STR(tech_constrain_value) );
+      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Constrained " + STR(pos) + "=" + cur_fu->get_name() + "->" << STR(tech_constrain_value));
       allocation_information->tech_constraints.push_back(tech_constrain_value);
    }
 }
@@ -921,7 +898,7 @@ bool allocation::check_templated_units(double clock_period, node_kind_prec_infoR
    std::string required_prec = "";
    std::string template_suffix = "";
    const size_t n_ins = node_info->input_prec.size();
-   for (size_t ind=0; ind < n_ins; ++ind)
+   for(size_t ind = 0; ind < n_ins; ++ind)
    {
       if(node_info->base128_input_nelem[ind] == 0)
       {
@@ -931,10 +908,10 @@ bool allocation::check_templated_units(double clock_period, node_kind_prec_infoR
       else
       {
          required_prec += STR(node_info->input_prec[ind]) + " " + STR(node_info->base128_input_nelem[ind]) + " ";
-         template_suffix += STR(node_info->input_prec[ind]) + "_"+ STR(node_info->base128_input_nelem[ind]) + "_";
+         template_suffix += STR(node_info->input_prec[ind]) + "_" + STR(node_info->base128_input_nelem[ind]) + "_";
       }
    }
-   if(node_info->base128_output_nelem==0)
+   if(node_info->base128_output_nelem == 0)
    {
       required_prec += STR(node_info->output_prec);
       template_suffix += STR(node_info->output_prec);
@@ -945,7 +922,7 @@ bool allocation::check_templated_units(double clock_period, node_kind_prec_infoR
       template_suffix += STR(node_info->output_prec) + "_" + STR(node_info->base128_output_nelem);
    }
    std::string fu_template_parameters = GetPointer<functional_unit>(current_fu)->fu_template_parameters;
-   if(!boost::algorithm::starts_with(fu_template_parameters,required_prec))
+   if(!boost::algorithm::starts_with(fu_template_parameters, required_prec))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not support required precision " + STR(required_prec) + "(" + fu_template_parameters + ")");
       return true;
@@ -953,20 +930,22 @@ bool allocation::check_templated_units(double clock_period, node_kind_prec_infoR
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "- required_prec: \"" + required_prec);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "- template_suffix: \"" + template_suffix + "\"");
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "- fu_template_parameters: \"" + fu_template_parameters + "\"");
-   std::string pipeline_id = get_compliant_pipelined_unit(clock_period, curr_op->pipe_parameters, current_fu, curr_op->get_name(), library->get_library_name(), template_suffix, node_info->input_prec.size() > 1 ? node_info->input_prec[1] : node_info->input_prec[0]);
-   if(pipeline_id!="")
+   std::string pipeline_id =
+       get_compliant_pipelined_unit(clock_period, curr_op->pipe_parameters, current_fu, curr_op->get_name(), library->get_library_name(), template_suffix, node_info->input_prec.size() > 1 ? node_info->input_prec[1] : node_info->input_prec[0]);
+   if(pipeline_id != "")
       required_prec += " " + pipeline_id;
    // if the computed parameters is different from what was used to build this specialization skip it.
-   if (required_prec != fu_template_parameters)
+   if(required_prec != fu_template_parameters)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + required_prec + " vs. " + fu_template_parameters);
       return true;
    }
 
-   if(pipeline_id=="")
+   if(pipeline_id == "")
    {
-      if(curr_op->time_m->get_cycles()==0 && allocation_information->time_m_execution_time(curr_op)>clock_period)
-         THROW_WARNING("No functional unit exists for the given clock period: the fastest unit will be used as multy-cycle unit ("+GetPointer<functional_unit>(current_fu)->fu_template_name +"): " + STR(allocation_information->time_m_execution_time(curr_op)));
+      if(curr_op->time_m->get_cycles() == 0 && allocation_information->time_m_execution_time(curr_op) > clock_period)
+         THROW_WARNING("No functional unit exists for the given clock period: the fastest unit will be used as multy-cycle unit (" + GetPointer<functional_unit>(current_fu)->fu_template_name +
+                       "): " + STR(allocation_information->time_m_execution_time(curr_op)));
    }
    return false;
 }
@@ -976,15 +955,13 @@ bool allocation::check_for_memory_compliancy(bool Has_extern_allocated_data, tec
    std::string memory_type = GetPointer<functional_unit>(current_fu)->memory_type;
    std::string bram_load_latency = GetPointer<functional_unit>(current_fu)->bram_load_latency;
 
-   ///LOAD/STORE operations allocated on memories have been already allocated
-   if(memory_type != "") return true;
+   /// LOAD/STORE operations allocated on memories have been already allocated
+   if(memory_type != "")
+      return true;
 
-   ///LOAD/STORE operations on proxys have been already managed
-   if(channels_type != "" &&
-         (memory_ctrl_type == MEMORY_CTRL_TYPE_PROXY ||
-          memory_ctrl_type == MEMORY_CTRL_TYPE_PROXYN ||
-          memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY ||
-          memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN)) return true;
+   /// LOAD/STORE operations on proxys have been already managed
+   if(channels_type != "" && (memory_ctrl_type == MEMORY_CTRL_TYPE_PROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_PROXYN || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN))
+      return true;
 #if !HAVE_EXPERIMENTAL
    if(GetPointer<functional_unit>(current_fu)->functional_unit_name == "MEMORY_CTRL_P1N")
       return true;
@@ -997,31 +974,31 @@ bool allocation::check_for_memory_compliancy(bool Has_extern_allocated_data, tec
       {
          case(MemoryAllocation_ChannelsType::MEM_ACC_11):
          case(MemoryAllocation_ChannelsType::MEM_ACC_N1):
-            {
-               if(channels_type.find(CHANNELS_TYPE_MEM_ACC_NN) != std::string::npos or channels_type.find(CHANNELS_TYPE_MEM_ACC_P1N) != std::string::npos)
-                  return true;
-               break;
-            }
+         {
+            if(channels_type.find(CHANNELS_TYPE_MEM_ACC_NN) != std::string::npos or channels_type.find(CHANNELS_TYPE_MEM_ACC_P1N) != std::string::npos)
+               return true;
+            break;
+         }
          case(MemoryAllocation_ChannelsType::MEM_ACC_NN):
-            {
-               if(channels_type.find(CHANNELS_TYPE_MEM_ACC_NN) == std::string::npos)
-                  return true;
-               break;
-            }
+         {
+            if(channels_type.find(CHANNELS_TYPE_MEM_ACC_NN) == std::string::npos)
+               return true;
+            break;
+         }
          case(MemoryAllocation_ChannelsType::MEM_ACC_P1N):
+         {
+            if(channels_type.find(CHANNELS_TYPE_MEM_ACC_P1N) == std::string::npos)
             {
-               if(channels_type.find(CHANNELS_TYPE_MEM_ACC_P1N) == std::string::npos)
-               {
-                  return true;
-               }
-               break;
+               return true;
             }
+            break;
+         }
          default:
             THROW_UNREACHABLE("");
       }
    }
    bool are_operations_bounded = memory_ctrl_type != "";
-   const functional_unit::operation_vec &Operations = GetPointer<functional_unit>(current_fu)->get_operations();
+   const functional_unit::operation_vec& Operations = GetPointer<functional_unit>(current_fu)->get_operations();
    const functional_unit::operation_vec::const_iterator it_o_end = Operations.end();
    for(auto it_o = Operations.begin(); it_o_end != it_o && are_operations_bounded; ++it_o)
       if(!GetPointer<operation>(*it_o)->is_bounded())
@@ -1042,9 +1019,12 @@ bool allocation::check_for_memory_compliancy(bool Has_extern_allocated_data, tec
    }
    if(bram_load_latency != "")
    {
-      if(bram_load_latency == "2" && parameters->getOption<std::string>(OPT_bram_high_latency) != "") return true;
-      if(bram_load_latency == "3" && parameters->getOption<std::string>(OPT_bram_high_latency) != "_3") return true;
-      if(bram_load_latency == "4" && parameters->getOption<std::string>(OPT_bram_high_latency) != "_4") return true;
+      if(bram_load_latency == "2" && parameters->getOption<std::string>(OPT_bram_high_latency) != "")
+         return true;
+      if(bram_load_latency == "3" && parameters->getOption<std::string>(OPT_bram_high_latency) != "_3")
+         return true;
+      if(bram_load_latency == "4" && parameters->getOption<std::string>(OPT_bram_high_latency) != "_4")
+         return true;
       if(bram_load_latency != "2" && bram_load_latency != "3" && bram_load_latency != "4")
          THROW_ERROR("unexpected bram_load_latency");
    }
@@ -1053,13 +1033,13 @@ bool allocation::check_for_memory_compliancy(bool Has_extern_allocated_data, tec
 
 bool allocation::check_type_and_precision(operation* curr_op, node_kind_prec_infoRef node_info)
 {
-   if (node_info->node_kind != "" && !curr_op->is_type_supported(node_info->node_kind))
+   if(node_info->node_kind != "" && !curr_op->is_type_supported(node_info->node_kind))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not supported type " + node_info->node_kind);
       return true; // FU does not support the operation type
    }
    // Check for correct precision
-   if (!curr_op->is_type_supported(node_info->node_kind, node_info->input_prec, node_info->base128_input_nelem))
+   if(!curr_op->is_type_supported(node_info->node_kind, node_info->input_prec, node_info->base128_input_nelem))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not supported precision");
       return true; // FU does support the operation type, but does not support correct precision
@@ -1069,36 +1049,38 @@ bool allocation::check_type_and_precision(operation* curr_op, node_kind_prec_inf
 
 bool allocation::check_proxies(const library_managerRef library, std::string fu_name)
 {
-   if(HLSMgr->Rfuns->is_a_proxied_function(fu_name)) return true;
+   if(HLSMgr->Rfuns->is_a_proxied_function(fu_name))
+      return true;
    if(library->get_library_name() == PROXY_LIBRARY)
    {
-      if(boost::algorithm::starts_with(fu_name,WRAPPED_PROXY_PREFIX))
+      if(boost::algorithm::starts_with(fu_name, WRAPPED_PROXY_PREFIX))
       {
          std::string original_function_name = fu_name.substr(std::string(WRAPPED_PROXY_PREFIX).size());
-         if(!HLSMgr->Rfuns->is_a_shared_function(funId, original_function_name)) return true;
+         if(!HLSMgr->Rfuns->is_a_shared_function(funId, original_function_name))
+            return true;
       }
       else
       {
          THROW_ASSERT(fu_name.compare(0, std::string(PROXY_PREFIX).size(), PROXY_PREFIX) == 0, "expected a proxy module");
          std::string original_function_name = fu_name.substr(std::string(PROXY_PREFIX).size());
-         if(!HLSMgr->Rfuns->is_a_proxied_shared_function(funId, original_function_name)) return true;
+         if(!HLSMgr->Rfuns->is_a_proxied_shared_function(funId, original_function_name))
+            return true;
       }
    }
    return false;
 }
 
-bool allocation::check_generated_bambu_flopoco(bool skip_softfloat_resources, structural_managerRef structManager_obj, std::string &bambu_provided_resource, bool skip_flopoco_resources, technology_nodeRef current_fu)
+bool allocation::check_generated_bambu_flopoco(bool skip_softfloat_resources, structural_managerRef structManager_obj, std::string& bambu_provided_resource, bool skip_flopoco_resources, technology_nodeRef current_fu)
 {
-   if(structManager_obj ) ///generated cannot be directly considered for allocation
+   if(structManager_obj) /// generated cannot be directly considered for allocation
    {
-      structural_objectRef modobj=structManager_obj->get_circ();
-      auto * mod = GetPointer<module>(modobj);
+      structural_objectRef modobj = structManager_obj->get_circ();
+      auto* mod = GetPointer<module>(modobj);
 
       if(mod->get_generated())
          return true;
 
-
-      const NP_functionalityRef &np = mod->get_NP_functionality();
+      const NP_functionalityRef& np = mod->get_NP_functionality();
       if(skip_flopoco_resources)
       {
          if(np && np->get_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) != "")
@@ -1110,17 +1092,18 @@ bool allocation::check_generated_bambu_flopoco(bool skip_softfloat_resources, st
             return true;
       }
       else if(np)
-            bambu_provided_resource = np->get_NP_functionality(NP_functionality::BAMBU_PROVIDED);
+         bambu_provided_resource = np->get_NP_functionality(NP_functionality::BAMBU_PROVIDED);
    }
-   else if (GetPointer<functional_unit>(current_fu)->fu_template_name != "")
+   else if(GetPointer<functional_unit>(current_fu)->fu_template_name != "")
    {
       std::string tfname = GetPointer<functional_unit>(current_fu)->fu_template_name;
       technology_nodeRef tfu = get_fu(tfname);
-      if(!tfu || !GetPointer<functional_unit_template>(tfu) || !GetPointer<functional_unit_template>(tfu)->FU || !GetPointer<functional_unit>(GetPointer<functional_unit_template>(tfu)->FU)->CM) return true;
+      if(!tfu || !GetPointer<functional_unit_template>(tfu) || !GetPointer<functional_unit_template>(tfu)->FU || !GetPointer<functional_unit>(GetPointer<functional_unit_template>(tfu)->FU)->CM)
+         return true;
       structural_managerRef tcm = GetPointer<functional_unit>(GetPointer<functional_unit_template>(tfu)->FU)->CM;
-      structural_objectRef tmodobj=tcm->get_circ();
-      auto * tmod = GetPointer<module>(tmodobj);
-      const NP_functionalityRef &tnp = tmod->get_NP_functionality();
+      structural_objectRef tmodobj = tcm->get_circ();
+      auto* tmod = GetPointer<module>(tmodobj);
+      const NP_functionalityRef& tnp = tmod->get_NP_functionality();
       if(tnp && skip_flopoco_resources && tnp->get_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) != "")
          return true;
       if(tnp && skip_softfloat_resources && tnp->get_NP_functionality(NP_functionality::BAMBU_PROVIDED) != "")
@@ -1137,17 +1120,15 @@ DesignFlowStep_Status allocation::InternalExec()
    const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(funId);
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
    const std::map<unsigned int, memory_symbolRef>& function_vars = HLSMgr->Rmem->get_function_vars(funId);
-   double clock_period = HLS_C->get_clock_period_resource_fraction()*HLS_C->get_clock_period();
+   double clock_period = HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period();
    long step_time;
    START_TIME(step_time);
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Module allocation information for function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
    unsigned int base_address = HLSMgr->base_address;
-   bool Has_extern_allocated_data = ((HLSMgr->Rmem->get_memory_address()-base_address)>0 &&
-                                     parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM) ||
-                                    (HLSMgr->Rmem->has_unknown_addresses() &&
-                                     parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM &&
+   bool Has_extern_allocated_data = ((HLSMgr->Rmem->get_memory_address() - base_address) > 0 && parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM) ||
+                                    (HLSMgr->Rmem->has_unknown_addresses() && parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM &&
                                      parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
    IntegrateTechnologyLibraries();
 
@@ -1162,24 +1143,23 @@ DesignFlowStep_Status allocation::InternalExec()
       skip_flopoco_resources = true;
       skip_softfloat_resources = false;
    }
-   std::unordered_map<std::string, unsigned int> &tech_vec = HLS_C->tech_constraints;
-   const std::unordered_map<std::string, std::pair<std::string, std::pair<std::string, unsigned int> > > &binding_constraints = HLS_C->binding_constraints;
-   std::unordered_map<std::string, std::map<unsigned int, unsigned int> > fu_name_to_id;
+   std::unordered_map<std::string, unsigned int>& tech_vec = HLS_C->tech_constraints;
+   const std::unordered_map<std::string, std::pair<std::string, std::pair<std::string, unsigned int>>>& binding_constraints = HLS_C->binding_constraints;
+   std::unordered_map<std::string, std::map<unsigned int, unsigned int>> fu_name_to_id;
    std::set<vertex> vertex_analysed;
    OpVertexSet support_ops(function_behavior->CGetOpGraph(FunctionBehavior::CFG));
    support_ops.insert(HLS->operations.begin(), HLS->operations.end());
    const OpGraphConstRef g = function_behavior->CGetOpGraph(FunctionBehavior::CFG, support_ops);
    OpVertexSet vertex_to_analyse(g);
    graph::vertex_iterator v, v_end;
-   std::map<std::string,technology_nodeRef> new_fu;
+   std::map<std::string, technology_nodeRef> new_fu;
    bool gimple_return_allocated_p = false;
    unsigned int gimple_return_current_id = 0;
-   for (boost::tie(v, v_end) = boost::vertices(*g); v != v_end; ++v)
+   for(boost::tie(v, v_end) = boost::vertices(*g); v != v_end; ++v)
    {
       std::string current_op = tree_helper::normalized_ID(g->CGetOpNodeInfo(*v)->GetOperation());
       const auto node_id = g->CGetOpNodeInfo(*v)->GetNodeId();
-      const auto node_operation = [&] () -> std::string
-      {
+      const auto node_operation = [&]() -> std::string {
          if(node_id == ENTRY_ID)
             return "Entry";
          if(node_id == EXIT_ID)
@@ -1188,19 +1168,19 @@ DesignFlowStep_Status allocation::InternalExec()
       }();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Processing operation: " + current_op + " - " + GET_NAME(g, *v) + (node_id and node_id != ENTRY_ID and node_id != EXIT_ID ? " - " + TreeM->get_tree_node_const(node_id)->ToString() : ""));
       technology_nodeRef current_fu;
-      if (GET_TYPE(g, *v) & (TYPE_STORE | TYPE_LOAD))
+      if(GET_TYPE(g, *v) & (TYPE_STORE | TYPE_LOAD))
       {
          const tree_nodeRef curr_tn = TreeM->get_tree_node_const(node_id);
-         auto * me = GetPointer<gimple_assign>(curr_tn);
+         auto* me = GetPointer<gimple_assign>(curr_tn);
          THROW_ASSERT(me, "only gimple_assign's are allowed as memory operations");
          unsigned int var = 0;
-         if (GET_TYPE(g, *v) & TYPE_STORE)
+         if(GET_TYPE(g, *v) & TYPE_STORE)
             var = tree_helper::get_base_index(TreeM, GET_INDEX_NODE(me->op0));
          else
             var = tree_helper::get_base_index(TreeM, GET_INDEX_NODE(me->op1));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variable is " + (var != 0 ? STR(TreeM->CGetTreeNode(var)) : "0"));
-         if (var == 0 || (function_vars.find(var) == function_vars.end() && (!HLSMgr->Rmem->has_proxied_internal_variables(funId) ||
-                                                                               HLSMgr->Rmem->get_proxied_internal_variables(funId).find(var) == HLSMgr->Rmem->get_proxied_internal_variables(funId).end())))
+         if(var == 0 ||
+            (function_vars.find(var) == function_vars.end() && (!HLSMgr->Rmem->has_proxied_internal_variables(funId) || HLSMgr->Rmem->get_proxied_internal_variables(funId).find(var) == HLSMgr->Rmem->get_proxied_internal_variables(funId).end())))
          {
             vertex_to_analyse.insert(*v);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Operation " + current_op + " queued for allocation");
@@ -1210,9 +1190,10 @@ DesignFlowStep_Status allocation::InternalExec()
          allocation_information->binding[node_id] = std::pair<std::string, unsigned int>(current_op, allocation_information->vars_to_memory_units[var]);
          allocation_information->node_id_to_fus[std::pair<unsigned int, std::string>(node_id, node_operation)].insert(allocation_information->vars_to_memory_units[var]);
          current_fu = allocation_information->list_of_FU[allocation_information->vars_to_memory_units[var]];
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operation " + current_op + " named " + GET_NAME(g, *v) + " mapped onto " + current_fu->get_name() + ", found in library " + TM->get_library(current_op) + " in position " + STR(allocation_information->vars_to_memory_units[var]));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Operation " + current_op + " named " + GET_NAME(g, *v) + " mapped onto " + current_fu->get_name() + ", found in library " + TM->get_library(current_op) + " in position " + STR(allocation_information->vars_to_memory_units[var]));
       }
-      else if (GIMPLE_RETURN == current_op)
+      else if(GIMPLE_RETURN == current_op)
       {
          if(!gimple_return_allocated_p)
          {
@@ -1230,28 +1211,24 @@ DesignFlowStep_Status allocation::InternalExec()
             current_fu = allocation_information->list_of_FU[gimple_return_current_id];
          allocation_information->binding[node_id] = std::pair<std::string, unsigned int>(current_op, gimple_return_current_id);
          allocation_information->node_id_to_fus[std::pair<unsigned int, std::string>(node_id, node_operation)].insert(gimple_return_current_id);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operation " + current_op + " named " + GET_NAME(g, *v) + " mapped onto " + current_fu->get_name() + ", found in library " + TM->get_library(current_op) + " in position " + STR(gimple_return_current_id));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Operation " + current_op + " named " + GET_NAME(g, *v) + " mapped onto " + current_fu->get_name() + ", found in library " + TM->get_library(current_op) + " in position " + STR(gimple_return_current_id));
       }
       // Artificial FUs
-      else if (ASSIGN == current_op || ASSERT_EXPR == current_op || ADDR_EXPR == current_op ||
-               READ_COND == current_op || MULTI_READ_COND == current_op || NOP_EXPR == current_op || CONVERT_EXPR == current_op ||
-               SWITCH_COND == current_op || GIMPLE_LABEL == current_op || GIMPLE_GOTO == current_op ||
-               GIMPLE_PRAGMA == current_op ||
-               ENTRY == current_op || EXIT == current_op || NOP == current_op ||
-               GIMPLE_PHI == current_op || GIMPLE_NOP == current_op ||
-               VIEW_CONVERT_EXPR == current_op
-               )
+      else if(ASSIGN == current_op || ASSERT_EXPR == current_op || ADDR_EXPR == current_op || READ_COND == current_op || MULTI_READ_COND == current_op || NOP_EXPR == current_op || CONVERT_EXPR == current_op || SWITCH_COND == current_op ||
+              GIMPLE_LABEL == current_op || GIMPLE_GOTO == current_op || GIMPLE_PRAGMA == current_op || ENTRY == current_op || EXIT == current_op || NOP == current_op || GIMPLE_PHI == current_op || GIMPLE_NOP == current_op ||
+              VIEW_CONVERT_EXPR == current_op)
       {
          unsigned int current_size = allocation_information->get_number_fu_types();
-         if (current_op == ASSIGN)
+         if(current_op == ASSIGN)
          {
             unsigned int modify_tree_index = g->CGetOpNodeInfo(*v)->GetNodeId();
             tree_nodeRef modify_node = TreeM->get_tree_node_const(modify_tree_index);
-            auto *gms = GetPointer<gimple_assign>(modify_node);
+            auto* gms = GetPointer<gimple_assign>(modify_node);
             unsigned int left_type_index;
             tree_nodeRef left_type_node = tree_helper::get_type_node(GET_NODE(gms->op0), left_type_index);
             if(tree_helper::is_a_complex(TreeM, left_type_index))
-                current_fu = get_fu(ASSIGN_VECTOR_BOOL_STD);
+               current_fu = get_fu(ASSIGN_VECTOR_BOOL_STD);
             else if(tree_helper::is_int(TreeM, left_type_index))
                current_fu = get_fu(ASSIGN_SIGNED_STD);
             else if(tree_helper::is_real(TreeM, left_type_index))
@@ -1259,11 +1236,11 @@ DesignFlowStep_Status allocation::InternalExec()
             else
                current_fu = get_fu(ASSIGN_UNSIGNED_STD);
          }
-         else if (current_op == ASSERT_EXPR)
+         else if(current_op == ASSERT_EXPR)
          {
             unsigned int modify_tree_index = g->CGetOpNodeInfo(*v)->GetNodeId();
             tree_nodeRef modify_node = TreeM->get_tree_node_const(modify_tree_index);
-            auto *gms = GetPointer<gimple_assign>(modify_node);
+            auto* gms = GetPointer<gimple_assign>(modify_node);
             unsigned int left_type_index;
             tree_nodeRef left_type_node = tree_helper::get_type_node(GET_NODE(gms->op0), left_type_index);
             if(tree_helper::is_int(TreeM, left_type_index))
@@ -1273,19 +1250,19 @@ DesignFlowStep_Status allocation::InternalExec()
             else
                current_fu = get_fu(ASSERT_EXPR_UNSIGNED_STD);
          }
-         else if (current_op == ADDR_EXPR)
+         else if(current_op == ADDR_EXPR)
             current_fu = get_fu(ADDR_EXPR_STD);
-         else if (current_op == NOP_EXPR)
+         else if(current_op == NOP_EXPR)
          {
             unsigned int modify_tree_index = g->CGetOpNodeInfo(*v)->GetNodeId();
 
-            //std::cout << NOP_EXPR << "->" << modify_tree_index << std::endl;
+            // std::cout << NOP_EXPR << "->" << modify_tree_index << std::endl;
             tree_nodeRef modify_node = TreeM->get_tree_node_const(modify_tree_index);
-            auto *gms = GetPointer<gimple_assign>(modify_node);
+            auto* gms = GetPointer<gimple_assign>(modify_node);
 
             unsigned int left_type_index;
             tree_nodeRef left_type_node = tree_helper::get_type_node(GET_NODE(gms->op0), left_type_index);
-            auto * ne = GetPointer<nop_expr>(GET_NODE(gms->op1));
+            auto* ne = GetPointer<nop_expr>(GET_NODE(gms->op1));
             unsigned int right_type_index;
             tree_nodeRef right_type_node = tree_helper::get_type_node(GET_NODE(ne->op), right_type_index);
 
@@ -1310,9 +1287,9 @@ DesignFlowStep_Status allocation::InternalExec()
                current_fu = get_fu(UUDATA_CONVERTER_STD);
             else if((intR || enumR) && (unsignedL || is_a_pointerL || boolL))
                current_fu = get_fu(IUDATA_CONVERTER_STD);
-            else if((unsignedR || is_a_pointerR || boolR) && (intL|| enumL))
+            else if((unsignedR || is_a_pointerR || boolR) && (intL || enumL))
                current_fu = get_fu(UIDATA_CONVERTER_STD);
-            else if((intR || enumR) && (intL|| enumL))
+            else if((intR || enumR) && (intL || enumL))
                current_fu = get_fu(IIDATA_CONVERTER_STD);
             else if(is_realR && is_realL)
             {
@@ -1336,18 +1313,19 @@ DesignFlowStep_Status allocation::InternalExec()
                current_fu = get_fu(BUVECTOR_CONVERTER_STD);
             }
             else
-               THROW_ERROR(std::string("Nop_Expr pattern not supported ") + STR(modify_tree_index) + " - Left type " + STR(left_type_index) + " is " + TreeM->get_tree_node_const(left_type_index)->ToString() + " - Right type " + STR(right_type_index) + " is " + TreeM->get_tree_node_const(right_type_index)->ToString());
+               THROW_ERROR(std::string("Nop_Expr pattern not supported ") + STR(modify_tree_index) + " - Left type " + STR(left_type_index) + " is " + TreeM->get_tree_node_const(left_type_index)->ToString() + " - Right type " + STR(right_type_index) +
+                           " is " + TreeM->get_tree_node_const(right_type_index)->ToString());
          }
-         else if (current_op == CONVERT_EXPR)
+         else if(current_op == CONVERT_EXPR)
          {
             unsigned int modify_tree_index = g->CGetOpNodeInfo(*v)->GetNodeId();
 
-            //std::cout << CONVERT_EXPR << "->" << modify_tree_index << std::endl;
+            // std::cout << CONVERT_EXPR << "->" << modify_tree_index << std::endl;
             tree_nodeRef modify_node = TreeM->get_tree_node_const(modify_tree_index);
-            auto *gms = GetPointer<gimple_assign>(modify_node);
+            auto* gms = GetPointer<gimple_assign>(modify_node);
             unsigned int left_type_index;
             tree_nodeRef left_type_node = tree_helper::get_type_node(GET_NODE(gms->op0), left_type_index);
-            auto * ce = GetPointer<convert_expr>(GET_NODE(gms->op1));
+            auto* ce = GetPointer<convert_expr>(GET_NODE(gms->op1));
             unsigned int right_type_index;
             tree_nodeRef right_type_node = tree_helper::get_type_node(GET_NODE(ce->op), right_type_index);
 
@@ -1369,37 +1347,37 @@ DesignFlowStep_Status allocation::InternalExec()
             else if(intR && intL)
                current_fu = get_fu(IICONVERTER_EXPR_STD);
             else
-               THROW_UNREACHABLE("CONVERT_EXPR pattern not supported in statement " + STR(modify_tree_index) + ". Left type is " + STR(left_type_index) + " " + STR(TreeM->CGetTreeNode(left_type_index)) + " - Right type is " + STR(right_type_index) + " " + STR(TreeM->CGetTreeNode(right_type_index)));
-
+               THROW_UNREACHABLE("CONVERT_EXPR pattern not supported in statement " + STR(modify_tree_index) + ". Left type is " + STR(left_type_index) + " " + STR(TreeM->CGetTreeNode(left_type_index)) + " - Right type is " + STR(right_type_index) + " " +
+                                 STR(TreeM->CGetTreeNode(right_type_index)));
          }
-         else if (current_op == READ_COND)
+         else if(current_op == READ_COND)
             current_fu = get_fu(READ_COND_STD);
-         else if (current_op == MULTI_READ_COND)
+         else if(current_op == MULTI_READ_COND)
             current_fu = get_fu(MULTI_READ_COND_STD);
-         else if (current_op == SWITCH_COND)
+         else if(current_op == SWITCH_COND)
             current_fu = get_fu(SWITCH_COND_STD);
-         else if (current_op == GIMPLE_LABEL)
+         else if(current_op == GIMPLE_LABEL)
             current_fu = get_fu(GIMPLE_LABEL_STD);
-         else if (current_op == GIMPLE_GOTO)
+         else if(current_op == GIMPLE_GOTO)
             current_fu = get_fu(GIMPLE_GOTO_STD);
          else if(current_op == GIMPLE_PRAGMA)
             current_fu = get_fu(GIMPLE_PRAGMA_STD);
-         else if (current_op == ENTRY)
+         else if(current_op == ENTRY)
             current_fu = get_fu(ENTRY_STD);
-         else if (current_op == EXIT)
+         else if(current_op == EXIT)
             current_fu = get_fu(EXIT_STD);
-         else if (current_op == NOP)
+         else if(current_op == NOP)
             current_fu = get_fu(NOP_STD);
-         else if (current_op == GIMPLE_PHI)
+         else if(current_op == GIMPLE_PHI)
             current_fu = get_fu(GIMPLE_PHI_STD);
-         else if (current_op == GIMPLE_NOP)
+         else if(current_op == GIMPLE_NOP)
             current_fu = get_fu(GIMPLE_NOP_STD);
-         else if (current_op == VIEW_CONVERT_EXPR)
+         else if(current_op == VIEW_CONVERT_EXPR)
          {
             unsigned int modify_tree_index = g->CGetOpNodeInfo(*v)->GetNodeId();
             tree_nodeRef modify_node = TreeM->get_tree_node_const(modify_tree_index);
-            auto *gms = GetPointer<gimple_assign>(modify_node);
-            auto *vce = GetPointer<view_convert_expr>(GET_NODE(gms->op1));
+            auto* gms = GetPointer<gimple_assign>(modify_node);
+            auto* vce = GetPointer<view_convert_expr>(GET_NODE(gms->op1));
             unsigned int right_type_index;
             tree_nodeRef right_type_node = tree_helper::get_type_node(GET_NODE(vce->op), right_type_index);
             if(tree_helper::is_int(TreeM, right_type_index))
@@ -1457,7 +1435,7 @@ DesignFlowStep_Status allocation::InternalExec()
       else if(binding_constraints.find(GET_NAME(g, *v)) != binding_constraints.end())
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  . Current node is under constraints");
-         const std::pair<std::string, std::pair<std::string, unsigned int> >& defined_binding = binding_constraints.find(GET_NAME(g, *v))->second;
+         const std::pair<std::string, std::pair<std::string, unsigned int>>& defined_binding = binding_constraints.find(GET_NAME(g, *v))->second;
          std::string fu_name = defined_binding.first;
          std::string fu_library = defined_binding.second.first;
          unsigned int fu_index = defined_binding.second.second;
@@ -1536,25 +1514,24 @@ DesignFlowStep_Status allocation::InternalExec()
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Starting allocation of operations in queued vertices");
 
-
-   for (const auto & tv : tech_vec)
+   for(const auto& tv : tech_vec)
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "---Resource constraint on " + tv.first + ": " + STR(tv.second));
 
    std::string bambu_provided_resource;
-   for (const auto & lib_name : TM->get_library_list())
+   for(const auto& lib_name : TM->get_library_list())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering library " + lib_name);
       const library_managerRef library = TM->get_library_manager(lib_name);
-      ///skip library of internal components
-      if (lib_name == "STD_COMMON")
+      /// skip library of internal components
+      if(lib_name == "STD_COMMON")
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered library " + lib_name);
          continue;
       }
-      for (const auto& fu : library->get_library_fu())
+      for(const auto& fu : library->get_library_fu())
       {
          technology_nodeRef current_fu = fu.second;
-         if (GetPointer<functional_unit_template>(current_fu))
+         if(GetPointer<functional_unit_template>(current_fu))
             continue;
 
          std::string channels_type = GetPointer<functional_unit>(current_fu)->channels_type;
@@ -1566,7 +1543,7 @@ DesignFlowStep_Status allocation::InternalExec()
             continue;
          }
 
-         ///check proxy functions
+         /// check proxy functions
          if((HLSMgr->Rfuns->has_shared_functions(HLS->functionId) || HLSMgr->Rfuns->has_proxied_shared_functions(HLS->functionId)))
          {
             if(check_proxies(library, fu.first))
@@ -1575,19 +1552,19 @@ DesignFlowStep_Status allocation::InternalExec()
                continue;
             }
          }
-         else if (lib_name == PROXY_LIBRARY)
+         else if(lib_name == PROXY_LIBRARY)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because proxy");
             continue;
          }
 
          std::unordered_map<std::string, unsigned int>::const_iterator tech_constrain_it;
-         if (GetPointer<functional_unit>(current_fu)->fu_template_name != "")
+         if(GetPointer<functional_unit>(current_fu)->fu_template_name != "")
             tech_constrain_it = tech_vec.find(ENCODE_FU_LIB(GetPointer<functional_unit>(current_fu)->fu_template_name, lib_name));
          else
             tech_constrain_it = tech_vec.find(ENCODE_FU_LIB(current_fu->get_name(), lib_name));
 
-         if (tech_constrain_it != tech_vec.end() && tech_constrain_it->second == 0)
+         if(tech_constrain_it != tech_vec.end() && tech_constrain_it->second == 0)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of constraint");
             continue; // forced to use 0 FUs of current ones
@@ -1596,7 +1573,7 @@ DesignFlowStep_Status allocation::InternalExec()
          unsigned int tech_constrain_value = tech_constrain_it == tech_vec.end() ? INFINITE_UINT : tech_constrain_it->second;
 
          bambu_provided_resource = "";
-         structural_managerRef structManager_obj=GetPointer<functional_unit>(current_fu)->CM;
+         structural_managerRef structManager_obj = GetPointer<functional_unit>(current_fu)->CM;
 
          /// check for generated module and bambu/flopoco resources
          if(check_generated_bambu_flopoco(skip_softfloat_resources, structManager_obj, bambu_provided_resource, skip_flopoco_resources, current_fu))
@@ -1607,10 +1584,10 @@ DesignFlowStep_Status allocation::InternalExec()
 
          unsigned int current_fu_id = allocation_information->get_number_fu_types();
 
-         unsigned int current_id=current_fu_id;
+         unsigned int current_id = current_fu_id;
 
          bool lib_is_proxy_or_work = lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY;
-         for (const auto & ops : GetPointer<functional_unit>(current_fu)->get_operations())
+         for(const auto& ops : GetPointer<functional_unit>(current_fu)->get_operations())
          {
             auto* curr_op = GetPointer<operation>(ops);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering operation: " + (ops)->get_name());
@@ -1619,25 +1596,25 @@ DesignFlowStep_Status allocation::InternalExec()
             for(const auto vert : vertex_to_analyse)
             {
                const auto vert_node_id = g->CGetOpNodeInfo(vert)->GetNodeId();
-               const auto vert_node_operation= [&] () -> std::string
-               {
+               const auto vert_node_operation = [&]() -> std::string {
                   if(vert_node_id == ENTRY_ID)
                      return "Entry";
                   if(vert_node_id == EXIT_ID)
                      return "Exit";
                   return GetPointer<const gimple_node>(TreeM->CGetTreeNode(vert_node_id))->operation;
                }();
-               if (tree_helper::normalized_ID(g->CGetOpNodeInfo(vert)->GetOperation()) != curr_op_name)
+               if(tree_helper::normalized_ID(g->CGetOpNodeInfo(vert)->GetOperation()) != curr_op_name)
                   continue;
-               else if((not lib_is_proxy_or_work) && TM->get_fu(tree_helper::normalized_ID(g->CGetOpNodeInfo(vert)->GetOperation()), WORK_LIBRARY) && GET_TYPE(g, vert) != TYPE_MEMCPY) continue;
-               //else if(lib_is_proxy_or_work && GET_TYPE(g, vert) == TYPE_MEMCPY) continue;
+               else if((not lib_is_proxy_or_work) && TM->get_fu(tree_helper::normalized_ID(g->CGetOpNodeInfo(vert)->GetOperation()), WORK_LIBRARY) && GET_TYPE(g, vert) != TYPE_MEMCPY)
+                  continue;
+               // else if(lib_is_proxy_or_work && GET_TYPE(g, vert) == TYPE_MEMCPY) continue;
 
                node_kind_prec_infoRef node_info(new node_kind_prec_info());
                HLS_manager::io_binding_type constant_id;
                bool isMemory = memory_ctrl_type != "";
                THROW_ASSERT((GET_TYPE(g, vert) & (TYPE_LOAD | TYPE_STORE)) == 0 or isMemory, "unexpected condition: " + g->CGetOpNodeInfo(vert)->GetOperation());
 
-               if (!isMemory)
+               if(!isMemory)
                {
                   allocation_information->GetNodeTypePrec(vert, g, node_info, constant_id, tech_constrain_value != INFINITE_UINT);
                }
@@ -1654,15 +1631,16 @@ DesignFlowStep_Status allocation::InternalExec()
 
                /// in case the operation is pipelined check the clock period
                THROW_ASSERT(curr_op->time_m, "expected a time model for " + current_fu->get_name() + " for operation " + curr_op_name);
-               if(curr_op->time_m->get_cycles() >= 1 && allocation_information->time_m_stage_period(curr_op)>clock_period && memory_ctrl_type=="" && GetPointer<functional_unit>(current_fu)->fu_template_name == "")
+               if(curr_op->time_m->get_cycles() >= 1 && allocation_information->time_m_stage_period(curr_op) > clock_period && memory_ctrl_type == "" && GetPointer<functional_unit>(current_fu)->fu_template_name == "")
                {
                   THROW_ERROR("Functional unit " + current_fu->get_name() + " not compliant with the given clock period " + STR(clock_period));
-                  //continue;
+                  // continue;
                }
                else if(curr_op->time_m->get_cycles() >= 1)
-                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Functional unit " + current_fu->get_name() + " compliant with the given clock period " + STR(clock_period) + " stage period " + STR(allocation_information->time_m_stage_period(curr_op)));
+                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                "Functional unit " + current_fu->get_name() + " compliant with the given clock period " + STR(clock_period) + " stage period " + STR(allocation_information->time_m_stage_period(curr_op)));
 
-               if (GetPointer<functional_unit>(current_fu)->fu_template_name != "")
+               if(GetPointer<functional_unit>(current_fu)->fu_template_name != "")
                {
                   // check if specialized unit is compliant with the vertex
                   if(check_templated_units(clock_period, node_info, library, current_fu, curr_op))
@@ -1673,47 +1651,47 @@ DesignFlowStep_Status allocation::InternalExec()
                }
 
                std::string current_op;
-               std::string specialized_fuName="";
+               std::string specialized_fuName = "";
 
                varargs_fu = false;
                if(structManager_obj && GetPointer<module>(structManager_obj->get_circ())->is_var_args())
                {
-                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"Found a var args function");
+                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Found a var args function");
                   varargs_fu = true;
                   moduleGeneratorRef modGen = moduleGeneratorRef(new moduleGenerator(HLSMgr, parameters));
                   std::vector<HLS_manager::io_binding_type> required_variables = HLSMgr->get_required_values(funId, vert);
                   std::string asm_unique_id;
                   if(g->CGetOpNodeInfo(vert)->GetOperation() == GIMPLE_ASM)
                      asm_unique_id = STR(g->CGetOpNodeInfo(vert)->GetNodeId());
-                  unsigned int firstIndexToSpecialize=0;
+                  unsigned int firstIndexToSpecialize = 0;
                   auto mod = GetPointer<module>(structManager_obj->get_circ());
-                  for (auto Pindex = 0u; Pindex < mod->get_in_port_size(); ++Pindex)
+                  for(auto Pindex = 0u; Pindex < mod->get_in_port_size(); ++Pindex)
                   {
                      const structural_objectRef& port_obj = mod->get_in_port(Pindex);
-                     auto port_name=port_obj->get_id();
+                     auto port_name = port_obj->get_id();
                      if(GetPointer<port_o>(port_obj)->get_is_var_args())
                         break;
                      if(port_name != CLOCK_PORT_NAME && port_name != RESET_PORT_NAME && port_name != START_PORT_NAME)
                         ++firstIndexToSpecialize;
                   }
-                  THROW_ASSERT(required_variables.size()>=firstIndexToSpecialize, "unexpected condition:"+STR(required_variables.size())+ " " + STR(firstIndexToSpecialize));
-                  current_op=current_fu->get_name()+asm_unique_id+modGen->get_specialized_name(firstIndexToSpecialize,required_variables, function_behavior);
-                  specialized_fuName=current_op;
+                  THROW_ASSERT(required_variables.size() >= firstIndexToSpecialize, "unexpected condition:" + STR(required_variables.size()) + " " + STR(firstIndexToSpecialize));
+                  current_op = current_fu->get_name() + asm_unique_id + modGen->get_specialized_name(firstIndexToSpecialize, required_variables, function_behavior);
+                  specialized_fuName = current_op;
 
-                  std::string fu_name=current_fu->get_name();
+                  std::string fu_name = current_fu->get_name();
                   std::string check_lib = TM->get_library(specialized_fuName);
                   if(check_lib == lib_name)
                   {
-                     new_fu[specialized_fuName]=get_fu(specialized_fuName);
+                     new_fu[specialized_fuName] = get_fu(specialized_fuName);
                   }
-                  else if(new_fu.find(specialized_fuName)==new_fu.end())
+                  else if(new_fu.find(specialized_fuName) == new_fu.end())
                   {
                      modGen->specialize_fu(fu_name, vert, lib_name, TM, function_behavior, specialized_fuName, new_fu, HLS_T->get_target_device()->get_type());
                   }
                }
-               else if (node_info->node_kind != "" && !isMemory)
+               else if(node_info->node_kind != "" && !isMemory)
                   current_op = encode_op_type_prec(curr_op_name, curr_op->get_type_supported_string(), node_info);
-               else if (node_info->node_kind != "")
+               else if(node_info->node_kind != "")
                   current_op = encode_op_type(curr_op_name, curr_op->get_type_supported_string());
                else
                   current_op = curr_op_name;
@@ -1732,45 +1710,45 @@ DesignFlowStep_Status allocation::InternalExec()
                unsigned int max_prec = node_info->input_prec.begin() == node_info->input_prec.end() ? 0 : *std::max_element(node_info->input_prec.begin(), node_info->input_prec.end());
                if(isMemory || lib_is_proxy_or_work || tech_constrain_value != INFINITE_UINT || bambu_provided_resource != "")
                {
-                  constant_id = HLS_manager::io_binding_type(0,0);
+                  constant_id = HLS_manager::io_binding_type(0, 0);
                   max_prec = 0;
                }
 
-               std::map<technology_nodeRef,std::map<unsigned int, std::map<HLS_manager::io_binding_type, unsigned int> > >::iterator techMap;
-               std::string functionalUnitName="";
-               unsigned int specializedId=current_id;
+               std::map<technology_nodeRef, std::map<unsigned int, std::map<HLS_manager::io_binding_type, unsigned int>>>::iterator techMap;
+               std::string functionalUnitName = "";
+               unsigned int specializedId = current_id;
                const library_managerRef libraryManager = TM->get_library_manager(library_name);
                if(varargs_fu)
                {
-                  functionalUnitName=specialized_fuName;
-                  techMap=fu_list.find(new_fu.find(functionalUnitName)->second);
-                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Specialized unit: "+new_fu.find(functionalUnitName)->first);
-                  if(techMap!=fu_list.end() && techMap->second.find(max_prec) != techMap->second.end() && techMap->second.find(max_prec)->second.find(constant_id) != techMap->second.find(max_prec)->second.end())
+                  functionalUnitName = specialized_fuName;
+                  techMap = fu_list.find(new_fu.find(functionalUnitName)->second);
+                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Specialized unit: " + new_fu.find(functionalUnitName)->first);
+                  if(techMap != fu_list.end() && techMap->second.find(max_prec) != techMap->second.end() && techMap->second.find(max_prec)->second.find(constant_id) != techMap->second.find(max_prec)->second.end())
                   {
-                     specializedId=techMap->second.find(max_prec)->second.find(constant_id)->second;
+                     specializedId = techMap->second.find(max_prec)->second.find(constant_id)->second;
                   }
                   else
                   {
-                     PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Insert into list of unit to add: "+new_fu.find(functionalUnitName)->first);
-                     fu_list[new_fu.find(functionalUnitName)->second][max_prec][constant_id]=current_id;
-                     allocation_information->precision_map[current_id]=max_prec;
-                     if( channels_type == CHANNELS_TYPE_MEM_ACC_NN && memory_ctrl_type != "")
+                     PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Insert into list of unit to add: " + new_fu.find(functionalUnitName)->first);
+                     fu_list[new_fu.find(functionalUnitName)->second][max_prec][constant_id] = current_id;
+                     allocation_information->precision_map[current_id] = max_prec;
+                     if(channels_type == CHANNELS_TYPE_MEM_ACC_NN && memory_ctrl_type != "")
                      {
                         auto n_ports = parameters->getOption<unsigned int>(OPT_channels_number);
                         set_number_channels(specializedId, n_ports);
                      }
                      else if(memory_ctrl_type != "")
                         set_number_channels(specializedId, 1);
-                     auto fuUnit=new_fu.find(functionalUnitName)->second;
+                     auto fuUnit = new_fu.find(functionalUnitName)->second;
                      if(fuUnit->get_kind() == functional_unit_K)
                      {
                         auto fuUnitModule = GetPointer<functional_unit>(fuUnit)->CM->get_circ();
                         if(GetPointer<module>(fuUnitModule))
                         {
-                           auto multiplicity=GetPointer<module>(fuUnitModule)->get_multi_unit_multiplicity();
+                           auto multiplicity = GetPointer<module>(fuUnitModule)->get_multi_unit_multiplicity();
                            if(multiplicity)
                            {
-                              PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Added multiplicity of "+ STR(multiplicity )+ " to " + functionalUnitName);
+                              PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Added multiplicity of " + STR(multiplicity) + " to " + functionalUnitName);
                               set_number_channels(specializedId, multiplicity);
                            }
                         }
@@ -1785,20 +1763,20 @@ DesignFlowStep_Status allocation::InternalExec()
                   functionalUnitName = current_fu->get_name();
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Functional unit name is " + functionalUnitName);
                   techMap = fu_list.find(libraryManager->get_fu(functionalUnitName));
-                  if(techMap!=fu_list.end() && techMap->second.find(max_prec) != techMap->second.end() && techMap->second.find(max_prec)->second.find(constant_id) != techMap->second.find(max_prec)->second.end())
+                  if(techMap != fu_list.end() && techMap->second.find(max_prec) != techMap->second.end() && techMap->second.find(max_prec)->second.find(constant_id) != techMap->second.find(max_prec)->second.end())
                   {
-                     specializedId=techMap->second.find(max_prec)->second.find(constant_id)->second;
+                     specializedId = techMap->second.find(max_prec)->second.find(constant_id)->second;
                   }
                   else
                   {
-                     fu_list[libraryManager->get_fu(functionalUnitName)][max_prec][constant_id]=current_id;
-                     allocation_information->precision_map[current_id]=max_prec;
+                     fu_list[libraryManager->get_fu(functionalUnitName)][max_prec][constant_id] = current_id;
+                     allocation_information->precision_map[current_id] = max_prec;
                      if(channels_type == CHANNELS_TYPE_MEM_ACC_P1N and memory_ctrl_type != "")
                      {
                         auto n_ports = parameters->getOption<unsigned int>(OPT_memory_banks_number);
                         set_number_channels(specializedId, n_ports);
                      }
-                     else if( channels_type == CHANNELS_TYPE_MEM_ACC_NN && memory_ctrl_type != "")
+                     else if(channels_type == CHANNELS_TYPE_MEM_ACC_NN && memory_ctrl_type != "")
                      {
                         auto n_ports = parameters->getOption<unsigned int>(OPT_channels_number);
                         set_number_channels(specializedId, n_ports);
@@ -1815,11 +1793,13 @@ DesignFlowStep_Status allocation::InternalExec()
                vertex_analysed.insert(vert);
                allocation_information->node_id_to_fus[std::pair<unsigned int, std::string>(vert_node_id, vert_node_operation)].insert(specializedId);
                allocation_information->id_to_fu_names[specializedId] = std::make_pair(functionalUnitName, library_name);
-               if(node_info->is_single_bool_test_cond_expr) allocation_information->single_bool_test_cond_expr_units.insert(specializedId);
-               if(node_info->is_simple_pointer_plus_expr) allocation_information->simple_pointer_plus_expr.insert(specializedId);
+               if(node_info->is_single_bool_test_cond_expr)
+                  allocation_information->single_bool_test_cond_expr_units.insert(specializedId);
+               if(node_info->is_simple_pointer_plus_expr)
+                  allocation_information->simple_pointer_plus_expr.insert(specializedId);
                if(library_name == PROXY_LIBRARY)
                {
-                  if(boost::algorithm::starts_with(functionalUnitName,WRAPPED_PROXY_PREFIX))
+                  if(boost::algorithm::starts_with(functionalUnitName, WRAPPED_PROXY_PREFIX))
                   {
                      std::string original_function_name = functionalUnitName.substr(std::string(WRAPPED_PROXY_PREFIX).size());
                      allocation_information->proxy_wrapped_units[specializedId] = original_function_name;
@@ -1837,9 +1817,9 @@ DesignFlowStep_Status allocation::InternalExec()
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered functional unit: " + current_fu->get_name());
       }
-      for(auto iter_new_fu=new_fu.begin(); iter_new_fu!=new_fu.end(); ++iter_new_fu)
+      for(auto iter_new_fu = new_fu.begin(); iter_new_fu != new_fu.end(); ++iter_new_fu)
       {
-         PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding functional unit: "+iter_new_fu->first+" in "+ lib_name);
+         PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding functional unit: " + iter_new_fu->first + " in " + lib_name);
          TM->add(iter_new_fu->second, lib_name);
       }
       new_fu.clear();
@@ -1852,32 +1832,35 @@ DesignFlowStep_Status allocation::InternalExec()
 #endif
 
    // Check if each operation has been analysed
-   for (const auto ve : vertex_to_analyse)
+   for(const auto ve : vertex_to_analyse)
    {
-      if (vertex_analysed.find(ve) != vertex_analysed.end()) continue;
+      if(vertex_analysed.find(ve) != vertex_analysed.end())
+         continue;
 
       node_kind_prec_infoRef node_info(new node_kind_prec_info());
       HLS_manager::io_binding_type constant_id;
       allocation_information->GetNodeTypePrec(ve, g, node_info, constant_id, false);
       std::string precisions;
       const size_t n_ins = node_info->input_prec.size();
-      for (size_t ind=0; ind < n_ins; ++ind)
+      for(size_t ind = 0; ind < n_ins; ++ind)
       {
          if(node_info->real_input_nelem[ind] == 0)
             precisions += " " + STR(node_info->input_prec[ind]);
          else
             precisions += " " + STR(node_info->input_prec[ind]) + ":" + STR(node_info->real_input_nelem[ind]);
       }
-      if(node_info->real_output_nelem==0)
+      if(node_info->real_output_nelem == 0)
          precisions += " " + STR(node_info->output_prec);
       else
-         precisions += " " + STR(node_info->output_prec)+ ":" + STR(node_info->real_output_nelem);
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Operation for which does not exist a functional unit in the resource library: " + tree_helper::normalized_ID(g->CGetOpNodeInfo(ve)->GetOperation()) + " in vertex: " + GET_NAME(g, ve) + " with vertex type: " + node_info->node_kind + " and vertex prec:" + precisions);
+         precisions += " " + STR(node_info->output_prec) + ":" + STR(node_info->real_output_nelem);
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                     "---Operation for which does not exist a functional unit in the resource library: " + tree_helper::normalized_ID(g->CGetOpNodeInfo(ve)->GetOperation()) + " in vertex: " + GET_NAME(g, ve) + " with vertex type: " + node_info->node_kind +
+                         " and vertex prec:" + precisions);
    }
    if(vertex_to_analyse.size() > vertex_analysed.size())
       THROW_ERROR("Vertices not completely allocated");
-   ///These data struture are filled only once
-   if (!allocation_information->node_id_to_fus.empty())
+   /// These data struture are filled only once
+   if(!allocation_information->node_id_to_fus.empty())
    {
       for(const auto& op : allocation_information->node_id_to_fus)
       {
@@ -1889,7 +1872,7 @@ DesignFlowStep_Status allocation::InternalExec()
       }
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Number of complex operations: " + STR(allocation_information->n_complex_operations));
    }
-   if (!allocation_information->node_id_to_fus.empty() and bb_version == 0)
+   if(!allocation_information->node_id_to_fus.empty() and bb_version == 0)
    {
       for(const auto& op : allocation_information->node_id_to_fus)
       {
@@ -1935,16 +1918,18 @@ DesignFlowStep_Status allocation::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-std::string allocation::get_compliant_pipelined_unit(double clock, const std::string&pipe_parameter, const technology_nodeRef current_fu, const std::string&curr_op, const std::string&library_name, const std::string&template_suffix, unsigned int module_prec)
+std::string allocation::get_compliant_pipelined_unit(double clock, const std::string& pipe_parameter, const technology_nodeRef current_fu, const std::string& curr_op, const std::string& library_name, const std::string& template_suffix,
+                                                     unsigned int module_prec)
 {
-   if(pipe_parameter=="") return "";
+   if(pipe_parameter == "")
+      return "";
    THROW_ASSERT(GetPointer<functional_unit>(current_fu), "expected a functional unit object");
    auto* fu = GetPointer<functional_unit>(current_fu);
 
    THROW_ASSERT(fu->fu_template_name != "", "expected a template_name for a pipelined unit");
-   if(precomputed_pipeline_unit.find(fu->fu_template_name+"_"+template_suffix) != precomputed_pipeline_unit.end())
+   if(precomputed_pipeline_unit.find(fu->fu_template_name + "_" + template_suffix) != precomputed_pipeline_unit.end())
    {
-      std::string compliant_id = precomputed_pipeline_unit.find(fu->fu_template_name+"_"+template_suffix)->second;
+      std::string compliant_id = precomputed_pipeline_unit.find(fu->fu_template_name + "_" + template_suffix)->second;
       if(pipe_parameter == compliant_id)
          return pipe_parameter;
       else
@@ -1957,20 +1942,20 @@ std::string allocation::get_compliant_pipelined_unit(double clock, const std::st
    structural_managerRef tcm = GetPointer<functional_unit>(fu_temp->FU)->CM;
    if(tcm)
    {
-      structural_objectRef tmodobj=tcm->get_circ();
-      auto * tmod = GetPointer<module>(tmodobj);
-      const NP_functionalityRef &np = tmod->get_NP_functionality();
+      structural_objectRef tmodobj = tcm->get_circ();
+      auto* tmod = GetPointer<module>(tmodobj);
+      const NP_functionalityRef& np = tmod->get_NP_functionality();
       if(np->get_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) != "")
          is_flopoco_provided = true;
    }
    technology_nodeRef fun_temp_operation = GetPointer<functional_unit>(fu_temp->FU)->get_operation(curr_op);
    THROW_ASSERT(fun_temp_operation, "operation not present in the template description");
-   auto * template_op = GetPointer<operation>(fun_temp_operation);
+   auto* template_op = GetPointer<operation>(fun_temp_operation);
    std::string temp_pipe_parameters = template_op->pipe_parameters;
    std::vector<std::string> parameters_split;
    boost::algorithm::split(parameters_split, temp_pipe_parameters, boost::algorithm::is_any_of("|"));
    THROW_ASSERT(parameters_split.size() > 0, "unexpected pipe_parameter format");
-   for(auto & el_indx : parameters_split)
+   for(auto& el_indx : parameters_split)
    {
       std::vector<std::string> parameters_pairs;
       boost::algorithm::split(parameters_pairs, el_indx, boost::algorithm::is_any_of(":"));
@@ -1992,25 +1977,25 @@ std::string allocation::get_compliant_pipelined_unit(double clock, const std::st
    }
    THROW_ASSERT(temp_pipe_parameters != "", "expected some pipe_parameters for the the template operation");
    std::vector<std::string> pipe_parameters;
-   std::string fastest_pipe_parameter="0";
+   std::string fastest_pipe_parameter = "0";
    double fastest_stage_period = std::numeric_limits<double>::max();
    boost::algorithm::split(pipe_parameters, temp_pipe_parameters, boost::algorithm::is_any_of(","));
    const std::vector<std::string>::const_iterator st_end = pipe_parameters.end();
    std::vector<std::string>::const_iterator st_next;
-   unsigned int skip_pipe_parameter=0;
+   unsigned int skip_pipe_parameter = 0;
    if(is_flopoco_provided)
-      skip_pipe_parameter = std::max(1u,parameters->getOption<unsigned int>(OPT_skip_pipe_parameter));
+      skip_pipe_parameter = std::max(1u, parameters->getOption<unsigned int>(OPT_skip_pipe_parameter));
    else if(is_a_skip_operation(curr_op))
       skip_pipe_parameter = parameters->getOption<unsigned int>(OPT_skip_pipe_parameter);
    for(auto st = st_next = pipe_parameters.begin(); st != st_end; ++st)
    {
       ++st_next;
-      const technology_nodeRef fu_cur_obj = HLS_T->get_technology_manager()->get_fu(fu->fu_template_name+"_"+template_suffix+"_"+*st, library_name);
+      const technology_nodeRef fu_cur_obj = HLS_T->get_technology_manager()->get_fu(fu->fu_template_name + "_" + template_suffix + "_" + *st, library_name);
       if(fu_cur_obj)
       {
          area_modelRef a_m = GetPointer<functional_unit>(fu_cur_obj)->area_m;
-         THROW_ASSERT(a_m, "Area information not specified for unit " + fu->fu_template_name+"_"+template_suffix+"_"+*st);
-         bool has_DSPs = (GetPointer<clb_model>(a_m) &&  GetPointer<clb_model>(a_m)->get_resource_value(clb_model::DSP)>0);
+         THROW_ASSERT(a_m, "Area information not specified for unit " + fu->fu_template_name + "_" + template_suffix + "_" + *st);
+         bool has_DSPs = (GetPointer<clb_model>(a_m) && GetPointer<clb_model>(a_m)->get_resource_value(clb_model::DSP) > 0);
          double DSP_allocation_coefficient = allocation_information->DSP_allocation_coefficient;
          double dsp_multiplier = has_DSPs ? allocation_information->DSPs_margin * DSP_allocation_coefficient : 1.0;
          double dsp_multiplier_stage = has_DSPs ? allocation_information->DSPs_margin_stage * DSP_allocation_coefficient : 1.0;
@@ -2019,18 +2004,19 @@ std::string allocation::get_compliant_pipelined_unit(double clock, const std::st
          {
             const functional_unit* fu_cur = GetPointer<functional_unit>(fu_cur_obj);
             auto* fu_cur_operation = GetPointer<operation>(fu_cur->get_operation(curr_op));
-            if(fu_cur_operation->time_m->get_cycles() >= 1 && allocation_information->time_m_stage_period(fu_cur_operation)<fastest_stage_period)
+            if(fu_cur_operation->time_m->get_cycles() >= 1 && allocation_information->time_m_stage_period(fu_cur_operation) < fastest_stage_period)
             {
                fastest_pipe_parameter = *st;
                fastest_stage_period = allocation_information->time_m_stage_period(fu_cur_operation);
             }
-            if((*st == "0" && dsp_multiplier*allocation_information->time_m_execution_time(fu_cur_operation) <clock && allocation_information->time_m_execution_time(fu_cur_operation) != 0.0) || (fu_cur_operation->time_m->get_cycles() >= 1 && dsp_multiplier_stage*allocation_information->time_m_stage_period(fu_cur_operation)<clock && *st != "0"))
+            if((*st == "0" && dsp_multiplier * allocation_information->time_m_execution_time(fu_cur_operation) < clock && allocation_information->time_m_execution_time(fu_cur_operation) != 0.0) ||
+               (fu_cur_operation->time_m->get_cycles() >= 1 && dsp_multiplier_stage * allocation_information->time_m_stage_period(fu_cur_operation) < clock && *st != "0"))
             {
                if(skip_pipe_parameter && st_next != st_end)
                   --skip_pipe_parameter;
                else
                {
-                  precomputed_pipeline_unit[fu->fu_template_name+"_"+template_suffix] = *st;
+                  precomputed_pipeline_unit[fu->fu_template_name + "_" + template_suffix] = *st;
                   if(*st == pipe_parameter)
                   {
                      return pipe_parameter;
@@ -2046,13 +2032,13 @@ std::string allocation::get_compliant_pipelined_unit(double clock, const std::st
    }
    if(fastest_pipe_parameter == "0") /// in case no pipelined version exist it returns the one not pipelined
    {
-     precomputed_pipeline_unit[fu->fu_template_name+"_"+template_suffix] = fastest_pipe_parameter;
+      precomputed_pipeline_unit[fu->fu_template_name + "_" + template_suffix] = fastest_pipe_parameter;
    }
    else
    {
       /// in case clock is not compatible with any of the pipelined version it returns the fastest pipelined version available
-      THROW_WARNING("No functional unit exists for the given clock period: the fastest pipelined unit will be used ("+fu->fu_template_name +"): " + STR(fastest_stage_period));
-      precomputed_pipeline_unit[fu->fu_template_name+"_"+template_suffix] = fastest_pipe_parameter;
+      THROW_WARNING("No functional unit exists for the given clock period: the fastest pipelined unit will be used (" + fu->fu_template_name + "): " + STR(fastest_stage_period));
+      precomputed_pipeline_unit[fu->fu_template_name + "_" + template_suffix] = fastest_pipe_parameter;
    }
    if(pipe_parameter == fastest_pipe_parameter)
    {
@@ -2070,7 +2056,8 @@ void allocation::set_number_channels(unsigned int fu_name, unsigned int n_ports)
 technology_nodeRef allocation::get_fu(const std::string& fu_name)
 {
    std::string library_name = HLS_T->get_technology_manager()->get_library(fu_name);
-   if(library_name == "") return technology_nodeRef();
+   if(library_name == "")
+      return technology_nodeRef();
    return HLS_T->get_technology_manager()->get_fu(fu_name, library_name);
 }
 
@@ -2081,32 +2068,32 @@ bool allocation::is_ram_not_timing_compliant(const HLS_constraintsRef HLS_C, uns
    if(HLSMgr->Rmem->is_read_only_variable(var))
       return false;
    auto n_ref = static_cast<unsigned int>(HLSMgr->Rmem->get_maximum_references(var));
-   double clock_period = HLS_C->get_clock_period_resource_fraction()*HLS_C->get_clock_period();
+   double clock_period = HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period();
    double controller_delay = 0; // too overestimated allocation_information->EstimateControllerDelay();
    const functional_unit* fu_cur = GetPointer<functional_unit>(current_fu);
    auto* load_operation = GetPointer<operation>(fu_cur->get_operation("STORE"));
    double ex_time = allocation_information->time_m_execution_time(load_operation);
-   unsigned int n_channels = n_ref>parameters->isOption(OPT_channels_number) ? parameters->getOption<unsigned int>(OPT_channels_number) : 1;
-   double mux_delay = allocation_information->estimate_muxNto1_delay(32,n_ref/n_channels);
-   double setup = allocation_information->get_setup_hold_time();//for the PHIs
-   //std::cerr << "memory " << var << " controller_delay=" << controller_delay << " ex_time=" << ex_time << " mux_delay=" << mux_delay << " setup=" << setup << std::endl;
-   return  n_ref/n_channels > 1 &&  (controller_delay+ex_time+mux_delay+setup)>clock_period;
+   unsigned int n_channels = n_ref > parameters->isOption(OPT_channels_number) ? parameters->getOption<unsigned int>(OPT_channels_number) : 1;
+   double mux_delay = allocation_information->estimate_muxNto1_delay(32, n_ref / n_channels);
+   double setup = allocation_information->get_setup_hold_time(); // for the PHIs
+   // std::cerr << "memory " << var << " controller_delay=" << controller_delay << " ex_time=" << ex_time << " mux_delay=" << mux_delay << " setup=" << setup << std::endl;
+   return n_ref / n_channels > 1 && (controller_delay + ex_time + mux_delay + setup) > clock_period;
 }
 
 std::string allocation::get_synch_ram_latency(const std::string& ram_template, const std::string& latency_postfix, const HLS_constraintsRef HLS_C, unsigned int var)
 {
    std::string new_lat;
-   technology_nodeRef current_fu = get_fu(ram_template+latency_postfix);
+   technology_nodeRef current_fu = get_fu(ram_template + latency_postfix);
    bool is_synchronous_ram_not_timing_compliant = is_ram_not_timing_compliant(HLS_C, var, current_fu);
    if(is_synchronous_ram_not_timing_compliant)
    {
-      new_lat = latency_postfix==""?std::string("3"):std::string("4");
-      current_fu = get_fu(ram_template+allocation_information->get_latency_string(new_lat));
+      new_lat = latency_postfix == "" ? std::string("3") : std::string("4");
+      current_fu = get_fu(ram_template + allocation_information->get_latency_string(new_lat));
       allocation_information->sync_ram_var_latency[var] = new_lat;
    }
    else
    {
-      new_lat = latency_postfix==""?"2":(latency_postfix=="_3"?"3":"4");
+      new_lat = latency_postfix == "" ? "2" : (latency_postfix == "_3" ? "3" : "4");
       allocation_information->sync_ram_var_latency[var] = new_lat;
    }
    return new_lat;
@@ -2117,19 +2104,20 @@ void allocation::IntegrateTechnologyLibraries()
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
    const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(funId);
    const HLS_constraintsRef HLS_C = HLS->HLS_C;
-   double clock_period = HLS_C->get_clock_period_resource_fraction()*HLS_C->get_clock_period();
+   double clock_period = HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period();
 
    std::string latency_postfix = "";
    if(parameters->getOption<std::string>(OPT_bram_high_latency) != "")
       latency_postfix = parameters->getOption<std::string>(OPT_bram_high_latency);
-   for (const auto & l : HLSMgr->Rmem->get_function_vars(funId))
+   for(const auto& l : HLSMgr->Rmem->get_function_vars(funId))
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - analyzing variable " + STR(l.first));
       unsigned int var = l.first;
       technology_nodeRef current_fu;
       unsigned int n_ports = 1;
 
-      if (HLSMgr->Rmem->has_callSite_base_address(var)) continue;
+      if(HLSMgr->Rmem->has_callSite_base_address(var))
+         continue;
 
       bool is_async_var = false;
 
@@ -2140,59 +2128,56 @@ void allocation::IntegrateTechnologyLibraries()
          if(HLSMgr->Rmem->is_sds_var(var))
          {
             if((HLSMgr->Rmem->has_all_pointers_resolved() && HLSMgr->Rmem->does_need_addr(var)) || (!HLSMgr->Rmem->has_all_pointers_resolved() && !HLSMgr->Rmem->is_private_memory(var)))
-               current_fu = get_fu(ARRAY_1D_STD_BRAM_SDS_BUS+latency_postfix);
+               current_fu = get_fu(ARRAY_1D_STD_BRAM_SDS_BUS + latency_postfix);
             else
             {
-
-               if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
-                     (AllocationInformation::can_be_asynchronous_ram(TreeM, var, parameters->getOption<unsigned int>(OPT_distram_threshold), HLSMgr->Rmem->is_read_only_variable(var))))
+               if(parameters->getOption<bool>(OPT_use_asynchronous_memories) && (AllocationInformation::can_be_asynchronous_ram(TreeM, var, parameters->getOption<unsigned int>(OPT_distram_threshold), HLSMgr->Rmem->is_read_only_variable(var))))
                {
                   current_fu = get_fu(ARRAY_1D_STD_DISTRAM_SDS);
                   bool is_asynchronous_ram_not_timing_compliant = is_ram_not_timing_compliant(HLS_C, var, current_fu);
                   if(is_asynchronous_ram_not_timing_compliant)
-                     current_fu = get_fu(ARRAY_1D_STD_BRAM_SDS+allocation_information->get_latency_string(get_synch_ram_latency(ARRAY_1D_STD_BRAM_SDS, latency_postfix, HLS_C, var)));
+                     current_fu = get_fu(ARRAY_1D_STD_BRAM_SDS + allocation_information->get_latency_string(get_synch_ram_latency(ARRAY_1D_STD_BRAM_SDS, latency_postfix, HLS_C, var)));
                   else
                   {
                      is_async_var = true;
                   }
                }
                else
-                  current_fu = get_fu(ARRAY_1D_STD_BRAM_SDS+allocation_information->get_latency_string(get_synch_ram_latency(ARRAY_1D_STD_BRAM_SDS, latency_postfix, HLS_C, var)));
+                  current_fu = get_fu(ARRAY_1D_STD_BRAM_SDS + allocation_information->get_latency_string(get_synch_ram_latency(ARRAY_1D_STD_BRAM_SDS, latency_postfix, HLS_C, var)));
             }
          }
-         else if(!unaligned_access_p && HLSMgr->Rmem->get_bram_bitsize()==8 && HLSMgr->Rmem->get_bus_data_bitsize() == 8 && !HLSMgr->Rmem->is_private_memory(var))
-            current_fu = get_fu(ARRAY_1D_STD_BRAM_SDS_BUS+latency_postfix);
+         else if(!unaligned_access_p && HLSMgr->Rmem->get_bram_bitsize() == 8 && HLSMgr->Rmem->get_bus_data_bitsize() == 8 && !HLSMgr->Rmem->is_private_memory(var))
+            current_fu = get_fu(ARRAY_1D_STD_BRAM_SDS_BUS + latency_postfix);
          else
-            current_fu = get_fu(ARRAY_1D_STD_BRAM+latency_postfix);
+            current_fu = get_fu(ARRAY_1D_STD_BRAM + latency_postfix);
       }
       else if(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_N1)
       {
          if(HLSMgr->Rmem->is_sds_var(var))
          {
             if((HLSMgr->Rmem->has_all_pointers_resolved() && HLSMgr->Rmem->does_need_addr(var)) || (!HLSMgr->Rmem->has_all_pointers_resolved() && !HLSMgr->Rmem->is_private_memory(var)))
-               current_fu = get_fu(ARRAY_1D_STD_BRAM_N1_SDS_BUS+latency_postfix);
+               current_fu = get_fu(ARRAY_1D_STD_BRAM_N1_SDS_BUS + latency_postfix);
             else
             {
-               if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
-                     AllocationInformation::can_be_asynchronous_ram(TreeM, var, parameters->getOption<unsigned int>(OPT_distram_threshold), HLSMgr->Rmem->is_read_only_variable(var)))
+               if(parameters->getOption<bool>(OPT_use_asynchronous_memories) && AllocationInformation::can_be_asynchronous_ram(TreeM, var, parameters->getOption<unsigned int>(OPT_distram_threshold), HLSMgr->Rmem->is_read_only_variable(var)))
                {
                   current_fu = get_fu(ARRAY_1D_STD_DISTRAM_N1_SDS);
                   bool is_asynchronous_ram_not_timing_compliant = is_ram_not_timing_compliant(HLS_C, var, current_fu);
                   if(is_asynchronous_ram_not_timing_compliant)
-                     current_fu = get_fu(ARRAY_1D_STD_BRAM_N1_SDS+allocation_information->get_latency_string(get_synch_ram_latency(ARRAY_1D_STD_BRAM_N1_SDS, latency_postfix, HLS_C, var)));
+                     current_fu = get_fu(ARRAY_1D_STD_BRAM_N1_SDS + allocation_information->get_latency_string(get_synch_ram_latency(ARRAY_1D_STD_BRAM_N1_SDS, latency_postfix, HLS_C, var)));
                   else
                   {
                      is_async_var = true;
                   }
                }
                else
-                  current_fu = get_fu(ARRAY_1D_STD_BRAM_N1_SDS+allocation_information->get_latency_string(get_synch_ram_latency(ARRAY_1D_STD_BRAM_N1_SDS, latency_postfix, HLS_C, var)));
+                  current_fu = get_fu(ARRAY_1D_STD_BRAM_N1_SDS + allocation_information->get_latency_string(get_synch_ram_latency(ARRAY_1D_STD_BRAM_N1_SDS, latency_postfix, HLS_C, var)));
             }
          }
-         else if(!unaligned_access_p && HLSMgr->Rmem->get_bram_bitsize()==8 && HLSMgr->Rmem->get_bus_data_bitsize() == 8 && !HLSMgr->Rmem->is_private_memory(var))
-            current_fu = get_fu(ARRAY_1D_STD_BRAM_N1_SDS_BUS+latency_postfix);
+         else if(!unaligned_access_p && HLSMgr->Rmem->get_bram_bitsize() == 8 && HLSMgr->Rmem->get_bus_data_bitsize() == 8 && !HLSMgr->Rmem->is_private_memory(var))
+            current_fu = get_fu(ARRAY_1D_STD_BRAM_N1_SDS_BUS + latency_postfix);
          else
-            current_fu = get_fu(ARRAY_1D_STD_BRAM_N1+latency_postfix);
+            current_fu = get_fu(ARRAY_1D_STD_BRAM_N1 + latency_postfix);
          n_ports = parameters->getOption<unsigned int>(OPT_channels_number);
       }
       else if(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN)
@@ -2200,40 +2185,37 @@ void allocation::IntegrateTechnologyLibraries()
          if(HLSMgr->Rmem->is_sds_var(var))
          {
             if((HLSMgr->Rmem->has_all_pointers_resolved() && HLSMgr->Rmem->does_need_addr(var)) || (!HLSMgr->Rmem->has_all_pointers_resolved() && !HLSMgr->Rmem->is_private_memory(var)))
-               current_fu = get_fu(ARRAY_1D_STD_BRAM_NN_SDS_BUS+latency_postfix);
+               current_fu = get_fu(ARRAY_1D_STD_BRAM_NN_SDS_BUS + latency_postfix);
             else
             {
-               if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
-                     AllocationInformation::can_be_asynchronous_ram(TreeM, var, parameters->getOption<unsigned int>(OPT_distram_threshold), HLSMgr->Rmem->is_read_only_variable(var)))
+               if(parameters->getOption<bool>(OPT_use_asynchronous_memories) && AllocationInformation::can_be_asynchronous_ram(TreeM, var, parameters->getOption<unsigned int>(OPT_distram_threshold), HLSMgr->Rmem->is_read_only_variable(var)))
                {
                   current_fu = get_fu(ARRAY_1D_STD_DISTRAM_NN_SDS);
                   bool is_asynchronous_ram_not_timing_compliant = is_ram_not_timing_compliant(HLS_C, var, current_fu);
                   if(is_asynchronous_ram_not_timing_compliant)
-                     current_fu = get_fu(ARRAY_1D_STD_BRAM_NN_SDS+allocation_information->get_latency_string(get_synch_ram_latency(ARRAY_1D_STD_BRAM_NN_SDS, latency_postfix, HLS_C, var)));
+                     current_fu = get_fu(ARRAY_1D_STD_BRAM_NN_SDS + allocation_information->get_latency_string(get_synch_ram_latency(ARRAY_1D_STD_BRAM_NN_SDS, latency_postfix, HLS_C, var)));
                   else
                   {
                      is_async_var = true;
                   }
                }
                else
-                  current_fu = get_fu(ARRAY_1D_STD_BRAM_NN_SDS+allocation_information->get_latency_string(get_synch_ram_latency(ARRAY_1D_STD_BRAM_NN_SDS, latency_postfix, HLS_C, var)));
+                  current_fu = get_fu(ARRAY_1D_STD_BRAM_NN_SDS + allocation_information->get_latency_string(get_synch_ram_latency(ARRAY_1D_STD_BRAM_NN_SDS, latency_postfix, HLS_C, var)));
             }
          }
-         else if(!unaligned_access_p && HLSMgr->Rmem->get_bram_bitsize()==8 && HLSMgr->Rmem->get_bus_data_bitsize() == 8 && !HLSMgr->Rmem->is_private_memory(var))
-            current_fu = get_fu(ARRAY_1D_STD_BRAM_NN_SDS_BUS+latency_postfix);
+         else if(!unaligned_access_p && HLSMgr->Rmem->get_bram_bitsize() == 8 && HLSMgr->Rmem->get_bus_data_bitsize() == 8 && !HLSMgr->Rmem->is_private_memory(var))
+            current_fu = get_fu(ARRAY_1D_STD_BRAM_NN_SDS_BUS + latency_postfix);
          else
-            current_fu = get_fu(ARRAY_1D_STD_BRAM_NN+latency_postfix);
+            current_fu = get_fu(ARRAY_1D_STD_BRAM_NN + latency_postfix);
          n_ports = parameters->getOption<unsigned int>(OPT_channels_number);
       }
       else
          THROW_ERROR("type of channel based organization not yet supported");
 
-
       unsigned int current_size = allocation_information->get_number_fu_types();
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - allocating unit " + current_fu->get_name() + " for variable " + function_behavior->CGetBehavioralHelper()->PrintVariable(l.first) + " in position " + STR(current_size));
       allocation_information->list_of_FU.push_back(current_fu);
-      if(HLSMgr->Rmem->is_sds_var(var) && HLSMgr->Rmem->is_read_only_variable(var) &&
-            (is_async_var || (parameters->isOption(OPT_rom_duplication) && parameters->getOption<bool>(OPT_rom_duplication))))
+      if(HLSMgr->Rmem->is_sds_var(var) && HLSMgr->Rmem->is_read_only_variable(var) && (is_async_var || (parameters->isOption(OPT_rom_duplication) && parameters->getOption<bool>(OPT_rom_duplication))))
       {
          allocation_information->tech_constraints.push_back(INFINITE_UINT);
          set_number_channels(current_size, n_ports);
@@ -2247,22 +2229,21 @@ void allocation::IntegrateTechnologyLibraries()
       THROW_ASSERT(allocation_information->tech_constraints.size() == allocation_information->list_of_FU.size(), "Something of wrong happened");
       allocation_information->vars_to_memory_units[var] = current_size;
       allocation_information->memory_units[current_size] = var;
-      allocation_information->memory_units_sizes[current_size] = tree_helper::size(TreeM,  var) / 8;
+      allocation_information->memory_units_sizes[current_size] = tree_helper::size(TreeM, var) / 8;
       allocation_information->precision_map[current_size] = 0;
       /// check clock constraints compatibility
-      auto * fu_br= GetPointer<functional_unit>(current_fu);
+      auto* fu_br = GetPointer<functional_unit>(current_fu);
       technology_nodeRef op_store_node = fu_br->get_operation("STORE");
-      auto * op_store = GetPointer<operation>(op_store_node);
+      auto* op_store = GetPointer<operation>(op_store_node);
       double store_delay = allocation_information->time_m_execution_time(op_store) - allocation_information->get_correction_time(current_size, "STORE") + allocation_information->get_setup_hold_time();
-      if(store_delay>clock_period)
-         THROW_ERROR("clock constraint too tight: BRAMs for this device cannot run so fast... (" + current_fu->get_name()+":"+ STR(store_delay) + ">" + STR(clock_period) +")");
-
+      if(store_delay > clock_period)
+         THROW_ERROR("clock constraint too tight: BRAMs for this device cannot run so fast... (" + current_fu->get_name() + ":" + STR(store_delay) + ">" + STR(clock_period) + ")");
    }
 
    /// allocate proxies
    if(HLSMgr->Rmem->has_proxied_internal_variables(funId))
    {
-      for (const auto & proxied_var_id : HLSMgr->Rmem->get_proxied_internal_variables(funId))
+      for(const auto& proxied_var_id : HLSMgr->Rmem->get_proxied_internal_variables(funId))
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - analyzing proxied variable " + STR(proxied_var_id));
          technology_nodeRef current_fu;
@@ -2272,53 +2253,51 @@ void allocation::IntegrateTechnologyLibraries()
             if(HLSMgr->Rmem->is_sds_var(proxied_var_id))
             {
                if((HLSMgr->Rmem->has_all_pointers_resolved() && HLSMgr->Rmem->does_need_addr(proxied_var_id)) || (!HLSMgr->Rmem->has_all_pointers_resolved() && !HLSMgr->Rmem->is_private_memory(proxied_var_id)))
-                  current_fu = get_fu(PROXY_CTRL+latency_postfix);
+                  current_fu = get_fu(PROXY_CTRL + latency_postfix);
                else
                {
                   if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
-                        AllocationInformation::can_be_asynchronous_ram(TreeM, proxied_var_id, parameters->getOption<unsigned int>(OPT_distram_threshold), HLSMgr->Rmem->is_read_only_variable(proxied_var_id)))
+                     AllocationInformation::can_be_asynchronous_ram(TreeM, proxied_var_id, parameters->getOption<unsigned int>(OPT_distram_threshold), HLSMgr->Rmem->is_read_only_variable(proxied_var_id)))
                   {
                      technology_nodeRef a_fu = get_fu(ARRAY_1D_STD_DISTRAM_SDS);
                      bool is_asynchronous_ram_not_timing_compliant = is_ram_not_timing_compliant(HLS_C, proxied_var_id, a_fu);
                      if(is_asynchronous_ram_not_timing_compliant)
-                         current_fu = get_fu(PROXY_CTRL+allocation_information->get_latency_string(get_synch_ram_latency(ARRAY_1D_STD_BRAM_SDS, latency_postfix, HLS_C, proxied_var_id)));
+                        current_fu = get_fu(PROXY_CTRL + allocation_information->get_latency_string(get_synch_ram_latency(ARRAY_1D_STD_BRAM_SDS, latency_postfix, HLS_C, proxied_var_id)));
                      else
                         current_fu = get_fu(DPROXY_CTRL);
                   }
                   else
-                     current_fu = get_fu(PROXY_CTRL+allocation_information->get_latency_string(get_synch_ram_latency(ARRAY_1D_STD_BRAM_SDS, latency_postfix, HLS_C, proxied_var_id)));
+                     current_fu = get_fu(PROXY_CTRL + allocation_information->get_latency_string(get_synch_ram_latency(ARRAY_1D_STD_BRAM_SDS, latency_postfix, HLS_C, proxied_var_id)));
                }
             }
             else
-               current_fu = get_fu(PROXY_CTRL+latency_postfix);
-
+               current_fu = get_fu(PROXY_CTRL + latency_postfix);
          }
-         else if(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_N1 ||
-                 parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN)
+         else if(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_N1 || parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN)
          {
             if(HLSMgr->Rmem->is_sds_var(proxied_var_id))
             {
                if((HLSMgr->Rmem->has_all_pointers_resolved() && HLSMgr->Rmem->does_need_addr(proxied_var_id)) || (!HLSMgr->Rmem->has_all_pointers_resolved() && !HLSMgr->Rmem->is_private_memory(proxied_var_id)))
-                  current_fu = get_fu(PROXY_CTRLN+latency_postfix);
+                  current_fu = get_fu(PROXY_CTRLN + latency_postfix);
                else
                {
                   bool is_nn = parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN;
                   if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
-                        AllocationInformation::can_be_asynchronous_ram(TreeM, proxied_var_id, parameters->getOption<unsigned int>(OPT_distram_threshold), HLSMgr->Rmem->is_read_only_variable(proxied_var_id)))
+                     AllocationInformation::can_be_asynchronous_ram(TreeM, proxied_var_id, parameters->getOption<unsigned int>(OPT_distram_threshold), HLSMgr->Rmem->is_read_only_variable(proxied_var_id)))
                   {
-                     technology_nodeRef a_fu = get_fu(is_nn?ARRAY_1D_STD_DISTRAM_NN_SDS:ARRAY_1D_STD_DISTRAM_N1_SDS);
+                     technology_nodeRef a_fu = get_fu(is_nn ? ARRAY_1D_STD_DISTRAM_NN_SDS : ARRAY_1D_STD_DISTRAM_N1_SDS);
                      bool is_asynchronous_ram_not_timing_compliant = is_ram_not_timing_compliant(HLS_C, proxied_var_id, a_fu);
                      if(is_asynchronous_ram_not_timing_compliant)
-                         current_fu = get_fu(PROXY_CTRLN+allocation_information->get_latency_string(get_synch_ram_latency(is_nn?ARRAY_1D_STD_BRAM_NN_SDS:ARRAY_1D_STD_BRAM_N1_SDS, latency_postfix, HLS_C, proxied_var_id)));
+                        current_fu = get_fu(PROXY_CTRLN + allocation_information->get_latency_string(get_synch_ram_latency(is_nn ? ARRAY_1D_STD_BRAM_NN_SDS : ARRAY_1D_STD_BRAM_N1_SDS, latency_postfix, HLS_C, proxied_var_id)));
                      else
                         current_fu = get_fu(DPROXY_CTRLN);
                   }
                   else
-                     current_fu = get_fu(PROXY_CTRLN+allocation_information->get_latency_string(get_synch_ram_latency(is_nn?ARRAY_1D_STD_BRAM_NN_SDS:ARRAY_1D_STD_BRAM_N1_SDS, latency_postfix, HLS_C, proxied_var_id)));
+                     current_fu = get_fu(PROXY_CTRLN + allocation_information->get_latency_string(get_synch_ram_latency(is_nn ? ARRAY_1D_STD_BRAM_NN_SDS : ARRAY_1D_STD_BRAM_N1_SDS, latency_postfix, HLS_C, proxied_var_id)));
                }
             }
             else
-               current_fu = get_fu(PROXY_CTRLN+latency_postfix);
+               current_fu = get_fu(PROXY_CTRLN + latency_postfix);
             n_ports = parameters->getOption<unsigned int>(OPT_channels_number);
          }
          else
@@ -2331,19 +2310,19 @@ void allocation::IntegrateTechnologyLibraries()
          allocation_information->id_to_fu_names[current_size] = std::make_pair(current_fu->get_name(), TM->get_library(current_fu->get_name()));
          THROW_ASSERT(allocation_information->tech_constraints.size() == allocation_information->list_of_FU.size(), "Something of wrong happened");
          allocation_information->vars_to_memory_units[proxied_var_id] = current_size;
-         allocation_information->proxy_memory_units[current_size]=proxied_var_id;
+         allocation_information->proxy_memory_units[current_size] = proxied_var_id;
          allocation_information->precision_map[current_size] = 0;
       }
    }
 
    /// add shared functions to the technology manager
-   if (HLSMgr->Rfuns->has_shared_functions(funId))
+   if(HLSMgr->Rfuns->has_shared_functions(funId))
    {
-      for (const auto & shared_fu_name : HLSMgr->Rfuns->get_shared_functions(funId))
+      for(const auto& shared_fu_name : HLSMgr->Rfuns->get_shared_functions(funId))
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - adding proxy function wrapper " + shared_fu_name);
          const std::string library_name = TM->get_library(shared_fu_name);
-         if (library_name != "")
+         if(library_name != "")
          {
             const library_managerRef libraryManager = TM->get_library_manager(library_name);
             technology_nodeRef techNode_obj = libraryManager->get_fu(shared_fu_name);
@@ -2357,7 +2336,7 @@ void allocation::IntegrateTechnologyLibraries()
             wrapper_tn = TM->get_fu(wrapped_fu_name, PROXY_LIBRARY);
             THROW_ASSERT(wrapper_tn, "Module not added");
             std::string key_new = ENCODE_FU_LIB(shared_fu_name, PROXY_LIBRARY);
-            HLS_C->tech_constraints[key_new] = 1;// HLS_C->tech_constraints.find(key_old)->second;
+            HLS_C->tech_constraints[key_new] = 1; // HLS_C->tech_constraints.find(key_old)->second;
             /// allocate it
             unsigned int current_size = allocation_information->get_number_fu_types();
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - allocating unit " + wrapper_tn->get_name() + " in position " + STR(current_size));
@@ -2366,16 +2345,16 @@ void allocation::IntegrateTechnologyLibraries()
             allocation_information->id_to_fu_names[current_size] = std::make_pair(wrapper_tn->get_name(), PROXY_LIBRARY);
             THROW_ASSERT(allocation_information->tech_constraints.size() == allocation_information->list_of_FU.size(), "Something of wrong happened");
             allocation_information->precision_map[current_size] = 0;
-            fu_list[wrapper_tn][0][HLS_manager::io_binding_type(0,0)]=current_size;
+            fu_list[wrapper_tn][0][HLS_manager::io_binding_type(0, 0)] = current_size;
             allocation_information->proxy_wrapped_units[current_size] = shared_fu_name;
          }
       }
    }
 
    /// add shared function proxies to the technology manager
-   if (HLSMgr->Rfuns->has_proxied_shared_functions(funId))
+   if(HLSMgr->Rfuns->has_proxied_shared_functions(funId))
    {
-      for (const auto & original_proxied_fu_name : HLSMgr->Rfuns->get_proxied_shared_functions(funId))
+      for(const auto& original_proxied_fu_name : HLSMgr->Rfuns->get_proxied_shared_functions(funId))
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - adding proxy function module " + original_proxied_fu_name);
          const std::string library_name = TM->get_library(original_proxied_fu_name);
@@ -2403,7 +2382,7 @@ bool allocation::HasToBeExecuted() const
       std::map<unsigned int, unsigned int> cur_bb_ver;
       const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
       std::set<unsigned int> funcs = call_graph_manager->GetReachedBodyFunctions();
-      if (funId and funcs.find(funId) == funcs.end())
+      if(funId and funcs.find(funId) == funcs.end())
          return false;
       const auto called_functions = call_graph_manager->GetReachedBodyFunctionsFrom(funId);
       for(auto const called_function : called_functions)

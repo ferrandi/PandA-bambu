@@ -177,7 +177,10 @@ class TreeNodesPairSorter : public std::binary_function<std::pair<tree_nodeRef, 
     */
    bool operator()(const std::pair<tree_nodeRef, tree_nodeRef>& x, const std::pair<tree_nodeRef, tree_nodeRef>& y) const
    {
-      if(x.first->index == y.first->index) { return x.second->index < y.second->index; }
+      if(x.first->index == y.first->index)
+      {
+         return x.second->index < y.second->index;
+      }
       else
       {
          return x.first->index < y.first->index;
@@ -263,7 +266,10 @@ CWriterRef CWriter::CreateCWriter(const CBackend::Type type,
          const InstrumentCBackendInformation* instrument_c_backend_information = GetPointer<const InstrumentCBackendInformation>(c_backend_information);
          const InstrumentWriterRef instrument_writer = InstrumentWriter::CreateInstrumentWriter(indented_output_stream, instrument_c_backend_information->profiling_architecture, parameters);
          const InstructionWriterRef instruction_writer(new InstrumentInstructionWriter(instrument_c_backend_information->profiling_architecture, app_man, instrument_writer, indented_output_stream, parameters));
-         if(parameters->getOption<int>(OPT_analysis_level) >= static_cast<int>(InstrumentWriter_Level::AL_LOOP)) { return CWriterRef(new LoopsInstrumentCWriter(app_man, instrument_writer, instruction_writer, indented_output_stream, parameters, verbose)); }
+         if(parameters->getOption<int>(OPT_analysis_level) >= static_cast<int>(InstrumentWriter_Level::AL_LOOP))
+         {
+            return CWriterRef(new LoopsInstrumentCWriter(app_man, instrument_writer, instruction_writer, indented_output_stream, parameters, verbose));
+         }
          else
          {
             return CWriterRef(new InstrumentCWriter(app_man, instrument_writer, instruction_writer, indented_output_stream, parameters, verbose));
@@ -312,7 +318,10 @@ void CWriter::declare_cast_types(unsigned int funId, CustomSet<std::string>& loc
          std::unordered_set<unsigned int> types;
          behavioral_helper->get_typecast(index, types);
          std::unordered_set<unsigned int>::const_iterator t_it_end = types.end();
-         for(std::unordered_set<unsigned int>::const_iterator t_it = types.begin(); t_it != t_it_end; ++t_it) { DeclareType(*t_it, behavioral_helper, locally_declared_types); }
+         for(std::unordered_set<unsigned int>::const_iterator t_it = types.begin(); t_it != t_it_end; ++t_it)
+         {
+            DeclareType(*t_it, behavioral_helper, locally_declared_types);
+         }
       }
    }
 }
@@ -327,7 +336,10 @@ void CWriter::Initialize()
    writtenIncludes.clear();
 }
 
-void CWriter::WriteBodyLoop(const FunctionBehaviorConstRef, const unsigned int, vertex current_vertex, bool bracket) { writeRoutineInstructions_rec(current_vertex, bracket); }
+void CWriter::WriteBodyLoop(const FunctionBehaviorConstRef, const unsigned int, vertex current_vertex, bool bracket)
+{
+   writeRoutineInstructions_rec(current_vertex, bracket);
+}
 
 void CWriter::WriteFunctionBody(unsigned int function_id)
 {
@@ -358,8 +370,10 @@ void CWriter::WriteHeader()
    for(auto extfun : AppM->get_functions_without_body())
    {
       const BehavioralHelperConstRef BH = this->AppM->CGetFunctionBehavior(extfun)->CGetBehavioralHelper();
-      if(BH->get_function_name() == "__bambu_readc" || BH->get_function_name() == "__bambu_read4c") is_readc_needed = true;
-      if(BH->get_function_name() == "__builtin_cond_expr32") is_builtin_cond_expr32 = true;
+      if(BH->get_function_name() == "__bambu_readc" || BH->get_function_name() == "__bambu_read4c")
+         is_readc_needed = true;
+      if(BH->get_function_name() == "__builtin_cond_expr32")
+         is_builtin_cond_expr32 = true;
    }
    if(is_readc_needed)
    {
@@ -369,7 +383,8 @@ void CWriter::WriteHeader()
           "long long int __bambu_read4c(int fd){long long int buf;int res = read(fd,&buf,4);return res == 4 ? buf : (res==3 ? (buf|(1ULL<<35)) : (res==2 ? (buf|(1ULL<<35)|(1ULL<<34)) : (res == 1 ? (buf|(1ULL<<35)|(1ULL<<34)|(1ULL<<33)) : "
           "(buf|(1ULL<<35)|(1ULL<<34)|(1ULL<<33)|(1ULL<<32))) ));}\n");
    }
-   if(is_builtin_cond_expr32) indented_output_stream->Append("#define __builtin_cond_expr32(cond, value1, value2) cond ? value1 : value2\n\n");
+   if(is_builtin_cond_expr32)
+      indented_output_stream->Append("#define __builtin_cond_expr32(cond, value1, value2) cond ? value1 : value2\n\n");
 }
 
 void CWriter::WriteGlobalDeclarations()
@@ -387,7 +402,10 @@ void CWriter::WriteGlobalDeclarations()
    // Write the declarations for the global variables
    var_pp_functorRef variableFunctor(new std_var_pp_functor(behavioral_helper));
    CustomSet<unsigned int>::const_iterator gblVars, gblVarsEnd;
-   for(gblVars = gblVariables.begin(), gblVarsEnd = gblVariables.end(); gblVars != gblVarsEnd; ++gblVars) { DeclareVariable(*gblVars, globallyDeclVars, globally_declared_types, behavioral_helper, variableFunctor); }
+   for(gblVars = gblVariables.begin(), gblVarsEnd = gblVariables.end(); gblVars != gblVarsEnd; ++gblVars)
+   {
+      DeclareVariable(*gblVars, globallyDeclVars, globally_declared_types, behavioral_helper, variableFunctor);
+   }
    indented_output_stream->Append("\n");
    if(AppM->CGetCallGraphManager()->ExistsAddressedFunction())
    {
@@ -415,7 +433,10 @@ void CWriter::DeclareFunctionTypes(const unsigned int funId)
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Parameter type " + STR(*parameter_type));
    }
    const unsigned int return_type_index = behavioral_helper->GetFunctionReturnType(funId);
-   if(return_type_index) { DeclareType(return_type_index, behavioral_helper, globally_declared_types); }
+   if(return_type_index)
+   {
+      DeclareType(return_type_index, behavioral_helper, globally_declared_types);
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Declared function types for " + behavioral_helper->get_function_name());
 }
 
@@ -443,12 +464,16 @@ void CWriter::WriteFunctionDeclaration(const unsigned int funId)
    const std::string& funName = behavioral_helper->get_function_name();
 #if HAVE_ARM_COMPILER
    if(Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_ARM_GCC and behavioral_helper->is_var_args())
-   { THROW_ERROR_CODE(VARARGS_EC, "Source code containing vargs function (" + behavioral_helper->get_function_name() + ")produced using arm compiler can not be compiled by x86 compilers"); }
-   #endif
+   {
+      THROW_ERROR_CODE(VARARGS_EC, "Source code containing vargs function (" + behavioral_helper->get_function_name() + ")produced using arm compiler can not be compiled by x86 compilers");
+   }
+#endif
 #if HAVE_SPARC_COMPILER
    if(Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_SPARC_GCC and behavioral_helper->is_var_args())
-   { THROW_ERROR_CODE(VARARGS_EC, "Source code containing vargs function (" + behavioral_helper->get_function_name() + ") produced using sparc compiler can not be compiled by x86 compilers"); }
-   #endif
+   {
+      THROW_ERROR_CODE(VARARGS_EC, "Source code containing vargs function (" + behavioral_helper->get_function_name() + ") produced using sparc compiler can not be compiled by x86 compilers");
+   }
+#endif
    if(funName != "main")
    {
       this->instrWriter->declareFunction(funId);
@@ -467,13 +492,15 @@ void CWriter::StartFunctionBody(const unsigned int function_id)
    const std::list<unsigned int>& funParams = behavioral_helper->get_parameters();
    for(unsigned int funParam : funParams)
    {
-      if(vars.find(funParam) != vars.end()) vars.erase(funParam);
+      if(vars.find(funParam) != vars.end())
+         vars.erase(funParam);
    }
 
    const CustomSet<unsigned int>& gblVariables = AppM->get_global_variables();
    for(unsigned int gblVariable : gblVariables)
    {
-      if(vars.find(gblVariable) != vars.end()) vars.erase(gblVariable);
+      if(vars.find(gblVariable) != vars.end())
+         vars.erase(gblVariable);
    }
 
    var_pp_functorRef variableFunctor(new std_var_pp_functor(behavioral_helper));
@@ -486,16 +513,21 @@ void CWriter::StartFunctionBody(const unsigned int function_id)
 void CWriter::EndFunctionBody(unsigned int funId)
 {
    indented_output_stream->Append("}\n");
-   if(this->verbose) indented_output_stream->Append("//end of function; id: " + STR(funId) + "\n");
+   if(this->verbose)
+      indented_output_stream->Append("//end of function; id: " + STR(funId) + "\n");
    indented_output_stream->Append("\n");
    basic_block_prefix.clear();
    basic_block_tail.clear();
    renaming_table.clear();
 }
 
-void CWriter::writePreInstructionInfo(const FunctionBehaviorConstRef, const vertex) {}
+void CWriter::writePreInstructionInfo(const FunctionBehaviorConstRef, const vertex)
+{
+}
 
-void CWriter::writePostInstructionInfo(const FunctionBehaviorConstRef, const vertex) {}
+void CWriter::writePostInstructionInfo(const FunctionBehaviorConstRef, const vertex)
+{
+}
 
 void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
 {
@@ -516,7 +548,10 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
    // mark this basic block as analyzed
    bb_analyzed.insert(current_vertex);
    // print a comment with info on the basicblock
-   if(this->verbose) { indented_output_stream->Append("//Basic block " + STR(bb_number) + " - loop " + STR(bb_node_info->loop_id) + "\n"); }
+   if(this->verbose)
+   {
+      indented_output_stream->Append("//Basic block " + STR(bb_number) + " - loop " + STR(bb_node_info->loop_id) + "\n");
+   }
    // check if some extra strings must be printed before or after the basic
    // block. this is used for splitting the phi nodes
    bool add_phi_nodes_assignment_prefix = basic_block_prefix.find(bb_number) != basic_block_prefix.end();
@@ -529,7 +564,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
       const unsigned int& bb_number_PD = bb_node_info_pd->block->number;
 
       std::string frontier_string;
-      for(const auto bb : bb_frontier) frontier_string += "BB" + STR(local_rec_bb_fcfgGraph->CGetBBNodeInfo(bb)->block->number) + " ";
+      for(const auto bb : bb_frontier)
+         frontier_string += "BB" + STR(local_rec_bb_fcfgGraph->CGetBBNodeInfo(bb)->block->number) + " ";
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Frontier at the moment is: " + frontier_string);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Its post-dominator is BB" + STR(bb_number_PD));
    }
@@ -548,9 +584,12 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
    const auto& stmts_list = bb_node_info->statements_list;
    for(const auto st : boost::adaptors::reverse(stmts_list))
    {
-      if(local_rec_instructions.find(st) == local_rec_instructions.end()) continue;
-      if(GET_TYPE(local_rec_cfgGraph, st) & TYPE_VPHI) continue;
-      if((GET_TYPE(local_rec_cfgGraph, st) & TYPE_INIT) != 0) continue;
+      if(local_rec_instructions.find(st) == local_rec_instructions.end())
+         continue;
+      if(GET_TYPE(local_rec_cfgGraph, st) & TYPE_VPHI)
+         continue;
+      if((GET_TYPE(local_rec_cfgGraph, st) & TYPE_INIT) != 0)
+         continue;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Considering operation " + GET_NAME(local_rec_cfgGraph, st));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "This is basic block is not empty in this task. Last operation to be printed id " + GET_NAME(local_rec_cfgGraph, st));
       last_stmt = st;
@@ -564,10 +603,12 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
    THROW_ASSERT(!last_statement_is_a_cond_or_goto || !is_there || (last_statement_is_a_cond_or_goto && last_stmt == stmts_list.back()), "inconsistent recursion");
    // check if the basic block starts with a label
    bool start_with_a_label = local_rec_behavioral_helper->start_with_a_label(bb_node_info->block);
-   if(start_with_a_label) INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Basic block starts with a label");
+   if(start_with_a_label)
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Basic block starts with a label");
    // check if the label is already in the goto list
    bool add_bb_label = goto_list.find(current_vertex) != goto_list.end();
-   if(add_bb_label) INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Basic block should start with a label");
+   if(add_bb_label)
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Basic block should start with a label");
 
    if(!add_bb_label and !start_with_a_label and boost::in_degree(current_vertex, *local_rec_bb_fcfgGraph) > 1)
    {
@@ -605,7 +646,10 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
    /// print each instruction
    if(bracket)
    {
-      if(analyze_bb_PD || is_there || add_bb_label || add_phi_nodes_assignment || add_phi_nodes_assignment_prefix) { indented_output_stream->Append("{\n"); }
+      if(analyze_bb_PD || is_there || add_bb_label || add_phi_nodes_assignment || add_phi_nodes_assignment_prefix)
+      {
+         indented_output_stream->Append("{\n");
+      }
       else
          add_semicolon = true;
    }
@@ -631,7 +675,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
 
       // fill the renaming table in case it is needed
       if(renaming_table.find(current_vertex) != renaming_table.end())
-         for(const auto& rvt : renaming_table.find(current_vertex)->second) BehavioralHelper::rename_a_variable(rvt.first, rvt.second);
+         for(const auto& rvt : renaming_table.find(current_vertex)->second)
+            BehavioralHelper::rename_a_variable(rvt.first, rvt.second);
       bool label_has_to_be_printed = start_with_a_label;
       bool prefix_has_to_be_printed = basic_block_prefix.find(bb_number) != basic_block_prefix.end();
       do
@@ -642,12 +687,14 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
             prefix_has_to_be_printed = false;
             indented_output_stream->Append(basic_block_prefix.find(bb_number)->second);
          }
-         if(local_rec_instructions.find(*vIter) == local_rec_instructions.end()) continue;
+         if(local_rec_instructions.find(*vIter) == local_rec_instructions.end())
+            continue;
          // If there is not any label to be printed, label_has_to_be_printed is already false, otherwise the label will be printed during this loop iteration
          label_has_to_be_printed = false;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Preparing printing of operation " + GET_NAME(local_rec_cfgGraph, *vIter));
          // Write in the C file extra information before the instruction itself
-         if(this->verbose) indented_output_stream->Append("//Instruction: " + GET_NAME(local_rec_cfgGraph, *vIter) + "\n");
+         if(this->verbose)
+            indented_output_stream->Append("//Instruction: " + GET_NAME(local_rec_cfgGraph, *vIter) + "\n");
          writePreInstructionInfo(local_rec_function_behavior, *vIter);
          // Now I print the instruction
          if(start_with_a_label && vIter == vIterBegin)
@@ -655,19 +702,22 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
             InEdgeIterator inE, inEEnd;
             for(boost::tie(inE, inEEnd) = boost::in_edges(current_vertex, *local_rec_bb_fcfgGraph); inE != inEEnd; inE++)
             {
-               if(FB_CFG_SELECTOR & local_rec_bb_fcfgGraph->GetSelector(*inE)) indented_output_stream->Append("//start of a loop\n");
+               if(FB_CFG_SELECTOR & local_rec_bb_fcfgGraph->GetSelector(*inE))
+                  indented_output_stream->Append("//start of a loop\n");
             }
          }
          bool isLastIntruction = last_stmt == *vIter;
          /// in case we have phi nodes we check if some assignments should be printed
          bool print_phi_now = ((GET_TYPE(local_rec_cfgGraph, *vIter) & (TYPE_IF | TYPE_WHILE | TYPE_FOR | TYPE_SWITCH | TYPE_MULTIIF))) || local_rec_behavioral_helper->end_with_a_cond_or_goto(bb_node_info->block);
-         if(add_phi_nodes_assignment && isLastIntruction && print_phi_now) indented_output_stream->Append(basic_block_tail.find(bb_number)->second);
+         if(add_phi_nodes_assignment && isLastIntruction && print_phi_now)
+            indented_output_stream->Append(basic_block_tail.find(bb_number)->second);
          if((GET_TYPE(local_rec_cfgGraph, *vIter) & (TYPE_VPHI)) == 0)
          {
             if(GET_TYPE(local_rec_cfgGraph, *vIter) & (TYPE_WHILE | TYPE_FOR) and this->verbose and local_rec_function_behavior->CGetLoops()->CGetLoop(bb_node_info->loop_id)->loop_type & DOALL_LOOP)
                indented_output_stream->Append("//#pragma omp parallel for\n");
             instrWriter->write(local_rec_function_behavior, *vIter, local_rec_variableFunctor);
-            if((GET_TYPE(local_rec_cfgGraph, *vIter) & TYPE_LABEL) == 0) add_semicolon = false;
+            if((GET_TYPE(local_rec_cfgGraph, *vIter) & TYPE_LABEL) == 0)
+               add_semicolon = false;
          }
          else if(this->verbose)
          {
@@ -675,9 +725,11 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
          }
          // Write in the C file extra information after the instruction statement
          writePostInstructionInfo(local_rec_function_behavior, *vIter);
-         if(!isLastIntruction) continue;
+         if(!isLastIntruction)
+            continue;
          BehavioralHelper::clear_renaming_table();
-         if(add_phi_nodes_assignment && !print_phi_now) indented_output_stream->Append(basic_block_tail.find(bb_number)->second);
+         if(add_phi_nodes_assignment && !print_phi_now)
+            indented_output_stream->Append(basic_block_tail.find(bb_number)->second);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---This is not the last statement");
          // Now I check if this is a control statement and I consequently print
          // the instructions contained in its branches
@@ -708,7 +760,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
             }
             else
                indented_output_stream->Append("{}\n");
-            if(add_false_to_goto) goto_list.erase(false_vertex);
+            if(add_false_to_goto)
+               goto_list.erase(false_vertex);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Printed then");
             if(bb_frontier.find(false_vertex) == bb_frontier.end())
             {
@@ -748,7 +801,10 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
             const vertex true_vertex = bb_graph_info->bb_index_map.find(bb_true_number)->second;
             if(bb_frontier.find(true_vertex) == bb_frontier.end())
             {
-               if(bb_analyzed.find(true_vertex) == bb_analyzed.end()) { WriteBodyLoop(local_rec_function_behavior, bb_node_info->block->number, true_vertex, true); }
+               if(bb_analyzed.find(true_vertex) == bb_analyzed.end())
+               {
+                  WriteBodyLoop(local_rec_function_behavior, bb_node_info->block->number, true_vertex, true);
+               }
                else
                {
                   THROW_ERROR("Body of a loop has yet been printed before the while statement");
@@ -763,7 +819,10 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
             const vertex false_vertex = bb_graph_info->bb_index_map.find(bb_false_number)->second;
             if(bb_frontier.find(false_vertex) == bb_frontier.end())
             {
-               if(bb_analyzed.find(false_vertex) == bb_analyzed.end()) { writeRoutineInstructions_rec(false_vertex, false); }
+               if(bb_analyzed.find(false_vertex) == bb_analyzed.end())
+               {
+                  writeRoutineInstructions_rec(false_vertex, false);
+               }
                else
                {
                   indented_output_stream->Append("goto " + basic_blocks_labels.find(bb_false_number)->second + ";\n");
@@ -787,7 +846,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
                {
                   bool to_be_added = bb_frontier.find(bb_vertex) == bb_frontier.end() && goto_list.find(bb_vertex) == goto_list.end();
                   add_elseif_to_goto[bb_index_num] = to_be_added;
-                  if(to_be_added) goto_list.insert(bb_vertex);
+                  if(to_be_added)
+                     goto_list.insert(bb_vertex);
                }
                else
                   add_elseif_to_goto[bb_index_num] = false;
@@ -807,10 +867,14 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
                   else
                      indented_output_stream->Append("else\n");
                }
-               if(add_elseif_to_goto.find(bb_index_num) != add_elseif_to_goto.end() && add_elseif_to_goto.find(bb_index_num)->second) goto_list.erase(bb_vertex);
+               if(add_elseif_to_goto.find(bb_index_num) != add_elseif_to_goto.end() && add_elseif_to_goto.find(bb_index_num)->second)
+                  goto_list.erase(bb_vertex);
                if(bb_frontier.find(bb_vertex) == bb_frontier.end())
                {
-                  if(bb_analyzed.find(bb_vertex) == bb_analyzed.end()) { writeRoutineInstructions_rec(bb_vertex, true); }
+                  if(bb_analyzed.find(bb_vertex) == bb_analyzed.end())
+                  {
+                     writeRoutineInstructions_rec(bb_vertex, true);
+                  }
                   else
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Successor has already been examined");
@@ -851,7 +915,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Default is empty");
                         empty_block = true;
                         indented_output_stream->Append("default:\n");
-                        if(current_vertex == dominators->get_immediate_dominator(next_bb)) analyze_bb_PD = true;
+                        if(current_vertex == dominators->get_immediate_dominator(next_bb))
+                           analyze_bb_PD = true;
                         break;
                      }
                      indented_output_stream->Append("default");
@@ -899,7 +964,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
                for(boost::tie(oE, oEEnd) = boost::out_edges(current_vertex, *local_rec_bb_fcfgGraph); oE != oEEnd; oE++)
                {
                   vertex next_bb = boost::target(*oE, *local_rec_bb_fcfgGraph);
-                  if(bb_frontier.find(next_bb) != bb_frontier.end()) continue;
+                  if(bb_frontier.find(next_bb) != bb_frontier.end())
+                     continue;
                   goto_list.insert(next_bb);
                }
             }
@@ -934,7 +1000,10 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
                      continue;
                   }
                }
-               if(boost::in_degree(next_bb, *local_rec_bb_fcfgGraph) == 1) { writeRoutineInstructions_rec(next_bb, false); }
+               if(boost::in_degree(next_bb, *local_rec_bb_fcfgGraph) == 1)
+               {
+                  writeRoutineInstructions_rec(next_bb, false);
+               }
                else
                {
                   const BBNodeInfoConstRef next_bb_node_info = local_rec_bb_fcfgGraph->CGetBBNodeInfo(next_bb);
@@ -972,13 +1041,15 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Examining the only? successor");
             vertex next_bb = boost::target(*oE, *local_rec_bb_fcfgGraph);
-            if(bb_frontier.find(next_bb) != bb_frontier.end() or boost::in_degree(next_bb, *local_rec_bb_fcfgGraph) == 1) continue;
+            if(bb_frontier.find(next_bb) != bb_frontier.end() or boost::in_degree(next_bb, *local_rec_bb_fcfgGraph) == 1)
+               continue;
             /// Last basic block of a while/for loop
             if(FB_CFG_SELECTOR & local_rec_bb_fcfgGraph->GetSelector(*oE))
             {
                const vertex target = boost::target(*oE, *local_rec_bb_fcfgGraph);
                const BBNodeInfoConstRef target_bb_node_info = local_rec_bb_fcfgGraph->CGetBBNodeInfo(target);
-               if(target_bb_node_info->statements_list.size() and (GET_TYPE(local_rec_cfgGraph, *(target_bb_node_info->statements_list.rbegin())) & (TYPE_WHILE | TYPE_FOR))) continue;
+               if(target_bb_node_info->statements_list.size() and (GET_TYPE(local_rec_cfgGraph, *(target_bb_node_info->statements_list.rbegin())) & (TYPE_WHILE | TYPE_FOR)))
+                  continue;
             }
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Successor does not belong to frontier");
@@ -991,7 +1062,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
          }
       }
    }
-   if(add_semicolon) indented_output_stream->Append(";\n"); /// added a fake indent
+   if(add_semicolon)
+      indented_output_stream->Append(";\n"); /// added a fake indent
 
    if(analyze_bb_PD)
    {
@@ -1001,7 +1073,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Printing the post dominator");
       writeRoutineInstructions_rec(bb_PD, false);
    }
-   if((analyze_bb_PD || is_there || add_bb_label || add_phi_nodes_assignment || add_phi_nodes_assignment_prefix) && bracket) indented_output_stream->Append("}\n");
+   if((analyze_bb_PD || is_there || add_bb_label || add_phi_nodes_assignment || add_phi_nodes_assignment_prefix) && bracket)
+      indented_output_stream->Append("}\n");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ended writing basic block " + STR(bb_number));
 }
@@ -1015,7 +1088,10 @@ void CWriter::compute_phi_nodes(const FunctionBehaviorConstRef function_behavior
    CustomSet<unsigned int> phi_instructions;
    for(const auto instruction : instructions)
    {
-      if(GET_TYPE(cfgGraph, instruction) & TYPE_PHI) { phi_instructions.insert(cfgGraph->CGetOpNodeInfo(instruction)->GetNodeId()); }
+      if(GET_TYPE(cfgGraph, instruction) & TYPE_PHI)
+      {
+         phi_instructions.insert(cfgGraph->CGetOpNodeInfo(instruction)->GetNodeId());
+      }
    }
    if(!phi_instructions.empty())
    {
@@ -1144,7 +1220,10 @@ void CWriter::writeRoutineInstructions(const unsigned int function_index, const 
                           std::inserter(not_yet_considered, not_yet_considered.begin()) /*result*/);
    }
    const vertex exit = bb_fcfgGraph->CGetBBGraphInfo()->exit_vertex;
-   if(goto_list.find(exit) != goto_list.end() && basic_blocks_labels.find(bloc::EXIT_BLOCK_ID) != basic_blocks_labels.end()) { indented_output_stream->Append(basic_blocks_labels.find(bloc::EXIT_BLOCK_ID)->second + ":\n"); }
+   if(goto_list.find(exit) != goto_list.end() && basic_blocks_labels.find(bloc::EXIT_BLOCK_ID) != basic_blocks_labels.end())
+   {
+      indented_output_stream->Append(basic_blocks_labels.find(bloc::EXIT_BLOCK_ID)->second + ":\n");
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--CWriter::writeRoutineInstructions - End");
 }
 
@@ -1177,21 +1256,31 @@ void CWriter::DeclareType(unsigned int varType, const BehavioralHelperConstRef b
          return;
       }
       const std::unordered_set<unsigned int> types_to_be_declared_before = tree_helper::GetTypesToBeDeclaredBefore(TM, real_var_type, without_transformation);
-      for(const auto type_to_be_declared : types_to_be_declared_before) { DeclareType(type_to_be_declared, behavioral_helper, locally_declared_types); }
+      for(const auto type_to_be_declared : types_to_be_declared_before)
+      {
+         DeclareType(type_to_be_declared, behavioral_helper, locally_declared_types);
+      }
       if(tree_helper::HasToBeDeclared(TM, real_var_type))
       {
-         if(this->verbose) { indented_output_stream->Append("//declaration of type " + STR(varType) + "(" + STR(real_var_type) + ")\n"); }
+         if(this->verbose)
+         {
+            indented_output_stream->Append("//declaration of type " + STR(varType) + "(" + STR(real_var_type) + ")\n");
+         }
          indented_output_stream->Append(behavioral_helper->print_type_declaration(real_var_type) + ";\n");
       }
       const std::unordered_set<unsigned int> types_to_be_declared_after = tree_helper::GetTypesToBeDeclaredAfter(TM, real_var_type, without_transformation);
-      for(const auto type_to_be_declared : types_to_be_declared_after) { DeclareType(type_to_be_declared, behavioral_helper, locally_declared_types); }
+      for(const auto type_to_be_declared : types_to_be_declared_after)
+      {
+         DeclareType(type_to_be_declared, behavioral_helper, locally_declared_types);
+      }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Declared type " + STR(varType));
 }
 
 void CWriter::DeclareVariable(unsigned int curVar, CustomSet<unsigned int>& already_declared_variables, CustomSet<std::string>& locally_declared_types, const BehavioralHelperConstRef behavioral_helper, const var_pp_functorConstRef varFunc)
 {
-   if(already_declared_variables.find(curVar) != already_declared_variables.end()) return;
+   if(already_declared_variables.find(curVar) != already_declared_variables.end())
+      return;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Declaring variable (" + STR(curVar) + ") " + behavioral_helper->PrintVariable(curVar));
    already_declared_variables.insert(curVar);
 
@@ -1203,7 +1292,10 @@ void CWriter::DeclareVariable(unsigned int curVar, CustomSet<unsigned int>& alre
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "For variable " + STR(curVar) + " recursing on " + STR(*initVarsIter));
          if(already_declared_variables.find(*initVarsIter) == already_declared_variables.end() && globallyDeclVars.find(*initVarsIter) == globallyDeclVars.end())
-         { DeclareVariable(*initVarsIter, already_declared_variables, locally_declared_types, behavioral_helper, varFunc); } }
+         {
+            DeclareVariable(*initVarsIter, already_declared_variables, locally_declared_types, behavioral_helper, varFunc);
+         }
+      }
    }
    const unsigned int variable_type = tree_helper::get_type_index(TM, curVar);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Type is " + STR(variable_type));
@@ -1214,17 +1306,22 @@ void CWriter::DeclareVariable(unsigned int curVar, CustomSet<unsigned int>& alre
 #endif
    )
    {
-      if(verbose) indented_output_stream->Append("//declaring variable " + STR(curVar) + " - type: " + STR(behavioral_helper->get_type(curVar)) + "\n");
+      if(verbose)
+         indented_output_stream->Append("//declaring variable " + STR(curVar) + " - type: " + STR(behavioral_helper->get_type(curVar)) + "\n");
       indented_output_stream->Append(behavioral_helper->PrintVarDeclaration(curVar, varFunc, true) + ";\n");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Declared variable " + behavioral_helper->PrintVariable(curVar));
 }
 
-const InstructionWriterRef CWriter::getInstructionWriter() const { return instrWriter; }
+const InstructionWriterRef CWriter::getInstructionWriter() const
+{
+   return instrWriter;
+}
 
 void CWriter::writeInclude(const std::string& file_name)
 {
-   if(file_name.find(".h") == std::string::npos || writtenIncludes.find(file_name) != writtenIncludes.end()) return;
+   if(file_name.find(".h") == std::string::npos || writtenIncludes.find(file_name) != writtenIncludes.end())
+      return;
    writtenIncludes.insert(file_name);
    indented_output_stream->Append("#include \"" + file_name + "\"\n");
 }
@@ -1235,24 +1332,29 @@ void CWriter::DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declare
    const auto p = behavioral_helper->get_parameters();
    const auto TreeMan = TM;
    const auto is_to_declare = [&p, &TreeMan](unsigned int obj) -> bool {
-      if(std::find(p.cbegin(), p.cend(), obj) != p.cend()) return false;
+      if(std::find(p.cbegin(), p.cend(), obj) != p.cend())
+         return false;
       const tree_nodeRef node = TreeMan->get_tree_node_const(obj);
-      if(node->get_kind() == parm_decl_K) return false;
+      if(node->get_kind() == parm_decl_K)
+         return false;
       auto* sa = GetPointer<ssa_name>(node);
-      if(sa and (sa->volatile_flag || GET_NODE(sa->CGetDefStmt())->get_kind() == gimple_nop_K) and sa->var and GET_NODE(sa->var)->get_kind() == parm_decl_K) return false;
+      if(sa and (sa->volatile_flag || GET_NODE(sa->CGetDefStmt())->get_kind() == gimple_nop_K) and sa->var and GET_NODE(sa->var)->get_kind() == parm_decl_K)
+         return false;
       return true;
    };
 
    unsigned int funId = behavioral_helper->get_function_index();
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Declaring " + STR(to_be_declared.size()) + " local variables");
    for(const auto var : to_be_declared)
-      if(is_to_declare(var)) DeclareVariable(var, already_declared_variables, already_declared_types, behavioral_helper, varFunc);
+      if(is_to_declare(var))
+         DeclareVariable(var, already_declared_variables, already_declared_types, behavioral_helper, varFunc);
    var_pp_functorRef variableFunctor(new std_var_pp_functor(behavioral_helper));
    const FunctionBehaviorConstRef function_behavior = AppM->CGetFunctionBehavior(funId);
    const OpGraphConstRef data = function_behavior->CGetOpGraph(FunctionBehavior::DFG);
    OpVertexSet vertices = OpVertexSet(data);
    VertexIterator v, vEnd;
-   for(boost::tie(v, vEnd) = boost::vertices(*data); v != vEnd; v++) vertices.insert(*v);
+   for(boost::tie(v, vEnd) = boost::vertices(*data); v != vEnd; v++)
+      vertices.insert(*v);
    THROW_ASSERT(vertices.size() > 0, "Graph for function " + behavioral_helper->get_function_name() + " is empty");
    compute_phi_nodes(function_behavior, vertices, variableFunctor);
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Declaring local variables");
@@ -1300,7 +1402,8 @@ void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const
       const BBNodeInfoConstRef si = bb_fcfgGraph->CGetBBNodeInfo(s);
       for(const auto& phi_op : si->block->CGetPhiList())
       {
-         if(phi_instructions.find(GET_INDEX_NODE(phi_op)) == phi_instructions.end()) continue;
+         if(phi_instructions.find(GET_INDEX_NODE(phi_op)) == phi_instructions.end())
+            continue;
          auto* pn = GetPointer<gimple_phi>(GET_NODE(phi_op));
          tree_nodeRef dest = pn->res;
          unsigned int dest_i = GET_INDEX_NODE(pn->res);
@@ -1358,9 +1461,13 @@ void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const
             for(boost::tie(o_it, o_it_end) = boost::out_edges(b, *bb_domGraph); o_it != o_it_end; ++o_it)
             {
                vertex tgt_bb = boost::target(*o_it, *bb_domGraph);
-               if(tgt_bb == b) continue;
+               if(tgt_bb == b)
+                  continue;
                const BBNodeInfoConstRef tgt_bi = bb_domGraph->CGetBBNodeInfo(tgt_bb);
-               if(tgt_bi && tgt_bi->block->live_in.find(dest_i) != tgt_bi->block->live_in.end()) { add_copy = true; }
+               if(tgt_bi && tgt_bi->block->live_in.find(dest_i) != tgt_bi->block->live_in.end())
+               {
+                  add_copy = true;
+               }
             }
             if(add_copy)
             {
@@ -1700,9 +1807,14 @@ void CWriter::WriteHashTableImplementation()
    indented_output_stream->Append("#define st_foreach_item_int(table, gen, key, value) for(gen=st_init_gen(table); st_gen_int(gen,key,value) || (st_free_gen(gen),0);)\n");
 }
 
-void CWriter::WriteFile(const std::string& file_name) { indented_output_stream->WriteFile(file_name); }
+void CWriter::WriteFile(const std::string& file_name)
+{
+   indented_output_stream->WriteFile(file_name);
+}
 
-void CWriter::WriteBBHeader(unsigned int) {}
+void CWriter::WriteBBHeader(unsigned int)
+{
+}
 
 void CWriter::WriteBuiltinWaitCall()
 {
@@ -1723,20 +1835,26 @@ void CWriter::WriteBuiltinWaitCall()
          std::string type = BH->print_type(type_index);
          if(BH->is_int(type_index))
          {
-            if(BH->get_size(type_index) < 32) type = "int";
+            if(BH->get_size(type_index) < 32)
+               type = "int";
          }
          else if(BH->is_unsigned(type_index))
          {
-            if(BH->get_size(type_index) < 32) type = "unsigned int";
+            if(BH->get_size(type_index) < 32)
+               type = "unsigned int";
          }
          else if(BH->is_real(type_index))
          {
-            if(BH->get_size(type_index) < 64) type = "double";
+            if(BH->get_size(type_index) < 64)
+               type = "double";
          }
          std::string name = BH->PrintVariable(I);
          typeAndName.push_back(std::make_pair(type, name));
       }
-      for(const auto& I : typeAndName) { indented_output_stream->Append(I.first + " " + I.second + " = va_arg(ap, " + I.first + ");\n"); }
+      for(const auto& I : typeAndName)
+      {
+         indented_output_stream->Append(I.first + " " + I.second + " = va_arg(ap, " + I.first + ");\n");
+      }
       unsigned int returnTypeIdx = BH->GetFunctionReturnType(id);
       std::string returnType;
       if(returnTypeIdx)
@@ -1744,25 +1862,34 @@ void CWriter::WriteBuiltinWaitCall()
          returnType = BH->print_type(returnTypeIdx);
          if(BH->is_int(returnTypeIdx))
          {
-            if(BH->get_size(returnTypeIdx) < 32) returnType = "int";
+            if(BH->get_size(returnTypeIdx) < 32)
+               returnType = "int";
          }
          else if(BH->is_unsigned(returnTypeIdx))
          {
-            if(BH->get_size(returnTypeIdx) < 32) returnType = "unsigned int";
+            if(BH->get_size(returnTypeIdx) < 32)
+               returnType = "unsigned int";
          }
          else if(BH->is_real(returnTypeIdx))
          {
-            if(BH->get_size(returnTypeIdx) < 64) returnType = "double";
+            if(BH->get_size(returnTypeIdx) < 64)
+               returnType = "double";
          }
       }
       else
          returnType = "void";
-      if(returnType != "void") { indented_output_stream->Append(returnType + " res = "); }
+      if(returnType != "void")
+      {
+         indented_output_stream->Append(returnType + " res = ");
+      }
       indented_output_stream->Append(BH->get_function_name() + "(");
       size_t typeAndNameSize = typeAndName.size();
       if(typeAndNameSize)
       {
-         for(size_t i = 0; i < typeAndNameSize - 1; ++i) { indented_output_stream->Append(typeAndName[i].second + ","); }
+         for(size_t i = 0; i < typeAndNameSize - 1; ++i)
+         {
+            indented_output_stream->Append(typeAndName[i].second + ",");
+         }
          indented_output_stream->Append(typeAndName[typeAndNameSize - 1].second);
       }
       indented_output_stream->Append(");\n");

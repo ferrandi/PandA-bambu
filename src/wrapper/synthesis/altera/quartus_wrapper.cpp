@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file quartus_wrapper.cpp
  * @brief Wrapper to quartus 14.0 and newer
@@ -38,27 +38,26 @@
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "quartus_wrapper.hpp"
 
-///wrapper/synthesis include
+/// wrapper/synthesis include
 #include "xml_script_command.hpp"
 
-QuartusWrapper::QuartusWrapper(const ParameterConstRef& _Param, const std::string& _output_dir, const target_deviceRef& _device) :
-   AlteraWrapper(_Param, QUARTUS_FLOW_TOOL_EXEC, _device, _output_dir, QUARTUS_FLOW_TOOL_ID)
-{}
+QuartusWrapper::QuartusWrapper(const ParameterConstRef& _Param, const std::string& _output_dir, const target_deviceRef& _device) : AlteraWrapper(_Param, QUARTUS_FLOW_TOOL_EXEC, _device, _output_dir, QUARTUS_FLOW_TOOL_ID)
+{
+}
 
-QuartusWrapper::~QuartusWrapper()
-= default;
+QuartusWrapper::~QuartusWrapper() = default;
 std::string QuartusWrapper::get_command_line(const DesignParametersRef& dp) const
 {
    std::ostringstream s;
    s << get_tool_exec() << " -t " << script_name;
-   for (const auto & option : xml_tool_options)
+   for(const auto& option : xml_tool_options)
    {
-      if (option->checkCondition(dp))
+      if(option->checkCondition(dp))
       {
          std::string value = toString(option, dp);
          replace_parameters(dp, value);

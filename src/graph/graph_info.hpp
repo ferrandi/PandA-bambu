@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file graph_info.hpp
  * @brief Base class for graph property.
@@ -40,41 +40,38 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef GRAPH_INFO_HPP
 #define GRAPH_INFO_HPP
 
-#include <ostream>
 #include "refcount.hpp"
+#include <ostream>
 /**
-* @name forward declarations
-*/
+ * @name forward declarations
+ */
 //@{
 REF_FORWARD_DECL(GraphInfo);
 //@}
 
-
 /**
  * Base class storing user data information to the whole graph.
  * This class is associated with the graph data structure.
-*/
+ */
 struct GraphInfo
 {
    /**
     * Constructor
     */
-   GraphInfo()
-   = default;
+   GraphInfo() = default;
 
    /// Destructor
-   virtual ~GraphInfo()= default;
+   virtual ~GraphInfo() = default;
 };
 
 /**
  * RefCount type definition of the GraphInfo class structure
-*/
+ */
 typedef refcount<GraphInfo> GraphInfoRef;
 typedef refcount<const GraphInfo> GraphInfoConstRef;
 
 #endif
-

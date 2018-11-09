@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file objective_function.hpp
  * @brief This file defines the objective function class.
@@ -42,16 +42,16 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef OBJECTIVE_FUNCTION_HPP
 #define OBJECTIVE_FUNCTION_HPP
 
-#include <iosfwd>
 #include "refcount.hpp"
+#include <iosfwd>
 
 /**
  * @name Forward declarations.
-*/
+ */
 //@{
 REF_FORWARD_DECL(problem_dim);
 REF_FORWARD_DECL(meilp_solver);
@@ -62,30 +62,26 @@ REF_FORWARD_DECL(meilp_solver);
  */
 class objective_function
 {
+ protected:
+ public:
+   /**
+    * This method prints the class to the standard output stream.
+    * @param os the output stream.
+    */
+   virtual void print(std::ostream&) const
+   {
+   }
 
-protected:
+   virtual void set_objective_function(meilp_solverRef const& MS, problem_dimRef const& p_dimension) = 0;
 
-public:
-
-
-  /**
-   * This method prints the class to the standard output stream.
-   * @param os the output stream.
-   */
-  virtual void print(std::ostream&) const {}
-
-
-  virtual void set_objective_function(meilp_solverRef const &MS, problem_dimRef const &p_dimension)=0;
-
-  /**
-   * The class constructor.
-   */
-  objective_function();
-  /**
-   * The class Destructor.
-   */
-  virtual ~objective_function();
-
+   /**
+    * The class constructor.
+    */
+   objective_function();
+   /**
+    * The class Destructor.
+    */
+   virtual ~objective_function();
 };
 
 typedef refcount<objective_function> objective_functionRef;

@@ -3,7 +3,7 @@
    Copyright (C) 1997-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Richard Henderson (rth@cygnus.com) and
-		  Jakub Jelinek (jj@ultra.linux.cz).
+        Jakub Jelinek (jj@ultra.linux.cz).
 
    The GNU C Library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -28,22 +28,24 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "soft-fp.h"
 #include "double.h"
+#include "soft-fp.h"
 
-DFtype
-__floatdidf (DItype i)
+DFtype __floatdidf(DItype i)
 {
-  FP_DECL_EX;
-  FP_DECL_D (A);
-  DFtype a;
+   FP_DECL_EX;
+   FP_DECL_D(A);
+   DFtype a;
 
-  FP_INIT_ROUNDMODE;
-  FP_FROM_INT_D (A, i, DI_BITS, UDItype);
-  FP_PACK_RAW_D (a, A);
-  FP_HANDLE_EXCEPTIONS;
+   FP_INIT_ROUNDMODE;
+   FP_FROM_INT_D(A, i, DI_BITS, UDItype);
+   FP_PACK_RAW_D(a, A);
+   FP_HANDLE_EXCEPTIONS;
 
-  return a;
+   return a;
 }
 
-inline DFtype __int64_to_float64if (DItype i) {return __floatdidf (i);}
+inline DFtype __int64_to_float64if(DItype i)
+{
+   return __floatdidf(i);
+}

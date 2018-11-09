@@ -121,9 +121,18 @@ namespace __AC_NAMESPACE
 
       typedef ac_private::iv<N, W <= 64> Base;
 
-      __FORCE_INLINE void bit_adjust() { Base::v.template bit_adjust<W, S>(); }
-      __FORCE_INLINE Base& base() { return *this; }
-      __FORCE_INLINE const Base& base() const { return *this; }
+      __FORCE_INLINE void bit_adjust()
+      {
+         Base::v.template bit_adjust<W, S>();
+      }
+      __FORCE_INLINE Base& base()
+      {
+         return *this;
+      }
+      __FORCE_INLINE const Base& base() const
+      {
+         return *this;
+      }
 
       __FORCE_INLINE void overflow_adjust(bool underflow, bool overflow)
       {
@@ -146,7 +155,8 @@ namespace __AC_NAMESPACE
 #if defined(__clang__)
 #pragma clang loop unroll(full)
 #endif
-               for(auto idx = 0; idx < N - 1; ++idx) Base::v.set(idx, ~0);
+               for(auto idx = 0; idx < N - 1; ++idx)
+                  Base::v.set(idx, ~0);
                Base::v.set(N - 1, (~((unsigned)~0 << ((W - 1) & 31))));
             }
             else if(underflow)
@@ -154,9 +164,11 @@ namespace __AC_NAMESPACE
 #if defined(__clang__)
 #pragma clang loop unroll(full)
 #endif
-               for(auto idx = 0; idx < N - 1; ++idx) Base::v.set(idx, 0);
+               for(auto idx = 0; idx < N - 1; ++idx)
+                  Base::v.set(idx, 0);
                Base::v.set(N - 1, ((unsigned)~0 << ((W - 1) & 31)));
-               if(O == AC_SAT_SYM) Base::v.set(0, Base::v[0] | 1);
+               if(O == AC_SAT_SYM)
+                  Base::v.set(0, Base::v[0] | 1);
             }
             else
                bit_adjust();
@@ -168,7 +180,8 @@ namespace __AC_NAMESPACE
 #if defined(__clang__)
 #pragma clang loop unroll(full)
 #endif
-               for(auto idx = 0; idx < N - 1; ++idx) Base::v.set(idx, ~0);
+               for(auto idx = 0; idx < N - 1; ++idx)
+                  Base::v.set(idx, ~0);
                Base::v.set(N - 1, ~((unsigned)~0 << (W & 31)));
             }
             else if(underflow)
@@ -180,7 +193,8 @@ namespace __AC_NAMESPACE
 
       constexpr __FORCE_INLINE bool quantization_adjust(bool qb, bool r, bool s)
       {
-         if(Q == AC_TRN) return false;
+         if(Q == AC_TRN)
+            return false;
          if(Q == AC_RND_ZERO)
             qb &= s || r;
          else if(Q == AC_RND_MIN_INF)
@@ -196,7 +210,10 @@ namespace __AC_NAMESPACE
          return ac_private::iv_uadd_carry(Base::v, qb, Base::v);
       }
 
-      __FORCE_INLINE bool is_neg() const { return S && Base::v[N - 1] < 0; }
+      __FORCE_INLINE bool is_neg() const
+      {
+         return S && Base::v[N - 1] < 0;
+      }
 
     public:
       static const int width = W;
@@ -290,7 +307,8 @@ namespace __AC_NAMESPACE
       {
 #if !defined(__BAMBU__) && defined(AC_DEFAULT_IN_RANGE)
          bit_adjust();
-         if(O == AC_SAT_SYM && S && Base::v[N - 1] < 0 && (W > 1 ? ac_private::iv_equal_zeros_to<W - 1, N>(Base::v) : true)) Base::v.set(0, (Base::v[0] | 1));
+         if(O == AC_SAT_SYM && S && Base::v[N - 1] < 0 && (W > 1 ? ac_private::iv_equal_zeros_to<W - 1, N>(Base::v) : true))
+            Base::v.set(0, (Base::v[0] | 1));
 #endif
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
@@ -339,7 +357,8 @@ namespace __AC_NAMESPACE
             bool neg_trg = S && (bool)this->operator[](W - 1);
             bool overflow = !neg_src && (neg_trg || !deleted_bits_zero);
             bool underflow = neg_src && (!neg_trg || !deleted_bits_one);
-            if(O == AC_SAT_SYM && S && S2) underflow |= neg_src && (W > 1 ? ac_private::iv_equal_zeros_to<((W > 1) ? W - 1 : 1), N>(Base::v) : true);
+            if(O == AC_SAT_SYM && S && S2)
+               underflow |= neg_src && (W > 1 ? ac_private::iv_equal_zeros_to<((W > 1) ? W - 1 : 1), N>(Base::v) : true);
             overflow_adjust(underflow, overflow);
          }
          else
@@ -363,18 +382,54 @@ namespace __AC_NAMESPACE
          return r;
       }
 
-      __FORCE_INLINE ac_fixed(bool b) { *this = (ac_int<1, false>)b; }
-      __FORCE_INLINE ac_fixed(char b) { *this = (ac_int<8, true>)b; }
-      __FORCE_INLINE ac_fixed(signed char b) { *this = (ac_int<8, true>)b; }
-      __FORCE_INLINE ac_fixed(unsigned char b) { *this = (ac_int<8, false>)b; }
-      __FORCE_INLINE ac_fixed(signed short b) { *this = (ac_int<16, true>)b; }
-      __FORCE_INLINE ac_fixed(unsigned short b) { *this = (ac_int<16, false>)b; }
-      __FORCE_INLINE ac_fixed(signed int b) { *this = (ac_int<32, true>)b; }
-      __FORCE_INLINE ac_fixed(unsigned int b) { *this = (ac_int<32, false>)b; }
-      __FORCE_INLINE ac_fixed(signed long b) { *this = (ac_int<ac_private::long_w, true>)b; }
-      __FORCE_INLINE ac_fixed(unsigned long b) { *this = (ac_int<ac_private::long_w, false>)b; }
-      __FORCE_INLINE ac_fixed(Slong b) { *this = (ac_int<64, true>)b; }
-      __FORCE_INLINE ac_fixed(Ulong b) { *this = (ac_int<64, false>)b; }
+      __FORCE_INLINE ac_fixed(bool b)
+      {
+         *this = (ac_int<1, false>)b;
+      }
+      __FORCE_INLINE ac_fixed(char b)
+      {
+         *this = (ac_int<8, true>)b;
+      }
+      __FORCE_INLINE ac_fixed(signed char b)
+      {
+         *this = (ac_int<8, true>)b;
+      }
+      __FORCE_INLINE ac_fixed(unsigned char b)
+      {
+         *this = (ac_int<8, false>)b;
+      }
+      __FORCE_INLINE ac_fixed(signed short b)
+      {
+         *this = (ac_int<16, true>)b;
+      }
+      __FORCE_INLINE ac_fixed(unsigned short b)
+      {
+         *this = (ac_int<16, false>)b;
+      }
+      __FORCE_INLINE ac_fixed(signed int b)
+      {
+         *this = (ac_int<32, true>)b;
+      }
+      __FORCE_INLINE ac_fixed(unsigned int b)
+      {
+         *this = (ac_int<32, false>)b;
+      }
+      __FORCE_INLINE ac_fixed(signed long b)
+      {
+         *this = (ac_int<ac_private::long_w, true>)b;
+      }
+      __FORCE_INLINE ac_fixed(unsigned long b)
+      {
+         *this = (ac_int<ac_private::long_w, false>)b;
+      }
+      __FORCE_INLINE ac_fixed(Slong b)
+      {
+         *this = (ac_int<64, true>)b;
+      }
+      __FORCE_INLINE ac_fixed(Ulong b)
+      {
+         *this = (ac_int<64, false>)b;
+      }
 
       constexpr __FORCE_INLINE ac_fixed(double d)
       {
@@ -403,7 +458,8 @@ namespace __AC_NAMESPACE
                overflow = !neg_src && (neg_trg || !deleted_bits_zero);
                underflow = neg_src && (!neg_trg || !deleted_bits_one);
             }
-            if(O == AC_SAT_SYM && S) underflow |= neg_src && (W > 1 ? ac_private::iv_equal_zeros_to<((W > 1) ? W - 1 : 1), N>(Base::v) : true);
+            if(O == AC_SAT_SYM && S)
+               underflow |= neg_src && (W > 1 ? ac_private::iv_equal_zeros_to<((W > 1) ? W - 1 : 1), N>(Base::v) : true);
             overflow_adjust(underflow, overflow);
          }
          else
@@ -436,7 +492,8 @@ namespace __AC_NAMESPACE
                overflow = !neg_src && (neg_trg || !deleted_bits_zero);
                underflow = neg_src && (!neg_trg || !deleted_bits_one);
             }
-            if(O == AC_SAT_SYM && S) underflow |= neg_src && (W > 1 ? ac_private::iv_equal_zeros_to<((W > 1) ? W - 1 : 1), N>(Base::v) : true);
+            if(O == AC_SAT_SYM && S)
+               underflow |= neg_src && (W > 1 ? ac_private::iv_equal_zeros_to<((W > 1) ? W - 1 : 1), N>(Base::v) : true);
             overflow_adjust(underflow, overflow);
          }
          else
@@ -507,23 +564,65 @@ namespace __AC_NAMESPACE
 
       // Explicit conversion functions to ac_int that captures all integer bits
       // (bits are truncated)
-      __FORCE_INLINE ac_int<AC_MAX(I, 1), S> to_ac_int() const { return ((ac_fixed<AC_MAX(I, 1), AC_MAX(I, 1), S>)*this).template slc<AC_MAX(I, 1)>(0); }
+      __FORCE_INLINE ac_int<AC_MAX(I, 1), S> to_ac_int() const
+      {
+         return ((ac_fixed<AC_MAX(I, 1), AC_MAX(I, 1), S>)*this).template slc<AC_MAX(I, 1)>(0);
+      }
 
       // Explicit conversion functions to C built-in types -------------
-      __FORCE_INLINE int to_int() const { return ((I - W) >= 32) ? 0 : (signed int)to_ac_int(); }
-      __FORCE_INLINE explicit operator int() const { return to_int(); }
-      __FORCE_INLINE unsigned to_uint() const { return ((I - W) >= 32) ? 0 : (unsigned int)to_ac_int(); }
-      __FORCE_INLINE explicit operator unsigned() const { return to_uint(); }
-      __FORCE_INLINE long to_long() const { return ((I - W) >= ac_private::long_w) ? 0 : (signed long)to_ac_int(); }
-      __FORCE_INLINE unsigned long to_ulong() const { return ((I - W) >= ac_private::long_w) ? 0 : (unsigned long)to_ac_int(); }
-      __FORCE_INLINE Slong to_int64() const { return ((I - W) >= 64) ? 0 : (Slong)to_ac_int(); }
-      __FORCE_INLINE Ulong to_uint64() const { return ((I - W) >= 64) ? 0 : (Ulong)to_ac_int(); }
-      __FORCE_INLINE double to_double() const { return ac_private::ldexpr<I - W>(Base::to_double()); }
-      __FORCE_INLINE explicit operator double() const { return to_double(); }
-      __FORCE_INLINE float to_float() const { return ac_private::ldexpr<I - W>(Base::to_float()); }
-      __FORCE_INLINE explicit operator float() const { return to_float(); }
+      __FORCE_INLINE int to_int() const
+      {
+         return ((I - W) >= 32) ? 0 : (signed int)to_ac_int();
+      }
+      __FORCE_INLINE explicit operator int() const
+      {
+         return to_int();
+      }
+      __FORCE_INLINE unsigned to_uint() const
+      {
+         return ((I - W) >= 32) ? 0 : (unsigned int)to_ac_int();
+      }
+      __FORCE_INLINE explicit operator unsigned() const
+      {
+         return to_uint();
+      }
+      __FORCE_INLINE long to_long() const
+      {
+         return ((I - W) >= ac_private::long_w) ? 0 : (signed long)to_ac_int();
+      }
+      __FORCE_INLINE unsigned long to_ulong() const
+      {
+         return ((I - W) >= ac_private::long_w) ? 0 : (unsigned long)to_ac_int();
+      }
+      __FORCE_INLINE Slong to_int64() const
+      {
+         return ((I - W) >= 64) ? 0 : (Slong)to_ac_int();
+      }
+      __FORCE_INLINE Ulong to_uint64() const
+      {
+         return ((I - W) >= 64) ? 0 : (Ulong)to_ac_int();
+      }
+      __FORCE_INLINE double to_double() const
+      {
+         return ac_private::ldexpr<I - W>(Base::to_double());
+      }
+      __FORCE_INLINE explicit operator double() const
+      {
+         return to_double();
+      }
+      __FORCE_INLINE float to_float() const
+      {
+         return ac_private::ldexpr<I - W>(Base::to_float());
+      }
+      __FORCE_INLINE explicit operator float() const
+      {
+         return to_float();
+      }
 
-      __FORCE_INLINE int length() const { return W; }
+      __FORCE_INLINE int length() const
+      {
+         return W;
+      }
 
       __FORCE_INLINE std::string to_string(ac_base_mode base_rep, bool sign_mag = false) const
       {
@@ -551,7 +650,8 @@ namespace __AC_NAMESPACE
          if(W - I > 0)
          {
             r[i++] = '.';
-            if(!ac_private::to_string(f_part.v, W - I, false, base_rep, true, r + i)) r[--i] = 0;
+            if(!ac_private::to_string(f_part.v, W - I, false, base_rep, true, r + i))
+               r[--i] = 0;
          }
          if(!i)
          {
@@ -737,7 +837,10 @@ namespace __AC_NAMESPACE
          return r;
       }
       // ! ------------------------------------------------------------------------
-      bool operator!() const { return Base::equal_zero(); }
+      bool operator!() const
+      {
+         return Base::equal_zero();
+      }
 
       // Bitwise (arithmetic) unary: complement  -----------------------------
       ac_fixed<W + !S, I + !S, true> operator~() const
@@ -1003,44 +1106,61 @@ namespace __AC_NAMESPACE
       }
       bool operator==(double d) const
       {
-         if(is_neg() != (d < 0.0)) return false;
+         if(is_neg() != (d < 0.0))
+            return false;
          double di = ac_private::ldexpr<-(I + !S + ((32 - W - !S) & 31))>(d);
          bool overflow, qb, r;
          ac_fixed<W, I, S> t;
          t.conv_from_fraction(di, &qb, &r, &overflow);
-         if(qb || r || overflow) return false;
+         if(qb || r || overflow)
+            return false;
          return operator==(t);
       }
-      bool operator!=(double d) const { return !operator==(d); }
+      bool operator!=(double d) const
+      {
+         return !operator==(d);
+      }
       bool operator<(double d) const
       {
-         if(is_neg() != (d < 0.0)) return is_neg();
+         if(is_neg() != (d < 0.0))
+            return is_neg();
          double di = ac_private::ldexpr<-(I + !S + ((32 - W - !S) & 31))>(d);
          bool overflow, qb, r;
          ac_fixed<W, I, S> t;
          t.conv_from_fraction(di, &qb, &r, &overflow);
-         if(is_neg() && overflow) return false;
+         if(is_neg() && overflow)
+            return false;
          return (!is_neg() && overflow) || ((qb || r) && operator<=(t)) || operator<(t);
       }
-      bool operator>=(double d) const { return !operator<(d); }
+      bool operator>=(double d) const
+      {
+         return !operator<(d);
+      }
       bool operator>(double d) const
       {
-         if(is_neg() != (d < 0.0)) return !is_neg();
+         if(is_neg() != (d < 0.0))
+            return !is_neg();
          double di = ac_private::ldexpr<-(I + !S + ((32 - W - !S) & 31))>(d);
          bool overflow, qb, r;
          ac_fixed<W, I, S> t;
          t.conv_from_fraction(di, &qb, &r, &overflow);
-         if(!is_neg() && overflow) return false;
+         if(!is_neg() && overflow)
+            return false;
          return (is_neg() && overflow) || operator>(t);
       }
-      bool operator<=(double d) const { return !operator>(d); }
+      bool operator<=(double d) const
+      {
+         return !operator>(d);
+      }
 
       struct range_ref_fixed
       {
          ac_fixed& ref;
          int low;
          int high;
-         range_ref_fixed(ac_fixed& _ref, int _high, int _low) : ref(_ref), low(_low), high(_high) {}
+         range_ref_fixed(ac_fixed& _ref, int _high, int _low) : ref(_ref), low(_low), high(_high)
+         {
+         }
 
          template <int W2, bool S2>
          __FORCE_INLINE const range_ref_fixed& operator=(const ac_int<W2, S2>& op) const
@@ -1060,7 +1180,10 @@ namespace __AC_NAMESPACE
          {
             return operator=(b.operator const ac_int<W, S>());
          }
-         __FORCE_INLINE const range_ref_fixed& operator=(const range_ref_fixed& b) const { return operator=(b.operator const ac_int<W, S>()); }
+         __FORCE_INLINE const range_ref_fixed& operator=(const range_ref_fixed& b) const
+         {
+            return operator=(b.operator const ac_int<W, S>());
+         }
       };
 
       // Bit and Slice Select -----------------------------------------------------
@@ -1074,8 +1197,14 @@ namespace __AC_NAMESPACE
          r.bit_adjust();
          return r;
       }
-      __FORCE_INLINE ac_int<W, S> operator()(int Hi, int Lo) const { return slc(Hi, Lo); }
-      __FORCE_INLINE const range_ref_fixed operator()(int Hi, int Lo) { return range_ref_fixed(*this, Hi, Lo); }
+      __FORCE_INLINE ac_int<W, S> operator()(int Hi, int Lo) const
+      {
+         return slc(Hi, Lo);
+      }
+      __FORCE_INLINE const range_ref_fixed operator()(int Hi, int Lo)
+      {
+         return range_ref_fixed(*this, Hi, Lo);
+      }
 
       template <int W1, int W2, bool S1, bool S2>
       __FORCE_INLINE ac_int<W, S> operator()(const ac_int<W1, S1>& _Hi, const ac_int<W1, S2>& _Lo) const
@@ -1096,13 +1225,19 @@ namespace __AC_NAMESPACE
          return range_ref_fixed(*this, Hi, Lo);
       }
 
-      __FORCE_INLINE ac_int<W, S> range(int Hi, int Lo) const { return operator()(Hi, Lo); }
+      __FORCE_INLINE ac_int<W, S> range(int Hi, int Lo) const
+      {
+         return operator()(Hi, Lo);
+      }
       template <int W1, int W2, bool S1, bool S2>
       __FORCE_INLINE ac_int<W, S> range(const ac_int<W1, S1>& _Hi, const ac_int<W1, S2>& _Lo) const
       {
          return operator()(_Hi, _Lo);
       }
-      __FORCE_INLINE range_ref_fixed range(int Hi, int Lo) { return range_ref_fixed(*this, Hi, Lo); }
+      __FORCE_INLINE range_ref_fixed range(int Hi, int Lo)
+      {
+         return range_ref_fixed(*this, Hi, Lo);
+      }
 
       template <int WS>
       __FORCE_INLINE ac_int<WS, S> slc(signed index) const
@@ -1175,8 +1310,13 @@ namespace __AC_NAMESPACE
          unsigned d_index;
 
        public:
-         ac_bitref(ac_fixed* bv, unsigned index = 0) : d_bv(*bv), d_index(index) {}
-         operator bool() const { return (d_index < W) ? (d_bv.v[d_index >> 5] >> (d_index & 31) & 1) : 0; }
+         ac_bitref(ac_fixed* bv, unsigned index = 0) : d_bv(*bv), d_index(index)
+         {
+         }
+         operator bool() const
+         {
+            return (d_index < W) ? (d_bv.v[d_index >> 5] >> (d_index & 31) & 1) : 0;
+         }
 
          __FORCE_INLINE ac_bitref operator=(int val)
          {
@@ -1193,7 +1333,10 @@ namespace __AC_NAMESPACE
          {
             return operator=(val.to_int());
          }
-         __FORCE_INLINE ac_bitref operator=(const ac_bitref& val) { return operator=((int)(bool)val); }
+         __FORCE_INLINE ac_bitref operator=(const ac_bitref& val)
+         {
+            return operator=((int)(bool)val);
+         }
       };
 
       ac_bitref operator[](unsigned int uindex)
@@ -1867,7 +2010,8 @@ namespace __AC_NAMESPACE
       __FORCE_INLINE bool init_array(ac_fixed<W, I, S, Q, O>* a, int n)
       {
          ac_fixed<W, I, S> t = value<V>(*a);
-         for(int i = 0; i < n; i++) a[i] = t;
+         for(int i = 0; i < n; i++)
+            a[i] = t;
          return true;
       }
 
@@ -1887,12 +2031,10 @@ namespace __AC_NAMESPACE
          }
          int exp_i;
          double f0 = frexp(d, &exp_i);
-         AC_ASSERT(exp_i <= Max_Exp + 1,
-                   "Exponent greater than standard double-precision float exponent "
-                   "max (+1024). It is probably an extended double");
-         AC_ASSERT(exp_i >= Denorm_Min_Exp + 1,
-                   "Exponent less than standard double-precision float exponent min "
-                   "(-1021). It is probably an extended double");
+         AC_ASSERT(exp_i <= Max_Exp + 1, "Exponent greater than standard double-precision float exponent "
+                                         "max (+1024). It is probably an extended double");
+         AC_ASSERT(exp_i >= Denorm_Min_Exp + 1, "Exponent less than standard double-precision float exponent min "
+                                                "(-1021). It is probably an extended double");
          exp_i--;
          int rshift = exp_i < Min_Exp ? Min_Exp - exp_i : (exp_i > Min_Exp && f0 < 0 && f0 >= -0.5) ? -1 : 0;
          exp = exp_i + rshift;
@@ -1917,12 +2059,10 @@ namespace __AC_NAMESPACE
          }
          int exp_i;
          float f0 = frexpf(f, &exp_i);
-         AC_ASSERT(exp_i <= Max_Exp + 1,
-                   "Exponent greater than standard single-precision float exponent "
-                   "max (+128). It is probably an extended float");
-         AC_ASSERT(exp_i >= Denorm_Min_Exp + 1,
-                   "Exponent less than standard single-precision float exponent min "
-                   "(-125). It is probably an extended float");
+         AC_ASSERT(exp_i <= Max_Exp + 1, "Exponent greater than standard single-precision float exponent "
+                                         "max (+128). It is probably an extended float");
+         AC_ASSERT(exp_i >= Denorm_Min_Exp + 1, "Exponent less than standard single-precision float exponent min "
+                                                "(-125). It is probably an extended float");
          exp_i--;
          int rshift = exp_i < Min_Exp ? Min_Exp - exp_i : (exp_i >= Min_Exp && f0 < 0 && f0 >= -0.5) ? -1 : 0;
          exp = exp_i + rshift;
@@ -1950,12 +2090,10 @@ namespace __AC_NAMESPACE
          int exp_i;
          bool s = d < 0;
          double f0 = frexp(s ? -d : d, &exp_i);
-         AC_ASSERT(exp_i <= Max_Exp + 1,
-                   "Exponent greater than standard double-precision float exponent "
-                   "max (+1024). It is probably an extended double");
-         AC_ASSERT(exp_i >= Denorm_Min_Exp + 1,
-                   "Exponent less than standard double-precision float exponent min "
-                   "(-1021). It is probably an extended double");
+         AC_ASSERT(exp_i <= Max_Exp + 1, "Exponent greater than standard double-precision float exponent "
+                                         "max (+1024). It is probably an extended double");
+         AC_ASSERT(exp_i >= Denorm_Min_Exp + 1, "Exponent less than standard double-precision float exponent min "
+                                                "(-1021). It is probably an extended double");
          exp_i--;
          int rshift = exp_i < Min_Exp ? Min_Exp - exp_i : 0;
          exp = exp_i + rshift;
@@ -1983,12 +2121,10 @@ namespace __AC_NAMESPACE
          int exp_i;
          bool s = f < 0;
          float f0 = frexp(s ? -f : f, &exp_i);
-         AC_ASSERT(exp_i <= Max_Exp + 1,
-                   "Exponent greater than standard single-precision float exponent "
-                   "max (+128). It is probably an extended float");
-         AC_ASSERT(exp_i >= Denorm_Min_Exp + 1,
-                   "Exponent less than standard single-precision float exponent min "
-                   "(-125). It is probably an extended float");
+         AC_ASSERT(exp_i <= Max_Exp + 1, "Exponent greater than standard single-precision float exponent "
+                                         "max (+128). It is probably an extended float");
+         AC_ASSERT(exp_i >= Denorm_Min_Exp + 1, "Exponent less than standard single-precision float exponent min "
+                                                "(-125). It is probably an extended float");
          exp_i--;
          int rshift = exp_i < Min_Exp ? Min_Exp - exp_i : 0;
          exp = exp_i + rshift;

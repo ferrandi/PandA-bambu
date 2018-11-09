@@ -19,36 +19,39 @@
 #ifndef LLVM_TRANSFORMS_UTILS_MYORDEREDINSTRUCTIONS_H
 #define LLVM_TRANSFORMS_UTILS_MYORDEREDINSTRUCTIONS_H
 
-
-
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/Analysis/OrderedBasicBlock.h"
 #include "llvm/IR/Dominators.h"
 #include "llvm/IR/Operator.h"
 
-namespace llvm {
+namespace llvm
+{
+   class OrderedInstructions
+   {
+      /// Used to check dominance for instructions in same basic block.
+      mutable DenseMap<const BasicBlock*, std::unique_ptr<OrderedBasicBlock>> OBBMap;
 
-class OrderedInstructions {
-  /// Used to check dominance for instructions in same basic block.
-  mutable DenseMap<const BasicBlock *, std::unique_ptr<OrderedBasicBlock>>
-      OBBMap;
+      /// The dominator tree of the parent function.
+      DominatorTree* DT;
 
-  /// The dominator tree of the parent function.
-  DominatorTree *DT;
+    public:
+      /// Constructor.
+      OrderedInstructions(DominatorTree* DT) : DT(DT)
+      {
+      }
 
-public:
-  /// Constructor.
-  OrderedInstructions(DominatorTree *DT) : DT(DT) {}
+      /// Return true if first instruction dominates the second.
+      bool dominates(const Instruction*, const Instruction*) const;
 
-  /// Return true if first instruction dominates the second.
-  bool dominates(const Instruction *, const Instruction *) const;
-
-  /// Invalidate the OrderedBasicBlock cache when its basic block changes.
-  /// i.e. If an instruction is deleted or added to the basic block, the user
-  /// should call this function to invalidate the OrderedBasicBlock cache for
-  /// this basic block.
-  void invalidateBlock(const BasicBlock *BB) { OBBMap.erase(BB); }
-};
+      /// Invalidate the OrderedBasicBlock cache when its basic block changes.
+      /// i.e. If an instruction is deleted or added to the basic block, the user
+      /// should call this function to invalidate the OrderedBasicBlock cache for
+      /// this basic block.
+      void invalidateBlock(const BasicBlock* BB)
+      {
+         OBBMap.erase(BB);
+      }
+   };
 
 } // end namespace llvm
 

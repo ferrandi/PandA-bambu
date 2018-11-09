@@ -29,63 +29,61 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file simulation_evaluation.cpp
  * @brief .
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "simulation_evaluation.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///HLS include
+/// HLS include
 #include "hls_manager.hpp"
 
 // include from HLS/simulation
 #include "SimulationInformation.hpp"
 
-///technology/physical_library/models includes
+/// technology/physical_library/models includes
 #include "time_model.hpp"
 
 // include from wrapper/simulation
 #include "SimulationTool.hpp"
 
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 
-SimulationEvaluation::SimulationEvaluation(const ParameterConstRef _Param, const HLS_managerRef _hls_mgr, const DesignFlowManagerConstRef _design_flow_manager) :
-   EvaluationBaseStep(_Param, _hls_mgr, 0, _design_flow_manager, HLSFlowStep_Type::SIMULATION_EVALUATION),
-   already_executed(false)
+SimulationEvaluation::SimulationEvaluation(const ParameterConstRef _Param, const HLS_managerRef _hls_mgr, const DesignFlowManagerConstRef _design_flow_manager)
+    : EvaluationBaseStep(_Param, _hls_mgr, 0, _design_flow_manager, HLSFlowStep_Type::SIMULATION_EVALUATION), already_executed(false)
 {
 }
 
-SimulationEvaluation::~SimulationEvaluation()
-= default;
+SimulationEvaluation::~SimulationEvaluation() = default;
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > SimulationEvaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> SimulationEvaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ret;
+   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
-         {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_SIMULATION_SCRIPT, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
-            ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_GENERATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
-            break;
-         }
+      {
+         ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_SIMULATION_SCRIPT, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_GENERATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+         break;
+      }
       case INVALIDATION_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       case PRECEDENCE_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       default:
          THROW_UNREACHABLE("");
    }
@@ -100,7 +98,7 @@ DesignFlowStep_Status SimulationEvaluation::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Executing simulation");
    HLSMgr->RSim->avg_n_cycles = HLSMgr->RSim->sim_tool->Simulate(HLSMgr->RSim->tot_n_cycles, HLSMgr->RSim->n_testcases);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Executed simulation");
-   if (not parameters->isOption(OPT_no_clean) and not parameters->getOption<bool>(OPT_no_clean))
+   if(not parameters->isOption(OPT_no_clean) and not parameters->getOption<bool>(OPT_no_clean))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Cleaning up simulation files");
       HLSMgr->RSim->sim_tool->Clean();
@@ -110,11 +108,11 @@ DesignFlowStep_Status SimulationEvaluation::InternalExec()
    std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
    for(const auto& objective : objective_vector)
    {
-      if (objective == "CYCLES" or objective =="TIME" or objective == "TOTAL_CYCLES" or objective =="TOTAL_TIME" or objective == "TIMExAREA")
+      if(objective == "CYCLES" or objective == "TIME" or objective == "TOTAL_CYCLES" or objective == "TOTAL_TIME" or objective == "TIMExAREA")
       {
          unsigned long long int tot_cycles = HLSMgr->RSim->tot_n_cycles;
          unsigned long long int avg_cycles = HLSMgr->RSim->avg_n_cycles;
-         const auto num_executions =  HLSMgr->RSim->n_testcases;
+         const auto num_executions = HLSMgr->RSim->n_testcases;
          HLSMgr->evaluations["TOTAL_CYCLES"] = std::vector<double>(1, static_cast<double>(tot_cycles));
          HLSMgr->evaluations["CYCLES"] = std::vector<double>(1, static_cast<double>(avg_cycles));
          HLSMgr->evaluations["NUM_EXECUTIONS"] = std::vector<double>(1, static_cast<double>(num_executions));
@@ -123,4 +121,3 @@ DesignFlowStep_Status SimulationEvaluation::InternalExec()
 
    return DesignFlowStep_Status::SUCCESS;
 }
-

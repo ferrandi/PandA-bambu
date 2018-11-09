@@ -34,7 +34,7 @@
  *
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  *
-*/
+ */
 #ifndef CALL_GRAPH_UNFOLDER_HPP
 #define CALL_GRAPH_UNFOLDER_HPP
 
@@ -47,47 +47,43 @@ CONSTREF_FORWARD_DECL(CallGraphManager);
 
 class CallGraphUnfolder
 {
-   protected:
+ protected:
+   /**
+    * A reference to the call graph to be unfolded
+    */
+   const CallGraphConstRef cg;
 
-      /**
-       * A reference to the call graph to be unfolded
-       */
-      const CallGraphConstRef cg;
+   /**
+    * The function id of the function where to start to unfold
+    */
+   const unsigned int root_fun_id;
 
-      /**
-       * The function id of the function where to start to unfold
-       */
-      const unsigned int root_fun_id;
-      
-      /// Maps every function to the calls it performs in cg.
-      // Must be correctly initialized with data from cg before calling Unfold()
-      const std::unordered_map<unsigned int, std::unordered_set<unsigned int> > & caller_to_call_id;
+   /// Maps every function to the calls it performs in cg.
+   // Must be correctly initialized with data from cg before calling Unfold()
+   const std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& caller_to_call_id;
 
-      /// Maps every id of a call site to the id of the called function
-      // Must be correctly initialized with data from cg before calling Unfold()
-      const std::unordered_map<unsigned int, std::unordered_set<unsigned int> > & call_to_called_id;
+   /// Maps every id of a call site to the id of the called function
+   // Must be correctly initialized with data from cg before calling Unfold()
+   const std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& call_to_called_id;
 
-      /// Set of indirect calls
-      // Must be correctly initialized with data from cg before calling Unfold()
-      const std::unordered_set<unsigned int> & indirect_calls;
+   /// Set of indirect calls
+   // Must be correctly initialized with data from cg before calling Unfold()
+   const std::unordered_set<unsigned int>& indirect_calls;
 
-      void RecursivelyUnfold(const UnfoldedVertexDescriptor caller_v, UnfoldedCallGraph & ucg) const;
+   void RecursivelyUnfold(const UnfoldedVertexDescriptor caller_v, UnfoldedCallGraph& ucg) const;
 
-   public:
+ public:
+   /**
+    * Unfolds the call graph cg, starting from the function with id
+    * root_fun_id.
+    * Returns the UnfoldedVertexDescritor representing the root of the
+    * unfolded call graph
+    */
+   UnfoldedVertexDescriptor Unfold(UnfoldedCallGraph& ucg) const;
 
-      /**
-       * Unfolds the call graph cg, starting from the function with id
-       * root_fun_id.
-       * Returns the UnfoldedVertexDescritor representing the root of the
-       * unfolded call graph
-       */
-      UnfoldedVertexDescriptor Unfold(UnfoldedCallGraph & ucg) const;
+   CallGraphUnfolder(CallGraphManagerConstRef cgman, std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& _caller_to_call_id, std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& _call_to_called_id,
+                     std::unordered_set<unsigned int>& _indirect_calls);
 
-      CallGraphUnfolder(CallGraphManagerConstRef cgman,
-            std::unordered_map<unsigned int, std::unordered_set<unsigned int> > & _caller_to_call_id,
-            std::unordered_map<unsigned int, std::unordered_set<unsigned int> > & _call_to_called_id,
-            std::unordered_set<unsigned int> & _indirect_calls);
-
-      ~CallGraphUnfolder();
+   ~CallGraphUnfolder();
 };
 #endif

@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file target_manager.cpp
  * @brief Implementation of some methods to manage a target for the synthesis
@@ -39,25 +39,21 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
-///Header include
+ */
+/// Header include
 #include "target_manager.hpp"
 
 #include "target_device.hpp"
 
-target_manager::target_manager(const ParameterConstRef& _Param, const technology_managerRef& _TM, const target_deviceRef& _device) :
-   Param(_Param),
-   TM(_TM),
-   device(_device)
+target_manager::target_manager(const ParameterConstRef& _Param, const technology_managerRef& _TM, const target_deviceRef& _device) : Param(_Param), TM(_TM), device(_device)
 {
    // Technology library manager
    set_technology_manager(_TM);
-   ///creating the datastructure representing the target device
+   /// creating the datastructure representing the target device
    set_target_device(_device);
 }
 
-target_manager::~target_manager()
-= default;
+target_manager::~target_manager() = default;
 
 void target_manager::set_technology_manager(const technology_managerRef& _TM)
 {

@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file ISE_isim_wrapper.hpp
  * @brief Wrapper to ISIM by XILINX
@@ -41,7 +41,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef XILINX_ISE_ISIM_WRAPPER_HPP
 #define XILINX_ISE_ISIM_WRAPPER_HPP
 
@@ -50,16 +50,16 @@
 CONSTREF_FORWARD_DECL(Parameter);
 class xml_element;
 
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
 
-#define DEFAULT_INTSTYLE				INTSTYLE_SILENT
-#define INTSTYLE_ISE					"ise"
-#define INTSTYLE_SILENT					"silent"
-#define INTSTYLE_XFLOW					"xflow"
+#define DEFAULT_INTSTYLE INTSTYLE_SILENT
+#define INTSTYLE_ISE "ise"
+#define INTSTYLE_SILENT "silent"
+#define INTSTYLE_XFLOW "xflow"
 
-#define ISIM_SUBDIR       (Param->getOption<std::string>(OPT_output_directory) + std::string("/isim"))
+#define ISIM_SUBDIR (Param->getOption<std::string>(OPT_output_directory) + std::string("/isim"))
 
 /**
  * @class ISE_isim_wrapper
@@ -67,39 +67,36 @@ class xml_element;
  */
 class ISE_isim_wrapper : public SimulationTool
 {
-   private:
+ private:
+   /// suffix added to the ISIM dir
+   std::string suffix;
 
-      ///suffix added to the ISIM dir
-      std::string suffix;
+   /**
+    * Creates the project file for ISIM
+    */
+   std::string create_project_script(const std::string& top_filename, const std::list<std::string>& file_list);
 
-      /**
-       * Creates the project file for ISIM
-       */
-      std::string create_project_script(const std::string& top_filename, const std::list<std::string> & file_list);
+   /**
+    * Generates the proper simulation script
+    */
+   void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list) override;
 
-      /**
-       * Generates the proper simulation script
-       */
-      void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string> & file_list) override;
+ public:
+   /**
+    * Constructor
+    * @param Param is the set of parameters
+    */
+   ISE_isim_wrapper(const ParameterConstRef& Param, std::string suffix);
 
-   public:
+   /**
+    * Destructor
+    */
+   ~ISE_isim_wrapper() override;
 
-      /**
-       * Constructor
-       * @param Param is the set of parameters
-       */
-      ISE_isim_wrapper(const ParameterConstRef& Param, std::string suffix);
-
-      /**
-       * Destructor
-       */
-      ~ISE_isim_wrapper() override;
-
-      /**
-       * Checks if the current specification can be executed or not
-       */
-      void CheckExecution() override;
-
+   /**
+    * Checks if the current specification can be executed or not
+    */
+   void CheckExecution() override;
 };
 /// Refcount definition for the class
 typedef refcount<ISE_isim_wrapper> ISE_isim_wrapperRef;

@@ -34,7 +34,7 @@
  *
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  *
-*/
+ */
 #ifndef UNFOLDED_FUNCTION_INFO_HPP
 #define UNFOLDED_FUNCTION_INFO_HPP
 #include "node_info.hpp"
@@ -45,15 +45,16 @@ CONSTREF_FORWARD_DECL(FunctionBehavior);
 
 class UnfoldedFunctionInfo : public NodeInfo
 {
-   public:
+ public:
+   const unsigned int f_id;
 
-      const unsigned int f_id;
+   FunctionBehaviorConstRef behavior;
 
-      FunctionBehaviorConstRef behavior;
+   explicit UnfoldedFunctionInfo(unsigned int _f_id = 0) : f_id(_f_id)
+   {
+   }
 
-      explicit UnfoldedFunctionInfo(unsigned int _f_id = 0) : f_id(_f_id) {}
-
-      ~UnfoldedFunctionInfo() override = default;
+   ~UnfoldedFunctionInfo() override = default;
 };
 
 typedef refcount<UnfoldedFunctionInfo> UnfoldedFunctionInfoRef;

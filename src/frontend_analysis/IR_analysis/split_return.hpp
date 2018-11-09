@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file split_return.hpp
  * @brief .
@@ -39,11 +39,11 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef SPLIT_RETURN_H
 #define SPLIT_RETURN_H
 
-///Superclass include
+/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
 #include "refcount.hpp"
@@ -58,53 +58,51 @@ class statement_list;
 REF_FORWARD_DECL(Schedule);
 //@}
 
-///STL include
-#include <unordered_map>
+/// STL include
 #include <deque>
 #include <list>
 #include <map>
 #include <set>
 #include <string>
+#include <unordered_map>
 
 /**
  * Structure the original short circuit
  */
 class SplitReturn : public FunctionFrontendFlowStep
 {
-   private:
-       /**
-        * Return the set of analyses in relationship with this design step
-        * @param relationship_type is the type of relationship to be considered
-        */
-       const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+ private:
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
+ public:
+   /**
+    * Constructor.
+    * @param Param is the set of the parameters
+    * @param AppM is the application manager
+    * @param function_id is the identifier of the function
+    * @param DesignFlowManagerConstRef is the design flow manager
+    */
+   SplitReturn(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
-   public:
-      /**
-       * Constructor.
-       * @param Param is the set of the parameters
-       * @param AppM is the application manager
-       * @param function_id is the identifier of the function
-       * @param DesignFlowManagerConstRef is the design flow manager
-       */
-      SplitReturn(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   /**
+    *  Destructor
+    */
+   ~SplitReturn() override;
 
-      /**
-       *  Destructor
-       */
-      ~SplitReturn() override;
+   /**
+    * Restructures the unstructured code
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /**
-       * Restructures the unstructured code
-       */
-      DesignFlowStep_Status InternalExec() override;
-
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      bool HasToBeExecuted() const override;
-
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 };
 
 #endif // SPLIT_RETURN_H

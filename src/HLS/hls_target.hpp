@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file hls_target.hpp
  * @brief Data structure representing the target information for the HLS
@@ -39,11 +39,11 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef _HLS_TARGET_HPP_
 #define _HLS_TARGET_HPP_
 
-///superclass include
+/// superclass include
 #include "target_manager.hpp"
 
 #include "target_device.hpp"
@@ -61,25 +61,23 @@ REF_FORWARD_DECL(BackendFlow);
 
 class HLS_target : public target_manager
 {
-   public:
+ public:
+   /**
+    * Constructor
+    */
+   HLS_target(const ParameterConstRef& Param, const technology_managerRef& TM, const target_deviceRef& _target);
 
-      /**
-       * Constructor
-       */
-      HLS_target(const ParameterConstRef& Param, const technology_managerRef& TM, const target_deviceRef& _target);
+   /**
+    * Destructor
+    */
+   ~HLS_target() override;
 
-      /**
-       * Destructor
-       */
-      ~HLS_target() override;
-
-      /**
-       * Factory method from XML file
-       */
-      static HLS_targetRef create_target(const ParameterRef& Param);
-
+   /**
+    * Factory method from XML file
+    */
+   static HLS_targetRef create_target(const ParameterRef& Param);
 };
-///refcount definition of class
+/// refcount definition of class
 typedef refcount<HLS_target> HLS_targetRef;
 
 #endif

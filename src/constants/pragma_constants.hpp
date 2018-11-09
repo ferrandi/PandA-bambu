@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file pragma_constants.hpp
  * @brief constant strings used in pragma identification
@@ -43,44 +43,43 @@
 #ifndef PRAGMA_CONSTANTS_HPP
 #define PRAGMA_CONSTANTS_HPP
 
-///The prefix common to all functions replacing pragma
+/// The prefix common to all functions replacing pragma
 #define STR_CST_pragma_prefix "__pragma"
 
-///The implicit clause for critical session name
+/// The implicit clause for critical session name
 #define STR_CST_pragma_clause_name "name"
 
-///The name of default critical session
+/// The name of default critical session
 #define STR_CST_pragma_default_name "__default__"
 
-///The function replacing an ending pragma
-#define STR_CST_pragma_function_end STR_CST_pragma_prefix"_end__"
+/// The function replacing an ending pragma
+#define STR_CST_pragma_function_end STR_CST_pragma_prefix "_end__"
 
-///The function replacin a generic pragma
-#define STR_CST_pragma_function_generic STR_CST_pragma_prefix"_generic__"
+/// The function replacin a generic pragma
+#define STR_CST_pragma_function_generic STR_CST_pragma_prefix "_generic__"
 
-///The function replacing a single line pragma with single argument
-#define STR_CST_pragma_function_single_line_one_argument STR_CST_pragma_prefix"_single_line_one_argument__"
+/// The function replacing a single line pragma with single argument
+#define STR_CST_pragma_function_single_line_one_argument STR_CST_pragma_prefix "_single_line_one_argument__"
 
-///The function replacing a single line pragma with two argument
+/// The function replacing a single line pragma with two argument
 #define STR_CST_pragma_function_single_line_two_arguments STR_CST_pragma_prefix "_single_line_two_arguments__"
 
-///The function replacing an opening pragma
-#define STR_CST_pragma_function_start STR_CST_pragma_prefix"_start__"
+/// The function replacing an opening pragma
+#define STR_CST_pragma_function_start STR_CST_pragma_prefix "_start__"
 
-///The call_point_hw pragma keyword
+/// The call_point_hw pragma keyword
 #define STR_CST_pragma_keyword_call_hw "call_hw"
 
-///The call_point_hw pragma keyword
+/// The call_point_hw pragma keyword
 #define STR_CST_pragma_keyword_call_point_hw "call_point_hw"
 
-///The keyword 'map' which identifies mapping pragmas
+/// The keyword 'map' which identifies mapping pragmas
 #define STR_CST_pragma_keyword_map "map"
 
-///The keyword 'omp' which identifies openmp pragmas
+/// The keyword 'omp' which identifies openmp pragmas
 #define STR_CST_pragma_keyword_omp "omp"
 
-///The keyword 'omp' which identifies openmp recursive
+/// The keyword 'omp' which identifies openmp recursive
 #define STR_CST_pragma_keyword_recursive "recursive"
 
 #endif
-

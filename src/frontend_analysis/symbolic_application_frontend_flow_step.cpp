@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file symbolic_application_frontend_flow_step.cpp
  * @brief This class models the application of a analysis to all the functions of an application
@@ -39,38 +39,36 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #include "symbolic_application_frontend_flow_step.hpp"
-#include "config_HAVE_ZEBU_BUILT.hpp"         // for HAVE_ZEBU_BUILT
+#include "config_HAVE_ZEBU_BUILT.hpp" // for HAVE_ZEBU_BUILT
 
-#include <boost/lexical_cast.hpp>             // for lexical_cast
-#include <iostream>                           // for ios_base::failure
-#include "Parameter.hpp"                      // for Parameter, ParameterCon...
-#include "application_manager.hpp"            // for application_managerRef
-#include "exceptions.hpp"                     // for THROW_UNREACHABLE
-#include "function_frontend_flow_step.hpp"    // for DesignFlowManagerConstRef
-#include "hash_helper.hpp"                    // for hash
-#include "string_manipulation.hpp"          // for GET_CLASS
+#include "Parameter.hpp"                   // for Parameter, ParameterCon...
+#include "application_manager.hpp"         // for application_managerRef
+#include "exceptions.hpp"                  // for THROW_UNREACHABLE
+#include "function_frontend_flow_step.hpp" // for DesignFlowManagerConstRef
+#include "hash_helper.hpp"                 // for hash
+#include "string_manipulation.hpp"         // for GET_CLASS
+#include <boost/lexical_cast.hpp>          // for lexical_cast
+#include <iostream>                        // for ios_base::failure
 
-
-SymbolicApplicationFrontendFlowStep::SymbolicApplicationFrontendFlowStep(const application_managerRef _AppM, const FrontendFlowStepType _represented_frontend_flow_step,  const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   ApplicationFrontendFlowStep(_AppM, SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP, _design_flow_manager, _parameters),
-   represented_frontend_flow_step_type(_represented_frontend_flow_step)
+SymbolicApplicationFrontendFlowStep::SymbolicApplicationFrontendFlowStep(const application_managerRef _AppM, const FrontendFlowStepType _represented_frontend_flow_step, const DesignFlowManagerConstRef _design_flow_manager,
+                                                                         const ParameterConstRef _parameters)
+    : ApplicationFrontendFlowStep(_AppM, SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP, _design_flow_manager, _parameters), represented_frontend_flow_step_type(_represented_frontend_flow_step)
 {
    composed = true;
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-SymbolicApplicationFrontendFlowStep::~SymbolicApplicationFrontendFlowStep()
-= default;
+SymbolicApplicationFrontendFlowStep::~SymbolicApplicationFrontendFlowStep() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > SymbolicApplicationFrontendFlowStep::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> SymbolicApplicationFrontendFlowStep::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(represented_frontend_flow_step_type, ALL_FUNCTIONS));
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
@@ -80,7 +78,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 #endif
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
@@ -106,7 +104,7 @@ const std::string SymbolicApplicationFrontendFlowStep::GetKindText() const
 
 const std::string SymbolicApplicationFrontendFlowStep::ComputeSignature(const FrontendFlowStepType represented_frontend_flow_step_type)
 {
-   return "Frontend::" + boost::lexical_cast<std::string>(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP) + "(" + boost::lexical_cast<std::string>(represented_frontend_flow_step_type)  + ")";
+   return "Frontend::" + boost::lexical_cast<std::string>(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP) + "(" + boost::lexical_cast<std::string>(represented_frontend_flow_step_type) + ")";
 }
 
 const std::string SymbolicApplicationFrontendFlowStep::GetSignature() const

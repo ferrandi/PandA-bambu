@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file FPge_expr.hpp
  * @brief FPge_expr module for flopoco.
@@ -38,48 +38,42 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef FPge_expr_HPP
 #define FPge_expr_HPP
-#include <vector>
-#include <sstream>
 #include <gmp.h>
-#include <mpfr.h>
 #include <gmpxx.h>
+#include <mpfr.h>
+#include <sstream>
+#include <vector>
 
 #undef DEBUG
 
 #include "Operator.hpp"
 
-
-namespace flopoco{
-
+namespace flopoco
+{
    /** The FPge_expr class */
    class FPge_expr : public Operator
    {
-   public:
+    public:
       /**
-		 * The  constructor
-		 * @param[in]		target		the target device
-                 * @param[in]		wER			the with of the exponent in input
-                 * @param[in]		wFR			the with of the fraction in input
-                 */
+       * The  constructor
+       * @param[in]		target		the target device
+       * @param[in]		wER			the with of the exponent in input
+       * @param[in]		wFR			the with of the fraction in input
+       */
       FPge_expr(Target* target, int wER, int wFR);
 
       /**
-		 *  destructor
-		 */
+       *  destructor
+       */
       ~FPge_expr() override;
 
-
-      void emulate(TestCase * tc) override;
+      void emulate(TestCase* tc) override;
       void buildStandardTestCases(TestCaseList* tcl) override;
 
-
-
-   private:
-
-
+    private:
    };
-}
+} // namespace flopoco
 #endif

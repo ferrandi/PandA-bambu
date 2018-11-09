@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file indented_output_stream.hpp
  * @brief Class to print indented code
@@ -39,15 +39,15 @@
  * $Date: $
  * Last modified by $Author: $
  *
-*/
+ */
 #ifndef INDENTED_OUTPUT_STREAM_HPP
 #define INDENTED_OUTPUT_STREAM_HPP
 
-///STD include
+/// STD include
 #include <sstream>
 #include <string>
 
-///utility include
+/// utility include
 #include "refcount.hpp"
 
 /// Special opening character used to open a new nested level. This character is just a control character and therefore it will not be printed.
@@ -60,75 +60,74 @@
  */
 class IndentedOutputStream
 {
-   private:
-      ///The actual stream
-      std::ostringstream output_stream;
+ private:
+   /// The actual stream
+   std::ostringstream output_stream;
 
-      ///number of spaces used to indent after a new line print
-      unsigned int indent_spaces;
+   /// number of spaces used to indent after a new line print
+   unsigned int indent_spaces;
 
-      ///char that increments the indent space by a delta
-      char opening_char;
+   /// char that increments the indent space by a delta
+   char opening_char;
 
-      ///char that increments the indent space by a delta
-      char closing_char;
+   /// char that increments the indent space by a delta
+   char closing_char;
 
-      ///delta indent space
-      unsigned int delta;
+   /// delta indent space
+   unsigned int delta;
 
-      bool is_line_start;
+   bool is_line_start;
 
-      /**
-       * Append the indent spaces
-       */
-      void AppendIndent();
+   /**
+    * Append the indent spaces
+    */
+   void AppendIndent();
 
-      /**
-       * Append the current char
-       */
-      void AppendChar(const char& c);
+   /**
+    * Append the current char
+    */
+   void AppendChar(const char& c);
 
-   public:
-      /**
-       * constructor
-       * @param o is the opening character used by simple_indent.
-       * @param c is the closing character used by simple_indent.
-       * @param d is the number of characters used to indent the code.
-       */
-      IndentedOutputStream(char o='{', char c='}', unsigned int d=3);
+ public:
+   /**
+    * constructor
+    * @param o is the opening character used by simple_indent.
+    * @param c is the closing character used by simple_indent.
+    * @param d is the number of characters used to indent the code.
+    */
+   IndentedOutputStream(char o = '{', char c = '}', unsigned int d = 3);
 
-      /**
-       * destructor
-       */
-      ~IndentedOutputStream();
+   /**
+    * destructor
+    */
+   ~IndentedOutputStream();
 
-      /**
-       * Append a string to the output
-       * @param message is the string to be printed
-       */
-      void Append(const std::string& message);
+   /**
+    * Append a string to the output
+    * @param message is the string to be printed
+    */
+   void Append(const std::string& message);
 
-      /**
-       * Manually increase the indenting of the code
-       */
-      void Indent();
+   /**
+    * Manually increase the indenting of the code
+    */
+   void Indent();
 
-      /**
-       * Manually reduce the indenting of the code
-       */
-      void Deindent();
+   /**
+    * Manually reduce the indenting of the code
+    */
+   void Deindent();
 
-      /**
-       * Write the indented output on a string
-       */
-      const std::string WriteString();
+   /**
+    * Write the indented output on a string
+    */
+   const std::string WriteString();
 
-      /**
-       * Write the indented output on a file
-       * @param file_name is the name of the file
-       */
-      void WriteFile(const std::string&file_name);
+   /**
+    * Write the indented output on a file
+    * @param file_name is the name of the file
+    */
+   void WriteFile(const std::string& file_name);
 };
 typedef refcount<IndentedOutputStream> IndentedOutputStreamRef;
 #endif
-

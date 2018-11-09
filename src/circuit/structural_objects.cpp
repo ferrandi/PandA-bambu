@@ -60,8 +60,8 @@
 #include <boost/iterator/iterator_traits.hpp>        // for iterator...
 #include <boost/lexical_cast.hpp>                    // for lexical_...
 #include <boost/type_index/type_index_facade.hpp>    // for operator==
+#include <climits>                                   // for UINT_MAX
 #include <iostream>                                  // for cout
-#include <climits>                                  // for UINT_MAX
 #include <list>                                      // for _List_co...
 #include <memory>                                    // for allocato...
 #include <set>                                       // for set, set...
@@ -106,7 +106,8 @@ const char* structural_type_descriptor::s_typeNames[] = {"OTHER", "BOOL", "INT",
 const std::string structural_type_descriptor::get_name() const
 {
    for(int i = 0; i < UNKNOWN; i++)
-      if(type == i) return boost::lexical_cast<std::string>(s_typeNames[i]);
+      if(type == i)
+         return boost::lexical_cast<std::string>(s_typeNames[i]);
    return "UNKNOWN";
 }
 
@@ -118,27 +119,38 @@ void structural_type_descriptor::xload(const xml_element* Enode, structural_type
       std::string type_string;
       LOAD_XVFM(type_string, Enode, type);
       for(i = 0; i < UNKNOWN; i++)
-         if(type_string == s_typeNames[i]) break;
+         if(type_string == s_typeNames[i])
+            break;
       this->type = s_type(i);
    }
    else
       type = type_DEFAULT;
-   if(type == BOOL) size = 1;
-   if(CE_XVM(size, Enode)) LOAD_XVM(size, Enode);
-   if(CE_XVM(vector_size, Enode)) LOAD_XVM(vector_size, Enode);
-   if(CE_XVM(id_type, Enode)) LOAD_XVM(id_type, Enode);
-   if(CE_XVM(treenode, Enode)) LOAD_XVM(treenode, Enode);
+   if(type == BOOL)
+      size = 1;
+   if(CE_XVM(size, Enode))
+      LOAD_XVM(size, Enode);
+   if(CE_XVM(vector_size, Enode))
+      LOAD_XVM(vector_size, Enode);
+   if(CE_XVM(id_type, Enode))
+      LOAD_XVM(id_type, Enode);
+   if(CE_XVM(treenode, Enode))
+      LOAD_XVM(treenode, Enode);
    THROW_ASSERT(type != type_DEFAULT or id_type.size(), "Wrong type descriptor");
 }
 
 void structural_type_descriptor::xwrite(xml_element* rootnode)
 {
    xml_element* Enode = rootnode->add_child_element(get_kind_text());
-   if(type != type_DEFAULT) WRITE_XNVM(type, s_typeNames[type], Enode);
-   if(size != size_DEFAULT) WRITE_XVM(size, Enode);
-   if(vector_size != size_DEFAULT) WRITE_XVM(vector_size, Enode);
-   if(id_type != "") WRITE_XVM(id_type, Enode);
-   if(treenode != treenode_DEFAULT) WRITE_XVM(treenode, Enode);
+   if(type != type_DEFAULT)
+      WRITE_XNVM(type, s_typeNames[type], Enode);
+   if(size != size_DEFAULT)
+      WRITE_XVM(size, Enode);
+   if(vector_size != size_DEFAULT)
+      WRITE_XVM(vector_size, Enode);
+   if(id_type != "")
+      WRITE_XVM(id_type, Enode);
+   if(treenode != treenode_DEFAULT)
+      WRITE_XVM(treenode, Enode);
 }
 
 void structural_type_descriptor::copy(structural_type_descriptorRef dest)
@@ -158,14 +170,16 @@ void structural_type_descriptor::print(std::ostream& os) const
       {
          THROW_ASSERT(size == 1 && vector_size == 0, "bool type descriptor not correctly defined" + STR(size) + "|" + STR(vector_size));
          os << "Bool {" << id_type << "} ";
-         if(treenode > 0) os << "(@" << treenode << ") ";
+         if(treenode > 0)
+            os << "(@" << treenode << ") ";
          break;
       }
       case INT:
       {
          THROW_ASSERT(size > 0 && vector_size == 0, "int type descriptor not correctly defined");
          os << "Int {" << id_type << "} ";
-         if(treenode > 0) os << "(@" << treenode << ") ";
+         if(treenode > 0)
+            os << "(@" << treenode << ") ";
          os << "size=" << size << " ";
          break;
       }
@@ -173,7 +187,8 @@ void structural_type_descriptor::print(std::ostream& os) const
       {
          THROW_ASSERT(size > 0 && vector_size == 0, "unsigned int type descriptor not correctly defined");
          os << "Unsigned Int {" << id_type << "} ";
-         if(treenode > 0) os << "(@" << treenode << ") ";
+         if(treenode > 0)
+            os << "(@" << treenode << ") ";
          os << "size=" << size << " ";
          break;
       }
@@ -181,14 +196,16 @@ void structural_type_descriptor::print(std::ostream& os) const
       {
          THROW_ASSERT(size > 0 && vector_size == 0, "real type descriptor not correctly defined");
          os << "Real {" << id_type << "} ";
-         if(treenode > 0) os << "(@" << treenode << ") ";
+         if(treenode > 0)
+            os << "(@" << treenode << ") ";
          os << "size=" << size << " ";
          break;
       }
       case USER:
       {
          os << "User type {" << id_type << "} ";
-         if(treenode > 0) os << "(@" << treenode << ") ";
+         if(treenode > 0)
+            os << "(@" << treenode << ") ";
          os << "size=" << size << " ";
          break;
       }
@@ -196,14 +213,16 @@ void structural_type_descriptor::print(std::ostream& os) const
       {
          THROW_ASSERT(size == 1 && vector_size > 0, "bool vector type descriptor not correctly defined");
          os << "Bool Vector [" << vector_size << "] {" << id_type << "} ";
-         if(treenode > 0) os << "(@" << treenode << ") ";
+         if(treenode > 0)
+            os << "(@" << treenode << ") ";
          break;
       }
       case VECTOR_INT:
       {
          THROW_ASSERT(size > 0 && vector_size > 0, "int vector type descriptor not correctly defined");
          os << "Int Vector [" << vector_size << "] {" << id_type << "} ";
-         if(treenode > 0) os << "(@" << treenode << ") ";
+         if(treenode > 0)
+            os << "(@" << treenode << ") ";
          os << "size=" << size << " ";
          break;
       }
@@ -211,7 +230,8 @@ void structural_type_descriptor::print(std::ostream& os) const
       {
          THROW_ASSERT(size > 0 && vector_size > 0, "unsigned int vector type descriptor not correctly defined");
          os << "Unsigned Int Vector [" << vector_size << "] {" << id_type << "} ";
-         if(treenode > 0) os << "(@" << treenode << ") ";
+         if(treenode > 0)
+            os << "(@" << treenode << ") ";
          os << "size=" << size << " ";
          break;
       }
@@ -219,7 +239,8 @@ void structural_type_descriptor::print(std::ostream& os) const
       {
          THROW_ASSERT(size > 0 && vector_size > 0, "real vector type descriptor not correctly defined");
          os << "Real Vector [" << vector_size << "] {" << id_type << "} ";
-         if(treenode > 0) os << "(@" << treenode << ") ";
+         if(treenode > 0)
+            os << "(@" << treenode << ") ";
          os << "size=" << size << " ";
          break;
       }
@@ -227,13 +248,15 @@ void structural_type_descriptor::print(std::ostream& os) const
       {
          THROW_ASSERT(vector_size > 0, "Vector User type descriptor not correctly defined");
          os << "User Vector type [" << vector_size << "] {" << id_type << "} ";
-         if(treenode > 0) os << "(@" << treenode << ") ";
+         if(treenode > 0)
+            os << "(@" << treenode << ") ";
          os << "size=" << size << " ";
          break;
       }
       case OTHER:
          os << "Other type {" << id_type << "} ";
-         if(treenode > 0) os << "(@" << treenode << ") ";
+         if(treenode > 0)
+            os << "(@" << treenode << ") ";
          break;
       case UNKNOWN:
       default:
@@ -409,7 +432,10 @@ structural_type_descriptor::structural_type_descriptor(unsigned int index, const
    vector_size = vector_size_DEFAULT;
    treenode = type_index;
    const unsigned int unqualified_type = helper->GetUnqualified(type_index);
-   if(unqualified_type == 0) { id_type = helper->print_type(type_index); }
+   if(unqualified_type == 0)
+   {
+      id_type = helper->print_type(type_index);
+   }
    else
    {
       id_type = helper->print_type(unqualified_type);
@@ -522,16 +548,25 @@ simple_indent structural_object::PP('[', ']', 2);
 
 /// ------------- structural object methods --------------------- //
 
-structural_object::structural_object(int debug, const structural_objectRef o) : owner(o), treenode(o ? o->treenode : treenode_DEFAULT), black_box(o ? o->black_box : black_box_DEFAULT), debug_level(debug) {}
+structural_object::structural_object(int debug, const structural_objectRef o) : owner(o), treenode(o ? o->treenode : treenode_DEFAULT), black_box(o ? o->black_box : black_box_DEFAULT), debug_level(debug)
+{
+}
 
-const structural_objectRef structural_object::get_owner() const { return owner.lock(); }
+const structural_objectRef structural_object::get_owner() const
+{
+   return owner.lock();
+}
 
-void structural_object::set_owner(const structural_objectRef new_owner) { owner = new_owner; }
+void structural_object::set_owner(const structural_objectRef new_owner)
+{
+   owner = new_owner;
+}
 
 #if HAVE_TECHNOLOGY_BUILT
 void structural_object::add_attribute(const std::string& name, const attributeRef& attribute)
 {
-   if(std::find(attribute_list.begin(), attribute_list.end(), name) == attribute_list.end()) attribute_list.push_back(name);
+   if(std::find(attribute_list.begin(), attribute_list.end(), name) == attribute_list.end())
+      attribute_list.push_back(name);
    attributes[name] = attribute;
 }
 
@@ -541,18 +576,36 @@ attributeRef structural_object::get_attribute(const std::string& name) const
    return attributes.find(name)->second;
 }
 
-const std::vector<std::string>& structural_object::get_attribute_list() const { return attribute_list; }
+const std::vector<std::string>& structural_object::get_attribute_list() const
+{
+   return attribute_list;
+}
 #endif
 
-void structural_object::set_treenode(unsigned int n) { treenode = n; }
+void structural_object::set_treenode(unsigned int n)
+{
+   treenode = n;
+}
 
-unsigned int structural_object::get_treenode() const { return treenode; }
+unsigned int structural_object::get_treenode() const
+{
+   return treenode;
+}
 
-void structural_object::set_id(const std::string& s) { id = s; }
+void structural_object::set_id(const std::string& s)
+{
+   id = s;
+}
 
-const std::string structural_object::get_id() const { return id; }
+const std::string structural_object::get_id() const
+{
+   return id;
+}
 
-void structural_object::set_type(const structural_type_descriptorRef& s) { type = s; }
+void structural_object::set_type(const structural_type_descriptorRef& s)
+{
+   type = s;
+}
 
 const structural_type_descriptorRef& structural_object::get_typeRef() const
 {
@@ -568,12 +621,14 @@ void structural_object::type_resize(unsigned int new_bit_size)
       case structural_type_descriptor::UINT:
       case structural_type_descriptor::REAL:
       {
-         if(type->size < new_bit_size) type->size = new_bit_size;
+         if(type->size < new_bit_size)
+            type->size = new_bit_size;
          break;
       }
       case structural_type_descriptor::VECTOR_BOOL:
       {
-         if(type->vector_size < new_bit_size) type->vector_size = new_bit_size;
+         if(type->vector_size < new_bit_size)
+            type->vector_size = new_bit_size;
          break;
       }
       case structural_type_descriptor::BOOL:
@@ -602,19 +657,23 @@ void structural_object::type_resize(unsigned int new_bit_size, unsigned int new_
       case structural_type_descriptor::VECTOR_UINT:
       case structural_type_descriptor::VECTOR_REAL:
       {
-         if(type->size < new_bit_size) type->size = new_bit_size;
-         if(type->vector_size < new_vec_size) type->vector_size = new_vec_size;
+         if(type->size < new_bit_size)
+            type->size = new_bit_size;
+         if(type->vector_size < new_vec_size)
+            type->vector_size = new_vec_size;
          break;
       }
       case structural_type_descriptor::VECTOR_BOOL:
       {
-         if(type->vector_size < new_bit_size * new_vec_size) type->vector_size = new_bit_size * new_vec_size;
+         if(type->vector_size < new_bit_size * new_vec_size)
+            type->vector_size = new_bit_size * new_vec_size;
          break;
       }
       case structural_type_descriptor::INT:
       case structural_type_descriptor::UINT:
       {
-         if(type->size < new_bit_size * new_vec_size) type->size = new_bit_size * new_vec_size;
+         if(type->size < new_bit_size * new_vec_size)
+            type->size = new_bit_size * new_vec_size;
          break;
       }
       case structural_type_descriptor::BOOL:
@@ -645,11 +704,20 @@ void structural_object::copy(structural_objectRef dest) const
 #endif
 }
 
-void structural_object::set_black_box(bool bb) { black_box = bb; }
+void structural_object::set_black_box(bool bb)
+{
+   black_box = bb;
+}
 
-bool structural_object::get_black_box() const { return black_box; }
+bool structural_object::get_black_box() const
+{
+   return black_box;
+}
 
-void structural_object::set_parameter(const std::string& name, const std::string& value) { parameters_list[name] = value; }
+void structural_object::set_parameter(const std::string& name, const std::string& value)
+{
+   parameters_list[name] = value;
+}
 
 std::string structural_object::get_parameter(std::string name) const
 {
@@ -675,32 +743,47 @@ structural_type_descriptor::s_type module::get_parameter_type(const technology_m
 {
    const auto module_type = get_generic_object(TM);
    const auto default_value = module_type->get_parameter(name);
-   if(default_value.substr(0, 2) == "\"\"" and default_value.substr(default_value.size() - 2, 2) == "\"\"") { return structural_type_descriptor::OTHER; }
+   if(default_value.substr(0, 2) == "\"\"" and default_value.substr(default_value.size() - 2, 2) == "\"\"")
+   {
+      return structural_type_descriptor::OTHER;
+   }
    if(default_value.front() == '\"' and default_value.back() == '\"')
    {
       const auto content_string = default_value.substr(1, default_value.size() - 2);
       for(const auto character : content_string)
       {
-         if(character != '0' and character != '1') { return structural_type_descriptor::UNKNOWN; }
+         if(character != '0' and character != '1')
+         {
+            return structural_type_descriptor::UNKNOWN;
+         }
       }
       return structural_type_descriptor::VECTOR_BOOL;
    }
-   if(default_value.front() >= '0' and default_value.front() <= '9') return structural_type_descriptor::INT;
-   if(default_value == "-1") return structural_type_descriptor::INT;
+   if(default_value.front() >= '0' and default_value.front() <= '9')
+      return structural_type_descriptor::INT;
+   if(default_value == "-1")
+      return structural_type_descriptor::INT;
    THROW_UNREACHABLE("Value of " + name + " is " + default_value);
-   if(get_owner() and GetPointer<const module>(get_owner())) return GetPointer<const module>(GetPointer<const module>(get_owner())->get_generic_object(TM))->get_parameter_type(TM, name);
+   if(get_owner() and GetPointer<const module>(get_owner()))
+      return GetPointer<const module>(GetPointer<const module>(get_owner())->get_generic_object(TM))->get_parameter_type(TM, name);
    return structural_type_descriptor::UNKNOWN;
 }
 #endif
 
-bool structural_object::is_parameter(std::string name) const { return parameters_list.find(name) != parameters_list.end(); }
+bool structural_object::is_parameter(std::string name) const
+{
+   return parameters_list.find(name) != parameters_list.end();
+}
 
 void structural_object::xload(const xml_element* Enode, structural_objectRef, structural_managerRef const&)
 {
    /// owner not managed by xload
-   if(CE_XVM(id, Enode)) LOAD_XVM(id, Enode);
-   if(CE_XVM(treenode, Enode)) LOAD_XVM(treenode, Enode);
-   if(CE_XVM(black_box, Enode)) LOAD_XVM(black_box, Enode);
+   if(CE_XVM(id, Enode))
+      LOAD_XVM(id, Enode);
+   if(CE_XVM(treenode, Enode))
+      LOAD_XVM(treenode, Enode);
+   if(CE_XVM(black_box, Enode))
+      LOAD_XVM(black_box, Enode);
       // Recurse through child nodes
 #if HAVE_ASSERTS
    bool has_structural_type_descriptor = false;
@@ -709,7 +792,8 @@ void structural_object::xload(const xml_element* Enode, structural_objectRef, st
    for(const auto& iter : list)
    {
       const auto* EnodeC = GetPointer<const xml_element>(iter);
-      if(!EnodeC) continue;
+      if(!EnodeC)
+         continue;
       if(EnodeC->get_name() == GET_CLASS_NAME(structural_type_descriptor))
       {
          type = structural_type_descriptorRef(new structural_type_descriptor);
@@ -724,7 +808,8 @@ void structural_object::xload(const xml_element* Enode, structural_objectRef, st
          std::string name;
          LOAD_XVM(name, EnodeC);
          const xml_text_node* text = EnodeC->get_child_text();
-         if(!text) THROW_ERROR("parameter definition is missing");
+         if(!text)
+            THROW_ERROR("parameter definition is missing");
          std::string default_value = text->get_content();
          xml_node::convert_escaped(default_value);
          set_parameter(name, default_value);
@@ -738,9 +823,12 @@ void structural_object::xwrite(xml_element* Enode)
    WRITE_XVM(id, Enode);
    std::string path = get_path();
    WRITE_XVM(path, Enode);
-   if(treenode != treenode_DEFAULT) WRITE_XVM(treenode, Enode);
-   if(black_box != black_box_DEFAULT) WRITE_XVM(black_box, Enode);
-   if(type) type->xwrite(Enode);
+   if(treenode != treenode_DEFAULT)
+      WRITE_XVM(treenode, Enode);
+   if(black_box != black_box_DEFAULT)
+      WRITE_XVM(black_box, Enode);
+   if(type)
+      type->xwrite(Enode);
    if(!parameters_list.empty())
    {
       const std::map<std::string, std::string>::const_iterator pl_it_end = parameters_list.end();
@@ -754,13 +842,16 @@ void structural_object::xwrite(xml_element* Enode)
 }
 
 #if HAVE_TECHNOLOGY_BUILT
-void structural_object::xwrite_attributes(xml_element*, const technology_nodeRef&) {}
+void structural_object::xwrite_attributes(xml_element*, const technology_nodeRef&)
+{
+}
 #endif
 
 void structural_object::print(std::ostream& os) const
 {
    os << "SO: " << id << " {" << type << "}";
-   if(treenode > 0) os << " (@" << treenode << ")";
+   if(treenode > 0)
+      os << " (@" << treenode << ")";
    os << (black_box ? " (BLACK BOX)" : "");
    os << " Path: " << get_path();
    PP(os, "\n");
@@ -818,7 +909,8 @@ void port_o::add_connection(structural_objectRef s)
                 get_path() + ": port cannot be connected to an object of type: " + std::string(s->get_kind_text()));
    for(auto& connected_object : connected_objects)
    {
-      if(connected_object.lock() == s) return;
+      if(connected_object.lock() == s)
+         return;
       THROW_ASSERT(!(((s->get_kind() == signal_o_K and connected_object.lock()->get_kind() == signal_o_K) || (s->get_kind() == signal_vector_o_K and connected_object.lock()->get_kind() == signal_vector_o_K)) and
                      s->get_owner() == connected_object.lock()->get_owner()),
                    "The port " + get_path() + " can have only one signal. " + s->get_path() + " and " + connected_object.lock()->get_path());
@@ -832,19 +924,25 @@ void port_o::remove_connection(structural_objectRef s)
    auto del = connected_objects.begin();
    for(; del != connected_objects.end(); ++del)
    {
-      if((*del).lock() == s) break;
+      if((*del).lock() == s)
+         break;
    }
-   if(del != connected_objects.end()) { connected_objects.erase(del); }
+   if(del != connected_objects.end())
+   {
+      connected_objects.erase(del);
+   }
 }
 
 bool port_o::is_connected(structural_objectRef s) const
 {
    THROW_ASSERT(s, "NULL object received");
-   if(connected_objects.size() == 0) return false;
+   if(connected_objects.size() == 0)
+      return false;
    auto del = connected_objects.begin();
    for(; del != connected_objects.end(); ++del)
    {
-      if((*del).lock() == s) return true;
+      if((*del).lock() == s)
+         return true;
    }
    return false;
 }
@@ -881,12 +979,14 @@ void port_o::substitute_connection(structural_objectRef old_conn, structural_obj
    if(existing)
    {
       auto deli = removed.begin();
-      for(; deli != removed.end(); ++deli) connected_objects.erase(*deli);
+      for(; deli != removed.end(); ++deli)
+         connected_objects.erase(*deli);
    }
    else
       for(auto& connected_object : connected_objects)
       {
-         if(connected_object.lock() == old_conn) connected_object = new_conn;
+         if(connected_object.lock() == old_conn)
+            connected_object = new_conn;
       }
 }
 
@@ -896,71 +996,170 @@ const structural_objectRef port_o::get_connection(unsigned int n) const
    return connected_objects[n].lock();
 }
 
-unsigned int port_o::get_connections_size() const { return static_cast<unsigned int>(connected_objects.size()); }
+unsigned int port_o::get_connections_size() const
+{
+   return static_cast<unsigned int>(connected_objects.size());
+}
 
-port_o::port_direction port_o::get_port_direction() const { return dir; }
+port_o::port_direction port_o::get_port_direction() const
+{
+   return dir;
+}
 
-void port_o::set_port_direction(port_direction _dir) { dir = _dir; }
+void port_o::set_port_direction(port_direction _dir)
+{
+   dir = _dir;
+}
 
-port_o::port_endianess port_o::get_port_endianess() const { return end; }
+port_o::port_endianess port_o::get_port_endianess() const
+{
+   return end;
+}
 
-void port_o::set_port_endianess(port_endianess _end) { end = _end; }
+void port_o::set_port_endianess(port_endianess _end)
+{
+   end = _end;
+}
 
-port_o::port_interface port_o::get_port_interface() const { return pi; }
+port_o::port_interface port_o::get_port_interface() const
+{
+   return pi;
+}
 
-void port_o::set_port_interface(port_interface _pi) { pi = _pi; }
+void port_o::set_port_interface(port_interface _pi)
+{
+   pi = _pi;
+}
 
-void port_o::set_is_var_args(bool c) { is_var_args = c; }
+void port_o::set_is_var_args(bool c)
+{
+   is_var_args = c;
+}
 
-bool port_o::get_is_var_args() const { return is_var_args; }
+bool port_o::get_is_var_args() const
+{
+   return is_var_args;
+}
 
-void port_o::set_is_clock(bool c) { is_clock = c; }
+void port_o::set_is_clock(bool c)
+{
+   is_clock = c;
+}
 
-bool port_o::get_is_clock() const { return is_clock; }
+bool port_o::get_is_clock() const
+{
+   return is_clock;
+}
 
-void port_o::set_is_extern(bool c) { is_extern = c; }
+void port_o::set_is_extern(bool c)
+{
+   is_extern = c;
+}
 
-bool port_o::get_is_extern() const { return is_extern; }
+bool port_o::get_is_extern() const
+{
+   return is_extern;
+}
 
-void port_o::set_bus_bundle(const std::string& name) { bus_bundle = name; }
+void port_o::set_bus_bundle(const std::string& name)
+{
+   bus_bundle = name;
+}
 
-std::string port_o::get_bus_bundle() const { return bus_bundle; }
+std::string port_o::get_bus_bundle() const
+{
+   return bus_bundle;
+}
 
-void port_o::set_is_global(bool c) { is_global = c; }
+void port_o::set_is_global(bool c)
+{
+   is_global = c;
+}
 
-bool port_o::get_is_global() const { return is_global; }
+bool port_o::get_is_global() const
+{
+   return is_global;
+}
 
-void port_o::set_is_memory(bool c) { is_memory = c; }
+void port_o::set_is_memory(bool c)
+{
+   is_memory = c;
+}
 
-bool port_o::get_is_memory() const { return is_memory; }
+bool port_o::get_is_memory() const
+{
+   return is_memory;
+}
 
-void port_o::set_is_slave(bool c) { is_slave = c; }
+void port_o::set_is_slave(bool c)
+{
+   is_slave = c;
+}
 
-bool port_o::get_is_slave() const { return is_slave; }
+bool port_o::get_is_slave() const
+{
+   return is_slave;
+}
 
-void port_o::set_is_master(bool c) { is_master = c; }
+void port_o::set_is_master(bool c)
+{
+   is_master = c;
+}
 
-bool port_o::get_is_master() const { return is_master; }
+bool port_o::get_is_master() const
+{
+   return is_master;
+}
 
-void port_o::set_is_data_bus(bool c) { is_data_bus = c; }
+void port_o::set_is_data_bus(bool c)
+{
+   is_data_bus = c;
+}
 
-bool port_o::get_is_data_bus() const { return is_data_bus; }
+bool port_o::get_is_data_bus() const
+{
+   return is_data_bus;
+}
 
-void port_o::set_is_addr_bus(bool c) { is_addr_bus = c; }
+void port_o::set_is_addr_bus(bool c)
+{
+   is_addr_bus = c;
+}
 
-bool port_o::get_is_addr_bus() const { return is_addr_bus; }
+bool port_o::get_is_addr_bus() const
+{
+   return is_addr_bus;
+}
 
-void port_o::set_is_size_bus(bool c) { is_size_bus = c; }
+void port_o::set_is_size_bus(bool c)
+{
+   is_size_bus = c;
+}
 
-bool port_o::get_is_size_bus() const { return is_size_bus; }
+bool port_o::get_is_size_bus() const
+{
+   return is_size_bus;
+}
 
-void port_o::set_is_doubled(bool c) { is_doubled = c; }
+void port_o::set_is_doubled(bool c)
+{
+   is_doubled = c;
+}
 
-bool port_o::get_is_doubled() const { return is_doubled; }
+bool port_o::get_is_doubled() const
+{
+   return is_doubled;
+}
 
-void port_o::set_is_halved(bool c) { is_halved = c; }
+void port_o::set_is_halved(bool c)
+{
+   is_halved = c;
+}
 
-bool port_o::get_is_halved() const { return is_halved; }
+bool port_o::get_is_halved() const
+{
+   return is_halved;
+}
 
 structural_objectRef port_o::find_bounded_object(const structural_objectConstRef f_owner) const
 {
@@ -985,11 +1184,13 @@ structural_objectRef port_o::find_bounded_object(const structural_objectConstRef
       {
          if(connected_object.lock()->get_kind() == port_o_K || connected_object.lock()->get_kind() == signal_o_K || connected_object.lock()->get_kind() == constant_o_K)
          {
-            if(connected_object.lock()->get_owner() != f_owner) continue;
+            if(connected_object.lock()->get_owner() != f_owner)
+               continue;
          }
          else if(connected_object.lock()->get_owner()->get_kind() == port_vector_o_K || connected_object.lock()->get_owner()->get_kind() == signal_vector_o_K)
          {
-            if(connected_object.lock()->get_owner()->get_owner() != f_owner) continue;
+            if(connected_object.lock()->get_owner()->get_owner() != f_owner)
+               continue;
          }
       }
       THROW_ASSERT(connected_object.lock(), "");
@@ -1013,7 +1214,8 @@ structural_objectRef port_o::find_bounded_object(const structural_objectConstRef
          port_count++;
       }
    }
-   if(!port_count) return res;
+   if(!port_count)
+      return res;
 
    if(port_count > 1)
    {
@@ -1038,7 +1240,8 @@ structural_objectRef port_o::find_isomorphic(const structural_objectRef key) con
       {
          auto* conn = GetPointer<signal_o>(key);
          for(unsigned int k = 0; k < conn->get_connected_objects_size(); k++)
-            if(conn->get_port(k)->get_id() == get_id()) return get_owner()->find_isomorphic(conn->get_port(k)->get_owner())->find_isomorphic(key);
+            if(conn->get_port(k)->get_id() == get_id())
+               return get_owner()->find_isomorphic(conn->get_port(k)->get_owner())->find_isomorphic(key);
          THROW_ERROR("Something went wrong!");
          break;
       }
@@ -1051,7 +1254,8 @@ structural_objectRef port_o::find_isomorphic(const structural_objectRef key) con
       case port_o_K:
       {
          for(const auto& port : ports)
-            if(port->get_id() == key->get_id()) return port;
+            if(port->get_id() == key->get_id())
+               return port;
          break;
       }
       case action_o_K:
@@ -1081,10 +1285,12 @@ structural_objectRef port_o::find_member(const std::string& _id, so_kind _type, 
          for(const auto& connected_object : connected_objects)
          {
             THROW_ASSERT(port_type == port_o_K || port_type == port_vector_o_K, "inconsistently organized port");
-            if(connected_object.lock()->get_kind() == _type && connected_object.lock()->get_id() == _id && connected_object.lock()->get_owner() == _owner) return connected_object.lock();
+            if(connected_object.lock()->get_kind() == _type && connected_object.lock()->get_id() == _id && connected_object.lock()->get_owner() == _owner)
+               return connected_object.lock();
          }
          for(const auto& port : ports)
-            if(port->get_id() == _id && port->get_owner() == _owner) return port;
+            if(port->get_id() == _id && port->get_owner() == _owner)
+               return port;
          break;
       }
       case action_o_K:
@@ -1121,9 +1327,9 @@ void port_o::copy(structural_objectRef dest) const
    GetPointer<port_o>(dest)->is_halved = is_halved;
    GetPointer<port_o>(dest)->is_critical = is_critical;
    GetPointer<port_o>(dest)->is_reverse = is_reverse;
-   if(GetPointer<port_o>(dest)->ports.size()==ports.size())
+   if(GetPointer<port_o>(dest)->ports.size() == ports.size())
    {
-      unsigned index=0;
+      unsigned index = 0;
       for(const auto& i : ports)
       {
          structural_objectRef port = GetPointer<port_o>(dest)->get_port(index);
@@ -1131,7 +1337,7 @@ void port_o::copy(structural_objectRef dest) const
          ++index;
       }
    }
-   else if(GetPointer<port_o>(dest)->ports.size()==0)
+   else if(GetPointer<port_o>(dest)->ports.size() == 0)
    {
       for(const auto& i : ports)
       {
@@ -1140,19 +1346,31 @@ void port_o::copy(structural_objectRef dest) const
          GetPointer<port_o>(dest)->ports.push_back(port);
       }
    }
-   else if(ports.size()!=0)
+   else if(ports.size() != 0)
       THROW_ERROR("unexpected copy: src=" + get_path() + " dest=" + dest->get_path() + " sizeSRC=" + STR(ports.size()) + " sizeDST=" + STR(GetPointer<port_o>(dest)->ports.size()));
    GetPointer<port_o>(dest)->lsb = lsb;
    /// connected_objects has to be updated outside!!!
 }
 
-void port_o::set_critical() { is_critical = true; }
+void port_o::set_critical()
+{
+   is_critical = true;
+}
 
-bool port_o::get_critical() const { return is_critical; }
+bool port_o::get_critical() const
+{
+   return is_critical;
+}
 
-void port_o::set_reverse() { is_reverse = true; }
+void port_o::set_reverse()
+{
+   is_reverse = true;
+}
 
-bool port_o::get_reverse() const { return is_reverse; }
+bool port_o::get_reverse() const
+{
+   return is_reverse;
+}
 
 void port_o::xload(const xml_element* Enode, structural_objectRef _owner, structural_managerRef const& CM)
 {
@@ -1169,21 +1387,36 @@ void port_o::xload(const xml_element* Enode, structural_objectRef _owner, struct
       LOAD_XVFM(pi_string, Enode, pi);
       pi = to_port_interface(pi_string);
    }
-   if(CE_XVM(is_var_args, Enode)) LOAD_XVM(is_var_args, Enode);
-   if(CE_XVM(is_clock, Enode)) LOAD_XVM(is_clock, Enode);
-   if(CE_XVM(is_extern, Enode)) LOAD_XVM(is_extern, Enode);
-   if(CE_XVM(is_global, Enode)) LOAD_XVM(is_global, Enode);
-   if(CE_XVM(is_memory, Enode)) LOAD_XVM(is_memory, Enode);
-   if(CE_XVM(is_slave, Enode)) LOAD_XVM(is_slave, Enode);
-   if(CE_XVM(is_master, Enode)) LOAD_XVM(is_master, Enode);
-   if(CE_XVM(is_data_bus, Enode)) LOAD_XVM(is_data_bus, Enode);
-   if(CE_XVM(is_addr_bus, Enode)) LOAD_XVM(is_addr_bus, Enode);
-   if(CE_XVM(is_size_bus, Enode)) LOAD_XVM(is_size_bus, Enode);
-   if(CE_XVM(is_doubled, Enode)) LOAD_XVM(is_doubled, Enode);
-   if(CE_XVM(is_halved, Enode)) LOAD_XVM(is_halved, Enode);
-   if(CE_XVM(is_critical, Enode)) LOAD_XVM(is_critical, Enode);
-   if(CE_XVM(is_reverse, Enode)) LOAD_XVM(is_reverse, Enode);
-   if(CE_XVM(size_parameter, Enode)) LOAD_XVM(size_parameter, Enode);
+   if(CE_XVM(is_var_args, Enode))
+      LOAD_XVM(is_var_args, Enode);
+   if(CE_XVM(is_clock, Enode))
+      LOAD_XVM(is_clock, Enode);
+   if(CE_XVM(is_extern, Enode))
+      LOAD_XVM(is_extern, Enode);
+   if(CE_XVM(is_global, Enode))
+      LOAD_XVM(is_global, Enode);
+   if(CE_XVM(is_memory, Enode))
+      LOAD_XVM(is_memory, Enode);
+   if(CE_XVM(is_slave, Enode))
+      LOAD_XVM(is_slave, Enode);
+   if(CE_XVM(is_master, Enode))
+      LOAD_XVM(is_master, Enode);
+   if(CE_XVM(is_data_bus, Enode))
+      LOAD_XVM(is_data_bus, Enode);
+   if(CE_XVM(is_addr_bus, Enode))
+      LOAD_XVM(is_addr_bus, Enode);
+   if(CE_XVM(is_size_bus, Enode))
+      LOAD_XVM(is_size_bus, Enode);
+   if(CE_XVM(is_doubled, Enode))
+      LOAD_XVM(is_doubled, Enode);
+   if(CE_XVM(is_halved, Enode))
+      LOAD_XVM(is_halved, Enode);
+   if(CE_XVM(is_critical, Enode))
+      LOAD_XVM(is_critical, Enode);
+   if(CE_XVM(is_reverse, Enode))
+      LOAD_XVM(is_reverse, Enode);
+   if(CE_XVM(size_parameter, Enode))
+      LOAD_XVM(size_parameter, Enode);
 
    structural_objectRef obj;
    unsigned int minBit = UINT_MAX;
@@ -1192,7 +1425,8 @@ void port_o::xload(const xml_element* Enode, structural_objectRef _owner, struct
    for(const auto& iter : list)
    {
       const auto* EnodeC = GetPointer<const xml_element>(iter);
-      if(!EnodeC) continue;
+      if(!EnodeC)
+         continue;
       if(EnodeC->get_name() == GET_CLASS_NAME(port_o))
       {
          THROW_ASSERT(CE_XVM(dir, EnodeC), "Port has to have a direction." + boost::lexical_cast<std::string>(EnodeC->get_line()));
@@ -1218,7 +1452,8 @@ port_o::port_direction port_o::to_port_direction(const std::string& val)
 {
    unsigned int i;
    for(i = 0; i < UNKNOWN; i++)
-      if(val == port_directionNames[i]) break;
+      if(val == port_directionNames[i])
+         break;
    return port_direction(i);
 }
 
@@ -1226,7 +1461,8 @@ port_o::port_interface port_o::to_port_interface(const std::string& val)
 {
    unsigned int i;
    for(i = 0; i < UNKNOWN; i++)
-      if(val == port_interfaceNames[i]) break;
+      if(val == port_interfaceNames[i])
+         break;
    return port_interface(i);
 }
 
@@ -1245,28 +1481,46 @@ void port_o::xwrite(xml_element* rootnode)
       tlm_directionality = "<->";
    else
       tlm_directionality = "--";
-   if(tlm_directionality != "--") WRITE_XVM(tlm_directionality, Enode);
+   if(tlm_directionality != "--")
+      WRITE_XVM(tlm_directionality, Enode);
 #endif
    //   WRITE_XVM(structural_object::get_typeRef()->id_type,Enode);
    WRITE_XNVM(dir, port_directionNames[dir], Enode);
-   if(pi != port_interface::PI_DEFAULT) WRITE_XNVM(pi, port_interfaceNames[pi], Enode);
+   if(pi != port_interface::PI_DEFAULT)
+      WRITE_XNVM(pi, port_interfaceNames[pi], Enode);
    xml_element* Enode_CO = Enode->add_child_element("connected_objects");
-   for(unsigned int i = 0; i < connected_objects.size(); i++) WRITE_XNVM2("CON" + boost::lexical_cast<std::string>(i), connected_objects[i].lock()->get_path(), Enode_CO);
-   if(is_clock != is_clock_DEFAULT) WRITE_XVM(is_clock, Enode);
-   if(is_extern != is_extern_DEFAULT) WRITE_XVM(is_extern, Enode);
-   if(is_global != is_global_DEFAULT) WRITE_XVM(is_global, Enode);
-   if(is_memory != is_memory_DEFAULT) WRITE_XVM(is_memory, Enode);
-   if(is_slave != is_slave_DEFAULT) WRITE_XVM(is_slave, Enode);
-   if(is_master != is_master_DEFAULT) WRITE_XVM(is_master, Enode);
-   if(is_data_bus != is_data_bus_DEFAULT) WRITE_XVM(is_data_bus, Enode);
-   if(is_addr_bus != is_addr_bus_DEFAULT) WRITE_XVM(is_addr_bus, Enode);
-   if(is_size_bus != is_size_bus_DEFAULT) WRITE_XVM(is_size_bus, Enode);
-   if(is_doubled != is_doubled_DEFAULT) WRITE_XVM(is_doubled, Enode);
-   if(is_halved != is_halved_DEFAULT) WRITE_XVM(is_halved, Enode);
-   if(is_critical != is_critical_DEFAULT) WRITE_XVM(is_critical, Enode);
-   if(is_reverse != is_reverse_DEFAULT) WRITE_XVM(is_reverse, Enode);
-   if(is_var_args != is_var_args_DEFAULT) WRITE_XVM(is_var_args, Enode);
-   for(auto& port : ports) port->xwrite(Enode);
+   for(unsigned int i = 0; i < connected_objects.size(); i++)
+      WRITE_XNVM2("CON" + boost::lexical_cast<std::string>(i), connected_objects[i].lock()->get_path(), Enode_CO);
+   if(is_clock != is_clock_DEFAULT)
+      WRITE_XVM(is_clock, Enode);
+   if(is_extern != is_extern_DEFAULT)
+      WRITE_XVM(is_extern, Enode);
+   if(is_global != is_global_DEFAULT)
+      WRITE_XVM(is_global, Enode);
+   if(is_memory != is_memory_DEFAULT)
+      WRITE_XVM(is_memory, Enode);
+   if(is_slave != is_slave_DEFAULT)
+      WRITE_XVM(is_slave, Enode);
+   if(is_master != is_master_DEFAULT)
+      WRITE_XVM(is_master, Enode);
+   if(is_data_bus != is_data_bus_DEFAULT)
+      WRITE_XVM(is_data_bus, Enode);
+   if(is_addr_bus != is_addr_bus_DEFAULT)
+      WRITE_XVM(is_addr_bus, Enode);
+   if(is_size_bus != is_size_bus_DEFAULT)
+      WRITE_XVM(is_size_bus, Enode);
+   if(is_doubled != is_doubled_DEFAULT)
+      WRITE_XVM(is_doubled, Enode);
+   if(is_halved != is_halved_DEFAULT)
+      WRITE_XVM(is_halved, Enode);
+   if(is_critical != is_critical_DEFAULT)
+      WRITE_XVM(is_critical, Enode);
+   if(is_reverse != is_reverse_DEFAULT)
+      WRITE_XVM(is_reverse, Enode);
+   if(is_var_args != is_var_args_DEFAULT)
+      WRITE_XVM(is_var_args, Enode);
+   for(auto& port : ports)
+      port->xwrite(Enode);
 }
 
 #if HAVE_TECHNOLOGY_BUILT
@@ -1289,10 +1543,16 @@ void port_o::xwrite_attributes(xml_element* rootnode, const technology_nodeRef&
 
 #if HAVE_EXPERIMENTAL
    /// writing pin layout information
-   if(GetPointer<functional_unit>(tn) && GetPointer<functional_unit>(tn)->layout_m) { GetPointer<functional_unit>(tn)->layout_m->xwrite(pin_node, get_id()); }
+   if(GetPointer<functional_unit>(tn) && GetPointer<functional_unit>(tn)->layout_m)
+   {
+      GetPointer<functional_unit>(tn)->layout_m->xwrite(pin_node, get_id());
+   }
 
    // For functional unit template we have to check that the underling functional unit has a layout
-   if(GetPointer<functional_unit_template>(tn) && GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->layout_m) { GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->layout_m->xwrite(pin_node, get_id()); }
+   if(GetPointer<functional_unit_template>(tn) && GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->layout_m)
+   {
+      GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->layout_m->xwrite(pin_node, get_id());
+   }
 #endif
 }
 #endif
@@ -1302,17 +1562,26 @@ void port_o::print(std::ostream& os) const
    PP(os, "PORT:\n");
    structural_object::print(os);
    PP(os, "[Dir: " + std::string(port_directionNames[dir]));
-   if(pi != port_interface::PI_DEFAULT) PP(os, "[Interface: " + std::string(port_interfaceNames[pi]));
-   if(connected_objects.size()) PP(os, " [CON: ");
-   for(const auto& connected_object : connected_objects) os << connected_object.lock()->get_path() + "-" + convert_so_short(connected_object.lock()->get_kind()) << " ";
-   if(connected_objects.size()) PP(os, "]");
+   if(pi != port_interface::PI_DEFAULT)
+      PP(os, "[Interface: " + std::string(port_interfaceNames[pi]));
+   if(connected_objects.size())
+      PP(os, " [CON: ");
+   for(const auto& connected_object : connected_objects)
+      os << connected_object.lock()->get_path() + "-" + convert_so_short(connected_object.lock()->get_kind()) << " ";
+   if(connected_objects.size())
+      PP(os, "]");
    PP(os, "]\n");
-   if(ports.size()) PP(os, "[Ports:\n");
-   for(const auto& port : ports) port->print(os);
-   if(ports.size()) PP(os, "]");
+   if(ports.size())
+      PP(os, "[Ports:\n");
+   for(const auto& port : ports)
+      port->print(os);
+   if(ports.size())
+      PP(os, "]");
 }
 
-event_o::event_o(int _debug_level, const structural_objectRef o) : structural_object(_debug_level, o) {}
+event_o::event_o(int _debug_level, const structural_objectRef o) : structural_object(_debug_level, o)
+{
+}
 
 structural_objectRef event_o::find_member(const std::string&, so_kind, const structural_objectRef) const
 {
@@ -1320,7 +1589,10 @@ structural_objectRef event_o::find_member(const std::string&, so_kind, const str
    return structural_objectRef();
 }
 
-void event_o::copy(structural_objectRef dest) const { structural_object::copy(dest); }
+void event_o::copy(structural_objectRef dest) const
+{
+   structural_object::copy(dest);
+}
 
 structural_objectRef event_o::find_isomorphic(const structural_objectRef) const
 {
@@ -1328,7 +1600,10 @@ structural_objectRef event_o::find_isomorphic(const structural_objectRef) const
    return structural_objectRef();
 }
 
-void event_o::xload(const xml_element* Enode, structural_objectRef _owner, structural_managerRef const& CM) { structural_object::xload(Enode, _owner, CM); }
+void event_o::xload(const xml_element* Enode, structural_objectRef _owner, structural_managerRef const& CM)
+{
+   structural_object::xload(Enode, _owner, CM);
+}
 
 void event_o::xwrite(xml_element* rootnode)
 {
@@ -1343,7 +1618,9 @@ void event_o::print(std::ostream& os) const
    PP(os, "\n");
 }
 
-data_o::data_o(int _debug_level, const structural_objectRef o) : structural_object(_debug_level, o) {}
+data_o::data_o(int _debug_level, const structural_objectRef o) : structural_object(_debug_level, o)
+{
+}
 
 structural_objectRef data_o::find_member(const std::string&, so_kind, const structural_objectRef) const
 {
@@ -1351,7 +1628,10 @@ structural_objectRef data_o::find_member(const std::string&, so_kind, const stru
    return structural_objectRef();
 }
 
-void data_o::copy(structural_objectRef dest) const { structural_object::copy(dest); }
+void data_o::copy(structural_objectRef dest) const
+{
+   structural_object::copy(dest);
+}
 
 structural_objectRef data_o::find_isomorphic(const structural_objectRef) const
 {
@@ -1359,7 +1639,10 @@ structural_objectRef data_o::find_isomorphic(const structural_objectRef) const
    return structural_objectRef();
 }
 
-void data_o::xload(const xml_element* Enode, structural_objectRef _owner, structural_managerRef const& CM) { structural_object::xload(Enode, _owner, CM); }
+void data_o::xload(const xml_element* Enode, structural_objectRef _owner, structural_managerRef const& CM)
+{
+   structural_object::xload(Enode, _owner, CM);
+}
 
 void data_o::xwrite(xml_element* rootnode)
 {
@@ -1374,7 +1657,9 @@ void data_o::print(std::ostream& os) const
    PP(os, "\n");
 }
 
-action_o::action_o(int _debug_level, const structural_objectRef o) : structural_object(_debug_level, o), function_id(0), action_type(UNKNOWN) {}
+action_o::action_o(int _debug_level, const structural_objectRef o) : structural_object(_debug_level, o), function_id(0), action_type(UNKNOWN)
+{
+}
 
 void action_o::add_parameter(structural_objectRef d)
 {
@@ -1388,15 +1673,30 @@ const structural_objectRef action_o::get_parameter(unsigned int n) const
    return parameters[n];
 }
 
-unsigned int action_o::get_parameters_size() const { return static_cast<unsigned int>(parameters.size()); }
+unsigned int action_o::get_parameters_size() const
+{
+   return static_cast<unsigned int>(parameters.size());
+}
 
-void action_o::set_fun_id(unsigned int _id) { function_id = _id; }
+void action_o::set_fun_id(unsigned int _id)
+{
+   function_id = _id;
+}
 
-unsigned int action_o::get_fun_id() const { return function_id; }
+unsigned int action_o::get_fun_id() const
+{
+   return function_id;
+}
 
-void action_o::set_action_type(process_type at) { action_type = at; }
+void action_o::set_action_type(process_type at)
+{
+   action_type = at;
+}
 
-action_o::process_type action_o::get_action_type() const { return action_type; }
+action_o::process_type action_o::get_action_type() const
+{
+   return action_type;
+}
 
 void action_o::add_event_to_sensitivity(structural_objectRef e)
 {
@@ -1404,7 +1704,10 @@ void action_o::add_event_to_sensitivity(structural_objectRef e)
    action_sensitivity.push_back(e);
 }
 
-unsigned int action_o::get_sensitivity_size() const { return static_cast<unsigned int>(action_sensitivity.size()); }
+unsigned int action_o::get_sensitivity_size() const
+{
+   return static_cast<unsigned int>(action_sensitivity.size());
+}
 
 const structural_objectRef action_o::get_sensitivity(unsigned int n) const
 {
@@ -1412,11 +1715,20 @@ const structural_objectRef action_o::get_sensitivity(unsigned int n) const
    return action_sensitivity[n];
 }
 
-void action_o::set_scope(const std::string& sc) { scope = sc; }
+void action_o::set_scope(const std::string& sc)
+{
+   scope = sc;
+}
 
-const std::string& action_o::get_scope() const { return scope; }
+const std::string& action_o::get_scope() const
+{
+   return scope;
+}
 
-bool action_o::get_process_nservice() const { return action_type != SERVICE; }
+bool action_o::get_process_nservice() const
+{
+   return action_type != SERVICE;
+}
 
 void action_o::copy(structural_objectRef dest) const
 {
@@ -1452,13 +1764,15 @@ structural_objectRef action_o::find_member(const std::string& _id, so_kind _type
       case data_o_K:
       {
          for(const auto& parameter : parameters)
-            if(parameter->get_id() == _id) return parameter;
+            if(parameter->get_id() == _id)
+               return parameter;
          break;
       }
       case event_o_K:
       {
          for(const auto& i : action_sensitivity)
-            if(i->get_id() == _id) return i;
+            if(i->get_id() == _id)
+               return i;
          break;
       }
       case action_o_K:
@@ -1488,7 +1802,8 @@ void action_o::xload(const xml_element* Enode, structural_objectRef _owner, stru
       std::string val;
       LOAD_XVFM(val, Enode, action_type);
       for(i = 0; i < UNKNOWN; i++)
-         if(val == process_typeNames[i]) break;
+         if(val == process_typeNames[i])
+            break;
       action_type = process_type(i);
    }
    /// someone has to take care of GM
@@ -1498,7 +1813,8 @@ void action_o::xload(const xml_element* Enode, structural_objectRef _owner, stru
    for(const auto& iter : list)
    {
       const auto* EnodeC = GetPointer<const xml_element>(iter);
-      if(!EnodeC) continue;
+      if(!EnodeC)
+         continue;
       if(EnodeC->get_name() == GET_CLASS_NAME(data_o))
       {
          obj = structural_objectRef(new data_o(CM->get_debug_level(), _owner));
@@ -1520,13 +1836,15 @@ void action_o::xwrite(xml_element* rootnode)
    structural_object::xwrite(Enode);
    if(parameters.size())
    {
-      for(auto& parameter : parameters) parameter->xwrite(Enode);
+      for(auto& parameter : parameters)
+         parameter->xwrite(Enode);
    }
    /// someone has to take care of GM
    WRITE_XNVM(action_type, process_typeNames[action_type], Enode);
    if(action_sensitivity.size())
    {
-      for(auto& i : action_sensitivity) i->xwrite(Enode);
+      for(auto& i : action_sensitivity)
+         i->xwrite(Enode);
    }
    WRITE_XVM(scope, Enode);
 }
@@ -1536,23 +1854,34 @@ void action_o::print(std::ostream& os) const
    PP(os, "ACTION:\n");
    structural_object::print(os);
    PP(os, "[\n");
-   if(parameters.size()) PP(os, "Method/procedure Parameters:\n");
-   for(const auto& parameter : parameters) parameter->print(os);
+   if(parameters.size())
+      PP(os, "Method/procedure Parameters:\n");
+   for(const auto& parameter : parameters)
+      parameter->print(os);
    // if (GM) GM->print(os); //too verbose
    PP(os, "Action type: " + std::string(process_typeNames[action_type]) + "\n");
 
-   if(action_sensitivity.size()) PP(os, "Sensitivity List:\n");
-   for(const auto& i : action_sensitivity) i->print(os);
+   if(action_sensitivity.size())
+      PP(os, "Sensitivity List:\n");
+   for(const auto& i : action_sensitivity)
+      i->print(os);
    os << "Scope " << scope << " ";
    os << (action_type != SERVICE ? "PROCESS" : "SERVICE");
    PP(os, "]\n");
 }
 
-constant_o::constant_o(int _debug_level, const structural_objectRef o) : structural_object(_debug_level, o) {}
+constant_o::constant_o(int _debug_level, const structural_objectRef o) : structural_object(_debug_level, o)
+{
+}
 
-constant_o::constant_o(int _debug_level, const structural_objectRef o, std::string  _value) : structural_object(_debug_level, o), value(std::move(_value)) {}
+constant_o::constant_o(int _debug_level, const structural_objectRef o, std::string _value) : structural_object(_debug_level, o), value(std::move(_value))
+{
+}
 
-unsigned int constant_o::get_connected_objects_size() const { return static_cast<unsigned int>(connected_objects.size()); }
+unsigned int constant_o::get_connected_objects_size() const
+{
+   return static_cast<unsigned int>(connected_objects.size());
+}
 
 structural_objectRef constant_o::get_connection(unsigned int idx) const
 {
@@ -1566,7 +1895,8 @@ void constant_o::add_connection(structural_objectRef p)
    THROW_ASSERT(p->get_kind() == port_o_K || p->get_kind() == signal_o_K, "constant can be connected only to ports and signals, but not to " + std::string(p->get_kind_text()));
    /// check if the object is already into the list
    for(auto& connected_object : connected_objects)
-      if(connected_object.lock() == p) return;
+      if(connected_object.lock() == p)
+         return;
    connected_objects.push_back(p);
 }
 
@@ -1578,9 +1908,15 @@ void constant_o::copy(structural_objectRef dest) const
    /// the field connected_objects has to be updated outside!!!
 }
 
-unsigned int constant_o::get_size() const { return GET_TYPE_SIZE(this); }
+unsigned int constant_o::get_size() const
+{
+   return GET_TYPE_SIZE(this);
+}
 
-std::string constant_o::get_value() const { return value; }
+std::string constant_o::get_value() const
+{
+   return value;
+}
 
 structural_objectRef constant_o::find_member(const std::string& _id, so_kind _type, const structural_objectRef _owner) const
 {
@@ -1590,7 +1926,8 @@ structural_objectRef constant_o::find_member(const std::string& _id, so_kind _ty
       case port_o_K:
       {
          for(const auto& connected_object : connected_objects)
-            if(connected_object.lock()->get_kind() == _type && connected_object.lock()->get_id() == _id && connected_object.lock()->get_owner() == _owner) return connected_object.lock();
+            if(connected_object.lock()->get_kind() == _type && connected_object.lock()->get_id() == _id && connected_object.lock()->get_owner() == _owner)
+               return connected_object.lock();
          break;
       }
       case action_o_K:
@@ -1617,7 +1954,8 @@ structural_objectRef constant_o::find_isomorphic(const structural_objectRef key)
       {
          auto* conn = GetPointer<signal_o>(key);
          for(unsigned int k = 0; k < conn->get_connected_objects_size(); k++)
-            if(conn->get_port(k)->get_id() == get_id()) return get_owner()->find_isomorphic(conn->get_port(k)->get_owner())->find_isomorphic(key);
+            if(conn->get_port(k)->get_id() == get_id())
+               return get_owner()->find_isomorphic(conn->get_port(k)->get_owner())->find_isomorphic(key);
          THROW_ERROR("Something went wrong!");
          break;
       }
@@ -1643,7 +1981,8 @@ structural_objectRef constant_o::find_isomorphic(const structural_objectRef key)
 
 void constant_o::xload(const xml_element* Enode, structural_objectRef, structural_managerRef const&)
 {
-   if(CE_XVM(value, Enode)) LOAD_XVM(value, Enode);
+   if(CE_XVM(value, Enode))
+      LOAD_XVM(value, Enode);
    std::string id_string;
    if(CE_XVM(id, Enode))
       LOAD_XVFM(id_string, Enode, id);
@@ -1659,7 +1998,8 @@ void constant_o::xwrite(xml_element* rootnode)
    structural_object::xwrite(Enode);
    WRITE_XVM(value, Enode);
    xml_element* Enode_CO = Enode->add_child_element("connected_objects");
-   for(unsigned int i = 0; i < connected_objects.size(); i++) WRITE_XNVM2("CON" + boost::lexical_cast<std::string>(i), connected_objects[i].lock()->get_path(), Enode_CO);
+   for(unsigned int i = 0; i < connected_objects.size(); i++)
+      WRITE_XNVM2("CON" + boost::lexical_cast<std::string>(i), connected_objects[i].lock()->get_path(), Enode_CO);
 }
 
 void constant_o::print(std::ostream& os) const
@@ -1668,23 +2008,35 @@ void constant_o::print(std::ostream& os) const
    structural_object::print(os);
    PP(os, "[\n");
    PP(os, "Value: " + value + "; ");
-   if(connected_objects.size()) PP(os, " [CON: ");
-   for(const auto& connected_object : connected_objects) os << connected_object.lock()->get_path() + "-" + convert_so_short(connected_object.lock()->get_kind()) << " ";
-   if(connected_objects.size()) PP(os, "]");
+   if(connected_objects.size())
+      PP(os, " [CON: ");
+   for(const auto& connected_object : connected_objects)
+      os << connected_object.lock()->get_path() + "-" + convert_so_short(connected_object.lock()->get_kind()) << " ";
+   if(connected_objects.size())
+      PP(os, "]");
    PP(os, "]\n");
 }
 
-signal_o::signal_o(int _debug_level, const structural_objectRef o, so_kind _signal_type) : structural_object(_debug_level, o), is_critical(false), lsb(0), signal_type(_signal_type) {}
+signal_o::signal_o(int _debug_level, const structural_objectRef o, so_kind _signal_type) : structural_object(_debug_level, o), is_critical(false), lsb(0), signal_type(_signal_type)
+{
+}
 
-void signal_o::set_critical() { is_critical = true; }
+void signal_o::set_critical()
+{
+   is_critical = true;
+}
 
-bool signal_o::get_critical() const { return is_critical; }
+bool signal_o::get_critical() const
+{
+   return is_critical;
+}
 
 void signal_o::add_port(structural_objectRef p)
 {
    THROW_ASSERT(p, "NULL object received");
    THROW_ASSERT(GetPointer<port_o>(p), "A port is expected");
-   if(std::find(connected_objects.begin(), connected_objects.end(), p) == connected_objects.end()) connected_objects.push_back(p);
+   if(std::find(connected_objects.begin(), connected_objects.end(), p) == connected_objects.end())
+      connected_objects.push_back(p);
 }
 
 const structural_objectRef signal_o::get_port(unsigned int n) const
@@ -1704,13 +2056,15 @@ void signal_o::remove_port(structural_objectRef s)
    THROW_ASSERT(s, "NULL object received");
    THROW_ASSERT(GetPointer<port_o>(s), "A port is expected");
    auto del = std::find(connected_objects.begin(), connected_objects.end(), s);
-   if(del != connected_objects.end()) connected_objects.erase(del);
+   if(del != connected_objects.end())
+      connected_objects.erase(del);
 }
 
 bool signal_o::is_connected(structural_objectRef s) const
 {
    THROW_ASSERT(s, "NULL object received");
-   if(connected_objects.size() == 0) return false;
+   if(connected_objects.size() == 0)
+      return false;
    return std::find(connected_objects.begin(), connected_objects.end(), s) != connected_objects.end();
 }
 
@@ -1721,7 +2075,8 @@ void signal_o::substitute_port(structural_objectRef old_conn, structural_objectR
    if(del != connected_objects.end())
    {
       auto del_old = std::find(connected_objects.begin(), connected_objects.end(), old_conn);
-      if(del_old != connected_objects.end()) connected_objects.erase(del_old);
+      if(del_old != connected_objects.end())
+         connected_objects.erase(del_old);
    }
    else
       for(auto& connected_object : connected_objects)
@@ -1738,11 +2093,15 @@ void signal_o::substitute_port(structural_objectRef old_conn, structural_objectR
       }
 }
 
-unsigned int signal_o::get_connected_objects_size() const { return static_cast<unsigned int>(connected_objects.size()); }
+unsigned int signal_o::get_connected_objects_size() const
+{
+   return static_cast<unsigned int>(connected_objects.size());
+}
 
 bool signal_o::is_full_connected() const
 {
-   if(connected_objects.size() <= 1) return false;
+   if(connected_objects.size() <= 1)
+      return false;
    bool in_port = false;
    bool out_port = false;
    auto it_end = connected_objects.end();
@@ -1771,7 +2130,8 @@ bool signal_o::is_full_connected() const
          }
       }
    }
-   if(in_port && out_port) return true;
+   if(in_port && out_port)
+      return true;
    // At this point ports are all input or all output
    for(auto it = connected_objects.begin(); it != it_end; ++it)
    {
@@ -1785,7 +2145,8 @@ bool signal_o::is_full_connected() const
             {
                auto* second_port = GetPointer<port_o>(*it2);
                structural_objectRef second_owner = second_port->get_owner();
-               if(first_owner == second_owner->get_owner() || second_owner == first_owner->get_owner()) return true;
+               if(first_owner == second_owner->get_owner() || second_owner == first_owner->get_owner())
+                  return true;
             }
          }
       }
@@ -1801,13 +2162,15 @@ structural_objectRef signal_o::find_member(const std::string& _id, so_kind _type
       case port_o_K:
       {
          for(const auto& connected_object : connected_objects)
-            if(connected_object->get_id() == _id && connected_object->get_owner() == _owner) return connected_object;
+            if(connected_object->get_id() == _id && connected_object->get_owner() == _owner)
+               return connected_object;
          break;
       }
       case signal_o_K:
       {
          for(const auto& signal : signals_)
-            if(signal->get_id() == _id && signal->get_owner() == _owner) return signal;
+            if(signal->get_id() == _id && signal->get_owner() == _owner)
+               return signal;
          break;
       }
       case action_o_K:
@@ -1828,7 +2191,8 @@ void signal_o::copy(structural_objectRef dest) const
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Copying signal: " << get_path());
    structural_object::copy(dest);
-   if(is_critical) GetPointer<signal_o>(dest)->set_critical();
+   if(is_critical)
+      GetPointer<signal_o>(dest)->set_critical();
    /// someone has to take care of connected_objects
 
    for(const auto& signal : signals_)
@@ -1872,7 +2236,8 @@ structural_objectRef signal_o::find_isomorphic(const structural_objectRef key) c
       case signal_o_K:
       {
          for(const auto& signal : signals_)
-            if(signal->get_id() == key->get_id()) return signal;
+            if(signal->get_id() == key->get_id())
+               return signal;
          break;
       }
       case action_o_K:
@@ -1898,7 +2263,8 @@ void signal_o::xload(const xml_element* Enode, structural_objectRef _owner, stru
    if(_id.find("\\") != std::string::npos)
    {
       structural_objectRef module_own = get_owner();
-      if(module_own->get_kind() != component_o_K) module_own = module_own->get_owner();
+      if(module_own->get_kind() != component_o_K)
+         module_own = module_own->get_owner();
 
       std::string base = _id;
       boost::replace_all(base, "\\", "");
@@ -1925,7 +2291,8 @@ void signal_o::xload(const xml_element* Enode, structural_objectRef _owner, stru
    for(const auto& iter : list)
    {
       const auto* EnodeC = GetPointer<const xml_element>(iter);
-      if(!EnodeC) continue;
+      if(!EnodeC)
+         continue;
       if(EnodeC->get_name() == GET_CLASS_NAME(signal_o))
       {
          structural_objectRef obj = structural_objectRef(new signal_o(CM->get_debug_level(), _owner, signal_o_K));
@@ -1947,21 +2314,29 @@ void signal_o::xwrite(xml_element* rootnode)
    xml_element* Enode = rootnode->add_child_element(get_kind_text());
    structural_object::xwrite(Enode);
    xml_element* Enode_CO = Enode->add_child_element("connected_objects");
-   for(unsigned int i = 0; i < connected_objects.size(); i++) WRITE_XNVM2("CON" + boost::lexical_cast<std::string>(i), connected_objects[i]->get_path(), Enode_CO);
-   for(auto& signal : signals_) signal->xwrite(Enode);
+   for(unsigned int i = 0; i < connected_objects.size(); i++)
+      WRITE_XNVM2("CON" + boost::lexical_cast<std::string>(i), connected_objects[i]->get_path(), Enode_CO);
+   for(auto& signal : signals_)
+      signal->xwrite(Enode);
 }
 
 void signal_o::print(std::ostream& os) const
 {
    PP(os, "SIGNAL:\n");
    structural_object::print(os);
-   if(connected_objects.size()) PP(os, "[CON: ");
-   for(const auto& connected_object : connected_objects) os << connected_object->get_path() + "-" + convert_so_short(connected_object->get_kind()) << " ";
-   if(connected_objects.size()) PP(os, "]\n");
+   if(connected_objects.size())
+      PP(os, "[CON: ");
+   for(const auto& connected_object : connected_objects)
+      os << connected_object->get_path() + "-" + convert_so_short(connected_object->get_kind()) << " ";
+   if(connected_objects.size())
+      PP(os, "]\n");
 
-   if(signals_.size()) PP(os, "[Signals:\n");
-   for(const auto& signal : signals_) signal->print(os);
-   if(signals_.size()) PP(os, "]");
+   if(signals_.size())
+      PP(os, "[Signals:\n");
+   for(const auto& signal : signals_)
+      signal->print(os);
+   if(signals_.size())
+      PP(os, "]");
 }
 
 void signal_o::add_n_signals(unsigned int n_signals, structural_objectRef _owner)
@@ -2001,21 +2376,44 @@ unsigned int signal_o::get_signals_size() const
    return static_cast<unsigned int>(signals_.size());
 }
 
-module::module(int _debug_level, const structural_objectRef o) : structural_object(_debug_level, o), last_position_port(0), is_critical(false), is_generated(false), multi_unit_multiplicity(0) {}
+module::module(int _debug_level, const structural_objectRef o) : structural_object(_debug_level, o), last_position_port(0), is_critical(false), is_generated(false), multi_unit_multiplicity(0)
+{
+}
 
-unsigned int module::get_num_ports() const { return last_position_port; }
+unsigned int module::get_num_ports() const
+{
+   return last_position_port;
+}
 
-void module::set_critical() { is_critical = true; }
+void module::set_critical()
+{
+   is_critical = true;
+}
 
-bool module::get_critical() const { return is_critical; }
+bool module::get_critical() const
+{
+   return is_critical;
+}
 
-void module::set_generated() { is_generated = true; }
+void module::set_generated()
+{
+   is_generated = true;
+}
 
-bool module::get_generated() const { return is_generated; }
+bool module::get_generated() const
+{
+   return is_generated;
+}
 
-void module::set_multi_unit_multiplicity(unsigned int value) { multi_unit_multiplicity = value; }
+void module::set_multi_unit_multiplicity(unsigned int value)
+{
+   multi_unit_multiplicity = value;
+}
 
-unsigned int module::get_multi_unit_multiplicity() const { return multi_unit_multiplicity; }
+unsigned int module::get_multi_unit_multiplicity() const
+{
+   return multi_unit_multiplicity;
+}
 
 structural_objectRef module::get_positional_port(unsigned int index) const
 {
@@ -2039,7 +2437,10 @@ const structural_objectRef module::get_in_port(unsigned int n) const
    return in_ports[n];
 }
 
-unsigned int module::get_in_port_size() const { return static_cast<unsigned int>(in_ports.size()); }
+unsigned int module::get_in_port_size() const
+{
+   return static_cast<unsigned int>(in_ports.size());
+}
 
 void module::add_out_port(structural_objectRef p)
 {
@@ -2057,7 +2458,10 @@ const structural_objectRef module::get_out_port(unsigned int n) const
    return out_ports[n];
 }
 
-unsigned int module::get_out_port_size() const { return static_cast<unsigned int>(out_ports.size()); }
+unsigned int module::get_out_port_size() const
+{
+   return static_cast<unsigned int>(out_ports.size());
+}
 
 void module::add_in_out_port(structural_objectRef p)
 {
@@ -2075,7 +2479,10 @@ const structural_objectRef module::get_in_out_port(unsigned int n) const
    return in_out_ports[n];
 }
 
-unsigned int module::get_in_out_port_size() const { return static_cast<unsigned int>(in_out_ports.size()); }
+unsigned int module::get_in_out_port_size() const
+{
+   return static_cast<unsigned int>(in_out_ports.size());
+}
 
 void module::add_gen_port(structural_objectRef p)
 {
@@ -2093,7 +2500,10 @@ const structural_objectRef module::get_gen_port(unsigned int n) const
    return gen_ports[n];
 }
 
-unsigned int module::get_gen_port_size() const { return static_cast<unsigned int>(gen_ports.size()); }
+unsigned int module::get_gen_port_size() const
+{
+   return static_cast<unsigned int>(gen_ports.size());
+}
 
 void module::remove_port(const std::string& _id)
 {
@@ -2114,7 +2524,8 @@ void module::remove_port(const std::string& _id)
    positional_map.clear();
    for(auto& l : _positional_map)
    {
-      if(l.first == num_port) continue;
+      if(l.first == num_port)
+         continue;
       if(l.first < num_port)
          positional_map[l.first] = l.second;
       else
@@ -2274,7 +2685,10 @@ const structural_objectRef module::get_internal_object(unsigned int n) const
    return internal_objects[n];
 }
 
-unsigned int module::get_internal_objects_size() const { return static_cast<unsigned int>(internal_objects.size()); }
+unsigned int module::get_internal_objects_size() const
+{
+   return static_cast<unsigned int>(internal_objects.size());
+}
 
 void module::add_process(structural_objectRef p)
 {
@@ -2290,7 +2704,10 @@ const structural_objectRef module::get_process(unsigned int n) const
    return list_of_process[n];
 }
 
-unsigned int module::get_process_size() const { return static_cast<unsigned int>(list_of_process.size()); }
+unsigned int module::get_process_size() const
+{
+   return static_cast<unsigned int>(list_of_process.size());
+}
 
 void module::add_service(structural_objectRef p)
 {
@@ -2306,7 +2723,10 @@ const structural_objectRef module::get_service(unsigned int n) const
    return list_of_service[n];
 }
 
-unsigned int module::get_service_size() const { return static_cast<unsigned int>(list_of_service.size()); }
+unsigned int module::get_service_size() const
+{
+   return static_cast<unsigned int>(list_of_service.size());
+}
 
 void module::add_event(structural_objectRef e)
 {
@@ -2322,7 +2742,10 @@ const structural_objectRef module::get_event(unsigned int n) const
    return list_of_event[n];
 }
 
-unsigned int module::get_event_size() const { return static_cast<unsigned int>(list_of_event.size()); }
+unsigned int module::get_event_size() const
+{
+   return static_cast<unsigned int>(list_of_event.size());
+}
 
 void module::add_local_data(structural_objectRef d)
 {
@@ -2338,7 +2761,10 @@ const structural_objectRef module::get_local_data(unsigned int n) const
    return local_data[n];
 }
 
-unsigned int module::get_local_data_size() const { return static_cast<unsigned int>(local_data.size()); }
+unsigned int module::get_local_data_size() const
+{
+   return static_cast<unsigned int>(local_data.size());
+}
 
 void module::set_NP_functionality(NP_functionalityRef f)
 {
@@ -2349,7 +2775,10 @@ void module::set_NP_functionality(NP_functionalityRef f)
       set_black_box(false);
 }
 
-const NP_functionalityRef& module::get_NP_functionality() const { return NP_descriptions; }
+const NP_functionalityRef& module::get_NP_functionality() const
+{
+   return NP_descriptions;
+}
 
 void module::get_NP_library_parameters(structural_objectRef _owner, std::vector<std::pair<std::string, structural_objectRef>>& parameters) const
 {
@@ -2372,64 +2801,77 @@ structural_objectRef module::find_member(const std::string& _id, so_kind _type, 
       case port_vector_o_K:
       {
          for(const auto& in_port : in_ports)
-            if(in_port->get_id() == _id) return in_port;
+            if(in_port->get_id() == _id)
+               return in_port;
          for(const auto& out_port : out_ports)
-            if(out_port->get_id() == _id) return out_port;
+            if(out_port->get_id() == _id)
+               return out_port;
          for(const auto& in_out_port : in_out_ports)
-            if(in_out_port->get_id() == _id) return in_out_port;
+            if(in_out_port->get_id() == _id)
+               return in_out_port;
          for(const auto& gen_port : gen_ports)
-            if(gen_port->get_id() == _id) return gen_port;
+            if(gen_port->get_id() == _id)
+               return gen_port;
          break;
       }
       case component_o_K:
       {
          auto it = index_components.find(_id);
-         if(it != index_components.end()) return it->second;
+         if(it != index_components.end())
+            return it->second;
          break;
       }
       case channel_o_K:
       {
          auto it = index_channels.find(_id);
-         if(it != index_channels.end()) return it->second;
+         if(it != index_channels.end())
+            return it->second;
          break;
       }
       case constant_o_K:
       {
          auto it = index_constants.find(_id);
-         if(it != index_constants.end()) return it->second;
+         if(it != index_constants.end())
+            return it->second;
          break;
       }
       case signal_vector_o_K:
       case signal_o_K:
       {
          auto it = index_signals.find(_id);
-         if(it != index_signals.end()) return it->second;
+         if(it != index_signals.end())
+            return it->second;
          break;
       }
       case bus_connection_o_K:
       {
          auto it = index_bus_connections.find(_id);
-         if(it != index_bus_connections.end()) return it->second;
+         if(it != index_bus_connections.end())
+            return it->second;
          break;
       }
       case data_o_K:
       {
          for(const auto& i : local_data)
-            if(i->get_id() == _id) return i;
+            if(i->get_id() == _id)
+               return i;
          break;
       }
       case event_o_K:
       {
          for(const auto& i : list_of_event)
-            if(i->get_id() == _id) return i;
+            if(i->get_id() == _id)
+               return i;
          break;
       }
       case action_o_K:
       {
          for(const auto& list_of_proces : list_of_process)
-            if(list_of_proces->get_id() == _id) return list_of_proces;
+            if(list_of_proces->get_id() == _id)
+               return list_of_proces;
          for(const auto& i : list_of_service)
-            if(i->get_id() == _id) return i;
+            if(i->get_id() == _id)
+               return i;
          break;
       }
       default:
@@ -2443,7 +2885,8 @@ bool module::is_var_args() const
    unsigned int currPort = 0;
    unsigned int inPortSize = get_in_port_size();
    for(currPort = 0; currPort < inPortSize; currPort++)
-      if(GetPointer<port_o>(get_in_port(currPort))->get_is_var_args()) return true;
+      if(GetPointer<port_o>(get_in_port(currPort))->get_is_var_args())
+         return true;
 
    return false;
 }
@@ -2453,15 +2896,19 @@ void module::copy(structural_objectRef dest) const
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Copying module: " + get_path() + " (" + get_typeRef()->id_type + ")");
    structural_object::copy(dest);
 
-   if(is_critical) GetPointer<module>(dest)->set_critical();
-   if(is_generated) GetPointer<module>(dest)->set_generated();
-   if(multi_unit_multiplicity) GetPointer<module>(dest)->set_multi_unit_multiplicity(multi_unit_multiplicity);
+   if(is_critical)
+      GetPointer<module>(dest)->set_critical();
+   if(is_generated)
+      GetPointer<module>(dest)->set_generated();
+   if(multi_unit_multiplicity)
+      GetPointer<module>(dest)->set_multi_unit_multiplicity(multi_unit_multiplicity);
    structural_objectRef obj;
 
    /// copying of the ports of the module: be aware of respecting the initial order of the ports
    // std::cerr << "copying of the ports of the module: be aware of respecting the initial order of the ports " + get_path() + " (" + get_typeRef()->id_type + ")" << std::endl;
 #ifndef NDEBUG
-   if(last_position_port) PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - copying ports: " << last_position_port);
+   if(last_position_port)
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - copying ports: " << last_position_port);
 #endif
    for(unsigned int i = 0; i < last_position_port; i++)
    {
@@ -2512,7 +2959,8 @@ void module::copy(structural_objectRef dest) const
 
    /// copy all the internal objects
 #ifndef NDEBUG
-   if(internal_objects.size()) PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - copying internal objects: " << internal_objects.size());
+   if(internal_objects.size())
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - copying internal objects: " << internal_objects.size());
 #endif
    for(auto int_obj : internal_objects)
    {
@@ -2562,7 +3010,8 @@ void module::copy(structural_objectRef dest) const
       if(int_obj->get_kind() == port_vector_o_K)
       {
          ports.push_back(int_obj);
-         for(unsigned int p = 0; p < GetPointer<port_o>(int_obj)->get_ports_size(); p++) ports.push_back(GetPointer<port_o>(int_obj)->get_port(p));
+         for(unsigned int p = 0; p < GetPointer<port_o>(int_obj)->get_ports_size(); p++)
+            ports.push_back(GetPointer<port_o>(int_obj)->get_port(p));
       }
       else
          ports.push_back(int_obj);
@@ -2576,7 +3025,8 @@ void module::copy(structural_objectRef dest) const
             const structural_objectRef conn_obj = port->get_connection(c);
             std::string connected_path = conn_obj->get_path();
             // std::cerr << "connected path: " << connected_path << " and scope: " << scope << std::endl;
-            if(connected_path.find(scope + "/") == std::string::npos) continue;
+            if(connected_path.find(scope + "/") == std::string::npos)
+               continue;
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "   - internal connection with: " << connected_path);
             structural_objectRef dest_obj;
             if(conn_obj->get_kind() == signal_o_K || conn_obj->get_kind() == signal_vector_o_K)
@@ -2589,7 +3039,8 @@ void module::copy(structural_objectRef dest) const
             {
                // port-to-port connection. It is a port of a submodule
                structural_objectRef conn_owner = conn_obj->get_owner();
-               if(conn_owner->get_kind() == port_vector_o_K and conn_owner->get_owner()->get_path() != get_path()) conn_owner = conn_owner->get_owner();
+               if(conn_owner->get_kind() == port_vector_o_K and conn_owner->get_owner()->get_path() != get_path())
+                  conn_owner = conn_owner->get_owner();
                THROW_ASSERT(conn_owner, "Not valid submodule");
                dest_obj = dest->find_isomorphic(conn_owner);
                dest_obj = dest_obj->find_isomorphic(conn_obj);
@@ -2619,13 +3070,17 @@ void module::copy(structural_objectRef dest) const
       {
          const structural_objectRef conn_obj = constant->get_connection(i);
          std::string connected_path = conn_obj->get_path();
-         if(connected_path.find(scope + "/") == std::string::npos) continue;
+         if(connected_path.find(scope + "/") == std::string::npos)
+            continue;
          /// it is a port
          structural_objectRef dest_obj;
          structural_objectRef conn_owner = conn_obj->get_owner();
          if(conn_owner->get_kind() != component_o_K || conn_owner->get_path() != get_path())
          {
-            if(conn_owner->get_kind() == port_vector_o_K and conn_owner->get_owner()->get_path() != get_path()) { conn_owner = conn_owner->get_owner(); }
+            if(conn_owner->get_kind() == port_vector_o_K and conn_owner->get_owner()->get_path() != get_path())
+            {
+               conn_owner = conn_owner->get_owner();
+            }
             dest_obj = dest->find_isomorphic(conn_owner);
             dest_obj = dest_obj->find_isomorphic(conn_obj);
          }
@@ -2649,7 +3104,8 @@ void module::copy(structural_objectRef dest) const
       std::vector<structural_objectRef> signal_objs;
       if(int_obj->get_kind() == signal_vector_o_K)
       {
-         for(unsigned int p = 0; p < GetPointer<signal_o>(int_obj)->get_signals_size(); p++) signal_objs.push_back(GetPointer<signal_o>(int_obj)->get_signal(p));
+         for(unsigned int p = 0; p < GetPointer<signal_o>(int_obj)->get_signals_size(); p++)
+            signal_objs.push_back(GetPointer<signal_o>(int_obj)->get_signal(p));
       }
       signal_objs.push_back(int_obj);
       for(auto signal_obj : signal_objs)
@@ -2661,7 +3117,8 @@ void module::copy(structural_objectRef dest) const
          {
             const structural_objectRef conn_obj = sig->get_port(c);
             std::string connected_path = conn_obj->get_path();
-            if(connected_path.find(scope + "/") == std::string::npos) continue;
+            if(connected_path.find(scope + "/") == std::string::npos)
+               continue;
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "   - internal connection with: " << connected_path);
             structural_objectRef dest_obj;
             if(conn_obj->get_kind() == port_o_K || conn_obj->get_kind() == port_vector_o_K)
@@ -2669,7 +3126,10 @@ void module::copy(structural_objectRef dest) const
                structural_objectRef conn_owner = conn_obj->get_owner();
                if(conn_owner->get_kind() != component_o_K || conn_owner->get_path() != get_path())
                {
-                  if(conn_owner->get_kind() == port_vector_o_K and conn_owner->get_owner()->get_path() != get_path()) { conn_owner = conn_owner->get_owner(); }
+                  if(conn_owner->get_kind() == port_vector_o_K and conn_owner->get_owner()->get_path() != get_path())
+                  {
+                     conn_owner = conn_owner->get_owner();
+                  }
                   dest_obj = dest->find_isomorphic(conn_owner);
                   dest_obj = dest_obj->find_isomorphic(conn_obj);
                }
@@ -2687,9 +3147,15 @@ void module::copy(structural_objectRef dest) const
       }
    }
 
-   for(auto l = index_bus_connections.begin(); l != index_bus_connections.end(); ++l) { THROW_ERROR("Copy of bus connections is not yet supported"); }
+   for(auto l = index_bus_connections.begin(); l != index_bus_connections.end(); ++l)
+   {
+      THROW_ERROR("Copy of bus connections is not yet supported");
+   }
 
-   for(auto l = index_channels.begin(); l != index_channels.end(); ++l) { THROW_ERROR("Copy of bus connections is not yet supported"); }
+   for(auto l = index_channels.begin(); l != index_channels.end(); ++l)
+   {
+      THROW_ERROR("Copy of bus connections is not yet supported");
+   }
 
    if(NP_descriptions)
    {
@@ -2716,14 +3182,18 @@ structural_objectRef module::find_isomorphic(const structural_objectRef key) con
             {
                for(const auto& in_port : in_ports)
                {
-                  if(in_port->get_id() == key->get_id()) return in_port;
+                  if(in_port->get_id() == key->get_id())
+                     return in_port;
                }
                for(const auto& in_port : in_ports)
                {
-                  if(key->get_owner()->get_kind() != port_vector_o_K || in_port->get_kind() != port_vector_o_K) continue;
-                  if(key->get_owner()->get_id() != in_port->get_id()) continue;
+                  if(key->get_owner()->get_kind() != port_vector_o_K || in_port->get_kind() != port_vector_o_K)
+                     continue;
+                  if(key->get_owner()->get_id() != in_port->get_id())
+                     continue;
                   structural_objectRef iso = in_port->find_isomorphic(key);
-                  if(iso) return iso;
+                  if(iso)
+                     return iso;
                }
                THROW_ERROR("Something went wrong with module " + key->get_path() + " in " + get_path());
                break;
@@ -2732,14 +3202,18 @@ structural_objectRef module::find_isomorphic(const structural_objectRef key) con
             {
                for(const auto& out_port : out_ports)
                {
-                  if(out_port->get_id() == key->get_id()) return out_port;
+                  if(out_port->get_id() == key->get_id())
+                     return out_port;
                }
                for(const auto& out_port : out_ports)
                {
-                  if(key->get_owner()->get_kind() != port_vector_o_K || out_port->get_kind() != port_vector_o_K) continue;
-                  if(key->get_owner()->get_id() != out_port->get_id()) continue;
+                  if(key->get_owner()->get_kind() != port_vector_o_K || out_port->get_kind() != port_vector_o_K)
+                     continue;
+                  if(key->get_owner()->get_id() != out_port->get_id())
+                     continue;
                   structural_objectRef iso = out_port->find_isomorphic(key);
-                  if(iso) return iso;
+                  if(iso)
+                     return iso;
                }
                THROW_ERROR("Something went wrong with module " + key->get_path() + " in " + get_path());
                break;
@@ -2748,14 +3222,18 @@ structural_objectRef module::find_isomorphic(const structural_objectRef key) con
             {
                for(const auto& in_out_port : in_out_ports)
                {
-                  if(in_out_port->get_id() == key->get_id()) return in_out_port;
+                  if(in_out_port->get_id() == key->get_id())
+                     return in_out_port;
                }
                for(const auto& in_out_port : in_out_ports)
                {
-                  if(key->get_owner()->get_kind() != port_vector_o_K || in_out_port->get_kind() != port_vector_o_K) continue;
-                  if(key->get_owner()->get_id() != in_out_port->get_id()) continue;
+                  if(key->get_owner()->get_kind() != port_vector_o_K || in_out_port->get_kind() != port_vector_o_K)
+                     continue;
+                  if(key->get_owner()->get_id() != in_out_port->get_id())
+                     continue;
                   structural_objectRef iso = in_out_port->find_isomorphic(key);
-                  if(iso) return iso;
+                  if(iso)
+                     return iso;
                }
                THROW_ERROR("Something went wrong with module " + key->get_path() + " in " + get_path());
                break;
@@ -2763,7 +3241,8 @@ structural_objectRef module::find_isomorphic(const structural_objectRef key) con
             case port_o::GEN:
             {
                for(const auto& gen_port : gen_ports)
-                  if(gen_port->get_id() == key->get_id()) return gen_port;
+                  if(gen_port->get_id() == key->get_id())
+                     return gen_port;
                THROW_ERROR("Something went wrong with module " + key->get_path());
                break;
             }
@@ -2779,21 +3258,24 @@ structural_objectRef module::find_isomorphic(const structural_objectRef key) con
       case component_o_K:
       {
          auto it = index_components.find(key->get_id());
-         if(it != index_components.end()) return it->second;
+         if(it != index_components.end())
+            return it->second;
          THROW_ERROR("Something went wrong with module " + key->get_path());
          break;
       }
       case channel_o_K:
       {
          auto it = index_channels.find(key->get_id());
-         if(it != index_channels.end()) return it->second;
+         if(it != index_channels.end())
+            return it->second;
          THROW_ERROR("Something went wrong with module " + key->get_path());
          break;
       }
       case constant_o_K:
       {
          auto it = index_constants.find(key->get_id());
-         if(it != index_constants.end()) return it->second;
+         if(it != index_constants.end())
+            return it->second;
          THROW_ERROR("Something went wrong with module " + key->get_path());
          break;
       }
@@ -2801,11 +3283,13 @@ structural_objectRef module::find_isomorphic(const structural_objectRef key) con
       case signal_o_K:
       {
          auto it = index_signals.find(key->get_id());
-         if(it != index_signals.end()) return it->second;
+         if(it != index_signals.end())
+            return it->second;
          if(key->get_owner()->get_kind() == signal_vector_o_K)
          {
             it = index_signals.find(key->get_owner()->get_id());
-            if(it != index_signals.end()) return it->second->find_isomorphic(key);
+            if(it != index_signals.end())
+               return it->second->find_isomorphic(key);
          }
          THROW_ERROR("Something went wrong! " + key->get_path() + " in " + get_path());
          break;
@@ -2813,7 +3297,8 @@ structural_objectRef module::find_isomorphic(const structural_objectRef key) con
       case bus_connection_o_K:
       {
          auto it = index_bus_connections.find(key->get_id());
-         if(it != index_bus_connections.end()) return it->second;
+         if(it != index_bus_connections.end())
+            return it->second;
          break;
       }
       case action_o_K:
@@ -2832,12 +3317,16 @@ std::vector<std::string> get_connections(const xml_element* node)
    for(const auto& itC : listC)
    {
       const auto* EnodeCC = GetPointer<const xml_element>(itC);
-      if(!EnodeCC) continue;
+      if(!EnodeCC)
+         continue;
       if(EnodeCC->get_name() == "connected_objects")
       {
          const xml_element::attribute_list Alist = EnodeCC->get_attributes();
          auto it_end = Alist.end();
-         for(auto it = Alist.begin(); it != it_end; ++it) { connections.push_back((*it)->get_value()); }
+         for(auto it = Alist.begin(); it != it_end; ++it)
+         {
+            connections.push_back((*it)->get_value());
+         }
       }
    }
    return connections;
@@ -2856,8 +3345,10 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
    for(const auto& iter : list)
    {
       const auto* EnodeC = GetPointer<const xml_element>(iter);
-      if(!EnodeC or EnodeC->get_name() == GET_CLASS_NAME(structural_type_descriptor)) continue;
-      if(!EnodeC or EnodeC->get_name() == "parameter") continue;
+      if(!EnodeC or EnodeC->get_name() == GET_CLASS_NAME(structural_type_descriptor))
+         continue;
+      if(!EnodeC or EnodeC->get_name() == "parameter")
+         continue;
 
       if(EnodeC->get_name() == GET_CLASS_NAME(port_o) || EnodeC->get_name() == GET_CLASS_NAME(port_vector_o))
       {
@@ -2882,7 +3373,8 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
             for(const auto& iterC : listC)
             {
                const auto* EnodeCC = GetPointer<const xml_element>(iterC);
-               if(!EnodeCC || EnodeCC->get_name() != GET_CLASS_NAME(port_o)) continue;
+               if(!EnodeCC || EnodeCC->get_name() != GET_CLASS_NAME(port_o))
+                  continue;
                std::string id_string;
                LOAD_XVFM(id_string, EnodeCC, id);
                structural_objectRef port_obj = obj->find_member(id_string, port_o_K, obj);
@@ -2947,7 +3439,8 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          for(const auto& iterC : listC)
          {
             const auto* EnodeCC = GetPointer<const xml_element>(iterC);
-            if(!EnodeCC || EnodeCC->get_name() != GET_CLASS_NAME(signal_o)) continue;
+            if(!EnodeCC || EnodeCC->get_name() != GET_CLASS_NAME(signal_o))
+               continue;
             std::string id_string;
             LOAD_XVFM(id_string, EnodeCC, id);
             structural_objectRef sig_obj = obj->find_member(id_string, signal_o_K, obj);
@@ -3009,45 +3502,51 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
       else if(EnodeC->get_name() == GET_CLASS_NAME(description))
       {
          const xml_text_node* text = EnodeC->get_child_text();
-         if(!text) THROW_WARNING("description is missing for " + EnodeC->get_name());
+         if(!text)
+            THROW_WARNING("description is missing for " + EnodeC->get_name());
          description = text->get_content();
          xml_node::convert_escaped(description);
       }
       else if(EnodeC->get_name() == GET_CLASS_NAME(copyright))
       {
          const xml_text_node* text = EnodeC->get_child_text();
-         if(!text) THROW_WARNING("copyright is missing for " + EnodeC->get_name());
+         if(!text)
+            THROW_WARNING("copyright is missing for " + EnodeC->get_name());
          copyright = text->get_content();
          xml_node::convert_escaped(copyright);
       }
       else if(EnodeC->get_name() == GET_CLASS_NAME(authors))
       {
          const xml_text_node* text = EnodeC->get_child_text();
-         if(!text) THROW_WARNING("authors are missing for " + EnodeC->get_name());
+         if(!text)
+            THROW_WARNING("authors are missing for " + EnodeC->get_name());
          authors = text->get_content();
          xml_node::convert_escaped(authors);
       }
       else if(EnodeC->get_name() == GET_CLASS_NAME(license))
       {
          const xml_text_node* text = EnodeC->get_child_text();
-         if(!text) THROW_WARNING("license is missing for " + EnodeC->get_name());
+         if(!text)
+            THROW_WARNING("license is missing for " + EnodeC->get_name());
          license = text->get_content();
          xml_node::convert_escaped(license);
       }
       else if(EnodeC->get_name() == GET_CLASS_NAME(specialized))
       {
          const xml_text_node* text = EnodeC->get_child_text();
-         if(!text) THROW_WARNING("specialization identifier is missing for " + EnodeC->get_name());
+         if(!text)
+            THROW_WARNING("specialization identifier is missing for " + EnodeC->get_name());
          specialized = text->get_content();
          xml_node::convert_escaped(specialized);
       }
       else if(EnodeC->get_name() == GET_CLASS_NAME(multi_unit_multiplicity))
       {
          const xml_text_node* text = EnodeC->get_child_text();
-         if(!text) THROW_WARNING("multi_unit_multiplicity identifier is missing for " + EnodeC->get_name());
+         if(!text)
+            THROW_WARNING("multi_unit_multiplicity identifier is missing for " + EnodeC->get_name());
          std::string multi_unit_multiplicitySTR = text->get_content();
          xml_node::convert_escaped(specialized);
-         multi_unit_multiplicity=boost::lexical_cast<unsigned>(multi_unit_multiplicitySTR);
+         multi_unit_multiplicity = boost::lexical_cast<unsigned>(multi_unit_multiplicitySTR);
       }
       else
       {
@@ -3067,7 +3566,8 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
       for(const auto& conn : conns)
       {
          /// if the scope is not included, it means that is an external connection. In this case, go on
-         if(conn.find(scope + "/") == std::string::npos) continue;
+         if(conn.find(scope + "/") == std::string::npos)
+            continue;
          std::string connected_path = conn;
          connected_path = connected_path.substr(scope.size() + 1, connected_path.size());
          std::vector<std::string> elements;
@@ -3077,7 +3577,10 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          if(elements.size() == 1)
          {
             /// it can be connected to a primary scalar port or a constant or a signal
-            if((connnected_object = find_member(elements[0], constant_o_K, _owner))) { GetPointer<constant_o>(connnected_object)->add_connection(obj); }
+            if((connnected_object = find_member(elements[0], constant_o_K, _owner)))
+            {
+               GetPointer<constant_o>(connnected_object)->add_connection(obj);
+            }
             else if((connnected_object = find_member(elements[0], signal_o_K, _owner)) and !(obj->get_kind() == signal_o_K and obj->get_path() == connnected_object->get_path()))
             {
                GetPointer<signal_o>(connnected_object)->add_port(obj);
@@ -3141,7 +3644,10 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          }
          THROW_ASSERT(connnected_object, "Connected object not correctly identified: " + conn);
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "       - Identified connection with " + connnected_object->get_path());
-         if(GetPointer<constant_o>(obj)) { GetPointer<constant_o>(obj)->add_connection(connnected_object); }
+         if(GetPointer<constant_o>(obj))
+         {
+            GetPointer<constant_o>(obj)->add_connection(connnected_object);
+         }
          else if(GetPointer<port_o>(obj))
          {
             GetPointer<port_o>(obj)->add_connection(connnected_object);
@@ -3156,7 +3662,8 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
    }
 
 #ifndef NDEBUG
-   if(get_black_box()) PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "   Component " + get_id() + " (" + get_typeRef()->id_type + ") is a black box");
+   if(get_black_box())
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "   Component " + get_id() + " (" + get_typeRef()->id_type + ") is a black box");
 #endif
 }
 
@@ -3180,47 +3687,57 @@ void module::xwrite(xml_element* rootnode)
 
    if(in_ports.size())
    {
-      for(auto& in_port : in_ports) in_port->xwrite(rootnode);
+      for(auto& in_port : in_ports)
+         in_port->xwrite(rootnode);
    }
    if(out_ports.size())
    {
-      for(auto& out_port : out_ports) out_port->xwrite(rootnode);
+      for(auto& out_port : out_ports)
+         out_port->xwrite(rootnode);
    }
    if(in_out_ports.size())
    {
-      for(auto& in_out_port : in_out_ports) in_out_port->xwrite(rootnode);
+      for(auto& in_out_port : in_out_ports)
+         in_out_port->xwrite(rootnode);
    }
 
    if(gen_ports.size())
    {
-      for(auto& gen_port : gen_ports) gen_port->xwrite(rootnode);
+      for(auto& gen_port : gen_ports)
+         gen_port->xwrite(rootnode);
    }
    if(internal_objects.size())
    {
-      for(auto& internal_object : internal_objects) internal_object->xwrite(rootnode);
+      for(auto& internal_object : internal_objects)
+         internal_object->xwrite(rootnode);
    }
 
    if(local_data.size())
    {
-      for(auto& i : local_data) i->xwrite(rootnode);
+      for(auto& i : local_data)
+         i->xwrite(rootnode);
    }
 
    if(list_of_event.size())
    {
-      for(auto& i : list_of_event) i->xwrite(rootnode);
+      for(auto& i : list_of_event)
+         i->xwrite(rootnode);
    }
 
    if(list_of_process.size())
    {
-      for(auto& list_of_proces : list_of_process) list_of_proces->xwrite(rootnode);
+      for(auto& list_of_proces : list_of_process)
+         list_of_proces->xwrite(rootnode);
    }
 
    if(list_of_service.size())
    {
-      for(auto& i : list_of_service) i->xwrite(rootnode);
+      for(auto& i : list_of_service)
+         i->xwrite(rootnode);
    }
 
-   if(NP_descriptions) NP_descriptions->xwrite(rootnode);
+   if(NP_descriptions)
+      NP_descriptions->xwrite(rootnode);
 }
 
 #if HAVE_TECHNOLOGY_BUILT
@@ -3230,21 +3747,30 @@ void module::xwrite_attributes(xml_element* rootnode, const technology_nodeRef& 
 
 #if HAVE_EXPERIMENTAL
    /// writing pin layout information
-   if(GetPointer<functional_unit>(tn) && GetPointer<functional_unit>(tn)->layout_m) { GetPointer<functional_unit>(tn)->layout_m->xwrite(rootnode); }
-   if(GetPointer<functional_unit_template>(tn) && GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->layout_m) { GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->layout_m->xwrite(rootnode, get_id()); }
+   if(GetPointer<functional_unit>(tn) && GetPointer<functional_unit>(tn)->layout_m)
+   {
+      GetPointer<functional_unit>(tn)->layout_m->xwrite(rootnode);
+   }
+   if(GetPointer<functional_unit_template>(tn) && GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->layout_m)
+   {
+      GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->layout_m->xwrite(rootnode, get_id());
+   }
 #endif
 
    if(in_ports.size())
    {
-      for(auto& in_port : in_ports) in_port->xwrite_attributes(rootnode, tn);
+      for(auto& in_port : in_ports)
+         in_port->xwrite_attributes(rootnode, tn);
    }
    if(out_ports.size())
    {
-      for(auto& out_port : out_ports) out_port->xwrite_attributes(rootnode, tn);
+      for(auto& out_port : out_ports)
+         out_port->xwrite_attributes(rootnode, tn);
    }
    if(in_out_ports.size())
    {
-      for(auto& in_out_port : in_out_ports) in_out_port->xwrite_attributes(rootnode, tn);
+      for(auto& in_out_port : in_out_ports)
+         in_out_port->xwrite_attributes(rootnode, tn);
    }
 }
 #endif
@@ -3256,48 +3782,58 @@ void module::print(std::ostream& os) const
    PP(os, "[\n");
    if(in_ports.size())
    {
-      for(unsigned int i = 0; i < in_ports.size(); i++) os << "In " << i + 1 << ") " << in_ports[i];
+      for(unsigned int i = 0; i < in_ports.size(); i++)
+         os << "In " << i + 1 << ") " << in_ports[i];
    }
    if(out_ports.size())
    {
-      for(unsigned int i = 0; i < out_ports.size(); i++) os << "Out " << i + 1 << ") " << out_ports[i];
+      for(unsigned int i = 0; i < out_ports.size(); i++)
+         os << "Out " << i + 1 << ") " << out_ports[i];
    }
    if(in_out_ports.size())
    {
-      for(unsigned int i = 0; i < in_out_ports.size(); i++) os << "IO " << i + 1 << ") " << in_out_ports[i];
+      for(unsigned int i = 0; i < in_out_ports.size(); i++)
+         os << "IO " << i + 1 << ") " << in_out_ports[i];
    }
 
    if(gen_ports.size())
    {
-      for(unsigned int i = 0; i < gen_ports.size(); i++) os << "GenP " << i + 1 << ") " << gen_ports[i];
+      for(unsigned int i = 0; i < gen_ports.size(); i++)
+         os << "GenP " << i + 1 << ") " << gen_ports[i];
    }
 
    if(internal_objects.size())
    {
-      for(unsigned int i = 0; i < internal_objects.size(); i++) os << "Int " << i + 1 << ") " << internal_objects[i];
+      for(unsigned int i = 0; i < internal_objects.size(); i++)
+         os << "Int " << i + 1 << ") " << internal_objects[i];
    }
 
    if(local_data.size())
    {
-      for(unsigned int i = 0; i < local_data.size(); i++) os << "D " << i + 1 << ") " << local_data[i];
+      for(unsigned int i = 0; i < local_data.size(); i++)
+         os << "D " << i + 1 << ") " << local_data[i];
    }
 
    if(list_of_event.size())
    {
-      for(unsigned int i = 0; i < list_of_event.size(); i++) os << "E " << i + 1 << ") " << list_of_event[i];
+      for(unsigned int i = 0; i < list_of_event.size(); i++)
+         os << "E " << i + 1 << ") " << list_of_event[i];
    }
 
    if(list_of_process.size())
    {
-      for(unsigned int i = 0; i < list_of_process.size(); i++) os << "Proc " << i + 1 << ") " << list_of_process[i];
+      for(unsigned int i = 0; i < list_of_process.size(); i++)
+         os << "Proc " << i + 1 << ") " << list_of_process[i];
    }
 
    if(list_of_service.size())
    {
-      for(unsigned int i = 0; i < list_of_service.size(); i++) os << "Serv " << i + 1 << ") " << list_of_service[i];
+      for(unsigned int i = 0; i < list_of_service.size(); i++)
+         os << "Serv " << i + 1 << ") " << list_of_service[i];
    }
 
-   if(NP_descriptions) NP_descriptions->print(os);
+   if(NP_descriptions)
+      NP_descriptions->print(os);
 
    os << description << std::endl;
    os << copyright << std::endl;
@@ -3387,15 +3923,29 @@ void module::change_port_direction(structural_objectRef port, port_o::port_direc
    GetPointer<port_o>(port)->set_port_direction(pdir);
 }
 
-component_o::component_o(int _debug_level, const structural_objectRef o) : module(_debug_level, o) {}
+component_o::component_o(int _debug_level, const structural_objectRef o) : module(_debug_level, o)
+{
+}
 
-structural_objectRef component_o::find_member(const std::string& _id, so_kind _type, const structural_objectRef _owner) const { return module::find_member(_id, _type, _owner); }
+structural_objectRef component_o::find_member(const std::string& _id, so_kind _type, const structural_objectRef _owner) const
+{
+   return module::find_member(_id, _type, _owner);
+}
 
-void component_o::copy(structural_objectRef dest) const { module::copy(dest); }
+void component_o::copy(structural_objectRef dest) const
+{
+   module::copy(dest);
+}
 
-structural_objectRef component_o::find_isomorphic(const structural_objectRef key) const { return module::find_isomorphic(key); }
+structural_objectRef component_o::find_isomorphic(const structural_objectRef key) const
+{
+   return module::find_isomorphic(key);
+}
 
-void component_o::xload(const xml_element* Enode, structural_objectRef _owner, structural_managerRef const& CM) { module::xload(Enode, _owner, CM); }
+void component_o::xload(const xml_element* Enode, structural_objectRef _owner, structural_managerRef const& CM)
+{
+   module::xload(Enode, _owner, CM);
+}
 
 void component_o::xwrite(xml_element* rootnode)
 {
@@ -3404,7 +3954,10 @@ void component_o::xwrite(xml_element* rootnode)
 }
 
 #if HAVE_TECHNOLOGY_BUILT
-void component_o::xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn) { module::xwrite_attributes(rootnode, tn); }
+void component_o::xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn)
+{
+   module::xwrite_attributes(rootnode, tn);
+}
 #endif
 
 void component_o::print(std::ostream& os) const
@@ -3413,11 +3966,19 @@ void component_o::print(std::ostream& os) const
    module::print(os);
 }
 
-channel_o::channel_o(int _debug_level, const structural_objectRef o) : module(_debug_level, o) {}
+channel_o::channel_o(int _debug_level, const structural_objectRef o) : module(_debug_level, o)
+{
+}
 
-void channel_o::add_interface(unsigned int t, const std::string& _interface) { impl_interfaces[t] = _interface; }
+void channel_o::add_interface(unsigned int t, const std::string& _interface)
+{
+   impl_interfaces[t] = _interface;
+}
 
-const std::string& channel_o::get_interface(unsigned int t) const { return impl_interfaces.find(t)->second; }
+const std::string& channel_o::get_interface(unsigned int t) const
+{
+   return impl_interfaces.find(t)->second;
+}
 
 void channel_o::add_port(structural_objectRef p)
 {
@@ -3432,18 +3993,23 @@ const structural_objectRef channel_o::get_port(unsigned int n) const
    return connected_objects[n];
 }
 
-unsigned int channel_o::get_connected_objects_size() const { return static_cast<unsigned int>(connected_objects.size()); }
+unsigned int channel_o::get_connected_objects_size() const
+{
+   return static_cast<unsigned int>(connected_objects.size());
+}
 
 structural_objectRef channel_o::find_member(const std::string& _id, so_kind _type, const structural_objectRef _owner) const
 {
    structural_objectRef mod = module::find_member(_id, _type, _owner);
-   if(mod) return mod;
+   if(mod)
+      return mod;
    switch(_type)
    {
       case port_o_K:
       {
          for(const auto& connected_object : connected_objects)
-            if(connected_object->get_id() == _id && connected_object->get_owner() == _owner) return connected_object;
+            if(connected_object->get_id() == _id && connected_object->get_owner() == _owner)
+               return connected_object;
          break;
       }
       case action_o_K:
@@ -3466,7 +4032,10 @@ void channel_o::copy(structural_objectRef dest) const
 {
    module::copy(dest);
    auto it_end = impl_interfaces.end();
-   for(auto it = impl_interfaces.begin(); it != it_end; ++it) { GetPointer<channel_o>(dest)->add_interface(it->first, it->second); }
+   for(auto it = impl_interfaces.begin(); it != it_end; ++it)
+   {
+      GetPointer<channel_o>(dest)->add_interface(it->first, it->second);
+   }
    /// someone has to take care of connected_objects
 }
 
@@ -3517,12 +4086,16 @@ void channel_o::xload(const xml_element* Enode, structural_objectRef _owner, str
    for(const auto& iter : list)
    {
       const auto* EnodeC = GetPointer<const xml_element>(iter);
-      if(!EnodeC) continue;
+      if(!EnodeC)
+         continue;
       if(EnodeC->get_name() == "impl_interfaces")
       {
          const xml_element::attribute_list Alist = EnodeC->get_attributes();
          auto it_end = Alist.end();
-         for(auto it = Alist.begin(); it != it_end; ++it) { impl_interfaces[boost::lexical_cast<unsigned int>((*it)->get_name().c_str() + 2)] = (*it)->get_value(); }
+         for(auto it = Alist.begin(); it != it_end; ++it)
+         {
+            impl_interfaces[boost::lexical_cast<unsigned int>((*it)->get_name().c_str() + 2)] = (*it)->get_value();
+         }
       }
    }
 }
@@ -3533,13 +4106,20 @@ void channel_o::xwrite(xml_element* rootnode)
    module::xwrite(Enode);
    xml_element* Enode_II = Enode->add_child_element("impl_interfaces");
    std::map<unsigned int, std::string>::const_iterator it_end = impl_interfaces.end();
-   for(std::map<unsigned int, std::string>::const_iterator it = impl_interfaces.begin(); it != it_end; ++it) { WRITE_XNVM2("II" + boost::lexical_cast<std::string>(it->first), it->second, Enode_II); }
+   for(std::map<unsigned int, std::string>::const_iterator it = impl_interfaces.begin(); it != it_end; ++it)
+   {
+      WRITE_XNVM2("II" + boost::lexical_cast<std::string>(it->first), it->second, Enode_II);
+   }
    xml_element* Enode_CO = Enode->add_child_element("connected_objects");
-   for(unsigned int i = 0; i < connected_objects.size(); i++) WRITE_XNVM2("CON" + boost::lexical_cast<std::string>(i), connected_objects[i]->get_path(), Enode_CO);
+   for(unsigned int i = 0; i < connected_objects.size(); i++)
+      WRITE_XNVM2("CON" + boost::lexical_cast<std::string>(i), connected_objects[i]->get_path(), Enode_CO);
 }
 
 #if HAVE_TECHNOLOGY_BUILT
-void channel_o::xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn) { module::xwrite_attributes(rootnode, tn); }
+void channel_o::xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn)
+{
+   module::xwrite_attributes(rootnode, tn);
+}
 #endif
 
 void channel_o::print(std::ostream& os) const
@@ -3547,17 +4127,21 @@ void channel_o::print(std::ostream& os) const
    os << "CHANNEL-";
    module::print(os);
    PP(os, "[");
-   if(impl_interfaces.size()) PP(os, "List of the interfaces:\n");
+   if(impl_interfaces.size())
+      PP(os, "List of the interfaces:\n");
    for(const auto& impl_interface : impl_interfaces)
    {
       os << " @(" << impl_interface.first << ") " << impl_interface.second;
       PP(os, "\n");
    }
-   for(const auto& connected_object : connected_objects) os << connected_object->get_path() + "-" + convert_so_short(connected_object->get_kind()) << " ";
+   for(const auto& connected_object : connected_objects)
+      os << connected_object->get_path() + "-" + convert_so_short(connected_object->get_kind()) << " ";
    PP(os, "\n]\n");
 }
 
-bus_connection_o::bus_connection_o(int _debug_level, const structural_objectRef o) : structural_object(_debug_level, o) {}
+bus_connection_o::bus_connection_o(int _debug_level, const structural_objectRef o) : structural_object(_debug_level, o)
+{
+}
 
 void bus_connection_o::add_connection(structural_objectRef c)
 {
@@ -3571,7 +4155,10 @@ const structural_objectRef bus_connection_o::get_connection(unsigned int n) cons
    return connections[n];
 }
 
-unsigned int bus_connection_o::get_connections_size() const { return static_cast<unsigned int>(connections.size()); }
+unsigned int bus_connection_o::get_connections_size() const
+{
+   return static_cast<unsigned int>(connections.size());
+}
 
 structural_objectRef bus_connection_o::find_isomorphic(const structural_objectRef) const
 {
@@ -3587,7 +4174,8 @@ structural_objectRef bus_connection_o::find_member(const std::string& _id, so_ki
       case port_o_K:
       {
          for(const auto& connection : connections)
-            if(connection->get_id() == _id && connection->get_owner() == _owner) return connection;
+            if(connection->get_id() == _id && connection->get_owner() == _owner)
+               return connection;
          break;
       }
       case action_o_K:
@@ -3611,7 +4199,10 @@ void bus_connection_o::copy(structural_objectRef dest) const
    /// someone has to take care of connections
 }
 
-void bus_connection_o::xload(const xml_element* Enode, structural_objectRef _owner, structural_managerRef const& CM) { structural_object::xload(Enode, _owner, CM); }
+void bus_connection_o::xload(const xml_element* Enode, structural_objectRef _owner, structural_managerRef const& CM)
+{
+   structural_object::xload(Enode, _owner, CM);
+}
 
 void bus_connection_o::xwrite(xml_element* rootnode)
 {
@@ -3624,8 +4215,10 @@ void bus_connection_o::print(std::ostream& os) const
    PP(os, "BUS CONNECTION:\n");
    structural_object::print(os);
    PP(os, "[\n");
-   if(connections.size()) PP(os, "List of connections:\n");
-   for(const auto& connection : connections) os << connection->get_path() + "-" + convert_so_short(connection->get_kind()) << " ";
+   if(connections.size())
+      PP(os, "List of connections:\n");
+   for(const auto& connection : connections)
+      os << connection->get_path() + "-" + convert_so_short(connection->get_kind()) << " ";
    PP(os, "\n]\n");
 }
 
@@ -3635,7 +4228,6 @@ void port_o::add_n_ports(unsigned int n_ports, structural_objectRef _owner)
    THROW_ASSERT(_owner.get() == this, "owner and this has to be the same object");
    THROW_ASSERT(n_ports != PARAMETRIC_PORT, "a number of port different from PARAMETRIC_PORT is expected");
    THROW_ASSERT(get_typeRef(), "the port vector has to have a type descriptor");
-
 
    unsigned int currentPortNumber = this->get_ports_size();
    for(unsigned int i = 0; i < n_ports; i++)
@@ -3661,9 +4253,15 @@ unsigned int port_o::get_ports_size() const
    return static_cast<unsigned int>(ports.size());
 }
 
-void port_o::set_port_size(unsigned int dim) { get_typeRef()->size = dim; }
+void port_o::set_port_size(unsigned int dim)
+{
+   get_typeRef()->size = dim;
+}
 
-unsigned int port_o::get_port_size() const { return get_typeRef()->size; }
+unsigned int port_o::get_port_size() const
+{
+   return get_typeRef()->size;
+}
 
 void port_o::resize_busport(unsigned int bus_size_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_data_bitsize, structural_objectRef port)
 {
@@ -3723,17 +4321,28 @@ void port_o::resize_std_port(unsigned int bitsize_variable, unsigned int n_eleme
 
 void port_o::fix_port_properties(structural_objectRef port_i, structural_objectRef cir_port)
 {
-   if(GetPointer<port_o>(port_i)->get_port_interface() != port_o::port_interface::PI_DEFAULT) GetPointer<port_o>(cir_port)->set_port_interface(GetPointer<port_o>(port_i)->get_port_interface());
-   if(GetPointer<port_o>(port_i)->get_is_extern()) GetPointer<port_o>(cir_port)->set_is_extern(true);
-   if(GetPointer<port_o>(port_i)->get_is_global()) GetPointer<port_o>(cir_port)->set_is_global(true);
-   if(GetPointer<port_o>(port_i)->get_is_memory()) GetPointer<port_o>(cir_port)->set_is_memory(true);
-   if(GetPointer<port_o>(port_i)->get_is_slave()) GetPointer<port_o>(cir_port)->set_is_slave(true);
-   if(GetPointer<port_o>(port_i)->get_is_master()) GetPointer<port_o>(cir_port)->set_is_master(true);
-   if(GetPointer<port_o>(port_i)->get_is_data_bus()) GetPointer<port_o>(cir_port)->set_is_data_bus(true);
-   if(GetPointer<port_o>(port_i)->get_is_addr_bus()) GetPointer<port_o>(cir_port)->set_is_addr_bus(true);
-   if(GetPointer<port_o>(port_i)->get_is_size_bus()) GetPointer<port_o>(cir_port)->set_is_size_bus(true);
-   if(GetPointer<port_o>(port_i)->get_is_doubled()) GetPointer<port_o>(cir_port)->set_is_doubled(true);
-   if(GetPointer<port_o>(port_i)->get_is_halved()) GetPointer<port_o>(cir_port)->set_is_halved(true);
+   if(GetPointer<port_o>(port_i)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
+      GetPointer<port_o>(cir_port)->set_port_interface(GetPointer<port_o>(port_i)->get_port_interface());
+   if(GetPointer<port_o>(port_i)->get_is_extern())
+      GetPointer<port_o>(cir_port)->set_is_extern(true);
+   if(GetPointer<port_o>(port_i)->get_is_global())
+      GetPointer<port_o>(cir_port)->set_is_global(true);
+   if(GetPointer<port_o>(port_i)->get_is_memory())
+      GetPointer<port_o>(cir_port)->set_is_memory(true);
+   if(GetPointer<port_o>(port_i)->get_is_slave())
+      GetPointer<port_o>(cir_port)->set_is_slave(true);
+   if(GetPointer<port_o>(port_i)->get_is_master())
+      GetPointer<port_o>(cir_port)->set_is_master(true);
+   if(GetPointer<port_o>(port_i)->get_is_data_bus())
+      GetPointer<port_o>(cir_port)->set_is_data_bus(true);
+   if(GetPointer<port_o>(port_i)->get_is_addr_bus())
+      GetPointer<port_o>(cir_port)->set_is_addr_bus(true);
+   if(GetPointer<port_o>(port_i)->get_is_size_bus())
+      GetPointer<port_o>(cir_port)->set_is_size_bus(true);
+   if(GetPointer<port_o>(port_i)->get_is_doubled())
+      GetPointer<port_o>(cir_port)->set_is_doubled(true);
+   if(GetPointer<port_o>(port_i)->get_is_halved())
+      GetPointer<port_o>(cir_port)->set_is_halved(true);
 }
 
 #if HAVE_KOALA_BUILT
@@ -3784,7 +4393,8 @@ std::string structural_object::get_equation(const structural_objectRef out_obj, 
             boost::algorithm::split(tokens, tmp, boost::algorithm::is_any_of(";"));
             for(unsigned int i = 0; i < tokens.size(); i++)
             {
-               if(boost::algorithm::starts_with(tokens[i], out_obj->get_id())) EQ = tokens[i].substr(tokens[i].find("=") + 1, tokens[i].size());
+               if(boost::algorithm::starts_with(tokens[i], out_obj->get_id()))
+                  EQ = tokens[i].substr(tokens[i].find("=") + 1, tokens[i].size());
             }
             // EQ = NPF->get_NP_functionality(NP_functionality::EQUATION);
             ////std::cerr << "Obj: " << owner->get_path() << " - Module equation: " << EQ << std::endl;
@@ -3794,8 +4404,10 @@ std::string structural_object::get_equation(const structural_objectRef out_obj, 
                std::string In = inobj->get_equation(inobj, TM, analyzed, input_ports, output_ports);
                bool in_port = false;
                for(std::set<structural_objectRef>::iterator k = input_ports.begin(); k != input_ports.end() and !in_port; ++k)
-                  if((*k)->get_id() == In) in_port = true;
-               if(!in_port) In = "(" + In + ")";
+                  if((*k)->get_id() == In)
+                     in_port = true;
+               if(!in_port)
+                  In = "(" + In + ")";
                boost::replace_all(EQ, GetPointer<module>(strobj)->get_in_port(p)->get_id(), In);
             }
          }
@@ -3805,7 +4417,8 @@ std::string structural_object::get_equation(const structural_objectRef out_obj, 
             for(unsigned int p = 0; p < GetPointer<port_o>(out_obj)->get_connections_size(); p++)
             {
                const structural_objectRef obj = GetPointer<port_o>(out_obj)->get_connection(p);
-               if(output_ports.find(obj) != output_ports.end()) continue;
+               if(output_ports.find(obj) != output_ports.end())
+                  continue;
                if(obj /* and analyzed.find(obj) == analyzed.end()*/)
                {
                   ////std::cerr << "  - Connected to: " <<  obj->get_path() << " - type: " << obj->get_kind_text() << std::endl;
@@ -3825,8 +4438,12 @@ std::string structural_object::get_equation(const structural_objectRef out_obj, 
             if(obj and out_obj != obj /* and analyzed.find(obj) == analyzed.end()*/)
             {
                ////std::cerr << "Signal: " <<  GetPointer<signal_o>(out_obj)->get_path() << " - Connected to: " << obj->get_kind_text() << std::endl;
-               if(output_ports.find(obj) != output_ports.end() and analyzed.find(obj) == analyzed.end()) { return obj->get_id(); }
-               if(GetPointer<port_o>(obj)->get_port_direction() != port_o::OUT || obj->get_owner() == get_owner()) continue;
+               if(output_ports.find(obj) != output_ports.end() and analyzed.find(obj) == analyzed.end())
+               {
+                  return obj->get_id();
+               }
+               if(GetPointer<port_o>(obj)->get_port_direction() != port_o::OUT || obj->get_owner() == get_owner())
+                  continue;
                EQ = obj->get_equation(obj, TM, analyzed, input_ports, output_ports);
             }
          }

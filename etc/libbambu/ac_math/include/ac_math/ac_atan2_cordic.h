@@ -166,7 +166,10 @@ namespace ac_math
 
    static table_tATAN2 atan_2mi(int i)
    {
-      if(i >= TE) { return 0; }
+      if(i >= TE)
+      {
+         return 0;
+      }
       return atan_pow2_table[i];
    }
 
@@ -220,7 +223,10 @@ namespace ac_math
             acc_a += d_a;
          }
       }
-      if(!y) { acc_a = x_neg ? fx_a(M_PI) : fx_a(0); }
+      if(!y)
+      {
+         acc_a = x_neg ? fx_a(M_PI) : fx_a(0);
+      }
       else if(!x)
       {
          acc_a = y < 0 ? fx_a(-M_PI / 2) : fx_a(M_PI / 2);

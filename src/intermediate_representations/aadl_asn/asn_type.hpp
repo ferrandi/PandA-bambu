@@ -29,25 +29,25 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file asn_type.hpp
  * @brief Data classes storing information for asn types
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
 #ifndef ASN_TYPE_HPP
 #define ASN_TYPE_HPP
 
-///STD include
+/// STD include
 #include <string>
 
-///STL include
+/// STL include
 #include <list>
 
-///utility include
+/// utility include
 #include "refcount.hpp"
 
 REF_FORWARD_DECL(AsnType);
@@ -69,162 +69,162 @@ enum class AsnType_Kind
 
 class AsnType
 {
-   protected:
-      ///The actual kind
-      const AsnType_Kind kind;
+ protected:
+   /// The actual kind
+   const AsnType_Kind kind;
 
-   public:
-      /**
-       * Constructor
-       */
-      explicit AsnType(const AsnType_Kind kind);
+ public:
+   /**
+    * Constructor
+    */
+   explicit AsnType(const AsnType_Kind kind);
 
-      /**
-       * Destructor
-       */
-      virtual ~AsnType();
+   /**
+    * Destructor
+    */
+   virtual ~AsnType();
 
-      /**
-       * Return the type
-       */
-      AsnType_Kind GetKind();
+   /**
+    * Return the type
+    */
+   AsnType_Kind GetKind();
 };
 
 class BooleanAsnType : public AsnType
 {
-   public:
-      /**
-       * Constructor
-       */
-      BooleanAsnType();
+ public:
+   /**
+    * Constructor
+    */
+   BooleanAsnType();
 };
 
 class ChoiceAsnType : public AsnType
 {
-   public:
-      ///The list of name type
-      const std::list<std::pair<std::string, AsnTypeRef> > element_type_list;
+ public:
+   /// The list of name type
+   const std::list<std::pair<std::string, AsnTypeRef>> element_type_list;
 
-      /**
-       * Constructor
-       * @param element_type_list is the types composing this choice
-       */
-      explicit ChoiceAsnType(std::list<std::pair<std::string, AsnTypeRef> >  element_type_list);
+   /**
+    * Constructor
+    * @param element_type_list is the types composing this choice
+    */
+   explicit ChoiceAsnType(std::list<std::pair<std::string, AsnTypeRef>> element_type_list);
 };
 
 class EnumeratedAsnType : public AsnType
 {
-   public:
-      ///The list of enum
-      const std::list<std::pair<std::string, unsigned int> > named_number_list;
+ public:
+   /// The list of enum
+   const std::list<std::pair<std::string, unsigned int>> named_number_list;
 
-      /**
-       * Constructor
-       * @param the list of enum
-       */
-      explicit EnumeratedAsnType(std::list<std::pair<std::string, unsigned int> > named_number_list);
+   /**
+    * Constructor
+    * @param the list of enum
+    */
+   explicit EnumeratedAsnType(std::list<std::pair<std::string, unsigned int>> named_number_list);
 };
 
 class IntegerAsnType : public AsnType
 {
-   public:
-      /**
-       * Constructor
-       */
-      IntegerAsnType();
+ public:
+   /**
+    * Constructor
+    */
+   IntegerAsnType();
 };
 
 class OctetStringAsnType : public AsnType
 {
-   public:
-      ///The size
-      size_t size;
+ public:
+   /// The size
+   size_t size;
 
-      /**
-       * Constructor
-       */
-      explicit OctetStringAsnType(const std::string&size);
+   /**
+    * Constructor
+    */
+   explicit OctetStringAsnType(const std::string& size);
 
-      /**
-       * Destructor
-       */
-      ~OctetStringAsnType() override;
+   /**
+    * Destructor
+    */
+   ~OctetStringAsnType() override;
 };
 
 class RealAsnType : public AsnType
 {
-   public:
-      /**
-       * Constructor
-       */
-      RealAsnType();
+ public:
+   /**
+    * Constructor
+    */
+   RealAsnType();
 };
 
 class RedefineAsnType : public AsnType
 {
-   public:
-      ///The redefined type
-      const std::string name;
+ public:
+   /// The redefined type
+   const std::string name;
 
-      /**
-       * Constructor
-       * @param name is the redefined type
-       */
-      explicit RedefineAsnType(std::string  name);
+   /**
+    * Constructor
+    * @param name is the redefined type
+    */
+   explicit RedefineAsnType(std::string name);
 };
 
 class SequenceAsnType : public AsnType
 {
-   public:
-      ///The list of fields
-      const std::list<std::pair<std::string, AsnTypeRef> > fields;
+ public:
+   /// The list of fields
+   const std::list<std::pair<std::string, AsnTypeRef>> fields;
 
-      /**
-       * Constructor
-       */
-      explicit SequenceAsnType(std::list<std::pair<std::string, AsnTypeRef> >   element_type_list);
+   /**
+    * Constructor
+    */
+   explicit SequenceAsnType(std::list<std::pair<std::string, AsnTypeRef>> element_type_list);
 };
 
 class SequenceOfAsnType : public AsnType
 {
-   public:
-      ///The type of the element
-      std::string element;
+ public:
+   /// The type of the element
+   std::string element;
 
-      ///The number of elements in the sequence
-      size_t size;
+   /// The number of elements in the sequence
+   size_t size;
 
-      /**
-       * Constructor
-       */
-      SequenceOfAsnType(std::string  element, const std::string&size);
+   /**
+    * Constructor
+    */
+   SequenceOfAsnType(std::string element, const std::string& size);
 };
 
 class SetAsnType : public AsnType
 {
-   public:
-      ///The list of fields
-      const std::list<std::pair<std::string, AsnTypeRef> > fields;
+ public:
+   /// The list of fields
+   const std::list<std::pair<std::string, AsnTypeRef>> fields;
 
-      /**
-       * Constructor
-       */
-      explicit SetAsnType(std::list<std::pair<std::string, AsnTypeRef> >  element_type_list);
+   /**
+    * Constructor
+    */
+   explicit SetAsnType(std::list<std::pair<std::string, AsnTypeRef>> element_type_list);
 };
 
 class SetOfAsnType : public AsnType
 {
-   public:
-      ///The type of the element
-      std::string element;
+ public:
+   /// The type of the element
+   std::string element;
 
-      ///The number of element in the set
-      size_t size;
+   /// The number of element in the set
+   size_t size;
 
-      /**
-       * Constructor
-       */
-      SetOfAsnType(std::string  element, const std::string&size);
+   /**
+    * Constructor
+    */
+   SetOfAsnType(std::string element, const std::string& size);
 };
 
 typedef refcount<AsnType> AsnTypeRef;

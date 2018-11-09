@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file simple_indent.hpp
  * @brief Simple pretty print functor.
@@ -39,7 +39,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef SIMPLE_INDENT_HPP
 #define SIMPLE_INDENT_HPP
 #include <ostream>
@@ -54,68 +54,65 @@
 
 /**
  * Very simple pretty printer functor.
-*/
+ */
 class simple_indent
 {
-   private:
-      ///number of spaces used to indent after a new line print
-      unsigned int indent_spaces;
+ private:
+   /// number of spaces used to indent after a new line print
+   unsigned int indent_spaces;
 
-      ///char that increments the indent space by a delta
-      char opening_char;
+   /// char that increments the indent space by a delta
+   char opening_char;
 
-      ///char that increments the indent space by a delta
-      char closing_char;
+   /// char that increments the indent space by a delta
+   char closing_char;
 
-      ///delta indent space
-      unsigned int delta;
+   /// delta indent space
+   unsigned int delta;
 
-      bool is_line_start;
+   bool is_line_start;
 
-      /**
-       * Write the indent spaces
-       */
-      void write_indent(std::ostream& os);
+   /**
+    * Write the indent spaces
+    */
+   void write_indent(std::ostream& os);
 
-      /**
-       * Write the current char
-       */
-      void write_char(std::ostream& os, const char& c);
+   /**
+    * Write the current char
+    */
+   void write_char(std::ostream& os, const char& c);
 
-   public:
+ public:
+   /**
+    * pretty print functor
+    * @param is the output stream
+    * @param is the string to be printed
+    */
+   void operator()(std::ostream& os, const std::string& str);
 
-      /**
-       * pretty print functor
-       * @param is the output stream
-       * @param is the string to be printed
-       */
-      void operator() (std::ostream& os, const std::string&str);
+   /**
+    * constructor
+    * @param o is the opening character used by simple_indent.
+    * @param c is the closing character used by simple_indent.
+    * @param d is the number of characters used to indent the code.
+    */
+   simple_indent(char o, char c, unsigned int d);
 
-      /**
-       * constructor
-       * @param o is the opening character used by simple_indent.
-       * @param c is the closing character used by simple_indent.
-       * @param d is the number of characters used to indent the code.
-       */
-      simple_indent(char o, char c, unsigned int d);
+   /**
+    * destructor
+    */
+   ~simple_indent();
 
-      /**
-       * destructor
-       */
-      ~simple_indent();
+   /**
+    * Manually increase the indenting of the code
+    */
+   void indent();
 
-      /**
-       * Manually increase the indenting of the code
-       */
-      void indent();
-
-      /**
-       * Manually reduce the indenting of the code
-       */
-      void deindent();
-
+   /**
+    * Manually reduce the indenting of the code
+    */
+   void deindent();
 };
 
 typedef refcount<simple_indent> simple_indentRef;
 #endif
-

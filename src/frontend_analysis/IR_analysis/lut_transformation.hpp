@@ -44,103 +44,102 @@
 #ifndef LUT_TRANSFORMATION_HPP
 #define LUT_TRANSFORMATION_HPP
 
-///Super class include
+/// Super class include
 #include "function_frontend_flow_step.hpp"
 
-///STD include
-#include <string>
-#include <set>
-#include <list>
-#include <cmath> 
-#include <map>
-#include <vector>
+/// STD include
 #include <algorithm>
-///Utility include
+#include <cmath>
+#include <list>
+#include <map>
+#include <set>
+#include <string>
+#include <vector>
+/// Utility include
 #include "refcount.hpp"
 
 //@{
 REF_FORWARD_DECL(bloc);
-//class integer_cst;
-//class target_mem_ref461;
-//REF_FORWARD_DECL(lut_transformation);
+// class integer_cst;
+// class target_mem_ref461;
+// REF_FORWARD_DECL(lut_transformation);
 REF_FORWARD_DECL(Schedule);
 REF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_manipulation);
 REF_FORWARD_DECL(tree_node);
 //@}
 
-
 class lut_transformation : public FunctionFrontendFlowStep
 {
-   private:
-      ///The tree manager
-      tree_managerRef TM;
+ private:
+   /// The tree manager
+   tree_managerRef TM;
 
-      ///The lut manipulation
-      tree_manipulationRef tree_man;
+   /// The lut manipulation
+   tree_manipulationRef tree_man;
 
-      ///The maximum number of inputs of a lut
-      size_t max_lut_size;
+   /// The maximum number of inputs of a lut
+   size_t max_lut_size;
 
-      /**
-       * Create gimple assignment
-       * @param type is the type the assignment
-       * @param op is the right part
-       * @param bb_index is the index of the basic block index
-       * @param srcp_default is the srcp to be assigned
-       */
-      tree_nodeRef CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string& srcp_default);
-      std::vector<tree_nodeRef> GetInputs(const tree_nodeRef node);
-      std::string DecToBin(unsigned long long int number);
-      unsigned long long int BinToDec(const std::string& number);
-      unsigned long long int GenerateIndexOfLutValue(const std::string& binString,const std::vector<std::size_t>& indexesSet);
-      std::string AddZeroes(const std::string& bitString,const double setSize);
-      std::vector<std::size_t> CreateLutIndexSet( std::vector<tree_nodeRef> nodeSet, std::vector<tree_nodeRef> values);
-      void MergeLut(const std::list<tree_nodeRef> &gimpleLutList, const std::pair<const unsigned int, blocRef > &bb);
-      std::vector<tree_nodeRef> GetLutList( std::vector<tree_nodeRef> list_of_stmt);
-      tree_nodeRef CreateConcat(const tree_nodeRef op0, const tree_nodeRef op1, std::pair<const unsigned int, blocRef> bb, tree_nodeRef stm_to_append);
-      tree_nodeRef CreateMultiConcat(std::vector<tree_nodeRef> set_of_nodes, const std::pair<const unsigned int, blocRef > &bb, tree_nodeRef stm_to_append);
-      std::vector<tree_nodeRef> CreateSetFromVector( std::vector<tree_nodeRef> firstSet, std::vector<tree_nodeRef> secondSet);
-      std::string CreateFinalString(const std::string &binaryString, const std::vector<tree_nodeRef> &unmergedSet, std::vector<tree_nodeRef> &mergedSet, const std::string &mergingValue );
-      std::vector<std::size_t> FindIndex( std::vector<tree_nodeRef> mergedSet, tree_nodeRef node);
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   /**
+    * Create gimple assignment
+    * @param type is the type the assignment
+    * @param op is the right part
+    * @param bb_index is the index of the basic block index
+    * @param srcp_default is the srcp to be assigned
+    */
+   tree_nodeRef CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string& srcp_default);
+   std::vector<tree_nodeRef> GetInputs(const tree_nodeRef node);
+   std::string DecToBin(unsigned long long int number);
+   unsigned long long int BinToDec(const std::string& number);
+   unsigned long long int GenerateIndexOfLutValue(const std::string& binString, const std::vector<std::size_t>& indexesSet);
+   std::string AddZeroes(const std::string& bitString, const double setSize);
+   std::vector<std::size_t> CreateLutIndexSet(std::vector<tree_nodeRef> nodeSet, std::vector<tree_nodeRef> values);
+   void MergeLut(const std::list<tree_nodeRef>& gimpleLutList, const std::pair<const unsigned int, blocRef>& bb);
+   std::vector<tree_nodeRef> GetLutList(std::vector<tree_nodeRef> list_of_stmt);
+   tree_nodeRef CreateConcat(const tree_nodeRef op0, const tree_nodeRef op1, std::pair<const unsigned int, blocRef> bb, tree_nodeRef stm_to_append);
+   tree_nodeRef CreateMultiConcat(std::vector<tree_nodeRef> set_of_nodes, const std::pair<const unsigned int, blocRef>& bb, tree_nodeRef stm_to_append);
+   std::vector<tree_nodeRef> CreateSetFromVector(std::vector<tree_nodeRef> firstSet, std::vector<tree_nodeRef> secondSet);
+   std::string CreateFinalString(const std::string& binaryString, const std::vector<tree_nodeRef>& unmergedSet, std::vector<tree_nodeRef>& mergedSet, const std::string& mergingValue);
+   std::vector<std::size_t> FindIndex(std::vector<tree_nodeRef> mergedSet, tree_nodeRef node);
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor.
-       * @param Param is the set of the parameters
-       * @param AppM is the application manager
-       * @param function_id is the identifier of the function
-       * @param DesignFlowManagerConstRef is the design flow manager
-       */
-      lut_transformation(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+ public:
+   /**
+    * Constructor.
+    * @param Param is the set of the parameters
+    * @param AppM is the application manager
+    * @param function_id is the identifier of the function
+    * @param DesignFlowManagerConstRef is the design flow manager
+    */
+   lut_transformation(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       *  Destructor
-       */
-      ~lut_transformation() override;
+   /**
+    *  Destructor
+    */
+   ~lut_transformation() override;
 
-      /**
-       * Computes the operations CFG graph data structure.
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status InternalExec() override;
+   /**
+    * Computes the operations CFG graph data structure.
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      void Initialize() override;
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 
-      /**
-       * Compute the relationships of a step with other steps
-       * @param dependencies is where relationships will be stored
-       * @param relationship_type is the type of relationship to be computed
-       */
-      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   /**
+    * Compute the relationships of a step with other steps
+    * @param dependencies is where relationships will be stored
+    * @param relationship_type is the type of relationship to be computed
+    */
+   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 };
 
 #endif
