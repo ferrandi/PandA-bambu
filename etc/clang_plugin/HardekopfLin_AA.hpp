@@ -254,19 +254,19 @@ class Andersen_AA
 
  protected:
    // How many times solve_node() has run.
-   u32 n_node_runs;
+   u32 n_node_runs{};
 
  private:
    // The n_node_runs at the time of the last LCD run.
-   u32 last_lcd;
+   u32 last_lcd{};
 
  protected:
    // The sequence number of the current node visit
-   u32 vtime;
+   u32 vtime{};
 
  private:
    // The number of the current lcd_dfs run
-   u32 curr_lcd_dfs;
+   u32 curr_lcd_dfs{};
    // The copy edges across which we already found identical points-to sets
    llvm::DenseSet<std::pair<u32, u32>> lcd_edges;
    // The next LCD run should start from these nodes.
@@ -293,17 +293,17 @@ class Andersen_AA
 
  protected:
    // The ID of the node to create next (should equal nodes.size())
-   u32 next_node;
+   u32 next_node{};
 
  private:
    // The struct type with the most fields
    //  (or min_struct if no structs are found).
    // All allocations are assumed to be of this type,
    //  unless trace_alloc_type() succeeds.
-   const llvm::Type* min_struct;
-   const llvm::Type* max_struct;
+   const llvm::Type* min_struct{};
+   const llvm::Type* max_struct{};
    // The # of fields in max_struct (0 for min_struct)
-   u32 max_struct_sz;
+   u32 max_struct_sz{};
    // Every struct type T is mapped to the vectors S (first) and O (second).
    // If field [i] in the expanded struct T begins an embedded struct,
    //  S[i] is the # of fields in the largest such struct, else S[i] = 1.
@@ -436,12 +436,12 @@ class Andersen_AA
    bool solve();
    void run_lcd();
    void solve_node(u32 n);
-   bool solve_ls_cons(u32 n, u32 hcd_rep, bdd d_points_to, std::set<Constraint>& cons_seen, Constraint& C);
-   void solve_ls_off(bdd d_points_to, bool load, u32 dest, u32 src, u32 off, const std::set<const llvm::Instruction*>* I);
+   bool solve_ls_cons(u32 n, u32 hcd_rep, const bdd& d_points_to, std::set<Constraint>& cons_seen, Constraint& C);
+   void solve_ls_off(const bdd& d_points_to, bool load, u32 dest, u32 src, u32 off, const std::set<const llvm::Instruction*>* I);
    void solve_ls_n(const u32* pdpts, const u32* edpts, bool load, u32 dest, u32 src);
-   bool solve_gep_cons(u32 n, bdd d_points_to, std::set<Constraint>& cons_seen, Constraint& C);
+   bool solve_gep_cons(u32 n, const bdd& d_points_to, std::set<Constraint>& cons_seen, Constraint& C);
    bool add_copy_edge(u32 src, u32 dest);
-   void solve_prop(u32 n, bdd d_points_to);
+   void solve_prop(u32 n, const bdd& d_points_to);
    void handle_ext(const llvm::Function* F, const llvm::Instruction* I);
    void lcd_dfs(u32 n);
 
@@ -545,7 +545,7 @@ class Andersen_AA
    }
 
  public:
-   Andersen_AA(const std::string& _TopFunctionName);
+   Andersen_AA(std::string _TopFunctionName);
    virtual ~Andersen_AA();
    virtual void computePointToSet(llvm::Module& M);
    const std::vector<u32>* pointsToSet(const llvm::Value*, u32 = 0);
@@ -624,7 +624,7 @@ class Staged_Flow_Sensitive_AA : public Andersen_AA
    std::map<std::pair<u32, u32>, u32> sq_map;
    std::map<u32, std::pair<u32, u32>> sq_unmap;
 
-   Worklist* sfsWL;
+   Worklist* sfsWL{};
 
    u32 findOCG(u32 n);
    u32 uniteOCG(u32 a, u32 b);

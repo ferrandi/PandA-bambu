@@ -89,6 +89,7 @@
 
 #include "boost/range/irange.hpp"
 #include <queue>
+#include <utility>
 
 #include "bvec.h"
 
@@ -97,8 +98,8 @@ namespace std
    template <>
    struct hash<bitmap>
    {
-      typedef bitmap argument_type;
-      typedef std::size_t result_type;
+      using argument_type = bitmap;
+      using result_type = std::size_t;
 
       result_type operator()(const argument_type& Arg) const
       {
@@ -185,18 +186,18 @@ class OffNode
    //  This is empty for unlabeled nodes, and contains 0 for non-pointers.
    bitmap ptr_eq;
    // The node of the main graph corresponding to us (for HCD).
-   u32 main_node;
+   u32 main_node{0};
    // The number of the DFS call that first visited us (0 if unvisited).
-   u32 dfs_id;
+   u32 dfs_id{0};
    // True if this is the root of an already processed SCC.
-   bool scc_root;
+   bool scc_root{false};
    // A VAL node is indirect if it's the LHS of a load+offset constraint;
    //  the LHS of addr_of and GEP are pre-labeled when building the graph
    //  and so don't need another unique label.
    // All AFP and REF nodes are indirect.
    bool indirect;
 
-   OffNode(bool ind = 0) : rep(node_rank_min), dfs_id(0), scc_root(0), indirect(ind)
+   OffNode(bool ind = false) : rep(node_rank_min), indirect(ind)
    {
    }
 
@@ -946,7 +947,7 @@ static const ei_pair ei_pairs[] = {
     {"XGetWindowProperty", EFT_A11R_NEW},
 
     // This must be the last entry.
-    {0, EFT_NOOP}};
+    {nullptr, EFT_NOOP}};
 
 /*  FIXME:
  *  SSL_CTX_ctrl, SSL_ctrl - may set the ptr field arg0->x
@@ -986,7 +987,9 @@ void ExtInfo::init()
          if(t_seen.count(p->t))
          {
             if(DEBUG_AA)
+            {
                llvm::errs() << p->n << "\n";
+            }
             assert(!"ei_pairs not grouped by type");
          }
          t_seen.insert(p->t);
@@ -995,7 +998,9 @@ void ExtInfo::init()
       if(info.count(p->n))
       {
          if(DEBUG_AA)
+         {
             llvm::errs() << p->n << "\n";
+         }
          assert(!"duplicate name in ei_pairs");
       }
       info[p->n] = p->t;
@@ -1035,26 +1040,28 @@ extf_t ExtInfo::get_type(const llvm::Function* F) const
       }
       return EFT_OTHER;
    }
-   else
-   {
-      return it->second;
-   }
+
+   return it->second;
 }
 
 bool ExtInfo::is_ext(const llvm::Function* F)
 {
    assert(F);
    if(!F->getBasicBlockList().empty())
+   {
       return false;
+   }
    // Check the cache first; everything below is slower.
    auto i_iec = isext_cache.find(F);
    if(i_iec != isext_cache.end())
+   {
       return i_iec->second;
+   }
 
    bool res;
    if(F->isDeclaration() || F->isIntrinsic())
    {
-      res = 1;
+      res = true;
    }
    else
    {
@@ -1079,14 +1086,14 @@ class Node
    //  For structs this equals the corresponding struct_sz element.
    u32 obj_sz;
    // The time this node was last visited
-   u32 vtime;
+   u32 vtime{0};
    // If rep < node_rank_min, this node is part of a set of equivalent nodes
    //  and (rep) is another node in that set.
    // Else this is the representative node of the set,
    //  and (rep) is its rank in the union-find structure.
    u32 rep;
    // If this node was determined to not point to anything
-   bool nonptr;
+   bool nonptr{false};
    // For SFS: true if this is an array or is heap-allocated
    bool weak;
 
@@ -1101,7 +1108,7 @@ class Node
    bitmap load_to, store_from, gep_to;
 
    //------------------------------------------------------------------------------
-   Node(const llvm::Value* v = nullptr, u32 s = 0, bool w = 0) : val(v), obj_sz(s), vtime(0), rep(node_rank_min), nonptr(0), weak(w)
+   Node(const llvm::Value* v = nullptr, u32 s = 0, bool w = false) : val(v), obj_sz(s), rep(node_rank_min), weak(w)
    {
    }
 
@@ -1171,21 +1178,33 @@ class Constraint
    bool operator<(const Constraint& b) const
    {
       if(type != b.type)
+      {
          return type < b.type;
+      }
       if(dest != b.dest)
+      {
          return dest < b.dest;
+      }
       if(src != b.src)
+      {
          return src < b.src;
+      }
       return off < b.off;
    }
    bool operator>(const Constraint& b) const
    {
       if(type != b.type)
+      {
          return type > b.type;
+      }
       if(dest != b.dest)
+      {
          return dest > b.dest;
+      }
       if(src != b.src)
+      {
          return src > b.src;
+      }
       return off > b.off;
    }
    bool operator!=(const Constraint& b) const
@@ -1203,22 +1222,32 @@ class Constraint
    void print(const Andersen_AA* AA) const
    {
       if(type == store_cons)
+      {
          llvm::errs() << "*";
+      }
       llvm::errs() << '(';
       AA->print_node(dest);
       llvm::errs() << ')';
       if(type == store_cons && off)
+      {
          llvm::errs() << " + " << off;
+      }
       llvm::errs() << " = ";
       if(type == addr_of_cons)
+      {
          llvm::errs() << '&';
+      }
       else if(type == load_cons)
+      {
          llvm::errs() << "*";
+      }
       llvm::errs() << '(';
       AA->print_node(src);
       llvm::errs() << ')';
       if(type != store_cons && off)
+      {
          llvm::errs() << " + " << off;
+      }
    }
    ConsType get_type() const
    {
@@ -1253,7 +1282,7 @@ namespace llvm
       }
       static unsigned getHashValue(const Constraint& X)
       {
-         return ((u32)X.get_type() << 29) ^ (X.get_dest() << 12) ^ X.get_src() ^ X.get_off();
+         return (static_cast<u32>(X.get_type()) << 29) ^ (X.get_dest() << 12) ^ X.get_src() ^ X.get_off();
       }
       static unsigned isEqual(const Constraint& X, const Constraint& Y)
       {
@@ -1287,11 +1316,15 @@ class Heap
       {
          u32 ip = i / 2; // parent pos.
          if(!ip)
+         {
             return;
+         }
          u32 k = hk[i], kp = hk[ip];
          // if the parent key is not greater, we're done
          if(kp <= k)
+         {
             return;
+         }
          // Swap key and value with the parent.
          hk[ip] = k, hk[i] = kp;
          u32 v = hv[i], vp = hv[ip];
@@ -1305,18 +1338,24 @@ class Heap
       for(u32 i = i0;;)
       {
          u32 ic = i * 2; // left child pos.
-         if(ic > nv)     // no left child
+         if(ic > nv)
+         { // no left child
             return;
+         }
          u32 k = hk[i], kc = hk[ic];
          if(ic < nv)
          { // right child exists
             u32 kr = hk[ic + 1];
-            if(kr < kc) // use the right child if it's smaller
+            if(kr < kc)
+            { // use the right child if it's smaller
                ++ic, kc = kr;
+            }
          }
 
-         if(kc >= k) // if the child key is not less, we're done
+         if(kc >= k)
+         { // if the child key is not less, we're done
             return;
+         }
          hk[ic] = k, hk[i] = kc;
          u32 v = hv[i], vc = hv[ic];
          hv[ic] = v, hv[i] = vc;
@@ -1331,9 +1370,9 @@ class Heap
       nv = 0;
       // hk, hv have an extra word before the first item,
       //  and there may be up to (mv+1) items.
-      hk = (u32*)malloc((mv + 2) * 4);
-      hv = (u32*)malloc((mv + 2) * 4);
-      idxv = (u32*)malloc((mv + 1) * 4);
+      hk = static_cast<u32*>(malloc((mv + 2) * 4));
+      hv = static_cast<u32*>(malloc((mv + 2) * 4));
+      idxv = static_cast<u32*>(malloc((mv + 1) * 4));
       memset(idxv, 0xff, (mv + 1) * 4); // set all words to NONE
    }
    ~Heap()
@@ -1371,19 +1410,25 @@ class Heap
          hv[nv] = v;
          idxv[v] = nv;
          perc_up(nv);
-         return 0;
+         return false;
       }
       // Change the key in place and move up/down as needed.
       assert(i <= nv);
       u32 pk = hk[i];
       if(k == pk)
-         return 1;
+      {
+         return true;
+      }
       hk[i] = k;
       if(k < pk)
+      {
          perc_up(i);
+      }
       else
+      {
          perc_dn(i);
-      return 1;
+      }
+      return true;
    }
    // Delete and return the current min value, storing its key in (pk).
    u32 pop(u32* pk = nullptr)
@@ -1402,7 +1447,9 @@ class Heap
          perc_dn(1);
       }
       if(pk)
+      {
          *pk = k;
+      }
       return v;
    }
 };
@@ -1427,9 +1474,9 @@ class Worklist
       if(curr.empty())
       {
          curr.swap(next);
-         return 1;
+         return true;
       }
-      return 0;
+      return false;
    }
    // Insert node (n) with priority (p) into the list.
    void push(u32 n, u32 p)
@@ -1445,7 +1492,7 @@ class Worklist
    }
 };
 
-Andersen_AA::Andersen_AA(const std::string& _TopFunctionName) : TopFunctionName(_TopFunctionName), last_obj_node(0), gep2pts(0), extinfo(0), WL(0)
+Andersen_AA::Andersen_AA(std::string _TopFunctionName) : TopFunctionName(std::move(_TopFunctionName)), last_obj_node(0), gep2pts(nullptr), extinfo(nullptr), WL(nullptr)
 {
 }
 
@@ -1517,7 +1564,9 @@ void Andersen_AA::run_cleanup()
    lcd_starts.clear();
    lcd_dfs_id.clear();
    while(!lcd_stk.empty())
+   {
       lcd_stk.pop();
+   }
    lcd_roots.clear();
    ext_seen.clear();
    node_vars.clear();
@@ -1551,7 +1600,9 @@ void Andersen_AA::pts_cleanup()
          // Note that an obj. node may have no value if it was merged into
          //  an artificial node.
          if(!N->get_val() || !llvm::isa<llvm::Argument>(N->get_val()))
+         {
             N->points_to = bddfalse;
+         }
       }
 
       if(N->points_to != bddfalse)
@@ -1587,10 +1638,14 @@ const Constraint& Andersen_AA::add_cons(ConsType t, u32 dest, u32 src, u32 off, 
    assert(src && dest && "null node in constraint");
 #if NO_FIELD_SENSITIVE
    if(!off_mandatory && (t == gep_cons && src == dest))
+   {
       return empty_C;
+   }
 #endif
    if(t == copy_cons && src == dest)
+   {
       return empty_C;
+   }
    Constraint C(t, dest, src, off, off_mandatory);
    switch(t)
    {
@@ -1623,7 +1678,9 @@ const Constraint& Andersen_AA::add_cons(ConsType t, u32 dest, u32 src, u32 off, 
 void Andersen_AA::verify_nodes()
 {
    if(DEBUG_AA)
+   {
       llvm::errs() << "***** Checking node info consistency...\n";
+   }
    for(auto i : boost::irange(0ul, nodes.size()))
    {
       const Node* N = nodes[i];
@@ -1634,27 +1691,37 @@ void Andersen_AA::verify_nodes()
          assert(!sz || i == i2p && "artificial node has an obj_sz");
          continue;
       }
-      u32 vn = get_val_node(V, 1), on = get_obj_node(V, 1), rn = 0, va = 0;
+      u32 vn = get_val_node(V, true), on = get_obj_node(V, true), rn = 0, va = 0;
       if(auto F = llvm::dyn_cast<const llvm::Function>(V))
       {
          // Don't use get_ret_node, etc. here -
          //  they will return the obj node for AT func.
          auto it = ret_node.find(F);
          if(it != ret_node.end())
+         {
             rn = it->second;
+         }
          it = vararg_node.find(F);
          if(it != vararg_node.end())
+         {
             va = it->second;
+         }
       }
       u32 osz = nodes[on]->obj_sz;
       // This is a value node (including ret/vararg).
       if(i == vn || i == rn || i == va)
+      {
          assert((!sz || at_args.count(V)) && "value node has an obj_sz");
-      // This node is within the object of its value.
+         // This node is within the object of its value.
+      }
       else if(i < on + osz)
+      {
          assert(sz && i + sz <= on + osz && "invalid obj_sz");
+      }
       else
+      {
          assert(!"node is none of val. obj. or art.");
+      }
    }
 
    for(auto it = val_node.begin(), ie = val_node.end(); it != ie; ++it)
@@ -1662,14 +1729,22 @@ void Andersen_AA::verify_nodes()
       const llvm::Value* V = it->first;
       // The args of addr-taken func. are mapped to the func. obj_nodes instead.
       if(!at_args.count(V))
+      {
          assert(V == nodes[it->second]->get_val() && "bad val_node entry");
+      }
    }
    for(auto it = obj_node.begin(), ie = obj_node.end(); it != ie; ++it)
+   {
       assert(it->first == nodes[it->second]->get_val() && "bad obj_node entry");
+   }
    for(auto it = ret_node.begin(), ie = ret_node.end(); it != ie; ++it)
+   {
       assert(it->first == nodes[it->second]->get_val() && "bad ret_node entry");
+   }
    for(auto it = vararg_node.begin(), ie = vararg_node.end(); it != ie; ++it)
+   {
       assert(it->first == nodes[it->second]->get_val() && "bad vararg_node entry");
+   }
 }
 
 // Fill in struct_info for T.
@@ -1678,9 +1753,13 @@ void Andersen_AA::analyze_struct(const llvm::StructType* T)
 {
    assert(T);
    if(struct_info.count(T))
+   {
       return;
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "analyze_struct  " << T->getName() << "\n";
+   }
    std::vector<u32> sz, off;
    // How many fields have been placed in the expanded struct
    u32 nf = 0;
@@ -1689,7 +1768,9 @@ void Andersen_AA::analyze_struct(const llvm::StructType* T)
       const llvm::Type* ET = *it;
       // Treat an array field as a single element of its type.
       while(auto AT = llvm::dyn_cast<const llvm::ArrayType>(ET))
+      {
          ET = AT->getElementType();
+      }
       // The offset is where this element will be placed in the exp. struct.
       off.push_back(nf);
       // Process a nested struct.
@@ -1699,7 +1780,9 @@ void Andersen_AA::analyze_struct(const llvm::StructType* T)
          auto nfE = szE.size();
          // Copy ST's info, whose element 0 is the size of ST itself.
          for(auto j : boost::irange(0ul, nfE))
+         {
             sz.push_back(szE[j]);
+         }
          nf += nfE;
       }
       else
@@ -1716,7 +1799,9 @@ void Andersen_AA::analyze_struct(const llvm::StructType* T)
       off.push_back(0);
    }
    else
+   {
       sz[0] = nf;
+   }
    if(nf > max_struct_sz)
    {
       max_struct = T;
@@ -1731,16 +1816,22 @@ u32 Andersen_AA::compute_gep_off(const llvm::User* V)
 {
    assert(V);
    if(DEBUG_AA)
+   {
       llvm::errs() << "    (gep  ";
+   }
    if(DEBUG_AA)
+   {
       print_val(V->getOperand(0));
+   }
    u32 off = 0;
    for(auto gi = llvm::gep_type_begin(*V), ge = llvm::gep_type_end(*V); gi != ge; ++gi)
    {
       auto ST = gi.getStructTypeOrNull();
       // Skip non-struct (i.e. array) offsets
       if(!ST)
+      {
          continue;
+      }
       auto op = llvm::dyn_cast<const llvm::ConstantInt>(gi.getOperand());
       assert(op && "non-const struct index in GEP");
       // The actual index
@@ -1758,7 +1849,9 @@ u32 Andersen_AA::compute_gep_off(const llvm::User* V)
       off += so[idx];
    }
    if(DEBUG_AA)
+   {
       llvm::errs() << ")\n";
+   }
    return off;
 }
 
@@ -1770,28 +1863,38 @@ const llvm::Type* Andersen_AA::trace_alloc_type(const llvm::Instruction* I)
    assert(I);
    // The largest type seen so far
    const llvm::Type* MT = I->getType()->getContainedType(0);
-   auto msz = 0ul; // the size of MT (0 for non-struct)
-   bool found = 0; // if any casts were found
+   auto msz = 0ul;     // the size of MT (0 for non-struct)
+   bool found = false; // if any casts were found
 
    while(auto AT = llvm::dyn_cast<const llvm::ArrayType>(MT))
+   {
       MT = AT->getElementType();
+   }
    if(auto ST = llvm::dyn_cast<const llvm::StructType>(MT))
+   {
       msz = get_struct_sz(ST).size();
+   }
 
    for(auto it = I->use_begin(), ie = I->use_end(); it != ie; ++it)
    {
       auto CI = llvm::dyn_cast<const llvm::CastInst>(*it);
       // Only check casts to other ptr types.
       if(!CI || !llvm::isa<llvm::PointerType>(CI->getType()))
+      {
          continue;
-      found = 1;
+      }
+      found = true;
       // The type we're currently casting to and its size
       const llvm::Type* T = CI->getType()->getContainedType(0);
       auto sz = 0ul;
       while(auto AT = llvm::dyn_cast<const llvm::ArrayType>(T))
+      {
          T = AT->getElementType();
+      }
       if(auto ST = llvm::dyn_cast<const llvm::StructType>(T))
+      {
          sz = get_struct_sz(ST).size();
+      }
       if(sz > msz)
       {
          msz = sz;
@@ -1802,7 +1905,9 @@ const llvm::Type* Andersen_AA::trace_alloc_type(const llvm::Instruction* I)
    // If the allocation is of non-struct type and we can't find any casts,
    //  assume that it may be cast to the largest struct later on.
    if(!found && !msz)
+   {
       return max_struct;
+   }
    return MT;
 }
 
@@ -1812,58 +1917,90 @@ size_t Andersen_AA::get_max_offset(const llvm::Value* V)
 {
    assert(V);
    if(DEBUG_AA)
+   {
       llvm::errs() << "        get_max_offset  ";
+   }
    if(DEBUG_AA)
+   {
       print_val(V);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
    const llvm::Type* T = V->getType();
    assert(llvm::isa<llvm::PointerType>(T) && T->getContainedType(0) == min_struct);
    // If V is a CE or bitcast, the actual pointer type is its operand.
    if(auto E = llvm::dyn_cast<const llvm::ConstantExpr>(V))
+   {
       T = E->getOperand(0)->getType();
+   }
    else if(auto BI = llvm::dyn_cast<const llvm::BitCastInst>(V))
+   {
       T = BI->getOperand(0)->getType();
-   // For other values, use the biggest struct type out of all operands.
+      // For other values, use the biggest struct type out of all operands.
+   }
    else if(auto U = llvm::dyn_cast<const llvm::User>(V))
    {
       if(DEBUG_AA)
+      {
          llvm::errs() << "          ops:";
+      }
       auto msz = 1ul; // the max size seen so far
       for(auto it = U->op_begin(), ie = U->op_end(); it != ie; ++it)
       {
          const llvm::Value* V = it->get();
          if(DEBUG_AA)
+         {
             llvm::errs() << "  ";
+         }
          if(DEBUG_AA)
+         {
             print_val(V);
+         }
          T = V->getType();
          if(!llvm::isa<llvm::PointerType>(T))
+         {
             continue;
+         }
          T = T->getContainedType(0);
          while(auto AT = llvm::dyn_cast<const llvm::ArrayType>(T))
+         {
             T = AT->getElementType();
+         }
          if(auto ST = llvm::dyn_cast<const llvm::StructType>(T))
          {
             auto sz = get_struct_sz(ST).size();
             if(msz < sz)
+            {
                msz = sz;
+            }
          }
       }
       if(DEBUG_AA)
+      {
          llvm::errs() << "\n";
+      }
       return msz;
    }
-   else // V has no operands
+   else
+   { // V has no operands
       return 1;
+   }
 
    if(!llvm::isa<llvm::PointerType>(T))
+   {
       return 1;
+   }
    T = T->getContainedType(0);
    while(auto AT = llvm::dyn_cast<const llvm::ArrayType>(T))
+   {
       T = AT->getElementType();
+   }
    if(auto ST = llvm::dyn_cast<const llvm::StructType>(T))
+   {
       return get_struct_sz(ST).size();
+   }
    return 1;
 }
 
@@ -1872,10 +2009,12 @@ size_t Andersen_AA::get_max_offset(const llvm::Value* V)
 u32 Andersen_AA::get_val_node_cptr(const llvm::Value* V)
 {
    assert(V);
-   u32 vn = get_val_node(V, 1);
+   u32 vn = get_val_node(V, true);
    // The value-node map takes priority over the general const.ptr. handling.
    if(vn)
+   {
       return vn;
+   }
 
    auto C = llvm::dyn_cast<const llvm::Constant>(V);
    assert(C && llvm::isa<llvm::PointerType>(C->getType()) && "value w/o node is not a const ptr");
@@ -1883,7 +2022,9 @@ u32 Andersen_AA::get_val_node_cptr(const llvm::Value* V)
 
    // We don't need constraints for null/undef.
    if(llvm::isa<llvm::ConstantPointerNull>(C) || llvm::isa<llvm::UndefValue>(C))
+   {
       return 0;
+   }
 
    auto E = llvm::dyn_cast<const llvm::ConstantExpr>(C);
    assert(E && "unknown const.ptr type");
@@ -1899,18 +2040,26 @@ u32 Andersen_AA::get_val_node_cptr(const llvm::Value* V)
          if(llvm::isa<llvm::ConstantPointerNull>(E->getOperand(0)))
          {
             if(E->getNumOperands() > 2)
+            {
                return 0;
+            }
             id_i2p_insn(E);
             return get_val_node(E);
          }
          else
          {
             if(DEBUG_AA)
+            {
                llvm::errs() << "CGEP #" << next_node << " addr:" << V << "\n";
+            }
             if(DEBUG_AA)
+            {
                print_val(E);
+            }
             if(DEBUG_AA)
+            {
                llvm::errs() << "\n";
+            }
             if(!val_node.count(E))
             {
                u32 vn = next_node++;
@@ -1938,16 +2087,24 @@ bool Andersen_AA::trace_int(const llvm::Value* V, llvm::DenseSet<const llvm::Val
 {
    auto i_seen = seen.find(V);
    if(i_seen != seen.end())
+   {
       return i_seen->second;
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "    trace_int[" << depth << "]  ";
+   }
    if(DEBUG_AA)
+   {
       print_val(V);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n      ";
+   }
    const llvm::Type* TL = V->getType();
    assert(V && llvm::isa<llvm::IntegerType>(TL) && "trying to trace non-int value");
-   seen[V] = 0;
+   seen[V] = false;
 
    // Opcode/operands of V (which is either insn or const.expr)
    u32 opcode = 0;
@@ -1957,45 +2114,67 @@ bool Andersen_AA::trace_int(const llvm::Value* V, llvm::DenseSet<const llvm::Val
    if(llvm::isa<llvm::Argument>(V) || llvm::isa<llvm::ConstantInt>(V))
    {
       if(DEBUG_AA)
+      {
          llvm::errs() << "<i2p>\n";
-      seen[V] = 1;
-      return 1;
+      }
+      seen[V] = true;
+      return true;
    }
-   else if(auto CE = llvm::dyn_cast<const llvm::ConstantExpr>(V))
+   if(auto CE = llvm::dyn_cast<const llvm::ConstantExpr>(V))
    {
       if(DEBUG_AA)
+      {
          llvm::errs() << "CE";
+      }
       opcode = CE->getOpcode();
       for(auto i : boost::irange(0u, CE->getNumOperands()))
+      {
          ops.push_back(CE->getOperand(i));
+      }
    }
    else if(auto I = llvm::dyn_cast<const llvm::Instruction>(V))
    {
       if(DEBUG_AA)
+      {
          llvm::errs() << "insn";
+      }
       opcode = I->getOpcode();
       for(auto i : boost::irange(0u, I->getNumOperands()))
+      {
          ops.push_back(I->getOperand(i));
+      }
    }
    else
+   {
       assert(!"unknown type of int value");
+   }
 
    assert(opcode);
    if(DEBUG_AA)
+   {
       llvm::errs() << "  (";
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << llvm::Instruction::getOpcodeName(opcode);
+   }
    for(auto i : boost::irange(0ul, ops.size()))
    {
       if(DEBUG_AA)
+      {
          llvm::errs() << "  ";
+      }
       if(DEBUG_AA)
+      {
          print_val(ops[i]);
+      }
    }
    if(DEBUG_AA)
+   {
       llvm::errs() << ")\n";
+   }
 
-   bool r = 0;
+   bool r = false;
    switch(opcode)
    {
       // These return untraceable int values.
@@ -2008,13 +2187,15 @@ bool Andersen_AA::trace_int(const llvm::Value* V, llvm::DenseSet<const llvm::Val
       case llvm::Instruction::VAArg:
       case llvm::Instruction::ExtractElement:
          if(DEBUG_AA)
+         {
             llvm::errs() << "      <i2p>\n";
-         seen[V] = 1;
-         return 1;
+         }
+         seen[V] = true;
+         return true;
          // This is the only direct way to get a ptr source.
       case llvm::Instruction::PtrToInt:
          src.insert(ops[0]);
-         return 0;
+         return false;
       case llvm::Instruction::Load:
       {
          // Loading from a global constant gives its initializer.
@@ -2024,52 +2205,74 @@ bool Andersen_AA::trace_int(const llvm::Value* V, llvm::DenseSet<const llvm::Val
             {
                auto GI = G->getInitializer();
                if(DEBUG_AA)
+               {
                   llvm::errs() << "      global const  ";
+               }
                if(DEBUG_AA)
+               {
                   print_val(GI);
+               }
                if(DEBUG_AA)
+               {
                   llvm::errs() << "\n";
+               }
                r = trace_int(GI, src, seen, depth + 1);
                if(r)
-                  seen[V] = 1;
+               {
+                  seen[V] = true;
+               }
                return r;
             }
          }
          // Try to find what was last stored here, within the same basic block.
          if(DEBUG_AA)
+         {
             llvm::errs() << "      last store  ";
+         }
          auto LI0 = llvm::cast<const llvm::LoadInst>(V);
          auto addr = ops[0];
          const llvm::Value* S = nullptr;
          // Whether the BB iterator reached the current insn.
-         bool found = 0;
+         bool found = false;
          auto bb = LI0->getParent();
          for(auto it = bb->begin(), ie = bb->end(); !found && it != ie; ++it)
          {
             if(auto SI = llvm::dyn_cast<const llvm::StoreInst>(it))
             {
                if(SI->getPointerOperand() == addr)
+               {
                   S = SI->getOperand(0);
+               }
             }
             else if(auto LI = llvm::dyn_cast<const llvm::LoadInst>(it))
+            {
                found = LI == LI0;
+            }
          }
          assert(found);
          if(S)
          {
             if(DEBUG_AA)
+            {
                print_val(S);
+            }
             if(DEBUG_AA)
+            {
                llvm::errs() << "\n";
+            }
             r = trace_int(S, src, seen, depth + 1);
             if(r)
-               seen[V] = 1;
+            {
+               seen[V] = true;
+            }
             return r;
          }
          if(DEBUG_AA)
+         {
             llvm::errs() << "<??\?>\n";
-         seen[V] = 1;
-         return 1;
+         }
+         seen[V] = true;
+         return true;
       }
          // For 1-addr arithmetic or casts, trace the addr operand.
       case llvm::Instruction::Shl:
@@ -2082,22 +2285,24 @@ bool Andersen_AA::trace_int(const llvm::Value* V, llvm::DenseSet<const llvm::Val
       {
          const llvm::Type* TR = ops[0]->getType();
          if(DEBUG_AA)
+         {
             llvm::errs() << "  (cast " << get_type_name(TR) << " -> " << get_type_name(TL) << "\n";
+         }
          if(llvm::isa<llvm::IntegerType>(TR))
          {
             r = trace_int(ops[0], src, seen, depth + 1);
             if(r)
-               seen[V] = 1;
+            {
+               seen[V] = true;
+            }
             return r;
          }
-         else
-         {
-            assert(opcode == llvm::Instruction::BitCast && "invalid operand for int insn");
-            llvm::Type::TypeID t = TR->getTypeID();
-            assert(t == llvm::Type::FloatTyID || t == llvm::Type::DoubleTyID && "invalid cast to int");
-            seen[V] = 1;
-            return 1;
-         }
+
+         assert(opcode == llvm::Instruction::BitCast && "invalid operand for int insn");
+         llvm::Type::TypeID t = TR->getTypeID();
+         assert(t == llvm::Type::FloatTyID || t == llvm::Type::DoubleTyID && "invalid cast to int");
+         seen[V] = true;
+         return true;
       }
          // Arithmetic with possibly 2 addr: trace both; add i2p only if both
          //  return i2p (if only 1 has i2p, assume it's an offset for the addr).
@@ -2113,36 +2318,48 @@ bool Andersen_AA::trace_int(const llvm::Value* V, llvm::DenseSet<const llvm::Val
       case llvm::Instruction::Xor:
          r = trace_int(ops[0], src, seen, depth + 1) & trace_int(ops[1], src, seen, depth + 1);
          if(r)
-            seen[V] = 1;
+         {
+            seen[V] = true;
+         }
          return r;
          // Trace all ops into the same set (if any op has i2p,
          //  the result can point to i2p too).
       case llvm::Instruction::PHI:
-         r = 0;
+         r = false;
          for(auto i : boost::irange(0ul, ops.size()))
          {
             // Sometimes a pointer or other value can come into an int-type phi node.
             const llvm::Type* T = ops[i]->getType();
             if(llvm::isa<llvm::IntegerType>(T))
+            {
                r |= trace_int(ops[i], src, seen, depth + 1);
+            }
             else if(llvm::isa<llvm::PointerType>(T))
+            {
                src.insert(ops[i]);
+            }
             else
-               r = 1;
+            {
+               r = true;
+            }
          }
          if(r)
-            seen[V] = 1;
+         {
+            seen[V] = true;
+         }
          return r;
       case llvm::Instruction::Select:
          r = trace_int(ops[0], src, seen, depth + 1) | trace_int(ops[1], src, seen, depth + 1);
          if(r)
-            seen[V] = 1;
+         {
+            seen[V] = true;
+         }
          return r;
       default:
          assert(!"this insn should not produce an int value");
    }
    assert(!"should not get here");
-   return 0;
+   return false;
 }
 
 //------------------------------------------------------------------------------
@@ -2154,11 +2371,17 @@ void Andersen_AA::id_func(const llvm::Function* F)
    assert(F);
    bool AT = F->hasAddressTaken(); // whether this function's addr. is ever taken
    if(DEBUG_AA)
+   {
       llvm::errs() << "id_func  ";
+   }
    if(DEBUG_AA)
+   {
       print_val(F);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << ":  addr " << (AT ? "taken" : "not taken");
+   }
    u32 vnF = 0, onF = 0;
    // Only make val/obj nodes for addr-taken functions.
    if(AT)
@@ -2176,11 +2399,15 @@ void Andersen_AA::id_func(const llvm::Function* F)
    if(extinfo->is_ext(F))
    {
       if(DEBUG_AA)
+      {
          llvm::errs() << ", ext\n";
+      }
       return;
    }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
    bool is_va = F->isVarArg();
    bool ptr_ret = llvm::isa<llvm::PointerType>(F->getReturnType());
    // The double-ptr args to main(), argv & envp, are treated as external vars.
@@ -2189,15 +2416,21 @@ void Andersen_AA::id_func(const llvm::Function* F)
       // Assume that the top function is never called indirectly.
       u32 i = 0;
       if(DEBUG_AA)
+      {
          llvm::errs() << "Add top function parameter constraints\n";
+      }
       for(auto& arg : F->args())
       {
          const llvm::Value* argAddr = &arg;
          ++i;
          if(!argAddr->getType()->isPtrOrPtrVectorTy())
+         {
             continue;
+         }
          if(DEBUG_AA)
+         {
             llvm::errs() << "Add constraint on parameter %" << i - 1 << "\n";
+         }
          u32 vn = next_node++;
          nodes.push_back(new Node(argAddr));
          val_node[argAddr] = vn;
@@ -2245,7 +2478,9 @@ void Andersen_AA::id_func(const llvm::Function* F)
          val_node[V] = onF + func_node_off_arg0 + i;
          at_args.insert(V);
          if(llvm::isa<llvm::PointerType>(V->getType()))
+         {
             last_ptr = i;
+         }
          ++i;
       }
       // The return node must go right after the first obj node.
@@ -2291,18 +2526,28 @@ void Andersen_AA::id_gep_ce(const llvm::Value* G)
    {
       auto E = llvm::dyn_cast<const llvm::ConstantExpr>(*it);
       if(!E)
+      {
          continue;
+      }
       // Recursively check the uses of a bitcast.
       if(E->getOpcode() == llvm::Instruction::BitCast)
+      {
          id_gep_ce(E);
+      }
       else if(E->getOpcode() == llvm::Instruction::GetElementPtr)
       {
          if(DEBUG_AA)
+         {
             llvm::errs() << "CGEP #" << next_node << "\n";
+         }
          if(DEBUG_AA)
+         {
             print_val(E);
+         }
          if(DEBUG_AA)
+         {
             llvm::errs() << "\n";
+         }
          // A GEP can only use a pointer as its first op.
          assert(E->getOperand(0) == G && "ptr used as index operand");
          // Make a node for this CGEP and record it to init
@@ -2323,23 +2568,29 @@ void Andersen_AA::id_global(const llvm::GlobalVariable* G)
    // Make a node for the global ptr.
    nodes.push_back(new Node(G));
    if(DEBUG_AA)
+   {
       llvm::errs() << "global #" << next_node << "\n";
+   }
    if(DEBUG_AA)
+   {
       print_val(G);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
 
    u32 vnG = next_node++;
    val_node[G] = vnG;
 
    // The type this global points to
    const llvm::Type* T = G->getType()->getContainedType(0);
-   bool is_array = 0;
+   bool is_array = false;
    // An array is considered a single variable of its type.
    while(auto AT = llvm::dyn_cast<const llvm::ArrayType>(T))
    {
       T = AT->getElementType();
-      is_array = 1;
+      is_array = true;
    }
    // The first node of the global object (a struct may have more)
    u32 onG = next_node;
@@ -2351,7 +2602,9 @@ void Andersen_AA::id_global(const llvm::GlobalVariable* G)
       auto nf = sz.size();
       // Make nodes for all the fields, with the same obj_sz (array => weak).
       for(auto i : boost::irange(0UL, nf))
+      {
          nodes.push_back(new Node(G, sz[i], is_array));
+      }
       next_node += nf;
       // A struct may be used in constant GEP expr.
       id_gep_ce(G);
@@ -2363,7 +2616,9 @@ void Andersen_AA::id_global(const llvm::GlobalVariable* G)
       ++next_node;
       // An array may be used in constant GEP expr.
       if(is_array)
+      {
          id_gep_ce(G);
+      }
    }
 
    add_cons(addr_of_cons, vnG, onG);
@@ -2374,7 +2629,9 @@ u32 Andersen_AA::get_node_rep(u32 n)
    u32& r0 = nodes[n]->rep;
    // If (n) has a rank, it is the rep.
    if(r0 >= node_rank_min)
+   {
       return n;
+   }
    // Recurse on the parent to get the real rep.
    u32 r = get_node_rep(r0);
    r0 = r; // set n's parent to the rep
@@ -2386,7 +2643,9 @@ u32 Andersen_AA::cget_node_rep(u32 n) const
 {
    u32 r;
    while((r = nodes[n]->rep) < node_rank_min)
+   {
       n = r;
+   }
    return n;
 }
 
@@ -2397,12 +2656,14 @@ u32 Andersen_AA::get_ret_node(const llvm::Function* F) const
 {
    assert(F);
    if(!llvm::isa<llvm::PointerType>(F->getReturnType()))
+   {
       return 0;
+   }
    auto it = ret_node.find(F);
    if(it == ret_node.end())
    {
       // Addr-taken func. have obj nodes in place of the ret/vararg nodes.
-      u32 on = get_obj_node(F, 1);
+      u32 on = get_obj_node(F, true);
       assert(on && "missing ret_node entry");
       return on + func_node_off_ret;
    }
@@ -2417,11 +2678,13 @@ u32 Andersen_AA::get_vararg_node(const llvm::Function* F) const
 {
    assert(F);
    if(!F->getFunctionType()->isVarArg())
+   {
       return 0;
+   }
    auto it = vararg_node.find(F);
    if(it == vararg_node.end())
    {
-      u32 on = get_obj_node(F, 1);
+      u32 on = get_obj_node(F, true);
       assert(on && "missing vararg_node entry");
       return on + nodes[on]->obj_sz - 1;
    }
@@ -2439,37 +2702,61 @@ std::string Andersen_AA::get_type_name(const llvm::Type* T) const
    {
       auto ST = llvm::dyn_cast<const llvm::StructType>(T);
       if(ST && ST->hasName())
+      {
          return ST->getName();
+      }
       return "<anon.struct>";
    }
    if(T->isSingleValueType())
    {
       if(T->isVoidTy())
+      {
          return "void";
-      else if(T->isHalfTy())
+      }
+      if(T->isHalfTy())
+      {
          return "_Float16";
-      else if(T->isFloatTy())
+      }
+      if(T->isFloatTy())
+      {
          return "float";
-      else if(T->isDoubleTy())
+      }
+      if(T->isDoubleTy())
+      {
          return "double";
-      else if(T->isX86_FP80Ty())
+      }
+      if(T->isX86_FP80Ty())
+      {
          return "long double";
-      else if(T->isFP128Ty())
+      }
+      if(T->isFP128Ty())
+      {
          return "long double";
-      else if(T->isIntegerTy())
+      }
+      if(T->isIntegerTy())
       {
          if(T->getScalarSizeInBits() == 1)
+         {
             return "_Bool";
-         else if(T->getScalarSizeInBits() > 1 && T->getScalarSizeInBits() <= 8)
+         }
+         if(T->getScalarSizeInBits() > 1 && T->getScalarSizeInBits() <= 8)
+         {
             return "unsigned char";
-         else if(T->getScalarSizeInBits() > 8 && T->getScalarSizeInBits() <= 16)
+         }
+         if(T->getScalarSizeInBits() > 8 && T->getScalarSizeInBits() <= 16)
+         {
             return "unsigned short int";
-         else if(T->getScalarSizeInBits() > 16 && T->getScalarSizeInBits() <= 32)
+         }
+         if(T->getScalarSizeInBits() > 16 && T->getScalarSizeInBits() <= 32)
+         {
             return "unsigned int";
-         else if(T->getScalarSizeInBits() > 32 && T->getScalarSizeInBits() <= 64)
+         }
+         if(T->getScalarSizeInBits() > 32 && T->getScalarSizeInBits() <= 64)
+         {
             return "unsigned long long int";
-         else
-            llvm_unreachable("not expected integer bitwidth size");
+         }
+
+         llvm_unreachable("not expected integer bitwidth size");
       }
    }
    return "<??\?>";
@@ -2492,10 +2779,14 @@ void Andersen_AA::print_struct_info(const llvm::Type* T) const
    const std::pair<std::vector<u32>, std::vector<u32>>& info = it->second;
    const std::vector<u32>&sz = info.first, &off = info.second;
    for(auto i : boost::irange(0ul, sz.size()))
+   {
       llvm::errs() << " " << sz[i];
+   }
    llvm::errs() << "\noff=";
    for(auto i : boost::irange(0ul, off.size()))
+   {
       llvm::errs() << " " << off[i];
+   }
    llvm::errs() << '\n';
 }
 
@@ -2503,8 +2794,10 @@ void Andersen_AA::print_struct_info(const llvm::Type* T) const
 void Andersen_AA::print_all_structs() const
 {
    llvm::errs() << "==========  Struct info  ===================================\n";
-   for(auto it = struct_info.begin(), ie = struct_info.end(); it != ie; ++it)
-      print_struct_info(it->first);
+   for(const auto& it : struct_info)
+   {
+      print_struct_info(it.first);
+   }
 }
 
 // Max. length of the printed name of a single object, max length for a complete
@@ -2540,9 +2833,13 @@ void Andersen_AA::print_val(const llvm::Value* V, u32 n, bool const_with_val, bo
    else if(I)
    {
       if(n && first)
+      {
          llvm::errs() << "<insn#" << n << ".";
+      }
       else
+      {
          llvm::errs() << "<insn.";
+      }
       llvm::errs() << I->getOpcodeName();
       if(I->getType()->getTypeID() != llvm::Type::VoidTyID)
       {
@@ -2555,11 +2852,15 @@ void Andersen_AA::print_val(const llvm::Value* V, u32 n, bool const_with_val, bo
             instID = static_cast<u32>(MST.getLocalSlot(I));
          }
          else
+         {
             instID = tmp_num.find(I)->second;
+         }
          llvm::errs() << "|'%" << instID;
       }
       else
+      {
          llvm::errs() << "??\?";
+      }
       llvm::errs() << '>';
    }
    else if(auto C = llvm::dyn_cast<const llvm::Constant>(V))
@@ -2569,9 +2870,13 @@ void Andersen_AA::print_val(const llvm::Value* V, u32 n, bool const_with_val, bo
    else if(auto A = llvm::dyn_cast<const llvm::Argument>(V))
    {
       if(n && first)
+      {
          llvm::errs() << "<arg#" << n;
+      }
       else
+      {
          llvm::errs() << "<arg";
+      }
       auto F = A->getParent();
       llvm::ModuleSlotTracker MST(F->getParent());
       MST.incorporateFunction(*F);
@@ -2581,9 +2886,13 @@ void Andersen_AA::print_val(const llvm::Value* V, u32 n, bool const_with_val, bo
    else
    {
       if(n && first)
+      {
          llvm::errs() << "<??\?#" << n << ">";
+      }
       else
+      {
          llvm::errs() << "<??\?>";
+      }
    }
 }
 
@@ -2593,26 +2902,44 @@ void Andersen_AA::print_const(const llvm::Constant* C, u32 n, bool const_with_va
 {
    assert(C);
    if(n && first)
+   {
       llvm::errs() << "<const#" << n << ".";
+   }
    else
+   {
       llvm::errs() << "<const.";
+   }
    if(auto K = llvm::dyn_cast<const llvm::ConstantInt>(C))
    {
       if(const_with_val)
+      {
          llvm::errs() << "int>(" << K->getSExtValue() << ")";
+      }
       else
+      {
          llvm::errs() << "int>";
+      }
    }
    else if(llvm::isa<llvm::ConstantFP>(C))
+   {
       llvm::errs() << "FP>";
+   }
    else if(llvm::isa<llvm::ConstantAggregateZero>(C))
+   {
       llvm::errs() << "aggregate(0)>";
+   }
    else if(llvm::isa<llvm::ConstantVector>(C))
+   {
       llvm::errs() << "vector>";
+   }
    else if(llvm::isa<llvm::ConstantPointerNull>(C))
+   {
       llvm::errs() << "ptr(0)>";
+   }
    else if(llvm::isa<llvm::UndefValue>(C))
+   {
       llvm::errs() << "undef>";
+   }
    else if(auto K = llvm::dyn_cast<const llvm::ConstantArray>(C))
    {
       if(const_with_val)
@@ -2624,7 +2951,9 @@ void Andersen_AA::print_const(const llvm::Constant* C, u32 n, bool const_with_va
          llvm::errs() << "[" << ne << "])";
       }
       else
+      {
          llvm::errs() << "array>";
+      }
    }
    else if(auto K = llvm::dyn_cast<const llvm::ConstantStruct>(C))
    {
@@ -2636,7 +2965,9 @@ void Andersen_AA::print_const(const llvm::Constant* C, u32 n, bool const_with_va
          llvm::errs() << ')';
       }
       else
+      {
          llvm::errs() << "struct>";
+      }
    }
    else if(auto K = llvm::dyn_cast<const llvm::ConstantDataSequential>(C))
    {
@@ -2648,16 +2979,22 @@ void Andersen_AA::print_const(const llvm::Constant* C, u32 n, bool const_with_va
          llvm::errs() << ')';
       }
       else
+      {
          llvm::errs() << "Sequential>";
+      }
    }
    else if(auto E = llvm::dyn_cast<const llvm::ConstantExpr>(C))
    {
       llvm::errs() << "expr>";
       if(const_with_val)
+      {
          print_const_expr(E);
+      }
    }
    else
+   {
       llvm::errs() << "??\?>";
+   }
 }
 
 //------------------------------------------------------------------------------
@@ -2673,7 +3010,7 @@ void Andersen_AA::print_const_expr(const llvm::ConstantExpr* E) const
       // We can only get here if const_with_val is 1.
       // Also this is a recursive call (first=0),
       //  and we no longer need the node IDs.
-      print_val(*it, 0, 1, 0);
+      print_val(*it, 0, true, false);
    }
    llvm::errs() << ')';
 }
@@ -2700,32 +3037,46 @@ void Andersen_AA::print_node(u32 n) const
       default:
          const llvm::Value* V = nodes[n]->get_val();
          // Obj node for current value and its obj size (both 0 if V is null)
-         u32 on = V ? get_obj_node(V, 1) : 0;
+         u32 on = V ? get_obj_node(V, true) : 0;
          u32 sz = nodes[on]->obj_sz;
          if(!V)
+         {
             llvm::errs() << "<artificial#" << n << ">";
+         }
          else if(auto F = llvm::dyn_cast<const llvm::Function>(V))
          {
             llvm::errs() << F->getName();
             if(n == get_ret_node(F))
+            {
                llvm::errs() << "<retval>";
+            }
             else if(n == get_vararg_node(F))
+            {
                llvm::errs() << "<vararg>";
-            // A function's value node is its original pointer.
+               // A function's value node is its original pointer.
+            }
             else if(n == get_val_node(F))
+            {
                llvm::errs() << "<fptr>";
-            // If it's an object node, mark it with the offset from the obj. start.
+               // If it's an object node, mark it with the offset from the obj. start.
+            }
             else if(n - on < sz)
+            {
                llvm::errs() << "/" << n - on;
-            // Unknown function node
+               // Unknown function node
+            }
             else
+            {
                llvm::errs() << "<??\?>";
+            }
          }
          else
          {
-            print_val(V, n, 0); // 0 to omit the values of constant nodes
+            print_val(V, n, false); // 0 to omit the values of constant nodes
             if(n - on < sz)
+            {
                llvm::errs() << "/" << n - on;
+            }
          }
    }
 }
@@ -2765,13 +3116,17 @@ void Andersen_AA::print_cons_graph(bool points_to_only) const
 {
    const char* header = "==========  Constraint graph ==============================\n";
    if(points_to_only)
+   {
       header = "==========  Points-to graph  ===============================\n";
+   }
    llvm::errs() << header;
    std::vector<std::string> lines;
    for(auto i : boost::irange(0ul, nodes.size()))
    {
       if(!points_to_only && !nodes[i]->is_rep())
+      {
          continue;
+      }
       print_node(i);
       llvm::errs() << "  ->";
       // If node #i was merged, print the edges and constraints of the rep node.
@@ -2787,10 +3142,10 @@ void Andersen_AA::print_cons_graph(bool points_to_only) const
          if(!N->copy_to.empty())
          {
             llvm::errs() << "\n    COPY:";
-            for(auto it = N->copy_to.begin(), ie = N->copy_to.end(); it != ie; ++it)
+            for(unsigned int it : N->copy_to)
             {
                llvm::errs() << "  ";
-               print_node(*it);
+               print_node(it);
             }
          }
          if(!N->load_to.empty())
@@ -2816,10 +3171,10 @@ void Andersen_AA::print_cons_graph(bool points_to_only) const
 //------------------------------------------------------------------------------
 void Andersen_AA::print_node_cons(const bitmap& L) const
 {
-   for(auto it = L.begin(), ie = L.end(); it != ie; ++it)
+   for(unsigned int it : L)
    {
       llvm::errs() << "  ";
-      const Constraint& C = cplx_cons[*it];
+      const Constraint& C = cplx_cons[it];
       switch(C.get_type())
       {
          case load_cons:
@@ -2835,7 +3190,9 @@ void Andersen_AA::print_node_cons(const bitmap& L) const
             assert(!"not a complex constraint");
       }
       if(C.get_off())
+      {
          llvm::errs() << " +" << C.get_off();
+      }
    }
 }
 
@@ -2851,9 +3208,11 @@ void Andersen_AA::print_metrics() const
    for(auto i : boost::irange(0ul, nn))
    {
       const Node* N = nodes[i];
-      u32 sz = (u32)bdd_satcountset(N->points_to, pts_dom);
+      auto sz = static_cast<u32>(bdd_satcountset(N->points_to, pts_dom));
       if(!sz)
+      {
          continue;
+      }
       assert(N->is_rep() && "non-rep node has a points_to");
       assert(!N->nonptr && "non-pointer has a points_to");
       ++n_pts;
@@ -2866,7 +3225,7 @@ void Andersen_AA::print_metrics() const
       }
    }
    pts_seen.clear();
-   double avg_pts = n_pts ? sum_pts / (double)n_pts : 0, avg_pts_uniq = n_pts_uniq ? sum_pts_uniq / (double)n_pts_uniq : 0;
+   double avg_pts = n_pts ? sum_pts / static_cast<double>(n_pts) : 0, avg_pts_uniq = n_pts_uniq ? sum_pts_uniq / static_cast<double>(n_pts_uniq) : 0;
    llvm::errs() << "Points-to edges: " << sum_pts << " in " << n_pts << " sets, avg " << avg_pts << "\n";
    llvm::errs() << "- unique points-to: " << sum_pts_uniq << " in " << n_pts_uniq << ", avg " << avg_pts_uniq << "\n";
 }
@@ -2878,34 +3237,38 @@ void Andersen_AA::list_ext_unknown(const llvm::Module& M) const
 {
    assert(extinfo);
    std::vector<std::string> names;
-   for(auto it = M.begin(), ie = M.end(); it != ie; ++it)
+   for(const auto& it : M)
    {
-      if(it->isDeclaration() || it->isIntrinsic())
+      if(it.isDeclaration() || it.isIntrinsic())
       {
-         bool rel = 0;
-         if(llvm::isa<llvm::PointerType>(it->getReturnType()))
+         bool rel = false;
+         if(llvm::isa<llvm::PointerType>(it.getReturnType()))
          {
-            rel = 1;
+            rel = true;
          }
          else
-            for(auto j = it->arg_begin(), je = it->arg_end(); j != je; ++j)
+         {
+            for(auto j = it.arg_begin(), je = it.arg_end(); j != je; ++j)
             {
                if(llvm::isa<llvm::PointerType>(j->getType()))
                {
-                  rel = 1;
+                  rel = true;
                   break;
                }
             }
-         if(rel && extinfo->get_type(&*it) == EFT_OTHER)
+         }
+         if(rel && extinfo->get_type(&it) == EFT_OTHER)
          {
-            names.push_back(it->getName());
+            names.push_back(it.getName());
          }
       }
    }
 
    sort(names.begin(), names.end());
-   if(names.size())
+   if(!names.empty())
+   {
       llvm::errs() << "!! Unknown ext. calls:\n";
+   }
    for(auto i : boost::irange(0ul, names.size()))
    {
       llvm::errs() << names[i] << "\n";
@@ -2916,16 +3279,18 @@ void Andersen_AA::list_ext_unknown(const llvm::Module& M) const
 // Add constraints for the GEP CE at node vnE.
 void Andersen_AA::proc_gep_ce(u32 vnE)
 {
-   const llvm::ConstantExpr* E = llvm::dyn_cast_or_null<const llvm::ConstantExpr>(nodes[vnE]->get_val());
+   const auto* E = llvm::dyn_cast_or_null<const llvm::ConstantExpr>(nodes[vnE]->get_val());
    assert(E);
    assert(E->getOpcode() == llvm::Instruction::GetElementPtr);
    if(global_init_done.count(vnE))
+   {
       return;
+   }
    global_init_done[vnE] = 1;
 
    const llvm::Value* R = E->getOperand(0);
    // Strip bitcasts from the RHS, until we get to GEP, i2p, or non-CE value.
-   bool nested = 0;
+   bool nested = false;
    for(auto ER = llvm::dyn_cast<const llvm::ConstantExpr>(R); ER && !nested; ER = llvm::dyn_cast_or_null<const llvm::ConstantExpr>(R))
    {
       switch(ER->getOpcode())
@@ -2939,7 +3304,7 @@ void Andersen_AA::proc_gep_ce(u32 vnE)
          case llvm::Instruction::GetElementPtr:
             // We can have (gep (bitcast (gep X 1)) 1); the inner gep
             //  must be handled recursively.
-            nested = 1;
+            nested = true;
             break;
          default:
             assert(!"unexpected constant expr type");
@@ -2947,22 +3312,34 @@ void Andersen_AA::proc_gep_ce(u32 vnE)
    }
    assert(!llvm::isa<llvm::ConstantPointerNull>(R) && "GEP of null not supported for global init");
    if(DEBUG_AA)
+   {
       llvm::errs() << "  CGEP  \n";
+   }
    if(DEBUG_AA)
+   {
       print_val(E);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
 
    // This may be the first time we reach R.
-   u32 vnR = get_val_node(R, 1);
+   u32 vnR = get_val_node(R, true);
    if(!vnR)
    {
       if(DEBUG_AA)
+      {
          llvm::errs() << "CE #" << next_node;
+      }
       if(DEBUG_AA)
+      {
          print_val(R);
+      }
       if(DEBUG_AA)
+      {
          llvm::errs() << "\n";
+      }
       vnR = next_node++;
       nodes.push_back(new Node(R));
       val_node[R] = vnR;
@@ -2985,7 +3362,9 @@ void Andersen_AA::proc_gep_ce(u32 vnE)
       else
       {
          if(DEBUG_AA)
+         {
             llvm::errs() << "!! uninitialized global in CGEP\n";
+         }
       }
    }
 }
@@ -2999,26 +3378,38 @@ u32 Andersen_AA::proc_global_init(u32 onG, const llvm::Constant* C, bool first)
    assert(onG && C);
    auto i_gid = global_init_done.find(onG);
    if(i_gid != global_init_done.end())
+   {
       return i_gid->second;
+   }
 
    if(first)
    {
       if(DEBUG_AA)
+      {
          llvm::errs() << "global_init  ";
+      }
       if(DEBUG_AA)
+      {
          print_node(onG);
+      }
       if(DEBUG_AA)
+      {
          llvm::errs() << " <= ";
+      }
       if(DEBUG_AA)
+      {
          print_val(C);
+      }
       if(DEBUG_AA)
+      {
          llvm::errs() << "\n";
+      }
    }
 
    // Strip bitcast expr from C, until we get to non-expr value or GEP;
    //  set C=0 in case of int->ptr (which we don't trace for globals)
    //  and exit on a ptr->int (a non-ptr single value).
-   bool done = 0;
+   bool done = false;
    for(auto E = llvm::dyn_cast<const llvm::ConstantExpr>(C); E && !done; E = llvm::dyn_cast_or_null<const llvm::ConstantExpr>(C))
    {
       switch(E->getOpcode())
@@ -3027,14 +3418,16 @@ u32 Andersen_AA::proc_global_init(u32 onG, const llvm::Constant* C, bool first)
             C = E->getOperand(0);
             break;
          case llvm::Instruction::GetElementPtr:
-            done = 1;
+            done = true;
             break;
          case llvm::Instruction::IntToPtr:
             C = nullptr;
             break;
          case llvm::Instruction::PtrToInt:
             if(first)
+            {
                global_init_done[onG] = 1;
+            }
             return 1;
          default:
             assert(!"unexpected constant expr type");
@@ -3048,7 +3441,9 @@ u32 Andersen_AA::proc_global_init(u32 onG, const llvm::Constant* C, bool first)
       if(first)
       {
          if(DEBUG_AA)
+         {
             llvm::errs() << "  <i2p>\n";
+         }
          global_init_done[onG] = 1;
       }
       return 1;
@@ -3057,7 +3452,9 @@ u32 Andersen_AA::proc_global_init(u32 onG, const llvm::Constant* C, bool first)
    if(C->isNullValue() || llvm::isa<llvm::UndefValue>(C))
    {
       if(first)
+      {
          global_init_done[onG] = 1;
+      }
       return 1;
    }
 
@@ -3071,15 +3468,21 @@ u32 Andersen_AA::proc_global_init(u32 onG, const llvm::Constant* C, bool first)
             // The expr. itself may need initialization;
             //  then it can be copied to the global.
             // This may be the first time we reach E.
-            u32 vnE = get_val_node(E, 1);
+            u32 vnE = get_val_node(E, true);
             if(!vnE)
             {
                if(DEBUG_AA)
+               {
                   llvm::errs() << "CE #%u:  " << next_node << "\n";
+               }
                if(DEBUG_AA)
+               {
                   print_val(E);
+               }
                if(DEBUG_AA)
+               {
                   llvm::errs() << "\n";
+               }
                vnE = next_node++;
                nodes.push_back(new Node(E));
                val_node[E] = vnE;
@@ -3095,7 +3498,9 @@ u32 Andersen_AA::proc_global_init(u32 onG, const llvm::Constant* C, bool first)
          }
       }
       if(first)
+      {
          global_init_done[onG] = 1;
+      }
       return 1;
    }
 
@@ -3106,7 +3511,9 @@ u32 Andersen_AA::proc_global_init(u32 onG, const llvm::Constant* C, bool first)
       //  field of the expanded struct. Note that the fields of a constant struct
       //  are accessed by getOperand().
       for(auto i : boost::irange(0u, CS->getNumOperands()))
-         off += proc_global_init(onG + off, CS->getOperand(i), 0);
+      {
+         off += proc_global_init(onG + off, CS->getOperand(i), false);
+      }
    }
    else if(auto CA = llvm::dyn_cast<const llvm::ConstantArray>(C))
    {
@@ -3114,18 +3521,26 @@ u32 Andersen_AA::proc_global_init(u32 onG, const llvm::Constant* C, bool first)
       // The offset returned (the field count of 1 el.)
       //  will be the same every time.
       for(auto i : boost::irange(0u, CA->getNumOperands()))
-         off = proc_global_init(onG, CA->getOperand(i), 0);
+      {
+         off = proc_global_init(onG, CA->getOperand(i), false);
+      }
    }
    else if(auto CA = llvm::dyn_cast<const llvm::ConstantDataSequential>(C))
    {
       for(auto i : boost::irange(0u, CA->getNumElements()))
-         off = proc_global_init(onG, CA->getElementAsConstant(i), 0);
+      {
+         off = proc_global_init(onG, CA->getElementAsConstant(i), false);
+      }
    }
    else
+   {
       assert(!"unexpected non-1st-class constant");
+   }
 
    if(first)
+   {
       global_init_done[onG] = off;
+   }
    return off;
 }
 
@@ -3141,28 +3556,44 @@ void Andersen_AA::id_ret_insn(const llvm::Instruction* I)
 
    // ignore void and non-ptr return statements
    if(!RI->getNumOperands())
+   {
       return;
+   }
    const llvm::Value* src = RI->getOperand(0);
    if(!llvm::isa<llvm::PointerType>(src->getType()))
+   {
       return;
+   }
 
    auto F = RI->getParent()->getParent();
    if(DEBUG_AA)
+   {
       llvm::errs() << "  id_ret_insn  ";
+   }
    if(DEBUG_AA)
+   {
       print_val(F);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << " <= ";
+   }
    if(DEBUG_AA)
+   {
       print_val(src);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
 
    u32 rnF = get_ret_node(F), vnS = get_val_node_cptr(src);
    assert(rnF);
    // vnS may be null if src is a null ptr
    if(vnS)
+   {
       add_cons(copy_cons, rnF, vnS);
+   }
 }
 
 //------------------------------------------------------------------------------
@@ -3171,15 +3602,21 @@ void Andersen_AA::id_call_insn(const llvm::Instruction* I)
 {
    assert(I);
    llvm::ImmutableCallSite CS(I); // this will assert the correct opcode
-   u32 vnI = get_val_node(I, 1);
+   u32 vnI = get_val_node(I, true);
    // val_node may be 0 if the call returns non-ptr.
 
    if(DEBUG_AA)
+   {
       llvm::errs() << "  id_call_insn  ";
+   }
    if(DEBUG_AA)
+   {
       print_val(I);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
 
    const llvm::Value* callee = CS.getCalledValue();
    auto F = llvm::dyn_cast<const llvm::Function>(callee);
@@ -3188,22 +3625,32 @@ void Andersen_AA::id_call_insn(const llvm::Instruction* I)
       // Try to recover the original function pointer from a bitcast.
       auto E = llvm::dyn_cast<const llvm::ConstantExpr>(callee);
       if(E && E->getOpcode() == llvm::Instruction::BitCast)
+      {
          F = llvm::dyn_cast<const llvm::Function>(E->getOperand(0));
+      }
    }
 
    if(vnI)
+   {
       id_call_obj(vnI, F);
+   }
 
    if(F)
    {
       if(extinfo->is_ext(F))
+      {
          id_ext_call(CS, F);
+      }
       else
+      {
          id_dir_call(CS, F);
+      }
    }
    else
+   {
       // If the callee was not identified as a function (null F), this is indirect.
       id_ind_call(CS);
+   }
 }
 
 //------------------------------------------------------------------------------
@@ -3215,22 +3662,28 @@ void Andersen_AA::id_alloc_insn(const llvm::Instruction* I)
    u32 vnI = get_val_node(AI);
 
    if(DEBUG_AA)
+   {
       llvm::errs() << "  id_alloc_insn  ";
+   }
    if(DEBUG_AA)
+   {
       print_val(AI);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
 
    const llvm::Type* T = nullptr;
    // heap-allocated or array => weak
-   bool weak = 0;
+   bool weak = false;
    // Find out which type of data was allocated.
 
    T = AI->getAllocatedType();
    // An array is considered the same as 1 element.
    while(auto AT = llvm::dyn_cast<const llvm::ArrayType>(T))
    {
-      weak = 1;
+      weak = true;
       T = AT->getElementType();
    }
 
@@ -3264,23 +3717,37 @@ void Andersen_AA::id_load_insn(const llvm::Instruction* I)
    u32 vnI = get_val_node(LI);
 
    if(DEBUG_AA)
+   {
       llvm::errs() << "  id_load_insn  ";
+   }
    if(DEBUG_AA)
+   {
       print_val(LI);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
 
    u32 vnS = get_val_node_cptr(LI->getOperand(0));
    if(!vnS)
    {
       if(DEBUG_AA)
+      {
          llvm::errs() << "!! load from null:  ";
+      }
       if(DEBUG_AA)
+      {
          print_val(LI);
+      }
       if(DEBUG_AA)
+      {
          llvm::errs() << "  <=  ";
+      }
       if(DEBUG_AA)
+      {
          print_val(LI->getOperand(0));
+      }
       return;
    }
    add_cons(load_cons, vnI, vnS);
@@ -3303,19 +3770,31 @@ void Andersen_AA::id_store_insn(const llvm::Instruction* I)
    }
 
    if(DEBUG_AA)
+   {
       llvm::errs() << "  id_store_insn  ";
+   }
    if(DEBUG_AA)
+   {
       print_val(dest);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "  <=  ";
+   }
    if(DEBUG_AA)
+   {
       print_val(src);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
 
    u32 vnD = get_val_node_cptr(dest), vnS = get_val_node_cptr(src);
-   if(vnS && vnD) // either may be a null ptr
+   if(vnS && vnD)
+   { // either may be a null ptr
       add_cons(store_cons, vnD, vnS);
+   }
 }
 
 //------------------------------------------------------------------------------
@@ -3326,17 +3805,25 @@ void Andersen_AA::id_gep_insn(const llvm::User* gep)
    u32 vnI = get_val_node(GO);
 
    if(DEBUG_AA)
+   {
       llvm::errs() << "  id_gep_insn  ";
+   }
    if(DEBUG_AA)
+   {
       print_val(GO);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
 
    auto S = GO->getOperand(0);
    if(llvm::isa<llvm::ConstantPointerNull>(S))
    {
       if(GO->getNumOperands() == 2)
+      {
          id_i2p_insn(GO);
+      }
       // A multi-index GEP of null is not a replacement for i2p, and so
       //  the result may be considered null.
       return;
@@ -3354,11 +3841,17 @@ void Andersen_AA::id_i2p_insn(const llvm::Value* V)
 {
    assert(V);
    if(DEBUG_AA)
+   {
       llvm::errs() << "  id_i2p_insn  ";
+   }
    if(DEBUG_AA)
+   {
       print_val(V);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
    u32 vnD = 0;
    llvm::Value* op = nullptr;
    if(auto II = llvm::dyn_cast<const llvm::IntToPtrInst>(V))
@@ -3389,35 +3882,51 @@ void Andersen_AA::id_i2p_insn(const llvm::Value* V)
          op = E->getOperand(1);
       }
       else
+      {
          assert(!"const.expr is not i2p or gep");
+      }
    }
    else
+   {
       assert(!"value is not i2p, gep, or const.expr");
+   }
 
    llvm::DenseSet<const llvm::Value*> src;
    llvm::DenseMap<const llvm::Value*, bool> seen;
    bool has_i2p = trace_int(op, src, seen);
    if(DEBUG_AA)
+   {
       llvm::errs() << "    src:";
+   }
    for(auto it = src.begin(), ie = src.end(); it != ie; ++it)
    {
       const llvm::Value* S = *it;
       if(DEBUG_AA)
+      {
          llvm::errs() << "  ";
+      }
       if(DEBUG_AA)
+      {
          print_val(S);
+      }
       u32 vnS = get_val_node_cptr(S);
       if(vnS)
+      {
          add_cons(copy_cons, vnD, vnS);
+      }
    }
    if(has_i2p)
    {
       if(DEBUG_AA)
+      {
          llvm::errs() << "  <i2p>";
+      }
       add_cons(addr_of_cons, vnD, i2p);
    }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
 }
 
 //------------------------------------------------------------------------------
@@ -3428,18 +3937,26 @@ void Andersen_AA::id_bitcast_insn(const llvm::Instruction* I)
    u32 vnI = get_val_node(BI);
 
    if(DEBUG_AA)
+   {
       llvm::errs() << "  id_bitcast_insn  ";
+   }
    if(DEBUG_AA)
+   {
       print_val(BI);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
 
    llvm::Value* op = BI->getOperand(0);
    // Bitcast can only convert ptr->ptr or num->num.
    assert(llvm::isa<llvm::PointerType>(op->getType()));
    u32 vnS = get_val_node_cptr(op);
-   if(vnS) // src may be a null ptr
+   if(vnS)
+   { // src may be a null ptr
       add_cons(copy_cons, vnI, vnS);
+   }
 }
 
 //------------------------------------------------------------------------------
@@ -3450,18 +3967,26 @@ void Andersen_AA::id_phi_insn(const llvm::Instruction* I)
    u32 vnI = get_val_node(PN);
 
    if(DEBUG_AA)
+   {
       llvm::errs() << "  id_phi_insn  ";
+   }
    if(DEBUG_AA)
+   {
       print_val(PN);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
 
    for(auto i : boost::irange(0u, PN->getNumIncomingValues()))
    {
       auto incoming = PN->getIncomingValue(i);
       u32 vnS = get_val_node_cptr(incoming);
-      if(vnS) // src may be a null ptr
+      if(vnS)
+      { // src may be a null ptr
          add_cons(copy_cons, vnI, vnS);
+      }
    }
 }
 
@@ -3473,19 +3998,29 @@ void Andersen_AA::id_select_insn(const llvm::Instruction* I)
    u32 vnI = get_val_node(SI);
 
    if(DEBUG_AA)
+   {
       llvm::errs() << "  id_select_insn  ";
+   }
    if(DEBUG_AA)
+   {
       print_val(SI);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
 
    //(select a0 a1 a2) = (a0 ? a1 : a2).
    u32 vnS1 = get_val_node_cptr(SI->getOperand(1)), vnS2 = get_val_node_cptr(SI->getOperand(2));
    // S1/S2 may be null ptr.
    if(vnS1)
+   {
       add_cons(copy_cons, vnI, vnS1);
+   }
    if(vnS2)
+   {
       add_cons(copy_cons, vnI, vnS2);
+   }
 }
 
 //------------------------------------------------------------------------------
@@ -3496,11 +4031,17 @@ void Andersen_AA::id_vaarg_insn(const llvm::Instruction* I)
    u32 vnI = get_val_node(VI);
 
    if(DEBUG_AA)
+   {
       llvm::errs() << "  id_vaarg_insn  ";
+   }
    if(DEBUG_AA)
+   {
       print_val(VI);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
 
    auto F = I->getParent()->getParent();
    u32 vaF = get_vararg_node(F);
@@ -3518,11 +4059,17 @@ void Andersen_AA::id_extract_insn(const llvm::Instruction* I)
    // u32 vnI= get_val_node(EI);
 
    if(DEBUG_AA)
+   {
       llvm::errs() << "  id_extract_insn  ";
+   }
    if(DEBUG_AA)
+   {
       print_val(EI);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
 
    assert(!"ExtractValue not handled yet");
 }
@@ -3539,16 +4086,20 @@ void Andersen_AA::id_call_obj(u32 vnI, const llvm::Function* F)
    assert(I);
    llvm::ImmutableCallSite CS(I);
    if(DEBUG_AA)
+   {
       llvm::errs() << "    id_call_obj:  ";
+   }
 
    if(F && extinfo->no_struct_alloc(F))
    {
       if(DEBUG_AA)
+      {
          llvm::errs() << "ext/no_struct_alloc\n";
+      }
       // 1 obj for non-struct-alloc externals (heap alloc => weak).
       u32 on = next_node++;
       obj_node[I] = on;
-      nodes.push_back(new Node(I, 1, 1));
+      nodes.push_back(new Node(I, 1, true));
       add_cons(addr_of_cons, vnI, on);
       // An indirect call may refer to an is_alloc external.
       // Also, realloc does a normal alloc if arg0 is null.
@@ -3556,7 +4107,9 @@ void Andersen_AA::id_call_obj(u32 vnI, const llvm::Function* F)
    else if(!F || extinfo->is_alloc(F) || (extinfo->get_type(F) == EFT_REALLOC && llvm::isa<llvm::ConstantPointerNull>(CS.getArgument(0))))
    {
       if(DEBUG_AA)
+      {
          llvm::errs() << (F ? "ext/alloc\n" : "indirect\n");
+      }
       // An ext. alloc call is equivalent to a malloc.
       const llvm::Type* T = trace_alloc_type(I);
       u32 on = next_node;
@@ -3568,17 +4121,19 @@ void Andersen_AA::id_call_obj(u32 vnI, const llvm::Function* F)
          auto nf = sz.size();
          for(auto i : boost::irange(0ul, nf))
          {
-            nodes.push_back(new Node(I, sz[i], 1));
+            nodes.push_back(new Node(I, sz[i], true));
          }
          next_node += nf;
       }
       else
       {
-         nodes.push_back(new Node(I, 1, 1));
+         nodes.push_back(new Node(I, 1, true));
          ++next_node;
       }
       if(F)
+      {
          add_cons(addr_of_cons, vnI, on);
+      }
       // For indirect calls, the solver will determine
       //  if the above should be added.
    }
@@ -3586,17 +4141,27 @@ void Andersen_AA::id_call_obj(u32 vnI, const llvm::Function* F)
    {
       bool stat2 = extinfo->has_static2(F);
       if(DEBUG_AA)
+      {
          llvm::errs() << "ext/static";
+      }
       if(DEBUG_AA)
+      {
          if(stat2)
+         {
             llvm::errs() << "2";
+         }
+      }
       if(DEBUG_AA)
+      {
          llvm::errs() << "\n";
+      }
       std::string fn = F->getName();
       u32 on = 0;
       auto i_srn = stat_ret_node.find(fn);
       if(i_srn != stat_ret_node.end())
+      {
          on = i_srn->second;
+      }
       else
       {
          obj_node[I] = on = next_node;
@@ -3634,7 +4199,9 @@ void Andersen_AA::id_call_obj(u32 vnI, const llvm::Function* F)
       // Only alloc/static externals need a call-site object.
    }
    else if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
 }
 
 //------------------------------------------------------------------------------
@@ -3643,11 +4210,17 @@ void Andersen_AA::id_dir_call(llvm::ImmutableCallSite CS, const llvm::Function* 
 {
    assert(F);
    if(DEBUG_AA)
+   {
       llvm::errs() << "    id_dir_call:  ";
+   }
    if(DEBUG_AA)
+   {
       print_val(F);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "  (ret.val ";
+   }
 
    // Only handle the ret.val. if it's used as a ptr.
    if(llvm::isa<llvm::PointerType>(CS.getType()))
@@ -3660,56 +4233,80 @@ void Andersen_AA::id_dir_call(llvm::ImmutableCallSite CS, const llvm::Function* 
          assert(rnF);
          add_cons(copy_cons, vnI, rnF);
          if(DEBUG_AA)
+         {
             llvm::errs() << "normal)\n";
+         }
       }
       else
       {
          // If not, this is an int->ptr cast that we can't trace.
          add_cons(addr_of_cons, vnI, i2p);
          if(DEBUG_AA)
+         {
             llvm::errs() << "i2p)\n";
+         }
       }
    }
    else if(DEBUG_AA)
+   {
       llvm::errs() << "ignored)\n";
+   }
 
    // Iterators for the actual and formal parameters
    auto itA = CS.arg_begin(), ieA = CS.arg_end();
    auto itF = F->arg_begin(), ieF = F->arg_end();
    // Go through the fixed parameters.
    if(DEBUG_AA)
+   {
       llvm::errs() << "      args:";
+   }
    for(; itF != ieF; ++itA, ++itF)
    {
       // Some programs (e.g. Linux kernel) leave unneeded parameters empty.
       if(itA == ieA)
       {
          if(DEBUG_AA)
+         {
             llvm::errs() << " !! not enough args\n";
+         }
          break;
       }
       const llvm::Argument& arg = *itF;
       const llvm::Value *AA = *itA, *FA = &arg; // current actual/formal arg
       // Non-ptr formal args don't need constraints.
       if(!llvm::isa<llvm::PointerType>(FA->getType()))
+      {
          continue;
+      }
       if(DEBUG_AA)
+      {
          llvm::errs() << "    ";
+      }
       if(DEBUG_AA)
+      {
          print_val(FA);
+      }
       if(DEBUG_AA)
+      {
          llvm::errs() << " <= ";
+      }
       if(DEBUG_AA)
+      {
          print_val(AA);
+      }
       u32 vnFA = get_val_node(FA);
       if(llvm::isa<llvm::PointerType>(AA->getType()))
       {
          u32 vnAA = get_val_node_cptr(AA);
          if(vnAA)
+         {
             add_cons(copy_cons, vnFA, vnAA);
+         }
       }
       else
+      {
          add_cons(addr_of_cons, vnFA, i2p);
+      }
    }
    // Any remaining actual args must be varargs.
    if(F->isVarArg())
@@ -3717,28 +4314,42 @@ void Andersen_AA::id_dir_call(llvm::ImmutableCallSite CS, const llvm::Function* 
       u32 vaF = get_vararg_node(F);
       assert(vaF);
       if(DEBUG_AA)
+      {
          llvm::errs() << "\n      varargs:";
+      }
       for(; itA != ieA; ++itA)
       {
          llvm::Value* AA = *itA;
          if(DEBUG_AA)
+         {
             llvm::errs() << "  ";
+         }
          if(DEBUG_AA)
+         {
             print_val(AA);
+         }
          if(llvm::isa<llvm::PointerType>(AA->getType()))
          {
             u32 vnAA = get_val_node_cptr(AA);
             if(vnAA)
+            {
                add_cons(copy_cons, vaF, vnAA);
+            }
          }
          else
+         {
             add_cons(addr_of_cons, vaF, i2p);
+         }
       }
    }
    else
+   {
       assert(itA == ieA && "too many args to non-vararg func.");
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
 }
 
 //------------------------------------------------------------------------------
@@ -3746,13 +4357,17 @@ void Andersen_AA::id_dir_call(llvm::ImmutableCallSite CS, const llvm::Function* 
 void Andersen_AA::id_ind_call(llvm::ImmutableCallSite CS)
 {
    if(DEBUG_AA)
+   {
       llvm::errs() << "    id_ind_call:  ";
+   }
    auto C = CS.getCalledValue();
    assert(C);
    if(llvm::isa<llvm::InlineAsm>(C))
    {
       if(DEBUG_AA)
+      {
          llvm::errs() << "ignoring inline ASM\n";
+      }
       return;
    }
 
@@ -3763,7 +4378,9 @@ void Andersen_AA::id_ind_call(llvm::ImmutableCallSite CS)
    ind_calls.insert(vnC);
 
    if(DEBUG_AA)
+   {
       llvm::errs() << "retval ";
+   }
    if(llvm::isa<llvm::PointerType>(CS.getType()))
    {
       u32 vnI = get_val_node(CS.getInstruction());
@@ -3771,14 +4388,20 @@ void Andersen_AA::id_ind_call(llvm::ImmutableCallSite CS)
       // Map the constraint to the insn. that created it.
       icall_cons[CST].insert(I);
       if(DEBUG_AA)
+      {
          llvm::errs() << "normal";
+      }
    }
    else if(DEBUG_AA)
+   {
       llvm::errs() << "ignored";
+   }
 
    // Go through the fixed parameters.
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n      args:";
+   }
    // The node offset of the next ptr arg
    u32 arg_off = func_node_off_arg0;
    auto itA = CS.arg_begin(), ieA = CS.arg_end();
@@ -3786,9 +4409,13 @@ void Andersen_AA::id_ind_call(llvm::ImmutableCallSite CS)
    {
       llvm::Value* AA = *itA;
       if(DEBUG_AA)
+      {
          llvm::errs() << "  ";
+      }
       if(DEBUG_AA)
+      {
          print_val(AA);
+      }
       // FIXME: don't add these cons. if the current formal arg in the
       //  function ptr type is of non-ptr type
       if(llvm::isa<llvm::PointerType>(AA->getType()))
@@ -3810,7 +4437,9 @@ void Andersen_AA::id_ind_call(llvm::ImmutableCallSite CS)
    //  the solver will need to reset it to the vararg node offset if the current
    //  member of the dest. points_to is a vararg func).
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
 }
 
 //------------------------------------------------------------------------------
@@ -3822,15 +4451,23 @@ void Andersen_AA::id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Fun
    auto I = CS.getInstruction();
    assert(I);
    if(DEBUG_AA)
+   {
       llvm::errs() << "    id_ext_call:  ";
+   }
    if(DEBUG_AA)
+   {
       print_val(F);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
 
    // The constraints for static/alloc were added by id_call_obj.
    if(extinfo->is_alloc(F) || extinfo->has_static(F))
+   {
       return;
+   }
 
    extf_t tF = extinfo->get_type(F);
    switch(tF)
@@ -3841,14 +4478,18 @@ void Andersen_AA::id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Fun
          //  that arg0 pointed to. We can consider it to be the same object,
          //  so the return can just copy arg0's points-to.
          if(llvm::isa<llvm::ConstantPointerNull>(CS.getArgument(0)))
+         {
             break;
+         }
       case EFT_L_A0:
       case EFT_L_A1:
       case EFT_L_A2:
       case EFT_L_A8:
       {
          if(!llvm::isa<llvm::PointerType>(I->getType()))
+         {
             break;
+         }
          u32 vnD = get_val_node(I);
          u32 i_arg;
          switch(tF)
@@ -3866,22 +4507,30 @@ void Andersen_AA::id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Fun
                i_arg = 0;
          }
          if(DEBUG_AA)
+         {
             llvm::errs() << "      L_A" << i_arg << "\n";
+         }
          auto src = CS.getArgument(i_arg);
          if(llvm::isa<llvm::PointerType>(src->getType()))
          {
             u32 vnS = get_val_node_cptr(src);
             if(vnS)
+            {
                add_cons(copy_cons, vnD, vnS);
+            }
          }
          else
+         {
             add_cons(addr_of_cons, vnD, i2p);
+         }
          break;
       }
       case EFT_L_A0__A0R_A1R:
       {
          if(DEBUG_AA)
+         {
             llvm::errs() << "      L_A0__A0R_A1R\n";
+         }
          add_store2_cons(CS.getArgument(0), CS.getArgument(1));
          // memcpy returns the dest.
          if(!I->use_empty() && llvm::isa<llvm::PointerType>(I->getType()))
@@ -3894,49 +4543,67 @@ void Andersen_AA::id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Fun
       }
       case EFT_A1R_A0R:
          if(DEBUG_AA)
+         {
             llvm::errs() << "      A1R_A0R\n";
+         }
          add_store2_cons(CS.getArgument(1), CS.getArgument(0));
          break;
       case EFT_A3R_A1R_NS:
          if(DEBUG_AA)
+         {
             llvm::errs() << "      A3R_A1R_NS\n";
+         }
          // These func. are never used to copy structs, so the size is 1.
          add_store2_cons(CS.getArgument(3), CS.getArgument(1), 1);
          break;
       case EFT_A1R_A0:
       {
          if(DEBUG_AA)
+         {
             llvm::errs() << "      A1R_A0\n";
+         }
          u32 vnD = get_val_node_cptr(CS.getArgument(1));
          u32 vnS = get_val_node_cptr(CS.getArgument(0));
          if(vnD && vnS)
+         {
             add_cons(store_cons, vnD, vnS);
+         }
          break;
       }
       case EFT_A2R_A1:
       {
          if(DEBUG_AA)
+         {
             llvm::errs() << "      A2R_A1\n";
+         }
          u32 vnD = get_val_node_cptr(CS.getArgument(2));
          u32 vnS = get_val_node_cptr(CS.getArgument(1));
          if(vnD && vnS)
+         {
             add_cons(store_cons, vnD, vnS);
+         }
          break;
       }
       case EFT_A4R_A1:
       {
          if(DEBUG_AA)
+         {
             llvm::errs() << "      A4R_A1\n";
+         }
          u32 vnD = get_val_node_cptr(CS.getArgument(4));
          u32 vnS = get_val_node_cptr(CS.getArgument(1));
          if(vnD && vnS)
+         {
             add_cons(store_cons, vnD, vnS);
+         }
          break;
       }
       case EFT_L_A0__A2R_A0:
       {
          if(DEBUG_AA)
+         {
             llvm::errs() << "      L_A0__A2R_A0\n";
+         }
          if(llvm::isa<llvm::PointerType>(I->getType()))
          {
             // Do the L_A0 part if the retval is used.
@@ -3946,16 +4613,22 @@ void Andersen_AA::id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Fun
             {
                u32 vnS = get_val_node_cptr(src);
                if(vnS)
+               {
                   add_cons(copy_cons, vnD, vnS);
+               }
             }
             else
+            {
                add_cons(addr_of_cons, vnD, i2p);
+            }
          }
          // Do the A2R_A0 part.
          u32 vnD = get_val_node_cptr(CS.getArgument(2));
          u32 vnS = get_val_node_cptr(CS.getArgument(0));
          if(vnD && vnS)
+         {
             add_cons(store_cons, vnD, vnS);
+         }
          break;
       }
       case EFT_A0R_NEW:
@@ -3983,17 +4656,23 @@ void Andersen_AA::id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Fun
                i_arg = 0;
          }
          if(DEBUG_AA)
+         {
             llvm::errs() << "      A" << i_arg << "R_NEW\n";
+         }
          // X -> X/0; *argI = X
          auto dest = CS.getArgument(i_arg);
          u32 vnD = get_val_node_cptr(dest);
          if(!vnD)
+         {
             break;
+         }
          auto T = dest->getType()->getContainedType(0);
          assert(llvm::isa<llvm::PointerType>(T) && "arg is not a double pointer");
          T = T->getContainedType(0);
          while(auto AT = llvm::dyn_cast<const llvm::ArrayType>(T))
+         {
             T = AT->getElementType();
+         }
 
          // make X/0 etc.
          u32 on = next_node;
@@ -4007,13 +4686,13 @@ void Andersen_AA::id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Fun
                // FIXME: X/0 shouldn't really have a value because it's not
                //  pointed to by any program variable, but for now we require
                //  all obj_nodes to have one.
-               nodes.push_back(new Node(dest, sz[i], 1));
+               nodes.push_back(new Node(dest, sz[i], true));
             }
             next_node += nf;
          }
          else
          {
-            nodes.push_back(new Node(dest, 1, 1));
+            nodes.push_back(new Node(dest, 1, true));
             ++next_node;
          }
          u32 vn = next_node++;
@@ -4053,10 +4732,14 @@ void Andersen_AA::add_store2_cons(const llvm::Value* D, const llvm::Value* S, si
    assert(D && S);
    u32 vnD = get_val_node_cptr(D), vnS = get_val_node_cptr(S);
    if(!vnD || !vnS)
+   {
       return;
+   }
    // Get the max possible size of the copy, unless it was provided.
    if(!sz)
+   {
       sz = std::min(get_max_offset(D), get_max_offset(S));
+   }
    // For each field (i), add (Ti = *S + i) and (*D + i = Ti).
    for(auto i : boost::irange(0ul, sz))
    {
@@ -4076,9 +4759,9 @@ void Andersen_AA::processBlock(const llvm::BasicBlock* BB)
    bb_seen.insert(BB);
 
    // Handle each insn based on opcode.
-   for(auto it = BB->begin(), ie = BB->end(); it != ie; ++it)
+   for(const auto& it : *BB)
    {
-      const llvm::Instruction* I = &*it;
+      const llvm::Instruction* I = &it;
       bool is_ptr = llvm::isa<llvm::PointerType>(I->getType());
       switch(I->getOpcode())
       {
@@ -4096,9 +4779,13 @@ void Andersen_AA::processBlock(const llvm::BasicBlock* BB)
             break;
          case llvm::Instruction::Load:
             if(is_ptr)
+            {
                id_load_insn(I);
+            }
             else
+            {
                get_val_node_cptr(I->getOperand(0));
+            }
             break;
          case llvm::Instruction::Store:
             assert(!is_ptr);
@@ -4114,23 +4801,33 @@ void Andersen_AA::processBlock(const llvm::BasicBlock* BB)
             break;
          case llvm::Instruction::BitCast:
             if(is_ptr)
+            {
                id_bitcast_insn(I);
+            }
             break;
          case llvm::Instruction::PHI:
             if(is_ptr)
+            {
                id_phi_insn(I);
+            }
             break;
          case llvm::Instruction::Select:
             if(is_ptr)
+            {
                id_select_insn(I);
+            }
             break;
          case llvm::Instruction::VAArg:
             if(is_ptr)
+            {
                id_vaarg_insn(I);
+            }
             break;
          case llvm::Instruction::ExtractValue:
             if(is_ptr)
+            {
                id_extract_insn(I);
+            }
             break;
             // No other ops should affect pointer values.
          default:
@@ -4151,16 +4848,23 @@ void Andersen_AA::visit_func(const llvm::Function* F)
 {
    assert(F);
    if(DEBUG_AA)
+   {
       llvm::errs() << "visit_func  ";
+   }
    if(DEBUG_AA)
+   {
       print_val(F);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
 
    // First make nodes for all ptr-return insn
    //  (since trace_int may sometimes return values below the current insn).
    // Also number all unnamed instructions that have a result.
    for(auto& BB : F->getBasicBlockList())
+   {
       for(auto& Inst : BB.getInstList())
       {
          const llvm::Instruction* I = &Inst;
@@ -4176,6 +4880,7 @@ void Andersen_AA::visit_func(const llvm::Function* F)
             tmp_num[I] = static_cast<u32>(MST.getLocalSlot(I));
          }
       }
+   }
 
    // process basic blocks in CFG depth-first order (this is not a
    // requirement for this analysis, but it is required by the sparse
@@ -4191,11 +4896,15 @@ void Andersen_AA::visit_func(const llvm::Function* F)
 void Andersen_AA::obj_cons_id(const llvm::Module& M, const llvm::Type* MS)
 {
    if(DEBUG_AA)
+   {
       llvm::errs() << "***** obj_cons_id starting\n";
+   }
    // Insert special nodes w/o values.
    next_node = first_var_node;
    for(auto i : boost::irange(0u, first_var_node))
+   {
       nodes.push_back(new Node);
+   }
    // i2p is actually an object, since its addr. is taken;
    //  p_i2p is its initial pointer
    nodes[i2p]->obj_sz = 1;
@@ -4208,13 +4917,19 @@ void Andersen_AA::obj_cons_id(const llvm::Module& M, const llvm::Type* MS)
 
    const auto& tst = M.getIdentifiedStructTypes();
    for(auto ST : tst)
+   {
       analyze_struct(ST);
+   }
 
    // IDENTIFY all functions & globals.
    for(auto& f : M.functions())
+   {
       id_func(&f);
+   }
    for(auto& g : M.globals())
+   {
       id_global(&g);
+   }
 
    // Init globals separately
    //  (since an initializer may refer to a global below it).
@@ -4228,31 +4943,43 @@ void Andersen_AA::obj_cons_id(const llvm::Module& M, const llvm::Type* MS)
       else
       {
          if(DEBUG_AA)
+         {
             llvm::errs() << "!! uninitialized global:\n";
+         }
          if(DEBUG_AA)
+         {
             print_val(G);
+         }
       }
    }
    // Now handle all remaining GEP CEs, since some of them are local.
    for(auto i : boost::irange(0ul, gep_ce.size()))
+   {
       proc_gep_ce(gep_ce[i]);
+   }
 
    // Visit all instructions (which may refer to any of the above).
    for(auto& f : M.functions())
    {
       if(!extinfo->is_ext(&f))
+      {
          visit_func(&f);
+      }
    }
    // Count the node types (except the special nodes).
    assert(next_node == nodes.size() && "wrong node count");
 
    if(DEBUG_AA)
+   {
       print_all_structs();
+   }
 
    // The nodes are now verified and printed at the end of clump_addr_taken().
    // The original constraints should appear in the order they were identified.
    if(DEBUG_AA)
+   {
       print_all_constraints();
+   }
 
 #if CHECK_CONS_UNDEF
    // Look for nodes that are read by constraints but never written.
@@ -4260,7 +4987,9 @@ void Andersen_AA::obj_cons_id(const llvm::Module& M, const llvm::Type* MS)
    for(auto i : boost::irange(0ul, constraints.size()))
    {
       if(constraints[i].get_type() != store_cons)
+      {
          def.insert(constraints[i].get_dest());
+      }
    }
    // Assume addr-taken function args are always defined (as they will be
    //  written by the store_cons of indirect calls).
@@ -4269,13 +4998,15 @@ void Andersen_AA::obj_cons_id(const llvm::Module& M, const llvm::Type* MS)
       def.insert(get_val_node(*it));
    }
    // The header should not appear if there is no problem.
-   bool hdr_done = 0;
+   bool hdr_done = false;
    for(auto i : boost::irange(0ul, constraints.size()))
    {
       const Constraint& C = constraints[i];
       assert(C.get_src());
       if(C.get_type() == addr_of_cons || def.count(C.get_src()))
+      {
          continue;
+      }
       const llvm::Value /**D= nodes[C.get_dest()]->get_val(),*/* S = nodes[C.get_src()]->get_val();
       if(S)
       {
@@ -4284,44 +5015,58 @@ void Andersen_AA::obj_cons_id(const llvm::Module& M, const llvm::Type* MS)
             // A non-addr-taken function may be never used, or one of its args
             //  may be always set to null.
             if(DEBUG_AA)
+            {
                llvm::errs() << "[arg] ";
+            }
             continue;
          }
-         else if(S->getName() == "UnifiedRetVal")
+         if(S->getName() == "UnifiedRetVal")
          {
             // A function may always return null; with opt -mergereturn,
             //  the UnifiedRetVal is undef, else the <retval> itself is.
             if(DEBUG_AA)
+            {
                llvm::errs() << "[uret] ";
+            }
             continue;
          }
-         else if(auto F = llvm::dyn_cast<const llvm::Function>(S))
+         if(auto F = llvm::dyn_cast<const llvm::Function>(S))
          {
             if(C.get_src() == get_ret_node(F))
             {
                if(DEBUG_AA)
+               {
                   llvm::errs() << "[ret] ";
+               }
                continue;
                // The vararg part may also be unused.
             }
-            else if(C.get_src() == get_vararg_node(F))
+            if(C.get_src() == get_vararg_node(F))
             {
                if(DEBUG_AA)
+               {
                   llvm::errs() << "[vararg] ";
+               }
                continue;
             }
          }
       }
       if(!hdr_done)
       {
-         hdr_done = 1;
+         hdr_done = true;
          if(DEBUG_AA)
+         {
             llvm::errs() << "!! Constraints with undefined src:\n";
+         }
       }
       if(DEBUG_AA)
+      {
          C.print(this);
+      }
       if(DEBUG_AA)
+      {
          llvm::errs() << '\n';
+      }
    }
 #endif
 }
@@ -4331,13 +5076,15 @@ void Andersen_AA::obj_cons_id(const llvm::Module& M, const llvm::Type* MS)
 void Andersen_AA::clump_addr_taken()
 {
    if(DEBUG_AA)
+   {
       llvm::errs() << "***** Moving addr-taken nodes to the front...\n";
+   }
    std::vector<Node*> old_nodes;
    old_nodes.swap(nodes);
    auto onsz = old_nodes.size();
    nodes.resize(onsz);
    // The node that was originally at (i) will be at move_to[i].
-   u32* move_to = (u32*)malloc(onsz * 4);
+   auto* move_to = static_cast<u32*>(malloc(onsz * 4));
 
    // The special nodes must stay at the front.
    for(auto i : boost::irange(0u, first_var_node))
@@ -4377,21 +5124,33 @@ void Andersen_AA::clump_addr_taken()
       assert(C.get_type() != addr_of_cons || C.get_src() <= last_obj_node);
    }
    for(auto it = val_node.begin(), ie = val_node.end(); it != ie; ++it)
+   {
       it->second = move_to[it->second];
+   }
    for(auto it = obj_node.begin(), ie = obj_node.end(); it != ie; ++it)
+   {
       it->second = move_to[it->second];
+   }
    for(auto it = ret_node.begin(), ie = ret_node.end(); it != ie; ++it)
+   {
       it->second = move_to[it->second];
+   }
    for(auto it = vararg_node.begin(), ie = vararg_node.end(); it != ie; ++it)
+   {
       it->second = move_to[it->second];
+   }
    // Also update ind_calls and icall_cons.
    std::set<u32> old_ind_calls;
    old_ind_calls.swap(ind_calls);
-   for(auto it = old_ind_calls.begin(), ie = old_ind_calls.end(); it != ie; ++it)
-      ind_calls.insert(move_to[*it]);
+   for(unsigned int old_ind_call : old_ind_calls)
+   {
+      ind_calls.insert(move_to[old_ind_call]);
+   }
    std::vector<std::pair<Constraint, std::set<const llvm::Instruction*>>> old_icall_cons;
    for(auto it = icall_cons.begin(), ie = icall_cons.end(); it != ie; ++it)
+   {
       old_icall_cons.push_back(*it);
+   }
    icall_cons.clear();
    for(auto i : boost::irange(0ul, old_icall_cons.size()))
    {
@@ -4405,7 +5164,9 @@ void Andersen_AA::clump_addr_taken()
    // Recheck what we just modified and print the nodes in the new sequence.
    verify_nodes();
    if(DEBUG_AA)
+   {
       print_all_nodes();
+   }
 }
 
 //------------------------------------------------------------------------------
@@ -4428,23 +5189,37 @@ u32 Andersen_AA::merge_nodes(u32 n1, u32 n2)
       std::swap(N1, N2);
    }
    else if(rank1 == rank2)
+   {
       ++N1->rep;
+   }
    N2->rep = n1;
    if(DEBUG_AA)
+   {
       llvm::errs() << "merge_nodes  ";
+   }
    if(DEBUG_AA)
+   {
       print_node(n1);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "  <=  ";
+   }
    if(DEBUG_AA)
+   {
       print_node(n2);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
 
    // If n2 was not visited in a long time,
    //  the combined node should be visited sooner.
    if(N1->vtime > N2->vtime)
+   {
       N1->vtime = N2->vtime;
+   }
    // Move n2's edges and constraints into n1.
    // This may cause n1 to have some edges to itself; copy edges are removed
    //  here (and also by the solver), while other types should remain.
@@ -4544,7 +5319,9 @@ void Andersen_AA::pre_opt_cleanup()
 void Andersen_AA::hvn(bool do_union)
 {
    if(DEBUG_AA)
+   {
       llvm::errs() << "***** Starting HVN\n";
+   }
    make_off_nodes();
    // The LHS of GEP's will be pre-labeled, so start the counter here.
    //  The labels must be disjoint from node IDs because addr_of_cons
@@ -4585,17 +5362,23 @@ void Andersen_AA::hr(bool do_union, u32 min_del)
    //  running the DFS on the same graph.
    auto curr_n_cons = constraints.size(), prev_n_cons = 0ul;
    if(DEBUG_AA)
+   {
       llvm::errs() << "  running HR" << (do_union ? "U" : "") << ", constraint count:  " << curr_n_cons;
+   }
    do
    {
       hvn(do_union);
       prev_n_cons = curr_n_cons;
       curr_n_cons = constraints.size();
       if(DEBUG_AA)
+      {
          llvm::errs() << "  " << curr_n_cons;
+      }
    } while(prev_n_cons - curr_n_cons >= min_del);
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
 }
 
 //------------------------------------------------------------------------------
@@ -4603,7 +5386,9 @@ void Andersen_AA::hr(bool do_union, u32 min_del)
 void Andersen_AA::make_off_nodes()
 {
    if(DEBUG_AA)
+   {
       llvm::errs() << "***** Creating offline graph nodes\n";
+   }
    auto nn = nodes.size();
    assert(last_obj_node && "clump_addr_taken is required");
    main2off.assign(nn, 0);
@@ -4660,14 +5445,16 @@ void Andersen_AA::make_off_nodes()
    // Create all the offline nodes, including REF.
    // AFP & VAR start out direct; then indirect REFs are added.
    off_nodes.assign(onn, OffNode());
-   off_nodes.insert(off_nodes.end(), nREF, OffNode(1));
+   off_nodes.insert(off_nodes.end(), nREF, OffNode(true));
    // Mark AFPs indirect.
    for(u32 i = firstAFP; i < firstVAL; ++i)
    {
-      off_nodes[i].indirect = 1;
+      off_nodes[i].indirect = true;
    }
    if(DEBUG_AA)
+   {
       llvm::errs() << "  " << nAFP << " AFP, " << nVAL << " VAL, " << nREF << " REF\n";
+   }
 }
 
 //------------------------------------------------------------------------------
@@ -4677,7 +5464,9 @@ void Andersen_AA::make_off_nodes()
 void Andersen_AA::add_off_edges(bool hcd)
 {
    if(DEBUG_AA)
+   {
       llvm::errs() << "***** Adding offline constraint edges\n";
+   }
    u32 n_copy = 0, n_load = 0, n_store = 0, n_impl_addr = 0, n_impl_copy = 0;
    for(auto i : boost::irange(0ul, constraints.size()))
    {
@@ -4732,7 +5521,7 @@ void Andersen_AA::add_off_edges(bool hcd)
                // Copying from an obj_node not in the graph makes dest. indirect.
                if(!hcd)
                {
-                  off_nodes[od].indirect = 1;
+                  off_nodes[od].indirect = true;
                }
             }
             break;
@@ -4745,7 +5534,7 @@ void Andersen_AA::add_off_edges(bool hcd)
                // D = *S + k: D indirect
                if(!hcd)
                {
-                  off_nodes[od].indirect = 1;
+                  off_nodes[od].indirect = true;
                }
             }
             else
@@ -4791,7 +5580,9 @@ void Andersen_AA::add_off_edges(bool hcd)
       }
    }
    if(DEBUG_AA)
+   {
       llvm::errs() << "  " << n_copy << " copy, " << n_load << " load, " << n_store << " store, " << n_impl_addr << " impl. addr_of, " << n_impl_copy << " impl. copy\n";
+   }
 }
 
 //------------------------------------------------------------------------------
@@ -4834,7 +5625,9 @@ static u32 merge_off_nodes(u32 n1, u32 n2)
    }
    N2->rep = n1;
    if(DEBUG_AA)
+   {
       llvm::errs() << "    merge " << n1 << " <= " << n2 << "\n";
+   }
 
    // Move n2's edges and labels into n1. In HVN mode, if both nodes were
    //  pre-labeled, n1 may have >1 label, but hvn_label() will be called
@@ -4866,13 +5659,13 @@ void Andersen_AA::hvn_dfs(u32 n, bool do_union)
    N->dfs_id = our_dfs;
 
    // Look for SCCs using all edges.
-   for(auto it = N->edges.begin(), ie = N->edges.end(); it != ie; ++it)
+   for(unsigned int edge : N->edges)
    {
-      hvn_check_edge(n, *it, do_union);
+      hvn_check_edge(n, edge, do_union);
    }
-   for(auto it = N->impl_edges.begin(), ie = N->impl_edges.end(); it != ie; ++it)
+   for(unsigned int impl_edge : N->impl_edges)
    {
-      hvn_check_edge(n, *it, do_union);
+      hvn_check_edge(n, impl_edge, do_union);
    }
    assert(N->is_rep());
 
@@ -4894,7 +5687,7 @@ void Andersen_AA::hvn_dfs(u32 n, bool do_union)
       //  if one of the stack nodes had a higher rank.
       assert(n);
       N = &off_nodes[n];
-      N->scc_root = 1;
+      N->scc_root = true;
       assert(N->is_rep());
       // Now label the root; a pre-labeled node still needs to get the data
       //  from its neighbors.
@@ -4958,9 +5751,9 @@ void Andersen_AA::hvn_label(u32 n)
       return;
    }
    // Collect all incoming labels into the current node.
-   for(auto it = N->edges.begin(), ie = N->edges.end(); it != ie; ++it)
+   for(unsigned int edge : N->edges)
    {
-      u32 n2 = get_off_rep(*it);
+      u32 n2 = get_off_rep(edge);
       if(n2 == n)
       {
          continue;
@@ -5011,9 +5804,9 @@ void Andersen_AA::hu_label(u32 n)
       pe.set(next_ptr_eq++);
    }
    // Collect all incoming labels into the current node.
-   for(auto it = N->edges.begin(), ie = N->edges.end(); it != ie; ++it)
+   for(unsigned int edge : N->edges)
    {
-      u32 n2 = get_off_rep(*it);
+      u32 n2 = get_off_rep(edge);
       if(n2 == n)
       {
          continue;
@@ -5038,7 +5831,9 @@ void Andersen_AA::hu_label(u32 n)
 void Andersen_AA::merge_ptr_eq()
 {
    if(DEBUG_AA)
+   {
       llvm::errs() << "***** Merging pointer-equivalent nodes\n";
+   }
    auto nn = nodes.size();
    // The first node (of the main graph) with the given ptr_eq.
    std::unordered_map<bitmap, u32> pe2node;
@@ -5056,7 +5851,7 @@ void Andersen_AA::merge_ptr_eq()
       if(pe.test(0))
       {
          assert(pe.count() == 1);
-         nodes[i]->nonptr = 1;
+         nodes[i]->nonptr = true;
          continue;
       }
       // Anything previously marked as non-ptr cannot have another label.
@@ -5084,13 +5879,17 @@ void Andersen_AA::merge_ptr_eq()
       Constraint& C = old_cons[i];
       // Ignore this constraint if either side is a non-ptr.
       if(nodes[C.get_dest()]->nonptr || nodes[C.get_src()]->nonptr)
+      {
          continue;
+      }
       C.dest = get_node_rep(C.get_dest());
       // Don't replace the source of addr_of by the rep: the merging
       //  done in HVN/HCD is based only on pointer equivalence,
       //  so non-reps may still be pointed to.
       if(C.get_type() != addr_of_cons)
+      {
          C.src = get_node_rep(C.get_src());
+      }
       // Ignore (copy X X) and duplicates.
       if((C.get_type() != copy_cons || C.get_dest() != C.get_src()) && !cons_seen.count(C))
       {
@@ -5110,7 +5909,9 @@ void Andersen_AA::merge_ptr_eq()
    {
       Constraint& C = old_icall_cons[i].first;
       if(nodes[C.get_dest()]->nonptr || nodes[C.get_src()]->nonptr)
+      {
          continue;
+      }
       C.dest = get_node_rep(C.get_dest());
       C.src = get_node_rep(C.get_src());
       const std::set<const llvm::Instruction*>& I = old_icall_cons[i].second;
@@ -5125,10 +5926,12 @@ void Andersen_AA::merge_ptr_eq()
 void Andersen_AA::hcd()
 {
    if(DEBUG_AA)
+   {
       llvm::errs() << "***** Starting HCD\n";
+   }
    make_off_nodes();
    //(1) means don't make implicit edges or set the indirect flag.
-   add_off_edges(1);
+   add_off_edges(true);
    // Map the offline nodes to the main graph.
    for(auto i : boost::irange(0ul, main2off.size()))
    {
@@ -5164,7 +5967,9 @@ void Andersen_AA::hcd()
       const Constraint& C0 = old_cons[i];
       u32 dest = get_node_rep(C0.get_dest()), src = C0.get_src();
       if(C0.get_type() != addr_of_cons)
+      {
          src = get_node_rep(src);
+      }
       Constraint C(C0.get_type(), dest, src, C0.get_off());
       // Ignore (copy X X) and duplicates.
       if((C.get_type() != copy_cons || dest != src) && !cons_seen.count(C))
@@ -5195,7 +6000,9 @@ void Andersen_AA::hcd_dfs(u32 n)
 {
    assert(n);
    if(DEBUG_AA)
+   {
       llvm::errs() << "  hcd_dfs " << n << "\n";
+   }
    OffNode* N = &off_nodes[n];
    assert(!N->scc_root && N->is_rep());
    u32 our_dfs = curr_dfs++;
@@ -5230,12 +6037,16 @@ void Andersen_AA::hcd_dfs(u32 n)
       // Record all nodes in our SCC (the root is not on the stack).
       std::vector<u32> scc(1, n);
       if(DEBUG_AA)
+      {
          llvm::errs() << "    HCD SCC: " << n;
+      }
       // The VAR (non-REF) nodes in this SCC (may be several since we don't run
       //  HR to convergence).
       std::vector<u32> var;
       if(n < firstREF)
+      {
          var.push_back(n);
+      }
       while(!dfs_stk.empty())
       {
          u32 n2 = dfs_stk.top();
@@ -5248,23 +6059,29 @@ void Andersen_AA::hcd_dfs(u32 n)
          dfs_stk.pop();
          scc.push_back(n2);
          if(DEBUG_AA)
+         {
             llvm::errs() << " " << n2;
+         }
          if(n2 < firstREF)
          {
             if(DEBUG_AA)
+            {
                llvm::errs() << '*';
+            }
             var.push_back(n2);
          }
       }
       if(DEBUG_AA)
+      {
          llvm::errs() << "\n";
+      }
       // Singleton SCCs are ignored.
       if(scc.size() == 1)
       {
-         N->scc_root = 1;
+         N->scc_root = true;
          return;
       }
-      assert(var.size() && "no VAR node in SCC");
+      assert(!var.empty() && "no VAR node in SCC");
       // Replace the offline VARs by the corresponding main nodes,
       //  then merge all of those.
       // Note that this will collapse any remaining VAR-only SCCs.
@@ -5281,7 +6098,7 @@ void Andersen_AA::hcd_dfs(u32 n)
          OffNode* N = &off_nodes[n];
          // Label N as a "root" (since it should be considered deleted but
          //  is not collapsed into the root).
-         N->scc_root = 1;
+         N->scc_root = true;
          if(n >= firstREF)
          {
             // Map the main node of N to the vars' rep.
@@ -5336,11 +6153,11 @@ void Andersen_AA::factor_ls()
 
    for(auto it = loads.begin(), ie = loads.end(); it != ie; ++it)
    {
-      factor_ls(it->second, it->first.first, it->first.second, 1);
+      factor_ls(it->second, it->first.first, it->first.second, true);
    }
    for(auto it = stores.begin(), ie = stores.end(); it != ie; ++it)
    {
-      factor_ls(it->second, it->first.first, it->first.second, 0);
+      factor_ls(it->second, it->first.first, it->first.second, false);
    }
 
    // Update icall_cons to the new constraints.
@@ -5358,9 +6175,13 @@ void Andersen_AA::factor_ls()
       if(i_fc != factored_cons.end())
       {
          if(C.get_type() == load_cons)
+         {
             C.dest = i_fc->second;
+         }
          else
+         {
             C.src = i_fc->second;
+         }
       }
       const std::set<const llvm::Instruction*>& I = old_icall_cons[i].second;
       icall_cons[C].insert(I.begin(), I.end());
@@ -5378,9 +6199,9 @@ void Andersen_AA::factor_ls(const std::set<u32>& other, u32 ref, u32 off, bool l
    if(szo < factor_min_sz)
    {
       // Return unfactored cons. to the list.
-      for(auto j = other.begin(), je = other.end(); j != je; ++j)
+      for(unsigned int j : other)
       {
-         Constraint C(load ? load_cons : store_cons, (load ? *j : ref), load ? ref : *j, off);
+         Constraint C(load ? load_cons : store_cons, (load ? j : ref), load ? ref : j, off);
          constraints.push_back(C);
       }
    }
@@ -5393,10 +6214,10 @@ void Andersen_AA::factor_ls(const std::set<u32>& other, u32 ref, u32 off, bool l
       constraints.push_back(Ca);
       // All the original cons. will be mapped to T.
       // Add (A = T) or (T = B).
-      for(auto j = other.begin(), je = other.end(); j != je; ++j)
+      for(unsigned int j : other)
       {
-         Constraint Cb(copy_cons, load ? *j : t, load ? t : *j, 0);
-         Constraint Cb0(load ? load_cons : store_cons, load ? *j : ref, load ? ref : *j, off);
+         Constraint Cb(copy_cons, load ? j : t, load ? t : j, 0);
+         Constraint Cb0(load ? load_cons : store_cons, load ? j : ref, load ? ref : j, off);
          constraints.push_back(Cb);
          factored_cons[Cb0] = t;
       }
@@ -5406,9 +6227,9 @@ void Andersen_AA::factor_ls(const std::set<u32>& other, u32 ref, u32 off, bool l
 void Andersen_AA::cons_opt()
 {
    // Do 1 pass of regular HVN, to reduce HU's memory usage.
-   hvn(0);
+   hvn(false);
    // Run HRU until it can no longer remove 100 constraints.
-   hr(1, 100);
+   hr(true, 100);
    // Do HCD after HVN, so that it has fewer nodes to put in the map.
    // This also avoids updating that map after HVN.
    hcd();
@@ -5435,13 +6256,15 @@ static std::priority_queue<std::pair<u32, u32>, std::vector<std::pair<u32, u32>>
 //  and odd positions in (v) are skipped because domains 0 and 1 have
 //  their variables interleaved.
 // It assumes that domain 0 is the first set of variables to be allocated.
-static void sat2vec(char* v, int szv)
+static void sat2vec(char* v, int /*szv*/)
 {
    // The number of bits in (v) used for domain 0
    //  and any other variables interleaved into it.
    static u32 fdd0_bits = 0;
    if(!fdd0_bits)
-      fdd0_bits = (u32)fdd_varnum(0) * 2 - 1;
+   {
+      fdd0_bits = static_cast<u32>(fdd_varnum(0)) * 2 - 1;
+   }
    // The result with all dont-cares at 0.
    u32 base = 0;
    // The list of dont-care masks and its size.
@@ -5521,7 +6344,7 @@ static std::vector<u32>* bdd2vec(bdd x)
       for(auto i : boost::irange(0u, bvc_remove))
       {
          // Some LRU entries may have an older time than the cache entry.
-         while(1)
+         while(true)
          {
             std::pair<u32, u32> x = bv_lru.top();
             bv_lru.pop();
@@ -5557,11 +6380,15 @@ static std::vector<u32>* bdd2vec(bdd x)
 static void clear_bdd2vec()
 {
    bddexp.clear();
-   for(auto it = bv_cache.begin(), ie = bv_cache.end(); it != ie; ++it)
-      delete it->second.second;
+   for(auto& it : bv_cache)
+   {
+      delete it.second.second;
+   }
    bv_cache.clear();
    while(!bv_lru.empty())
+   {
       bv_lru.pop();
+   }
    bv_time = 0;
 }
 
@@ -5573,7 +6400,9 @@ void Andersen_AA::pts_init()
    std::set<u32> valid_off;
    u32 max_sz = 0;
    if(DEBUG_AA)
+   {
       llvm::errs() << "PTS init\n";
+   }
    for(auto i : boost::irange(0ul, constraints.size()))
    {
       const Constraint& C = constraints[i];
@@ -5582,9 +6411,13 @@ void Andersen_AA::pts_init()
          max_sz = std::max(max_sz, C.get_off() + 1);
          valid_off.insert(C.get_off());
          if(DEBUG_AA)
+         {
             C.print(this);
+         }
          if(DEBUG_AA)
+         {
             llvm::errs() << "\n";
+         }
       }
    }
    // fprintf(stderr, "valid offsets: %u of %u\n", valid_off.count(), max_sz);
@@ -5595,7 +6428,9 @@ void Andersen_AA::pts_init()
    {
       u32 sz = nodes[i]->obj_sz;
       if(sz < 2)
+      {
          continue;
+      }
       if(max_sz < sz)
       {
          max_sz = sz;
@@ -5604,15 +6439,25 @@ void Andersen_AA::pts_init()
       // Record the node in the largest valid offset.
       u32 off = sz - 1;
       for(; off && !valid_off.count(off); --off)
+      {
          ;
+      }
       if(!off)
+      {
          continue;
+      }
       if(DEBUG_AA)
+      {
          llvm::errs() << "off_nodes[" << off << "] <- ";
+      }
       if(DEBUG_AA)
+      {
          print_node(i);
+      }
       if(DEBUG_AA)
+      {
          llvm::errs() << "\n";
+      }
       assert(off < off_nodes.size());
       off_nodes[off].insert(i);
    }
@@ -5655,7 +6500,7 @@ void Andersen_AA::pts_init()
    fdd_setpair(gep2pts, 1, 0);
    // Make a bit vector for each domain.
    bvec vpts = bvec_varfdd(0), vgep = bvec_varfdd(1);
-   u32 pts_bits = (u32)vpts.bitnum();
+   auto pts_bits = static_cast<u32>(vpts.bitnum());
    // For each offset, make the GEP function.
    geps.assign(max_sz, bddfalse);
    // The set of nodes with more fields than the current offset.
@@ -5664,9 +6509,9 @@ void Andersen_AA::pts_init()
    for(auto it0 = valid_off.rbegin(), ie = valid_off.rend(); it0 != ie; ++it0)
    {
       u32 off = *it0;
-      for(auto it1 = off_nodes[off].begin(), ie = off_nodes[off].end(); it1 != ie; ++it1)
+      for(unsigned int it1 : off_nodes[off])
       {
-         om |= get_node_var(*it1);
+         om |= get_node_var(it1);
       }
       // Vector for (pts+off).
       bvec add = bvec_add(vpts, bvec_con(pts_bits, off));
@@ -5739,22 +6584,30 @@ void Andersen_AA::solve_init()
    }
    constraints.clear();
    if(DEBUG_AA)
-      print_cons_graph(0); // print the complete constraint graph
+   {
+      print_cons_graph(false); // print the complete constraint graph
+   }
 
    // Start the worklist with all nodes that point to something
    //  and have outgoing constraint edges.
    assert(!WL);
    WL = new Worklist(nn);
    if(DEBUG_AA)
+   {
       llvm::errs() << "***** Initial worklist:";
+   }
    for(auto i : boost::irange(0u, nn))
    {
       Node* N = nodes[i];
       if(!N->is_rep())
+      {
          continue;
+      }
       N->vtime = 0;
       if(N->points_to == bddfalse)
+      {
          continue;
+      }
       if(N->copy_to.empty() && N->load_to.empty() && N->store_from.empty() && N->gep_to.empty())
       {
          // If N has no outgoing constraints, we can't do anything with it now.
@@ -5762,12 +6615,18 @@ void Andersen_AA::solve_init()
       }
       WL->push(i, 0);
       if(DEBUG_AA)
+      {
          llvm::errs() << "  ";
+      }
       if(DEBUG_AA)
+      {
          print_node(i);
+      }
    }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
+   }
    WL->swap_if_empty();
    ext_seen.clear();
    ext_failed.clear();
@@ -5779,34 +6638,44 @@ bool Andersen_AA::solve()
 {
    assert(WL && "solve called without a worklist");
    if(DEBUG_AA)
+   {
       llvm::errs() << "***** Starting pass 0\n";
+   }
 
    n_node_runs = 0;
    last_lcd = 0;
    vtime = 1;
-   bool fail = 0;
-   while(1)
+   bool fail = false;
+   while(true)
    {
       if(WL->swap_if_empty())
       { // current pass done
          // If nothing is queued for this pass, the graph has converged.
          if(WL->empty())
+         {
             break;
+         }
          if(DEBUG_AA)
+         {
             llvm::errs() << "***** Starting pass\n";
+         }
       }
       u32 p;
       u32 n = WL->pop(&p);
       // If a node was merged after the push, it will stay on the list
       //  but should not be processed.
       if(!nodes[n]->is_rep())
+      {
          continue;
+      }
 
       // the ID worklist sets vtime to 0
       // This entry may have an earlier vtime if it was pushed onto next and then
       //  popped from curr.
       if(p < nodes[n]->vtime)
+      {
          continue;
+      }
       // If something was merged into n after it was pushed, its vtime may have
       //  been reduced below p.
 
@@ -5814,7 +6683,9 @@ bool Andersen_AA::solve()
 
       // Is it time to do cycle detection?
       if(lcd_starts.size() >= lcd_size || n_node_runs - last_lcd >= lcd_period)
+      {
          run_lcd();
+      }
    }
 
    delete WL;
@@ -5834,15 +6705,20 @@ void Andersen_AA::run_lcd()
    // Run DFS starting from every rep node on the list, unless it was already seen
    //  in the current LCD pass.
    if(DEBUG_AA)
-      llvm::errs() << "LCD starting\n";
-   for(auto it = lcd_starts.begin(), ie = lcd_starts.end(); it != ie; ++it)
    {
-      u32 n = *it;
+      llvm::errs() << "LCD starting\n";
+   }
+   for(unsigned int n : lcd_starts)
+   {
       if(nodes[n]->is_rep() && !lcd_dfs_id.count(n))
+      {
          lcd_dfs(n);
+      }
    }
    if(DEBUG_AA)
+   {
       llvm::errs() << "LCD done\n";
+   }
    assert(lcd_stk.empty());
    lcd_starts.clear();
 }
@@ -5855,11 +6731,17 @@ void Andersen_AA::solve_node(u32 n)
    ++n_node_runs;
    Node* N = nodes[n];
    if(DEBUG_AA)
+   {
       llvm::errs() << "solve_node  ";
+   }
    if(DEBUG_AA)
+   {
       print_node(n);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "  vtime: " << N->vtime << " -> " << vtime << "\n";
+   }
    N->vtime = vtime++;
 
    // Points-to bits added to N since the last visit.
@@ -5867,7 +6749,9 @@ void Andersen_AA::solve_node(u32 n)
    // If this node was on the prev. worklist, it may have been processed
    //  (updating the points_to) after getting added to the curr. list.
    if(d_points_to == bddfalse)
+   {
       return;
+   }
    const std::vector<u32>* d_points_to_v = bdd2vec(d_points_to);
    const u32* pdpts = &(d_points_to_v->at(0));
    const u32* edpts = pdpts + d_points_to_v->size();
@@ -5882,21 +6766,25 @@ void Andersen_AA::solve_node(u32 n)
    if(i_hv != hcd_var.end())
    {
       if(DEBUG_AA)
+      {
          llvm::errs() << "HCD starting\n";
+      }
       // Then merge everything in our points_to with HV.
       hcd_rep = get_node_rep(i_hv->second);
-      bool chg = 0;
+      bool chg = false;
       for(const u32* ip = pdpts; ip != edpts; ++ip)
       {
          u32 x = get_node_rep(*ip);
          if(x != hcd_rep && x != i2p)
          {
             hcd_rep = merge_nodes(hcd_rep, x);
-            chg = 1;
+            chg = true;
          }
       }
       if(DEBUG_AA)
+      {
          llvm::errs() << "HCD done\n";
+      }
    }
    // The final rep of the SCC goes on the worklist.
    WL->push(hcd_rep, nodes[hcd_rep]->vtime);
@@ -5950,7 +6838,7 @@ void Andersen_AA::solve_node(u32 n)
 //  all the other args are local vars in solve_node().
 // Note that (C) will be updated in place with the node reps.
 // Returns true if (C) became redundant.
-bool Andersen_AA::solve_ls_cons(u32 n, u32 hcd_rep, bdd d_points_to, std::set<Constraint>& cons_seen, Constraint& C)
+bool Andersen_AA::solve_ls_cons(u32 n, u32 hcd_rep, const bdd& d_points_to, std::set<Constraint>& cons_seen, Constraint& C)
 {
    bool load = C.get_type() == load_cons;
    assert(load || C.get_type() == store_cons);
@@ -6018,25 +6906,35 @@ bool Andersen_AA::solve_ls_cons(u32 n, u32 hcd_rep, bdd d_points_to, std::set<Co
             auto F = llvm::dyn_cast_or_null<const llvm::Function>(R->get_val());
             if(F && extinfo->is_ext(F))
             {
-               for(auto it = I->begin(), ie = I->end(); it != ie; ++it)
+               for(auto it : *I)
                {
-                  handle_ext(F, *it);
+                  handle_ext(F, it);
                }
             }
          }
       }
-      return 1;
+      return true;
    }
    cons_seen.insert(C);
    if(DEBUG_AA)
+   {
       llvm::errs() << (load ? "  load_cons  " : "  store_cons  ");
+   }
    if(DEBUG_AA)
+   {
       print_node(load ? dest : src);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "  +" << off << "  ";
+   }
    if(I)
+   {
       if(DEBUG_AA)
+      {
          llvm::errs() << (load ? "(ind_call retval)  " : "(ind_call arg)  ");
+      }
+   }
 
    // If our points_to was collapsed via HCD, we only need to add the edge
    //  from its rep. Note that loads with offset are still handled using
@@ -6061,10 +6959,12 @@ bool Andersen_AA::solve_ls_cons(u32 n, u32 hcd_rep, bdd d_points_to, std::set<Co
          }
       }
       if(DEBUG_AA)
+      {
          llvm::errs() << "<HCD>\n";
+      }
       // This cons. is now redundant because all future members of our points_to
       //  will be pointer-equivalent to hcd_rep, which already has the edge.
-      return 1;
+      return true;
    }
 
    if(off)
@@ -6077,15 +6977,17 @@ bool Andersen_AA::solve_ls_cons(u32 n, u32 hcd_rep, bdd d_points_to, std::set<Co
       solve_ls_n(pdpts, edpts, load, dest, src);
    }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
-   return 0;
+   }
+   return false;
 }
 
 //------------------------------------------------------------------------------
 // The main loop of solve_ls_cons(), separated for profiling.
 // The first version is for load/store with offset, and the second
 //  is for normal load/store (offset 0).
-void Andersen_AA::solve_ls_off(bdd d_points_to, bool load, u32 dest, u32 src, u32 off, const std::set<const llvm::Instruction*>* I)
+void Andersen_AA::solve_ls_off(const bdd& d_points_to, bool load, u32 dest, u32 src, u32 off, const std::set<const llvm::Instruction*>* I)
 {
    // Remove points-to members too small for the offset.
    // However, if this is an ind. call, we must keep all ext. function nodes
@@ -6093,37 +6995,47 @@ void Andersen_AA::solve_ls_off(bdd d_points_to, bool load, u32 dest, u32 src, u3
    bdd mask = I ? off_mask[off] | ext_func_nodes : off_mask[off];
    bdd m_points_to = d_points_to & mask;
    if(m_points_to == bddfalse)
+   {
       return;
+   }
    const std::vector<u32>* d_points_to_v = bdd2vec(m_points_to);
    const u32* pdpts = &(d_points_to_v->at(0));
    const u32* edpts = pdpts + d_points_to_v->size();
    // Did D.points_to change? (for load only).
-   bool chg = 0;
+   bool chg = false;
    for(const u32* ip = pdpts; ip != edpts; ++ip)
    {
       // Use the original points-to member (rather than the rep)
       //  to check for ext.func. and to compare offset/obj_sz.
       u32 rn = *ip;
       if(DEBUG_AA)
+      {
          llvm::errs() << '{';
+      }
       if(DEBUG_AA)
+      {
          print_node(rn);
+      }
       if(DEBUG_AA)
+      {
          llvm::errs() << '}';
+      }
       // In case of ind. call, check if rsrc is an ext. function.
       if(I)
       {
          assert((load && off == 1) || (!load && off >= 2) && "wrong offset for icall retval or arg");
          // When handling an ind.call cons, skip non-func. members.
          if(!func_node_set.count(rn))
+         {
             continue;
+         }
          const Node* R = nodes[rn];
          if(ext_func_node_set.count(rn))
          {
             auto F = llvm::dyn_cast_or_null<const llvm::Function>(R->get_val());
-            for(auto it = I->begin(), ie = I->end(); it != ie; ++it)
+            for(auto it : *I)
             {
-               handle_ext(F, *it);
+               handle_ext(F, it);
             }
             continue;
          }
@@ -6133,7 +7045,9 @@ void Andersen_AA::solve_ls_off(bdd d_points_to, bool load, u32 dest, u32 src, u3
          //  will be processed.
          //      assert(R->obj_sz > off);
          if(DEBUG_AA)
+         {
             llvm::errs() << "(non-ext)";
+         }
       }
       else if(func_node_set.count(rn))
       {
@@ -6152,7 +7066,7 @@ void Andersen_AA::solve_ls_off(bdd d_points_to, bool load, u32 dest, u32 src, u3
       {
          if(add_copy_edge(rn, dest))
          {
-            chg = 1;
+            chg = true;
          }
       }
       else
@@ -6163,7 +7077,9 @@ void Andersen_AA::solve_ls_off(bdd d_points_to, bool load, u32 dest, u32 src, u3
             const llvm::Value* V = nodes[rn]->get_val();
             // Note: V may be null due to constraint factoring.
             if(V && !llvm::isa<llvm::PointerType>(V->getType()))
+            {
                continue;
+            }
          }
          if(add_copy_edge(src, rn))
          {
@@ -6180,21 +7096,27 @@ void Andersen_AA::solve_ls_off(bdd d_points_to, bool load, u32 dest, u32 src, u3
 //------------------------------------------------------------------------------
 void Andersen_AA::solve_ls_n(const u32* pdpts, const u32* edpts, bool load, u32 dest, u32 src)
 {
-   bool chg = 0;
+   bool chg = false;
    for(const u32* ip = pdpts; ip != edpts; ++ip)
    {
       u32 rn = get_node_rep(*ip);
       if(DEBUG_AA)
+      {
          llvm::errs() << '{';
+      }
       if(DEBUG_AA)
+      {
          print_node(rn);
+      }
       if(DEBUG_AA)
+      {
          llvm::errs() << '}';
+      }
       if(load)
       {
          if(add_copy_edge(rn, dest))
          {
-            chg = 1;
+            chg = true;
          }
       }
       else
@@ -6213,7 +7135,7 @@ void Andersen_AA::solve_ls_n(const u32* pdpts, const u32* edpts, bool load, u32 
 
 //------------------------------------------------------------------------------
 // Handle the GEP constraint (C).
-bool Andersen_AA::solve_gep_cons(u32 n, bdd d_points_to, std::set<Constraint>& cons_seen, Constraint& C)
+bool Andersen_AA::solve_gep_cons(u32 n, const bdd& d_points_to, std::set<Constraint>& cons_seen, Constraint& C)
 {
    assert(C.get_type() == gep_cons);
    // If n2 was merged into n, C.src may still be n2.
@@ -6223,15 +7145,21 @@ bool Andersen_AA::solve_gep_cons(u32 n, bdd d_points_to, std::set<Constraint>& c
    C.dest = dest;
    if(cons_seen.count(C))
    {
-      return 1;
+      return true;
    }
    cons_seen.insert(C);
    if(DEBUG_AA)
+   {
       llvm::errs() << "  gep_cons  ";
+   }
    if(DEBUG_AA)
+   {
       print_node(dest);
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "  ";
+   }
    Node* D = nodes[dest];
    bdd prev_pts = D->points_to;
    assert(off < geps.size());
@@ -6246,12 +7174,16 @@ bool Andersen_AA::solve_gep_cons(u32 n, bdd d_points_to, std::set<Constraint>& c
    if(D->points_to != prev_pts)
    {
       if(DEBUG_AA)
+      {
          llvm::errs() << '*';
+      }
       WL->push(dest, D->vtime);
    }
    if(DEBUG_AA)
+   {
       llvm::errs() << "\n";
-   return 0;
+   }
+   return false;
 }
 
 //------------------------------------------------------------------------------
@@ -6265,28 +7197,34 @@ bool Andersen_AA::add_copy_edge(u32 src, u32 dest)
    // Neither do we add edges from i2p, as there's nothing to propagate.
    // Also avoid edges from a node to itself.
    if(src == i2p || dest == i2p || src == dest)
-      return 0;
+   {
+      return false;
+   }
    Node* S = nodes[src];
    if(S->copy_to.test_and_set(dest))
    {
       if(DEBUG_AA)
+      {
          llvm::errs() << 'c';
+      }
       Node* D = nodes[dest];
       bdd prev_pts = D->points_to;
       D->points_to |= S->points_to;
       if(D->points_to != prev_pts)
       {
          if(DEBUG_AA)
+         {
             llvm::errs() << '*';
-         return 1;
+         }
+         return true;
       }
    }
-   return 0;
+   return false;
 }
 
 //------------------------------------------------------------------------------
 // Propagate (d_points_to) along all copy edges from node (n).
-void Andersen_AA::solve_prop(u32 n, bdd d_points_to)
+void Andersen_AA::solve_prop(u32 n, const bdd& d_points_to)
 {
    Node* N = nodes[n];
    std::set<u32> copy_seen;
@@ -6296,13 +7234,19 @@ void Andersen_AA::solve_prop(u32 n, bdd d_points_to)
       assert(dest0 != n && "copy self-loop not removed");
       u32 dest = get_node_rep(dest0);
       if(DEBUG_AA)
+      {
          llvm::errs() << "  copy edge  ";
+      }
       if(DEBUG_AA)
+      {
          print_node(dest);
+      }
       // If the rep of this copy dest. is n itself, or if we already propagated
       //  to it, it can be skipped.
       if(dest == n || copy_seen.count(dest))
+      {
          continue;
+      }
       copy_seen.insert(dest);
       Node* D = nodes[dest];
       std::pair<u32, u32> E(n, dest);
@@ -6321,11 +7265,15 @@ void Andersen_AA::solve_prop(u32 n, bdd d_points_to)
       if(D->points_to != prev_pts)
       {
          if(DEBUG_AA)
+         {
             llvm::errs() << "  *";
+         }
          WL->push(dest, D->vtime);
       }
       if(DEBUG_AA)
+      {
          llvm::errs() << "\n";
+      }
    }
 }
 
@@ -6336,7 +7284,9 @@ void Andersen_AA::handle_ext(const llvm::Function* F, const llvm::Instruction* I
    assert(extinfo->is_ext(F));
    std::pair<const llvm::Function*, const llvm::Instruction*> arg(F, I);
    if(ext_seen.count(arg))
+   {
       return;
+   }
    ext_seen.insert(arg);
    llvm::ImmutableCallSite CS(I);
    extf_t tF = extinfo->get_type(F);
@@ -6348,26 +7298,40 @@ void Andersen_AA::handle_ext(const llvm::Function* F, const llvm::Instruction* I
          // For is_alloc, point the caller's copy of the retval to its object
          //  (making sure the retval is actually used).
          if(!llvm::isa<llvm::PointerType>(I->getType()))
+         {
             break;
+         }
          u32 vnD = get_node_rep(get_val_node(I));
          u32 onD = get_obj_node(I);
          Node* D = nodes[vnD];
          if(DEBUG_AA)
+         {
             llvm::errs() << "(alloc: " << F->getName() << ": ";
+         }
          if(DEBUG_AA)
+         {
             print_node(vnD);
+         }
          if(DEBUG_AA)
+         {
             llvm::errs() << " -> ";
+         }
          if(DEBUG_AA)
+         {
             print_node(onD);
+         }
          if(DEBUG_AA)
+         {
             llvm::errs() << ')';
+         }
          bdd prev_pts = D->points_to;
          D->points_to |= get_node_var(onD);
          if(D->points_to != prev_pts)
          {
             if(DEBUG_AA)
+            {
                llvm::errs() << '*';
+            }
             WL->push(vnD, D->vtime);
          }
          break;
@@ -6377,13 +7341,19 @@ void Andersen_AA::handle_ext(const llvm::Function* F, const llvm::Instruction* I
          //  and to a function with fewer args at another time;
          //  we should skip the realloc if the current call has fewer args.
          if(CS.arg_size() < 1)
+         {
             break;
+         }
          if(llvm::isa<llvm::ConstantPointerNull>(CS.getArgument(0)))
          {
             if(!llvm::isa<llvm::PointerType>(I->getType()))
+            {
                break;
+            }
             if(DEBUG_AA)
+            {
                llvm::errs() << "realloc:(alloc)";
+            }
             u32 vnD = get_node_rep(get_val_node(I));
             u32 onD = get_obj_node(I);
             Node* D = nodes[vnD];
@@ -6392,20 +7362,26 @@ void Andersen_AA::handle_ext(const llvm::Function* F, const llvm::Instruction* I
             if(D->points_to != prev_pts)
             {
                if(DEBUG_AA)
+               {
                   llvm::errs() << '*';
+               }
                WL->push(vnD, D->vtime);
             }
             break;
          }
          if(DEBUG_AA)
+         {
             llvm::errs() << "realloc:";
+         }
       case EFT_L_A0:
       case EFT_L_A1:
       case EFT_L_A2:
       case EFT_L_A8:
       {
          if(!llvm::isa<llvm::PointerType>(I->getType()))
+         {
             break;
+         }
          u32 vnD = get_node_rep(get_val_node(I));
          u32 i_arg;
          switch(tF)
@@ -6423,13 +7399,17 @@ void Andersen_AA::handle_ext(const llvm::Function* F, const llvm::Instruction* I
                i_arg = 0;
          }
          if(CS.arg_size() <= i_arg)
+         {
             break;
+         }
          if(DEBUG_AA)
+         {
             llvm::errs() << "(L_A" << i_arg << ")";
+         }
          const llvm::Value* src = CS.getArgument(i_arg);
          if(llvm::isa<llvm::PointerType>(src->getType()))
          {
-            u32 vnS = get_node_rep(get_val_node(src, 1));
+            u32 vnS = get_node_rep(get_val_node(src, true));
             if(vnS)
             {
                if(add_copy_edge(vnS, vnD))
@@ -6446,7 +7426,9 @@ void Andersen_AA::handle_ext(const llvm::Function* F, const llvm::Instruction* I
             if(D->points_to != prev_pts)
             {
                if(DEBUG_AA)
+               {
                   llvm::errs() << '*';
+               }
                WL->push(vnD, D->vtime);
             }
          }
@@ -6455,7 +7437,9 @@ void Andersen_AA::handle_ext(const llvm::Function* F, const llvm::Instruction* I
       case EFT_NOOP:
          // No-op and unknown func. have no effect.
          if(DEBUG_AA)
+         {
             llvm::errs() << "(no-op)";
+         }
          break;
       case EFT_OTHER:
          if(!F->doesNotAccessMemory())
@@ -6469,7 +7453,9 @@ void Andersen_AA::handle_ext(const llvm::Function* F, const llvm::Instruction* I
                if(D->points_to != prev_pts)
                {
                   if(DEBUG_AA)
+                  {
                      llvm::errs() << '*';
+                  }
                   WL->push(vnD, D->vtime);
                }
             }
@@ -6495,9 +7481,8 @@ void Andersen_AA::lcd_dfs(u32 n)
    // If any of n's edges point to non-rep nodes, they will be updated.
    bitmap del_copy, add_copy;
 
-   for(auto it = N->copy_to.begin(), ie = N->copy_to.end(); it != ie; ++it)
+   for(unsigned int dest0 : N->copy_to)
    {
-      u32 dest0 = *it;
       assert(dest0 != n && "copy self-loop not removed");
       u32 dest = get_node_rep(dest0);
       // Delete and skip any edge whose replacement is already there
@@ -6521,7 +7506,9 @@ void Andersen_AA::lcd_dfs(u32 n)
          // If dest (or any successor) was visited in this pass before us, it must
          //  be the root, so set our dfs_id to the root's id.
          if(lcd_dfs_id[dest] < lcd_dfs_id[n])
+         {
             lcd_dfs_id[n] = lcd_dfs_id[dest];
+         }
       }
 
       // If the dest. was merged (such as by the recursion above),
@@ -6545,13 +7532,15 @@ void Andersen_AA::lcd_dfs(u32 n)
    // If our dfs_id is unchanged, N is the root of an SCC.
    if(lcd_dfs_id[n] == our_dfs)
    {
-      bool chg = 0; // was (n) merged?
+      bool chg = false; // was (n) merged?
       while(!lcd_stk.empty())
       {
          u32 n2 = lcd_stk.top();
          // Anything visited before us should remain on the stack.
          if(lcd_dfs_id[n2] < our_dfs)
+         {
             break;
+         }
          lcd_stk.pop();
          // Note: n2 may have been merged using HCD.
          u32 rn2 = get_node_rep(n2);
@@ -6559,7 +7548,7 @@ void Andersen_AA::lcd_dfs(u32 n)
          {
             n = merge_nodes(n, rn2);
          }
-         chg = 1;
+         chg = true;
       }
       // Once this SCC is collapsed, the root should not be processed again.
       lcd_roots.insert(n);
@@ -6570,14 +7559,18 @@ void Andersen_AA::lcd_dfs(u32 n)
       }
    }
    else
+   {
       // Save N until we get back to the root.
       lcd_stk.push(n);
+   }
 }
 
 void Andersen_AA::computePointToSet(llvm::Module& M)
 {
    if(DEBUG_AA)
+   {
       llvm::errs() << "starting Andersen analysis\n";
+   }
    run_init();
    list_ext_unknown(M);
    auto MS = getmin_struct(M);
@@ -6589,14 +7582,22 @@ void Andersen_AA::computePointToSet(llvm::Module& M)
    solve_init();
    solve();
    if(DEBUG_AA)
-      print_cons_graph(1);
+   {
+      print_cons_graph(true);
+   }
    if(DEBUG_AA)
+   {
       print_metrics();
+   }
    run_cleanup();
    if(DEBUG_AA)
+   {
       pts_cleanup();
+   }
    if(DEBUG_AA)
+   {
       llvm::errs() << "Andersen analysis completed\n";
+   }
 }
 
 // Return the points-to set of node n, with offset off,
@@ -6605,7 +7606,9 @@ const std::vector<u32>* Andersen_AA::pointsToSet(u32 n, u32 off)
 {
    assert(n && n < nodes.size() && "node ID out of range");
    if(!off)
+   {
       return bdd2vec(nodes[get_node_rep(n)]->points_to);
+   }
    assert(off < geps.size() && geps[off] != bddfalse);
    bdd gep = bdd_replace(bdd_relprod(nodes[get_node_rep(n)]->points_to, geps[off], pts_dom), gep2pts);
    return bdd2vec(gep);
@@ -6616,22 +7619,26 @@ const std::vector<u32>* Andersen_AA::pointsToSet(const llvm::Value* V, u32 off)
 {
    auto CE = llvm::dyn_cast<const llvm::ConstantExpr>(V);
    if(CE && CE->getOpcode() == llvm::Instruction::BitCast)
+   {
       return pointsToSet(get_val_node(CE->getOperand(0)), off);
-   else if(auto BC = llvm::dyn_cast<const llvm::BitCastInst>(V))
+   }
+   if(auto BC = llvm::dyn_cast<const llvm::BitCastInst>(V))
    {
       if(auto gepOp = llvm::dyn_cast<const llvm::GetElementPtrInst>(BC->getOperand(0)))
       {
          auto CE2 = llvm::dyn_cast<const llvm::ConstantExpr>(gepOp->getPointerOperand());
          if(CE2 && CE2->getOpcode() == llvm::Instruction::BitCast)
+         {
             return pointsToSet(get_val_node(CE2->getOperand(0)));
-         else
-            return pointsToSet(get_val_node(gepOp->getPointerOperand()));
+         }
+
+         return pointsToSet(get_val_node(gepOp->getPointerOperand()));
       }
-      else
-         return pointsToSet(get_val_node(BC->getOperand(0)), off);
+
+      return pointsToSet(get_val_node(BC->getOperand(0)), off);
    }
-   else
-      return pointsToSet(get_val_node(V), off);
+
+   return pointsToSet(get_val_node(V), off);
 }
 
 bool Andersen_AA::has_malloc_obj(u32 n, const llvm::TargetLibraryInfo* TLI, u32 off)
@@ -6639,7 +7646,9 @@ bool Andersen_AA::has_malloc_obj(u32 n, const llvm::TargetLibraryInfo* TLI, u32 
    assert(n && n < nodes.size() && "node ID out of range");
    std::vector<u32>* pts;
    if(!off)
+   {
       pts = bdd2vec(nodes[get_node_rep(n)]->points_to);
+   }
    else
    {
       assert(off < geps.size() && geps[off] != bddfalse);
@@ -6653,7 +7662,9 @@ bool Andersen_AA::has_malloc_obj(u32 n, const llvm::TargetLibraryInfo* TLI, u32 
       {
          auto ci = llvm::dyn_cast<const llvm::CallInst>(val);
          if(ci && llvm::isMallocLikeFn(ci, TLI))
+         {
             return true;
+         }
       }
    }
    return false;
@@ -6674,17 +7685,27 @@ u32 Andersen_AA::PE(const llvm::Value* V)
       {
          auto CE2 = llvm::dyn_cast<const llvm::ConstantExpr>(gepOp->getPointerOperand());
          if(CE2 && CE2->getOpcode() == llvm::Instruction::BitCast)
+         {
             n = get_val_node(CE2->getOperand(0));
+         }
          else
+         {
             n = get_val_node(gepOp->getPointerOperand());
+         }
       }
       else
-         n = get_val_node(BC->getOperand(0), 1);
+      {
+         n = get_val_node(BC->getOperand(0), true);
+      }
    }
    else
-      n = get_val_node(V, 1);
+   {
+      n = get_val_node(V, true);
+   }
    if(!n)
+   {
       return NOVAR_ID;
+   }
    return get_node_rep(n);
 }
 
@@ -6710,12 +7731,10 @@ bool Andersen_AA::is_null(u32 n, u32 off)
    {
       return (pts == bddfalse);
    }
-   else
-   {
-      assert(off < geps.size() && geps[off] != bddfalse);
-      bdd gep = bdd_replace(bdd_relprod(pts, geps[off], pts_dom), gep2pts);
-      return (gep == bddfalse);
-   }
+
+   assert(off < geps.size() && geps[off] != bddfalse);
+   bdd gep = bdd_replace(bdd_relprod(pts, geps[off], pts_dom), gep2pts);
+   return (gep == bddfalse);
 }
 
 bool Andersen_AA::is_single(u32 n, u32 off)
@@ -6730,12 +7749,10 @@ bool Andersen_AA::is_single(u32 n, u32 off)
    {
       return (bdd_satcountset(pts, pts_dom) == 1);
    }
-   else
-   {
-      assert(off < geps.size() && geps[off] != bddfalse);
-      bdd gep = bdd_replace(bdd_relprod(pts, geps[off], pts_dom), gep2pts);
-      return (bdd_satcountset(gep, pts_dom) == 1);
-   }
+
+   assert(off < geps.size() && geps[off] != bddfalse);
+   bdd gep = bdd_replace(bdd_relprod(pts, geps[off], pts_dom), gep2pts);
+   return (bdd_satcountset(gep, pts_dom) == 1);
 }
 
 const llvm::Value* Andersen_AA::getValue(u32 n)
@@ -6772,17 +7789,19 @@ class PtsSet
    bdd get_bdd(u32 x)
    {
       if(x >= bdd_xlt.size())
+      {
          bdd_xlt.resize(x + 1, bddfalse);
+      }
       if(bdd_xlt[x] == bddfalse)
+      {
          bdd_xlt[x] = fdd_ithvar(0, static_cast<int>(x));
+      }
       return bdd_xlt[x];
    }
 
  public:
-   PtsSet()
-   {
-   }
-   PtsSet(bdd p) : pts(p)
+   PtsSet() = default;
+   PtsSet(const bdd& p) : pts(p)
    {
    }
    PtsSet(const PtsSet& rhs)
@@ -6813,7 +7832,9 @@ class PtsSet
    PtsSet operator+(u32 off) const
    {
       if(off == 0)
+      {
          return *this;
+      }
       assert(off < bdd_off.size() && bdd_off[off] != bddfalse);
       return PtsSet(bdd_replace(bdd_relprod(pts, bdd_off[off], pdom), g2p));
    }
@@ -6858,25 +7879,27 @@ std::vector<bdd> PtsSet::bdd_xlt;
 class PtsGraph
 {
  public:
-   PtsGraph()
-   {
-   }
+   PtsGraph() = default;
 
    void init(std::vector<u32>& vars)
    {
       sort(vars.begin(), vars.end());
       pts.resize(vars.size(), pts_el());
       for(auto i : boost::irange(0ul, vars.size()))
+      {
          pts[i].first = vars[i];
+      }
    }
 
    PtsSet operator[](u32 el)
    {
-      pts_cit i = pts_find(el);
+      auto i = pts_find(el);
       if(i == pts.end())
+      {
          return bddfalse;
-      else
-         return i->second;
+      }
+
+      return i->second;
    }
 
    bool operator|=(PtsGraph& rhs)
@@ -6884,9 +7907,9 @@ class PtsGraph
       bool c = false;
       for(auto i : rhs.change)
       {
-         pts_cit k = rhs.pts_find(i);
+         auto k = rhs.pts_find(i);
          assert(k != rhs.pts.end());
-         pts_it j = pts_find(k->first);
+         auto j = pts_find(k->first);
          assert(j != pts.end());
          if((j->second |= k->second))
          {
@@ -6904,10 +7927,12 @@ class PtsGraph
       for(auto i : rhs.change)
       {
          if(o2p[i] != part)
+         {
             continue;
-         pts_cit k = rhs.pts_find(i);
+         }
+         auto k = rhs.pts_find(i);
          assert(k != rhs.pts.end());
-         pts_it j = pts_find(k->first);
+         auto j = pts_find(k->first);
          assert(j != pts.end());
          if((j->second |= k->second))
          {
@@ -6925,10 +7950,12 @@ class PtsGraph
       for(auto i : rhs.change)
       {
          if(i == el)
+         {
             continue;
-         pts_cit k = rhs.pts_find(i);
+         }
+         auto k = rhs.pts_find(i);
          assert(k != rhs.pts.end());
-         pts_it j = pts_find(k->first);
+         auto j = pts_find(k->first);
          assert(j != pts.end());
          if((j->second |= k->second))
          {
@@ -6942,19 +7969,23 @@ class PtsGraph
 
    void assign_el(u32 el, const PtsSet& rhs)
    {
-      pts_it i = pts_find(el);
+      auto i = pts_find(el);
       assert(i != pts.end());
       if(i->second != rhs)
+      {
          change.insert(el);
+      }
       i->second = rhs;
    }
 
    void or_el(u32 el, const PtsSet& rhs)
    {
-      pts_it i = pts_find(el);
+      auto i = pts_find(el);
       assert(i != pts.end());
       if((i->second |= rhs))
+      {
          change.insert(el);
+      }
    }
 
    void or_changed(PtsSet& lhs, const std::vector<u32>& v)
@@ -6963,7 +7994,9 @@ class PtsGraph
       for(auto i : v)
       {
          if(change.has(i))
+         {
             lhs |= (*this)[i];
+         }
       }
    }
 
@@ -6995,9 +8028,7 @@ class PtsGraph
    class change_set
    {
     public:
-      change_set()
-      {
-      }
+      change_set() = default;
 
       void insert(u32 x)
       {
@@ -7026,7 +8057,7 @@ class PtsGraph
          return binary_search(S.begin(), S.end(), x);
       }
 
-      typedef std::vector<u32>::iterator ch_it;
+      using ch_it = std::vector<u32>::iterator;
 
       ch_it begin()
       {
@@ -7042,11 +8073,11 @@ class PtsGraph
    };
 
    change_set change;
-   typedef change_set::ch_it ch_it;
+   using ch_it = change_set::ch_it;
 
    typedef std::pair<u32, PtsSet> pts_el;
-   typedef std::vector<pts_el>::iterator pts_it;
-   typedef std::vector<pts_el>::const_iterator pts_cit;
+   using pts_it = std::vector<pts_el>::iterator;
+   using pts_cit = std::vector<pts_el>::const_iterator;
 
    std::vector<pts_el> pts;
 
@@ -7068,13 +8099,11 @@ class PtsGraph
 class PartMap
 {
  public:
-   PartMap()
-   {
-   }
+   PartMap() = default;
 
    void insert(size_t dst, size_t part)
    {
-      pmap.push_back(std::pair<u32, u32>(dst, part));
+      pmap.emplace_back(dst, part);
    }
 
    void erase_dst(size_t dst)
@@ -7122,7 +8151,9 @@ class PartMap
       if(i > 0)
       {
          for(; i < ie; ++i)
+         {
             p.push_back(pmap[i]);
+         }
          pmap.swap(p);
       }
    }
@@ -7159,7 +8190,7 @@ class PartMap
    std::vector<std::pair<u32, u32>> pmap;
 };
 
-typedef PartMap::pmap_it pmap_it;
+using pmap_it = PartMap::pmap_it;
 
 // {addr_of, copy, gep} instruction
 struct TpNode
@@ -7219,9 +8250,7 @@ enum node_type
 class DFG
 {
  public:
-   DFG() : tp_base(0), ld_base(0), st_base(0), np_base(0)
-   {
-   }
+   DFG() = default;
 
    // insert a constraint into the DFG, creating a node for it;
    // return the index of the node in the particular class it belongs
@@ -7233,13 +8262,13 @@ class DFG
          case addr_of_cons:
          case copy_cons:
          case gep_cons:
-            tp_nodes.push_back(TpNode(C));
+            tp_nodes.emplace_back(C);
             return tp_nodes.size() - 1;
          case load_cons:
-            ld_nodes.push_back(LdNode(C));
+            ld_nodes.emplace_back(C);
             return ld_nodes.size() - 1;
          case store_cons:
-            st_nodes.push_back(StNode(C));
+            st_nodes.emplace_back(C);
             return st_nodes.size() - 1;
          default:
             assert(0 && "unknown constraint type");
@@ -7273,7 +8302,9 @@ class DFG
          {
             auto& def = v2d[C.get_src()];
             for(auto j : def)
+            {
                add_edge(j, i);
+            }
          }
       }
 
@@ -7282,7 +8313,9 @@ class DFG
          Constraint& C = ld_nodes[i].inst;
          auto& def = v2d[C.get_src()];
          for(auto j : def)
+         {
             add_edge(j, ld_base + i);
+         }
       }
 
       for(auto i : boost::irange(0ul, st_nodes.size()))
@@ -7290,10 +8323,14 @@ class DFG
          Constraint& C = st_nodes[i].inst;
          auto &d1 = v2d[C.get_dest()], &d2 = v2d[C.get_src()];
          for(auto j : d1)
+         {
             add_edge(j, st_base + i);
+         }
 
          for(auto j : d2)
+         {
             add_edge(j, st_base + i);
+         }
       }
    }
 
@@ -7301,7 +8338,7 @@ class DFG
    // finalize_insert() has been called
    size_t insert_nop()
    {
-      np_nodes.push_back(NpNode());
+      np_nodes.emplace_back();
       return (np_base + np_nodes.size() - 1);
    }
 
@@ -7434,15 +8471,17 @@ class DFG
       for(auto i : boost::irange(0ul, ld_nodes.size()))
       {
          if(ld_nodes[i].rep)
+         {
             cnt++;
+         }
       }
       return cnt;
    }
 
-   typedef std::vector<TpNode>::iterator tp_it;
-   typedef std::vector<LdNode>::iterator ld_it;
-   typedef std::vector<StNode>::iterator st_it;
-   typedef std::vector<NpNode>::iterator np_it;
+   using tp_it = std::vector<TpNode>::iterator;
+   using ld_it = std::vector<LdNode>::iterator;
+   using st_it = std::vector<StNode>::iterator;
+   using np_it = std::vector<NpNode>::iterator;
 
    // iterate over the TpNodes
    tp_it tp_begin()
@@ -7538,26 +8577,32 @@ class DFG
 
    void stats(std::vector<bitmap>& vp)
    {
-      assert(o2p.size());
+      assert(!o2p.empty());
 
       std::map<size_t, size_t> np2p, p2ne;
       u32 t1 = 0, t3 = 0, t4 = 0;
 
       for(auto i : tp_nodes)
+      {
          t1 += i.succ.size();
+      }
       for(auto i : ld_nodes)
       {
          t1 += i.tl_succ.size();
          for(auto j : i.part_succ)
          {
             if(!j.second)
+            {
                continue;
+            }
             assert(j.second < vp.size() && !vp[j.second].empty());
             p2ne[j.second]++;
             t3++;
             t4 += vp[j.second].count();
             if(is_np(j.first))
+            {
                np2p[j.first] = j.second;
+            }
          }
       }
       for(auto i : st_nodes)
@@ -7565,13 +8610,17 @@ class DFG
          for(auto j : i.part_succ)
          {
             if(!j.second)
+            {
                continue;
+            }
             assert(j.second < vp.size() && !vp[j.second].empty());
             p2ne[j.second]++;
             t3++;
             t4 += vp[j.second].count();
             if(is_np(j.first))
+            {
                np2p[j.first] = j.second;
+            }
          }
       }
 
@@ -7583,7 +8632,9 @@ class DFG
          {
             auto idx = np_base + (i - np_nodes.begin());
             if(!np2p.count(idx))
+            {
                continue;
+            }
             for(auto j : i->succ)
             {
                if(is_np(j) && !np2p.count(j))
@@ -7599,7 +8650,9 @@ class DFG
       {
          auto idx = np_base + (i - np_nodes.begin());
          if(!np2p.count(idx))
+         {
             continue;
+         }
          p2ne[np2p[idx]] += i->succ.size();
          t3 += i->succ.size();
          t4 += i->succ.size() * vp[np2p[idx]].count();
@@ -7627,15 +8680,13 @@ class DFG
 
    // indices >= tp_base and < ld_base refer to tp_nodes; >= ld_base
    // and < st_base refer to ld_nodes; etc for st and np
-   size_t tp_base, ld_base, st_base, np_base;
+   size_t tp_base{0}, ld_base{0}, st_base{0}, np_base{0};
 };
 
 class EdgeSet
 {
  public:
-   EdgeSet()
-   {
-   }
+   EdgeSet() = default;
    EdgeSet(const EdgeSet& rhs)
    {
       S = rhs.S;
@@ -7699,14 +8750,10 @@ class EdgeSet
       S.insert(S.end(), rhs.S.begin(), rhs.S.end());
    }
 
-   EdgeSet& operator=(const EdgeSet& rhs)
-   {
-      S = rhs.S;
-      return (*this);
-   }
+   EdgeSet& operator=(const EdgeSet& rhs) = default;
 
-   typedef std::vector<u32>::iterator set_it;
-   typedef std::vector<u32>::const_iterator set_cit;
+   using set_it = std::vector<u32>::iterator;
+   using set_cit = std::vector<u32>::const_iterator;
 
    set_it begin()
    {
@@ -7721,44 +8768,40 @@ class EdgeSet
    std::vector<u32> S;
 };
 
-typedef EdgeSet::set_it set_it;
+using set_it = EdgeSet::set_it;
 
 // a node in the SEG
 //
 class SEGnode
 {
  public:
-   bool np; // node is non-preserving
-   bool r;  // node uses a relevant def
-   bool c;  // node has a constant transfer function
+   bool np{false}; // node is non-preserving
+   bool r{false};  // node uses a relevant def
+   bool c{false};  // node has a constant transfer function
 
-   u32 rep; // set representative (> ICFG.size() if node is the rep)
+   u32 rep{~0U}; // set representative (> ICFG.size() if node is the rep)
 
-   u32 dfs;  // for tarjan's
-   bool del; // "
+   u32 dfs{0};      // for tarjan's
+   bool del{false}; // "
 
    EdgeSet pred; // predecessors
    EdgeSet succ; // successors
 
-   SEGnode() : np(false), r(false), c(false), rep(~0U), dfs(0), del(false)
-   {
-   }
-   SEGnode(bool _np) : np(_np), r(false), c(false), rep(~0U), dfs(0), del(false)
+   SEGnode() = default;
+   SEGnode(bool _np) : np(_np), rep(~0U), dfs(0)
    {
    }
 };
 class OffNodeSFS
 {
  public:
-   bool del;     // for tarjans
-   u32 rep, dfs; // "
+   bool del{false};      // for tarjans
+   u32 rep{~0U}, dfs{0}; // "
 
-   bool idr;
+   bool idr{false};
    bitmap edges, lbls;
 
-   OffNodeSFS() : del(false), rep(~0U), dfs(0), idr(false)
-   {
-   }
+   OffNodeSFS() = default;
 };
 
 Staged_Flow_Sensitive_AA::Staged_Flow_Sensitive_AA(const std::string& _TopFunctionName) : Andersen_AA(_TopFunctionName), PRE(_TopFunctionName), prog_start_node(0), num_tmp(0), pe_lbl(0), dfs_num(0)
@@ -7777,9 +8820,11 @@ Staged_Flow_Sensitive_AA::~Staged_Flow_Sensitive_AA()
 u32 Staged_Flow_Sensitive_AA::findOCG(u32 n)
 {
    if(RPPOCG(n))
+   {
       return n;
-   else
-      return (OCG[n].rep = findOCG(OCG[n].rep));
+   }
+
+   return (OCG[n].rep = findOCG(OCG[n].rep));
 }
 
 u32 Staged_Flow_Sensitive_AA::uniteOCG(u32 a, u32 b)
@@ -7787,7 +8832,9 @@ u32 Staged_Flow_Sensitive_AA::uniteOCG(u32 a, u32 b)
    assert(RPPOCG(a) && RPPOCG(b));
 
    if(a == b)
+   {
       return a;
+   }
 
    u32 ra = RNKOCG(a), rb = RNKOCG(b);
 
@@ -7798,7 +8845,9 @@ u32 Staged_Flow_Sensitive_AA::uniteOCG(u32 a, u32 b)
       b = t;
    }
    else if(ra == rb)
+   {
       OCG[a].rep--;
+   }
 
    OCG[a].idr |= OCG[b].idr;
    OCG[a].lbls |= OCG[b].lbls;
@@ -7824,12 +8873,18 @@ void Staged_Flow_Sensitive_AA::hu(u32 n)
       OffNodeSFS& P = OCG[p];
 
       if(p == n || P.del)
+      {
          continue;
+      }
 
       if(!P.dfs)
+      {
          hu(p);
+      }
       if(P.dfs < N.dfs)
+      {
          N.dfs = P.dfs;
+      }
    }
    if(my_dfs == N.dfs)
    {
@@ -7840,21 +8895,31 @@ void Staged_Flow_Sensitive_AA::hu(u32 n)
       }
       OCG[n].del = true;
       if(OCG[n].idr)
+      {
          OCG[n].lbls.set(pe_lbl++);
+      }
       for(auto i : OCG[n].edges)
       {
          u32 p = findOCG(i);
          if(p == n)
+         {
             continue;
+         }
          assert(!OCG[p].lbls.empty());
-         if(!OCG[p].lbls.test(0)) // not a non-pointer
+         if(!OCG[p].lbls.test(0))
+         { // not a non-pointer
             OCG[n].lbls |= OCG[p].lbls;
+         }
       }
       if(OCG[n].lbls.empty())
+      {
          OCG[n].lbls.set(0); // non-pointer
+      }
    }
    else
+   {
       node_st.push(n);
+   }
 }
 
 void Staged_Flow_Sensitive_AA::make_off_graph()
@@ -7862,7 +8927,9 @@ void Staged_Flow_Sensitive_AA::make_off_graph()
    OCG.assign(nodes.size(), OffNodeSFS());
    // address-taken variables are indirect
    for(auto i : boost::irange(1u, last_obj_node + 1))
+   {
       OCG[i].idr = true;
+   }
    for(auto i : boost::irange(0ul, constraints.size()))
    {
       const Constraint& C = constraints[i];
@@ -7887,7 +8954,9 @@ void Staged_Flow_Sensitive_AA::make_off_graph()
             u32 l = pe_lbl;
 
             if(j != gep2pe.end())
+            {
                l = j->second;
+            }
             else
             {
                gep2pe[A] = l;
@@ -7923,7 +8992,9 @@ void Staged_Flow_Sensitive_AA::cons_opt(std::vector<u32>& redir)
    for(auto i : boost::irange(1ul, OCG.size()))
    {
       if(!OCG[i].dfs)
+      {
          hu(i);
+      }
    }
    assert(node_st.empty());
    // merge nodes based on the detected equivalences
@@ -7944,7 +9015,9 @@ void Staged_Flow_Sensitive_AA::cons_opt(std::vector<u32>& redir)
          merge_nodes(i, get_node_rep(j->second));
       }
       else
+      {
          eq[N.lbls] = i;
+      }
    }
    OCG.clear();
    eq.clear();
@@ -7967,7 +9040,7 @@ void Staged_Flow_Sensitive_AA::cons_opt(std::vector<u32>& redir)
          redir[i] = ~0u;
          continue;
       }
-      else if(OC.get_type() == store_cons && PRE.is_null(OC.get_dest(), 0))
+      if(OC.get_type() == store_cons && PRE.is_null(OC.get_dest(), 0))
       {
          redir[i] = ~0u;
          continue;
@@ -7975,7 +9048,9 @@ void Staged_Flow_Sensitive_AA::cons_opt(std::vector<u32>& redir)
       Constraint C(OC);
       C.dest = get_node_rep(C.get_dest());
       if(C.get_type() != addr_of_cons)
+      {
          C.src = get_node_rep(C.get_src());
+      }
       if(C.get_type() != load_cons && C.get_type() != store_cons)
       {
          if((C.get_type() == copy_cons && !C.get_off() && C.get_src() == C.get_dest()) || seen.count(C))
@@ -7992,7 +9067,7 @@ void Staged_Flow_Sensitive_AA::cons_opt(std::vector<u32>& redir)
 
 size_t Staged_Flow_Sensitive_AA::create_node(bool np)
 {
-   ICFG.push_back(SEGnode(np));
+   ICFG.emplace_back(np);
    assert(ICFG.size() < MAX_G);
    return ICFG.size() - 1;
 }
@@ -8001,7 +9076,9 @@ void Staged_Flow_Sensitive_AA::add_edge(u32 src, u32 dst)
 {
    assert(CHK(src) && CHK(dst));
    if(src != dst)
+   {
       ICFG[dst].pred.insert(src);
+   }
 }
 
 void Staged_Flow_Sensitive_AA::erase_edge(u32 src, u32 dst)
@@ -8040,7 +9117,9 @@ u32 Staged_Flow_Sensitive_AA::unite(u32 a, u32 b, bool t2, bool t5)
    assert(CHK(a) && CHK(b));
    assert(!(NP(a) && NP(b)) && !(t2 && t5));
    if(a == b)
+   {
       return a;
+   }
    u32 ra = RNK(a), rb = RNK(b);
    if(!t2 && !t5)
    {
@@ -8051,15 +9130,21 @@ u32 Staged_Flow_Sensitive_AA::unite(u32 a, u32 b, bool t2, bool t5)
          b = t;
       }
       else if(ra == rb)
+      {
          ICFG[a].rep--;
+      }
    }
    else if(ra < rb)
+   {
       ICFG[a].rep = (~0u - rb); // a gets b's rank
+   }
    ICFG[a].c |= ICFG[b].c;
    ICFG[a].r |= ICFG[b].r;
    ICFG[a].np |= ICFG[b].np;
    if(!t2)
+   {
       ICFG[a].pred |= ICFG[b].pred;
+   }
    ICFG[b].rep = a;
    return a;
 }
@@ -8078,7 +9163,9 @@ void Staged_Flow_Sensitive_AA::clean_G()
    for(auto i : boost::irange(1ul, ICFG.size()))
    {
       if(RPP(i) && !DEL(i))
+      {
          redir[i] = nn++;
+      }
    }
    newG.assign(nn, SEGnode());
    for(auto i : redir)
@@ -8089,9 +9176,13 @@ void Staged_Flow_Sensitive_AA::clean_G()
       {
          u32 p = find(j);
          if(p == i.first)
+         {
             continue;
+         }
          if((ii = redir.find(p)) != redir.end())
+         {
             X.pred.insert(ii->second);
+         }
       }
       X.pred.unique();
    }
@@ -8103,18 +9194,26 @@ void Staged_Flow_Sensitive_AA::clean_G()
       // note that we can get defs whose nodes were deleted by T6
       // because of CN; these are set to 0 by the else branch
       if(i && (ii = redir.find(find(i))) != redir.end())
+      {
          i = ii->second;
+      }
       else
+      {
          i = 0;
+      }
    }
    for(auto& i : uses)
    {
       // note that we can get uses whose nodes were deleted by
       // rm_undef(); these are set to 0 by the else branch
       if(i && (ii = redir.find(find(i))) != redir.end())
+      {
          i = ii->second;
+      }
       else
+      {
          i = 0;
+      }
    }
    // do this last because find() uses G
    ICFG.swap(newG);
@@ -8130,7 +9229,9 @@ void Staged_Flow_Sensitive_AA::T2()
    for(auto i : topo)
    {
       if(DEL(i))
+      {
          continue; // may have been deleted by rm_undef()
+      }
       u32 n = find(i);
       SEGnode& N = ICFG[n];
       // pred may have non-reps (though no self-edges), therefore we
@@ -8143,7 +9244,9 @@ void Staged_Flow_Sensitive_AA::T2()
          u32 x = find(j);
          assert(x != n && CHK(x));
          if(!p)
+         {
             p = x;
+         }
          else if(p != x)
          {
             mult = true;
@@ -8170,14 +9273,20 @@ void Staged_Flow_Sensitive_AA::t4_visit(u32 n)
       u32 p = find(i);
       assert(CHK(p));
       if(NP(p))
+      {
          continue;
+      }
       SEGnode& P = ICFG[p];
       if(!P.del)
       {
          if(!P.dfs)
+         {
             t4_visit(p);
+         }
          if(N.dfs > P.dfs)
+         {
             N.dfs = P.dfs;
+         }
       }
    }
    if(my_dfs == N.dfs)
@@ -8192,7 +9301,9 @@ void Staged_Flow_Sensitive_AA::t4_visit(u32 n)
       ICFG[n].del = true;
    }
    else
+   {
       node_st.push(n);
+   }
 }
 
 // collapse p-node SCCs and topologically number them
@@ -8206,12 +9317,16 @@ void Staged_Flow_Sensitive_AA::T4()
       if(RPP(i))
       {
          if(!NP(i) && !ICFG[i].dfs)
+         {
             t4_visit(i);
+         }
          if(RPP(i))
          {                      // this includes NP nodes, which t4_visit doesn't
             ICFG[i].del = true; // T6 assumes all rep nodes have del == true
             if(RQ(i))
+            {
                rq.push_back(i); // save RQ nodes for T6
+            }
          }
       }
    }
@@ -8241,7 +9356,9 @@ void Staged_Flow_Sensitive_AA::t5_visit(u32 n)
       assert(CHK(x) && x != n);
 
       if(!s)
+      {
          s = x;
+      }
       else if(s != x)
       {
          mult = true;
@@ -8269,7 +9386,9 @@ void Staged_Flow_Sensitive_AA::T5()
    {
       u32 n = find(i);
       if(!DEL(n) && !NP(n) && !RQ(n) && ICFG[n].dfs)
+      {
          t5_visit(n);
+      }
    }
 }
 
@@ -8281,10 +9400,14 @@ void Staged_Flow_Sensitive_AA::t6_visit(u32 n, bool t7)
    N.del = false;
    // save !NP && !RQ nodes for T5
    if(!NP(n) && !RQ(n))
+   {
       not_nprq.push_back(n);
+   }
 
    if(t7 && CN(n))
+   {
       return;
+   }
    for(auto i : N.pred)
    {
       u32 p = find(i);
@@ -8292,9 +9415,13 @@ void Staged_Flow_Sensitive_AA::t6_visit(u32 n, bool t7)
       {
          assert(CHK(p));
          if(ICFG[p].del)
+         {
             t6_visit(p);
+         }
          if(!NP(p) && !RQ(p))
+         {
             ICFG[p].succ.insert(n);
+         }
       }
    }
 }
@@ -8309,16 +9436,22 @@ void Staged_Flow_Sensitive_AA::T6(bool t7)
    for(auto i : rq)
    {
       if(DEL(i))
+      {
          continue;
+      }
 
       u32 n = find(i);
       if(ICFG[n].del)
+      {
          t6_visit(n, t7);
+      }
    }
    for(auto i : boost::irange(1ul, ICFG.size()))
    {
       if(ICFG[i].del)
+      {
          ICFG[i].rep = 0;
+      }
    }
 }
 
@@ -8337,7 +9470,9 @@ void Staged_Flow_Sensitive_AA::rm_undef()
       {
          u32 p = find(j);
          if(!DEL(p) && p != i)
+         {
             pred.insert(p);
+         }
       }
 
       if(!pred.empty())
@@ -8508,6 +9643,7 @@ void Staged_Flow_Sensitive_AA::visit_func(const llvm::Function* F)
    // First make nodes for all ptr-return insn
    //  (since trace_int may sometimes return values below the current insn).
    for(auto& BB : F->getBasicBlockList())
+   {
       for(auto& Inst : BB.getInstList())
       {
          const llvm::Instruction* I = &Inst;
@@ -8517,6 +9653,7 @@ void Staged_Flow_Sensitive_AA::visit_func(const llvm::Function* F)
             val_node[I] = next_node++;
          }
       }
+   }
 
    // insert entries for the global constraints into defs and uses
    // (this only needs to happen once, after obj_cons_id creates the
@@ -8542,7 +9679,9 @@ void Staged_Flow_Sensitive_AA::visit_func(const llvm::Function* F)
 static const llvm::Function* calledFunction(const llvm::CallInst* ci)
 {
    if(const llvm::Function* F = ci->getCalledFunction())
+   {
       return F;
+   }
 
    auto v = ci->getCalledValue();
 
@@ -8551,7 +9690,9 @@ static const llvm::Function* calledFunction(const llvm::CallInst* ci)
       if(C->getOpcode() == llvm::Instruction::BitCast)
       {
          if(auto F = llvm::dyn_cast<const llvm::Function>(C->getOperand(0)))
+         {
             return F;
+         }
       }
    }
    return nullptr;
@@ -8577,7 +9718,9 @@ void Staged_Flow_Sensitive_AA::processBlock(u32 parent, const llvm::BasicBlock* 
    bb_start[BB] = n;
 
    if(parent != (~0u))
+   {
       add_edge(parent, n);
+   }
    else
    {
       auto F = BB->getParent();
@@ -8649,30 +9792,42 @@ void Staged_Flow_Sensitive_AA::processBlock(u32 parent, const llvm::BasicBlock* 
             break;
          case llvm::Instruction::BitCast:
             if(is_ptr)
+            {
                id_bitcast_insn(I);
+            }
             break;
          case llvm::Instruction::PHI:
             if(is_ptr)
+            {
                id_phi_insn(I);
+            }
             break;
          case llvm::Instruction::Select:
             if(is_ptr)
+            {
                id_select_insn(I);
+            }
             break;
          case llvm::Instruction::VAArg:
             if(is_ptr)
+            {
                id_vaarg_insn(I);
+            }
             break;
          case llvm::Instruction::ExtractValue:
             if(is_ptr)
+            {
                id_extract_insn(I);
+            }
          default:
             assert(!is_ptr && "unknown insn has a pointer return type");
       }
 
       cons_sz = constraints.size();
       if(cons_sz == curr_cons && !call)
+      {
          continue;
+      }
 
       defs.insert(defs.end(), cons_sz - curr_cons, 0);
       uses.insert(uses.end(), cons_sz - curr_cons, 0);
@@ -8691,7 +9846,9 @@ void Staged_Flow_Sensitive_AA::processBlock(u32 parent, const llvm::BasicBlock* 
                for(u32 i = curr_cons; i < cons_sz; ++i)
                {
                   if(constraints[i].get_type() == store_cons)
+                  {
                      num_stores++;
+                  }
                }
 
                // memcpy/move, etc can create multiple loads and stores; we
@@ -8724,7 +9881,9 @@ void Staged_Flow_Sensitive_AA::processBlock(u32 parent, const llvm::BasicBlock* 
                   if(num_stores == 1)
                   {
                      if(!NP(n))
+                     {
                         ICFG[n].np = true;
+                     }
                      else
                      {
                         u32 next = create_node(true);
@@ -8739,7 +9898,9 @@ void Staged_Flow_Sensitive_AA::processBlock(u32 parent, const llvm::BasicBlock* 
                      Constraint& C = constraints[i];
 
                      if(C.get_type() == store_cons)
+                     {
                         defs[i] = n;
+                     }
                      else if(C.get_type() == load_cons)
                      {
                         ICFG[n].r = true;
@@ -8766,7 +9927,9 @@ void Staged_Flow_Sensitive_AA::processBlock(u32 parent, const llvm::BasicBlock* 
          { // indirect call
             auto ci = llvm::cast<const llvm::CallInst>(I);
             if(llvm::isa<llvm::InlineAsm>(ci->getCalledValue()))
+            {
                continue;
+            }
 
             u32 fp = get_val_node(ci->getCalledValue(), true);
             if(fp)
@@ -8778,12 +9941,14 @@ void Staged_Flow_Sensitive_AA::processBlock(u32 parent, const llvm::BasicBlock* 
                // question are, by construction, already in SSA form; we
                // save these constraints to process later
                for(u32 i = curr_cons; i < cons_sz; ++i)
+               {
                   idr_cons.push_back(i);
+               }
 
                // we also save the indirect call inst and current node so
                // we can add the inter-procedural control-flow edges later,
                // as well as process indirect external calls
-               idr_calls.push_back(std::make_pair(ci, n));
+               idr_calls.emplace_back(ci, n);
 
                // make sure call inst has an associated object node
                //
@@ -8816,7 +9981,9 @@ void Staged_Flow_Sensitive_AA::processBlock(u32 parent, const llvm::BasicBlock* 
       else if(store) // non-preserving node
       {
          if(!NP(n))
+         {
             ICFG[n].np = true;
+         }
          else
          {
             u32 next = create_node(true);
@@ -8861,7 +10028,9 @@ void Staged_Flow_Sensitive_AA::cons_opt_wrap()
    for(auto i : idr_cons)
    {
       if(redir[i] != ~0u)
+      {
          new_idr.push_back(redir[i]);
+      }
    }
    std::sort(new_idr.begin(), new_idr.end());
    auto e = std::unique(new_idr.begin(), new_idr.end());
@@ -8882,9 +10051,13 @@ void Staged_Flow_Sensitive_AA::cons_opt_wrap()
    for(auto i : boost::irange(0ul, defs.size()))
    {
       if(defs[i] && redir[i] != ~0u)
+      {
          new_defs[redir[i]] = defs[i];
+      }
       if(uses[i] && redir[i] != ~0u)
+      {
          new_uses[redir[i]] = uses[i];
+      }
    }
 
    defs.swap(new_defs);
@@ -8941,17 +10114,23 @@ void Staged_Flow_Sensitive_AA::icfg_inter_edges(llvm::Module& M)
          {
             auto cle = llvm::dyn_cast_or_null<const llvm::Function>(nodes[j]->get_val());
             if(!cle)
+            {
                continue;
+            }
 
             if(extinfo->is_ext(cle))
             {
                has_ext.insert(rep);
                if(extinfo->is_alloc(cle))
+               {
                   is_alloc.insert(rep);
+               }
                // currently we only handle indirect allocs for external stubs
             }
             else
+            {
                ffp.push_back(cle);
+            }
          }
 
          std::sort(ffp.begin(), ffp.end());
@@ -8969,7 +10148,9 @@ void Staged_Flow_Sensitive_AA::icfg_inter_edges(llvm::Module& M)
          {
             add_edge(cll, fun_start[j]);
             if(fun_ret.count(j))
+            {
                add_edge(fun_ret[j], ret);
+            }
          }
 
          factor[rep] = std::pair<u32, u32>(cll, ret);
@@ -8992,7 +10173,9 @@ void Staged_Flow_Sensitive_AA::icfg_inter_edges(llvm::Module& M)
       // from the call to the local successors of the callsite,
       // otherwise control goes via the callee
       if(!has_ext.count(rep))
+      {
          erase_edge(n, succ);
+      }
    }
 
    // these are dead now
@@ -9023,7 +10206,9 @@ void Staged_Flow_Sensitive_AA::icfg_inter_edges(llvm::Module& M)
          assert(fun_start.count(j));
          add_edge(clr, fun_start[j]);
          if(fun_ret.count(j))
+         {
             add_edge(fun_ret[j], succ);
+         }
       }
    }
 
@@ -9098,14 +10283,18 @@ void Staged_Flow_Sensitive_AA::process_idr_cons()
 
                // eliminate edges from pointer arguments to non-pointer formals
                if(C.get_off() > 1 && !llvm::isa<llvm::PointerType>(nodes[el]->get_val()->getType()))
+               {
                   continue;
+               }
 
-               new_cons.push_back(Constraint(copy_cons, *dst_p, *src_p, 0));
+               new_cons.emplace_back(copy_cons, *dst_p, *src_p, 0);
             }
          }
       }
       else
+      {
          tv = j->second;
+      }
 
       if(C.get_off() == 1)
       {
@@ -9118,7 +10307,7 @@ void Staged_Flow_Sensitive_AA::process_idr_cons()
          dst_p = &tv;
       }
 
-      new_cons.push_back(Constraint(copy_cons, *dst_p, *src_p, 0));
+      new_cons.emplace_back(copy_cons, *dst_p, *src_p, 0);
    }
 
    // unique the new constraints and add them to constraints[]
@@ -9130,7 +10319,9 @@ void Staged_Flow_Sensitive_AA::process_idr_cons()
    // defs[], uses[], or the SEG nodes because the constraints from
    // indirect calls were never used for them).
    for(auto i : idr_cons)
+   {
       constraints[i].off = ~0u;
+   }
 
    // these are dead now
    tgts.clear();
@@ -9145,7 +10336,9 @@ void Staged_Flow_Sensitive_AA::sfs_prep()
 
    strong.assign(last_obj_node + 1, false); // object -> strong?
    for(auto i : boost::irange(0u, last_obj_node + 1))
+   {
       strong[i] = !nodes[i]->weak;
+   }
 
    // BDD globals (grab geps from Anders)
    pdom = fdd_ithset(0);
@@ -9180,8 +10373,10 @@ void Staged_Flow_Sensitive_AA::sfs_prep()
          new_uses.resize(idx + 1, 0);
          new_uses[idx] = uses[i];
       }
-      else if((C.get_type() == addr_of_cons || C.get_type() == copy_cons) && C.get_dest() <= last_obj_node) // global init
+      else if((C.get_type() == addr_of_cons || C.get_type() == copy_cons) && C.get_dest() <= last_obj_node)
+      { // global init
          gv2n[C.get_dest()].push_back(idx);
+      }
    }
 
    defs.swap(new_defs);
@@ -9207,11 +10402,13 @@ u32 Staged_Flow_Sensitive_AA::squeeze(u32 p, u32 o, bool save)
       sq_map[x] = idx++;
       assert(idx < ~0u);
       if(save)
+      {
          sq_unmap[idx - 1] = x;
+      }
       return idx - 1;
    }
-   else
-      return i->second;
+
+   return i->second;
 }
 std::pair<u32, u32> Staged_Flow_Sensitive_AA::unsqueeze(u32 n)
 {
@@ -9235,7 +10432,9 @@ void Staged_Flow_Sensitive_AA::partition_vars()
    for(auto i : boost::irange(0ul, defs.size()))
    {
       if(!defs[i])
+      {
          continue;
+      }
 
       u32 idx = dfg->st_idx(i, true);
       Constraint& C = dfg->node_cons(idx);
@@ -9247,16 +10446,22 @@ void Staged_Flow_Sensitive_AA::partition_vars()
       {
          auto& pts = *(PRE.pointsToSet(C.get_dest(), C.get_off()));
          if(strong[pts.front()])
+         {
             cons_strong.insert(idx);
+         }
       }
       else if(PRE.is_null(C.get_dest(), C.get_off()))
+      {
          cons_strong.insert(idx);
+      }
    }
 
    for(auto i : boost::irange(0ul, uses.size()))
    {
       if(!uses[i])
+      {
          continue;
+      }
 
       u32 idx = dfg->ld_idx(i, true);
       Constraint& C = dfg->node_cons(idx);
@@ -9270,7 +10475,9 @@ void Staged_Flow_Sensitive_AA::partition_vars()
       std::pair<u32, u32> access = unsqueeze(i.first);
       auto& pts = *(PRE.pointsToSet(access.first, access.second));
       for(auto j : pts)
+      {
          rel[j].set(i.first);
+      }
    }
 
    sq_map.clear();
@@ -9289,13 +10496,15 @@ void Staged_Flow_Sensitive_AA::partition_vars()
    for(auto i : gv2n)
    {
       if(rel.count(i.first))
+      {
          rel[i.first].set(0);
+      }
    }
 
    std::unordered_map<bitmap, u32> eq; // map relevant partitions to equiv. class
 
    assert(var_part.empty());
-   var_part.push_back(bitmap()); // 0 index reserved
+   var_part.emplace_back(); // 0 index reserved
 
    for(auto i : rel)
    {
@@ -9303,7 +10512,7 @@ void Staged_Flow_Sensitive_AA::partition_vars()
 
       if(!cl)
       {
-         var_part.push_back(bitmap());
+         var_part.emplace_back();
          cl = var_part.size() - 1;
          eq[i.second] = cl;
       }
@@ -9323,7 +10532,9 @@ void Staged_Flow_Sensitive_AA::partition_vars()
    for(auto i : boost::irange(1ul, var_part.size()))
    {
       for(auto j : var_part[i])
+      {
          o2p[j] = i;
+      }
    }
 
    {
@@ -9387,7 +10598,9 @@ void Staged_Flow_Sensitive_AA::compute_seg()
                   rst.push_back(n);
                }
                if(cons_strong.count(k))
+               {
                   ICFG[n].c = true;
+               }
             }
             else
             {
@@ -9401,7 +10614,9 @@ void Staged_Flow_Sensitive_AA::compute_seg()
                ICFG[n].r = true;
                ++r;
                if(np <= 1 || r <= 1)
+               {
                   rst.push_back(n);
+               }
             }
          }
       }
@@ -9419,23 +10634,35 @@ void Staged_Flow_Sensitive_AA::compute_seg()
       if(np <= 1 || r <= 1)
       {
          if(np == 1 && r > 0)
+         {
             process_1store(i);
+         }
          else if(np > 0 && r == 1)
+         {
             process_1load(i);
+         }
 
          // for prepping DFG nodes
          for(auto j : cons_load)
+         {
             n2p[j].push_back(i);
+         }
          for(auto j : cons_store)
+         {
             n2p[j].push_back(i);
+         }
 
          // for sharing points-to graphs
          if(np <= 1)
          {
             for(auto j : cons_load)
+            {
                n2g[j].set(squeeze(1, i));
+            }
             for(auto j : cons_store)
+            {
                n2g[j].set(squeeze(1, i));
+            }
          }
          else
          {
@@ -9478,7 +10705,9 @@ void Staged_Flow_Sensitive_AA::compute_seg()
       for(auto j : rel[rep])
       {
          if(j == 0)
+         {
             continue;
+         }
 
          for(auto k : cons_part[j])
          {
@@ -9488,7 +10717,9 @@ void Staged_Flow_Sensitive_AA::compute_seg()
             {
                u32 n = find(defs[dfg->st_idx(k, false)]);
                if(DEL(n))
+               {
                   continue; // because of T6 and CN
+               }
 
                assert(CHK(n) && NP(n) && !pass_defs.count(n));
                pass_defs[n] = k;
@@ -9498,7 +10729,9 @@ void Staged_Flow_Sensitive_AA::compute_seg()
             {
                u32 n = find(uses[dfg->ld_idx(k, false)]);
                if(DEL(n))
+               {
                   continue; // because of rm_undef
+               }
 
                assert(C.get_type() == load_cons && CHK(n) && RQ(n));
                pass_uses[n].push_back(k);
@@ -9542,9 +10775,13 @@ void Staged_Flow_Sensitive_AA::compute_seg()
       }
 
       for(auto j : topo)
+      {
          ICFG[j].pred = saveG[j].pred;
+      }
       for(auto j : t5_reps)
+      {
          ICFG[j].pred = saveG[j].pred;
+      }
 
       {
          for(auto j : boost::irange(1ul, ICFG.size()))
@@ -9567,11 +10804,6 @@ void Staged_Flow_Sensitive_AA::compute_seg()
    cons_part.clear();
    cons_strong.clear();
 
-   if(false)
-   {
-      dfg->stats(var_part);
-   }
-
    // determine which load/store nodes can share points-to graphs; for
    // each group of nodes that can share a points-to graph, we
    // designate a rep node (the store node if it exists, an arbitrary
@@ -9587,7 +10819,9 @@ void Staged_Flow_Sensitive_AA::compute_seg()
          st[i.second] = i.first;
       }
       else
+      {
          ld[i.second].push_back(i.first);
+      }
    }
 
    sq_map.clear(); // dead now
@@ -9598,7 +10832,9 @@ void Staged_Flow_Sensitive_AA::compute_seg()
       auto& n = i.second; // note that n is sorted
 
       if(!s && n.size() == 1)
+      {
          continue; // single node in eq class
+      }
 
       if(s)
       {
@@ -9646,7 +10882,6 @@ void Staged_Flow_Sensitive_AA::compute_seg()
       }
    }
 
-   if(true)
    {
       llvm::errs() << "loads shared == " << dfg->num_shared() << " out of " << dfg->num_ld() << "\n";
    }
@@ -9668,7 +10903,9 @@ void Staged_Flow_Sensitive_AA::compute_seg()
          {
             LdNode& N = dfg->get_ld(j);
             if(N.rep)
+            {
                j = N.rep;
+            }
          }
       }
       std::sort(i->succ.begin(), i->succ.end());
@@ -9686,7 +10923,9 @@ void Staged_Flow_Sensitive_AA::compute_seg()
          {
             LdNode& N = dfg->get_ld(j.first);
             if(N.rep && N.rep != idx)
+            {
                j.first = N.rep;
+            }
          }
       }
       if(i->rep)
@@ -9706,7 +10945,9 @@ void Staged_Flow_Sensitive_AA::compute_seg()
          {
             LdNode& N = dfg->get_ld(j.first);
             if(N.rep && N.rep != idx)
+            {
                j.first = N.rep;
+            }
          }
       }
       i->part_succ.uniq();
@@ -9720,7 +10961,9 @@ void Staged_Flow_Sensitive_AA::compute_seg()
          {
             LdNode& N = dfg->get_ld(j);
             if(N.rep)
+            {
                j = N.rep;
+            }
          }
       }
       std::sort(i->succ.begin(), i->succ.end());
@@ -9728,7 +10971,6 @@ void Staged_Flow_Sensitive_AA::compute_seg()
       i->succ.erase(ex, i->succ.end());
    }
 
-   if(true)
    {
       dfg->stats(var_part);
    }
@@ -9741,7 +10983,9 @@ void Staged_Flow_Sensitive_AA::compute_seg()
    {
       std::vector<u32>& v = p2v[i];
       for(auto j : var_part[i])
+      {
          v.push_back(j);
+      }
    }
 
    var_part.clear(); // dead now
@@ -9771,14 +11015,18 @@ void Staged_Flow_Sensitive_AA::process_1store(u32 part)
       assert(glob_init.empty());
       u32 st_idx = cons_store.front();
       for(auto i : cons_load)
+      {
          dfg->add_edge(st_idx, i, part);
+      }
    }
    else // a global init
    {
       for(auto i : glob_init)
       {
          for(auto j : cons_load)
+         {
             dfg->add_edge(i, j);
+         }
       }
    }
 }
@@ -9787,7 +11035,9 @@ void Staged_Flow_Sensitive_AA::process_1load(u32 part)
 {
    u32 ld_idx = cons_load.front();
    for(auto i : cons_store)
+   {
       dfg->add_edge(i, ld_idx, part);
+   }
 }
 
 void Staged_Flow_Sensitive_AA::process_seg(u32 part, u32 n)
@@ -9867,7 +11117,9 @@ void Staged_Flow_Sensitive_AA::process_seg(u32 part, u32 n)
    {
       u32 p = find(i);
       if(p == n || DEL(p))
+      {
          continue;
+      }
 
       pred.insert(p);
       if(!pass_node.count(p))
@@ -9888,8 +11140,10 @@ void Staged_Flow_Sensitive_AA::process_seg(u32 part, u32 n)
    if(true) //!!FIXME: investigate this later
    {
       if(dfg->is_np(first) && pred.empty())
+      {
          llvm::errs() << "nop w/ no preds"
                       << "\n";
+      }
    }
 }
 
@@ -9904,7 +11158,9 @@ bool Staged_Flow_Sensitive_AA::solve()
    for(auto i = dfg->tp_begin(), e = dfg->tp_end(); i != e; ++i, ++idx)
    {
       if(i->inst.get_type() == addr_of_cons)
+      {
          sfsWL->push(idx, 0);
+      }
    }
 
    // initialize the timestamp and n_node_runs
@@ -9912,12 +11168,14 @@ bool Staged_Flow_Sensitive_AA::solve()
    n_node_runs = 0;
 
    // the main solver loop
-   while(1)
+   while(true)
    {
       if(sfsWL->swap_if_empty())
       {
          if(sfsWL->empty())
+         {
             break; // solver is complete
+         }
       }
 
       n_node_runs++;
@@ -9929,7 +11187,9 @@ bool Staged_Flow_Sensitive_AA::solve()
       // visited it already since this instance was pushed, leave it alone
       // (this only matters if we're using a dual worklist)
       if(p < priority[n])
+      {
          continue;
+      }
       priority[n] = vtime++;
 
       switch(dfg->type(n))
@@ -9973,7 +11233,9 @@ void Staged_Flow_Sensitive_AA::processTp(TpNode& N)
    if(change)
    {
       for(auto i : N.succ)
+      {
          sfsWL->push(i, priority[i]);
+      }
    }
 }
 
@@ -9984,14 +11246,18 @@ void Staged_Flow_Sensitive_AA::processLd(LdNode& N, u32 idx)
    // this node may not belong to any partition if it was pruned by the
    // initial SEG in obj_cons_id.cpp
    if(N.pts.empty())
+   {
       return;
+   }
 
    // first we process the load instruction itself
    PtsSet rhs = top[N.inst.get_src()] + N.inst.get_off();
    auto& ptsto = *(bdd2vec(rhs.get_bdd()));
 
    if(ptsto.empty())
+   {
       return;
+   }
 
    bool change = false;
    PtsSet& lhs = top[N.inst.get_dest()];
@@ -10006,13 +11272,17 @@ void Staged_Flow_Sensitive_AA::processLd(LdNode& N, u32 idx)
    {
       N.old = rhs;
       for(auto i : ptsto)
+      {
          change |= (lhs |= N.pts[i]);
+      }
    }
 
    if(change)
    {
       for(auto i : N.tl_succ)
+      {
          sfsWL->push(i, priority[i]);
+      }
    }
 
    // now we propagate the address-taken ptsto info
@@ -10027,7 +11297,9 @@ void Staged_Flow_Sensitive_AA::processLd(LdNode& N, u32 idx)
             {
                LdNode& S = dfg->get_ld(i.first);
                if(!S.rep)
+               {
                   c = S.pts.or_part(N.pts, i.second);
+               }
                else
                {
                   assert(S.rep == idx);
@@ -10046,7 +11318,9 @@ void Staged_Flow_Sensitive_AA::processLd(LdNode& N, u32 idx)
          }
 
          if(c)
+         {
             sfsWL->push(i.first, priority[i.first]);
+         }
       }
       N.pts.rst();
    }
@@ -10059,13 +11333,17 @@ void Staged_Flow_Sensitive_AA::processSt(StNode& N, u32 idx)
    // this node may not belong to any partition if it was pruned by the
    // initial SEG in obj_cons_id.cpp
    if(N.out.empty())
+   {
       return;
+   }
 
    PtsSet lhs = top[N.inst.get_dest()] + N.inst.get_off();
    auto& ptsto = *(bdd2vec(lhs.get_bdd()));
 
    if(ptsto.empty())
+   {
       return;
+   }
 
    PtsSet& rhs = top[N.inst.get_src()];
 
@@ -10090,7 +11368,9 @@ void Staged_Flow_Sensitive_AA::processSt(StNode& N, u32 idx)
       if(rhs != N.old1 || lhs != N.old2)
       {
          for(auto i : ptsto)
+         {
             N.out.or_el(i, rhs);
+         }
          N.old1 = rhs;
          N.old2 = lhs;
       }
@@ -10107,7 +11387,9 @@ void Staged_Flow_Sensitive_AA::processSt(StNode& N, u32 idx)
             {
                LdNode& S = dfg->get_ld(i.first);
                if(!S.rep)
+               {
                   c = S.pts.or_part(N.out, i.second);
+               }
                else
                {
                   assert(S.rep == idx);
@@ -10126,7 +11408,9 @@ void Staged_Flow_Sensitive_AA::processSt(StNode& N, u32 idx)
          }
 
          if(c)
+         {
             sfsWL->push(i.first, priority[i.first]);
+         }
       }
       N.out.rst();
    }
@@ -10135,7 +11419,9 @@ void Staged_Flow_Sensitive_AA::processSt(StNode& N, u32 idx)
 void Staged_Flow_Sensitive_AA::processNp(NpNode& N)
 {
    if(!N.pts.check())
+   {
       return;
+   }
    for(auto i : N.succ)
    {
       bool change = false;
@@ -10158,7 +11444,9 @@ void Staged_Flow_Sensitive_AA::processNp(NpNode& N)
             assert(0 && "unexpected type");
       }
       if(change)
+      {
          sfsWL->push(i, priority[i]);
+      }
    }
    N.pts.rst();
 }
@@ -10180,11 +11468,17 @@ void Staged_Flow_Sensitive_AA::processSharedLd(LdNode& N, PtsGraph& pts)
    {
       N.old = rhs;
       for(auto i : ptsto)
+      {
          change |= (lhs |= pts[i]);
+      }
    }
    if(change)
+   {
       for(auto i : N.tl_succ)
+      {
          sfsWL->push(i, priority[i]);
+      }
+   }
    for(auto i : N.part_succ)
    {
       bool c = false;
@@ -10207,7 +11501,9 @@ void Staged_Flow_Sensitive_AA::processSharedLd(LdNode& N, PtsGraph& pts)
             assert(0 && "unexpected type");
       }
       if(c)
+      {
          sfsWL->push(i.first, priority[i.first]);
+      }
    }
 }
 
@@ -10228,9 +11524,13 @@ void Staged_Flow_Sensitive_AA::computePointToSet(llvm::Module& M)
       {
          auto val = getValue(get_node_rep(idx));
          if(val)
+         {
             getValue(idx)->print(llvm::errs());
+         }
          else
+         {
             llvm::errs() << "???";
+         }
       }
       llvm::errs() << "\n  ";
       var.print();

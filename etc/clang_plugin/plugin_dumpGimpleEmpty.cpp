@@ -59,8 +59,10 @@ namespace clang
       std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance& CI, llvm::StringRef InFile) override
       {
          DiagnosticsEngine& D = CI.getDiagnostics();
-         if(outdir_name == "")
+         if(outdir_name.empty())
+         {
             D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "outputdir not specified"));
+         }
          gimpleRawWriter = new DumpGimpleRaw(CI, outdir_name, InFile, true, nullptr);
          return llvm::make_unique<dummyConsumer>();
       }
@@ -82,10 +84,14 @@ namespace clang
             }
          }
          if(!args.empty() && args.at(0) == "-help")
+         {
             PrintHelp(llvm::errs());
+         }
 
-         if(outdir_name == "")
+         if(outdir_name.empty())
+         {
             D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "outputdir not specified"));
+         }
          return true;
       }
       void PrintHelp(llvm::raw_ostream& ros)
@@ -123,7 +129,7 @@ namespace llvm
       {
          initializeLoopPassPass(*PassRegistry::getPassRegistry());
       }
-      bool runOnModule(Module& M)
+      bool runOnModule(Module& M) override
       {
          assert(gimpleRawWriter);
          const std::string empty;
@@ -132,11 +138,11 @@ namespace llvm
          gimpleRawWriter = nullptr;
          return res;
       }
-      virtual StringRef getPassName() const
+      StringRef getPassName() const override
       {
          return CLANG_VERSION_STRING(_plugin_dumpGimpleSSAPass);
       }
-      void getAnalysisUsage(AnalysisUsage& AU) const
+      void getAnalysisUsage(AnalysisUsage& AU) const override
       {
          AU.setPreservesAll();
          getLoopAnalysisUsage(AU);

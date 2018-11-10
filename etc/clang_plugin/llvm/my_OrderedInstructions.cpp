@@ -12,21 +12,22 @@
 //===----------------------------------------------------------------------===//
 
 #include "my_OrderedInstructions.hpp"
-using namespace llvm;
 
 /// Given 2 instructions, use OrderedBasicBlock to check for dominance relation
 /// if the instructions are in the same basic block, Otherwise, use dominator
 /// tree.
-bool OrderedInstructions::dominates(const Instruction* InstA, const Instruction* InstB) const
+bool llvm::OrderedInstructions::dominates(const llvm::Instruction* InstA, const llvm::Instruction* InstB) const
 {
-   const BasicBlock* IBB = InstA->getParent();
+   const auto* IBB = InstA->getParent();
    // Use ordered basic block to do dominance check in case the 2 instructions
    // are in the same basic block.
    if(IBB == InstB->getParent())
    {
       auto OBB = OBBMap.find(IBB);
       if(OBB == OBBMap.end())
+      {
          OBB = OBBMap.insert({IBB, make_unique<OrderedBasicBlock>(IBB)}).first;
+      }
       return OBB->second->dominates(InstA, InstB);
    }
    return DT->dominates(InstA->getParent(), InstB->getParent());

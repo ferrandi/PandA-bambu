@@ -110,13 +110,17 @@ namespace clang
       std::size_t found = original_filename.find_last_of("/\\");
       std::string dump_base_name;
       if(found == std::string::npos)
+      {
          dump_base_name = original_filename;
+      }
       else
+      {
          dump_base_name = original_filename.substr(found + 1);
+      }
       return outdir_name + "/" + dump_base_name + fileSuffix;
    }
 
-   static void writeXML_interfaceFile(const std::string filename)
+   static void writeXML_interfaceFile(const std::string& filename)
    {
       std::error_code EC;
       llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
@@ -125,8 +129,10 @@ namespace clang
       stream << "<module>\n";
       for(auto funArgPair : Fun2Params)
       {
-         if(TopFunctionName != "" && Fun2Demangled.find(funArgPair.first)->second != TopFunctionName && funArgPair.first != TopFunctionName)
+         if(!TopFunctionName.empty() && Fun2Demangled.find(funArgPair.first)->second != TopFunctionName && funArgPair.first != TopFunctionName)
+         {
             continue;
+         }
          bool hasInterfaceType = HLS_interfaceMap.find(funArgPair.first) != HLS_interfaceMap.end();
          if(hasInterfaceType)
          {
@@ -135,7 +141,7 @@ namespace clang
             const auto& interfaceTypenameVec = Fun2ParamType.find(funArgPair.first)->second;
             const auto& interfaceTypenameIncludeVec = Fun2ParamInclude.find(funArgPair.first)->second;
             unsigned int ArgIndex = 0;
-            for(auto par : funArgPair.second)
+            for(const auto& par : funArgPair.second)
             {
                std::string typenameArg = interfaceTypenameVec.at(ArgIndex);
                convert_unescaped(typenameArg);
@@ -156,15 +162,25 @@ namespace clang
          NamedDecl* ND = nullptr;
 
          if(ty->isPointerType() || ty->isReferenceType())
+         {
             return getBaseTypeDecl(ty->getPointeeType());
-         else if(ty->isRecordType())
+         }
+         if(ty->isRecordType())
+         {
             ND = ty->getAs<RecordType>()->getDecl();
+         }
          else if(ty->isEnumeralType())
+         {
             ND = ty->getAs<EnumType>()->getDecl();
+         }
          else if(ty->getTypeClass() == Type::Typedef)
+         {
             ND = ty->getAs<TypedefType>()->getDecl();
+         }
          else if(ty->isArrayType())
+         {
             return getBaseTypeDecl(ty->castAsArrayTypeUnsafe()->getElementType());
+         }
          return ND;
       }
 
@@ -246,7 +262,9 @@ namespace clang
                            D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface non-consistent with parameter of constant array type, where user defined interface is: %0")).AddString(UserDefinedInterfaceType);
                         }
                         else
+                        {
                            interfaceType = UserDefinedInterfaceType;
+                        }
                      }
                   }
                   else if(argType->isPointerType() || argType->isReferenceType())
@@ -261,13 +279,17 @@ namespace clang
                            D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface non-consistent with parameter of pointer type, where user defined interface is: %0")).AddString(UserDefinedInterfaceType);
                         }
                         else
+                        {
                            interfaceType = UserDefinedInterfaceType;
+                        }
                      }
                   }
                   else
                   {
                      if(!argType->isBuiltinType())
+                     {
                         interfaceType = "none";
+                     }
                      if(UDIT_p)
                      {
                         if(UserDefinedInterfaceType != "none" && UserDefinedInterfaceType != "handshake" && UserDefinedInterfaceType != "valid" && UserDefinedInterfaceType != "acknowledge")
@@ -276,9 +298,13 @@ namespace clang
                            D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface non-consistent with parameter of builtin type, where user defined interface is: %0")).AddString(UserDefinedInterfaceType);
                         }
                         else
+                        {
                            interfaceType = UserDefinedInterfaceType;
+                        }
                         if(argType->isBuiltinType() && interfaceType == "none")
+                        {
                            interfaceType = "default";
+                        }
                      }
                   }
 
@@ -290,7 +316,9 @@ namespace clang
                      Fun2ParamInclude[funName].push_back(SM.getPresumedLoc(BTD->getLocStart(), false).getFilename());
                   }
                   else
+                  {
                      Fun2ParamInclude[funName].push_back("");
+                  }
                }
             }
          }
@@ -302,10 +330,9 @@ namespace clang
       }
       bool HandleTopLevelDecl(DeclGroupRef DG) override
       {
-         for(DeclGroupRef::iterator i = DG.begin(), e = DG.end(); i != e; ++i)
+         for(auto D : DG)
          {
-            const Decl* D = *i;
-            if(const FunctionDecl* FD = dyn_cast<FunctionDecl>(D))
+            if(const auto* FD = dyn_cast<FunctionDecl>(D))
             {
                AnalyzeFunctionDecl(FD);
                auto endLoc = FD->getLocEnd();
@@ -313,7 +340,7 @@ namespace clang
                auto filename = SM.getPresumedLoc(endLoc, false).getFilename();
                prevLoc[filename] = endLoc;
             }
-            else if(const LinkageSpecDecl* LSD = dyn_cast<LinkageSpecDecl>(D))
+            else if(const auto* LSD = dyn_cast<LinkageSpecDecl>(D))
             {
                for(auto d : LSD->decls())
                {
@@ -341,9 +368,9 @@ namespace clang
       {
       }
 
-      void HandlePragma(Preprocessor& PP, PragmaIntroducerKind Introducer, Token& PragmaTok) override
+      void HandlePragma(Preprocessor& PP, PragmaIntroducerKind /*Introducer*/, Token& PragmaTok) override
       {
-         Token Tok;
+         Token Tok{};
          unsigned int index = 0;
          std::string par;
          std::string interface;
@@ -354,7 +381,9 @@ namespace clang
             if(Tok.isNot(tok::eod))
             {
                if(index == 0)
+               {
                   par = PP.getSpelling(Tok);
+               }
                else if(index >= 1)
                {
                   auto tokString = PP.getSpelling(Tok);
@@ -416,8 +445,10 @@ namespace clang
       std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance& CI, llvm::StringRef InFile) override
       {
          DiagnosticsEngine& D = CI.getDiagnostics();
-         if(outdir_name == "")
+         if(outdir_name.empty())
+         {
             D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "outputdir argument not specified"));
+         }
          clang::Preprocessor& PP = CI.getPreprocessor();
          PP.AddPragmaHandler(new HLS_interface_PragmaHandler());
          gimpleRawWriter = new DumpGimpleRaw(CI, outdir_name, InFile, false, &Fun2Params);
@@ -453,10 +484,14 @@ namespace clang
             }
          }
          if(!args.empty() && args.at(0) == "-help")
+         {
             PrintHelp(llvm::errs());
+         }
 
-         if(outdir_name == "")
+         if(outdir_name.empty())
+         {
             D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "outputdir not specified"));
+         }
          return true;
       }
       void PrintHelp(llvm::raw_ostream& ros)
@@ -542,24 +577,24 @@ namespace llvm
          initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());
          initializeDominanceFrontierWrapperPassPass(*PassRegistry::getPassRegistry());
       }
-      bool runOnModule(Module& M)
+      bool runOnModule(Module& M) override
       {
 #if PRINT_DBG_MSG
          llvm::errs() << "Top function name: " << TopFunctionName << "\n";
 #endif
          assert(gimpleRawWriter);
-         assert(interface_XML_filename != "");
+         assert(!interface_XML_filename.empty());
          clang::writeXML_interfaceFile(interface_XML_filename);
          auto res = gimpleRawWriter->runOnModule(M, this, TopFunctionName);
          delete gimpleRawWriter;
          gimpleRawWriter = nullptr;
          return res;
       }
-      virtual StringRef getPassName() const
+      StringRef getPassName() const override
       {
          return CLANG_VERSION_STRING(_plugin_dumpGimpleSSAPass);
       }
-      void getAnalysisUsage(AnalysisUsage& AU) const
+      void getAnalysisUsage(AnalysisUsage& AU) const override
       {
          getLoopAnalysisUsage(AU);
          AU.addRequired<MemoryDependenceWrapperPass>();

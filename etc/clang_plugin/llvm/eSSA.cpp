@@ -201,11 +201,17 @@ namespace eSSAInfoClasses
       auto* ArgA = llvm::dyn_cast_or_null<llvm::Argument>(A);
       auto* ArgB = llvm::dyn_cast_or_null<llvm::Argument>(B);
       if(ArgA && !ArgB)
+      {
          return true;
+      }
       if(ArgB && !ArgA)
+      {
          return false;
+      }
       if(ArgA && ArgB)
+      {
          return ArgA->getArgNo() < ArgB->getArgNo();
+      }
       return OI.dominates(llvm::cast<llvm::Instruction>(A), llvm::cast<llvm::Instruction>(B));
    }
 
@@ -222,7 +228,9 @@ namespace eSSAInfoClasses
       bool operator()(const ValueDFS& A, const ValueDFS& B) const
       {
          if(&A == &B)
+         {
             return false;
+         }
          // The only case we can't directly compare them is when they in the same
          // block, and both have localnum == middle.  In that case, we have to use
          // comesbefore to see what the real ordering is, because they are in the
@@ -235,10 +243,14 @@ namespace eSSAInfoClasses
          // So we sort by edge, then by def.
          // Note that only phi nodes uses and defs can come last.
          if(SameBlock && A.LocalNum == LN_Last && B.LocalNum == LN_Last)
+         {
             return comparePHIRelated(A, B);
+         }
 
          if(!SameBlock || A.LocalNum != LN_Middle || B.LocalNum != LN_Middle)
+         {
             return std::tie(A.DFSIn, A.DFSOut, A.LocalNum, A.Def, A.U) < std::tie(B.DFSIn, B.DFSOut, B.LocalNum, B.Def, B.U);
+         }
          return localComesBefore(A, B);
       }
 
@@ -267,7 +279,9 @@ namespace eSSAInfoClasses
       llvm::Value* getMiddleDef(const ValueDFS& VD) const
       {
          if(VD.Def)
+         {
             return VD.Def;
+         }
          // It's possible for the defs and uses to be null.  For branches, the local
          // numbering will say the placed predicaeinfos should go first (IE
          // LN_beginning), so we won't be in this function. For assumes, we will end
@@ -288,7 +302,9 @@ namespace eSSAInfoClasses
       const llvm::Instruction* getDefOrUser(const llvm::Value* Def, const llvm::Use* U) const
       {
          if(Def)
+         {
             return llvm::cast<llvm::Instruction>(Def);
+         }
          return llvm::cast<llvm::Instruction>(U->getUser());
       }
 
@@ -306,19 +322,23 @@ namespace eSSAInfoClasses
          auto* ArgB = llvm::dyn_cast_or_null<llvm::Argument>(BDef);
 
          if(ArgA || ArgB)
+         {
             return valueComesBefore(OI, ArgA, ArgB);
+         }
 
          auto* AInst = getDefOrUser(ADef, A.U);
          auto* BInst = getDefOrUser(BDef, B.U);
          return valueComesBefore(OI, AInst, BInst);
       }
    };
-   typedef llvm::SmallVectorImpl<ValueDFS> ValueDFSStack;
+   using ValueDFSStack = llvm::SmallVectorImpl<ValueDFS>;
 
    bool stackIsInScope(const ValueDFSStack& Stack, const ValueDFS& VDUse, const llvm::DominatorTree* DT)
    {
       if(Stack.empty())
+      {
          return false;
+      }
       // If it's a phi only use, make sure it's for this phi node edge, and that the
       // use is in a phi node.  If it's anything else, and the top of the stack is
       // EdgeOnly, we need to pop the stack.  We deliberately sort phi uses next to
@@ -327,14 +347,20 @@ namespace eSSAInfoClasses
       if(Stack.back().EdgeOnly)
       {
          if(!VDUse.U)
+         {
             return false;
+         }
          auto* PHI = llvm::dyn_cast<llvm::PHINode>(VDUse.U->getUser());
          if(!PHI)
+         {
             return false;
+         }
          // Check edge
          llvm::BasicBlock* EdgePred = PHI->getIncomingBlock(*VDUse.U);
          if(EdgePred != getBranchBlock(Stack.back().PInfo))
+         {
             return false;
+         }
 
          // Use dominates, which knows how to handle edge dominance.
          const auto bbedge = getBlockEdge(Stack.back().PInfo);
@@ -348,7 +374,9 @@ namespace eSSAInfoClasses
    void popStackUntilDFSScope(ValueDFSStack& Stack, const ValueDFS& VD, const llvm::DominatorTree* DT)
    {
       while(!Stack.empty() && !stackIsInScope(Stack, VD, DT))
+      {
          Stack.pop_back();
+      }
    }
 
    // Convert the uses of Op into a vector of uses, associating global and local
@@ -379,7 +407,9 @@ namespace eSSAInfoClasses
             llvm::DomTreeNode* DomNode = DT->getNode(IBlock);
             // It's possible our use is in an unreachable block. Skip it if so.
             if(!DomNode)
+            {
                continue;
+            }
             VD.DFSIn = DomNode->getDFSNumIn();
             VD.DFSOut = DomNode->getDFSNumOut();
             VD.U = &U;
@@ -408,13 +438,17 @@ namespace eSSAInfoClasses
 
    // Given the renaming stack, make all the operands currently on the stack real
    // by inserting them into the IR.  Return the last operation's value.
-   llvm::Value* materializeStack(unsigned int& Counter, ValueDFSStack& RenameStack, llvm::Value* OrigOp, llvm::Function& F, llvm::DenseMap<const llvm::Value*, const PredicateBase*>& PredicateMap)
+   llvm::Value* materializeStack(unsigned int& Counter, ValueDFSStack& RenameStack, llvm::Value* OrigOp, llvm::Function& /*F*/, llvm::DenseMap<const llvm::Value*, const PredicateBase*>& PredicateMap)
    {
       // Find the first thing we have to materialize
       auto RevIter = RenameStack.rbegin();
       for(; RevIter != RenameStack.rend(); ++RevIter)
+      {
          if(RevIter->Def)
+         {
             break;
+         }
+      }
 
       size_t Start = RevIter - RenameStack.rbegin();
       // The maximum number of things we should be trying to materialize at once
@@ -505,7 +539,9 @@ namespace eSSAInfoClasses
                VD.LocalNum = LN_Middle;
                llvm::DomTreeNode* DomNode = DT->getNode(PAssume->AssumeInst->getParent());
                if(!DomNode)
+               {
                   continue;
+               }
                VD.DFSIn = DomNode->getDFSNumIn();
                VD.DFSOut = DomNode->getDFSNumOut();
                VD.PInfo = PossibleCopy;
@@ -589,10 +625,14 @@ namespace eSSAInfoClasses
             // If we get to this point, and the stack is empty we must have a use
             // with no renaming needed, just skip it.
             if(RenameStack.empty())
+            {
                continue;
+            }
             // Skip values, only want to rename the uses
             if(VD.Def || PossibleCopy)
+            {
                continue;
+            }
 
             ValueDFS& Result = RenameStack.back();
 
@@ -600,7 +640,9 @@ namespace eSSAInfoClasses
             // this point. This ensures every comparison that affects our operation
             // ends up with predicateinfo.
             if(!Result.Def)
+            {
                Result.Def = materializeStack(Counter, RenameStack, Op, fun, PredicateMap);
+            }
 
 #if DEBUG_ESSA
             llvm::errs() << "Found replacement " << *Result.Def << " for " << *VD.U->get() << " in " << *(VD.U->getUser()) << "\n";
@@ -641,21 +683,27 @@ namespace eSSAInfoClasses
       auto* Op0 = Comparison->getOperand(0);
       auto* Op1 = Comparison->getOperand(1);
       if(Op0 == Op1)
+      {
          return;
+      }
       CmpOperands.push_back(Comparison);
       // Only want real values, not constants.  Additionally, operands with one use
       // are only being used in the comparison, which means they will not be useful
       // for us to consider for predicateinfo.
       //
       if((llvm::isa<llvm::Instruction>(Op0) || llvm::isa<llvm::Argument>(Op0)) && !Op0->hasOneUse())
+      {
          CmpOperands.push_back(Op0);
+      }
       if((llvm::isa<llvm::Instruction>(Op1) || llvm::isa<llvm::Argument>(Op1)) && !Op1->hasOneUse())
+      {
          CmpOperands.push_back(Op1);
+      }
    }
 
    // Process an assume instruction and place relevant operations we want to rename
    // into OpsToRename.
-   void processAssume(llvm::IntrinsicInst* II, llvm::BasicBlock* AssumeBB, llvm::SmallPtrSetImpl<llvm::Value*>& OpsToRename, llvm::DenseMap<llvm::Value*, unsigned int>& ValueInfoNums, llvm::SmallVector<eSSAInfoClasses::ValueInfo, 32>& ValueInfos)
+   void processAssume(llvm::IntrinsicInst* II, llvm::BasicBlock* /*AssumeBB*/, llvm::SmallPtrSetImpl<llvm::Value*>& OpsToRename, llvm::DenseMap<llvm::Value*, unsigned int>& ValueInfoNums, llvm::SmallVector<eSSAInfoClasses::ValueInfo, 32>& ValueInfos)
    {
       // See if we have a comparison we support
       llvm::SmallVector<llvm::Value*, 8> CmpOperands;
@@ -717,16 +765,22 @@ namespace eSSAInfoClasses
             // Don't try to insert on a self-edge. This is mainly because we will
             // eliminate during renaming anyway.
             if(Succ == BranchBB)
+            {
                continue;
+            }
             bool TakenEdge = (Succ == FirstBB);
             // For and, only insert on the true edge
             // For or, only insert on the false edge
             if((isAnd && !TakenEdge) || (isOr && TakenEdge))
+            {
                continue;
+            }
             PredicateBase* PB = new PredicateBranch(Op, BranchBB, Succ, Cond, TakenEdge);
             addInfoFor(OpsToRename, Op, PB, ValueInfoNums, ValueInfos);
             if(!Succ->getSinglePredecessor())
+            {
                EdgeUsesOnly.insert({BranchBB, Succ});
+            }
          }
       };
 
@@ -759,7 +813,9 @@ namespace eSSAInfoClasses
             collectCmpOps(Cmp, CmpOperands);
             // Now add our copy infos for our operands
             for(auto* Op : CmpOperands)
+            {
                InsertHelper(Op, isAnd, isOr, Cmp);
+            }
          }
          else if(auto* BinOp = llvm::dyn_cast<llvm::BinaryOperator>(Cond))
          {
@@ -783,7 +839,9 @@ namespace eSSAInfoClasses
    {
       llvm::Value* Op = SI->getCondition();
       if((!llvm::isa<llvm::Instruction>(Op) && !llvm::isa<llvm::Argument>(Op)) || Op->hasOneUse())
+      {
          return;
+      }
 
       // Remember how many outgoing edges there are to every successor.
       llvm::SmallDenseMap<llvm::BasicBlock*, unsigned, 16> SwitchEdges;
@@ -799,10 +857,12 @@ namespace eSSAInfoClasses
          llvm::BasicBlock* TargetBlock = C.getCaseSuccessor();
          if(SwitchEdges.lookup(TargetBlock) == 1)
          {
-            PredicateSwitch* PS = new PredicateSwitch(Op, SI->getParent(), TargetBlock, C.getCaseValue(), SI);
+            auto* PS = new PredicateSwitch(Op, SI->getParent(), TargetBlock, C.getCaseValue(), SI);
             addInfoFor(OpsToRename, Op, PS, ValueInfoNums, ValueInfos);
             if(!TargetBlock->getSinglePredecessor())
+            {
                EdgeUsesOnly.insert({BranchBB, TargetBlock});
+            }
          }
       }
    }
@@ -837,10 +897,14 @@ bool eSSA::runOnFunction(llvm::Function& fun, llvm::ModulePass* modulePass)
       if(auto* BI = llvm::dyn_cast<llvm::BranchInst>(BranchBB->getTerminator()))
       {
          if(!BI->isConditional())
+         {
             continue;
+         }
          // Can't insert conditional information if they all go to the same place.
          if(BI->getSuccessor(0) == BI->getSuccessor(1))
+         {
             continue;
+         }
          processBranch(BI, BranchBB, OpsToRename, ValueInfoNums, ValueInfos, EdgeUsesOnly);
       }
       else if(auto* SI = llvm::dyn_cast<llvm::SwitchInst>(BranchBB->getTerminator()))

@@ -89,10 +89,14 @@ namespace clang
             }
          }
          if(!args.empty() && args.at(0) == "-help")
+         {
             PrintHelp(llvm::errs());
+         }
 
-         if(topfname == "")
+         if(topfname.empty())
+         {
             D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "topfname not specified"));
+         }
          return true;
       }
       void PrintHelp(llvm::raw_ostream& ros)
@@ -134,7 +138,7 @@ namespace llvm
       std::string getDemangled(const std::string& declname)
       {
          int status;
-         char* demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), NULL, NULL, &status);
+         char* demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), nullptr, nullptr, &status);
          if(status == 0)
          {
             std::string res = declname;
@@ -148,19 +152,17 @@ namespace llvm
             free(demangled_outbuffer);
             return res;
          }
-         else
-            assert(demangled_outbuffer == nullptr);
+
+         assert(demangled_outbuffer == nullptr);
+
          return declname;
       }
       bool is_builtin_fn(const std::string& declname) const
       {
-         if(builtinsNames.find(std::string("__builtin_") + declname) != builtinsNames.end() || builtinsNames.find(declname) != builtinsNames.end())
-            return true;
-         else
-            return false;
+         return builtinsNames.find(std::string("__builtin_") + declname) != builtinsNames.end() || builtinsNames.find(declname) != builtinsNames.end();
       }
 
-      bool runOnModule(Module& M)
+      bool runOnModule(Module& M) override
       {
          bool changed = false;
 #if PRINT_DBG_MSG
@@ -214,11 +216,11 @@ namespace llvm
          }
          return changed;
       }
-      virtual StringRef getPassName() const
+      StringRef getPassName() const override
       {
          return CLANG_VERSION_STRING(_plugin_DoNotExposeGlobalsPass);
       }
-      void getAnalysisUsage(AnalysisUsage& AU) const
+      void getAnalysisUsage(AnalysisUsage& AU) const override
       {
          getLoopAnalysisUsage(AU);
       }
