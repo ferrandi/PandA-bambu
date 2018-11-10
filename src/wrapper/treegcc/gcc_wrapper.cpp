@@ -732,10 +732,10 @@ void GccWrapper::SetZebuDefault()
    optimization_flags["tree-loop-ivcanon"] = false; /// this is requested for rebuild while and for
    optimization_flags["tree-sink"] = true;          /// this is requested for rebuild while and for
    optimization_flags["trapping-math"] = true; ///-fno-trapping-math compiles code assuming that floating-point operations cannot generate user-visible traps.  These traps include division by zero, overflow, underflow, inexact result and invalid operation.
-                                               ///This option implies -fno-signaling-nans.  Setting this option may allow faster code if one relies on "non-stop" IEEE arithmetic, for example. This option should never be turned on by any -O option since it
-                                               ///can result in incorrect output for programs which depend on an exact implementation of IEEE or ISO rules/specifications for math functions.
+                                               /// This option implies -fno-signaling-nans.  Setting this option may allow faster code if one relies on "non-stop" IEEE arithmetic, for example. This option should never be turned on by any -O option since it
+                                               /// can result in incorrect output for programs which depend on an exact implementation of IEEE or ISO rules/specifications for math functions.
    optimization_flags["signed-zeros"] = true;  ///-fno-signed-zeros allows optimizations for floating point arithmetic that ignore the signedness of zero. IEEE arithmetic specifies the behavior of distinct +0.0 and -0.0 values, which then prohibits
-                                               ///simplification of expressions such as x+0.0 or 0.0*x (even with -ffinite-math-only).
+                                               /// simplification of expressions such as x+0.0 or 0.0*x (even with -ffinite-math-only).
    optimization_flags["rename-registers"] = false; /// cross compilation problems
 
    /// builtin function;

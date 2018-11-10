@@ -88,7 +88,7 @@ struct attribute
  private:
    std::string content;
 
-   value_t value_type;
+   value_t value_type{FLOAT64};
 
    std::vector<attributeRef> content_list;
 
@@ -187,9 +187,9 @@ class library_manager
     */
    //@{
    /// Constructor.
-   library_manager(const ParameterConstRef& Param, bool std = true);
+   library_manager(ParameterConstRef Param, bool std = true);
 
-   library_manager(std::string library_name, const ParameterConstRef& Param, bool std = true);
+   library_manager(std::string library_name, ParameterConstRef Param, bool std = true);
 
    /// Destructor.
    ~library_manager();

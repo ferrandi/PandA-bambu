@@ -203,12 +203,12 @@ DesignFlowStep_Status add_library::InternalExec()
       {
          op->time_m->set_stage_period(call_delay);
          /// FIXME: identification of pipelined functions is disabled since liveness analysis of parameters have not yet been added
-         if(false and not HLS->Rfu->has_resource_sharing())
-         {
-            const ControlStep ii(1);
-            op->time_m->set_initiation_time(ii);
-         }
-         else
+         //         if(false and not HLS->Rfu->has_resource_sharing())
+         //         {
+         //            const ControlStep ii(1);
+         //            op->time_m->set_initiation_time(ii);
+         //         }
+         //         else
          {
             //+1 prevents chaining of two operations mapped on the same functional unit
             const ControlStep ii(max_cycles + 1);

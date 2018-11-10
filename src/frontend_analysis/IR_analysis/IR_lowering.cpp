@@ -502,7 +502,7 @@ do_alg_addsub_factor:
    {
       unsigned long long int d;
 
-      d = (static_cast<unsigned long long int>(1) << m) + 1;
+      d = (1ULL << m) + 1;
       if(t % d == 0 && t > d && m < maxm && (!cache_hit || cache_alg == alg_add_factor))
       {
          /** If the target has a cheap shift-and-add instruction use
@@ -539,7 +539,7 @@ do_alg_addsub_factor:
          break;
       }
 
-      d = (static_cast<unsigned long long int>(1) << m) - 1;
+      d = (1ULL << m) - 1;
       if(t % d == 0 && t > d && m < maxm && (!cache_hit || cache_alg == alg_sub_factor))
       {
          /** If the target has a cheap shift-and-subtract insn use
@@ -745,7 +745,7 @@ tree_nodeRef IR_lowering::expand_mult_const(tree_nodeRef op0, unsigned long long
    tree_nodeRef accum, tem;
    int opno;
    unsigned data_bitsize = tree_helper::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(type)));
-   unsigned long long int data_mask = data_bitsize >= 64 ? ~static_cast<unsigned long long int>(0) : (static_cast<unsigned long long int>(1) << data_bitsize) - 1;
+   unsigned long long int data_mask = data_bitsize >= 64 ? ~0ULL : (1ULL << data_bitsize) - 1;
    tree_nodeRef tem_ga;
    tree_nodeRef COST0 = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(type));
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Expanding " + op0->ToString());
@@ -807,7 +807,7 @@ tree_nodeRef IR_lowering::expand_mult_const(tree_nodeRef op0, unsigned long long
             }
             else
                accum = tem;
-            val_so_far += static_cast<long long int>(1) << log;
+            val_so_far += 1LL << log;
             break;
 
          case alg_sub_t_m2:
@@ -827,7 +827,7 @@ tree_nodeRef IR_lowering::expand_mult_const(tree_nodeRef op0, unsigned long long
             tem_ga = CreateGimpleAssign(type, accum, block->number, srcp_default);
             block->PushBefore(tem_ga, stmt);
             accum = GetPointer<gimple_assign>(GET_NODE(tem_ga))->op0;
-            val_so_far -= static_cast<long long int>(1) << log;
+            val_so_far -= 1LL << log;
             break;
 
          case alg_add_t2_m:
@@ -966,7 +966,7 @@ tree_nodeRef IR_lowering::expand_smod_pow2(tree_nodeRef op0, unsigned long long 
    block->PushBefore(signmask_ga, stmt);
    tree_nodeRef signmask_var = GetPointer<gimple_assign>(GET_NODE(signmask_ga))->op0;
 
-   masklow = (static_cast<unsigned long long int>(1) << logd) - 1;
+   masklow = (1ULL << logd) - 1;
    tree_nodeRef Constmasklow = TM->CreateUniqueIntegerCst(static_cast<long long int>(masklow), GET_INDEX_NODE(type));
 
    tree_nodeRef temp = tree_man->create_binary_operation(type, op0, signmask_var, srcp_default, bit_xor_expr_K);
