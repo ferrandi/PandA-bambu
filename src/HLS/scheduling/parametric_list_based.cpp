@@ -583,10 +583,10 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
       CustomMap<unsigned int, OpVertexSet> restarted_resources;
       bool do_again;
 
+      auto prev_scheduled = schedule->num_scheduled();
       do
       {
          do_again = false;
-         auto prev_scheduled = schedule->num_scheduled();
          while(ready_resources.size())
          {
             unsigned int fu_type;
