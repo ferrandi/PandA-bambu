@@ -379,12 +379,14 @@ namespace clang
       }
       const void* getGimpleNop(const llvm::Value* operand, const void* scpe);
       template <class InstructionOrConstantExpr>
+      bool isSignedInstruction(const InstructionOrConstantExpr* inst) const;
+      template <class InstructionOrConstantExpr>
       bool isSignedResult(const InstructionOrConstantExpr* inst) const;
       const llvm::Type* getCondSignedResult(const llvm::Value* operand, const llvm::Type* type) const;
       template <class InstructionOrConstantExpr>
       bool isSignedOperand(const InstructionOrConstantExpr* inst, unsigned index) const;
       template <class InstructionOrConstantExpr>
-      bool isUnsignedOperand(const InstructionOrConstantExpr* inst) const;
+      bool isUnsignedOperand(const InstructionOrConstantExpr* inst, unsigned index) const;
       const void* getSSA(const llvm::Value* operand, const void* def_stmt, const llvm::Function* currentFunction, bool isDefault);
       bool is_PTS(unsigned int varId, const llvm::TargetLibraryInfo& TLI, bool with_all = false);
       bool is_virtual_ssa(const void* t) const;

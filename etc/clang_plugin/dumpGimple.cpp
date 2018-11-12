@@ -1207,6 +1207,45 @@ namespace clang
    }
 
    template <class InstructionOrConstantExpr>
+   bool DumpGimpleRaw::isSignedInstruction(const InstructionOrConstantExpr* inst) const
+   {
+      auto opcode = inst->getOpcode();
+      switch(opcode)
+      {
+         case llvm::Instruction::Select:
+         {
+            auto op0 = inst->getOperand(1);
+            auto op1 = inst->getOperand(2);
+            if (dyn_cast<llvm::ConstantInt>(op0) && dyn_cast<InstructionOrConstantExpr>(op1))
+               return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op1));
+            else if (dyn_cast<llvm::ConstantInt>(op1) && dyn_cast<InstructionOrConstantExpr>(op0))
+               return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0));
+            else if(dyn_cast<InstructionOrConstantExpr>(op0) && dyn_cast<InstructionOrConstantExpr>(op1))
+               return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0)) && isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0));
+            else
+               return false;
+         }
+         case llvm::Instruction::Add:
+         case llvm::Instruction::Sub:
+         case llvm::Instruction::Mul:
+         {
+            auto op0 = inst->getOperand(0);
+            auto op1 = inst->getOperand(1);
+            if (dyn_cast<llvm::ConstantInt>(op0) && dyn_cast<InstructionOrConstantExpr>(op1))
+               return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op1));
+            else if (dyn_cast<llvm::ConstantInt>(op1) && dyn_cast<InstructionOrConstantExpr>(op0))
+               return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0));
+            else if(dyn_cast<InstructionOrConstantExpr>(op0) && dyn_cast<InstructionOrConstantExpr>(op1))
+               return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0)) && isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0));
+            else
+               return false;
+         }
+         default:
+            return false;
+      }
+   }
+
+   template <class InstructionOrConstantExpr>
    bool DumpGimpleRaw::isSignedResult(const InstructionOrConstantExpr* inst) const
    {
       auto opcode = inst->getOpcode();
@@ -1219,7 +1258,7 @@ namespace clang
          case llvm::Instruction::SExt:
             return true;
          default:
-            return false;
+            return isSignedInstruction(inst);
       }
    }
    const llvm::Type* DumpGimpleRaw::getCondSignedResult(const llvm::Value* operand, const llvm::Type* type) const
@@ -1264,17 +1303,30 @@ namespace clang
                   return false;
             }
          }
+         case llvm::Instruction::Select:
+         {
+            if(index==0)
+            {
+               return false;
+            }
+            else
+            {
+               return isSignedInstruction(inst);
+            }
+         }
          default:
-            return false;
+            return isSignedInstruction(inst);
       }
    }
 
    template <class InstructionOrConstantExpr>
-   bool DumpGimpleRaw::isUnsignedOperand(const InstructionOrConstantExpr* inst) const
+   bool DumpGimpleRaw::isUnsignedOperand(const InstructionOrConstantExpr* inst, unsigned index) const
    {
       auto opcode = inst->getOpcode();
       switch(opcode)
       {
+         case llvm::Instruction::AShr:
+            return index != 0;
          case llvm::Instruction::Shl:
          case llvm::Instruction::LShr:
          case llvm::Instruction::UDiv:
@@ -1284,16 +1336,12 @@ namespace clang
          case llvm::Instruction::UIToFP:
          case llvm::Instruction::IntToPtr:
          case llvm::Instruction::PtrToInt:
-         case llvm::Instruction::Add:
-         case llvm::Instruction::Sub:
-         case llvm::Instruction::Mul:
          case llvm::Instruction::And:
          case llvm::Instruction::Or:
          case llvm::Instruction::Xor:
          case llvm::Instruction::PHI:
          case llvm::Instruction::Ret:
          case llvm::Instruction::Store:
-         case llvm::Instruction::Select:
          case llvm::Instruction::Switch:
             return true;
          case llvm::Instruction::ICmp:
@@ -1311,6 +1359,23 @@ namespace clang
                default:
                   return false;
             }
+         }
+         case llvm::Instruction::Select:
+         {
+            if(index==0)
+            {
+               return true;
+            }
+            else
+            {
+               return !isSignedInstruction(inst);
+            }
+         }
+         case llvm::Instruction::Add:
+         case llvm::Instruction::Sub:
+         case llvm::Instruction::Mul:
+         {
+            return !isSignedInstruction(inst);
          }
          default:
             return false;
@@ -1637,10 +1702,12 @@ namespace clang
                ics = &index2integer_cst_signed.find(op)->second;
             return ics;
          }
-         else
+         else if(!CheckSignedTag(TREE_TYPE(op)))
             return build1(GT(NOP_EXPR), AddSignedTag(type_operand), op);
+         else
+            return op;
       }
-      else if(isUnsignedOperand(inst) && (CheckSignedTag(TREE_TYPE(op))))
+      else if(isUnsignedOperand(inst,index) && (CheckSignedTag(TREE_TYPE(op))))
          return build1(GT(NOP_EXPR), NormalizeSignedTag(TREE_TYPE(op)), op);
       else
          return op;
