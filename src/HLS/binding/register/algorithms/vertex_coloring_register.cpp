@@ -101,7 +101,7 @@ DesignFlowStep_Status vertex_coloring_register::InternalExec()
       INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "-->Register binding information for function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
    INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level,
-                  std::string("---Register allocation algorithm obtains ") + (num_colors == register_lower_bound ? "an optimal" : "a sub-optimal") + " result: " + boost::lexical_cast<std::string>(num_colors) + " registers" +
+                  std::string("---Register allocation algorithm obtains ") + (num_colors == register_lower_bound ? "an optimal" : "a sub-optimal") + " result: " + std::to_string(num_colors) + " registers" +
                       (num_colors == register_lower_bound ? "" : ("(LB:" + STR(register_lower_bound) + ")")));
    if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
       HLS->Rreg->print();

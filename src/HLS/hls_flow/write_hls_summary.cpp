@@ -93,7 +93,7 @@ DesignFlowStep_Status WriteHLSSummary::Exec()
       std::string candidate_out_file_name;
       do
       {
-         candidate_out_file_name = out_file_name + "_" + boost::lexical_cast<std::string>(progressive++) + ".xml";
+         candidate_out_file_name = out_file_name + "_" + std::to_string(progressive++) + ".xml";
       } while (boost::filesystem::exists(candidate_out_file_name));
       out_file_name = candidate_out_file_name;
       HLSMgr->xwrite(out_file_name);

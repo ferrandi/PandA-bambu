@@ -387,7 +387,7 @@ int Parameter::GetFunctionDebugLevel(const std::string& class_name, const std::s
    canonic_class_name.erase(std::remove(canonic_class_name.begin(), canonic_class_name.end(), '_'), canonic_class_name.end());
    auto canonic_function_name = function_name;
    canonic_function_name.erase(std::remove(canonic_function_name.begin(), canonic_function_name.end(), '_'), canonic_function_name.end());
-   const auto canonic_full_function_name = canonic_class_name + "::" + canonic_function_name;
+   const auto canonic_full_function_name = canonic_class_name + std::string("::") + canonic_function_name;
    if(debug_classes.find(boost::to_upper_copy(canonic_full_function_name)) != debug_classes.end())
    {
       return DEBUG_LEVEL_INFINITE;

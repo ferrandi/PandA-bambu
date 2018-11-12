@@ -114,7 +114,7 @@ const std::string HLSFunctionStep::GetSignature() const
 
 const std::string HLSFunctionStep::ComputeSignature(const HLSFlowStep_Type hls_flow_step_type, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization, const unsigned int function_id)
 {
-   return "HLS::" + boost::lexical_cast<std::string>(static_cast<unsigned int>(hls_flow_step_type)) + (hls_flow_step_specialization ? "::" + hls_flow_step_specialization->GetSignature() : "") + "::" + boost::lexical_cast<std::string>(function_id);
+   return "HLS::" + std::to_string(static_cast<unsigned int>(hls_flow_step_type)) + (hls_flow_step_specialization ? "::" + hls_flow_step_specialization->GetSignature() : "") + "::" + std::to_string(function_id);
 }
 
 const std::string HLSFunctionStep::GetName() const

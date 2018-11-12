@@ -1073,9 +1073,9 @@ void fu_binding::manage_memory_ports_chained(const structural_managerRef SM, con
                THROW_ASSERT(from_ports.find(key) != from_ports.end(), "somewhere the signal " + key + " should be produced");
                structural_objectRef sign;
                if(port_i->get_kind() == port_vector_o_K)
-                  sign = SM->add_sign_vector(key + "_" + boost::lexical_cast<std::string>(sign_id), GetPointer<port_o>(port_i)->get_ports_size(), circuit, port_i->get_typeRef());
+                  sign = SM->add_sign_vector(key + "_" + std::to_string(sign_id), GetPointer<port_o>(port_i)->get_ports_size(), circuit, port_i->get_typeRef());
                else
-                  sign = SM->add_sign(key + "_" + boost::lexical_cast<std::string>(sign_id), circuit, port_i->get_typeRef());
+                  sign = SM->add_sign(key + "_" + std::to_string(sign_id), circuit, port_i->get_typeRef());
                ++sign_id;
                SM->add_connection(sign, port_i);
                SM->add_connection(sign, from_ports.find(key)->second);
@@ -1306,9 +1306,9 @@ void fu_binding::manage_extern_global_port(const structural_managerRef SM, struc
       else
       {
          if(port_in->get_kind() == port_vector_o_K)
-            ext_port = SM->add_port_vector("ext_" + GetPointer<port_o>(port_in)->get_id() + "_" + boost::lexical_cast<std::string>(num), dir, GetPointer<port_o>(port_in)->get_ports_size(), circuit, port_in->get_typeRef());
+            ext_port = SM->add_port_vector("ext_" + GetPointer<port_o>(port_in)->get_id() + "_" + std::to_string(num), dir, GetPointer<port_o>(port_in)->get_ports_size(), circuit, port_in->get_typeRef());
          else
-            ext_port = SM->add_port("ext_" + GetPointer<port_o>(port_in)->get_id() + "_" + boost::lexical_cast<std::string>(num), dir, circuit, port_in->get_typeRef());
+            ext_port = SM->add_port("ext_" + GetPointer<port_o>(port_in)->get_id() + "_" + std::to_string(num), dir, circuit, port_in->get_typeRef());
       }
       port_o::fix_port_properties(port_in, ext_port);
       SM->add_connection(port_in, ext_port);
@@ -1447,14 +1447,14 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       if(bram_bitsize > HLSMgr->Rmem->get_maxbram_bitsize())
          THROW_ERROR("incorrect operation mapping on memory module");
 
-      fu_module->set_parameter("BRAM_BITSIZE", boost::lexical_cast<std::string>(bram_bitsize));
+      fu_module->set_parameter("BRAM_BITSIZE", std::to_string(bram_bitsize));
       bool Has_extern_allocated_data = ((HLSMgr->Rmem->get_memory_address() - HLSMgr->base_address) > 0 and parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM) or
                                        (HLSMgr->Rmem->has_unknown_addresses() and HLS->Param->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM and
                                         HLS->Param->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
       if(Has_extern_allocated_data)
-         fu_module->set_parameter("BUS_PIPELINED", boost::lexical_cast<std::string>(0));
+         fu_module->set_parameter("BUS_PIPELINED", std::to_string(0));
       else
-         fu_module->set_parameter("BUS_PIPELINED", boost::lexical_cast<std::string>(1));
+         fu_module->set_parameter("BUS_PIPELINED", std::to_string(1));
    }
    else
    {
@@ -1549,7 +1549,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                for(std::vector<std::string>::const_iterator it = param.begin(); it != it_end; ++it)
                {
                   if(*it == "ALIGNED_BITSIZE")
-                     fu_module->set_parameter("ALIGNED_BITSIZE", boost::lexical_cast<std::string>(HLSMgr->Rmem->get_aligned_bitsize()));
+                     fu_module->set_parameter("ALIGNED_BITSIZE", std::to_string(HLSMgr->Rmem->get_aligned_bitsize()));
                   if(*it == "LSB_PARAMETER" && op_name == "pointer_plus_expr")
                   {
                      unsigned int curr_LSB = 0;
@@ -1586,11 +1586,11 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                            lsb_parameter = static_cast<int>(curr_LSB);
                         else
                            lsb_parameter = std::min(lsb_parameter, static_cast<int>(curr_LSB));
-                        fu_module->set_parameter("LSB_PARAMETER", boost::lexical_cast<std::string>(lsb_parameter));
+                        fu_module->set_parameter("LSB_PARAMETER", std::to_string(lsb_parameter));
                      }
                      else
                      {
-                        fu_module->set_parameter("LSB_PARAMETER", boost::lexical_cast<std::string>(curr_LSB));
+                        fu_module->set_parameter("LSB_PARAMETER", std::to_string(curr_LSB));
                      }
                   }
                   if(*it == "OFFSET_PARAMETER" && op_name == "bit_ior_concat_expr")
@@ -1679,7 +1679,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                         unsigned int sizetype = tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, out_var));
                         if(sizetype == 1)
                            sizetype = 8;
-                        fu_module->set_parameter("PRECISION", boost::lexical_cast<std::string>(sizetype));
+                        fu_module->set_parameter("PRECISION", std::to_string(sizetype));
                      }
                   }
                }
@@ -1763,18 +1763,18 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
 {
    auto* fu_module = GetPointer<module>(fu_obj);
    /// base address specialization
-   fu_module->set_parameter("address_space_begin", boost::lexical_cast<std::string>(base_address));
-   fu_module->set_parameter("address_space_rangesize", boost::lexical_cast<std::string>(rangesize));
+   fu_module->set_parameter("address_space_begin", base_address);
+   fu_module->set_parameter("address_space_rangesize", std::to_string(rangesize));
    if(is_sparse_memory)
-      fu_module->set_parameter("USE_SPARSE_MEMORY", boost::lexical_cast<std::string>(1));
+      fu_module->set_parameter("USE_SPARSE_MEMORY", std::to_string(1));
    else
-      fu_module->set_parameter("USE_SPARSE_MEMORY", boost::lexical_cast<std::string>(0));
+      fu_module->set_parameter("USE_SPARSE_MEMORY", std::to_string(0));
    memory::add_memory_parameter(HLS->datapath, base_address, STR(HLSMgr->Rmem->get_base_address(ar, HLS->functionId)));
 
    long long int vec_size = 0;
    /// array ref initialization
    THROW_ASSERT(ar, "expected a real tree node index");
-   std::string init_filename = "array_ref_" + boost::lexical_cast<std::string>(ar) + ".mem";
+   std::string init_filename = "array_ref_" + std::to_string(ar) + ".mem";
    std::ofstream init_file_a((init_filename).c_str());
    std::ofstream init_file_b;
    if(is_memory_splitted)
@@ -1794,22 +1794,22 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
    bool unaligned_access_p = parameters->isOption(OPT_unaligned_access) && parameters->getOption<bool>(OPT_unaligned_access);
    if(!unaligned_access_p && HLSMgr->Rmem->get_bram_bitsize() == 8 && HLSMgr->Rmem->get_bus_data_bitsize() == 8 && !HLSMgr->Rmem->is_private_memory(ar))
    {
-      fu_module->set_parameter("n_elements", boost::lexical_cast<std::string>((vec_size * elts_size) / 8));
-      fu_module->set_parameter("data_size", boost::lexical_cast<std::string>(8));
+      fu_module->set_parameter("n_elements", std::to_string((vec_size * elts_size) / 8));
+      fu_module->set_parameter("data_size", std::to_string(8));
    }
    else
    {
-      fu_module->set_parameter("n_elements", boost::lexical_cast<std::string>(vec_size));
-      fu_module->set_parameter("data_size", boost::lexical_cast<std::string>(std::max(elts_size, 8u)));
+      fu_module->set_parameter("n_elements", std::to_string(vec_size));
+      fu_module->set_parameter("data_size", std::to_string(std::max(elts_size, 8u)));
    }
    if(HLSMgr->Rmem->is_private_memory(ar))
-      fu_module->set_parameter("PRIVATE_MEMORY", boost::lexical_cast<std::string>(1));
+      fu_module->set_parameter("PRIVATE_MEMORY", std::to_string(1));
    else
-      fu_module->set_parameter("PRIVATE_MEMORY", boost::lexical_cast<std::string>(0));
+      fu_module->set_parameter("PRIVATE_MEMORY", std::to_string(0));
    if(HLSMgr->Rmem->is_read_only_variable(ar))
-      fu_module->set_parameter("READ_ONLY_MEMORY", boost::lexical_cast<std::string>(1));
+      fu_module->set_parameter("READ_ONLY_MEMORY", std::to_string(1));
    else
-      fu_module->set_parameter("READ_ONLY_MEMORY", boost::lexical_cast<std::string>(0));
+      fu_module->set_parameter("READ_ONLY_MEMORY", std::to_string(0));
 }
 #define CHANGE_SDS_MEMORY_LAYOUT 0
 
@@ -1869,7 +1869,7 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
          is_sds = false;
       }
       else
-         fu_module->set_parameter("BRAM_BITSIZE", boost::lexical_cast<std::string>(elts_size));
+         fu_module->set_parameter("BRAM_BITSIZE", std::to_string(elts_size));
 #if CHANGE_SDS_MEMORY_LAYOUT
       if(vd && vd->bit_values.size())
       {

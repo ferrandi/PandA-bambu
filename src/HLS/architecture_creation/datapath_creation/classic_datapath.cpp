@@ -245,7 +245,7 @@ void classic_datapath::add_ports()
       }
       const_obj->set_parameter("value", trimmed_value);
       constant_obj->set_structural_obj(const_obj);
-      std::string name = "out_const_" + boost::lexical_cast<std::string>(num);
+      std::string name = "out_const_" + std::to_string(num);
       structural_type_descriptorRef sign_type = structural_type_descriptorRef(new structural_type_descriptor("bool", precision));
       structural_objectRef sign = SM->add_sign(name, circuit, sign_type);
       structural_objectRef out_port = const_obj->find_member("out1", port_o_K, const_obj);

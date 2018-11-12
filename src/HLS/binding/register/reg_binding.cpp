@@ -221,14 +221,14 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - Start");
 
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Number of registers: " + boost::lexical_cast<std::string>(get_used_regs()));
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Number of registers: " + std::to_string(get_used_regs()));
 
    compute_is_without_enable();
    /// define boolean type for command signals
    all_regs_without_enable = get_used_regs() != 0;
    for(unsigned int i = 0; i < get_used_regs(); i++)
    {
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Allocating register number: " + boost::lexical_cast<std::string>(i));
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Allocating register number: " + std::to_string(i));
       generic_objRef regis = get(i);
       std::string name = regis->get_string();
       std::string synch_reset = HLS->Param->getOption<std::string>(OPT_sync_reset);
@@ -253,7 +253,7 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
       SM->add_connection(reset_port, port_rst);
       regis->set_structural_obj(reg_mod);
 
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Register " + boost::lexical_cast<std::string>(i) + " successfully allocated");
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Register " + std::to_string(i) + " successfully allocated");
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - End");
    if(HLS->output_level >= OUTPUT_LEVEL_MINIMUM)

@@ -531,9 +531,9 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
    {
       bool unbounded = false;
       bool store_unbounded_check = false;
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      schedule->num_scheduled() " + boost::lexical_cast<std::string>(schedule->num_scheduled()));
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      already_sch " + boost::lexical_cast<std::string>(already_sch));
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      operations_number " + boost::lexical_cast<std::string>(operations_number));
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      schedule->num_scheduled() " + std::to_string(schedule->num_scheduled()));
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      already_sch " + std::to_string(already_sch));
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      operations_number " + std::to_string(operations_number));
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      Scheduling in control step " + STR(current_cycle) + " (Time: " + STR(from_strongtype_cast<double>(current_cycle) * clock_cycle) + ")");
       /// definition of the data structure used to check if a resource is available given a vertex
       /// in case a vertex is not included in a map this mean that the used resources are zero.

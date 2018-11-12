@@ -55,7 +55,7 @@
 
 #include "boost/lexical_cast.hpp"
 
-#define I2S(number) boost::lexical_cast<std::string>(number)
+#define I2S(number) std::to_string(number)
 
 class network_flow
 {

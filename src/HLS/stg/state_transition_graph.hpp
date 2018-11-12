@@ -82,7 +82,7 @@ REF_FORWARD_DECL(Parameter);
 #define ST_EDGE_FEEDBACK_T 1 << 2
 
 /**
- * Structure holding informations about a node into graph. A node represent an execution state of the machine. It
+ * Structure holding information about a node into graph. A node represent an execution state of the machine. It
  * contains operations to be started when execution will reach this state.
  */
 struct StateInfo : public NodeInfo
@@ -170,7 +170,7 @@ typedef refcount<const StateInfo> StateInfoConstRef;
  */
 struct TransitionInfo : public EdgeInfo
 {
-   /// pointer to graph storing informations about operations
+   /// pointer to graph storing information about operations
    OpGraphConstRef op_function_graph;
 
    /// Don't care information

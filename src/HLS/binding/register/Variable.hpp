@@ -90,7 +90,7 @@ struct variable2obj : public std::map<unsigned int, data_obj>
 
    const data_obj operator()(const unsigned int& __k) const
    {
-      THROW_ASSERT(this->find(__k) != this->end(), "Impossible to find variable " + boost::lexical_cast<std::string>(__k));
+      THROW_ASSERT(this->find(__k) != this->end(), "Impossible to find variable " + std::to_string(__k));
       return this->find(__k)->second;
    }
 

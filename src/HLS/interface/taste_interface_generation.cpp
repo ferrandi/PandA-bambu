@@ -315,7 +315,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
 
                /// Connecting register
                AddSignal(SM_taste_interface, filtered_address, "out1", address_compare, "in1", "filtered_address_output");
-               AddConstant(SM_taste_interface, address_compare, "in2", boost::lexical_cast<std::string>(function_parameter.bambu_address), 32);
+               AddConstant(SM_taste_interface, address_compare, "in2", std::to_string(function_parameter.bambu_address), 32);
                AddSignal(SM_taste_interface, address_compare, "out1", param_reg, "wenable", "address_compare_output");
                AddSignal(SM_taste_interface, param_converter, "out1", param_reg, "in1", "param_converter_" + function_parameter.name + "_output");
                AddSignal(SM_taste_interface, param_reg, "out1", minimal_interface, function_parameter.name, function_parameter.name + "_reg_output");

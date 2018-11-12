@@ -179,7 +179,7 @@ DesignFlowStep_Status mux_connection_binding::InternalExec()
       if(output_level <= OUTPUT_LEVEL_PEDANTIC)
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Connection Binding Information for function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Number of allocated multiplexers (2-to-1 equivalent): " + boost::lexical_cast<std::string>(mux));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Number of allocated multiplexers (2-to-1 equivalent): " + std::to_string(mux));
       INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "---Total number of bit-level multiplexers: " + STR(HLS->Rconn->determine_bit_level_mux()));
       if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
          HLS->Rconn->print();
@@ -342,7 +342,7 @@ void mux_connection_binding::create_single_conn(const OpGraphConstRef data, cons
          {
             HLS->Rconn->add_data_transfer(fu_obj_src, fu_obj, port_num, port_index, data_transfer(tree_var, precision, *s_in_it, state, op));
             PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                          "       - add data transfer from " << fu_obj_src->get_string() << " to " << fu_obj->get_string() << " port " << boost::lexical_cast<std::string>(port_num) << ":" << boost::lexical_cast<std::string>(port_index) << " from state "
+                          "       - add data transfer from " << fu_obj_src->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
                                                              << HLS->Rliv->get_name(*s_in_it) + " to state " + HLS->Rliv->get_name(state) + (tree_var ? (" for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var)) : ""));
             generic_objRef enable_obj = GetPointer<register_obj>(fu_obj)->get_wr_enable();
             GetPointer<commandport_obj>(enable_obj)->add_activation(commandport_obj::transition(*s_in_it, state, commandport_obj::data_operation_pair(cur_phi_tree_var, op)));
@@ -354,7 +354,7 @@ void mux_connection_binding::create_single_conn(const OpGraphConstRef data, cons
       {
          HLS->Rconn->add_data_transfer(fu_obj_src, fu_obj, port_num, port_index, data_transfer(tree_var, precision, state, NULL_VERTEX, op));
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                       "       - add data transfer from " << fu_obj_src->get_string() << " to " << fu_obj->get_string() << " port " << boost::lexical_cast<std::string>(port_num) << ":" << boost::lexical_cast<std::string>(port_index) << " in state "
+                       "       - add data transfer from " << fu_obj_src->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index) << " in state "
                                                           << HLS->Rliv->get_name(state) + (tree_var ? (" for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var)) : ""));
       }
    }
@@ -1074,11 +1074,11 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
             auto* bf = GetPointer<bit_field_ref>(tn);
             long long int bpos = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(bf->op2)));
             if(bpos % 8)
-               THROW_ERROR_CODE(BITFIELD_EC, "Bitfield LOAD/STORE not yet supported @" + boost::lexical_cast<std::string>(tree_var));
+               THROW_ERROR_CODE(BITFIELD_EC, "Bitfield LOAD/STORE not yet supported @" + std::to_string(tree_var));
             /// check bitsize
             auto bsize = static_cast<unsigned int>(tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(bf->op1))));
             if(bsize == 1 || resize_to_1_8_16_32_64_128_256_512(bsize) != bsize)
-               THROW_ERROR_CODE(BITFIELD_EC, "Bitfield LOAD/STORE not yet supported @" + boost::lexical_cast<std::string>(tree_var));
+               THROW_ERROR_CODE(BITFIELD_EC, "Bitfield LOAD/STORE not yet supported @" + std::to_string(tree_var));
             auto offset = static_cast<unsigned int>(bpos / 8);
 #if USE_ALIGNMENT_INFO
             alignment = offset & (alignment - 1);
@@ -1368,7 +1368,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                THROW_ASSERT(fu_src_obj, "unexpected condition");
                HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, src_state, state, op));
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                             "       - add data transfer from primary input " << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port " << boost::lexical_cast<std::string>(port_num) << ":" << boost::lexical_cast<std::string>(port_index)
+                             "       - add data transfer from primary input " << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index)
                                                                               << " from state "
                                                                               << HLS->Rliv->get_name(src_state) + " to state " + HLS->Rliv->get_name(state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
             }
@@ -1383,7 +1383,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                      const generic_objRef fu_src_obj = HLS->Rfu->get(def_op);
                      HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, src_state, state, op));
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                   "       - add data transfer from " << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port " << boost::lexical_cast<std::string>(port_num) << ":" << boost::lexical_cast<std::string>(port_index)
+                                   "       - add data transfer from " << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index)
                                                                       << " from state "
                                                                       << HLS->Rliv->get_name(src_state) + " to state " + HLS->Rliv->get_name(state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
                   }
@@ -1398,7 +1398,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                      {
                         HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, src_state, state, op));
                         PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                      "       - add data transfer from " << reg_obj->get_string() << " to " << fu_obj->get_string() << " port " << boost::lexical_cast<std::string>(port_num) << ":" << boost::lexical_cast<std::string>(port_index)
+                                      "       - add data transfer from " << reg_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index)
                                                                          << " from state "
                                                                          << HLS->Rliv->get_name(src_state) + " to state " + HLS->Rliv->get_name(state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
                      }
@@ -1420,7 +1420,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                   {
                      HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, src_state, state, op));
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                   "       - add data transfer from " << reg_obj->get_string() << " to " << fu_obj->get_string() << " port " << boost::lexical_cast<std::string>(port_num) << ":" << boost::lexical_cast<std::string>(port_index)
+                                   "       - add data transfer from " << reg_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index)
                                                                       << " from state "
                                                                       << HLS->Rliv->get_name(src_state) + " to state " + HLS->Rliv->get_name(state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
                   }
@@ -1444,7 +1444,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                THROW_ASSERT(fu_src_obj, "unexpected condition");
                HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, state, tgt_state, op));
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                             "       - add data transfer from primary input " << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port " << boost::lexical_cast<std::string>(port_num) << ":" << boost::lexical_cast<std::string>(port_index)
+                             "       - add data transfer from primary input " << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index)
                                                                               << " from state "
                                                                               << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
             }
@@ -1460,7 +1460,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                      const generic_objRef fu_src_obj = HLS->Rfu->get(def_op);
                      HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, state, tgt_state, op));
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                   "       - add data transfer from " << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port " << boost::lexical_cast<std::string>(port_num) << ":" << boost::lexical_cast<std::string>(port_index)
+                                   "       - add data transfer from " << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index)
                                                                       << " from state "
                                                                       << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
                   }
@@ -1475,7 +1475,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                      {
                         HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, state, tgt_state, op));
                         PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                      "       - add data transfer from " << reg_obj->get_string() << " to " << fu_obj->get_string() << " port " << boost::lexical_cast<std::string>(port_num) << ":" << boost::lexical_cast<std::string>(port_index)
+                                      "       - add data transfer from " << reg_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index)
                                                                          << " from state "
                                                                          << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
                      }
@@ -1530,7 +1530,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                      }
                      HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index, data_transfer(tree_temp, precision, state, tgt_state, op));
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                   "       - add data transfer from " << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port " << boost::lexical_cast<std::string>(port_num) << ":" << boost::lexical_cast<std::string>(port_index)
+                                   "       - add data transfer from " << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index)
                                                                       << " from state "
                                                                       << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_temp));
                   }
@@ -1546,7 +1546,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                      {
                         HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, state, tgt_state, op));
                         PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                      "       - add data transfer from " << reg_obj->get_string() << " to " << fu_obj->get_string() << " port " << boost::lexical_cast<std::string>(port_num) << ":" << boost::lexical_cast<std::string>(port_index)
+                                      "       - add data transfer from " << reg_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index)
                                                                          << " from state "
                                                                          << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
                      }
@@ -1564,7 +1564,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                   {
                      HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, state, tgt_state, op));
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                   "       - add data transfer from " << reg_obj->get_string() << " to " << fu_obj->get_string() << " port " << boost::lexical_cast<std::string>(port_num) << ":" << boost::lexical_cast<std::string>(port_index)
+                                   "       - add data transfer from " << reg_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index)
                                                                       << " from state "
                                                                       << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
                   }
@@ -2635,7 +2635,7 @@ unsigned int mux_connection_binding::mux_interconnection()
       unsigned int operand = std::get<1>(connection.first);
       unsigned int port_index = std::get<2>(connection.first);
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                    "Unit: " + unit->get_string() + "(" + boost::lexical_cast<std::string>(operand) + ":" + boost::lexical_cast<std::string>(port_index) + "): " + boost::lexical_cast<std::string>(connection.second.size()) + " connections");
+                    "Unit: " + unit->get_string() + "(" + std::to_string(operand) + ":" + std::to_string(port_index) + "): " + std::to_string(connection.second.size()) + " connections");
 
       allocated_mux += input_logic(connection.second, unit, operand, port_index, iteration);
       ++iteration;

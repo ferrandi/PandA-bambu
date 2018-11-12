@@ -179,7 +179,7 @@ void ControllerCreatorBaseStep::add_command_ports(structural_objectRef circuit)
    out_num = 0;
    in_num = 0;
    const auto& selectors = HLS->Rconn->GetSelectors();
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding " + boost::lexical_cast<std::string>(selectors.size()) + " selectors");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding " + std::to_string(selectors.size()) + " selectors");
    for(const auto& selector : selectors)
    {
       for(const auto& j : selector.second)

@@ -140,7 +140,7 @@ static std::string input_vector_to_string(const std::vector<long long int>& to_b
    std::string output;
    for(unsigned int i = 0; i < to_be_printed.size(); i++)
    {
-      output += (to_be_printed[i] == default_COND ? "-" : boost::lexical_cast<std::string>(to_be_printed[i]));
+      output += (to_be_printed[i] == default_COND ? "-" : std::to_string(to_be_printed[i]));
       if(i != (to_be_printed.size() - 1) && with_comma)
          output += ",";
    }
@@ -296,7 +296,7 @@ void fsm_controller::create_state_machine(std::string& parse)
       for(std::list<EdgeDescriptor>::const_iterator e_it = sorted.begin(); e_it != e_it_end; ++e_it, ++j)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Considering successor state " + stg->CGetStateInfo(boost::target(*e_it, *stg))->name);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Number of inputs is " + boost::lexical_cast<std::string>(in_num));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Number of inputs is " + std::to_string(in_num));
          std::vector<std::string> in(in_num, "-");
 
          const std::set<std::pair<vertex, unsigned int>>& cond = stg->CGetTransitionInfo(*e_it)->conditions;

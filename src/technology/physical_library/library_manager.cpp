@@ -415,11 +415,9 @@ void library_manager::update(const technology_nodeRef& fu_node)
    {
       current_fu = GetPointer<functional_unit>(GetPointer<functional_unit_template>(fu)->FU);
    }
-   if(current_fu)
-   {
-      current_fu->ordered_attributes = GetPointer<functional_unit>(node)->ordered_attributes;
-      current_fu->attributes = GetPointer<functional_unit>(node)->attributes;
-   }
+   THROW_ASSERT(current_fu, "unexpected condition");
+   current_fu->ordered_attributes = GetPointer<functional_unit>(node)->ordered_attributes;
+   current_fu->attributes = GetPointer<functional_unit>(node)->attributes;
    if(GetPointer<functional_unit>(node)->area_m)
    {
       current_fu->area_m = GetPointer<functional_unit>(node)->area_m;
@@ -464,31 +462,31 @@ void library_manager::update(const technology_nodeRef& fu_node)
    {
       GetPointer<functional_unit_template>(fu)->specialized = GetPointer<functional_unit_template>(fu_node)->specialized;
    }
-   if(GetPointer<functional_unit>(node) && (!GetPointer<functional_unit>(node)->fu_template_name.empty() || GetPointer<functional_unit_template>(fu_node)))
+   if((GetPointer<functional_unit>(node) && !GetPointer<functional_unit>(node)->fu_template_name.empty()) || GetPointer<functional_unit_template>(fu_node))
    {
       current_fu->fu_template_name = GetPointer<functional_unit>(node)->fu_template_name;
    }
-   if(GetPointer<functional_unit>(node) && (!GetPointer<functional_unit>(node)->fu_template_parameters.empty() || GetPointer<functional_unit_template>(fu_node)))
+   if((GetPointer<functional_unit>(node) && !GetPointer<functional_unit>(node)->fu_template_parameters.empty()) || GetPointer<functional_unit_template>(fu_node))
    {
       current_fu->fu_template_parameters = GetPointer<functional_unit>(node)->fu_template_parameters;
    }
-   if(GetPointer<functional_unit>(node) && (!GetPointer<functional_unit>(node)->characterizing_constant_value.empty() || GetPointer<functional_unit_template>(fu_node)))
+   if((GetPointer<functional_unit>(node) && !GetPointer<functional_unit>(node)->characterizing_constant_value.empty()) || GetPointer<functional_unit_template>(fu_node))
    {
       current_fu->characterizing_constant_value = GetPointer<functional_unit>(node)->characterizing_constant_value;
    }
-   if(GetPointer<functional_unit>(node) && (!GetPointer<functional_unit>(node)->memory_type.empty() || GetPointer<functional_unit_template>(fu_node)))
+   if((GetPointer<functional_unit>(node) && !GetPointer<functional_unit>(node)->memory_type.empty()) || GetPointer<functional_unit_template>(fu_node))
    {
       current_fu->memory_type = GetPointer<functional_unit>(node)->memory_type;
    }
-   if(GetPointer<functional_unit>(node) && (!GetPointer<functional_unit>(node)->channels_type.empty() || GetPointer<functional_unit_template>(fu_node)))
+   if((GetPointer<functional_unit>(node) && !GetPointer<functional_unit>(node)->channels_type.empty()) || GetPointer<functional_unit_template>(fu_node))
    {
       current_fu->channels_type = GetPointer<functional_unit>(node)->channels_type;
    }
-   if(GetPointer<functional_unit>(node) && (!GetPointer<functional_unit>(node)->memory_ctrl_type.empty() || GetPointer<functional_unit_template>(fu_node)))
+   if((GetPointer<functional_unit>(node) && !GetPointer<functional_unit>(node)->memory_ctrl_type.empty()) || GetPointer<functional_unit_template>(fu_node))
    {
       current_fu->memory_ctrl_type = GetPointer<functional_unit>(node)->memory_ctrl_type;
    }
-   if(GetPointer<functional_unit>(node) && (!GetPointer<functional_unit>(node)->bram_load_latency.empty() || GetPointer<functional_unit_template>(fu_node)))
+   if((GetPointer<functional_unit>(node) && !GetPointer<functional_unit>(node)->bram_load_latency.empty()) || GetPointer<functional_unit_template>(fu_node))
    {
       current_fu->bram_load_latency = GetPointer<functional_unit>(node)->bram_load_latency;
    }

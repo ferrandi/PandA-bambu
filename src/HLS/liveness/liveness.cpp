@@ -150,7 +150,7 @@ const std::set<vertex>& liveness::get_state_in(vertex state, vertex op, unsigned
 {
    THROW_ASSERT(state_in_definitions.find(state) != state_in_definitions.end(), "state never used " + get_name(state));
    THROW_ASSERT(state_in_definitions.find(state)->second.find(op) != state_in_definitions.find(state)->second.end(), "op never used in state " + get_name(state));
-   THROW_ASSERT(state_in_definitions.find(state)->second.find(op)->second.find(var) != state_in_definitions.find(state)->second.find(op)->second.end(), "var never used in the given state. Var: " + boost::lexical_cast<std::string>(var));
+   THROW_ASSERT(state_in_definitions.find(state)->second.find(op)->second.find(var) != state_in_definitions.find(state)->second.find(op)->second.end(), "var never used in the given state. Var: " + std::to_string(var));
    return state_in_definitions.find(state)->second.find(op)->second.find(var)->second;
 }
 
@@ -174,7 +174,7 @@ const std::set<vertex>& liveness::get_state_out(vertex state, vertex op, unsigne
 {
    THROW_ASSERT(state_out_definitions.find(state) != state_out_definitions.end(), "state never used " + get_name(state));
    THROW_ASSERT(state_out_definitions.find(state)->second.find(op) != state_out_definitions.find(state)->second.end(), "op never used in state " + get_name(state));
-   THROW_ASSERT(state_out_definitions.find(state)->second.find(op)->second.find(var) != state_out_definitions.find(state)->second.find(op)->second.end(), "var never used in the given state. Var: " + boost::lexical_cast<std::string>(var));
+   THROW_ASSERT(state_out_definitions.find(state)->second.find(op)->second.find(var) != state_out_definitions.find(state)->second.find(op)->second.end(), "var never used in the given state. Var: " + std::to_string(var));
    return state_out_definitions.find(state)->second.find(op)->second.find(var)->second;
 }
 

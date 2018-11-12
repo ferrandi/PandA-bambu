@@ -558,6 +558,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                   EdgeDescriptor s_e = STG_builder->connect_state(call_set, s_cur, ST_EDGE_NORMAL_T);
 
                   std::set<std::pair<vertex, unsigned int>> OutCondition;
+                  //for(auto call : call_operations.find(previous)->second)
                   OutCondition.insert(std::make_pair(call, T_COND));
                   STG_builder->set_condition(s_e, OutCondition);
                }

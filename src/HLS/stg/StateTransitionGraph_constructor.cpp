@@ -135,7 +135,7 @@ EdgeDescriptor StateTransitionGraph_constructor::connect_state(const vertex& src
 
 void StateTransitionGraph_constructor::set_condition(const EdgeDescriptor& e, const std::set<std::pair<vertex, unsigned int>>& cond)
 {
-   // getting informations from graph
+   // getting information from graph
    state_transition_graph->GetTransitionInfo(e)->conditions.clear();
    add_conditions(cond, state_transition_graph->GetTransitionInfo(e)->conditions);
 }

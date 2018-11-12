@@ -4487,10 +4487,7 @@ std::string tree_helper::return_C_qualifiers(const TreeVocabularyTokenTypes_Toke
 long long tree_helper::get_integer_cst_value(const integer_cst* ic)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Getting integer const value");
-   if(!ic)
-   {
-      THROW_ERROR("Something wrong");
-   }
+   THROW_ASSERT(ic!=nullptr, "unexpected condition");
    THROW_ASSERT(ic->type, "Something wrong");
    tree_nodeRef type = GET_NODE(ic->type);
    THROW_ASSERT(GetPointer<integer_type>(type) or type->get_kind() == pointer_type_K or type->get_kind() == reference_type_K or type->get_kind() == boolean_type_K or type->get_kind() == enumeral_type_K,
