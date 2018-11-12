@@ -6900,7 +6900,15 @@ namespace RangeAnalysis
 
       return it->second;
    }
-   void RangeAnalysis::printRanges(llvm::Module& /*M*/, llvm::raw_ostream& /*O*/)
+   void RangeAnalysis::printRanges(llvm::Module&
+#ifdef DEBUG_RA
+                                   M
+#endif
+                                   , llvm::raw_ostream&
+#ifdef DEBUG_RA
+                                   O
+#endif
+                                   )
    {
 #ifdef DEBUG_RA
       for(llvm::Function& F : M)
