@@ -852,7 +852,7 @@ void tree_manager::ReplaceTreeNode(const tree_nodeRef& stmt, const tree_nodeRef&
    RecursiveReplaceTreeNode(temp, old_node, new_node, stmt, false);
 }
 
-void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef& old_node, const tree_nodeRef& new_node, const tree_nodeRef& stmt, const bool definition)
+void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef old_node, const tree_nodeRef& new_node, const tree_nodeRef& stmt, const bool definition)// NOLINT
 {
 #ifndef NDEBUG
    int function_debug_level = Param->GetFunctionDebugLevel(GET_CLASS(*this), __func__);
