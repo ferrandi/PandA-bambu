@@ -865,11 +865,13 @@ xml_foreach_t::xml_foreach_t(const xml_element* element) : xml_script_node_t(NOD
       for(const auto& s : subscript)
       {
          const xml_element* el = GetPointer<xml_element>(s);
-         if(!el)
+         if(el==nullptr)
          {
             continue;
          }
-         xml_script_node_tRef node = xml_script_node_tRef(xml_script_node_t::create(el));
+         auto nodeptr = xml_script_node_t::create(el);
+         THROW_ASSERT(nodeptr, "unexpected condition");
+         xml_script_node_tRef node = xml_script_node_tRef(nodeptr);
          Nodes.push_back(node);
       }
    }

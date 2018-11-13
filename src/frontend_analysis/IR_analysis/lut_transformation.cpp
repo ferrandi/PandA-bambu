@@ -524,7 +524,7 @@ void lut_transformation::MergeLut(const std::list<tree_nodeRef>& gimpleLutList, 
          std::reverse(currentLutValueInBit.begin(), currentLutValueInBit.end());
 
          std::string firstOpValueInBit;
-
+         THROW_ASSERT(lutToExpand, "unexpected condition");
          auto* expand_lut_cost = GetPointer<integer_cst>(GET_NODE(lutToExpand->op1));
          THROW_ASSERT(expand_lut_cost, STR(lutToExpand->op1));
          auto expandlutNumber = static_cast<long long unsigned int>(tree_helper::get_integer_cst_value(expand_lut_cost));
