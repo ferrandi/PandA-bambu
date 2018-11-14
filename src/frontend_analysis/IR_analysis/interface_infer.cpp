@@ -181,8 +181,8 @@ void interface_infer::classifyArgRecurse(std::set<unsigned>& Visited, ssa_name* 
             }
             else
             {
-               THROW_ASSERT(GET_NODE(ga->op1)->get_kind() == ssa_name_K, "unexpected condition");
-               if(GetPointer<ssa_name>(GET_NODE(ga->op1)) != argSSA)
+               THROW_ASSERT(GET_NODE(ga->op1)->get_kind() == ssa_name_K || GetPointer<cst_node>(GET_NODE(ga->op1)), "unexpected condition");
+               if(GetPointer<cst_node>(GET_NODE(ga->op1)) || GetPointer<ssa_name>(GET_NODE(ga->op1)) != argSSA)
                {
                   isWrite = true;
                   writeStmt.push_back(par_use.first);
