@@ -2885,10 +2885,11 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
          const auto fu_type = GetFuType(second_operation);
          bool is_array = is_direct_access_memory_unit(fu_type);
          unsigned var = is_array ? (is_memory_unit(fu_type) ? get_memory_var(fu_type) : get_proxy_memory_var(fu_type)) : 0;
-         if(var && hls_manager->Rmem->get_maximum_references(var) > (2 * get_number_channels(fu_type)))
+         auto nchannels=get_number_channels(fu_type);
+         if(var && hls_manager->Rmem->get_maximum_references(var) > (2 * nchannels))
          {
-            THROW_ASSERT(get_number_channels(fu_type)>0, "unexpected condition");
-            const auto ret = estimate_muxNto1_delay(get_prec(fu_type), static_cast<unsigned int>(hls_manager->Rmem->get_maximum_references(var)) / (2 * get_number_channels(fu_type)));
+            THROW_ASSERT(nchannels>0, "unexpected condition");
+            const auto ret = estimate_muxNto1_delay(get_prec(fu_type), static_cast<unsigned int>(hls_manager->Rmem->get_maximum_references(var)) / (2 * nchannels));
             connection_time += ret;
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed connection time for load and store " + STR(first_operation) + "-->" + STR(second_operation) + ": 0.0");
@@ -2903,10 +2904,11 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
             const auto fu_type = GetFuType(first_operation);
             bool is_array = is_direct_access_memory_unit(fu_type);
             unsigned var = is_array ? (is_memory_unit(fu_type) ? get_memory_var(fu_type) : get_proxy_memory_var(fu_type)) : 0;
-            if(var && hls_manager->Rmem->get_maximum_loads(var) > (get_number_channels(fu_type)))
+            auto nchannels=get_number_channels(fu_type);
+            if(var && hls_manager->Rmem->get_maximum_loads(var) > (nchannels))
             {
-               THROW_ASSERT(get_number_channels(fu_type)>0, "unexpected condition");
-               auto ret = estimate_muxNto1_delay(get_prec(fu_type), static_cast<unsigned int>(hls_manager->Rmem->get_maximum_loads(var)) / (get_number_channels(fu_type)));
+               THROW_ASSERT(nchannels>0, "unexpected condition");
+               auto ret = estimate_muxNto1_delay(get_prec(fu_type), static_cast<unsigned int>(hls_manager->Rmem->get_maximum_loads(var)) / (nchannels));
                if(ret > (2.5 * get_setup_hold_time()))
                   ret = 2.5 * get_setup_hold_time();
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed connection time of load " + STR(first_operation) + "-->" + STR(second_operation) + ": " + STR(ret) + " var=" + STR(var));
