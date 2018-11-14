@@ -847,7 +847,7 @@ xml_foreach_t::xml_foreach_t(const xml_element* element) : xml_script_node_t(NOD
    Nodes.clear();
 
    xml_attribute* a = element->get_attribute("variable");
-   if(!a)
+   if(a==nullptr)
    {
       THROW_ERROR("Error: the \"foreach\" block requires the definition of the variable");
    }
