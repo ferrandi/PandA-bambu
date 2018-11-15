@@ -46,11 +46,9 @@
 #ifndef GEN_OBJECT_HPP
 #define GEN_OBJECT_HPP
 
-/// Autoheader include
-#include <utility>
-
 #include "config_HAVE_UNORDERED.hpp"
 
+#include <utility>
 #include "refcount.hpp"
 
 /**
@@ -72,6 +70,7 @@ class generic_obj
    {
       FUNCTIONAL_UNIT = 0, /// a functional resource
       REGISTER,            /// a register
+      MULTI_UNBOUNDED_OBJ, /// a multi unbounded controller
       COMMAND_PORT,        /// a command port (mainly connections from/to controller)
       DATA_PORT,           /// a data port (in/out data)
       CONNECTION_ELEMENT,  /// an element used for connecting the resources (e.g., muxes)

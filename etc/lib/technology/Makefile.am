@@ -17,7 +17,8 @@ EXTRA_DIST = \
   NC_SF_IPs.xml \
   NC_STD_IPs.xml \
   NC_VEC_IPs.xml \
-  NC_wishbone_IPs.xml
+  NC_wishbone_IPs.xml\
+  NC_PC_IPs.xml
 
 #do not touch the following line
 

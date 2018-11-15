@@ -141,11 +141,6 @@ struct StateInfo : public NodeInfo
    /// set of moved operations ending in this state
    std::list<vertex> moved_ending_op;
 
-   /// define for some vertices which are the conditions under which they are executed
-   /// <v1, {(<ctrlv2,T>, <ctrlv3,F>),(<ctrlv2,F>, <ctrlv3,T>)}> means that v1 will been executed when ctrlv2&&!ctrlv3 || !ctrlv2&&ctrlv3
-   /// in case the map does not vertex v it means that v will always been executed
-   std::map<vertex, std::set<std::set<std::pair<vertex, unsigned int>>>> conditionally_executed_operations;
-
    /**
     * Implementation of print method for this kind of node. It simply prints the list of operations contained into this
     * state
@@ -164,30 +159,47 @@ struct StateInfo : public NodeInfo
 typedef refcount<StateInfo> StateInfoRef;
 typedef refcount<const StateInfo> StateInfoConstRef;
 
+enum transition_type : int {
+            DONTCARE_COND = 0,
+            TRUE_COND,
+            FALSE_COND,
+            CASE_COND,
+            ALL_FINISHED,
+            NOT_ALL_FINISHED
+         };
+
 /**
  * Structure holding the information about an edge into the graph. It specialize generic edge_info
  * The property associated with edge is the control condition
  */
-struct TransitionInfo : public EdgeInfo
+class TransitionInfo : public EdgeInfo
 {
+   private:
    /// pointer to graph storing information about operations
    OpGraphConstRef op_function_graph;
+   transition_type t{DONTCARE_COND};
+   std::set<vertex> ops;
+   bool has_default{false};
+   std::set<unsigned> labels;
+   vertex ref_state{NULL_VERTEX};
 
-   /// Don't care information
-   static const unsigned int DONTCARE;
+   public:
+   TransitionInfo(OpGraphConstRef g) : op_function_graph(g) {}
 
-   /**
-    * This set stores a set of pair where the first represents the controlling operations while the second encodes the controlling condition value/label.
-    * It can be 0 (without any control dependence), T_COND (it depends on
-    * a true value of a condition) or F_COND (it depends on a false value of a condition) or a label in case of a switch statement
-    */
-   std::set<std::pair<vertex, unsigned int>> conditions;
+   friend class StateTransitionGraph_constructor;
 
    /**
     * Print the information associated with the edge of the graph.
     * @param os is the output stream.
     */
    void print(std::ostream& os) const;
+
+   bool get_has_default() const {return has_default;}
+   transition_type get_type() const {return t;}
+   const std::set<vertex>&get_operations() const {return ops;}
+   vertex get_operation() const;
+   const std::set<unsigned>&get_labels() const {return labels;}
+   vertex get_ref_state() const;
 };
 /// refcount about edge info
 typedef refcount<TransitionInfo> TransitionInfoRef;
@@ -210,7 +222,7 @@ struct StateTransitionGraphInfo : public GraphInfo
    /// true when the FSM has cycles
    bool is_a_dag;
 
-   /// in case of a dag it is possible to compute the minumum number of cycles
+   /// in case of a dag it is possible to compute the minimum number of cycles
    unsigned int min_cycles;
    /// maximum number of cycles
    unsigned int max_cycles;
@@ -238,7 +250,7 @@ class StateTransitionGraphsCollection : public graphs_collection
  public:
    /**
     * Constructor
-    * @param state_transtion_graph_info is the info to be associated with the graph
+    * @param state_transition_graph_info is the info to be associated with the graph
     * @param parameters is the set of input parameters
     */
    StateTransitionGraphsCollection(const StateTransitionGraphInfoRef state_transition_graph_info, const ParameterConstRef parameters);
@@ -338,7 +350,7 @@ struct StateTransitionGraph : public graph
    }
 
    /**
-    * Return the info associated with a transtion
+    * Return the info associated with a transition
     * @param transition is the transition to be considered
     */
    inline TransitionInfoRef GetTransitionInfo(const EdgeDescriptor transition)

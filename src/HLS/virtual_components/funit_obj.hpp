@@ -57,7 +57,7 @@
  */
 class funit_obj : public generic_obj
 {
-   /// istance number of the unit
+   /// instance number of the unit
    unsigned int index;
    /// type of the functional unit
    unsigned int fu_type;
@@ -69,7 +69,7 @@ class funit_obj : public generic_obj
    /**
     * This is the constructor of the object class, with a given id
     * @param _name is the id
-    * @param _index is the istance of the functional unit
+    * @param _index is the instance of the functional unit
     * @param _type is the functional unit type
     */
    funit_obj(const std::string& _name, unsigned int _type, unsigned int _index) : generic_obj(FUNCTIONAL_UNIT, _name), index(_index), fu_type(_type)

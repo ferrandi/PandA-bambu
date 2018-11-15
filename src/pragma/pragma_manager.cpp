@@ -34,7 +34,7 @@
  * @file pragma_manager.cpp
  * @brief Implementation for methods used to manage pragma annotations.
  *
- * Implementation of methods used to manage informations about pragma directives in a C/C++ program.
+ * Implementation of methods used to manage information about pragma directives in a C/C++ program.
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>

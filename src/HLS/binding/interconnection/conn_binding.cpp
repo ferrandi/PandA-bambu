@@ -67,6 +67,8 @@
 #include "mux_conn.hpp"
 #include "mux_obj.hpp"
 #include "register_obj.hpp"
+#include "state_transition_graph_manager.hpp"
+#include "multi_unbounded_obj.hpp"
 
 #include "hls.hpp"
 
@@ -493,7 +495,7 @@ void conn_binding::specialise_mux(const generic_objRef mux, unsigned int bits_tg
    structural_objectRef mux_obj = mux->get_structural_obj();
    const module* mux_module = GetPointer<module>(mux_obj);
 
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Specialising " + mux_obj->get_path() + ": " + STR(data_size));
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Specializing " + mux_obj->get_path() + ": " + STR(data_size));
    /// specializing multiplexer ports
    mux_module->get_in_port(1)->type_resize(data_size);
    mux_module->get_in_port(2)->type_resize(data_size);
@@ -804,7 +806,7 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
       component->set_structural_obj(sparse_component);
       auto* sparse_module = GetPointer<module>(sparse_component);
 
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Specialising " + sparse_component->get_path() + ": " + STR(bitsize));
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Specializing " + sparse_component->get_path() + ": " + STR(bitsize));
       /// specializing sparse module ports
       unsigned int shift_index = 0;
       if(component->get_type() == generic_obj::MULTIPLIER_CONN_OBJ && GetPointer<multiplier_conn_obj>(component)->is_multiplication_to_constant())
@@ -1068,9 +1070,46 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added connections of " + c->first->get_path());
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added calls connections");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding outputs");
-
    std::map<structural_objectRef, structural_objectRef> sig;
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding multi-unbounded controllers connections");
+   for(auto state2mu : HLS->STG->get_mu_ctrls())
+   {
+      auto mu = state2mu.second;
+      structural_objectRef mu_mod = mu->get_structural_obj();
+      auto mut = GetPointer<multi_unbounded_obj>(mu);
+      const auto& ops = mut->get_ops();
+      structural_objectRef inOps = mu_mod->find_member("ops", port_vector_o_K, mu_mod);
+      port_o *port = GetPointer<port_o>(inOps);
+      auto j=0u;
+      for (const auto& op : ops)
+      {
+         generic_objRef fu_unit = HLS->Rfu->get(op);
+         structural_objectRef fu_obj = fu_unit->get_structural_obj();
+         structural_objectRef done = fu_obj->find_member(DONE_PORT_NAME, port_o_K, fu_obj);
+         std::string sign_owner_id = done->get_owner()->get_id();
+         if(done->get_kind() == port_vector_o_K)
+         {
+            THROW_ASSERT(GetPointer<port_o>(done)->get_ports_size() != 0, "port not correctly initialized" + done->get_path());
+            THROW_ASSERT(GetPointer<funit_obj>(fu_unit), "unexpected port configuration");
+            done = GetPointer<port_o>(done)->get_port(GetPointer<funit_obj>(fu_unit)->get_index() % GetPointer<port_o>(done)->get_ports_size());
+            sign_owner_id = sign_owner_id + "_P" + done->get_id();
+            THROW_ASSERT(done, "Missing done_port from function call " + fu_unit->get_string());
+         }
+         if(sig.find(done) == sig.end())
+         {
+            sig[done] = SM->add_sign("s_done_" + sign_owner_id, SM->get_circ(), boolean_port_type);
+            SM->add_connection(done, sig[done]);
+         }
+         THROW_ASSERT(port->get_port(j), "port->get_port(j) not found");
+         const auto & port_obj = port->get_port(j);
+         SM->add_connection(port_obj, sig[done]);
+         ++j;
+      }
+      HLS->Rconn->bind_selector_port(conn_binding::OUT, commandport_obj::MULTI_UNBOUNDED, mu, 0);
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added multi-unbounded controllers connections");
+
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding outputs");
    /// output signals to the controller for condition evaluation
    if(selectors.find(conn_binding::OUT) != selectors.end())
    {
@@ -1095,6 +1134,15 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
             structural_objectRef sel_obj = SM->add_port(GetPointer<commandport_obj>(j->second)->get_string(), port_o::OUT, circuit, multiif_port_type);
             (j->second)->set_structural_obj(sel_obj);
          }
+         else if(GetPointer<commandport_obj>(j->second)->get_command_type() == commandport_obj::MULTI_UNBOUNDED)
+         {
+            structural_objectRef mu_mod = j->second->get_structural_obj();
+            auto mu_obj = j->first.first;
+            structural_objectRef alldone_command_port = SM->add_port(GetPointer<commandport_obj>(j->second)->get_string(), port_o::OUT, circuit, boolean_port_type);
+            THROW_ASSERT(GetPointer<multi_unbounded_obj>(mu_obj), "unexpected condition");
+            SM->add_connection(GetPointer<multi_unbounded_obj>(mu_obj)->get_out_sign(), alldone_command_port);
+            (j->second)->set_structural_obj(alldone_command_port);
+         }
          else
          {
             structural_objectRef sel_obj = SM->add_port(GetPointer<commandport_obj>(j->second)->get_string(), port_o::OUT, circuit, boolean_port_type);
@@ -1114,9 +1162,9 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
                      THROW_ASSERT(GetPointer<port_o>(done)->get_ports_size() != 0, "port not correctly initialized" + done->get_path());
                      THROW_ASSERT(GetPointer<funit_obj>(fu_unit), "unexpected port configuration");
                      done = GetPointer<port_o>(done)->get_port(GetPointer<funit_obj>(fu_unit)->get_index() % GetPointer<port_o>(done)->get_ports_size());
+                     THROW_ASSERT(done, "Missing done_port from function call " + fu_unit->get_string());
                      sign_owner_id = sign_owner_id + "_P" + done->get_id();
                   }
-                  THROW_ASSERT(done, "Missing done_port from function call " + fu_unit->get_string());
                   if(sig.find(done) == sig.end())
                   {
                      sig[done] = SM->add_sign("s_done_" + sign_owner_id, SM->get_circ(), boolean_port_type);
@@ -1129,6 +1177,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added outputs");
+
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added command ports");
 }
 

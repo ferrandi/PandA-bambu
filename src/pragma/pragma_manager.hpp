@@ -34,7 +34,7 @@
  * @file pragma_manager.hpp
  * @brief Manager for pragma annotations.
  *
- * A object for manage informations about pragma directives in a C/C++ program.
+ * A object for manage information about pragma directives in a C/C++ program.
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>

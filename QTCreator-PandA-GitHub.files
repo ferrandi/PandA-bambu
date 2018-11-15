@@ -1436,6 +1436,7 @@ src/HLS/virtual_components/dataport_obj.hpp
 src/HLS/virtual_components/funit_obj.hpp
 src/HLS/virtual_components/generic_obj.cpp
 src/HLS/virtual_components/generic_obj.hpp
+src/HLS/virtual_components/multi_unbounded_obj.hpp
 src/HLS/virtual_components/multiplier_conn_obj.hpp
 src/HLS/virtual_components/mux_obj.cpp
 src/HLS/virtual_components/mux_obj.hpp

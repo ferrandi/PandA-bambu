@@ -4079,7 +4079,7 @@ struct record_type : public type_node
    tree_nodeRef cls;
 
    /**
-    * binf field are informations about this type, as a base type for itself.
+    * binf field are information about this type, as a base type for itself.
     * It is a binfo node.
     * (macro TYPE_BINFO)
     */
@@ -5533,7 +5533,7 @@ struct union_type : public type_node
    std::vector<tree_nodeRef> list_of_fncs;
 
    /**
-    * binf field are informations about this type, as a base type for itself.
+    * binf field are information about this type, as a base type for itself.
     * It is a binfo node.
     * (macro TYPE_BINFO)
     */

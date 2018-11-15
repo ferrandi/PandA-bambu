@@ -639,7 +639,7 @@ class BehavioralHelper
     * \verbatim
     * MYINT a
     * \endverbatim
-    * when the variable var is equal to 4(a) and the vppf is an istance of std_var_pp_functor.
+    * when the variable var is equal to 4(a) and the vppf is an instance of std_var_pp_functor.
     * @param var is the considered variable.
     * @param vppf is the functor used to dump the variable var.
     * @param print_init tells if the init has to be printed

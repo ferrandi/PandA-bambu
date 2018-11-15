@@ -31,65 +31,58 @@
  *
  */
 /**
- * @file register_obj.hpp
- * @brief Base class for all register into datapath
+ * @file multi_unbounded_obj.hpp
+ * @brief Base class for all unbounded objects added to datapath
  *
- *
- *
- * @author Christian Pilato <pilato@elet.polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
  *
  */
 
-#ifndef REGISTER_HPP
-#define REGISTER_HPP
+#ifndef MULTI_UNBOUNDED_OBJ_HPP
+#define MULTI_UNBOUNDED_OBJ_HPP
 
-#include "generic_obj.hpp"
 #include "refcount.hpp"
+#include <set>
+#include "generic_obj.hpp"
+#include "graph.hpp"
 
 /**
  * class modeling a register object
  */
-class register_obj : public generic_obj
+class multi_unbounded_obj : public generic_obj
 {
-   generic_objRef wr_enable;
+   vertex fsm_state;
+   std::set<vertex> ops;
 
  public:
    /**
-    * This is the constructor of the object class, with a given id
-    * @param new_value is the new value for register entry
+    * This is the constructor of the multi_unbounded_obj class, with a given id
+    * @param _name is the name of the multi_unbounded_obj
     */
-   explicit register_obj(const std::string& _name) : generic_obj(REGISTER, _name)
+   explicit multi_unbounded_obj(vertex _fsm_state, const std::set<vertex> &_ops, const std::string& _name) : generic_obj(MULTI_UNBOUNDED_OBJ, _name), fsm_state(_fsm_state), ops(_ops)
    {
    }
 
    /**
     * Destructor.
     */
-   ~register_obj() override = default;
+   ~multi_unbounded_obj() override = default;
 
    /**
-    * Gets the write enable object for the given register
-    * @return a set of sets where each of them can enable register write (when all conditions contained are
-    *        true)
+    * @return the all done object associated with a multi-unbounded controller
     */
-   generic_objRef get_wr_enable() const
+   vertex get_fsm_state() const
    {
-      return wr_enable;
+      return fsm_state;
    }
 
-   /**
-    * Sets the write enable for given register
-    */
-   void set_wr_enable(const generic_objRef& wr_en)
-   {
-      wr_enable = wr_en;
-   }
+   const std::set<vertex>& get_ops() {return ops;}
 };
 
-/// RefCount definition for register_obj class
-typedef refcount<register_obj> register_objRef;
+/// RefCount definition for multi_unbounded_obj class
+typedef refcount<multi_unbounded_obj> multi_unbounded_objRef;
 
 #endif

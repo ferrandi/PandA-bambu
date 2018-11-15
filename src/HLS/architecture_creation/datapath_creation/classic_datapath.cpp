@@ -64,6 +64,7 @@
 #include "memory.hpp"
 #include "reg_binding.hpp"
 #include "schedule.hpp"
+#include "state_transition_graph_manager.hpp"
 
 #include "exceptions.hpp"
 
@@ -141,6 +142,9 @@ DesignFlowStep_Status classic_datapath::InternalExec()
    /// allocate functional units
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding functional units");
    HLS->Rfu->add_to_SM(HLSMgr, HLS, clock, reset);
+
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding multi-unbounded controllers");
+   HLS->STG->add_to_SM(clock, reset);
 
    /// allocate interconnections
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding interconnections");

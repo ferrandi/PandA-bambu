@@ -54,9 +54,13 @@ CONSTREF_FORWARD_DECL(hls);
 CONSTREF_FORWARD_DECL(HLS_manager);
 CONSTREF_FORWARD_DECL(OpGraph);
 CONSTREF_FORWARD_DECL(StateTransitionGraph);
+REF_FORWARD_DECL(hls);
 REF_FORWARD_DECL(StateTransitionGraph);
 REF_FORWARD_DECL(StateTransitionGraph_constructor);
 REF_FORWARD_DECL(StateTransitionGraphsCollection);
+REF_FORWARD_DECL(structural_object);
+REF_FORWARD_DECL(generic_obj);
+REF_FORWARD_DECL(structural_manager);
 
 /**
  * Class used to manage a graph into finite state machine representation; it contains methods to build the graph,
@@ -69,7 +73,7 @@ class StateTransitionGraphManager
    /// The bulk graph
    const StateTransitionGraphsCollectionRef state_transition_graphs_collection;
 
-   /// The acyclic version of stg
+   /// The acyclic version of STG
    const StateTransitionGraphRef ACYCLIC_STG_graph;
 
    /// The complete version of std
@@ -98,6 +102,12 @@ class StateTransitionGraphManager
    // helper method to retrieve states
    std::set<vertex> get_states(const vertex& op, StateTypes statetypes) const;
 
+   /// HLS data-structure
+   hlsRef HLS;
+
+   /// map between state and multi-unbounded controllers
+   std::map<vertex, generic_objRef> multi_unbounded_table;
+
  public:
    /// reference to the class for building the graph
    const StateTransitionGraph_constructorRef STG_builder;
@@ -106,7 +116,7 @@ class StateTransitionGraphManager
     * Constructor of the class. It creates a new empty graph and it sets reference to hls class
     * @param HLS is the HLS data structure
     */
-   StateTransitionGraphManager(const HLS_managerConstRef HLSMgr, const hlsConstRef HLS, const ParameterConstRef parameters);
+   StateTransitionGraphManager(const HLS_managerConstRef HLSMgr, hlsRef HLS, const ParameterConstRef parameters);
 
    /**
     * Destructor
@@ -123,25 +133,25 @@ class StateTransitionGraphManager
 
    /**
     * Returns pointer to state transition graph created.
-    * @return reference to a graph that contains informations about operations to be executed and control edges
+    * @return reference to a graph that contains information about operations to be executed and control edges
     */
    StateTransitionGraphRef GetStg();
 
    /**
     * Returns pointer to state transition graph created.
-    * @return reference to a graph that contains informations about operations to be executed and control edges
+    * @return reference to a graph that contains information about operations to be executed and control edges
     */
    const StateTransitionGraphConstRef CGetStg() const;
 
    /**
     * Returns pointer to state transition graph created.
-    * @return reference to a graph that contains informations about operations to be executed and control edges
+    * @return reference to a graph that contains information about operations to be executed and control edges
     */
    StateTransitionGraphRef GetAstg();
 
    /**
     * Returns pointer to state transition graph created.
-    * @return reference to a graph that contains informations about operations to be executed and control edges
+    * @return reference to a graph that contains information about operations to be executed and control edges
     */
    const StateTransitionGraphConstRef CGetAstg() const;
 
@@ -166,12 +176,24 @@ class StateTransitionGraphManager
     */
    vertex get_exit_state() const;
 
-   std::set<std::pair<vertex, unsigned int>> get_conditions(const vertex& v) const;
-
    /**
     * @return the number of states of the FSM
     */
    unsigned int get_number_of_states() const;
+
+   void add_multi_unbounded_obj(vertex s, const std::set<vertex> &ops);
+
+   void specialise_mu(structural_objectRef &mu_mod, generic_objRef mu) const;
+
+   const std::map<vertex, generic_objRef>& get_mu_ctrls() const
+   {
+      return multi_unbounded_table;
+   }
+
+   /**
+    * Add components to the datapath required by the FSM
+    */
+   void add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port);
 };
 /// refcount definition to allocate the class
 typedef refcount<StateTransitionGraphManager> StateTransitionGraphManagerRef;

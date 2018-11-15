@@ -245,7 +245,7 @@ class fu_binding
 
    /**
     * Redefinition of the [] operator. It is necessary because segfaults happen when the vertex is not into the map
-    * and so the object has not been created yet. This operator can be used only to read informations since it returns
+    * and so the object has not been created yet. This operator can be used only to read information since it returns
     * a constant object. It's necessary because a direct manipulation of object can create data inconsistence with
     * objects.
     * @param v is the vertex you want to get the object

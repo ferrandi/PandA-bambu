@@ -199,27 +199,86 @@ void StateInfo::print(std::ostream& os, const int detail_level) const
    os << ">";
 }
 
-const unsigned int TransitionInfo::DONTCARE = 1 << 0;
-
 void TransitionInfo::print(std::ostream& os) const
 {
    const BehavioralHelperConstRef BH = op_function_graph->CGetOpGraphInfo()->BH;
-   for(auto it = conditions.begin(); it != conditions.end(); ++it)
+   if(t == DONTCARE_COND)
+      ; // nothing to print
+   else if(t==TRUE_COND)
+       os << GET_NAME(op_function_graph, get_operation()) << "(T)\\n";
+   else if(t==FALSE_COND)
+      os << GET_NAME(op_function_graph, get_operation()) << "(F)\\n";
+   else if(t==CASE_COND)
    {
-      if(it->second == T_COND)
-         os << GET_NAME(op_function_graph, it->first) << "(T)\\n";
-      else if(it->second == F_COND)
-         os << GET_NAME(op_function_graph, it->first) << "(F)\\n";
-      else if(it->second == DONTCARE)
-         os << GET_NAME(op_function_graph, it->first) << "(-)\\n";
-      else if(it->second == default_COND)
-         os << GET_NAME(op_function_graph, it->first) << "(default)\\n";
-      else
+      auto op = get_operation();
+      os << GET_NAME(op_function_graph, op);
+      os << " (";
+      const var_pp_functorConstRef std(new std_var_pp_functor(BH));
+      bool first=true;
+      for(auto label: labels)
       {
-         const var_pp_functorConstRef std(new std_var_pp_functor(BH));
-         os << GET_NAME(op_function_graph, it->first) << " (" << BH->print_node(it->second, it->first, std) << ")\\n";
+         if(first)
+         {
+            os << BH->print_node(label, op, std);
+            first=false;
+         }
+         else
+            os << "," << BH->print_node(label, op, std);
       }
+      if(has_default)
+      {
+         if(first)
+            os <<  "default\\n";
+         else
+            os <<  ",default\\n";
+      }
+      os << ")";
+
    }
+   else if(t==ALL_FINISHED)
+   {
+      bool first=true;
+      for(auto op: ops)
+      {
+         if(first)
+         {
+            os << GET_NAME(op_function_graph, op);
+            first=false;
+         }
+         else
+            os << "," << GET_NAME(op_function_graph, op);
+      }
+      os << "(ALL_FINISHED)\\n";
+   }
+   else if(t==NOT_ALL_FINISHED)
+   {
+      bool first=true;
+      for(auto op: ops)
+      {
+         if(first)
+         {
+            os << GET_NAME(op_function_graph, op);
+            first=false;
+         }
+         else
+            os << "," << GET_NAME(op_function_graph, op);
+      }
+      os << "(NOT_ALL_FINISHED)\\n";
+   }
+   else
+      THROW_ERROR("transition type not yet supported");
+}
+
+vertex TransitionInfo::get_operation() const
+{
+   THROW_ASSERT(ops.size()==1, "unexpected condition");
+   return *ops.begin();
+}
+
+vertex TransitionInfo::get_ref_state() const
+{
+   THROW_ASSERT((t==ALL_FINISHED||t==NOT_ALL_FINISHED) && ref_state != NULL_VERTEX, "unexpected condition");
+   return ref_state;
 }
 
 StateTransitionGraphInfo::StateTransitionGraphInfo(const OpGraphConstRef _op_function_graph) : op_function_graph(_op_function_graph), is_a_dag(true), min_cycles(0), max_cycles(0)

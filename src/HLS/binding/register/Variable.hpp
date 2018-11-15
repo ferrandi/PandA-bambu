@@ -70,7 +70,7 @@ struct variable2obj : public std::map<unsigned int, data_obj>
    virtual ~variable2obj() = default;
 
    /**
-    * Function that print the informations associated with a variable
+    * Function that print the information associated with a variable
     * @param os is the output stream
     */
    virtual void print_el(typename variable2obj<data_obj>::const_iterator& it) const = 0;

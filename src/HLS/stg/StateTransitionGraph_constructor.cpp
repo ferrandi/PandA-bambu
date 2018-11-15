@@ -32,7 +32,7 @@
  */
 /**
  * @file StateTransitionGraph_constructor.cpp
- * @brief File contanining the structures necessary to manage a graph that will represent a state transition graph
+ * @brief File containing the structures necessary to manage a graph that will represent a state transition graph
  *
  * This file contains the necessary data structures used to represent a state transition graph
  *
@@ -47,13 +47,8 @@
 /// Header include
 #include "StateTransitionGraph_constructor.hpp"
 
-/// Behavior include
 #include "op_graph.hpp"
-
-/// hls include
 #include "hls_manager.hpp"
-
-/// hls/stg includes
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
 
@@ -127,58 +122,40 @@ EdgeDescriptor StateTransitionGraph_constructor::connect_state(const vertex& src
    boost::tie(e, exists) = boost::edge(src, tgt, *state_transition_graphs_collection);
    THROW_ASSERT(!exists, "transition already added");
    // edge creation
-   const TransitionInfoRef eInfo = TransitionInfoRef(new TransitionInfo);
-   eInfo->op_function_graph = HLSMgr.lock()->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG);
+   const TransitionInfoRef eInfo = TransitionInfoRef(new TransitionInfo(HLSMgr.lock()->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG)));
    e = state_transition_graphs_collection->AddEdge(src, tgt, type, eInfo);
    return e;
 }
 
-void StateTransitionGraph_constructor::set_condition(const EdgeDescriptor& e, const std::set<std::pair<vertex, unsigned int>>& cond)
+void StateTransitionGraph_constructor::set_condition(const EdgeDescriptor& e, transition_type t, vertex op)
 {
-   // getting information from graph
-   state_transition_graph->GetTransitionInfo(e)->conditions.clear();
-   add_conditions(cond, state_transition_graph->GetTransitionInfo(e)->conditions);
+   state_transition_graph->GetTransitionInfo(e)->t = t;
+   state_transition_graph->GetTransitionInfo(e)->ops.insert(op);
 }
 
-void StateTransitionGraph_constructor::add_conditions(const std::set<std::pair<vertex, unsigned int>>& EdgeConditions, std::set<std::pair<vertex, unsigned int>>& Conditions)
+void StateTransitionGraph_constructor::set_unbounded_condition(const EdgeDescriptor& e, transition_type t, const std::set<vertex> &ops, vertex ref_state)
 {
-   for(const auto& EdgeCondition : EdgeConditions)
-   {
-      if(Conditions.find(std::make_pair(EdgeCondition.first, TransitionInfo::DONTCARE)) != Conditions.end())
-      {
-         continue;
-      }
-      if(EdgeCondition.second == TransitionInfo::DONTCARE)
-      {
-         Conditions.erase(std::make_pair(EdgeCondition.first, T_COND));
-         Conditions.erase(std::make_pair(EdgeCondition.first, F_COND));
-         Conditions.insert(std::make_pair(EdgeCondition.first, TransitionInfo::DONTCARE));
-      }
-      else if(EdgeCondition.second == T_COND)
-      {
-         if(Conditions.find(std::make_pair(EdgeCondition.first, F_COND)) != Conditions.end())
-         {
-            Conditions.erase(std::make_pair(EdgeCondition.first, F_COND));
-            Conditions.insert(std::make_pair(EdgeCondition.first, TransitionInfo::DONTCARE));
-         }
-         else
-            Conditions.insert(std::make_pair(EdgeCondition.first, T_COND));
-      }
-      else if(EdgeCondition.second == F_COND)
-      {
-         if(Conditions.find(std::make_pair(EdgeCondition.first, T_COND)) != Conditions.end())
-         {
-            Conditions.erase(std::make_pair(EdgeCondition.first, T_COND));
-            Conditions.insert(std::make_pair(EdgeCondition.first, TransitionInfo::DONTCARE));
-         }
-         else
-            Conditions.insert(std::make_pair(EdgeCondition.first, F_COND));
-      }
-      else
-      {
-         Conditions.insert(EdgeCondition);
-      }
-   }
+   state_transition_graph->GetTransitionInfo(e)->t = t;
+   state_transition_graph->GetTransitionInfo(e)->ops=ops;
+   state_transition_graph->GetTransitionInfo(e)->ref_state = ref_state;
+}
+
+
+void StateTransitionGraph_constructor::set_switch_condition(const EdgeDescriptor& e, vertex op, const std::set<unsigned>& labels, bool has_default)
+{
+   state_transition_graph->GetTransitionInfo(e)->t = CASE_COND;
+   state_transition_graph->GetTransitionInfo(e)->ops.insert(op);
+   state_transition_graph->GetTransitionInfo(e)->has_default = has_default;
+   state_transition_graph->GetTransitionInfo(e)->labels=labels;
+}
+
+
+void StateTransitionGraph_constructor::copy_condition(const EdgeDescriptor& dest, const EdgeDescriptor& source)
+{
+   state_transition_graph->GetTransitionInfo(dest)->t = state_transition_graph->GetTransitionInfo(source)->t;
+   state_transition_graph->GetTransitionInfo(dest)->ops=state_transition_graph->GetTransitionInfo(source)->ops;
+   state_transition_graph->GetTransitionInfo(dest)->has_default = state_transition_graph->GetTransitionInfo(source)->has_default;
+   state_transition_graph->GetTransitionInfo(dest)->labels=state_transition_graph->GetTransitionInfo(source)->labels;
 }
 
 //*********************************************************************

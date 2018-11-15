@@ -69,7 +69,7 @@ struct vertex2obj : public std::map<vertex, data_obj>
    virtual ~vertex2obj() = default;
 
    /**
-    * Function that print the informations associated with a vertex.
+    * Function that print the information associated with a vertex.
     * @param os is the output stream
     */
    virtual void print_el(std::ostream& os, const graph*, typename vertex2obj<data_obj>::const_iterator& it) const

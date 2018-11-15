@@ -235,8 +235,8 @@ void HLS_constraints::set_max_registers(unsigned int n_resources)
  *    - Does not exist a functional unit for an operation to be executed
  *    - Functional units consumption is too high (functional unit power is greater than maximum power per cycle)
  *    - Does not exist enough functional unit for an operation.
- * @param GM is the reference to behavioral_manager class, where all informations about graphs are stored
- * @param TM is the rerefence to technology_manager class, where all informations about architecture are stored
+ * @param GM is the reference to behavioral_manager class, where all information about graphs are stored
+ * @param TM is the rerefence to technology_manager class, where all information about architecture are stored
  */
 void HLS_constraints::check_HLS_constraints(const behavioral_managerRef & GM, const technology_managerRef & TM) const
 {

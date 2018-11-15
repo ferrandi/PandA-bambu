@@ -270,15 +270,10 @@ void fsm_controller::create_state_machine(std::string& parse)
       {
          if(!found_default)
          {
-            const std::set<std::pair<vertex, unsigned int>>& cond = stg->CGetTransitionInfo(*oe)->conditions;
-            for(const auto& cond_it : cond)
+            if(stg->CGetTransitionInfo(*oe)->get_has_default())
             {
-               if(cond_it.second == default_COND)
-               {
-                  found_default = true;
-                  default_edge = *oe;
-                  break;
-               }
+               found_default = true;
+               default_edge = *oe;
             }
             if(!found_default)
                sorted.push_back(*oe);
@@ -299,42 +294,87 @@ void fsm_controller::create_state_machine(std::string& parse)
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Number of inputs is " + std::to_string(in_num));
          std::vector<std::string> in(in_num, "-");
 
-         const std::set<std::pair<vertex, unsigned int>>& cond = stg->CGetTransitionInfo(*e_it)->conditions;
-         ;
-         for(auto cond_it = cond.begin(); cond_it != cond.end(); ++cond_it)
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing condition");
+         auto transitionType=stg->CGetTransitionInfo(*e_it)->get_type();
+         if(transitionType==DONTCARE_COND)
+            ; // do nothing
+         else if(transitionType==TRUE_COND)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing condition");
-            std::string value;
-            if(cond_it->second == T_COND)
+            auto op = stg->CGetTransitionInfo(*e_it)->get_operation();
+            THROW_ASSERT(cond_ports.find(op) != cond_ports.end(), "the port is missing");
+            THROW_ASSERT(in[cond_ports.find(op)->second] == "-", "two different values for the same condition port");
+            in[cond_ports.find(op)->second] = "1";
+         }
+         else if(transitionType==FALSE_COND)
+         {
+            auto op = stg->CGetTransitionInfo(*e_it)->get_operation();
+            THROW_ASSERT(cond_ports.find(op) != cond_ports.end(), "the port is missing");
+            THROW_ASSERT(in[cond_ports.find(op)->second] == "-", "two different values for the same condition port");
+            in[cond_ports.find(op)->second] = "0";
+         }
+         else if(transitionType==ALL_FINISHED)
+         {
+            auto ops=stg->CGetTransitionInfo(*e_it)->get_operations();
+            if(ops.size()==1)
             {
-               THROW_ASSERT(in[cond_ports[cond_it->first]] == "-", "two different values for the same condition port");
-               value = "1";
+               auto op = *(ops.begin());
+               THROW_ASSERT(cond_ports.find(op) != cond_ports.end(), "the port is missing");
+               THROW_ASSERT(in[cond_ports.find(op)->second] == "-", "two different values for the same condition port");
+               in[cond_ports.find(op)->second] = "1";
             }
-            else if(cond_it->second == F_COND)
+            else
             {
-               THROW_ASSERT(in[cond_ports[cond_it->first]] == "-", "two different values for the same condition port");
-               value = "0";
+               auto state = stg->CGetTransitionInfo(*e_it)->get_ref_state();
+               THROW_ASSERT(mu_ports.find(state) != mu_ports.end(), "the port is missing");
+               THROW_ASSERT(in[mu_ports.find(state)->second] == "-", "two different values for the same condition port");
+               in[mu_ports.find(state)->second] = "1";
             }
-            else if(cond_it->second == default_COND)
+         }
+         else if(transitionType==NOT_ALL_FINISHED)
+         {
+            auto ops=stg->CGetTransitionInfo(*e_it)->get_operations();
+            if(ops.size()==1)
             {
-               value = in[cond_ports[cond_it->first]];
+               auto op = *(ops.begin());
+               THROW_ASSERT(cond_ports.find(op) != cond_ports.end(), "the port is missing");
+               THROW_ASSERT(in[cond_ports.find(op)->second] == "-", "two different values for the same condition port");
+               in[cond_ports.find(op)->second] = "0";
+            }
+            else
+            {
+               auto state = stg->CGetTransitionInfo(*e_it)->get_ref_state();
+               THROW_ASSERT(mu_ports.find(state) != mu_ports.end(), "the port is missing");
+               THROW_ASSERT(in[mu_ports.find(state)->second] == "-", "two different values for the same condition port");
+               in[mu_ports.find(state)->second] = "0";
+            }
+         }
+         else if(transitionType==CASE_COND)
+         {
+            auto op = stg->CGetTransitionInfo(*e_it)->get_operation();
+            THROW_ASSERT(cond_ports.find(op) != cond_ports.end(), "the port is missing");
+            THROW_ASSERT(in[cond_ports.find(op)->second] == "-", "two different values for the same condition port");
+            std::string value=in[cond_ports.find(op)->second];
+            THROW_ASSERT(value == "-", "two different values for the same condition port");
+            auto labels = stg->CGetTransitionInfo(*e_it)->get_labels();
+            for(auto label : labels)
+            {
+               if(value == "-")
+                  value = get_guard_value(TreeM, label, op, data);
+               else
+                  value += "|" + get_guard_value(TreeM, label, op, data);
+            }
+            if(stg->CGetTransitionInfo(*e_it)->get_has_default())
+            {
                if(value == "-")
                   value = STR(default_COND);
                else
                   value += "|" + STR(default_COND);
             }
-            else
-            {
-               value = in[cond_ports[cond_it->first]];
-               if(value == "-")
-                  value = get_guard_value(TreeM, cond_it->second, cond_it->first, data);
-               else
-                  value += "|" + get_guard_value(TreeM, cond_it->second, cond_it->first, data);
-            }
-            in[cond_ports[cond_it->first]] = value;
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed condition");
+            in[cond_ports.find(op)->second] = value;
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Analyzed conditions: " + parse);
+         else
+            THROW_ERROR("transition type not supported yet");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed conditions: " + parse);
 
          parse += " : ";
          for(std::vector<std::string>::const_iterator in_it = in.begin(); in_it != in.end(); ++in_it)

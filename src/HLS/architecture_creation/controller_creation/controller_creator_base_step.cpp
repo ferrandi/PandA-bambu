@@ -54,6 +54,7 @@
 #include "function_behavior.hpp"
 
 #include "commandport_obj.hpp"
+#include "multi_unbounded_obj.hpp"
 
 #include "exceptions.hpp"
 
@@ -199,32 +200,42 @@ void ControllerCreatorBaseStep::add_command_ports(structural_objectRef circuit)
          if(selector.first == conn_binding::OUT)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Connection from datapath to controller");
-            /// operation modifying the control flow (e.g., if, switch, ...)
-            vertex cond_v = GetPointer<commandport_obj>(j.second)->get_vertex();
             structural_objectRef sel_obj;
-            if(GetPointer<commandport_obj>(j.second)->get_command_type() == commandport_obj::SWITCH)
+            if(GetPointer<commandport_obj>(j.second)->get_command_type() == commandport_obj::MULTI_UNBOUNDED)
             {
-               /// multi bit selector representing the evaluation of a switch
-               unsigned int var_written = HLSMgr->get_produced_value(HLS->functionId, cond_v);
-               structural_type_descriptorRef switch_port_type = structural_type_descriptorRef(new structural_type_descriptor(var_written, FB->CGetBehavioralHelper()));
-               sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, switch_port_type);
-            }
-            else if(GetPointer<commandport_obj>(j.second)->get_command_type() == commandport_obj::MULTIIF)
-            {
-               std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(HLS->functionId, cond_v);
-               auto vect_size = static_cast<unsigned int>(var_read.size());
-               structural_type_descriptorRef multiif_port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", vect_size));
-               sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, multiif_port_type);
+               sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, bool_type);
+               auto mu_obj = GetPointer<commandport_obj>(j.second)->get_elem();
+               THROW_ASSERT(GetPointer<multi_unbounded_obj>(mu_obj), "unexpected condition");
+               mu_ports[GetPointer<multi_unbounded_obj>(mu_obj)->get_fsm_state()]=in_num;
             }
             else
             {
-               /// single bit selector representing the evaluation of a condition
-               sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, bool_type);
+               /// operation modifying the control flow (e.g., if, switch, ...)
+               vertex cond_v = GetPointer<commandport_obj>(j.second)->get_vertex();
+               if(GetPointer<commandport_obj>(j.second)->get_command_type() == commandport_obj::SWITCH)
+               {
+                  /// multi bit selector representing the evaluation of a switch
+                  unsigned int var_written = HLSMgr->get_produced_value(HLS->functionId, cond_v);
+                  structural_type_descriptorRef switch_port_type = structural_type_descriptorRef(new structural_type_descriptor(var_written, FB->CGetBehavioralHelper()));
+                  sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, switch_port_type);
+               }
+               else if(GetPointer<commandport_obj>(j.second)->get_command_type() == commandport_obj::MULTIIF)
+               {
+                  std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(HLS->functionId, cond_v);
+                  auto vect_size = static_cast<unsigned int>(var_read.size());
+                  structural_type_descriptorRef multiif_port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", vect_size));
+                  sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, multiif_port_type);
+               }
+               else
+               {
+                  /// single bit selector representing the evaluation of a condition
+                  sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, bool_type);
+               }
+               cond_ports[cond_v] = in_num;
+               cond_obj[cond_v] = j.second;
             }
             GetPointer<commandport_obj>(j.second)->set_controller_obj(sel_obj);
             in_ports[j.second] = in_num;
-            cond_ports[cond_v] = in_num;
-            cond_obj[cond_v] = j.second;
             in_num++;
          }
       }

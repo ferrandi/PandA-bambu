@@ -34,7 +34,7 @@
  * @file hls.hpp
  * @brief Data structure definition for high-level synthesis flow.
  *
- * This struct contains all informations useful to high-level synthesis flow.
+ * This struct contains all information useful to high-level synthesis flow.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Christian Pilato <pilato@elet.polimi.it>
@@ -86,7 +86,7 @@ enum class HLSFlowStep_Type;
 /**
  * @class hls
  * @ingroup HLS
- * Data structure that contains all informations about high level synthesis process
+ * Data structure that contains all information about high level synthesis process
  */
 class hls
 {
@@ -209,18 +209,18 @@ class hls
    // -------------- Printing helpers -------------- //
 
    /**
-    * Prints the hls solution available up to now. It prints informations about:
+    * Prints the hls solution available up to now. It prints information about:
     *   - scheduling
     *   - functional units binding
     *   - total number of control steps
     *   - register binding (if register allocation has been performed)
     *   - connection binding (if it has been performed)
-    * @param os is the stream where the informations have to be printed
+    * @param os is the stream where the information have to be printed
     */
    void print(std::ostream& os) const;
 
    /**
-    * Prints on stream the scheduling (if it has been performed). It prints informations about
+    * Prints on stream the scheduling (if it has been performed). It prints information about
     *   - Operation name
     *   - Control step where it will start its execution
     *   - Functional unit where it has been mapped
@@ -228,29 +228,29 @@ class hls
    void PrintScheduling() const;
 
    /**
-    * Prints on stream the register binding (if it has been performed). It prints informations about
+    * Prints on stream the register binding (if it has been performed). It prints information about
     *   - Variable name
     *   - Operations which variable is live beetween
     *   - Register where the variable has been stored
-    * @param os is the stream where the informations have to be printed
+    * @param os is the stream where the information have to be printed
     */
    void print_register_binding(std::ostream& os) const;
 
    /**
-    * Prints on stream the register grouping (if it has been performed). It prints informations about
+    * Prints on stream the register grouping (if it has been performed). It prints information about
     *   - Variable name
     *   - Operations which variable is live beetween
     *   - Register where the variable has been stored
-    * @param os is the stream where the informations have to be printed
+    * @param os is the stream where the information have to be printed
     */
    void print_register_grouping(std::ostream& os) const;
 
    /**
-    * Prints on stream the connection binding (if it has been performed). It prints informations about
+    * Prints on stream the connection binding (if it has been performed). It prints information about
     *   - Connection source and target
     *   - Element used to perform connection
     *   - Variables that could cross the connection
-    * @param os is the stream where the informations have to be printed
+    * @param os is the stream where the information have to be printed
     */
    void print_connection_binding(std::ostream& os) const;
 

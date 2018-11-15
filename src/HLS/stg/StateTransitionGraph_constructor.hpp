@@ -55,6 +55,7 @@ CONSTREF_FORWARD_DECL(HLS_manager);
 CONSTREF_FORWARD_DECL(OpGraph);
 REF_FORWARD_DECL(StateTransitionGraph);
 REF_FORWARD_DECL(StateTransitionGraphsCollection);
+enum transition_type : int;
 
 class StateTransitionGraph_constructor
 {
@@ -114,12 +115,30 @@ class StateTransitionGraph_constructor
    /**
     * Changes the control condition associated to an edge. If no condition is given, previous one is erased and
     * edge becomes without a true or false control dependence.
-    * @param e is the edge you want to change the control condition
-    * @param cond is the new control condition to be associated to edge (no control dependence condition as default)
+    * @param e is the FSM edge
+    * @param t is the condition type
+    * @param ops is the vertex involved by this condition
     */
-   void set_condition(const EdgeDescriptor& e, const std::set<std::pair<vertex, unsigned int>>& cond);
+   void set_condition(const EdgeDescriptor& e, transition_type t, vertex ops);
 
-   static void add_conditions(const std::set<std::pair<vertex, unsigned int>>& EdgeConditions, std::set<std::pair<vertex, unsigned int>>& Conditions);
+   void set_unbounded_condition(const EdgeDescriptor& e, transition_type t, const std::set<vertex> &ops, vertex ref_state);
+
+   /**
+    * @brief function setting the condition on edge derived from switch statements
+    * @param e is the FSM edge
+    * @param op is the controlling operations
+    * @param labels are the the switch guards/labels associated with the edge
+    * @param has_default is true when with the edge is associated the default guard/label
+    */
+   void set_switch_condition(const EdgeDescriptor& e, vertex op, const std::set<unsigned>& labels, bool has_default);
+
+   /**
+    * @brief copy condition from one edge to another
+    * @param dest is the destination edge of the fsm
+    * @param source is the source edge of the fsm
+    */
+   void copy_condition(const EdgeDescriptor& dest, const EdgeDescriptor& source);
+
 
    /** Removes the specified edge from the graph.
     * If the graph does not contain the specified edge, this method throws an exception. */

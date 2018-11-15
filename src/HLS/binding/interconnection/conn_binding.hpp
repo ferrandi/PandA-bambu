@@ -291,7 +291,7 @@ class conn_binding
 
    /**
     * Returns reference to generic object associated to a given variable, for a specific port direction
-    * @param var is variable associated to desidered port
+    * @param var is variable associated with the port
     * @param dir is port direction
     * @return reference to the generic object of the port associated to given variable, into given direction
     */
@@ -299,7 +299,7 @@ class conn_binding
 
    /**
     * Returns reference to generic object associated to a given vertex, for a specific port direction
-    * @param ver is vertex associated to desidered port
+    * @param ver is vertex associated to desired port
     * @param dir is port direction
     * @param mode is command mode (OPERATION or CONDITION)
     * @return reference to the generic object of the port associated to given vertex, into given direction

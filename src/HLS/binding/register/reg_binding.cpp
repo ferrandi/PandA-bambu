@@ -114,7 +114,7 @@ unsigned int reg_binding::get_bitsize(unsigned int r) const
 
 void reg_binding::specialise_reg(structural_objectRef& reg, unsigned int r)
 {
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level, "Specialising " + reg->get_path() + ":");
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level, "Specializing " + reg->get_path() + ":");
    const structural_type_descriptorRef& in_type = GetPointer<module>(reg)->get_in_port(0)->get_typeRef();
    const structural_type_descriptorRef& out_type = GetPointer<module>(reg)->get_out_port(0)->get_typeRef();
    unsigned int max_bits = STD_GET_SIZE(in_type);

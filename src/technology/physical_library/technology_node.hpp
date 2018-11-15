@@ -190,6 +190,7 @@ enum class TargetDevice_Type;
 #define CE_FSM "CE_FSM"
 #define CE_BYPASS "CE_BYPASS"
 #define JOIN_STD "JOIN_FU"
+#define SIMPLEJOIN_STD "SIMPLEJOIN_FU"
 #define PT_STD "PT_FU"
 #define START_STD "START_FU"
 #define COND_STD "COND_FU"
@@ -541,7 +542,7 @@ struct functional_unit : public technology_node
    /// Template parameters.
    std::string fu_template_parameters;
 
-   /// Value used during the characterization of this istance.
+   /// Value used during the characterization of this instance.
    std::string characterizing_constant_value;
 
    /// Specify the type of memory the functional unit is compliant with.

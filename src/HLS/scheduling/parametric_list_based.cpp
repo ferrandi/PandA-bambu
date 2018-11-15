@@ -891,7 +891,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
 
                /// check if there exist enough resources available
                schedulable = BB_update_resources_use(used_resources[fu_type], current_vertex, current_starting_time, fu_type);
-               if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) /*&& RW_stmts.find(current_vertex) == RW_stmts.end()*/)
+               if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) && RW_stmts.find(current_vertex) == RW_stmts.end())
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  " + GET_NAME(flow_graph, current_vertex) + " is unbounded");
                   THROW_ASSERT(!(unbounded || is_live || store_unbounded_check), "unexpected case");

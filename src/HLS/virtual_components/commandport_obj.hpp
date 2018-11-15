@@ -63,8 +63,8 @@ REF_FORWARD_DECL(commandport_obj);
 
 /**
  * @class commandport_obj
- * This class manages command ports into datapath. It contains informations about operation vertex giving command
- * if it is operation or a condition. It also contains informations about port direction. All these command ports
+ * This class manages command ports into datapath. It contains information about operation vertex giving command
+ * if it is operation or a condition. It also contains information about port direction. All these command ports
  * are connected to controller.
  */
 class commandport_obj : public generic_obj
@@ -80,6 +80,7 @@ class commandport_obj : public generic_obj
       SELECTOR,      /// mux selector
       ALUSELECTOR,   /// ALU selector
       UNBOUNDED,     /// signal representing a communication for an unbounded object (function call)
+      MULTI_UNBOUNDED, /// signal representing when a multi unbounded call ends
       WRENABLE       /// enable for register writing
    } command_type;
 
@@ -89,7 +90,8 @@ class commandport_obj : public generic_obj
 
  private:
    /// TODO: substitute with a functor
-   /// Vertex associated to signal (if type is condition or operation)
+   /// operation vertex associated with the command port signal (if type is condition or operation) or
+   /// state vertex associated with the command port signal
    vertex signal;
 
    generic_objRef elem;
@@ -117,7 +119,7 @@ class commandport_obj : public generic_obj
 
    commandport_obj(generic_objRef _elem, unsigned int _mode, const std::string& _name) : generic_obj(COMMAND_PORT, _name), elem(std::move(_elem)), mode(_mode), is_a_phi_write_enable(false)
    {
-      THROW_ASSERT(mode == SELECTOR || mode == WRENABLE || mode == ALUSELECTOR, "Selector port is wrong");
+      THROW_ASSERT(mode == SELECTOR || mode == WRENABLE || mode == ALUSELECTOR or mode == MULTI_UNBOUNDED, "Selector port is wrong");
    }
 
    /**
@@ -174,7 +176,7 @@ class commandport_obj : public generic_obj
 
    const generic_objRef& get_elem() const
    {
-      THROW_ASSERT(mode == SELECTOR || mode == WRENABLE || mode == ALUSELECTOR, "Selector port is wrong");
+      THROW_ASSERT(mode == SELECTOR || mode == WRENABLE || mode == ALUSELECTOR || mode == MULTI_UNBOUNDED, "Selector port is wrong");
       return elem;
    }
 
@@ -192,6 +194,8 @@ class commandport_obj : public generic_obj
             return "MULTIIF";
          case UNBOUNDED:
             return "UNBOUNDED";
+         case MULTI_UNBOUNDED:
+            return "MULTI_UNBOUNDED";
          case SELECTOR:
             return "SELECTOR";
          case WRENABLE:

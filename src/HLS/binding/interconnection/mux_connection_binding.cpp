@@ -1651,7 +1651,7 @@ void mux_connection_binding::create_connections()
    std::set<unsigned int> setFu = HLS->Rfu->get_allocation_list();
    for(unsigned int i : setFu)
    {
-      // number of istance functional unit i
+      // number of instance functional unit i
       unsigned int num = HLS->Rfu->get_number(i);
       for(unsigned int fu_num = 0; fu_num < num; fu_num++)
       {
@@ -2587,6 +2587,7 @@ void mux_connection_binding::create_connections()
          }
       }
    }
+
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Ended execution of interconnection binding");
 
 #if 0

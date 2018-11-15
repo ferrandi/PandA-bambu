@@ -123,6 +123,8 @@ class ControllerCreatorBaseStep : public HLSFunctionStep
    /// element is the same number of the generic_objRef into in_ports to which get_vertex() was called
    /// Initialized after add_common_ports is called
    std::map<vertex, unsigned int> cond_ports;
+   /// This map put into relation fsm states and alldone multi_unbounded ports
+   std::map<vertex, unsigned int> mu_ports;
    /// Map between the operation vertex and the corresponding control port
    std::map<vertex, generic_objRef> cond_obj;
 

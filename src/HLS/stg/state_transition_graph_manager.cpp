@@ -51,10 +51,17 @@
 #include "behavioral_helper.hpp"
 #include "op_graph.hpp"
 
+#include "structural_manager.hpp"
+#include "target_device.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
+
 /// hls include
 #include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
+#include "hls_target.hpp"
+#include "fu_binding.hpp"
 
 /// Parameter include
 #include "Parameter.hpp"
@@ -63,15 +70,18 @@
 #include "StateTransitionGraph_constructor.hpp"
 #include "state_transition_graph.hpp"
 
+#include "multi_unbounded_obj.hpp"
+#include "funit_obj.hpp"
+
 /// Tree include
 #include "var_pp_functor.hpp"
 
-/// Utilty include
+/// Utility include
 #include "boost/graph/topological_sort.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "simple_indent.hpp"
 
-StateTransitionGraphManager::StateTransitionGraphManager(const HLS_managerConstRef _HLSMgr, const hlsConstRef _HLS, const ParameterConstRef _Param)
+StateTransitionGraphManager::StateTransitionGraphManager(const HLS_managerConstRef _HLSMgr, hlsRef _HLS, const ParameterConstRef _Param)
     : state_transition_graphs_collection(
           StateTransitionGraphsCollectionRef(new StateTransitionGraphsCollection(StateTransitionGraphInfoRef(new StateTransitionGraphInfo(_HLSMgr->CGetFunctionBehavior(_HLS->functionId)->CGetOpGraph(FunctionBehavior::CFG))), _Param))),
       ACYCLIC_STG_graph(StateTransitionGraphRef(new StateTransitionGraph(state_transition_graphs_collection, ST_EDGE_NORMAL_T))),
@@ -80,6 +90,7 @@ StateTransitionGraphManager::StateTransitionGraphManager(const HLS_managerConstR
       Param(_Param),
       output_level(_Param->getOption<int>(OPT_output_level)),
       debug_level(_Param->getOption<int>(OPT_debug_level)),
+      HLS(_HLS),
       STG_builder(StateTransitionGraph_constructorRef(new StateTransitionGraph_constructor(state_transition_graphs_collection, _HLSMgr, _HLS->functionId)))
 {
    STG_builder->create_entry_state();
@@ -96,56 +107,6 @@ const StateTransitionGraphConstRef StateTransitionGraphManager::CGetAstg() const
 const StateTransitionGraphConstRef StateTransitionGraphManager::CGetStg() const
 {
    return STG_graph;
-}
-
-std::set<std::pair<vertex, unsigned int>> StateTransitionGraphManager::get_conditions(const vertex& v) const
-{
-   std::set<std::pair<vertex, unsigned int>> Conditions;
-
-   InEdgeIterator ie, iend;
-   for(boost::tie(ie, iend) = boost::in_edges(v, *STG_graph); ie != iend; ie++)
-   {
-      std::set<std::pair<vertex, unsigned int>> EdgeConditions = GET_EDGE_INFO(state_transition_graphs_collection, TransitionInfo, *ie)->conditions;
-      for(const auto& EdgeCondition : EdgeConditions)
-      {
-         if(Conditions.find(EdgeCondition) != Conditions.end())
-            continue;
-         if(EdgeCondition.second == TransitionInfo::DONTCARE)
-         {
-            if(Conditions.find(std::make_pair(EdgeCondition.first, T_COND)) != Conditions.end())
-               Conditions.erase(std::make_pair(EdgeCondition.first, T_COND));
-            if(Conditions.find(std::make_pair(EdgeCondition.first, F_COND)) != Conditions.end())
-               Conditions.erase(std::make_pair(EdgeCondition.first, F_COND));
-            Conditions.insert(EdgeCondition);
-         }
-         if(EdgeCondition.second == T_COND)
-         {
-            if(Conditions.find(std::make_pair(EdgeCondition.first, F_COND)) != Conditions.end())
-            {
-               Conditions.erase(std::make_pair(EdgeCondition.first, F_COND));
-               Conditions.insert(std::make_pair(EdgeCondition.first, TransitionInfo::DONTCARE));
-            }
-            if(Conditions.find(std::make_pair(EdgeCondition.first, TransitionInfo::DONTCARE)) == Conditions.end())
-               Conditions.insert(EdgeCondition);
-         }
-         if(EdgeCondition.second == F_COND)
-         {
-            if(Conditions.find(std::make_pair(EdgeCondition.first, T_COND)) != Conditions.end())
-            {
-               Conditions.erase(std::make_pair(EdgeCondition.first, T_COND));
-               Conditions.insert(std::make_pair(EdgeCondition.first, TransitionInfo::DONTCARE));
-            }
-            if(Conditions.find(std::make_pair(EdgeCondition.first, TransitionInfo::DONTCARE)) == Conditions.end())
-               Conditions.insert(EdgeCondition);
-         }
-         else
-         {
-            Conditions.insert(EdgeCondition);
-         }
-      }
-   }
-
-   return Conditions;
 }
 
 void StateTransitionGraphManager::compute_min_max()
@@ -272,4 +233,48 @@ void StateTransitionGraphManager::print_statistics() const
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Minimum number of cycles: " + STR(STG_graph->CGetStateTransitionGraphInfo()->min_cycles));
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Maximum number of cycles " + STR(STG_graph->CGetStateTransitionGraphInfo()->max_cycles));
    }
+}
+
+void StateTransitionGraphManager::add_multi_unbounded_obj(vertex s, const std::set<vertex> &ops)
+{
+   if(multi_unbounded_table.find(s) == multi_unbounded_table.end())
+   {
+      multi_unbounded_table[s] = generic_objRef(new multi_unbounded_obj(s, ops, std::string("mu_") + STG_graph->CGetStateInfo(s)->name));
+   }
+}
+
+void StateTransitionGraphManager::specialise_mu(structural_objectRef& mu_mod, generic_objRef mu) const
+{
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, HLS->debug_level, "---Specializing " + mu_mod->get_path());
+   auto mut = GetPointer<multi_unbounded_obj>(mu);
+   THROW_ASSERT(mut, "unexpected condition");
+   structural_objectRef inOps = mu_mod->find_member("ops", port_vector_o_K, mu_mod);
+   port_o *port = GetPointer<port_o>(inOps);
+   const auto& ops = mut->get_ops();
+   auto n_in_ports = static_cast<unsigned int>(ops.size());
+   port->add_n_ports(n_in_ports, inOps);
+}
+
+void StateTransitionGraphManager::add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port)
+{
+   const auto& SM = HLS->datapath;
+   const auto& circuit = SM->get_circ();
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding :multi-unbounded controllers");
+   for(auto state2mu: multi_unbounded_table)
+   {
+      auto mu = state2mu.second;
+      std::string name = mu->get_string();
+      std::string library = HLS->HLS_T->get_technology_manager()->get_library(SIMPLEJOIN_STD);
+      structural_objectRef mu_mod = SM->add_module_from_technology_library(name, SIMPLEJOIN_STD, library, circuit, HLS->HLS_T->get_technology_manager());
+      specialise_mu(mu_mod, mu);
+
+      structural_objectRef port_ck = mu_mod->find_member(CLOCK_PORT_NAME, port_o_K, mu_mod);
+      SM->add_connection(clock_port, port_ck);
+      structural_objectRef port_rst = mu_mod->find_member(RESET_PORT_NAME, port_o_K, mu_mod);
+      SM->add_connection(reset_port, port_rst);
+      mu->set_structural_obj(mu_mod);
+      auto p_obj=mu_mod->find_member("sop", port_o_K, mu_mod);
+      mu->set_out_sign(p_obj);
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Adding :multi-unbounded controllers");
 }

@@ -89,7 +89,7 @@ class reg_binding : public variable2obj<generic_objRef>
    /// relation between registers and their bitsize
    std::map<unsigned int, unsigned int> bitsize_map;
 
-   /// HLS datastructure
+   /// HLS data-structure
    hlsRef HLS;
 
    /// information about all the HLS synthesis
@@ -110,7 +110,7 @@ class reg_binding : public variable2obj<generic_objRef>
    void compute_is_without_enable();
 
    /**
-    * Specialise a register according to the type of the variables crossing it.
+    * Specialize a register according to the type of the variables crossing it.
     * @param reg is the register
     * @param reg is the id of the register
     */

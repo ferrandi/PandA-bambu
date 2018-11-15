@@ -99,10 +99,8 @@ DesignFlowStep_Status LoadDefaultTechnology::Exec()
 #include "NC_HLS_IPs.data"
          ,
 #include "NC_MEM_IPs.data"
-#if HAVE_EXPERIMENTAL
          ,
 #include "NC_PC_IPs.data"
-#endif
          ,
 #include "NC_SF_IPs.data"
          ,
