@@ -553,17 +553,17 @@ void interface_infer::create_resource_Write_simple(const std::vector<std::string
 
 void interface_infer::create_resource(const std::vector<std::string>& operationsR, const std::vector<std::string>& operationsW, const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool isDiffSize)
 {
-   if(interfaceType == "none" || interfaceType == "acknowledge" || interfaceType == "valid" || interfaceType == "handshake")
+   if(interfaceType == "none" || interfaceType == "acknowledge" || interfaceType == "valid"  || interfaceType == "ovalid" || interfaceType == "handshake")
    {
       THROW_ASSERT(!operationsR.empty() || !operationsW.empty(), "unexpected condition");
       bool IO_P = !operationsR.empty() && !operationsW.empty();
       if(!operationsR.empty())
       {
-         create_resource_Read_simple(operationsR, argName_string, interfaceType, inputBitWidth, IO_P);
+         create_resource_Read_simple(operationsR, argName_string, (interfaceType=="ovalid" ? "none" : interfaceType), inputBitWidth, IO_P);
       }
       if(!operationsW.empty())
       {
-         create_resource_Write_simple(operationsW, argName_string, interfaceType, inputBitWidth, IO_P, isDiffSize);
+         create_resource_Write_simple(operationsW, argName_string, (interfaceType=="ovalid" ? "valid" : interfaceType), inputBitWidth, IO_P, isDiffSize);
       }
    }
    else
@@ -790,8 +790,8 @@ DesignFlowStep_Status interface_infer::InternalExec()
                            std::cerr << "IO arg\n";
                            if(interfaceType == "ptrdefault")
                            {
-                              DesignInterfaceArgs[argName_string] = "valid";
-                              interfaceType = "valid";
+                              DesignInterfaceArgs[argName_string] = "ovalid";
+                              interfaceType = "ovalid";
                            }
                         }
                         else if(isRead)
@@ -800,6 +800,10 @@ DesignFlowStep_Status interface_infer::InternalExec()
                            {
                               DesignInterfaceArgs[argName_string] = "none";
                               interfaceType = "none";
+                           }
+                           else if(interfaceType == "ovalid")
+                           {
+                              THROW_ERROR("parameter " + argName_string + " cannot have interface " + interfaceType + " because it is read only");
                            }
                            std::cerr << "I arg\n";
                         }
@@ -880,7 +884,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                                  THROW_ERROR("unexpected pattern");
                            }
                            THROW_ASSERT(destBB != bloc::ENTRY_BLOCK_ID, "unexpected condition");
-                           std::string fdName = ENCODE_FDNAME(argName_string, "_Read_", interfaceType);
+                           std::string fdName = ENCODE_FDNAME(argName_string, "_Read_", (interfaceType=="ovalid" ? "none" : interfaceType));
                            std::vector<std::string> operationsR, operationsW;
                            operationsR.push_back(fdName);
                            std::list<tree_nodeRef> usedStmt_defs;
@@ -897,7 +901,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                            for(auto rs : readStmt)
                               addGimpleNOPxVirtual(rs, sl, TM);
                            unsigned int IdIndex = 0;
-                           fdName = ENCODE_FDNAME(argName_string, "_Write_", interfaceType);
+                           fdName = ENCODE_FDNAME(argName_string, "_Write_", (interfaceType=="ovalid" ? "valid" : interfaceType));
                            bool isDiffSize = false;
                            unsigned WrittenSize = 0;
                            for(auto ws : writeStmt)
@@ -922,7 +926,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                         }
                         else if(isRead && isWrite)
                         {
-                           std::string fdName = ENCODE_FDNAME(argName_string, "_Read_", interfaceType);
+                           std::string fdName = ENCODE_FDNAME(argName_string, "_Read_", (interfaceType=="ovalid" ? "none" : interfaceType));
                            std::vector<std::string> operationsR, operationsW;
                            unsigned int IdIndex = 0;
                            std::list<tree_nodeRef> usedStmt_defs;
@@ -939,7 +943,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               ++IdIndex;
                            }
                            IdIndex = 0;
-                           fdName = ENCODE_FDNAME(argName_string, "_Write_", interfaceType);
+                           fdName = ENCODE_FDNAME(argName_string, "_Write_", (interfaceType=="ovalid" ? "valid" : interfaceType));
                            bool isDiffSize = false;
                            unsigned WrittenSize = 0;
                            for(auto ws : writeStmt)
@@ -966,7 +970,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                         {
                            std::vector<std::string> operationsR, operationsW;
                            unsigned int IdIndex = 0;
-                           std::string fdName = ENCODE_FDNAME(argName_string, "_Write_", interfaceType);
+                           std::string fdName = ENCODE_FDNAME(argName_string, "_Write_", (interfaceType=="ovalid" ? "valid" : interfaceType));
                            bool isDiffSize = false;
                            unsigned WrittenSize = 0;
                            for(auto ws : writeStmt)
