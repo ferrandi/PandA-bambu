@@ -2174,13 +2174,13 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            /// check if a mult_expr may become a widen_mult_expr
                            auto dw_out = tree_helper::Size(GET_NODE(ga->op0));
                            unsigned int data_bitsize_out = resize_to_1_8_16_32_64_128_256_512(dw_out);
-                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---data_bitsize_out " + STR(data_bitsize_out) + " <- " + STR(dw_out) +"\n");
+                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---data_bitsize_out " + STR(data_bitsize_out) + " <- " + STR(dw_out) + "\n");
                            auto dw_in0 = tree_helper::Size(GET_NODE(GetPointer<binary_expr>(GET_NODE(ga->op1))->op0));
                            unsigned int data_bitsize_in0 = resize_to_1_8_16_32_64_128_256_512(dw_in0);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---data_bitsize_in0 " + STR(data_bitsize_in0) + " <- " + STR(dw_in0) + "\n");
                            auto dw_in1 = tree_helper::Size(GET_NODE(GetPointer<binary_expr>(GET_NODE(ga->op1))->op1));
                            unsigned int data_bitsize_in1 = resize_to_1_8_16_32_64_128_256_512(dw_in1);
-                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---data_bitsize_in1 " + STR(data_bitsize_in1) + " <- "  + STR(dw_in1) + "\n");
+                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---data_bitsize_in1 " + STR(data_bitsize_in1) + " <- " + STR(dw_in1) + "\n");
                            if(std::max(data_bitsize_in0, data_bitsize_in1) * 2 == data_bitsize_out)
                            {
                               unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0));

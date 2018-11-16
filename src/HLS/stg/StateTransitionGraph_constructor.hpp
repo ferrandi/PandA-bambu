@@ -121,7 +121,7 @@ class StateTransitionGraph_constructor
     */
    void set_condition(const EdgeDescriptor& e, transition_type t, vertex ops);
 
-   void set_unbounded_condition(const EdgeDescriptor& e, transition_type t, const std::set<vertex> &ops, vertex ref_state);
+   void set_unbounded_condition(const EdgeDescriptor& e, transition_type t, const std::set<vertex>& ops, vertex ref_state);
 
    /**
     * @brief function setting the condition on edge derived from switch statements
@@ -138,7 +138,6 @@ class StateTransitionGraph_constructor
     * @param source is the source edge of the fsm
     */
    void copy_condition(const EdgeDescriptor& dest, const EdgeDescriptor& source);
-
 
    /** Removes the specified edge from the graph.
     * If the graph does not contain the specified edge, this method throws an exception. */

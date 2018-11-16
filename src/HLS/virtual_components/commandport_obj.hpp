@@ -73,15 +73,15 @@ class commandport_obj : public generic_obj
    /// Available command types
    typedef enum
    {
-      OPERATION = 0, /// operation enable
-      CONDITION,     /// conditional value. it represents a readcond if it goes to the controller or a condition if it goes to the datapath
-      SWITCH,        /// switch value, it represents the value of the switch statement
-      MULTIIF,       /// represents the multi conditions
-      SELECTOR,      /// mux selector
-      ALUSELECTOR,   /// ALU selector
-      UNBOUNDED,     /// signal representing a communication for an unbounded object (function call)
+      OPERATION = 0,   /// operation enable
+      CONDITION,       /// conditional value. it represents a readcond if it goes to the controller or a condition if it goes to the datapath
+      SWITCH,          /// switch value, it represents the value of the switch statement
+      MULTIIF,         /// represents the multi conditions
+      SELECTOR,        /// mux selector
+      ALUSELECTOR,     /// ALU selector
+      UNBOUNDED,       /// signal representing a communication for an unbounded object (function call)
       MULTI_UNBOUNDED, /// signal representing when a multi unbounded call ends
-      WRENABLE       /// enable for register writing
+      WRENABLE         /// enable for register writing
    } command_type;
 
    typedef std::pair<unsigned int, vertex> data_operation_pair;

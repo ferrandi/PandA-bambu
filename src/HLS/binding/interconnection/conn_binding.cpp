@@ -63,12 +63,12 @@
 #include "dbgPrintHelper.hpp"
 #include "fu_binding.hpp"
 #include "funit_obj.hpp"
+#include "multi_unbounded_obj.hpp"
 #include "multiplier_conn_obj.hpp"
 #include "mux_conn.hpp"
 #include "mux_obj.hpp"
 #include "register_obj.hpp"
 #include "state_transition_graph_manager.hpp"
-#include "multi_unbounded_obj.hpp"
 
 #include "hls.hpp"
 
@@ -1079,9 +1079,9 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
       auto mut = GetPointer<multi_unbounded_obj>(mu);
       const auto& ops = mut->get_ops();
       structural_objectRef inOps = mu_mod->find_member("ops", port_vector_o_K, mu_mod);
-      port_o *port = GetPointer<port_o>(inOps);
-      auto j=0u;
-      for (const auto& op : ops)
+      port_o* port = GetPointer<port_o>(inOps);
+      auto j = 0u;
+      for(const auto& op : ops)
       {
          generic_objRef fu_unit = HLS->Rfu->get(op);
          structural_objectRef fu_obj = fu_unit->get_structural_obj();
@@ -1101,7 +1101,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
             SM->add_connection(done, sig[done]);
          }
          THROW_ASSERT(port->get_port(j), "port->get_port(j) not found");
-         const auto & port_obj = port->get_port(j);
+         const auto& port_obj = port->get_port(j);
          SM->add_connection(port_obj, sig[done]);
          ++j;
       }

@@ -47,8 +47,8 @@
 /// Header include
 #include "StateTransitionGraph_constructor.hpp"
 
-#include "op_graph.hpp"
 #include "hls_manager.hpp"
+#include "op_graph.hpp"
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
 
@@ -133,29 +133,27 @@ void StateTransitionGraph_constructor::set_condition(const EdgeDescriptor& e, tr
    state_transition_graph->GetTransitionInfo(e)->ops.insert(op);
 }
 
-void StateTransitionGraph_constructor::set_unbounded_condition(const EdgeDescriptor& e, transition_type t, const std::set<vertex> &ops, vertex ref_state)
+void StateTransitionGraph_constructor::set_unbounded_condition(const EdgeDescriptor& e, transition_type t, const std::set<vertex>& ops, vertex ref_state)
 {
    state_transition_graph->GetTransitionInfo(e)->t = t;
-   state_transition_graph->GetTransitionInfo(e)->ops=ops;
+   state_transition_graph->GetTransitionInfo(e)->ops = ops;
    state_transition_graph->GetTransitionInfo(e)->ref_state = ref_state;
 }
-
 
 void StateTransitionGraph_constructor::set_switch_condition(const EdgeDescriptor& e, vertex op, const std::set<unsigned>& labels, bool has_default)
 {
    state_transition_graph->GetTransitionInfo(e)->t = CASE_COND;
    state_transition_graph->GetTransitionInfo(e)->ops.insert(op);
    state_transition_graph->GetTransitionInfo(e)->has_default = has_default;
-   state_transition_graph->GetTransitionInfo(e)->labels=labels;
+   state_transition_graph->GetTransitionInfo(e)->labels = labels;
 }
-
 
 void StateTransitionGraph_constructor::copy_condition(const EdgeDescriptor& dest, const EdgeDescriptor& source)
 {
    state_transition_graph->GetTransitionInfo(dest)->t = state_transition_graph->GetTransitionInfo(source)->t;
-   state_transition_graph->GetTransitionInfo(dest)->ops=state_transition_graph->GetTransitionInfo(source)->ops;
+   state_transition_graph->GetTransitionInfo(dest)->ops = state_transition_graph->GetTransitionInfo(source)->ops;
    state_transition_graph->GetTransitionInfo(dest)->has_default = state_transition_graph->GetTransitionInfo(source)->has_default;
-   state_transition_graph->GetTransitionInfo(dest)->labels=state_transition_graph->GetTransitionInfo(source)->labels;
+   state_transition_graph->GetTransitionInfo(dest)->labels = state_transition_graph->GetTransitionInfo(source)->labels;
 }
 
 //*********************************************************************

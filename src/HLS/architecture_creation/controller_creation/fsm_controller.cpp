@@ -295,27 +295,27 @@ void fsm_controller::create_state_machine(std::string& parse)
          std::vector<std::string> in(in_num, "-");
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing condition");
-         auto transitionType=stg->CGetTransitionInfo(*e_it)->get_type();
-         if(transitionType==DONTCARE_COND)
+         auto transitionType = stg->CGetTransitionInfo(*e_it)->get_type();
+         if(transitionType == DONTCARE_COND)
             ; // do nothing
-         else if(transitionType==TRUE_COND)
+         else if(transitionType == TRUE_COND)
          {
             auto op = stg->CGetTransitionInfo(*e_it)->get_operation();
             THROW_ASSERT(cond_ports.find(op) != cond_ports.end(), "the port is missing");
             THROW_ASSERT(in[cond_ports.find(op)->second] == "-", "two different values for the same condition port");
             in[cond_ports.find(op)->second] = "1";
          }
-         else if(transitionType==FALSE_COND)
+         else if(transitionType == FALSE_COND)
          {
             auto op = stg->CGetTransitionInfo(*e_it)->get_operation();
             THROW_ASSERT(cond_ports.find(op) != cond_ports.end(), "the port is missing");
             THROW_ASSERT(in[cond_ports.find(op)->second] == "-", "two different values for the same condition port");
             in[cond_ports.find(op)->second] = "0";
          }
-         else if(transitionType==ALL_FINISHED)
+         else if(transitionType == ALL_FINISHED)
          {
-            auto ops=stg->CGetTransitionInfo(*e_it)->get_operations();
-            if(ops.size()==1)
+            auto ops = stg->CGetTransitionInfo(*e_it)->get_operations();
+            if(ops.size() == 1)
             {
                auto op = *(ops.begin());
                THROW_ASSERT(cond_ports.find(op) != cond_ports.end(), "the port is missing");
@@ -330,10 +330,10 @@ void fsm_controller::create_state_machine(std::string& parse)
                in[mu_ports.find(state)->second] = "1";
             }
          }
-         else if(transitionType==NOT_ALL_FINISHED)
+         else if(transitionType == NOT_ALL_FINISHED)
          {
-            auto ops=stg->CGetTransitionInfo(*e_it)->get_operations();
-            if(ops.size()==1)
+            auto ops = stg->CGetTransitionInfo(*e_it)->get_operations();
+            if(ops.size() == 1)
             {
                auto op = *(ops.begin());
                THROW_ASSERT(cond_ports.find(op) != cond_ports.end(), "the port is missing");
@@ -348,12 +348,12 @@ void fsm_controller::create_state_machine(std::string& parse)
                in[mu_ports.find(state)->second] = "0";
             }
          }
-         else if(transitionType==CASE_COND)
+         else if(transitionType == CASE_COND)
          {
             auto op = stg->CGetTransitionInfo(*e_it)->get_operation();
             THROW_ASSERT(cond_ports.find(op) != cond_ports.end(), "the port is missing");
             THROW_ASSERT(in[cond_ports.find(op)->second] == "-", "two different values for the same condition port");
-            std::string value=in[cond_ports.find(op)->second];
+            std::string value = in[cond_ports.find(op)->second];
             THROW_ASSERT(value == "-", "two different values for the same condition port");
             auto labels = stg->CGetTransitionInfo(*e_it)->get_labels();
             for(auto label : labels)

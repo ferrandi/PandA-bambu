@@ -181,9 +181,9 @@ class StateTransitionGraphManager
     */
    unsigned int get_number_of_states() const;
 
-   void add_multi_unbounded_obj(vertex s, const std::set<vertex> &ops);
+   void add_multi_unbounded_obj(vertex s, const std::set<vertex>& ops);
 
-   void specialise_mu(structural_objectRef &mu_mod, generic_objRef mu) const;
+   void specialise_mu(structural_objectRef& mu_mod, generic_objRef mu) const;
 
    const std::map<vertex, generic_objRef>& get_mu_ctrls() const
    {

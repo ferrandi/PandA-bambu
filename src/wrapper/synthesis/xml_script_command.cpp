@@ -862,7 +862,7 @@ xml_foreach_t::xml_foreach_t(const xml_element* element) : xml_script_node_t(NOD
       for(const auto& s : subscript)
       {
          const xml_element* el = GetPointer<xml_element>(s);
-         if(el==nullptr)
+         if(el == nullptr)
          {
             continue;
          }

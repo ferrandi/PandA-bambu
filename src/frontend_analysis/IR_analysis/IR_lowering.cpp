@@ -966,7 +966,7 @@ tree_nodeRef IR_lowering::expand_smod_pow2(tree_nodeRef op0, unsigned long long 
    block->PushBefore(signmask_ga, stmt);
    tree_nodeRef signmask_var = GetPointer<gimple_assign>(GET_NODE(signmask_ga))->op0;
 
-   if(logd<0)
+   if(logd < 0)
       THROW_ERROR("unexpected condition");
    masklow = (1ULL << logd) - 1;
    tree_nodeRef Constmasklow = TM->CreateUniqueIntegerCst(static_cast<long long int>(masklow), GET_INDEX_NODE(type));

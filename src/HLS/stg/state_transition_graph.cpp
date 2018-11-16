@@ -204,23 +204,23 @@ void TransitionInfo::print(std::ostream& os) const
    const BehavioralHelperConstRef BH = op_function_graph->CGetOpGraphInfo()->BH;
    if(t == DONTCARE_COND)
       ; // nothing to print
-   else if(t==TRUE_COND)
-       os << GET_NAME(op_function_graph, get_operation()) << "(T)\\n";
-   else if(t==FALSE_COND)
+   else if(t == TRUE_COND)
+      os << GET_NAME(op_function_graph, get_operation()) << "(T)\\n";
+   else if(t == FALSE_COND)
       os << GET_NAME(op_function_graph, get_operation()) << "(F)\\n";
-   else if(t==CASE_COND)
+   else if(t == CASE_COND)
    {
       auto op = get_operation();
       os << GET_NAME(op_function_graph, op);
       os << " (";
       const var_pp_functorConstRef std(new std_var_pp_functor(BH));
-      bool first=true;
-      for(auto label: labels)
+      bool first = true;
+      for(auto label : labels)
       {
          if(first)
          {
             os << BH->print_node(label, op, std);
-            first=false;
+            first = false;
          }
          else
             os << "," << BH->print_node(label, op, std);
@@ -228,37 +228,36 @@ void TransitionInfo::print(std::ostream& os) const
       if(has_default)
       {
          if(first)
-            os <<  "default\\n";
+            os << "default\\n";
          else
-            os <<  ",default\\n";
+            os << ",default\\n";
       }
       os << ")";
-
    }
-   else if(t==ALL_FINISHED)
+   else if(t == ALL_FINISHED)
    {
-      bool first=true;
-      for(auto op: ops)
+      bool first = true;
+      for(auto op : ops)
       {
          if(first)
          {
             os << GET_NAME(op_function_graph, op);
-            first=false;
+            first = false;
          }
          else
             os << "," << GET_NAME(op_function_graph, op);
       }
       os << "(ALL_FINISHED)\\n";
    }
-   else if(t==NOT_ALL_FINISHED)
+   else if(t == NOT_ALL_FINISHED)
    {
-      bool first=true;
-      for(auto op: ops)
+      bool first = true;
+      for(auto op : ops)
       {
          if(first)
          {
             os << GET_NAME(op_function_graph, op);
-            first=false;
+            first = false;
          }
          else
             os << "," << GET_NAME(op_function_graph, op);
@@ -271,13 +270,13 @@ void TransitionInfo::print(std::ostream& os) const
 
 vertex TransitionInfo::get_operation() const
 {
-   THROW_ASSERT(ops.size()==1, "unexpected condition");
+   THROW_ASSERT(ops.size() == 1, "unexpected condition");
    return *ops.begin();
 }
 
 vertex TransitionInfo::get_ref_state() const
 {
-   THROW_ASSERT((t==ALL_FINISHED||t==NOT_ALL_FINISHED) && ref_state != NULL_VERTEX, "unexpected condition");
+   THROW_ASSERT((t == ALL_FINISHED || t == NOT_ALL_FINISHED) && ref_state != NULL_VERTEX, "unexpected condition");
    return ref_state;
 }
 

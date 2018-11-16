@@ -48,8 +48,8 @@
 
 #include "config_HAVE_UNORDERED.hpp"
 
-#include <utility>
 #include "refcount.hpp"
+#include <utility>
 
 /**
  * @name Forward declarations

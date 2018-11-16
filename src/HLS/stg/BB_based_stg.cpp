@@ -447,9 +447,9 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
             HLS->STG->GetStg()->GetStateInfo(s_call)->is_dummy = true;
             call_states[s_cur].push_back(s_call);
             std::set<vertex> ops;
-            ops.insert(call_operations.find(s_cur)->second.begin(),  call_operations.find(s_cur)->second.end());
-            if(ops.size()>1)
-               HLS->STG->add_multi_unbounded_obj(s_cur,ops);
+            ops.insert(call_operations.find(s_cur)->second.begin(), call_operations.find(s_cur)->second.end());
+            if(ops.size() > 1)
+               HLS->STG->add_multi_unbounded_obj(s_cur, ops);
          }
 
          if(have_previous)
@@ -463,7 +463,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                THROW_ASSERT(call_operations.find(previous) != call_operations.end() && call_operations.find(previous)->second.begin() != call_operations.find(previous)->second.end(), "unexpected condition");
                THROW_ASSERT(call_states.find(previous) != call_states.end(), "unexpected condition");
                std::set<vertex> ops;
-               ops.insert( call_operations.find(previous)->second.begin(),  call_operations.find(previous)->second.end());
+               ops.insert(call_operations.find(previous)->second.begin(), call_operations.find(previous)->second.end());
                auto call_sets = call_states.find(previous)->second;
                for(auto& call_set : call_sets)
                {
@@ -590,29 +590,28 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       if(cfg_edge_ids.size())
       {
          auto edgeType = *cfg_edge_ids.begin();
-         transition_type t=TRUE_COND;
-         if(edgeType==T_COND || edgeType==F_COND)
+         transition_type t = TRUE_COND;
+         if(edgeType == T_COND || edgeType == F_COND)
          {
-            if(edgeType==T_COND)
-               t=TRUE_COND;
-            else if(edgeType==F_COND)
-               t=FALSE_COND;
+            if(edgeType == T_COND)
+               t = TRUE_COND;
+            else if(edgeType == F_COND)
+               t = FALSE_COND;
             STG_builder->set_condition(s_e, t, last_operation);
          }
          else
          {
             std::set<unsigned> labels;
-            bool has_default=false;
+            bool has_default = false;
             for(auto label : cfg_edge_ids)
             {
-               if(label==default_COND)
-                  has_default=true;
+               if(label == default_COND)
+                  has_default = true;
                else
                   labels.insert(label);
             }
             STG_builder->set_switch_condition(s_e, last_operation, labels, has_default);
          }
-
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(fbb->CGetBBNodeInfo(bb_src)->block->number) + "-->" + STR(fbb->CGetBBNodeInfo(bb_tgt)->block->number));
    }

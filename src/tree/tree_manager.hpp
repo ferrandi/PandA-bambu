@@ -181,7 +181,7 @@ class tree_manager
     * @param stmt is the statement from which the recursion originates (necessary to update ssa_nodes usage information)
     * @param definition is true if old_node is a ssa_name in the left part of a gimple_assign
     */
-   void RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef old_node, const tree_nodeRef& new_node, const tree_nodeRef& stmt, bool definition);// NOLINT
+   void RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef old_node, const tree_nodeRef& new_node, const tree_nodeRef& stmt, bool definition); // NOLINT
 
    /**
     * This is the constructor of the tree_manager which initializes the vector of functions.

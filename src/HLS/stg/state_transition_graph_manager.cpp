@@ -57,11 +57,11 @@
 #include "technology_node.hpp"
 
 /// hls include
+#include "fu_binding.hpp"
 #include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
-#include "fu_binding.hpp"
 
 /// Parameter include
 #include "Parameter.hpp"
@@ -70,8 +70,8 @@
 #include "StateTransitionGraph_constructor.hpp"
 #include "state_transition_graph.hpp"
 
-#include "multi_unbounded_obj.hpp"
 #include "funit_obj.hpp"
+#include "multi_unbounded_obj.hpp"
 
 /// Tree include
 #include "var_pp_functor.hpp"
@@ -235,7 +235,7 @@ void StateTransitionGraphManager::print_statistics() const
    }
 }
 
-void StateTransitionGraphManager::add_multi_unbounded_obj(vertex s, const std::set<vertex> &ops)
+void StateTransitionGraphManager::add_multi_unbounded_obj(vertex s, const std::set<vertex>& ops)
 {
    if(multi_unbounded_table.find(s) == multi_unbounded_table.end())
    {
@@ -249,7 +249,7 @@ void StateTransitionGraphManager::specialise_mu(structural_objectRef& mu_mod, ge
    auto mut = GetPointer<multi_unbounded_obj>(mu);
    THROW_ASSERT(mut, "unexpected condition");
    structural_objectRef inOps = mu_mod->find_member("ops", port_vector_o_K, mu_mod);
-   port_o *port = GetPointer<port_o>(inOps);
+   port_o* port = GetPointer<port_o>(inOps);
    const auto& ops = mut->get_ops();
    auto n_in_ports = static_cast<unsigned int>(ops.size());
    port->add_n_ports(n_in_ports, inOps);
@@ -260,7 +260,7 @@ void StateTransitionGraphManager::add_to_SM(structural_objectRef clock_port, str
    const auto& SM = HLS->datapath;
    const auto& circuit = SM->get_circ();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding :multi-unbounded controllers");
-   for(auto state2mu: multi_unbounded_table)
+   for(auto state2mu : multi_unbounded_table)
    {
       auto mu = state2mu.second;
       std::string name = mu->get_string();
@@ -273,7 +273,7 @@ void StateTransitionGraphManager::add_to_SM(structural_objectRef clock_port, str
       structural_objectRef port_rst = mu_mod->find_member(RESET_PORT_NAME, port_o_K, mu_mod);
       SM->add_connection(reset_port, port_rst);
       mu->set_structural_obj(mu_mod);
-      auto p_obj=mu_mod->find_member("sop", port_o_K, mu_mod);
+      auto p_obj = mu_mod->find_member("sop", port_o_K, mu_mod);
       mu->set_out_sign(p_obj);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Adding :multi-unbounded controllers");

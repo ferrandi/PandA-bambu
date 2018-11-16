@@ -1368,8 +1368,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                THROW_ASSERT(fu_src_obj, "unexpected condition");
                HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, src_state, state, op));
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                             "       - add data transfer from primary input " << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index)
-                                                                              << " from state "
+                             "       - add data transfer from primary input " << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
                                                                               << HLS->Rliv->get_name(src_state) + " to state " + HLS->Rliv->get_name(state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
             }
             else
@@ -1383,8 +1382,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                      const generic_objRef fu_src_obj = HLS->Rfu->get(def_op);
                      HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, src_state, state, op));
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                   "       - add data transfer from " << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index)
-                                                                      << " from state "
+                                   "       - add data transfer from " << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
                                                                       << HLS->Rliv->get_name(src_state) + " to state " + HLS->Rliv->get_name(state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
                   }
                   else if(HLS->storage_value_information->is_a_storage_value(src_state, tree_var))
@@ -1398,8 +1396,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                      {
                         HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, src_state, state, op));
                         PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                      "       - add data transfer from " << reg_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index)
-                                                                         << " from state "
+                                      "       - add data transfer from " << reg_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
                                                                          << HLS->Rliv->get_name(src_state) + " to state " + HLS->Rliv->get_name(state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
                      }
                   }
@@ -1420,8 +1417,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                   {
                      HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, src_state, state, op));
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                   "       - add data transfer from " << reg_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index)
-                                                                      << " from state "
+                                   "       - add data transfer from " << reg_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
                                                                       << HLS->Rliv->get_name(src_state) + " to state " + HLS->Rliv->get_name(state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
                   }
                }
@@ -1444,8 +1440,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                THROW_ASSERT(fu_src_obj, "unexpected condition");
                HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, state, tgt_state, op));
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                             "       - add data transfer from primary input " << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index)
-                                                                              << " from state "
+                             "       - add data transfer from primary input " << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
                                                                               << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
             }
             else
@@ -1460,8 +1455,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                      const generic_objRef fu_src_obj = HLS->Rfu->get(def_op);
                      HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, state, tgt_state, op));
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                   "       - add data transfer from " << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index)
-                                                                      << " from state "
+                                   "       - add data transfer from " << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
                                                                       << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
                   }
                   else if(HLS->storage_value_information->is_a_storage_value(state, tree_var))
@@ -1475,8 +1469,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                      {
                         HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, state, tgt_state, op));
                         PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                      "       - add data transfer from " << reg_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index)
-                                                                         << " from state "
+                                      "       - add data transfer from " << reg_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
                                                                          << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
                      }
                   }
@@ -1530,8 +1523,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                      }
                      HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index, data_transfer(tree_temp, precision, state, tgt_state, op));
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                   "       - add data transfer from " << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index)
-                                                                      << " from state "
+                                   "       - add data transfer from " << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
                                                                       << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_temp));
                   }
                   else
@@ -1546,8 +1538,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                      {
                         HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, state, tgt_state, op));
                         PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                      "       - add data transfer from " << reg_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index)
-                                                                         << " from state "
+                                      "       - add data transfer from " << reg_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
                                                                          << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
                      }
                   }
@@ -1564,8 +1555,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                   {
                      HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, state, tgt_state, op));
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                   "       - add data transfer from " << reg_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index)
-                                                                      << " from state "
+                                   "       - add data transfer from " << reg_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
                                                                       << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
                   }
                }
@@ -2635,8 +2625,7 @@ unsigned int mux_connection_binding::mux_interconnection()
       const generic_objRef unit = std::get<0>(connection.first);
       unsigned int operand = std::get<1>(connection.first);
       unsigned int port_index = std::get<2>(connection.first);
-      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                    "Unit: " + unit->get_string() + "(" + std::to_string(operand) + ":" + std::to_string(port_index) + "): " + std::to_string(connection.second.size()) + " connections");
+      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Unit: " + unit->get_string() + "(" + std::to_string(operand) + ":" + std::to_string(port_index) + "): " + std::to_string(connection.second.size()) + " connections");
 
       allocated_mux += input_logic(connection.second, unit, operand, port_index, iteration);
       ++iteration;

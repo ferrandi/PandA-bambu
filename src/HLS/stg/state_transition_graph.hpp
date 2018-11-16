@@ -159,14 +159,15 @@ struct StateInfo : public NodeInfo
 typedef refcount<StateInfo> StateInfoRef;
 typedef refcount<const StateInfo> StateInfoConstRef;
 
-enum transition_type : int {
-            DONTCARE_COND = 0,
-            TRUE_COND,
-            FALSE_COND,
-            CASE_COND,
-            ALL_FINISHED,
-            NOT_ALL_FINISHED
-         };
+enum transition_type : int
+{
+   DONTCARE_COND = 0,
+   TRUE_COND,
+   FALSE_COND,
+   CASE_COND,
+   ALL_FINISHED,
+   NOT_ALL_FINISHED
+};
 
 /**
  * Structure holding the information about an edge into the graph. It specialize generic edge_info
@@ -174,7 +175,7 @@ enum transition_type : int {
  */
 class TransitionInfo : public EdgeInfo
 {
-   private:
+ private:
    /// pointer to graph storing information about operations
    OpGraphConstRef op_function_graph;
    transition_type t{DONTCARE_COND};
@@ -183,8 +184,10 @@ class TransitionInfo : public EdgeInfo
    std::set<unsigned> labels;
    vertex ref_state{NULL_VERTEX};
 
-   public:
-   TransitionInfo(OpGraphConstRef g) : op_function_graph(g) {}
+ public:
+   TransitionInfo(OpGraphConstRef g) : op_function_graph(g)
+   {
+   }
 
    friend class StateTransitionGraph_constructor;
 
@@ -194,11 +197,23 @@ class TransitionInfo : public EdgeInfo
     */
    void print(std::ostream& os) const;
 
-   bool get_has_default() const {return has_default;}
-   transition_type get_type() const {return t;}
-   const std::set<vertex>&get_operations() const {return ops;}
+   bool get_has_default() const
+   {
+      return has_default;
+   }
+   transition_type get_type() const
+   {
+      return t;
+   }
+   const std::set<vertex>& get_operations() const
+   {
+      return ops;
+   }
    vertex get_operation() const;
-   const std::set<unsigned>&get_labels() const {return labels;}
+   const std::set<unsigned>& get_labels() const
+   {
+      return labels;
+   }
    vertex get_ref_state() const;
 };
 /// refcount about edge info

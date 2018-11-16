@@ -206,7 +206,7 @@ void ControllerCreatorBaseStep::add_command_ports(structural_objectRef circuit)
                sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, bool_type);
                auto mu_obj = GetPointer<commandport_obj>(j.second)->get_elem();
                THROW_ASSERT(GetPointer<multi_unbounded_obj>(mu_obj), "unexpected condition");
-               mu_ports[GetPointer<multi_unbounded_obj>(mu_obj)->get_fsm_state()]=in_num;
+               mu_ports[GetPointer<multi_unbounded_obj>(mu_obj)->get_fsm_state()] = in_num;
             }
             else
             {
