@@ -31,8 +31,8 @@
  *
 */
 /**
- * @file Read_valid.cpp
- * @brief Snippet for the Read_valid dynamic generator.
+ * @file Read_handshake.cpp
+ * @brief Snippet for the Read_handshake dynamic generator.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
@@ -44,12 +44,12 @@ std::cout << "reg [PORTSIZE_" << _ports_out[1].name << "-1:0] started0 1INIT_ZER
 std::cout << "reg [PORTSIZE_" << _ports_out[1].name << "-1:0] validated 1INIT_ZERO_VALUE;\n";
 std::cout << "reg [PORTSIZE_" << _ports_out[1].name << "-1:0] validated0 1INIT_ZERO_VALUE;\n";
 std::cout << "reg [(PORTSIZE_" << _ports_out[1].name << "*BITSIZE_" << _ports_out[1].name << ")-1:0] " << _ports_out[1].name << " ;\n";
-std::cout << "reg [PORTSIZE_" << _ports_out[1].name << "-1:0] " << _ports_out[0].name << " 1INIT_ZERO_VALUE;\n";
+std::cout << "reg [PORTSIZE_" << _ports_out[1].name << "-1:0] " << _ports_out[0].name << "0 1INIT_ZERO_VALUE;\n";
 std::cout << "reg [" << _ports_in[4].type_size << "-1:0] reg_" << _ports_in[4].name << " 1INIT_ZERO_VALUE;\n";
 
 std::cout << "always @(*)\n";
 std::cout << "  for(ii=0; ii<PORTSIZE_"<< _ports_out[1].name << "; ii=ii+1)\n";
-std::cout << "    started0[ii] = (started[ii] | " << _ports_in[2].name << "[ii]) & !(validated[ii] | " << _ports_in[5].name << ");\n";
+std::cout << "    started0[ii] <= (started[ii] | " << _ports_in[2].name << "[ii]) & !(validated[ii] | " << _ports_in[5].name << ");\n";
 std::cout << "always @(posedge clock 1RESET_EDGE)\n";
 std::cout << "  if (1RESET_VALUE)\n";
 std::cout << "    started <= 0;\n";
@@ -83,8 +83,9 @@ std::cout << "end\n";
 std::cout << "always @(*)\n";
 std::cout << "begin\n";
 std::cout << "  for(ii=0; ii<PORTSIZE_"<< _ports_out[1].name << "; ii=ii+1)\n";
-std::cout << "    " << _ports_out[0].name << "[ii] = ("<< _ports_in[2].name <<"[ii] & " << _ports_in[5].name << ") | (started[ii] & " << _ports_in[5].name << ")  | (validated[ii] & "<< _ports_in[2].name <<"[ii]);" <<std::endl;
+std::cout << "    " << _ports_out[0].name << "0[ii] = ("<< _ports_in[2].name <<"[ii] & " << _ports_in[5].name << ") | (started[ii] & " << _ports_in[5].name << ")  | (validated[ii] & "<< _ports_in[2].name <<"[ii]);" <<std::endl;
  std::cout << "end\n";
 
-
+std::cout << "assign " << _ports_out[0].name << " = " << _ports_out[0].name << "0;\n";
+std::cout << "assign " << _ports_out[2].name << " = |" << _ports_out[0].name << "0;\n";
 

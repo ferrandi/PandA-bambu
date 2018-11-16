@@ -1135,6 +1135,9 @@ gcc_regression_simple/zero-struct-1.c\
 ./bambu_specific_test4/ac_types2_out_ack.cpp \
 ./bambu_specific_test4/ac_types3.cpp \
 ./bambu_specific_test4/ac_types4.cpp \
+./bambu_specific_test4/ac_types2_in_handshake.cpp \
+./bambu_specific_test4/ac_types2_out_handshake.cpp \
+./bambu_specific_test4/ac_types2_handshake.cpp \
 ./bambu_specific_test4/simple_c1.c\
 ./bambu_specific_test4/simple_c1_none.c\
 ./bambu_specific_test4/simple_c2_none.c\

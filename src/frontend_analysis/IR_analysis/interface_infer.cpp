@@ -500,7 +500,7 @@ void interface_infer::create_resource_Write_simple(const std::vector<std::string
       GetPointer<port_o>(addrPort)->set_is_var_args(true); /// required to activate the module generation
       if(interfaceType == "acknowledge" || interfaceType == "handshake")
       {
-         auto inPort_o_done = CM->add_port(DONE_PORT_NAME, port_o::OUT, interface_top, bool_type);
+         CM->add_port_vector(DONE_PORT_NAME, port_o::OUT, nOps, interface_top, bool_type);
       }
 
       auto inPort_o = CM->add_port("_" + argName_string + (IO_port ? "_o" : ""), port_o::OUT, interface_top, Intype);

@@ -750,7 +750,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             writer->write("if (" + (has_valid ? port_vld->get_id() : DONE_PORT_NAME) + " == 1)\n");
             writer->write(STR(STD_OPENING_CHAR));
             writer->write("begin\n");
-            writer->write("registered_" + orig_name + " = " + orig_name + ";\n");
+            writer->write("registered_" + orig_name + " <= " + orig_name + ";\n");
             writer->write(STR(STD_CLOSING_CHAR));
             writer->write("end\n");
             writer->write(STR(STD_CLOSING_CHAR));

@@ -31,8 +31,8 @@
  *
 */
 /**
- * @file Write_acknowledge.cpp
- * @brief Snippet for the Write_acknowledge dynamic generator.
+ * @file Write_handshake.cpp
+ * @brief Snippet for the Write_handshake dynamic generator.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
@@ -49,7 +49,7 @@ std::cout << "reg [" << _ports_out[1].type_size << "-1:0] reg_" << _ports_out[1]
 
 std::cout << "always @(*)\n";
 std::cout << "  for(ii=0; ii<PORTSIZE_"<< _ports_in[3].name << "; ii=ii+1)\n";
-std::cout << "    started0[ii] <= (started[ii] | " << _ports_in[2].name << "[ii]) & !(validated[ii] | " << _ports_in[6].name << ");\n";
+std::cout << "    started0[ii] = (started[ii] | " << _ports_in[2].name << "[ii]) & !(validated[ii] | " << _ports_in[6].name << ");\n";
 std::cout << "always @(posedge clock 1RESET_EDGE)\n";
 std::cout << "  if (1RESET_VALUE)\n";
 std::cout << "    started <= 0;\n";
@@ -92,5 +92,5 @@ std::cout << "  for(ii=0; ii<PORTSIZE_"<< _ports_in[3].name << "; ii=ii+1)\n";
 std::cout << "    " << _ports_out[0].name << "[ii] = ("<< _ports_in[2].name <<"[ii] & " << _ports_in[6].name << ") | (started[ii] & " << _ports_in[6].name << ")  | (validated[ii] & "<< _ports_in[2].name <<"[ii]);" <<std::endl;
  std::cout << "end\n";
 
-
+std::cout << "assign " << _ports_out[2].name << " = (|"<<_ports_in[2].name<<") | (|started);\n";
 

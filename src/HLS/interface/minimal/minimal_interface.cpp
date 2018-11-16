@@ -723,17 +723,34 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
 
       if(portsToSkip.find(port_in) == portsToSkip.end() && portsToConnect.find(port_in) == portsToConnect.end() && portsToConstant.find(port_in) == portsToConstant.end())
       {
-         structural_objectRef ext_port = interfaceObj->find_member(port_name, port_o_K, interfaceObj);
-
-         if(!ext_port)
+         if(GetPointer<port_o>(port_in)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
          {
-            if(port_in->get_kind() == port_vector_o_K)
-               ext_port = SM_minimal_interface->add_port_vector(port_name, port_o::IN, GetPointer<port_o>(port_in)->get_ports_size(), interfaceObj, port_in->get_typeRef());
-            else
-               ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, port_in->get_typeRef());
+            std::string ext_name = port_name[0] == '_' ? port_name.substr(1) : port_name;
+            structural_objectRef ext_port = interfaceObj->find_member(ext_name, port_o_K, interfaceObj);
+            if(!ext_port)
+            {
+               if(port_in->get_kind() == port_vector_o_K)
+                  ext_port = SM_minimal_interface->add_port_vector(ext_name, port_o::IN, GetPointer<port_o>(port_in)->get_ports_size(), interfaceObj, port_in->get_typeRef());
+               else
+                  ext_port = SM_minimal_interface->add_port(ext_name, port_o::IN, interfaceObj, port_in->get_typeRef());
+            }
+            port_o::fix_port_properties(port_in, ext_port);
+            SM_minimal_interface->add_connection(port_in, ext_port);
          }
-         port_o::fix_port_properties(port_in, ext_port);
-         SM_minimal_interface->add_connection(port_in, ext_port);
+         else
+         {
+            structural_objectRef ext_port = interfaceObj->find_member(port_name, port_o_K, interfaceObj);
+
+            if(!ext_port)
+            {
+               if(port_in->get_kind() == port_vector_o_K)
+                  ext_port = SM_minimal_interface->add_port_vector(port_name, port_o::IN, GetPointer<port_o>(port_in)->get_ports_size(), interfaceObj, port_in->get_typeRef());
+               else
+                  ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, port_in->get_typeRef());
+            }
+            port_o::fix_port_properties(port_in, ext_port);
+            SM_minimal_interface->add_connection(port_in, ext_port);
+         }
       }
       else if(portsToConnect.find(port_in) != portsToConnect.end())
       {
