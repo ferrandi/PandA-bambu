@@ -448,6 +448,17 @@ void MinimalInterfaceTestbench::write_interface_handler() const
             ///check if you have both _vld and _ack
             std::string orig_port_name;
             bool have_both=false;
+            if(InterfaceType == port_o::port_interface::PI_RVALID)
+            {
+               orig_port_name=portInst->get_id();
+               auto size_string=orig_port_name.size()-std::string("_vld").size();
+               orig_port_name=orig_port_name.substr(0, size_string);
+               auto port_ack = mod->find_member(orig_port_name+"_ack", port_o_K, cir);
+               if(port_ack)
+               {
+                  have_both=true;
+               }
+            }
             if(InterfaceType == port_o::port_interface::PI_WACK)
             {
                orig_port_name=portInst->get_id();
@@ -461,9 +472,9 @@ void MinimalInterfaceTestbench::write_interface_handler() const
             }
 
 
-            if(InterfaceType == port_o::port_interface::PI_RVALID || InterfaceType == port_o::port_interface::PI_WACK)
+            if(InterfaceType == port_o::port_interface::PI_RVALID || InterfaceType == port_o::port_interface::PI_WACK || InterfaceType == port_o::port_interface::PI_EMPTY_N || InterfaceType == port_o::port_interface::PI_FULL_N)
             {
-               if(firstRValid && InterfaceType == port_o::port_interface::PI_RVALID)
+               if(!have_both && (firstRValid && InterfaceType == port_o::port_interface::PI_RVALID))
                {
                   firstRValid = false;
                   writer->write("reg __vld_port_state = 0;\n");
@@ -473,24 +484,53 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                   firstWAck = false;
                   writer->write("reg __ack_port_state = 0;\n");
                }
-               writer->write_comment(InterfaceType == port_o::port_interface::PI_RVALID ? "RVALID handler\n" : "WACK handler\n");
+               if(InterfaceType == port_o::port_interface::PI_RVALID)
+                  writer->write_comment("RVALID handler\n");
+               else if(InterfaceType == port_o::port_interface::PI_WACK)
+                  writer->write_comment("WACK handler\n");
+               else if(InterfaceType == port_o::port_interface::PI_EMPTY_N)
+                  writer->write_comment("EMPTY_N handler\n");
+               else if(InterfaceType == port_o::port_interface::PI_FULL_N)
+                  writer->write_comment("FULL_N handler\n");
+               else
+                  THROW_ERROR("unsupported interface type");
                writer->write("always @ (posedge " + std::string(CLOCK_PORT_NAME) + ")\n");
                writer->write(STR(STD_OPENING_CHAR));
                writer->write("begin\n");
-               if(have_both)
+               if(have_both && InterfaceType == port_o::port_interface::PI_WACK)
                {
-                  if(InterfaceType == port_o::port_interface::PI_WACK)
-                     writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + " <= " + HDL_manager::convert_to_identifier(writer.get(), orig_port_name) + "_vld & !"+ HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + ";\n");
-                  else
-                     THROW_ERROR("interface not expected");
+                  writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + " <= " + HDL_manager::convert_to_identifier(writer.get(), orig_port_name) + "_vld & !"+ HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + ";\n");
                }
                else
                {
-                  writer->write(InterfaceType == port_o::port_interface::PI_RVALID ? "if(__state == 3 && __vld_port_state == 0)\n" : "if(__state == 3 && __ack_port_state == 0)\n");
+                  if(InterfaceType == port_o::port_interface::PI_RVALID)
+                  {
+                     if(have_both)
+                        writer->write("if(__state == 3)\n");
+                     else
+                        writer->write("if(__state == 3 && __vld_port_state == 0)\n");
+                  }
+                  else if(InterfaceType == port_o::port_interface::PI_WACK)
+                     writer->write("if(__state == 3 && __ack_port_state == 0)\n");
+                  else if(InterfaceType == port_o::port_interface::PI_EMPTY_N)
+                     writer->write("if(__state == 3)\n");
+                  else if(InterfaceType == port_o::port_interface::PI_FULL_N)
+                     writer->write("if(__state == 3)\n");
+                  else
+                     THROW_ERROR("unsupported interface type");
                   writer->write(STR(STD_OPENING_CHAR));
                   writer->write("begin\n");
                   writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + " <= 1'b1;\n");
-                  writer->write(InterfaceType == port_o::port_interface::PI_RVALID ? "__vld_port_state <= 1;" : "__ack_port_state <= 1;");
+                  if(!have_both && InterfaceType == port_o::port_interface::PI_RVALID)
+                     writer->write("__vld_port_state <= 1;");
+                  else if(InterfaceType == port_o::port_interface::PI_WACK)
+                     writer->write("__ack_port_state <= 1;");
+                  else if(InterfaceType == port_o::port_interface::PI_EMPTY_N)
+                     ;
+                  else if(InterfaceType == port_o::port_interface::PI_FULL_N)
+                     ;
+                  else
+                     THROW_ERROR("unsupported interface type");
                   writer->write(STR(STD_CLOSING_CHAR) + "\n");
                   writer->write("end\n");
                   writer->write("else");
@@ -855,8 +895,14 @@ void MinimalInterfaceTestbench::write_file_reading_operations() const
       if(!portInst)
       {
          portInst = mod->find_member(par + "_i", port_o_K, cir);
-         THROW_ASSERT(portInst, "unexpected condition");
-         THROW_ASSERT(GetPointer<port_o>(portInst)->get_port_interface() != port_o::port_interface::PI_DEFAULT, "unexpected condition");
+      }
+      if(!portInst)
+      {
+         portInst = mod->find_member(par + "_dout", port_o_K, cir);
+      }
+      if(!portInst)
+      {
+         portInst = mod->find_member(par + "_din", port_o_K, cir);
       }
       THROW_ASSERT(portInst, "unexpected condition");
       auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();

@@ -734,15 +734,31 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
          if(!portInst)
          {
             portInst = mod->find_member(par + "_o", port_o_K, cir);
-            THROW_ASSERT(portInst, "unexpected condition");
-            THROW_ASSERT(GetPointer<port_o>(portInst)->get_port_interface() != port_o::port_interface::PI_DEFAULT, "unexpected condition");
          }
-         THROW_ASSERT(portInst, "unexpected condition");
+         if(!portInst)
+         {
+            portInst = mod->find_member(par + "_dout", port_o_K, cir);
+         }
+         if(!portInst)
+         {
+            portInst = mod->find_member(par + "_din", port_o_K, cir);
+         }
+         THROW_ASSERT(portInst, "unexpected condition: "+par);
          auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
          if(InterfaceType == port_o::port_interface::PI_WNONE)
          {
             auto port_vld = mod->find_member(portInst->get_id() + "_vld", port_o_K, cir);
             auto has_valid = port_vld && GetPointer<port_o>(port_vld)->get_port_interface() == port_o::port_interface::PI_WVALID;
+            if(!port_vld)
+            {
+               auto port_name=portInst->get_id();
+               auto terminate=port_name.size()>4 ? port_name.size()-std::string("_din").size() : 0;
+               if(port_name.substr(terminate)=="_din")
+               {
+                  port_vld = mod->find_member(port_name.substr(0,terminate) + "_write", port_o_K, cir);
+                  has_valid = port_vld && GetPointer<port_o>(port_vld)->get_port_interface() == port_o::port_interface::PI_WRITE;
+               }
+            }
             auto orig_name = portInst->get_id();
             writer->write("always @(negedge " + std::string(CLOCK_PORT_NAME) + ")\n");
             writer->write(STR(STD_OPENING_CHAR));
@@ -774,8 +790,14 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
          if(!portInst)
          {
             portInst = mod->find_member(par + "_o", port_o_K, cir);
-            THROW_ASSERT(portInst, "unexpected condition");
-            THROW_ASSERT(GetPointer<port_o>(portInst)->get_port_interface() != port_o::port_interface::PI_DEFAULT, "unexpected condition");
+         }
+         if(!portInst)
+         {
+            portInst = mod->find_member(par + "_dout", port_o_K, cir);
+         }
+         if(!portInst)
+         {
+            portInst = mod->find_member(par + "_din", port_o_K, cir);
          }
          THROW_ASSERT(portInst, "unexpected condition");
          auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
@@ -1675,8 +1697,14 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
          if(!portInst)
          {
             portInst = mod->find_member(par + "_i", port_o_K, cir);
-            THROW_ASSERT(portInst, "unexpected condition");
-            THROW_ASSERT(GetPointer<port_o>(portInst)->get_port_interface() != port_o::port_interface::PI_DEFAULT, "unexpected condition");
+         }
+         if(!portInst)
+         {
+            portInst = mod->find_member(par + "_dout", port_o_K, cir);
+         }
+         if(!portInst)
+         {
+            portInst = mod->find_member(par + "_din", port_o_K, cir);
          }
          THROW_ASSERT(portInst, "unexpected condition");
          auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();

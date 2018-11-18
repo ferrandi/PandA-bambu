@@ -703,6 +703,36 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                else if(GetPointer<port_o>(int_port)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
                   THROW_ERROR("not yet supported port interface");
             }
+            else
+            {
+               int_port = wrappedObj->find_member("_" + port_name + "_dout", port_o_K, wrappedObj);
+               if(int_port)
+               {
+                  if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_RNONE)
+                  {
+                     portsToSkip.insert(int_port);
+                     if(port_in->get_kind() == port_vector_o_K)
+                        ext_port = SM_minimal_interface->add_port_vector(port_name + "_dout", port_o::IN, GetPointer<port_o>(int_port)->get_ports_size(), interfaceObj, int_port->get_typeRef());
+                     else
+                        ext_port = SM_minimal_interface->add_port(port_name + "_dout", port_o::IN, interfaceObj, int_port->get_typeRef());
+                     port_o::fix_port_properties(int_port, ext_port);
+                     SM_minimal_interface->add_connection(int_port, ext_port);
+                  }
+                  else if(GetPointer<port_o>(int_port)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
+                     THROW_ERROR("not yet supported port interface");
+               }
+               else
+               {
+                  int_port = wrappedObj->find_member("_" + port_name + "_din", port_o_K, wrappedObj);
+                  if(int_port)
+                  {
+                     if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_WNONE)
+                     {
+                        portsToSkip.insert(int_port);
+                     }
+                  }
+               }
+            }
             if(!int_port)
             {
                int_port = wrappedObj->find_member(port_name, port_o_K, wrappedObj);
@@ -789,7 +819,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       if(GetPointer<port_o>(port_out)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
       {
          if(GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WNONE || GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WVALID ||
-            GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_RACK)
+            GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_RACK || GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_READ ||
+            GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WRITE)
          {
             portsToSkip.insert(port_out);
             auto port_name = GetPointer<port_o>(port_out)->get_id();

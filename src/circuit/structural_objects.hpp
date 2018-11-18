@@ -641,7 +641,11 @@ struct port_o : public structural_object
       PI_RACK,
       PI_WACK,
       PI_RVALID,
-      PI_WVALID
+      PI_WVALID,
+      PI_EMPTY_N,
+      PI_READ,
+      PI_FULL_N,
+      PI_WRITE
    };
 
    static const unsigned int PARAMETRIC_PORT = static_cast<unsigned int>(-1);
