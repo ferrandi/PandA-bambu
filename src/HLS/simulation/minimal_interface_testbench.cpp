@@ -439,6 +439,7 @@ void MinimalInterfaceTestbench::write_interface_handler() const
    {
       bool firstRValid = true;
       bool firstWAck = true;
+      bool firstFull_n = true;
       for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
       {
          const structural_objectRef& portInst = mod->get_in_port(i);
@@ -471,7 +472,6 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                }
             }
 
-
             if(InterfaceType == port_o::port_interface::PI_RVALID || InterfaceType == port_o::port_interface::PI_WACK || InterfaceType == port_o::port_interface::PI_EMPTY_N || InterfaceType == port_o::port_interface::PI_FULL_N)
             {
                if(!have_both && (firstRValid && InterfaceType == port_o::port_interface::PI_RVALID))
@@ -482,7 +482,12 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                if(!have_both && (firstWAck && InterfaceType == port_o::port_interface::PI_WACK))
                {
                   firstWAck = false;
-                  writer->write("reg __ack_port_state = 0;\n");
+                  writer->write("integer __ack_port_state = 0;\n");
+               }
+               if(firstFull_n && InterfaceType == port_o::port_interface::PI_FULL_N)
+               {
+                  firstFull_n = false;
+                  writer->write("integer __full_n_port_state = 0;\n");
                }
                if(InterfaceType == port_o::port_interface::PI_RVALID)
                   writer->write_comment("RVALID handler\n");
@@ -511,7 +516,9 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                         writer->write("if(__state == 3 && __vld_port_state == 0)\n");
                   }
                   else if(InterfaceType == port_o::port_interface::PI_WACK)
-                     writer->write("if(__state == 3 && __ack_port_state == 0)\n");
+                  {
+                     writer->write("if(__state == 3)\n");
+                  }
                   else if(InterfaceType == port_o::port_interface::PI_EMPTY_N)
                      writer->write("if(__state == 3)\n");
                   else if(InterfaceType == port_o::port_interface::PI_FULL_N)
@@ -520,15 +527,23 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                      THROW_ERROR("unsupported interface type");
                   writer->write(STR(STD_OPENING_CHAR));
                   writer->write("begin\n");
-                  writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + " <= 1'b1;\n");
-                  if(!have_both && InterfaceType == port_o::port_interface::PI_RVALID)
-                     writer->write("__vld_port_state <= 1;");
+                  if(InterfaceType == port_o::port_interface::PI_WACK)
+                     writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + " <= __ack_port_state < 1 ? 1'b0 : 1'b1;\n");
+                  else if(InterfaceType == port_o::port_interface::PI_FULL_N)
+                     writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + " <= __full_n_port_state < 3 ? 1'b0 : 1'b1;\n");
+                  else
+                     writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + " <= 1'b1;\n");
+                  if(InterfaceType == port_o::port_interface::PI_RVALID)
+                  {
+                     if(!have_both)
+                        writer->write("__vld_port_state <= 1;");
+                  }
                   else if(InterfaceType == port_o::port_interface::PI_WACK)
-                     writer->write("__ack_port_state <= 1;");
+                     writer->write("__ack_port_state <= __ack_port_state + 1;");
                   else if(InterfaceType == port_o::port_interface::PI_EMPTY_N)
                      ;
                   else if(InterfaceType == port_o::port_interface::PI_FULL_N)
-                     ;
+                     writer->write("__full_n_port_state <= __full_n_port_state + 1;");
                   else
                      THROW_ERROR("unsupported interface type");
                   writer->write(STR(STD_CLOSING_CHAR) + "\n");
