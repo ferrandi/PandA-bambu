@@ -504,7 +504,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
    {
       for(auto arg2stms : bb2arg2stmtsR.second)
       {
-         if(arg2stms.second.size() > 1)
+         if(arg2stms.second.size() > 0)
             for(auto stmt : arg2stms.second)
             {
                THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition");
@@ -516,7 +516,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
    {
       for(auto arg2stms : bb2arg2stmtsW.second)
       {
-         if(arg2stms.second.size() > 1)
+         if(arg2stms.second.size() > 0)
             for(auto stmt : arg2stms.second)
             {
                THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition");
