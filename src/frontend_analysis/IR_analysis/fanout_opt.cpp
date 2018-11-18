@@ -93,6 +93,29 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    switch(relationship_type)
    {
       case(INVALIDATION_RELATIONSHIP):
+      {
+         switch(GetStatus())
+         {
+            case DesignFlowStep_Status::SUCCESS:
+            {
+               relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
+               break;
+            }
+            case DesignFlowStep_Status::SKIPPED:
+            case DesignFlowStep_Status::UNCHANGED:
+            case DesignFlowStep_Status::UNEXECUTED:
+            case DesignFlowStep_Status::UNNECESSARY:
+            {
+               break;
+            }
+            case DesignFlowStep_Status::ABORTED:
+            case DesignFlowStep_Status::EMPTY:
+            case DesignFlowStep_Status::NONEXISTENT:
+            default:
+               THROW_UNREACHABLE("");
+         }
+         break;
+      }
       case(PRECEDENCE_RELATIONSHIP):
       {
          break;
