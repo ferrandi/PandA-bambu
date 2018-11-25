@@ -1138,6 +1138,12 @@ gcc_regression_simple/zero-struct-1.c\
 ./bambu_specific_test4/ac_types2_in_handshake.cpp \
 ./bambu_specific_test4/ac_types2_out_handshake.cpp \
 ./bambu_specific_test4/ac_types2_handshake.cpp \
+./bambu_specific_test4/ac_types2_fifo.cpp \
+./bambu_specific_test4/ac_types2_array.cpp \
+./bambu_specific_test4/ac_types2_array_7bits.cpp \
+./bambu_specific_test4/ac_types2_array_32ubits.cpp \
+./bambu_specific_test4/ac_types2_array_64ubits.cpp \
+./bambu_specific_test4/ac_types2_array_128ubits.cpp \
 ./bambu_specific_test4/simple_c1.c\
 ./bambu_specific_test4/simple_c1_none.c\
 ./bambu_specific_test4/simple_c2_none.c\
@@ -1148,6 +1154,10 @@ gcc_regression_simple/zero-struct-1.c\
 ./bambu_specific_test4/simple_c3_ovalid.c \
 ./bambu_specific_test4/simple_c4_fifo.c \
 ./bambu_specific_test4/simple_c4_handshake.c \
+./bambu_specific_test4/simple_c4_array.c \
+./bambu_specific_test4/simple_c4_array_8bits.c \
+./bambu_specific_test4/simple_c4_array_32bits.c \
+./bambu_specific_test4/simple_c4_array_64bits.c \
 ./bambu_specific_test4.sh\
 ./bambu_specific_test4_list\
 ./function_pointers.sh\

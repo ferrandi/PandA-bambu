@@ -64,7 +64,7 @@ std::cout << "always @(*)\n";
 std::cout << "begin\n";
 std::cout << "  for(ii=0; ii<PORTSIZE_"<< _ports_out[1].name << "; ii=ii+1)\n";
 std::cout << "    " << _ports_out[0].name << "0[ii] = ("<< _ports_in[2].name <<"[ii] & " << _ports_in[5].name << ") | (started[ii] & " << _ports_in[5].name << ");" <<std::endl;
- std::cout << "end\n";
+std::cout << "end\n";
 
 std::cout << "assign " << _ports_out[0].name << " = " << _ports_out[0].name << "0;\n";
 std::cout << "assign " << _ports_out[2].name << " = |" << _ports_out[0].name << "0;\n";

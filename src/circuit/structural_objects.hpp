@@ -645,7 +645,12 @@ struct port_o : public structural_object
       PI_EMPTY_N,
       PI_READ,
       PI_FULL_N,
-      PI_WRITE
+      PI_WRITE,
+      PI_ADDRESS,
+      PI_CHIPENABLE,
+      PI_WRITEENABLE,
+      PI_DIN,
+      PI_DOUT
    };
 
    static const unsigned int PARAMETRIC_PORT = static_cast<unsigned int>(-1);
@@ -731,6 +736,16 @@ struct port_o : public structural_object
     * Set the port interface type of the port.
     */
    void set_port_interface(port_interface pi);
+
+   /**
+    * Return the port interface alignment.
+    */
+   unsigned get_port_alignment() const;
+
+   /**
+    * Set the port interface alignment.
+    */
+   void set_port_alignment(unsigned algn);
 
    /**
     * Return the connected signal, if any. Null pointer otherwise.
@@ -1042,6 +1057,8 @@ struct port_o : public structural_object
    /// port interface type of a port
    port_interface pi;
 
+   unsigned aligment;
+
    /// when true the port must be specialized at runtime depending on the number of input
    bool is_var_args;
 
@@ -1120,6 +1137,7 @@ struct port_o : public structural_object
    static const bool is_critical_DEFAULT = false;
    static const bool is_reverse_DEFAULT = false;
    static const bool is_var_args_DEFAULT = false;
+   static const unsigned port_interface_alignment_DEFAULT = 0;
    //@}
 };
 

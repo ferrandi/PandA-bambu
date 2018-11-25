@@ -174,6 +174,12 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
    cpp_code_header += "#include <boost/algorithm/string/replace.hpp>\n";
 
    cpp_code_header += "#define STR(x) boost::lexical_cast<std::string>(x)\n\n";
+   cpp_code_header += "#define RUPNP2_2(x)   (        (x) | (   (x) >> 1) )\n";
+   cpp_code_header += "#define RUPNP2_4(x)   ( RUPNP2_2(x) | ( RUPNP2_2(x) >> 2) )\n";
+   cpp_code_header += "#define RUPNP2_8(x)   ( RUPNP2_4(x) | ( RUPNP2_4(x) >> 4) )\n";
+   cpp_code_header += "#define RUPNP2_16(x)  ( RUPNP2_8(x) | ( RUPNP2_8(x) >> 8) )\n";
+   cpp_code_header += "#define RUPNP2_32(x)  (RUPNP2_16(x) | (RUPNP2_16(x) >>16) )\n";
+   cpp_code_header += "#define RUPNP2(x)     (RUPNP2_32(x-1) + 1)\n";
    cpp_code_header += "int main(int argc, char **argv)\n";
    cpp_code_header += "{\n";
 
@@ -182,11 +188,13 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
    cpp_code_header += "         std::string name;\n";
    cpp_code_header += "         std::string type;\n";
    cpp_code_header += "         unsigned int type_size;\n";
-   cpp_code_header += "         unsigned int address;\n";
+   cpp_code_header += "         unsigned int alignment;\n";
    cpp_code_header += "   };\n";
+
 
    cpp_code_footer += "\n\n\n";
    cpp_code_footer += "   return 0;\n}\n";
+
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Importing XML description...");
 
@@ -208,11 +216,14 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
       cpp_code_body += "   _p[" + STR(portNum) + "].type = \"" + typeRef->get_name() + "\";\n";
       unsigned int dataSize = typeRef->vector_size != 0 ? typeRef->vector_size : typeRef->size;
       cpp_code_body += "   _p[" + STR(portNum) + "].type_size = " + STR(resize_to_8_or_greater(dataSize)) + ";\n";
+      cpp_code_body += "   _p[" + STR(portNum) + "].alignment = 0;\n";
       portNum++;
    }
 
    cpp_code_body += "   parameter _ports_in[" + STR(mod->get_in_port_size()) + "];\n";
+   cpp_code_body += "   int _np_in = " + STR(mod->get_in_port_size()) + ";\n";
    cpp_code_body += "   parameter _ports_out[" + STR(mod->get_out_port_size()) + "];\n";
+   cpp_code_body += "   int _np_out = " + STR(mod->get_out_port_size()) + ";\n";
    if(mod->get_in_out_port_size())
       cpp_code_body += "   parameter _ports_inout[" + STR(mod->get_in_out_port_size()) + "];\n";
 
@@ -223,6 +234,7 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
       cpp_code_body += "   _ports_in[" + STR(i) + "].type = \"" + port_in->get_typeRef()->get_name() + "\";\n";
       unsigned int dataSize = port_in->get_typeRef()->vector_size != 0 ? port_in->get_typeRef()->vector_size : port_in->get_typeRef()->size;
       cpp_code_body += "   _ports_in[" + STR(i) + "].type_size = " + STR(dataSize) + ";\n";
+      cpp_code_body += "   _ports_in[" + STR(i) + "].alignment = " + STR(GetPointer<port_o>(port_in)->get_port_alignment()) + ";\n";
    }
    for(unsigned int i = 0; i < mod->get_out_port_size(); ++i)
    {
@@ -231,6 +243,7 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
       cpp_code_body += "   _ports_out[" + STR(i) + "].type = \"" + port_out->get_typeRef()->get_name() + "\";\n";
       unsigned int dataSize = port_out->get_typeRef()->vector_size != 0 ? port_out->get_typeRef()->vector_size : port_out->get_typeRef()->size;
       cpp_code_body += "   _ports_out[" + STR(i) + "].type_size = " + STR(dataSize) + ";\n";
+      cpp_code_body += "   _ports_out[" + STR(i) + "].alignment = " + STR(GetPointer<port_o>(port_out)->get_port_alignment()) + ";\n";
    }
    for(unsigned int i = 0; i < mod->get_in_out_port_size(); ++i)
    {
@@ -239,6 +252,7 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
       cpp_code_body += "   _ports_inout[" + STR(i) + "].type = \"" + port_inout->get_typeRef()->get_name() + "\";\n";
       unsigned int dataSize = port_inout->get_typeRef()->vector_size != 0 ? port_inout->get_typeRef()->vector_size : port_inout->get_typeRef()->size;
       cpp_code_body += "   _ports_inout[" + STR(i) + "].type_size = " + STR(dataSize) + ";\n";
+      cpp_code_body += "   _ports_inout[" + STR(i) + "].alignment = " + STR(GetPointer<port_o>(port_inout)->get_port_alignment()) + ";\n";
    }
 
    cpp_code_body += "std::string data_bus_bitsize = \"" + STR(HLSMgr->Rmem->get_bus_data_bitsize()) + "\";\n";
@@ -346,7 +360,20 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
          specializing_string = STR(tree_helper::size(TreeM, GET_INDEX_NODE(return_type)));
    }
    else if(cfg->CGetOpNodeInfo(ve)->GetOperation().find(STR_CST_interface_parameter_keyword) != std::string::npos)
-      specializing_string = cfg->CGetOpNodeInfo(ve)->GetOperation().substr(0, cfg->CGetOpNodeInfo(ve)->GetOperation().find(STR_CST_interface_parameter_keyword));
+   {
+      auto parameter_name = cfg->CGetOpNodeInfo(ve)->GetOperation().substr(0, cfg->CGetOpNodeInfo(ve)->GetOperation().find(STR_CST_interface_parameter_keyword));
+      tree_managerRef TreeM = HLSMgr->get_tree_manager();
+      auto fnode = TreeM->get_tree_node_const(FB->CGetBehavioralHelper()->get_function_index());
+      auto fd = GetPointer<function_decl>(fnode);
+      std::string fname;
+      tree_helper::get_mangled_fname(fd, fname);
+      THROW_ASSERT(HLSMgr->design_interface_typename.find(fname) != HLSMgr->design_interface_typename.end(), "unexpected condition");
+      THROW_ASSERT(HLSMgr->design_interface_typename.find(fname)->second.find(parameter_name) != HLSMgr->design_interface_typename.find(fname)->second.end(), "unexpected condition");
+      auto par_typename = HLSMgr->design_interface_typename.find(fname)->second.find(parameter_name)->second;
+      auto arraySize = HLSMgr->design_interface_arraysize.find(fname) != HLSMgr->design_interface_arraysize.end() &&
+                       HLSMgr->design_interface_arraysize.find(fname)->second.find(parameter_name) != HLSMgr->design_interface_arraysize.find(fname)->second.end() ? HLSMgr->design_interface_arraysize.find(fname)->second.find(parameter_name)->second :"1";
+      specializing_string = arraySize;
+   }
 
    const library_managerRef libraryManager = TM->get_library_manager(libraryId);
 

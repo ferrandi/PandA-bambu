@@ -115,6 +115,8 @@ class HLS_manager : public application_manager
 
    /// store the design interface directives coming from an xml file: function_name->parameter_name->interface_type
    std::map<std::string, std::map<std::string, std::string>> design_interface;
+   /// store the design interface array size coming from an xml file: function_name->parameter_name->interface_arraysize
+   std::map<std::string, std::map<std::string, std::string>> design_interface_arraysize;
    /// store the design interface typenames coming from an xml file: function_name->parameter_name->interface_typename
    std::map<std::string, std::map<std::string, std::string>> design_interface_typename;
    /// store the design interface signature coming from an xml file: function_name->typename_signature

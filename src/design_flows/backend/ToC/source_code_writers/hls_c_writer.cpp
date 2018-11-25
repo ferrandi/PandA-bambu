@@ -414,7 +414,13 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef behavio
                if((*argTypename.rbegin()) == '*')
                {
                   interfaceBaseAlloc = true;
-                  indented_output_stream->Append(param + " = (" + argTypename + ")malloc(sizeof(" + argTypename.substr(0, argTypename.size() - 1) + "));\n");
+                  std::string arraySize;
+                  if(hls_c_backend_information->HLSMgr->design_interface_arraysize.find(fname) != hls_c_backend_information->HLSMgr->design_interface_arraysize.end() &&
+                     hls_c_backend_information->HLSMgr->design_interface_arraysize.find(fname)->second.find(param) != hls_c_backend_information->HLSMgr->design_interface_arraysize.find(fname)->second.end())
+                  {
+                     arraySize = hls_c_backend_information->HLSMgr->design_interface_arraysize.find(fname)->second.find(param)->second;
+                  }
+                  indented_output_stream->Append(param + " = (" + argTypename + ")malloc(" + (arraySize == "" ? std::string("") : (arraySize + "*")) + "sizeof(" + argTypename.substr(0, argTypename.size() - 1) + "));\n");
                }
             }
          }
@@ -676,7 +682,8 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
             auto argTypename = DesignInterfaceTypename.find(fname)->second.find(param)->second;
             if((*argTypename.rbegin()) != '*')
                reference_type_p = true;
-            auto acTypeBw = ac_type_bitwidth(argTypename);
+            bool is_signed;
+            auto acTypeBw = ac_type_bitwidth(argTypename, is_signed);
             if(acTypeBw)
                base_type_bitsize = acTypeBw;
          }

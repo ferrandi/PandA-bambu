@@ -52,9 +52,9 @@
 #include <cstdlib>                                   // for strtod
 #include <cxxabi.h>                                  // for __cxa_de...
 #include <iosfwd>                                    // for stringst...
-#include <string>                                    // for string
+#include <iostream>
+#include <string> // for string
 #include <vector>
-
 /**
  * Macro which performs a lexical_cast to a string
  */
@@ -260,7 +260,7 @@ inline std::string convert_fp_to_string(std::string num, unsigned int precision)
  */
 #define GET_CLASS(obj) string_demangle(typeid(obj).name())
 
-inline unsigned int ac_type_bitwidth(const std::string intType)
+inline unsigned int ac_type_bitwidth(const std::string intType, bool& is_signed)
 {
    unsigned int inputBitWidth = 0;
    auto interfaceTypename = intType;
@@ -269,13 +269,39 @@ inline unsigned int ac_type_bitwidth(const std::string intType)
    if(interfaceTypename.find("ac_int<") == 0)
    {
       auto subtypeArg = interfaceTypename.substr(std::string("ac_int<").size());
-      auto sizeString = subtypeArg.substr(0, subtypeArg.find_first_of(",> "));
+      auto terminate = subtypeArg.find_first_of(",> ");
+      if(subtypeArg.at(terminate) == '>')
+         is_signed = true;
+      else
+      {
+         auto signString = subtypeArg.substr(terminate + 2);
+         signString = signString.substr(0, signString.find_first_of(",> "));
+         if(signString == "true" || signString == "1")
+            is_signed = true;
+         else
+            is_signed = false;
+      }
+      auto sizeString = subtypeArg.substr(0, terminate);
       inputBitWidth = boost::lexical_cast<unsigned>(sizeString);
    }
    else if(interfaceTypename.find("ac_fixed<") == 0)
    {
       auto subtypeArg = interfaceTypename.substr(std::string("ac_fixed<").size());
-      auto sizeString = subtypeArg.substr(0, subtypeArg.find_first_of(",> "));
+      auto terminate = subtypeArg.find_first_of(",> ");
+      auto secondPartType = subtypeArg.substr(terminate + 2);
+      auto terminate2 = secondPartType.find_first_of(",> ");
+      if(secondPartType.at(terminate2) == '>')
+         is_signed = true;
+      else
+      {
+         auto signString = secondPartType.substr(terminate2 + 2);
+         signString = signString.substr(0, signString.find_first_of(",> "));
+         if(signString == "true" || signString == "1")
+            is_signed = true;
+         else
+            is_signed = false;
+      }
+      auto sizeString = subtypeArg.substr(0, terminate);
       inputBitWidth = boost::lexical_cast<unsigned>(sizeString);
    }
    else if(interfaceTypename.find("ap_int<") == 0)
@@ -283,24 +309,28 @@ inline unsigned int ac_type_bitwidth(const std::string intType)
       auto subtypeArg = interfaceTypename.substr(std::string("ap_int<").size());
       auto sizeString = subtypeArg.substr(0, subtypeArg.find_first_of(",> "));
       inputBitWidth = boost::lexical_cast<unsigned>(sizeString);
+      is_signed = true;
    }
    else if(interfaceTypename.find("ap_uint<") == 0)
    {
       auto subtypeArg = interfaceTypename.substr(std::string("ap_uint<").size());
       auto sizeString = subtypeArg.substr(0, subtypeArg.find_first_of(",> "));
       inputBitWidth = boost::lexical_cast<unsigned>(sizeString);
+      is_signed = false;
    }
    else if(interfaceTypename.find("ap_fixed<") == 0)
    {
       auto subtypeArg = interfaceTypename.substr(std::string("ap_fixed<").size());
       auto sizeString = subtypeArg.substr(0, subtypeArg.find_first_of(",> "));
       inputBitWidth = boost::lexical_cast<unsigned>(sizeString);
+      is_signed = true;
    }
    else if(interfaceTypename.find("ap_ufixed<") == 0)
    {
       auto subtypeArg = interfaceTypename.substr(std::string("ap_ufixed<").size());
       auto sizeString = subtypeArg.substr(0, subtypeArg.find_first_of(",> "));
       inputBitWidth = boost::lexical_cast<unsigned>(sizeString);
+      is_signed = false;
    }
    return inputBitWidth;
 }

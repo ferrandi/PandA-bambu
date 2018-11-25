@@ -66,12 +66,15 @@ static clang::DumpGimpleRaw* gimpleRawWriter;
 static std::string TopFunctionName;
 static std::map<std::string, std::vector<std::string>> Fun2Params;
 static std::map<std::string, std::vector<std::string>> Fun2ParamType;
+static std::map<std::string, std::map<std::string, std::string>> Fun2ParamSize;
 static std::map<std::string, std::vector<std::string>> Fun2ParamInclude;
 static std::map<std::string, std::string> Fun2Demangled;
 static std::map<std::string, std::map<clang::SourceLocation, std::pair<std::string, std::string>>> HLS_interface_PragmaMap;
+static std::map<std::string, std::map<clang::SourceLocation, std::pair<std::string, std::string>>> HLS_interface_PragmaMapArraySize;
 static std::map<std::string, clang::SourceLocation> prevLoc;
 
 static std::map<std::string, std::vector<std::string>> HLS_interfaceMap;
+static std::map<std::string, std::map<std::string, std::string>> HLS_interfaceArraySizeMap;
 static std::string interface_XML_filename;
 
 namespace clang
@@ -145,7 +148,10 @@ namespace clang
             {
                std::string typenameArg = interfaceTypenameVec.at(ArgIndex);
                convert_unescaped(typenameArg);
-               stream << "    <arg id=\"" << par << "\" interface_type=\"" << interfaceTypeVec.at(ArgIndex) << "\" interface_typename=\"" << typenameArg << "\" interface_typename_include=\"" << interfaceTypenameIncludeVec.at(ArgIndex) << "\"/>\n";
+               stream << "    <arg id=\"" << par << "\" interface_type=\"" << interfaceTypeVec.at(ArgIndex) << "\" interface_typename=\"" << typenameArg<< "\"";
+               if(Fun2ParamSize.find(funArgPair.first) != Fun2ParamSize.end() && Fun2ParamSize.find(funArgPair.first)->second.find(par) != Fun2ParamSize.find(funArgPair.first)->second.end())
+                  stream << " size=\"" << Fun2ParamSize.find(funArgPair.first)->second.find(par)->second<< "\"";
+               stream << " interface_typename_include=\"" << interfaceTypenameIncludeVec.at(ArgIndex) << "\"/>\n";
                ++ArgIndex;
             }
             stream << "  </function>\n";
@@ -188,6 +194,7 @@ namespace clang
       {
          auto& SM = FD->getASTContext().getSourceManager();
          std::map<std::string, std::string> interface_PragmaMap;
+         std::map<std::string, std::string> interface_PragmaMapArraySize;
          auto locEnd = FD->getLocEnd();
          auto filename = SM.getPresumedLoc(locEnd, false).getFilename();
          if(HLS_interface_PragmaMap.find(filename) != HLS_interface_PragmaMap.end())
@@ -202,6 +209,16 @@ namespace clang
                if((prev.isInvalid() || prev < loc2pair.first) && (loc2pair.first < locEnd))
                {
                   interface_PragmaMap[loc2pair.second.first] = loc2pair.second.second;
+               }
+            }
+            if(HLS_interface_PragmaMapArraySize.find(filename) != HLS_interface_PragmaMapArraySize.end())
+            {
+               for(auto& loc2pair : HLS_interface_PragmaMapArraySize.find(filename)->second)
+               {
+                  if((prev.isInvalid() || prev < loc2pair.first) && (loc2pair.first < locEnd))
+                  {
+                     interface_PragmaMapArraySize[loc2pair.second.first] = loc2pair.second.second;
+                  }
                }
             }
          }
@@ -230,6 +247,7 @@ namespace clang
                if(const ParmVarDecl* ND = dyn_cast<ParmVarDecl>(par))
                {
                   std::string interfaceType = "default";
+                  std::string arraySize;
                   std::string UserDefinedInterfaceType;
                   auto parName = ND->getNameAsString();
                   bool UDIT_p = false;
@@ -252,7 +270,9 @@ namespace clang
                            CA = cast<ConstantArrayType>(CA->getElementType());
                            OrigTotArraySize *= CA->getSize();
                         }
-                        interfaceType = "array-" + OrigTotArraySize.toString(10, false);
+                        interfaceType = "array";
+                        arraySize = OrigTotArraySize.toString(10, false);
+                        assert(arraySize !=  "0");
                      }
                      if(UDIT_p)
                      {
@@ -264,6 +284,16 @@ namespace clang
                         else
                         {
                            interfaceType = UserDefinedInterfaceType;
+                           if(interfaceType == "array")
+                           {
+                              if(interface_PragmaMapArraySize.find(parName) == interface_PragmaMapArraySize.end())
+                              {
+                                 DiagnosticsEngine& D = CI.getDiagnostics();
+                                 D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface inconsistent internal data structure: %0")).AddString(UserDefinedInterfaceType);
+                              }
+                              else
+                                 arraySize = interface_PragmaMapArraySize.find(parName)->second;
+                           }
                         }
                      }
                   }
@@ -311,6 +341,8 @@ namespace clang
                   HLS_interfaceMap[funName].push_back(interfaceType);
                   Fun2Params[funName].push_back(parName);
                   Fun2ParamType[funName].push_back(ND->getType().getAsString());
+                  if(interfaceType=="array")
+                     Fun2ParamSize[funName][parName]=arraySize;
                   if(auto BTD = getBaseTypeDecl(ND->getType()))
                   {
                      Fun2ParamInclude[funName].push_back(SM.getPresumedLoc(BTD->getLocStart(), false).getFilename());
@@ -374,6 +406,7 @@ namespace clang
          unsigned int index = 0;
          std::string par;
          std::string interface;
+         std::string ArraySize;
          auto loc = PragmaTok.getLocation();
          while(Tok.isNot(tok::eod))
          {
@@ -395,26 +428,18 @@ namespace clang
                         unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface unexpected interface type. Currently accepted keywords are: none,array,bus,fifo,handshake,valid,ovalid,acknowledge");
                         D.Report(PragmaTok.getLocation(), ID);
                      }
+                     interface += tokString;
                   }
                   else if(index == 2)
                   {
-                     if(tokString != "-" && interface != "array")
+                     if(Tok.isNot(tok::numeric_constant) || interface != "array")
                      {
                         DiagnosticsEngine& D = PP.getDiagnostics();
                         unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface malformed");
                         D.Report(PragmaTok.getLocation(), ID);
                      }
+                     ArraySize=tokString;
                   }
-                  else if(index == 3)
-                  {
-                     if(Tok.isNot(tok::numeric_constant) || interface != "array-")
-                     {
-                        DiagnosticsEngine& D = PP.getDiagnostics();
-                        unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface malformed");
-                        D.Report(PragmaTok.getLocation(), ID);
-                     }
-                  }
-                  interface += tokString;
                }
                ++index;
             }
@@ -424,7 +449,17 @@ namespace clang
             auto& SM = PP.getSourceManager();
             std::map<std::string, std::string> interface_PragmaMap;
             auto filename = SM.getPresumedLoc(loc, false).getFilename();
+            if(ArraySize!="" && ArraySize!="0" && interface!="array")
+            {
+               DiagnosticsEngine& D = PP.getDiagnostics();
+               unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface malformed");
+               D.Report(PragmaTok.getLocation(), ID);
+            }
             HLS_interface_PragmaMap[filename][loc] = std::make_pair(par, interface);
+            if(interface=="array")
+            {
+               HLS_interface_PragmaMapArraySize[filename][loc] = std::make_pair(par, ArraySize);
+            }
          }
          else
          {

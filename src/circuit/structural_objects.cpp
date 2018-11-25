@@ -874,6 +874,7 @@ port_o::port_o(int _debug_level, const structural_objectRef o, port_direction _d
       dir(_dir),
       end(NONE),
       pi(port_interface::PI_DEFAULT),
+      aligment(port_interface_alignment_DEFAULT),
       is_var_args(is_var_args_DEFAULT),
       is_clock(is_clock_DEFAULT),
       is_extern(is_extern_DEFAULT),
@@ -1029,6 +1030,16 @@ port_o::port_interface port_o::get_port_interface() const
 void port_o::set_port_interface(port_interface _pi)
 {
    pi = _pi;
+}
+
+unsigned port_o::get_port_alignment() const
+{
+   return aligment;
+}
+
+void port_o::set_port_alignment(unsigned algn)
+{
+   aligment = algn;
 }
 
 void port_o::set_is_var_args(bool c)
@@ -1311,6 +1322,7 @@ void port_o::copy(structural_objectRef dest) const
    GetPointer<port_o>(dest)->dir = dir;
    GetPointer<port_o>(dest)->end = end;
    GetPointer<port_o>(dest)->pi = pi;
+   GetPointer<port_o>(dest)->aligment = aligment;
    GetPointer<port_o>(dest)->bus_bundle = bus_bundle;
    GetPointer<port_o>(dest)->size_parameter = size_parameter;
    GetPointer<port_o>(dest)->is_var_args = is_var_args;
@@ -1387,6 +1399,8 @@ void port_o::xload(const xml_element* Enode, structural_objectRef _owner, struct
       LOAD_XVFM(pi_string, Enode, pi);
       pi = to_port_interface(pi_string);
    }
+   if(CE_XVM(aligment, Enode))
+      LOAD_XVM(aligment, Enode);
    if(CE_XVM(is_var_args, Enode))
       LOAD_XVM(is_var_args, Enode);
    if(CE_XVM(is_clock, Enode))
@@ -1488,6 +1502,8 @@ void port_o::xwrite(xml_element* rootnode)
    WRITE_XNVM(dir, port_directionNames[dir], Enode);
    if(pi != port_interface::PI_DEFAULT)
       WRITE_XNVM(pi, port_interfaceNames[pi], Enode);
+   if(aligment != port_interface_alignment_DEFAULT)
+      WRITE_XVM(aligment, Enode);
    xml_element* Enode_CO = Enode->add_child_element("connected_objects");
    for(unsigned int i = 0; i < connected_objects.size(); i++)
       WRITE_XNVM2("CON" + boost::lexical_cast<std::string>(i), connected_objects[i].lock()->get_path(), Enode_CO);
@@ -1564,6 +1580,8 @@ void port_o::print(std::ostream& os) const
    PP(os, "[Dir: " + std::string(port_directionNames[dir]));
    if(pi != port_interface::PI_DEFAULT)
       PP(os, "[Interface: " + std::string(port_interfaceNames[pi]));
+   if(aligment != port_interface_alignment_DEFAULT)
+      PP(os, "[Interface: " + STR(aligment));
    if(connected_objects.size())
       PP(os, " [CON: ");
    for(const auto& connected_object : connected_objects)
@@ -4323,6 +4341,8 @@ void port_o::fix_port_properties(structural_objectRef port_i, structural_objectR
 {
    if(GetPointer<port_o>(port_i)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
       GetPointer<port_o>(cir_port)->set_port_interface(GetPointer<port_o>(port_i)->get_port_interface());
+   if(GetPointer<port_o>(port_i)->get_port_alignment() != port_interface_alignment_DEFAULT)
+      GetPointer<port_o>(cir_port)->set_port_alignment(GetPointer<port_o>(port_i)->get_port_alignment());
    if(GetPointer<port_o>(port_i)->get_is_extern())
       GetPointer<port_o>(cir_port)->set_is_extern(true);
    if(GetPointer<port_o>(port_i)->get_is_global())

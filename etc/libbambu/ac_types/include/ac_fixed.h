@@ -756,33 +756,25 @@ namespace __AC_NAMESPACE
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
       ac_fixed& operator*=(const ac_fixed<W2, I2, S2, Q2, O2>& op2)
       {
-         bit_adjust();
          *this = this->operator*(op2);
-         bit_adjust();
          return *this;
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
       ac_fixed& operator+=(const ac_fixed<W2, I2, S2, Q2, O2>& op2)
       {
-         bit_adjust();
          *this = this->operator+(op2);
-         bit_adjust();
          return *this;
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
       ac_fixed& operator-=(const ac_fixed<W2, I2, S2, Q2, O2>& op2)
       {
-         bit_adjust();
          *this = this->operator-(op2);
-         bit_adjust();
          return *this;
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
       ac_fixed& operator/=(const ac_fixed<W2, I2, S2, Q2, O2>& op2)
       {
-         bit_adjust();
          *this = this->operator/(op2);
-         bit_adjust();
          return *this;
       }
       // increment/decrement by quantum (smallest difference that can be
@@ -793,7 +785,6 @@ namespace __AC_NAMESPACE
          ac_fixed<1, I - W + 1, false> q;
          q.template set_val<AC_VAL_QUANTUM>();
          operator+=(q);
-         bit_adjust();
          return *this;
       }
       ac_fixed& operator--()
@@ -801,13 +792,11 @@ namespace __AC_NAMESPACE
          ac_fixed<1, I - W + 1, false> q;
          q.template set_val<AC_VAL_QUANTUM>();
          operator-=(q);
-         bit_adjust();
          return *this;
       }
       // Arithmetic postfix increment, decrement ---------------------------------
       const ac_fixed operator++(int)
       {
-         bit_adjust();
          ac_fixed t = *this;
          ac_fixed<1, I - W + 1, false> q;
          q.template set_val<AC_VAL_QUANTUM>();
@@ -816,7 +805,6 @@ namespace __AC_NAMESPACE
       }
       const ac_fixed operator--(int)
       {
-         bit_adjust();
          ac_fixed t = *this;
          ac_fixed<1, I - W + 1, false> q;
          q.template set_val<AC_VAL_QUANTUM>();
@@ -824,10 +812,11 @@ namespace __AC_NAMESPACE
          return t;
       }
       // Arithmetic Unary --------------------------------------------------------
-      ac_fixed operator+()
+      ac_fixed operator+() const
       {
-         bit_adjust();
-         return *this;
+         ac_fixed t = *this;
+         t.bit_adjust();
+         return t;
       }
       typename rt_unary::neg operator-() const
       {
@@ -918,21 +907,18 @@ namespace __AC_NAMESPACE
       ac_fixed& operator&=(const ac_fixed<W2, I2, S2, Q2, O2>& op2)
       {
          *this = this->operator&(op2);
-         bit_adjust();
          return *this;
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
       ac_fixed& operator|=(const ac_fixed<W2, I2, S2, Q2, O2>& op2)
       {
          *this = this->operator|(op2);
-         bit_adjust();
          return *this;
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
       ac_fixed& operator^=(const ac_fixed<W2, I2, S2, Q2, O2>& op2)
       {
          *this = this->operator^(op2);
-         bit_adjust();
          return *this;
       }
       // Shift (result constrained by left operand) -------------------------------

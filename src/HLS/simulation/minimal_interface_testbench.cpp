@@ -158,7 +158,7 @@ void MinimalInterfaceTestbench::write_memory_handler() const
          post_slice = "[" + boost::lexical_cast<std::string>((i + 1) * bitsize - 1) + ":" + boost::lexical_cast<std::string>(i * bitsize) + "]";
       else
          post_slice = "";
-      writer->write(mem_aggregate + " = (Mout_Wdata_ram" + post_slice + " & mask" + post_slice + ") | (" + mem_aggregate + " & ~(mask" + post_slice + "));\n");
+      writer->write(mem_aggregate + " <= (Mout_Wdata_ram" + post_slice + " & mask" + post_slice + ") | (" + mem_aggregate + " & ~(mask" + post_slice + "));\n");
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n");
    }
@@ -446,29 +446,29 @@ void MinimalInterfaceTestbench::write_interface_handler() const
          auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
          if(InterfaceType != port_o::port_interface::PI_DEFAULT)
          {
-            ///check if you have both _vld and _ack
+            /// check if you have both _vld and _ack
             std::string orig_port_name;
-            bool have_both=false;
+            bool have_both = false;
             if(InterfaceType == port_o::port_interface::PI_RVALID)
             {
-               orig_port_name=portInst->get_id();
-               auto size_string=orig_port_name.size()-std::string("_vld").size();
-               orig_port_name=orig_port_name.substr(0, size_string);
-               auto port_ack = mod->find_member(orig_port_name+"_ack", port_o_K, cir);
+               orig_port_name = portInst->get_id();
+               auto size_string = orig_port_name.size() - std::string("_vld").size();
+               orig_port_name = orig_port_name.substr(0, size_string);
+               auto port_ack = mod->find_member(orig_port_name + "_ack", port_o_K, cir);
                if(port_ack)
                {
-                  have_both=true;
+                  have_both = true;
                }
             }
             if(InterfaceType == port_o::port_interface::PI_WACK)
             {
-               orig_port_name=portInst->get_id();
-               auto size_string=orig_port_name.size()-std::string("_ack").size();
-               orig_port_name=orig_port_name.substr(0, size_string);
-               auto port_valid = mod->find_member(orig_port_name+"_vld", port_o_K, cir);
+               orig_port_name = portInst->get_id();
+               auto size_string = orig_port_name.size() - std::string("_ack").size();
+               orig_port_name = orig_port_name.substr(0, size_string);
+               auto port_valid = mod->find_member(orig_port_name + "_vld", port_o_K, cir);
                if(port_valid)
                {
-                  have_both=true;
+                  have_both = true;
                }
             }
 
@@ -504,7 +504,8 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                writer->write("begin\n");
                if(have_both && InterfaceType == port_o::port_interface::PI_WACK)
                {
-                  writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + " <= " + HDL_manager::convert_to_identifier(writer.get(), orig_port_name) + "_vld & !"+ HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + ";\n");
+                  writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + " <= " + HDL_manager::convert_to_identifier(writer.get(), orig_port_name) + "_vld & !" +
+                                HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + ";\n");
                }
                else
                {
@@ -661,6 +662,11 @@ void MinimalInterfaceTestbench::write_output_signal_declaration() const
             writer->write("reg " + writer->type_converter(portInst->get_typeRef()) + writer->type_converter_size(portInst));
             writer->write("registered_" + HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + ";\n");
          }
+         else if(GetPointer<port_o>(portInst)->get_port_interface() == port_o::port_interface::PI_DOUT)
+         {
+            writer->write("reg " + writer->type_converter(portInst->get_typeRef()) + writer->type_converter_size(portInst));
+            writer->write("ex_" + HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + ";\n");
+         }
       }
       writer->write("\n");
    }
@@ -803,100 +809,6 @@ void MinimalInterfaceTestbench::read_input_value_from_file_RNONE(const std::stri
    }
 }
 
-void MinimalInterfaceTestbench::read_input_value_from_file_WNONE(const std::string& input_name, bool& first_valid_input) const
-{
-   if(input_name != CLOCK_PORT_NAME && input_name != RESET_PORT_NAME && input_name != START_PORT_NAME)
-   {
-      writer->write("\n");
-      writer->write_comment("Read a value for " + input_name + " --------------------------------------------------------------\n");
-      if(!first_valid_input)
-         writer->write("_ch_ = $fgetc(file);\n");
-
-      writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\")\n");
-      writer->write(STR(STD_OPENING_CHAR));
-      writer->write("begin\n");
-      {
-         writer->write("_r_ = $fgets(line, file);\n");
-         writer->write("_ch_ = $fgetc(file);\n");
-      }
-      writer->write(STR(STD_CLOSING_CHAR));
-      writer->write("end\n");
-
-      if(first_valid_input)
-      {
-         /// write statement for new vectors' check
-         writer->write_comment("If no character found\n");
-         writer->write("if (_ch_ == -1)\n");
-         writer->write(STR(STD_OPENING_CHAR));
-         writer->write("begin\n");
-         {
-            writer->write("$display(\"No more values found. Simulation(s) executed: %d.\\n\", _n_);\n");
-            writer->write("$fclose(res_file);\n");
-            writer->write("$fclose(file);\n");
-            writer->write("$finish;\n");
-         }
-         writer->write(STR(STD_CLOSING_CHAR));
-         writer->write("end\n");
-         writer->write("else\n");
-         writer->write(STR(STD_OPENING_CHAR));
-         writer->write("begin\n");
-         {
-            writer->write_comment("Vectors count\n");
-            writer->write("_n_ = _n_ + 1;\n");
-            writer->write("$display(\"Start reading vector %d's values from input file.\\n\", _n_);\n");
-         }
-         writer->write(STR(STD_CLOSING_CHAR));
-         writer->write("end\n");
-         first_valid_input = false;
-      }
-
-      writer->write("if (_ch_ == \"p\")\n");
-      writer->write(STR(STD_OPENING_CHAR));
-      writer->write("begin\n");
-      {
-         writer->write("_r_ = $fscanf(file,\"%b\\n\", paddr" + input_name + "); ");
-         writer->write_comment("expected format: bbb...b (example: 00101110)\n");
-      }
-      writer->write(STR(STD_CLOSING_CHAR));
-      writer->write("end\n");
-
-      writer->write("if (_r_ != 1) ");
-      writer->write_comment("error\n");
-      writer->write(STR(STD_OPENING_CHAR));
-      writer->write("begin\n");
-      {
-         writer->write("_ch_ = $fgetc(file);\n");
-         writer->write("if (_ch_ == `EOF) ");
-         writer->write_comment("end-of-file reached\n");
-         writer->write(STR(STD_OPENING_CHAR));
-         writer->write("begin\n");
-         {
-            writer->write("$display(\"ERROR - End of file reached before getting all the values for the parameters\");\n");
-            writer->write("$fclose(res_file);\n");
-            writer->write("$fclose(file);\n");
-            writer->write("$finish;\n");
-         }
-         writer->write(STR(STD_CLOSING_CHAR));
-         writer->write("end\n");
-         writer->write("else ");
-         writer->write_comment("generic error\n");
-         writer->write(STR(STD_OPENING_CHAR));
-         writer->write("begin\n");
-         {
-            writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-            writer->write("$fclose(res_file);\n");
-            writer->write("$fclose(file);\n");
-            writer->write("$finish;\n");
-         }
-         writer->write(STR(STD_CLOSING_CHAR));
-         writer->write("end\n");
-      }
-      writer->write(STR(STD_CLOSING_CHAR));
-      writer->write("end\n");
-      writer->write_comment("Value for " + input_name + " found ---------------------------------------------------------------\n");
-   }
-}
-
 void MinimalInterfaceTestbench::write_file_reading_operations() const
 {
    /// file reading operations
@@ -919,6 +831,14 @@ void MinimalInterfaceTestbench::write_file_reading_operations() const
       {
          portInst = mod->find_member(par + "_din", port_o_K, cir);
       }
+      if(!portInst)
+      {
+         portInst = mod->find_member(par + "_d0", port_o_K, cir);
+      }
+      if(!portInst)
+      {
+         portInst = mod->find_member(par + "_q0", port_o_K, cir);
+      }
       THROW_ASSERT(portInst, "unexpected condition");
       auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
       std::string input_name = HDL_manager::convert_to_identifier(writer.get(), portInst->get_id());
@@ -939,10 +859,10 @@ void MinimalInterfaceTestbench::write_file_reading_operations() const
          }
          read_input_value_from_file_RNONE(input_name, first_valid_input, bitsize);
       }
-      else if(InterfaceType == port_o::port_interface::PI_WNONE)
+      else if(InterfaceType == port_o::port_interface::PI_WNONE || InterfaceType == port_o::port_interface::PI_DIN || InterfaceType == port_o::port_interface::PI_DOUT)
          read_input_value_from_file("paddr" + input_name, first_valid_input);
       else
-         THROW_ERROR("not yet supported port interface");
+         THROW_ERROR("not yet supported port interface for port " + input_name);
    }
    if(not first_valid_input)
       writer->write("_ch_ = $fgetc(file);\n");

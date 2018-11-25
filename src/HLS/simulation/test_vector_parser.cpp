@@ -100,10 +100,20 @@ TestVectorParser::~TestVectorParser() = default;
 void TestVectorParser::ParseUserString(std::vector<std::map<std::string, std::string>>& test_vectors) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining " + user_input_string);
+   std::string local_string = user_input_string;
 
+   /// pre-processing to support arrays
+   std::string::iterator last_comma = local_string.end();
+   for(auto it = local_string.begin(), it_end = local_string.end(); it != it_end; ++it)
+   {
+      if(*it == ',')
+         last_comma = it;
+      else if(*it == '=' && last_comma != it_end)
+         *last_comma = '$';
+   }
    test_vectors.push_back(std::map<std::string, std::string>());
    std::vector<std::string> testbench_parameters;
-   boost::algorithm::split(testbench_parameters, user_input_string, boost::algorithm::is_any_of(","));
+   boost::algorithm::split(testbench_parameters, local_string, boost::algorithm::is_any_of("$"));
    unsigned int index = 0;
    for(auto parameter : testbench_parameters)
    {

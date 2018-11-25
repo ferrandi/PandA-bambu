@@ -705,6 +705,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             }
             else
             {
+               /// check if we have fifo-in interface
                int_port = wrappedObj->find_member("_" + port_name + "_dout", port_o_K, wrappedObj);
                if(int_port)
                {
@@ -723,12 +724,43 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                }
                else
                {
+                  /// check if we have fifo-out interface
                   int_port = wrappedObj->find_member("_" + port_name + "_din", port_o_K, wrappedObj);
                   if(int_port)
                   {
                      if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_WNONE)
                      {
+                        int_port = wrappedObj->find_member(port_name, port_o_K, wrappedObj);
+                        THROW_ASSERT(int_port, "unexpected condition");
                         portsToSkip.insert(int_port);
+                     }
+                  }
+                  else
+                  {
+                     /// check if we have array single port in interface
+                     int_port = wrappedObj->find_member("_" + port_name + "_q0", port_o_K, wrappedObj);
+                     if(int_port)
+                     {
+                        if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_DIN)
+                        {
+                           int_port = wrappedObj->find_member(port_name, port_o_K, wrappedObj);
+                           THROW_ASSERT(int_port, "unexpected condition");
+                           portsToSkip.insert(int_port);
+                        }
+                     }
+                     else
+                     {
+                        /// check if we have array single port out interface
+                        int_port = wrappedObj->find_member("_" + port_name + "_d0", port_o_K, wrappedObj);
+                        if(int_port)
+                        {
+                           if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_DOUT)
+                           {
+                              int_port = wrappedObj->find_member(port_name, port_o_K, wrappedObj);
+                              THROW_ASSERT(int_port, "unexpected condition");
+                              portsToSkip.insert(int_port);
+                           }
+                        }
                      }
                   }
                }
@@ -820,7 +852,9 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       {
          if(GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WNONE || GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WVALID ||
             GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_RACK || GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_READ ||
-            GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WRITE)
+            GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WRITE || GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_ADDRESS ||
+            GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_CHIPENABLE || GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WRITEENABLE ||
+            GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_DOUT)
          {
             portsToSkip.insert(port_out);
             auto port_name = GetPointer<port_o>(port_out)->get_id();

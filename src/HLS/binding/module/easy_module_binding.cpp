@@ -202,7 +202,7 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
                         break;
                      ++index;
                   }
-                  THROW_ASSERT(index < ops.size(), "unexpected condition");
+                  index = index % multiplicity;
                   fu.bind(op, fu_unit, index);
                   easy_bound_vertices.insert(op);
                   const auto node_id = sdg->CGetOpNodeInfo(op)->GetNodeId();

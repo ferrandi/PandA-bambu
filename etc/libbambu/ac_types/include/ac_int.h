@@ -358,6 +358,7 @@ typedef signed long long Slong;
          return ldexpr32<N / 32>(N < 0 ? d / ((unsigned)1 << (-N & 31)) : d * ((unsigned)1 << (N & 31)));
       }
 
+
       template <int N, bool C>
       class iv_base
       {
@@ -589,19 +590,19 @@ typedef signed long long Slong;
       class iv_base<3, false>
       {
          long long int va __INIT_VALUE_LL;
-         int v2 __INIT_VALUE;
+         long long int v2 __INIT_VALUE_LL;
 
        public:
          template <int W, bool S>
          __FORCE_INLINE void bit_adjust()
          {
-            constexpr const unsigned rem = (32 - W) & 31;
-            v2 = S ? ((v2 << rem) >> rem) : (rem ? ((unsigned)v2 << rem) >> rem : 0);
+            constexpr const unsigned rem = (64 - W) & 63;
+            v2 = S ? ((v2 << rem) >> rem) : (rem ? ((unsigned long long)v2 << rem) >> rem : 0);
          }
          void assign_int64(Slong l)
          {
             va = l;
-            v2 = va < 0 ? ~0 : 0;
+            v2 = va < 0 ? ~0LL : 0;
          }
          void assign_uint64(Ulong l)
          {
@@ -648,7 +649,7 @@ typedef signed long long Slong;
             {
                AC_ASSERT(M == 1, "unexpected condition");
                va = b.to_int64();
-               v2 = va < 0 ? ~0 : 0;
+               v2 = va < 0 ? ~0LL : 0;
             }
          }
       };

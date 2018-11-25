@@ -378,9 +378,9 @@ void WishboneInterfaceTestbench::write_call(bool hasMultiIrq) const
    writer->write("always @(posedge " + std::string(CLOCK_PORT_NAME) + ")\n");
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
-   writer->write("we_is = we_fsm & !ack_os;\n");
-   writer->write("cyc_is = cyc_fsm & !ack_os;\n");
-   writer->write("stb_is = stb_fsm & !ack_os;\n\n");
+   writer->write("we_is <= we_fsm & !ack_os;\n");
+   writer->write("cyc_is <= cyc_fsm & !ack_os;\n");
+   writer->write("stb_is <= stb_fsm & !ack_os;\n\n");
    writer->write(STR(STD_CLOSING_CHAR));
    writer->write("end\n");
 }
@@ -427,7 +427,7 @@ void WishboneInterfaceTestbench::write_memory_handler() const
       writer->write("begin\n");
       for(unsigned int i = 0; i <= j; ++i)
       {
-         writer->write("_bambu_testbench_mem_[(addr_om - base_addr) + " + STR(i) + "] = dat_om[" + STR((i * 8) + 7) + ":" + STR((i * 8)) + "];\n");
+         writer->write("_bambu_testbench_mem_[(addr_om - base_addr) + " + STR(i) + "] <= dat_om[" + STR((i * 8) + 7) + ":" + STR((i * 8)) + "];\n");
       }
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n");
@@ -457,7 +457,7 @@ void WishboneInterfaceTestbench::write_memory_handler() const
       writer->write("begin\n");
       for(unsigned int i = 0; i <= j; ++i)
       {
-         writer->write("dat_im[" + STR((i * 8) + 7) + ":" + STR((i * 8)) + "] = _bambu_testbench_mem_[(addr_om - base_addr) + " + STR(i) + "];\n");
+         writer->write("dat_im[" + STR((i * 8) + 7) + ":" + STR((i * 8)) + "] <= _bambu_testbench_mem_[(addr_om - base_addr) + " + STR(i) + "];\n");
       }
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n");
