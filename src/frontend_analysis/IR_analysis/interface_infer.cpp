@@ -599,7 +599,7 @@ void interface_infer::create_resource_Write_simple(const std::vector<std::string
 }
 
 void interface_infer::create_resource_array(const std::vector<std::string>& operationsR, const std::vector<std::string>& operationsW, const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth, unsigned int arraySize,
-                                            bool is_acType, bool is_signed, unsigned n_resources)
+                                            unsigned n_resources, unsigned alignment)
 {
    const std::string ResourceName = ENCODE_FDNAME(argName_string, "_ReadWrite_", interfaceType);
    auto HLSMgr = GetPointer<HLS_manager>(AppM);
@@ -620,42 +620,7 @@ void interface_infer::create_resource_array(const std::vector<std::string>& oper
       GetPointer<module>(interface_top)->set_license(GENERATED_LICENSE);
       GetPointer<module>(interface_top)->set_multi_unit_multiplicity(n_resources);
 
-      /// compute alignment
-      unsigned alignment = 1;
-      if(inputBitWidth <= 8)
-      {
-         alignment = !is_acType ? 1 : 4;
-      }
-      else if(inputBitWidth <= 16)
-      {
-         alignment = !is_acType ? 2 : 4;
-      }
-      else if(inputBitWidth <= 32)
-      {
-         if(is_acType && !is_signed && inputBitWidth==32)
-            alignment = 8;
-         else
-            alignment = 4;
-      }
-      else if(inputBitWidth <= 64)
-      {
-         alignment = 8;
-      }
-      else if(inputBitWidth <= 128)
-      {
-         if(is_acType && !is_signed)
-            alignment = 20;
-         else
-            alignment = 16;
-      }
-      else
-      {
-         alignment = (inputBitWidth / 32) + 4 * (inputBitWidth % 32 ? 1 : 0);
-         if(!is_signed && inputBitWidth % 32 == 0)
-            alignment += 4;
-      }
       auto nbitAddres= 32u - static_cast<unsigned>(__builtin_clz(arraySize*alignment - 1));
-
       unsigned int address_bitsize = HLSMgr->get_address_bitsize();
       structural_type_descriptorRef word_bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", address_bitsize));
       auto nbit = 32u - static_cast<unsigned>(__builtin_clz(arraySize - 1));
@@ -754,24 +719,52 @@ void interface_infer::create_resource_array(const std::vector<std::string>& oper
    }
 }
 
-void interface_infer::create_resource(const std::vector<std::string>& operationsR, const std::vector<std::string>& operationsW, const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool isDiffSize,
-                                      const std::string& fname, bool is_acType, bool is_signed)
+void interface_infer::ComputeResourcesAlignment(unsigned& n_resources, unsigned &alignment, unsigned int inputBitWidth, bool is_acType, bool is_signed, bool is_fixed)
 {
-   unsigned n_resources = 1;
+   n_resources = 1;
    if(inputBitWidth > 64 && inputBitWidth <= 128)
    {
-      if(!is_signed && inputBitWidth == 128)
-         n_resources = 5;
-      else
-         n_resources = 2;
+      n_resources = 2;
    }
    else if(inputBitWidth > 128)
    {
       n_resources = inputBitWidth / 32 + (inputBitWidth % 32 ? 1 : 0);
-      if(!is_signed && inputBitWidth % 32 == 0)
+      if(!is_signed && inputBitWidth % 32 == 0 &&  !is_fixed)
          ++n_resources;
    }
+   /// compute alignment
+   alignment = 1;
+   if(inputBitWidth <= 8)
+   {
+      alignment = !is_acType ? 1 : 4;
+   }
+   else if(inputBitWidth <= 16)
+   {
+      alignment = !is_acType ? 2 : 4;
+   }
+   else if(inputBitWidth <= 32)
+   {
+      alignment = 4;
+   }
+   else if(inputBitWidth <= 64)
+   {
+      alignment = 8;
+   }
+   else if(inputBitWidth <= 128)
+   {
+      alignment = 16;
+   }
+   else
+   {
+      alignment = (inputBitWidth / 32) + 4 * (inputBitWidth % 32 ? 1 : 0);
+      if(!is_signed && inputBitWidth % 32 == 0 && !is_fixed)
+         alignment += 4;
+   }
+}
 
+void interface_infer::create_resource(const std::vector<std::string>& operationsR, const std::vector<std::string>& operationsW, const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool isDiffSize,
+                                      const std::string& fname, unsigned n_resources, unsigned alignment)
+{
    if(interfaceType == "none" || interfaceType == "acknowledge" || interfaceType == "valid" || interfaceType == "ovalid" || interfaceType == "handshake" || interfaceType == "fifo")
    {
       THROW_ASSERT(!operationsR.empty() || !operationsW.empty(), "unexpected condition");
@@ -794,7 +787,7 @@ void interface_infer::create_resource(const std::vector<std::string>& operations
       auto arraySize = boost::lexical_cast<unsigned>(arraySizeSTR);
       if(arraySize == 0)
          THROW_ERROR("array size equal to zero");
-      create_resource_array(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, arraySize, is_acType, is_signed, n_resources);
+      create_resource_array(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, arraySize, n_resources, alignment);
    }
    else
       THROW_ERROR("interface not supported: " + interfaceType);
@@ -998,13 +991,17 @@ DesignFlowStep_Status interface_infer::InternalExec()
                      std::cerr << "list of statement that use this parameter\n";
                      auto inputBitWidth = tree_helper::size(TM, tree_helper::get_pointed_type(TM, GET_INDEX_NODE(a->type)));
                      bool is_signed;
-                     auto acTypeBw = ac_type_bitwidth(interfaceTypename, is_signed);
+                     bool is_fixed;
+                     auto acTypeBw = ac_type_bitwidth(interfaceTypename, is_signed, is_fixed);
                      bool is_acType = false;
                      if(acTypeBw)
                      {
                         is_acType = true;
                         inputBitWidth = acTypeBw;
                      }
+                     unsigned n_resources;
+                     unsigned alignment;
+                     ComputeResourcesAlignment(n_resources, alignment, inputBitWidth, is_acType, is_signed, is_fixed);
                      THROW_ASSERT(inputBitWidth, "unexpected condition");
 
                      auto argSSANode = TM->GetTreeReindex(par2ssa.find(arg_id)->second);
@@ -1092,7 +1089,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                            create_Read_function(argName_string, tree_nodeRef(), destBB, sl, fd, fdName, argSSANode, a, readType, usedStmt_defs, tree_man, TM, commonRWSignature);
                            for(auto rs : readStmt)
                               addGimpleNOPxVirtual(rs, sl, TM);
-                           create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, false, fname, is_acType, is_signed);
+                           create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, false, fname, n_resources, alignment);
                            modified = true;
                         }
                         else if(isRead && !isWrite)
@@ -1113,7 +1110,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               usedStmt_defs.clear();
                               ++loadIdIndex;
                            }
-                           create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, false, fname, is_acType, is_signed);
+                           create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, false, fname, n_resources, alignment);
                            modified = true;
                         }
                         else if(canBeMovedToBB2 && isRead && isWrite)
@@ -1166,7 +1163,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               create_Write_function(argName_string, ws, ws_ga->bb_index, sl, fd, instanceFname, argSSANode, ws_ga->op1, a, GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM, commonRWSignature);
                               ++IdIndex;
                            }
-                           create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, isDiffSize, fname, is_acType, is_signed);
+                           create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, isDiffSize, fname, n_resources, alignment);
                            modified = true;
                         }
                         else if(isRead && isWrite)
@@ -1208,7 +1205,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               create_Write_function(argName_string, ws, ws_ga->bb_index, sl, fd, instanceFname, argSSANode, ws_ga->op1, a, GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM, commonRWSignature);
                               ++IdIndex;
                            }
-                           create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, isDiffSize, fname, is_acType, is_signed);
+                           create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, isDiffSize, fname, n_resources, alignment);
                            modified = true;
                         }
                         else if(!isRead && isWrite)
@@ -1235,7 +1232,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               create_Write_function(argName_string, ws, ws_ga->bb_index, sl, fd, instanceFname, argSSANode, ws_ga->op1, a, GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM, commonRWSignature);
                               ++IdIndex;
                            }
-                           create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, isDiffSize, fname, is_acType, is_signed);
+                           create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, isDiffSize, fname, n_resources, alignment);
                            modified = true;
                         }
                         else

@@ -99,7 +99,7 @@ namespace __AC_NAMESPACE
    // AC_SAT, AC_SAT_ZERO, AC_SAT_SYM };
 
    template <int W, int I, bool S = true, ac_q_mode Q = AC_TRN, ac_o_mode O = AC_WRAP>
-   class ac_fixed : private ac_private::iv<(W + 31 + !S) / 32, W <= 64>
+   class ac_fixed : private ac_private::iv<(W + 31 + !S) / 32, false>
 #ifndef __BAMBU__
                         __AC_FIXED_UTILITY_BASE
 #endif
@@ -119,7 +119,7 @@ namespace __AC_NAMESPACE
          typedef ac_fixed<w_shiftl, I, S> shiftl;
       };
 
-      typedef ac_private::iv<N, W <= 64> Base;
+      typedef ac_private::iv<N, false> Base;
 
       __FORCE_INLINE void bit_adjust()
       {
@@ -567,6 +567,12 @@ namespace __AC_NAMESPACE
       __FORCE_INLINE ac_int<AC_MAX(I, 1), S> to_ac_int() const
       {
          return ((ac_fixed<AC_MAX(I, 1), AC_MAX(I, 1), S>)*this).template slc<AC_MAX(I, 1)>(0);
+      }
+      template<int W1, bool S1>
+      __FORCE_INLINE explicit operator ac_int<W1, S1> () const
+      {
+         ac_int<AC_MAX(I, 1), S> temp = to_ac_int();
+         return (ac_int<W1,S1>)temp;
       }
 
       // Explicit conversion functions to C built-in types -------------

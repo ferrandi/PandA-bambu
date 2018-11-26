@@ -190,6 +190,13 @@ namespace clang
          return ND;
       }
 
+      QualType RemoveTypedef(QualType t)
+      {
+         if(t->getTypeClass() == Type::Typedef)
+            return RemoveTypedef(t->getAs<TypedefType>()->getDecl()->getUnderlyingType());
+         else
+            return t;
+      }
       void AnalyzeFunctionDecl(const FunctionDecl* FD)
       {
          auto& SM = FD->getASTContext().getSourceManager();
@@ -241,7 +248,7 @@ namespace clang
             };
             auto funName = getMangledName(FD);
             Fun2Demangled[funName] = FD->getNameInfo().getName().getAsString();
-            // llvm::errs()<<"funName:"<<funName<<"\n";
+            //llvm::errs()<<"funName:"<<funName<<"\n";
             for(const auto par : FD->parameters())
             {
                if(const ParmVarDecl* ND = dyn_cast<ParmVarDecl>(par))
@@ -249,6 +256,7 @@ namespace clang
                   std::string interfaceType = "default";
                   std::string arraySize;
                   std::string UserDefinedInterfaceType;
+                  std::string ParamTypeName;
                   auto parName = ND->getNameAsString();
                   bool UDIT_p = false;
                   if(interface_PragmaMap.find(parName) != interface_PragmaMap.end())
@@ -257,7 +265,7 @@ namespace clang
                      UDIT_p = true;
                   }
                   auto argType = ND->getType();
-                  // argType->dump (llvm::errs() );
+                  //argType->dump (llvm::errs() );
                   if(isa<DecayedType>(argType))
                   {
                      auto DT = cast<DecayedType>(argType);
@@ -270,6 +278,10 @@ namespace clang
                            CA = cast<ConstantArrayType>(CA->getElementType());
                            OrigTotArraySize *= CA->getSize();
                         }
+                        if(CA->getElementType()->getTypeClass() == Type::Typedef)
+                           ParamTypeName = RemoveTypedef(CA->getElementType()).getAsString() + " *";
+                        else
+                           ParamTypeName = CA->getElementType().getAsString() + " *";
                         interfaceType = "array";
                         arraySize = OrigTotArraySize.toString(10, false);
                         assert(arraySize !=  "0");
@@ -299,6 +311,12 @@ namespace clang
                   }
                   else if(argType->isPointerType() || argType->isReferenceType())
                   {
+                     auto PT = dyn_cast<PointerType>(argType);
+                     if(PT && PT->getPointeeType()->getTypeClass() == Type::Typedef)
+                        ParamTypeName = RemoveTypedef(PT->getPointeeType()).getAsString() + " *";
+                     auto RT = dyn_cast<ReferenceType>(argType);
+                     if(RT && RT->getPointeeType()->getTypeClass() == Type::Typedef)
+                        ParamTypeName = RemoveTypedef(RT->getPointeeType()).getAsString() + " &";
                      interfaceType = "ptrdefault";
                      if(UDIT_p)
                      {
@@ -316,6 +334,8 @@ namespace clang
                   }
                   else
                   {
+                     if(argType->getTypeClass() == Type::Typedef)
+                        ParamTypeName = RemoveTypedef(argType).getAsString();
                      if(!argType->isBuiltinType())
                      {
                         interfaceType = "none";
@@ -340,7 +360,9 @@ namespace clang
 
                   HLS_interfaceMap[funName].push_back(interfaceType);
                   Fun2Params[funName].push_back(parName);
-                  Fun2ParamType[funName].push_back(ND->getType().getAsString());
+                  if(ParamTypeName.empty())
+                     ParamTypeName = ND->getType().getAsString();
+                  Fun2ParamType[funName].push_back(ParamTypeName);
                   if(interfaceType=="array")
                      Fun2ParamSize[funName][parName]=arraySize;
                   if(auto BTD = getBaseTypeDecl(ND->getType()))

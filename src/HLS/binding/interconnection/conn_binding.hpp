@@ -213,6 +213,8 @@ class conn_binding
    /// map between the connection <src, tgt, tgt_port, tgt_port_index> and the corresponding object
    conn_implementation_map conn_implementation;
 
+   static unsigned unique_id;
+
    /**
     * Specialise a multiplexer according to the type of the variables crossing it.
     * @param mux is the multiplexer

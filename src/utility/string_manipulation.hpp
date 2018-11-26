@@ -260,8 +260,10 @@ inline std::string convert_fp_to_string(std::string num, unsigned int precision)
  */
 #define GET_CLASS(obj) string_demangle(typeid(obj).name())
 
-inline unsigned int ac_type_bitwidth(const std::string intType, bool& is_signed)
+inline unsigned int ac_type_bitwidth(const std::string intType, bool& is_signed, bool& is_fixed)
 {
+   is_fixed=false;
+   is_signed=false;
    unsigned int inputBitWidth = 0;
    auto interfaceTypename = intType;
    if(interfaceTypename.find("const ") == 0)
@@ -286,6 +288,7 @@ inline unsigned int ac_type_bitwidth(const std::string intType, bool& is_signed)
    }
    else if(interfaceTypename.find("ac_fixed<") == 0)
    {
+      is_fixed=true;
       auto subtypeArg = interfaceTypename.substr(std::string("ac_fixed<").size());
       auto terminate = subtypeArg.find_first_of(",> ");
       auto secondPartType = subtypeArg.substr(terminate + 2);
@@ -320,6 +323,7 @@ inline unsigned int ac_type_bitwidth(const std::string intType, bool& is_signed)
    }
    else if(interfaceTypename.find("ap_fixed<") == 0)
    {
+      is_fixed=true;
       auto subtypeArg = interfaceTypename.substr(std::string("ap_fixed<").size());
       auto sizeString = subtypeArg.substr(0, subtypeArg.find_first_of(",> "));
       inputBitWidth = boost::lexical_cast<unsigned>(sizeString);
@@ -327,6 +331,7 @@ inline unsigned int ac_type_bitwidth(const std::string intType, bool& is_signed)
    }
    else if(interfaceTypename.find("ap_ufixed<") == 0)
    {
+      is_fixed=true;
       auto subtypeArg = interfaceTypename.substr(std::string("ap_ufixed<").size());
       auto sizeString = subtypeArg.substr(0, subtypeArg.find_first_of(",> "));
       inputBitWidth = boost::lexical_cast<unsigned>(sizeString);
