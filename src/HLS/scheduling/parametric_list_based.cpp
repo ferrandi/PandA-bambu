@@ -59,6 +59,9 @@
 
 #include "basic_block.hpp"
 #include "tree_basic_block.hpp"
+#include "tree_helper.hpp"
+#include "tree_manager.hpp"
+#include "tree_node.hpp"
 
 #include "BambuParameter.hpp"
 #include "cpu_time.hpp"
@@ -539,29 +542,40 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
    for(rv = ready_vertices.begin(); rv != rv_end; ++rv)
       add_to_priority_queues(priority_queues, ready_resources, *rv);
 
+   const auto TM = HLSMgr->get_tree_manager();
+   auto fnode = TM->get_tree_node_const(funId);
+   auto fd = GetPointer<function_decl>(fnode);
+   std::string fname;
+   tree_helper::get_mangled_fname(fd, fname);
    std::unordered_set<vertex> RW_stmts;
-   for(auto bb2arg2stmtsR : HLSMgr->design_interface_loads)
+   if(HLSMgr->design_interface_loads.find(fname) != HLSMgr->design_interface_loads.end())
    {
-      for(auto arg2stms : bb2arg2stmtsR.second)
+      for(auto bb2arg2stmtsR : HLSMgr->design_interface_loads.find(fname)->second)
       {
-         if(arg2stms.second.size() > 0)
-            for(auto stmt : arg2stms.second)
-            {
-               THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition");
-               RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
-            }
+         for(auto arg2stms : bb2arg2stmtsR.second)
+         {
+            if(arg2stms.second.size() > 0)
+               for(auto stmt : arg2stms.second)
+               {
+                  THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition: STMT="+STR(stmt));
+                  RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
+               }
+         }
       }
    }
-   for(auto bb2arg2stmtsW : HLSMgr->design_interface_stores)
+   if(HLSMgr->design_interface_stores.find(fname) != HLSMgr->design_interface_stores.end())
    {
-      for(auto arg2stms : bb2arg2stmtsW.second)
+      for(auto bb2arg2stmtsW : HLSMgr->design_interface_stores.find(fname)->second)
       {
-         if(arg2stms.second.size() > 0)
-            for(auto stmt : arg2stms.second)
-            {
-               THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition");
-               RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
-            }
+         for(auto arg2stms : bb2arg2stmtsW.second)
+         {
+            if(arg2stms.second.size() > 0)
+               for(auto stmt : arg2stms.second)
+               {
+                  THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition");
+                  RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
+               }
+         }
       }
    }
 
@@ -865,9 +879,9 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                if(RW_stmts.find(current_vertex) != RW_stmts.end())
                {
                   auto bb_index = flow_graph->CGetOpNodeInfo(current_vertex)->bb_index;
-                  if(HLSMgr->design_interface_loads.find(bb_index) != HLSMgr->design_interface_loads.end())
+                  if(HLSMgr->design_interface_loads.find(fname) != HLSMgr->design_interface_loads.end() && HLSMgr->design_interface_loads.find(fname)->second.find(bb_index) != HLSMgr->design_interface_loads.find(fname)->second.end())
                   {
-                     for(auto par2stmts : HLSMgr->design_interface_loads.find(bb_index)->second)
+                     for(auto par2stmts : HLSMgr->design_interface_loads.find(fname)->second.find(bb_index)->second)
                      {
                         std::set<vertex> OpCluster;
                         for(auto stmt : par2stmts.second)
@@ -915,9 +929,9 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                         }
                      }
                   }
-                  if(HLSMgr->design_interface_stores.find(bb_index) != HLSMgr->design_interface_stores.end())
+                  if(HLSMgr->design_interface_stores.find(fname) != HLSMgr->design_interface_stores.end() && HLSMgr->design_interface_stores.find(fname)->second.find(bb_index) != HLSMgr->design_interface_stores.find(fname)->second.end())
                   {
-                     for(auto par2stmts : HLSMgr->design_interface_stores.find(bb_index)->second)
+                     for(auto par2stmts : HLSMgr->design_interface_stores.find(fname)->second.find(bb_index)->second)
                      {
                         std::set<vertex> OpCluster;
                         for(auto stmt : par2stmts.second)

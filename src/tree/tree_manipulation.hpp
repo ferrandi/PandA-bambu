@@ -193,6 +193,14 @@ class tree_manipulation
     */
    tree_nodeRef CreateIntegerCst(const tree_nodeConstRef& type, const long long int value, const unsigned int integer_cst_nid) const;
 
+   /** Function used to create a real_cst node.
+    * @param  type is the type of the node.
+    * @param value is the value of the constant
+    * @param  real_cst_nid is the index node of the object to be created
+    * @return the tree_reindex node of the real_cst created.
+    */
+   tree_nodeRef CreateRealCst(const tree_nodeConstRef& type, const long double value, const unsigned int real_cst_nid) const;
+
    /// IDENTIFIER_TREE_NODE
    /**
     * Function used to create an identifier node if it is not already present, otherwise it returns the one that is already in the tree manager.

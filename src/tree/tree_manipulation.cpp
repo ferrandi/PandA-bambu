@@ -583,6 +583,29 @@ tree_nodeRef tree_manipulation::CreateIntegerCst(const tree_nodeConstRef& type, 
    return node_ref;
 }
 
+tree_nodeRef tree_manipulation::CreateRealCst(const tree_nodeConstRef& type, const long double value, const unsigned int real_cst_nid) const
+{
+   THROW_ASSERT(type->get_kind() == tree_reindex_K, "Type node is not a tree reindex");
+
+   unsigned int type_node_nid = type->index;
+   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
+   IR_schema[TOK(TOK_TYPE)] = STR(type_node_nid);
+   std::stringstream ss;
+   ss << value;
+   IR_schema[TOK(TOK_VALR)] = ss.str();
+
+   std::stringstream ssX;
+   ss << std::hexfloat<<value;
+   IR_schema[TOK(TOK_VALX)] = ss.str();
+
+   this->TreeM->create_tree_node(real_cst_nid, real_cst_K, IR_schema);
+   tree_nodeRef node_ref = TreeM->GetTreeReindex(real_cst_nid);
+
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created node " + STR(GET_INDEX_NODE(node_ref)) + " (" + GET_NODE(node_ref)->get_kind_text() + ")");
+
+   return node_ref;
+}
+
 /// IDENTIFIER_TREE_NODE
 
 /// Create an identifier node

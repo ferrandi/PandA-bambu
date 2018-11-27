@@ -70,9 +70,9 @@ class interface_infer : public FunctionFrontendFlowStep
    void classifyArg(statement_list* sl, tree_nodeRef argSSANode, bool& canBeMovedToBB2, bool& isRead, bool& isWrite, bool& unkwown_pattern, std::list<tree_nodeRef>& writeStmt, std::list<tree_nodeRef>& readStmt);
    void addGimpleNOPxVirtual(tree_nodeRef origStmt, statement_list* sl, const tree_managerRef TM);
 
-   void create_Read_function(const std::string& argName_string, tree_nodeRef origStmt, unsigned int destBB, statement_list* sl, function_decl* fd, const std::string& fdName, tree_nodeRef argSSANode, parm_decl* a, tree_nodeRef readType,
+   void create_Read_function(const std::string& fname, const std::string& argName_string, tree_nodeRef origStmt, unsigned int destBB, statement_list* sl, function_decl* fd, const std::string& fdName, tree_nodeRef argSSANode, parm_decl* a, tree_nodeRef readType,
                              const std::list<tree_nodeRef>& usedStmt_defs, const tree_manipulationRef tree_man, const tree_managerRef TM, bool commonRWSignature);
-   void create_Write_function(const std::string& argName_string, tree_nodeRef origStmt, unsigned int destBB, statement_list* sl, function_decl* fd, const std::string& fdName, tree_nodeRef argSSANode, tree_nodeRef writeValue, parm_decl* a,
+   void create_Write_function(const std::string& fname, const std::string& argName_string, tree_nodeRef origStmt, unsigned int destBB, statement_list* sl, function_decl* fd, const std::string& fdName, tree_nodeRef argSSANode, tree_nodeRef writeValue, parm_decl* a,
                               tree_nodeRef writeType, const tree_manipulationRef tree_man, const tree_managerRef TM, bool commonRWSignature);
 
    void create_resource_Read_simple(const std::vector<std::string>& operations, const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool IO_port, unsigned n_resources);
