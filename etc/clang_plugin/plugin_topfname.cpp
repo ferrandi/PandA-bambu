@@ -165,6 +165,27 @@ namespace llvm
       bool runOnModule(Module& M) override
       {
          bool changed = false;
+         bool hasTopFun=false;
+         for(auto& fun : M.getFunctionList())
+         {
+            if(!fun.isIntrinsic() && !fun.isDeclaration())
+            {
+               auto funName = fun.getName();
+               auto demangled = getDemangled(funName);
+               if(!fun.hasInternalLinkage() && (funName == TopFunctionName || demangled == TopFunctionName))
+               {
+                  hasTopFun=true;
+               }
+            }
+         }
+         if(!hasTopFun)
+         {
+            llvm::errs()<<"DOES NOT HAVE TOP FNAME\n";
+            return false;
+         }
+         llvm::errs()<<"HAS TOP FNAME\n";
+
+         ///check if the translation unit has the top function name
 #if PRINT_DBG_MSG
          llvm::errs() << "Top function name: " << TopFunctionName << "\n";
 #endif
