@@ -158,7 +158,7 @@ void MinimalInterfaceTestbench::write_memory_handler() const
          post_slice = "[" + boost::lexical_cast<std::string>((i + 1) * bitsize - 1) + ":" + boost::lexical_cast<std::string>(i * bitsize) + "]";
       else
          post_slice = "";
-      writer->write(mem_aggregate + " <= (Mout_Wdata_ram" + post_slice + " & mask" + post_slice + ") | (" + mem_aggregate + " & ~(mask" + post_slice + "));\n");
+      writer->write(mem_aggregate + " = (Mout_Wdata_ram" + post_slice + " & mask" + post_slice + ") | (" + mem_aggregate + " & ~(mask" + post_slice + "));\n");
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n");
    }
