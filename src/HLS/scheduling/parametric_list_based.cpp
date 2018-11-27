@@ -330,45 +330,48 @@ void parametric_list_based::Initialize()
    ending_time = OpVertexMap<double>(FB->CGetOpGraph(FunctionBehavior::CFG));
 }
 
-
-void parametric_list_based::CheckSchedulabilityConditions(const vertex& current_vertex, ControlStep current_cycle,
-                                   double &current_starting_time, double &current_ending_time, double& current_stage_period,
-                                   CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map,
-                                   double current_cycle_starting_time, double current_cycle_ending_time,
-                                   double setup_hold_time, double &phi_extra_time, double scheduling_mux_margins,
-                                   bool unbounded, bool cstep_has_RET_conflict,
-                                   unsigned int fu_type,
-                                   const vertex2obj<ControlStep>& current_ASAP,
-                                   const fu_bindingRef res_binding, const ScheduleRef schedule,
-                                   bool& predecessorsCond, bool& pipeliningCond, bool&cannotBeChained0, bool& chainingRetCond, bool &cannotBeChained1, bool& asyncCond, bool&cannotBeChained2,
-                                   bool& MultiCond0, bool& MultiCond1, bool& nonDirectMemCond)
+void parametric_list_based::CheckSchedulabilityConditions(const vertex& current_vertex, ControlStep current_cycle, double& current_starting_time, double& current_ending_time, double& current_stage_period,
+                                                          CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map, double current_cycle_starting_time, double current_cycle_ending_time, double setup_hold_time, double& phi_extra_time,
+                                                          double scheduling_mux_margins, bool unbounded, bool cstep_has_RET_conflict, unsigned int fu_type, const vertex2obj<ControlStep>& current_ASAP, const fu_bindingRef res_binding,
+                                                          const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond, bool& cannotBeChained0, bool& chainingRetCond, bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2,
+                                                          bool& MultiCond0, bool& MultiCond1, bool& nonDirectMemCond)
 {
-   predecessorsCond=current_ASAP.find(current_vertex) != current_ASAP.end() and current_ASAP.find(current_vertex)->second > current_cycle;
-   if(predecessorsCond) return;
+   predecessorsCond = current_ASAP.find(current_vertex) != current_ASAP.end() and current_ASAP.find(current_vertex)->second > current_cycle;
+   if(predecessorsCond)
+      return;
    compute_starting_ending_time_asap(current_vertex, fu_type, current_cycle, current_starting_time, current_ending_time, current_stage_period, cannotBeChained1, res_binding, schedule, phi_extra_time, setup_hold_time, local_connection_map);
    bool is_pipelined = HLS->allocation_information->get_initiation_time(fu_type, current_vertex) != 0;
    auto n_cycles = HLS->allocation_information->get_cycles(fu_type, current_vertex, flow_graph);
-   pipeliningCond=is_pipelined and (current_starting_time > current_cycle_starting_time) and ((current_stage_period + current_starting_time + setup_hold_time + phi_extra_time + scheduling_mux_margins > (current_cycle_ending_time) || unbounded));
-   if(pipeliningCond) return;
-   cannotBeChained0=current_starting_time >= (current_cycle_ending_time) ||
-                    ((!is_pipelined && n_cycles == 0 && current_starting_time > (current_cycle_starting_time)) && current_ending_time + setup_hold_time + phi_extra_time + scheduling_mux_margins > current_cycle_ending_time);
-   if(cannotBeChained0) return;
+   pipeliningCond = is_pipelined and (current_starting_time > current_cycle_starting_time) and ((current_stage_period + current_starting_time + setup_hold_time + phi_extra_time + scheduling_mux_margins > (current_cycle_ending_time) || unbounded));
+   if(pipeliningCond)
+      return;
+   cannotBeChained0 = current_starting_time >= (current_cycle_ending_time) ||
+                      ((!is_pipelined && n_cycles == 0 && current_starting_time > (current_cycle_starting_time)) && current_ending_time + setup_hold_time + phi_extra_time + scheduling_mux_margins > current_cycle_ending_time);
+   if(cannotBeChained0)
+      return;
    chainingRetCond = (unbounded || cstep_has_RET_conflict /*|| current_starting_time > (current_cycle_starting_time)*/) && (GET_TYPE(flow_graph, current_vertex) & TYPE_RET);
-   if(chainingRetCond) return;
-   if(cannotBeChained1) return;
-   asyncCond=(current_starting_time > (EPSILON + current_cycle_starting_time)) and (GET_TYPE(flow_graph, current_vertex) & TYPE_LOAD) and HLS->allocation_information->is_one_cycle_direct_access_memory_unit(fu_type) and
-             (!HLS->allocation_information->is_readonly_memory_unit(fu_type) || (!HLS->Param->isOption(OPT_rom_duplication) || !HLS->Param->getOption<bool>(OPT_rom_duplication))) and
-             ((HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(fu_type) ? HLS->allocation_information->get_memory_var(fu_type) : HLS->allocation_information->get_proxy_memory_var(fu_type))) >
-              HLS->allocation_information->get_number_channels(fu_type));
-   if(asyncCond) return;
-   cannotBeChained2=(current_starting_time > (current_cycle_starting_time)) && !HLS->Param->getOption<bool>(OPT_chaining);
-   if(cannotBeChained2) return;
-   MultiCond0=(!is_pipelined && n_cycles > 0 && current_starting_time > (current_cycle_starting_time)) && current_ending_time - (n_cycles - 1) * clock_cycle + setup_hold_time + phi_extra_time + scheduling_mux_margins > current_cycle_ending_time;
-   if(MultiCond0) return;
-   MultiCond1=current_ending_time + setup_hold_time + phi_extra_time + scheduling_mux_margins > current_cycle_ending_time && unbounded;
-   if(MultiCond1) return;
-   nonDirectMemCond=(GET_TYPE(flow_graph, current_vertex) & (TYPE_LOAD | TYPE_STORE)) && !HLS->allocation_information->is_direct_access_memory_unit(fu_type) && unbounded;
-   if(nonDirectMemCond) return;
+   if(chainingRetCond)
+      return;
+   if(cannotBeChained1)
+      return;
+   asyncCond = (current_starting_time > (EPSILON + current_cycle_starting_time)) and (GET_TYPE(flow_graph, current_vertex) & TYPE_LOAD) and HLS->allocation_information->is_one_cycle_direct_access_memory_unit(fu_type) and
+               (!HLS->allocation_information->is_readonly_memory_unit(fu_type) || (!HLS->Param->isOption(OPT_rom_duplication) || !HLS->Param->getOption<bool>(OPT_rom_duplication))) and
+               ((HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(fu_type) ? HLS->allocation_information->get_memory_var(fu_type) : HLS->allocation_information->get_proxy_memory_var(fu_type))) >
+                HLS->allocation_information->get_number_channels(fu_type));
+   if(asyncCond)
+      return;
+   cannotBeChained2 = (current_starting_time > (current_cycle_starting_time)) && !HLS->Param->getOption<bool>(OPT_chaining);
+   if(cannotBeChained2)
+      return;
+   MultiCond0 = (!is_pipelined && n_cycles > 0 && current_starting_time > (current_cycle_starting_time)) && current_ending_time - (n_cycles - 1) * clock_cycle + setup_hold_time + phi_extra_time + scheduling_mux_margins > current_cycle_ending_time;
+   if(MultiCond0)
+      return;
+   MultiCond1 = current_ending_time + setup_hold_time + phi_extra_time + scheduling_mux_margins > current_cycle_ending_time && unbounded;
+   if(MultiCond1)
+      return;
+   nonDirectMemCond = (GET_TYPE(flow_graph, current_vertex) & (TYPE_LOAD | TYPE_STORE)) && !HLS->allocation_information->is_direct_access_memory_unit(fu_type) && unbounded;
+   if(nonDirectMemCond)
+      return;
 }
 const double parametric_list_based::EPSILON = 0.000000001;
 
@@ -557,7 +560,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
             if(arg2stms.second.size() > 0)
                for(auto stmt : arg2stms.second)
                {
-                  THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition: STMT="+STR(stmt));
+                  THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition: STMT=" + STR(stmt));
                   RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
                }
          }
@@ -759,19 +762,11 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                double phi_extra_time;
                CustomMap<std::pair<unsigned int, unsigned int>, double> local_connection_map;
 
-               bool predecessorsCond, pipeliningCond, cannotBeChained0,chainingRetCond,cannotBeChained1,asyncCond,cannotBeChained2,MultiCond0,MultiCond1,nonDirectMemCond;
+               bool predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond, cannotBeChained1, asyncCond, cannotBeChained2, MultiCond0, MultiCond1, nonDirectMemCond;
 
-               CheckSchedulabilityConditions(current_vertex, current_cycle,
-                                                  current_starting_time, current_ending_time, current_stage_period,
-                                                  local_connection_map,
-                                                  current_cycle_starting_time, current_cycle_ending_time,
-                                                  setup_hold_time, phi_extra_time, scheduling_mux_margins,
-                                                  unbounded, cstep_has_RET_conflict,
-                                                  fu_type,
-                                                  current_ASAP,
-                                                  res_binding, schedule,
-                                                  predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond, cannotBeChained1, asyncCond, cannotBeChained2,
-                                                  MultiCond0, MultiCond1, nonDirectMemCond);
+               CheckSchedulabilityConditions(current_vertex, current_cycle, current_starting_time, current_ending_time, current_stage_period, local_connection_map, current_cycle_starting_time, current_cycle_ending_time, setup_hold_time, phi_extra_time,
+                                             scheduling_mux_margins, unbounded, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule, predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond, cannotBeChained1, asyncCond,
+                                             cannotBeChained2, MultiCond0, MultiCond1, nonDirectMemCond);
 
                /// checking if predecessors have finished
                if(predecessorsCond)
@@ -896,33 +891,24 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                            {
                               if(op == current_vertex)
                                  ++numReadyOrScheduled;
-                              else if (schedule->is_scheduled(op))
+                              else if(schedule->is_scheduled(op))
                                  ++numReadyOrScheduled;
                               else if(std::find(queue.begin(), queue.end(), op) != queue.end())
                               {
-                                 bool predecessorsCondLocal, pipeliningCondLocal, cannotBeChained0Local, chainingRetCondLocal, cannotBeChained1Local, asyncCondLocal, cannotBeChained2Local,
-                                       MultiCond0Local, MultiCond1Local, nonDirectMemCondLocal;
-                                 double current_starting_timeLocal, current_ending_timeLocal, current_stage_periodLocal,phi_extra_timeLocal;
+                                 bool predecessorsCondLocal, pipeliningCondLocal, cannotBeChained0Local, chainingRetCondLocal, cannotBeChained1Local, asyncCondLocal, cannotBeChained2Local, MultiCond0Local, MultiCond1Local, nonDirectMemCondLocal;
+                                 double current_starting_timeLocal, current_ending_timeLocal, current_stage_periodLocal, phi_extra_timeLocal;
                                  CustomMap<std::pair<unsigned int, unsigned int>, double> local_connection_mapLocal;
-                                 CheckSchedulabilityConditions(op, current_cycle,
-                                                               current_starting_timeLocal, current_ending_timeLocal, current_stage_periodLocal,
-                                                               local_connection_mapLocal,
-                                                               current_cycle_starting_time, current_cycle_ending_time,
-                                                               setup_hold_time, phi_extra_timeLocal, scheduling_mux_margins,
-                                                               unbounded, cstep_has_RET_conflict,
-                                                               fu_type,
-                                                               current_ASAP,
-                                                               res_binding, schedule,
-                                                               predecessorsCondLocal, pipeliningCondLocal, cannotBeChained0Local, chainingRetCondLocal, cannotBeChained1Local, asyncCondLocal, cannotBeChained2Local,
-                                                               MultiCond0Local, MultiCond1Local, nonDirectMemCondLocal);
-                                 if(!predecessorsCondLocal && !pipeliningCondLocal && !cannotBeChained0Local && !chainingRetCondLocal && !cannotBeChained1Local && !asyncCondLocal && !cannotBeChained2Local &&
-                                       !MultiCond0Local && !MultiCond1Local && !nonDirectMemCondLocal)
+                                 CheckSchedulabilityConditions(op, current_cycle, current_starting_timeLocal, current_ending_timeLocal, current_stage_periodLocal, local_connection_mapLocal, current_cycle_starting_time, current_cycle_ending_time,
+                                                               setup_hold_time, phi_extra_timeLocal, scheduling_mux_margins, unbounded, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule, predecessorsCondLocal, pipeliningCondLocal,
+                                                               cannotBeChained0Local, chainingRetCondLocal, cannotBeChained1Local, asyncCondLocal, cannotBeChained2Local, MultiCond0Local, MultiCond1Local, nonDirectMemCondLocal);
+                                 if(!predecessorsCondLocal && !pipeliningCondLocal && !cannotBeChained0Local && !chainingRetCondLocal && !cannotBeChained1Local && !asyncCondLocal && !cannotBeChained2Local && !MultiCond0Local && !MultiCond1Local &&
+                                    !nonDirectMemCondLocal)
                                  {
                                     ++numReadyOrScheduled;
                                  }
                               }
                            }
-//                           std::cerr<< "Rfu_type=" << fu_type << "numReady="<<numReadyOrScheduled << "vs ops="<< HLS->allocation_information->get_number_fu(fu_type)<<"\n";
+                           //                           std::cerr<< "Rfu_type=" << fu_type << "numReady="<<numReadyOrScheduled << "vs ops="<< HLS->allocation_information->get_number_fu(fu_type)<<"\n";
                            if(numReadyOrScheduled % HLS->allocation_information->get_number_fu(fu_type) && OpCluster.size() != numReadyOrScheduled)
                               restarted = true;
                            break;
@@ -946,33 +932,24 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                            {
                               if(op == current_vertex)
                                  ++numReadyOrScheduled;
-                              else if (schedule->is_scheduled(op))
+                              else if(schedule->is_scheduled(op))
                                  ++numReadyOrScheduled;
                               else if(std::find(queue.begin(), queue.end(), op) != queue.end())
                               {
-                                 bool predecessorsCondLocal, pipeliningCondLocal, cannotBeChained0Local, chainingRetCondLocal, cannotBeChained1Local, asyncCondLocal, cannotBeChained2Local,
-                                       MultiCond0Local, MultiCond1Local, nonDirectMemCondLocal;
-                                 double current_starting_timeLocal, current_ending_timeLocal, current_stage_periodLocal,phi_extra_timeLocal;
+                                 bool predecessorsCondLocal, pipeliningCondLocal, cannotBeChained0Local, chainingRetCondLocal, cannotBeChained1Local, asyncCondLocal, cannotBeChained2Local, MultiCond0Local, MultiCond1Local, nonDirectMemCondLocal;
+                                 double current_starting_timeLocal, current_ending_timeLocal, current_stage_periodLocal, phi_extra_timeLocal;
                                  CustomMap<std::pair<unsigned int, unsigned int>, double> local_connection_mapLocal;
-                                 CheckSchedulabilityConditions(op, current_cycle,
-                                                               current_starting_timeLocal, current_ending_timeLocal, current_stage_periodLocal,
-                                                               local_connection_mapLocal,
-                                                               current_cycle_starting_time, current_cycle_ending_time,
-                                                               setup_hold_time, phi_extra_timeLocal, scheduling_mux_margins,
-                                                               unbounded, cstep_has_RET_conflict,
-                                                               fu_type,
-                                                               current_ASAP,
-                                                               res_binding, schedule,
-                                                               predecessorsCondLocal, pipeliningCondLocal, cannotBeChained0Local, chainingRetCondLocal, cannotBeChained1Local, asyncCondLocal, cannotBeChained2Local,
-                                                               MultiCond0Local, MultiCond1Local, nonDirectMemCondLocal);
-                                 if(!predecessorsCondLocal && !pipeliningCondLocal && !cannotBeChained0Local && !chainingRetCondLocal && !cannotBeChained1Local && !asyncCondLocal && !cannotBeChained2Local &&
-                                       !MultiCond0Local && !MultiCond1Local && !nonDirectMemCondLocal)
+                                 CheckSchedulabilityConditions(op, current_cycle, current_starting_timeLocal, current_ending_timeLocal, current_stage_periodLocal, local_connection_mapLocal, current_cycle_starting_time, current_cycle_ending_time,
+                                                               setup_hold_time, phi_extra_timeLocal, scheduling_mux_margins, unbounded, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule, predecessorsCondLocal, pipeliningCondLocal,
+                                                               cannotBeChained0Local, chainingRetCondLocal, cannotBeChained1Local, asyncCondLocal, cannotBeChained2Local, MultiCond0Local, MultiCond1Local, nonDirectMemCondLocal);
+                                 if(!predecessorsCondLocal && !pipeliningCondLocal && !cannotBeChained0Local && !chainingRetCondLocal && !cannotBeChained1Local && !asyncCondLocal && !cannotBeChained2Local && !MultiCond0Local && !MultiCond1Local &&
+                                    !nonDirectMemCondLocal)
                                  {
                                     ++numReadyOrScheduled;
                                  }
                               }
                            }
-//                           std::cerr<< "Wfu_type=" << fu_type << "numReady="<<numReadyOrScheduled << "vs ops="<< HLS->allocation_information->get_number_fu(fu_type)<<"\n";
+                           //                           std::cerr<< "Wfu_type=" << fu_type << "numReady="<<numReadyOrScheduled << "vs ops="<< HLS->allocation_information->get_number_fu(fu_type)<<"\n";
                            if(numReadyOrScheduled % HLS->allocation_information->get_number_fu(fu_type) && OpCluster.size() != numReadyOrScheduled)
                               restarted = true;
                            break;
@@ -982,7 +959,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                }
                if(restarted)
                {
-//                  std::cerr<< "Restarted\n";
+                  //                  std::cerr<< "Restarted\n";
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "                  Interface operation restarted " + GET_NAME(flow_graph, current_vertex) + " mapped on " + HLS->allocation_information->get_fu_name(fu_type).first + "at cstep " + STR(current_cycle));
                   auto insertResult = restarted_resources.insert(make_pair(fu_type, OpVertexSet(flow_graph)));
@@ -1006,7 +983,6 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + GET_NAME(flow_graph, current_vertex) + " is bounded");
                }
-
 
                if(schedulable)
                {

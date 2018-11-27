@@ -101,8 +101,7 @@
 
 #define CONN_COLUMN_SIZE 40
 
-
-unsigned conn_binding::unique_id=0;
+unsigned conn_binding::unique_id = 0;
 
 conn_binding::conn_binding(const BehavioralHelperConstRef _BH, const ParameterConstRef _parameters)
     : parameters(_parameters), debug_level(_parameters->get_class_debug_level(GET_CLASS(*this))), output_level(_parameters->getOption<int>(OPT_output_level)), BH(_BH)

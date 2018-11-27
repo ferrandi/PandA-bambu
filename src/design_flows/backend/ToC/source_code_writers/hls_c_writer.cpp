@@ -682,8 +682,8 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
             auto argTypename = DesignInterfaceTypename.find(fname)->second.find(param)->second;
             if((*argTypename.rbegin()) != '*')
                reference_type_p = true;
-            bool is_signed,is_fixed;
-            auto acTypeBw = ac_type_bitwidth(argTypename, is_signed,is_fixed);
+            bool is_signed, is_fixed;
+            auto acTypeBw = ac_type_bitwidth(argTypename, is_signed, is_fixed);
             if(acTypeBw)
                base_type_bitsize = acTypeBw;
          }

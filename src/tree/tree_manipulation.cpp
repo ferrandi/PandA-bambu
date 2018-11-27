@@ -595,7 +595,7 @@ tree_nodeRef tree_manipulation::CreateRealCst(const tree_nodeConstRef& type, con
    IR_schema[TOK(TOK_VALR)] = ss.str();
 
    std::stringstream ssX;
-   ss << std::hexfloat<<value;
+   ss << std::hexfloat << value;
    IR_schema[TOK(TOK_VALX)] = ss.str();
 
    this->TreeM->create_tree_node(real_cst_nid, real_cst_K, IR_schema);

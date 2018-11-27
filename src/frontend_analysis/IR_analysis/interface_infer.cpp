@@ -293,14 +293,13 @@ void interface_infer::create_Read_function(tree_nodeRef refStmt, const std::stri
       args.push_back(size_value);
       const auto data_value_id = TM->new_tree_node_id();
       tree_nodeRef data_value;
-      if(GET_NODE(readType)->get_kind() == integer_type_K || GET_NODE(readType)->get_kind() == enumeral_type_K || GET_NODE(readType)->get_kind() == pointer_type_K  || GET_NODE(readType)->get_kind() == reference_type_K)
+      if(GET_NODE(readType)->get_kind() == integer_type_K || GET_NODE(readType)->get_kind() == enumeral_type_K || GET_NODE(readType)->get_kind() == pointer_type_K || GET_NODE(readType)->get_kind() == reference_type_K)
          data_value = tree_man->CreateIntegerCst(readType, 0, data_value_id);
       else if(GET_NODE(readType)->get_kind() == real_type_K)
          data_value = tree_man->CreateRealCst(readType, 0.l, data_value_id);
       else
          THROW_ERROR("unexpected data type");
       args.push_back(data_value);
-
    }
    if(origStmt)
    {
@@ -647,7 +646,7 @@ void interface_infer::create_resource_array(const std::vector<std::string>& oper
       GetPointer<module>(interface_top)->set_license(GENERATED_LICENSE);
       GetPointer<module>(interface_top)->set_multi_unit_multiplicity(n_resources);
 
-      auto nbitAddres= 32u - static_cast<unsigned>(__builtin_clz(arraySize*alignment - 1));
+      auto nbitAddres = 32u - static_cast<unsigned>(__builtin_clz(arraySize * alignment - 1));
       unsigned int address_bitsize = HLSMgr->get_address_bitsize();
       structural_type_descriptorRef word_bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", address_bitsize));
       auto nbit = 32u - static_cast<unsigned>(__builtin_clz(arraySize - 1));
@@ -746,7 +745,7 @@ void interface_infer::create_resource_array(const std::vector<std::string>& oper
    }
 }
 
-void interface_infer::ComputeResourcesAlignment(unsigned& n_resources, unsigned &alignment, unsigned int inputBitWidth, bool is_acType, bool is_signed, bool is_fixed)
+void interface_infer::ComputeResourcesAlignment(unsigned& n_resources, unsigned& alignment, unsigned int inputBitWidth, bool is_acType, bool is_signed, bool is_fixed)
 {
    n_resources = 1;
    if(inputBitWidth > 64 && inputBitWidth <= 128)
@@ -756,7 +755,7 @@ void interface_infer::ComputeResourcesAlignment(unsigned& n_resources, unsigned 
    else if(inputBitWidth > 128)
    {
       n_resources = inputBitWidth / 32 + (inputBitWidth % 32 ? 1 : 0);
-      if(!is_signed && inputBitWidth % 32 == 0 &&  !is_fixed)
+      if(!is_signed && inputBitWidth % 32 == 0 && !is_fixed)
          ++n_resources;
    }
    /// compute alignment

@@ -216,10 +216,10 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
                                element_type_kind == record_type_K))
                         {
                            do_lowering = false;
-                           THROW_ASSERT(element_type_kind == array_type_K or element_type_kind == nullptr_type_K or element_type_kind == type_pack_expansion_K or element_type_kind == real_type_K or element_type_kind == complex_type_K or element_type_kind == function_type_K or
-                                            element_type_kind == lang_type_K or element_type_kind == method_type_K or element_type_kind == offset_type_K or element_type_kind == qual_union_type_K or element_type_kind == record_type_K or
-                                            element_type_kind == reference_type_K or element_type_kind == set_type_K or element_type_kind == template_type_parm_K or element_type_kind == typename_type_K or element_type_kind == union_type_K or
-                                            element_type_kind == vector_type_K or element_type_kind == void_type_K,
+                           THROW_ASSERT(element_type_kind == array_type_K or element_type_kind == nullptr_type_K or element_type_kind == type_pack_expansion_K or element_type_kind == real_type_K or element_type_kind == complex_type_K or
+                                            element_type_kind == function_type_K or element_type_kind == lang_type_K or element_type_kind == method_type_K or element_type_kind == offset_type_K or element_type_kind == qual_union_type_K or
+                                            element_type_kind == record_type_K or element_type_kind == reference_type_K or element_type_kind == set_type_K or element_type_kind == template_type_parm_K or element_type_kind == typename_type_K or
+                                            element_type_kind == union_type_K or element_type_kind == vector_type_K or element_type_kind == void_type_K,
                                         element_type->get_kind_text());
                         }
                      }

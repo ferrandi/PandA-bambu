@@ -273,16 +273,10 @@ class parametric_list_based : public Scheduling
 
    bool check_LOAD_chaining(vertex current_v, const ControlStep cs, const ScheduleConstRef schedule) const;
 
-   void CheckSchedulabilityConditions(const vertex& current_vertex, ControlStep current_cycle,
-                                      double &current_starting_time, double &current_ending_time, double& current_stage_period,
-                                      CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map,
-                                      double current_cycle_starting_time, double current_cycle_ending_time,
-                                      double setup_hold_time, double &phi_extra_time, double scheduling_mux_margins,
-                                      bool unbounded, bool cstep_has_RET_conflict,
-                                      unsigned int fu_type,
-                                      const vertex2obj<ControlStep>& current_ASAP,
-                                      const fu_bindingRef res_binding, const ScheduleRef schedule,
-                                      bool& predecessorsCond, bool& pipeliningCond, bool&cannotBeChained0, bool& chainingRetCond, bool &cannotBeChained1, bool &asyncCond, bool&cannotBeChained2, bool &MultiCond0, bool &MultiCond1, bool &nonDirectMemCond);
+   void CheckSchedulabilityConditions(const vertex& current_vertex, ControlStep current_cycle, double& current_starting_time, double& current_ending_time, double& current_stage_period,
+                                      CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map, double current_cycle_starting_time, double current_cycle_ending_time, double setup_hold_time, double& phi_extra_time,
+                                      double scheduling_mux_margins, bool unbounded, bool cstep_has_RET_conflict, unsigned int fu_type, const vertex2obj<ControlStep>& current_ASAP, const fu_bindingRef res_binding, const ScheduleRef schedule,
+                                      bool& predecessorsCond, bool& pipeliningCond, bool& cannotBeChained0, bool& chainingRetCond, bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2, bool& MultiCond0, bool& MultiCond1, bool& nonDirectMemCond);
    /**
     * Compute the relationship of this step
     * @param relationship_type is the type of relationship to be considered

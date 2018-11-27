@@ -191,10 +191,8 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
    cpp_code_header += "         unsigned int alignment;\n";
    cpp_code_header += "   };\n";
 
-
    cpp_code_footer += "\n\n\n";
    cpp_code_footer += "   return 0;\n}\n";
-
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Importing XML description...");
 
@@ -370,8 +368,10 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
       THROW_ASSERT(HLSMgr->design_interface_typename.find(fname) != HLSMgr->design_interface_typename.end(), "unexpected condition");
       THROW_ASSERT(HLSMgr->design_interface_typename.find(fname)->second.find(parameter_name) != HLSMgr->design_interface_typename.find(fname)->second.end(), "unexpected condition");
       auto par_typename = HLSMgr->design_interface_typename.find(fname)->second.find(parameter_name)->second;
-      auto arraySize = HLSMgr->design_interface_arraysize.find(fname) != HLSMgr->design_interface_arraysize.end() &&
-                       HLSMgr->design_interface_arraysize.find(fname)->second.find(parameter_name) != HLSMgr->design_interface_arraysize.find(fname)->second.end() ? HLSMgr->design_interface_arraysize.find(fname)->second.find(parameter_name)->second :"1";
+      auto arraySize =
+          HLSMgr->design_interface_arraysize.find(fname) != HLSMgr->design_interface_arraysize.end() && HLSMgr->design_interface_arraysize.find(fname)->second.find(parameter_name) != HLSMgr->design_interface_arraysize.find(fname)->second.end() ?
+              HLSMgr->design_interface_arraysize.find(fname)->second.find(parameter_name)->second :
+              "1";
       specializing_string = arraySize;
    }
 
