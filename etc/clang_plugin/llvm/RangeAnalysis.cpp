@@ -4190,7 +4190,7 @@ namespace RangeAnalysis
                auto ROM = cast<llvm::GlobalVariable>(varValue);
                auto init_value = ROM->getInitializer();
                auto ivid = init_value->getValueID();
-               if(ivid == llvm::Value::ConstantArrayVal || ivid == llvm::Value::ConstantDataArrayVal || ivid == llvm::Value::ConstantDataVectorVal || ivid == llvm::Value::ConstantAggregateZeroVal)
+               if(ivid == llvm::Value::ConstantArrayVal || ivid == llvm::Value::ConstantDataArrayVal || ivid == llvm::Value::ConstantDataVectorVal || ivid == llvm::Value::ConstantAggregateZeroVal || ivid == llvm::Value::ConstantIntVal)
                {
                   res = res.unionWith(getLLVM_range(init_value));
                }
