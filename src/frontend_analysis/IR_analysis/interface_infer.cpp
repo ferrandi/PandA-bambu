@@ -257,7 +257,9 @@ void interface_infer::classifyArgRecurse(std::set<unsigned>& Visited, ssa_name* 
       {
          canBeMovedToBB2 = false;
          // look for the actual vs formal parameter binding
+#if HAVE_ASSERTS
          bool found = false;
+#endif
          unsigned par_index = 0;
          for(auto par : gc->args)
          {
@@ -267,7 +269,9 @@ void interface_infer::classifyArgRecurse(std::set<unsigned>& Visited, ssa_name* 
             {
                if(argSSA == ssaPar)
                {
+#if HAVE_ASSERTS
                   found = true;
+#endif
                   break;
                }
             }
