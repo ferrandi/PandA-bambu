@@ -1586,7 +1586,7 @@ DesignFlowStep_Status allocation::InternalExec()
 
          unsigned int current_id = current_fu_id;
 
-         bool lib_is_proxy_or_work = lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY;
+         bool lib_is_proxy_or_work = lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY || lib_name == INTERFACE_LIBRARY;
          for(const auto& ops : GetPointer<functional_unit>(current_fu)->get_operations())
          {
             auto* curr_op = GetPointer<operation>(ops);
@@ -1729,7 +1729,8 @@ DesignFlowStep_Status allocation::InternalExec()
                   }
                   else
                   {
-                     PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Insert into list of unit to add: " + new_fu.find(functionalUnitName)->first);
+                     PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                   "Insert into list of unit to add: " + new_fu.find(functionalUnitName)->first + " prec=" + STR(max_prec) + " constant_id=" + STR(std::get<0>(constant_id)) + "-" + STR(std::get<1>(constant_id)));
                      fu_list[new_fu.find(functionalUnitName)->second][max_prec][constant_id] = current_id;
                      allocation_information->precision_map[current_id] = max_prec;
                      if(channels_type == CHANNELS_TYPE_MEM_ACC_NN && memory_ctrl_type != "")
