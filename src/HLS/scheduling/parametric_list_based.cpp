@@ -908,7 +908,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                                  }
                               }
                            }
-                           //                           std::cerr<< "Rfu_type=" << fu_type << "numReady="<<numReadyOrScheduled << "vs ops="<< HLS->allocation_information->get_number_fu(fu_type)<<"\n";
+                           // std::cerr << "Rfu_type=" << fu_type << "numReady=" << numReadyOrScheduled << "vs ops=" << HLS->allocation_information->get_number_fu(fu_type) << "\n";
                            if(numReadyOrScheduled % HLS->allocation_information->get_number_fu(fu_type) && OpCluster.size() != numReadyOrScheduled)
                               restarted = true;
                            break;
@@ -949,7 +949,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                                  }
                               }
                            }
-                           //                           std::cerr<< "Wfu_type=" << fu_type << "numReady="<<numReadyOrScheduled << "vs ops="<< HLS->allocation_information->get_number_fu(fu_type)<<"\n";
+                           // std::cerr << "Wfu_type=" << fu_type << "numReady=" << numReadyOrScheduled << "vs ops=" << HLS->allocation_information->get_number_fu(fu_type) << "\n";
                            if(numReadyOrScheduled % HLS->allocation_information->get_number_fu(fu_type) && OpCluster.size() != numReadyOrScheduled)
                               restarted = true;
                            break;
@@ -1103,8 +1103,8 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
             if(prev_scheduled != schedule->num_scheduled())
             {
                do_again = true;
+               PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "         Restarted the scheduling loop to accommodate restarted vertices: " + STR(prev_scheduled) + " vs " + STR(schedule->num_scheduled()));
                prev_scheduled = schedule->num_scheduled();
-               PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "         Restarted the scheduling loop to accommodate restarted vertices");
             }
          }
          if(!postponed_resources.empty())

@@ -187,7 +187,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             auto argName = GET_NODE(a->name);
             THROW_ASSERT(GetPointer<identifier_node>(argName), "unexpected condition");
             const std::string& argName_string = GetPointer<identifier_node>(argName)->strg;
-            THROW_ASSERT(DesignInterfaceArgs.find(argName_string) != DesignInterfaceArgs.end(), "unexpected condition");
+            THROW_ASSERT(DesignInterfaceArgs.find(argName_string) != DesignInterfaceArgs.end(), "unexpected condition:" + argName_string);
             auto interfaceType = DesignInterfaceArgs.find(argName_string)->second;
             if(interfaceType != "default")
             {
