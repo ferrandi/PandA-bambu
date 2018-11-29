@@ -1144,6 +1144,7 @@ gcc_regression_simple/zero-struct-1.c\
 ./bambu_specific_test4/ac_types2_array_32ubits.cpp \
 ./bambu_specific_test4/ac_types2_array_64ubits.cpp \
 ./bambu_specific_test4/ac_types2_array_128ubits.cpp \
+./bambu_specific_test4/ac_types2_array_multi_function.cpp \
 ./bambu_specific_test4/simple_c1.c\
 ./bambu_specific_test4/simple_c1_none.c\
 ./bambu_specific_test4/simple_c2_none.c\
