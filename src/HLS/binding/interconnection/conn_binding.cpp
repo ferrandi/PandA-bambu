@@ -1041,6 +1041,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
                   std::string library = TM->get_library(OR_GATE_STD);
                   structural_objectRef or_gate = SM->add_module_from_technology_library("or_" + pp_pair.first->get_owner()->get_id() + STR(unique_id), OR_GATE_STD, library, SM->get_circ(), TM);
                   structural_objectRef sig = SM->add_sign("s_" + pp_pair.first->get_owner()->get_id() + STR(unique_id), SM->get_circ(), boolean_port_type);
+                  ++unique_id;
                   SM->add_connection(sig, or_gate->find_member("out1", port_o_K, or_gate));
                   SM->add_connection(sig, pp_pair.first);
                   structural_objectRef in = or_gate->find_member("in", port_vector_o_K, or_gate);
@@ -1060,6 +1061,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
             std::string library = TM->get_library(OR_GATE_STD);
             structural_objectRef or_gate = SM->add_module_from_technology_library("or_" + c->first->get_owner()->get_id() + STR(unique_id), OR_GATE_STD, library, SM->get_circ(), TM);
             structural_objectRef sig = SM->add_sign("s_" + c->first->get_owner()->get_id() + STR(unique_id), SM->get_circ(), boolean_port_type);
+            ++unique_id;
             SM->add_connection(sig, or_gate->find_member("out1", port_o_K, or_gate));
             SM->add_connection(sig, c->first);
             structural_objectRef in = or_gate->find_member("in", port_vector_o_K, or_gate);
@@ -1072,7 +1074,6 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
             }
          }
       }
-      ++unique_id;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added connections of " + c->first->get_path());
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added calls connections");
