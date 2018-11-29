@@ -365,9 +365,6 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
       auto fd = GetPointer<function_decl>(fnode);
       std::string fname;
       tree_helper::get_mangled_fname(fd, fname);
-      THROW_ASSERT(HLSMgr->design_interface_typename.find(fname) != HLSMgr->design_interface_typename.end(), "unexpected condition");
-      THROW_ASSERT(HLSMgr->design_interface_typename.find(fname)->second.find(parameter_name) != HLSMgr->design_interface_typename.find(fname)->second.end(), "unexpected condition");
-      auto par_typename = HLSMgr->design_interface_typename.find(fname)->second.find(parameter_name)->second;
       auto arraySize =
           HLSMgr->design_interface_arraysize.find(fname) != HLSMgr->design_interface_arraysize.end() && HLSMgr->design_interface_arraysize.find(fname)->second.find(parameter_name) != HLSMgr->design_interface_arraysize.find(fname)->second.end() ?
               HLSMgr->design_interface_arraysize.find(fname)->second.find(parameter_name)->second :
