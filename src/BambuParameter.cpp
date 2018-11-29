@@ -2954,6 +2954,10 @@ void BambuParameter::CheckParameters()
    {
       THROW_ERROR("Experimental setup not recognized: " + getOption<std::string>(OPT_experimental_setup));
    }
+   if(isOption(OPT_interface_type) && getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+   {
+      setOption(OPT_do_not_expose_globals, true);
+   }
 
    add_bambu_library("bambu");
 
