@@ -148,9 +148,9 @@ namespace clang
             {
                std::string typenameArg = interfaceTypenameVec.at(ArgIndex);
                convert_unescaped(typenameArg);
-               stream << "    <arg id=\"" << par << "\" interface_type=\"" << interfaceTypeVec.at(ArgIndex) << "\" interface_typename=\"" << typenameArg<< "\"";
+               stream << "    <arg id=\"" << par << "\" interface_type=\"" << interfaceTypeVec.at(ArgIndex) << "\" interface_typename=\"" << typenameArg << "\"";
                if(Fun2ParamSize.find(funArgPair.first) != Fun2ParamSize.end() && Fun2ParamSize.find(funArgPair.first)->second.find(par) != Fun2ParamSize.find(funArgPair.first)->second.end())
-                  stream << " size=\"" << Fun2ParamSize.find(funArgPair.first)->second.find(par)->second<< "\"";
+                  stream << " size=\"" << Fun2ParamSize.find(funArgPair.first)->second.find(par)->second << "\"";
                stream << " interface_typename_include=\"" << interfaceTypenameIncludeVec.at(ArgIndex) << "\"/>\n";
                ++ArgIndex;
             }
@@ -194,8 +194,20 @@ namespace clang
       {
          if(t->getTypeClass() == Type::Typedef)
             return RemoveTypedef(t->getAs<TypedefType>()->getDecl()->getUnderlyingType());
+         else if(t->getTypeClass() == Type::TemplateSpecialization)
+         {
+            return t;
+         }
          else
             return t;
+      }
+      std::string GetTypeNameCanonical(QualType t)
+      {
+         auto typeName = t->getCanonicalTypeInternal().getAsString();
+         auto key = std::string("class ");
+         if(typeName.find(key) == 0)
+            typeName = typeName.substr(key.size());
+         return typeName;
       }
       void AnalyzeFunctionDecl(const FunctionDecl* FD)
       {
@@ -248,7 +260,7 @@ namespace clang
             };
             auto funName = getMangledName(FD);
             Fun2Demangled[funName] = FD->getNameInfo().getName().getAsString();
-            //llvm::errs()<<"funName:"<<funName<<"\n";
+            // llvm::errs()<<"funName:"<<funName<<"\n";
             for(const auto par : FD->parameters())
             {
                if(const ParmVarDecl* ND = dyn_cast<ParmVarDecl>(par))
@@ -265,7 +277,7 @@ namespace clang
                      UDIT_p = true;
                   }
                   auto argType = ND->getType();
-                  //argType->dump (llvm::errs() );
+                  // argType->dump (llvm::errs() );
                   if(isa<DecayedType>(argType))
                   {
                      auto DT = cast<DecayedType>(argType);
@@ -279,12 +291,12 @@ namespace clang
                            OrigTotArraySize *= CA->getSize();
                         }
                         if(CA->getElementType()->getTypeClass() == Type::Typedef)
-                           ParamTypeName = RemoveTypedef(CA->getElementType()).getAsString() + " *";
+                           ParamTypeName = GetTypeNameCanonical(RemoveTypedef(CA->getElementType())) + " *";
                         else
-                           ParamTypeName = CA->getElementType().getAsString() + " *";
+                           ParamTypeName = GetTypeNameCanonical(CA->getElementType()) + " *";
                         interfaceType = "array";
                         arraySize = OrigTotArraySize.toString(10, false);
-                        assert(arraySize !=  "0");
+                        assert(arraySize != "0");
                      }
                      if(UDIT_p)
                      {
@@ -313,15 +325,15 @@ namespace clang
                   {
                      auto PT = dyn_cast<PointerType>(argType);
                      if(PT && PT->getPointeeType()->getTypeClass() == Type::Typedef)
-                        ParamTypeName = RemoveTypedef(PT->getPointeeType()).getAsString() + " *";
+                        ParamTypeName = GetTypeNameCanonical(RemoveTypedef(PT->getPointeeType())) + " *";
                      auto RT = dyn_cast<ReferenceType>(argType);
                      if(RT && RT->getPointeeType()->getTypeClass() == Type::Typedef)
-                        ParamTypeName = RemoveTypedef(RT->getPointeeType()).getAsString() + " &";
+                        ParamTypeName = GetTypeNameCanonical(RemoveTypedef(RT->getPointeeType())) + " &";
                      interfaceType = "ptrdefault";
                      if(UDIT_p)
                      {
-                        if(UserDefinedInterfaceType != "none" && UserDefinedInterfaceType != "handshake" && UserDefinedInterfaceType != "valid" && UserDefinedInterfaceType != "ovalid" && UserDefinedInterfaceType != "acknowledge" && UserDefinedInterfaceType != "fifo" &&
-                           UserDefinedInterfaceType != "bus")
+                        if(UserDefinedInterfaceType != "none" && UserDefinedInterfaceType != "handshake" && UserDefinedInterfaceType != "valid" && UserDefinedInterfaceType != "ovalid" && UserDefinedInterfaceType != "acknowledge" &&
+                           UserDefinedInterfaceType != "fifo" && UserDefinedInterfaceType != "bus")
                         {
                            DiagnosticsEngine& D = CI.getDiagnostics();
                            D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface non-consistent with parameter of pointer type, where user defined interface is: %0")).AddString(UserDefinedInterfaceType);
@@ -335,7 +347,7 @@ namespace clang
                   else
                   {
                      if(argType->getTypeClass() == Type::Typedef)
-                        ParamTypeName = RemoveTypedef(argType).getAsString();
+                        ParamTypeName = GetTypeNameCanonical(RemoveTypedef(argType));
                      if(!argType->isBuiltinType())
                      {
                         interfaceType = "none";
@@ -361,10 +373,10 @@ namespace clang
                   HLS_interfaceMap[funName].push_back(interfaceType);
                   Fun2Params[funName].push_back(parName);
                   if(ParamTypeName.empty())
-                     ParamTypeName = ND->getType().getAsString();
+                     ParamTypeName = GetTypeNameCanonical(ND->getType());
                   Fun2ParamType[funName].push_back(ParamTypeName);
-                  if(interfaceType=="array")
-                     Fun2ParamSize[funName][parName]=arraySize;
+                  if(interfaceType == "array")
+                     Fun2ParamSize[funName][parName] = arraySize;
                   if(auto BTD = getBaseTypeDecl(ND->getType()))
                   {
                      Fun2ParamInclude[funName].push_back(SM.getPresumedLoc(BTD->getLocStart(), false).getFilename());
@@ -460,7 +472,7 @@ namespace clang
                         unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface malformed");
                         D.Report(PragmaTok.getLocation(), ID);
                      }
-                     ArraySize=tokString;
+                     ArraySize = tokString;
                   }
                }
                ++index;
@@ -471,14 +483,14 @@ namespace clang
             auto& SM = PP.getSourceManager();
             std::map<std::string, std::string> interface_PragmaMap;
             auto filename = SM.getPresumedLoc(loc, false).getFilename();
-            if(ArraySize!="" && ArraySize!="0" && interface!="array")
+            if(ArraySize != "" && ArraySize != "0" && interface != "array")
             {
                DiagnosticsEngine& D = PP.getDiagnostics();
                unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface malformed");
                D.Report(PragmaTok.getLocation(), ID);
             }
             HLS_interface_PragmaMap[filename][loc] = std::make_pair(par, interface);
-            if(interface=="array")
+            if(interface == "array")
             {
                HLS_interface_PragmaMapArraySize[filename][loc] = std::make_pair(par, ArraySize);
             }

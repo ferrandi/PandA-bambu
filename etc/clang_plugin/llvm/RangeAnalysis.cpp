@@ -6902,13 +6902,14 @@ namespace RangeAnalysis
    }
    void RangeAnalysis::printRanges(llvm::Module&
 #ifdef DEBUG_RA
-                                   M
+                                       M
 #endif
-                                   , llvm::raw_ostream&
+                                   ,
+                                   llvm::raw_ostream&
 #ifdef DEBUG_RA
-                                   O
+                                       O
 #endif
-                                   )
+   )
    {
 #ifdef DEBUG_RA
       for(llvm::Function& F : M)

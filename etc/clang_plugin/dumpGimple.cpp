@@ -1216,9 +1216,9 @@ namespace clang
          {
             auto op0 = inst->getOperand(1);
             auto op1 = inst->getOperand(2);
-            if (dyn_cast<llvm::ConstantInt>(op0) && dyn_cast<InstructionOrConstantExpr>(op1))
+            if(dyn_cast<llvm::ConstantInt>(op0) && dyn_cast<InstructionOrConstantExpr>(op1))
                return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op1));
-            else if (dyn_cast<llvm::ConstantInt>(op1) && dyn_cast<InstructionOrConstantExpr>(op0))
+            else if(dyn_cast<llvm::ConstantInt>(op1) && dyn_cast<InstructionOrConstantExpr>(op0))
                return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0));
             else if(dyn_cast<InstructionOrConstantExpr>(op0) && dyn_cast<InstructionOrConstantExpr>(op1))
                return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0)) && isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0));
@@ -1231,9 +1231,9 @@ namespace clang
          {
             auto op0 = inst->getOperand(0);
             auto op1 = inst->getOperand(1);
-            if (dyn_cast<llvm::ConstantInt>(op0) && dyn_cast<InstructionOrConstantExpr>(op1))
+            if(dyn_cast<llvm::ConstantInt>(op0) && dyn_cast<InstructionOrConstantExpr>(op1))
                return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op1));
-            else if (dyn_cast<llvm::ConstantInt>(op1) && dyn_cast<InstructionOrConstantExpr>(op0))
+            else if(dyn_cast<llvm::ConstantInt>(op1) && dyn_cast<InstructionOrConstantExpr>(op0))
                return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0));
             else if(dyn_cast<InstructionOrConstantExpr>(op0) && dyn_cast<InstructionOrConstantExpr>(op1))
                return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0)) && isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0));
@@ -1305,7 +1305,7 @@ namespace clang
          }
          case llvm::Instruction::Select:
          {
-            if(index==0)
+            if(index == 0)
             {
                return false;
             }
@@ -1362,7 +1362,7 @@ namespace clang
          }
          case llvm::Instruction::Select:
          {
-            if(index==0)
+            if(index == 0)
             {
                return true;
             }
@@ -1707,7 +1707,7 @@ namespace clang
          else
             return op;
       }
-      else if(isUnsignedOperand(inst,index) && (CheckSignedTag(TREE_TYPE(op))))
+      else if(isUnsignedOperand(inst, index) && (CheckSignedTag(TREE_TYPE(op))))
          return build1(GT(NOP_EXPR), NormalizeSignedTag(TREE_TYPE(op)), op);
       else
          return op;
