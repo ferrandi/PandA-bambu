@@ -264,7 +264,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Dominator Vertex: " + HLSMgr->CGetFunctionBehavior(CG->get_function(vert_dominator))->CGetBehavioralHelper()->get_function_name() + " - function " + called_fu_name);
       }
    }
-   /// compute the number of istances for each function
+   /// compute the number of instances for each function
    std::map<vertex, unsigned int> num_instances;
    num_instances[top_vertex] = 1;
    std::map<unsigned int, std::vector<std::string>> function_allocation_map;
