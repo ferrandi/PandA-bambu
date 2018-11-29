@@ -105,18 +105,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 #else
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
 #endif
-#if 0
-#if HAVE_BAMBU_BUILT
-         if(parameters->isOption(OPT_writer_language))
-         {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(HDL_VAR_DECL_FIX, SAME_FUNCTION));
-         }
-         else
-#endif
-         {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(VAR_DECL_FIX, SAME_FUNCTION));
-         }
-#endif
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
