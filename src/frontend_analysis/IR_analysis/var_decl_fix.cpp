@@ -32,7 +32,7 @@
  */
 /**
  * @file var_decl_fix.cpp
- * @brief Pre-analysis step fixing var_decl duplications.
+ * @brief Pre-analysis step fixing var_decl duplication.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
@@ -105,6 +105,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
 #if HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(PARM_DECL_TAKEN_ADDRESS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(INTERFACE_INFER, SAME_FUNCTION));
 #endif
          break;
       }

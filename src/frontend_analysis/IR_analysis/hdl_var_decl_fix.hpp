@@ -32,7 +32,7 @@
  */
 /**
  * @file hdl_var_decl_fix.hpp
- * @brief Pre-analysis step fixing var_decl duplications and hdl name conflicts.
+ * @brief Pre-analysis step fixing var_decl duplication and HDL name conflicts.
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *

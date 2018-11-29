@@ -32,7 +32,7 @@
  */
 /**
  * @file hdl_var_decl_fix.cpp
- * @brief Pre-analysis step fixing var_decl duplications and hdl name conflicts.
+ * @brief Pre-analysis step fixing var_decl duplication and HDL name conflicts.
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
@@ -60,6 +60,7 @@
 
 /// tree includes
 #include "behavioral_helper.hpp"
+#include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
@@ -93,9 +94,79 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
    /// Fixing names of parameters
    const tree_nodeRef curr_tn = TM->GetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(curr_tn);
+   std::string fname;
+   tree_helper::get_mangled_fname(fd, fname);
+   auto HLSMgr = GetPointer<HLS_manager>(AppM);
 
-   for(auto arg : fd->list_of_args)
-      recursive_examinate(arg);
+   if(HLSMgr && !HLSMgr->design_interface.empty() && HLSMgr->design_interface.find(fname) != HLSMgr->design_interface.end())
+   {
+      for(auto arg : fd->list_of_args)
+      {
+         auto a = GetPointer<parm_decl>(GET_NODE(arg));
+         auto argName = GET_NODE(a->name);
+         THROW_ASSERT(GetPointer<identifier_node>(argName), "unexpected condition");
+         const std::string argName_string = GetPointer<identifier_node>(argName)->strg;
+         recursive_examinate(arg);
+         argName = GET_NODE(a->name);
+         THROW_ASSERT(GetPointer<identifier_node>(argName), "unexpected condition");
+         const std::string argName_string_new = GetPointer<identifier_node>(argName)->strg;
+         if(argName_string != argName_string_new)
+         {
+            auto di_it = HLSMgr->design_interface.find(fname)->second.find(argName_string);
+            auto di_value = di_it->second;
+            HLSMgr->design_interface.find(fname)->second.erase(di_it);
+            HLSMgr->design_interface.find(fname)->second[argName_string_new] = di_value;
+            if(HLSMgr->design_interface_arraysize.find(fname) != HLSMgr->design_interface_arraysize.end() && HLSMgr->design_interface_arraysize.find(fname)->second.find(argName_string) != HLSMgr->design_interface_arraysize.find(fname)->second.end())
+            {
+               auto dia_it = HLSMgr->design_interface_arraysize.find(fname)->second.find(argName_string);
+               auto dia_value = dia_it->second;
+               HLSMgr->design_interface_arraysize.find(fname)->second.erase(dia_it);
+               HLSMgr->design_interface_arraysize.find(fname)->second[argName_string_new] = dia_value;
+            }
+            auto dit_it = HLSMgr->design_interface_typename.find(fname)->second.find(argName_string);
+            auto dit_value = dit_it->second;
+            HLSMgr->design_interface_typename.find(fname)->second.erase(dit_it);
+            HLSMgr->design_interface_typename.find(fname)->second[argName_string_new] = dit_value;
+
+            auto diti_it = HLSMgr->design_interface_typenameinclude.find(fname)->second.find(argName_string);
+            auto diti_value = diti_it->second;
+            HLSMgr->design_interface_typenameinclude.find(fname)->second.erase(diti_it);
+            HLSMgr->design_interface_typenameinclude.find(fname)->second[argName_string_new] = diti_value;
+
+            if(HLSMgr->design_interface_loads.find(fname) != HLSMgr->design_interface_loads.end())
+            {
+               for(auto& bb2parLoads : HLSMgr->design_interface_loads.find(fname)->second)
+               {
+                  if(bb2parLoads.second.find(argName_string) != bb2parLoads.second.end())
+                  {
+                     auto l_it = bb2parLoads.second.find(argName_string);
+                     auto l_value = l_it->second;
+                     bb2parLoads.second.erase(l_it);
+                     bb2parLoads.second[argName_string_new] = l_value;
+                  }
+               }
+            }
+            if(HLSMgr->design_interface_stores.find(fname) != HLSMgr->design_interface_stores.end())
+            {
+               for(auto& bb2parLoads : HLSMgr->design_interface_stores.find(fname)->second)
+               {
+                  if(bb2parLoads.second.find(argName_string) != bb2parLoads.second.end())
+                  {
+                     auto l_it = bb2parLoads.second.find(argName_string);
+                     auto l_value = l_it->second;
+                     bb2parLoads.second.erase(l_it);
+                     bb2parLoads.second[argName_string_new] = l_value;
+                  }
+               }
+            }
+         }
+      }
+   }
+   else
+   {
+      for(auto arg : fd->list_of_args)
+         recursive_examinate(arg);
+   }
 
    VarDeclFix::InternalExec();
 

@@ -32,7 +32,7 @@
  */
 /**
  * @file var_decl_fix.hpp
- * @brief Pre-analysis step fixing var_decl duplications.
+ * @brief Pre-analysis step fixing var_decl duplication.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
