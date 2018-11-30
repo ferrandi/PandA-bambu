@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file timing_group.hpp
  * @brief Class implementation for base timing group
@@ -39,18 +39,15 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "timing_group.hpp"
 
 #include "library_manager.hpp"
 
 #include "polixml.hpp"
 
-timing_group::timing_group() : 
-      intrinsic_rise(0.0),
-      intrinsic_fall(0.0)
+timing_group::timing_group() : intrinsic_rise(0.0), intrinsic_fall(0.0)
 {
-   
 }
 
 void timing_group::xwrite(xml_element* pin_node, const std::set<std::string>& input_set)
@@ -64,12 +61,14 @@ void timing_group::xwrite(xml_element* pin_node, const std::set<std::string>& in
    att->xwrite(pin_node, "intrinsic_fall");
 
    std::string pins;
-   for(const auto & i : input_set)
+   for(const auto& i : input_set)
    {
-      if (pins.size()) pins += " ";
+      if(!pins.empty())
+      {
+         pins += " ";
+      }
       pins += i;
    }
    att = attributeRef(new attribute(attribute::STRING, pins));
    att->xwrite(pin_node, "related_pin");
-
 }

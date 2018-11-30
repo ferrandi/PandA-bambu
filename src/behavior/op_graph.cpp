@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file op_graph.cpp
  * @brief Data structures used in operations graph
@@ -39,29 +39,27 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #include "op_graph.hpp"
 
-#include <boost/filesystem/operations.hpp>        // for create_directories
-#include <boost/tuple/tuple.hpp>                  // for tie
-#include <fstream>
-#include <utility>                                // for pair
 #include "Parameter.hpp"
 #include "behavioral_helper.hpp"
 #include "behavioral_writer_helper.hpp"
-#include "exceptions.hpp"                         // for THROW_ASSERT, THROW...
+#include "exceptions.hpp" // for THROW_ASSERT, THROW...
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include <boost/filesystem/operations.hpp> // for create_directories
+#include <boost/tuple/tuple.hpp>           // for tie
+#include <fstream>
+#include <utility> // for pair
 
-///Utility include
+/// Utility include
 
-OpEdgeInfo::OpEdgeInfo()
-= default;
+OpEdgeInfo::OpEdgeInfo() = default;
 
-OpEdgeInfo::~OpEdgeInfo()
-= default;
+OpEdgeInfo::~OpEdgeInfo() = default;
 
 bool OpEdgeInfo::FlgEdgeT() const
 {
@@ -77,17 +75,14 @@ bool OpEdgeInfo::FlgEdgeF() const
    return labels.find(FLG_SELECTOR)->second.find(F_COND) != labels.find(FLG_SELECTOR)->second.end();
 }
 
-OpNodeInfo::OpNodeInfo() :
-   node(tree_nodeRef()),
-   bb_index(0),
-   cer(0)
+OpNodeInfo::OpNodeInfo() : node(tree_nodeRef()), bb_index(0), cer(0)
 {
    Initialize();
 }
 
 void OpNodeInfo::Initialize()
 {
-   ///This is necessary to be sure that the set exists (even if empty)
+   /// This is necessary to be sure that the set exists (even if empty)
    variables[FunctionBehavior_VariableType::SCALAR][FunctionBehavior_VariableAccessType::USE] = CustomSet<unsigned int>();
    variables[FunctionBehavior_VariableType::SCALAR][FunctionBehavior_VariableAccessType::DEFINITION] = CustomSet<unsigned int>();
    variables[FunctionBehavior_VariableType::SCALAR][FunctionBehavior_VariableAccessType::OVER] = CustomSet<unsigned int>();
@@ -111,17 +106,15 @@ void OpNodeInfo::Initialize()
 #endif
 }
 
+OpNodeInfo::~OpNodeInfo() = default;
 
-OpNodeInfo::~OpNodeInfo()
-= default;
-
-const CustomSet<unsigned int> & OpNodeInfo::GetVariables(const FunctionBehavior_VariableType variable_type, const FunctionBehavior_VariableAccessType access_type) const
+const CustomSet<unsigned int>& OpNodeInfo::GetVariables(const FunctionBehavior_VariableType variable_type, const FunctionBehavior_VariableAccessType access_type) const
 {
    return variables.find(variable_type)->second.find(access_type)->second;
 }
 
 #if HAVE_EXPERIMENTAL
-const CustomSet<MemoryAddress> & OpNodeInfo::GetDynamicMemoryLocations(const FunctionBehavior_VariableAccessType access_type) const
+const CustomSet<MemoryAddress>& OpNodeInfo::GetDynamicMemoryLocations(const FunctionBehavior_VariableAccessType access_type) const
 {
    return dynamic_memory_locations.find(access_type)->second;
 }
@@ -156,28 +149,28 @@ unsigned int OpNodeInfo::GetNodeId() const
    return 0;
 }
 
-void PrintVariablesList(std::ostream & stream, const std::string&name, const CustomSet<unsigned int> variables, const BehavioralHelperConstRef behavioral_helper, const bool dotty_format)
+void PrintVariablesList(std::ostream& stream, const std::string& name, const CustomSet<unsigned int> variables, const BehavioralHelperConstRef behavioral_helper, const bool dotty_format)
 {
    if(variables.size())
       stream << name << ":" << (dotty_format ? "\\n" : "\n");
 
-   for (const auto & variable : variables)
+   for(const auto& variable : variables)
       stream << behavioral_helper->PrintVariable(variable) << "(" << variable << ")" << (dotty_format ? "\\n" : "\n");
 }
 
-void PrintMemoriesList(std::ostream & stream, const std::string&name, const CustomSet<MemoryAddress> variables, const BehavioralHelperConstRef, const bool dotty_format)
+void PrintMemoriesList(std::ostream& stream, const std::string& name, const CustomSet<MemoryAddress> variables, const BehavioralHelperConstRef, const bool dotty_format)
 {
    if(variables.size())
       stream << name << ":" << (dotty_format ? "\\n" : "\n");
-   for (const auto & variable : variables)
+   for(const auto& variable : variables)
       stream << from_strongtype_cast<int>(variable) << (dotty_format ? "\\n" : "\n");
 }
 
-void PrintVariablesLists(std::ostream & stream, const std::string&name, const CustomMap<FunctionBehavior_VariableAccessType, CustomSet<unsigned int> > variables, const BehavioralHelperConstRef behavioral_helper, const bool dotty_format)
+void PrintVariablesLists(std::ostream& stream, const std::string& name, const CustomMap<FunctionBehavior_VariableAccessType, CustomSet<unsigned int>> variables, const BehavioralHelperConstRef behavioral_helper, const bool dotty_format)
 {
-   for (const auto & local_variables : variables)
+   for(const auto& local_variables : variables)
    {
-      if (local_variables.second.size())
+      if(local_variables.second.size())
       {
          stream << name << ":" << (dotty_format ? "\\n" : "\n");
          PrintVariablesList(stream, "USES", variables.find(FunctionBehavior_VariableAccessType::USE)->second, behavioral_helper, dotty_format);
@@ -189,11 +182,11 @@ void PrintVariablesLists(std::ostream & stream, const std::string&name, const Cu
    }
 }
 
-void PrintMemoriesLists(std::ostream & stream, const std::string&name, const CustomMap<FunctionBehavior_VariableAccessType, CustomSet<MemoryAddress> > variables, const BehavioralHelperConstRef behavioral_helper, const bool dotty_format)
+void PrintMemoriesLists(std::ostream& stream, const std::string& name, const CustomMap<FunctionBehavior_VariableAccessType, CustomSet<MemoryAddress>> variables, const BehavioralHelperConstRef behavioral_helper, const bool dotty_format)
 {
-   for (const auto & local_variables : variables)
+   for(const auto& local_variables : variables)
    {
-      if (local_variables.second.size())
+      if(local_variables.second.size())
       {
          stream << name << ":" << (dotty_format ? "\\n" : "\n");
          PrintMemoriesList(stream, "USES", variables.find(FunctionBehavior_VariableAccessType::USE)->second, behavioral_helper, dotty_format);
@@ -204,7 +197,7 @@ void PrintMemoriesLists(std::ostream & stream, const std::string&name, const Cus
    }
 }
 
-void OpNodeInfo::Print(std::ostream & stream, const BehavioralHelperConstRef behavioral_helper, bool dotty_format) const
+void OpNodeInfo::Print(std::ostream& stream, const BehavioralHelperConstRef behavioral_helper, bool dotty_format) const
 {
    PrintVariablesList(stream, "source code variables", cited_variables, behavioral_helper, dotty_format);
    PrintVariablesLists(stream, "SCALARS", variables.find(FunctionBehavior_VariableType::SCALAR)->second, behavioral_helper, dotty_format);
@@ -218,21 +211,18 @@ void OpNodeInfo::Print(std::ostream & stream, const BehavioralHelperConstRef beh
 #endif
 }
 
-OpGraphInfo::OpGraphInfo(const BehavioralHelperConstRef _BH) :
-   BH(_BH)
-{}
-
-OpGraphInfo::~OpGraphInfo()
-= default;
-
-OpGraphsCollection::OpGraphsCollection(const OpGraphInfoRef _info, const ParameterConstRef _parameters) :
-   graphs_collection(RefcountCast<GraphInfo>(_info), _parameters),
-   operations(OpGraphConstRef(new OpGraph(OpGraphsCollectionRef(this, null_deleter()), 0)))
+OpGraphInfo::OpGraphInfo(const BehavioralHelperConstRef _BH) : BH(_BH)
 {
 }
 
-OpGraphsCollection::~OpGraphsCollection()
-= default;
+OpGraphInfo::~OpGraphInfo() = default;
+
+OpGraphsCollection::OpGraphsCollection(const OpGraphInfoRef _info, const ParameterConstRef _parameters)
+    : graphs_collection(RefcountCast<GraphInfo>(_info), _parameters), operations(OpGraphConstRef(new OpGraph(OpGraphsCollectionRef(this, null_deleter()), 0)))
+{
+}
+
+OpGraphsCollection::~OpGraphsCollection() = default;
 
 const OpVertexSet OpGraphsCollection::CGetOperations() const
 {
@@ -259,32 +249,31 @@ void OpGraphsCollection::Clear()
 }
 
 #if HAVE_UNORDERED
-OpVertexSet::OpVertexSet(const OpGraphConstRef) :
-   std::unordered_set<vertex>()
-{}
+OpVertexSet::OpVertexSet(const OpGraphConstRef) : std::unordered_set<vertex>()
+{
+}
 
-OpEdgeSet::OpEdgeSet(const OpGraphConstRef) :
-   std::unordered_set<EdgeDescriptor>()
-{}
+OpEdgeSet::OpEdgeSet(const OpGraphConstRef) : std::unordered_set<EdgeDescriptor>()
+{
+}
 
 #else
-OpVertexSorter::OpVertexSorter(const OpGraphConstRef _op_graph) :
-   op_graph(_op_graph)
-{}
+OpVertexSorter::OpVertexSorter(const OpGraphConstRef _op_graph) : op_graph(_op_graph)
+{
+}
 
 bool OpVertexSorter::operator()(const vertex x, const vertex y) const
 {
    return GET_NAME(op_graph, x) < GET_NAME(op_graph, y);
 }
 
-OpVertexSet::OpVertexSet(OpGraphConstRef _op_graph) :
-   std::set<vertex, OpVertexSorter>(OpVertexSorter(_op_graph))
-{}
+OpVertexSet::OpVertexSet(OpGraphConstRef _op_graph) : std::set<vertex, OpVertexSorter>(OpVertexSorter(_op_graph))
+{
+}
 
-
-OpEdgeSorter::OpEdgeSorter(const OpGraphConstRef _op_graph) :
-   op_graph(_op_graph)
-{}
+OpEdgeSorter::OpEdgeSorter(const OpGraphConstRef _op_graph) : op_graph(_op_graph)
+{
+}
 
 bool OpEdgeSorter::operator()(const EdgeDescriptor x, const EdgeDescriptor y) const
 {
@@ -295,27 +284,26 @@ bool OpEdgeSorter::operator()(const EdgeDescriptor x, const EdgeDescriptor y) co
    return GET_NAME(op_graph, boost::target(x, *op_graph)) < GET_NAME(op_graph, boost::target(y, *op_graph));
 }
 
-OpEdgeSet::OpEdgeSet(OpGraphConstRef _op_graph) :
-   std::set<EdgeDescriptor, OpEdgeSorter>(OpEdgeSorter(_op_graph))
-{}
+OpEdgeSet::OpEdgeSet(OpGraphConstRef _op_graph) : std::set<EdgeDescriptor, OpEdgeSorter>(OpEdgeSorter(_op_graph))
+{
+}
 #endif
 
-OpGraph::OpGraph(OpGraphsCollectionRef _op_graphs_collection, int _selector) :
-   graph(_op_graphs_collection.get(), _selector)
-{}
+OpGraph::OpGraph(OpGraphsCollectionRef _op_graphs_collection, int _selector) : graph(_op_graphs_collection.get(), _selector)
+{
+}
 
-OpGraph::OpGraph(const OpGraphsCollectionRef _op_graphs_collection, int _selector, const std::unordered_set<boost::graph_traits<OpGraphsCollection>::vertex_descriptor > & _sub) :
-   graph(_op_graphs_collection.get(), _selector, _sub)
-{}
+OpGraph::OpGraph(const OpGraphsCollectionRef _op_graphs_collection, int _selector, const std::unordered_set<boost::graph_traits<OpGraphsCollection>::vertex_descriptor>& _sub) : graph(_op_graphs_collection.get(), _selector, _sub)
+{
+}
 
-OpGraph::~OpGraph()
-= default;
+OpGraph::~OpGraph() = default;
 
 void OpGraph::WriteDot(const std::string& file_name, const int detail_level) const
 {
    const BehavioralHelperConstRef helper = CGetOpGraphInfo()->BH;
    std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + helper->get_function_name() + "/";
-   if (!boost::filesystem::exists(output_directory))
+   if(!boost::filesystem::exists(output_directory))
       boost::filesystem::create_directories(output_directory);
    const std::string full_name = output_directory + file_name;
    const VertexWriterConstRef op_label_writer(new OpWriter(this, detail_level));
@@ -323,7 +311,7 @@ void OpGraph::WriteDot(const std::string& file_name, const int detail_level) con
    InternalWriteDot<const OpWriter, const OpEdgeWriter>(full_name, op_label_writer, op_edge_property_writer);
 }
 
-std::unordered_map<vertex, OpVertexSet> OpGraph::GetSrcVertices(const OpVertexSet & toCheck, int edgeType) const
+std::unordered_map<vertex, OpVertexSet> OpGraph::GetSrcVertices(const OpVertexSet& toCheck, int edgeType) const
 {
    null_deleter null;
    OpGraphConstRef thisRef(this, null);
@@ -351,7 +339,7 @@ std::unordered_map<vertex, OpVertexSet> OpGraph::GetSrcVertices(const OpVertexSe
 
 const OpVertexSet OpGraph::CGetOperations() const
 {
-   const auto ret_value = dynamic_cast<OpGraphsCollection *>(collection)->CGetOperations();
+   const auto ret_value = dynamic_cast<OpGraphsCollection*>(collection)->CGetOperations();
    return ret_value;
 }
 
@@ -398,7 +386,7 @@ void OpGraph::WriteDot(const std::string& file_name, const hlsConstRef HLS, cons
 {
    const BehavioralHelperConstRef helper = CGetOpGraphInfo()->BH;
    std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + helper->get_function_name() + "/";
-   if (!boost::filesystem::exists(output_directory))
+   if(!boost::filesystem::exists(output_directory))
       boost::filesystem::create_directories(output_directory);
    const std::string full_name = output_directory + file_name;
    const VertexWriterConstRef op_label_writer(new TimedOpWriter(this, HLS, critical_paths));

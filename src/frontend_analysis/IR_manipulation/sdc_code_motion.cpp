@@ -29,76 +29,75 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file sdc_code_motion.cpp
  * @brief Analysis step performing code motion speculation on the basis of sdc results.
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "sdc_code_motion.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior includes
+/// behavior includes
 #include "basic_block.hpp"
 #include "function_behavior.hpp"
 #include "op_graph.hpp"
 
-///design_flow includes
+/// design_flow includes
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 
-///frontend_flow include
+/// frontend_flow include
 #include "frontend_flow_step_factory.hpp"
 
-///frontend_flow/IR_analysis include
+/// frontend_flow/IR_analysis include
 #include "simple_code_motion.hpp"
 
-///HLS includes
+/// HLS includes
 #include "hls.hpp"
 #include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
 
-///HLS/scheduling include
+/// HLS/scheduling include
 #include "sdc_scheduling.hpp"
 
-///tree includes
+/// tree includes
+#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
-#include "string_manipulation.hpp"          // for GET_CLASS
 
-SDCCodeMotion::SDCCodeMotion(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   FunctionFrontendFlowStep(_AppM, _function_id, SDC_CODE_MOTION, _design_flow_manager, _parameters)
+SDCCodeMotion::SDCCodeMotion(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, SDC_CODE_MOTION, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-SDCCodeMotion::~SDCCodeMotion()
-= default;
+SDCCodeMotion::~SDCCodeMotion() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > SDCCodeMotion::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> SDCCodeMotion::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -124,15 +123,15 @@ DesignFlowStep_Status SDCCodeMotion::InternalExec()
    const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
 
    const tree_managerRef TM = AppM->get_tree_manager();
-   auto * fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
-   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
-   std::map<unsigned int, blocRef> & list_of_bloc = sl->list_of_bloc;
+   auto* fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
+   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   std::map<unsigned int, blocRef>& list_of_bloc = sl->list_of_bloc;
 
-   ///Retrieve result of sdc scheduling
+   /// Retrieve result of sdc scheduling
    const auto sdc_scheduling_step = design_flow_manager.lock()->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(HLSFlowStep_Type::SDC_SCHEDULING, HLSFlowStepSpecializationConstRef(), function_id));
    THROW_ASSERT(sdc_scheduling_step, "SDC scheduling hls step not found");
    const auto sdc_scheduling = GetPointer<const SDCScheduling>(design_flow_graph->CGetDesignFlowStepInfo(sdc_scheduling_step)->design_flow_step);
-   const auto & movements_list = sdc_scheduling->movements_list;
+   const auto& movements_list = sdc_scheduling->movements_list;
    for(const auto& movement : movements_list)
    {
       const auto statement_index = movement[0];
@@ -157,7 +156,7 @@ DesignFlowStep_Status SDCCodeMotion::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-void SDCCodeMotion::ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type)
+void SDCCodeMotion::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
 {
    FunctionFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }

@@ -29,74 +29,74 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file cond_expr_restructuring.cpp
  * @brief Analysis step restructing tree of cond_expr to reduce critical path delay
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "cond_expr_restructuring.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior include
+/// behavior include
 #include "application_manager.hpp"
 
-///design_flows includes
+/// design_flows includes
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 
-///HLS includes
+/// HLS includes
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_step.hpp"
 
-///HLS/binding/module
+/// HLS/binding/module
 #include "fu_binding.hpp"
 
-///HLS/module_allocation
+/// HLS/module_allocation
 #include "allocation_information.hpp"
 
-///HLS/scheduling include
+/// HLS/scheduling include
 #include "schedule.hpp"
 
-///parser/treegcc include
+/// parser/treegcc include
 #include "token_interface.hpp"
 
-///tree includes
+/// tree includes
+#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
-#include "string_manipulation.hpp"          // for GET_CLASS
 
 #define EPSILON 0.0001
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > CondExprRestructuring::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> CondExprRestructuring::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
-         ///Not executed
+         /// Not executed
          if(GetStatus() != DesignFlowStep_Status::SUCCESS)
          {
             if(GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
             {
-               ///If schedule is not update, do not execute this step and invalidate UpdateSchedule
+               /// If schedule is not update, do not execute this step and invalidate UpdateSchedule
                const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
                if(update_schedule)
                {
@@ -112,11 +112,11 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          }
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship> (MULTI_WAY_IF, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship> (COMPLETE_BB_GRAPH, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship> (COMMUTATIVE_EXPR_RESTRUCTURING, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COMPLETE_BB_GRAPH, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COMMUTATIVE_EXPR_RESTRUCTURING, SAME_FUNCTION));
          break;
       }
       default:
@@ -127,15 +127,13 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-CondExprRestructuring::CondExprRestructuring(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   FunctionFrontendFlowStep(_AppM, _function_id, COND_EXPR_RESTRUCTURING, _design_flow_manager, _parameters)
+CondExprRestructuring::CondExprRestructuring(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, COND_EXPR_RESTRUCTURING, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-CondExprRestructuring::~CondExprRestructuring()
-= default;
-
+CondExprRestructuring::~CondExprRestructuring() = default;
 
 bool CondExprRestructuring::IsCondExprGimple(const tree_nodeConstRef tn) const
 {
@@ -178,12 +176,12 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
    static size_t counter = 0;
 
    const tree_manipulationConstRef tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters));
-   auto * fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
-   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto* fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
+   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
    for(const auto& block : sl->list_of_bloc)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
-      const auto & list_of_stmt = block.second->CGetStmtList();
+      const auto& list_of_stmt = block.second->CGetStmtList();
       for(auto stmt = list_of_stmt.begin(); stmt != list_of_stmt.end(); stmt++)
       {
 #ifndef NDEBUG
@@ -240,13 +238,13 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
 
          const double old_time = schedule->GetEndingTime(first_ga->index);
 
-         ///Check if new ending time would not be larger
-         ///The time in which last operand is ready
+         /// Check if new ending time would not be larger
+         /// The time in which last operand is ready
          double operand_ready_time = 0.0;
 
          const auto other_operand_of_first = first_operand_of_first ? first_ce->op2 : first_ce->op1;
          const auto other_operand_of_second = first_operand_of_second ? second_ce->op2 : second_ce->op1;
-         CustomSet<std::pair<tree_nodeRef, tree_nodeRef> > operands;
+         CustomSet<std::pair<tree_nodeRef, tree_nodeRef>> operands;
          operands.insert(std::pair<tree_nodeRef, tree_nodeRef>(other_operand_of_first, *stmt));
          operands.insert(std::pair<tree_nodeRef, tree_nodeRef>(other_operand_of_second, second_stmt));
          operands.insert(std::pair<tree_nodeRef, tree_nodeRef>(third_ce->op1, third_stmt));
@@ -275,7 +273,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
             }
          }
 
-         ///As cond expr time we consider the worst among the existing operation in the chain
+         /// As cond expr time we consider the worst among the existing operation in the chain
          const auto cond_expr_time1 = allocation_information->GetTimeLatency((*stmt)->index, fu_binding::UNKNOWN).first;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Delay of first operation is " + STR(cond_expr_time1));
          const auto cond_expr_time2 = allocation_information->GetTimeLatency(second_stmt->index, fu_binding::UNKNOWN).first;
@@ -296,7 +294,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(second_stmt));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(*stmt));
 
-         ///Inserting first cond expr after the last one
+         /// Inserting first cond expr after the last one
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> cond_expr_schema, gimple_assign_schema, ssa_schema;
          const auto type_index = tree_helper::get_type_index(TM, (*stmt)->index);
          const auto cond_expr_id = TM->new_tree_node_id();
@@ -311,7 +309,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          cond_expr_schema[TOK(TOK_OP2)] = boost::lexical_cast<std::string>(second_value->index);
          TM->create_tree_node(cond_expr_id, cond_expr_K, cond_expr_schema);
 
-         ///Create the ssa in the left part
+         /// Create the ssa in the left part
          auto ssa_vers = TM->get_next_vers();
          auto ssa_node_nid = TM->new_tree_node_id();
          ssa_schema[TOK(TOK_TYPE)] = STR(type_index);
@@ -329,7 +327,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          }
          TM->create_tree_node(ssa_node_nid, ssa_name_K, ssa_schema);
 
-         ///Create the assign
+         /// Create the assign
          const auto gimple_node_id = TM->new_tree_node_id();
          gimple_assign_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
          gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
@@ -337,12 +335,12 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          gimple_assign_schema[TOK(TOK_OP1)] = STR(cond_expr_id);
          TM->create_tree_node(gimple_node_id, gimple_assign_K, gimple_assign_schema);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(TM->GetTreeReindex(gimple_node_id)));
-         ///Set the bit value for the intermediate ssa to correctly update execution time
+         /// Set the bit value for the intermediate ssa to correctly update execution time
          GetPointer<ssa_name>(TM->get_tree_node_const(ssa_node_nid))->bit_values = GetPointer<ssa_name>(GET_NODE(first_ga->op0))->bit_values;
          block.second->PushBefore(TM->GetTreeReindex(gimple_node_id), *stmt);
          new_tree_nodes.push_back(TM->GetTreeReindex(gimple_node_id));
 
-         ///Condition of the old root
+         /// Condition of the old root
          tree_nodeRef first_cond;
          if(first_operand_of_first)
          {
@@ -357,7 +355,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
             new_tree_nodes.push_back(not_first_cond_def);
          }
 
-         ///Conditon of the second ce
+         /// Conditon of the second ce
          tree_nodeRef second_cond;
          if(first_operand_of_second)
          {
@@ -371,13 +369,13 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
             block.second->PushBefore(not_second_cond_def, *stmt);
             new_tree_nodes.push_back(not_second_cond_def);
          }
-         ///Building the condition of the root cond expr
+         /// Building the condition of the root cond expr
          tree_nodeRef and_first_cond = tree_man->CreateAndExpr(first_cond, second_cond, blocRef());
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(GetPointer<ssa_name>(GET_NODE(and_first_cond))->CGetDefStmt()));
          block.second->PushBefore(GetPointer<ssa_name>(GET_NODE(and_first_cond))->CGetDefStmt(), *stmt);
          new_tree_nodes.push_back(GetPointer<ssa_name>(GET_NODE(and_first_cond))->CGetDefStmt());
 
-         ///Inserting last cond expr
+         /// Inserting last cond expr
          cond_expr_schema.clear();
          const auto root_cond_expr_id = TM->new_tree_node_id();
          cond_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
@@ -387,7 +385,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          cond_expr_schema[TOK(TOK_OP2)] = boost::lexical_cast<std::string>(ssa_node_nid);
          TM->create_tree_node(root_cond_expr_id, cond_expr_K, cond_expr_schema);
 
-         ///Create the assign
+         /// Create the assign
          const auto root_gimple_node_id = TM->new_tree_node_id();
          gimple_assign_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
          gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
@@ -401,10 +399,10 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          AppM->RegisterTransformation(GetName(), TM->CGetTreeNode(root_gimple_node_id));
 #endif
 
-         ///Check that the second cond expr is actually dead
+         /// Check that the second cond expr is actually dead
          THROW_ASSERT(GetPointer<const ssa_name>(GET_CONST_NODE(second_ga->op0))->CGetUseStmts().size() == 0, "");
 
-         ///Remove the intermediate cond_expr
+         /// Remove the intermediate cond_expr
          block.second->RemoveStmt(second_stmt);
 
          for(const auto& temp_stmt : list_of_stmt)
@@ -422,27 +420,27 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          if(new_time + EPSILON > old_time)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Error in estimation");
-            ///Removing added statements
+            /// Removing added statements
             for(const auto& to_be_removed : new_tree_nodes)
             {
                block.second->RemoveStmt(to_be_removed);
             }
 
-            ///Adding old statements
+            /// Adding old statements
             next_stmt ? block.second->PushBefore(second_stmt, next_stmt) : block.second->PushBack(second_stmt);
             next_stmt ? block.second->PushBefore(first_stmt, next_stmt) : block.second->PushBack(first_stmt);
 
-            ///Recomputing schedule
+            /// Recomputing schedule
             for(const auto& temp_stmt : list_of_stmt)
             {
                schedule->UpdateTime(temp_stmt->index);
             }
 
-            ///Setting pointer to the previous element
+            /// Setting pointer to the previous element
             stmt = std::prev(next_stmt_ptr);
             continue;
          }
-         ///Restarting
+         /// Restarting
          modified = true;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined");
          stmt = list_of_stmt.begin();
@@ -471,9 +469,10 @@ void CondExprRestructuring::Initialize()
 bool CondExprRestructuring::HasToBeExecuted() const
 {
 #if HAVE_ILP_BUILT
-   if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
+   if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
+      GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
    {
-      ///If schedule is not update, do not execute this step and invalidate UpdateSchedule
+      /// If schedule is not update, do not execute this step and invalidate UpdateSchedule
       const auto update_schedule = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UPDATE_SCHEDULE, function_id));
       if(update_schedule)
       {
@@ -499,4 +498,3 @@ bool CondExprRestructuring::HasToBeExecuted() const
       return false;
    }
 }
-

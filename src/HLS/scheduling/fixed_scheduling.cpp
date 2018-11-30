@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,15 +29,15 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file fixed_scheduling.cpp
- * @brief 
+ * @brief
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * $Revision$
  * $Date$
- * Last modified by 
+ * Last modified by
  *
  */
 #include "fixed_scheduling.hpp"
@@ -45,14 +45,14 @@
 #include "hls.hpp"
 #include "hls_manager.hpp"
 
-#include "scheduling.hpp"
 #include "Parameter.hpp"
+#include "scheduling.hpp"
 
-#include "schedule.hpp"
 #include "fu_binding.hpp"
+#include "schedule.hpp"
 
-#include "fileIO.hpp"
 #include "exceptions.hpp"
+#include "fileIO.hpp"
 
 #include "xml_document.hpp"
 #include "xml_dom_parser.hpp"
@@ -62,13 +62,12 @@
 
 #include "dbgPrintHelper.hpp"
 
-fixed_scheduling::fixed_scheduling(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
-   Scheduling(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::FIXED_SCHEDULING)
+fixed_scheduling::fixed_scheduling(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
+    : Scheduling(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::FIXED_SCHEDULING)
 {
 }
 
-fixed_scheduling::~fixed_scheduling()
-= default;
+fixed_scheduling::~fixed_scheduling() = default;
 
 DesignFlowStep_Status fixed_scheduling::InternalExec()
 {
@@ -79,29 +78,29 @@ DesignFlowStep_Status fixed_scheduling::InternalExec()
    {
       XMLDomParser parser(File);
       parser.Exec();
-      if (parser)
+      if(parser)
       {
-         //Walk the tree:
-         const xml_element* node = parser.get_document()->get_root_node(); //deleted by DomParser.
+         // Walk the tree:
+         const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
          HLS->xload(node, HLSMgr->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::FDFG));
       }
    }
-   catch (const char * msg)
+   catch(const char* msg)
    {
       std::cerr << msg << std::endl;
       THROW_ERROR("Error in fixed_scheduling");
    }
-   catch (const std::string& msg)
+   catch(const std::string& msg)
    {
       std::cerr << msg << std::endl;
       THROW_ERROR("Error in fixed_scheduling");
    }
-   catch (const std::exception& ex)
+   catch(const std::exception& ex)
    {
       std::cout << "Exception caught: " << ex.what() << std::endl;
       THROW_ERROR("Error in fixed_scheduling");
    }
-   catch ( ... )
+   catch(...)
    {
       std::cerr << "unknown exception" << std::endl;
       THROW_ERROR("Error in fixed_scheduling");

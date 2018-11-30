@@ -29,25 +29,25 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file to_data_file_step_factory.hpp
  * @brief Factory for to data file step
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
 #ifndef TO_DATA_FILE_STEP_FACTORY_HPP
 #define TO_DATA_FILE_STEP_FACTORY_HPP
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
 
-///Superclass include
+/// Superclass include
 #include "design_flow_step_factory.hpp"
 
-///utility include
+/// utility include
 #include "refcount.hpp"
 
 REF_FORWARD_DECL(DesignFlowStep);
@@ -55,42 +55,40 @@ REF_FORWARD_DECL(target_manager);
 
 class ToDataFileStepFactory : public DesignFlowStepFactory
 {
-   private:
+ private:
 #if HAVE_CIRCUIT_BUILT
-      ///The target device
-      const target_managerRef target;
+   /// The target device
+   const target_managerRef target;
 #endif
 
-   public:
-      /**
-       * Constructor
-       * @param target is the target device
-       * @param design_flow_manager is the design flow manager
-       * @param parameters is the set of input parameters
-       */
-      ToDataFileStepFactory(
+ public:
+   /**
+    * Constructor
+    * @param target is the target device
+    * @param design_flow_manager is the design flow manager
+    * @param parameters is the set of input parameters
+    */
+   ToDataFileStepFactory(
 #if HAVE_CIRCUIT_BUILT
-         const target_managerRef target,
+       const target_managerRef target,
 #endif
-         const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+       const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-      /**
-       * Destructor
-       */
-      ~ToDataFileStepFactory() override;
+   /**
+    * Destructor
+    */
+   ~ToDataFileStepFactory() override;
 
-      /**
-       * Return the prefix of the steps created by the factory
-       */
-      const std::string GetPrefix() const override;
+   /**
+    * Return the prefix of the steps created by the factory
+    */
+   const std::string GetPrefix() const override;
 
-      /**
-       * Creates a step
-       * @param signature is the signature of the step to be created
-       * @return the created step
-       */
-      const DesignFlowStepRef CreateStep(const std::string&signature) const;
+   /**
+    * Creates a step
+    * @param signature is the signature of the step to be created
+    * @return the created step
+    */
+   const DesignFlowStepRef CreateStep(const std::string& signature) const;
 };
 #endif
-
-

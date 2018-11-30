@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file moduleGenerator.hpp
  * @brief
@@ -42,20 +42,20 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef _MODULE_GENERATOR_HPP_
 #define _MODULE_GENERATOR_HPP_
 
-///graph include
+/// graph include
 #include "graph.hpp"
 
-///STL include
+/// STL include
 #include <map>
 
-///technology/target_device include
+/// technology/target_device include
 #include "target_device.hpp"
 
-///utility include
+/// utility include
 #include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(FunctionBehavior);
@@ -66,43 +66,43 @@ REF_FORWARD_DECL(structural_object);
 REF_FORWARD_DECL(structural_type_descriptor);
 REF_FORWARD_DECL(technology_manager);
 REF_FORWARD_DECL(technology_node);
-
+class module;
 
 class moduleGenerator
 {
-   protected:
-      ///The HLS manager
-      const HLS_managerConstRef HLSMgr;
+ protected:
+   /// The HLS manager
+   const HLS_managerConstRef HLSMgr;
 
-      ///The set of input parameters
-      const ParameterConstRef parameters;
+   /// The set of input parameters
+   const ParameterConstRef parameters;
 
-      ///The debug level
-      const int debug_level;
+   /// The debug level
+   const int debug_level;
 
-   public:
+ public:
+   /**
+    * Constructor.
+    * @param HLSMgr is the HLS manager
+    * @param parameters is the set of input parameters
+    */
+   moduleGenerator(const HLS_managerConstRef HLSMgr, const ParameterConstRef parameters);
 
-      /**
-       * Constructor.
-       * @param HLSMgr is the HLS manager
-       * @param parameters is the set of input parameters
-       */
-      moduleGenerator(const HLS_managerConstRef HLSMgr, const ParameterConstRef parameters);
+   /**
+    * Destructor.
+    */
+   virtual ~moduleGenerator();
 
-      /**
-       * Destructor.
-       */
-      virtual ~moduleGenerator();
+   structural_type_descriptorRef getDataType(unsigned int variable, const FunctionBehaviorConstRef FB) const;
 
-      structural_type_descriptorRef getDataType(unsigned int variable, const FunctionBehaviorConstRef FB) const;
+   void add_port_parameters(structural_objectRef generated_port, structural_objectRef currentPort);
 
-      void add_port_parameters(structural_objectRef generated_port, structural_objectRef currentPort);
+   std::string GenerateHDL(const module* mod, const std::string& hdl_template, std::vector<std::tuple<unsigned int, unsigned int>>& required_variables, const std::string& specializing_string, const FunctionBehaviorConstRef FB,
+                           const std::string& path_dynamic_generators, HDLWriter_Language);
 
-      std::string GenerateHDL(const std::string& hdl_template, std::vector<std::tuple<unsigned int,unsigned int> >& required_variables, const std::string& specializing_string, const FunctionBehaviorConstRef FB, const std::string& path_dynamic_generators, HDLWriter_Language);
+   std::string get_specialized_name(unsigned int firstIndexToSpecialize, std::vector<std::tuple<unsigned int, unsigned int>>& required_variables, const FunctionBehaviorConstRef FB) const;
 
-      std::string get_specialized_name(std::vector<std::tuple<unsigned int,unsigned int> >& required_variables, const FunctionBehaviorConstRef FB) const;
-
-      void specialize_fu(std::string fuName, vertex ve, std::string libraryId, const technology_managerRef TM, const FunctionBehaviorConstRef FB, std::string new_fu_name, std::map<std::string,technology_nodeRef> & new_fu, const TargetDevice_Type dv_type);
+   void specialize_fu(std::string fuName, vertex ve, std::string libraryId, const technology_managerRef TM, const FunctionBehaviorConstRef FB, std::string new_fu_name, std::map<std::string, technology_nodeRef>& new_fu, const TargetDevice_Type dv_type);
 };
 typedef refcount<moduleGenerator> moduleGeneratorRef;
 #endif

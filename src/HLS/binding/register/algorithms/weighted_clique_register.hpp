@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file weighted_clique_register.hpp
  * @brief Weighted clique covering register allocation procedure
@@ -39,7 +39,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef WEIGHTED_CLIQUE_REGISTER_HPP
 #define WEIGHTED_CLIQUE_REGISTER_HPP
 
@@ -49,53 +49,50 @@ enum class CliqueCovering_Algorithm;
 
 class WeightedCliqueRegisterBindingSpecialization : public HLSFlowStepSpecialization
 {
-   public:
-      ///The algorithm to be used
-      const CliqueCovering_Algorithm clique_covering_algorithm;
+ public:
+   /// The algorithm to be used
+   const CliqueCovering_Algorithm clique_covering_algorithm;
 
-      /**
-       * Constructor
-       */
-      explicit WeightedCliqueRegisterBindingSpecialization(const CliqueCovering_Algorithm clique_covering_algorithm);
+   /**
+    * Constructor
+    */
+   explicit WeightedCliqueRegisterBindingSpecialization(const CliqueCovering_Algorithm clique_covering_algorithm);
 
-      /**
-       * Return the string representation of this
-       */
-      const std::string GetKindText() const override;
+   /**
+    * Return the string representation of this
+    */
+   const std::string GetKindText() const override;
 
-      /**
-       * Return the contribution to the signature of a step given by the specialization
-       */
-      const std::string GetSignature() const override;
-
-
+   /**
+    * Return the contribution to the signature of a step given by the specialization
+    */
+   const std::string GetSignature() const override;
 };
 
 class weighted_clique_register : public compatibility_based_register
 {
-   public:
-      /**
-       * Constructor of the class.
-       * @param design_flow_manager is the design flow manager
-       */
-      weighted_clique_register(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
+ public:
+   /**
+    * Constructor of the class.
+    * @param design_flow_manager is the design flow manager
+    */
+   weighted_clique_register(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
 
-      /**
-       * Destructor of the class.
-       */
-      ~weighted_clique_register() override;
+   /**
+    * Destructor of the class.
+    */
+   ~weighted_clique_register() override;
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status InternalExec() override;
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      void Initialize() override;
-
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 };
 
 #endif // WEIGHTED_CLIQUE_HPP

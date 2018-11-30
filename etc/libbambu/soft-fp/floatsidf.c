@@ -3,7 +3,7 @@
    Copyright (C) 1997-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Richard Henderson (rth@cygnus.com) and
-		  Jakub Jelinek (jj@ultra.linux.cz).
+        Jakub Jelinek (jj@ultra.linux.cz).
 
    The GNU C Library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -29,19 +29,21 @@
    <http://www.gnu.org/licenses/>.  */
 
 #define FP_NO_EXCEPTIONS
-#include "soft-fp.h"
 #include "double.h"
+#include "soft-fp.h"
 
-DFtype
-__floatsidf (SItype i)
+DFtype __floatsidf(SItype i)
 {
-  FP_DECL_D (A);
-  DFtype a;
+   FP_DECL_D(A);
+   DFtype a;
 
-  FP_FROM_INT_D (A, i, SI_BITS, USItype);
-  FP_PACK_RAW_D (a, A);
+   FP_FROM_INT_D(A, i, SI_BITS, USItype);
+   FP_PACK_RAW_D(a, A);
 
-  return a;
+   return a;
 }
 
-inline DFtype __int32_to_float64if (SItype i) {return __floatsidf (i);}
+inline DFtype __int32_to_float64if(SItype i)
+{
+   return __floatsidf(i);
+}

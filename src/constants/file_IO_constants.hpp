@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file file_IO_constants.hpp
  * @brief constants used in Input/Output
@@ -43,13 +43,13 @@
 #ifndef FILE_IO_CONSTANTS_HPP
 #define FILE_IO_CONSTANTS_HPP
 
-///The file used to store shell output
+/// The file used to store shell output
 #define STR_CST_file_IO_shell_output_file "shell_output"
 
-///The file used to store the script shell
+/// The file used to store the script shell
 #define STR_CST_file_IO_shell_script "shell_script"
 
-///The source code default output file
+/// The source code default output file
 #define STR_CST_file_IO_source_code_output_file "output.c"
 
 #endif

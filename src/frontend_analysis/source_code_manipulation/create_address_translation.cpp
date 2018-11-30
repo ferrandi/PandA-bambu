@@ -29,74 +29,72 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file  create_address_translation.cpp
  * @brief Writes source code of hdl module to translate addresses from pci address space to bambu address space
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "create_address_translation.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior include
+/// behavior include
 #include "application_manager.hpp"
 
-///constants includes
+/// constants includes
 #include "constants.hpp"
 #include "taste_constants.hpp"
 
-///design_flows include
+/// design_flows include
 #include "design_flow_manager.hpp"
 
-///HLS include
+/// HLS include
 #include "hls_manager.hpp"
 
-///intermediate_representation/aadl include
+/// intermediate_representation/aadl include
 #include "aadl_information.hpp"
 #include "asn_type.hpp"
 
-///tree includes
+/// tree includes
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-///utility include
+/// utility include
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "indented_output_stream.hpp"
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
-#include "string_manipulation.hpp"          // for GET_CLASS
+#include "string_manipulation.hpp" // for GET_CLASS
 
-CreateAddressTranslation::CreateAddressTranslation(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   ApplicationFrontendFlowStep(_AppM, FrontendFlowStepType::CREATE_ADDRESS_TRANSLATION, _design_flow_manager, _parameters),
-   aadl_information(GetPointer<const HLS_manager>(_AppM)->aadl_information)
+CreateAddressTranslation::CreateAddressTranslation(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : ApplicationFrontendFlowStep(_AppM, FrontendFlowStepType::CREATE_ADDRESS_TRANSLATION, _design_flow_manager, _parameters), aadl_information(GetPointer<const HLS_manager>(_AppM)->aadl_information)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-CreateAddressTranslation::~CreateAddressTranslation()
-= default;
+CreateAddressTranslation::~CreateAddressTranslation() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > CreateAddressTranslation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> CreateAddressTranslation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CREATE_TREE_MANAGER, WHOLE_APPLICATION));
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          if(design_flow_manager.lock()->GetStatus(GetSignature()) == DesignFlowStep_Status::SUCCESS)
          {
@@ -110,275 +108,272 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const unsigned int tree_parameter_type, unsigned int & bambu_address, unsigned int & taste_address, unsigned int & registers, const bool first_level, const bool little_endianess)
+void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const unsigned int tree_parameter_type, unsigned int& bambu_address, unsigned int& taste_address, unsigned int& registers, const bool first_level, const bool little_endianess)
 {
    switch(asn_type->GetKind())
    {
       case AsnType_Kind::BOOLEAN:
+      {
+         if(first_level)
          {
-            if(first_level)
-            {
-               address_translation->Append(",0");
-               memory_enabling->Append(",0");
-               data_size->Append(",0");
-               endianess_check->Append(","  + std::string(little_endianess ? "0" : "1"));
-               taste_address  = taste_address + 4;
-               registers++;
-               break;
-            }
-            else
-            {
-               address_translation->Append("," + STR(bambu_address));
-               memory_enabling->Append(",1");
-               data_size->Append(",1");
-               endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
-               bambu_address = bambu_address + 1;
-               taste_address  = taste_address + 4;
-               break;
-
-            }
+            address_translation->Append(",0");
+            memory_enabling->Append(",0");
+            data_size->Append(",0");
+            endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
+            taste_address = taste_address + 4;
+            registers++;
             break;
          }
+         else
+         {
+            address_translation->Append("," + STR(bambu_address));
+            memory_enabling->Append(",1");
+            data_size->Append(",1");
+            endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
+            bambu_address = bambu_address + 1;
+            taste_address = taste_address + 4;
+            break;
+         }
+         break;
+      }
       case AsnType_Kind::CHOICE:
-         {
-            THROW_ERROR("Choice ASN type not supported");
-            break;
-         }
+      {
+         THROW_ERROR("Choice ASN type not supported");
+         break;
+      }
       case AsnType_Kind::ENUMERATED:
+      {
+         if(first_level)
          {
-            if(first_level)
-            {
-               address_translation->Append(",0");
-               memory_enabling->Append(",0");
-               data_size->Append(",0");
-               endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
-               taste_address  = taste_address + 4;
-               registers++;
-               break;
-            }
-            else
-            {
-               address_translation->Append("," + STR(bambu_address));
-               memory_enabling->Append(",1");
-               data_size->Append(",4");
-               endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
-               bambu_address = bambu_address + 4;
-               taste_address  = taste_address + 4;
-               break;
-            }
+            address_translation->Append(",0");
+            memory_enabling->Append(",0");
+            data_size->Append(",0");
+            endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
+            taste_address = taste_address + 4;
+            registers++;
+            break;
          }
+         else
+         {
+            address_translation->Append("," + STR(bambu_address));
+            memory_enabling->Append(",1");
+            data_size->Append(",4");
+            endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
+            bambu_address = bambu_address + 4;
+            taste_address = taste_address + 4;
+            break;
+         }
+      }
       case AsnType_Kind::INTEGER:
+      {
+         if(first_level)
          {
-            if(first_level)
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->INTEGER (first level)");
+            address_translation->Append(",0,0");
+            memory_enabling->Append(",0,0");
+            data_size->Append(",0,0");
+            endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
+            endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
+            taste_address = taste_address + 8;
+            const auto byte_size = tree_helper::Size(TreeM->get_tree_node_const(tree_parameter_type)) / 8;
+            if(byte_size == 8)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->INTEGER (first level)");
-               address_translation->Append(",0,0");
-               memory_enabling->Append(",0,0");
-               data_size->Append(",0,0");
-               endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
-               endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
-               taste_address  = taste_address + 8;
-               const auto byte_size = tree_helper::Size(TreeM->get_tree_node_const(tree_parameter_type))/8;
-               if(byte_size == 8)
-               {
-                  registers += 2;
-               }
-               else
-               {
-                  registers++;
-               }
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-               break;
+               registers += 2;
             }
             else
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->INTEGER (not first level)");
-               const auto byte_size = tree_helper::Size(TreeM->get_tree_node_const(tree_parameter_type))/8;
-               if(byte_size <= 4)
-               {
-                  little_endianess ? address_translation->Append(",0," + STR(bambu_address)) : address_translation->Append("," + STR(bambu_address) + ",0");
-                  little_endianess ? memory_enabling->Append(",0,1") : memory_enabling->Append(",1,0");
-                  little_endianess ? data_size->Append(",0," +STR(byte_size)) : data_size->Append("," + STR(byte_size) + ",0");
-                  endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
-                  endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
-                  bambu_address = bambu_address + byte_size;
-                  taste_address  = taste_address + 8;
-               }
-               else if(byte_size == 8)
-               {
-                  address_translation->Append("," + STR(bambu_address) + "," + STR(bambu_address+4));
-                  memory_enabling->Append(",1,1");
-                  data_size->Append("," + STR(byte_size) + "," + STR(byte_size));
-                  endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
-                  endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
-                  bambu_address = bambu_address + byte_size;
-                  taste_address  = taste_address + 8;
-               }
-               else
-               {
-                  THROW_ERROR("Integer larger than 128 bits not supported");
-               }
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-            }
-            break;
-         }
-      case AsnType_Kind::OCTET_STRING:
-         {
-            const auto octet_string = GetPointer<const OctetStringAsnType>(asn_type);
-            const auto byte_size = octet_string->size;
-            const auto word_size = (byte_size%4) ? ((byte_size/4)+1)*4 : byte_size/4;
-            for(unsigned int word = 0; word < word_size; word++)
-            {
-               address_translation->Append("," + STR(bambu_address));
-               memory_enabling->Append(",1");
-               data_size->Append("," +STR(byte_size));
-               endianess_check->Append(",0");
-               bambu_address = bambu_address + 1;
-               taste_address  = taste_address + 1;
-            }
-            break;
-         }
-      case AsnType_Kind::REAL:
-         {
-            if(first_level)
-            {
-               const auto byte_size = tree_helper::Size(TreeM->get_tree_node_const(tree_parameter_type))/8;
-               if(byte_size == 8)
-               {
-                  address_translation->Append(",0,0,");
-                  memory_enabling->Append(",0,0");
-                  data_size->Append(",0,0,");
-                  endianess_check->Append("," + std::string(little_endianess ? "0,0" : "1,1"));
-                  taste_address  = taste_address + 8;
-                  registers+=2;
-               }
-               else
-               {
-                  address_translation->Append(",0");
-                  memory_enabling->Append(",0");
-                  data_size->Append(",0");
-                  endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
-                  taste_address  = taste_address + 4;
-                  registers++;
-               }
-               break;
-            }
-            else
-            {
-               const auto byte_size = tree_helper::Size(TreeM->get_tree_node_const(tree_parameter_type))/8;
-               if(byte_size == 4)
-               {
-                  little_endianess ? address_translation->Append(",0," + STR(bambu_address)) : address_translation->Append("," + STR(bambu_address) + ",0");
-                  little_endianess ? memory_enabling->Append(",0,1") : memory_enabling->Append(",1,0");
-                  little_endianess ? data_size->Append(",0," + STR(byte_size)) : data_size->Append("," + STR(byte_size) + ",0");
-                  endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
-                  bambu_address = bambu_address + byte_size;
-                  taste_address  = taste_address + 4;
-               }
-               else if(byte_size == 8)
-               {
-                  address_translation->Append("," + STR(bambu_address) + "," + STR(bambu_address+4));
-                  memory_enabling->Append(",1,1");
-                  data_size->Append("," + STR(byte_size) + "," + STR(byte_size));
-                  endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
-                  endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
-                  bambu_address = bambu_address + byte_size;
-                  taste_address  = taste_address + 8; 
-               }
-               else
-               {
-                  THROW_ERROR("Unsupported real type size " + STR(byte_size));
-               }
-               break;
-            }
-         }
-      case AsnType_Kind::REDEFINE:
-         {
-            const auto redefine = GetPointer<const RedefineAsnType>(asn_type);
-            const auto redefine_asn_type = aadl_information->CGetAsnType(redefine->name);
-            ComputeAddress(redefine_asn_type, tree_parameter_type, bambu_address, taste_address, registers, first_level, little_endianess);
-            break;
-         }
-      case AsnType_Kind::SEQUENCE:
-         {
-            const auto sequence = GetPointer<const SequenceAsnType>(asn_type);
-            const auto tree_record_type = GetPointer<const record_type>(TreeM->get_tree_node_const(tree_parameter_type));
-            const auto tree_fields = tree_record_type->list_of_flds;
-            size_t tree_field_index = 0;
-            for(const auto& field : sequence->fields)
-            {
-               ComputeAddress(field.second, tree_helper::CGetType(GET_NODE(tree_fields[tree_field_index]))->index, bambu_address, taste_address, registers, false, little_endianess);
-               const auto field_bpos = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index]))->bpos)));
-               THROW_ASSERT(field_bpos%8 == 0, "Bitfield not supported");
-               const auto current_field_beginning = field_bpos/8;
-               const auto next_field_beginning = [&] () -> long long int
-               {
-                  if(tree_field_index + 1 > tree_fields.size())
-                  {
-                     return tree_helper::Size(TreeM->get_tree_node_const(tree_parameter_type))/8;
-                  }
-                  else
-                  {
-                     return tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_NODE(GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index+1]))->bpos)))/8;
-                  }
-               }();
-               const auto field_size = tree_helper::Size(GET_NODE(tree_fields[tree_field_index]))/8;
-               bambu_address = bambu_address + static_cast<unsigned int>(field_size - (next_field_beginning - current_field_beginning));
-               tree_field_index++;
-            }
-            break;
-         }
-      case AsnType_Kind::SEQUENCEOF:
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->SEQUENCEOF");
-            const auto sequenceof = GetPointer<const SequenceOfAsnType>(asn_type);
-            const auto element_type = aadl_information->CGetAsnType(sequenceof->element);
-            for(size_t counter = 0; counter < sequenceof->size; counter++)
-            {
-               ComputeAddress(element_type, tree_helper::CGetPointedType(TreeM->get_tree_node_const(tree_parameter_type))->index, bambu_address, taste_address, registers, false, little_endianess);
+               registers++;
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
             break;
          }
-      case AsnType_Kind::SET:
+         else
          {
-            const auto set = GetPointer<const SetAsnType>(asn_type);
-            const auto tree_record_type = GetPointer<const record_type>(TreeM->get_tree_node_const(tree_parameter_type));
-            const auto tree_fields = tree_record_type->list_of_flds;
-            size_t tree_field_index = 0;
-            for(const auto& field : set->fields)
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->INTEGER (not first level)");
+            const auto byte_size = tree_helper::Size(TreeM->get_tree_node_const(tree_parameter_type)) / 8;
+            if(byte_size <= 4)
             {
-               ComputeAddress(field.second, tree_helper::CGetType(GET_NODE(tree_fields[tree_field_index]))->index, bambu_address, taste_address, registers, false, little_endianess);
-               const auto field_bpos = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index]))->bpos)));
-               THROW_ASSERT(field_bpos%8 == 0, "Bitfield not supported");
-               const auto current_field_beginning = field_bpos/8;
-               const auto next_field_beginning = [&] () -> long long int
+               little_endianess ? address_translation->Append(",0," + STR(bambu_address)) : address_translation->Append("," + STR(bambu_address) + ",0");
+               little_endianess ? memory_enabling->Append(",0,1") : memory_enabling->Append(",1,0");
+               little_endianess ? data_size->Append(",0," + STR(byte_size)) : data_size->Append("," + STR(byte_size) + ",0");
+               endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
+               endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
+               bambu_address = bambu_address + byte_size;
+               taste_address = taste_address + 8;
+            }
+            else if(byte_size == 8)
+            {
+               address_translation->Append("," + STR(bambu_address) + "," + STR(bambu_address + 4));
+               memory_enabling->Append(",1,1");
+               data_size->Append("," + STR(byte_size) + "," + STR(byte_size));
+               endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
+               endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
+               bambu_address = bambu_address + byte_size;
+               taste_address = taste_address + 8;
+            }
+            else
+            {
+               THROW_ERROR("Integer larger than 128 bits not supported");
+            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+         }
+         break;
+      }
+      case AsnType_Kind::OCTET_STRING:
+      {
+         const auto octet_string = GetPointer<const OctetStringAsnType>(asn_type);
+         const auto byte_size = octet_string->size;
+         const auto word_size = (byte_size % 4) ? ((byte_size / 4) + 1) * 4 : byte_size / 4;
+         for(unsigned int word = 0; word < word_size; word++)
+         {
+            address_translation->Append("," + STR(bambu_address));
+            memory_enabling->Append(",1");
+            data_size->Append("," + STR(byte_size));
+            endianess_check->Append(",0");
+            bambu_address = bambu_address + 1;
+            taste_address = taste_address + 1;
+         }
+         break;
+      }
+      case AsnType_Kind::REAL:
+      {
+         if(first_level)
+         {
+            const auto byte_size = tree_helper::Size(TreeM->get_tree_node_const(tree_parameter_type)) / 8;
+            if(byte_size == 8)
+            {
+               address_translation->Append(",0,0,");
+               memory_enabling->Append(",0,0");
+               data_size->Append(",0,0,");
+               endianess_check->Append("," + std::string(little_endianess ? "0,0" : "1,1"));
+               taste_address = taste_address + 8;
+               registers += 2;
+            }
+            else
+            {
+               address_translation->Append(",0");
+               memory_enabling->Append(",0");
+               data_size->Append(",0");
+               endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
+               taste_address = taste_address + 4;
+               registers++;
+            }
+            break;
+         }
+         else
+         {
+            const auto byte_size = tree_helper::Size(TreeM->get_tree_node_const(tree_parameter_type)) / 8;
+            if(byte_size == 4)
+            {
+               little_endianess ? address_translation->Append(",0," + STR(bambu_address)) : address_translation->Append("," + STR(bambu_address) + ",0");
+               little_endianess ? memory_enabling->Append(",0,1") : memory_enabling->Append(",1,0");
+               little_endianess ? data_size->Append(",0," + STR(byte_size)) : data_size->Append("," + STR(byte_size) + ",0");
+               endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
+               bambu_address = bambu_address + byte_size;
+               taste_address = taste_address + 4;
+            }
+            else if(byte_size == 8)
+            {
+               address_translation->Append("," + STR(bambu_address) + "," + STR(bambu_address + 4));
+               memory_enabling->Append(",1,1");
+               data_size->Append("," + STR(byte_size) + "," + STR(byte_size));
+               endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
+               endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
+               bambu_address = bambu_address + byte_size;
+               taste_address = taste_address + 8;
+            }
+            else
+            {
+               THROW_ERROR("Unsupported real type size " + STR(byte_size));
+            }
+            break;
+         }
+      }
+      case AsnType_Kind::REDEFINE:
+      {
+         const auto redefine = GetPointer<const RedefineAsnType>(asn_type);
+         const auto redefine_asn_type = aadl_information->CGetAsnType(redefine->name);
+         ComputeAddress(redefine_asn_type, tree_parameter_type, bambu_address, taste_address, registers, first_level, little_endianess);
+         break;
+      }
+      case AsnType_Kind::SEQUENCE:
+      {
+         const auto sequence = GetPointer<const SequenceAsnType>(asn_type);
+         const auto tree_record_type = GetPointer<const record_type>(TreeM->get_tree_node_const(tree_parameter_type));
+         const auto tree_fields = tree_record_type->list_of_flds;
+         size_t tree_field_index = 0;
+         for(const auto& field : sequence->fields)
+         {
+            ComputeAddress(field.second, tree_helper::CGetType(GET_NODE(tree_fields[tree_field_index]))->index, bambu_address, taste_address, registers, false, little_endianess);
+            const auto field_bpos = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index]))->bpos)));
+            THROW_ASSERT(field_bpos % 8 == 0, "Bitfield not supported");
+            const auto current_field_beginning = field_bpos / 8;
+            const auto next_field_beginning = [&]() -> long long int {
+               if(tree_field_index + 1 > tree_fields.size())
                {
-                  if(tree_field_index + 1 > tree_fields.size())
-                  {
-                     return tree_helper::Size(TreeM->get_tree_node_const(tree_parameter_type))/8;
-                  }
-                  else
-                  {
-                     return tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_NODE(GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index+1]))->bpos)))/8;
-                  }
-               }();
-               const auto field_size = tree_helper::Size(GET_NODE(tree_fields[tree_field_index]))/8;
-               bambu_address = bambu_address + static_cast<unsigned int>(field_size - (next_field_beginning - current_field_beginning));
-               tree_field_index++;
-            }
-            break;
+                  return tree_helper::Size(TreeM->get_tree_node_const(tree_parameter_type)) / 8;
+               }
+               else
+               {
+                  return tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_NODE(GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index + 1]))->bpos))) / 8;
+               }
+            }();
+            const auto field_size = tree_helper::Size(GET_NODE(tree_fields[tree_field_index])) / 8;
+            bambu_address = bambu_address + static_cast<unsigned int>(field_size - (next_field_beginning - current_field_beginning));
+            tree_field_index++;
          }
-      case AsnType_Kind::SETOF:
+         break;
+      }
+      case AsnType_Kind::SEQUENCEOF:
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->SEQUENCEOF");
+         const auto sequenceof = GetPointer<const SequenceOfAsnType>(asn_type);
+         const auto element_type = aadl_information->CGetAsnType(sequenceof->element);
+         for(size_t counter = 0; counter < sequenceof->size; counter++)
          {
-            const auto setof = GetPointer<const SetOfAsnType>(asn_type);
-            const auto element_type = aadl_information->CGetAsnType(setof->element);
-            for(size_t counter = 0; counter < setof->size; counter++)
-            {
-               ComputeAddress(element_type, tree_helper::CGetPointedType(TreeM->get_tree_node_const(tree_parameter_type))->index, bambu_address, taste_address, registers, false, little_endianess);
-            }
-            break;
+            ComputeAddress(element_type, tree_helper::CGetPointedType(TreeM->get_tree_node_const(tree_parameter_type))->index, bambu_address, taste_address, registers, false, little_endianess);
          }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+         break;
+      }
+      case AsnType_Kind::SET:
+      {
+         const auto set = GetPointer<const SetAsnType>(asn_type);
+         const auto tree_record_type = GetPointer<const record_type>(TreeM->get_tree_node_const(tree_parameter_type));
+         const auto tree_fields = tree_record_type->list_of_flds;
+         size_t tree_field_index = 0;
+         for(const auto& field : set->fields)
+         {
+            ComputeAddress(field.second, tree_helper::CGetType(GET_NODE(tree_fields[tree_field_index]))->index, bambu_address, taste_address, registers, false, little_endianess);
+            const auto field_bpos = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index]))->bpos)));
+            THROW_ASSERT(field_bpos % 8 == 0, "Bitfield not supported");
+            const auto current_field_beginning = field_bpos / 8;
+            const auto next_field_beginning = [&]() -> long long int {
+               if(tree_field_index + 1 > tree_fields.size())
+               {
+                  return tree_helper::Size(TreeM->get_tree_node_const(tree_parameter_type)) / 8;
+               }
+               else
+               {
+                  return tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_NODE(GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index + 1]))->bpos))) / 8;
+               }
+            }();
+            const auto field_size = tree_helper::Size(GET_NODE(tree_fields[tree_field_index])) / 8;
+            bambu_address = bambu_address + static_cast<unsigned int>(field_size - (next_field_beginning - current_field_beginning));
+            tree_field_index++;
+         }
+         break;
+      }
+      case AsnType_Kind::SETOF:
+      {
+         const auto setof = GetPointer<const SetOfAsnType>(asn_type);
+         const auto element_type = aadl_information->CGetAsnType(setof->element);
+         for(size_t counter = 0; counter < setof->size; counter++)
+         {
+            ComputeAddress(element_type, tree_helper::CGetPointedType(TreeM->get_tree_node_const(tree_parameter_type))->index, bambu_address, taste_address, registers, false, little_endianess);
+         }
+         break;
+      }
       default:
          THROW_UNREACHABLE("");
    }
@@ -395,11 +390,11 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
    for(const auto& top_function_name : aadl_information->top_functions_names)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing function " + top_function_name);
-      ///The taste address of return (if any)
+      /// The taste address of return (if any)
       unsigned int taste_return_address = 0;
 
       THROW_ASSERT(aadl_information->function_parameters.find("PI_" + top_function_name) != aadl_information->function_parameters.end(), top_function_name);
-      auto & function_parameters = aadl_information->function_parameters.find("PI_" + top_function_name)->second;
+      auto& function_parameters = aadl_information->function_parameters.find("PI_" + top_function_name)->second;
       const auto function_id = TreeM->function_index(top_function_name);
       address_translation = IndentedOutputStreamRef(new IndentedOutputStream());
       address_translation->Append("unsigned int " STR_CST_taste_address_translation + top_function_name + "(unsigned int arg)\n");
@@ -418,9 +413,9 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
       endianess_check->Append("{\n");
       endianess_check->Append("const unsigned int endianess_check[] = {0");
       unsigned int bambu_address = 0;
-      ///Taste address starts from 4, since first 4 bytes are reserved to status register
+      /// Taste address starts from 4, since first 4 bytes are reserved to status register
       unsigned int taste_address = 4;
-      ///Build the map between parameter name and index type
+      /// Build the map between parameter name and index type
       CustomMap<std::string, unsigned int> parameter_to_type;
       THROW_ASSERT(function_id, "Function " + top_function_name + " not found in tree");
       const auto fd = GetPointer<const function_decl>(TreeM->CGetTreeNode(function_id));
@@ -437,15 +432,14 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
          parameter_to_type["return"] = ft->retn->index;
       }
       bool used_return = false;
-      for(auto & parameter : function_parameters)
+      for(auto& parameter : function_parameters)
       {
          const auto parameter_name = parameter.name;
-         bambu_address = (bambu_address % 8) ? ((bambu_address/8)+1)*8 : bambu_address;
-         taste_address = (taste_address % 8) ? ((taste_address/8)+1)*8 : taste_address;
+         bambu_address = (bambu_address % 8) ? ((bambu_address / 8) + 1) * 8 : bambu_address;
+         taste_address = (taste_address % 8) ? ((taste_address / 8) + 1) * 8 : taste_address;
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing parameter " + parameter_name);
-         const auto tree_parameter_index = [&] () -> unsigned int
-         {
+         const auto tree_parameter_index = [&]() -> unsigned int {
             if(parameter_to_type.find(parameter_name) != parameter_to_type.end())
             {
                return parameter_to_type.find(parameter_name)->second;
@@ -460,7 +454,7 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
             }
          }();
          const auto asn_type = aadl_information->CGetAsnType(parameter.asn_type);
-         ///Starting address of the parameter
+         /// Starting address of the parameter
          parameter.bambu_address = bambu_address;
          parameter.pointer = tree_helper::is_a_pointer(TreeM, tree_parameter_index);
          ComputeAddress(asn_type, tree_parameter_index, bambu_address, taste_address, parameter.num_registers, true, parameter.endianess);
@@ -498,10 +492,12 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
          AppM->input_files[address_translation_file] = address_translation_file;
          AppM->input_files[memory_enabling_file] = memory_enabling_file;
          AppM->input_files[data_size_file] = data_size_file;
-         new_top_functions += STR_CST_string_separator + STR_CST_taste_address_translation + top_function_name + STR_CST_string_separator + STR_CST_taste_memory_enabling + top_function_name + STR_CST_string_separator + STR_CST_taste_data_size + top_function_name;
+         new_top_functions +=
+             STR_CST_string_separator + STR_CST_taste_address_translation + top_function_name + STR_CST_string_separator + STR_CST_taste_memory_enabling + top_function_name + STR_CST_string_separator + STR_CST_taste_data_size + top_function_name;
       }
       IndentedOutputStreamRef output_multiplexer = IndentedOutputStreamRef(new IndentedOutputStream());
-      output_multiplexer->Append("unsigned int " STR_CST_taste_output_multiplexer + top_function_name + "(unsigned int address, unsigned int reg_status" + (used_return ? ", unsigned int function_return_port" : "") + (bambu_address != 0 ? ", unsigned int from_memory" : "") + ")\n");
+      output_multiplexer->Append("unsigned int " STR_CST_taste_output_multiplexer + top_function_name + "(unsigned int address, unsigned int reg_status" + (used_return ? ", unsigned int function_return_port" : "") +
+                                 (bambu_address != 0 ? ", unsigned int from_memory" : "") + ")\n");
       output_multiplexer->Append("{\n");
       output_multiplexer->Append("unsigned int ret = 0;\n");
       if(used_return)
@@ -538,16 +534,16 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
    reg_status->Append("unsigned int " STR_CST_taste_reg_status "(unsigned int current_value, unsigned int from_outside, unsigned int from_done)\n");
    reg_status->Append("{\n");
    reg_status->Append("unsigned int ret = 0;\n");
-   ///Storing starting coming from outside
+   /// Storing starting coming from outside
    reg_status->Append("unsigned int bit0 = from_outside & 1;\n");
    reg_status->Append("ret = ret | bit0 ;\n");
-   ///We are running if we receive the start and we were not running or if we were running and we didn't receive done
+   /// We are running if we receive the start and we were not running or if we were running and we didn't receive done
    reg_status->Append("unsigned int bit1 = (((bit0 != 0) && (current_value & 2 == 0)) || (((current_value & 2) != 0) && (from_done == 0))) ? 2 : 0;\n");
    reg_status->Append("ret = ret | bit1;\n");
-   ///We ended if (we ended in the past or we just ended) and we were not starting
+   /// We ended if (we ended in the past or we just ended) and we were not starting
    reg_status->Append("unsigned int bit2 = (((current_value & 4) || (from_done)) && !((bit0) && !(current_value & 2))) ? 4 : 0;\n");
    reg_status->Append("ret = ret | bit2;\n");
-   ///We are starting if we start and we are not running
+   /// We are starting if we start and we are not running
    reg_status->Append("unsigned int bit3 = ((bit0) && (current_value & 2)) ? 8 : 0;\n");
    reg_status->Append("ret = ret | bit3;\n");
    reg_status->Append("return ret;\n");
@@ -570,7 +566,7 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
 #endif
    new_top_functions += STR_CST_string_separator + STR_CST_taste_endianess_inversion;
 
-   const_cast<Parameter *>(parameters.get())->setOption(OPT_top_functions_names, new_top_functions);
+   const_cast<Parameter*>(parameters.get())->setOption(OPT_top_functions_names, new_top_functions);
    return changed ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
 

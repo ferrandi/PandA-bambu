@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file technology_manager.cpp
  * @brief Class implementation of the manager of the technology library structures.
@@ -43,14 +43,14 @@
  *
  */
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
 #include "config_HAVE_FROM_LIBERTY.hpp"
 
-#include "technology_manager.hpp"
 #include "library_manager.hpp"
-#include "technology_node.hpp"
 #include "structural_manager.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
 
 #include "area_model.hpp"
 #include "time_model.hpp"
@@ -59,25 +59,25 @@
 #endif
 #include "graph.hpp"
 
-#include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
 
 #if HAVE_FROM_LIBERTY
 #include "lib2xml.hpp"
 #endif
 
-#include "polixml.hpp"
-#include "xml_helper.hpp"
 #include "exceptions.hpp"
-#include "utility.hpp"
 #include "fileIO.hpp"
+#include "polixml.hpp"
+#include "utility.hpp"
+#include "xml_helper.hpp"
 
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
 
 #include "simple_indent.hpp"
-#include "string_manipulation.hpp"          // for GET_CLASS
+#include "string_manipulation.hpp" // for GET_CLASS
 
 const unsigned int technology_manager::XML = 1 << 0;
 #if HAVE_FROM_LIBERTY
@@ -86,72 +86,67 @@ const unsigned int technology_manager::LIB = 1 << 1;
 #endif
 const unsigned int technology_manager::LEF = 1 << 2;
 
-technology_manager::technology_manager(const ParameterConstRef _Param) :
-   Param(_Param)
+technology_manager::technology_manager(const ParameterConstRef _Param) : Param(_Param)
 {
    debug_level = Param->get_class_debug_level(GET_CLASS(*this));
 }
 
-technology_manager::~technology_manager()
-= default;
-
+technology_manager::~technology_manager() = default;
 
 void technology_manager::print(std::ostream& os) const
 {
-   for (const auto & librarie : libraries)
+   for(const auto& librarie : libraries)
    {
       const library_managerRef library = library_map.find(librarie)->second;
       const library_manager::fu_map_type& cells = library->get_library_fu();
-      for (const auto & cell : cells)
+      for(const auto& cell : cells)
       {
          cell.second->print(os);
       }
    }
 }
 
-
-bool technology_manager::can_implement(const std::string&fu_name, const std::string&op_name, const std::string&Library) const
+bool technology_manager::can_implement(const std::string& fu_name, const std::string& op_name, const std::string& Library) const
 {
-   technology_nodeRef node = get_fu(fu_name,Library);
-   if(!node) return false;
+   technology_nodeRef node = get_fu(fu_name, Library);
+   if(!node)
+      return false;
    return GetPointer<functional_unit>(node)->get_operation(op_name) ? true : false;
 }
 
-
-technology_nodeRef technology_manager::get_fu(const std::string&fu_name, const std::string&Library) const
+technology_nodeRef technology_manager::get_fu(const std::string& fu_name, const std::string& Library) const
 {
    THROW_ASSERT(Library.size(), "Library not specified for component " + fu_name);
-   if (library_map.find(Library) != library_map.end() and library_map.find(Library)->second->is_fu(fu_name))
+   if(library_map.find(Library) != library_map.end() and library_map.find(Library)->second->is_fu(fu_name))
       return library_map.find(Library)->second->get_fu(fu_name);
    return technology_nodeRef();
 }
 
-
-ControlStep technology_manager::get_initiation_time(const std::string&fu_name, const std::string&op_name, const std::string&Library) const
+ControlStep technology_manager::get_initiation_time(const std::string& fu_name, const std::string& op_name, const std::string& Library) const
 {
-   technology_nodeRef node = get_fu(fu_name,Library);
-   THROW_ASSERT(GetPointer<functional_unit>(node),"Unit " + fu_name + " not stored into library ("+Library+")");
+   technology_nodeRef node = get_fu(fu_name, Library);
+   THROW_ASSERT(GetPointer<functional_unit>(node), "Unit " + fu_name + " not stored into library (" + Library + ")");
    technology_nodeRef node_op = GetPointer<functional_unit>(node)->get_operation(op_name);
-   THROW_ASSERT(GetPointer<operation>(node_op),"Operation " + op_name + " not stored into "+ fu_name + " library ("+Library+")");
+   THROW_ASSERT(GetPointer<operation>(node_op), "Operation " + op_name + " not stored into " + fu_name + " library (" + Library + ")");
    THROW_ASSERT(GetPointer<operation>(node_op)->time_m, "Missing timing information");
    return GetPointer<operation>(node_op)->time_m->get_initiation_time();
 }
 
-double technology_manager::get_execution_time(const std::string&fu_name, const std::string&op_name, const std::string&Library) const
+double technology_manager::get_execution_time(const std::string& fu_name, const std::string& op_name, const std::string& Library) const
 {
-   technology_nodeRef node = get_fu(fu_name,Library);
-   THROW_ASSERT(GetPointer<functional_unit>(node),"Unit " + fu_name + " not stored into library ("+Library+")");
+   technology_nodeRef node = get_fu(fu_name, Library);
+   THROW_ASSERT(GetPointer<functional_unit>(node), "Unit " + fu_name + " not stored into library (" + Library + ")");
    technology_nodeRef node_op = GetPointer<functional_unit>(node)->get_operation(op_name);
-   THROW_ASSERT(GetPointer<operation>(node_op),"Operation " + op_name + " not stored into "+ fu_name + " library ("+Library+")");
+   THROW_ASSERT(GetPointer<operation>(node_op), "Operation " + op_name + " not stored into " + fu_name + " library (" + Library + ")");
    THROW_ASSERT(GetPointer<operation>(node_op)->time_m, "Missing timing information");
    return GetPointer<operation>(node_op)->time_m->get_execution_time();
 }
 
-double technology_manager::get_area(const std::string&fu_name, const std::string&Library) const
+double technology_manager::get_area(const std::string& fu_name, const std::string& Library) const
 {
-   technology_nodeRef node = get_fu(fu_name,Library);
-   THROW_ASSERT(GetPointer<functional_unit>(node),"Unit " + fu_name + " not stored into library ("+Library+")");
-   THROW_ASSERT(GetPointer<functional_unit>(node)->area_m,"Unit " + fu_name + "("+Library+") does not store area model");
+   technology_nodeRef node = get_fu(fu_name, Library);
+   THROW_ASSERT(GetPointer<functional_unit>(node), "Unit " + fu_name + " not stored into library (" + Library + ")");
+   THROW_ASSERT(GetPointer<functional_unit>(node)->area_m, "Unit " + fu_name + "(" + Library + ") does not store area model");
    return GetPointer<functional_unit>(node)->area_m->get_area_value();
 }
 
@@ -174,10 +169,10 @@ double technology_manager::get_width(const std::string&fu_name, const std::strin
 #endif
 
 #if HAVE_CIRCUIT_BUILT
-void technology_manager::add_resource(const std::string&Library, const std::string&fu_name, const structural_managerRef CM, const bool is_builtin)
+void technology_manager::add_resource(const std::string& Library, const std::string& fu_name, const structural_managerRef CM, const bool is_builtin)
 {
    technology_nodeRef curr = get_fu(fu_name, Library);
-   if (!curr)
+   if(!curr)
    {
       curr = technology_nodeRef(new functional_unit);
       GetPointer<functional_unit>(curr)->functional_unit_name = fu_name;
@@ -195,7 +190,7 @@ void technology_manager::add_resource(const std::string&Library, const std::stri
 }
 #endif
 
-void technology_manager::add_operation(const std::string&Library, const std::string&fu_name, const std::string&operation_name)
+void technology_manager::add_operation(const std::string& Library, const std::string& fu_name, const std::string& operation_name)
 {
    THROW_ASSERT(library_map.find(Library) != library_map.end(), "Library \"" + Library + "\" not found");
    THROW_ASSERT(library_map[Library]->is_fu(fu_name), "Unit \"" + fu_name + "\" not found in library \"" + Library);
@@ -206,13 +201,14 @@ void technology_manager::add_operation(const std::string&Library, const std::str
    GetPointer<functional_unit>(curr)->add(curr_op);
 }
 
-void technology_manager::add(const technology_nodeRef curr, const std::string&Library)
+void technology_manager::add(const technology_nodeRef curr, const std::string& Library)
 {
    auto it = std::find(libraries.begin(), libraries.end(), Library);
-   if (it == libraries.end())
+   if(it == libraries.end())
    {
       bool std = true;
-      if (Library == CG_LIBRARY || Library == DESIGN) std = false;
+      if(Library == CG_LIBRARY || Library == DESIGN)
+         std = false;
       library_managerRef lib(new library_manager(Library, Param, std));
       library_map[Library] = lib;
       libraries.push_back(Library);
@@ -227,10 +223,11 @@ void technology_manager::xload(const xml_element* node, const target_deviceRef d
    std::set<library_managerRef> temp_libraries;
 
    const xml_node::node_list list = node->get_children();
-   for (const auto & iter : list)
+   for(const auto& iter : list)
    {
       const auto* Enode = GetPointer<const xml_element>(iter);
-      if(!Enode) continue;
+      if(!Enode)
+         continue;
       if(Enode->get_name() == "information")
       {
          const attribute_sequence::attribute_list& attr_list = Enode->get_attributes();
@@ -239,7 +236,8 @@ void technology_manager::xload(const xml_element* node, const target_deviceRef d
 #if HAVE_FROM_LIBERTY
             std::string key = (*a)->get_name();
             std::string value = (*a)->get_value();
-            if (key == "liberty_file") info[library_manager::LIBERTY] = value;
+            if(key == "liberty_file")
+               info[library_manager::LIBERTY] = value;
 #endif
          }
       }
@@ -264,17 +262,28 @@ void technology_manager::xload(const xml_element* node, const target_deviceRef d
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Updating library " + library_name);
             for(auto f = fus.begin(); f != fus.end(); ++f)
             {
-               if (library_map[library_name]->is_fu(f->first))
+               if(library_map[library_name]->is_fu(f->first))
                {
-                  ///First part of the condition is for skip template
-                  if(not GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first)) or GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first))->characterization_timestamp <= GetPointer<const functional_unit>(f->second)->characterization_timestamp)
+                  /// First part of the condition is for skip template
+                  if(not GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first)) or
+                     GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first))->characterization_timestamp <= GetPointer<const functional_unit>(f->second)->characterization_timestamp)
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Updating " + f->first + (GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first)) ? " characterized at " + STR(GetPointer<const functional_unit>(f->second)->characterization_timestamp) + " - Previous characterization is at " + STR(GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first))->characterization_timestamp): ""));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "-->Updating " + f->first +
+                                        (GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first)) ?
+                                             " characterized at " + STR(GetPointer<const functional_unit>(f->second)->characterization_timestamp) + " - Previous characterization is at " +
+                                                 STR(GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first))->characterization_timestamp) :
+                                             ""));
                      library_map[library_name]->update(f->second);
                   }
                   else
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Not updating " + f->first + (GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first)) ? " characterized at " + STR(GetPointer<const functional_unit>(f->second)->characterization_timestamp) + " - Previous characterization is at " + STR(GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first))->characterization_timestamp): ""));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "-->Not updating " + f->first +
+                                        (GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first)) ?
+                                             " characterized at " + STR(GetPointer<const functional_unit>(f->second)->characterization_timestamp) + " - Previous characterization is at " +
+                                                 STR(GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first))->characterization_timestamp) :
+                                             ""));
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
                }
@@ -309,16 +318,18 @@ void technology_manager::gload(const std::string& file_name, const fileIO_istrea
    while(*file)
    {
       char tmp[255];
-      file->getline(tmp, 255);  // delim defaults to '\n'
+      file->getline(tmp, 255); // delim defaults to '\n'
       std::string line = tmp;
-      if(!file or line.size() == 0 or boost::algorithm::starts_with(line,"#")) continue;
+      if(!file or line.size() == 0 or boost::algorithm::starts_with(line, "#"))
+         continue;
 
       std::vector<std::string> splitted;
       boost::algorithm::split(splitted, line, boost::algorithm::is_any_of(" ;\t"));
-      if (splitted[0] == "PIN") continue;
+      if(splitted[0] == "PIN")
+         continue;
 
       std::string fu_name = splitted[1];
-      if (fu_name.find("\"") != std::string::npos)
+      if(fu_name.find("\"") != std::string::npos)
          fu_name = "gate_" + boost::lexical_cast<std::string>(gate++);
 
       technology_nodeRef fu_curr = TM->get_fu(fu_name, library_name);
@@ -336,9 +347,9 @@ void technology_manager::gload(const std::string& file_name, const fileIO_istrea
 }
 #endif
 
-void technology_manager::xwrite(xml_element *rootnode, TargetDevice_Type dv_type, const std::set<std::string> &_libraries)
+void technology_manager::xwrite(xml_element* rootnode, TargetDevice_Type dv_type, const std::set<std::string>& _libraries)
 {
-   ///Set of libraries sorted by name
+   /// Set of libraries sorted by name
    std::set<std::string> sorted_libraries;
    for(const auto& library : library_map)
    {
@@ -346,9 +357,9 @@ void technology_manager::xwrite(xml_element *rootnode, TargetDevice_Type dv_type
    }
    for(const auto& library : sorted_libraries)
    {
-      if (library == "design")
+      if(library == "design")
          continue;
-      if (_libraries.empty() || _libraries.count(library))
+      if(_libraries.empty() || _libraries.count(library))
       {
          if(get_library_manager(library)->get_library_fu().size())
          {
@@ -359,7 +370,7 @@ void technology_manager::xwrite(xml_element *rootnode, TargetDevice_Type dv_type
 }
 
 #if HAVE_FROM_LIBERTY
-void technology_manager::lib_write(const std::string& filename, TargetDevice_Type dv_type, const std::set<std::string> & local_libraries)
+void technology_manager::lib_write(const std::string& filename, TargetDevice_Type dv_type, const std::set<std::string>& local_libraries)
 {
    unsigned int output_level = Param->getOption<unsigned int>(OPT_output_level);
    try
@@ -370,27 +381,29 @@ void technology_manager::lib_write(const std::string& filename, TargetDevice_Typ
       document.write_to_file_formatted("__library__.xml");
 
       xml2lib("__library__.xml", filename, output_level, debug_level);
-      if (debug_level < DEBUG_LEVEL_PEDANTIC) boost::filesystem::remove("__library__.xml");
+      if(debug_level < DEBUG_LEVEL_PEDANTIC)
+         boost::filesystem::remove("__library__.xml");
       for(std::set<std::string>::const_iterator l = local_libraries.begin(); l != local_libraries.end(); ++l)
       {
-         if (!is_library_manager(*l)) continue;
+         if(!is_library_manager(*l))
+            continue;
          const library_managerRef LM = get_library_manager(*l);
          LM->set_info(library_manager::LIBERTY, filename);
       }
    }
-   catch (const char * msg)
+   catch(const char* msg)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string& msg)
+   catch(const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::exception& ex)
+   catch(const std::exception& ex)
    {
       std::cout << "Exception caught: " << ex.what() << std::endl;
    }
-   catch ( ... )
+   catch(...)
    {
       std::cerr << "unknown exception" << std::endl;
    }
@@ -398,7 +411,7 @@ void technology_manager::lib_write(const std::string& filename, TargetDevice_Typ
 #endif
 
 #if HAVE_EXPERIMENTAL
-void technology_manager::lef_write(const std::string& filename, TargetDevice_Type dv_type, const std::set<std::string> &_libraries)
+void technology_manager::lef_write(const std::string& filename, TargetDevice_Type dv_type, const std::set<std::string>& _libraries)
 {
    unsigned int output_level = Param->getOption<unsigned int>(OPT_output_level);
    try
@@ -412,24 +425,25 @@ void technology_manager::lef_write(const std::string& filename, TargetDevice_Typ
       boost::filesystem::remove("__library__.xml");
       for(std::set<std::string>::const_iterator l = _libraries.begin(); l != _libraries.end(); ++l)
       {
-         if (!is_library_manager(*l)) continue;
+         if(!is_library_manager(*l))
+            continue;
          const library_managerRef LM = get_library_manager(*l);
          LM->set_info(library_manager::LEF, filename);
       }
    }
-   catch (const char * msg)
+   catch(const char* msg)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string& msg)
+   catch(const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::exception& ex)
+   catch(const std::exception& ex)
    {
       std::cout << "Exception caught: " << ex.what() << std::endl;
    }
-   catch ( ... )
+   catch(...)
    {
       std::cerr << "unknown exception" << std::endl;
    }
@@ -439,21 +453,21 @@ void technology_manager::lef_write(const std::string& filename, TargetDevice_Typ
 std::string technology_manager::get_library(const std::string& Name) const
 {
    std::string Library;
-   for(const auto & librarie : libraries)
+   for(const auto& librarie : libraries)
    {
       Library = librarie;
       THROW_ASSERT(library_map.find(Library) != library_map.end(), "Library " + Library + " not found");
-      if (library_map.find(Library)->second->is_fu(Name))
+      if(library_map.find(Library)->second->is_fu(Name))
          return Library;
    }
-   ///empty string. it means that the cell is not contained into any library
+   /// empty string. it means that the cell is not contained into any library
    return "";
 }
 
 #if HAVE_PHYSICAL_LIBRARY_MODELS_BUILT
 size_t technology_manager::get_library_count(const std::string& Name) const
 {
-   if (std::find(libraries.begin(), libraries.end(), Name) != libraries.end() && library_map.find(Name) != library_map.end())
+   if(std::find(libraries.begin(), libraries.end(), Name) != libraries.end() && library_map.find(Name) != library_map.end())
       return library_map.find(Name)->second->get_gate_count();
 
    return 0;
@@ -474,12 +488,13 @@ bool technology_manager::is_library_manager(const std::string& Name) const
 void technology_manager::erase_library(const std::string& Name)
 {
    library_map.erase(Name);
-   if (std::find(libraries.begin(), libraries.end(), Name) != libraries.end())
+   if(std::find(libraries.begin(), libraries.end(), Name) != libraries.end())
       libraries.erase(std::find(libraries.begin(), libraries.end(), Name));
 }
 
 #if HAVE_CIRCUIT_BUILT
-void technology_manager::add_storage(const std::string&s_name, const structural_managerRef CM, const std::string& Library, const unsigned int bits, const unsigned int words, const unsigned int readinputs, const unsigned int writeinputs, const unsigned int readwriteinputs)
+void technology_manager::add_storage(const std::string& s_name, const structural_managerRef CM, const std::string& Library, const unsigned int bits, const unsigned int words, const unsigned int readinputs, const unsigned int writeinputs,
+                                     const unsigned int readwriteinputs)
 {
    technology_nodeRef curr_storage = technology_nodeRef(new storage_unit);
    GetPointer<storage_unit>(curr_storage)->storage_unit_name = s_name;
@@ -498,7 +513,7 @@ bool technology_manager::IsBuiltin(const std::string& component_name) const
    return builtins.find(component_name) != builtins.end();
 }
 
-const functional_unit * technology_manager::CGetSetupHoldFU() const
+const functional_unit* technology_manager::CGetSetupHoldFU() const
 {
    const technology_nodeConstRef f_unit_as = get_fu("ASSIGN_SINGLE_UNSIGNED_FU", LIBRARY_STD_FU);
    THROW_ASSERT(f_unit_as, "Library miss component: ASSIGN_SINGLE_UNSIGNED_FU");

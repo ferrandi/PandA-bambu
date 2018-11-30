@@ -29,24 +29,23 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file asn_parser_node.cpp
  * @brief Specification of the data structure associated with a node during asn parsing
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "asn_parser_node.hpp"
 
-std::ostream & operator<<(std::ostream & os, const AsnParserNode & asn_parser_node)
+std::ostream& operator<<(std::ostream& os, const AsnParserNode& asn_parser_node)
 {
-   if(asn_parser_node.strg != "")
+   if(!asn_parser_node.strg.empty())
+   {
       os << asn_parser_node.strg;
+   }
    return os;
 }
-
-
-

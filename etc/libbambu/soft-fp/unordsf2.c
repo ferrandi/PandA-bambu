@@ -27,24 +27,23 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "soft-fp.h"
 #include "single.h"
+#include "soft-fp.h"
 
-CMPtype
-__unordsf2 (SFtype a, SFtype b)
+CMPtype __unordsf2(SFtype a, SFtype b)
 {
-  FP_DECL_EX;
-  FP_DECL_S (A);
-  FP_DECL_S (B);
-  CMPtype r;
+   FP_DECL_EX;
+   FP_DECL_S(A);
+   FP_DECL_S(B);
+   CMPtype r;
 
-  FP_INIT_EXCEPTIONS;
-  FP_UNPACK_RAW_S (A, a);
-  FP_UNPACK_RAW_S (B, b);
-  FP_CMP_UNORD_S (r, A, B);
-  if (r && (FP_ISSIGNAN_S (A) || FP_ISSIGNAN_S (B)))
-    FP_SET_EXCEPTION (FP_EX_INVALID);
-  FP_HANDLE_EXCEPTIONS;
+   FP_INIT_EXCEPTIONS;
+   FP_UNPACK_RAW_S(A, a);
+   FP_UNPACK_RAW_S(B, b);
+   FP_CMP_UNORD_S(r, A, B);
+   if(r && (FP_ISSIGNAN_S(A) || FP_ISSIGNAN_S(B)))
+      FP_SET_EXCEPTION(FP_EX_INVALID);
+   FP_HANDLE_EXCEPTIONS;
 
-  return r;
+   return r;
 }

@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
@@ -41,48 +41,40 @@
 
 // includes from behavior/
 #include "call_graph_manager.hpp"
-#include "string_manipulation.hpp"          // for STR
+#include "string_manipulation.hpp" // for STR
 
-CallSitesCollectorVisitor::CallSitesCollectorVisitor(CallGraphManagerConstRef cgman,
-      std::unordered_map<unsigned int, std::unordered_set<unsigned int> > & _fu_id_to_call_ids,
-      std::unordered_map<unsigned int, std::unordered_set<unsigned int> > & _call_id_to_called_id,
-      std::unordered_set<unsigned int> & _indirect_calls) :
-   CGMan(std::move(cgman)),
-   fu_id_to_call_ids(_fu_id_to_call_ids),
-   call_id_to_called_id(_call_id_to_called_id),
-   indirect_calls(_indirect_calls)
-{}
+CallSitesCollectorVisitor::CallSitesCollectorVisitor(CallGraphManagerConstRef cgman, std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& _fu_id_to_call_ids,
+                                                     std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& _call_id_to_called_id, std::unordered_set<unsigned int>& _indirect_calls)
+    : CGMan(std::move(cgman)), fu_id_to_call_ids(_fu_id_to_call_ids), call_id_to_called_id(_call_id_to_called_id), indirect_calls(_indirect_calls)
+{
+}
 
-CallSitesCollectorVisitor::~CallSitesCollectorVisitor()
-= default;
+CallSitesCollectorVisitor::~CallSitesCollectorVisitor() = default;
 
-void CallSitesCollectorVisitor::discover_vertex(const vertex & v, const CallGraph &)
+void CallSitesCollectorVisitor::discover_vertex(const vertex& v, const CallGraph&)
 {
    const unsigned int this_fun_id = CGMan->get_function(v);
    fu_id_to_call_ids[this_fun_id];
 }
 
-void CallSitesCollectorVisitor::back_edge(const EdgeDescriptor &, const CallGraph &)
+void CallSitesCollectorVisitor::back_edge(const EdgeDescriptor&, const CallGraph&)
 {
    THROW_ERROR("Recursive functions not yet supported");
 }
 
-void CallSitesCollectorVisitor::examine_edge(const EdgeDescriptor &e, const CallGraph &g)
+void CallSitesCollectorVisitor::examine_edge(const EdgeDescriptor& e, const CallGraph& g)
 {
    const unsigned int called_id = CGMan->get_function(boost::target(e, g));
    const unsigned int caller_id = CGMan->get_function(boost::source(e, g));
-   const std::set<unsigned int> & direct_calls =
-      g.CGetFunctionEdgeInfo(e)->direct_call_points;
-   const std::set<unsigned int> & indir_calls =
-      g.CGetFunctionEdgeInfo(e)->indirect_call_points;
-   for (const unsigned int callid : direct_calls)
+   const std::set<unsigned int>& direct_calls = g.CGetFunctionEdgeInfo(e)->direct_call_points;
+   const std::set<unsigned int>& indir_calls = g.CGetFunctionEdgeInfo(e)->indirect_call_points;
+   for(const unsigned int callid : direct_calls)
    {
       fu_id_to_call_ids[caller_id].insert(callid);
-      THROW_ASSERT(call_id_to_called_id[callid].empty() or callid == 0,
-            "direct call " + STR(callid) + " calls more than one function");
+      THROW_ASSERT(call_id_to_called_id[callid].empty() or callid == 0, "direct call " + STR(callid) + " calls more than one function");
       call_id_to_called_id[callid].insert(called_id);
    }
-   for (const unsigned int callid : indir_calls)
+   for(const unsigned int callid : indir_calls)
    {
       fu_id_to_call_ids[caller_id].insert(callid);
       call_id_to_called_id[callid].insert(called_id);

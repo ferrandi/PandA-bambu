@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file loop.cpp
  * @brief implementation of the loop representation
@@ -39,96 +39,94 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "loop.hpp"
 
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/filtered_graph.hpp>
-#include <boost/tuple/tuple.hpp>                  // for tie
-#include <limits>
-#include <iosfwd>
 #include "basic_block.hpp"
 #include "exceptions.hpp"
-#include "function_behavior.hpp"                  // for BBGraphRef
+#include "function_behavior.hpp" // for BBGraphRef
 #include "op_graph.hpp"
 #include "tree_basic_block.hpp"
-
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/filtered_graph.hpp>
+#include <boost/tuple/tuple.hpp> // for tie
+#include <iosfwd>
+#include <limits>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic error "-Weffc++"
 
 unsigned int Loop::curr_unused_irreducible_id = std::numeric_limits<unsigned int>::max();
 
-Loop::Loop(const BBGraphRef _g) :
-   g(_g),
-   is_innermost_loop(false),
-   parent_loop(),
-   children(),
-   blocks(),
-   exits(),
-   landing_pads(),
-   primary_landing_pad_block(NULL_VERTEX),
-   header_block(NULL_VERTEX),
-   alternative_entries(),
-   loop_id(curr_unused_irreducible_id--),
-   exit_landing_association(),
-   sp_back_edges(),
-   depth(0),
-   loop_type(UNKNOWN_LOOP),
-   footprint_size(0),
-   instruction_size(0),
-   body_start(NULL_VERTEX),
-   main_iv(0),
-   initialization_tree_node_id(0),
-   init_gimple_id(0),
-   inc_id(0),
-   increment(0),
-   increment_tn(),
-   lower_bound(0),
-   upper_bound(0),
-   upper_bound_tn(),
-   close_interval(false)
+Loop::Loop(const BBGraphRef _g)
+    : g(_g),
+      is_innermost_loop(false),
+      parent_loop(),
+      children(),
+      blocks(),
+      exits(),
+      landing_pads(),
+      primary_landing_pad_block(NULL_VERTEX),
+      header_block(NULL_VERTEX),
+      alternative_entries(),
+      loop_id(curr_unused_irreducible_id--),
+      exit_landing_association(),
+      sp_back_edges(),
+      depth(0),
+      loop_type(UNKNOWN_LOOP),
+      footprint_size(0),
+      instruction_size(0),
+      body_start(NULL_VERTEX),
+      main_iv(0),
+      initialization_tree_node_id(0),
+      init_gimple_id(0),
+      inc_id(0),
+      increment(0),
+      increment_tn(),
+      lower_bound(0),
+      upper_bound(0),
+      upper_bound_tn(),
+      close_interval(false)
 {
 }
 
-Loop::Loop(const BBGraphRef _bb_graph, vertex _header_block) :
-   g(_bb_graph),
-   is_innermost_loop(false),
-   parent_loop(),
-   children(),
-   blocks(),
-   exits(),
-   landing_pads(),
-   primary_landing_pad_block(NULL_VERTEX),
-   header_block(_header_block),
-   alternative_entries(),
-   loop_id(0),
-   exit_landing_association(),
-   sp_back_edges(),
-   depth(0),
-   loop_type(UNKNOWN_LOOP),
-   footprint_size(0),
-   instruction_size(0),
-   body_start(NULL_VERTEX),
-   main_iv(0),
-   initialization_tree_node_id(0),
-   init_gimple_id(0),
-   inc_id(0),
-   increment(0),
-   increment_tn(),
-   lower_bound(0),
-   upper_bound(0),
-   upper_bound_tn(),
-   close_interval(false)
+Loop::Loop(const BBGraphRef _bb_graph, vertex _header_block)
+    : g(_bb_graph),
+      is_innermost_loop(false),
+      parent_loop(),
+      children(),
+      blocks(),
+      exits(),
+      landing_pads(),
+      primary_landing_pad_block(NULL_VERTEX),
+      header_block(_header_block),
+      alternative_entries(),
+      loop_id(0),
+      exit_landing_association(),
+      sp_back_edges(),
+      depth(0),
+      loop_type(UNKNOWN_LOOP),
+      footprint_size(0),
+      instruction_size(0),
+      body_start(NULL_VERTEX),
+      main_iv(0),
+      initialization_tree_node_id(0),
+      init_gimple_id(0),
+      inc_id(0),
+      increment(0),
+      increment_tn(),
+      lower_bound(0),
+      upper_bound(0),
+      upper_bound_tn(),
+      close_interval(false)
 {
    const BBNodeInfoConstRef bb_node_info = g->CGetBBNodeInfo(_header_block);
    loop_id = bb_node_info->block->number;
    add_block(_header_block);
    alternative_entries.insert(_header_block);
 }
-
 
 unsigned int Loop::GetId() const
 {
@@ -155,7 +153,7 @@ size_t Loop::num_blocks() const
    return blocks.size();
 }
 
-const std::unordered_set<vertex> & Loop::get_blocks() const
+const std::unordered_set<vertex>& Loop::get_blocks() const
 {
    return blocks;
 }
@@ -190,11 +188,11 @@ vertex Loop::primary_landing_pad() const
    std::unordered_set<vertex>::const_iterator lp_iter, lp_end = landing_pads.end();
    vertex candidate = NULL_VERTEX;
    bool first = true;
-   for (lp_iter = landing_pads.begin(); lp_iter != lp_end; ++lp_iter)
+   for(lp_iter = landing_pads.begin(); lp_iter != lp_end; ++lp_iter)
    {
       vertex lp = *lp_iter;
 
-      if (candidate == NULL_VERTEX)
+      if(candidate == NULL_VERTEX)
       {
          candidate = lp;
          continue;
@@ -202,23 +200,23 @@ vertex Loop::primary_landing_pad() const
 
       graph::out_edge_iterator e_out_iter, e_out_iter_end;
       vertex test_candidate = NULL_VERTEX;
-      for (boost::tie(e_out_iter, e_out_iter_end) = boost::out_edges(lp, *g) ; e_out_iter != e_out_iter_end ; ++e_out_iter )
+      for(boost::tie(e_out_iter, e_out_iter_end) = boost::out_edges(lp, *g); e_out_iter != e_out_iter_end; ++e_out_iter)
       {
-         if (test_candidate == NULL_VERTEX)
+         if(test_candidate == NULL_VERTEX)
             test_candidate = boost::target(*e_out_iter, *g);
          else
             test_candidate = NULL_VERTEX;
       }
-      if (test_candidate != candidate)
+      if(test_candidate != candidate)
       {
-         if (first)
+         if(first)
          {
             // If candidate has a single successor which is test_candidate, then test_candidate is our
             // new candidate
             graph::out_edge_iterator e_iter, e_iter_end;
-            for (boost::tie(e_iter, e_iter_end) = boost::out_edges(candidate, *g) ; e_iter != e_iter_end ; ++e_iter )
+            for(boost::tie(e_iter, e_iter_end) = boost::out_edges(candidate, *g); e_iter != e_iter_end; ++e_iter)
             {
-               if (boost::target(*e_out_iter, *g) != test_candidate)
+               if(boost::target(*e_out_iter, *g) != test_candidate)
                   return NULL_VERTEX;
             }
          }
@@ -248,23 +246,23 @@ void Loop::ComputeLandingPadExits()
    get_recursively_bb(belonging);
 
    std::unordered_set<vertex>::iterator source, source_end;
-   source_end  = belonging.end();
-   for (source = belonging.begin(); source != source_end; ++source)
+   source_end = belonging.end();
+   for(source = belonging.begin(); source != source_end; ++source)
    {
       vertex block = *source;
       graph::out_edge_iterator e_out_iter, e_out_iter_end;
-      for (boost::tie(e_out_iter, e_out_iter_end) = boost::out_edges(block, *g) ; e_out_iter != e_out_iter_end ; ++e_out_iter )
+      for(boost::tie(e_out_iter, e_out_iter_end) = boost::out_edges(block, *g); e_out_iter != e_out_iter_end; ++e_out_iter)
       {
          vertex target = boost::target(*e_out_iter, *g);
          // If target does not belong to this loop, then this is an exit block
-         if (belonging.find(target) == belonging.end())
+         if(belonging.find(target) == belonging.end())
          {
             // This is an exit block.
             exits.push_back(block);
             // Update the landing pad info
             landing_pads.insert(target);
 
-            //setting the map exit_landing_association
+            // setting the map exit_landing_association
             exit_landing_association[block].insert(target);
          }
       }
@@ -281,11 +279,11 @@ void Loop::AddChild(LoopRef child)
    children.insert(child);
 }
 
-void Loop::get_recursively_bb(std::unordered_set<vertex> & ret) const
+void Loop::get_recursively_bb(std::unordered_set<vertex>& ret) const
 {
    ret.insert(blocks.begin(), blocks.end());
    std::set<LoopConstRef>::const_iterator child, child_end = children.end();
-   for (child = children.begin(); child != child_end; ++child)
+   for(child = children.begin(); child != child_end; ++child)
       (*child)->get_recursively_bb(ret);
 }
 
@@ -304,12 +302,12 @@ OpVertexSet Loop::GetRecursivelyOps(const OpGraphConstRef op_graph) const
    return ret;
 }
 
-const std::map<vertex, std::unordered_set<vertex> > & Loop::get_exit_landing_association() const
+const std::map<vertex, std::unordered_set<vertex>>& Loop::get_exit_landing_association() const
 {
    return exit_landing_association;
 }
 
-const std::set<LoopConstRef> & Loop::GetChildren() const
+const std::set<LoopConstRef>& Loop::GetChildren() const
 {
    return children;
 }

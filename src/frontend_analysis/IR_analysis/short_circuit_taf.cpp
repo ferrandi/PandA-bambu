@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file short_circuit_taf.cpp
  * @brief Analysis step rebuilding a short circuit in a single gimple_cond with the condition in three address form.
@@ -39,67 +39,65 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "short_circuit_taf.hpp"
 
 #include "phi_opt.hpp"
 
-///Behavior include
+/// Behavior include
 #include "application_manager.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
 
 #if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
-///HLS include
+/// HLS include
 #include "hls_step.hpp"
 #endif
 
-///Parameter include
+/// Parameter include
 #include "Parameter.hpp"
 
-///parser/treegcc include
+/// parser/treegcc include
 #include "token_interface.hpp"
 
-///STD include
+/// STD include
 #include <fstream>
 
-///STL include
+/// STL include
 #include <unordered_set>
 
-///tree includes
+/// tree includes
 #include "behavioral_helper.hpp"
 #include "ext_tree_node.hpp"
+#include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include "tree_basic_block.hpp"
-#include "tree_helper.hpp"
 
-///design_flow_manager include
+/// design_flow_manager include
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "design_flow_manager.hpp"
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
-#include "string_manipulation.hpp"          // for GET_CLASS
+#include "string_manipulation.hpp" // for GET_CLASS
 
-short_circuit_taf::short_circuit_taf(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
-   FunctionFrontendFlowStep(_AppM, _function_id, SHORT_CIRCUIT_TAF, _design_flow_manager, _parameters)
+short_circuit_taf::short_circuit_taf(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, SHORT_CIRCUIT_TAF, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-short_circuit_taf::~short_circuit_taf()
-= default;
+short_circuit_taf::~short_circuit_taf() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > short_circuit_taf::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> short_circuit_taf::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BLOCK_FIX, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SWITCH_FIX, SAME_FUNCTION));
@@ -112,14 +110,15 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 #endif
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(REMOVE_CLOBBER_GA, SAME_FUNCTION));
          relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
+         relationships.insert(std::make_pair(INTERFACE_INFER, SAME_FUNCTION));
          break;
       }
       default:
@@ -134,11 +133,11 @@ void short_circuit_taf::Initialize()
 {
 }
 
-bool short_circuit_taf::check_phis(unsigned int curr_bb, std::map<unsigned int, blocRef> & list_of_bloc)
+bool short_circuit_taf::check_phis(unsigned int curr_bb, std::map<unsigned int, blocRef>& list_of_bloc)
 {
    for(const auto& phi : list_of_bloc[curr_bb]->CGetPhiList())
    {
-      auto *cb_phi = GetPointer<gimple_phi>(GET_NODE(phi));
+      auto* cb_phi = GetPointer<gimple_phi>(GET_NODE(phi));
       if(cb_phi->virtual_flag)
          return false;
    }
@@ -149,13 +148,13 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
-   auto * fd = GetPointer<function_decl>(temp);
-   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto* fd = GetPointer<function_decl>(temp);
+   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
 
-   std::map<unsigned int, blocRef> & list_of_bloc = sl->list_of_bloc;
+   std::map<unsigned int, blocRef>& list_of_bloc = sl->list_of_bloc;
    std::map<unsigned int, blocRef>::iterator it, it_end = list_of_bloc.end();
 
-   ///compute merging candidates
+   /// compute merging candidates
    std::unordered_set<unsigned int> merging_candidates;
    for(it = list_of_bloc.begin(); it != it_end; ++it)
    {
@@ -193,8 +192,8 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
    else
       return DesignFlowStep_Status::UNCHANGED;
 
-   ///find the first to merge
-   unsigned int bb1=static_cast<unsigned int>(-1), bb2=static_cast<unsigned int>(-1), merging_candidate = 0;
+   /// find the first to merge
+   unsigned int bb1 = static_cast<unsigned int>(-1), bb2 = static_cast<unsigned int>(-1), merging_candidate = 0;
    bool bb1_true = false;
    bool bb2_true = false;
    bool mergeable_pair_found;
@@ -232,7 +231,7 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
                WriteBBGraphDot("BB_After_" + GetName() + "_merge_" + STR(merge_n) + ".dot");
             merge_n++;
          }
-         else ///cond expr not completely collapsed
+         else /// cond expr not completely collapsed
             merging_candidates.erase(merging_candidate);
       }
    } while(mergeable_pair_found);
@@ -244,15 +243,15 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
    }
    else
    {
-      return  DesignFlowStep_Status::UNCHANGED;
+      return DesignFlowStep_Status::UNCHANGED;
    }
 }
 
-bool short_circuit_taf::check_merging_candidate(unsigned int &bb1, unsigned int &bb2, unsigned int merging_candidate, bool &bb1_true, bool &bb2_true, std::map<unsigned int, blocRef> & list_of_bloc)
+bool short_circuit_taf::check_merging_candidate(unsigned int& bb1, unsigned int& bb2, unsigned int merging_candidate, bool& bb1_true, bool& bb2_true, std::map<unsigned int, blocRef>& list_of_bloc)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking merging candidate BB" + STR(merging_candidate));
    bool mergeable_pair_found = false;
-   ///let bb1 the upper if
+   /// let bb1 the upper if
    THROW_ASSERT(list_of_bloc.find(merging_candidate) != list_of_bloc.end(), "merging_candidate is not included in list_of_bloc");
    const std::vector<unsigned int>::const_iterator it_pred_end = list_of_bloc[merging_candidate]->list_of_pred.end();
    for(std::vector<unsigned int>::const_iterator it_bb1_pred = list_of_bloc[merging_candidate]->list_of_pred.begin(); !mergeable_pair_found && it_pred_end != it_bb1_pred; ++it_bb1_pred)
@@ -265,17 +264,17 @@ bool short_circuit_taf::check_merging_candidate(unsigned int &bb1, unsigned int 
       if(GET_NODE(list_of_bloc[bb1]->CGetStmtList().back())->get_kind() != gimple_cond_K)
          continue;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining merging candidate predecessor BB" + STR(bb1));
-      THROW_ASSERT(list_of_bloc[bb1]->true_edge > 0, "bb1 has to be an if statement "+boost::lexical_cast<std::string>(bb1) + " " + boost::lexical_cast<std::string>(merging_candidate));
+      THROW_ASSERT(list_of_bloc[bb1]->true_edge > 0, "bb1 has to be an if statement " + boost::lexical_cast<std::string>(bb1) + " " + boost::lexical_cast<std::string>(merging_candidate));
       if(list_of_bloc[bb1]->true_edge == merging_candidate)
          bb1_true = true;
       else
          bb1_true = false;
-      ///let search bb2, the lower if
+      /// let search bb2, the lower if
       for(std::vector<unsigned int>::const_iterator it_bb2_pred = list_of_bloc[merging_candidate]->list_of_pred.begin(); !mergeable_pair_found && it_pred_end != it_bb2_pred; ++it_bb2_pred)
       {
          bb2 = *it_bb2_pred;
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Examining merging candidate nested predecessor " + boost::lexical_cast<std::string>(bb2));
-         if(bb2 == bloc::ENTRY_BLOCK_ID || bb2 == merging_candidate) 
+         if(bb2 == bloc::ENTRY_BLOCK_ID || bb2 == merging_candidate)
             continue;
          if(list_of_bloc[bb2]->list_of_pred.size() > 1)
             continue;
@@ -285,8 +284,8 @@ bool short_circuit_taf::check_merging_candidate(unsigned int &bb1, unsigned int 
             continue;
          if(GET_NODE(list_of_bloc[bb2]->CGetStmtList().back())->get_kind() != gimple_cond_K)
             continue;
-         THROW_ASSERT(list_of_bloc[bb2]->true_edge > 0, "bb2 has to be an if statement "+boost::lexical_cast<std::string>(bb2) + " " + boost::lexical_cast<std::string>(merging_candidate));
-         //This check is needed for empty while loop with short circuit (e. g. 20000314-1.c)
+         THROW_ASSERT(list_of_bloc[bb2]->true_edge > 0, "bb2 has to be an if statement " + boost::lexical_cast<std::string>(bb2) + " " + boost::lexical_cast<std::string>(merging_candidate));
+         // This check is needed for empty while loop with short circuit (e. g. 20000314-1.c)
          if(list_of_bloc[bb2]->true_edge == bb1 || list_of_bloc[bb2]->false_edge == bb1)
             continue;
          if(bb1_true && list_of_bloc[bb1]->false_edge == bb2)
@@ -322,7 +321,7 @@ bool short_circuit_taf::check_merging_candidate(unsigned int &bb1, unsigned int 
    return mergeable_pair_found;
 }
 
-bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, bool bb1_true, std::map<unsigned int, blocRef> & list_of_bloc, bool or_type, unsigned int merging_candidate)
+bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, bool bb1_true, std::map<unsigned int, blocRef>& list_of_bloc, bool or_type, unsigned int merging_candidate)
 {
    const tree_managerRef TM = AppM->get_tree_manager();
 
@@ -332,8 +331,8 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
       return false;
    const auto list_of_stmt_cond2 = list_of_bloc[bb2]->CGetStmtList();
 
-   ///identify the first gimple_cond
-   const auto & list_of_stmt_cond1 = list_of_bloc[bb1]->CGetStmtList();
+   /// identify the first gimple_cond
+   const auto& list_of_stmt_cond1 = list_of_bloc[bb1]->CGetStmtList();
    THROW_ASSERT(GET_NODE(list_of_stmt_cond1.back())->get_kind() == gimple_cond_K, "a gimple_cond is expected");
    tree_nodeRef cond_statement = list_of_stmt_cond1.back();
    list_of_bloc[bb1]->RemoveStmt(cond_statement);
@@ -357,7 +356,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    IR_schema.clear();
    tree_nodeRef ssa1_cond_node = TM->GetTreeReindex(ssa1_node_nid);
 
-   ///create the assignment between condition for bb1 and the new ssa var
+   /// create the assignment between condition for bb1 and the new ssa var
    unsigned int cond1_gimple_stmt_id = TM->new_tree_node_id();
    IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
    IR_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(ssa1_node_nid);
@@ -375,7 +374,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    {
       for(const auto& phi : list_of_bloc[merging_candidate]->CGetPhiList())
       {
-         auto *mc_phi = GetPointer<gimple_phi>(GET_NODE(phi));
+         auto* mc_phi = GetPointer<gimple_phi>(GET_NODE(phi));
          std::pair<tree_nodeRef, unsigned int> def_edge_to_be_removed(tree_nodeRef(), 0);
          std::pair<tree_nodeRef, unsigned int> def_edge_to_be_updated(tree_nodeRef(), 0);
          for(const auto& def_edge : mc_phi->CGetDefEdgesList())
@@ -431,12 +430,11 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
          mc_phi->RemoveDefEdge(TM, def_edge_to_be_removed);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Phi is " + mc_phi->ToString());
       }
-
    }
 
    if((bb1_true && !or_type) || (!bb1_true && or_type))
    {
-      ///cond1 has to be negate
+      /// cond1 has to be negate
       /// create the ssa_var representing the negated condition
       unsigned int ncond_ssa_vers = TM->get_next_vers();
       unsigned int ncond_ssa_node_nid = TM->new_tree_node_id();
@@ -448,7 +446,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
       IR_schema.clear();
       tree_nodeRef ncond_ssa_cond_node = TM->GetTreeReindex(ncond_ssa_node_nid);
 
-      ///create !cond1
+      /// create !cond1
       IR_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
       IR_schema[TOK(TOK_OP)] = boost::lexical_cast<std::string>(cond1_index);
       IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
@@ -467,7 +465,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
       list_of_bloc[bb1]->PushBack(created_stmt);
       cond1_index = ncond_ssa_node_nid;
    }
-   ///identify the second gimple_cond
+   /// identify the second gimple_cond
    THROW_ASSERT(list_of_bloc[bb2]->CGetPhiList().size() == 0, "not expected phi nodes");
 
    THROW_ASSERT(GET_NODE(list_of_stmt_cond2.front())->get_kind() == gimple_cond_K, "a gimple_cond is expected");
@@ -478,15 +476,13 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
 
    const auto type_node2 = tree_helper::CGetType(GET_NODE(ce2->op0));
    unsigned int cond2_index = GET_INDEX_NODE(ce2->op0);
-   THROW_ASSERT(type_node->get_kind() == boolean_type_K and
-         type_node2->get_kind() == boolean_type_K,
-         "something of unexpected is happened:"
-         " type_node: " + STR(type_node) + " is " + type_node->get_kind_text() +
-         " type_node2: " + STR(type_node2) + " is " + type_node2->get_kind_text());
+   THROW_ASSERT(type_node->get_kind() == boolean_type_K and type_node2->get_kind() == boolean_type_K, "something of unexpected is happened:"
+                                                                                                      " type_node: " +
+                                                                                                          STR(type_node) + " is " + type_node->get_kind_text() + " type_node2: " + STR(type_node2) + " is " + type_node2->get_kind_text());
    unsigned int type_index2;
    tree_helper::get_type_node(GET_NODE(ce2->op0), type_index2);
-   //the following condition cannot be guaranteed
-   //THROW_ASSERT(type_index == type_index2, "Different types " + STR(TM->CGetTreeNode(type_index)) + " vs " + STR(TM->CGetTreeNode(type_index2)) + " in " + ce1->ToString() + " and " + ce2->ToString());
+   // the following condition cannot be guaranteed
+   // THROW_ASSERT(type_index == type_index2, "Different types " + STR(TM->CGetTreeNode(type_index)) + " vs " + STR(TM->CGetTreeNode(type_index2)) + " in " + ce1->ToString() + " and " + ce2->ToString());
    /// create the ssa_var representing the condition for bb2
    unsigned int ssa2_vers = TM->get_next_vers();
    unsigned int ssa2_node_nid = TM->new_tree_node_id();
@@ -498,7 +494,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    IR_schema.clear();
    tree_nodeRef ssa2_cond_node = TM->GetTreeReindex(ssa2_node_nid);
 
-   ///create the assignment between condition for bb2 and the new ssa var
+   /// create the assignment between condition for bb2 and the new ssa var
    unsigned int cond2_gimple_stmt_id = TM->new_tree_node_id();
    IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
    IR_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(ssa2_node_nid);
@@ -510,7 +506,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    list_of_bloc[bb1]->PushBack(cond2_created_stmt);
    cond2_index = ssa2_node_nid;
 
-   ///create (!)cond1 or cond2
+   /// create (!)cond1 or cond2
    IR_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
    IR_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(cond1_index);
    IR_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(cond2_index);
@@ -523,23 +519,23 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    IR_schema.clear();
    /// The expression contained in ce2 must now be the newly created expression,
    /// identified by expr_index
-   ///Temporary remove statement to remove old uses
+   /// Temporary remove statement to remove old uses
    list_of_bloc[bb2]->RemoveStmt(second_stmt);
    ce2->op0 = TM->GetTreeReindex(expr_index);
 
-   ///Readding the statement
+   /// Readding the statement
    list_of_bloc[bb2]->PushBack(second_stmt);
 
-   ///add the statements of bb1 to bb2
+   /// add the statements of bb1 to bb2
    while(list_of_stmt_cond1.size())
    {
       const tree_nodeRef stmt = list_of_stmt_cond1.back();
       list_of_bloc[bb1]->RemoveStmt(stmt);
       list_of_bloc[bb2]->PushFront(stmt);
    }
-   ///add the phi of bb1 to bb2
+   /// add the phi of bb1 to bb2
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Moving phis");
-   const auto & bb1_phi_list = list_of_bloc[bb1]->CGetPhiList();
+   const auto& bb1_phi_list = list_of_bloc[bb1]->CGetPhiList();
    while(bb1_phi_list.size())
    {
       const tree_nodeRef phi = bb1_phi_list.back();
@@ -552,10 +548,9 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    return true;
 }
 
-
-void short_circuit_taf::restructure_CFG(unsigned int bb1, unsigned int bb2, unsigned int merging_candidate, std::map<unsigned int, blocRef> & list_of_bloc)
+void short_circuit_taf::restructure_CFG(unsigned int bb1, unsigned int bb2, unsigned int merging_candidate, std::map<unsigned int, blocRef>& list_of_bloc)
 {
-   ///fix bb2 predecessor
+   /// fix bb2 predecessor
    std::vector<unsigned int>::iterator pos;
    std::vector<unsigned int>::const_iterator it_bb1_pred_end = list_of_bloc[bb1]->list_of_pred.end();
    for(std::vector<unsigned int>::const_iterator it_bb1_pred = list_of_bloc[bb1]->list_of_pred.begin(); it_bb1_pred_end != it_bb1_pred; ++it_bb1_pred)
@@ -570,7 +565,7 @@ void short_circuit_taf::restructure_CFG(unsigned int bb1, unsigned int bb2, unsi
    }
    pos = std::find(list_of_bloc[bb2]->list_of_pred.begin(), list_of_bloc[bb2]->list_of_pred.end(), bb1);
    list_of_bloc[bb2]->list_of_pred.erase(pos);
-   ///fix bb1 empty block
+   /// fix bb1 empty block
    pos = std::find(list_of_bloc[merging_candidate]->list_of_pred.begin(), list_of_bloc[merging_candidate]->list_of_pred.end(), bb1);
    list_of_bloc[merging_candidate]->list_of_pred.erase(pos);
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Removed BB " + boost::lexical_cast<std::string>(bb1));
@@ -589,12 +584,10 @@ void short_circuit_taf::fix_multi_way_if(unsigned int curr_bb, std::map<unsigned
       tree_nodeRef cond_statement_node = cond_statement ? GET_NODE(cond_statement) : cond_statement;
       if(cond_statement_node && GetPointer<gimple_multi_way_if>(cond_statement_node))
       {
-         auto * gmwi = GetPointer<gimple_multi_way_if>(cond_statement_node);
-         for(auto & cond : gmwi->list_of_cond)
+         auto* gmwi = GetPointer<gimple_multi_way_if>(cond_statement_node);
+         for(auto& cond : gmwi->list_of_cond)
             if(cond.second == curr_bb)
                cond.second = succ;
       }
    }
 }
-
-

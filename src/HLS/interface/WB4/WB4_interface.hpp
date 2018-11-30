@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file WB4_interface.hpp
  * @brief Class to generate WB4 interfaces for high-level synthesis
@@ -44,14 +44,14 @@
  * $Locker:  $
  * $State: Exp $
  *
-*/
+ */
 
 #ifndef _WB4_INTERFACE_HPP_
 #define _WB4_INTERFACE_HPP_
 
 #include "minimal_interface.hpp"
 
-///utility include
+/// utility include
 #include "refcount.hpp"
 /**
  * Class generating WB4 interfaces
@@ -63,44 +63,44 @@ REF_FORWARD_DECL(structural_type_descriptor);
 
 class WB4_interface : public minimal_interface
 {
-   protected:
-      unsigned int get_data_bus_bitsize();
+ protected:
+   unsigned int get_data_bus_bitsize();
 
-      unsigned int get_addr_bus_bitsize();
+   unsigned int get_addr_bus_bitsize();
 
-      void build_WB4_bus_interface(structural_managerRef SM);
+   void build_WB4_bus_interface(structural_managerRef SM);
 
-      void connect_with_signal_name(structural_managerRef SM, structural_objectRef portA, structural_objectRef portB, std::string signalName);
+   void connect_with_signal_name(structural_managerRef SM, structural_objectRef portA, structural_objectRef portB, std::string signalName);
 
-      void connect_with_signal_name(structural_managerRef SM, structural_objectRef APort, structural_objectRef B, std::string Bsignal, const std::string &signalName);
+   void connect_with_signal_name(structural_managerRef SM, structural_objectRef APort, structural_objectRef B, std::string Bsignal, const std::string& signalName);
 
-      void connect_with_signal_name(structural_managerRef SM, structural_objectRef A, std::string Asignal, structural_objectRef B, std::string Bsignal, const std::string &signalName);
+   void connect_with_signal_name(structural_managerRef SM, structural_objectRef A, std::string Asignal, structural_objectRef B, std::string Bsignal, const std::string& signalName);
 
-      void connect_with_signal(structural_managerRef SM, structural_objectRef portA, structural_objectRef portB);
+   void connect_with_signal(structural_managerRef SM, structural_objectRef portA, structural_objectRef portB);
 
-      void connect_with_signal(structural_managerRef SM, structural_objectRef A, std::string Asignal, structural_objectRef B, std::string Bsignal);
+   void connect_with_signal(structural_managerRef SM, structural_objectRef A, std::string Asignal, structural_objectRef B, std::string Bsignal);
 
-      void connect_with_signal(structural_managerRef SM, structural_objectRef APort, structural_objectRef B, std::string Bsignal);
+   void connect_with_signal(structural_managerRef SM, structural_objectRef APort, structural_objectRef B, std::string Bsignal);
 
-      void connect_with_signal(structural_managerRef SM, structural_objectRef A, std::string Asignal, structural_objectRef portB);
+   void connect_with_signal(structural_managerRef SM, structural_objectRef A, std::string Asignal, structural_objectRef portB);
 
-      void build_WB4_complete_logic(structural_managerRef SM, structural_objectRef wrappedObj, structural_objectRef interfaceObj);
+   void build_WB4_complete_logic(structural_managerRef SM, structural_objectRef wrappedObj, structural_objectRef interfaceObj);
 
-   public:
-      /**
-       * Constructor
-       */
-      WB4_interface(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::WB4_INTERFACE_GENERATION);
+ public:
+   /**
+    * Constructor
+    */
+   WB4_interface(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::WB4_INTERFACE_GENERATION);
 
-      /**
-       * Destructor
-       */
-      ~WB4_interface() override;
+   /**
+    * Destructor
+    */
+   ~WB4_interface() override;
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status InternalExec() override;
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 };
 #endif

@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file datapath.hpp
  * @brief Base class for all datapath creation algorithms.
@@ -42,7 +42,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef _DATAPATH_CREATOR_HPP_
 #define _DATAPATH_CREATOR_HPP_
@@ -56,27 +56,27 @@ REF_FORWARD_DECL(datapath_creator);
  */
 class datapath_creator : public HLSFunctionStep
 {
-   protected:
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+ protected:
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor
-       * @param design_flow_manager is the design flow manager
-       * @param hls_flow_step_type is the type of algorithm used to create a datapath
-       */
-      datapath_creator(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_factory);
+ public:
+   /**
+    * Constructor
+    * @param design_flow_manager is the design flow manager
+    * @param hls_flow_step_type is the type of algorithm used to create a datapath
+    */
+   datapath_creator(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_factory);
 
-      /**
-       * Destructor.
-       */
-      ~datapath_creator() override;
+   /**
+    * Destructor.
+    */
+   ~datapath_creator() override;
 };
-///refcount definition of the class
+/// refcount definition of the class
 typedef refcount<datapath_creator> datapath_creatorRef;
 
 #endif

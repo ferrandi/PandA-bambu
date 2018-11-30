@@ -29,7 +29,7 @@
  *   Free Software Foundation, Inc.,
  *   51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA.
  *
-*/
+ */
 /**
  * @file token_interface.hpp
  * @brief A simple interface to token object of the raw files.
@@ -42,13 +42,13 @@
  * @date $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef TOKEN_INTEFACE_HPP
 #define TOKEN_INTEFACE_HPP
 
-#include <string>
 #include <cstring>
 #include <map>
+#include <string>
 
 enum class TreeVocabularyTokenTypes_TokenEnum
 {
@@ -584,7 +584,7 @@ enum class TreeVocabularyTokenTypes_TokenEnum
    TOK_PREDICATE,
    TOK_SLOT,
 
-   ///RTL token
+   /// RTL token
    TOK_RTL,
    TOK_ABS_R,
    TOK_AND_R,
@@ -667,7 +667,7 @@ enum class TreeVocabularyTokenTypes_TokenEnum
    TOK_XOR_R,
    TOK_ZERO_EXTEND_R,
 
-   ///RTL MODE token
+   /// RTL MODE token
    TOK_NONE_R,
    TOK_QC_R,
    TOK_HC_R,
@@ -702,40 +702,41 @@ enum class TreeVocabularyTokenTypes_TokenEnum
 
 struct treeVocabularyTokenTypes
 {
-      static const char* tokenNames[];
-      static const int bisontokens[];
+   static const char* tokenNames[];
+   static const int bisontokens[];
 
-      ///Map between bison token and token_interface token
-      std::map<int, TreeVocabularyTokenTypes_TokenEnum> from_bisontoken_map;
-      int check_tokens(const char* tok) const;
-      TreeVocabularyTokenTypes_TokenEnum bison2token(int bison) const;
-      treeVocabularyTokenTypes();
-    private:
-      struct ltstr
+   /// Map between bison token and token_interface token
+   std::map<int, TreeVocabularyTokenTypes_TokenEnum> from_bisontoken_map;
+   int check_tokens(const char* tok) const;
+   TreeVocabularyTokenTypes_TokenEnum bison2token(int bison) const;
+   treeVocabularyTokenTypes();
+
+ private:
+   struct ltstr
+   {
+      bool operator()(const char* s1, const char* s2) const
       {
-         bool operator()(const char* s1, const char* s2) const
-         {
          return strcmp(s1, s2) < 0;
-         }
-      };
-      std::map<const char *, int, ltstr> token_map;
-  };
+      }
+   };
+   std::map<const char*, int, ltstr> token_map;
+};
 
 /**
  * Return the name associated with the token.
  * @param i is the token coding.
-*/
+ */
 const std::string TI_getTokenName(const TreeVocabularyTokenTypes_TokenEnum i);
 
 /**
  * Macro which writes on an output stream a token.
-*/
-#define WRITE_TOKEN(os, token) os  << " "<< TI_getTokenName(TreeVocabularyTokenTypes_TokenEnum::token)
+ */
+#define WRITE_TOKEN(os, token) os << " " << TI_getTokenName(TreeVocabularyTokenTypes_TokenEnum::token)
 
 /**
  * Second version of WRITE_TOKEN. Used in attr.cpp
-*/
-#define WRITE_TOKEN2(os, token) os  << " "<< TI_getTokenName(token)
+ */
+#define WRITE_TOKEN2(os, token) os << " " << TI_getTokenName(token)
 
 /**
  * Macro used to convert a token symbol into a treeVocabularyTokenTypes

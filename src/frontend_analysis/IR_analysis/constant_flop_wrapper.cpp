@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file constant_flop_wrapper.cpp
  * @brief Step that recognizes when there's a floating point operation
@@ -37,92 +37,89 @@
  *
  * @author Nicolas Tagliabue
  * @author Lorenzo Porro
-*/
+ */
 
-///header include
+/// header include
 #include <constant_flop_wrapper.hpp>
 
-///design_flows include
+/// design_flows include
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "design_flow_step.hpp"
 
-///frontend_analysis
+/// frontend_analysis
 #include "symbolic_application_frontend_flow_step.hpp"
 
-///Behavior include
+/// Behavior include
 #include "application_manager.hpp"
+#include "behavioral_helper.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
-#include "behavioral_helper.hpp"
 
-///Graph include
+/// Graph include
 #include "basic_block.hpp"
 #include "basic_blocks_graph_constructor.hpp"
 
-///Parameter include
+/// Parameter include
 #include "Parameter.hpp"
 
-///STD include
+/// STD include
 #include <boost/filesystem/fstream.hpp>
 #include <fstream>
 
-///STL include
-#include <map>
+/// STL include
 #include "custom_map.hpp"
-#include <string>
-#include <set>
 #include <algorithm>
+#include <map>
+#include <set>
+#include <string>
 
-///Tree include
+/// Tree include
 #include "ext_tree_node.hpp"
+#include "gcc_wrapper.hpp"
 #include "tree_basic_block.hpp"
+#include "tree_helper.hpp"
 #include "tree_manager.hpp"
+#include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include "tree_helper.hpp"
-#include "tree_manipulation.hpp"
-#include "gcc_wrapper.hpp"
 
-///Utility include
+/// Utility include
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 
-///SoftFloat functions include
+/// SoftFloat functions include
 #include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
-#include "string_manipulation.hpp"          // for GET_CLASS
+#include "string_manipulation.hpp" // for GET_CLASS
 
 static std::set<std::string> functions = {"__float32_addif", "__float32_subif", "__float32_mulif", "__float32_divif", "__float64_addif", "__float64_subif", "__float64_mulif", "__float64_divif"};
 
 std::set<std::string> constant_flop_wrapper::operations;
 
-constant_flop_wrapper::constant_flop_wrapper(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
-   FunctionFrontendFlowStep(_AppM, _function_id, CONSTANT_FLOP_WRAPPER, _design_flow_manager, _parameters),
-   TreeM(_AppM->get_tree_manager()),
-   tree_man(new tree_manipulation(TreeM, parameters))
+constant_flop_wrapper::constant_flop_wrapper(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, CONSTANT_FLOP_WRAPPER, _design_flow_manager, _parameters), TreeM(_AppM->get_tree_manager()), tree_man(new tree_manipulation(TreeM, parameters))
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-constant_flop_wrapper::~constant_flop_wrapper()
-= default;
+constant_flop_wrapper::~constant_flop_wrapper() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > constant_flop_wrapper::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> constant_flop_wrapper::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SOFT_FLOAT_CG_EXT, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -138,9 +135,9 @@ DesignFlowStep_Status constant_flop_wrapper::InternalExec()
 {
    bool changed = false;
    const tree_nodeRef curr_tn = TreeM->GetTreeNode(function_id);
-   auto * this_fd = GetPointer<function_decl>(curr_tn);
-   auto * sl = GetPointer<statement_list>(GET_NODE(this_fd->body));
-   CustomSet<std::pair<std::string, tree_nodeConstRef> > functions_to_be_created;
+   auto* this_fd = GetPointer<function_decl>(curr_tn);
+   auto* sl = GetPointer<statement_list>(GET_NODE(this_fd->body));
+   CustomSet<std::pair<std::string, tree_nodeConstRef>> functions_to_be_created;
    for(const auto& block : sl->list_of_bloc)
    {
       for(const auto& stmt : block.second->CGetStmtList())
@@ -156,19 +153,19 @@ DesignFlowStep_Status constant_flop_wrapper::InternalExec()
          {
             continue;
          }
-         const call_expr * ce = GetPointer<call_expr>(GET_NODE(ga->op1));
+         const call_expr* ce = GetPointer<call_expr>(GET_NODE(ga->op1));
          if(not ce)
          {
             continue;
          }
          const tree_nodeRef f = GET_NODE(ce->fn);
-         const addr_expr * ae = GetPointer<addr_expr>(f);
+         const addr_expr* ae = GetPointer<addr_expr>(f);
          const tree_nodeRef o = GET_NODE(ae->op);
-         const function_decl * fd = GetPointer<function_decl>(o);
+         const function_decl* fd = GetPointer<function_decl>(o);
          const tree_nodeRef i = GET_NODE(fd->name);
-         const identifier_node * in = GetPointer<identifier_node>(i);
+         const identifier_node* in = GetPointer<identifier_node>(i);
 
-         //the following three lines check if the functions written by this class are being analyzed multiple times (to avoid infinite loop)
+         // the following three lines check if the functions written by this class are being analyzed multiple times (to avoid infinite loop)
          bool function_already_scanned = operations.find(in->strg) != operations.end();
          if(function_already_scanned)
          {
@@ -211,19 +208,19 @@ DesignFlowStep_Status constant_flop_wrapper::InternalExec()
          {
             continue;
          }
-         const call_expr * ce = GetPointer<call_expr>(GET_NODE(ga->op1));
+         const call_expr* ce = GetPointer<call_expr>(GET_NODE(ga->op1));
          if(not ce)
          {
             continue;
          }
          const tree_nodeRef f = GET_NODE(ce->fn);
-         const addr_expr * ae = GetPointer<addr_expr>(f);
+         const addr_expr* ae = GetPointer<addr_expr>(f);
          const tree_nodeRef o = GET_NODE(ae->op);
-         const function_decl * fd = GetPointer<function_decl>(o);
+         const function_decl* fd = GetPointer<function_decl>(o);
          const tree_nodeRef i = GET_NODE(fd->name);
-         const identifier_node * in = GetPointer<identifier_node>(i);
+         const identifier_node* in = GetPointer<identifier_node>(i);
 
-         //the following three lines check if the functions written by this class are being analyzed multiple times (to avoid infinite loop)
+         // the following three lines check if the functions written by this class are being analyzed multiple times (to avoid infinite loop)
          bool function_already_scanned = operations.find(in->strg) != operations.end();
          if(function_already_scanned)
          {
@@ -276,7 +273,7 @@ DesignFlowStep_Status constant_flop_wrapper::InternalExec()
                THROW_ERROR_CODE(NESTED_FUNCTIONS_EC, "Nested functions not yet supported " + boost::lexical_cast<std::string>(function_id));
             }
 #ifndef NDEBUG
-            for (const auto p : helper->get_parameters())
+            for(const auto p : helper->get_parameters())
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter " + STR(p));
 #endif
             if(body)
@@ -306,15 +303,14 @@ DesignFlowStep_Status constant_flop_wrapper::InternalExec()
    return changed ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
 
-
-void constant_flop_wrapper::SoftFloatWriter(CustomSet<std::pair<std::string, tree_nodeConstRef> > function_to_be_generateds)
+void constant_flop_wrapper::SoftFloatWriter(CustomSet<std::pair<std::string, tree_nodeConstRef>> function_to_be_generateds)
 {
    bool generate_source_code = false;
-   boost::filesystem::path full_path = parameters->getOption<std::string>(OPT_output_temporary_directory) +"/float_operations_" + function_behavior->CGetBehavioralHelper()->get_function_name() + ".c";
+   boost::filesystem::path full_path = parameters->getOption<std::string>(OPT_output_temporary_directory) + "/float_operations_" + function_behavior->CGetBehavioralHelper()->get_function_name() + ".c";
    boost::filesystem::ofstream new_file;
 
    new_file.open(full_path, boost::filesystem::ofstream::app);
-   new_file << "#include \"" << PANDA_INCLUDE_INSTALLDIR  << "/softfloat.c\"" << std::endl;
+   new_file << "#include \"" << PANDA_INCLUDE_INSTALLDIR << "/softfloat.c\"" << std::endl;
    for(const auto& function_to_be_generated : function_to_be_generateds)
    {
       const std::string function_header = GenerateFunctionName(function_to_be_generated.first, function_to_be_generated.second);
@@ -354,7 +350,7 @@ void constant_flop_wrapper::SoftFloatWriter(CustomSet<std::pair<std::string, tre
 
 std::string constant_flop_wrapper::GenerateFunctionName(const std::string& function_name, const tree_nodeConstRef constant)
 {
-   const auto * rc = GetPointer<const real_cst>(constant);
+   const auto* rc = GetPointer<const real_cst>(constant);
 
    std::string function_header = function_name + std::string("_") + rc->valr;
    std::replace(function_header.begin(), function_header.end(), '.', '_');

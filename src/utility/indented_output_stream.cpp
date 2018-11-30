@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file indented_output_stream.hpp
  * @brief Class to print indented code
@@ -39,47 +39,43 @@
  * $Date: 2012-03-12 10:46:42 +0100 (Mon, 12 Mar 2012) $
  * Last modified by $Author: ferrandi $
  *
-*/
+ */
 
 #include <cstddef>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
-///Utility include
+/// Utility include
 #include "exceptions.hpp"
-///Header include
+/// Header include
 #include "indented_output_stream.hpp"
 
-///In global_variables.hpp
+/// In global_variables.hpp
 extern size_t indentation;
 
-IndentedOutputStream::IndentedOutputStream(char o, char c, unsigned int d) :
-   indent_spaces(0),
-   opening_char(o),
-   closing_char(c),
-   delta(d),
-   is_line_start(true)
-{}
+IndentedOutputStream::IndentedOutputStream(char o, char c, unsigned int d) : indent_spaces(0), opening_char(o), closing_char(c), delta(d), is_line_start(true)
+{
+}
 
 IndentedOutputStream::~IndentedOutputStream()
 {
 #ifndef NDEBUG
-   ///This corresponds to a THROW_ASSERT, however it is against C++ rules throw an errror inside a destructor
+   /// This corresponds to a THROW_ASSERT, however it is against C++ rules throw an errror inside a destructor
    if(indent_spaces != 0)
    {
-      std::cerr << "Not all indentations have been closed: " << indentation <<  std::endl;
+      std::cerr << "Not all indentations have been closed: " << indentation << std::endl;
    }
 #endif
 }
 
-void IndentedOutputStream::Append(const std::string&str)
+void IndentedOutputStream::Append(const std::string& str)
 {
    std::string::const_iterator it_end = str.end();
-   ///Specified whether the first character of the string
-   ///we are going to write must be indented or not
-   bool needToInd=false;
+   /// Specified whether the first character of the string
+   /// we are going to write must be indented or not
+   bool needToInd = false;
 
-   if (*(str.begin()) == closing_char)
+   if(*(str.begin()) == closing_char)
    {
 #if 0
       if(delta > indent_spaces)
@@ -91,13 +87,15 @@ void IndentedOutputStream::Append(const std::string&str)
       Deindent();
    }
 
-   if (is_line_start)
+   if(is_line_start)
+   {
       AppendIndent();
+   }
 
-   for (std::string::const_iterator it = str.begin(); it != it_end; ++it)
+   for(std::string::const_iterator it = str.begin(); it != it_end; ++it)
    {
       is_line_start = false;
-      if (*it == '\n')
+      if(*it == '\n')
       {
          output_stream << *it;
          if((it + 1) != it_end)
@@ -107,20 +105,26 @@ void IndentedOutputStream::Append(const std::string&str)
                AppendIndent();
             }
             else
+            {
                needToInd = true;
+            }
          }
          else
+         {
             is_line_start = true;
+         }
       }
-      else if (*it == opening_char)
+      else if(*it == opening_char)
       {
-         indent_spaces+=delta;
-         if (opening_char != STD_OPENING_CHAR)
+         indent_spaces += delta;
+         if(opening_char != STD_OPENING_CHAR)
+         {
             AppendChar(*it);
+         }
       }
-      else if (*it == closing_char)
+      else if(*it == closing_char)
       {
-         if (*(str.begin()) != closing_char and it != str.begin())
+         if(*(str.begin()) != closing_char and it != str.begin())
          {
             Deindent();
          }
@@ -129,18 +133,24 @@ void IndentedOutputStream::Append(const std::string&str)
             AppendIndent();
             needToInd = false;
          }
-         if (STD_CLOSING_CHAR != closing_char)
+         if(STD_CLOSING_CHAR != closing_char)
+         {
             AppendChar(*it);
+         }
       }
       else
+      {
          AppendChar(*it);
+      }
    }
 }
 
 void IndentedOutputStream::AppendIndent()
 {
-   for (unsigned int i = 0; i < indent_spaces; i++)
+   for(unsigned int i = 0; i < indent_spaces; i++)
+   {
       output_stream << " ";
+   }
 }
 
 void IndentedOutputStream::AppendChar(const char& c)
@@ -166,11 +176,10 @@ const std::string IndentedOutputStream::WriteString()
    return ret;
 }
 
-void IndentedOutputStream::WriteFile(const std::string&file_name)
+void IndentedOutputStream::WriteFile(const std::string& file_name)
 {
    std::ofstream file_out(file_name.c_str(), std::ios::out);
    file_out << output_stream.str() << std::endl;
    file_out.close();
    output_stream.str(std::string());
 }
-

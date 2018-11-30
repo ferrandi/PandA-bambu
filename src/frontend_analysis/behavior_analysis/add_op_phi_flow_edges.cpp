@@ -29,60 +29,58 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file add_op_phi_flow_edges.cpp
  * @brief Analysis step which adds flow edges from the computation of the condition(s) of gimple_cond and gimple_multi_way_if to phi
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "add_op_phi_flow_edges.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior includes
+/// behavior includes
+#include "basic_block.hpp"
 #include "function_behavior.hpp"
 #include "op_graph.hpp"
 #include "operations_graph_constructor.hpp"
-#include "basic_block.hpp"
 
-///tree includes
+/// tree includes
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "ext_tree_node.hpp"
+#include "hash_helper.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include "hash_helper.hpp"
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
-#include "string_manipulation.hpp"          // for GET_CLASS
 
-
-AddOpPhiFlowEdges::AddOpPhiFlowEdges(const application_managerRef _AppM, const unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   FunctionFrontendFlowStep(_AppM, _function_id, ADD_OP_PHI_FLOW_EDGES, _design_flow_manager, _parameters)
+AddOpPhiFlowEdges::AddOpPhiFlowEdges(const application_managerRef _AppM, const unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, ADD_OP_PHI_FLOW_EDGES, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-AddOpPhiFlowEdges::~AddOpPhiFlowEdges()
-= default;
+AddOpPhiFlowEdges::~AddOpPhiFlowEdges() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > AddOpPhiFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> AddOpPhiFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OPERATIONS_CFG_COMPUTATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DOM_POST_DOM_COMPUTATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -113,11 +111,10 @@ void AddOpPhiFlowEdges::Initialize()
 
 DesignFlowStep_Status AddOpPhiFlowEdges::InternalExec()
 {
-
-   ///The control flow graph of operation
+   /// The control flow graph of operation
    const OpGraphConstRef fcfg = function_behavior->CGetOpGraph(FunctionBehavior::FCFG);
 
-   ///The control flow graph of basic block
+   /// The control flow graph of basic block
    const auto bb_fcfg = function_behavior->CGetBBGraph(FunctionBehavior::FBB);
    const auto dom_tree = function_behavior->CGetBBGraph(FunctionBehavior::DOM_TREE);
 
@@ -131,7 +128,7 @@ DesignFlowStep_Status AddOpPhiFlowEdges::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + GET_NAME(fcfg, *operation));
          const auto bb_index = fcfg->CGetOpNodeInfo(*operation)->bb_index;
          const auto bb_vertex = bb_index_map.find(bb_index)->second;
-         ///Check if the phi is not in the target of a feedback edge
+         /// Check if the phi is not in the target of a feedback edge
          bool found_feedback_edge = false;
          InEdgeIterator ie, ie_end;
          for(boost::tie(ie, ie_end) = boost::in_edges(bb_vertex, *bb_fcfg); ie != ie_end; ie++)
@@ -173,7 +170,7 @@ DesignFlowStep_Status AddOpPhiFlowEdges::InternalExec()
          }
          else if(last_statement->get_kind() == gimple_multi_way_if_K)
          {
-            ///Approximation: we consider all conditions
+            /// Approximation: we consider all conditions
             const auto gmwi = GetPointer<const gimple_multi_way_if>(last_statement);
             for(const auto& cond : gmwi->list_of_cond)
             {
@@ -217,5 +214,3 @@ DesignFlowStep_Status AddOpPhiFlowEdges::InternalExec()
 
    return DesignFlowStep_Status::SUCCESS;
 }
-
-

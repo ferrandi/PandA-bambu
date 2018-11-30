@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,25 +29,25 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file soft_float_cg_ext.hpp
  * @brief Step that extends the call graph with the soft-float calls where appropriate.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
-*/
+ */
 #ifndef SOFT_FLOAT_CG_EXT_HPP
 #define SOFT_FLOAT_CG_EXT_HPP
 
-///Superclass include
+/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
-///STL include
+/// STL include
 #include <set>
 #include <unordered_set>
 
-///Utility include
+/// Utility include
 #include "refcount.hpp"
 
 /**
@@ -65,49 +65,48 @@ REF_FORWARD_DECL(tree_node);
  */
 class soft_float_cg_ext : public FunctionFrontendFlowStep
 {
-   protected:
-      ///Tree manager
-      const tree_managerRef TreeM;
+ protected:
+   /// Tree manager
+   const tree_managerRef TreeM;
 
-      ///tree manipulation
-      const tree_manipulationRef tree_man;
+   /// tree manipulation
+   const tree_manipulationRef tree_man;
 
-      ///when true IR has been modified
-      bool modified;
+   /// when true IR has been modified
+   bool modified;
 
-      /**
-      * Recursive examinate tree node
-      * @param current_statement is the current analyzed statement
-      * @param current_tree_node is the current tree node
-      */
-      void RecursiveExaminate(const tree_nodeRef current_statement, const tree_nodeRef current_tree_node);
+   /**
+    * Recursive examinate tree node
+    * @param current_statement is the current analyzed statement
+    * @param current_tree_node is the current tree node
+    */
+   void RecursiveExaminate(const tree_nodeRef current_statement, const tree_nodeRef current_tree_node);
 
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor.
-       * @param Param is the set of the parameters
-       * @param AppM is the application manager
-       * @param fun_id is the function index
-       * @param design_flow_manager is the design flow manager
-       */
-      soft_float_cg_ext(const ParameterConstRef Param, const application_managerRef AppM, unsigned int fun_id, const DesignFlowManagerConstRef design_flow_manager);
+ public:
+   /**
+    * Constructor.
+    * @param Param is the set of the parameters
+    * @param AppM is the application manager
+    * @param fun_id is the function index
+    * @param design_flow_manager is the design flow manager
+    */
+   soft_float_cg_ext(const ParameterConstRef Param, const application_managerRef AppM, unsigned int fun_id, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Destructor
-       */
-      ~soft_float_cg_ext() override;
+   /**
+    * Destructor
+    */
+   ~soft_float_cg_ext() override;
 
-      /**
-       * Fixes the var_decl duplication.
-       */
-      DesignFlowStep_Status InternalExec() override;
+   /**
+    * Fixes the var_decl duplication.
+    */
+   DesignFlowStep_Status InternalExec() override;
 };
 
 #endif
-

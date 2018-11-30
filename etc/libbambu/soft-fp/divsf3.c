@@ -3,7 +3,7 @@
    Copyright (C) 1997-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Richard Henderson (rth@cygnus.com) and
-		  Jakub Jelinek (jj@ultra.linux.cz).
+        Jakub Jelinek (jj@ultra.linux.cz).
 
    The GNU C Library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -28,26 +28,28 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "soft-fp.h"
 #include "single.h"
+#include "soft-fp.h"
 
-SFtype
-__divsf3 (SFtype a, SFtype b)
+SFtype __divsf3(SFtype a, SFtype b)
 {
-  FP_DECL_EX;
-  FP_DECL_S (A);
-  FP_DECL_S (B);
-  FP_DECL_S (R);
-  SFtype r;
+   FP_DECL_EX;
+   FP_DECL_S(A);
+   FP_DECL_S(B);
+   FP_DECL_S(R);
+   SFtype r;
 
-  FP_INIT_ROUNDMODE;
-  FP_UNPACK_S (A, a);
-  FP_UNPACK_S (B, b);
-  FP_DIV_S (R, A, B);
-  FP_PACK_S (r, R);
-  FP_HANDLE_EXCEPTIONS;
+   FP_INIT_ROUNDMODE;
+   FP_UNPACK_S(A, a);
+   FP_UNPACK_S(B, b);
+   FP_DIV_S(R, A, B);
+   FP_PACK_S(r, R);
+   FP_HANDLE_EXCEPTIONS;
 
-  return r;
+   return r;
 }
 
-inline SFtype __float32_divif(SFtype a, SFtype b) {return __divsf3(a, b);}
+inline SFtype __float32_divif(SFtype a, SFtype b)
+{
+   return __divsf3(a, b);
+}

@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file synthesis_evaluation.cpp
  *
@@ -39,74 +39,73 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "synthesis_evaluation.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior include
+/// behavior include
 #include "call_graph_manager.hpp"
 
-///HLS include
+/// HLS include
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_manager.hpp"
 
-///technology/physical_library/models
+/// technology/physical_library/models
 #include "area_model.hpp"
 #include "time_model.hpp"
 
-///technology/physical_library/models/area
+/// technology/physical_library/models/area
 #include "clb_model.hpp"
 
-///wrapper/synthesis include
+/// wrapper/synthesis include
 #include "BackendFlow.hpp"
 
-SynthesisEvaluation::SynthesisEvaluation(const ParameterConstRef _Param, const HLS_managerRef _hls_mgr, const DesignFlowManagerConstRef _design_flow_manager) :
-   EvaluationBaseStep(_Param, _hls_mgr, 0, _design_flow_manager, HLSFlowStep_Type::SYNTHESIS_EVALUATION)
+SynthesisEvaluation::SynthesisEvaluation(const ParameterConstRef _Param, const HLS_managerRef _hls_mgr, const DesignFlowManagerConstRef _design_flow_manager)
+    : EvaluationBaseStep(_Param, _hls_mgr, 0, _design_flow_manager, HLSFlowStep_Type::SYNTHESIS_EVALUATION)
 {
 }
 
-SynthesisEvaluation::~SynthesisEvaluation()
-= default;
+SynthesisEvaluation::~SynthesisEvaluation() = default;
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > SynthesisEvaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> SynthesisEvaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ret;
+   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case PRECEDENCE_RELATIONSHIP:
-         {
+      {
 #if HAVE_SIMULATION_WRAPPER_BUILT
-            ret.insert(std::make_tuple(HLSFlowStep_Type::SIMULATION_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::SIMULATION_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
 #endif
 #if HAVE_VCD_BUILT
-            if (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
-               ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_UTILITY, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
+            ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_UTILITY, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
 #endif
-            break;
-         }
+         break;
+      }
       case INVALIDATION_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       case DEPENDENCE_RELATIONSHIP:
-         {
+      {
 #if HAVE_TASTE
-            if(parameters->getOption<bool>(OPT_generate_taste_architecture))
-            {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_TASTE_SYNTHESIS_SCRIPT, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
-            }
-            else
-#endif
-            {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_SYNTHESIS_SCRIPT, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
-            }
-            break;
+         if(parameters->getOption<bool>(OPT_generate_taste_architecture))
+         {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_TASTE_SYNTHESIS_SCRIPT, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
          }
+         else
+#endif
+         {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_SYNTHESIS_SCRIPT, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+         }
+         break;
+      }
       default:
          THROW_UNREACHABLE("");
    }
@@ -121,21 +120,21 @@ DesignFlowStep_Status SynthesisEvaluation::InternalExec()
    bool printed_area = false;
    for(const auto& objective : objective_vector)
    {
-      if ((objective == "AREA" or objective == "AREAxTIME") and printed_area == false)
+      if((objective == "AREA" or objective == "AREAxTIME") and !printed_area)
       {
          printed_area = true;
-         ///get the used resources from the wrapper
+         /// get the used resources from the wrapper
          area_modelRef area_m = HLSMgr->get_backend_flow()->get_used_resources();
 
-         if (area_m)
+         if(area_m)
          {
             double slices = GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::SLICE) : 0;
-            if (slices != 0.0)
+            if(slices != 0.0)
             {
                HLSMgr->evaluations["SLICE"] = std::vector<double>(1, slices);
             }
             double sliceLuts = GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::SLICE_LUTS) : 0;
-            if (sliceLuts != 0.0)
+            if(sliceLuts != 0.0)
             {
                HLSMgr->evaluations["SLICE_LUTS"] = std::vector<double>(1, sliceLuts);
             }
@@ -157,7 +156,7 @@ DesignFlowStep_Status SynthesisEvaluation::InternalExec()
          }
          HLSMgr->evaluations["AREA"] = std::vector<double>(1, area_m->get_area_value());
       }
-      else if (objective == "BRAMS")
+      else if(objective == "BRAMS")
       {
          area_modelRef area_m = HLSMgr->get_backend_flow()->get_used_resources();
          double brams = 0;
@@ -165,9 +164,9 @@ DesignFlowStep_Status SynthesisEvaluation::InternalExec()
             brams = GetPointer<clb_model>(area_m)->get_resource_value(clb_model::BRAM);
          HLSMgr->evaluations["BRAMS"] = std::vector<double>(1, brams);
       }
-      else if (objective == "CLOCK_SLACK")
+      else if(objective == "CLOCK_SLACK")
       {
-         ///get the timing information after the synthesis
+         /// get the timing information after the synthesis
          time_modelRef time_m = HLSMgr->get_backend_flow()->get_timing_results();
          double minimum_period = time_m->get_execution_time();
 
@@ -179,34 +178,34 @@ DesignFlowStep_Status SynthesisEvaluation::InternalExec()
          }
          HLSMgr->evaluations["CLOCK_SLACK"] = std::vector<double>(1, slack);
       }
-      else if (objective == "PERIOD")
+      else if(objective == "PERIOD")
       {
-         ///get the timing information after the synthesis
+         /// get the timing information after the synthesis
          time_modelRef time_m = HLSMgr->get_backend_flow()->get_timing_results();
          double minimum_period = time_m->get_execution_time();
          HLSMgr->evaluations["PERIOD"] = std::vector<double>(1, minimum_period);
       }
-      else if (objective == "DSPS")
+      else if(objective == "DSPS")
       {
-         ///get the used resources from the wrapper
+         /// get the used resources from the wrapper
          area_modelRef area_m = HLSMgr->get_backend_flow()->get_used_resources();
          double dsps = 0;
          if(GetPointer<clb_model>(area_m))
             dsps = GetPointer<clb_model>(area_m)->get_resource_value(clb_model::DSP);
          HLSMgr->evaluations["DSPS"] = std::vector<double>(1, dsps);
       }
-      else if (objective == "FREQUENCY" or objective == "TIME" or objective == "TOTAL_TIME" or objective == "AREAxTIME")
+      else if(objective == "FREQUENCY" or objective == "TIME" or objective == "TOTAL_TIME" or objective == "AREAxTIME")
       {
-         ///get the timing information after the synthesis
+         /// get the timing information after the synthesis
          time_modelRef time_m = HLSMgr->get_backend_flow()->get_timing_results();
          double minimum_period = time_m->get_execution_time();
 
-         double maximum_frequency = 1000.0/minimum_period;
+         double maximum_frequency = 1000.0 / minimum_period;
          HLSMgr->evaluations["FREQUENCY"] = std::vector<double>(1, maximum_frequency);
       }
-      else if (objective == "REGISTERS")
+      else if(objective == "REGISTERS")
       {
-         ///get the used resources from the wrapper
+         /// get the used resources from the wrapper
          area_modelRef area_m = HLSMgr->get_backend_flow()->get_used_resources();
          double reg = 0;
          if(GetPointer<clb_model>(area_m))

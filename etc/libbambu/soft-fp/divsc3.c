@@ -26,89 +26,83 @@ a copy of the GCC Runtime Library Exception along with this program;
 see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 <http://www.gnu.org/licenses/>.  */
 
-typedef union 
-{
-  float value;
-  unsigned int u_value;
+typedef union {
+   float value;
+   unsigned int u_value;
 } local_float_shape_type;
 
-static inline
-unsigned int __local_get_uint32(float x)
+static inline unsigned int __local_get_uint32(float x)
 {
-  local_float_shape_type val;
-  val.value = x;
-  return val.u_value;
+   local_float_shape_type val;
+   val.value = x;
+   return val.u_value;
 }
-static inline
-float __local_get_float(unsigned int x)
+static inline float __local_get_float(unsigned int x)
 {
-  local_float_shape_type val;
-  val.u_value = x;
-  return val.value;
+   local_float_shape_type val;
+   val.u_value = x;
+   return val.value;
 }
 
 #define isinf(x) ((__local_get_uint32(x) & 0x7fffffff) == 0x7f800000)
 #define isfinite(x) ((__local_get_uint32(x) & 0x7fffffff) < 0x7f800000)
 #define isnan(x) ((__local_get_uint32(x) & 0x7fffffff) > 0x7f800000)
 
-static inline 
-float __local_copysignf(float x, float y)
+static inline float __local_copysignf(float x, float y)
 {
-  unsigned ix,iy;
-  ix = __local_get_uint32(x);
-  iy = __local_get_uint32(y);
-  x=__local_get_float((ix&0x7fffffff)|(iy&0x80000000));
-  return x;
+   unsigned ix, iy;
+   ix = __local_get_uint32(x);
+   iy = __local_get_uint32(y);
+   x = __local_get_float((ix & 0x7fffffff) | (iy & 0x80000000));
+   return x;
 }
 
-
-__complex__ float
-__divsc3 (float a, float b, float c, float d)
+__complex__ float __divsc3(float a, float b, float c, float d)
 {
-  float denom, ratio, x, y;
-  __complex__ float res;
+   float denom, ratio, x, y;
+   __complex__ float res;
 
-  if (fabsf (c) < fabsf (d))
-    {
+   if(fabsf(c) < fabsf(d))
+   {
       ratio = c / d;
       denom = (c * ratio) + d;
       x = ((a * ratio) + b) / denom;
       y = ((b * ratio) - a) / denom;
-    }
-  else
-    {
+   }
+   else
+   {
       ratio = d / c;
       denom = (d * ratio) + c;
       x = ((b * ratio) + a) / denom;
       y = (b - (a * ratio)) / denom;
-    }
+   }
 
-  /* Recover infinities and zeros that computed as NaN+iNaN; the only cases
-     are nonzero/zero, infinite/finite, and finite/infinite.  */
-  if (isnan (x) && isnan (y))
-    {
-      if (c == 0.0 && d == 0.0 && (!isnan (a) || !isnan (b)))
-	{
-	  x = __local_copysignf (__builtin_inff(), c) * a;
-	  y = __local_copysignf (__builtin_inff(), c) * b;
-	}
-      else if ((isinf (a) || isinf (b)) && isfinite (c) && isfinite (d))
-	{
-	  a = __local_copysignf (isinf (a) ? 1 : 0, a);
-	  b = __local_copysignf (isinf (b) ? 1 : 0, b);
-	  x = __builtin_inff() * (a * c + b * d);
-	  y = __builtin_inff() * (b * c - a * d);
-	}
-      else if ((isinf (c) || isinf (d)) && isfinite (a) && isfinite (b))
-	{
-	  c = __local_copysignf (isinf (c) ? 1 : 0, c);
-	  d = __local_copysignf (isinf (d) ? 1 : 0, d);
-	  x = 0.0 * (a * c + b * d);
-	  y = 0.0 * (b * c - a * d);
-	}
-    }
+   /* Recover infinities and zeros that computed as NaN+iNaN; the only cases
+      are nonzero/zero, infinite/finite, and finite/infinite.  */
+   if(isnan(x) && isnan(y))
+   {
+      if(c == 0.0 && d == 0.0 && (!isnan(a) || !isnan(b)))
+      {
+         x = __local_copysignf(__builtin_inff(), c) * a;
+         y = __local_copysignf(__builtin_inff(), c) * b;
+      }
+      else if((isinf(a) || isinf(b)) && isfinite(c) && isfinite(d))
+      {
+         a = __local_copysignf(isinf(a) ? 1 : 0, a);
+         b = __local_copysignf(isinf(b) ? 1 : 0, b);
+         x = __builtin_inff() * (a * c + b * d);
+         y = __builtin_inff() * (b * c - a * d);
+      }
+      else if((isinf(c) || isinf(d)) && isfinite(a) && isfinite(b))
+      {
+         c = __local_copysignf(isinf(c) ? 1 : 0, c);
+         d = __local_copysignf(isinf(d) ? 1 : 0, d);
+         x = 0.0 * (a * c + b * d);
+         y = 0.0 * (b * c - a * d);
+      }
+   }
 
-  __real__ res = x;
-  __imag__ res = y;
-  return res;
+   __real__ res = x;
+   __imag__ res = y;
+   return res;
 }

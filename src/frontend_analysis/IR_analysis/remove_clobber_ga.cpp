@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file remove_clobber_ga.cpp
  * @brief Analysis step that removes clobber gimple_assign introduced by GCC v4.7 and greater.
@@ -39,20 +39,20 @@
  *
  */
 
-///header include
+/// header include
 #include "remove_clobber_ga.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior includes
+/// behavior includes
 #include "application_manager.hpp"
 #include "function_behavior.hpp"
 
-///STD include
+/// STD include
 #include <fstream>
 
-///tree includes
+/// tree includes
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
@@ -62,32 +62,31 @@
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
 
-///utility include
+/// utility include
 #include "dbgPrintHelper.hpp"
-#include "string_manipulation.hpp"          // for GET_CLASS
+#include "string_manipulation.hpp" // for GET_CLASS
 
-remove_clobber_ga::remove_clobber_ga(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   FunctionFrontendFlowStep(_AppM, _function_id, REMOVE_CLOBBER_GA, _design_flow_manager, _parameters)
+remove_clobber_ga::remove_clobber_ga(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, REMOVE_CLOBBER_GA, _design_flow_manager, _parameters)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-remove_clobber_ga::~remove_clobber_ga()
-= default;
+remove_clobber_ga::~remove_clobber_ga() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship> > remove_clobber_ga::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>> remove_clobber_ga::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BLOCK_FIX, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SWITCH_FIX, SAME_FUNCTION));
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP) :
-      case(INVALIDATION_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP):
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
@@ -102,12 +101,12 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
 DesignFlowStep_Status remove_clobber_ga::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
-   std::map<unsigned int,tree_nodeRef > var_substitution_table;
-   std::map<unsigned int, std::set<tree_nodeRef> > stmt_to_be_removed;
+   std::map<unsigned int, tree_nodeRef> var_substitution_table;
+   std::map<unsigned int, std::set<tree_nodeRef>> stmt_to_be_removed;
 
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
-   auto * fd = GetPointer<function_decl>(temp);
-   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto* fd = GetPointer<function_decl>(temp);
+   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
    const bool is_single_write_memory = GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->IsSingleWriteMemory();
 
    for(auto block : sl->list_of_bloc)
@@ -121,7 +120,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
       {
          /// skip all non-clobber gimple_assign
          tree_nodeRef tn = GET_NODE(stmt);
-         auto * ga = GetPointer<gimple_assign>(tn);
+         auto* ga = GetPointer<gimple_assign>(tn);
          if(!ga || !ga->clobber)
             continue;
          if(is_single_write_memory)
@@ -142,7 +141,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
             continue;
          for(const auto& phi : block.second->CGetPhiList())
          {
-            auto * gp = GetPointer<gimple_phi>(GET_NODE(phi));
+            auto* gp = GetPointer<gimple_phi>(GET_NODE(phi));
             if(gp->virtual_flag)
             {
                for(const auto& def_edge : gp->CGetDefEdgesList())
@@ -152,7 +151,9 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
                      tree_nodeRef res = var_substitution_table.find(GET_INDEX_NODE(def_edge.first))->second;
                      while(var_substitution_table.find(GET_INDEX_NODE(res)) != var_substitution_table.end())
                         res = var_substitution_table.find(GET_INDEX_NODE(res))->second;
-                     THROW_ASSERT(!(GetPointer<ssa_name>(GET_NODE(res)) and GetPointer<gimple_assign>(GET_NODE(GetPointer<ssa_name>(GET_NODE(res))->CGetDefStmt())) && GetPointer<gimple_assign>(GET_NODE(GetPointer<ssa_name>(GET_NODE(res))->CGetDefStmt()))->clobber), "unexpected condition");
+                     THROW_ASSERT(
+                         !(GetPointer<ssa_name>(GET_NODE(res)) and GetPointer<gimple_assign>(GET_NODE(GetPointer<ssa_name>(GET_NODE(res))->CGetDefStmt())) && GetPointer<gimple_assign>(GET_NODE(GetPointer<ssa_name>(GET_NODE(res))->CGetDefStmt()))->clobber),
+                         "unexpected condition");
                      gp->ReplaceDefEdge(TM, def_edge, gimple_phi::DefEdge(TM->GetTreeReindex(GET_INDEX_NODE(res)), def_edge.second));
                   }
                }
@@ -162,7 +163,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
          {
             /// consider only gimple statements using virtual operands
             tree_nodeRef tn = GET_NODE(stmt);
-            auto * gn = GetPointer<gimple_node>(tn);
+            auto* gn = GetPointer<gimple_node>(tn);
             THROW_ASSERT(gn, "unexpected condition");
             if(!gn->memuse)
                continue;
@@ -172,9 +173,8 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
       }
    }
 
-
    /// now remove the clobber gimple_assign
-   const std::map<unsigned int, std::set<tree_nodeRef> >::iterator stbr_it_end = stmt_to_be_removed.end();
+   const std::map<unsigned int, std::set<tree_nodeRef>>::iterator stbr_it_end = stmt_to_be_removed.end();
    for(auto stbr_it = stmt_to_be_removed.begin(); stbr_it != stbr_it_end; ++stbr_it)
    {
       unsigned int curr_bb = stbr_it->first;

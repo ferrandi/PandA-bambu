@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file weights_xml.hpp
  * @brief xml nodes of weight models
@@ -42,43 +42,43 @@
 #ifndef WEIGHTS_XML_HPP
 #define WEIGHTS_XML_HPP
 
-///The attribute containing the cycles of an operations
+/// The attribute containing the cycles of an operations
 #define STR_XML_weights_cycles "cycles"
 
-///The node containing the execution time of a function
+/// The node containing the execution time of a function
 #define STR_XML_weights_function "function"
 
-///The node containing information about gimple based model
+/// The node containing information about gimple based model
 #define STR_XML_weights_gimple "tree_weights"
 
-///The node containing information about rtl mode
+/// The node containing information about rtl mode
 #define STR_XML_weights_mode "mode"
 
-///The attribute containing the name of the node/type/etc
+/// The attribute containing the name of the node/type/etc
 #define STR_XML_weights_name "name"
 
-///The attribute containing the type of distribution
+/// The attribute containing the type of distribution
 #define STR_XML_weights_distribution "distribution"
 
-///The attribute containing the processing element of the model
+/// The attribute containing the processing element of the model
 #define STR_XML_weights_processing_element "processing_element"
 
-///The root of a weights model
+/// The root of a weights model
 #define STR_XML_weights_root "model_weights"
 
-///The node containing information about gimple based model
+/// The node containing information about gimple based model
 #define STR_XML_weights_rtl "rtl_weights"
 
-///The node containing information about rtl node
+/// The node containing information about rtl node
 #define STR_XML_weights_rtx "rtx"
 
-///The attribute storing the length of the sequences
+/// The attribute storing the length of the sequences
 #define STR_XML_weights_sequences_length "sequence_length"
 
-///The attribute containing the name of a symbolic stochastic variable 
+/// The attribute containing the name of a symbolic stochastic variable
 #define STR_XML_weights_variable "variable"
 
-///The attribute containing the variance of distribution probability of cycles of an operation
+/// The attribute containing the variance of distribution probability of cycles of an operation
 #define STR_XML_weights_variance "variance"
 
 #endif

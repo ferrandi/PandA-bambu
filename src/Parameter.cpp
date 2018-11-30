@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file Parameter.cpp
  * @brief
@@ -40,59 +40,59 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Autoheader include
+/// Autoheader include
 #include "config_ARM_GCC_VERSION.hpp"
 #include "config_HAVE_ARM_COMPILER.hpp"
 #include "config_HAVE_FROM_ARCH_BUILT.hpp"
-#include "config_HAVE_FROM_C_BUILT.hpp"
 #include "config_HAVE_FROM_CSV_BUILT.hpp"
+#include "config_HAVE_FROM_C_BUILT.hpp"
 #include "config_HAVE_FROM_IPXACT_BUILT.hpp"
 #include "config_HAVE_FROM_PSPLIB_BUILT.hpp"
 #include "config_HAVE_FROM_SDF3_BUILT.hpp"
+#include "config_HAVE_I386_CLANG4_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG4_M32.hpp"
+#include "config_HAVE_I386_CLANG4_M64.hpp"
+#include "config_HAVE_I386_CLANG4_MX32.hpp"
+#include "config_HAVE_I386_CLANG5_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG5_M32.hpp"
+#include "config_HAVE_I386_CLANG5_M64.hpp"
+#include "config_HAVE_I386_CLANG5_MX32.hpp"
+#include "config_HAVE_I386_CLANG6_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG6_M32.hpp"
+#include "config_HAVE_I386_CLANG6_M64.hpp"
+#include "config_HAVE_I386_CLANG6_MX32.hpp"
 #include "config_HAVE_I386_GCC45_COMPILER.hpp"
 #include "config_HAVE_I386_GCC46_COMPILER.hpp"
 #include "config_HAVE_I386_GCC47_COMPILER.hpp"
-#include "config_HAVE_I386_GCC48_COMPILER.hpp"
-#include "config_HAVE_I386_GCC49_COMPILER.hpp"
-#include "config_HAVE_I386_GCC5_COMPILER.hpp"
-#include "config_HAVE_I386_GCC6_COMPILER.hpp"
-#include "config_HAVE_I386_GCC7_COMPILER.hpp"
-#include "config_HAVE_I386_GCC8_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG4_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG5_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG6_COMPILER.hpp"
 #include "config_HAVE_I386_GCC47_M32.hpp"
-#include "config_HAVE_I386_GCC48_M32.hpp"
-#include "config_HAVE_I386_GCC49_M32.hpp"
-#include "config_HAVE_I386_GCC5_M32.hpp"
-#include "config_HAVE_I386_GCC6_M32.hpp"
-#include "config_HAVE_I386_GCC7_M32.hpp"
-#include "config_HAVE_I386_GCC8_M32.hpp"
-#include "config_HAVE_I386_CLANG4_M32.hpp"
-#include "config_HAVE_I386_CLANG5_M32.hpp"
-#include "config_HAVE_I386_CLANG6_M32.hpp"
-#include "config_HAVE_I386_GCC47_MX32.hpp"
-#include "config_HAVE_I386_GCC48_MX32.hpp"
-#include "config_HAVE_I386_GCC49_MX32.hpp"
-#include "config_HAVE_I386_GCC5_MX32.hpp"
-#include "config_HAVE_I386_GCC6_MX32.hpp"
-#include "config_HAVE_I386_GCC7_MX32.hpp"
-#include "config_HAVE_I386_GCC8_MX32.hpp"
-#include "config_HAVE_I386_CLANG4_MX32.hpp"
-#include "config_HAVE_I386_CLANG5_MX32.hpp"
-#include "config_HAVE_I386_CLANG6_MX32.hpp"
 #include "config_HAVE_I386_GCC47_M64.hpp"
+#include "config_HAVE_I386_GCC47_MX32.hpp"
+#include "config_HAVE_I386_GCC48_COMPILER.hpp"
+#include "config_HAVE_I386_GCC48_M32.hpp"
 #include "config_HAVE_I386_GCC48_M64.hpp"
+#include "config_HAVE_I386_GCC48_MX32.hpp"
+#include "config_HAVE_I386_GCC49_COMPILER.hpp"
+#include "config_HAVE_I386_GCC49_M32.hpp"
 #include "config_HAVE_I386_GCC49_M64.hpp"
+#include "config_HAVE_I386_GCC49_MX32.hpp"
+#include "config_HAVE_I386_GCC5_COMPILER.hpp"
+#include "config_HAVE_I386_GCC5_M32.hpp"
 #include "config_HAVE_I386_GCC5_M64.hpp"
+#include "config_HAVE_I386_GCC5_MX32.hpp"
+#include "config_HAVE_I386_GCC6_COMPILER.hpp"
+#include "config_HAVE_I386_GCC6_M32.hpp"
 #include "config_HAVE_I386_GCC6_M64.hpp"
+#include "config_HAVE_I386_GCC6_MX32.hpp"
+#include "config_HAVE_I386_GCC7_COMPILER.hpp"
+#include "config_HAVE_I386_GCC7_M32.hpp"
 #include "config_HAVE_I386_GCC7_M64.hpp"
+#include "config_HAVE_I386_GCC7_MX32.hpp"
+#include "config_HAVE_I386_GCC8_COMPILER.hpp"
+#include "config_HAVE_I386_GCC8_M32.hpp"
 #include "config_HAVE_I386_GCC8_M64.hpp"
-#include "config_HAVE_I386_CLANG4_M64.hpp"
-#include "config_HAVE_I386_CLANG5_M64.hpp"
-#include "config_HAVE_I386_CLANG6_M64.hpp"
+#include "config_HAVE_I386_GCC8_MX32.hpp"
 #include "config_HAVE_IPXACT_BUILT.hpp"
 #include "config_HAVE_PERFORMANCE_METRICS_XML.hpp"
 #include "config_HAVE_REGRESSORS_BUILT.hpp"
@@ -100,6 +100,9 @@
 #include "config_HAVE_SPARC_COMPILER.hpp"
 #include "config_HAVE_TO_DATAFILE_BUILT.hpp"
 #include "config_HAVE_WEIGHT_MODELS_XML.hpp"
+#include "config_I386_CLANG4_VERSION.hpp"
+#include "config_I386_CLANG5_VERSION.hpp"
+#include "config_I386_CLANG6_VERSION.hpp"
 #include "config_I386_GCC45_VERSION.hpp"
 #include "config_I386_GCC46_VERSION.hpp"
 #include "config_I386_GCC47_VERSION.hpp"
@@ -109,26 +112,23 @@
 #include "config_I386_GCC6_VERSION.hpp"
 #include "config_I386_GCC7_VERSION.hpp"
 #include "config_I386_GCC8_VERSION.hpp"
-#include "config_I386_CLANG4_VERSION.hpp"
-#include "config_I386_CLANG5_VERSION.hpp"
-#include "config_I386_CLANG6_VERSION.hpp"
 #include "config_PACKAGE_BUGREPORT.hpp"
 #include "config_PACKAGE_STRING.hpp"
 #include "config_SPARC_GCC_VERSION.hpp"
 
-///Header include
+/// Header include
 #include "Parameter.hpp"
 
 #if HAVE_FROM_C_BUILT
-///wrapper/treegcc
+/// wrapper/treegcc
 #include "gcc_wrapper.hpp"
 #endif
 
-///Boost include
+/// Boost include
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 
-///Constants include
+/// Constants include
 #if HAVE_REGRESSORS_BUILT
 #include "aggregated_features_xml.hpp"
 #include "skip_rows_xml.hpp"
@@ -136,8 +136,8 @@
 #if HAVE_FROM_ARCH_BUILT
 #include "architecture_xml.hpp"
 #endif
-#include "constants.hpp"
 #include "constant_strings.hpp"
+#include "constants.hpp"
 #if HAVE_HLS_BUILT
 #include "constraints_xml.hpp"
 #endif
@@ -151,7 +151,7 @@
 #if HAVE_SOURCE_CODE_STATISTICS_XML
 #include "source_code_statistics_xml.hpp"
 #endif
-#if (HAVE_WEIGHT_MODELS_XML && HAVE_EXPERIMENTAL) || HAVE_PERFORMANCE_METRICS_XML
+#if(HAVE_WEIGHT_MODELS_XML && HAVE_EXPERIMENTAL) || HAVE_PERFORMANCE_METRICS_XML
 #include "probability_distribution_xml.hpp"
 #endif
 #if HAVE_TECHNOLOGY_BUILT
@@ -164,9 +164,8 @@
 #include "sdf3_xml.hpp"
 #endif
 
-
 #if HAVE_CODE_ESTIMATION_BUILT
-///design_flows/codesign/estimation include
+/// design_flows/codesign/estimation include
 #include "actor_graph_estimator.hpp"
 #endif
 
@@ -174,43 +173,38 @@
 #include "token_interface.hpp"
 #endif
 
-///STD include
-#include <iosfwd>
+/// STD include
 #include <cstdlib>
+#include <iosfwd>
 
-///Utility include
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
+/// Utility include
 #include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
 #include "refcount.hpp"
 #include "xml_helper.hpp"
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
 
-///XML include
+/// XML include
 #include "polixml.hpp"
 #include "xml_dom_parser.hpp"
 #if HAVE_FROM_IPXACT_BUILT
 #include "ip_xact_xml.hpp"
-///Constants include
+/// Constants include
 #include "design_analysis_xml.hpp"
 #endif
 
-const std::string branch_name =
-{
+const std::string branch_name = {
 #include "branch_name.hpp"
 };
 
-const std::string revision_hash =
-{
+const std::string revision_hash = {
 #include "revision_hash.hpp"
 };
 
 #define OPTION_NAME(r, data, elem) option_name[BOOST_PP_CAT(OPT_, elem)] = #elem;
 
-Parameter::Parameter(const std::string&_program_name, int _argc, char * * const _argv, int _debug_level) :
-   argc(_argc),
-   argv(_argv),
-   debug_level(_debug_level)
+Parameter::Parameter(const std::string& _program_name, int _argc, char** const _argv, int _debug_level) : argc(_argc), argv(_argv), debug_level(_debug_level)
 {
    setOption(OPT_program_name, _program_name);
    BOOST_PP_SEQ_FOR_EACH(OPTION_NAME, BOOST_PP_EMPTY, BAMBU_OPTIONS)
@@ -223,7 +217,7 @@ Parameter::Parameter(const std::string&_program_name, int _argc, char * * const 
    BOOST_PP_SEQ_FOR_EACH(OPTION_NAME, BOOST_PP_EMPTY, SYNTHESIS_OPTIONS)
    BOOST_PP_SEQ_FOR_EACH(OPTION_NAME, BOOST_PP_EMPTY, TREE_PANDA_GCC_OPTIONS)
    BOOST_PP_SEQ_FOR_EACH(OPTION_NAME, BOOST_PP_EMPTY, ZEBU_OPTIONS)
-   //This part has been added since boost macro does not expand correctly
+   // This part has been added since boost macro does not expand correctly
    std::map<enum enum_option, std::string>::iterator it, it_end = option_name.end();
    for(it = option_name.begin(); it != it_end; it++)
    {
@@ -233,14 +227,7 @@ Parameter::Parameter(const std::string&_program_name, int _argc, char * * const 
    SetCommonDefaults();
 }
 
-Parameter::Parameter(const Parameter & other) :
-   argc(other.argc),
-   argv(other.argv),
-   Options(other.Options),
-   enum_options(other.enum_options),
-   option_name(other.option_name),
-   debug_classes(other.debug_classes),
-   debug_level(other.debug_level)
+Parameter::Parameter(const Parameter& other) : argc(other.argc), argv(other.argv), Options(other.Options), enum_options(other.enum_options), option_name(other.option_name), debug_classes(other.debug_classes), debug_level(other.debug_level)
 {
 }
 
@@ -252,7 +239,7 @@ void Parameter::CheckParameters()
       boost::filesystem::remove_all(temporary_directory);
    }
    boost::filesystem::create_directory(temporary_directory);
-   ///Output directory is not removed since it can be the current one
+   /// Output directory is not removed since it can be the current one
    const std::string output_directory = getOption<std::string>(OPT_output_directory);
    if(!boost::filesystem::exists(output_directory))
    {
@@ -269,21 +256,21 @@ void Parameter::CheckParameters()
    }
 }
 
-Parameter::~Parameter()
-= default;
+Parameter::~Parameter() = default;
 
 void Parameter::load_xml_configuration_file_rec(const xml_element* node)
 {
-   //Recurse through child nodes:
+   // Recurse through child nodes:
    const xml_node::node_list list = node->get_children();
-   for (const auto & iter : list)
+   for(const auto& iter : list)
    {
       const auto* EnodeC = GetPointer<const xml_element>(iter);
-      if (!EnodeC) continue;
+      if(!EnodeC)
+         continue;
       /// general options
-      if (CE_XVM(value, EnodeC))
+      if(CE_XVM(value, EnodeC))
          Options[GET_NODE_NAME(EnodeC)] = GET_STRING_VALUE(EnodeC);
-      if (EnodeC->get_children().size())
+      if(EnodeC->get_children().size())
          load_xml_configuration_file_rec(EnodeC);
    }
 }
@@ -294,42 +281,42 @@ void Parameter::load_xml_configuration_file(const std::string& filename)
    {
       XMLDomParser parser(filename);
       parser.Exec();
-      if (parser)
+      if(parser)
       {
-         //Walk the tree:
-         const xml_element* node = parser.get_document()->get_root_node(); //deleted by DomParser.
+         // Walk the tree:
+         const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
 
-         //Recurse through child nodes:
+         // Recurse through child nodes:
          const xml_node::node_list list = node->get_children();
-         for (const auto & iter : list)
+         for(const auto& iter : list)
          {
             const auto* EnodeC = GetPointer<const xml_element>(iter);
-            if (!EnodeC) continue;
+            if(!EnodeC)
+               continue;
             /// general options
-            if (CE_XVM(value, EnodeC))
+            if(CE_XVM(value, EnodeC))
                Options[GET_NODE_NAME(EnodeC)] = GET_STRING_VALUE(EnodeC);
-            if (EnodeC->get_children().size())
+            if(EnodeC->get_children().size())
                load_xml_configuration_file_rec(EnodeC);
          }
       }
    }
-   catch (const char * msg)
+   catch(const char* msg)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string& msg)
+   catch(const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::exception& ex)
+   catch(const std::exception& ex)
    {
       std::cout << "Exception caught: " << ex.what() << std::endl;
    }
-   catch ( ... )
+   catch(...)
    {
       std::cerr << "unknown exception" << std::endl;
    }
-
 }
 
 void Parameter::write_xml_configuration_file(const std::string& filename)
@@ -338,7 +325,7 @@ void Parameter::write_xml_configuration_file(const std::string& filename)
 
    xml_element* parameters = document.create_root_node("parameters");
 
-   for (OptionMap::const_iterator Op = Options.begin(); Op != Options.end(); ++Op)
+   for(OptionMap::const_iterator Op = Options.begin(); Op != Options.end(); ++Op)
    {
       xml_element* node = parameters->add_child_element(Op->first);
       WRITE_XNVM2("value", Op->second, node);
@@ -351,7 +338,7 @@ void Parameter::SetCommonDefaults()
 {
    setOption(STR_OPT_benchmark_fake_parameters, "<none>");
    std::string current_dir = GetCurrentPath();
-   std::string temporary_directory = current_dir + "/" +std::string(STR_CST_temporary_directory);
+   std::string temporary_directory = current_dir + "/" + std::string(STR_CST_temporary_directory);
 
    setOption(OPT_dot_directory, current_dir + "/dot/");
    setOption(OPT_output_temporary_directory, temporary_directory + "/");
@@ -361,7 +348,7 @@ void Parameter::SetCommonDefaults()
    if(revision_hash == "")
       setOption(OPT_revision, "unknown-trunk");
    else
-      setOption(OPT_revision, revision_hash + (branch_name != "" ?  "-" + branch_name : ""));
+      setOption(OPT_revision, revision_hash + (branch_name != "" ? "-" + branch_name : ""));
    setOption(OPT_seed, 0);
 
    setOption(OPT_cfg_max_transformations, std::numeric_limits<size_t>::max());
@@ -370,7 +357,7 @@ void Parameter::SetCommonDefaults()
 void Parameter::print(std::ostream& os) const
 {
    os << "List of parameters: " << std::endl;
-   for(const auto & Option : Options)
+   for(const auto& Option : Options)
    {
       os << Option.first << ": " << Option.second << std::endl;
    }
@@ -382,25 +369,25 @@ void Parameter::print(std::ostream& os) const
    os << " === " << std::endl;
 }
 
-int Parameter::get_class_debug_level(const std::string&class_name, int _debug_level) const
+int Parameter::get_class_debug_level(const std::string& class_name, int _debug_level) const
 {
    auto temp = class_name;
    temp.erase(std::remove(temp.begin(), temp.end(), '_'), temp.end());
    if(debug_classes.find(boost::to_upper_copy(temp)) != debug_classes.end() or debug_classes.find(STR_CST_debug_all) != debug_classes.end())
       return DEBUG_LEVEL_INFINITE;
-   else if (_debug_level < 0)
+   else if(_debug_level < 0)
       return getOption<int>(OPT_debug_level);
    else
       return _debug_level;
 }
 
-int Parameter::GetFunctionDebugLevel(const std::string&class_name, const std::string&function_name) const
+int Parameter::GetFunctionDebugLevel(const std::string& class_name, const std::string& function_name) const
 {
    auto canonic_class_name = class_name;
    canonic_class_name.erase(std::remove(canonic_class_name.begin(), canonic_class_name.end(), '_'), canonic_class_name.end());
    auto canonic_function_name = function_name;
    canonic_function_name.erase(std::remove(canonic_function_name.begin(), canonic_function_name.end(), '_'), canonic_function_name.end());
-   const auto canonic_full_function_name = canonic_class_name + "::" + canonic_function_name;
+   const auto canonic_full_function_name = canonic_class_name + std::string("::") + canonic_function_name;
    if(debug_classes.find(boost::to_upper_copy(canonic_full_function_name)) != debug_classes.end())
    {
       return DEBUG_LEVEL_INFINITE;
@@ -409,7 +396,6 @@ int Parameter::GetFunctionDebugLevel(const std::string&class_name, const std::st
    {
       return get_class_debug_level(class_name);
    }
-
 }
 
 void Parameter::add_debug_class(const std::string& class_name)
@@ -419,7 +405,7 @@ void Parameter::add_debug_class(const std::string& class_name)
    debug_classes.insert(boost::to_upper_copy(temp));
 }
 
-void Parameter::PrintFullHeader(std::ostream & os) const
+void Parameter::PrintFullHeader(std::ostream& os) const
 {
    PrintProgramName(os);
    os << "                         Politecnico di Milano - DEIB" << std::endl;
@@ -428,7 +414,7 @@ void Parameter::PrintFullHeader(std::ostream & os) const
    os << "                Copyright (c) 2004-2018 Politecnico di Milano" << std::endl;
    std::string version = PrintVersion();
    if(version.size() < 80)
-      os << std::string(40 - (version.size()/2), ' ') << version << std::endl;
+      os << std::string(40 - (version.size() / 2), ' ') << version << std::endl;
    else
       os << version << std::endl;
    os << std::endl;
@@ -436,31 +422,30 @@ void Parameter::PrintFullHeader(std::ostream & os) const
 
 std::string Parameter::PrintVersion() const
 {
-   return std::string("Version: ") + PACKAGE_STRING + " - Revision " + getOption<std::string>(OPT_revision)
-   ;
+   return std::string("Version: ") + PACKAGE_STRING + " - Revision " + getOption<std::string>(OPT_revision);
 }
 
-void Parameter::PrintUsage(std::ostream & os) const
+void Parameter::PrintUsage(std::ostream& os) const
 {
    PrintFullHeader(os);
    PrintHelp(os);
 }
 
-bool Parameter::ManageDefaultOptions(int next_option, char * optarg_param, bool &exit_success)
+bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& exit_success)
 {
-   exit_success= false;
-   switch (next_option)
+   exit_success = false;
+   switch(next_option)
    {
       case INPUT_OPT_NO_CLEAN:
          setOption(OPT_no_clean, true);
          break;
       case 'h': // print help message and exit
          PrintUsage(std::cout);
-         exit_success= true;
+         exit_success = true;
          break;
       case 'V':
          PrintFullHeader(std::cout);
-         exit_success= true;
+         exit_success = true;
          break;
 #if !RELEASE
       case OPT_READ_PARAMETERS_XML:
@@ -592,7 +577,7 @@ bool Parameter::ManageDefaultOptions(int next_option, char * optarg_param, bool 
             {
                PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, ARM_GCC_VERSION);
             }
-            exit_success=true;
+            exit_success = true;
             break;
 #endif
          }
@@ -620,7 +605,7 @@ bool Parameter::ManageDefaultOptions(int next_option, char * optarg_param, bool 
       {
          std::vector<std::string> Splitted;
          boost::algorithm::split(Splitted, optarg_param, boost::algorithm::is_any_of(","));
-         for (const auto & i : Splitted)
+         for(const auto& i : Splitted)
          {
             add_debug_class(i);
          }
@@ -645,11 +630,11 @@ bool Parameter::ManageDefaultOptions(int next_option, char * optarg_param, bool 
       }
       case OPT_OUTPUT_TEMPORARY_DIRECTORY:
       {
-         ///If the path is not absolute, make it into absolute
+         /// If the path is not absolute, make it into absolute
          std::string path(optarg_param);
          std::string temporary_directory_pattern;
-         temporary_directory_pattern = path+"/"+std::string(STR_CST_temporary_directory);
-         //The %s are required by the mkdtemp function
+         temporary_directory_pattern = path + "/" + std::string(STR_CST_temporary_directory);
+         // The %s are required by the mkdtemp function
          boost::filesystem::path temp_path = temporary_directory_pattern + "-%%%%-%%%%-%%%%-%%%%";
 
          boost::filesystem::path temp_path_obtained = boost::filesystem::unique_path(temp_path);
@@ -676,7 +661,7 @@ bool Parameter::ManageDefaultOptions(int next_option, char * optarg_param, bool 
       }
       default:
       {
-         ///next_option is not a Tool parameter
+         /// next_option is not a Tool parameter
          return true;
       }
    }
@@ -684,15 +669,15 @@ bool Parameter::ManageDefaultOptions(int next_option, char * optarg_param, bool 
 }
 
 #if HAVE_FROM_C_BUILT
-bool Parameter::ManageGccOptions(int next_option, char * optarg_param)
+bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
 {
-   switch (next_option)
+   switch(next_option)
    {
       case 'c':
-         {
-            setOption(OPT_gcc_c, true);
-            break;
-         }
+      {
+         setOption(OPT_gcc_c, true);
+         break;
+      }
       case 'D':
       {
          std::string defines;
@@ -749,44 +734,46 @@ bool Parameter::ManageGccOptions(int next_option, char * optarg_param)
       }
       case 'm':
       {
-         if (optarg_param)
+         if(optarg_param)
          {
             const std::string opt_level = std::string(optarg_param);
             if(opt_level == "32")
             {
-#if (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M32) ||(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M32) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M32) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M32) || (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M32) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M32) || (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M32) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32) || (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M32) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M32)
-               if( false
-#if (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M32)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC47
+#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M32) || (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M32) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M32) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M32) || \
+    (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M32) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M32) || (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M32) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32) ||  \
+    (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M32) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M32)
+               if(false
+#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M32)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC47
 #endif
-#if (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M32)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC48
+#if(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M32)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC48
 #endif
-#if (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M32)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
+#if(HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M32)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
 #endif
-#if (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M32)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
+#if(HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M32)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
 #endif
-#if (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M32)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
+#if(HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M32)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
 #endif
-#if (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M32)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+#if(HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M32)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
 #endif
-#if (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M32)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
+#if(HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M32)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
 #endif
-#if (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4
+#if(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
-#if (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M32)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
+#if(HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M32)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
-#if (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M32)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG6
+#if(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M32)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
-                  )
+               )
                   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
                else
 #endif
@@ -794,39 +781,41 @@ bool Parameter::ManageGccOptions(int next_option, char * optarg_param)
             }
             else if(opt_level == "x32")
             {
-#if (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32) ||(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_MX32) || (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_MX32) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_MX32) || (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_MX32) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_MX32) || (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX32) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_MX32)
-               if( false
-#if (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC47
+#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32) || (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_MX32) || \
+    (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_MX32) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_MX32) || (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_MX32) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_MX32) ||  \
+    (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX32) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_MX32)
+               if(false
+#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC47
 #endif
-#if (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC48
+#if(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC48
 #endif
-#if (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
+#if(HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
 #endif
-#if (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_MX32)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
+#if(HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_MX32)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
 #endif
-#if (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_MX32)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
+#if(HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_MX32)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
 #endif
-#if (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_MX32)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+#if(HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_MX32)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
 #endif
-#if (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_MX32)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
+#if(HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_MX32)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
 #endif
-#if (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_MX32)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4
+#if(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_MX32)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
-#if (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX32)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
+#if(HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX32)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
-#if (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_MX32)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG6
+#if(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_MX32)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
-                  )
+               )
                   setOption(OPT_gcc_m32_mx32, "-mx32");
                else
 #endif
@@ -834,39 +823,41 @@ bool Parameter::ManageGccOptions(int next_option, char * optarg_param)
             }
             else if(opt_level == "64")
             {
-#if (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64) ||(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M64) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M64) || (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M64) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M64) || (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M64) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M64) || (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M64)
-               if( false
-    #if (HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC47
-    #endif
-    #if (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC48
-    #endif
-    #if (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M64)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
-    #endif
-    #if (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M64)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
-    #endif
-    #if (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M64)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
-    #endif
-    #if (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M64)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
-    #endif
-    #if (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M64)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
-    #endif
-    #if (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M64)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4
-    #endif
-    #if (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
-    #endif
-    #if (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M64)
-                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG6
-    #endif
-                   )
+#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64) || (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M64) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M64) || \
+    (HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M64) || (HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M64) || (HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M64) || (HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M64) ||  \
+    (HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64) || (HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M64)
+               if(false
+#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC47
+#endif
+#if(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC48
+#endif
+#if(HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M64)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
+#endif
+#if(HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M64)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
+#endif
+#if(HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M64)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
+#endif
+#if(HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M64)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+#endif
+#if(HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M64)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
+#endif
+#if(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M64)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4
+#endif
+#if(HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
+#endif
+#if(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M64)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG6
+#endif
+               )
                   setOption(OPT_gcc_m32_mx32, "-m64");
                else
 #endif
@@ -890,7 +881,7 @@ bool Parameter::ManageGccOptions(int next_option, char * optarg_param)
       }
       case 'I':
       {
-         std::string includes= "-I " + std::string(optarg);
+         std::string includes = "-I " + std::string(optarg);
          if(isOption(OPT_gcc_includes))
             includes = getOption<std::string>(OPT_gcc_includes) + " " + includes;
          setOption(OPT_gcc_includes, includes);
@@ -914,7 +905,7 @@ bool Parameter::ManageGccOptions(int next_option, char * optarg_param)
       }
       case 'O':
       {
-         if (optarg_param)
+         if(optarg_param)
          {
             const std::string opt_level = std::string(optarg_param);
             if(opt_level == "0")
@@ -1140,7 +1131,7 @@ bool Parameter::ManageGccOptions(int next_option, char * optarg_param)
       }
       default:
       {
-         ///next_option is not a GCC parameter
+         /// next_option is not a GCC parameter
          return true;
       }
    }
@@ -1166,58 +1157,28 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::string& file_name, con
    }
 #endif
 #if HAVE_FROM_C_BUILT
-   if(extension == "c" or
-         extension == "i")
+   if(extension == "c" or extension == "i")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--C source file");
       return Parameters_FileFormat::FF_C;
    }
-   if(
-         extension == "m" or
-         extension == "mi"
-         )
+   if(extension == "m" or extension == "mi")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--C source file");
       return Parameters_FileFormat::FF_OBJECTIVEC;
    }
-   if(
-         extension == "mm" or
-         extension == "M" or
-         extension == "mii")
+   if(extension == "mm" or extension == "M" or extension == "mii")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--C source file");
       return Parameters_FileFormat::FF_OBJECTIVECPP;
    }
-   if(
-         extension == "ii" or
-         extension == "cc" or
-         extension == "cp" or
-         extension == "cxx" or
-         extension == "cpp" or
-         extension == "CPP" or
-         extension == "c++" or
-         extension == "C")
+   if(extension == "ii" or extension == "cc" or extension == "cp" or extension == "cxx" or extension == "cpp" or extension == "CPP" or extension == "c++" or extension == "C")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--C source file");
       return Parameters_FileFormat::FF_CPP;
    }
-   if(
-         extension == "f" or
-         extension == "for" or
-         extension == "ftn" or
-         extension == "F" or
-         extension == "FOR" or
-         extension == "fpp" or
-         extension == "FPP" or
-         extension == "FTN" or
-         extension == "f90" or
-         extension == "f95" or
-         extension == "f03" or
-         extension == "f08" or
-         extension == "F90" or
-         extension == "F95" or
-         extension == "F03" or
-         extension == "F08")
+   if(extension == "f" or extension == "for" or extension == "ftn" or extension == "F" or extension == "FOR" or extension == "fpp" or extension == "FPP" or extension == "FTN" or extension == "f90" or extension == "f95" or extension == "f03" or
+      extension == "f08" or extension == "F90" or extension == "F95" or extension == "F03" or extension == "F08")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--C source file");
       return Parameters_FileFormat::FF_FORTRAN;
@@ -1388,25 +1349,25 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::string& file_name, con
          if(root->get_name() == STR_XML_Metrics)
          {
             const xml_node::node_list list = root->get_children();
-            for (xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
+            for(xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
             {
                const xml_element* static_or_dynamic = GetPointer<const xml_element>(*iter);
-               if (!static_or_dynamic)
+               if(!static_or_dynamic)
                   continue;
-               if (static_or_dynamic->get_name() == STR_XML_Metrics_Static)
+               if(static_or_dynamic->get_name() == STR_XML_Metrics_Static)
                {
                   const xml_node::node_list static_children = static_or_dynamic->get_children();
-                  for (xml_node::node_list::const_iterator static_child = static_children.begin(); static_child != static_children.end(); static_child++)
+                  for(xml_node::node_list::const_iterator static_child = static_children.begin(); static_child != static_children.end(); static_child++)
                   {
-                     const xml_element * static_child_xml = GetPointer<const xml_element>(*static_child);
+                     const xml_element* static_child_xml = GetPointer<const xml_element>(*static_child);
                      if(!static_child_xml)
                         continue;
                      if(static_child_xml->get_name() == STR_XML_Metrics_Sequential_Estimation)
                      {
                         const xml_node::node_list sequential_children = static_child_xml->get_children();
-                        for (xml_node::node_list::const_iterator sequential_child = sequential_children.begin(); sequential_child != sequential_children.end(); sequential_child++)
+                        for(xml_node::node_list::const_iterator sequential_child = sequential_children.begin(); sequential_child != sequential_children.end(); sequential_child++)
                         {
-                           const xml_element * sequential_child_xml = GetPointer<const xml_element>(*sequential_child);
+                           const xml_element* sequential_child_xml = GetPointer<const xml_element>(*sequential_child);
                            if(sequential_child_xml and sequential_child_xml->get_attribute(STR_XML_Metrics_Distribution))
                            {
                               const std::string distribution = sequential_child_xml->get_attribute(STR_XML_Metrics_Distribution)->get_value();
@@ -1441,12 +1402,12 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::string& file_name, con
          if(root->get_name() == STR_XML_weights_root)
          {
             const xml_node::node_list list = root->get_children();
-            for (xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
+            for(xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
             {
                const xml_element* model = GetPointer<const xml_element>(*iter);
-               if (not model)
+               if(not model)
                   continue;
-               if (model->get_attribute(STR_XML_weights_distribution) and model->get_attribute(STR_XML_weights_distribution)->get_value() == STR_XML_probability_distribution_symbolic)
+               if(model->get_attribute(STR_XML_weights_distribution) and model->get_attribute(STR_XML_weights_distribution)->get_value() == STR_XML_probability_distribution_symbolic)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Symbolic distribution model");
                   return Parameters_FileFormat::FF_XML_WGT_SYM;
@@ -1460,13 +1421,13 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::string& file_name, con
       return Parameters_FileFormat::FF_XML;
    }
 #if HAVE_FROM_C_BUILT
-   if (boost::filesystem::exists(file_name))
+   if(boost::filesystem::exists(file_name))
    {
       const auto opened_file = fileIO_istream_open(file_name);
       std::string line;
-      if(! opened_file->eof())
+      if(!opened_file->eof())
       {
-         getline (*opened_file,line);
+         getline(*opened_file, line);
          if(line.find(STOK(TOK_GCC_VERSION)) != std::string::npos)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Raw file");
@@ -1478,194 +1439,191 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::string& file_name, con
    return Parameters_FileFormat::FF_UNKNOWN;
 }
 
-void Parameter::PrintBugReport(std::ostream &os) const
+void Parameter::PrintBugReport(std::ostream& os) const
 {
    os << "Please report bugs to <" << PACKAGE_BUGREPORT << ">\n" << std::endl;
 }
 
-void Parameter::PrintGeneralOptionsUsage(std::ostream & os) const
+void Parameter::PrintGeneralOptionsUsage(std::ostream& os) const
 {
-   os
-   << "  General options:\n\n"
-   << "    --help, -h\n"
-   << "        Display this usage information.\n\n"
-   << "    --version, -V\n"
-   << "        Display the version of the program.\n\n"
+   os << "  General options:\n\n"
+      << "    --help, -h\n"
+      << "        Display this usage information.\n\n"
+      << "    --version, -V\n"
+      << "        Display the version of the program.\n\n"
 #if HAVE_EXPERIMENTAL
-   << "    --seed=<number>\n"
-   << "        Set the seed of the random number generator (default=0).\n\n"
+      << "    --seed=<number>\n"
+      << "        Set the seed of the random number generator (default=0).\n\n"
 #endif
 #if !RELEASE
-   << "    --read-parameters-XML=<xml_file_name>\n"
-   << "        Read command line options from a XML file.\n\n"
-   << "    --write-parameters-XML=<xml_file_name>\n"
-   << "        Dump the parsed command line options into a XML file.\n\n"
+      << "    --read-parameters-XML=<xml_file_name>\n"
+      << "        Read command line options from a XML file.\n\n"
+      << "    --write-parameters-XML=<xml_file_name>\n"
+      << "        Dump the parsed command line options into a XML file.\n\n"
 #endif
-   << std::endl;
+      << std::endl;
 }
 
-void Parameter::PrintOutputOptionsUsage(std::ostream & os) const
+void Parameter::PrintOutputOptionsUsage(std::ostream& os) const
 {
-   os
-   << "  Output options:\n\n"
-   << "    --verbosity, -v <level>\n"
-   << "        Set the output verbosity level\n"
-   << "        Possible values for <level>:\n"
-   << "            0 - NONE\n"
-   << "            1 - MINIMUM\n"
-   << "            2 - VERBOSE\n"
-   << "            3 - PEDANTIC\n"
-   << "            4 - VERY PEDANTIC\n"
-   << "        (default = 1)\n"
-   << "\n"
+   os << "  Output options:\n\n"
+      << "    --verbosity, -v <level>\n"
+      << "        Set the output verbosity level\n"
+      << "        Possible values for <level>:\n"
+      << "            0 - NONE\n"
+      << "            1 - MINIMUM\n"
+      << "            2 - VERBOSE\n"
+      << "            3 - PEDANTIC\n"
+      << "            4 - VERY PEDANTIC\n"
+      << "        (default = 1)\n"
+      << "\n"
 #if !RELEASE
-   << "    --debug, -d <level>\n"
-   << "        Set the verbosity level of debugging information\n"
-   << "        Possible values for <level>:\n"
-   << "            0 - NONE\n"
-   << "            1 - MINIMUM\n"
-   << "            2 - VERBOSE\n"
-   << "            3 - PEDANTIC\n"
-   << "            4 - VERY PEDANTIC\n"
-   << "        (default = 1).\n\n"
-   << "    --debug-classes=<classes_list>\n"
-   << "        Set maximum debug level for classes in <classes_list>\n\n"
-   << "    --cfg-max-transformations=<number>\n"
-   << "        Set a maximum number of cfg transformations for each function.\n\n"
+      << "    --debug, -d <level>\n"
+      << "        Set the verbosity level of debugging information\n"
+      << "        Possible values for <level>:\n"
+      << "            0 - NONE\n"
+      << "            1 - MINIMUM\n"
+      << "            2 - VERBOSE\n"
+      << "            3 - PEDANTIC\n"
+      << "            4 - VERY PEDANTIC\n"
+      << "        (default = 1).\n\n"
+      << "    --debug-classes=<classes_list>\n"
+      << "        Set maximum debug level for classes in <classes_list>\n\n"
+      << "    --cfg-max-transformations=<number>\n"
+      << "        Set a maximum number of cfg transformations for each function.\n\n"
 #endif
-   << "    --no-clean\n"
-   << "        Do not remove temporary files.\n\n"
-   << "    --benchmark-name=<name>\n"
-   << "        Set the name of the current benchmark for data collection.\n"
-   << "        Mainly useful for data collection from extensive regression tests.\n\n"
-   << "    --configuration-name=<name>\n"
-   << "        Set the name of the current tool configuration for data collection.\n"
-   << "        Mainly useful for data collection from extensive regression tests.\n\n"
-   << "    --benchmark-fake-parameters\n"
-   << "        Set the parameters string for data collection. The parameters in the\n"
-   << "        string are not actually used, but they are used for data collection in\n"
-   << "        extensive regression tests.\n\n"
-   << "    --output-temporary-directory=<path>\n"
-   << "        Set the directory where temporary files are saved.\n"
-   << "        Default is '" << STR_CST_temporary_directory << "'\n\n"
-   << "    --print-dot\n"
-   << "        Dump to file several different graphs used in the IR of the tool.\n"
-   << "        The graphs are saved in .dot files, in graphviz format\n\n"
+      << "    --no-clean\n"
+      << "        Do not remove temporary files.\n\n"
+      << "    --benchmark-name=<name>\n"
+      << "        Set the name of the current benchmark for data collection.\n"
+      << "        Mainly useful for data collection from extensive regression tests.\n\n"
+      << "    --configuration-name=<name>\n"
+      << "        Set the name of the current tool configuration for data collection.\n"
+      << "        Mainly useful for data collection from extensive regression tests.\n\n"
+      << "    --benchmark-fake-parameters\n"
+      << "        Set the parameters string for data collection. The parameters in the\n"
+      << "        string are not actually used, but they are used for data collection in\n"
+      << "        extensive regression tests.\n\n"
+      << "    --output-temporary-directory=<path>\n"
+      << "        Set the directory where temporary files are saved.\n"
+      << "        Default is '" << STR_CST_temporary_directory << "'\n\n"
+      << "    --print-dot\n"
+      << "        Dump to file several different graphs used in the IR of the tool.\n"
+      << "        The graphs are saved in .dot files, in graphviz format\n\n"
 #if !RELEASE
-   << "    --error-on-warning\n"
-   << "        Convert all runtime warnings to errors.\n\n"
+      << "    --error-on-warning\n"
+      << "        Convert all runtime warnings to errors.\n\n"
 #endif
-   ;
+       ;
 }
 
 #if HAVE_FROM_C_BUILT
-void Parameter::PrintGccOptionsUsage(std::ostream & os) const
+void Parameter::PrintGccOptionsUsage(std::ostream& os) const
 {
-   os
-   << "  GCC options:\n\n"
-   << "    --compiler=<compiler_version>\n"
-   << "        Specify which compiler is used.\n"
-   << "        Possible values for <compiler_version> are:\n"
+   os << "  GCC options:\n\n"
+      << "    --compiler=<compiler_version>\n"
+      << "        Specify which compiler is used.\n"
+      << "        Possible values for <compiler_version> are:\n"
 #if HAVE_ARM_COMPILER
-   << "            ARM\n"
+      << "            ARM\n"
 #endif
 #if HAVE_SPARC_COMPILER
-   << "            SPARC\n"
+      << "            SPARC\n"
 #endif
 #if HAVE_I386_GCC45_COMPILER
-   << "            I386_GCC45\n"
+      << "            I386_GCC45\n"
 #endif
 #if HAVE_I386_GCC46_COMPILER
-   << "            I386_GCC46\n"
+      << "            I386_GCC46\n"
 #endif
 #if HAVE_I386_GCC47_COMPILER
-   << "            I386_GCC47\n"
+      << "            I386_GCC47\n"
 #endif
 #if HAVE_I386_GCC48_COMPILER
-   << "            I386_GCC48\n"
+      << "            I386_GCC48\n"
 #endif
 #if HAVE_I386_GCC49_COMPILER
-   << "            I386_GCC49\n"
+      << "            I386_GCC49\n"
 #endif
 #if HAVE_I386_GCC5_COMPILER
-   << "            I386_GCC5\n"
+      << "            I386_GCC5\n"
 #endif
 #if HAVE_I386_GCC6_COMPILER
-   << "            I386_GCC6\n"
+      << "            I386_GCC6\n"
 #endif
 #if HAVE_I386_GCC7_COMPILER
-   << "            I386_GCC7\n"
+      << "            I386_GCC7\n"
 #endif
 #if HAVE_I386_GCC8_COMPILER
-   << "            I386_GCC8\n"
+      << "            I386_GCC8\n"
 #endif
 #if HAVE_I386_CLANG4_COMPILER
-   << "            I386_CLANG4\n"
+      << "            I386_CLANG4\n"
 #endif
 #if HAVE_I386_CLANG5_COMPILER
-   << "            I386_CLANG5\n"
+      << "            I386_CLANG5\n"
 #endif
 #if HAVE_I386_CLANG6_COMPILER
-   << "            I386_CLANG6\n"
+      << "            I386_CLANG6\n"
 #endif
-   << "\n"
-   << "    -O<level>\n"
-   << "        Enable a specific optimization level. Possible values are the usual\n"
-   << "        optimization flags accepted by compilers, plus some others:\n"
-   << "        -O0,-O1,-O2,-O3,-Os,-O4,-O5.\n\n"
-   << "    -f<option>\n"
-   << "        Enable or disable a GCC optimization option. All the -f or -fno options\n"
-   << "        are supported. In particular, -ftree-vectorize option triggers the\n"
-   << "        high-level synthesis of vectorized operations.\n\n"
-   << "    -I<path>\n"
-   << "        Specify a path where headers are searched for.\n\n"
-   << "    -W<warning>\n"
-   << "        Specify a warning option passed to GCC. All the -W options available in\n"
-   << "        GCC are supported.\n\n"
-   << "    -E\n"
-   << "        Enable preprocessing mode of GCC.\n\n"
-   << "    --std=<standard>\n"
-   << "        Assume that the input sources are for <standard>. All\n"
-   << "        the --std options available in GCC are supported.\n\n"
-   << "    -D<name>\n"
-   << "        Predefine name as a macro, with definition 1.\n\n"
-   << "    -D<name=definition>\n"
-   << "        Tokenize <definition> and process as if it appeared as a #define directive.\n\n"
-   << "    -U<name>\n"
-   << "        Remove existing definition for macro <name>.\n\n"
-   << "    --param <name>=<value>\n"
-   << "        Set the amount <value> for the GCC parameter <name> that could be used for\n"
-   << "        some optimizations.\n\n"
-   << "    -l<library>\n"
-   << "        Search the library named <library> when linking.\n\n"
-   << "    -L<dir>\n"
-   << "        Add directory <dir> to the list of directories to be searched for -l.\n\n"
-   << "    --use-raw\n"
-   << "        Specify that input file is already a raw file and not a source file.\n\n"
-   << "    -m<machine-option>\n"
-   << "        Specify machine dependend options (currently not used).\n\n"
+      << "\n"
+      << "    -O<level>\n"
+      << "        Enable a specific optimization level. Possible values are the usual\n"
+      << "        optimization flags accepted by compilers, plus some others:\n"
+      << "        -O0,-O1,-O2,-O3,-Os,-O4,-O5.\n\n"
+      << "    -f<option>\n"
+      << "        Enable or disable a GCC optimization option. All the -f or -fno options\n"
+      << "        are supported. In particular, -ftree-vectorize option triggers the\n"
+      << "        high-level synthesis of vectorized operations.\n\n"
+      << "    -I<path>\n"
+      << "        Specify a path where headers are searched for.\n\n"
+      << "    -W<warning>\n"
+      << "        Specify a warning option passed to GCC. All the -W options available in\n"
+      << "        GCC are supported.\n\n"
+      << "    -E\n"
+      << "        Enable preprocessing mode of GCC.\n\n"
+      << "    --std=<standard>\n"
+      << "        Assume that the input sources are for <standard>. All\n"
+      << "        the --std options available in GCC are supported.\n\n"
+      << "    -D<name>\n"
+      << "        Predefine name as a macro, with definition 1.\n\n"
+      << "    -D<name=definition>\n"
+      << "        Tokenize <definition> and process as if it appeared as a #define directive.\n\n"
+      << "    -U<name>\n"
+      << "        Remove existing definition for macro <name>.\n\n"
+      << "    --param <name>=<value>\n"
+      << "        Set the amount <value> for the GCC parameter <name> that could be used for\n"
+      << "        some optimizations.\n\n"
+      << "    -l<library>\n"
+      << "        Search the library named <library> when linking.\n\n"
+      << "    -L<dir>\n"
+      << "        Add directory <dir> to the list of directories to be searched for -l.\n\n"
+      << "    --use-raw\n"
+      << "        Specify that input file is already a raw file and not a source file.\n\n"
+      << "    -m<machine-option>\n"
+      << "        Specify machine dependend options (currently not used).\n\n"
 #if !RELEASE
-   << "    --read-GCC-XML=<xml_file_name>\n"
-   << "        Read GCC options from a XML file.\n\n"
-   << "    --write-GCC-XML=<xml_file_name>\n"
-   << "        Dump the parsed GCC compiler options into a XML file.\n\n"
+      << "    --read-GCC-XML=<xml_file_name>\n"
+      << "        Read GCC options from a XML file.\n\n"
+      << "    --write-GCC-XML=<xml_file_name>\n"
+      << "        Dump the parsed GCC compiler options into a XML file.\n\n"
 #endif
-   << "    --Include-sysdir\n"
-   << "        Return the system include directory used by the wrapped GCC compiler.\n\n"
-   << "    --gcc-config\n"
-   << "        Return the GCC configuration.\n\n"
+      << "    --Include-sysdir\n"
+      << "        Return the system include directory used by the wrapped GCC compiler.\n\n"
+      << "    --gcc-config\n"
+      << "        Return the GCC configuration.\n\n"
 #if !RELEASE
-   << "    --compute-sizeof\n"
-   << "        Replace sizeof with the computed valued for the considered target\n"
-   << "        architecture.\n\n"
+      << "    --compute-sizeof\n"
+      << "        Replace sizeof with the computed valued for the considered target\n"
+      << "        architecture.\n\n"
 #endif
-   << "    --extra-gcc-options\n"
-   << "        Specify custom extra options to the compiler.\n\n"
-   << std::endl;
+      << "    --extra-gcc-options\n"
+      << "        Specify custom extra options to the compiler.\n\n"
+      << std::endl;
 }
 #endif
 
-template<>
+template <>
 const CustomSet<std::string> Parameter::getOption(const enum enum_option name) const
 {
    CustomSet<std::string> ret;
@@ -1673,14 +1631,14 @@ const CustomSet<std::string> Parameter::getOption(const enum enum_option name) c
    const std::string to_be_splitted = getOption<std::string>(name);
    boost::algorithm::split(splitted, to_be_splitted, boost::algorithm::is_any_of(STR_CST_string_separator));
    size_t i_end = splitted.size();
-   for (size_t i = 0; i < i_end; i++)
+   for(size_t i = 0; i < i_end; i++)
    {
       ret.insert(splitted[i]);
    }
    return ret;
 }
 
-template<>
+template <>
 const std::list<std::string> Parameter::getOption(const enum enum_option name) const
 {
    std::list<std::string> ret;
@@ -1688,7 +1646,7 @@ const std::list<std::string> Parameter::getOption(const enum enum_option name) c
    const std::string to_be_splitted = getOption<std::string>(name);
    boost::algorithm::split(splitted, to_be_splitted, boost::algorithm::is_any_of(STR_CST_string_separator));
    size_t i_end = splitted.size();
-   for (size_t i = 0; i < i_end; i++)
+   for(size_t i = 0; i < i_end; i++)
    {
       ret.push_back(splitted[i]);
    }
@@ -1704,7 +1662,7 @@ const std::vector<std::string> Parameter::CGetArgv() const
 }
 
 #if HAVE_HOST_PROFILING_BUILT
-template<>
+template <>
 HostProfiling_Method Parameter::getOption(const enum enum_option name) const
 {
    return static_cast<HostProfiling_Method>(getOption<int>(name));
@@ -1712,13 +1670,13 @@ HostProfiling_Method Parameter::getOption(const enum enum_option name) const
 #endif
 
 #if HAVE_TARGET_PROFILING
-template<>
+template <>
 InstrumentWriter_Level Parameter::getOption(const enum enum_option name) const
 {
    return static_cast<InstrumentWriter_Level>(getOption<int>(name));
 }
 
-template<>
+template <>
 TargetArchitecture_Kind Parameter::getOption(const enum enum_option name) const
 {
    return static_cast<TargetArchitecture_Kind>(getOption<int>(name));
@@ -1726,21 +1684,21 @@ TargetArchitecture_Kind Parameter::getOption(const enum enum_option name) const
 #endif
 
 #if HAVE_FROM_C_BUILT
-template<>
+template <>
 GccWrapper_CompilerTarget Parameter::getOption(const enum enum_option name) const
 {
    return static_cast<GccWrapper_CompilerTarget>(getOption<int>(name));
 }
 #endif
 
-template<>
+template <>
 Parameters_FileFormat Parameter::getOption(const enum enum_option name) const
 {
    return static_cast<Parameters_FileFormat>(getOption<int>(name));
 }
 
 #if HAVE_CODE_ESTIMATION_BUILT
-template<>
+template <>
 std::unordered_set<ActorGraphEstimator_Algorithm> Parameter::getOption(const enum enum_option name) const
 {
    std::unordered_set<ActorGraphEstimator_Algorithm> return_value;
@@ -1749,15 +1707,15 @@ std::unordered_set<ActorGraphEstimator_Algorithm> Parameter::getOption(const enu
    std::vector<std::string> splitted;
    boost::algorithm::split(splitted, temp, boost::algorithm::is_any_of(","));
    size_t i_end = splitted.size();
-   for (size_t i = 0; i < i_end; i++)
+   for(size_t i = 0; i < i_end; i++)
    {
-      if (splitted[i] == "")
+      if(splitted[i] == "")
          continue;
-      if (splitted[i] == STR_CST_path_based)
+      if(splitted[i] == STR_CST_path_based)
          return_value.insert(ActorGraphEstimator_Algorithm::PE_PATH_BASED);
-      else if (splitted[i] == STR_CST_worst_case)
+      else if(splitted[i] == STR_CST_worst_case)
          return_value.insert(ActorGraphEstimator_Algorithm::PE_WORST_CASE);
-      else if (splitted[i] == STR_CST_average_case)
+      else if(splitted[i] == STR_CST_average_case)
          return_value.insert(ActorGraphEstimator_Algorithm::PE_AVERAGE_CASE);
       else
          THROW_ERROR("Unrecognized performance estimation algorithm: " + splitted[i]);
@@ -1765,7 +1723,7 @@ std::unordered_set<ActorGraphEstimator_Algorithm> Parameter::getOption(const enu
    return return_value;
 }
 
-template<>
+template <>
 ActorGraphEstimator_Algorithm Parameter::getOption(const enum enum_option name) const
 {
    return static_cast<ActorGraphEstimator_Algorithm>(getOption<int>(name));
@@ -1773,7 +1731,7 @@ ActorGraphEstimator_Algorithm Parameter::getOption(const enum enum_option name) 
 #endif
 
 #if HAVE_DIOPSIS
-template<>
+template <>
 DiopsisInstrumentWriter_Type Parameter::getOption(const enum enum_option name) const
 {
    return static_cast<DiopsisInstrumentWriter_Type>(getOption<int>(name));
@@ -1781,7 +1739,7 @@ DiopsisInstrumentWriter_Type Parameter::getOption(const enum enum_option name) c
 #endif
 
 #if HAVE_DESIGN_ANALYSIS_BUILT
-template<>
+template <>
 DesignAnalysis_Step Parameter::getOption(const enum enum_option name) const
 {
    return static_cast<DesignAnalysis_Step>(getOption<int>(name));
@@ -1789,12 +1747,12 @@ DesignAnalysis_Step Parameter::getOption(const enum enum_option name) const
 #endif
 
 #if HAVE_FROM_C_BUILT
-template<>
+template <>
 GccWrapper_OptimizationSet Parameter::getOption(const enum enum_option name) const
 {
    return static_cast<GccWrapper_OptimizationSet>(getOption<int>(name));
 }
-template<>
+template <>
 void Parameter::setOption(const enum enum_option name, const GccWrapper_OptimizationSet value)
 {
    enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(value));
@@ -1802,92 +1760,92 @@ void Parameter::setOption(const enum enum_option name, const GccWrapper_Optimiza
 #endif
 
 #if HAVE_TO_C_BUILT
-template<>
+template <>
 ActorGraphBackend_Type Parameter::getOption(const enum enum_option name) const
 {
    return static_cast<ActorGraphBackend_Type>(getOption<int>(name));
 }
 #endif
 #if HAVE_HLS_BUILT
-template<>
+template <>
 HLSFlowStep_Type Parameter::getOption(const enum enum_option name) const
 {
    return static_cast<HLSFlowStep_Type>(getOption<int>(name));
 }
 
-template<>
+template <>
 void Parameter::setOption(const enum enum_option name, const HLSFlowStep_Type hls_flow_step_type)
 {
    enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(hls_flow_step_type));
 }
 
-template<>
+template <>
 MemoryAllocation_Policy Parameter::getOption(const enum enum_option name) const
 {
    return static_cast<MemoryAllocation_Policy>(getOption<int>(name));
 }
 
-template<>
+template <>
 void Parameter::setOption(const enum enum_option name, const MemoryAllocation_Policy memory_allocation_policy)
 {
    enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(memory_allocation_policy));
 }
 
-template<>
+template <>
 MemoryAllocation_ChannelsType Parameter::getOption(const enum enum_option name) const
 {
    return static_cast<MemoryAllocation_ChannelsType>(getOption<int>(name));
 }
 
-template<>
+template <>
 void Parameter::setOption(const enum enum_option name, const MemoryAllocation_ChannelsType memory_allocation_channels_type)
 {
    enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(memory_allocation_channels_type));
 }
 
-template<>
+template <>
 CliqueCovering_Algorithm Parameter::getOption(const enum enum_option name) const
 {
    return static_cast<CliqueCovering_Algorithm>(getOption<int>(name));
 }
 
-template<>
+template <>
 void Parameter::setOption(const enum enum_option name, const CliqueCovering_Algorithm clique_covering_algorithm)
 {
    enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(clique_covering_algorithm));
 }
 
-template<>
+template <>
 Evaluation_Mode Parameter::getOption(const enum enum_option name) const
 {
    return static_cast<Evaluation_Mode>(getOption<int>(name));
 }
 
-template<>
+template <>
 void Parameter::setOption(const enum enum_option name, const Evaluation_Mode evaluation_mode)
 {
    enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(evaluation_mode));
 }
 
-template<>
+template <>
 ParametricListBased_Metric Parameter::getOption(const enum enum_option name) const
 {
    return static_cast<ParametricListBased_Metric>(getOption<int>(name));
 }
 
-template<>
+template <>
 void Parameter::setOption(const enum enum_option name, const ParametricListBased_Metric parametric_list_based_metric)
 {
    enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(parametric_list_based_metric));
 }
 
-template<>
+template <>
 SDCScheduling_Algorithm Parameter::getOption(const enum enum_option name) const
 {
    return static_cast<SDCScheduling_Algorithm>(getOption<int>(name));
 }
 
-template<>
+template <>
 void Parameter::setOption(const enum enum_option name, const SDCScheduling_Algorithm sdc_scheduling_algorithm)
 {
    enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(sdc_scheduling_algorithm));

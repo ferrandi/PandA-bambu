@@ -29,27 +29,27 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file to_data_file_step.hpp
  * @brief Base class for data backend
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef TO_DATA_FILE_STEP_HPP
 #define TO_DATA_FILE_STEP_HPP
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
 
-///Superclass include
+/// Superclass include
 #include "design_flow_step.hpp"
 
-///STD include
+/// STD include
 #include <string>
 
-///utility include
+/// utility include
 #include "refcount.hpp"
 
 enum class ToDataFileStep_Type
@@ -66,84 +66,80 @@ enum class ToDataFileStep_Type
 namespace std
 {
    template <>
-      struct hash<ToDataFileStep_Type> : public unary_function<ToDataFileStep_Type, size_t>
+   struct hash<ToDataFileStep_Type> : public unary_function<ToDataFileStep_Type, size_t>
+   {
+      size_t operator()(ToDataFileStep_Type design_flow_step) const
       {
-         size_t operator()(ToDataFileStep_Type design_flow_step) const
-         {
-            hash<int> hasher;
-            return hasher(static_cast<int>(design_flow_step));
-         }
-      };
-}
-
+         hash<int> hasher;
+         return hasher(static_cast<int>(design_flow_step));
+      }
+   };
+} // namespace std
 
 class ToDataFileStep : public virtual DesignFlowStep
 {
-   protected:
-      ///The type of step
-      ToDataFileStep_Type to_data_file_step_type;
+ protected:
+   /// The type of step
+   ToDataFileStep_Type to_data_file_step_type;
 
-   public:
-      /**
-       * Constructor
-       * @param design_flow_manager is the design flow manager
-       * @param to_data_file_step is the type of this step
-       * @param parameters is the set of input parameters
-       */
-      ToDataFileStep(const DesignFlowManagerConstRef design_flow_manager, const ToDataFileStep_Type to_data_file_step, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor
+    * @param design_flow_manager is the design flow manager
+    * @param to_data_file_step is the type of this step
+    * @param parameters is the set of input parameters
+    */
+   ToDataFileStep(const DesignFlowManagerConstRef design_flow_manager, const ToDataFileStep_Type to_data_file_step, const ParameterConstRef parameters);
 
-      /**
-       * Return a unified identifier of this design step
-       * @return the signature of the design step
-       */
-      const std::string GetSignature() const override;
+   /**
+    * Return a unified identifier of this design step
+    * @return the signature of the design step
+    */
+   const std::string GetSignature() const override;
 
-      /**
-       * Given a to data file step type, return the name of the type
-       * @param to_data_file_step is the type to be considered
-       * @return the name of the type
-       */
-      static
-      const std::string EnumToName(const ToDataFileStep_Type to_data_file_step);
+   /**
+    * Given a to data file step type, return the name of the type
+    * @param to_data_file_step is the type to be considered
+    * @return the name of the type
+    */
+   static const std::string EnumToName(const ToDataFileStep_Type to_data_file_step);
 
-      /**
-       * Given the name of data file step type, return the enum
-       * @param to_data_file_step_type is the type to be considered
-       * @return the name of the type
-       */
-      static
-      ToDataFileStep_Type NameToEnum(const std::string&to_data_file_step);
+   /**
+    * Given the name of data file step type, return the enum
+    * @param to_data_file_step_type is the type to be considered
+    * @return the name of the type
+    */
+   static ToDataFileStep_Type NameToEnum(const std::string& to_data_file_step);
 
-      /**
-       * Compute the signature of a to data file step
-       * @param to_data_file_step_type is the type of the step
-       * @return the corresponding signature
-       */
-      static
-      const std::string ComputeSignature(const ToDataFileStep_Type to_data_file_step_type);
+   /**
+    * Compute the signature of a to data file step
+    * @param to_data_file_step_type is the type of the step
+    * @return the corresponding signature
+    */
+   static const std::string ComputeSignature(const ToDataFileStep_Type to_data_file_step_type);
 
-      /**
-       * Return the name of this design step
-       * @return the name of the pass (for debug purpose)
-       */
-      const std::string GetName() const override;
+   /**
+    * Return the name of this design step
+    * @return the name of the pass (for debug purpose)
+    */
+   const std::string GetName() const override;
 
-      /**
-       * Compute the relationships of a step with other steps
-       * @param dependencies is where relationships will be stored
-       * @param relationship_type is the type of relationship to be computed
-       */
-      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override = 0;
+   /**
+    * Compute the relationships of a step with other steps
+    * @param dependencies is where relationships will be stored
+    * @param relationship_type is the type of relationship to be computed
+    */
+   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override = 0;
 
-      /**
-       * Return the factory to create this type of steps
-       */
-      const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
+   /**
+    * Return the factory to create this type of steps
+    */
+   const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
 
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      bool HasToBeExecuted() const override;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 };
 #endif

@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file mux_obj.hpp
  * @brief Base class for multiplexer into datapath
@@ -40,23 +40,22 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "mux_obj.hpp"
 
-mux_obj::mux_obj(const generic_objRef _first, const generic_objRef _second, unsigned int _level, const std::string& _name) :
-   generic_obj(CONNECTION_ELEMENT, _name), bitsize(0), first(_first), second(_second), level(_level)
-{}
+mux_obj::mux_obj(const generic_objRef _first, const generic_objRef _second, unsigned int _level, const std::string& _name) : generic_obj(CONNECTION_ELEMENT, _name), bitsize(0), first(_first), second(_second), level(_level)
+{
+}
 
-mux_obj::~mux_obj()
-= default;
+mux_obj::~mux_obj() = default;
 
 void mux_obj::set_target(const generic_objRef tgt)
-{ 
+{
    target = tgt;
 }
 
 generic_objRef mux_obj::GetSelector() const
-{ 
+{
    return selector;
 }
 

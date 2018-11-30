@@ -1128,6 +1128,39 @@ gcc_regression_simple/zero-struct-1.c\
 ./bambu_specific_test2/ps_constraints.xml \
 ./bambu_specific_test3.sh\
 ./bambu_specific_test3_list\
+./bambu_specific_test4/ac_types1.cpp \
+./bambu_specific_test4/ac_types2.cpp \
+./bambu_specific_test4/ac_types2_valid.cpp \
+./bambu_specific_test4/ac_types2_ack.cpp \
+./bambu_specific_test4/ac_types2_out_ack.cpp \
+./bambu_specific_test4/ac_types3.cpp \
+./bambu_specific_test4/ac_types4.cpp \
+./bambu_specific_test4/ac_types2_in_handshake.cpp \
+./bambu_specific_test4/ac_types2_out_handshake.cpp \
+./bambu_specific_test4/ac_types2_handshake.cpp \
+./bambu_specific_test4/ac_types2_fifo.cpp \
+./bambu_specific_test4/ac_types2_array.cpp \
+./bambu_specific_test4/ac_types2_array_7bits.cpp \
+./bambu_specific_test4/ac_types2_array_32ubits.cpp \
+./bambu_specific_test4/ac_types2_array_64ubits.cpp \
+./bambu_specific_test4/ac_types2_array_128ubits.cpp \
+./bambu_specific_test4/ac_types2_array_multi_function.cpp \
+./bambu_specific_test4/simple_c1.c\
+./bambu_specific_test4/simple_c1_none.c\
+./bambu_specific_test4/simple_c2_none.c\
+./bambu_specific_test4/simple_c3_none.c\
+./bambu_specific_test4/simple_c1_in_valid.c\
+./bambu_specific_test4/simple_c1_in_ack.c\
+./bambu_specific_test4/simple_c1_ack.c\
+./bambu_specific_test4/simple_c3_ovalid.c \
+./bambu_specific_test4/simple_c4_fifo.c \
+./bambu_specific_test4/simple_c4_handshake.c \
+./bambu_specific_test4/simple_c4_array.c \
+./bambu_specific_test4/simple_c4_array_8bits.c \
+./bambu_specific_test4/simple_c4_array_32bits.c \
+./bambu_specific_test4/simple_c4_array_64bits.c \
+./bambu_specific_test4.sh\
+./bambu_specific_test4_list\
 ./function_pointers.sh\
 ./function_pointers_list_bsearch\
 ./function_pointers_list_qsort\

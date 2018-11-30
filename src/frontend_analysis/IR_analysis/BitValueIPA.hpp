@@ -40,7 +40,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef BIT_VALUE_IPA_HPP
 #define BIT_VALUE_IPA_HPP
@@ -58,51 +58,42 @@
  */
 class BitValueIPA : public ApplicationFrontendFlowStep, public BitLatticeManipulator
 {
-   protected:
+ protected:
+   /**
+    * stores the function ids of the functions whose Bit_Value intra procedural
+    * steps have to be invalidated by this step
+    */
+   std::set<unsigned int> fun_id_to_restart;
 
-      /**
-       * stores the function ids of the functions whose Bit_Value intra procedural
-       * steps have to be invalidated by this step 
-       */
-      std::set<unsigned int> fun_id_to_restart;
+   std::map<unsigned int, unsigned int> last_bitvalue_ver;
 
-      std::map<unsigned int, unsigned int> last_bitvalue_ver;
+   std::map<unsigned int, unsigned int> last_bb_ver;
 
-      std::map<unsigned int, unsigned int> last_bb_ver;
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> >
-         ComputeFrontendRelationships(
-            const DesignFlowStep::RelationshipType relationship_type) const override;
+   void ComputeRelationships(DesignFlowStepSet& relationships, const DesignFlowStep::RelationshipType relationship_type) override;
 
-      void ComputeRelationships(
-            DesignFlowStepSet & relationships,
-            const DesignFlowStep::RelationshipType relationship_type) override;
+ public:
+   BitValueIPA(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-   public:
+   ~BitValueIPA() override;
 
-      BitValueIPA(
-            const application_managerRef AppM,
-            const DesignFlowManagerConstRef design_flow_manager,
-            const ParameterConstRef parameters);
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status Exec() override;
 
-      ~BitValueIPA() override;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status Exec() override;
-
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      bool HasToBeExecuted() const override;
-
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      void Initialize() override;
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 };
 
 #endif

@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file typed_node_info.hpp
  * @brief Base class description of data information associated with each node of a graph.
@@ -40,20 +40,18 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "typed_node_info.hpp"
 
-TypedNodeInfo::TypedNodeInfo() :
-   node_type(TYPE_GENERIC)
-{}
+TypedNodeInfo::TypedNodeInfo() : node_type(TYPE_GENERIC)
+{
+}
 
-TypedNodeInfo::~TypedNodeInfo()
-= default;
+TypedNodeInfo::~TypedNodeInfo() = default;
 
-void TypedNodeInfo::print(std::ostream& os) const
+void TypedNodeInfo::print(std::ostream& os, int) const
 {
    os << node_type << " " << node_operation << " " << vertex_name << "\n";
 }
-

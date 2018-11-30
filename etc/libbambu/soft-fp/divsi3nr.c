@@ -21,53 +21,47 @@
 #include "bambu-arch.h"
 #include <stdlib.h>
 
-typedef          int SItype	__attribute__ ((mode (SI)));
-typedef unsigned int USItype	__attribute__ ((mode (SI)));
-typedef          int DItype	__attribute__ ((mode (DI)));
-typedef unsigned int UDItype	__attribute__ ((mode (DI)));
+typedef int SItype __attribute__((mode(SI)));
+typedef unsigned int USItype __attribute__((mode(SI)));
+typedef int DItype __attribute__((mode(DI)));
+typedef unsigned int UDItype __attribute__((mode(DI)));
 /* Define ALIASNAME as a strong alias for NAME.  */
-# define strong_alias(name, aliasname) _strong_alias(name, aliasname)
-# define _strong_alias(name, aliasname) \
-  extern __typeof (name) aliasname __attribute__ ((alias (#name)));
+#define strong_alias(name, aliasname) _strong_alias(name, aliasname)
+#define _strong_alias(name, aliasname) extern __typeof(name) aliasname __attribute__((alias(#name)));
 
 #define DIV_NUM_BIT 32
 #include "common_core_nonrestoring_sdiv.h"
 
-SItype
-__divsi3 (SItype u, SItype v)
+SItype __divsi3(SItype u, SItype v)
 {
-  DItype rem;
-  SItype res = non_restoring_sdiv(u,v,&rem,1);
-  return res;
+   DItype rem;
+   SItype res = non_restoring_sdiv(u, v, &rem, 1);
+   return res;
 }
-strong_alias (__divsi3, __divsi3_internal)
+strong_alias(__divsi3, __divsi3_internal)
 
-SItype
-__modsi3 (SItype u, SItype v)
+    SItype __modsi3(SItype u, SItype v)
 {
-  DItype rem;
-  non_restoring_sdiv(u,v,&rem,1);
-  SItype res = rem;
-  return res;
+   DItype rem;
+   non_restoring_sdiv(u, v, &rem, 1);
+   SItype res = rem;
+   return res;
 }
-strong_alias (__modsi3, __modsi3_internal)
+strong_alias(__modsi3, __modsi3_internal)
 
-USItype
-__udivsi3 (USItype u, USItype v)
+    USItype __udivsi3(USItype u, USItype v)
 {
-  DItype rem;
-  USItype res = non_restoring_sdiv(u,v,&rem,0);
-  return res;
+   DItype rem;
+   USItype res = non_restoring_sdiv(u, v, &rem, 0);
+   return res;
 }
-strong_alias (__udivsi3, __udivsi3_internal)
+strong_alias(__udivsi3, __udivsi3_internal)
 
-USItype
-__umodsi3 (USItype u, USItype v)
+    USItype __umodsi3(USItype u, USItype v)
 {
-  DItype rem;
-  non_restoring_sdiv(u,v,&rem,0);
-  USItype res = rem;
-  return res;
+   DItype rem;
+   non_restoring_sdiv(u, v, &rem, 0);
+   USItype res = rem;
+   return res;
 }
-strong_alias (__umodsi3, __umodsi3_internal)
-
+strong_alias(__umodsi3, __umodsi3_internal)

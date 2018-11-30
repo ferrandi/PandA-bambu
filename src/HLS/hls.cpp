@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file hls.cpp
  * @brief Data structure implementation for high-level synthesis flow.
@@ -43,11 +43,11 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
-///Header include
+ */
+/// Header include
 #include "hls.hpp"
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
 #include "hls_target.hpp"
@@ -55,10 +55,10 @@
 
 #include "hls_constraints.hpp"
 
-#include "schedule.hpp"
+#include "conn_binding.hpp"
 #include "fu_binding.hpp"
 #include "reg_binding.hpp"
-#include "conn_binding.hpp"
+#include "schedule.hpp"
 
 #include "standard_hls.hpp"
 #include "virtual_hls.hpp"
@@ -67,30 +67,28 @@
 
 #include "BambuParameter.hpp"
 
-#include "polixml.hpp"
-#include "xml_helper.hpp"
 #include "exceptions.hpp"
+#include "polixml.hpp"
 #include "utility.hpp"
+#include "xml_helper.hpp"
 
 #include <boost/lexical_cast.hpp>
 #include <utility>
 
 #include "op_graph.hpp"
 
-///HLS/binding/storage_value_insertion includes
+/// HLS/binding/storage_value_insertion includes
 #include "storage_value_information.hpp"
 
-///HLS/chaining_information
+/// HLS/chaining_information
 #include "chaining_information.hpp"
 
-///HLS/module_allocation
+/// HLS/module_allocation
 #include "allocation_information.hpp"
 
 #include "dbgPrintHelper.hpp"
 
-
-static
-void computeResources(const structural_objectRef circ, const technology_managerRef TM, std::map<std::string, unsigned int>& resources);
+static void computeResources(const structural_objectRef circ, const technology_managerRef TM, std::map<std::string, unsigned int>& resources);
 
 /*************************************************************************************************
  *                                                                                               *
@@ -98,37 +96,35 @@ void computeResources(const structural_objectRef circ, const technology_managerR
  *                                                                                               *
  *************************************************************************************************/
 
-hls::hls(const ParameterConstRef _Param, unsigned int _function_id, OpVertexSet  _operations, const HLS_targetRef _HLS_T, const HLS_constraintsRef _HLS_C) :
-   functionId(_function_id),
-   operations(std::move(_operations)),
-   HLS_T(_HLS_T),
-   HLS_C(_HLS_C),
-   allocation_information(),
-   registered_inputs(false),
-   registered_done_port(false),
-   call_sites_number(0),
-   Param(_Param),
-   debug_level (_Param->getOption<int>(OPT_debug_level)),
-   output_level (_Param->getOption<int>(OPT_output_level)),
-   HLS_execution_time(0)
+hls::hls(const ParameterConstRef _Param, unsigned int _function_id, OpVertexSet _operations, const HLS_targetRef _HLS_T, const HLS_constraintsRef _HLS_C)
+    : functionId(_function_id),
+      operations(std::move(_operations)),
+      HLS_T(_HLS_T),
+      HLS_C(_HLS_C),
+      allocation_information(),
+      registered_inputs(false),
+      registered_done_port(false),
+      call_sites_number(0),
+      Param(_Param),
+      debug_level(_Param->getOption<int>(OPT_debug_level)),
+      output_level(_Param->getOption<int>(OPT_output_level)),
+      HLS_execution_time(0)
 {
-   THROW_ASSERT(HLS_T, "HLS initalization: HLS_target not available");
-   THROW_ASSERT(HLS_C, "HLS initalization: HLS_constraints not available");
-   THROW_ASSERT(Param, "HLS initalization: Parameter not available");
+   THROW_ASSERT(HLS_T, "HLS initialization: HLS_target not available");
+   THROW_ASSERT(HLS_C, "HLS initialization: HLS_constraints not available");
+   THROW_ASSERT(Param, "HLS initialization: Parameter not available");
 }
 
-hls::~hls()
-= default;
+hls::~hls() = default;
 
 void hls::xload(const xml_element* node, const OpGraphConstRef data)
 {
-
    ScheduleRef sch = this->Rsch;
    fu_binding& fu = *(this->Rfu);
    unsigned int tot_cstep = 0;
 
    std::map<std::string, vertex> String2Vertex;
-   std::map<std::pair<std::string, std::string>, std::list<unsigned int> > String2Id;
+   std::map<std::pair<std::string, std::string>, std::list<unsigned int>> String2Id;
 
    for(auto operation : operations)
    {
@@ -139,28 +135,31 @@ void hls::xload(const xml_element* node, const OpGraphConstRef data)
    {
       String2Id[allocation_information->get_fu_name(id)].push_back(id);
    }
-   //Recurse through child nodes:
+   // Recurse through child nodes:
    const xml_node::node_list list = node->get_children();
-   for (const auto & iter : list)
+   for(const auto& iter : list)
    {
       const auto* Enode = GetPointer<const xml_element>(iter);
-      if(!Enode || Enode->get_name() != "scheduling") continue;
+      if(!Enode || Enode->get_name() != "scheduling")
+         continue;
       const xml_node::node_list list1 = Enode->get_children();
-      for (const auto & iter1 : list1)
+      for(const auto& iter1 : list1)
       {
          const auto* EnodeC = GetPointer<const xml_element>(iter1);
-         if(!EnodeC) continue;
+         if(!EnodeC)
+            continue;
          if(EnodeC->get_name() == "scheduling_constraints")
          {
             std::string vertex_name;
             unsigned int cstep = 0u;
             LOAD_XVM(vertex_name, EnodeC);
             THROW_ASSERT(vertex_name != "", "bad formed xml file: vertex_name expected in a hls specification");
-            if(CE_XVM(cstep, EnodeC)) 
+            if(CE_XVM(cstep, EnodeC))
                LOAD_XVM(cstep, EnodeC);
             else
                THROW_ERROR("bad formed xml file: cstep expected in a hls specification for operation " + vertex_name);
-            if (cstep > tot_cstep) tot_cstep = cstep;
+            if(cstep > tot_cstep)
+               tot_cstep = cstep;
 
             unsigned int fu_index;
             LOAD_XVM(fu_index, EnodeC);
@@ -168,10 +167,10 @@ void hls::xload(const xml_element* node, const OpGraphConstRef data)
             std::string fu_name;
             std::string library = LIBRARY_STD;
             LOAD_XVM(fu_name, EnodeC);
-            if(CE_XVM(library, EnodeC)) LOAD_XVM(library, EnodeC);
+            if(CE_XVM(library, EnodeC))
+               LOAD_XVM(library, EnodeC);
             unsigned int fu_type;
-            if (allocation_information->is_artificial_fu(String2Id[std::make_pair(fu_name, library)].front()) || 
-                allocation_information->is_assign(String2Id[std::make_pair(fu_name, library)].front()))
+            if(allocation_information->is_artificial_fu(String2Id[std::make_pair(fu_name, library)].front()) || allocation_information->is_assign(String2Id[std::make_pair(fu_name, library)].front()))
             {
                fu_type = String2Id[std::make_pair(fu_name, library)].front();
                String2Id[std::make_pair(fu_name, library)].pop_front();
@@ -211,7 +210,8 @@ void hls::xwrite(xml_element* rootnode, const OpGraphConstRef data)
 
       WRITE_XVM(fu_name, EnodeC);
       WRITE_XVM(fu_index, EnodeC);
-      if (library != LIBRARY_STD) WRITE_XVM(library, EnodeC);
+      if(library != LIBRARY_STD)
+         WRITE_XVM(library, EnodeC);
    }
 
    if(datapath)
@@ -220,7 +220,7 @@ void hls::xwrite(xml_element* rootnode, const OpGraphConstRef data)
       std::map<std::string, unsigned int> resources;
       const technology_managerRef TM = HLS_T->get_technology_manager();
       computeResources(datapath->get_circ(), TM, resources);
-      for (auto & resource : resources)
+      for(auto& resource : resources)
       {
          xml_element* EnodeC = Enode->add_child_element("resource");
          std::string name = resource.first;
@@ -231,20 +231,21 @@ void hls::xwrite(xml_element* rootnode, const OpGraphConstRef data)
    }
 }
 
-
-static
-void computeResources(const structural_objectRef circ, const technology_managerRef TM, std::map<std::string, unsigned int>& resources)
+static void computeResources(const structural_objectRef circ, const technology_managerRef TM, std::map<std::string, unsigned int>& resources)
 {
    const module* mod = GetPointer<module>(circ);
-   for (unsigned int l = 0; l < mod->get_internal_objects_size(); l++)
+   for(unsigned int l = 0; l < mod->get_internal_objects_size(); l++)
    {
       const structural_objectRef obj = mod->get_internal_object(l);
       const structural_type_descriptorRef id_type = obj->get_typeRef();
-      if (obj->get_kind() != component_o_K) continue;
+      if(obj->get_kind() != component_o_K)
+         continue;
       computeResources(obj, TM, resources);
-      if (obj->get_id() == "Controller_i" || obj->get_id() == "Datapath_i") continue;
+      if(obj->get_id() == "Controller_i" || obj->get_id() == "Datapath_i")
+         continue;
       std::string library = TM->get_library(id_type->id_type);
-      if (library == WORK_LIBRARY || library == PROXY_LIBRARY) continue;
+      if(library == WORK_LIBRARY || library == PROXY_LIBRARY)
+         continue;
       resources[id_type->id_type]++;
    }
 }
@@ -258,7 +259,7 @@ void hls::PrintResources() const
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Summary of resources:");
-   for (auto r = resources.begin(); r != resources.end(); ++r)
+   for(auto r = resources.begin(); r != resources.end(); ++r)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "--- - " + r->first + ": " + STR(r->second));
    }

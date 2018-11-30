@@ -29,48 +29,46 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file generate_fu_list.cpp
  * @brief Class for generating the list of functional untis to be characterized
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
-///Header include
+ */
+/// Header include
 #include "generate_fu_list.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///boost include
+/// boost include
 #include <boost/algorithm/string/split.hpp>
 
-///circuit includes
+/// circuit includes
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 
-///design_flows includes
+/// design_flows includes
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 
-///design_flows/technology includes
+/// design_flows/technology includes
 #include "technology_flow_step.hpp"
 #include "technology_flow_step_factory.hpp"
 
-///technology include
+/// technology include
 #include "technology_manager.hpp"
 
-///technology/physical_library includes
+/// technology/physical_library includes
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_VERY_PEDANTIC
 #include "library_manager.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "technology_node.hpp"
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_VERY_PEDANTIC
-#include "string_manipulation.hpp"          // for GET_CLASS
 
-GenerateFuList::GenerateFuList(const target_managerRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   DesignFlowStep(_design_flow_manager, _parameters),
-   ToDataFileStep(_design_flow_manager, ToDataFileStep_Type::GENERATE_FU_LIST, _parameters),
-   FunctionalUnitStep(_target, _design_flow_manager, _parameters)
+GenerateFuList::GenerateFuList(const target_managerRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : DesignFlowStep(_design_flow_manager, _parameters), ToDataFileStep(_design_flow_manager, ToDataFileStep_Type::GENERATE_FU_LIST, _parameters), FunctionalUnitStep(_target, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
    if(parameters->getOption<std::string>(OPT_component_name) != "all")
@@ -114,43 +112,46 @@ DesignFlowStep_Status GenerateFuList::Exec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-void GenerateFuList::ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type)
+void GenerateFuList::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
 {
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
+      {
+         const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const auto* technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
          {
-            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const auto * technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
-            {
-               const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_FILE_TECHNOLOGY);
-               const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
-               const DesignFlowStepRef technology_design_flow_step = technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_FILE_TECHNOLOGY);
-               relationship.insert(technology_design_flow_step);
-            }
-            {
-               const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY);
-               const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
-               const DesignFlowStepRef technology_design_flow_step = technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY);
-               relationship.insert(technology_design_flow_step);
-            }
-            if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
-            {
-               const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::WRITE_TECHNOLOGY);
-               const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
-               const DesignFlowStepRef technology_design_flow_step = technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::WRITE_TECHNOLOGY);
-               relationship.insert(technology_design_flow_step);
-            }
-            break;
+            const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_FILE_TECHNOLOGY);
+            const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
+            const DesignFlowStepRef technology_design_flow_step =
+                technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_FILE_TECHNOLOGY);
+            relationship.insert(technology_design_flow_step);
          }
+         {
+            const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY);
+            const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
+            const DesignFlowStepRef technology_design_flow_step =
+                technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY);
+            relationship.insert(technology_design_flow_step);
+         }
+         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+         {
+            const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::WRITE_TECHNOLOGY);
+            const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
+            const DesignFlowStepRef technology_design_flow_step =
+                technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::WRITE_TECHNOLOGY);
+            relationship.insert(technology_design_flow_step);
+         }
+         break;
+      }
       case INVALIDATION_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       case PRECEDENCE_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       default:
          THROW_UNREACHABLE("");
    }
@@ -176,12 +177,12 @@ const DesignFlowStepFactoryConstRef GenerateFuList::CGetDesignFlowStepFactory() 
    return ToDataFileStep::CGetDesignFlowStepFactory();
 }
 
-void GenerateFuList::AnalyzeCell(functional_unit * fu, const unsigned int, const std::vector<std::string> &, const size_t, const std::vector<std::string> &, const size_t, const unsigned int constPort, const bool is_commutative)
+void GenerateFuList::AnalyzeCell(functional_unit* fu, const unsigned int, const std::vector<std::string>&, const size_t, const std::vector<std::string>&, const size_t, const unsigned int constPort, const bool is_commutative)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + fu->get_name());
    const structural_objectRef obj = fu->CM->get_circ();
    unsigned int n_ports = GetPointer<module>(obj)->get_in_port_size();
-   if(constPort < n_ports && is_commutative && constPort>has_first_synthesis_id)
+   if(constPort < n_ports && is_commutative && constPort > has_first_synthesis_id)
    {
       current_list = current_list + "," + component + "-" + fu->get_name();
    }

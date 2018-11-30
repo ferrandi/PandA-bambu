@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file Lexer_utilities.hpp
  * @brief macro used to instantiate LEX based lexers.
@@ -41,17 +41,17 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef LEXER_UTILITIES_HPP
 #define LEXER_UTILITIES_HPP
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_FLEX_2_5_34_OR_GREATER.hpp"
 #include "config_HAVE_FLEX_2_5_35_OR_GREATER.hpp"
 
-#define    yyalloc     LN_CONCAT(yyalloc)
-#define    yyrealloc     LN_CONCAT(yyrealloc)
-#define    yyfree     LN_CONCAT(yyfree)
+#define yyalloc LN_CONCAT(yyalloc)
+#define yyrealloc LN_CONCAT(yyrealloc)
+#define yyfree LN_CONCAT(yyfree)
 
 #if HAVE_FLEX_2_5_35_OR_GREATER
 
@@ -62,15 +62,15 @@
 typedef size_t yy_size_t;
 #endif
 
-void yyfree (void * ptr );
-void *yyrealloc  (void * , yy_size_t);
-void *yyalloc (yy_size_t);
+void yyfree(void* ptr);
+void* yyrealloc(void*, yy_size_t);
+void* yyalloc(yy_size_t);
 
 #else
 
-void yyfree (void * ptr );
-void *yyrealloc  (void * ptr, unsigned int  size );
-void *yyalloc (unsigned int  size );
+void yyfree(void* ptr);
+void* yyrealloc(void* ptr, unsigned int size);
+void* yyalloc(unsigned int size);
 
 #endif
 
@@ -84,35 +84,47 @@ void *yyalloc (unsigned int  size );
 #ifndef LCLASS_SPECIALIZED
 struct LN_CONCAT(FlexLexer) : public yyFlexLexer
 {
-   LN_CONCAT(FlexLexer)( std::istream* argin = nullptr, std::ostream* argout = nullptr ) : yyFlexLexer(argin, argout){}
-   ~LN_CONCAT(FlexLexer)(){}
+   LN_CONCAT(FlexLexer)(std::istream* argin = nullptr, std::ostream* argout = nullptr) : yyFlexLexer(argin, argout)
+   {
+   }
+   ~LN_CONCAT(FlexLexer)()
+   {
+   }
    void yyerror(const char* msg)
    {
       LexerError(msg);
    }
-   void LexerError( const char* msg)
+   void LexerError(const char* msg)
    {
-      std::cout << msg << " at line number |" << lineno() << "|\t" ;
-      std::cout << "text is |" << YYText() << "|" << std::endl ;
+      std::cout << msg << " at line number |" << lineno() << "|\t";
+      std::cout << "text is |" << YYText() << "|" << std::endl;
       throw "Parse Error";
    }
-   int yywrap(){return 1;}
-   YYSTYPE *lvalp;
+   int yywrap()
+   {
+      return 1;
+   }
+   YYSTYPE* lvalp;
    int yylex();
 };
 #endif
 
-inline
-int yyFlexLexer::yylex(){return 0;}
+inline int yyFlexLexer::yylex()
+{
+   return 0;
+}
 
 #if HAVE_FLEX_2_5_34_OR_GREATER
-inline
-int yyFlexLexer::yywrap(){return 1;}
+inline int yyFlexLexer::yywrap()
+{
+   return 1;
+}
 #else
-#define    yywrap     LN_CONCAT(yywrap)
-extern "C" inline
-int yywrap(){return 1;}
+#define yywrap LN_CONCAT(yywrap)
+extern "C" inline int yywrap()
+{
+   return 1;
+}
 #endif
 
 #endif
-

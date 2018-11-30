@@ -34,7 +34,7 @@
  *
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  *
-*/
+ */
 #ifndef UNFOLDED_CALL_INFO_HPP
 #define UNFOLDED_CALL_INFO_HPP
 #include "edge_info.hpp"
@@ -45,15 +45,16 @@ CONSTREF_FORWARD_DECL(CallBehavior);
 
 class UnfoldedCallInfo : public EdgeInfo
 {
-   public :
-      const unsigned int call_id;
+ public:
+   const unsigned int call_id;
 
-      const bool is_direct;
+   const bool is_direct;
 
-      UnfoldedCallInfo(unsigned int _call_id, bool _is_direct = true)
-         : call_id(_call_id), is_direct(_is_direct) {}
+   UnfoldedCallInfo(unsigned int _call_id, bool _is_direct = true) : call_id(_call_id), is_direct(_is_direct)
+   {
+   }
 
-      ~UnfoldedCallInfo() override = default;
+   ~UnfoldedCallInfo() override = default;
 };
 
 typedef refcount<UnfoldedCallInfo> UnfoldedCallInfoRef;

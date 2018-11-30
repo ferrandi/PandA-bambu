@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file FPAssign.cpp
  * @brief FPAssign module for flopoco.
@@ -38,9 +38,9 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Autoheader include
+/// Autoheader include
 #include "config_SKIP_WARNING_SECTIONS.hpp"
 
 #if SKIP_WARNING_SECTIONS
@@ -48,73 +48,68 @@
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #endif
 
+#include <cmath>
+#include <cstring>
 #include <iosfwd>
 #include <sstream>
 #include <vector>
-#include <cmath>
-#include <cstring>
 
 #include <cstddef>
 #include <gmp.h>
 
-#include <gmpxx.h>
 #include "utils.hpp"
+#include <gmpxx.h>
 
 #include "FPAssign.hpp"
 
+#include <cmath>
 #include <cstdlib>
 #include <iomanip>
+#include <list>
+#include <locale>
+#include <map>
 #include <sstream>
 #include <string>
-#include <list>
-#include <map>
 #include <vector>
-#include <cmath>
-#include <locale>
 
 #include <cstdio>
 #include <mpfr.h>
 
 using namespace std;
 
-namespace flopoco{
-
+namespace flopoco
+{
    extern vector<Operator*> oplist;
 
 #define DEBUGVHDL 0
 
-
-   FPAssign::FPAssign(Target* _target, int wE, int wF) :
-         Operator(_target) {
-
+   FPAssign::FPAssign(Target* _target, int wE, int wF) : Operator(_target)
+   {
       ostringstream name;
 
-      name<<"FPAssign_" <<wE<<"_"<<wF;
+      name << "FPAssign_" << wE << "_" << wF;
       setName(name.str());
 
       setCopyrightString("Fabrizio Ferrandi (2011-2018)");
 
       /* Set up the IO signals */
 
-      addFPInput ("X", wE,wF);
-      addFPOutput ("R", wE,wF);
+      addFPInput("X", wE, wF);
+      addFPOutput("R", wE, wF);
 
       /*	VHDL code description	*/
-      vhdl << tab << "R <= X;"<<endl;
+      vhdl << tab << "R <= X;" << endl;
    }
-
 
    FPAssign::~FPAssign() = default;
 
-
-   void FPAssign::emulate(TestCase * )
+   void FPAssign::emulate(TestCase*)
    {
       // TODO
    }
 
-
-   void FPAssign::buildStandardTestCases(TestCaseList* ){
-
+   void FPAssign::buildStandardTestCases(TestCaseList*)
+   {
    }
 
-}
+} // namespace flopoco

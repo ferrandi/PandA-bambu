@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file reg_binding.cpp
  * @brief Class implementation of the register binding data structure.
@@ -40,47 +40,47 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "reg_binding.hpp"
 #include "generic_obj.hpp"
 #include "register_obj.hpp"
 
-#include "function_behavior.hpp"
 #include "behavioral_helper.hpp"
+#include "function_behavior.hpp"
 
+#include "FPGA_device.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
-#include "target_device.hpp"
-#include "FPGA_device.hpp"
 #include "liveness.hpp"
+#include "target_device.hpp"
 
-#include "structural_manager.hpp"
-#include "technology_manager.hpp"
 #include "Parameter.hpp"
 #include "boost/lexical_cast.hpp"
+#include "structural_manager.hpp"
+#include "technology_manager.hpp"
 
-///HLS/binding/storage_value_information
+/// HLS/binding/storage_value_information
 #include "storage_value_information.hpp"
 
-///technology/physical_library include
+/// technology/physical_library include
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "technology_node.hpp"
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
-reg_binding::reg_binding(const hlsRef& HLS_, const HLS_managerRef HLSMgr_) :
-   debug(HLS_->debug_level), used_regs(0), HLS(HLS_), HLSMgr(HLSMgr_), all_regs_without_enable(false)
+reg_binding::reg_binding(const hlsRef& HLS_, const HLS_managerRef HLSMgr_) : debug(HLS_->debug_level), used_regs(0), HLS(HLS_), HLSMgr(HLSMgr_), all_regs_without_enable(false)
 {
 }
 
-reg_binding::~reg_binding()
-= default;
+reg_binding::~reg_binding() = default;
 
-void reg_binding::print_el(const_iterator &it) const
+void reg_binding::print_el(const_iterator& it) const
 {
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, HLS->output_level, "---Storage Value: " +  STR(it->first) + " for variable " + HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()->PrintVariable(HLS->storage_value_information->get_variable_index(it->first)) + " stored into register " + it->second->get_string());
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, HLS->output_level,
+                  "---Storage Value: " + STR(it->first) + " for variable " + HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()->PrintVariable(HLS->storage_value_information->get_variable_index(it->first)) + " stored into register " +
+                      it->second->get_string());
 }
 
-std::set<unsigned int> reg_binding::get_vars(const unsigned int & r) const
+std::set<unsigned int> reg_binding::get_vars(const unsigned int& r) const
 {
    std::set<unsigned int> vars;
    THROW_ASSERT(reg2storage_values.find(r) != reg2storage_values.end() && !reg2storage_values.find(r)->second.empty(), "at least a storage value has to be mapped on register r");
@@ -95,7 +95,7 @@ unsigned int reg_binding::compute_bitsize(unsigned int r)
 {
    std::set<unsigned int> reg_vars = get_vars(r);
    unsigned int max_bits = 0;
-   for (unsigned int reg_var : reg_vars)
+   for(unsigned int reg_var : reg_vars)
    {
       structural_type_descriptorRef node_type = structural_type_descriptorRef(new structural_type_descriptor(reg_var, HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()));
       unsigned int node_size = STD_GET_SIZE(node_type);
@@ -112,29 +112,29 @@ unsigned int reg_binding::get_bitsize(unsigned int r) const
    return bitsize_map.find(r)->second;
 }
 
-void reg_binding::specialise_reg(structural_objectRef & reg, unsigned int r)
+void reg_binding::specialise_reg(structural_objectRef& reg, unsigned int r)
 {
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level, "Specialising " + reg->get_path() + ":");
-   const structural_type_descriptorRef &in_type = GetPointer<module>(reg)->get_in_port(0)->get_typeRef();
-   const structural_type_descriptorRef &out_type = GetPointer<module>(reg)->get_out_port(0)->get_typeRef();
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level, "Specializing " + reg->get_path() + ":");
+   const structural_type_descriptorRef& in_type = GetPointer<module>(reg)->get_in_port(0)->get_typeRef();
+   const structural_type_descriptorRef& out_type = GetPointer<module>(reg)->get_out_port(0)->get_typeRef();
    unsigned int max_bits = STD_GET_SIZE(in_type);
    max_bits = max_bits < STD_GET_SIZE(out_type) ? STD_GET_SIZE(out_type) : max_bits;
    unsigned int bits = compute_bitsize(r);
    max_bits = max_bits < bits ? bits : max_bits;
    unsigned int offset = 0;
-   if (GetPointer<module>(reg)->get_in_port(0)->get_id() == CLOCK_PORT_NAME)
+   if(GetPointer<module>(reg)->get_in_port(0)->get_id() == CLOCK_PORT_NAME)
    {
       if(GetPointer<module>(reg)->get_in_port(1)->get_id() == RESET_PORT_NAME)
          offset = 2;
       else
          offset = 1;
    }
-   if (STD_GET_SIZE(in_type) < max_bits)
+   if(STD_GET_SIZE(in_type) < max_bits)
    {
       GetPointer<module>(reg)->get_in_port(offset)->type_resize(max_bits); // in1
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level, "- " + GetPointer<module>(reg)->get_in_port(0)->get_path() + " -> " + in_type->get_name() + " (size: " + STR(in_type->size) + ", vector_size: " + STR(in_type->vector_size) + ")");
    }
-   if (STD_GET_SIZE(out_type) < max_bits)
+   if(STD_GET_SIZE(out_type) < max_bits)
    {
       GetPointer<module>(reg)->get_out_port(0)->type_resize(max_bits); // out1
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level, "- " + GetPointer<module>(reg)->get_out_port(0)->get_path() + " -> " + out_type->get_name() + " (size: " + STR(out_type->size) + ", vector_size: " + STR(out_type->vector_size) + ")");
@@ -145,7 +145,7 @@ void reg_binding::compute_is_without_enable()
 {
    std::map<unsigned int, unsigned int> n_in;
    std::map<unsigned int, unsigned int> n_out;
-   const std::list<vertex> & support_set = HLS->Rliv->get_support();
+   const std::list<vertex>& support_set = HLS->Rliv->get_support();
    const std::list<vertex>::const_iterator ss_it_end = support_set.end();
    for(auto ss_it = support_set.begin(); ss_it != ss_it_end; ++ss_it)
    {
@@ -175,9 +175,9 @@ void reg_binding::compute_is_without_enable()
       }
    }
 
-   for (unsigned int i = 0; i < get_used_regs(); i++)
+   for(unsigned int i = 0; i < get_used_regs(); i++)
    {
-      const std::set<unsigned int> &store_vars_set = get_vars(i);
+      const std::set<unsigned int>& store_vars_set = get_vars(i);
       const std::set<unsigned int>::const_iterator svs_it_end = store_vars_set.end();
       bool all_woe = true;
       for(auto svs_it = store_vars_set.begin(); svs_it != svs_it_end && all_woe; ++svs_it)
@@ -189,21 +189,20 @@ void reg_binding::compute_is_without_enable()
       }
       if(all_woe)
       {
-         //std::cerr << "register STD " << i << std::endl;
+         // std::cerr << "register STD " << i << std::endl;
          is_without_enable.insert(i);
       }
    }
-
 }
 
 void reg_binding::bind(unsigned int sv, unsigned int index)
 {
    reverse_map[sv] = index;
-   if (unique_table.find(index) == unique_table.end())
-      unique_table[index] = generic_objRef(new register_obj(std::string("reg_")+STR(index)));
+   if(unique_table.find(index) == unique_table.end())
+      unique_table[index] = generic_objRef(new register_obj(std::string("reg_") + STR(index)));
    auto i = this->find(sv);
-   if (i == this->end())
-      this->insert(std::make_pair(sv,unique_table[index]));
+   if(i == this->end())
+      this->insert(std::make_pair(sv, unique_table[index]));
    else
       i->second = unique_table[index];
    reg2storage_values[index].insert(sv);
@@ -222,15 +221,14 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - Start");
 
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Number of registers: " +
-                                                         boost::lexical_cast<std::string>(get_used_regs()));
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Number of registers: " + std::to_string(get_used_regs()));
 
    compute_is_without_enable();
    /// define boolean type for command signals
    all_regs_without_enable = get_used_regs() != 0;
-   for (unsigned int i = 0; i < get_used_regs(); i++)
+   for(unsigned int i = 0; i < get_used_regs(); i++)
    {
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Allocating register number: " + boost::lexical_cast<std::string>(i));
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Allocating register number: " + std::to_string(i));
       generic_objRef regis = get(i);
       std::string name = regis->get_string();
       std::string synch_reset = HLS->Param->getOption<std::string>(OPT_sync_reset);
@@ -242,7 +240,7 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
       else if(synch_reset == "no")
          register_type_name = register_SE;
       else if(synch_reset == "sync")
-            register_type_name = register_SRSE;
+         register_type_name = register_SRSE;
       else
          register_type_name = register_SARSE;
       all_regs_without_enable = all_regs_without_enable && curr_is_is_without_enable;
@@ -255,14 +253,13 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
       SM->add_connection(reset_port, port_rst);
       regis->set_structural_obj(reg_mod);
 
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Register " + boost::lexical_cast<std::string>(i) + " successfully allocated");
-
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Register " + std::to_string(i) + " successfully allocated");
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - End");
-   if (HLS->output_level >= OUTPUT_LEVEL_MINIMUM)
+   if(HLS->output_level >= OUTPUT_LEVEL_MINIMUM)
    {
       unsigned int number_ff = 0;
-      for (unsigned int r = 0; r < get_used_regs(); r++)
+      for(unsigned int r = 0; r < get_used_regs(); r++)
       {
          number_ff += get_bitsize(r);
       }

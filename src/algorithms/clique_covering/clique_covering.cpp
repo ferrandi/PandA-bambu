@@ -29,14 +29,14 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file clique_covering.cpp
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  */
 
-///Header include
+/// Header include
 #include "clique_covering.hpp"
 const std::string CliqueCovering_AlgorithmToString(const CliqueCovering_Algorithm clique_covering_algorithm)
 {
@@ -66,7 +66,6 @@ const std::string CliqueCovering_AlgorithmToString(const CliqueCovering_Algorith
 #endif
       default:
          THROW_UNREACHABLE("");
-
    }
    return "";
 }

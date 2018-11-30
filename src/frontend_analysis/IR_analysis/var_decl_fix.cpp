@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,10 +29,10 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file var_decl_fix.cpp
- * @brief Pre-analysis step fixing var_decl duplications.
+ * @brief Pre-analysis step fixing var_decl duplication.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
@@ -40,65 +40,64 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_BAMBU_BUILT.hpp"
 
-///Header include
+/// Header include
 #include "var_decl_fix.hpp"
 
-///Behavior include
+/// Behavior include
 #include "application_manager.hpp"
 #include "function_behavior.hpp"
 
-///Parameter include
+/// Parameter include
 #include "Parameter.hpp"
 
-///parser/treegcc include
+/// parser/treegcc include
 #include "token_interface.hpp"
 
-///STD include
+/// STD include
 #include <fstream>
 
-///STL include
+/// STL include
 #include <map>
 #include <string>
 
-///Tree include
+/// Tree include
 #include "behavioral_helper.hpp"
 #include "ext_tree_node.hpp"
 #include "tree_basic_block.hpp"
+#include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include "tree_helper.hpp"
 
-///Utility include
+/// Utility include
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
-#include "string_manipulation.hpp"          // for GET_CLASS
+#include "string_manipulation.hpp" // for GET_CLASS
 
-VarDeclFix::VarDeclFix(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters, const FrontendFlowStepType _frontend_flow_step_type) :
-   FunctionFrontendFlowStep(_AppM, _function_id, _frontend_flow_step_type, _design_flow_manager, _parameters)
+VarDeclFix::VarDeclFix(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters, const FrontendFlowStepType _frontend_flow_step_type)
+    : FunctionFrontendFlowStep(_AppM, _function_id, _frontend_flow_step_type, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-VarDeclFix::~VarDeclFix()
-= default;
+VarDeclFix::~VarDeclFix() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > VarDeclFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> VarDeclFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(CHECK_SYSTEM_TYPE, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
@@ -106,6 +105,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
 #if HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(PARM_DECL_TAKEN_ADDRESS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(INTERFACE_INFER, SAME_FUNCTION));
 #endif
          break;
       }
@@ -121,13 +121,13 @@ DesignFlowStep_Status VarDeclFix::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
    const tree_nodeRef curr_tn = TM->GetTreeNode(function_id);
-   auto * fd = GetPointer<function_decl>(curr_tn);
-   auto * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto* fd = GetPointer<function_decl>(curr_tn);
+   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
 
    for(const auto& arg : fd->list_of_args)
       recursive_examinate(arg);
 
-   std::map<unsigned int, blocRef> &blocks = sl->list_of_bloc;
+   std::map<unsigned int, blocRef>& blocks = sl->list_of_bloc;
    std::map<unsigned int, blocRef>::iterator it, it_end;
 
    it_end = blocks.end();
@@ -141,7 +141,7 @@ DesignFlowStep_Status VarDeclFix::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
+void VarDeclFix::recursive_examinate(const tree_nodeRef& tn)
 {
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    const tree_managerRef TM = AppM->get_tree_manager();
@@ -152,8 +152,8 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
       case call_expr_K:
       case aggr_init_expr_K:
       {
-         const call_expr * ce = GetPointer<call_expr>(curr_tn);
-         const std::vector<tree_nodeRef> & args = ce->args;
+         const call_expr* ce = GetPointer<call_expr>(curr_tn);
+         const std::vector<tree_nodeRef>& args = ce->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
          for(arg = args.begin(); arg != arg_end; ++arg)
          {
@@ -163,8 +163,8 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
       }
       case gimple_call_K:
       {
-         const gimple_call * ce = GetPointer<gimple_call>(curr_tn);
-         const std::vector<tree_nodeRef> & args = ce->args;
+         const gimple_call* ce = GetPointer<gimple_call>(curr_tn);
+         const std::vector<tree_nodeRef>& args = ce->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
          for(arg = args.begin(); arg != arg_end; ++arg)
          {
@@ -174,7 +174,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
       }
       case gimple_assign_K:
       {
-         auto * gm = GetPointer<gimple_assign>(curr_tn);
+         auto* gm = GetPointer<gimple_assign>(curr_tn);
          recursive_examinate(gm->op0);
          recursive_examinate(gm->op1);
          if(gm->predicate)
@@ -191,15 +191,15 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
          if(already_examinated_decls.find(GET_INDEX_NODE(tn)) == already_examinated_decls.end())
          {
             already_examinated_decls.insert(GET_INDEX_NODE(tn));
-            auto * dn = GetPointer<decl_node>(GET_NODE(tn));
+            auto* dn = GetPointer<decl_node>(GET_NODE(tn));
             recursive_examinate(dn->type);
             if(dn->name)
             {
-               //check if the var_decl
+               // check if the var_decl
                if(curr_tn->get_kind() == var_decl_K)
-               {  /* this is a variable declaration */
-                  auto *cast_res = GetPointer<var_decl>(curr_tn);
-                  if(cast_res->static_flag == true)
+               { /* this is a variable declaration */
+                  auto* cast_res = GetPointer<var_decl>(curr_tn);
+                  if(cast_res->static_flag)
                   {
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Found a static variable with identifier <" + GetPointer<identifier_node>(GET_NODE(dn->name))->strg + "> within function #" + STR(function_id));
                   }
@@ -212,10 +212,10 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
                else
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, name_id + " is a duplicated var_decl");
-                  ///create a new identifier_node tree node
+                  /// create a new identifier_node tree node
                   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
                   unsigned int var_decl_name_nid_test;
-                  unsigned var_decl_unique_id=0;
+                  unsigned var_decl_unique_id = 0;
                   do
                   {
                      IR_schema[TOK(TOK_STRG)] = name_id + STR(var_decl_unique_id++);
@@ -234,7 +234,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
       }
       case ssa_name_K:
       {
-         const ssa_name * sn = GetPointer<ssa_name>(curr_tn);
+         const ssa_name* sn = GetPointer<ssa_name>(curr_tn);
          if(sn->var)
             recursive_examinate(sn->var);
          break;
@@ -249,7 +249,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
          }
          break;
       }
-      case CASE_UNARY_EXPRESSION :
+      case CASE_UNARY_EXPRESSION:
       {
          if(curr_tn->get_kind() == addr_expr_K)
          {
@@ -259,20 +259,20 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
             }
             already_visited_ae.insert(GET_INDEX_NODE(tn));
          }
-         const unary_expr * ue = GetPointer<unary_expr>(curr_tn);
+         const unary_expr* ue = GetPointer<unary_expr>(curr_tn);
          recursive_examinate(ue->op);
          break;
       }
-      case CASE_BINARY_EXPRESSION :
+      case CASE_BINARY_EXPRESSION:
       {
-         const binary_expr * be = GetPointer<binary_expr>(curr_tn);
+         const binary_expr* be = GetPointer<binary_expr>(curr_tn);
          recursive_examinate(be->op0);
          recursive_examinate(be->op1);
          break;
       }
-      case CASE_TERNARY_EXPRESSION :
+      case CASE_TERNARY_EXPRESSION:
       {
-         const ternary_expr * te = GetPointer<ternary_expr>(curr_tn);
+         const ternary_expr* te = GetPointer<ternary_expr>(curr_tn);
          recursive_examinate(te->op0);
          if(te->op1)
             recursive_examinate(te->op1);
@@ -280,9 +280,9 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
             recursive_examinate(te->op2);
          break;
       }
-      case CASE_QUATERNARY_EXPRESSION :
+      case CASE_QUATERNARY_EXPRESSION:
       {
-         const quaternary_expr * qe = GetPointer<quaternary_expr>(curr_tn);
+         const quaternary_expr* qe = GetPointer<quaternary_expr>(curr_tn);
          recursive_examinate(qe->op0);
          if(qe->op1)
             recursive_examinate(qe->op1);
@@ -294,9 +294,9 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
       }
       case constructor_K:
       {
-         const constructor * co = GetPointer<constructor>(curr_tn);
-         const std::vector<std::pair< tree_nodeRef, tree_nodeRef> > & list_of_idx_valu = co->list_of_idx_valu;
-         std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator it, it_end = list_of_idx_valu.end();
+         const constructor* co = GetPointer<constructor>(curr_tn);
+         const std::vector<std::pair<tree_nodeRef, tree_nodeRef>>& list_of_idx_valu = co->list_of_idx_valu;
+         std::vector<std::pair<tree_nodeRef, tree_nodeRef>>::const_iterator it, it_end = list_of_idx_valu.end();
          for(it = list_of_idx_valu.begin(); it != it_end; ++it)
          {
             recursive_examinate(it->second);
@@ -305,19 +305,19 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
       }
       case gimple_cond_K:
       {
-         const gimple_cond * gc = GetPointer<gimple_cond>(curr_tn);
+         const gimple_cond* gc = GetPointer<gimple_cond>(curr_tn);
          recursive_examinate(gc->op0);
          break;
       }
       case gimple_switch_K:
       {
-         const gimple_switch * se = GetPointer<gimple_switch>(curr_tn);
+         const gimple_switch* se = GetPointer<gimple_switch>(curr_tn);
          recursive_examinate(se->op0);
          break;
       }
       case gimple_multi_way_if_K:
       {
-         auto* gmwi=GetPointer<gimple_multi_way_if>(curr_tn);
+         auto* gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
          for(const auto& cond : gmwi->list_of_cond)
             if(cond.first)
                recursive_examinate(cond.first);
@@ -325,14 +325,14 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
       }
       case gimple_return_K:
       {
-         const gimple_return * re = GetPointer<gimple_return>(curr_tn);
+         const gimple_return* re = GetPointer<gimple_return>(curr_tn);
          if(re->op)
             recursive_examinate(re->op);
          break;
       }
       case gimple_for_K:
       {
-         const gimple_for * fe = GetPointer<gimple_for>(curr_tn);
+         const gimple_for* fe = GetPointer<gimple_for>(curr_tn);
          recursive_examinate(fe->op0);
          recursive_examinate(fe->op1);
          recursive_examinate(fe->op2);
@@ -340,7 +340,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
       }
       case gimple_while_K:
       {
-         const gimple_while * we = GetPointer<gimple_while>(curr_tn);
+         const gimple_while* we = GetPointer<gimple_while>(curr_tn);
          recursive_examinate(we->op0);
          break;
       }
@@ -349,7 +349,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
          if(already_examinated_decls.find(GET_INDEX_NODE(tn)) == already_examinated_decls.end())
          {
             already_examinated_decls.insert(GET_INDEX_NODE(tn));
-            auto * ty = GetPointer<type_node>(GET_NODE(tn));
+            auto* ty = GetPointer<type_node>(GET_NODE(tn));
             if(ty && ty->name && GET_NODE(ty->name)->get_kind() == type_decl_K)
             {
                recursive_examinate(ty->name);
@@ -364,13 +364,13 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
                else
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + name_id + " is a duplicated type");
-                  ///create a new identifier_node tree node
+                  /// create a new identifier_node tree node
                   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
                   unsigned int var_decl_name_nid_test;
-                  unsigned var_decl_unique_id=0;
+                  unsigned var_decl_unique_id = 0;
                   do
                   {
-                     IR_schema[TOK(TOK_STRG)] = name_id+STR(var_decl_unique_id++);
+                     IR_schema[TOK(TOK_STRG)] = name_id + STR(var_decl_unique_id++);
                      var_decl_name_nid_test = TM->find(identifier_node_K, IR_schema);
                   } while(var_decl_name_nid_test);
                   unsigned int var_decl_name_nid = TM->new_tree_node_id();
@@ -385,7 +385,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
       }
       case type_decl_K:
       {
-         auto * td = GetPointer<type_decl>(GET_NODE(tn));
+         auto* td = GetPointer<type_decl>(GET_NODE(tn));
          if(td and td->name and td->include_name != "<built-in>" and (not td->operating_system_flag) and (not td->library_system_flag))
          {
             std::string name_id = GetPointer<identifier_node>(GET_NODE(td->name))->strg;
@@ -394,13 +394,13 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
             else
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + name_id + " is a duplicated type");
-               ///create a new identifier_node tree node
+               /// create a new identifier_node tree node
                std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
                unsigned int var_decl_name_nid_test;
-               unsigned var_decl_unique_id=0;
+               unsigned var_decl_unique_id = 0;
                do
                {
-                  IR_schema[TOK(TOK_STRG)] = name_id+STR(var_decl_unique_id++);
+                  IR_schema[TOK(TOK_STRG)] = name_id + STR(var_decl_unique_id++);
                   var_decl_name_nid_test = TM->find(identifier_node_K, IR_schema);
                } while(var_decl_name_nid_test);
                unsigned int var_decl_name_nid = TM->new_tree_node_id();
@@ -414,7 +414,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
       }
       case target_mem_ref_K:
       {
-         const target_mem_ref * tmr = GetPointer<target_mem_ref>(curr_tn);
+         const target_mem_ref* tmr = GetPointer<target_mem_ref>(curr_tn);
          if(tmr->symbol)
             recursive_examinate(tmr->symbol);
          if(tmr->base)
@@ -425,7 +425,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
       }
       case target_mem_ref461_K:
       {
-         const target_mem_ref461 * tmr = GetPointer<target_mem_ref461>(curr_tn);
+         const target_mem_ref461* tmr = GetPointer<target_mem_ref461>(curr_tn);
          if(tmr->base)
             recursive_examinate(tmr->base);
          if(tmr->idx)
@@ -483,7 +483,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef & tn)
    return;
 }
 
-const std::string VarDeclFix::Normalize(const std::string&identifier) const
+const std::string VarDeclFix::Normalize(const std::string& identifier) const
 {
    return identifier;
 }

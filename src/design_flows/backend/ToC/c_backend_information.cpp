@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file c_backend_information.cpp
  * @brief Base class to pass information to a c backend
@@ -39,13 +39,11 @@
  * $Date: $
  * Last modified by $Author: $
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "c_backend_information.hpp"
 
-CBackendInformation::CBackendInformation()
-= default;
+CBackendInformation::CBackendInformation() = default;
 
-CBackendInformation::~CBackendInformation()
-= default;
+CBackendInformation::~CBackendInformation() = default;

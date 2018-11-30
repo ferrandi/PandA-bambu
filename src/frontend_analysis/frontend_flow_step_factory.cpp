@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file frontend_flow_step_factory.hpp
  * @brief This class contains the methods to create a frontend flow step
@@ -39,28 +39,28 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "frontend_flow_step_factory.hpp"
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_ARCH_BUILT.hpp"
+#include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
+#include "config_HAVE_ILP_BUILT.hpp"    // for HAVE_ILP_BUILT
+#include "config_HAVE_PRAGMA_BUILT.hpp" // for HAVE_PRAGMA_B...
+#include "config_HAVE_RTL_BUILT.hpp"    // for HAVE_RTL_BUILT
+#include "config_HAVE_TASTE.hpp"        // for HAVE_TASTE
 #include "config_HAVE_ZEBU_BUILT.hpp"
-#include "config_HAVE_BAMBU_BUILT.hpp"
-#include "config_HAVE_ILP_BUILT.hpp"                    // for HAVE_ILP_BUILT
-#include "config_HAVE_PRAGMA_BUILT.hpp"                 // for HAVE_PRAGMA_B...
-#include "config_HAVE_RTL_BUILT.hpp"                    // for HAVE_RTL_BUILT
-#include "config_HAVE_TASTE.hpp"                        // for HAVE_TASTE
 
-#include "exceptions.hpp"                               // for THROW_UNREACH...
+#include "exceptions.hpp" // for THROW_UNREACH...
 
-///Passes includes
-#include "design_flow_step.hpp"
+/// Passes includes
 #include "add_bb_ecfg_edges.hpp"
+#include "design_flow_step.hpp"
 #if HAVE_BAMBU_BUILT
 #include "AddArtificialCallFlowEdges.hpp"
 #endif
@@ -88,9 +88,9 @@
 #include "bb_order_computation.hpp"
 #include "bb_reachability_computation.hpp"
 #if HAVE_BAMBU_BUILT
+#include "BitValueIPA.hpp"
 #include "Bit_Value.hpp"
 #include "Bit_Value_opt.hpp"
-#include "BitValueIPA.hpp"
 #endif
 #include "block_fix.hpp"
 #include "build_virtual_phi.hpp"
@@ -113,11 +113,11 @@
 #include "complete_bb_graph.hpp"
 #include "complete_call_graph.hpp"
 #if HAVE_BAMBU_BUILT
-#include "compute_implicit_calls.hpp"
+#include "CSE.hpp"
 #include "commutative_expr_restructuring.hpp"
+#include "compute_implicit_calls.hpp"
 #include "cond_expr_restructuring.hpp"
 #include "constant_flop_wrapper.hpp"
-#include "CSE.hpp"
 #endif
 #if HAVE_TASTE
 #include "create_address_translation.hpp"
@@ -148,11 +148,11 @@
 #include "parallel_regions_graph_computation.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
+#include "FixStructsPassedByValue.hpp"
+#include "FunctionCallTypeCleanup.hpp"
 #include "extract_gimple_cond_op.hpp"
 #include "extract_patterns.hpp"
 #include "fanout_opt.hpp"
-#include "FixStructsPassedByValue.hpp"
-#include "FunctionCallTypeCleanup.hpp"
 #endif
 #if HAVE_ZEBU_BUILT
 #include "FunctionPointerCallGraphComputation.hpp"
@@ -168,13 +168,14 @@
 #include "header_structuring.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
-#include "hls_div_cg_ext.hpp"
 #include "HWCallInjection.hpp"
+#include "hls_div_cg_ext.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
+#include "IR_lowering.hpp"
+#include "interface_infer.hpp"
 #include "ipa_point_to_analysis.hpp"
 #endif
-#include "IR_lowering.hpp"
 #if HAVE_ZEBU_BUILT
 #include "instruction_sequences_computation.hpp"
 #include "loop_regions_computation.hpp"
@@ -193,12 +194,12 @@
 #if HAVE_BAMBU_BUILT
 #include "lut_transformation.hpp"
 #endif
-#include "memory_data_flow_analysis.hpp"
 #include "mem_cg_ext.hpp"
+#include "memory_data_flow_analysis.hpp"
 #if HAVE_BAMBU_BUILT
+#include "NI_SSA_liveness.hpp"
 #include "multi_way_if.hpp"
 #include "multiple_entry_if_reduction.hpp" //modified here
-#include "NI_SSA_liveness.hpp"
 #endif
 #include "op_cdg_computation.hpp"
 #include "op_feedback_edges_computation.hpp"
@@ -263,10 +264,10 @@
 #include "sizeof_substitution.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
-#include "split_return.hpp"
 #include "short_circuit_taf.hpp"
 #include "simple_code_motion.hpp"
 #include "soft_float_cg_ext.hpp"
+#include "split_return.hpp"
 #endif
 #if HAVE_ZEBU_BUILT
 #include "source_code_statistics.hpp"
@@ -311,20 +312,17 @@
 #include "symbolic_application_frontend_flow_step.hpp"
 
 #if HAVE_ARCH_BUILT
-FrontendFlowStepFactory::FrontendFlowStepFactory(const application_managerRef _AppM, const ArchManagerRef _arch_manager, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   DesignFlowStepFactory(_design_flow_manager, _parameters),
-   AppM(_AppM),
-   arch_manager(_arch_manager)
-{}
+FrontendFlowStepFactory::FrontendFlowStepFactory(const application_managerRef _AppM, const ArchManagerRef _arch_manager, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : DesignFlowStepFactory(_design_flow_manager, _parameters), AppM(_AppM), arch_manager(_arch_manager)
+{
+}
 #endif
 
-FrontendFlowStepFactory::FrontendFlowStepFactory(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager,  const ParameterConstRef _parameters) :
-   DesignFlowStepFactory(_design_flow_manager, _parameters),
-   AppM(_AppM)
-{}
+FrontendFlowStepFactory::FrontendFlowStepFactory(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) : DesignFlowStepFactory(_design_flow_manager, _parameters), AppM(_AppM)
+{
+}
 
-FrontendFlowStepFactory::~FrontendFlowStepFactory()
-= default;
+FrontendFlowStepFactory::~FrontendFlowStepFactory() = default;
 
 const DesignFlowStepSet FrontendFlowStepFactory::GenerateFrontendSteps(const std::unordered_set<FrontendFlowStepType>& frontend_flow_step_types) const
 {
@@ -399,7 +397,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #endif
       case DOM_POST_DOM_COMPUTATION:
 #if HAVE_BAMBU_BUILT
-      case (FANOUT_OPT):
+      case(FANOUT_OPT):
       case MULTIPLE_ENTRY_IF_REDUCTION:
 #endif
 #if HAVE_EXPERIMENTAL && HAVE_ZEBU_BUILT
@@ -433,6 +431,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #if HAVE_BAMBU_BUILT
       case HLS_DIV_CG_EXT:
       case HWCALL_INJECTION:
+      case INTERFACE_INFER:
       case IR_LOWERING:
 #endif
       case LOOP_COMPUTATION:
@@ -444,7 +443,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
       case LOOPS_ANALYSIS_BAMBU:
 #endif
 #if HAVE_ZEBU_BUILT
-      case LOOPS_ANALYSIS_ZEBU :
+      case LOOPS_ANALYSIS_ZEBU:
 #endif
       case LOOPS_IDENTIFICATION:
 #if HAVE_ZEBU_BUILT
@@ -560,30 +559,30 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #if HAVE_BAMBU_BUILT
       case VIRTUAL_PHI_NODES_SPLIT:
 #endif
-         {
-            return DesignFlowStepRef(new SymbolicApplicationFrontendFlowStep(AppM, frontend_flow_step_type, design_flow_manager.lock(), parameters));
-         }
+      {
+         return DesignFlowStepRef(new SymbolicApplicationFrontendFlowStep(AppM, frontend_flow_step_type, design_flow_manager.lock(), parameters));
+      }
 #if HAVE_HOST_PROFILING_BUILT
       case BASIC_BLOCKS_PROFILING:
 #endif
 #if HAVE_BAMBU_BUILT
-      case (BAMBU_FRONTEND_FLOW):
+      case(BAMBU_FRONTEND_FLOW):
       case BIT_VALUE_IPA:
 #endif
-      case(COMPLETE_CALL_GRAPH) :
+      case(COMPLETE_CALL_GRAPH):
 #if HAVE_TASTE
       case CREATE_ADDRESS_TRANSLATION:
 #endif
-      case(CREATE_TREE_MANAGER) :
+      case(CREATE_TREE_MANAGER):
 #if HAVE_EXPERIMENTAL && HAVE_ZEBU_BUILT
       case DYNAMIC_VAR_COMPUTATION:
 #endif
 #if HAVE_BAMBU_BUILT
       case FIND_MAX_CFG_TRANSFORMATIONS:
 #endif
-      case(FUNCTION_ANALYSIS) :
+      case(FUNCTION_ANALYSIS):
 #if HAVE_ZEBU_BUILT
-      case(FUNCTION_POINTER_CALLGRAPH_COMPUTATION) :
+      case(FUNCTION_POINTER_CALLGRAPH_COMPUTATION):
 #endif
 #if HAVE_BAMBU_BUILT
       case HDL_FUNCTION_DECL_FIX:
@@ -592,32 +591,31 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
       case(HOST_PROFILING):
 #endif
 #if HAVE_BAMBU_BUILT
-      case (IPA_POINT_TO_ANALYSIS):
+      case(IPA_POINT_TO_ANALYSIS):
 #endif
       case MEM_CG_EXT:
 #if HAVE_ZEBU_BUILT
       case POINTED_DATA_EVALUATION:
 #endif
 #if HAVE_FROM_PRAGMA_BUILT
-      case(PRAGMA_ANALYSIS) :
+      case(PRAGMA_ANALYSIS):
 #endif
 #if HAVE_FROM_PRAGMA_BUILT
       case(PRAGMA_SUBSTITUTION):
 #endif
 #if HAVE_ZEBU_BUILT
-      case(SOURCE_CODE_STATISTICS) :
+      case(SOURCE_CODE_STATISTICS):
 #endif
       case STRING_CST_FIX:
-      case(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP) :
+      case(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP):
 #if HAVE_ZEBU_BUILT
-      case(SIZEOF_SUBSTITUTION) :
+      case(SIZEOF_SUBSTITUTION):
 #endif
-         {
-            return CreateApplicationFrontendFlowStep(frontend_flow_step_type);
-         }
+      {
+         return CreateApplicationFrontendFlowStep(frontend_flow_step_type);
+      }
       default:
          THROW_UNREACHABLE("Frontend flow step type does not exist");
-
    }
    return DesignFlowStepRef();
 }
@@ -628,31 +626,31 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
    {
 #if HAVE_HOST_PROFILING_BUILT
       case BASIC_BLOCKS_PROFILING:
-         {
-            return DesignFlowStepRef(new BasicBlocksProfiling(AppM, design_flow_manager.lock(), parameters));
-         }
+      {
+         return DesignFlowStepRef(new BasicBlocksProfiling(AppM, design_flow_manager.lock(), parameters));
+      }
 #endif
 #if HAVE_BAMBU_BUILT
       case BAMBU_FRONTEND_FLOW:
-         {
-            return DesignFlowStepRef(new BambuFrontendFlow(AppM, design_flow_manager.lock(), parameters));
-         }
+      {
+         return DesignFlowStepRef(new BambuFrontendFlow(AppM, design_flow_manager.lock(), parameters));
+      }
       case BIT_VALUE_IPA:
       {
          return DesignFlowStepRef(new BitValueIPA(AppM, design_flow_manager.lock(), parameters));
       }
 #endif
-      case(COMPLETE_CALL_GRAPH) :
-         {
-            return DesignFlowStepRef(new CompleteCallGraph(AppM, design_flow_manager.lock(), parameters));
-         }
+      case(COMPLETE_CALL_GRAPH):
+      {
+         return DesignFlowStepRef(new CompleteCallGraph(AppM, design_flow_manager.lock(), parameters));
+      }
 #if HAVE_TASTE
       case CREATE_ADDRESS_TRANSLATION:
-         {
-            return DesignFlowStepRef(new CreateAddressTranslation(AppM, design_flow_manager.lock(), parameters));
-         }
+      {
+         return DesignFlowStepRef(new CreateAddressTranslation(AppM, design_flow_manager.lock(), parameters));
+      }
 #endif
-      case(CREATE_TREE_MANAGER) :
+      case(CREATE_TREE_MANAGER):
       {
          return DesignFlowStepRef(new create_tree_manager(parameters, AppM, design_flow_manager.lock()));
       }
@@ -668,12 +666,12 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
          return DesignFlowStepRef(new FindMaxCFGTransformations(AppM, design_flow_manager.lock(), parameters));
       }
 #endif
-      case(FUNCTION_ANALYSIS) :
+      case(FUNCTION_ANALYSIS):
       {
          return DesignFlowStepRef(new call_graph_computation(parameters, AppM, design_flow_manager.lock()));
       }
 #if HAVE_ZEBU_BUILT
-      case(FUNCTION_POINTER_CALLGRAPH_COMPUTATION) :
+      case(FUNCTION_POINTER_CALLGRAPH_COMPUTATION):
       {
          return DesignFlowStepRef(new FunctionPointerCallGraphComputation(parameters, AppM, design_flow_manager.lock()));
       }
@@ -685,7 +683,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
       }
 #endif
 #if HAVE_HOST_PROFILING_BUILT
-      case(HOST_PROFILING) :
+      case(HOST_PROFILING):
       {
          return DesignFlowStepRef(new HostProfiling(AppM, design_flow_manager.lock(), parameters));
       }
@@ -719,7 +717,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
       }
 #endif
 #if HAVE_ZEBU_BUILT
-      case(SIZEOF_SUBSTITUTION) :
+      case(SIZEOF_SUBSTITUTION):
       {
          return DesignFlowStepRef(new SizeofSubstitution(AppM, design_flow_manager.lock(), parameters));
       }
@@ -792,7 +790,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
 #endif
       case DOM_POST_DOM_COMPUTATION:
 #if HAVE_BAMBU_BUILT
-      case (FANOUT_OPT):
+      case(FANOUT_OPT):
       case MULTIPLE_ENTRY_IF_REDUCTION:
 #endif
 #if HAVE_EXPERIMENTAL && HAVE_ZEBU_BUILT
@@ -826,6 +824,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
 #if HAVE_BAMBU_BUILT
       case HLS_DIV_CG_EXT:
       case HWCALL_INJECTION:
+      case INTERFACE_INFER:
       case IR_LOWERING:
 #endif
       case LOOP_COMPUTATION:
@@ -837,7 +836,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
       case LOOPS_ANALYSIS_BAMBU:
 #endif
 #if HAVE_ZEBU_BUILT
-      case LOOPS_ANALYSIS_ZEBU :
+      case LOOPS_ANALYSIS_ZEBU:
 #endif
       case LOOPS_IDENTIFICATION:
 #if HAVE_ZEBU_BUILT
@@ -1085,9 +1084,9 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
          return DesignFlowStepRef(new CleanVirtualPhi(AppM, function_id, design_flow_manager.lock(), parameters));
       }
       case COMPLETE_BB_GRAPH:
-         {
-            return DesignFlowStepRef(new CompleteBBGraph(AppM, function_id, design_flow_manager.lock(), parameters));
-         }
+      {
+         return DesignFlowStepRef(new CompleteBBGraph(AppM, function_id, design_flow_manager.lock(), parameters));
+      }
 #if HAVE_BAMBU_BUILT
       case COMPUTE_IMPLICIT_CALLS:
       {
@@ -1098,13 +1097,13 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
          return DesignFlowStepRef(new commutative_expr_restructuring(AppM, function_id, design_flow_manager.lock(), parameters));
       }
       case COND_EXPR_RESTRUCTURING:
-         {
-            return DesignFlowStepRef(new CondExprRestructuring(AppM, function_id, design_flow_manager.lock(), parameters));
-         }
+      {
+         return DesignFlowStepRef(new CondExprRestructuring(AppM, function_id, design_flow_manager.lock(), parameters));
+      }
       case CONSTANT_FLOP_WRAPPER:
-         {
-            return DesignFlowStepRef(new constant_flop_wrapper(parameters, AppM, function_id, design_flow_manager.lock()));
-         }
+      {
+         return DesignFlowStepRef(new constant_flop_wrapper(parameters, AppM, function_id, design_flow_manager.lock()));
+      }
       case CSE_STEP:
       {
          return DesignFlowStepRef(new CSE(parameters, AppM, function_id, design_flow_manager.lock()));
@@ -1127,7 +1126,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
          return DesignFlowStepRef(new dom_post_dom_computation(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #if HAVE_BAMBU_BUILT
-      case (FANOUT_OPT):
+      case(FANOUT_OPT):
       {
          return DesignFlowStepRef(new fanout_opt(parameters, AppM, function_id, design_flow_manager.lock()));
       }
@@ -1209,6 +1208,10 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       {
          return DesignFlowStepRef(new HWCallInjection(parameters, AppM, function_id, design_flow_manager.lock()));
       }
+      case INTERFACE_INFER:
+      {
+         return DesignFlowStepRef(new interface_infer(AppM, function_id, design_flow_manager.lock(), parameters));
+      }
       case IR_LOWERING:
       {
          return DesignFlowStepRef(new IR_lowering(parameters, AppM, function_id, design_flow_manager.lock()));
@@ -1235,7 +1238,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       }
 #endif
 #if HAVE_ZEBU_BUILT
-      case LOOPS_ANALYSIS_ZEBU :
+      case LOOPS_ANALYSIS_ZEBU:
       {
          return DesignFlowStepRef(new LoopsAnalysisZebu(parameters, AppM, function_id, design_flow_manager.lock()));
       }
@@ -1406,7 +1409,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
 #if HAVE_BAMBU_BUILT
       case SPLIT_RETURN:
       {
-       return DesignFlowStepRef(new SplitReturn(parameters, AppM, function_id, design_flow_manager.lock()));
+         return DesignFlowStepRef(new SplitReturn(parameters, AppM, function_id, design_flow_manager.lock()));
       }
       case SHORT_CIRCUIT_TAF:
       {
@@ -1511,7 +1514,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       case VIRTUAL_PHI_NODES_SPLIT:
       {
          return DesignFlowStepRef(new virtual_phi_nodes_split(parameters, AppM, function_id, design_flow_manager.lock()));
-
       }
 #endif
 #if HAVE_HOST_PROFILING_BUILT
@@ -1521,11 +1523,11 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       case BAMBU_FRONTEND_FLOW:
       case BIT_VALUE_IPA:
 #endif
-      case(COMPLETE_CALL_GRAPH) :
+      case(COMPLETE_CALL_GRAPH):
 #if HAVE_TASTE
       case CREATE_ADDRESS_TRANSLATION:
 #endif
-      case(CREATE_TREE_MANAGER) :
+      case(CREATE_TREE_MANAGER):
 #if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
       case(DYNAMIC_VAR_COMPUTATION):
 #endif
@@ -1533,9 +1535,9 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
 #if HAVE_BAMBU_BUILT
       case FIND_MAX_CFG_TRANSFORMATIONS:
 #endif
-      case(FUNCTION_ANALYSIS) :
+      case(FUNCTION_ANALYSIS):
 #if HAVE_ZEBU_BUILT
-      case(FUNCTION_POINTER_CALLGRAPH_COMPUTATION) :
+      case(FUNCTION_POINTER_CALLGRAPH_COMPUTATION):
 #endif
 #if HAVE_BAMBU_BUILT
       case HDL_FUNCTION_DECL_FIX:
@@ -1563,7 +1565,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       case(SOURCE_CODE_STATISTICS):
 #endif
       case STRING_CST_FIX:
-      case(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP) :
+      case(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP):
       {
          THROW_UNREACHABLE("Trying to create a function frontend flow step from " + FrontendFlowStep::EnumToKindText(design_flow_step_type));
          break;

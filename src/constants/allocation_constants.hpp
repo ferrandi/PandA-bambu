@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file allocation_constants.hpp
  * @brief constants used by HLS constants
@@ -37,26 +37,26 @@
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
  */
-///The default value for coefficient of PIPELINE STAGE 0
+/// The default value for coefficient of PIPELINE STAGE 0
 #define NUM_CST_allocation_default_allocation_coefficient 1.0
 
-///The default value for connection offset
+/// The default value for connection offset
 #define NUM_CST_allocation_default_connection_offset 0.0
 
-///The default value used in computation of fanout delay
+/// The default value used in computation of fanout delay
 #define NUM_CST_allocation_default_fanout_coefficent 0.007
 
-///The default value used in computation of fanout delay
+/// The default value used in computation of fanout delay
 #define NUM_CST_allocation_default_max_fanout_size 200
 
-///The default number of inputs of a lut
+/// The default number of inputs of a lut
 #define NUM_CST_allocation_default_max_lut_size 6
 
-///The default value used in computation of controller delay
+/// The default value used in computation of controller delay
 #define NUM_CST_allocation_default_states_number_normalization 30
 
-///The default value for the ratio between the output delay of a DSP and the setup delay
+/// The default value for the ratio between the output delay of a DSP and the setup delay
 #define NUM_CST_allocation_default_output_carry_connection_ratio 0.6
 
-///The default value for the ratio between the output delay of a DSP and the setup delay
+/// The default value for the ratio between the output delay of a DSP and the setup delay
 #define NUM_CST_allocation_default_output_DSP_connection_ratio 0.6

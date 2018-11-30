@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file function_allocation.hpp
  * @brief Base class to allocate functions in high-level synthesis
@@ -39,7 +39,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef FUNCTION_ALLOCATION_HPP
 #define FUNCTION_ALLOCATION_HPP
@@ -52,20 +52,20 @@ REF_FORWARD_DECL(function_allocation);
  */
 class function_allocation : public HLS_step
 {
-   public:
-      /**
-       * Constructor
-       */
-      function_allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
+ public:
+   /**
+    * Constructor
+    */
+   function_allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
 
-      /**
-       * Destructor
-       */
-      ~function_allocation() override;
+   /**
+    * Destructor
+    */
+   ~function_allocation() override;
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      void Initialize() override;
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 };
 #endif

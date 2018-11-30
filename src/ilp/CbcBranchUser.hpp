@@ -3,104 +3,94 @@
 #ifndef CBCBRANCHUSER_HPP
 #define CBCBRANCHUSER_HPP
 
-#include "CbcBranchBase.hpp"
 #include "CbcBranchActual.hpp"
+#include "CbcBranchBase.hpp"
 
 /** Branching decision user class */
 
-class CbcBranchUserDecision : public CbcBranchDecision {
-public:
-  // Default Constructor 
-  CbcBranchUserDecision ();
+class CbcBranchUserDecision : public CbcBranchDecision
+{
+ public:
+   // Default Constructor
+   CbcBranchUserDecision();
 
-  // Copy constructor 
-  CbcBranchUserDecision ( const CbcBranchUserDecision &);
+   // Copy constructor
+   CbcBranchUserDecision(const CbcBranchUserDecision&);
 
-  virtual ~CbcBranchUserDecision();
+   virtual ~CbcBranchUserDecision();
 
- /// Clone
-  virtual CbcBranchDecision * clone() const;
+   /// Clone
+   virtual CbcBranchDecision* clone() const;
 
-    /// Initialize i.e. before start of choosing at a node
-  virtual void initialize(CbcModel * model);
+   /// Initialize i.e. before start of choosing at a node
+   virtual void initialize(CbcModel* model);
 
-  /** Returns nonzero if branching on first object is "better" than on
-      second (if second NULL first wins).
-      This is only used after strong branching.  The initial selection
-      is done by infeasibility() for each CbcObject
-      return code +1 for up branch preferred, -1 for down
-      
- */
-  virtual int betterBranch(CbcBranchingObject * thisOne,
-			    CbcBranchingObject * bestSoFar,
-			    double changeUp, int numberInfeasibilitiesUp,
-			    double changeDown, int numberInfeasibilitiesDown);
+   /** Returns nonzero if branching on first object is "better" than on
+       second (if second NULL first wins).
+       This is only used after strong branching.  The initial selection
+       is done by infeasibility() for each CbcObject
+       return code +1 for up branch preferred, -1 for down
 
-  /** \brief Compare N branching objects. Return index of best
-      and sets way of branching in chosen object.
-    
-    This routine is used only after strong branching.
-    This is reccommended version as it can be more sophisticated
   */
+   virtual int betterBranch(CbcBranchingObject* thisOne, CbcBranchingObject* bestSoFar, double changeUp, int numberInfeasibilitiesUp, double changeDown, int numberInfeasibilitiesDown);
 
-  virtual int
-  bestBranch (CbcBranchingObject ** objects, int numberObjects, int numberUnsatisfied,
-	      double * changeUp, int * numberInfeasibilitiesUp,
-	      double * changeDown, int * numberInfeasibilitiesDown,
-	      double objectiveValue) ;
-private:
-  
-  /// Illegal Assignment operator 
-  CbcBranchUserDecision & operator=(const CbcBranchUserDecision& rhs);
+   /** \brief Compare N branching objects. Return index of best
+       and sets way of branching in chosen object.
 
+     This routine is used only after strong branching.
+     This is reccommended version as it can be more sophisticated
+   */
+
+   virtual int bestBranch(CbcBranchingObject** objects, int numberObjects, int numberUnsatisfied, double* changeUp, int* numberInfeasibilitiesUp, double* changeDown, int* numberInfeasibilitiesDown, double objectiveValue);
+
+ private:
+   /// Illegal Assignment operator
+   CbcBranchUserDecision& operator=(const CbcBranchUserDecision& rhs);
 };
 
 /// Define a single integer class where branching is forced until fixed
 
+class CbcSimpleIntegerFixed : public CbcSimpleInteger
+{
+ public:
+   // Default Constructor
+   CbcSimpleIntegerFixed();
 
-class CbcSimpleIntegerFixed : public CbcSimpleInteger {
+   // Useful constructor - passed integer index and model index
+   CbcSimpleIntegerFixed(CbcModel* model, int iColumn, double breakEven = 0.5);
 
-public:
+   // Constructor from simple
+   CbcSimpleIntegerFixed(const CbcSimpleInteger& simple);
 
-  // Default Constructor 
-  CbcSimpleIntegerFixed ();
+   // Copy constructor
+   CbcSimpleIntegerFixed(const CbcSimpleIntegerFixed&);
 
-  // Useful constructor - passed integer index and model index
-  CbcSimpleIntegerFixed (CbcModel * model, int iColumn, double breakEven=0.5);
-  
-  // Constructor from simple
-  CbcSimpleIntegerFixed (const CbcSimpleInteger & simple);
-  
-  // Copy constructor 
-  CbcSimpleIntegerFixed ( const CbcSimpleIntegerFixed &);
-   
-  /// Clone
-  virtual CbcObject * clone() const;
+   /// Clone
+   virtual CbcObject* clone() const;
 
-  // Assignment operator 
-  CbcSimpleIntegerFixed & operator=( const CbcSimpleIntegerFixed& rhs);
+   // Assignment operator
+   CbcSimpleIntegerFixed& operator=(const CbcSimpleIntegerFixed& rhs);
 
-  // Destructor 
-  ~CbcSimpleIntegerFixed ();
-  
-  /// Infeasibility - large is 0.5
-  virtual double infeasibility(int & preferredWay) const;
+   // Destructor
+   ~CbcSimpleIntegerFixed();
 
-  /** Creates a branching object
+   /// Infeasibility - large is 0.5
+   virtual double infeasibility(int& preferredWay) const;
 
-    The preferred direction is set by \p way, -1 for down, +1 for up.
-  */
-  //virtual CbcBranchingObject * createBranch(int way) ;
-  /** Create a branching object and indicate which way to branch first.
-      
-      The branching object has to know how to create branches (fix
-      variables, etc.)
-  */
-  virtual CbcBranchingObject * createBranch(OsiSolverInterface * solver,
-					    const OsiBranchingInformation * info, int way) ;
+   /** Creates a branching object
 
-protected:
-  /// data
+     The preferred direction is set by \p way, -1 for down, +1 for up.
+   */
+   // virtual CbcBranchingObject * createBranch(int way) ;
+   /** Create a branching object and indicate which way to branch first.
+
+       The branching object has to know how to create branches (fix
+       variables, etc.)
+   */
+   virtual CbcBranchingObject* createBranch(OsiSolverInterface* solver, const OsiBranchingInformation* info, int way);
+
+ protected:
+   /// data
 };
 
 #endif

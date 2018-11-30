@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file xst_wrapper.hpp
  * @brief Wrapper to XST by XILINX
@@ -41,7 +41,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef _XILINX_XST_WRAPPER_HPP_
 #define _XILINX_XST_WRAPPER_HPP_
 
@@ -55,15 +55,15 @@ REF_FORWARD_DECL(area_model);
 REF_FORWARD_DECL(time_model);
 class xml_element;
 
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
 
-#define XST_TOOL_ID   "xst"
+#define XST_TOOL_ID "xst"
 
-#define   PARAM_xst_tmpdir     "xst_tmpdir"
-#define   PARAM_xst_hdpdir     "xst_hdpdir"
-#define   PARAM_xst_prj_file   "xst_prj_file"
+#define PARAM_xst_tmpdir "xst_tmpdir"
+#define PARAM_xst_hdpdir "xst_hdpdir"
+#define PARAM_xst_prj_file "xst_prj_file"
 
 /**
  * @class xst_wrapper
@@ -71,43 +71,40 @@ class xml_element;
  */
 class xst_wrapper : public XilinxWrapper
 {
-   protected:
+ protected:
+   /**
+    * Generates project file
+    */
+   void GenerateProjectFile(const DesignParametersRef& dp);
 
-      /**
-       * Generates project file
-       */
-      void GenerateProjectFile(const DesignParametersRef dp);
+   /**
+    * Initializes the reserved variables
+    */
+   void init_reserved_vars() override;
 
-      /**
-       * Initializes the reserved variables
-       */
-      void init_reserved_vars() override;
+   /**
+    * Evaluates the design variables
+    */
+   void EvaluateVariables(const DesignParametersRef dp) override;
 
-      /**
-       * Evaluates the design variables
-       */
-      void EvaluateVariables(const DesignParametersRef dp) override;
+   /**
+    * Returns the proper command line
+    */
+   std::string get_command_line(const DesignParametersRef& dp) const override;
 
-      /**
-       * Returns the proper command line
-       */
-      std::string get_command_line(const DesignParametersRef& dp) const override;
+ public:
+   /**
+    * Constructor
+    * @param Param is the set of parameters
+    */
+   xst_wrapper(const ParameterConstRef& Param, const std::string& _output_dir, const target_deviceRef& _device);
 
-   public:
-
-      /**
-       * Constructor
-       * @param Param is the set of parameters
-       */
-      xst_wrapper(const ParameterConstRef Param, const std::string& _output_dir, const target_deviceRef _device);
-
-      /**
-       * Destructor
-       */
-      ~xst_wrapper() override;
-
+   /**
+    * Destructor
+    */
+   ~xst_wrapper() override;
 };
-///Refcount definition for the class
+/// Refcount definition for the class
 typedef refcount<xst_wrapper> xst_wrapperRef;
 
 #endif

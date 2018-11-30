@@ -29,108 +29,80 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file test_vector_parser.cpp
  * @brief .
  *
-*/
+ */
 
 #ifndef TEST_VECTOR_PARSER_HPP
 #define TEST_VECTOR_PARSER_HPP
 
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
 
 #include "hls_step.hpp"
 
 class TestVectorParser : public HLS_step
 {
-   private:
+ private:
+   std::string input_xml_filename;
 
-      std::string input_xml_filename;
+   std::string user_input_string;
 
-      std::string user_input_string;
+   /**
+    * Parse a user defined string extracting the test vectors
+    * @param [out] test_vectors Where the parsed test vectors are stored
+    */
+   void ParseUserString(std::vector<std::map<std::string, std::string>>& test_vectors) const;
 
-      /**
-       * Parse a user defined string extracting the test vectors
-       * @param [out] test_vectors Where the parsed test vectors are stored
-       */
-      void ParseUserString
-      (
-         std::vector<std::map<std::string, std::string> >& test_vectors
-      )
-      const;
+   /**
+    * Parse a user defined xml file extracting the test vectors
+    */
+   void ParseXMLFile(std::vector<std::map<std::string, std::string>>& test_vectors) const;
 
-      /**
-       * Parse a user defined xml file extracting the test vectors
-       */
-      void ParseXMLFile
-      (
-         std::vector<std::map<std::string, std::string> > & test_vectors
-      )
-      const;
+   /**
+    * Parses the test vectors using one of ParseUserString() or
+    * ParseXMLFile(), depending on internal parameters set from Initialize()
+    * @param [out] test_vectors Where the parsed test vectors are stored
+    */
+   size_t ParseTestVectors(std::vector<std::map<std::string, std::string>>& test_vectors) const;
 
-      /**
-       * Parses the test vectors using one of ParseUserString() or
-       * ParseXMLFile(), depending on internal parameters set from Initialize()
-       * @param [out] test_vectors Where the parsed test vectors are stored
-       */
-      size_t ParseTestVectors
-      (std::vector<std::map<std::string, std::string> > & test_vectors)
-      const;
+ public:
+   /**
+    * Constructor
+    */
+   TestVectorParser(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager);
 
-   public:
+   /**
+    * Destructor
+    */
+   ~TestVectorParser() override;
 
-      /**
-       * Constructor
-       */
-      TestVectorParser
-      (
-         const ParameterConstRef _parameters,
-         const HLS_managerRef _HLSMgr,
-         const DesignFlowManagerConstRef _design_flow_manager
-      );
+   /**
+    * Initializes the data needed for execution. It's something similar to a
+    * constructor, but it runs just before execution. The reason is that some
+    * data needed for the execution may not be present when the step is
+    * created and they need to be retreived just before the execution
+    */
+   void Initialize() override;
 
-      /**
-       * Destructor
-       */
-      ~TestVectorParser() override;
+   /**
+    * Executes the step
+    */
+   DesignFlowStep_Status Exec() override;
 
-      /**
-       * Initializes the data needed for execution. It's something similar to a
-       * constructor, but it runs just before execution. The reason is that some
-       * data needed for the execution may not be present when the step is
-       * created and they need to be retreived just before the execution
-       */
-      void Initialize() override;
+   /**
+    * Compute the HLS relationships of this step
+    */
+   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      /**
-       * Executes the step
-       */
-      DesignFlowStep_Status Exec() override;
-
-      /**
-       * Compute the HLS relationships of this step
-       */
-      const std::unordered_set
-      <
-         std::tuple
-         <
-            HLSFlowStep_Type,
-            HLSFlowStepSpecializationConstRef,
-            HLSFlowStep_Relationship
-         >
-      >
-      ComputeHLSRelationships
-      (const DesignFlowStep::RelationshipType relationship_type)
-      const override;
-
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      bool HasToBeExecuted() const override;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 };
 #endif

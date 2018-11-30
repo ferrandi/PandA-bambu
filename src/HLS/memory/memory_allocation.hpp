@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file memory_allocation.hpp
  * @brief Base class to allocate memories in high-level synthesis
@@ -40,7 +40,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef _MEMORY_ALLOCATION_HPP_
 #define _MEMORY_ALLOCATION_HPP_
@@ -54,12 +54,12 @@ REF_FORWARD_DECL(memory_allocation);
  */
 enum class MemoryAllocation_Policy
 {
-   LSS = 0,   /// all local variables, static variables and strings are allocated on BRAMs
-   GSS,       /// all global variables, static variables and strings are allocated on BRAMs
-   ALL_BRAM,  /// all objects that need to be stored in memory are allocated on BRAMs
-   NO_BRAM,   /// all objects that need to be stored in memory are allocated on an external memory
+   LSS = 0,            /// all local variables, static variables and strings are allocated on BRAMs
+   GSS,                /// all global variables, static variables and strings are allocated on BRAMs
+   ALL_BRAM,           /// all objects that need to be stored in memory are allocated on BRAMs
+   NO_BRAM,            /// all objects that need to be stored in memory are allocated on an external memory
    EXT_PIPELINED_BRAM, /// all objects that need to be stored in memory are allocated on an external pipelined memory
-   NONE       /// no policy
+   NONE                /// no policy
 };
 
 /**
@@ -78,29 +78,29 @@ enum class MemoryAllocation_ChannelsType
  */
 class MemoryAllocationSpecialization : public HLSFlowStepSpecialization
 {
-   public:
-      ///memory allocation policy
-      const MemoryAllocation_Policy memory_allocation_policy;
+ public:
+   /// memory allocation policy
+   const MemoryAllocation_Policy memory_allocation_policy;
 
-      ///number of channels
-      const MemoryAllocation_ChannelsType memory_allocation_channels_type;
+   /// number of channels
+   const MemoryAllocation_ChannelsType memory_allocation_channels_type;
 
-      /**
-       * Constructor
-       * @param memory_allocation_policy is the memory allocation policy
-       * @param memory_allocation_channels_type is the number of channels
-       */
-      MemoryAllocationSpecialization(const MemoryAllocation_Policy memory_allocation_policy, const MemoryAllocation_ChannelsType memory_allocation_channels_type);
+   /**
+    * Constructor
+    * @param memory_allocation_policy is the memory allocation policy
+    * @param memory_allocation_channels_type is the number of channels
+    */
+   MemoryAllocationSpecialization(const MemoryAllocation_Policy memory_allocation_policy, const MemoryAllocation_ChannelsType memory_allocation_channels_type);
 
-      /**
-       * Return the string representation of this
-       */
-      const std::string GetKindText() const override;
+   /**
+    * Return the string representation of this
+    */
+   const std::string GetKindText() const override;
 
-      /**
-       * Return the contribution to the signature of a step given by the specialization
-       */
-      const std::string GetSignature() const override;
+   /**
+    * Return the contribution to the signature of a step given by the specialization
+    */
+   const std::string GetSignature() const override;
 };
 
 /**
@@ -108,53 +108,54 @@ class MemoryAllocationSpecialization : public HLSFlowStepSpecialization
  */
 class memory_allocation : public HLS_step
 {
-   protected:
-      ///True if this step has already been executed
-      bool already_executed;
+ protected:
+   /// True if this step has already been executed
+   bool already_executed;
 
-      ///list of functions to be analyzed
-      std::set<unsigned int> func_list;
+   /// list of functions to be analyzed
+   std::set<unsigned int> func_list;
 
-      ///The memory allocation policy
-      const MemoryAllocation_Policy memory_allocation_policy;
+   /// The memory allocation policy
+   const MemoryAllocation_Policy memory_allocation_policy;
 
-      /**
-       * Prepares the datastructures for the memory allocation
-       */
-      void setup_memory_allocation();
+   /**
+    * Prepares the datastructures for the memory allocation
+    */
+   void setup_memory_allocation();
 
-      /**
-       * Performs a final analysis of the memory allocation to finalize the datastructure
-       */
-      void finalize_memory_allocation();
+   /**
+    * Performs a final analysis of the memory allocation to finalize the datastructure
+    */
+   void finalize_memory_allocation();
 
-      /**
-       * Compute the relationship of this step
-       * @param relationship_type is the type of relationship to be considered
-       * @return the steps in relationship with this
-       */
-      const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   /**
+    * Compute the relationship of this step
+    * @param relationship_type is the type of relationship to be considered
+    * @return the steps in relationship with this
+    */
+   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor
-       * @param design_flow_manager is the design flow manager
-       * @param hls_flow_step_type is the algorithm to be used
-       */
-      memory_allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
+ public:
+   /**
+    * Constructor
+    * @param design_flow_manager is the design flow manager
+    * @param hls_flow_step_type is the algorithm to be used
+    */
+   memory_allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
+                     const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
 
-      /**
-       * Destructor
-       */
-      ~memory_allocation() override;
+   /**
+    * Destructor
+    */
+   ~memory_allocation() override;
 
-      void allocate_parameters(unsigned int functionId);
+   void allocate_parameters(unsigned int functionId);
 
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      bool HasToBeExecuted() const override;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 };
 
 #endif

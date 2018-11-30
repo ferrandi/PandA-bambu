@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file bb_reachability_computation.cpp
  * @brief Analysis step computing reachability between operations
@@ -39,45 +39,42 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
-///Header include
+ */
+/// Header include
 #include "bb_reachability_computation.hpp"
 
 ///. includes
 #include "Parameter.hpp"
 
-///algorithms/loops_detection includes
+/// algorithms/loops_detection includes
 #include "loop.hpp"
 #include "loops.hpp"
 
-///behavior includes
+/// behavior includes
 #include "application_manager.hpp"
 #include "basic_block.hpp"
 #include "function_behavior.hpp"
 
-///graph includes
+/// graph includes
 #include "graph.hpp"
 
-///tree includes
+/// tree includes
 #include "tree_basic_block.hpp"
 
-///STL includes
+/// STL includes
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "hash_helper.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 #include <unordered_map>
 #include <unordered_set>
-#include "hash_helper.hpp"
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
-#include "string_manipulation.hpp"          // for GET_CLASS
 
-
-BBReachabilityComputation::BBReachabilityComputation(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
-   FunctionFrontendFlowStep(_AppM, _function_id, BB_REACHABILITY_COMPUTATION, _design_flow_manager, _Param)
+BBReachabilityComputation::BBReachabilityComputation(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, BB_REACHABILITY_COMPUTATION, _design_flow_manager, _Param)
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-
-BBReachabilityComputation::~BBReachabilityComputation()
-= default;
+BBReachabilityComputation::~BBReachabilityComputation() = default;
 
 void BBReachabilityComputation::Initialize()
 {
@@ -88,19 +85,19 @@ void BBReachabilityComputation::Initialize()
    }
 }
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > BBReachabilityComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BBReachabilityComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(ADD_BB_ECFG_EDGES, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -114,12 +111,12 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 DesignFlowStep_Status BBReachabilityComputation::InternalExec()
 {
-   ///The extended control flow graph of basic block
+   /// The extended control flow graph of basic block
    const BBGraphConstRef ecfg = function_behavior->CGetBBGraph(FunctionBehavior::EBB);
 
-   ///The reachability among basic blocks
-   std::unordered_map<vertex, std::unordered_set<vertex> > & bb_reachability = function_behavior->bb_reachability;
-   std::unordered_map<vertex, std::unordered_set<vertex> > & feedback_bb_reachability = function_behavior->feedback_bb_reachability;
+   /// The reachability among basic blocks
+   std::unordered_map<vertex, std::unordered_set<vertex>>& bb_reachability = function_behavior->bb_reachability;
+   std::unordered_map<vertex, std::unordered_set<vertex>>& feedback_bb_reachability = function_behavior->feedback_bb_reachability;
 
    std::deque<vertex> container;
    boost::topological_sort(*ecfg, std::back_inserter(container));
@@ -139,9 +136,9 @@ DesignFlowStep_Status BBReachabilityComputation::InternalExec()
 
    feedback_bb_reachability = bb_reachability;
 
-   ///Get first level loops
+   /// Get first level loops
    const LoopConstRef zero_loop = function_behavior->CGetLoops()->CGetLoop(0);
-   const std::set<LoopConstRef> & first_level_loops = zero_loop->GetChildren();
+   const std::set<LoopConstRef>& first_level_loops = zero_loop->GetChildren();
    std::set<LoopConstRef>::const_iterator first_level_loop, first_level_loop_end = first_level_loops.end();
    for(first_level_loop = first_level_loops.begin(); first_level_loop != first_level_loop_end; ++first_level_loop)
    {

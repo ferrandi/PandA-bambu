@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file remove_clobber_ga.hpp
  * @brief Analysis step that removes clobber gimple_assign introduced by GCC v4.7 and greater.
@@ -39,49 +39,46 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef REMOVE_CLOBBER_GA_HPP
 #define REMOVE_CLOBBER_GA_HPP
 
-///Superclass include
+/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
 /**
  * Restructure the tree control flow graph
  */
-class remove_clobber_ga: public FunctionFrontendFlowStep
+class remove_clobber_ga : public FunctionFrontendFlowStep
 {
-   private:
+ private:
+   /// flag to check if initial tree has been dumped
+   static bool tree_dumped;
 
-      /// flag to check if initial tree has been dumped
-      static bool tree_dumped;
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+ public:
+   /**
+    * Constructor.
+    * @param AppM is the application manager
+    * @param function_id is the identifier of the function
+    * @param design_flow_manager is the design flow manager
+    * @param parameters is the set of input parameters
+    */
+   remove_clobber_ga(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
+   /**
+    *  Destructor
+    */
+   ~remove_clobber_ga() override;
 
-   public:
-      /**
-       * Constructor.
-       * @param AppM is the application manager
-       * @param function_id is the identifier of the function
-       * @param design_flow_manager is the design flow manager
-       * @param parameters is the set of input parameters
-       */
-      remove_clobber_ga(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
-
-      /**
-       *  Destructor
-       */
-      ~remove_clobber_ga() override;
-
-      /**
-       * Updates the tree to have a more compliant CFG
-       */
-      DesignFlowStep_Status InternalExec() override;
-
+   /**
+    * Updates the tree to have a more compliant CFG
+    */
+   DesignFlowStep_Status InternalExec() override;
 };
 #endif

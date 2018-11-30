@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file fun_dominator_allocation.cpp
  * @brief Function allocation based on the dominator tree of the call graph.
@@ -39,126 +39,124 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 
 ///. include
-#include "constant_strings.hpp"
 #include "Parameter.hpp"
+#include "constant_strings.hpp"
 
-///Header include
+/// Header include
 #include "fun_dominator_allocation.hpp"
 
-///algorithms/domainance include
+/// algorithms/domainance include
 #include "Dominance.hpp"
 
-///behavior include
+/// behavior include
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
 #include "op_graph.hpp"
 
-///design_flows include
+/// design_flows include
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 
-///design_flows/codesign include
+/// design_flows/codesign include
 #if HAVE_PRAGMA_BUILT && HAVE_EXPERIMENTAL
 #include "actor_graph_flow_step.hpp"
 #include "actor_graph_flow_step_factory.hpp"
 #endif
 
-///frontend_analysis includes
+/// frontend_analysis includes
 #include "application_frontend_flow_step.hpp"
 #include "frontend_flow_step_factory.hpp"
 
-///HLS include
+/// HLS include
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
 
-///HLS/function_allocation includes
+/// HLS/function_allocation includes
 #include "functions.hpp"
 
-///technology include
+/// technology include
 #include "technology_flow_step.hpp"
 #include "technology_flow_step_factory.hpp"
 #include "technology_manager.hpp"
 
-///technology/physical_library includes
+/// technology/physical_library includes
 #include "library_manager.hpp"
 #include "technology_node.hpp"
 
-
-///tree include
+/// tree include
 #include "behavioral_helper.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 
-///utility include
+/// utility include
 #include "cpu_time.hpp"
 
+#include "string_manipulation.hpp" // for GET_CLASS
 #include <boost/range/adaptor/reversed.hpp>
-#include "string_manipulation.hpp"          // for GET_CLASS
 
-
-fun_dominator_allocation::fun_dominator_allocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
-   function_allocation(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_type),
-   already_executed(false)
+fun_dominator_allocation::fun_dominator_allocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+    : function_allocation(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_type), already_executed(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-fun_dominator_allocation::~fun_dominator_allocation()
-= default;
+fun_dominator_allocation::~fun_dominator_allocation() = default;
 
-void fun_dominator_allocation::ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type)
+void fun_dominator_allocation::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
 {
    switch(relationship_type)
    {
       case(PRECEDENCE_RELATIONSHIP):
-         {
+      {
 #if HAVE_PRAGMA_BUILT && HAVE_EXPERIMENTAL
-            if(parameters->isOption(OPT_parse_pragma) and parameters->getOption<bool>(OPT_parse_pragma) and relationship_type == PRECEDENCE_RELATIONSHIP)
+         if(parameters->isOption(OPT_parse_pragma) and parameters->getOption<bool>(OPT_parse_pragma) and relationship_type == PRECEDENCE_RELATIONSHIP)
+         {
+            for(const auto input_function : HLSMgr->get_functions_with_body())
             {
-               for(const auto input_function : HLSMgr->get_functions_with_body())
-               {
-                  const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-                  const ActorGraphFlowStepFactory * actor_graph_flow_step_factory = GetPointer<const ActorGraphFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("ActorGraph"));
-                  const std::string actor_graph_creator_signature = ActorGraphFlowStep::ComputeSignature(ACTOR_GRAPHS_CREATOR, input_function, 0, "");
-                  const vertex actor_graph_creator_step = design_flow_manager.lock()->GetDesignFlowStep(actor_graph_creator_signature);
-                  const DesignFlowStepRef design_flow_step = actor_graph_creator_step ? design_flow_graph->CGetDesignFlowStepInfo(actor_graph_creator_step)->design_flow_step : actor_graph_flow_step_factory->CreateActorGraphStep(ACTOR_GRAPHS_CREATOR, input_function);
-                  relationship.insert(design_flow_step);
-               }
+               const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+               const ActorGraphFlowStepFactory* actor_graph_flow_step_factory = GetPointer<const ActorGraphFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("ActorGraph"));
+               const std::string actor_graph_creator_signature = ActorGraphFlowStep::ComputeSignature(ACTOR_GRAPHS_CREATOR, input_function, 0, "");
+               const vertex actor_graph_creator_step = design_flow_manager.lock()->GetDesignFlowStep(actor_graph_creator_signature);
+               const DesignFlowStepRef design_flow_step =
+                   actor_graph_creator_step ? design_flow_graph->CGetDesignFlowStepInfo(actor_graph_creator_step)->design_flow_step : actor_graph_flow_step_factory->CreateActorGraphStep(ACTOR_GRAPHS_CREATOR, input_function);
+               relationship.insert(design_flow_step);
             }
+         }
 #endif
-            break;
-         }
+         break;
+      }
       case DEPENDENCE_RELATIONSHIP:
-         {
-            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const auto * frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
-            const std::string frontend_flow_signature = ApplicationFrontendFlowStep::ComputeSignature(BAMBU_FRONTEND_FLOW);
-            const vertex frontend_flow_step = design_flow_manager.lock()->GetDesignFlowStep(frontend_flow_signature);
-            const DesignFlowStepRef design_flow_step = frontend_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(frontend_flow_step)->design_flow_step : frontend_flow_step_factory->CreateApplicationFrontendFlowStep(BAMBU_FRONTEND_FLOW);
-            relationship.insert(design_flow_step);
+      {
+         const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const auto* frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
+         const std::string frontend_flow_signature = ApplicationFrontendFlowStep::ComputeSignature(BAMBU_FRONTEND_FLOW);
+         const vertex frontend_flow_step = design_flow_manager.lock()->GetDesignFlowStep(frontend_flow_signature);
+         const DesignFlowStepRef design_flow_step = frontend_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(frontend_flow_step)->design_flow_step : frontend_flow_step_factory->CreateApplicationFrontendFlowStep(BAMBU_FRONTEND_FLOW);
+         relationship.insert(design_flow_step);
 
-            const auto * technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
-            const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
-            const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
-            const DesignFlowStepRef technology_design_flow_step = technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
-            relationship.insert(technology_design_flow_step);
-            break;
-         }
+         const auto* technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
+         const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+         const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
+         const DesignFlowStepRef technology_design_flow_step =
+             technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+         relationship.insert(technology_design_flow_step);
+         break;
+      }
       case INVALIDATION_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       default:
          THROW_UNREACHABLE("");
    }
@@ -170,41 +168,41 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
    already_executed = true;
    const CallGraphManagerConstRef CG = HLSMgr->CGetCallGraphManager();
    auto root_functions = CG->GetRootFunctions();
-   if (parameters->isOption(OPT_top_design_name)) // top design function become the top_vertex
+   if(parameters->isOption(OPT_top_design_name)) // top design function become the top_vertex
    {
       const auto top_rtldesign_function_id = HLSMgr->get_tree_manager()->function_index(parameters->getOption<std::string>(OPT_top_design_name));
-      if (top_rtldesign_function_id != 0 and root_functions.find(top_rtldesign_function_id) != root_functions.end())
+      if(top_rtldesign_function_id != 0 and root_functions.find(top_rtldesign_function_id) != root_functions.end())
       {
          root_functions.clear();
          root_functions.insert(top_rtldesign_function_id);
       }
    }
-   for (const auto root_f_id : root_functions)
+   for(const auto root_f_id : root_functions)
    {
       const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(root_f_id);
       const BehavioralHelperConstRef BH = function_behavior->CGetBehavioralHelper();
       std::string fname = BH->get_function_name();
-      if (tree_helper::is_a_nop_function_decl(GetPointer<function_decl>(HLSMgr->get_tree_manager()->get_tree_node_const(root_f_id))))
+      if(tree_helper::is_a_nop_function_decl(GetPointer<function_decl>(HLSMgr->get_tree_manager()->get_tree_node_const(root_f_id))))
          THROW_ERROR(fname + " function is empty or the compiler killed all the statements");
    }
-   if (parameters->isOption(OPT_disable_function_proxy) and parameters->getOption<bool>(OPT_disable_function_proxy))
+   if(parameters->isOption(OPT_disable_function_proxy) and parameters->getOption<bool>(OPT_disable_function_proxy))
       return DesignFlowStep_Status::UNCHANGED;
 
    std::set<unsigned int> reached_fu_ids;
    for(const auto f_id : root_functions)
-      for (const auto reached_f_id : CG->GetReachedBodyFunctionsFrom(f_id))
+      for(const auto reached_f_id : CG->GetReachedBodyFunctionsFrom(f_id))
          reached_fu_ids.insert(reached_f_id);
 
    /// the analysis has to be performed only on the reachable functions
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Functions to be synthesized:");
-   for (const auto & funID : reached_fu_ids)
+   for(const auto& funID : reached_fu_ids)
    {
       const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(funID);
       const BehavioralHelperConstRef BH = function_behavior->CGetBehavioralHelper();
       std::string fname = BH->get_function_name();
-      if (tree_helper::is_a_nop_function_decl(GetPointer<function_decl>(HLSMgr->get_tree_manager()->get_tree_node_const(funID))))
+      if(tree_helper::is_a_nop_function_decl(GetPointer<function_decl>(HLSMgr->get_tree_manager()->get_tree_node_const(funID))))
          THROW_WARNING(fname + " function is empty or the compiler killed all the statements");
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---" + fname);
    }
@@ -217,22 +215,22 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
    vertex top_vertex = CG->GetVertex(top_fun_id);
 
    std::unordered_set<vertex> vertex_subset;
-   for (const auto & funID : reached_fu_ids)
+   for(const auto& funID : reached_fu_ids)
       vertex_subset.insert(CG->GetVertex(funID));
 
-   refcount<dominance<graph> > cg_dominators;
+   refcount<dominance<graph>> cg_dominators;
    const CallGraphConstRef subgraph = CG->CGetCallSubGraph(vertex_subset);
    /// we do not need the exit vertex since the post-dominator graph is not used
-   cg_dominators = refcount<dominance<graph> >(new dominance<graph>(*subgraph, top_vertex, NULL_VERTEX, parameters));
+   cg_dominators = refcount<dominance<graph>>(new dominance<graph>(*subgraph, top_vertex, NULL_VERTEX, parameters));
    cg_dominators->calculate_dominance_info(dominance<graph>::CDI_DOMINATORS);
    const std::unordered_map<vertex, vertex>& cg_dominator_map = cg_dominators->get_dominator_map();
-   std::map<std::string, std::set<vertex> > fun_dom_map;
-   std::map<std::string, std::set<unsigned int> > where_used;
+   std::map<std::string, std::set<vertex>> fun_dom_map;
+   std::map<std::string, std::set<unsigned int>> where_used;
    std::map<std::string, bool> indirectlyCalled;
    const HLS_constraintsRef HLS_C = HLS_constraintsRef(new HLS_constraints(HLSMgr->get_parameter(), ""));
 
    const CallGraphConstRef cg = CG->CGetCallGraph();
-   for (const auto & funID : reached_fu_ids)
+   for(const auto& funID : reached_fu_ids)
    {
       vertex vert_dominator, current_vertex;
       current_vertex = CG->GetVertex(funID);
@@ -244,44 +242,40 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
       OutEdgeIterator eo, eo_end;
       for(boost::tie(eo, eo_end) = boost::out_edges(current_vertex, *cg); eo != eo_end; ++eo)
       {
-         const FunctionBehaviorConstRef called_function_behavior = HLSMgr->CGetFunctionBehavior(CG->get_function(boost::target(*eo,*cg)));
+         const FunctionBehaviorConstRef called_function_behavior = HLSMgr->CGetFunctionBehavior(CG->get_function(boost::target(*eo, *cg)));
          const BehavioralHelperConstRef called_BH = called_function_behavior->CGetBehavioralHelper();
          std::string called_fu_name = called_BH->get_function_name();
-         if (HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY) == INFINITE_UINT || // without constraints
-               HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY) == 1) // or single instance functions
+         if(HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY) == INFINITE_UINT || // without constraints
+            HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY) == 1)               // or single instance functions
          {
             fun_dom_map[called_fu_name].insert(vert_dominator);
-            const auto * info =
-               Cget_edge_info<FunctionEdgeInfo, const CallGraph>(*eo, *cg);
+            const auto* info = Cget_edge_info<FunctionEdgeInfo, const CallGraph>(*eo, *cg);
 
-            if (info->direct_call_points.size())
+            if(info->direct_call_points.size())
                where_used[called_fu_name].insert(funID);
             else
                where_used[called_fu_name];
 
-            if (info->indirect_call_points.size() or info->function_addresses.size())
+            if(info->indirect_call_points.size() or info->function_addresses.size())
                indirectlyCalled[called_fu_name] = true;
             else
                indirectlyCalled[called_fu_name] = false;
          }
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Dominator Vertex: " + HLSMgr->CGetFunctionBehavior(CG->get_function(vert_dominator))->CGetBehavioralHelper()->get_function_name() + " - function "+ called_fu_name);
-
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Dominator Vertex: " + HLSMgr->CGetFunctionBehavior(CG->get_function(vert_dominator))->CGetBehavioralHelper()->get_function_name() + " - function " + called_fu_name);
       }
    }
-   /// compute the number of istances for each function
+   /// compute the number of instances for each function
    std::map<vertex, unsigned int> num_instances;
    num_instances[top_vertex] = 1;
-   std::map<unsigned int, std::vector<std::string > >function_allocation_map;
+   std::map<unsigned int, std::vector<std::string>> function_allocation_map;
    std::list<vertex> topology_sorted_vertex;
    cg->TopologicalSort(topology_sorted_vertex);
-   for (const auto & cur : topology_sorted_vertex)
+   for(const auto& cur : topology_sorted_vertex)
    {
       unsigned int funID = CG->get_function(cur);
-      if (reached_fu_ids.find(funID) == reached_fu_ids.end())
+      if(reached_fu_ids.find(funID) == reached_fu_ids.end())
          continue;
-      THROW_ASSERT(num_instances.find(CG->GetVertex(funID)) != num_instances.end(),
-            "missing number of instances of function " +
-            HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name());
+      THROW_ASSERT(num_instances.find(CG->GetVertex(funID)) != num_instances.end(), "missing number of instances of function " + HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name());
       function_allocation_map[funID];
       unsigned int cur_instances = num_instances.at(cur);
       OutEdgeIterator eo, eo_end;
@@ -298,19 +292,19 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
 
    THROW_ASSERT(num_instances.at(top_vertex) == 1, "top function cannot be called from some other function");
    /// find the common dominator and decide where to allocate
-   for (const auto & dom_map : fun_dom_map)
+   for(const auto& dom_map : fun_dom_map)
    {
       unsigned int funID = 0;
-      if (dom_map.second.size() == 1)
+      if(dom_map.second.size() == 1)
       {
          vertex cur = *dom_map.second.begin();
-         while (num_instances.at(cur) != 1)
+         while(num_instances.at(cur) != 1)
             cur = cg_dominator_map.at(cur);
          funID = CG->get_function(cur);
       }
       else
       {
-         if (dom_map.second.find(top_vertex) != dom_map.second.end())
+         if(dom_map.second.find(top_vertex) != dom_map.second.end())
             funID = CG->get_function(top_vertex);
          else
          {
@@ -323,10 +317,9 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
             {
                cur = cg_dominator_map.at(cur);
                dominator_list1.push_front(cur);
-            }
-            while (cur != top_vertex);
+            } while(cur != top_vertex);
             ++vert_it;
-            std::list<vertex>::const_iterator last=dominator_list1.end();
+            std::list<vertex>::const_iterator last = dominator_list1.end();
             for(; vert_it != vert_it_end; ++vert_it)
             {
                std::list<vertex> dominator_list2;
@@ -336,14 +329,10 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
                {
                   cur = cg_dominator_map.find(cur)->second;
                   dominator_list2.push_front(cur);
-               }
-               while (cur != top_vertex);
+               } while(cur != top_vertex);
                /// find the common dominator between two candidates
-               std::list<vertex>::const_iterator dl1_it = dominator_list1.begin(),
-                                                 dl2_it = dominator_list2.begin(),
-                                                 dl2_it_end = dominator_list2.end(),
-                                                 cur_last = dominator_list1.begin();
-               while (dl1_it != last && dl2_it != dl2_it_end && *dl1_it == *dl2_it && (num_instances.at(*dl1_it) == 1))
+               std::list<vertex>::const_iterator dl1_it = dominator_list1.begin(), dl2_it = dominator_list2.begin(), dl2_it_end = dominator_list2.end(), cur_last = dominator_list1.begin();
+               while(dl1_it != last && dl2_it != dl2_it_end && *dl1_it == *dl2_it && (num_instances.at(*dl1_it) == 1))
                {
                   cur = *dl1_it;
                   ++dl1_it;
@@ -352,15 +341,13 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
                }
                last = cur_last;
                funID = CG->get_function(cur);
-               if (cur == top_vertex)
+               if(cur == top_vertex)
                   break;
             }
          }
       }
       THROW_ASSERT(funID, "null function id index unexpected");
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-            "function " + dom_map.first + " has to be allocated in " +
-            HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "function " + dom_map.first + " has to be allocated in " + HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name());
       function_allocation_map[funID].push_back(dom_map.first);
    }
 
@@ -368,17 +355,14 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
    const HLS_targetRef HLS_T = HLSMgr->get_HLS_target();
    const technology_managerRef TM = HLS_T->get_technology_manager();
 
-   for (const auto & funID : reached_fu_ids)
+   for(const auto& funID : reached_fu_ids)
    {
-      for (const auto & fun_vertex : function_allocation_map.at(funID))
+      for(const auto& fun_vertex : function_allocation_map.at(funID))
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-               fun_vertex + " has to be allocated in " +
-               HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, fun_vertex + " has to be allocated in " + HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name());
          THROW_ASSERT(where_used.at(fun_vertex).size() > 0 or indirectlyCalled.at(fun_vertex),
-               fun_vertex + " function not used anywhere: used size = " + STR(where_used.at(fun_vertex).size()) +
-	       " indirectlyCalled = " + STR(indirectlyCalled.at(fun_vertex)));
-         if (where_used.at(fun_vertex).size() == 1)
+                      fun_vertex + " function not used anywhere: used size = " + STR(where_used.at(fun_vertex).size()) + " indirectlyCalled = " + STR(indirectlyCalled.at(fun_vertex)));
+         if(where_used.at(fun_vertex).size() == 1)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Skipped because used only once");
             continue;
@@ -394,7 +378,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
             continue;
          }
 #if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
-         if (fun_vertex == "panda_pthread_mutex")
+         if(fun_vertex == "panda_pthread_mutex")
          {
             continue;
          }
@@ -414,13 +398,13 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
          const BehavioralHelperConstRef cur_BH = cur_function_behavior->CGetBehavioralHelper();
          PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Adding proxy wrapper: " + fun_vertex + " in function " + cur_BH->get_function_name());
          /// add proxies
-         for (const auto & wu_id : where_used.at(fun_vertex))
+         for(const auto& wu_id : where_used.at(fun_vertex))
          {
-            if (wu_id != funID)
+            if(wu_id != funID)
             {
                const FunctionBehaviorConstRef wiu_function_behavior = HLSMgr->CGetFunctionBehavior(wu_id);
                const BehavioralHelperConstRef wiu_BH = wiu_function_behavior->CGetBehavioralHelper();
-               PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Adding proxy function: " + fun_vertex+ " in function " + wiu_BH->get_function_name());
+               PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Adding proxy function: " + fun_vertex + " in function " + wiu_BH->get_function_name());
                HLSMgr->Rfuns->add_shared_function_proxy(wu_id, fun_vertex);
             }
          }

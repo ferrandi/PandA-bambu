@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file aggregate_data_flow_analysis.hpp
  * @brief Meta analysis step performing aggregate variable; dependence of this step is the actual step performing aggregate data flow analysis
@@ -39,52 +39,50 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef AGGREGATE_DATA_FLOW_ANALYSIS_HPP
 #define AGGREGATE_DATA_FLOW_ANALYSIS_HPP
 
-///Superclass include
+/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
 #include "refcount.hpp"
 
 class AggregateDataFlowAnalysis : public FunctionFrontendFlowStep
 {
-   private:
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+ private:
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor
-       * @param AppM is the application manager
-       * @param function_index is the index of the function
-       * @param design_flow_manager is the design flow manager
-       * @param parameters is the set of the parameters
-       */
-      AggregateDataFlowAnalysis(const application_managerRef AppM, const unsigned int function_index, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor
+    * @param AppM is the application manager
+    * @param function_index is the index of the function
+    * @param design_flow_manager is the design flow manager
+    * @param parameters is the set of the parameters
+    */
+   AggregateDataFlowAnalysis(const application_managerRef AppM, const unsigned int function_index, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-      /**
-       *  Destructor
-       */
-      ~AggregateDataFlowAnalysis() override;
+   /**
+    *  Destructor
+    */
+   ~AggregateDataFlowAnalysis() override;
 
-      /**
-       * Cleans the fake data dependencies
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status InternalExec() override;
+   /**
+    * Cleans the fake data dependencies
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /**
-       * Compute the relationships of a step with other steps
-       * @param dependencies is where relationships will be stored
-       * @param relationship_type is the type of relationship to be computed
-       */
-      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   /**
+    * Compute the relationships of a step with other steps
+    * @param dependencies is where relationships will be stored
+    * @param relationship_type is the type of relationship to be computed
+    */
+   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 };
 #endif
-
-

@@ -15,7 +15,7 @@ noinst_HEADERS = generic_obj.hpp \
                  funit_obj.hpp \
                  register_obj.hpp \
                  mux_obj.hpp adder_conn_obj.hpp multiplier_conn_obj.hpp bitfield_obj.hpp \
-                 commandport_obj.hpp dataport_obj.hpp conv_conn_obj.hpp
+                 commandport_obj.hpp dataport_obj.hpp conv_conn_obj.hpp multi_unbounded_obj.hpp
 
 lib_virtual_components_la_SOURCES = \
    generic_obj.cpp \

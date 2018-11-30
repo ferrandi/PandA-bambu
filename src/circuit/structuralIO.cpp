@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file structuralIO.cpp
  * @brief Input and output functions used to read and write the structural data structures.
@@ -40,16 +40,16 @@
  * @warning This file is still in a work in progress state
  * @warning Last modified by $Author$
  *
-*/
+ */
 #include "structuralIO.hpp"
 
-#include <iostream>                        // for operator<<, endl, basic_os...
-#include <string>                          // for operator<<, string, char_t...
-#include "Parameter.hpp"                   // for ParameterRef
-#include "structural_manager.hpp"          // for structural_managerRef, str...
-#include "structural_objects.hpp"          // for structural_type_descriptorRef
-#include "xml_document.hpp"                // for xml_document
-#include "xml_dom_parser.hpp"              // for XMLDomParser
+#include "Parameter.hpp"          // for ParameterRef
+#include "structural_manager.hpp" // for structural_managerRef, str...
+#include "structural_objects.hpp" // for structural_type_descriptorRef
+#include "xml_document.hpp"       // for xml_document
+#include "xml_dom_parser.hpp"     // for XMLDomParser
+#include <iostream>               // for operator<<, endl, basic_os...
+#include <string>                 // for operator<<, string, char_t...
 
 structural_managerRef read_structural_File(const std::string& fn, const ParameterRef& Param)
 {
@@ -58,37 +58,37 @@ structural_managerRef read_structural_File(const std::string& fn, const Paramete
       structural_managerRef CM;
       XMLDomParser parser(fn);
       parser.Exec();
-      if (parser)
+      if(parser)
       {
-         //Walk the tree:
+         // Walk the tree:
          CM = structural_managerRef(new structural_manager(Param));
          structural_type_descriptorRef build_type = structural_type_descriptorRef(new structural_type_descriptor("BUILD"));
          CM->set_top_info("BUILD", build_type);
-         const xml_element* node = parser.get_document()->get_root_node(); //deleted by DomParser.
+         const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
          structural_manager::xload(node, CM);
       }
       return CM;
    }
-   catch (const char * msg)
+   catch(const char* msg)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string& msg)
+   catch(const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::exception& ex)
+   catch(const std::exception& ex)
    {
       std::cout << "Exception caught: " << ex.what() << std::endl;
    }
-   catch ( ... )
+   catch(...)
    {
       std::cerr << "unknown exception" << std::endl;
    }
    return structural_managerRef();
 }
 
-void write_structural_File(const std::string& f, structural_managerRef const & CM)
+void write_structural_File(const std::string& f, structural_managerRef const& CM)
 {
    try
    {
@@ -97,21 +97,20 @@ void write_structural_File(const std::string& f, structural_managerRef const & C
       CM->xwrite(nodeRoot);
       document.write_to_file_formatted(f);
    }
-   catch (const char * msg)
+   catch(const char* msg)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string& msg)
+   catch(const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::exception& ex)
+   catch(const std::exception& ex)
    {
       std::cout << "Exception caught: " << ex.what() << std::endl;
    }
-   catch ( ... )
+   catch(...)
    {
       std::cerr << "unknown exception" << std::endl;
    }
 }
-

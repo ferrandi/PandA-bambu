@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 
 /**
  * @file CMOS_technology.hpp
@@ -51,31 +51,27 @@ REF_FORWARD_DECL(technology_manager);
 
 class CMOS_technology : public target_technology
 {
-      /**
-       * Initialize the target device based on the given parameters
-       */
-      void initialize() override;
+   /**
+    * Initialize the target device based on the given parameters
+    */
+   void initialize() override;
 
-   public:
+ public:
+   /**
+    * Constructor of the class
+    */
+   explicit CMOS_technology(const ParameterConstRef& param);
 
-      /**
-       * Constructor of the class
-       */
-      explicit CMOS_technology(const ParameterConstRef param);
+   /**
+    * Destructor of the class
+    */
+   ~CMOS_technology() override;
 
-      /**
-       * Destructor of the class
-       */
-      ~CMOS_technology() override;
-
-      /**
-       * Returns the type of the technology currently implemented in a string format.
-       * @return a string representing the type of the technology
-       */
-      std::string get_string_type() const override;
-
+   /**
+    * Returns the type of the technology currently implemented in a string format.
+    * @return a string representing the type of the technology
+    */
+   std::string get_string_type() const override;
 };
 
 #endif
-
-

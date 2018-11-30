@@ -29,58 +29,57 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file AddArtificialCallFlowEdges.cpp
  * @brief Analysis step which adds flow edges to builtin bambu time functions
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
-///Header include
+ */
+/// Header include
 #include "AddArtificialCallFlowEdges.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior include
+/// behavior include
 #include "basic_block.hpp"
 #include "op_graph.hpp"
 #include "operations_graph_constructor.hpp"
 
-///boost include
+/// boost include
 #include <boost/range/adaptor/reversed.hpp>
 
-///tree include
+/// tree include
 #include "behavioral_helper.hpp"
 #include "tree_basic_block.hpp"
 
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "hash_helper.hpp"
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
-#include "string_manipulation.hpp"          // for GET_CLASS
+#include "string_manipulation.hpp" // for GET_CLASS
 
-AddArtificialCallFlowEdges::AddArtificialCallFlowEdges(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   FunctionFrontendFlowStep(_AppM, _function_id, ADD_ARTIFICIAL_CALL_FLOW_EDGES, _design_flow_manager, _parameters)
+AddArtificialCallFlowEdges::AddArtificialCallFlowEdges(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, ADD_ARTIFICIAL_CALL_FLOW_EDGES, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-AddArtificialCallFlowEdges::~AddArtificialCallFlowEdges()
-= default;
+AddArtificialCallFlowEdges::~AddArtificialCallFlowEdges() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > AddArtificialCallFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> AddArtificialCallFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OPERATIONS_CFG_COMPUTATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OP_REACHABILITY_COMPUTATION, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -94,34 +93,34 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 DesignFlowStep_Status AddArtificialCallFlowEdges::InternalExec()
 {
-   ///The control flow graph of basic blocks
+   /// The control flow graph of basic blocks
    const BBGraphConstRef bb_graph = function_behavior->CGetBBGraph(FunctionBehavior::BB);
 
-   ///The control flow graph of operation
+   /// The control flow graph of operation
    const OpGraphConstRef op_graph = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
 
    const auto BH = function_behavior->CGetBehavioralHelper();
-   ///Adding operation to empty return
+   /// Adding operation to empty return
    VertexIterator v, v_end;
-   for (boost::tie(v, v_end) = boost::vertices(*bb_graph); v != v_end; ++v)
+   for(boost::tie(v, v_end) = boost::vertices(*bb_graph); v != v_end; ++v)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(bb_graph->CGetBBNodeInfo(*v)->block->number));
-      const auto & statements_list = bb_graph->CGetBBNodeInfo(*v)->statements_list;
-      for (const auto stmt : statements_list)
+      const auto& statements_list = bb_graph->CGetBBNodeInfo(*v)->statements_list;
+      for(const auto stmt : statements_list)
       {
          const OpNodeInfoConstRef node_info = op_graph->CGetOpNodeInfo(stmt);
          const unsigned int st_tn_id = node_info->GetNodeId();
-         if (not BH->CanBeMoved(st_tn_id))
+         if(not BH->CanBeMoved(st_tn_id))
          {
             bool previous = true;
-            for (const auto other_stmt : statements_list)
+            for(const auto other_stmt : statements_list)
             {
-               if (other_stmt == stmt)
+               if(other_stmt == stmt)
                {
                   previous = false;
                   continue;
                }
-               if (previous)
+               if(previous)
                   function_behavior->ogc->AddEdge(other_stmt, stmt, FLG_SELECTOR);
                else
                   function_behavior->ogc->AddEdge(stmt, other_stmt, FLG_SELECTOR);

@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file lattice_flow_wrapper.hpp
  * @brief Wrapper to invoke lattice_flow tool by Lattice
@@ -40,15 +40,15 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef LATTICE_LATTICE_FLOW_HPP
 #define LATTICE_LATTICE_FLOW_HPP
 
 #include "LatticeWrapper.hpp"
 
-#define PARAM_lattice_outdir      "lattice_outdir"
-#define LATTICE_FLOW_TOOL_ID      "lattice_flow"
-#define LATTICE_FLOW_TOOL_EXEC    "diamondc"
+#define PARAM_lattice_outdir "lattice_outdir"
+#define LATTICE_FLOW_TOOL_ID "lattice_flow"
+#define LATTICE_FLOW_TOOL_EXEC "diamondc"
 
 /**
  * @class lattice_flow_wrapper
@@ -56,28 +56,25 @@
  */
 class lattice_flow_wrapper : public LatticeWrapper
 {
-   protected:
+ protected:
+   /**
+    * Evaluates the design variables
+    */
+   void EvaluateVariables(const DesignParametersRef dp) override;
 
-      /**
-       * Evaluates the design variables
-       */
-      void EvaluateVariables(const DesignParametersRef dp) override;
+ public:
+   /**
+    * Constructor
+    * @param Param is the set of parameters
+    */
+   lattice_flow_wrapper(const ParameterConstRef& Param, const std::string& _output_dir, const target_deviceRef& _device);
 
-   public:
-
-      /**
-       * Constructor
-       * @param Param is the set of parameters
-       */
-      lattice_flow_wrapper(const ParameterConstRef Param, const std::string& _output_dir, const target_deviceRef _device);
-
-      /**
-       * Destructor
-       */
-      ~lattice_flow_wrapper() override;
-
+   /**
+    * Destructor
+    */
+   ~lattice_flow_wrapper() override;
 };
-///Refcount definition for the class
+/// Refcount definition for the class
 typedef refcount<lattice_flow_wrapper> lattice_flow_wrapperRef;
 
 #endif

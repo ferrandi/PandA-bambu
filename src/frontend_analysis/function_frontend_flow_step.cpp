@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file function_frontend_flow_step.cpp
  * @brief This class contains the base representation for a generic frontend flow step
@@ -40,54 +40,50 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "function_frontend_flow_step.hpp"
-#include <boost/iterator/iterator_facade.hpp>           // for operator!=
-#include <boost/lexical_cast.hpp>                       // for lexical_cast
-#include <boost/tuple/tuple.hpp>                        // for tie
-#include <iostream>                                     // for ios_base::fai...
-#include <unordered_map>                                // for unordered_map
-#include <unordered_set>                                // for unordered_set
-#include <utility>                                      // for pair
-#include "Parameter.hpp"                                // for Parameter
-#include "application_manager.hpp"                      // for application_m...
-#include "basic_block.hpp"                              // for BBGraphsColle...
-#include "behavioral_helper.hpp"                        // for BehavioralHelper
-#include "call_graph.hpp"                               // for CallGraph
-#include "call_graph_manager.hpp"                       // for CallGraphMana...
-#include "cdfg_edge_info.hpp"                           // for CFG_SELECTOR
-#include "custom_set.hpp"                               // for CustomSet
-#include "dbgPrintHelper.hpp"                           // for DEBUG_LEVEL_V...
-#include "design_flow_graph.hpp"                        // for DesignFlowGraph
-#include "design_flow_manager.hpp"                      // for DesignFlowMan...
-#include "design_flow_step_factory.hpp"                 // for DesignFlowMan...
-#include "edge_info.hpp"                                // for EdgeInfoRef
-#include "exceptions.hpp"                               // for THROW_ASSERT
-#include "ext_tree_node.hpp"                            // for gimple_multi_...
-#include "frontend_flow_step_factory.hpp"               // for DesignFlowSte...
-#include "function_behavior.hpp"                        // for FunctionBehavior
-#include "graph.hpp"                                    // for SelectEdge
-#include "hash_helper.hpp"                              // for hash
-#include "string_manipulation.hpp"                      // for STR GET_CLASS
-#include "symbolic_application_frontend_flow_step.hpp"  // for SymbolicAppli...
-#include "tree_basic_block.hpp"                         // for bloc, bloc::E...
-#include "tree_common.hpp"                              // for gimple_multi_...
-#include "tree_manager.hpp"                             // for ParameterCons...
-#include "tree_node.hpp"                                // for function_decl
+#include "Parameter.hpp"                               // for Parameter
+#include "application_manager.hpp"                     // for application_m...
+#include "basic_block.hpp"                             // for BBGraphsColle...
+#include "behavioral_helper.hpp"                       // for BehavioralHelper
+#include "call_graph.hpp"                              // for CallGraph
+#include "call_graph_manager.hpp"                      // for CallGraphMana...
+#include "cdfg_edge_info.hpp"                          // for CFG_SELECTOR
+#include "custom_set.hpp"                              // for CustomSet
+#include "dbgPrintHelper.hpp"                          // for DEBUG_LEVEL_V...
+#include "design_flow_graph.hpp"                       // for DesignFlowGraph
+#include "design_flow_manager.hpp"                     // for DesignFlowMan...
+#include "design_flow_step_factory.hpp"                // for DesignFlowMan...
+#include "edge_info.hpp"                               // for EdgeInfoRef
+#include "exceptions.hpp"                              // for THROW_ASSERT
+#include "ext_tree_node.hpp"                           // for gimple_multi_...
+#include "frontend_flow_step_factory.hpp"              // for DesignFlowSte...
+#include "function_behavior.hpp"                       // for FunctionBehavior
+#include "graph.hpp"                                   // for SelectEdge
+#include "hash_helper.hpp"                             // for hash
+#include "string_manipulation.hpp"                     // for STR GET_CLASS
+#include "symbolic_application_frontend_flow_step.hpp" // for SymbolicAppli...
+#include "tree_basic_block.hpp"                        // for bloc, bloc::E...
+#include "tree_common.hpp"                             // for gimple_multi_...
+#include "tree_manager.hpp"                            // for ParameterCons...
+#include "tree_node.hpp"                               // for function_decl
 #include "tree_reindex.hpp"
+#include <boost/iterator/iterator_facade.hpp> // for operator!=
+#include <boost/lexical_cast.hpp>             // for lexical_cast
+#include <boost/tuple/tuple.hpp>              // for tie
+#include <iostream>                           // for ios_base::fai...
+#include <unordered_map>                      // for unordered_map
+#include <unordered_set>                      // for unordered_set
+#include <utility>                            // for pair
 
-FunctionFrontendFlowStep::FunctionFrontendFlowStep(const application_managerRef _AppM, const unsigned int _function_id, const FrontendFlowStepType _frontend_flow_step_type,  const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   FrontendFlowStep(_AppM, _frontend_flow_step_type, _design_flow_manager, _parameters),
-   function_behavior(_AppM->GetFunctionBehavior(_function_id)),
-   function_id(_function_id),
-   bb_version(0),
-   bitvalue_version(0)
+FunctionFrontendFlowStep::FunctionFrontendFlowStep(const application_managerRef _AppM, const unsigned int _function_id, const FrontendFlowStepType _frontend_flow_step_type, const DesignFlowManagerConstRef _design_flow_manager,
+                                                   const ParameterConstRef _parameters)
+    : FrontendFlowStep(_AppM, _frontend_flow_step_type, _design_flow_manager, _parameters), function_behavior(_AppM->GetFunctionBehavior(_function_id)), function_id(_function_id), bb_version(0), bitvalue_version(0)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-FunctionFrontendFlowStep::~FunctionFrontendFlowStep()
-= default;
+FunctionFrontendFlowStep::~FunctionFrontendFlowStep() = default;
 
 const std::string FunctionFrontendFlowStep::GetSignature() const
 {
@@ -102,8 +98,8 @@ const std::string FunctionFrontendFlowStep::ComputeSignature(const FrontendFlowS
 const std::string FunctionFrontendFlowStep::GetName() const
 {
 #ifndef NDEBUG
-   const std::string version = bb_version != 0 ? ( "(" + STR(bb_version) + ")") : "";
-   const std::string bv_version = bitvalue_version != 0 ? ( "[" + STR(bitvalue_version) + "]") : "";
+   const std::string version = bb_version != 0 ? ("(" + STR(bb_version) + ")") : "";
+   const std::string bv_version = bitvalue_version != 0 ? ("[" + STR(bitvalue_version) + "]") : "";
 #else
    const std::string version = "";
    const std::string bv_version = "";
@@ -111,13 +107,13 @@ const std::string FunctionFrontendFlowStep::GetName() const
    return "Frontend::" + GetKindText() + "::" + function_behavior->CGetBehavioralHelper()->get_function_name() + version + bv_version;
 }
 
-void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet & relationships, const DesignFlowStep::RelationshipType relationship_type)
+void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relationships, const DesignFlowStep::RelationshipType relationship_type)
 {
    const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-   const auto * frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(CGetDesignFlowStepFactory());
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > frontend_relationships = ComputeFrontendRelationships(relationship_type);
+   const auto* frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(CGetDesignFlowStepFactory());
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> frontend_relationships = ComputeFrontendRelationships(relationship_type);
 
-   ///Precedence step whose symbolic application frontend flow step has to be executed can be considered as dependence step
+   /// Precedence step whose symbolic application frontend flow step has to be executed can be considered as dependence step
    if(relationship_type == DEPENDENCE_RELATIONSHIP)
    {
       const auto precedence_relationships = ComputeFrontendRelationships(PRECEDENCE_RELATIONSHIP);
@@ -131,7 +127,8 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet & relation
             if(symbolic_step)
             {
 #ifndef NDEBUG
-               if(not(design_flow_manager.lock()->GetStatus(symbolic_signature) == DesignFlowStep_Status::UNEXECUTED or design_flow_manager.lock()->GetStatus(signature) == DesignFlowStep_Status::SUCCESS or design_flow_manager.lock()->GetStatus(signature) == DesignFlowStep_Status::UNCHANGED))
+               if(not(design_flow_manager.lock()->GetStatus(symbolic_signature) == DesignFlowStep_Status::UNEXECUTED or design_flow_manager.lock()->GetStatus(signature) == DesignFlowStep_Status::SUCCESS or
+                      design_flow_manager.lock()->GetStatus(signature) == DesignFlowStep_Status::UNCHANGED))
                {
                   design_flow_manager.lock()->CGetDesignFlowGraph()->WriteDot("Design_Flow_Error");
                   const auto design_flow_step_info = design_flow_graph->CGetDesignFlowStepInfo(symbolic_step);
@@ -143,14 +140,14 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet & relation
          }
       }
    }
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> >::const_iterator frontend_relationship, frontend_relationship_end = frontend_relationships.end();
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>>::const_iterator frontend_relationship, frontend_relationship_end = frontend_relationships.end();
    for(frontend_relationship = frontend_relationships.begin(); frontend_relationship != frontend_relationship_end; ++frontend_relationship)
    {
       switch(frontend_relationship->second)
       {
-         case(ALL_FUNCTIONS) :
+         case(ALL_FUNCTIONS):
          {
-            ///This is managed by FrontendFlowStep::ComputeRelationships
+            /// This is managed by FrontendFlowStep::ComputeRelationships
             break;
          }
          case(CALLED_FUNCTIONS):
@@ -209,7 +206,7 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet & relation
             }
             break;
          }
-         case(SAME_FUNCTION) :
+         case(SAME_FUNCTION):
          {
             vertex prec_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(frontend_relationship->first, function_id));
             DesignFlowStepRef design_flow_step;
@@ -225,9 +222,9 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet & relation
             }
             break;
          }
-         case(WHOLE_APPLICATION) :
+         case(WHOLE_APPLICATION):
          {
-            ///This is managed by FrontendFlowStep::ComputeRelationships
+            /// This is managed by FrontendFlowStep::ComputeRelationships
             break;
          }
          default:
@@ -252,7 +249,7 @@ bool FunctionFrontendFlowStep::HasToBeExecuted() const
    return bb_version != function_behavior->GetBBVersion();
 }
 
-void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string&filename) const
+void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string& filename) const
 {
    auto bb_graph_info = BBGraphInfoRef(new BBGraphInfo(AppM, function_id));
    BBGraphsCollectionRef GCC_bb_graphs_collection(new BBGraphsCollection(bb_graph_info, parameters));
@@ -266,7 +263,7 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string&filename) const
    {
       inverse_vertex_map[block.first] = GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)));
    }
-   ///Set entry and exit
+   /// Set entry and exit
    if(inverse_vertex_map.find(bloc::ENTRY_BLOCK_ID) == inverse_vertex_map.end())
    {
       inverse_vertex_map[bloc::ENTRY_BLOCK_ID] = GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo()));

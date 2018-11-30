@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file STG_creator.cpp
  * @brief Base class for all STG creation algorithms.
@@ -42,21 +42,19 @@
  * $Locker:  $
  * $State: Exp $
  *
-*/
+ */
 #include "STG_creator.hpp"
 
-#include "xml_helper.hpp"
 #include "polixml.hpp"
+#include "xml_helper.hpp"
 
 #include "Parameter.hpp"
 #include "refcount.hpp"
 #include "utility.hpp"
 
-STG_creator::STG_creator(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type):
-   HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
+STG_creator::STG_creator(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+    : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
-
 }
 
-STG_creator::~STG_creator()
-= default;
+STG_creator::~STG_creator() = default;

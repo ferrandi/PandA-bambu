@@ -29,54 +29,54 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file testbench_generation.hpp
  * @brief .
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Superclass include
+/// Superclass include
 #include "hls_step.hpp"
 
 class TestbenchGeneration
-#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
-final
+#if(__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
+    final
 #endif
-: public HLS_step
+    : public HLS_step
 {
-   protected:
-      /**
-       * Compute the relationship of this step
-       * @param relationship_type is the type of relationship to be considered
-       * @return the steps in relationship with this
-       */
-      const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+ protected:
+   /**
+    * Compute the relationship of this step
+    * @param relationship_type is the type of relationship to be considered
+    * @return the steps in relationship with this
+    */
+   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor
-       * @param parameters is the set of input parameters
-       * @param hls_mgr is the HLS manager
-       * @param design_flow_manager is the design flow manager
-       */
-      TestbenchGeneration(const ParameterConstRef parameters, const HLS_managerRef hls_mgr, const DesignFlowManagerConstRef design_flow_manager);
+ public:
+   /**
+    * Constructor
+    * @param parameters is the set of input parameters
+    * @param hls_mgr is the HLS manager
+    * @param design_flow_manager is the design flow manager
+    */
+   TestbenchGeneration(const ParameterConstRef parameters, const HLS_managerRef hls_mgr, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Destructor
-       */
-      ~TestbenchGeneration() override;
+   /**
+    * Destructor
+    */
+   ~TestbenchGeneration() override;
 
-      /**
-       * Execute this step
-       */
-      DesignFlowStep_Status Exec() override;
+   /**
+    * Execute this step
+    */
+   DesignFlowStep_Status Exec() override;
 
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      bool HasToBeExecuted() const override;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 };

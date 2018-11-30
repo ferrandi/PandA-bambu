@@ -1436,6 +1436,7 @@ src/HLS/virtual_components/dataport_obj.hpp
 src/HLS/virtual_components/funit_obj.hpp
 src/HLS/virtual_components/generic_obj.cpp
 src/HLS/virtual_components/generic_obj.hpp
+src/HLS/virtual_components/multi_unbounded_obj.hpp
 src/HLS/virtual_components/multiplier_conn_obj.hpp
 src/HLS/virtual_components/mux_obj.cpp
 src/HLS/virtual_components/mux_obj.hpp
@@ -1647,6 +1648,8 @@ src/frontend_analysis/IR_analysis/hdl_var_decl_fix.cpp
 src/frontend_analysis/IR_analysis/hdl_var_decl_fix.hpp
 src/frontend_analysis/IR_analysis/hls_div_cg_ext.cpp
 src/frontend_analysis/IR_analysis/hls_div_cg_ext.hpp
+src/frontend_analysis/IR_analysis/interface_infer.cpp
+src/frontend_analysis/IR_analysis/interface_infer.hpp
 src/frontend_analysis/IR_analysis/ipa_point_to_analysis.cpp
 src/frontend_analysis/IR_analysis/ipa_point_to_analysis.hpp
 src/frontend_analysis/IR_analysis/loops_analysis_bambu.cpp

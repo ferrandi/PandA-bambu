@@ -29,28 +29,26 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file hls_function_ir.cpp
  * @brief Base class for intermediate representation used by HLS ifunction steps
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
-///Header include
+ */
+/// Header include
 #include "hls_function_ir.hpp"
 
-///behavior include
+/// behavior include
 #include "application_manager.hpp"
 
-///HLS include
+/// HLS include
 #include "hls_manager.hpp"
 
-HLSFunctionIR::HLSFunctionIR(const HLS_managerRef _hls_manager, const unsigned int _function_index, const ParameterConstRef _parameters) :
-   HLSIR(_hls_manager, _parameters),
-   hls(hlsRef(_hls_manager->get_HLS(_function_index).get(), null_deleter())),
-   function_index(_function_index)
-{}
+HLSFunctionIR::HLSFunctionIR(const HLS_managerRef _hls_manager, const unsigned int _function_index, const ParameterConstRef _parameters)
+    : HLSIR(_hls_manager, _parameters), hls(hlsRef(_hls_manager->get_HLS(_function_index).get(), null_deleter())), function_index(_function_index)
+{
+}
 
-HLSFunctionIR::~HLSFunctionIR()
-= default;
+HLSFunctionIR::~HLSFunctionIR() = default;

@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file clb_model.hpp
  * @brief Specification of the class for representing FPGA area/resource models
@@ -40,96 +40,93 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef _CLB_MODEL_HPP_
 #define _CLB_MODEL_HPP_
 
 #include "area_model.hpp"
 
-#include <vector>
 #include <map>
+#include <vector>
 
-///Utility include
+/// Utility include
 #include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(Parameter);
 
 class clb_model : public area_model
 {
-   public:
+ public:
+   /// type of resources
+   typedef enum
+   {
+      REGISTERS,
+      SLICE,
+      SLICE_LUTS,
+      LUT_FF_PAIRS,
+      ALMS,
+      LOGIC_ELEMENTS,
+      DSP,
+      BRAM
+   } value_t;
 
-      ///type of resources
-      typedef enum
-      {
-         REGISTERS,
-         SLICE,
-         SLICE_LUTS,
-         LUT_FF_PAIRS,
-         ALMS,
-         LOGIC_ELEMENTS,
-         DSP,
-         BRAM
-      } value_t;
+ protected:
+   /// a double value representing the area of the component
+   double area;
 
-   protected:
+   /// resources required for the component
+   std::map<value_t, double> used_resources;
 
-      ///a double value representing the area of the component
-      double area;
+ public:
+   /**
+    * Constructor
+    */
+   explicit clb_model(const ParameterConstRef& Param);
 
-      ///resources required for the component
-      std::map<value_t, double> used_resources;
+   /**
+    * Constructor with specified area value
+    */
+   clb_model(const ParameterConstRef& Param, const double& _area_);
 
-   public:
+   /**
+    * Destructor
+    */
+   ~clb_model() override;
 
-      /**
-       * Constructor
-       */
-      explicit clb_model(const ParameterConstRef Param);
+   /**
+    * Prints the used resources into an output stream
+    */
+   void print(std::ostream& os) const override;
 
-      /**
-       * Constructor with specified area value
-       */
-      clb_model(const ParameterConstRef Param, const double& _area_);
+   /**
+    * Sets the nominal value for the area of the component
+    */
+   void set_area_value(const double& _area_) override;
 
-      /**
-       * Destructor
-       */
-      ~clb_model() override;
+   /**
+    * Returns the nominal value for the area of the component
+    */
+   double get_area_value() const override;
 
-      /**
-       * Prints the used resources into an output stream
-       */
-      void print(std::ostream& os) const override;
+   /**
+    * Checks if there is a characterization for the given type
+    */
+   bool is_characterization(unsigned int characterization_type) const override;
 
-      /**
-       * Sets the nominal value for the area of the component
-       */
-      void set_area_value(const double& _area_) override;
+   /**
+    * Sets the number of resources used for the specified type
+    */
+   void set_resource_value(value_t val, double num);
 
-      /**
-       * Returns the nominal value for the area of the component
-       */
-      double get_area_value() const override;
+   /**
+    * Returns true if the specified resource is used, false otherwise
+    */
+   bool is_used_resource(value_t val) const;
 
-      /**
-       * Checks if there is a characterization for the given type
-       */
-      bool is_characterization(unsigned int characterization_type) const override;
-
-      /**
-       * Sets the number of resources used for the specified type
-       */
-      void set_resource_value(value_t val, double num);
-
-      /**
-       * Returns true if the specified resource is used, false otherwise
-       */
-      bool is_used_resource(value_t val) const;
-
-      /**
-       * Returns the number of resources used for the given type
-       */
-      double get_resource_value(value_t val) const;
+   /**
+    * Returns the number of resources used for the given type
+    */
+   double get_resource_value(value_t val) const;
 };
 
 typedef refcount<clb_model> clb_modelRef;

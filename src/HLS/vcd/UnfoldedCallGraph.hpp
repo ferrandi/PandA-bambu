@@ -34,20 +34,22 @@
  *
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  *
-*/
+ */
 #ifndef UNFOLDED_CALL_GRAPH_HPP
 #define UNFOLDED_CALL_GRAPH_HPP
 
-#include "graph.hpp"
-#include "UnfoldedFunctionInfo.hpp"
 #include "UnfoldedCallInfo.hpp"
+#include "UnfoldedFunctionInfo.hpp"
+#include "graph.hpp"
 
 class UnfoldedCallGraph : public RawGraph
 {
-   public:
-      explicit UnfoldedCallGraph(GraphInfoRef g_info) : RawGraph(g_info) {}
+ public:
+   explicit UnfoldedCallGraph(GraphInfoRef g_info) : RawGraph(g_info)
+   {
+   }
 
-      ~UnfoldedCallGraph() = default;
+   ~UnfoldedCallGraph() = default;
 };
 
 typedef boost::graph_traits<UnfoldedCallGraph>::vertex_descriptor UnfoldedVertexDescriptor;

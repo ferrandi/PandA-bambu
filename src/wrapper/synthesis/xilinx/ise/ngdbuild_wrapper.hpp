@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file ngdbuild_wrapper.hpp
  * @brief Wrapper to ngdbuild by XILINX
@@ -41,15 +41,15 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef _XILINX_NGDBUILD_WRAPPER_HPP_
 #define _XILINX_NGDBUILD_WRAPPER_HPP_
 
 #include "XilinxWrapper.hpp"
 
-#define NGDBUILD_TOOL_ID       "ngdbuild"
+#define NGDBUILD_TOOL_ID "ngdbuild"
 
-#define PARAM_ngdbuild_tmpdir  "ngdbuild_tmpdir"
+#define PARAM_ngdbuild_tmpdir "ngdbuild_tmpdir"
 
 /**
  * @class ngdbuild_wrapper
@@ -57,38 +57,35 @@
  */
 class ngdbuild_wrapper : public XilinxWrapper
 {
-   protected:
+ protected:
+   /**
+    * Initializes the reserved variables
+    */
+   void init_reserved_vars() override;
 
-      /**
-       * Initializes the reserved variables
-       */
-      void init_reserved_vars() override;
+   /**
+    * Evaluates the design variables
+    */
+   void EvaluateVariables(const DesignParametersRef dp) override;
 
-      /**
-       * Evaluates the design variables
-       */
-      void EvaluateVariables(const DesignParametersRef dp) override;
+   /**
+    * Returns the proper command line
+    */
+   std::string get_command_line(const DesignParametersRef& dp) const override;
 
-      /**
-       * Returns the proper command line
-       */
-      std::string get_command_line(const DesignParametersRef& dp) const override;
+ public:
+   /**
+    * Constructor
+    * @param Param is the set of parameters
+    */
+   ngdbuild_wrapper(const ParameterConstRef& Param, const std::string& _output_dir, const target_deviceRef& _device);
 
-   public:
-
-      /**
-       * Constructor
-       * @param Param is the set of parameters
-       */
-      ngdbuild_wrapper(const ParameterConstRef Param, const std::string& _output_dir, const target_deviceRef _device);
-
-      /**
-       * Destructor
-       */
-      ~ngdbuild_wrapper() override;
-
+   /**
+    * Destructor
+    */
+   ~ngdbuild_wrapper() override;
 };
-///Refcount definition for the class
+/// Refcount definition for the class
 typedef refcount<ngdbuild_wrapper> ngdbuild_wrapperRef;
 
 #endif

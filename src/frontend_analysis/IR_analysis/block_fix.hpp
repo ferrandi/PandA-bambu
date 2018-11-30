@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file block_fix.hpp
  * @brief Analysis step that modifies the control flow graph of the tree to make it more compliant
@@ -39,14 +39,14 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef BLOCK_FIX_HPP
 #define BLOCK_FIX_HPP
 
-///Superclass include
+/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
-///Utility include
+/// Utility include
 #include "refcount.hpp"
 
 /**
@@ -63,38 +63,37 @@ class gimple_phi;
 /**
  * Restructure the tree control flow graph
  */
-class BlockFix: public FunctionFrontendFlowStep
+class BlockFix : public FunctionFrontendFlowStep
 {
-   private:
+ private:
+   /// flag to check if initial tree has been dumped
+   static bool tree_dumped;
 
-      /// flag to check if initial tree has been dumped
-      static bool tree_dumped;
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+ public:
+   /**
+    * Constructor.
+    * @param AppM is the application manager
+    * @param function_id is the identifier of the function
+    * @param design_flow_manager is the design flow manager
+    * @param parameters is the set of input parameters
+    */
+   BlockFix(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-   public:
-      /**
-       * Constructor.
-       * @param AppM is the application manager
-       * @param function_id is the identifier of the function
-       * @param design_flow_manager is the design flow manager
-       * @param parameters is the set of input parameters
-       */
-      BlockFix(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   /**
+    *  Destructor
+    */
+   ~BlockFix() override;
 
-      /**
-       *  Destructor
-       */
-      ~BlockFix() override;
-
-      /**
-       * Updates the tree to have a more compliant CFG
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status InternalExec() override;
+   /**
+    * Updates the tree to have a more compliant CFG
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 };
 #endif

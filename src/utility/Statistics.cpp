@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file Statistics.cpp
  * @brief This file collects some algebric statistical functions.
@@ -39,7 +39,7 @@
  * $Revision$
  * $Date$
  *
-*/
+ */
 #include <boost/math/special_functions/fpclassify.hpp>
 #include <cmath>
 
@@ -48,15 +48,15 @@
 boost::math::normal MultiplyVarForCoefficient(int coeff, boost::math::normal var)
 {
    double mean, st_dev;
-   mean = var.mean()*coeff;
-   st_dev = var.standard_deviation()*coeff;
+   mean = var.mean() * coeff;
+   st_dev = var.standard_deviation() * coeff;
    boost::math::normal s(mean, st_dev);
    return s;
 }
 
 boost::math::normal VarSum(boost::math::normal x, double c)
 {
-   boost::math::normal s((x.mean()+ c), x.standard_deviation());
+   boost::math::normal s((x.mean() + c), x.standard_deviation());
    return s;
 }
 
@@ -78,11 +78,13 @@ boost::math::normal VarSum(boost::math::normal x, boost::math::normal y, double 
 
 boost::math::lognormal VarSum(std::vector<boost::math::lognormal> v)
 {
-   if (v.size() > 0)
+   if(!v.empty())
    {
       boost::math::lognormal s = v.at(0);
-      for (unsigned int i = 1; i < v.size(); i++)
-         s = VarSum(s,v.at(i));
+      for(unsigned int i = 1; i < v.size(); i++)
+      {
+         s = VarSum(s, v.at(i));
+      }
       return s;
    }
    return boost::math::lognormal();
@@ -98,11 +100,11 @@ boost::math::lognormal VarSum(boost::math::lognormal s1, boost::math::lognormal 
    double mean, st_dev;
    double u1, u2;
 
-   u1 = exp(s1.location() + (pow(s1.scale(),2))/2) + exp(s2.location() + (pow(s2.scale(),2))/2);
-   u2 = exp(2*s1.location() + 2*pow(s1.scale(),2)) + exp(2*s2.location() + 2*pow(s2.scale(),2)) + 2*exp(s1.location()+s2.location())*exp(0.5*(pow(s1.scale(), 2) + pow(s2.scale(), 2) + 2 * p * s1.scale() * s2.scale()));
+   u1 = exp(s1.location() + (pow(s1.scale(), 2)) / 2) + exp(s2.location() + (pow(s2.scale(), 2)) / 2);
+   u2 = exp(2 * s1.location() + 2 * pow(s1.scale(), 2)) + exp(2 * s2.location() + 2 * pow(s2.scale(), 2)) + 2 * exp(s1.location() + s2.location()) * exp(0.5 * (pow(s1.scale(), 2) + pow(s2.scale(), 2) + 2 * p * s1.scale() * s2.scale()));
 
-   mean = 2*log(u1) - 0.5*log(u2);
-   st_dev = sqrt(log(u2)-2*log(u1));
+   mean = 2 * log(u1) - 0.5 * log(u2);
+   st_dev = sqrt(log(u2) - 2 * log(u1));
 
    boost::math::lognormal s(mean, st_dev);
    return s;
@@ -112,14 +114,12 @@ boost::math::normal VarMax(boost::math::normal x, boost::math::normal y, double 
 {
    double mean = 0, st_dev = 0, var = 0;
    double a = 0, alpha = 0;
-	
-   a = pow((pow(x.standard_deviation(), 2) + pow(y.standard_deviation(),2) - 2 * p * x.standard_deviation() * y.standard_deviation()),0.5);
+
+   a = pow((pow(x.standard_deviation(), 2) + pow(y.standard_deviation(), 2) - 2 * p * x.standard_deviation() * y.standard_deviation()), 0.5);
    alpha = (x.mean() + y.mean()) / a;
 
-   mean = x.mean() * cdf(x,alpha) + y.mean() * cdf(y,-alpha) + a * pdf(x,alpha);
-   var = (pow(x.standard_deviation(), 2) + pow(x.mean(),2)) * cdf(x,alpha) +
-      (pow(y.standard_deviation(), 2) + pow(y.mean(),2)) * cdf(y,-alpha) +
-      (x.mean() + y.mean()) * a * pdf(x,alpha) - pow(mean,2);
+   mean = x.mean() * cdf(x, alpha) + y.mean() * cdf(y, -alpha) + a * pdf(x, alpha);
+   var = (pow(x.standard_deviation(), 2) + pow(x.mean(), 2)) * cdf(x, alpha) + (pow(y.standard_deviation(), 2) + pow(y.mean(), 2)) * cdf(y, -alpha) + (x.mean() + y.mean()) * a * pdf(x, alpha) - pow(mean, 2);
 
    st_dev = sqrt(var);
    boost::math::normal s(mean, st_dev);
@@ -128,11 +128,13 @@ boost::math::normal VarMax(boost::math::normal x, boost::math::normal y, double 
 
 boost::math::normal VarMax(std::vector<boost::math::normal> v)
 {
-   if (v.size() > 0)
+   if(!v.empty())
    {
       boost::math::normal s = v.at(0);
-      for (unsigned int i = 1; i < v.size(); i++)
-         s = VarMax(s,v.at(i),0);
+      for(unsigned int i = 1; i < v.size(); i++)
+      {
+         s = VarMax(s, v.at(i), 0);
+      }
       return s;
    }
    return boost::math::normal();
@@ -153,10 +155,13 @@ boost::math::lognormal ComputeStatisticalPower(double p, int n)
 boost::math::normal CreateStatisticalAttribute(double a, int n)
 {
    std::vector<int> v;
-   for (int i=0; i<n;i++)
+   v.reserve(static_cast<size_t>(n));
+   for(int i = 0; i < n; i++)
+   {
       v.push_back(1);
+   }
 
-   return CreateStatisticalAttribute(a, v, 0, 1, 1, 0, 1); 
+   return CreateStatisticalAttribute(a, v, 0, 1, 1, 0, 1);
 }
 
 boost::math::normal CreateStatisticalAttribute(double a, std::vector<int> d, double mean, double st_dev, int d_rand, double mean_rand, double st_dev_rand)
@@ -165,7 +170,7 @@ boost::math::normal CreateStatisticalAttribute(double a, std::vector<int> d, dou
    boost::math::normal x_rand(mean_rand, st_dev_rand);
    ris = MultiplyVarForCoefficient(d_rand, x_rand);
 
-   for (int i : d)
+   for(int i : d)
    {
       boost::math::normal temp(mean, st_dev);
       ris = VarSum(ris, MultiplyVarForCoefficient(i, temp));

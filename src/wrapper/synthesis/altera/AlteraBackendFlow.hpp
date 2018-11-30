@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file AlteraBackendFlow.hpp
  * @brief Wrapper to implement a synthesis tools by Altera
@@ -40,62 +40,60 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef ALTERA_BACKEND_FLOW_HPP
 #define ALTERA_BACKEND_FLOW_HPP
 
-///superclass include
+/// superclass include
 #include "BackendFlow.hpp"
 
 class AlteraBackendFlow : public BackendFlow
 {
-      ///design values reported by the tools
-      std::map<std::string, double> design_values;
+   /// design values reported by the tools
+   std::map<std::string, double> design_values;
 
-      /**
-       * Writes the proper flow configuration in the output script
-       */
-      void WriteFlowConfiguration(std::ostream& script) override;
+   /**
+    * Writes the proper flow configuration in the output script
+    */
+   void WriteFlowConfiguration(std::ostream& script) override;
 
-      /**
-       * Parses device utilization
-       */
-      void xparse_utilization(const std::string& fn);
+   /**
+    * Parses device utilization
+    */
+   void xparse_utilization(const std::string& fn);
 
-      /**
-       * Checks the synthesis results and fills the corresponding datastructures
-       */
-      void CheckSynthesisResults() override;
+   /**
+    * Checks the synthesis results and fills the corresponding datastructures
+    */
+   void CheckSynthesisResults() override;
 
-      /**
-       * Creates the constraint file
-       */
-      void create_sdc(const DesignParametersRef dp);
+   /**
+    * Creates the constraint file
+    */
+   void create_sdc(const DesignParametersRef dp);
 
-   public:
+ public:
+   /**
+    * Constructor
+    */
+   AlteraBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef target);
 
-      /**
-       * Constructor
-       */
-      AlteraBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef target);
+   /**
+    * Destructor
+    */
+   ~AlteraBackendFlow() override;
 
-      /**
-       * Destructor
-       */
-      ~AlteraBackendFlow() override;
+   /**
+    * Initializes the parameters
+    */
+   void InitDesignParameters() override;
 
-      /**
-       * Initializes the parameters
-       */
-      void InitDesignParameters() override;
-
-      /**
-       * Checks if the execution can be performed and, in case, performs the synthesis
-       */
-      void ExecuteSynthesis() override;
-
+   /**
+    * Checks if the execution can be performed and, in case, performs the synthesis
+    */
+   void ExecuteSynthesis() override;
 };
-///Refcount definition for the class
+/// Refcount definition for the class
 typedef refcount<AlteraBackendFlow> AlteraBackendFlowRef;
 
 #endif

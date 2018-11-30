@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file fix_characterization.cpp
  * @brief Step to fix components characterization
@@ -37,39 +37,37 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "fix_characterization.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///technology include
+/// technology include
 #include "technology_manager.hpp"
 
-///technology/physical_library includes
+/// technology/physical_library includes
 #include "library_manager.hpp"
 #include "technology_node.hpp"
 
-///technology/physical_library/models include
-#include "time_model.hpp"
+/// technology/physical_library/models include
 #include "clb_model.hpp"
+#include "time_model.hpp"
 
-///technology/target_device include
+/// technology/target_device include
+#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "target_device.hpp"
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
-#include "string_manipulation.hpp"          // for GET_CLASS
 
-FixCharacterization::FixCharacterization(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::FIX_CHARACTERIZATION, _parameters),
-   assignment_execution_time(0.0)
+FixCharacterization::FixCharacterization(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::FIX_CHARACTERIZATION, _parameters), assignment_execution_time(0.0)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-FixCharacterization::~FixCharacterization()
-= default;
+FixCharacterization::~FixCharacterization() = default;
 
 void FixCharacterization::Initialize()
 {
@@ -91,18 +89,15 @@ DesignFlowStep_Status FixCharacterization::Exec()
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + fu.first);
          auto single_fu = GetPointer<functional_unit>(fu.second);
-         if(!single_fu) continue;
+         if(!single_fu)
+            continue;
          auto template_name = single_fu->fu_template_name;
          auto fu_name = single_fu->functional_unit_name;
          if(single_fu)
          {
-            ///assignment
-            if(fu_name == "ASSIGN_REAL_FU" ||
-               fu_name == "ASSIGN_SIGNED_FU" ||
-               fu_name == "ASSIGN_UNSIGNED_FU" ||
-               fu_name == "ASSIGN_VECTOR_BOOL_FU" ||
-               fu_name == "addr_expr_FU" || fu_name == "fp_view_convert_expr_FU" || fu_name == "ui_view_convert_expr_FU" || fu_name == "view_convert_expr_FU" || fu_name == "assert_expr_FU"
-                    )
+            /// assignment
+            if(fu_name == "ASSIGN_REAL_FU" || fu_name == "ASSIGN_SIGNED_FU" || fu_name == "ASSIGN_UNSIGNED_FU" || fu_name == "ASSIGN_VECTOR_BOOL_FU" || fu_name == "addr_expr_FU" || fu_name == "fp_view_convert_expr_FU" ||
+               fu_name == "ui_view_convert_expr_FU" || fu_name == "view_convert_expr_FU" || fu_name == "assert_expr_FU")
             {
                single_fu->area_m->set_area_value(1);
                for(auto op : single_fu->get_operations())
@@ -110,19 +105,13 @@ DesignFlowStep_Status FixCharacterization::Exec()
                   if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Fixing execution time of " + GetPointer<const operation>(op)->operation_name + " on " + fu.first);
-                     (GetPointer<operation>(op))->time_m->set_execution_time(assignment_execution_time,0);
+                     (GetPointer<operation>(op))->time_m->set_execution_time(assignment_execution_time, 0);
                      single_fu->characterization_timestamp = assignment_characterization_timestamp;
                   }
                }
             }
             /// shift ops
-            if(template_name == "rshift_expr_FU" ||
-               template_name == "ui_rshift_expr_FU" ||
-               template_name == "lshift_expr_FU" ||
-               template_name == "ui_lshift_expr_FU" ||
-               template_name == "ui_lrotate_expr_FU" ||
-               template_name == "ui_rrotate_expr_FU"
-                    )
+            if(template_name == "rshift_expr_FU" || template_name == "ui_rshift_expr_FU" || template_name == "lshift_expr_FU" || template_name == "ui_lshift_expr_FU" || template_name == "ui_lrotate_expr_FU" || template_name == "ui_rrotate_expr_FU")
             {
                std::vector<std::string> template_parameters;
                boost::algorithm::split(template_parameters, single_fu->fu_template_parameters, boost::algorithm::is_any_of(" "));
@@ -135,23 +124,15 @@ DesignFlowStep_Status FixCharacterization::Exec()
                      if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Fixing execution time of " + GetPointer<const operation>(op)->operation_name + " on " + fu.first);
-                        (GetPointer<operation>(op))->time_m->set_execution_time(assignment_execution_time,0);
+                        (GetPointer<operation>(op))->time_m->set_execution_time(assignment_execution_time, 0);
                         single_fu->characterization_timestamp = assignment_characterization_timestamp;
                      }
                   }
                }
             }
             /// vectorize shift ops
-            if(
-                  template_name == "vec_rshift_expr_FU" ||
-                  template_name == "ui_vec_rshift_expr_FU" ||
-                  template_name == "vec1_rshift_expr_FU" ||
-                  template_name == "ui_vec1_rshift_expr_FU" ||
-                  template_name == "vec_lshift_expr_FU" ||
-                  template_name == "ui_vec_lshift_expr_FU" ||
-                  template_name == "vec1_lshift_expr_FU" ||
-                  template_name == "ui_vec1_lshift_expr_FU"
-                  )
+            if(template_name == "vec_rshift_expr_FU" || template_name == "ui_vec_rshift_expr_FU" || template_name == "vec1_rshift_expr_FU" || template_name == "ui_vec1_rshift_expr_FU" || template_name == "vec_lshift_expr_FU" ||
+               template_name == "ui_vec_lshift_expr_FU" || template_name == "vec1_lshift_expr_FU" || template_name == "ui_vec1_lshift_expr_FU")
             {
                std::vector<std::string> template_parameters;
                boost::algorithm::split(template_parameters, single_fu->fu_template_parameters, boost::algorithm::is_any_of(" "));
@@ -164,22 +145,15 @@ DesignFlowStep_Status FixCharacterization::Exec()
                      if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Fixing execution time of " + GetPointer<const operation>(op)->operation_name + " on " + fu.first);
-                        (GetPointer<operation>(op))->time_m->set_execution_time(assignment_execution_time,0);
+                        (GetPointer<operation>(op))->time_m->set_execution_time(assignment_execution_time, 0);
                         single_fu->characterization_timestamp = assignment_characterization_timestamp;
                      }
                   }
                }
             }
-            ///conversion
-            if(fu_name == "IIdata_converter_FU" ||
-               fu_name == "UIdata_converter_FU" ||
-               fu_name == "IUdata_converter_FU" ||
-               fu_name == "UUdata_converter_FU" ||
-               fu_name == "IIconvert_expr_FU" ||
-               fu_name == "IUconvert_expr_FU" ||
-               fu_name == "UIconvert_expr_FU" ||
-               fu_name == "UUconvert_expr_FU"
-                    )
+            /// conversion
+            if(fu_name == "IIdata_converter_FU" || fu_name == "UIdata_converter_FU" || fu_name == "IUdata_converter_FU" || fu_name == "UUdata_converter_FU" || fu_name == "IIconvert_expr_FU" || fu_name == "IUconvert_expr_FU" ||
+               fu_name == "UIconvert_expr_FU" || fu_name == "UUconvert_expr_FU")
             {
                single_fu->area_m->set_area_value(1);
                for(auto op : single_fu->get_operations())
@@ -187,17 +161,13 @@ DesignFlowStep_Status FixCharacterization::Exec()
                   if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Fixing execution time of " + GetPointer<const operation>(op)->operation_name + " on " + fu.first);
-                     (GetPointer<operation>(op))->time_m->set_execution_time(assignment_execution_time,0);
+                     (GetPointer<operation>(op))->time_m->set_execution_time(assignment_execution_time, 0);
                      single_fu->characterization_timestamp = assignment_characterization_timestamp;
                   }
                }
             }
             /// bitwise ops
-            if(template_name == "bit_and_expr_FU" ||
-               template_name == "ui_bit_and_expr_FU" ||
-               template_name == "bit_ior_expr_FU" ||
-               template_name == "ui_bit_ior_expr_FU"
-                    )
+            if(template_name == "bit_and_expr_FU" || template_name == "ui_bit_and_expr_FU" || template_name == "bit_ior_expr_FU" || template_name == "ui_bit_ior_expr_FU")
             {
                std::vector<std::string> template_parameters;
                boost::algorithm::split(template_parameters, single_fu->fu_template_parameters, boost::algorithm::is_any_of(" "));
@@ -210,18 +180,14 @@ DesignFlowStep_Status FixCharacterization::Exec()
                      if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Fixing execution time of " + GetPointer<const operation>(op)->operation_name + " on " + fu.first);
-                        (GetPointer<operation>(op))->time_m->set_execution_time(assignment_execution_time,0);
+                        (GetPointer<operation>(op))->time_m->set_execution_time(assignment_execution_time, 0);
                         single_fu->characterization_timestamp = assignment_characterization_timestamp;
                      }
                   }
                }
             }
             /// vectorize bitwise ops
-            if(template_name == "vec_bit_and_expr_FU" ||
-               template_name == "ui_vec_bit_and_expr_FU" ||
-               template_name == "vec_bit_ior_expr_FU" ||
-               template_name == "ui_vec_bit_ior_expr_FU"
-                    )
+            if(template_name == "vec_bit_and_expr_FU" || template_name == "ui_vec_bit_and_expr_FU" || template_name == "vec_bit_ior_expr_FU" || template_name == "ui_vec_bit_ior_expr_FU")
             {
                std::vector<std::string> template_parameters;
                boost::algorithm::split(template_parameters, single_fu->fu_template_parameters, boost::algorithm::is_any_of(" "));
@@ -234,17 +200,14 @@ DesignFlowStep_Status FixCharacterization::Exec()
                      if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Fixing execution time of " + GetPointer<const operation>(op)->operation_name + " on " + fu.first);
-                        (GetPointer<operation>(op))->time_m->set_execution_time(assignment_execution_time,0);
+                        (GetPointer<operation>(op))->time_m->set_execution_time(assignment_execution_time, 0);
                         single_fu->characterization_timestamp = assignment_characterization_timestamp;
                      }
                   }
                }
             }
             /// cond expr ops
-            if(template_name == "cond_expr_FU" ||
-               template_name == "ui_cond_expr_FU" ||
-               template_name == "fp_cond_expr_FU"
-                    )
+            if(template_name == "cond_expr_FU" || template_name == "ui_cond_expr_FU" || template_name == "fp_cond_expr_FU")
             {
                std::vector<std::string> template_parameters;
                boost::algorithm::split(template_parameters, single_fu->fu_template_parameters, boost::algorithm::is_any_of(" "));
@@ -257,16 +220,14 @@ DesignFlowStep_Status FixCharacterization::Exec()
                      if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Fixing execution time of " + GetPointer<const operation>(op)->operation_name + " on " + fu.first);
-                        (GetPointer<operation>(op))->time_m->set_execution_time(assignment_execution_time,0);
+                        (GetPointer<operation>(op))->time_m->set_execution_time(assignment_execution_time, 0);
                         single_fu->characterization_timestamp = assignment_characterization_timestamp;
                      }
                   }
                }
             }
             /// vectorize cond expr ops
-            if(template_name == "vec_cond_expr_FU" ||
-               template_name == "ui_vec_cond_expr_FU"
-                    )
+            if(template_name == "vec_cond_expr_FU" || template_name == "ui_vec_cond_expr_FU")
             {
                std::vector<std::string> template_parameters;
                boost::algorithm::split(template_parameters, single_fu->fu_template_parameters, boost::algorithm::is_any_of(" "));
@@ -279,7 +240,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
                      if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Fixing execution time of " + GetPointer<const operation>(op)->operation_name + " on " + fu.first);
-                        (GetPointer<operation>(op))->time_m->set_execution_time(assignment_execution_time,0);
+                        (GetPointer<operation>(op))->time_m->set_execution_time(assignment_execution_time, 0);
                         single_fu->characterization_timestamp = assignment_characterization_timestamp;
                      }
                   }
@@ -330,7 +291,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed " + fu.first);
       }
    }
-   ///Second iteration of fixing
+   /// Second iteration of fixing
    for(const auto& library : libraries)
    {
       const auto LM = TM->get_library_manager(library);
@@ -344,21 +305,10 @@ DesignFlowStep_Status FixCharacterization::Exec()
          auto template_name = single_fu->fu_template_name;
          if(single_fu)
          {
-            ///64 bits plus/minus
-            if(template_name == "plus_expr_FU" or
-                  template_name == "ui_plus_expr_FU" or
-                  template_name == "minus_expr_FU" or
-                  template_name == "ui_minus_expr_FU" or
-                  template_name == "ternary_alu_expr_FU" or
-                  template_name == "ui_ternary_alu_expr_FU" or
-                  template_name == "ternary_mm_expr_FU" or
-                  template_name == "ui_ternary_mm_expr_FU" or
-                  template_name == "ternary_mp_expr_FU" or
-                  template_name == "ui_ternary_mp_expr_FU" or
-                  template_name == "ternary_pm_expr_FU" or
-                  template_name == "ui_ternary_pm_expr_FU" or
-                  template_name == "ternary_plus_expr_FU" or
-                  template_name == "ui_ternary_plus_expr_FU")
+            /// 64 bits plus/minus
+            if(template_name == "plus_expr_FU" or template_name == "ui_plus_expr_FU" or template_name == "minus_expr_FU" or template_name == "ui_minus_expr_FU" or template_name == "ternary_alu_expr_FU" or template_name == "ui_ternary_alu_expr_FU" or
+               template_name == "ternary_mm_expr_FU" or template_name == "ui_ternary_mm_expr_FU" or template_name == "ternary_mp_expr_FU" or template_name == "ui_ternary_mp_expr_FU" or template_name == "ternary_pm_expr_FU" or
+               template_name == "ui_ternary_pm_expr_FU" or template_name == "ternary_plus_expr_FU" or template_name == "ui_ternary_plus_expr_FU")
             {
                if(single_fu->fu_template_parameters.find(" 0") != std::string::npos or (single_fu->fu_template_parameters.size() >= 2 and single_fu->fu_template_parameters.substr(0, 2) == "0 "))
                {
@@ -408,15 +358,15 @@ const std::unordered_set<TechnologyFlowStep_Type> FixCharacterization::ComputeTe
    std::unordered_set<TechnologyFlowStep_Type> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP):
       {
          relationships.insert(TechnologyFlowStep_Type::LOAD_DEFAULT_TECHNOLOGY);
          relationships.insert(TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY);
@@ -430,6 +380,3 @@ const std::unordered_set<TechnologyFlowStep_Type> FixCharacterization::ComputeTe
    }
    return relationships;
 }
-
-
-

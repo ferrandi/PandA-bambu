@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file tree_basic_block.cpp
  * @brief Data structure describing a basic block at tree level.
@@ -40,47 +40,37 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "tree_basic_block.hpp"
 
 #if HAVE_BAMBU_BUILT
-///HLS/scheduling include
+/// HLS/scheduling include
 #include "schedule.hpp"
 #endif
 
-///tree includes
+/// tree includes
+#include "string_manipulation.hpp" // for STR
 #include "tree_helper.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include "string_manipulation.hpp"          // for STR
-
 
 const unsigned int bloc::ENTRY_BLOCK_ID = 0;
 const unsigned int bloc::EXIT_BLOCK_ID = 1;
 
-bloc::bloc(unsigned int _number) :
-   removed_phi(0),
-   updated_ssa_uses(false),
-   number(_number),
-   loop_id(0),
-   hpl(0),
-   true_edge(0),
-   false_edge(0)
+bloc::bloc(unsigned int _number) : removed_phi(0), updated_ssa_uses(false), number(_number), loop_id(0), hpl(0), true_edge(0), false_edge(0)
 {
-
 }
 
-bloc::~bloc()
-= default;
+bloc::~bloc() = default;
 
-void bloc::visit(tree_node_visitor * const v) const
+void bloc::visit(tree_node_visitor* const v) const
 {
-   unsigned int mask=ALL_VISIT;
+   unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
-   SEQ_VISIT_MEMBER(mask,list_of_phi,tree_node,visit,tree_node_visitor,v);
-   SEQ_VISIT_MEMBER(mask,list_of_stmt,tree_node,visit,tree_node_visitor,v);
+   SEQ_VISIT_MEMBER(mask, list_of_phi, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, list_of_stmt, tree_node, visit, tree_node_visitor, v);
    /// live in and out not visited by design
 }
 
@@ -95,7 +85,7 @@ void bloc::PushFront(const tree_nodeRef statement)
    {
       list_of_stmt.insert(std::next(list_of_stmt.begin()), statement);
    }
-   ///This check is necessary since during parsing of statement list statement has not yet been filled
+   /// This check is necessary since during parsing of statement list statement has not yet been filled
    if(GET_NODE(statement) and GetPointer<gimple_node>(GET_NODE(statement)))
    {
       GetPointer<gimple_node>(GET_NODE(statement))->bb_index = number;
@@ -105,7 +95,7 @@ void bloc::PushFront(const tree_nodeRef statement)
       const auto& uses = tree_helper::ComputeSsaUses(statement);
       for(const auto& use : uses)
       {
-         for(size_t counter = 0; counter < use.second; counter ++)
+         for(size_t counter = 0; counter < use.second; counter++)
          {
             GetPointer<ssa_name>(GET_NODE(use.first))->AddUseStmt(statement);
          }
@@ -153,7 +143,7 @@ void bloc::PushBack(const tree_nodeRef statement)
          list_of_stmt.push_back(statement);
       }
    }
-   ///This check is necessary since during parsing of statement list statement has not yet been filled
+   /// This check is necessary since during parsing of statement list statement has not yet been filled
    if(GET_NODE(statement) and GetPointer<gimple_node>(GET_NODE(statement)))
    {
       GetPointer<gimple_node>(GET_NODE(statement))->bb_index = number;
@@ -177,7 +167,7 @@ void bloc::PushBack(const tree_nodeRef statement)
       const auto& uses = tree_helper::ComputeSsaUses(statement);
       for(const auto& use : uses)
       {
-         for(size_t counter = 0; counter < use.second; counter ++)
+         for(size_t counter = 0; counter < use.second; counter++)
          {
             GetPointer<ssa_name>(GET_NODE(use.first))->AddUseStmt(statement);
          }
@@ -210,32 +200,32 @@ void bloc::Replace(const tree_nodeRef old_stmt, const tree_nodeRef new_stmt, con
          THROW_ASSERT(old_ga, "");
          THROW_ASSERT(new_ga, "");
          THROW_ASSERT(not old_ga->memdef or move_virtuals, STR(old_stmt) + " defines virtuals");
-         if (move_virtuals)
+         if(move_virtuals)
          {
-            if (old_ga->memdef)
+            if(old_ga->memdef)
             {
                new_ga->memdef = old_ga->memdef;
                GetPointer<ssa_name>(GET_NODE(new_ga->memdef))->SetDefStmt(new_stmt);
             }
-            if (old_ga->memuse)
+            if(old_ga->memuse)
             {
                new_ga->memuse = old_ga->memuse;
                GetPointer<ssa_name>(GET_NODE(new_ga->memuse))->AddUseStmt(new_stmt);
             }
-            if (old_ga->vdef)
+            if(old_ga->vdef)
             {
                new_ga->vdef = old_ga->vdef;
                GetPointer<ssa_name>(GET_NODE(new_ga->vdef))->SetDefStmt(new_stmt);
             }
-            if (old_ga->vuses.size())
+            if(old_ga->vuses.size())
             {
                new_ga->vuses = old_ga->vuses;
-               for (const auto & v : new_ga->vuses)
+               for(const auto& v : new_ga->vuses)
                {
                   GetPointer<ssa_name>(GET_NODE(v))->AddUseStmt(new_stmt);
                }
             }
-            if (old_ga->vovers.size())
+            if(old_ga->vovers.size())
             {
                new_ga->vovers = old_ga->vovers;
             }
@@ -273,7 +263,7 @@ void bloc::PushBefore(const tree_nodeRef new_stmt, const tree_nodeRef existing_s
       const auto& uses = tree_helper::ComputeSsaUses(new_stmt);
       for(const auto& use : uses)
       {
-         for(size_t counter = 0; counter < use.second; counter ++)
+         for(size_t counter = 0; counter < use.second; counter++)
          {
             GetPointer<ssa_name>(GET_NODE(use.first))->AddUseStmt(new_stmt);
          }
@@ -321,7 +311,7 @@ void bloc::PushAfter(const tree_nodeRef new_stmt, const tree_nodeRef existing_st
       const auto& uses = tree_helper::ComputeSsaUses(new_stmt);
       for(const auto& use : uses)
       {
-         for(size_t counter = 0; counter < use.second; counter ++)
+         for(size_t counter = 0; counter < use.second; counter++)
          {
             GetPointer<ssa_name>(GET_NODE(use.first))->AddUseStmt(new_stmt);
          }
@@ -337,7 +327,7 @@ void bloc::PushAfter(const tree_nodeRef new_stmt, const tree_nodeRef existing_st
 
 void bloc::AddPhi(const tree_nodeRef phi)
 {
-   ///This check is necessary since during parsing of statement list statement has not yet been filled
+   /// This check is necessary since during parsing of statement list statement has not yet been filled
    if(GET_NODE(phi) and GetPointer<gimple_phi>(GET_NODE(phi)))
       GetPointer<gimple_phi>(GET_NODE(phi))->bb_index = number;
    if(updated_ssa_uses)
@@ -345,7 +335,7 @@ void bloc::AddPhi(const tree_nodeRef phi)
       const auto& uses = tree_helper::ComputeSsaUses(phi);
       for(const auto& use : uses)
       {
-         for(size_t counter = 0; counter < use.second; counter ++)
+         for(size_t counter = 0; counter < use.second; counter++)
          {
             GetPointer<ssa_name>(GET_NODE(use.first))->AddUseStmt(phi);
          }
@@ -369,12 +359,12 @@ void bloc::AddPhi(const tree_nodeRef phi)
 #endif
 }
 
-const std::list<tree_nodeRef> & bloc::CGetPhiList() const
+const std::list<tree_nodeRef>& bloc::CGetPhiList() const
 {
    return list_of_phi;
 }
 
-const std::list<tree_nodeRef> & bloc::CGetStmtList() const
+const std::list<tree_nodeRef>& bloc::CGetStmtList() const
 {
    return list_of_stmt;
 }
@@ -399,7 +389,7 @@ void bloc::RemoveStmt(const tree_nodeRef statement)
       const auto& uses = tree_helper::ComputeSsaUses(statement);
       for(const auto& use : uses)
       {
-         for(size_t counter = 0; counter < use.second; counter ++)
+         for(size_t counter = 0; counter < use.second; counter++)
          {
             GetPointer<ssa_name>(GET_NODE(use.first))->RemoveUse(statement);
          }
@@ -428,7 +418,7 @@ void bloc::RemovePhi(const tree_nodeRef phi)
       const auto& uses = tree_helper::ComputeSsaUses(phi);
       for(const auto& use : uses)
       {
-         for(size_t counter = 0; counter < use.second; counter ++)
+         for(size_t counter = 0; counter < use.second; counter++)
          {
             GetPointer<ssa_name>(GET_NODE(use.first))->RemoveUse(phi);
          }

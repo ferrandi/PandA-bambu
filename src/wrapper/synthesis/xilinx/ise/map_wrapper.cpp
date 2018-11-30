@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file map_wrapper.cpp
  * @brief Implementation of the wrapper to MAP
@@ -41,8 +41,8 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
-///Header include
+ */
+/// Header include
 #include "map_wrapper.hpp"
 
 #include "config_XILINX_SETTINGS.hpp"
@@ -51,19 +51,17 @@
 #include "xml_script_command.hpp"
 
 #include "Parameter.hpp"
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include <iostream>
 
-//constructor
-map_wrapper::map_wrapper(const ParameterConstRef _Param, const std::string& _output_dir, const target_deviceRef _device) :
-   XilinxWrapper(_Param, MAP_TOOL_ID, _device, _output_dir, "map")
+// constructor
+map_wrapper::map_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir, const target_deviceRef& _device) : XilinxWrapper(_Param, MAP_TOOL_ID, _device, _output_dir, "map")
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the MAP wrapper...");
 }
 
-//destructor
-map_wrapper::~map_wrapper()
-= default;
+// destructor
+map_wrapper::~map_wrapper() = default;
 
 void map_wrapper::init_reserved_vars()
 {
@@ -82,9 +80,9 @@ std::string map_wrapper::get_command_line(const DesignParametersRef& dp) const
 {
    std::ostringstream s;
    s << get_tool_exec();
-   for (const auto & option : xml_tool_options)
+   for(const auto& option : xml_tool_options)
    {
-      if (option->checkCondition(dp))
+      if(option->checkCondition(dp))
       {
          std::string value = toString(option, dp);
          replace_parameters(dp, value);

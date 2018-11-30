@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file module_interface.cpp
  * @brief Base class for all module interfaces
@@ -42,15 +42,15 @@
  * $Locker:  $
  * $State: Exp $
  *
-*/
-///Autoheader include
+ */
+/// Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
 #include "module_interface.hpp"
 
+#include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
-#include "behavioral_helper.hpp"
 
 #include "hls.hpp"
 #include "hls_manager.hpp"
@@ -66,49 +66,44 @@
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
 
-///HLS/module_allocation includes
+/// HLS/module_allocation includes
 #include "add_library.hpp"
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 
-module_interface::module_interface(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
-   HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
+module_interface::module_interface(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+    : HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
 }
 
-module_interface::~module_interface()
-= default;
+module_interface::~module_interface() = default;
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > module_interface::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> module_interface::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ret;
+   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
+      {
+         const auto cg_man = HLSMgr->CGetCallGraphManager();
+         if(HLSMgr->hasToBeInterfaced(funId) and (cg_man->ExistsAddressedFunction() or hls_flow_step_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION))
          {
-            const auto cg_man = HLSMgr->CGetCallGraphManager();
-            if (HLSMgr->hasToBeInterfaced(funId) and (cg_man->ExistsAddressedFunction() or hls_flow_step_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION))
-            {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION,
-                                          HLSFlowStepSpecializationConstRef(),
-                                          HLSFlowStep_Relationship::SAME_FUNCTION));
-            }
-            else
-            {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::TOP_ENTITY_CREATION,
-                                          HLSFlowStepSpecializationConstRef(),
-                                          HLSFlowStep_Relationship::SAME_FUNCTION));
-            }
-            break;
+            ret.insert(std::make_tuple(HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          }
+         else
+         {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::TOP_ENTITY_CREATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         }
+         break;
+      }
       case INVALIDATION_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       case PRECEDENCE_RELATIONSHIP:
-         {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(false)), HLSFlowStep_Relationship::SAME_FUNCTION));
-            break;
-         }
+      {
+         ret.insert(std::make_tuple(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(false)), HLSFlowStep_Relationship::SAME_FUNCTION));
+         break;
+      }
       default:
          THROW_UNREACHABLE("");
    }
@@ -130,7 +125,7 @@ void module_interface::add_sign_vector(const structural_managerRef SM, const str
    SM->add_connection(sig, sig2);
 }
 
-void module_interface::AddSignal(const structural_managerRef SM, const structural_objectRef component1, const std::string&port1_name, const structural_objectRef component2, const std::string&port2_name, const std::string&signal_name)
+void module_interface::AddSignal(const structural_managerRef SM, const structural_objectRef component1, const std::string& port1_name, const structural_objectRef component2, const std::string& port2_name, const std::string& signal_name)
 {
    structural_objectRef port1;
    unsigned int size1;
@@ -188,7 +183,7 @@ void module_interface::AddSignal(const structural_managerRef SM, const structura
    }
 }
 
-void module_interface::AddConnection(const structural_managerRef SM, const structural_objectRef component1, const std::string&port1_name, const structural_objectRef component2, const std::string&port2_name)
+void module_interface::AddConnection(const structural_managerRef SM, const structural_objectRef component1, const std::string& port1_name, const structural_objectRef component2, const std::string& port2_name)
 {
    structural_objectRef port1;
    unsigned int size1;
@@ -236,7 +231,7 @@ void module_interface::AddConnection(const structural_managerRef SM, const struc
    SM->add_connection(port1, port2);
 }
 
-void module_interface::AddConstant(const structural_managerRef SM, const structural_objectRef component, const std::string&port_name, const std::string&constant_value, const unsigned int constant_size)
+void module_interface::AddConstant(const structural_managerRef SM, const structural_objectRef component, const std::string& port_name, const std::string& constant_value, const unsigned int constant_size)
 {
    structural_objectRef port;
    unsigned int size;

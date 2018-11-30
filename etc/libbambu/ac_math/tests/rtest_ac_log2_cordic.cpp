@@ -11,19 +11,19 @@
  *  Copyright , Mentor Graphics Corporation,                     *
  *                                                                        *
  *  All Rights Reserved.                                                  *
- *  
+ *
  **************************************************************************
  *  Licensed under the Apache License, Version 2.0 (the "License");       *
- *  you may not use this file except in compliance with the License.      * 
+ *  you may not use this file except in compliance with the License.      *
  *  You may obtain a copy of the License at                               *
  *                                                                        *
  *      http://www.apache.org/licenses/LICENSE-2.0                        *
  *                                                                        *
- *  Unless required by applicable law or agreed to in writing, software   * 
- *  distributed under the License is distributed on an "AS IS" BASIS,     * 
+ *  Unless required by applicable law or agreed to in writing, software   *
+ *  distributed under the License is distributed on an "AS IS" BASIS,     *
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or       *
- *  implied.                                                              * 
- *  See the License for the specific language governing permissions and   * 
+ *  implied.                                                              *
+ *  See the License for the specific language governing permissions and   *
  *  limitations under the License.                                        *
  **************************************************************************
  *                                                                        *
@@ -50,12 +50,9 @@ using namespace ac_math;
 //   ac_fixed inputs.
 
 template <int Wfi, int Ifi, int outWfi, int outIfi, bool outSfi>
-void test_ac_log2_cordic(
-  const ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP>  &in,
-  ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> &log2_out
-)
+void test_ac_log2_cordic(const ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP>& in, ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>& log2_out)
 {
-  ac_log2_cordic(in, log2_out);
+   ac_log2_cordic(in, log2_out);
 }
 
 // ------------------------------------------------------------------------------
@@ -64,15 +61,15 @@ void test_ac_log2_cordic(
 
 double abs_double(double x)
 {
-  return x >= 0 ? x : -x;
+   return x >= 0 ? x : -x;
 }
 
 // ==============================================================================
 
-#include <math.h>
-#include <string>
 #include <fstream>
 #include <iostream>
+#include <math.h>
+#include <string>
 using namespace std;
 
 // ===============================================================================
@@ -85,130 +82,150 @@ using namespace std;
 //   in variables defined in the calling function.
 
 template <int Wfi, int Ifi, int outWfi, int outIfi, bool outSfi>
-int test_driver(
-  double &cumulative_max_error_log2,
-  const double allowed_error,
-  const double threshold,
-  bool details = false
-)
+int test_driver(double& cumulative_max_error_log2, const double allowed_error, const double threshold, bool details = false)
 {
-  ac_fixed<Wfi + 2, Ifi + 1, false, AC_TRN, AC_WRAP> i; // make loop variable slightly larger
-  ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP> input;
-  ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP> last;
-  typedef ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> T_out;
-  T_out log2_out;
+   ac_fixed<Wfi + 2, Ifi + 1, false, AC_TRN, AC_WRAP> i; // make loop variable slightly larger
+   ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP> input;
+   ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP> last;
+   typedef ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> T_out;
+   T_out log2_out;
 
-  // set ranges and step size for testbench
-  ac_fixed<Wfi, Ifi, false> lower_limit = input.template set_val<AC_VAL_MIN>();
-  ac_fixed<Wfi, Ifi, false> upper_limit = input.template set_val<AC_VAL_MAX>();
-  ac_fixed<Wfi, Ifi, false> step        = input.template set_val<AC_VAL_QUANTUM>();
+   // set ranges and step size for testbench
+   ac_fixed<Wfi, Ifi, false> lower_limit = input.template set_val<AC_VAL_MIN>();
+   ac_fixed<Wfi, Ifi, false> upper_limit = input.template set_val<AC_VAL_MAX>();
+   ac_fixed<Wfi, Ifi, false> step = input.template set_val<AC_VAL_QUANTUM>();
 
-  cout << "TEST: ac_log2_cordic() INPUT: ";
-  cout.width(38);
-  cout << left << input.type_name();
-  cout << "OUTPUT: ";
-  cout.width(38);
-  cout << left << log2_out.type_name();
-  cout << "RESULT: ";
+   cout << "TEST: ac_log2_cordic() INPUT: ";
+   cout.width(38);
+   cout << left << input.type_name();
+   cout << "OUTPUT: ";
+   cout.width(38);
+   cout << left << log2_out.type_name();
+   cout << "RESULT: ";
 
-  // Dump the test details
-  if (details) {
-    cout << endl; // LCOV_EXCL_LINE
-    cout << "  Ranges for input types:" << endl; // LCOV_EXCL_LINE
-    cout << "    lower_limit          = " << lower_limit << endl; // LCOV_EXCL_LINE
-    cout << "    upper_limit          = " << upper_limit << endl; // LCOV_EXCL_LINE
-    cout << "    step                 = " << step << endl; // LCOV_EXCL_LINE
-  }
+   // Dump the test details
+   if(details)
+   {
+      cout << endl;                                                 // LCOV_EXCL_LINE
+      cout << "  Ranges for input types:" << endl;                  // LCOV_EXCL_LINE
+      cout << "    lower_limit          = " << lower_limit << endl; // LCOV_EXCL_LINE
+      cout << "    upper_limit          = " << upper_limit << endl; // LCOV_EXCL_LINE
+      cout << "    step                 = " << step << endl;        // LCOV_EXCL_LINE
+   }
 
-  bool passed = true;
-  double max_log2_error = 0.0;
+   bool passed = true;
+   double max_log2_error = 0.0;
 
-  for (i = lower_limit; i <= upper_limit; i += step) {
-    // Set values for input.
-    input = i;
-    if (input.to_double() == 0) { continue; }
+   for(i = lower_limit; i <= upper_limit; i += step)
+   {
+      // Set values for input.
+      input = i;
+      if(input.to_double() == 0)
+      {
+         continue;
+      }
 
-    // call reference log2() with fixed-pt value converted back to double
-    // an additional step of typecasting is required in order to perform
-    // quantization on the expected output.
-    double expected_log2 = ((T_out)log2(input.to_double())).to_double();
+      // call reference log2() with fixed-pt value converted back to double
+      // an additional step of typecasting is required in order to perform
+      // quantization on the expected output.
+      double expected_log2 = ((T_out)log2(input.to_double())).to_double();
 
-    // call DUT with fixed-pt value
-    test_ac_log2_cordic(input,log2_out);
+      // call DUT with fixed-pt value
+      test_ac_log2_cordic(input, log2_out);
 
-    double actual_log2 = log2_out.to_double();
-    double this_error_log2;
+      double actual_log2 = log2_out.to_double();
+      double this_error_log2;
 
-    // If expected value of either output falls below the threshold, calculate absolute error instead of relative
-    if (expected_log2 > threshold) {this_error_log2 = abs_double( (expected_log2 - actual_log2) / expected_log2 ) * 100.0;}
-    else {this_error_log2 = abs_double(expected_log2 - actual_log2) * 100.0;}
+      // If expected value of either output falls below the threshold, calculate absolute error instead of relative
+      if(expected_log2 > threshold)
+      {
+         this_error_log2 = abs_double((expected_log2 - actual_log2) / expected_log2) * 100.0;
+      }
+      else
+      {
+         this_error_log2 = abs_double(expected_log2 - actual_log2) * 100.0;
+      }
 
 #ifdef DEBUG
-    if (this_error_log2 > allowed_error) {
-      cout << endl;
-      cout << "  Error exceeds tolerance" << endl;
-      cout << "  input           = " << input << endl;
-      cout << "  expected_log2   = " << expected_log2 << endl;
-      cout << "  actual_log2     = " << actual_log2 << endl;
-      cout << "  this_error_log2 = " << this_error_log2 << endl;
-      cout << "  threshold       = " << threshold << endl;
-      assert(false);
-    }
+      if(this_error_log2 > allowed_error)
+      {
+         cout << endl;
+         cout << "  Error exceeds tolerance" << endl;
+         cout << "  input           = " << input << endl;
+         cout << "  expected_log2   = " << expected_log2 << endl;
+         cout << "  actual_log2     = " << actual_log2 << endl;
+         cout << "  this_error_log2 = " << this_error_log2 << endl;
+         cout << "  threshold       = " << threshold << endl;
+         assert(false);
+      }
 #endif
 
-    if (this_error_log2 > max_log2_error) { max_log2_error = this_error_log2; }
-  }
+      if(this_error_log2 > max_log2_error)
+      {
+         max_log2_error = this_error_log2;
+      }
+   }
 
-  if (max_log2_error > cumulative_max_error_log2) { cumulative_max_error_log2 = max_log2_error; }
+   if(max_log2_error > cumulative_max_error_log2)
+   {
+      cumulative_max_error_log2 = max_log2_error;
+   }
 
-  passed = (max_log2_error < allowed_error);
+   passed = (max_log2_error < allowed_error);
 
-  if (passed) { printf("PASSED , max err (%f)\n", max_log2_error); }
-  else        { printf("FAILED , max err (%f)\n", max_log2_error); } // LCOV_EXCL_LINE
+   if(passed)
+   {
+      printf("PASSED , max err (%f)\n", max_log2_error);
+   }
+   else
+   {
+      printf("FAILED , max err (%f)\n", max_log2_error);
+   } // LCOV_EXCL_LINE
 
-  return 0;
+   return 0;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-  double max_error_log2 = 0.0;
-  double allowed_error = 0.5;
-  double threshold = 0.005;
+   double max_error_log2 = 0.0;
+   double allowed_error = 0.5;
+   double threshold = 0.005;
 
-  cout << "=============================================================================" << endl;
-  cout << "Testing function: ac_log2_cordic() - Allowed error " << allowed_error << endl;
+   cout << "=============================================================================" << endl;
+   cout << "Testing function: ac_log2_cordic() - Allowed error " << allowed_error << endl;
 
-  //template <int Wfi, int Ifi, int outWfi, int outIfi, bool outSfi>
-  test_driver<16, -5, 40, 12, true>(max_error_log2, allowed_error, threshold);
-  test_driver<16, -4, 40, 12, true>(max_error_log2, allowed_error, threshold);
-  test_driver<16, -3, 40, 12, true>(max_error_log2, allowed_error, threshold);
-  test_driver<16, -2, 40, 12, true>(max_error_log2, allowed_error, threshold);
-  test_driver<16, -1, 40, 12, true>(max_error_log2, allowed_error, threshold);
-  test_driver<16,  0, 40, 12, true>(max_error_log2, allowed_error, threshold);
-  test_driver<16,  1, 40, 12, true>(max_error_log2, allowed_error, threshold);
-  test_driver<16,  2, 40, 12, true>(max_error_log2, allowed_error, threshold);
-  test_driver<16,  3, 40, 12, true>(max_error_log2, allowed_error, threshold);
-  test_driver<16,  4, 40, 12, true>(max_error_log2, allowed_error, threshold);
-  test_driver<16,  5, 40, 12, true>(max_error_log2, allowed_error, threshold);
-  test_driver<16,  6, 40, 12, true>(max_error_log2, allowed_error, threshold);
-  test_driver<16,  7, 40, 12, true>(max_error_log2, allowed_error, threshold);
-  test_driver<16,  8, 40, 12, true>(max_error_log2, allowed_error, threshold);
-  test_driver<16,  9, 40, 12, true>(max_error_log2, allowed_error, threshold);
-  test_driver< 8, 12, 40, 12, true>(max_error_log2, allowed_error, threshold);
+   // template <int Wfi, int Ifi, int outWfi, int outIfi, bool outSfi>
+   test_driver<16, -5, 40, 12, true>(max_error_log2, allowed_error, threshold);
+   test_driver<16, -4, 40, 12, true>(max_error_log2, allowed_error, threshold);
+   test_driver<16, -3, 40, 12, true>(max_error_log2, allowed_error, threshold);
+   test_driver<16, -2, 40, 12, true>(max_error_log2, allowed_error, threshold);
+   test_driver<16, -1, 40, 12, true>(max_error_log2, allowed_error, threshold);
+   test_driver<16, 0, 40, 12, true>(max_error_log2, allowed_error, threshold);
+   test_driver<16, 1, 40, 12, true>(max_error_log2, allowed_error, threshold);
+   test_driver<16, 2, 40, 12, true>(max_error_log2, allowed_error, threshold);
+   test_driver<16, 3, 40, 12, true>(max_error_log2, allowed_error, threshold);
+   test_driver<16, 4, 40, 12, true>(max_error_log2, allowed_error, threshold);
+   test_driver<16, 5, 40, 12, true>(max_error_log2, allowed_error, threshold);
+   test_driver<16, 6, 40, 12, true>(max_error_log2, allowed_error, threshold);
+   test_driver<16, 7, 40, 12, true>(max_error_log2, allowed_error, threshold);
+   test_driver<16, 8, 40, 12, true>(max_error_log2, allowed_error, threshold);
+   test_driver<16, 9, 40, 12, true>(max_error_log2, allowed_error, threshold);
+   test_driver<8, 12, 40, 12, true>(max_error_log2, allowed_error, threshold);
 
-  cout << "=============================================================================" << endl;
-  cout << "  Testbench finished. Maximum errors observed across all bit-width variations:" << endl;
-  cout << "    max_error_log2 = " << max_error_log2 << endl;
+   cout << "=============================================================================" << endl;
+   cout << "  Testbench finished. Maximum errors observed across all bit-width variations:" << endl;
+   cout << "    max_error_log2 = " << max_error_log2 << endl;
 
-  // If error limits on any test value have been crossed, the test has failed
-  // Notify the user that the test was a failure if that is the case.
-  if (max_error_log2 > allowed_error) {
-    cout << "  ac_log2_cordic - FAILED - Error tolerance(s) exceeded" << endl; // LCOV_EXCL_LINE
-    cout << "=============================================================================" << endl; // LCOV_EXCL_LINE
-    return (-1); // LCOV_EXCL_LINE
-  }
+   // If error limits on any test value have been crossed, the test has failed
+   // Notify the user that the test was a failure if that is the case.
+   if(max_error_log2 > allowed_error)
+   {
+      cout << "  ac_log2_cordic - FAILED - Error tolerance(s) exceeded" << endl;                       // LCOV_EXCL_LINE
+      cout << "=============================================================================" << endl; // LCOV_EXCL_LINE
+      return (-1);                                                                                     // LCOV_EXCL_LINE
+   }
 
-  cout << "  ac_log2_cordic - PASSED" << endl;
-  cout << "=============================================================================" << endl;
-  return (0);
+   cout << "  ac_log2_cordic - PASSED" << endl;
+   cout << "=============================================================================" << endl;
+   return (0);
 }

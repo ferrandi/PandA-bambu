@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file quartus_report_wrapper.cpp
  * @brief Implementation of the wrapper to quartus reporting tool
@@ -41,40 +41,38 @@
  * @author Silvia Lovergine <lovergine@elet.polimi.it>
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
-///Header include
+ */
+/// Header include
 #include "quartus_report_wrapper.hpp"
 
 #include "ToolManager.hpp"
 #include "xml_script_command.hpp"
 
 #include "Parameter.hpp"
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 
-//constructor
-QuartusReportWrapper::QuartusReportWrapper(const ParameterConstRef _Param, const std::string& _output_dir, const target_deviceRef _device) :
-   AlteraWrapper(_Param, QUARTUS_REPORT_TOOL_EXEC, _device, _output_dir, QUARTUS_REPORT_TOOL_ID)
+// constructor
+QuartusReportWrapper::QuartusReportWrapper(const ParameterConstRef& _Param, const std::string& _output_dir, const target_deviceRef& _device) : AlteraWrapper(_Param, QUARTUS_REPORT_TOOL_EXEC, _device, _output_dir, QUARTUS_REPORT_TOOL_ID)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the QUARTUS_REPORT wrapper...");
 }
 
-//destructor
-QuartusReportWrapper::~QuartusReportWrapper()
-= default;
+// destructor
+QuartusReportWrapper::~QuartusReportWrapper() = default;
 
 void QuartusReportWrapper::EvaluateVariables(const DesignParametersRef dp)
 {
    std::string top_id = dp->component_name;
-   dp->parameter_values[PARAM_quartus_report] = output_dir + "/" + top_id+"_report.xml";
+   dp->parameter_values[PARAM_quartus_report] = output_dir + "/" + top_id + "_report.xml";
 }
 
 std::string QuartusReportWrapper::get_command_line(const DesignParametersRef& dp) const
 {
    std::ostringstream s;
    s << get_tool_exec() << " -t " << script_name;
-   for (const auto & option : xml_tool_options)
+   for(const auto& option : xml_tool_options)
    {
-      if (option->checkCondition(dp))
+      if(option->checkCondition(dp))
       {
          std::string value = toString(option, dp);
          replace_parameters(dp, value);

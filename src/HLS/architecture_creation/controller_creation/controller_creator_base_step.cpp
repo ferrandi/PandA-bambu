@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,17 +29,17 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file controller_creator_base_step.cpp
  * @brief Base class for all controller creation algorithms.
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  *
-*/
+ */
 #include "controller_creator_base_step.hpp"
 
-///implemented controllers
+/// implemented controllers
 #include "fsm_controller.hpp"
 
 #include "hls.hpp"
@@ -47,53 +47,50 @@
 
 #include "BambuParameter.hpp"
 
-#include "utility.hpp"
 #include "dbgPrintHelper.hpp"
+#include "utility.hpp"
 
-#include "function_behavior.hpp"
 #include "behavioral_helper.hpp"
+#include "function_behavior.hpp"
 
 #include "commandport_obj.hpp"
+#include "multi_unbounded_obj.hpp"
 
 #include "exceptions.hpp"
 
-#include "structural_objects.hpp"
 #include "structural_manager.hpp"
+#include "structural_objects.hpp"
 
 #include "technology_manager.hpp"
 
 #include "polixml.hpp"
 #include "xml_helper.hpp"
 
-ControllerCreatorBaseStep::ControllerCreatorBaseStep(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
-      HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type),
-      out_num(0),
-      in_num(0)
+ControllerCreatorBaseStep::ControllerCreatorBaseStep(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+    : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type), out_num(0), in_num(0)
 {
-
 }
 
-ControllerCreatorBaseStep::~ControllerCreatorBaseStep()
-= default;
+ControllerCreatorBaseStep::~ControllerCreatorBaseStep() = default;
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ControllerCreatorBaseStep::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ControllerCreatorBaseStep::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ret;
+   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
-         {
-            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_datapath_architecture), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            break;
-         }
+      {
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_datapath_architecture), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         break;
+      }
       case INVALIDATION_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       case PRECEDENCE_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       default:
          THROW_UNREACHABLE("");
    }
@@ -116,8 +113,8 @@ void ControllerCreatorBaseStep::Initialize()
    in_ports.clear();
    cond_ports.clear();
    cond_obj.clear();
-   out_num=0;
-   in_num=0;
+   out_num = 0;
+   in_num = 0;
 }
 
 void ControllerCreatorBaseStep::add_common_ports(structural_objectRef circuit)
@@ -182,53 +179,63 @@ void ControllerCreatorBaseStep::add_command_ports(structural_objectRef circuit)
 
    out_num = 0;
    in_num = 0;
-   const auto & selectors = HLS->Rconn->GetSelectors();
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding " + boost::lexical_cast<std::string>(selectors.size()) + " selectors");
+   const auto& selectors = HLS->Rconn->GetSelectors();
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding " + std::to_string(selectors.size()) + " selectors");
    for(const auto& selector : selectors)
    {
       for(const auto& j : selector.second)
       {
-         ///connections from controller to datapath
-         if (selector.first == conn_binding::IN)
+         /// connections from controller to datapath
+         if(selector.first == conn_binding::IN)
          {
-            ///operations signals have not to be added at this point
-            if (GetPointer<commandport_obj>(j.second)->get_command_type() == commandport_obj::OPERATION)
+            /// operations signals have not to be added at this point
+            if(GetPointer<commandport_obj>(j.second)->get_command_type() == commandport_obj::OPERATION)
                continue;
-            ///they represent commands to multiplexers or write enables to registers
+            /// they represent commands to multiplexers or write enables to registers
             structural_objectRef sel_obj = SM->add_port(j.second->get_structural_obj()->get_id(), port_o::OUT, circuit, bool_type);
             GetPointer<commandport_obj>(j.second)->set_controller_obj(sel_obj);
             out_ports[j.second] = out_num++;
          }
-         ///connections from datapath to controller
-         if (selector.first == conn_binding::OUT)
+         /// connections from datapath to controller
+         if(selector.first == conn_binding::OUT)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Connection from datapath to controller");
-            ///operation modifying the control flow (e.g., if, switch, ...)
-            vertex cond_v = GetPointer<commandport_obj>(j.second)->get_vertex();
             structural_objectRef sel_obj;
-            if(GetPointer<commandport_obj>(j.second)->get_command_type() == commandport_obj::SWITCH)
+            if(GetPointer<commandport_obj>(j.second)->get_command_type() == commandport_obj::MULTI_UNBOUNDED)
             {
-               ///multi bit selector representing the evaluation of a switch
-               unsigned int var_written = HLSMgr->get_produced_value(HLS->functionId, cond_v);
-               structural_type_descriptorRef switch_port_type = structural_type_descriptorRef(new structural_type_descriptor(var_written, FB->CGetBehavioralHelper()));
-               sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, switch_port_type);
-            }
-            else if(GetPointer<commandport_obj>(j.second)->get_command_type() == commandport_obj::MULTIIF)
-            {
-               std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(HLS->functionId, cond_v);
-               auto vect_size = static_cast<unsigned int>(var_read.size());
-               structural_type_descriptorRef multiif_port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", vect_size));
-               sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, multiif_port_type);
+               sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, bool_type);
+               auto mu_obj = GetPointer<commandport_obj>(j.second)->get_elem();
+               THROW_ASSERT(GetPointer<multi_unbounded_obj>(mu_obj), "unexpected condition");
+               mu_ports[GetPointer<multi_unbounded_obj>(mu_obj)->get_fsm_state()] = in_num;
             }
             else
             {
-               ///single bit selector representing the evaluation of a condition
-               sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, bool_type);
+               /// operation modifying the control flow (e.g., if, switch, ...)
+               vertex cond_v = GetPointer<commandport_obj>(j.second)->get_vertex();
+               if(GetPointer<commandport_obj>(j.second)->get_command_type() == commandport_obj::SWITCH)
+               {
+                  /// multi bit selector representing the evaluation of a switch
+                  unsigned int var_written = HLSMgr->get_produced_value(HLS->functionId, cond_v);
+                  structural_type_descriptorRef switch_port_type = structural_type_descriptorRef(new structural_type_descriptor(var_written, FB->CGetBehavioralHelper()));
+                  sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, switch_port_type);
+               }
+               else if(GetPointer<commandport_obj>(j.second)->get_command_type() == commandport_obj::MULTIIF)
+               {
+                  std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(HLS->functionId, cond_v);
+                  auto vect_size = static_cast<unsigned int>(var_read.size());
+                  structural_type_descriptorRef multiif_port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", vect_size));
+                  sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, multiif_port_type);
+               }
+               else
+               {
+                  /// single bit selector representing the evaluation of a condition
+                  sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, bool_type);
+               }
+               cond_ports[cond_v] = in_num;
+               cond_obj[cond_v] = j.second;
             }
             GetPointer<commandport_obj>(j.second)->set_controller_obj(sel_obj);
             in_ports[j.second] = in_num;
-            cond_ports[cond_v] = in_num;
-            cond_obj[cond_v] = j.second;
             in_num++;
          }
       }

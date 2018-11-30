@@ -3,7 +3,7 @@
    Copyright (C) 1997-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Richard Henderson (rth@cygnus.com) and
-		  Jakub Jelinek (jj@ultra.linux.cz).
+        Jakub Jelinek (jj@ultra.linux.cz).
 
    The GNU C Library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -28,27 +28,26 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "soft-fp.h"
-#include "single.h"
 #include "double.h"
+#include "single.h"
+#include "soft-fp.h"
 
-DFtype
-__extendsfdf2 (SFtype a)
+DFtype __extendsfdf2(SFtype a)
 {
-  FP_DECL_EX;
-  FP_DECL_S (A);
-  FP_DECL_D (R);
-  DFtype r;
+   FP_DECL_EX;
+   FP_DECL_S(A);
+   FP_DECL_D(R);
+   DFtype r;
 
-  FP_INIT_EXCEPTIONS;
-  FP_UNPACK_RAW_S (A, a);
+   FP_INIT_EXCEPTIONS;
+   FP_UNPACK_RAW_S(A, a);
 #if _FP_W_TYPE_SIZE < _FP_FRACBITS_D
-  FP_EXTEND (D, S, 2, 1, R, A);
+   FP_EXTEND(D, S, 2, 1, R, A);
 #else
-  FP_EXTEND (D, S, 1, 1, R, A);
+   FP_EXTEND(D, S, 1, 1, R, A);
 #endif
-  FP_PACK_RAW_D (r, R);
-  FP_HANDLE_EXCEPTIONS;
+   FP_PACK_RAW_D(r, R);
+   FP_HANDLE_EXCEPTIONS;
 
-  return r;
+   return r;
 }

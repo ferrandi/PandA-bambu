@@ -3,7 +3,7 @@
    Copyright (C) 1997-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Richard Henderson (rth@cygnus.com) and
-		  Jakub Jelinek (jj@ultra.linux.cz).
+        Jakub Jelinek (jj@ultra.linux.cz).
 
    The GNU C Library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -28,22 +28,24 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "soft-fp.h"
 #include "single.h"
+#include "soft-fp.h"
 
-SItype
-__fixsfsi (SFtype a)
+SItype __fixsfsi(SFtype a)
 {
-  FP_DECL_EX;
-  FP_DECL_S (A);
-  USItype r;
+   FP_DECL_EX;
+   FP_DECL_S(A);
+   USItype r;
 
-  FP_INIT_EXCEPTIONS;
-  FP_UNPACK_RAW_S (A, a);
-  FP_TO_INT_S (r, A, SI_BITS, 1);
-  FP_HANDLE_EXCEPTIONS;
+   FP_INIT_EXCEPTIONS;
+   FP_UNPACK_RAW_S(A, a);
+   FP_TO_INT_S(r, A, SI_BITS, 1);
+   FP_HANDLE_EXCEPTIONS;
 
-  return r;
+   return r;
 }
 
-inline SItype __float32_to_int32_round_to_zeroif(SFtype a) {return __fixsfsi(a);}
+inline SItype __float32_to_int32_round_to_zeroif(SFtype a)
+{
+   return __fixsfsi(a);
+}

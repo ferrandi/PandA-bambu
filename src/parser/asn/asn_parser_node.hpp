@@ -29,25 +29,25 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file asn_parser_node.hpp
  * @brief Specification of the data structure associated with a node during asn parsing
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef ASN_PARSER_NODE_HPP
 #define ASN_PARSER_NODE_HPP
 
-///STD include
+/// STD include
 #include <iosfwd>
 #include <string>
 
-///STL include
+/// STL include
 #include <list>
 
-///utility include
+/// utility include
 #include "custom_map.hpp"
 #include "refcount.hpp"
 
@@ -55,28 +55,26 @@ REF_FORWARD_DECL(AsnType);
 
 /**
  * Data associated with a node of the asn parser
-*/
+ */
 struct AsnParserNode
 {
-   ///A string associated with this node
+   /// A string associated with this node
    std::string strg;
 
-   ///A asn type
+   /// A asn type
    AsnTypeRef asn_type;
 
-   ///List of pair name type
-   std::list<std::pair<std::string, AsnTypeRef> > element_type_list;
+   /// List of pair name type
+   std::list<std::pair<std::string, AsnTypeRef>> element_type_list;
 
-   ///List of named number
-   std::list<std::pair<std::string, unsigned int> > named_number_list;
+   /// List of named number
+   std::list<std::pair<std::string, unsigned int>> named_number_list;
 
    /**
     * Friend definition of the << operator.
     * @param os is the output stream
     * @param to_be_printed is the node to be printed
     */
-   friend std::ostream& operator<<(std::ostream& os, const AsnParserNode & to_be_printed);
+   friend std::ostream& operator<<(std::ostream& os, const AsnParserNode& to_be_printed);
 };
 #endif
-
-

@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file hls_bit_value.hpp
  * @brief Proxy class calling the bit value analysis just before the hls_bit_value step taking into account the results of the memory hls_bit_value
@@ -39,13 +39,13 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef HLS_BIT_VALUE_HPP
 #define HLS_BIT_VALUE_HPP
 
-///superclass include
-#include "hls_function_step.hpp"
+/// superclass include
 #include "application_manager.hpp"
+#include "hls_function_step.hpp"
 #include "refcount.hpp"
 /**
  * @name forward declarations
@@ -58,14 +58,13 @@ REF_FORWARD_DECL(hls_bit_value);
 #include "graph.hpp"
 #include "utility.hpp"
 
-#include <vector>
+#include <cmath>
 #include <map>
 #include <string>
-#include <cmath>
 #include <unordered_map>
+#include <vector>
 
 #include "hls_manager.hpp"
-
 
 /**
  * @class hls_bit_value
@@ -73,41 +72,39 @@ REF_FORWARD_DECL(hls_bit_value);
  */
 class hls_bit_value : public HLSFunctionStep
 {
+   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type) override;
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+ public:
+   /**
+    * @name Constructors and Destructors.
+    */
+   //@{
+   /**
+    * Constructor.
+    * @param design_flow_manager is the design flow manager
+    */
+   hls_bit_value(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
-   public:
+   /**
+    * Destructor.
+    */
+   ~hls_bit_value() override;
+   //@}
 
-      /**
-       * @name Constructors and Destructors.
-      */
-      //@{
-      /**
-       * Constructor.
-       * @param design_flow_manager is the design flow manager
-       */
-      hls_bit_value(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /**
-       * Destructor.
-       */
-      ~hls_bit_value() override;
-      //@}
-
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status InternalExec() override;
-
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      void Initialize() override;
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 };
 #endif

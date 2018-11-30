@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file vivado_flow_wrapper.hpp
  * @brief Wrapper to invoke vivado_flow tool by XILINX
@@ -40,14 +40,14 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef XILINX_VIVADO_FLOW_HPP
 #define XILINX_VIVADO_FLOW_HPP
 
 #include "XilinxWrapper.hpp"
 
-#define VIVADO_FLOW_TOOL_ID      "vivado_flow"
-#define VIVADO_FLOW_TOOL_EXEC    "vivado"
+#define VIVADO_FLOW_TOOL_ID "vivado_flow"
+#define VIVADO_FLOW_TOOL_EXEC "vivado"
 
 /**
  * @class vivado_flow_wrapper
@@ -55,37 +55,33 @@
  */
 class vivado_flow_wrapper : public XilinxWrapper
 {
-   private:
-      void create_sdc(const DesignParametersRef dp);
+ private:
+   void create_sdc(const DesignParametersRef& dp);
 
-   protected:
+ protected:
+   /**
+    * Evaluates the design variables
+    */
+   void EvaluateVariables(const DesignParametersRef dp) override;
 
-      /**
-       * Evaluates the design variables
-       */
-      void EvaluateVariables(const DesignParametersRef dp) override;
+   /**
+    * Returns the proper command line
+    */
+   std::string get_command_line(const DesignParametersRef& dp) const override;
 
-      /**
-       * Returns the proper command line
-       */
-      std::string get_command_line(const DesignParametersRef& dp) const override;
+ public:
+   /**
+    * Constructor
+    * @param Param is the set of parameters
+    */
+   vivado_flow_wrapper(const ParameterConstRef& Param, const std::string& _output_dir, const target_deviceRef& _device);
 
-
-   public:
-
-      /**
-       * Constructor
-       * @param Param is the set of parameters
-       */
-      vivado_flow_wrapper(const ParameterConstRef Param, const std::string& _output_dir, const target_deviceRef _device);
-
-      /**
-       * Destructor
-       */
-      ~vivado_flow_wrapper() override;
-
+   /**
+    * Destructor
+    */
+   ~vivado_flow_wrapper() override;
 };
-///Refcount definition for the class
+/// Refcount definition for the class
 typedef refcount<vivado_flow_wrapper> vivado_flow_wrapperRef;
 
 #endif

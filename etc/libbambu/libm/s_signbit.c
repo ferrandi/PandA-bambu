@@ -1,11 +1,11 @@
-/** 
- * Porting of the libm library to the PandA framework 
+/**
+ * Porting of the libm library to the PandA framework
  * starting from the original FDLIBM 5.3 (Freely Distributable LIBM) developed by SUN
  * plus the newlib version 1.19 from RedHat and plus uClibc version 0.9.32.1 developed by Erik Andersen.
  * The author of this port is Fabrizio Ferrandi from Politecnico di Milano.
  * The porting fall under the LGPL v2.1, see the files COPYING.LIB and COPYING.LIBM_PANDA in this directory.
  * Date: September, 11 2013.
-*/
+ */
 /* Return nonzero value if number is negative.
    Copyright (C) 1997 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
@@ -28,10 +28,9 @@
 
 #include "math_private.h"
 
-
-int __signbit (double x)
+int __signbit(double x)
 {
-  int hx;
-  hx = GET_HI (x);
-  return (unsigned int)(hx & 0x80000000);
+   int hx;
+   hx = GET_HI(x);
+   return (unsigned int)(hx & 0x80000000);
 }

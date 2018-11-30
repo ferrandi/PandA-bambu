@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file check_system_type.hpp
  * @brief analyse srcp of variables and types to detect system ones; the identified one are flagged
@@ -39,22 +39,22 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef CHECK_SYSTEM_TYPE_HPP
 #define CHECK_SYSTEM_TYPE_HPP
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_LEON3.hpp"
 
-///Superclass include
+/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
-///STD include
+/// STD include
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
-///Utility include
+/// Utility include
 #include "refcount.hpp"
 #include "utility.hpp"
 
@@ -67,116 +67,107 @@ REF_FORWARD_DECL(tree_node);
  */
 class CheckSystemType : public FunctionFrontendFlowStep
 {
-   private:
-      ///The helper associated with the current function
-      const BehavioralHelperConstRef behavioral_helper;
+ private:
+   /// The helper associated with the current function
+   const BehavioralHelperConstRef behavioral_helper;
 
-      ///The tree manager
-      const tree_managerRef TM;
+   /// The tree manager
+   const tree_managerRef TM;
 
-      ///Already visited tree node (used to avoid infinite recursion)
-      std::unordered_set<unsigned int> already_visited;
+   /// Already visited tree node (used to avoid infinite recursion)
+   std::unordered_set<unsigned int> already_visited;
 
-      ///Contains the list of the folders containining the system header files
-      static
-      std::vector<std::string> systemIncPath;
+   /// Contains the list of the folders containining the system header files
+   static std::vector<std::string> systemIncPath;
 
-      ///Associates to each system header file its full path
-      static
-      std::unordered_map<std::string, std::string> inclNameToPath;
+   /// Associates to each system header file its full path
+   static std::unordered_map<std::string, std::string> inclNameToPath;
 
-      ///Associates a function to its original name
-      static
-      std::unordered_map<std::string, std::string> rename_function;
+   /// Associates a function to its original name
+   static std::unordered_map<std::string, std::string> rename_function;
 
-      ///Associates a type to its original name
-      static
-      std::unordered_map<std::string, std::string> rename_types;
+   /// Associates a type to its original name
+   static std::unordered_map<std::string, std::string> rename_types;
 
-      ///The set of functions which have to be considered library_system
-      static
-      std::unordered_set<std::string> library_system_functions;
+   /// The set of functions which have to be considered library_system
+   static std::unordered_set<std::string> library_system_functions;
 
-       ///The set of headers which contains function which have to be considered library_system
-      static
-      std::unordered_set<std::string> library_system_includes;
+   /// The set of headers which contains function which have to be considered library_system
+   static std::unordered_set<std::string> library_system_includes;
 
 #if HAVE_LEON3
-      ///The set of system function not supported by bcc
-      static
-      std::unordered_set<std::string> not_supported_leon3_functions;
+   /// The set of system function not supported by bcc
+   static std::unordered_set<std::string> not_supported_leon3_functions;
 #endif
 
-      ///Map undefined library function to corresponding header
-      static
-      std::unordered_map<std::string, std::string> undefined_library_function_include;
+   /// Map undefined library function to corresponding header
+   static std::unordered_map<std::string, std::string> undefined_library_function_include;
 
-      ///Already executed
-      bool already_executed;
+   /// Already executed
+   bool already_executed;
 
-      /**
-       * Examinate recursively the tree to detect system types and system variables
-       * @param tn is the root of the subtree to be examinated; it must be a tree_reindex
-       */
-      void recursive_examinate(const tree_nodeRef &tn);
+   /**
+    * Examinate recursively the tree to detect system types and system variables
+    * @param tn is the root of the subtree to be examinated; it must be a tree_reindex
+    */
+   void recursive_examinate(const tree_nodeRef& tn);
 
-      /**
-       * Examinate recursively the tree to detect system types and system variables
-       * @param curr_tn is the root of the subtree to be examinated; it must not be a tree_reindex
-       * @param index is the index of the tree_node
-       */
-      void recursive_examinate(const tree_nodeRef & curr_tn, const unsigned int index);
+   /**
+    * Examinate recursively the tree to detect system types and system variables
+    * @param curr_tn is the root of the subtree to be examinated; it must not be a tree_reindex
+    * @param index is the index of the tree_node
+    */
+   void recursive_examinate(const tree_nodeRef& curr_tn, const unsigned int index);
 
-      /**
-       * Check if an header is a system header
-       * @param include is the header file
-       */
-      bool is_system_include(std::string include) const;
+   /**
+    * Check if an header is a system header
+    * @param include is the header file
+    */
+   bool is_system_include(std::string include) const;
 
-      /**
-       * Build the include map, the function rename map and library system sets
-       */
-      void build_include_structures();
+   /**
+    * Build the include map, the function rename map and library system sets
+    */
+   void build_include_structures();
 
-      /**
-       * Given the string stored in a srcp of the raw return the correct include name 
-       * @param include is the string of srcp to be checked
-       * @param real_name is the string fixed
-       */
-      void getRealInclName(const std::string&include, std::string & real_name) const;
+   /**
+    * Given the string stored in a srcp of the raw return the correct include name
+    * @param include is the string of srcp to be checked
+    * @param real_name is the string fixed
+    */
+   void getRealInclName(const std::string& include, std::string& real_name) const;
 
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
+ public:
+   /**
+    * Constructor
+    * @param Param is the set of the parameters
+    * @param AppM is the application manager
+    * @param function_id is the index of the function
+    * @param design_flow_manager is the design flow manager
+    */
+   CheckSystemType(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Constructor
-       * @param Param is the set of the parameters
-       * @param AppM is the application manager
-       * @param function_id is the index of the function
-       * @param design_flow_manager is the design flow manager
-       */
-      CheckSystemType(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   /**
+    * Destructor
+    */
+   ~CheckSystemType() override;
 
-      /**
-       * Destructor
-       */
-      ~CheckSystemType() override;
+   /**
+    * Adds the system_flag to the tree_node's of variables and types when necessary
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /**
-       * Adds the system_flag to the tree_node's of variables and types when necessary
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status InternalExec() override;
-
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      bool HasToBeExecuted() const override;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 };
 #endif

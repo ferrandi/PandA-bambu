@@ -29,21 +29,21 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file hls_function_ir.hpp
  * @brief Base class for intermediate representation used by HLS ifunction steps
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef HLS_FUNCTION_IR_HPP
 #define HLS_FUNCTION_IR_HPP
 
-///Superclass include
+/// Superclass include
 #include "hls_ir.hpp"
 
-///utility include
+/// utility include
 #include "refcount.hpp"
 
 REF_FORWARD_DECL(hls);
@@ -51,25 +51,25 @@ CONSTREF_FORWARD_DECL(Parameter);
 
 class HLSFunctionIR : public HLSIR
 {
-   protected:
-      ///The hls of the function
-      hlsRef hls;
+ protected:
+   /// The hls of the function
+   hlsRef hls;
 
-      ///The index of the function to which this IR is associated
-      const unsigned int function_index;
+   /// The index of the function to which this IR is associated
+   const unsigned int function_index;
 
-   public:
-      /**
-       * Constructor
-       * @param hls_manager is the HLS manager
-       * @param function_index is the index of the function to which this IR is associated
-       * @param parameters is the set of input parameters
-       */
-      HLSFunctionIR(const HLS_managerRef hls_manager, const unsigned int function_index, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor
+    * @param hls_manager is the HLS manager
+    * @param function_index is the index of the function to which this IR is associated
+    * @param parameters is the set of input parameters
+    */
+   HLSFunctionIR(const HLS_managerRef hls_manager, const unsigned int function_index, const ParameterConstRef parameters);
 
-      /**
-       * Destructor
-       */
-      ~HLSFunctionIR() override;
+   /**
+    * Destructor
+    */
+   ~HLSFunctionIR() override;
 };
 #endif

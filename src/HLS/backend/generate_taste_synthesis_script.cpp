@@ -29,30 +29,30 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file generate_taste_synthesis_script.cpp
  * @brief Wrapper used to generate synthesis script for taste
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "generate_taste_synthesis_script.hpp"
 
-///HLS include
+/// HLS include
 #include "hls_manager.hpp"
 
-///wrapper/synthesis include
+/// wrapper/synthesis include
 #include "BackendFlow.hpp"
 
-GenerateTasteSynthesisScript::GenerateTasteSynthesisScript(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) :
-   HLS_step(_Param, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::GENERATE_TASTE_SYNTHESIS_SCRIPT)
-{}
+GenerateTasteSynthesisScript::GenerateTasteSynthesisScript(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
+    : HLS_step(_Param, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::GENERATE_TASTE_SYNTHESIS_SCRIPT)
+{
+}
 
-GenerateTasteSynthesisScript::~GenerateTasteSynthesisScript()
-= default;
+GenerateTasteSynthesisScript::~GenerateTasteSynthesisScript() = default;
 
 DesignFlowStep_Status GenerateTasteSynthesisScript::Exec()
 {
@@ -65,27 +65,26 @@ bool GenerateTasteSynthesisScript::HasToBeExecuted() const
    return true;
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > GenerateTasteSynthesisScript::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> GenerateTasteSynthesisScript::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ret;
+   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
-         {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_TASTE_HDL_ARCHITECTURE, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
-            break;
-         }
+      {
+         ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_TASTE_HDL_ARCHITECTURE, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+         break;
+      }
       case INVALIDATION_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       case PRECEDENCE_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       default:
          THROW_UNREACHABLE("");
    }
    return ret;
 }
-

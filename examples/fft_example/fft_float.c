@@ -112,8 +112,7 @@ main (void)
     }
   printf ("\n");
 
-  i = FFT(1, 7, &x, &y);
-
+  i = FFT(1, 7, x, y);
   for (i = 0; i < 128; i++)
     {
       printf ("%d %e %e\n", i, 

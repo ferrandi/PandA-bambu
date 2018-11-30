@@ -38,16 +38,14 @@
 #ifndef WB4INTERCON_INTERFACE_H
 #define WB4INTERCON_INTERFACE_H
 
-
 #include "WB4_interface.hpp"
-
 
 /**
  * @brief Class generating the top WB4 module.
  */
 class WB4Intercon_interface : public WB4_interface
 {
-  public:
+ public:
    /**
     * Constructor.
     */

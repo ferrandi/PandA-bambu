@@ -41,40 +41,55 @@
 #include "clique_covering_graph.hpp"
 #include "filter_clique.hpp"
 
-
-
-template<typename vertex_type>
+template <typename vertex_type>
 struct check_clique
 {
-      virtual ~check_clique() = default;
+   virtual ~check_clique() = default;
 
-      virtual bool check_edge_compatibility(C_vertex& rep, C_vertex& other)  = 0;
+   virtual bool check_edge_compatibility(C_vertex& rep, C_vertex& other) = 0;
 
-      virtual bool check_no_mux_needed(C_vertex& rep, C_vertex& other) = 0;
+   virtual bool check_no_mux_needed(C_vertex& rep, C_vertex& other) = 0;
 
-      virtual check_clique* clone() const = 0;
+   virtual check_clique* clone() const = 0;
 
-      virtual double cost(size_t clique_count) = 0;
+   virtual double cost(size_t clique_count) = 0;
 
-      virtual size_t num_mux() = 0;
+   virtual size_t num_mux() = 0;
 
-      virtual void update_after_join(C_vertex& , C_vertex&) = 0;
+   virtual void update_after_join(C_vertex&, C_vertex&) = 0;
 
-      virtual void initialize_structures(boost_cc_compatibility_graph& , std::map<C_vertex, vertex_type>& )  = 0 ;
-
+   virtual void initialize_structures(boost_cc_compatibility_graph&, std::map<C_vertex, vertex_type>&) = 0;
 };
 
-template<typename vertex_type>
+template <typename vertex_type>
 struct no_check_clique : public check_clique<vertex_type>
 {
-      bool check_edge_compatibility(C_vertex& , C_vertex&) override  {return true;}
-      bool check_no_mux_needed(C_vertex& , C_vertex& ) override  {return true;}
-      no_check_clique* clone() const override { return new no_check_clique(*this);}
-      double cost(size_t clique_count) override {return static_cast<double>(clique_count);}
-      size_t num_mux() override {return 0;}
-      void update_after_join(C_vertex& , C_vertex&) override {}
-      void initialize_structures(boost_cc_compatibility_graph& , std::map<C_vertex, vertex_type>& ) override{}
-
+   bool check_edge_compatibility(C_vertex&, C_vertex&) override
+   {
+      return true;
+   }
+   bool check_no_mux_needed(C_vertex&, C_vertex&) override
+   {
+      return true;
+   }
+   no_check_clique* clone() const override
+   {
+      return new no_check_clique(*this);
+   }
+   double cost(size_t clique_count) override
+   {
+      return static_cast<double>(clique_count);
+   }
+   size_t num_mux() override
+   {
+      return 0;
+   }
+   void update_after_join(C_vertex&, C_vertex&) override
+   {
+   }
+   void initialize_structures(boost_cc_compatibility_graph&, std::map<C_vertex, vertex_type>&) override
+   {
+   }
 };
 
 #endif

@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 
 /**
  * @file target_technology.hpp
@@ -45,7 +45,7 @@
 #ifndef _TARGET_TECHNOLOGY_HPP_
 #define _TARGET_TECHNOLOGY_HPP_
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_CMOS_BUILT.hpp"
 
 #include "refcount.hpp"
@@ -55,117 +55,111 @@ class xml_element;
 
 #include "exceptions.hpp"
 
-#include <string>
 #include <map>
+#include <string>
 
 class target_technology
 {
-   public:
-
-      ///target technologies currently implemented
-      typedef enum
-      {
+ public:
+   /// target technologies currently implemented
+   typedef enum
+   {
 #if HAVE_CMOS_BUILT
-         CMOS = 0, /// integrated circuits through CMOS technology
+      CMOS = 0, /// integrated circuits through CMOS technology
 #endif
-         FPGA = 1  /// FPGA devices
-      } target_t;
+      FPGA = 1 /// FPGA devices
+   } target_t;
 
-   protected:
+ protected:
+   /// Class containing all the parameters
+   const ParameterConstRef Param;
 
-      ///Class containing all the parameters
-      const ParameterConstRef Param;
+   /// Technology type
+   target_t type;
 
-      ///Technology type
-      target_t type;
+   /// Map containing all the parameters of the technology. All the values are stored as strings and they have correctly converted through the get_parameter template.
+   std::map<std::string, std::string> parameters;
 
-      ///Map containing all the parameters of the technology. All the values are stored as strings and they have correctly converted through the get_parameter template.
-      std::map<std::string, std::string> parameters;
+   /**
+    * Method to read an XML file and identify the section containing technology-related parameters
+    * @param node is the root node for the analysis
+    */
+   void xload(const xml_element* node);
 
-      /**
-       * Method to read an XML file and identify the section containing technology-related parameters
-       * @param node is the root node for the analysis
-       */
-      void xload(const xml_element* node);
+   /**
+    * Method to read the part of the XML file related to technology parameters
+    * @param tech_xml is the node where the analysis will be performed
+    */
+   void xload_technology_parameters(const xml_element* tech_xml);
 
-      /**
-       * Method to read the part of the XML file related to technology parameters
-       * @param tech_xml is the node where the analysis will be performed
-       */
-      void xload_technology_parameters(const xml_element* tech_xml);
+ public:
+   /**
+    * Constructor.
+    */
+   explicit target_technology(const ParameterConstRef& param);
 
-   public:
+   /**
+    * Destructor.
+    */
+   virtual ~target_technology();
 
-      /**
-       * Constructor.
-       */
-      explicit target_technology(const ParameterConstRef param);
+   /**
+    * Initializes the target technology based on the given parameters
+    */
+   virtual void initialize() = 0;
 
-      /**
-       * Destructor.
-       */
-      virtual ~target_technology();
+   /**
+    * Factory method. Creates the datastructure of the given type
+    * @param type is the type of the target technology to be created
+    * @param param is the datastructure containing all the parameters
+    * @return a reference to the specialization of the target technology datastructure
+    */
+   static target_technologyRef create_technology(const target_t type, const ParameterConstRef& param);
 
-      /**
-       * Initializes the target technology based on the given parameters
-       */
-      virtual void initialize() = 0;
+   /**
+    * Returns the type of the technology currently implemented.
+    * @return the type of the technology
+    */
+   target_t get_type() const;
 
-      /**
-       * Factory method. Creates the datastructure of the given type
-       * @param type is the type of the target technology to be created
-       * @param param is the datastructure containing all the parameters
-       * @return a reference to the specialization of the target technology datastructure
-       */
-      static
-      target_technologyRef create_technology(const target_t type, const ParameterConstRef param);
+   /**
+    * Returns the type of the technology currently implemented in a string format.
+    * @return a string representing the type of the technology
+    */
+   virtual std::string get_string_type() const = 0;
 
-      /**
-       * Returns the type of the technology currently implemented.
-       * @return the type of the technology
-       */
-      target_t get_type() const;
+   /**
+    * Returns the value of the specified parameter, if any. Otherwise, it throws an exception.
+    * @param key it is the string identifier of the parameter to be returned
+    */
+   template <typename G>
+   G get_parameter(const std::string& key) const
+   {
+      if(parameters.find(key) == parameters.end())
+         THROW_ERROR("Parameter \"" + key + "\" not found in target technology parameters' list");
+      return boost::lexical_cast<G>(parameters.find(key)->second);
+   }
 
-      /**
-       * Returns the type of the technology currently implemented in a string format.
-       * @return a string representing the type of the technology
-       */
-      virtual std::string get_string_type() const = 0;
+   /**
+    * Sets the value of the specified parameter
+    */
+   template <typename G>
+   void set_parameter(const std::string& key, G value)
+   {
+      parameters[key] = boost::lexical_cast<std::string>(value);
+   }
 
-      /**
-       * Returns the value of the specified parameter, if any. Otherwise, it throws an exception.
-       * @param key it is the string identifier of the parameter to be returned
-       */
-      template <typename G>
-      G get_parameter(const std::string& key) const
-      {
-         if (parameters.find(key) == parameters.end())
-            THROW_ERROR("Parameter \"" + key + "\" not found in target technology parameters' list");
-         return boost::lexical_cast<G>(parameters.find(key)->second);
-      }
-
-      /**
-       * Sets the value of the specified parameter
-       */
-      template <typename G>
-      void set_parameter(const std::string& key, G value)
-      {
-         parameters[key] = boost::lexical_cast<std::string>(value);
-      }
-
-      /**
-       * Returns true if there is a value associated with the specified string identifier, false otherwise.
-       * @param key it is the string identifier of the parameter to be searched
-       */
-      bool is_parameter(const std::string& key) const
-      {
-         return parameters.find(key) != parameters.end();
-      }
+   /**
+    * Returns true if there is a value associated with the specified string identifier, false otherwise.
+    * @param key it is the string identifier of the parameter to be searched
+    */
+   bool is_parameter(const std::string& key) const
+   {
+      return parameters.find(key) != parameters.end();
+   }
 };
 
-///refcount definition for the class
+/// refcount definition for the class
 typedef refcount<target_technology> target_technologyRef;
 
 #endif
-
-

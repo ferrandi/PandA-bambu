@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
@@ -50,25 +50,24 @@
 
 REF_FORWARD_DECL(Discrepancy);
 
-extern void discrepancy_parseY
-(const std::string& fname, DiscrepancyRef Discrepancy);
+extern void discrepancy_parseY(const std::string& fname, DiscrepancyRef Discrepancy);
 
-void parse_discrepancy (const std::string& c_trace_filename, DiscrepancyRef Discrepancy)
+void parse_discrepancy(const std::string& c_trace_filename, DiscrepancyRef Discrepancy)
 {
    try
    {
       discrepancy_parseY(c_trace_filename, Discrepancy);
       return;
    }
-   catch (const char * msg)
+   catch(const char* msg)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string& msg)
+   catch(const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }
-   catch ( ... )
+   catch(...)
    {
       std::cerr << "unknown exception" << std::endl;
    }

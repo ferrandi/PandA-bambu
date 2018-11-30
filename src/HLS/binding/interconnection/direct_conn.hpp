@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file direct_conn.hpp
  * @brief Class adopted to represent direct connections inside the datapath
@@ -41,42 +41,42 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef _DIRECT_CONN_HPP_
 #define _DIRECT_CONN_HPP_
 
-#include "refcount.hpp"
 #include "connection_obj.hpp"
+#include "refcount.hpp"
 
 /**
  * Class to represent direct connections
  */
 class direct_conn : public connection_obj
 {
+ public:
+   /**
+    * Costructor.
+    */
+   explicit direct_conn(const std::set<data_transfer>& _live_variable) : connection_obj(DIRECT_CONN, _live_variable)
+   {
+   }
 
-   public:
+   /**
+    * Destructor.
+    */
+   ~direct_conn() override = default;
 
-      /**
-       * Costructor.
-       */
-      explicit direct_conn(const std::set<data_transfer>& _live_variable) :
-         connection_obj(DIRECT_CONN, _live_variable)
-      {}
-
-      /**
-       * Destructor.
-       */
-      ~direct_conn() override= default;
-
-      /**
-       * Returns the name associated with the element
-       * @return a string containing the identifier
-       */
-      const std::string get_string() const override { return "DIRECT_CONNECTION"; }
-
+   /**
+    * Returns the name associated with the element
+    * @return a string containing the identifier
+    */
+   const std::string get_string() const override
+   {
+      return "DIRECT_CONNECTION";
+   }
 };
-///refcount definition of the class
+/// refcount definition of the class
 typedef refcount<direct_conn> direct_connRef;
 
 #endif

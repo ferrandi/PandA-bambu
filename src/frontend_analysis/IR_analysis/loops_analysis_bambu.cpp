@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,66 +29,64 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file loops_analysis_bambu.cpp
  * @brief Analysis step performing loops analysis.
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 
-///Header include
+/// Header include
 #include "loops_analysis_bambu.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///algorithms/loops_detection include
+/// algorithms/loops_detection include
 #include "loop.hpp"
 #include "loops.hpp"
 
-///behavior include
+/// behavior include
 #include "application_manager.hpp"
 #include "basic_block.hpp"
 #include "function_behavior.hpp"
 
-///pragma include
+/// pragma include
 #include "pragma_manager.hpp"
 
-///tree include
+/// tree include
 #include "ext_tree_node.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
-#include "string_manipulation.hpp"          // for GET_CLASS
 
-LoopsAnalysisBambu::LoopsAnalysisBambu(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
-   FunctionFrontendFlowStep(_AppM, _function_id, LOOPS_ANALYSIS_BAMBU, _design_flow_manager, _parameters)
+LoopsAnalysisBambu::LoopsAnalysisBambu(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, LOOPS_ANALYSIS_BAMBU, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-LoopsAnalysisBambu::~LoopsAnalysisBambu()
-= default;
+LoopsAnalysisBambu::~LoopsAnalysisBambu() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > LoopsAnalysisBambu::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> LoopsAnalysisBambu::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DOM_POST_DOM_COMPUTATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LOOPS_IDENTIFICATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
-         const auto is_simd = [&] () ->bool
-         {
+         const auto is_simd = [&]() -> bool {
             const auto sl = GetPointer<const statement_list>(GET_NODE(GetPointer<const function_decl>(AppM->get_tree_manager()->CGetTreeNode(function_id))->body));
             THROW_ASSERT(sl, "");
             for(const auto& block : sl->list_of_bloc)
@@ -96,10 +94,10 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
                for(const auto& stmt : block.second->CGetStmtList())
                {
                   const auto gp = GetPointer<const gimple_pragma>(GET_NODE(stmt));
-                  if (gp and gp->scope and GetPointer<const omp_pragma>(GET_NODE(gp->scope)))
+                  if(gp and gp->scope and GetPointer<const omp_pragma>(GET_NODE(gp->scope)))
                   {
-                     const auto * sp = GetPointer<const omp_simd_pragma>(GET_NODE(gp->directive));
-                     if (sp)
+                     const auto* sp = GetPointer<const omp_simd_pragma>(GET_NODE(gp->directive));
+                     if(sp)
                      {
                         return true;
                      }
@@ -112,11 +110,11 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SERIALIZE_MUTUAL_EXCLUSIONS, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SIMPLE_CODE_MOTION, SAME_FUNCTION));
          break;
@@ -153,7 +151,7 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
       InEdgeIterator ei, ei_end;
       for(boost::tie(ei, ei_end) = boost::in_edges(header, *fbb); ei != ei_end; ei++)
       {
-         if((FB_CFG_SELECTOR) & fbb->GetSelector(*ei))
+         if((FB_CFG_SELECTOR)&fbb->GetSelector(*ei))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Feedback edge");
             feedback_edges++;
@@ -186,11 +184,11 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Single feedback loop");
 
-      ///Get last basic block of the loop
+      /// Get last basic block of the loop
       const vertex last_bb = [&]() -> vertex {
          for(boost::tie(ei, ei_end) = boost::in_edges(header, *fbb); ei != ei_end; ei++)
          {
-            if((FB_CFG_SELECTOR) & fbb->GetSelector(*ei))
+            if((FB_CFG_SELECTOR)&fbb->GetSelector(*ei))
             {
                return boost::source(*ei, *fbb);
             }
@@ -199,7 +197,7 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
       }();
       const unsigned int last_bb_index = fbb->CGetBBNodeInfo(last_bb)->block->number;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Last basic block is BB" + STR(last_bb_index));
-      ///Get exit condition of the loop
+      /// Get exit condition of the loop
       const tree_nodeRef last_stmt = GET_NODE(fbb->CGetBBNodeInfo(do_while ? last_bb : header)->block->CGetStmtList().back());
       if(last_stmt->get_kind() != gimple_cond_K)
       {
@@ -208,7 +206,7 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
       }
       const tree_nodeRef op = GET_NODE(GetPointer<const gimple_cond>(last_stmt)->op0);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Condition operand (" + op->get_kind_text() + ") is " + op->ToString());
-      const auto * cond_sn = GetPointer<const ssa_name>(op);
+      const auto* cond_sn = GetPointer<const ssa_name>(op);
       if(not cond_sn)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Argument of cond expression is not a ssa");
@@ -228,41 +226,31 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
       }
       const tree_nodeRef cond = GET_NODE(GetPointer<const gimple_assign>(cond_def)->op1);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Condition variable is assigned in " + STR(cond));
-      if(cond->get_kind() != eq_expr_K and
-            cond->get_kind() != ge_expr_K and
-            cond->get_kind() != gt_expr_K and
-            cond->get_kind() != le_expr_K and
-            cond->get_kind() != lt_expr_K and
-            cond->get_kind() != ne_expr_K and
-            cond->get_kind() != uneq_expr_K and
-            cond->get_kind() != ungt_expr_K and
-            cond->get_kind() != unge_expr_K and
-            cond->get_kind() != unle_expr_K and
-            cond->get_kind() != unlt_expr_K)
+      if(cond->get_kind() != eq_expr_K and cond->get_kind() != ge_expr_K and cond->get_kind() != gt_expr_K and cond->get_kind() != le_expr_K and cond->get_kind() != lt_expr_K and cond->get_kind() != ne_expr_K and cond->get_kind() != uneq_expr_K and
+         cond->get_kind() != ungt_expr_K and cond->get_kind() != unge_expr_K and cond->get_kind() != unle_expr_K and cond->get_kind() != unlt_expr_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Condition is not a comparison");
          continue;
       }
-      ///We assume that induction variable is the left one; if it is not, analysis will fail
-      const auto * cond_be = GetPointer<const binary_expr>(cond);
+      /// We assume that induction variable is the left one; if it is not, analysis will fail
+      const auto* cond_be = GetPointer<const binary_expr>(cond);
       const tree_nodeRef first_operand = GET_NODE(cond_be->op0);
-      ///Induction variable must be a ssa name
+      /// Induction variable must be a ssa name
       if(first_operand->get_kind() != ssa_name_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--First operand of gimple cond is not ssa_name");
          continue;
       }
-      const auto * sn = GetPointer<const ssa_name>(first_operand);
-      ///Look for its definition
-      const auto  defs = sn->CGetDefStmts();
+      const auto* sn = GetPointer<const ssa_name>(first_operand);
+      /// Look for its definition
+      const auto defs = sn->CGetDefStmts();
       if(defs.size() != 1)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Induction variable is not ssa");
          continue;
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Induction variable is " + STR(first_operand));
-      const tree_nodeRef def = [&]() -> tree_nodeRef
-      {
+      const tree_nodeRef def = [&]() -> tree_nodeRef {
          const auto temp_def = GET_NODE(*(defs.begin()));
          if(do_while)
             return temp_def;
@@ -292,13 +280,13 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
          continue;
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Induction variable is assigned in " + def->ToString());
-      const auto * ga = GetPointer<const gimple_assign>(def);
+      const auto* ga = GetPointer<const gimple_assign>(def);
       if(GET_NODE(ga->op1)->get_kind() != plus_expr_K and GET_NODE(ga->op1)->get_kind() != minus_expr_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Induction variable is not incremented or decremented");
          continue;
       }
-      const auto * be = GetPointer<const binary_expr>(GET_NODE(ga->op1));
+      const auto* be = GetPointer<const binary_expr>(GET_NODE(ga->op1));
       if(GET_NODE(be->op1)->get_kind() != integer_cst_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Induction variable is not incremnted or decremented of a constant");
@@ -322,19 +310,18 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Temp induction variable is not defined in a phi");
          continue;
       }
-      const auto * gp = GetPointer<const gimple_phi>(def2);
+      const auto* gp = GetPointer<const gimple_phi>(def2);
       if(gp->CGetDefEdgesList().size() != 2)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Phi has not two incoming definitions");
          continue;
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Init phi is " + gp->ToString());
-      const tree_nodeRef init = [&]() -> tree_nodeRef
-      {
+      const tree_nodeRef init = [&]() -> tree_nodeRef {
          for(const auto& def_edge : gp->CGetDefEdgesList())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + def_edge.first->ToString() + " comes from " + STR(def_edge.second));
-            if(def_edge.second!= last_bb_index)
+            if(def_edge.second != last_bb_index)
             {
                return def_edge.first;
             }
@@ -350,7 +337,7 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
          loop->increment = tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_NODE(be->op1)));
          if(be->get_kind() == minus_expr_K)
          {
-            loop->increment = - loop->increment;
+            loop->increment = -loop->increment;
          }
       }
       loop->upper_bound_tn = cond_be->op1;
@@ -369,7 +356,7 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
       }
       else
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Initialization " +  init->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Initialization " + init->ToString());
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bound " + GET_NODE(be->op1)->ToString());
       }
       return_value = DesignFlowStep_Status::SUCCESS;
@@ -381,4 +368,3 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
    }
    return return_value;
 }
-

@@ -29,24 +29,22 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file hls_ir.cpp
  * @brief Base class for intermediate representation used by HLS steps
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
-///Header include
+ */
+/// Header include
 #include "hls_ir.hpp"
 
-HLSIR::HLSIR(const HLS_managerRef _hls_manager, const ParameterConstRef _parameters) :
-   IntermediateRepresentation(_parameters),
-   hls_manager(HLS_managerRef(_hls_manager.get(), null_deleter()))
-{}
+HLSIR::HLSIR(const HLS_managerRef& _hls_manager, const ParameterConstRef& _parameters) : IntermediateRepresentation(_parameters), hls_manager(HLS_managerRef(_hls_manager.get(), null_deleter()))
+{
+}
 
-HLSIR::~HLSIR()
-= default;
+HLSIR::~HLSIR() = default;
 
 void HLSIR::Initialize()
 {

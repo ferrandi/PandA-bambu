@@ -34,7 +34,7 @@
  *
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  *
-*/
+ */
 
 #ifndef DISCREPANCY_HPP
 #define DISCREPANCY_HPP
@@ -52,79 +52,81 @@
 // includes from utility/
 #include "refcount.hpp"
 
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
-#include <string>
 
 struct Discrepancy
 {
-      /// Reference to the unfolded call graph used for the discrepancy analysis
-      UnfoldedCallGraph DiscrepancyCallGraph;
+   /// Reference to the unfolded call graph used for the discrepancy analysis
+   UnfoldedCallGraph DiscrepancyCallGraph;
 
-      /// UnfoldedVertexDescriptor of the root of the DiscrepancyCallGraph
-      UnfoldedVertexDescriptor unfolded_root_v;
+   /// UnfoldedVertexDescriptor of the root of the DiscrepancyCallGraph
+   UnfoldedVertexDescriptor unfolded_root_v;
 
-      /**
-       * A map to store the vcd signals to be dumped. The key is the scope, and
-       * the mapped set contains all the signals to be dumped for that scope
-       */
-      std::unordered_map<std::string, std::unordered_set<std::string> > selected_vcd_signals;
+   /**
+    * A map to store the vcd signals to be dumped. The key is the scope, and
+    * the mapped set contains all the signals to be dumped for that scope
+    */
+   std::unordered_map<std::string, std::unordered_set<std::string>> selected_vcd_signals;
 
-      /**
-       * A map to store the name of the output signal of every operation.
-       * The key is the operation id, the mapped value is the signal name
-       */
-      std::unordered_map<unsigned int, std::string> opid_to_outsignal;
+   /**
+    * A map to store the name of the output signal of every operation.
+    * The key is the operation id, the mapped value is the signal name
+    */
+   std::unordered_map<unsigned int, std::string> opid_to_outsignal;
 
-      /// Map every vertex of the UnfoldedCallGraph to a scope in HW
-      std::unordered_map<UnfoldedVertexDescriptor, std::string> unfolded_v_to_scope;
+   /// Map every vertex of the UnfoldedCallGraph to a scope in HW
+   std::unordered_map<UnfoldedVertexDescriptor, std::string> unfolded_v_to_scope;
 
-      /// Map every fun_id to the set of HW scopes of the functional modules
-      std::unordered_map<unsigned int, std::set<std::string> > f_id_to_scope;
+   /// Map every fun_id to the set of HW scopes of the functional modules
+   std::unordered_map<unsigned int, std::set<std::string>> f_id_to_scope;
 
-      /**
-       * Set of tree nodes representing the ssa_name to be skipped in discrepancy analysis
-       */
-      TreeNodeSet ssa_to_skip;
+   /**
+    * Set of tree nodes representing the ssa_name to be skipped in discrepancy analysis
+    */
+   TreeNodeSet ssa_to_skip;
 
-      /**
-       * Set of tree nodes. SSA in this set must not be checked in the
-       * discrepancy analysis if they are also marked as addresses.
-       */
-      TreeNodeSet ssa_to_skip_if_address;
+   /**
+    * Set of tree nodes. SSA in this set must not be checked in the
+    * discrepancy analysis if they are also marked as addresses.
+    */
+   TreeNodeSet ssa_to_skip_if_address;
 
-      /**
-       * Set of tree nodes representing the ssa_name to be treated as addresses in discrepancy analysis
-       */
-      TreeNodeSet address_ssa;
+   /**
+    * Set of tree nodes representing the ssa_name to be treated as addresses in discrepancy analysis
+    */
+   TreeNodeSet address_ssa;
 
-      /**
-       * Map a discrepancy info to the list of pairs representing the
-       * corresponding assignments in C. The firts element of every pair is the
-       * context, the second element of the pair (the string) is the binary
-       * string representation assigned by the operation identified by the
-       * primary key.
-       */
-      std::map<DiscrepancyOpInfo, std::list<std::pair<uint64_t, std::string> > > c_op_trace;
+   /**
+    * Map a discrepancy info to the list of pairs representing the
+    * corresponding assignments in C. The firts element of every pair is the
+    * context, the second element of the pair (the string) is the binary
+    * string representation assigned by the operation identified by the
+    * primary key.
+    */
+   std::map<DiscrepancyOpInfo, std::list<std::pair<uint64_t, std::string>>> c_op_trace;
 
-      /**
-       * Address map used for address discrepancy analysis. The primary key is
-       * the context, the secondary key is the variable id, the mapped value is
-       * the base address
-       */
-      std::unordered_map<uint64_t, std::unordered_map<unsigned int, uint64_t> > c_addr_map;
+   /**
+    * Address map used for address discrepancy analysis. The primary key is
+    * the context, the secondary key is the variable id, the mapped value is
+    * the base address
+    */
+   std::unordered_map<uint64_t, std::unordered_map<unsigned int, uint64_t>> c_addr_map;
 
-      /**
-       * Maps every call context in the discrepancy trace to the corresponding
-       * scope in the generated HW.
-       */
-      std::unordered_map<uint64_t, std::string> context_to_scope;
+   /**
+    * Maps every call context in the discrepancy trace to the corresponding
+    * scope in the generated HW.
+    */
+   std::unordered_map<uint64_t, std::string> context_to_scope;
 
-      unsigned long long n_total_operations = 0;
+   unsigned long long n_total_operations = 0;
 
-      unsigned long long n_checked_operations = 0;
+   unsigned long long n_checked_operations = 0;
 
-      Discrepancy(void) : DiscrepancyCallGraph(GraphInfoRef(new GraphInfo())) {}
+   Discrepancy(void) : DiscrepancyCallGraph(GraphInfoRef(new GraphInfo()))
+   {
+   }
 };
 
 typedef refcount<Discrepancy> DiscrepancyRef;

@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file verilog_writer.hpp
  * @brief Class for system verilog writing. Currently only system verilog provided descriptions are managed.
@@ -39,7 +39,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef SYSTEM_VERILOG_WRITER_HPP
 #define SYSTEM_VERILOG_WRITER_HPP
 
@@ -47,33 +47,37 @@
 
 class system_verilog_writer : public verilog_writer
 {
-   public:
+ public:
+   /**
+    * Return the name of the language writer.
+    */
+   std::string get_name() const override
+   {
+      return "system_verilog";
+   }
+   /**
+    * Return the filename extension associted with the verilog_writer.
+    */
+   std::string get_extension() const override
+   {
+      return ".sv";
+   }
 
-      /**
-       * Return the name of the language writer.
-      */
-      std::string get_name() const override {return "system_verilog";}
-      /**
-       * Return the filename extension associted with the verilog_writer.
-      */
-      std::string get_extension() const override {return ".sv";}
+   /**
+    * Write in the proper language the behavioral description of the module described in "Not Parsed" form.
+    * @param cir is the component.
+    */
+   void write_NP_functionalities(const structural_objectRef& cir) override;
 
-      /**
-       * Write in the proper language the behavioral description of the module described in "Not Parsed" form.
-       * @param cir is the component.
-      */
-      void write_NP_functionalities(const structural_objectRef &cir) override;
+   /**
+    * Constructor
+    */
+   explicit system_verilog_writer(const ParameterConstRef parameters);
 
-      /**
-       * Constructor
-       */
-      explicit system_verilog_writer(const ParameterConstRef parameters);
-
-      /**
-       * Destructor
-       */
-      ~system_verilog_writer() override;
-
+   /**
+    * Destructor
+    */
+   ~system_verilog_writer() override;
 };
 
 #endif

@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file liberty_model.hpp
  * @brief Class specification for the timing model based on liberty information
@@ -39,7 +39,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef _LIBERTY_MODEL_HPP_
 #define _LIBERTY_MODEL_HPP_
 
@@ -51,46 +51,51 @@ REF_FORWARD_DECL(timing_group);
 
 class liberty_model : public time_model
 {
-      double drive_strength;
+   double drive_strength;
 
-      double skew;
+   double skew;
 
-      std::map<std::string, std::map<std::set<std::string>, timing_groupRef> > timing_groups;
+   std::map<std::string, std::map<std::set<std::string>, timing_groupRef>> timing_groups;
 
-   public:
+ public:
+   /**
+    * @name Constructors and destructors.
+    */
+   //@{
+   /**
+    * Constructor
+    */
+   explicit liberty_model(const ParameterConstRef Param);
 
-      /**
-       * @name Constructors and destructors.
-       */
-      //@{
-      /**
-       * Constructor
-       */
-      explicit liberty_model(const ParameterConstRef Param);
+   /**
+    * Destructor
+    */
+   ~liberty_model() override;
+   //@}
 
-      /**
-       * Destructor
-       */
-      ~liberty_model() override;
-      //@}
+   void xwrite(xml_element* pin_node, const std::string& output_pin) override;
 
-      void xwrite(xml_element* pin_node, const std::string& output_pin) override;
+   void add_timing_group(const std::string& output, const std::set<std::string>& inputs, const timing_groupRef& tg);
 
-      void add_timing_group(const std::string& output, const std::set<std::string>& inputs, const timing_groupRef& tg);
+   std::map<std::string, std::map<std::set<std::string>, timing_groupRef>> get_timing_groups() const
+   {
+      return timing_groups;
+   }
 
-      std::map<std::string, std::map<std::set<std::string>, timing_groupRef> > get_timing_groups() const { return timing_groups; }
+   void set_timing_groups(const std::map<std::string, std::map<std::set<std::string>, timing_groupRef>>& timing_groups_);
 
-      void set_timing_groups(const std::map<std::string, std::map<std::set<std::string>, timing_groupRef> >& timing_groups_);
+   bool has_timing_groups() const
+   {
+      return (timing_groups.size() > 0);
+   }
 
-      bool has_timing_groups() const { return (timing_groups.size() > 0); }
+   void set_drive_strength(double value);
 
-      void set_drive_strength(double value);
+   double get_drive_strength() const;
 
-      double get_drive_strength() const;
+   void set_skew_value(double value);
 
-      void set_skew_value(double value);
-
-      double get_skew_value() const;
+   double get_skew_value() const;
 };
 
 typedef refcount<liberty_model> liberty_modelRef;

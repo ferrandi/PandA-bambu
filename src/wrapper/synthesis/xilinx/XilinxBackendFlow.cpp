@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file XilinxBackendFlow.cpp
  * @brief Implementation of the wrapper to Xilinx tools
@@ -40,43 +40,42 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
-///Header include
+ */
+/// Header include
 #include "XilinxBackendFlow.hpp"
 
 #include "config_HAVE_XILINX.hpp"
 #include "config_XILINX_SETTINGS.hpp"
 #include "config_XILINX_VIVADO_SETTINGS.hpp"
 
-///constants include
+/// constants include
 #include "synthesis_constants.hpp"
 
-#include "target_manager.hpp"
-#include "target_device.hpp"
+#include "LUT_model.hpp"
 #include "area_model.hpp"
 #include "clb_model.hpp"
-#include "time_model.hpp"
-#include "LUT_model.hpp"
 #include "map_wrapper.hpp"
+#include "target_device.hpp"
+#include "target_manager.hpp"
+#include "time_model.hpp"
 #include "trce_wrapper.hpp"
 
 #include "XilinxWrapper.hpp"
 
-#include "xml_script_command.hpp"
-#include "xml_dom_parser.hpp"
 #include "Parameter.hpp"
 #include "fileIO.hpp"
+#include "xml_dom_parser.hpp"
+#include "xml_script_command.hpp"
 
-///circuit include
+/// circuit include
 #include "structural_objects.hpp"
 
-#include "string_manipulation.hpp"          // for GET_CLASS
+#include "string_manipulation.hpp" // for GET_CLASS
 
-
-#define XST_NUMBER_OF_SLICE_REGISTERS           "XST_NUMBER_OF_SLICE_REGISTERS"
-#define XST_NUMBER_OF_SLICE_LUTS                "XST_NUMBER_OF_SLICE_LUTS"
-#define XST_NUMBER_OF_LUT_FLIP_FLOP_PAIRS_USED  "XST_NUMBER_OF_LUT_FLIP_FLOP_PAIRS_USED"
-#define XST_NUMBER_OF_BLOCK_RAMFIFO             "XST_NUMBER_OF_BLOCK_RAMFIFO"
+#define XST_NUMBER_OF_SLICE_REGISTERS "XST_NUMBER_OF_SLICE_REGISTERS"
+#define XST_NUMBER_OF_SLICE_LUTS "XST_NUMBER_OF_SLICE_LUTS"
+#define XST_NUMBER_OF_LUT_FLIP_FLOP_PAIRS_USED "XST_NUMBER_OF_LUT_FLIP_FLOP_PAIRS_USED"
+#define XST_NUMBER_OF_BLOCK_RAMFIFO "XST_NUMBER_OF_BLOCK_RAMFIFO"
 
 #define VIVADO_XILINX_LUT_FLIP_FLOP_PAIRS_USED "XILINX_LUT_FLIP_FLOP_PAIRS_USED"
 #define VIVADO_XILINX_SLICE "XILINX_SLICE"
@@ -89,51 +88,51 @@
 #define VIVADO_XILINX_POWER "XILINX_POWER"
 #define VIVADO_XILINX_DESIGN_DELAY "XILINX_DESIGN_DELAY"
 
-XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _target) :
-   BackendFlow(_Param, _flow_name, _target)
+XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _target) : BackendFlow(_Param, _flow_name, _target)
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Creating Xilinx Backend Flow ::.");
    boost::filesystem::create_directories(UCF_SUBDIR);
 
    default_data["Virtex-4"] =
-      #include "Virtex-4.data"
-         ;
+#include "Virtex-4.data"
+       ;
 #if HAVE_TASTE
    default_data["Virtex-4-Taste"] =
-      #include "Virtex-4-Taste.data"
-         ;
+#include "Virtex-4-Taste.data"
+       ;
 #endif
    default_data["Virtex-5"] =
-      #include "Virtex-5.data"
-         ;
+#include "Virtex-5.data"
+       ;
    default_data["Virtex-6"] =
-      #include "Virtex-6.data"
-         ;
+#include "Virtex-6.data"
+       ;
    default_data["Virtex-7"] =
-      #include "Virtex-7.data"
-         ;
+#include "Virtex-7.data"
+       ;
    default_data["Virtex-7-VVD"] =
-      #include "Virtex-7-VVD.data"
-         ;
+#include "Virtex-7-VVD.data"
+       ;
    default_data["Artix-7-VVD"] =
-      #include "Artix-7-VVD.data"
-         ;
+#include "Artix-7-VVD.data"
+       ;
    default_data["Zynq-VVD"] =
-      #include "Zynq-VVD.data"
-         ;
+#include "Zynq-VVD.data"
+       ;
    default_data["Zynq-YOSYS-VVD"] =
-      #include "Zynq-YOSYS-VVD.data"
-         ;
+#include "Zynq-YOSYS-VVD.data"
+       ;
    default_data["Zynq"] =
-      #include "Zynq.data"
-         ;
+#include "Zynq.data"
+       ;
 
    XMLDomParserRef parser;
-   if (Param->isOption(OPT_target_device_script))
+   if(Param->isOption(OPT_target_device_script))
    {
       std::string xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
-      if (!boost::filesystem::exists(xml_file_path)) THROW_ERROR("File \"" + xml_file_path + "\" does not exist!");
+      if(!boost::filesystem::exists(xml_file_path))
+         THROW_ERROR("File \"" + xml_file_path + "\" does not exist!");
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Importing scripts from file: " + xml_file_path);
       parser = XMLDomParserRef(new XMLDomParser(xml_file_path));
    }
@@ -151,7 +150,7 @@ XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::
          device_string = device_string + "-Taste";
       }
 #endif
-      if (default_data.find(device_string) == default_data.end())
+      if(default_data.find(device_string) == default_data.end())
          THROW_ERROR("Device family \"" + device_string + "\" not supported!");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Importing default scripts for target device family: " + device_string);
       parser = XMLDomParserRef(new XMLDomParser(device_string, default_data[device_string]));
@@ -159,22 +158,21 @@ XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::
    parse_flow(parser);
 }
 
-XilinxBackendFlow::~XilinxBackendFlow()
-= default;
+XilinxBackendFlow::~XilinxBackendFlow() = default;
 
 void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
 {
    std::ifstream output_file(fn.c_str());
-   if (output_file.is_open())
+   if(output_file.is_open())
    {
       while(!output_file.eof())
       {
          std::string line;
-         getline (output_file, line);
-         if (line.size() and line.find("Number of Slice Registers:") != std::string::npos)
+         getline(output_file, line);
+         if(line.size() and line.find("Number of Slice Registers:") != std::string::npos)
          {
             std::string tk = "Number of Slice Registers:";
-            std::string token = line.substr(line.find(tk) + tk.size()+1, line.length());
+            std::string token = line.substr(line.find(tk) + tk.size() + 1, line.length());
             boost::algorithm::trim(token);
             token = token.substr(0, token.find(" "));
             boost::algorithm::trim(token);
@@ -184,10 +182,10 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             auto* clb_m = GetPointer<clb_model>(area_m);
             clb_m->set_resource_value(clb_model::REGISTERS, boost::lexical_cast<unsigned int>(token));
          }
-         else if (line.size() and line.find("Number of Slice Flip Flops:") != std::string::npos)
+         else if(line.size() and line.find("Number of Slice Flip Flops:") != std::string::npos)
          {
             std::string tk = "Number of Slice Flip Flops:";
-            std::string token = line.substr(line.find(tk) + tk.size()+1, line.length());
+            std::string token = line.substr(line.find(tk) + tk.size() + 1, line.length());
             boost::algorithm::trim(token);
             token = token.substr(0, token.find(" "));
             boost::algorithm::trim(token);
@@ -197,10 +195,10 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             auto* clb_m = GetPointer<clb_model>(area_m);
             clb_m->set_resource_value(clb_model::REGISTERS, boost::lexical_cast<unsigned int>(token));
          }
-         else if (line.size() and line.find("Number of 4 input LUTs:") != std::string::npos)
+         else if(line.size() and line.find("Number of 4 input LUTs:") != std::string::npos)
          {
             std::string tk = "Number of 4 input LUTs:";
-            std::string token = line.substr(line.find(tk) + tk.size()+1, line.length());
+            std::string token = line.substr(line.find(tk) + tk.size() + 1, line.length());
             boost::algorithm::trim(token);
             token = token.substr(0, token.find(" "));
             boost::algorithm::trim(token);
@@ -210,10 +208,10 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             auto* clb_m = GetPointer<clb_model>(area_m);
             clb_m->set_resource_value(clb_model::SLICE_LUTS, boost::lexical_cast<unsigned int>(token));
          }
-         else if (line.size() and line.find("Number of Slice LUTs:") != std::string::npos)
+         else if(line.size() and line.find("Number of Slice LUTs:") != std::string::npos)
          {
             std::string tk = "Number of Slice LUTs:";
-            std::string token = line.substr(line.find(tk) + tk.size()+1, line.length());
+            std::string token = line.substr(line.find(tk) + tk.size() + 1, line.length());
             boost::algorithm::trim(token);
             token = token.substr(0, token.find(" "));
             boost::algorithm::trim(token);
@@ -223,10 +221,10 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             auto* clb_m = GetPointer<clb_model>(area_m);
             clb_m->set_resource_value(clb_model::SLICE_LUTS, boost::lexical_cast<unsigned int>(token));
          }
-         else if (line.size() and line.find("Number of occupied Slices:") != std::string::npos)
+         else if(line.size() and line.find("Number of occupied Slices:") != std::string::npos)
          {
             std::string tk = "Number of occupied Slices:";
-            std::string token = line.substr(line.find(tk) + tk.size()+1, line.length());
+            std::string token = line.substr(line.find(tk) + tk.size() + 1, line.length());
             boost::algorithm::trim(token);
             token = token.substr(0, token.find(" "));
             boost::algorithm::trim(token);
@@ -236,10 +234,10 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             auto* clb_m = GetPointer<clb_model>(area_m);
             clb_m->set_resource_value(clb_model::SLICE, boost::lexical_cast<unsigned int>(token));
          }
-         else if (line.size() and line.find("Number of LUT Flip Flop pairs used:") != std::string::npos)
+         else if(line.size() and line.find("Number of LUT Flip Flop pairs used:") != std::string::npos)
          {
             std::string tk = "Number of LUT Flip Flop pairs used:";
-            std::string token = line.substr(line.find(tk) + tk.size()+1, line.length());
+            std::string token = line.substr(line.find(tk) + tk.size() + 1, line.length());
             boost::algorithm::trim(token);
             token = token.substr(0, token.find(" "));
             boost::algorithm::trim(token);
@@ -250,10 +248,10 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             clb_m->set_resource_value(clb_model::LUT_FF_PAIRS, boost::lexical_cast<unsigned int>(token));
             clb_m->set_area_value(boost::lexical_cast<unsigned int>(token));
          }
-         else if (line.size() and line.find("Number of DSP48Es:") != std::string::npos)
+         else if(line.size() and line.find("Number of DSP48Es:") != std::string::npos)
          {
             std::string tk = "Number of DSP48Es:";
-            std::string token = line.substr(line.find(tk) + tk.size()+1, line.length());
+            std::string token = line.substr(line.find(tk) + tk.size() + 1, line.length());
             boost::algorithm::trim(token);
             token = token.substr(0, token.find(" "));
             boost::algorithm::trim(token);
@@ -263,10 +261,10 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             auto* clb_m = GetPointer<clb_model>(area_m);
             clb_m->set_resource_value(clb_model::DSP, boost::lexical_cast<unsigned int>(token));
          }
-         else if (line.size() and line.find("Number of DSP48E1s:") != std::string::npos)
+         else if(line.size() and line.find("Number of DSP48E1s:") != std::string::npos)
          {
             std::string tk = "Number of DSP48E1s:";
-            std::string token = line.substr(line.find(tk) + tk.size()+1, line.length());
+            std::string token = line.substr(line.find(tk) + tk.size() + 1, line.length());
             boost::algorithm::trim(token);
             token = token.substr(0, token.find(" "));
             boost::algorithm::trim(token);
@@ -276,10 +274,10 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             auto* clb_m = GetPointer<clb_model>(area_m);
             clb_m->set_resource_value(clb_model::DSP, boost::lexical_cast<unsigned int>(token));
          }
-         else if (line.size() and line.find("Number of BlockRAM/FIFO:") != std::string::npos)
+         else if(line.size() and line.find("Number of BlockRAM/FIFO:") != std::string::npos)
          {
             std::string tk = "Number of BlockRAM/FIFO:";
-            std::string token = line.substr(line.find(tk) + tk.size()+1, line.length());
+            std::string token = line.substr(line.find(tk) + tk.size() + 1, line.length());
             boost::algorithm::trim(token);
             token = token.substr(0, token.find(" "));
             boost::algorithm::trim(token);
@@ -289,10 +287,10 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             auto* clb_m = GetPointer<clb_model>(area_m);
             clb_m->set_resource_value(clb_model::BRAM, boost::lexical_cast<unsigned int>(token));
          }
-         else if (line.size() and line.find("Number of RAMB36E1/FIFO36E1s:") != std::string::npos)
+         else if(line.size() and line.find("Number of RAMB36E1/FIFO36E1s:") != std::string::npos)
          {
             std::string tk = "Number of RAMB36E1/FIFO36E1s:";
-            std::string token = line.substr(line.find(tk) + tk.size()+1, line.length());
+            std::string token = line.substr(line.find(tk) + tk.size() + 1, line.length());
             boost::algorithm::trim(token);
             token = token.substr(0, token.find(" "));
             boost::algorithm::trim(token);
@@ -302,10 +300,10 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             auto* clb_m = GetPointer<clb_model>(area_m);
             clb_m->set_resource_value(clb_model::BRAM, boost::lexical_cast<unsigned int>(token));
          }
-         else if (line.size() and line.find("Number of FIFO16/RAMB16s:") != std::string::npos)
+         else if(line.size() and line.find("Number of FIFO16/RAMB16s:") != std::string::npos)
          {
             std::string tk = "Number of FIFO16/RAMB16s:";
-            std::string token = line.substr(line.find(tk) + tk.size()+1, line.length());
+            std::string token = line.substr(line.find(tk) + tk.size() + 1, line.length());
             boost::algorithm::trim(token);
             token = token.substr(0, token.find(" "));
             boost::algorithm::trim(token);
@@ -325,41 +323,46 @@ void XilinxBackendFlow::xparse_xst_utilization(const std::string& fn)
    {
       XMLDomParser parser(fn);
       parser.Exec();
-      if (parser)
+      if(parser)
       {
-         //Walk the tree:
-         const xml_element* node = parser.get_document()->get_root_node(); //deleted by DomParser.
+         // Walk the tree:
+         const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
          THROW_ASSERT(node->get_name() == "document", "Wrong root name: " + node->get_name());
 
          const xml_node::node_list list_int = node->get_children();
-         for (const auto & iter_int : list_int)
+         for(const auto& iter_int : list_int)
          {
             const auto* EnodeC = GetPointer<const xml_element>(iter_int);
-            if(!EnodeC) continue;
+            if(!EnodeC)
+               continue;
 
-            if (EnodeC->get_name() == "application")
+            if(EnodeC->get_name() == "application")
             {
                const xml_node::node_list list_sec = EnodeC->get_children();
-               for (const auto & iter_sec : list_sec)
+               for(const auto& iter_sec : list_sec)
                {
                   const auto* nodeS = GetPointer<const xml_element>(iter_sec);
-                  if(!nodeS) continue;
+                  if(!nodeS)
+                     continue;
 
-                  if (nodeS->get_name() == "section")
+                  if(nodeS->get_name() == "section")
                   {
                      std::string stringID;
-                     if(CE_XVM(stringID, nodeS)) LOAD_XVM(stringID, nodeS);
-                     if (stringID == "XST_DEVICE_UTILIZATION_SUMMARY")
+                     if(CE_XVM(stringID, nodeS))
+                        LOAD_XVM(stringID, nodeS);
+                     if(stringID == "XST_DEVICE_UTILIZATION_SUMMARY")
                      {
                         const xml_node::node_list list_item = nodeS->get_children();
-                        for (const auto & it_item : list_item)
+                        for(const auto& it_item : list_item)
                         {
                            const auto* nodeIt = GetPointer<const xml_element>(it_item);
-                           if(!nodeIt or nodeIt->get_name() != "item") continue;
+                           if(!nodeIt or nodeIt->get_name() != "item")
+                              continue;
 
-                           if(CE_XVM(stringID, nodeIt)) LOAD_XVM(stringID, nodeIt);
+                           if(CE_XVM(stringID, nodeIt))
+                              LOAD_XVM(stringID, nodeIt);
 
-                           if (stringID != "XST_SELECTED_DEVICE")
+                           if(stringID != "XST_SELECTED_DEVICE")
                            {
                               std::string value;
                               if(CE_XVM(value, nodeIt))
@@ -378,16 +381,16 @@ void XilinxBackendFlow::xparse_xst_utilization(const std::string& fn)
 
          area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
          auto* clb_m = GetPointer<clb_model>(area_m);
-         if (design_values.find(XST_NUMBER_OF_SLICE_REGISTERS) != design_values.end())
+         if(design_values.find(XST_NUMBER_OF_SLICE_REGISTERS) != design_values.end())
             clb_m->set_resource_value(clb_model::REGISTERS, design_values[XST_NUMBER_OF_SLICE_REGISTERS]);
-         if (design_values.find(XST_NUMBER_OF_SLICE_LUTS) != design_values.end())
+         if(design_values.find(XST_NUMBER_OF_SLICE_LUTS) != design_values.end())
             clb_m->set_resource_value(clb_model::SLICE_LUTS, design_values[XST_NUMBER_OF_SLICE_LUTS]);
-         if (design_values.find(XST_NUMBER_OF_BLOCK_RAMFIFO) != design_values.end())
+         if(design_values.find(XST_NUMBER_OF_BLOCK_RAMFIFO) != design_values.end())
             clb_m->set_resource_value(clb_model::BRAM, design_values[XST_NUMBER_OF_BLOCK_RAMFIFO]);
 
          /// setting the global area occupation as the number of LUT/FF pairs when possible
          if(design_values.find(XST_NUMBER_OF_LUT_FLIP_FLOP_PAIRS_USED) == design_values.end())
-            design_values[XST_NUMBER_OF_LUT_FLIP_FLOP_PAIRS_USED] = 0;//it may happen when the component will be completely "destroyed" by the logic synthesisstep
+            design_values[XST_NUMBER_OF_LUT_FLIP_FLOP_PAIRS_USED] = 0; // it may happen when the component will be completely "destroyed" by the logic synthesisstep
 
          clb_m->set_resource_value(clb_model::LUT_FF_PAIRS, design_values[XST_NUMBER_OF_LUT_FLIP_FLOP_PAIRS_USED]);
          area_m->set_area_value(design_values[XST_NUMBER_OF_LUT_FLIP_FLOP_PAIRS_USED]);
@@ -395,19 +398,19 @@ void XilinxBackendFlow::xparse_xst_utilization(const std::string& fn)
          return;
       }
    }
-   catch (const char * msg)
+   catch(const char* msg)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string& msg)
+   catch(const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::exception& ex)
+   catch(const std::exception& ex)
    {
       std::cout << "Exception caught: " << ex.what() << std::endl;
    }
-   catch ( ... )
+   catch(...)
    {
       std::cerr << "unknown exception" << std::endl;
    }
@@ -417,13 +420,13 @@ void XilinxBackendFlow::xparse_xst_utilization(const std::string& fn)
 void XilinxBackendFlow::parse_timing(const std::string& log_file)
 {
    std::ifstream output_file(log_file.c_str());
-   if (output_file.is_open())
+   if(output_file.is_open())
    {
       while(!output_file.eof())
       {
          std::string line;
-         getline (output_file, line);
-         if (line.size() and line.find("Minimum period:") != std::string::npos)
+         getline(output_file, line);
+         if(line.size() and line.find("Minimum period:") != std::string::npos)
          {
             if(line.find("No path found") != std::string::npos)
             {
@@ -434,7 +437,7 @@ void XilinxBackendFlow::parse_timing(const std::string& log_file)
             else
             {
                std::string token("Minimum period:");
-               std::string tk = line.substr(line.find(token)+token.size()+1, line.size());
+               std::string tk = line.substr(line.find(token) + token.size() + 1, line.size());
                boost::trim(tk);
                tk = tk.substr(0, tk.find_first_of(' '));
                boost::replace_all(tk, "ns", "");
@@ -443,7 +446,7 @@ void XilinxBackendFlow::parse_timing(const std::string& log_file)
                lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, boost::lexical_cast<double>(tk));
                if(boost::lexical_cast<double>(tk) > Param->getOption<double>(OPT_clock_period))
                {
-                  CopyFile(Param->getOption<std::string>(OPT_output_directory)+"/Synthesis/xst/" + actual_parameters->component_name + ".log" , STR_CST_synthesis_timing_violation_report);
+                  CopyFile(Param->getOption<std::string>(OPT_output_directory) + "/Synthesis/xst/" + actual_parameters->component_name + ".log", STR_CST_synthesis_timing_violation_report);
                }
             }
          }
@@ -460,16 +463,16 @@ void XilinxBackendFlow::parse_timing(const std::string& log_file)
 void XilinxBackendFlow::parse_DSPs(const std::string& log_file)
 {
    std::ifstream output_file(log_file.c_str());
-   if (output_file.is_open())
+   if(output_file.is_open())
    {
       while(!output_file.eof())
       {
          std::string line;
-         getline (output_file, line);
-         if (line.size() and line.find("Number of DSP48Es:") != std::string::npos)
+         getline(output_file, line);
+         if(line.size() and line.find("Number of DSP48Es:") != std::string::npos)
          {
             std::string token("Number of DSP48Es:");
-            std::string tk = line.substr(line.find(token)+token.size()+1, line.size());
+            std::string tk = line.substr(line.find(token) + token.size() + 1, line.size());
             boost::trim(tk);
             tk = tk.substr(0, tk.find_first_of(' '));
             auto* clb_m = GetPointer<clb_model>(area_m);
@@ -486,21 +489,20 @@ void XilinxBackendFlow::xparse_timing(const std::string& fn, bool post)
    {
       XMLDomParser parser(fn);
       parser.Exec();
-      if (parser)
+      if(parser)
       {
-         //Walk the tree:
-         const xml_element* node = parser.get_document()->get_root_node(); //deleted by DomParser.
-         const xml_text_node * child_text = [&] () -> const xml_text_node *
-         {
+         // Walk the tree:
+         const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
+         const xml_text_node* child_text = [&]() -> const xml_text_node* {
             THROW_ASSERT(node->get_name() == "twReport", "Wrong root name: " + node->get_name());
 
             const xml_node::node_list list_int = node->get_children();
-            for (const auto & iter_int : list_int)
+            for(const auto& iter_int : list_int)
             {
                const auto* EnodeC = GetPointer<const xml_element>(iter_int);
                if(!EnodeC)
                   continue;
-               if (flow_name == "Characterization" and EnodeC->get_name() == "twBody")
+               if(flow_name == "Characterization" and EnodeC->get_name() == "twBody")
                {
                   const auto tw_slacks = EnodeC->CGetDescendants("twErrRpt/twConst/twPathRpt/twConstPath/twSlack");
                   if(tw_slacks.size() == 0)
@@ -510,23 +512,24 @@ void XilinxBackendFlow::xparse_timing(const std::string& fn, bool post)
                   const auto tw_slack = *(tw_slacks.begin());
                   THROW_ASSERT(GetPointer<const xml_element>(tw_slack), "");
                   return GetPointer<const xml_element>(tw_slack)->get_child_text();
-
                }
-               else if (EnodeC->get_name() == "twSum")
+               else if(EnodeC->get_name() == "twSum")
                {
                   const xml_node::node_list list = EnodeC->get_children();
-                  for (const auto & iter : list)
+                  for(const auto& iter : list)
                   {
                      const auto* Enode = GetPointer<const xml_element>(iter);
-                     if(!Enode) continue;
-                     if (Enode->get_name() == "twStats")
+                     if(!Enode)
+                        continue;
+                     if(Enode->get_name() == "twStats")
                      {
                         const xml_node::node_list listS = Enode->get_children();
-                        for (const auto & iterS : listS)
+                        for(const auto& iterS : listS)
                         {
                            const auto* EnodeS = GetPointer<const xml_element>(iterS);
-                           if(!EnodeS) continue;
-                           if (EnodeS->get_name() == "twMinPer" or EnodeS->get_name() == "twMaxCombDel")
+                           if(!EnodeS)
+                              continue;
+                           if(EnodeS->get_name() == "twMinPer" or EnodeS->get_name() == "twMaxCombDel")
                            {
                               return EnodeS->get_child_text();
                            }
@@ -541,7 +544,7 @@ void XilinxBackendFlow::xparse_timing(const std::string& fn, bool post)
          double period = std::abs(boost::lexical_cast<double>(child_text->get_content()));
          time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
          auto* lut_m = GetPointer<LUT_model>(time_m);
-         if (post)
+         if(post)
          {
             lut_m->set_timing_value(LUT_model::MINIMUM_PERIOD_POST_PAR, period);
          }
@@ -552,19 +555,19 @@ void XilinxBackendFlow::xparse_timing(const std::string& fn, bool post)
          return;
       }
    }
-   catch (const char * msg)
+   catch(const char* msg)
    {
       THROW_ERROR("Error during TRCE report (" + fn + ") :" + *msg);
    }
-   catch (const std::string& msg)
+   catch(const std::string& msg)
    {
       THROW_ERROR("Error during TRCE report (" + fn + ") :" + msg);
    }
-   catch (const std::exception& ex)
+   catch(const std::exception& ex)
    {
       THROW_ERROR("Error during TRCE report (" + fn + ") :" + ex.what());
    }
-   catch ( ... )
+   catch(...)
    {
       THROW_ERROR("Error during TRCE report (" + fn + ") :" + "Unknown exception");
    }
@@ -582,32 +585,28 @@ void XilinxBackendFlow::CheckSynthesisResults()
 
    if(!is_vivado)
    {
-      if (boost::filesystem::exists(actual_parameters->parameter_values[PARAM_map_report]))
+      if(boost::filesystem::exists(actual_parameters->parameter_values[PARAM_map_report]))
       {
          xparse_map_utilization(actual_parameters->parameter_values[PARAM_map_report]);
       }
-      else if (boost::filesystem::exists(actual_parameters->parameter_values[PARAM_xst_report]))
+      else if(boost::filesystem::exists(actual_parameters->parameter_values[PARAM_xst_report]))
       {
          xparse_xst_utilization(actual_parameters->parameter_values[PARAM_xst_report]);
-         if (actual_parameters->parameter_values.find(PARAM_xst_log_file) != actual_parameters->parameter_values.end() &&
-             boost::filesystem::exists(actual_parameters->parameter_values[PARAM_xst_log_file]))
+         if(actual_parameters->parameter_values.find(PARAM_xst_log_file) != actual_parameters->parameter_values.end() && boost::filesystem::exists(actual_parameters->parameter_values[PARAM_xst_log_file]))
             parse_DSPs(actual_parameters->parameter_values[PARAM_xst_log_file]);
       }
       else
          THROW_ERROR("the script does not have a synthesis step");
 
-      if (actual_parameters->parameter_values.find(PARAM_trce_report_post) != actual_parameters->parameter_values.end() &&
-          boost::filesystem::exists(actual_parameters->parameter_values[PARAM_trce_report_post]))
+      if(actual_parameters->parameter_values.find(PARAM_trce_report_post) != actual_parameters->parameter_values.end() && boost::filesystem::exists(actual_parameters->parameter_values[PARAM_trce_report_post]))
       {
          xparse_timing(actual_parameters->parameter_values[PARAM_trce_report_post], true);
       }
-      else if (actual_parameters->parameter_values.find(PARAM_trce_report_pre) != actual_parameters->parameter_values.end() &&
-               boost::filesystem::exists(actual_parameters->parameter_values[PARAM_trce_report_pre]))
+      else if(actual_parameters->parameter_values.find(PARAM_trce_report_pre) != actual_parameters->parameter_values.end() && boost::filesystem::exists(actual_parameters->parameter_values[PARAM_trce_report_pre]))
       {
          xparse_timing(actual_parameters->parameter_values[PARAM_trce_report_pre], false);
       }
-      else if (actual_parameters->parameter_values.find(PARAM_xst_log_file) != actual_parameters->parameter_values.end() &&
-               boost::filesystem::exists(actual_parameters->parameter_values[PARAM_xst_log_file]))
+      else if(actual_parameters->parameter_values.find(PARAM_xst_log_file) != actual_parameters->parameter_values.end() && boost::filesystem::exists(actual_parameters->parameter_values[PARAM_xst_log_file]))
       {
          parse_timing(actual_parameters->parameter_values[PARAM_xst_log_file]);
       }
@@ -645,7 +644,8 @@ void XilinxBackendFlow::CheckSynthesisResults()
       else
          lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, 0);
    }
-   if((output_level >= OUTPUT_LEVEL_VERY_PEDANTIC or (Param->IsParameter("DumpingTimingReport") and Param->GetParameter<int>("DumpingTimingReport"))) and ((actual_parameters->parameter_values.find(PARAM_vivado_timing_report) != actual_parameters->parameter_values.end() and ExistFile(actual_parameters->parameter_values.find(PARAM_vivado_timing_report)->second))))
+   if((output_level >= OUTPUT_LEVEL_VERY_PEDANTIC or (Param->IsParameter("DumpingTimingReport") and Param->GetParameter<int>("DumpingTimingReport"))) and
+      ((actual_parameters->parameter_values.find(PARAM_vivado_timing_report) != actual_parameters->parameter_values.end() and ExistFile(actual_parameters->parameter_values.find(PARAM_vivado_timing_report)->second))))
    {
       CopyStdout(actual_parameters->parameter_values.find(PARAM_vivado_timing_report)->second);
    }
@@ -657,39 +657,44 @@ void XilinxBackendFlow::vivado_xparse_utilization(const std::string& fn)
    {
       XMLDomParser parser(fn);
       parser.Exec();
-      if (parser)
+      if(parser)
       {
-         //Walk the tree:
-         const xml_element* node = parser.get_document()->get_root_node(); //deleted by DomParser.
+         // Walk the tree:
+         const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
          THROW_ASSERT(node->get_name() == "document", "Wrong root name: " + node->get_name());
 
          const xml_node::node_list list_int = node->get_children();
-         for (const auto & iter_int : list_int)
+         for(const auto& iter_int : list_int)
          {
             const auto* EnodeC = GetPointer<const xml_element>(iter_int);
-            if(!EnodeC) continue;
+            if(!EnodeC)
+               continue;
 
-            if (EnodeC->get_name() == "application")
+            if(EnodeC->get_name() == "application")
             {
                const xml_node::node_list list_sec = EnodeC->get_children();
-               for (const auto & iter_sec : list_sec)
+               for(const auto& iter_sec : list_sec)
                {
                   const auto* nodeS = GetPointer<const xml_element>(iter_sec);
-                  if(!nodeS) continue;
+                  if(!nodeS)
+                     continue;
 
-                  if (nodeS->get_name() == "section")
+                  if(nodeS->get_name() == "section")
                   {
                      std::string stringID;
-                     if(CE_XVM(stringID, nodeS)) LOAD_XVM(stringID, nodeS);
-                     if (stringID == "XILINX_SYNTHESIS_SUMMARY")
+                     if(CE_XVM(stringID, nodeS))
+                        LOAD_XVM(stringID, nodeS);
+                     if(stringID == "XILINX_SYNTHESIS_SUMMARY")
                      {
                         const xml_node::node_list list_item = nodeS->get_children();
-                        for (const auto & it_item : list_item)
+                        for(const auto& it_item : list_item)
                         {
                            const auto* nodeIt = GetPointer<const xml_element>(it_item);
-                           if(!nodeIt or nodeIt->get_name() != "item") continue;
+                           if(!nodeIt or nodeIt->get_name() != "item")
+                              continue;
 
-                           if(CE_XVM(stringID, nodeIt)) LOAD_XVM(stringID, nodeIt);
+                           if(CE_XVM(stringID, nodeIt))
+                              LOAD_XVM(stringID, nodeIt);
 
                            std::string value;
                            if(CE_XVM(value, nodeIt))
@@ -707,19 +712,19 @@ void XilinxBackendFlow::vivado_xparse_utilization(const std::string& fn)
          return;
       }
    }
-   catch (const char * msg)
+   catch(const char* msg)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string& msg)
+   catch(const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::exception& ex)
+   catch(const std::exception& ex)
    {
       std::cout << "Exception caught: " << ex.what() << std::endl;
    }
-   catch ( ... )
+   catch(...)
    {
       std::cerr << "unknown exception" << std::endl;
    }
@@ -739,7 +744,7 @@ void XilinxBackendFlow::WriteFlowConfiguration(std::ostream& script)
    if(setupscr.size() and setupscr != "0")
    {
       script << "#configuration" << std::endl;
-      if(boost::algorithm::starts_with(setupscr,"export"))
+      if(boost::algorithm::starts_with(setupscr, "export"))
          script << setupscr + " >& /dev/null; ";
       else
          script << ". " << setupscr << " >& /dev/null; ";
@@ -765,15 +770,15 @@ void XilinxBackendFlow::InitDesignParameters()
       actual_parameters->parameter_values[PARAM_top_id] = actual_parameters->component_name;
 
    std::string ise_style;
-   if (output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
-      ise_style =  std::string(INTSTYLE_ISE);
+   if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+      ise_style = std::string(INTSTYLE_ISE);
    else
-      ise_style =  std::string(INTSTYLE_SILENT);
+      ise_style = std::string(INTSTYLE_SILENT);
    actual_parameters->parameter_values[PARAM_ise_style] = ise_style;
 
    actual_parameters->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
 
-   ///determine if power optimization has to be performed
+   /// determine if power optimization has to be performed
    bool xpwr_enabled = false;
    if(Param->isOption("power_optimization") && Param->getOption<bool>("power_optimization"))
       xpwr_enabled = true;
@@ -796,7 +801,6 @@ void XilinxBackendFlow::InitDesignParameters()
    }
    else
       actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(false);
-
 
    bool is_vivado = false;
    if(device->get_parameter<std::string>("family").find("-VVD") != std::string::npos)
@@ -821,7 +825,7 @@ void XilinxBackendFlow::InitDesignParameters()
          else if(extension == "sv" || extension == "SV")
             sources_macro_list += "read_verilog -sv " + file_list[v];
          else
-            THROW_ERROR("Extension not recognized! "+extension);
+            THROW_ERROR("Extension not recognized! " + extension);
       }
       /// additional constraints have to be manage at this level
       if(Param->isOption(OPT_backend_sdc_extensions))
@@ -843,7 +847,7 @@ void XilinxBackendFlow::InitDesignParameters()
             else if(extension == "sv" || extension == "SV")
                sources_macro_list += "\\\"read_verilog -sv -defer " + file_list[v] + "\\\"";
             else
-               THROW_ERROR("Extension not recognized! "+extension);
+               THROW_ERROR("Extension not recognized! " + extension);
          }
          actual_parameters->parameter_values[PARAM_yosys_vivado_sources_macro_list] = sources_macro_list;
       }
@@ -853,7 +857,7 @@ void XilinxBackendFlow::InitDesignParameters()
       create_cf(actual_parameters, true);
       create_cf(actual_parameters, false);
    }
-   for (auto & step : steps)
+   for(auto& step : steps)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Evaluating variables of step " + step->name);
       step->tool->EvaluateVariables(actual_parameters);
@@ -884,6 +888,8 @@ void XilinxBackendFlow::create_cf(const DesignParametersRef dp, bool xst)
    }
 
    UCF_file.close();
-   if (xst) dp->parameter_values[PARAM_xcf_file] = ucf_filename;
-   else dp->parameter_values[PARAM_ucf_file] = ucf_filename;
+   if(xst)
+      dp->parameter_values[PARAM_xcf_file] = ucf_filename;
+   else
+      dp->parameter_values[PARAM_ucf_file] = ucf_filename;
 }

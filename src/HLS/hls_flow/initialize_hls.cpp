@@ -29,26 +29,26 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file initialize_hls.cpp
  * @brief Step which initializes HLS data structure
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "initialize_hls.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///circuit include
-#include "structural_objects.hpp"
+/// circuit include
 #include "structural_manager.hpp"
+#include "structural_objects.hpp"
 
-///HLS include
+/// HLS include
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_manager.hpp"
@@ -56,42 +56,45 @@
 
 #include "memory_allocation.hpp"
 
-///technology include
+/// technology include
 #include "technology_manager.hpp"
 
-///technology/physical_library include
+/// technology/physical_library include
 #include "technology_node.hpp"
 
-///tree include
+/// tree include
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 
-InitializeHLS::InitializeHLS(const ParameterConstRef _parameters, const HLS_managerRef _HLS_mgr, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
-   HLSFunctionStep(_parameters, _HLS_mgr, _function_id, _design_flow_manager, HLSFlowStep_Type::INITIALIZE_HLS)
-{}
-
-InitializeHLS::~InitializeHLS()
-= default;
-
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > InitializeHLS::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+InitializeHLS::InitializeHLS(const ParameterConstRef _parameters, const HLS_managerRef _HLS_mgr, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : HLSFunctionStep(_parameters, _HLS_mgr, _function_id, _design_flow_manager, HLSFlowStep_Type::INITIALIZE_HLS)
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ret;
+}
+
+InitializeHLS::~InitializeHLS() = default;
+
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> InitializeHLS::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+{
+   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       case INVALIDATION_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       case PRECEDENCE_RELATIONSHIP:
-         {
-            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_function_allocation_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
-            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_memory_allocation_algorithm), HLSFlowStepSpecializationConstRef(new MemoryAllocationSpecialization(parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy), parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type))), HLSFlowStep_Relationship::WHOLE_APPLICATION));
-            break;
-         }
+      {
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_function_allocation_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+         ret.insert(
+             std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_memory_allocation_algorithm),
+                             HLSFlowStepSpecializationConstRef(new MemoryAllocationSpecialization(parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy), parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type))),
+                             HLSFlowStep_Relationship::WHOLE_APPLICATION));
+         break;
+      }
       default:
          THROW_UNREACHABLE("");
    }
@@ -100,9 +103,8 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 
 void InitializeHLS::Initialize()
 {
-   ///NOTE: this overrides HLSFunctionStep::Initialize which cannot be invoked since HLS has not yet been set
+   /// NOTE: this overrides HLSFunctionStep::Initialize which cannot be invoked since HLS has not yet been set
 }
-
 
 DesignFlowStep_Status InitializeHLS::InternalExec()
 {
@@ -129,9 +131,9 @@ DesignFlowStep_Status InitializeHLS::InternalExec()
 #endif
    {
       HLS->controller_type = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_controller_architecture));
-      HLS->module_binding_algorithm =  static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_fu_binding_algorithm));
-      HLS->liveness_algorithm=  static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_liveness_algorithm));
-      HLS->chaining_algorithm =  static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_chaining_algorithm));
+      HLS->module_binding_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_fu_binding_algorithm));
+      HLS->liveness_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_liveness_algorithm));
+      HLS->chaining_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_chaining_algorithm));
    }
 #if 0
    fu->set_clock_period(HLS->HLS_C->get_clock_period());
@@ -139,4 +141,3 @@ DesignFlowStep_Status InitializeHLS::InternalExec()
 #endif
    return DesignFlowStep_Status::SUCCESS;
 }
-

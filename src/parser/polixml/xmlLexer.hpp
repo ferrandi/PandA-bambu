@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file xmlLexer.hpp
  * @brief header file for LEX based lexer for the xml format.
@@ -39,11 +39,11 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef XMLLEXER_HPP
 #define XMLLEXER_HPP
 
-#define LN_CONCAT(name)Xml##name
+#define LN_CONCAT(name) Xml##name
 
 #define LCLASS_SPECIALIZED
 
@@ -51,22 +51,19 @@
 
 #include "Lexer_utilities.hpp"
 
-///utility include
+/// utility include
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "exceptions.hpp"
-#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
-#include "string_manipulation.hpp"          // for STR
+#include "string_manipulation.hpp" // for STR
 
 extern int exit_code;
 
 struct XmlFlexLexer : public yyFlexLexer
 {
-   ///The name of the parsed file/string
+   /// The name of the parsed file/string
    const std::string name;
 
-   XmlFlexLexer(std::string _name,  std::istream* argin=nullptr, std::ostream* argout=nullptr) :
-      yyFlexLexer(argin, argout),
-      name(std::move(_name)),
-      keep(0)
+   XmlFlexLexer(std::string _name, std::istream* argin = nullptr, std::ostream* argout = nullptr) : yyFlexLexer(argin, argout), name(std::move(_name)), keep(0)
    {
    }
    ~XmlFlexLexer() override = default;
@@ -76,14 +73,17 @@ struct XmlFlexLexer : public yyFlexLexer
    }
    void LexerError(const char* msg) override
    {
-      INDENT_OUT_MEX(0,0, STR(msg) + " at line number |" + STR(lineno()) + "|\ttext is |" + STR(YYText()) + "|");
+      INDENT_OUT_MEX(0, 0, STR(msg) + " at line number |" + STR(lineno()) + "|\ttext is |" + STR(YYText()) + "|");
       exit_code = EXIT_FAILURE;
       THROW_ERROR("Error in parsing xml: " + name);
    }
-   int yywrap() override{return 1;}
-   ///To store start condition
+   int yywrap() override
+   {
+      return 1;
+   }
+   /// To store start condition
    int keep;
-   YYSTYPE *lvalp;
+   YYSTYPE* lvalp;
    int yylex() override;
 };
 

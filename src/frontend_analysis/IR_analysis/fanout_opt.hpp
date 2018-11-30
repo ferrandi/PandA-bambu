@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file fanout_opt.hpp
  * @brief Fanout optimization step.
@@ -39,7 +39,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef FANOUT_OPT_HPP
 #define FANOUT_OPT_HPP
@@ -56,54 +56,47 @@ REF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_node);
 //@}
 
-
-
 /**
  * @brief fanout_opt analysis
  */
 class fanout_opt : public FunctionFrontendFlowStep
 {
+ private:
+   /// The scheduling solution
+   ScheduleRef schedule;
 
-   private:
+   /// tree manager
+   const tree_managerRef TM;
 
-      ///The scheduling solution
-      ScheduleRef schedule;
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      /// tree manager
-      const tree_managerRef TM;
+   /// return true in case the use is relevant for the fanout optimization
+   bool is_dest_relevant(tree_nodeRef t, bool is_phi);
 
+ public:
+   /**
+    * Constructor.
+    * @param _Param is the set of the parameters
+    * @param _AppM is the application manager
+    * @param function_id is the identifier of the function
+    * @param design_flow_manager is the design flow manager
+    */
+   fanout_opt(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
-      const std::unordered_set< std::pair<FrontendFlowStepType, FunctionRelationship> >
-      ComputeFrontendRelationships (const DesignFlowStep::RelationshipType relationship_type) const override;
+   /**
+    *  Destructor
+    */
+   ~fanout_opt() override;
+   /**
+    * perform fanout_opt analysis
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /// return true in case the use is relevant for the fanout optimization
-      bool is_dest_relevant(tree_nodeRef t, bool is_phi);
-
-   public:
-      /**
-       * Constructor.
-       * @param _Param is the set of the parameters
-       * @param _AppM is the application manager
-       * @param function_id is the identifier of the function
-       * @param design_flow_manager is the design flow manager
-       */
-      fanout_opt (const ParameterConstRef Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
-
-      /**
-       *  Destructor
-       */
-      ~fanout_opt () override;
-      /**
-       * perform fanout_opt analysis
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status
-         InternalExec () override;
-
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec)
-       */
-      void Initialize() override;
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec)
+    */
+   void Initialize() override;
 };
 
 #endif /* FANOUT_OPT_HPP */

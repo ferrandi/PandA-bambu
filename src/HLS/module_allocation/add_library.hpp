@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file add_library.hpp
  * @brief This step adds the current module to the technology library
@@ -39,15 +39,15 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef ADD_LIBRARY_HPP
 #define ADD_LIBRARY_HPP
 
-#include <string>                 // for string
-#include "design_flow_step.hpp"   // for DesignFlowManagerConstRef, DesignFl...
-#include "hls_function_step.hpp"  // for HLSFunctionStep
-#include "hls_step.hpp"           // for HLSFlowStepSpecialization, HLSFlowS...
-#include "refcount.hpp"           // for REF_FORWARD_DECL
+#include "design_flow_step.hpp"  // for DesignFlowManagerConstRef, DesignFl...
+#include "hls_function_step.hpp" // for HLSFunctionStep
+#include "hls_step.hpp"          // for HLSFlowStepSpecialization, HLSFlowS...
+#include "refcount.hpp"          // for REF_FORWARD_DECL
+#include <string>                // for string
 
 REF_FORWARD_DECL(add_library);
 CONSTREF_FORWARD_DECL(Parameter);
@@ -57,53 +57,53 @@ CONSTREF_FORWARD_DECL(Parameter);
  */
 class AddLibrarySpecialization : public HLSFlowStepSpecialization
 {
-   public:
-      ///True if we are adding module with interface
-      const bool interfaced;
+ public:
+   /// True if we are adding module with interface
+   const bool interfaced;
 
-      /**
-       * Constructor
-       * @param interfaced is true if we are adding module with interface
-       */
-      explicit AddLibrarySpecialization(const bool interfaced);
+   /**
+    * Constructor
+    * @param interfaced is true if we are adding module with interface
+    */
+   explicit AddLibrarySpecialization(const bool interfaced);
 
-      /**
-       * Return the string representation of this
-       */
-      const std::string GetKindText() const override;
+   /**
+    * Return the string representation of this
+    */
+   const std::string GetKindText() const override;
 
-      /**
-       * Return the contribution to the signature of a step given by the specialization
-       */
-      const std::string GetSignature() const override;
+   /**
+    * Return the contribution to the signature of a step given by the specialization
+    */
+   const std::string GetSignature() const override;
 };
 
 class add_library : public HLSFunctionStep
 {
-   private:
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+ private:
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor
-       * @param design_flow_manager is the design flow manager
-       */
-      add_library(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
+ public:
+   /**
+    * Constructor
+    * @param design_flow_manager is the design flow manager
+    */
+   add_library(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
 
-      /**
-       * Destructor
-       */
-      ~add_library() override;
+   /**
+    * Destructor
+    */
+   ~add_library() override;
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status InternalExec() override;
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 };
 
 #endif // ADD_LIBRARY_HPP

@@ -11,19 +11,19 @@
  *  Copyright , Mentor Graphics Corporation,                     *
  *                                                                        *
  *  All Rights Reserved.                                                  *
- *  
+ *
  **************************************************************************
  *  Licensed under the Apache License, Version 2.0 (the "License");       *
- *  you may not use this file except in compliance with the License.      * 
+ *  you may not use this file except in compliance with the License.      *
  *  You may obtain a copy of the License at                               *
  *                                                                        *
  *      http://www.apache.org/licenses/LICENSE-2.0                        *
  *                                                                        *
- *  Unless required by applicable law or agreed to in writing, software   * 
- *  distributed under the License is distributed on an "AS IS" BASIS,     * 
+ *  Unless required by applicable law or agreed to in writing, software   *
+ *  distributed under the License is distributed on an "AS IS" BASIS,     *
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or       *
- *  implied.                                                              * 
- *  See the License for the specific language governing permissions and   * 
+ *  implied.                                                              *
+ *  See the License for the specific language governing permissions and   *
  *  limitations under the License.                                        *
  **************************************************************************
  *                                                                        *
@@ -50,12 +50,9 @@ using namespace ac_math;
 //   ac_fixed inputs.
 
 template <int Wfi, int Ifi, int outWfi, int outIfi>
-void test_ac_tan_pwl(
-  const ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP>  &in,
-  ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP> &tan_out
-)
+void test_ac_tan_pwl(const ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP>& in, ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP>& tan_out)
 {
-  tan_out = ac_tan_pwl<ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP> >(in);
+   tan_out = ac_tan_pwl<ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP>>(in);
 }
 
 // ------------------------------------------------------------------------------
@@ -64,15 +61,15 @@ void test_ac_tan_pwl(
 
 double abs_double(double x)
 {
-  return x >= 0 ? x : -x;
+   return x >= 0 ? x : -x;
 }
 
 // ==============================================================================
 
-#include <math.h>
-#include <string>
 #include <fstream>
 #include <iostream>
+#include <math.h>
+#include <string>
 using namespace std;
 
 // ===============================================================================
@@ -85,179 +82,202 @@ using namespace std;
 //   in variables defined in the calling function.
 
 template <int Wfi, int Ifi, int outWfi, int outIfi>
-int test_driver(
-  double &cumulative_max_error_tan,
-  const double allowed_error,
-  const double threshold,
-  const double upper_limit_degrees,
-  bool details = false
-)
+int test_driver(double& cumulative_max_error_tan, const double allowed_error, const double threshold, const double upper_limit_degrees, bool details = false)
 {
-  ac_fixed<Wfi + 2, Ifi + 1, false, AC_TRN, AC_WRAP> i; // make loop variable slightly larger
-  ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP> input;
-  ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP> last;
-  typedef ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP> T_out;
-  T_out tan_out;
+   ac_fixed<Wfi + 2, Ifi + 1, false, AC_TRN, AC_WRAP> i; // make loop variable slightly larger
+   ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP> input;
+   ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP> last;
+   typedef ac_fixed<outWfi, outIfi, false, AC_TRN, AC_WRAP> T_out;
+   T_out tan_out;
 
-  // set ranges and step size for testbench
-  ac_fixed<Wfi, Ifi> lower_limit = input.template set_val<AC_VAL_MIN>();
-  double upper_limit_type = input.template set_val<AC_VAL_MAX>().to_double();
-  double upper_limit_rad  = upper_limit_degrees * M_PI / 180;
-  ac_fixed<Wfi, Ifi> upper_limit = upper_limit_type < upper_limit_rad ? upper_limit_type : upper_limit_rad;
-  ac_fixed<Wfi, Ifi> step        = input.template set_val<AC_VAL_QUANTUM>();
+   // set ranges and step size for testbench
+   ac_fixed<Wfi, Ifi> lower_limit = input.template set_val<AC_VAL_MIN>();
+   double upper_limit_type = input.template set_val<AC_VAL_MAX>().to_double();
+   double upper_limit_rad = upper_limit_degrees * M_PI / 180;
+   ac_fixed<Wfi, Ifi> upper_limit = upper_limit_type < upper_limit_rad ? upper_limit_type : upper_limit_rad;
+   ac_fixed<Wfi, Ifi> step = input.template set_val<AC_VAL_QUANTUM>();
 
-  cout << "TEST: ac_tan_pwl() INPUT: ";
-  cout.width(38);
-  cout << left << input.type_name();
-  cout << "upper_limit_degrees = " << upper_limit_degrees << " ";
-  cout << "OUTPUT: ";
-  cout.width(38);
-  cout << left << tan_out.type_name();
-  cout << "RESULT: ";
+   cout << "TEST: ac_tan_pwl() INPUT: ";
+   cout.width(38);
+   cout << left << input.type_name();
+   cout << "upper_limit_degrees = " << upper_limit_degrees << " ";
+   cout << "OUTPUT: ";
+   cout.width(38);
+   cout << left << tan_out.type_name();
+   cout << "RESULT: ";
 
-  // Dump the test details
-  if (details) {
-    cout << endl; // LCOV_EXCL_LINE
-    cout << "  Ranges for input types:" << endl; // LCOV_EXCL_LINE
-    cout << "    lower_limit = " << lower_limit << endl; // LCOV_EXCL_LINE
-    cout << "    upper_limit = " << upper_limit << endl; // LCOV_EXCL_LINE
-    cout << "    step        = " << step << endl; // LCOV_EXCL_LINE
-  }
+   // Dump the test details
+   if(details)
+   {
+      cout << endl;                                        // LCOV_EXCL_LINE
+      cout << "  Ranges for input types:" << endl;         // LCOV_EXCL_LINE
+      cout << "    lower_limit = " << lower_limit << endl; // LCOV_EXCL_LINE
+      cout << "    upper_limit = " << upper_limit << endl; // LCOV_EXCL_LINE
+      cout << "    step        = " << step << endl;        // LCOV_EXCL_LINE
+   }
 
-  bool passed = true;
-  double max_tan_error = 0.0;
+   bool passed = true;
+   double max_tan_error = 0.0;
 
-  bool check_monotonic = true;
-  bool compare_tan = false;
-  double old_output_tan;
+   bool check_monotonic = true;
+   bool compare_tan = false;
+   double old_output_tan;
 
-  for (i = lower_limit; i <= upper_limit; i += step) {
-    // Set values for input.
-    input = i;
+   for(i = lower_limit; i <= upper_limit; i += step)
+   {
+      // Set values for input.
+      input = i;
 
-    // For now, skip zero values.
-    if (input == 0) { continue; }
-    // call reference tan() with fixed-pt value converted back to double
-    // an additional step of typecasting is required in order to perform
-    // quantization on the expected output.
-    double expected_tan = ((T_out)tan(input.to_double())).to_double();
-
-    // If input is zero, saturate the expected value according to the min. value representible by
-    // the fixed point output.
-    if (input == 0) {
-      T_out output_min;
-      output_min.template set_val<AC_VAL_MIN>();
-      expected_tan = output_min.to_double();
-    }
-
-    // call DUT with fixed-pt value
-    test_ac_tan_pwl(input, tan_out);
-
-    double actual_tan = tan_out.to_double();
-    double this_error_tan;
-
-    // If expected value of either output falls below the threshold, calculate absolute error instead of relative
-    if (expected_tan > threshold) {this_error_tan = abs_double( (expected_tan - actual_tan) / expected_tan ) * 100.0;}
-    else {this_error_tan = abs_double(expected_tan - actual_tan) * 100.0;}
-
-    if (check_monotonic) {
-      // MONOTONIC: Make sure that function is monotonic. Compare old value (value of previous iteration) with current value. Since the tangent function we
-      // are testing is an increasing function, and our testbench value keeps incrementing or remains the same (in case of saturation), we expect the
-      // old value to be lesser than or equal to the current one.
-
-      // This comparison is only carried out once there is an old value to compare with
-      if (compare_tan) {
-        // Figuring out what the normalized value was for the input is a good way to figure out where the discontinuity occured w.r.t. the PWL segments.
-        ac_fixed<Wfi, 0, false, AC_TRN, AC_WRAP> norm_input;
-        ac_normalize(input, norm_input);
-        // if by any chance the function output has dropped in value, print out at what point the problem has occured and throw a runtime assertion.
-        if (old_output_tan > actual_tan) {
-          cout << endl; // LCOV_EXCL_LINE
-          cout << "  tan output not monotonic at :" << endl; // LCOV_EXCL_LINE
-          cout << "  x = " << input << endl; // LCOV_EXCL_LINE
-          cout << "  y = " << tan_out << endl; // LCOV_EXCL_LINE
-          cout << "  old_output_tan = " << old_output_tan << endl; // LCOV_EXCL_LINE
-          assert(false); // LCOV_EXCL_LINE
-        }
+      // For now, skip zero values.
+      if(input == 0)
+      {
+         continue;
       }
-      // Update the old value
-      old_output_tan = actual_tan;
-      // Once an old value has been stored, i.e. towards the end of the first iteration, this value is set to true.
-      compare_tan = true;
-    }
+      // call reference tan() with fixed-pt value converted back to double
+      // an additional step of typecasting is required in order to perform
+      // quantization on the expected output.
+      double expected_tan = ((T_out)tan(input.to_double())).to_double();
+
+      // If input is zero, saturate the expected value according to the min. value representible by
+      // the fixed point output.
+      if(input == 0)
+      {
+         T_out output_min;
+         output_min.template set_val<AC_VAL_MIN>();
+         expected_tan = output_min.to_double();
+      }
+
+      // call DUT with fixed-pt value
+      test_ac_tan_pwl(input, tan_out);
+
+      double actual_tan = tan_out.to_double();
+      double this_error_tan;
+
+      // If expected value of either output falls below the threshold, calculate absolute error instead of relative
+      if(expected_tan > threshold)
+      {
+         this_error_tan = abs_double((expected_tan - actual_tan) / expected_tan) * 100.0;
+      }
+      else
+      {
+         this_error_tan = abs_double(expected_tan - actual_tan) * 100.0;
+      }
+
+      if(check_monotonic)
+      {
+         // MONOTONIC: Make sure that function is monotonic. Compare old value (value of previous iteration) with current value. Since the tangent function we
+         // are testing is an increasing function, and our testbench value keeps incrementing or remains the same (in case of saturation), we expect the
+         // old value to be lesser than or equal to the current one.
+
+         // This comparison is only carried out once there is an old value to compare with
+         if(compare_tan)
+         {
+            // Figuring out what the normalized value was for the input is a good way to figure out where the discontinuity occured w.r.t. the PWL segments.
+            ac_fixed<Wfi, 0, false, AC_TRN, AC_WRAP> norm_input;
+            ac_normalize(input, norm_input);
+            // if by any chance the function output has dropped in value, print out at what point the problem has occured and throw a runtime assertion.
+            if(old_output_tan > actual_tan)
+            {
+               cout << endl;                                            // LCOV_EXCL_LINE
+               cout << "  tan output not monotonic at :" << endl;       // LCOV_EXCL_LINE
+               cout << "  x = " << input << endl;                       // LCOV_EXCL_LINE
+               cout << "  y = " << tan_out << endl;                     // LCOV_EXCL_LINE
+               cout << "  old_output_tan = " << old_output_tan << endl; // LCOV_EXCL_LINE
+               assert(false);                                           // LCOV_EXCL_LINE
+            }
+         }
+         // Update the old value
+         old_output_tan = actual_tan;
+         // Once an old value has been stored, i.e. towards the end of the first iteration, this value is set to true.
+         compare_tan = true;
+      }
 
 #ifdef DEBUG
-    double input_degrees = input.to_double() * 180 / M_PI;
-    if (this_error_tan > allowed_error) {
-      cout << endl;
-      cout << "  Error exceeds tolerance" << endl;
-      cout << "  input          = " << input << endl;
-      cout << "  input_degrees  = " << input_degrees << endl;
-      cout << "  expected_tan   = " << expected_tan << endl;
-      cout << "  actual_tan     = " << actual_tan << endl;
-      cout << "  this_error_tan = " << this_error_tan << endl;
-      cout << "  threshold      = " << threshold << endl;
-      assert(false);
-    }
+      double input_degrees = input.to_double() * 180 / M_PI;
+      if(this_error_tan > allowed_error)
+      {
+         cout << endl;
+         cout << "  Error exceeds tolerance" << endl;
+         cout << "  input          = " << input << endl;
+         cout << "  input_degrees  = " << input_degrees << endl;
+         cout << "  expected_tan   = " << expected_tan << endl;
+         cout << "  actual_tan     = " << actual_tan << endl;
+         cout << "  this_error_tan = " << this_error_tan << endl;
+         cout << "  threshold      = " << threshold << endl;
+         assert(false);
+      }
 #endif
 
-    if (this_error_tan > max_tan_error) { max_tan_error = this_error_tan; }
-  }
+      if(this_error_tan > max_tan_error)
+      {
+         max_tan_error = this_error_tan;
+      }
+   }
 
-  if (max_tan_error > cumulative_max_error_tan) { cumulative_max_error_tan = max_tan_error; }
+   if(max_tan_error > cumulative_max_error_tan)
+   {
+      cumulative_max_error_tan = max_tan_error;
+   }
 
-  passed = (max_tan_error < allowed_error);
+   passed = (max_tan_error < allowed_error);
 
-  if (passed) { printf("PASSED , max err (%f)\n", max_tan_error); }
-  else        { printf("FAILED , max err (%f)\n", max_tan_error); } // LCOV_EXCL_LINE
+   if(passed)
+   {
+      printf("PASSED , max err (%f)\n", max_tan_error);
+   }
+   else
+   {
+      printf("FAILED , max err (%f)\n", max_tan_error);
+   } // LCOV_EXCL_LINE
 
-  return 0;
+   return 0;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-  double max_error_tan = 0.0;
-  double allowed_error = 4.0;
-  double threshold = 0.1;
+   double max_error_tan = 0.0;
+   double allowed_error = 4.0;
+   double threshold = 0.1;
 
-  cout << "=============================================================================" << endl;
-  cout << "Testing function: ac_tan_pwl() - Allowed error " << allowed_error << endl;
+   cout << "=============================================================================" << endl;
+   cout << "Testing function: ac_tan_pwl() - Allowed error " << allowed_error << endl;
 
-  // template <int Wfi, int Ifi, int outWfi, int outIfi>
-  test_driver<22,  4, 64, 20>(max_error_tan, allowed_error, threshold, 45   );
-  test_driver<22,  4, 64, 20>(max_error_tan, allowed_error, threshold, 50   );
-  test_driver<22,  4, 64, 20>(max_error_tan, allowed_error, threshold, 55   );
-  test_driver<22,  4, 64, 20>(max_error_tan, allowed_error, threshold, 60   );
-  test_driver<22,  4, 64, 20>(max_error_tan, allowed_error, threshold, 65   );
-  test_driver<22,  4, 64, 20>(max_error_tan, allowed_error, threshold, 70   );
-  test_driver<22,  4, 64, 20>(max_error_tan, allowed_error, threshold, 75   );
-  test_driver<22,  4, 64, 20>(max_error_tan, allowed_error, threshold, 80   );
-  test_driver<22,  4, 64, 20>(max_error_tan, allowed_error, threshold, 81   );
-  test_driver<22,  4, 64, 20>(max_error_tan, allowed_error, threshold, 82   );
-  test_driver<22,  4, 64, 20>(max_error_tan, allowed_error, threshold, 83   );
-  test_driver<22,  4, 64, 20>(max_error_tan, allowed_error, threshold, 84   );
-  test_driver<22,  4, 64, 20>(max_error_tan, allowed_error, threshold, 85   );
-  test_driver<22,  4, 64, 20>(max_error_tan, allowed_error, threshold, 86   );
-  test_driver<22,  4, 64, 20>(max_error_tan, allowed_error, threshold, 87   );
-  test_driver<22,  4, 64, 20>(max_error_tan, allowed_error, threshold, 88   );
-  test_driver<22,  4, 64, 20>(max_error_tan, allowed_error, threshold, 89   );
-  test_driver<22,  4, 64, 20>(max_error_tan, allowed_error, threshold, 89.18);
-  test_driver<22, -2, 64, 20>(max_error_tan, allowed_error, threshold, 45   );
-  test_driver<22, -3, 64, 20>(max_error_tan, allowed_error, threshold, 45   );
+   // template <int Wfi, int Ifi, int outWfi, int outIfi>
+   test_driver<22, 4, 64, 20>(max_error_tan, allowed_error, threshold, 45);
+   test_driver<22, 4, 64, 20>(max_error_tan, allowed_error, threshold, 50);
+   test_driver<22, 4, 64, 20>(max_error_tan, allowed_error, threshold, 55);
+   test_driver<22, 4, 64, 20>(max_error_tan, allowed_error, threshold, 60);
+   test_driver<22, 4, 64, 20>(max_error_tan, allowed_error, threshold, 65);
+   test_driver<22, 4, 64, 20>(max_error_tan, allowed_error, threshold, 70);
+   test_driver<22, 4, 64, 20>(max_error_tan, allowed_error, threshold, 75);
+   test_driver<22, 4, 64, 20>(max_error_tan, allowed_error, threshold, 80);
+   test_driver<22, 4, 64, 20>(max_error_tan, allowed_error, threshold, 81);
+   test_driver<22, 4, 64, 20>(max_error_tan, allowed_error, threshold, 82);
+   test_driver<22, 4, 64, 20>(max_error_tan, allowed_error, threshold, 83);
+   test_driver<22, 4, 64, 20>(max_error_tan, allowed_error, threshold, 84);
+   test_driver<22, 4, 64, 20>(max_error_tan, allowed_error, threshold, 85);
+   test_driver<22, 4, 64, 20>(max_error_tan, allowed_error, threshold, 86);
+   test_driver<22, 4, 64, 20>(max_error_tan, allowed_error, threshold, 87);
+   test_driver<22, 4, 64, 20>(max_error_tan, allowed_error, threshold, 88);
+   test_driver<22, 4, 64, 20>(max_error_tan, allowed_error, threshold, 89);
+   test_driver<22, 4, 64, 20>(max_error_tan, allowed_error, threshold, 89.18);
+   test_driver<22, -2, 64, 20>(max_error_tan, allowed_error, threshold, 45);
+   test_driver<22, -3, 64, 20>(max_error_tan, allowed_error, threshold, 45);
 
-  cout << "=============================================================================" << endl;
-  cout << "  Testbench finished. Maximum errors observed across all bit-width variations:" << endl;
-  cout << "    max_error_tan = " << max_error_tan << endl;
+   cout << "=============================================================================" << endl;
+   cout << "  Testbench finished. Maximum errors observed across all bit-width variations:" << endl;
+   cout << "    max_error_tan = " << max_error_tan << endl;
 
-  // If error limits on any test value have been crossed, the test has failed
-  // Notify the user that the test was a failure if that is the case.
-  if (max_error_tan > allowed_error) {
-    cout << "  ac_tan_pwl - FAILED - Error tolerance(s) exceeded" << endl; // LCOV_EXCL_LINE
-    cout << "=============================================================================" << endl; // LCOV_EXCL_LINE
-    return (-1); // LCOV_EXCL_LINE
-  }
+   // If error limits on any test value have been crossed, the test has failed
+   // Notify the user that the test was a failure if that is the case.
+   if(max_error_tan > allowed_error)
+   {
+      cout << "  ac_tan_pwl - FAILED - Error tolerance(s) exceeded" << endl;                           // LCOV_EXCL_LINE
+      cout << "=============================================================================" << endl; // LCOV_EXCL_LINE
+      return (-1);                                                                                     // LCOV_EXCL_LINE
+   }
 
-  cout << "  ac_tan_pwl - PASSED" << endl;
-  cout << "=============================================================================" << endl;
-  return (0);
+   cout << "  ac_tan_pwl - PASSED" << endl;
+   cout << "=============================================================================" << endl;
+   return (0);
 }

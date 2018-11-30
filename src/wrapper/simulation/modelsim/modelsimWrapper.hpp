@@ -7,7 +7,7 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file modelsimWrapper.hpp
  * @brief Wrapper to modelsim.
@@ -40,7 +40,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef MODELSIMWRAPPER_HPP
 #define MODELSIMWRAPPER_HPP
 
@@ -48,10 +48,10 @@
 #include "refcount.hpp"
 CONSTREF_FORWARD_DECL(Parameter);
 
-///STD include
+/// STD include
 #include <string>
 
-///STL include
+/// STL include
 #include <list>
 
 /**
@@ -60,36 +60,35 @@ CONSTREF_FORWARD_DECL(Parameter);
  */
 class modelsimWrapper : public SimulationTool
 {
-      ///suffix added to the SIM dir
-      std::string suffix;
+   /// suffix added to the SIM dir
+   std::string suffix;
 
-      /**
-       * Generates the proper simulation script
-       */
-      void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string> & file_list) override;
+   /**
+    * Generates the proper simulation script
+    */
+   void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list) override;
 
-   public:
+ public:
+   /**
+    * Constructor
+    * @param Param is the set of parameters
+    */
+   modelsimWrapper(const ParameterConstRef& Param, std::string suffix);
 
-      /**
-       * Constructor
-       * @param Param is the set of parameters
-       */
-      modelsimWrapper(const ParameterConstRef Param, std::string  suffix);
+   /**
+    * Destructor
+    */
+   ~modelsimWrapper() override;
 
-      /**
-       * Destructor
-       */
-      ~modelsimWrapper() override;
+   /**
+    * Checks if the current specification can be executed or not
+    */
+   void CheckExecution() override;
 
-      /**
-       * Checks if the current specification can be executed or not
-       */
-      void CheckExecution() override;
-
-      /**
-       * Remove files created during simulation
-       */
-      void Clean() const override;
+   /**
+    * Remove files created during simulation
+    */
+   void Clean() const override;
 };
 /// Refcount definition for the modelsimWrapper class
 typedef refcount<modelsimWrapper> modelsimWrapperRef;

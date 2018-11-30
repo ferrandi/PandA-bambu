@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file hls_c_backend_information.cpp
  * @brief Class to pass information to the hls backend
@@ -39,21 +39,15 @@
  * $Date: $
  * Last modified by $Author: $
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "hls_c_backend_information.hpp"
 
 #include <utility>
 
-HLSCBackendInformation::HLSCBackendInformation
-(
-   std::string  _results_filename,
-   const HLS_managerConstRef _HLSMgr
-) :
-   results_filename(std::move(_results_filename)),
-   HLSMgr(_HLSMgr)
-{}
+HLSCBackendInformation::HLSCBackendInformation(std::string _results_filename, const HLS_managerConstRef& _HLSMgr) : results_filename(std::move(_results_filename)), HLSMgr(_HLSMgr)
+{
+}
 
-HLSCBackendInformation::~HLSCBackendInformation()
-= default;
+HLSCBackendInformation::~HLSCBackendInformation() = default;

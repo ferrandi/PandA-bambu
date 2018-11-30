@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file sched_based_chaining_computation.cpp
  * @brief chaining computation starting from the results of the scheduling step
@@ -38,31 +38,30 @@
 
 #include "sched_based_chaining_computation.hpp"
 
+#include "exceptions.hpp"
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
-#include "function_behavior.hpp"
-#include "exceptions.hpp"
 
-///STD include
-#include <set>
+/// STD include
 #include <map>
+#include <set>
 
 #include "Parameter.hpp"
-#include "schedule.hpp"
 #include "dbgPrintHelper.hpp"
+#include "schedule.hpp"
 
-///HLS/chaining includes
+/// HLS/chaining includes
 #include "chaining_information.hpp"
-#include "string_manipulation.hpp"          // for GET_CLASS
+#include "string_manipulation.hpp" // for GET_CLASS
 
-sched_based_chaining_computation::sched_based_chaining_computation(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
-   chaining(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::SCHED_CHAINING)
+sched_based_chaining_computation::sched_based_chaining_computation(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
+    : chaining(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::SCHED_CHAINING)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-sched_based_chaining_computation::~sched_based_chaining_computation()
-= default;
+sched_based_chaining_computation::~sched_based_chaining_computation() = default;
 
 void sched_based_chaining_computation::Initialize()
 {
@@ -84,7 +83,7 @@ DesignFlowStep_Status sched_based_chaining_computation::InternalExec()
       if(current_starting_cycle == current_ending_cycle)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operations " + GET_NAME(flow_graph, *op) + " and " + GET_NAME(flow_graph, *op) + " are chained in");
-         HLS->chaining_information->add_chained_vertices_in(*op,*op);
+         HLS->chaining_information->add_chained_vertices_in(*op, *op);
       }
       InEdgeIterator ei, ei_end;
       bool is_chained_test = false;
@@ -94,13 +93,13 @@ DesignFlowStep_Status sched_based_chaining_computation::InternalExec()
          if(HLS->Rsch->get_cstep_end(src) == current_starting_cycle)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, std::string("Operations ") + GET_NAME(flow_graph, src) + " and " + GET_NAME(flow_graph, *op) + " are chained in");
-            HLS->chaining_information->add_chained_vertices_in(*op,src);
+            HLS->chaining_information->add_chained_vertices_in(*op, src);
             is_chained_test = true;
          }
       }
       if(is_chained_test)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, std::string("Operations ") +  GET_NAME(flow_graph, *op) + " is chained with something");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, std::string("Operations ") + GET_NAME(flow_graph, *op) + " is chained with something");
          HLS->chaining_information->is_chained_with.insert(*op);
       }
       OutEdgeIterator eo, eo_end;
@@ -110,7 +109,7 @@ DesignFlowStep_Status sched_based_chaining_computation::InternalExec()
          if(HLS->Rsch->get_cstep(tgt) == current_ending_cycle)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, std::string("Operations ") + GET_NAME(flow_graph, tgt) + " and " + GET_NAME(flow_graph, *op) + " are chained out");
-            HLS->chaining_information->add_chained_vertices_out(*op,tgt);
+            HLS->chaining_information->add_chained_vertices_out(*op, tgt);
          }
       }
    }

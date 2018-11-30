@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file c_backend_information.hpp
  * @brief Base class to pass information to a c backend
@@ -39,29 +39,28 @@
  * $Date: $
  * Last modified by $Author: $
  *
-*/
+ */
 
 #ifndef C_BACKEND_INFORMATION_HPP
 #define C_BACKEND_INFORMATION_HPP
 
-///Utility include
+/// Utility include
 #include "refcount.hpp"
 
-///Base class to pass information to a c backend
+/// Base class to pass information to a c backend
 class CBackendInformation
 {
-   public:
-      /**
-       * Constructor
-       */
-      CBackendInformation();
+ public:
+   /**
+    * Constructor
+    */
+   CBackendInformation();
 
-      /**
-       * Destructor
-       */
-      virtual ~CBackendInformation();
+   /**
+    * Destructor
+    */
+   virtual ~CBackendInformation();
 };
 typedef refcount<const CBackendInformation> CBackendInformationConstRef;
 typedef refcount<CBackendInformation> CBackendInformationRef;
 #endif
-

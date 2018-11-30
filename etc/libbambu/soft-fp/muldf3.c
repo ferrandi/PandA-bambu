@@ -3,7 +3,7 @@
    Copyright (C) 1997-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Richard Henderson (rth@cygnus.com) and
-		  Jakub Jelinek (jj@ultra.linux.cz).
+        Jakub Jelinek (jj@ultra.linux.cz).
 
    The GNU C Library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -28,26 +28,28 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "soft-fp.h"
 #include "double.h"
+#include "soft-fp.h"
 
-DFtype
-__muldf3 (DFtype a, DFtype b)
+DFtype __muldf3(DFtype a, DFtype b)
 {
-  FP_DECL_EX;
-  FP_DECL_D (A);
-  FP_DECL_D (B);
-  FP_DECL_D (R);
-  DFtype r;
+   FP_DECL_EX;
+   FP_DECL_D(A);
+   FP_DECL_D(B);
+   FP_DECL_D(R);
+   DFtype r;
 
-  FP_INIT_ROUNDMODE;
-  FP_UNPACK_D (A, a);
-  FP_UNPACK_D (B, b);
-  FP_MUL_D (R, A, B);
-  FP_PACK_D (r, R);
-  FP_HANDLE_EXCEPTIONS;
+   FP_INIT_ROUNDMODE;
+   FP_UNPACK_D(A, a);
+   FP_UNPACK_D(B, b);
+   FP_MUL_D(R, A, B);
+   FP_PACK_D(r, R);
+   FP_HANDLE_EXCEPTIONS;
 
-  return r;
+   return r;
 }
 
-inline DFtype __float64_mulif(DFtype a, DFtype b) {return __muldf3(a, b);}
+inline DFtype __float64_mulif(DFtype a, DFtype b)
+{
+   return __muldf3(a, b);
+}

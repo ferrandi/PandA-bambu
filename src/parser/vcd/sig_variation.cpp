@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
@@ -38,97 +38,96 @@
 
 #include <utility>
 
-sig_variation::sig_variation(
-      unsigned long long ts, std::string  val, unsigned long long d)
-   : time_stamp(ts), value(std::move(val)), duration(d)
-{}
+sig_variation::sig_variation(unsigned long long ts, std::string val, unsigned long long d) : time_stamp(ts), value(std::move(val)), duration(d)
+{
+}
 
-bool operator < (const sig_variation &w, const unsigned long long t)
+bool operator<(const sig_variation& w, const unsigned long long t)
 {
    return w.time_stamp < t;
 }
 
-bool operator <= (const sig_variation &w, const unsigned long long t)
+bool operator<=(const sig_variation& w, const unsigned long long t)
 {
    return w.time_stamp <= t;
 }
 
-bool operator > (const sig_variation &w, const unsigned long long t)
+bool operator>(const sig_variation& w, const unsigned long long t)
 {
    return w.time_stamp > t;
 }
 
-bool operator >= (const sig_variation &w, const unsigned long long t)
+bool operator>=(const sig_variation& w, const unsigned long long t)
 {
    return w.time_stamp >= t;
 }
 
-bool operator == (const sig_variation &w, const unsigned long long t)
+bool operator==(const sig_variation& w, const unsigned long long t)
 {
    return w.time_stamp == t;
 }
 
-bool operator != (const sig_variation &w, const unsigned long long t)
+bool operator!=(const sig_variation& w, const unsigned long long t)
 {
    return w.time_stamp != t;
 }
 
-bool operator < (const unsigned long long t, const sig_variation & v)
+bool operator<(const unsigned long long t, const sig_variation& v)
 {
    return t < v.time_stamp;
 }
 
-bool operator <= (const unsigned long long t, const sig_variation & v)
+bool operator<=(const unsigned long long t, const sig_variation& v)
 {
    return t <= v.time_stamp;
 }
 
-bool operator > (const unsigned long long t, const sig_variation & v)
+bool operator>(const unsigned long long t, const sig_variation& v)
 {
    return t > v.time_stamp;
 }
 
-bool operator >= (const unsigned long long t, const sig_variation & v)
+bool operator>=(const unsigned long long t, const sig_variation& v)
 {
    return t >= v.time_stamp;
 }
 
-bool operator == (const unsigned long long t, const sig_variation & v)
+bool operator==(const unsigned long long t, const sig_variation& v)
 {
    return t == v.time_stamp;
 }
 
-bool operator != (const unsigned long long t, const sig_variation & v)
+bool operator!=(const unsigned long long t, const sig_variation& v)
 {
    return t != v.time_stamp;
 }
 
-bool operator < (const sig_variation &w, const sig_variation & v)
+bool operator<(const sig_variation& w, const sig_variation& v)
 {
    return w.time_stamp < v.time_stamp;
 }
 
-bool operator <= (const sig_variation &w, const sig_variation & v)
+bool operator<=(const sig_variation& w, const sig_variation& v)
 {
    return w.time_stamp <= v.time_stamp;
 }
 
-bool operator > (const sig_variation &w, const sig_variation & v)
+bool operator>(const sig_variation& w, const sig_variation& v)
 {
    return w.time_stamp > v.time_stamp;
 }
 
-bool operator >= (const sig_variation &w, const sig_variation & v)
+bool operator>=(const sig_variation& w, const sig_variation& v)
 {
    return w.time_stamp >= v.time_stamp;
 }
 
-bool operator == (const sig_variation &w, const sig_variation & v)
+bool operator==(const sig_variation& w, const sig_variation& v)
 {
    return w.time_stamp == v.time_stamp;
 }
 
-bool operator != (const sig_variation &w, const sig_variation & v)
+bool operator!=(const sig_variation& w, const sig_variation& v)
 {
    return w.time_stamp != v.time_stamp;
 }
