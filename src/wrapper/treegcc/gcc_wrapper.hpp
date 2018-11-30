@@ -196,6 +196,10 @@ class GccWrapper
       std::string topfname_plugin_obj;
       std::string topfname_plugin_name;
 
+      /// The plugin making visible only the top function
+      std::string ASTAnalyzer_plugin_obj;
+      std::string ASTAnalyzer_plugin_name;
+
 #if HAVE_FROM_RTL_BUILT
       /// The plugin to dump gimple and rtl
       std::string rtl_plugin;
@@ -246,8 +250,9 @@ class GccWrapper
     * @param real_rile_name stores the source code file which is actually compiled; the function can modified it in case of empty file
     * @param parameters_line are the parameters to be passed to gcc
     * @param empty_file tells if .001.tu tree has to be produced
+    * @param enable Analyzer plugin.
     */
-   void CompileFile(const std::string& original_file_name, std::string& real_file_name, const std::string& parameters_line, bool empty_file = false);
+   void CompileFile(const std::string& original_file_name, std::string& real_file_name, const std::string& parameters_line, bool empty_file = false, bool enableAnalyzer = false);
 
    /**
     * Return the compiler for a given target

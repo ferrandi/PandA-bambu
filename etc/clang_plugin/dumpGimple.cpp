@@ -39,7 +39,6 @@
  */
 #include "plugin_includes.hpp"
 
-#include "clang/AST/AST.h"
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/CFG.h"
 #include "llvm/Analysis/ConstantFolding.h"
@@ -62,6 +61,7 @@
 #include "llvm/IR/Operator.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
+#include "llvm/Support/ErrorHandling.h"
 
 #if __clang_major__ == 4
 #include "llvm/Transforms/Utils/MemorySSA.h"
@@ -70,9 +70,6 @@
 #include "llvm/Support/KnownBits.h"
 #include "llvm/Transforms/Utils/LowerMemIntrinsics.h"
 #endif
-#include "clang/AST/Mangle.h"
-#include "clang/AST/Stmt.h"
-#include "clang/Lex/Preprocessor.h"
 #include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/Analysis/LazyValueInfo.h"
 #include "llvm/Analysis/TargetLibraryInfo.h"
@@ -83,6 +80,7 @@
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/ModuleSlotTracker.h"
+#include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Transforms/Utils/Local.h"
 
@@ -111,7 +109,7 @@ static std::string create_file_name_string(const std::string& outdir_name, const
    return outdir_name + "/" + dump_base_name + ".gimplePSSA";
 }
 
-namespace clang
+namespace llvm
 {
    char DumpGimpleRaw::buffer[LOCAL_BUFFER_LEN];
 
@@ -217,11 +215,10 @@ namespace clang
    };
 #undef DEF_BUILTIN
 
-   DumpGimpleRaw::DumpGimpleRaw(CompilerInstance& _Instance, const std::string& _outdir_name, const std::string& _InFile, bool _onlyGlobals, std::map<std::string, std::vector<std::string>>* _fun2params)
+   DumpGimpleRaw::DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool _onlyGlobals, std::map<std::string, std::vector<std::string>>* _fun2params)
        : outdir_name(_outdir_name),
          InFile(_InFile),
          filename(create_file_name_string(_outdir_name, _InFile)),
-         Instance(_Instance),
          stream(create_file_name_string(_outdir_name, _InFile), EC, llvm::sys::fs::F_RW),
          onlyGlobals(_onlyGlobals),
          fun2params(_fun2params),
@@ -237,8 +234,7 @@ namespace clang
    {
       if(EC)
       {
-         DiagnosticsEngine& D = Instance.getDiagnostics();
-         D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "not able to open the output raw file"));
+         llvm::report_fatal_error("not able to open the output raw file");
       }
       DumpVersion(stream);
       assignCode(&SignedPointerTypeReference, GT(SIGNEDPOINTERTYPE));
@@ -6293,4 +6289,4 @@ namespace clang
       }
       return res;
    }
-} // namespace clang
+} // namespace llvm

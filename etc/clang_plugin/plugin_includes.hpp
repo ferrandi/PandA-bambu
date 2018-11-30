@@ -43,8 +43,6 @@
 /// Autoheader include
 #include "config_HAVE_LIBBDD.hpp"
 
-#include "clang/AST/ASTConsumer.h"
-#include "clang/Frontend/CompilerInstance.h"
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/Hashing.h"
 #include "llvm/IR/LLVMContext.h"
@@ -52,6 +50,7 @@
 #if __clang_major__ != 4
 #include "llvm/Transforms/Utils/PredicateInfo.h"
 #endif
+#include <deque>
 #include <list>
 #include <map>
 #include <set>
@@ -74,14 +73,6 @@
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang5##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang5" #SYMBOL
 #endif
-
-class dummyConsumer : public clang::ASTConsumer
-{
- public:
-   dummyConsumer()
-   {
-   }
-};
 
 namespace llvm
 {
@@ -114,7 +105,7 @@ namespace RangeAnalysis
 }
 class Andersen_AA;
 
-namespace clang
+namespace llvm
 {
    class DumpGimpleRaw
    {
@@ -206,7 +197,6 @@ namespace clang
       const std::string outdir_name;
       const std::string InFile;
       std::string filename;
-      CompilerInstance& Instance;
       /// stream associated with the gimple raw file
       llvm::raw_fd_ostream stream;
       /// when true only the global variables are serialized
@@ -727,10 +717,10 @@ namespace clang
       void computeMAEntryDefs(const llvm::Function* F, std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>>& CurrentListofMAEntryDef, llvm::ModulePass* modulePass);
 
     public:
-      DumpGimpleRaw(CompilerInstance& _Instance, const std::string& _outdir_name, const std::string& _InFile, bool onlyGlobals, std::map<std::string, std::vector<std::string>>* fun2params);
+      DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool onlyGlobals, std::map<std::string, std::vector<std::string>>* fun2params);
 
       bool runOnModule(llvm::Module& M, llvm::ModulePass* modulePass, const std::string& TopFunctionName);
    };
-} // namespace clang
+} // namespace llvm
 
 #endif

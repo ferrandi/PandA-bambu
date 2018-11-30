@@ -32,20 +32,23 @@
  */
 /**
  * @file plugin_topfname.cpp
- * @brief Dummy Plugin. LLVM does not need this plugin but we add just for the sake of completeness.
+ * @brief In case topfname function is available all global objects but the top function can be private.
+ * This is going to simplify quite much the obtained IR.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
 #include "plugin_includes.hpp"
 
-#include "clang/AST/AST.h"
-#include "clang/AST/ASTConsumer.h"
-#include "clang/AST/RecursiveASTVisitor.h"
-#include "clang/Frontend/CompilerInstance.h"
-#include "clang/Frontend/FrontendPluginRegistry.h"
-#include "clang/Sema/Sema.h"
-#include "llvm/Support/raw_ostream.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IR/PassManager.h"
+#include "llvm/InitializePasses.h"
+#include "llvm/Pass.h"
+#include "llvm/PassRegistry.h"
+#include "llvm/Support/CommandLine.h"
+#include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#include "llvm/Transforms/Utils/LoopUtils.h"
 
 #include <cxxabi.h>
 
@@ -56,77 +59,9 @@ namespace llvm
    struct CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass);
 }
 
-static std::string TopFunctionName;
-
-namespace clang
-{
-   class CLANG_VERSION_SYMBOL(_plugin_topfname) : public PluginASTAction
-   {
-      std::string topfname;
-      friend struct llvm::CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass);
-
-    protected:
-      std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance&, llvm::StringRef) override
-      {
-         TopFunctionName = topfname;
-         return llvm::make_unique<dummyConsumer>();
-      }
-
-      bool ParseArgs(const CompilerInstance& CI, const std::vector<std::string>& args) override
-      {
-         DiagnosticsEngine& D = CI.getDiagnostics();
-         for(size_t i = 0, e = args.size(); i != e; ++i)
-         {
-            if(args.at(i) == "-topfname")
-            {
-               if(i + 1 >= e)
-               {
-                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "missing topfname argument"));
-                  return false;
-               }
-               ++i;
-               topfname = args.at(i);
-            }
-         }
-         if(!args.empty() && args.at(0) == "-help")
-         {
-            PrintHelp(llvm::errs());
-         }
-
-         if(topfname.empty())
-         {
-            D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "topfname not specified"));
-         }
-         return true;
-      }
-      void PrintHelp(llvm::raw_ostream& ros)
-      {
-         ros << "Help for " CLANG_VERSION_STRING(_plugin_topfname) "  plugin\n";
-         ros << "-topfname <topfunctionname>\n";
-         ros << "  name of the top function\n";
-      }
-
-      PluginASTAction::ActionType getActionType() override
-      {
-         return AddAfterMainAction;
-      }
-   };
-
-} // namespace clang
-
-static clang::FrontendPluginRegistry::Add<clang::CLANG_VERSION_SYMBOL(_plugin_topfname)> X(CLANG_VERSION_STRING(_plugin_topfname), "Dumy plugin");
-
-#include "llvm/IR/LegacyPassManager.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/PassManager.h"
-#include "llvm/InitializePasses.h"
-#include "llvm/Pass.h"
-#include "llvm/PassRegistry.h"
-#include "llvm/Transforms/IPO/PassManagerBuilder.h"
-#include "llvm/Transforms/Utils/LoopUtils.h"
-
 namespace llvm
 {
+   cl::opt<std::string> TopFunctionName_DNEGP("panda-TFN", cl::desc("Specify the name of the top function"), cl::value_desc("name of the top function"));
    struct CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass) : public ModulePass
    {
       static char ID;
@@ -166,13 +101,15 @@ namespace llvm
       {
          bool changed = false;
          bool hasTopFun = false;
+         if(TopFunctionName_DNEGP.empty())
+            llvm::report_fatal_error("-panda-TFN parameter not specified");
          for(auto& fun : M.getFunctionList())
          {
             if(!fun.isIntrinsic() && !fun.isDeclaration())
             {
                auto funName = fun.getName();
                auto demangled = getDemangled(funName);
-               if(!fun.hasInternalLinkage() && (funName == TopFunctionName || demangled == TopFunctionName))
+               if(!fun.hasInternalLinkage() && (funName == TopFunctionName_DNEGP || demangled == TopFunctionName_DNEGP))
                {
                   hasTopFun = true;
                }
@@ -181,7 +118,7 @@ namespace llvm
 
          /// check if the translation unit has the top function name
 #if PRINT_DBG_MSG
-         llvm::errs() << "Top function name: " << TopFunctionName << "\n";
+         llvm::errs() << "Top function name: " << TopFunctionName_DNEGP << "\n";
 #endif
          for(auto& globalVar : M.getGlobalList())
          {
@@ -219,7 +156,7 @@ namespace llvm
 #if PRINT_DBG_MSG
                llvm::errs() << "Found function: " << funName << "|" << demangled << "\n";
 #endif
-               if(!fun.hasInternalLinkage() && funName != TopFunctionName && demangled != TopFunctionName && !is_builtin_fn(funName) && !is_builtin_fn(demangled))
+               if(!fun.hasInternalLinkage() && funName != TopFunctionName_DNEGP && demangled != TopFunctionName_DNEGP && !is_builtin_fn(funName) && !is_builtin_fn(demangled))
                {
 #if PRINT_DBG_MSG
                   llvm::errs() << "it becomes internal\n";

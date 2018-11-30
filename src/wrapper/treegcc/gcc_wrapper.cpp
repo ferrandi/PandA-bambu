@@ -82,16 +82,19 @@
 #include "config_I386_CLANG4_SSA_PLUGIN.hpp"
 #include "config_I386_CLANG4_SSA_PLUGINCPP.hpp"
 #include "config_I386_CLANG4_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CLANG4_ASTANALYZER_PLUGIN.hpp"
 #include "config_I386_CLANG5_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG5_EXE.hpp"
 #include "config_I386_CLANG5_SSA_PLUGIN.hpp"
 #include "config_I386_CLANG5_SSA_PLUGINCPP.hpp"
 #include "config_I386_CLANG5_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CLANG5_ASTANALYZER_PLUGIN.hpp"
 #include "config_I386_CLANG6_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG6_EXE.hpp"
 #include "config_I386_CLANG6_SSA_PLUGIN.hpp"
 #include "config_I386_CLANG6_SSA_PLUGINCPP.hpp"
 #include "config_I386_CLANG6_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CLANG6_ASTANALYZER_PLUGIN.hpp"
 #include "config_I386_CLANGPP4_EXE.hpp"
 #include "config_I386_CLANGPP5_EXE.hpp"
 #include "config_I386_CLANGPP6_EXE.hpp"
@@ -243,18 +246,34 @@ GccWrapper::GccWrapper(const ParameterConstRef _Param, const GccWrapper_Compiler
 // destructor
 GccWrapper::~GccWrapper() = default;
 
-void GccWrapper::CompileFile(const std::string& original_file_name, std::string& real_file_name, const std::string& parameters_line, bool empty_file)
+void GccWrapper::CompileFile(const std::string& original_file_name, std::string& real_file_name, const std::string& parameters_line, bool empty_file, bool enableAnalyzer)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Compiling " + original_file_name + "(transformed in " + real_file_name);
 
    /// The gcc output
    const std::string gcc_output_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
 
-   std::string opt; // = " -O1";
    const Compiler compiler = GetCompiler();
    std::string command = compiler.gcc.string();
+   if(enableAnalyzer && !compiler.is_clang)
+   {
+      bool flag_cpp;
+      if(Param->isOption(OPT_input_format) && Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP)
+         flag_cpp = true;
+      else
+         flag_cpp = false;
+#if HAVE_I386_CLANG6_COMPILER
+      command = flag_cpp ? I386_CLANGPP6_EXE : I386_CLANG6_EXE;
+#elif HAVE_I386_CLANG5_COMPILER
+      command = flag_cpp ? I386_CLANGPP5_EXE : I386_CLANG5_EXE;
+#elif HAVE_I386_CLANG4_COMPILER
+      command = flag_cpp ? I386_CLANGPP4_EXE : I386_CLANG4_EXE;
+#else
+     THROW_ERROR("unexpected condition");
+#endif
+   }
    command += " -D__NO_INLINE__ "; /// needed to avoid problem with glibc inlines
-   if(Param->isOption(OPT_discrepancy) and Param->getOption<bool>(OPT_discrepancy))
+   if(Param->isOption(OPT_discrepancy) and Param->getOption<bool>(OPT_discrepancy) and !enableAnalyzer)
    {
       command += " -D__BAMBU_DISCREPANCY__ ";
    }
@@ -266,7 +285,8 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       source_files.push_back(original_file_name);
       command += AddSourceCodeIncludes(source_files) + " ";
    }
-   command += " " + compiler.extra_options + " ";
+   if(!enableAnalyzer)
+      command += " " + compiler.extra_options + " ";
 
    bool isWholeProgram =
        Param->isOption(OPT_gcc_optimizations) && Param->getOption<std::string>(OPT_gcc_optimizations).find("whole-program") != std::string::npos && Param->getOption<std::string>(OPT_gcc_optimizations).find("no-whole-program") == std::string::npos;
@@ -286,18 +306,36 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       }
       real_file_name = temp_file_name;
       if(compiler.is_clang)
-         command += opt + " -c -fplugin=" + compiler.empty_plugin_obj + " -Xclang -add-plugin -Xclang " + compiler.empty_plugin_name + " -Xclang -plugin-arg-" + compiler.empty_plugin_name + " -Xclang -outputdir -Xclang -plugin-arg-" +
-                    compiler.empty_plugin_name + " -Xclang " + Param->getOption<std::string>(OPT_output_temporary_directory);
+         command += " -c -fplugin=" + compiler.empty_plugin_obj + " -mllvm -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) + " -mllvm -panda-infile=" + real_file_name;
       else
-         command += opt + " -c -fplugin=" + compiler.empty_plugin_obj + " -fplugin-arg-" + compiler.empty_plugin_name + "-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory);
+         command += " -c -fplugin=" + compiler.empty_plugin_obj + " -fplugin-arg-" + compiler.empty_plugin_name + "-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory);
+   }
+   else if(enableAnalyzer)
+   {
+      if(!Param->isOption(OPT_top_functions_names))
+      {
+         THROW_ERROR("Clang analyzer requires a top function name");
+      }
+      const auto top_functions_names = Param->getOption<const std::list<std::string>>(OPT_top_functions_names);
+      std::string fname;
+      if(top_functions_names.size() != 1)
+      {
+         THROW_ERROR("Clang analyzer requires a single top function");
+      }
+      fname = top_functions_names.front();
+      command += " -c -fplugin=" + compiler.ASTAnalyzer_plugin_obj;
+      command += " -Xclang -add-plugin -Xclang " + compiler.ASTAnalyzer_plugin_name + " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang -outputdir -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name +
+                 " -Xclang " + Param->getOption<std::string>(OPT_output_temporary_directory);
+
+      command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang -topfname -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang " + fname;
    }
    else if((Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E)) or (Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S)))
-      command += opt;
+      ;
    else
 #if HAVE_FROM_RTL_BUILT
        if(Param->getOption<bool>(OPT_use_rtl))
    {
-      command += opt + " -c -fplugin=" + compiler.rtl_plugin;
+      command += " -c -fplugin=" + compiler.rtl_plugin;
    }
    else
 #endif
@@ -317,16 +355,17 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
             addTopFName = top_functions_names.size() == 1;
             fname = top_functions_names.front();
          }
+         command += " -c -fplugin=" + compiler.ssa_plugin_obj + " -mllvm -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) + " -mllvm -panda-infile=" + real_file_name;
 
-         command += opt + " -c -fplugin=" + compiler.ssa_plugin_obj + " -Xclang -add-plugin -Xclang " + compiler.ssa_plugin_name + " -Xclang -plugin-arg-" + compiler.ssa_plugin_name + " -Xclang -outputdir -Xclang -plugin-arg-" + compiler.ssa_plugin_name +
-                    " -Xclang " + Param->getOption<std::string>(OPT_output_temporary_directory);
          if(addTopFName)
-            command += " -Xclang -plugin-arg-" + compiler.ssa_plugin_name + " -Xclang -topfname -Xclang -plugin-arg-" + compiler.ssa_plugin_name + " -Xclang " + fname;
+         {
+            command += " -mllvm -panda-topfname=" + fname;
+         }
       }
       else
-         command += opt + " -c -fplugin=" + compiler.ssa_plugin_obj + " -fplugin-arg-" + compiler.ssa_plugin_name + "-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory);
+         command += " -c -fplugin=" + compiler.ssa_plugin_obj + " -fplugin-arg-" + compiler.ssa_plugin_name + "-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory);
    }
-   if((Param->isOption(OPT_top_functions_names) && Param->getOption<bool>(OPT_do_not_expose_globals)) || (isWholeProgram && compiler.is_clang))
+   if((Param->isOption(OPT_top_functions_names) && Param->getOption<bool>(OPT_do_not_expose_globals) && !enableAnalyzer) || (isWholeProgram && compiler.is_clang && !enableAnalyzer))
    {
       std::string fname;
       bool addPlugin = false;
@@ -347,8 +386,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       if(addPlugin)
       {
          if(compiler.is_clang)
-            command += " -fplugin=" + compiler.topfname_plugin_obj + " -Xclang -add-plugin -Xclang " + compiler.topfname_plugin_name + " -Xclang -plugin-arg-" + compiler.topfname_plugin_name + " -Xclang -topfname -Xclang -plugin-arg-" +
-                       compiler.topfname_plugin_name + " -Xclang " + fname;
+            command += " -fplugin=" + compiler.topfname_plugin_obj + " -mllvm -panda-TFN=" + fname;
          else
             command += " -fplugin=" + compiler.topfname_plugin_obj + " -fplugin-arg-" + compiler.topfname_plugin_name + "-topfname=" + fname;
       }
@@ -441,6 +479,51 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
          bool assume_aligned_access_p = Param->isOption(OPT_aligned_access) && Param->getOption<bool>(OPT_aligned_access);
          if(assume_aligned_access_p)
             THROW_ERROR("Option --aligned-access cannot be used with -O3 or -ftree-vectorize");
+      }
+   }
+
+   if(Param->isOption(OPT_interface_type) && Param->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+   {
+      if(!(HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER))
+         THROW_ERROR("inferred interfaces analysis requires CLANG");
+      for(auto& source_file : source_files)
+      {
+         if(already_processed_files.find(source_file.first) != already_processed_files.end())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Already processed " + source_file.first);
+            continue;
+         }
+         std::string analyzing_compiling_parameters;
+         if(Param->isOption(OPT_gcc_standard))
+         {
+            std::string standard = Param->getOption<std::string>(OPT_gcc_standard);
+            analyzing_compiling_parameters += "--std=" + standard + " ";
+         }
+         if(Param->isOption(OPT_gcc_defines))
+         {
+            const auto defines = Param->getOption<const CustomSet<std::string>>(OPT_gcc_defines);
+            for(const auto& define : defines)
+            {
+               std::string escaped_string = define;
+               // add_escape(escaped_string, "\"");
+               analyzing_compiling_parameters += "-D" + escaped_string + " ";
+            }
+         }
+         if(Param->isOption(OPT_gcc_undefines))
+         {
+            const auto undefines = Param->getOption<const CustomSet<std::string>>(OPT_gcc_undefines);
+            for(const auto& undefine : undefines)
+            {
+               std::string escaped_string = undefine;
+               // add_escape(escaped_string, "\"");
+               analyzing_compiling_parameters += "-U" + escaped_string + " ";
+            }
+         }
+         if(Param->isOption(OPT_gcc_includes))
+         {
+            analyzing_compiling_parameters += Param->getOption<std::string>(OPT_gcc_includes) + " ";
+         }
+         CompileFile(source_file.first, source_file.second, analyzing_compiling_parameters, false, true);
       }
    }
 
@@ -1328,6 +1411,16 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       }
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC45_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC45_TOPFNAME_PLUGIN;
+#if HAVE_I386_CLANG6_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
+#elif HAVE_I386_CLANG5_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
+#elif HAVE_I386_CLANG4_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
+#endif
 #if HAVE_FROM_RTL_BUILT
       compiler.rtl_plugin = plugin_dir + "";
 #endif
@@ -1357,6 +1450,16 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       }
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC46_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC46_TOPFNAME_PLUGIN;
+#if HAVE_I386_CLANG6_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
+#elif HAVE_I386_CLANG5_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
+#elif HAVE_I386_CLANG4_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
+#endif
 #if HAVE_FROM_RTL_BUILT
       compiler.rtl_plugin = plugin_dir + "";
 #endif
@@ -1393,6 +1496,16 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       }
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC47_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC47_TOPFNAME_PLUGIN;
+#if HAVE_I386_CLANG6_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
+#elif HAVE_I386_CLANG5_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
+#elif HAVE_I386_CLANG4_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
+#endif
 #if HAVE_FROM_RTL_BUILT
       compiler.rtl_plugin = plugin_dir + "";
 #endif
@@ -1429,6 +1542,16 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       }
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC48_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC48_TOPFNAME_PLUGIN;
+#if HAVE_I386_CLANG6_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
+#elif HAVE_I386_CLANG5_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
+#elif HAVE_I386_CLANG4_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
+#endif
 #if HAVE_FROM_RTL_BUILT
       compiler.rtl_plugin = plugin_dir + "";
 #endif
@@ -1457,6 +1580,16 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ssa_plugin_name = (flag_cpp ? I386_GCC49_SSA_PLUGINCPP : I386_GCC49_SSA_PLUGIN);
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC49_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC49_TOPFNAME_PLUGIN;
+#if HAVE_I386_CLANG6_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
+#elif HAVE_I386_CLANG5_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
+#elif HAVE_I386_CLANG4_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
+#endif
 #if HAVE_FROM_RTL_BUILT
       compiler.rtl_plugin = plugin_dir + "";
 #endif
@@ -1485,6 +1618,16 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ssa_plugin_name = (flag_cpp ? I386_GCC5_SSA_PLUGINCPP : I386_GCC5_SSA_PLUGIN);
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC5_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC5_TOPFNAME_PLUGIN;
+#if HAVE_I386_CLANG6_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
+#elif HAVE_I386_CLANG5_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
+#elif HAVE_I386_CLANG4_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
+#endif
 #if HAVE_FROM_RTL_BUILT
       compiler.rtl_plugin = plugin_dir + "";
 #endif
@@ -1514,6 +1657,16 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ssa_plugin_name = (flag_cpp ? I386_GCC6_SSA_PLUGINCPP : I386_GCC6_SSA_PLUGIN);
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC6_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC6_TOPFNAME_PLUGIN;
+#if HAVE_I386_CLANG6_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
+#elif HAVE_I386_CLANG5_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
+#elif HAVE_I386_CLANG4_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
+#endif
 
 #if HAVE_FROM_RTL_BUILT
       compiler.rtl_plugin = plugin_dir + "";
@@ -1544,6 +1697,16 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ssa_plugin_name = (flag_cpp ? I386_GCC7_SSA_PLUGINCPP : I386_GCC7_SSA_PLUGIN);
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC7_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC7_TOPFNAME_PLUGIN;
+#if HAVE_I386_CLANG6_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
+#elif HAVE_I386_CLANG5_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
+#elif HAVE_I386_CLANG4_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
+#endif
 
 #if HAVE_FROM_RTL_BUILT
       compiler.rtl_plugin = plugin_dir + "";
@@ -1574,6 +1737,16 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ssa_plugin_name = (flag_cpp ? I386_GCC8_SSA_PLUGINCPP : I386_GCC8_SSA_PLUGIN);
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC8_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC8_TOPFNAME_PLUGIN;
+#if HAVE_I386_CLANG6_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
+#elif HAVE_I386_CLANG5_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
+#elif HAVE_I386_CLANG4_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
+#endif
 
 #if HAVE_FROM_RTL_BUILT
       compiler.rtl_plugin = plugin_dir + "";
@@ -1595,6 +1768,8 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG4_SSA_PLUGINCPP : I386_CLANG4_SSA_PLUGIN);
       compiler.topfname_plugin_obj = plugin_dir + I386_CLANG4_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_CLANG4_TOPFNAME_PLUGIN;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
 
 #if HAVE_FROM_RTL_BUILT
       compiler.rtl_plugin = plugin_dir + "";
@@ -1616,6 +1791,8 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG5_SSA_PLUGINCPP : I386_CLANG5_SSA_PLUGIN);
       compiler.topfname_plugin_obj = plugin_dir + I386_CLANG5_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_CLANG5_TOPFNAME_PLUGIN;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
 
 #if HAVE_FROM_RTL_BUILT
       compiler.rtl_plugin = plugin_dir + "";
@@ -1637,6 +1814,8 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG6_SSA_PLUGINCPP : I386_CLANG6_SSA_PLUGIN);
       compiler.topfname_plugin_obj = plugin_dir + I386_CLANG6_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_CLANG6_TOPFNAME_PLUGIN;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
 
 #if HAVE_FROM_RTL_BUILT
       compiler.rtl_plugin = plugin_dir + "";
