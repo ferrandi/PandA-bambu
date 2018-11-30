@@ -1130,9 +1130,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                      auto inputBitWidth = tree_helper::size(TM, tree_helper::get_pointed_type(TM, GET_INDEX_NODE(aType)));
                      bool is_signed;
                      bool is_fixed;
-                     std::cerr << "interfaceTypename=" << interfaceTypename << "\n";
                      auto acTypeBw = ac_type_bitwidth(interfaceTypename, is_signed, is_fixed);
-                     std::cerr << "after=" << interfaceTypename << "\n";
                      bool is_acType = false;
                      if(acTypeBw)
                      {
