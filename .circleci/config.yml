@@ -9,7 +9,6 @@ jobs:
       CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
     docker:
     - image: ubuntu:18.04
-      command: /sbin/init
     steps:
     - run: echo 'export PATH=/usr/lib/ccache:$PATH' >> $BASH_ENV 
     - checkout
