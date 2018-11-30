@@ -330,7 +330,6 @@ gcc_regression_simple/20080719-1.c
 gcc_regression_simple/20080813-1.c
 gcc_regression_simple/20081112-1.c
 gcc_regression_simple/20081218-1.c
-gcc_regression_simple/20090113-1.c
 gcc_regression_simple/20090113-2.c
 gcc_regression_simple/20090113-3.c
 gcc_regression_simple/20090207-1.c
