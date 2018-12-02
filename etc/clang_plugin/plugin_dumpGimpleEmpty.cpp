@@ -53,10 +53,10 @@ namespace llvm
 {
    cl::opt<std::string> outdir_name("panda-outputdir", cl::desc("Specify the directory where the gimple raw file will be written"), cl::value_desc("directory path"));
    cl::opt<std::string> InFile("panda-infile", cl::desc("Specify the name of the compiled source file"), cl::value_desc("filename path"));
-   struct CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyPass) : public ModulePass
+   struct CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty) : public ModulePass
    {
       static char ID;
-      CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyPass)() : ModulePass(ID)
+      CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)() : ModulePass(ID)
       {
          initializeLoopPassPass(*PassRegistry::getPassRegistry());
       }
@@ -82,17 +82,17 @@ namespace llvm
       }
    };
 
-   char CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyPass)::ID = 0;
+   char CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)::ID = 0;
 
 } // namespace llvm
 
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyPass)> XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleEmptyPass), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false /* Only looks at CFG */,
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)> XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleEmpty), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false /* Only looks at CFG */,
                                                                                          false /* Analysis Pass */);
 
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
-   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyPass)());
+   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)());
 }
 // These constructors add our pass to a list of global extensions.
 static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyLoader_Ox)(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);

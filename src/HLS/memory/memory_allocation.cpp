@@ -253,20 +253,24 @@ void memory_allocation::finalize_memory_allocation()
       const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(fun_id);
       const BehavioralHelperConstRef behavioral_helper = function_behavior->CGetBehavioralHelper();
       bool is_interfaced = HLSMgr->hasToBeInterfaced(behavioral_helper->get_function_index());
+      bool is_inferred_interface = parameters->isOption(OPT_interface_type) && parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
       if(function_behavior->get_has_globals() && (!parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals)))
          has_intern_shared_data = true;
-      const std::list<unsigned int>& function_parameters = behavioral_helper->get_parameters();
-      for(const auto function_parameter : function_parameters)
+      if(!is_inferred_interface)
       {
-         if(HLSMgr->Rmem->is_parm_decl_copied(function_parameter) && !HLSMgr->Rmem->is_parm_decl_stored(function_parameter))
+         const std::list<unsigned int>& function_parameters = behavioral_helper->get_parameters();
+         for(const auto function_parameter : function_parameters)
          {
-            use_databus_width = true;
-            maximum_bus_size = std::max(maximum_bus_size, 8u);
-         }
-         if(!use_unknown_address && is_interfaced && tree_helper::is_a_pointer(TreeM, function_parameter))
-         {
-            use_unknown_address = true;
-            THROW_WARNING("This function uses unknown addresses: " + behavioral_helper->get_function_name());
+            if(HLSMgr->Rmem->is_parm_decl_copied(function_parameter) && !HLSMgr->Rmem->is_parm_decl_stored(function_parameter))
+            {
+               use_databus_width = true;
+               maximum_bus_size = std::max(maximum_bus_size, 8u);
+            }
+            if(!use_unknown_address && is_interfaced && tree_helper::is_a_pointer(TreeM, function_parameter))
+            {
+               use_unknown_address = true;
+               THROW_WARNING("This function uses unknown addresses: " + behavioral_helper->get_function_name());
+            }
          }
       }
       if(function_behavior->has_packed_vars())

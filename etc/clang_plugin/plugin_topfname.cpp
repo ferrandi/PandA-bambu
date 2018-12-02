@@ -56,17 +56,17 @@
 
 namespace llvm
 {
-   struct CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass);
+   struct CLANG_VERSION_SYMBOL(_plugin_topfname);
 }
 
 namespace llvm
 {
    cl::opt<std::string> TopFunctionName_DNEGP("panda-TFN", cl::desc("Specify the name of the top function"), cl::value_desc("name of the top function"));
-   struct CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass) : public ModulePass
+   struct CLANG_VERSION_SYMBOL(_plugin_topfname) : public ModulePass
    {
       static char ID;
       static const std::set<std::string> builtinsNames;
-      CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass)() : ModulePass(ID)
+      CLANG_VERSION_SYMBOL(_plugin_topfname)() : ModulePass(ID)
       {
          initializeLoopPassPass(*PassRegistry::getPassRegistry());
       }
@@ -115,7 +115,8 @@ namespace llvm
                }
             }
          }
-
+         if(!hasTopFun)
+            return changed;
          /// check if the translation unit has the top function name
 #if PRINT_DBG_MSG
          llvm::errs() << "Top function name: " << TopFunctionName_DNEGP << "\n";
@@ -170,7 +171,7 @@ namespace llvm
       }
       StringRef getPassName() const override
       {
-         return CLANG_VERSION_STRING(_plugin_DoNotExposeGlobalsPass);
+         return CLANG_VERSION_STRING(_plugin_topfname);
       }
       void getAnalysisUsage(AnalysisUsage& AU) const override
       {
@@ -178,22 +179,22 @@ namespace llvm
       }
    };
 
-   char CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass)::ID = 0;
+   char CLANG_VERSION_SYMBOL(_plugin_topfname)::ID = 0;
 
 #define DEF_BUILTIN(X, N, C, T, LT, B, F, NA, AT, IM, COND) N,
-   const std::set<std::string> CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass)::builtinsNames = {
+   const std::set<std::string> CLANG_VERSION_SYMBOL(_plugin_topfname)::builtinsNames = {
 #include "gcc/builtins.def"
    };
 #undef DEF_BUILTIN
 
 } // namespace llvm
 
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass)> XPass(CLANG_VERSION_STRING(_plugin_DoNotExposeGlobalsPass), "Make all private/static but the top function", false /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)> XPass(CLANG_VERSION_STRING(_plugin_topfname), "Make all private/static but the top function", false /* Only looks at CFG */, false /* Analysis Pass */);
 
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
-   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsPass)());
+   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)());
 }
 // These constructors add our pass to a list of global extensions.
-static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_DoNotExposeGlobalsLoader_Ox)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
+static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_topfname_Ox)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);

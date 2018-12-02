@@ -67,6 +67,22 @@ for compiler in $CLANG_TO_BE_CHECKED; do
          echo "checking clang++...no"
          continue
       fi
+      llvm_link=`echo $clang_file | sed s/clang/llvm-link/`
+      I386_LLVM4_LINK_EXE=$clang_dir/$llvm_link
+      if test -f $I386_LLVM4_LINK_EXE; then
+         echo "checking llvm-link...$I386_LLVM4_LINK_EXE"
+      else
+         echo "checking llvm-link...no"
+         continue
+      fi
+      llvm_opt=`echo $clang_file | sed s/clang/opt/`
+      I386_LLVM4_OPT_EXE=$clang_dir/$llvm_opt
+      if test -f $I386_LLVM4_OPT_EXE; then
+         echo "checking llvm-opt...$I386_LLVM4_OPT_EXE"
+      else
+         echo "checking llvm-opt...no"
+         continue
+      fi
       ac_save_CC="$CC"
       ac_save_CFLAGS="$CFLAGS"
       ac_save_LDFLAGS="$LDFLAGS"
@@ -332,6 +348,8 @@ if test x$I386_CLANG4_PLUGIN_COMPILER != x; then
   AC_DEFINE_UNQUOTED(I386_CLANG4_EXE, "${I386_CLANG4_EXE}", "Define the plugin clang")
   AC_DEFINE_UNQUOTED(I386_CLANG_CPP4_EXE, "${I386_CLANG_CPP4_EXE}", "Define the plugin cpp")
   AC_DEFINE_UNQUOTED(I386_CLANGPP4_EXE, "${I386_CLANGPP4_EXE}", "Define the plugin clang++")
+  AC_DEFINE_UNQUOTED(I386_LLVM4_LINK_EXE, "${I386_LLVM4_LINK_EXE}", "Define the plugin clang++")
+  AC_DEFINE_UNQUOTED(I386_LLVM4_OPT_EXE, "${I386_LLVM4_OPT_EXE}", "Define the plugin clang++")
   AC_DEFINE_UNQUOTED(I386_CLANG4_EMPTY_PLUGIN, "${I386_CLANG4_EMPTY_PLUGIN}", "Define the filename of the CLANG PandA Empty plugin")
   AC_DEFINE_UNQUOTED(I386_CLANG4_SSA_PLUGIN, "${I386_CLANG4_SSA_PLUGIN}", "Define the filename of the CLANG PandA SSA plugin")
   AC_DEFINE_UNQUOTED(I386_CLANG4_SSA_PLUGINCPP, "${I386_CLANG4_SSA_PLUGINCPP}", "Define the filename of the CLANG PandA C++ SSA plugin")
@@ -413,6 +431,22 @@ for compiler in $CLANG_TO_BE_CHECKED; do
          echo "checking clang++...$I386_CLANGPP5_EXE"
       else
          echo "checking clang++...no"
+         continue
+      fi
+      llvm_link=`echo $clang_file | sed s/clang/llvm-link/`
+      I386_LLVM5_LINK_EXE=$clang_dir/$llvm_link
+      if test -f $I386_LLVM5_LINK_EXE; then
+         echo "checking llvm-link...$I386_LLVM5_LINK_EXE"
+      else
+         echo "checking llvm-link...no"
+         continue
+      fi
+      llvm_opt=`echo $clang_file | sed s/clang/opt/`
+      I386_LLVM5_OPT_EXE=$clang_dir/$llvm_opt
+      if test -f $I386_LLVM5_OPT_EXE; then
+         echo "checking llvm-opt...$I386_LLVM5_OPT_EXE"
+      else
+         echo "checking llvm-opt...no"
          continue
       fi
       ac_save_CC="$CC"
@@ -680,6 +714,8 @@ if test x$I386_CLANG5_PLUGIN_COMPILER != x; then
   AC_DEFINE_UNQUOTED(I386_CLANG5_EXE, "${I386_CLANG5_EXE}", "Define the plugin clang")
   AC_DEFINE_UNQUOTED(I386_CLANG_CPP5_EXE, "${I386_CLANG_CPP5_EXE}", "Define the plugin cpp")
   AC_DEFINE_UNQUOTED(I386_CLANGPP5_EXE, "${I386_CLANGPP5_EXE}", "Define the plugin clang++")
+  AC_DEFINE_UNQUOTED(I386_LLVM5_LINK_EXE, "${I386_LLVM5_LINK_EXE}", "Define the plugin clang++")
+  AC_DEFINE_UNQUOTED(I386_LLVM5_OPT_EXE, "${I386_LLVM5_OPT_EXE}", "Define the plugin clang++")
   AC_DEFINE_UNQUOTED(I386_CLANG5_EMPTY_PLUGIN, "${I386_CLANG5_EMPTY_PLUGIN}", "Define the filename of the CLANG PandA Empty plugin")
   AC_DEFINE_UNQUOTED(I386_CLANG5_SSA_PLUGIN, "${I386_CLANG5_SSA_PLUGIN}", "Define the filename of the CLANG PandA SSA plugin")
   AC_DEFINE_UNQUOTED(I386_CLANG5_SSA_PLUGINCPP, "${I386_CLANG5_SSA_PLUGINCPP}", "Define the filename of the CLANG PandA C++ SSA plugin")
@@ -762,6 +798,22 @@ for compiler in $CLANG_TO_BE_CHECKED; do
          echo "checking clang++...$I386_CLANGPP6_EXE"
       else
          echo "checking clang++...no"
+         continue
+      fi
+      llvm_link=`echo $clang_file | sed s/clang/llvm-link/`
+      I386_LLVM6_LINK_EXE=$clang_dir/$llvm_link
+      if test -f $I386_LLVM6_LINK_EXE; then
+         echo "checking llvm-link...$I386_LLVM6_LINK_EXE"
+      else
+         echo "checking llvm-link...no"
+         continue
+      fi
+      llvm_opt=`echo $clang_file | sed s/clang/opt/`
+      I386_LLVM6_OPT_EXE=$clang_dir/$llvm_opt
+      if test -f $I386_LLVM6_OPT_EXE; then
+         echo "checking llvm-opt...$I386_LLVM6_OPT_EXE"
+      else
+         echo "checking llvm-opt...no"
          continue
       fi
       ac_save_CC="$CC"
@@ -1029,6 +1081,8 @@ if test x$I386_CLANG6_PLUGIN_COMPILER != x; then
   AC_DEFINE_UNQUOTED(I386_CLANG6_EXE, "${I386_CLANG6_EXE}", "Define the plugin clang")
   AC_DEFINE_UNQUOTED(I386_CLANG_CPP6_EXE, "${I386_CLANG_CPP6_EXE}", "Define the plugin cpp")
   AC_DEFINE_UNQUOTED(I386_CLANGPP6_EXE, "${I386_CLANGPP6_EXE}", "Define the plugin clang++")
+  AC_DEFINE_UNQUOTED(I386_LLVM6_LINK_EXE, "${I386_LLVM6_LINK_EXE}", "Define the plugin clang++")
+  AC_DEFINE_UNQUOTED(I386_LLVM6_OPT_EXE, "${I386_LLVM6_OPT_EXE}", "Define the plugin clang++")
   AC_DEFINE_UNQUOTED(I386_CLANG6_EMPTY_PLUGIN, "${I386_CLANG6_EMPTY_PLUGIN}", "Define the filename of the CLANG PandA Empty plugin")
   AC_DEFINE_UNQUOTED(I386_CLANG6_SSA_PLUGIN, "${I386_CLANG6_SSA_PLUGIN}", "Define the filename of the CLANG PandA SSA plugin")
   AC_DEFINE_UNQUOTED(I386_CLANG6_SSA_PLUGINCPP, "${I386_CLANG6_SSA_PLUGINCPP}", "Define the filename of the CLANG PandA C++ SSA plugin")

@@ -83,10 +83,10 @@ namespace llvm
    cl::opt<std::string> outdir_name("panda-outputdir", cl::desc("Specify the directory where the gimple raw file will be written"), cl::value_desc("directory path"));
    cl::opt<std::string> InFile("panda-infile", cl::desc("Specify the name of the compiled source file"), cl::value_desc("filename path"));
 
-   struct CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSAPass) : public ModulePass
+   struct CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) : public ModulePass
    {
       static char ID;
-      CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSAPass)() : ModulePass(ID)
+      CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)() : ModulePass(ID)
       {
          initializeLoopPassPass(*PassRegistry::getPassRegistry());
          initializeLazyValueInfoWrapperPassPass(*PassRegistry::getPassRegistry());
@@ -165,7 +165,7 @@ namespace llvm
       }
       StringRef getPassName() const override
       {
-         return CLANG_VERSION_STRING(_plugin_dumpGimpleSSAPass);
+         return CLANG_VERSION_STRING(_plugin_dumpGimpleSSA);
       }
       void getAnalysisUsage(AnalysisUsage& AU) const override
       {
@@ -187,13 +187,17 @@ namespace llvm
          AU.addRequired<DominanceFrontierWrapperPass>();
       }
    };
-   char CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSAPass)::ID = 0;
+   char CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)::ID = 0;
 
 } // namespace llvm
 
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSAPass)> XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleSSAPass), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false /* Only looks at CFG */,
-                                                                                       false /* Analysis Pass */);
-
+// Currently there is no difference between c++ or c serialization
+#if CPP_LANGUAGE
+   static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)> XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleSSACpp), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false /* Only looks at CFG */,
+                                                                                          false /* Analysis Pass */);
+#else
+   static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)> XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleSSA), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false /* Only looks at CFG */,                                                                                          false /* Analysis Pass */);
+#endif
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder& PMB, llvm::legacy::PassManagerBase& PM)
 {
@@ -211,7 +215,7 @@ static void loadPass(const llvm::PassManagerBuilder& PMB, llvm::legacy::PassMana
       PM.add(llvm::createAggressiveDCEPass());
       PM.add(llvm::createLoopLoadEliminationPass());
    }
-   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSAPass)());
+   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)());
 }
 // These constructors add our pass to a list of global extensions.
 static llvm::RegisterStandardPasses llvmtoolLoader_Ox(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);

@@ -61,6 +61,9 @@
 /// The output file for tree-panda-gcc
 #define STR_CST_gcc_obj_file "run-%%%%-%%%%-%%%%-%%%%.o"
 
+/// bitcode LLVM temporary file
+#define STR_CST_llvm_obj_file "run-%%%%-%%%%-%%%%-%%%%.bc"
+
 /// The file where output messages of gcc are saved
 #define STR_CST_gcc_output "__gcc_output"
 

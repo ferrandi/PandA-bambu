@@ -1403,9 +1403,21 @@ namespace llvm
          else
          {
             assert(currentFunction != nullptr);
+            assert(currentFunction->getParent());
             llvm::ModuleSlotTracker MST(currentFunction->getParent());
             MST.incorporateFunction(*currentFunction);
             ssa_vers = MST.getLocalSlot(operand);
+            if(ssa_vers<0)
+            {
+               if(memoryaccess2ssaindex.find(operand) == memoryaccess2ssaindex.end())
+               {
+                  ssa_vers = last_memory_ssa_vers;
+                  --last_memory_ssa_vers;
+                  memoryaccess2ssaindex[operand] = ssa_vers;
+               }
+               else
+                  ssa_vers = memoryaccess2ssaindex.find(operand)->second;
+            }
             assert(ssa_vers >= 0);
             sn.type = assignCodeType(getCondSignedResult(operand, operand->getType()));
 #if HAVE_LIBBDD

@@ -91,7 +91,7 @@ namespace clang
          return on + "/" + dump_base_name;
       }
 
-      void convert_unescaped(std::string& ioString)
+      void convert_unescaped(std::string& ioString) const
       {
          std::string::size_type lPos = 0;
          while((lPos = ioString.find_first_of("&<>'\"", lPos)) != std::string::npos)
@@ -121,7 +121,7 @@ namespace clang
          }
       }
 
-      void writeXML_interfaceFile(const std::string& filename, const std::string& TopFunctionName)
+      void writeXML_interfaceFile(const std::string& filename, const std::string& TopFunctionName) const
       {
          std::error_code EC;
          llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
@@ -158,7 +158,7 @@ namespace clang
          stream << "</module>\n";
       }
 
-      void writeFun2Params(const std::string& filename)
+      void writeFun2Params(const std::string& filename) const
       {
          std::error_code EC;
          llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
@@ -198,7 +198,7 @@ namespace clang
          return ND;
       }
 
-      QualType RemoveTypedef(QualType t)
+      QualType RemoveTypedef(QualType t) const
       {
          if(t->getTypeClass() == Type::Typedef)
             return RemoveTypedef(t->getAs<TypedefType>()->getDecl()->getUnderlyingType());
@@ -210,7 +210,7 @@ namespace clang
             return t;
       }
 
-      std::string GetTypeNameCanonical(QualType t)
+      std::string GetTypeNameCanonical(QualType t) const
       {
          auto typeName = t->getCanonicalTypeInternal().getAsString();
          auto key = std::string("class ");
@@ -536,10 +536,6 @@ namespace clang
          {
             D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "outputdir argument not specified"));
          }
-         if(topfname.empty())
-         {
-            D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "topfname argument not specified"));
-         }
          clang::Preprocessor& PP = CI.getPreprocessor();
          PP.AddPragmaHandler(new HLS_interface_PragmaHandler());
          return llvm::make_unique<FunctionArgConsumer>(CI, topfname, outdir_name, InFile);
@@ -579,10 +575,6 @@ namespace clang
          if(outdir_name.empty())
          {
             D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "outputdir not specified"));
-         }
-         if(topfname.empty())
-         {
-            D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "topfname not specified"));
          }
          return true;
       }
