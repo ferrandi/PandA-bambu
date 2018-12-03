@@ -25,7 +25,7 @@ jobs:
         # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
         - v1-dep-
     - run: apt-get -qq update
-    - run: apt-get install ccache autoconf autoconf-archive automake libtool gcc-7 g++-7 gcc-7 gcc-7-plugin-dev gcc-7-multilib g++-7-multilib gfortran-7 gfortran-7-multilib clang-6.0 libclang-6.0-dev libboost-all-dev libmpc-dev libmpfi-dev libmpfr-dev libxml2-dev liblzma-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config libsuitesparse-dev libglpk-dev make
+    - run: apt-get -y install ccache autoconf autoconf-archive automake libtool gcc-7 g++-7 gcc-7 gcc-7-plugin-dev gcc-7-multilib g++-7-multilib gfortran-7 gfortran-7-multilib clang-6.0 libclang-6.0-dev libboost-all-dev libmpc-dev libmpfi-dev libmpfr-dev libxml2-dev liblzma-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config libsuitesparse-dev libglpk-dev make
     - run:
         name: make -f Makefile.init
         command: if [ "$CIRCLE_NODE_INDEX" == "0" ]; then make -f Makefile.init; fi
