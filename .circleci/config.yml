@@ -1,7 +1,7 @@
 version: 2
 jobs:
   build:
-    parallelism: 4
+    parallelism: 1
     shell: /bin/bash --login
     environment:
       CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
@@ -11,8 +11,8 @@ jobs:
     working_directory: ~/ferrandi/PandA-bambu
     steps:
     - run: echo 'export PATH=/usr/lib/ccache:$PATH' >> $BASH_ENV 
-    - checkout
     - run: apt-get -qq update && apt-get install -y ca-certificates curl git openssh-client
+    - checkout
     - run: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
     # Dependencies
     # Restore the dependency cache
