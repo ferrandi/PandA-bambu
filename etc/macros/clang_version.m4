@@ -67,6 +67,22 @@ for compiler in $CLANG_TO_BE_CHECKED; do
          echo "checking clang++...no"
          continue
       fi
+      llvm_link=`echo $clang_file | sed s/clang/llvm-link/`
+      I386_LLVM4_LINK_EXE=$clang_dir/$llvm_link
+      if test -f $I386_LLVM4_LINK_EXE; then
+         echo "checking llvm-link...$I386_LLVM4_LINK_EXE"
+      else
+         echo "checking llvm-link...no"
+         continue
+      fi
+      llvm_opt=`echo $clang_file | sed s/clang/opt/`
+      I386_LLVM4_OPT_EXE=$clang_dir/$llvm_opt
+      if test -f $I386_LLVM4_OPT_EXE; then
+         echo "checking llvm-opt...$I386_LLVM4_OPT_EXE"
+      else
+         echo "checking llvm-opt...no"
+         continue
+      fi
       ac_save_CC="$CC"
       ac_save_CFLAGS="$CFLAGS"
       ac_save_LDFLAGS="$LDFLAGS"
@@ -302,6 +318,7 @@ PLUGIN_TEST
          build_I386_CLANG4_SSA_PLUGIN=yes;
          build_I386_CLANG4_SSA_PLUGINCPP=yes;
          build_I386_CLANG4_TOPFNAME_PLUGIN=yes;
+         build_I386_CLANG4_ASTANALYZER_PLUGIN=yes;
       done
       if test "x$I386_CLANG4_PLUGIN_COMPILER" != x; then
          break;
@@ -317,10 +334,12 @@ if test x$I386_CLANG4_PLUGIN_COMPILER != x; then
   I386_CLANG4_SSA_PLUGIN=clang4_plugin_dumpGimpleSSA
   I386_CLANG4_SSA_PLUGINCPP=clang4_plugin_dumpGimpleSSACpp
   I386_CLANG4_TOPFNAME_PLUGIN=clang4_plugin_topfname
+  I386_CLANG4_ASTANALYZER_PLUGIN=clang4_plugin_ASTAnalyzer
   AC_SUBST(I386_CLANG4_EMPTY_PLUGIN)
   AC_SUBST(I386_CLANG4_SSA_PLUGIN)
   AC_SUBST(I386_CLANG4_SSA_PLUGINCPP)
   AC_SUBST(I386_CLANG4_TOPFNAME_PLUGIN)
+  AC_SUBST(I386_CLANG4_ASTANALYZER_PLUGIN)
   AC_SUBST(I386_LLVM4_HEADER_DIR)
   AC_SUBST(I386_CLANG4_EXE)
   AC_SUBST(I386_CLANG4_VERSION)
@@ -329,10 +348,13 @@ if test x$I386_CLANG4_PLUGIN_COMPILER != x; then
   AC_DEFINE_UNQUOTED(I386_CLANG4_EXE, "${I386_CLANG4_EXE}", "Define the plugin clang")
   AC_DEFINE_UNQUOTED(I386_CLANG_CPP4_EXE, "${I386_CLANG_CPP4_EXE}", "Define the plugin cpp")
   AC_DEFINE_UNQUOTED(I386_CLANGPP4_EXE, "${I386_CLANGPP4_EXE}", "Define the plugin clang++")
+  AC_DEFINE_UNQUOTED(I386_LLVM4_LINK_EXE, "${I386_LLVM4_LINK_EXE}", "Define the plugin clang++")
+  AC_DEFINE_UNQUOTED(I386_LLVM4_OPT_EXE, "${I386_LLVM4_OPT_EXE}", "Define the plugin clang++")
   AC_DEFINE_UNQUOTED(I386_CLANG4_EMPTY_PLUGIN, "${I386_CLANG4_EMPTY_PLUGIN}", "Define the filename of the CLANG PandA Empty plugin")
   AC_DEFINE_UNQUOTED(I386_CLANG4_SSA_PLUGIN, "${I386_CLANG4_SSA_PLUGIN}", "Define the filename of the CLANG PandA SSA plugin")
   AC_DEFINE_UNQUOTED(I386_CLANG4_SSA_PLUGINCPP, "${I386_CLANG4_SSA_PLUGINCPP}", "Define the filename of the CLANG PandA C++ SSA plugin")
   AC_DEFINE_UNQUOTED(I386_CLANG4_TOPFNAME_PLUGIN, "${I386_CLANG4_TOPFNAME_PLUGIN}", "Define the filename of the CLANG PandA topfname plugin")
+  AC_DEFINE_UNQUOTED(I386_CLANG4_ASTANALYZER_PLUGIN, "${I386_CLANG4_ASTANALYZER_PLUGIN}", "Define the filename of the CLANG PandA ASTAnalyzer plugin")
   AC_DEFINE_UNQUOTED(I386_CLANG4_VERSION, "${I386_CLANG4_VERSION}", "Define the clang version")
   AC_DEFINE_UNQUOTED(I386_CLANG4_PLUGIN_COMPILER, "${I386_CLANG4_PLUGIN_COMPILER}", "Define the plugin compiler")
 fi
@@ -409,6 +431,22 @@ for compiler in $CLANG_TO_BE_CHECKED; do
          echo "checking clang++...$I386_CLANGPP5_EXE"
       else
          echo "checking clang++...no"
+         continue
+      fi
+      llvm_link=`echo $clang_file | sed s/clang/llvm-link/`
+      I386_LLVM5_LINK_EXE=$clang_dir/$llvm_link
+      if test -f $I386_LLVM5_LINK_EXE; then
+         echo "checking llvm-link...$I386_LLVM5_LINK_EXE"
+      else
+         echo "checking llvm-link...no"
+         continue
+      fi
+      llvm_opt=`echo $clang_file | sed s/clang/opt/`
+      I386_LLVM5_OPT_EXE=$clang_dir/$llvm_opt
+      if test -f $I386_LLVM5_OPT_EXE; then
+         echo "checking llvm-opt...$I386_LLVM5_OPT_EXE"
+      else
+         echo "checking llvm-opt...no"
          continue
       fi
       ac_save_CC="$CC"
@@ -646,6 +684,7 @@ PLUGIN_TEST
          build_I386_CLANG5_SSA_PLUGIN=yes;
          build_I386_CLANG5_SSA_PLUGINCPP=yes;
          build_I386_CLANG5_TOPFNAME_PLUGIN=yes;
+         build_I386_CLANG5_ASTANALYZER_PLUGIN=yes;
       done
       if test "x$I386_CLANG5_PLUGIN_COMPILER" != x; then
          break;
@@ -661,10 +700,12 @@ if test x$I386_CLANG5_PLUGIN_COMPILER != x; then
   I386_CLANG5_SSA_PLUGIN=clang5_plugin_dumpGimpleSSA
   I386_CLANG5_SSA_PLUGINCPP=clang5_plugin_dumpGimpleSSACpp
   I386_CLANG5_TOPFNAME_PLUGIN=clang5_plugin_topfname
+  I386_CLANG5_ASTANALYZER_PLUGIN=clang5_plugin_ASTAnalyzer
   AC_SUBST(I386_CLANG5_EMPTY_PLUGIN)
   AC_SUBST(I386_CLANG5_SSA_PLUGIN)
   AC_SUBST(I386_CLANG5_SSA_PLUGINCPP)
   AC_SUBST(I386_CLANG5_TOPFNAME_PLUGIN)
+  AC_SUBST(I386_CLANG5_ASTANALYZER_PLUGIN)
   AC_SUBST(I386_LLVM5_HEADER_DIR)
   AC_SUBST(I386_CLANG5_EXE)
   AC_SUBST(I386_CLANG5_VERSION)
@@ -673,10 +714,13 @@ if test x$I386_CLANG5_PLUGIN_COMPILER != x; then
   AC_DEFINE_UNQUOTED(I386_CLANG5_EXE, "${I386_CLANG5_EXE}", "Define the plugin clang")
   AC_DEFINE_UNQUOTED(I386_CLANG_CPP5_EXE, "${I386_CLANG_CPP5_EXE}", "Define the plugin cpp")
   AC_DEFINE_UNQUOTED(I386_CLANGPP5_EXE, "${I386_CLANGPP5_EXE}", "Define the plugin clang++")
+  AC_DEFINE_UNQUOTED(I386_LLVM5_LINK_EXE, "${I386_LLVM5_LINK_EXE}", "Define the plugin clang++")
+  AC_DEFINE_UNQUOTED(I386_LLVM5_OPT_EXE, "${I386_LLVM5_OPT_EXE}", "Define the plugin clang++")
   AC_DEFINE_UNQUOTED(I386_CLANG5_EMPTY_PLUGIN, "${I386_CLANG5_EMPTY_PLUGIN}", "Define the filename of the CLANG PandA Empty plugin")
   AC_DEFINE_UNQUOTED(I386_CLANG5_SSA_PLUGIN, "${I386_CLANG5_SSA_PLUGIN}", "Define the filename of the CLANG PandA SSA plugin")
   AC_DEFINE_UNQUOTED(I386_CLANG5_SSA_PLUGINCPP, "${I386_CLANG5_SSA_PLUGINCPP}", "Define the filename of the CLANG PandA C++ SSA plugin")
   AC_DEFINE_UNQUOTED(I386_CLANG5_TOPFNAME_PLUGIN, "${I386_CLANG5_TOPFNAME_PLUGIN}", "Define the filename of the CLANG PandA topfname plugin")
+  AC_DEFINE_UNQUOTED(I386_CLANG5_ASTANALYZER_PLUGIN, "${I386_CLANG5_ASTANALYZER_PLUGIN}", "Define the filename of the CLANG PandA ASTAnalyzer plugin")
   AC_DEFINE_UNQUOTED(I386_CLANG5_VERSION, "${I386_CLANG5_VERSION}", "Define the clang version")
   AC_DEFINE_UNQUOTED(I386_CLANG5_PLUGIN_COMPILER, "${I386_CLANG5_PLUGIN_COMPILER}", "Define the plugin compiler")
 fi
@@ -754,6 +798,22 @@ for compiler in $CLANG_TO_BE_CHECKED; do
          echo "checking clang++...$I386_CLANGPP6_EXE"
       else
          echo "checking clang++...no"
+         continue
+      fi
+      llvm_link=`echo $clang_file | sed s/clang/llvm-link/`
+      I386_LLVM6_LINK_EXE=$clang_dir/$llvm_link
+      if test -f $I386_LLVM6_LINK_EXE; then
+         echo "checking llvm-link...$I386_LLVM6_LINK_EXE"
+      else
+         echo "checking llvm-link...no"
+         continue
+      fi
+      llvm_opt=`echo $clang_file | sed s/clang/opt/`
+      I386_LLVM6_OPT_EXE=$clang_dir/$llvm_opt
+      if test -f $I386_LLVM6_OPT_EXE; then
+         echo "checking llvm-opt...$I386_LLVM6_OPT_EXE"
+      else
+         echo "checking llvm-opt...no"
          continue
       fi
       ac_save_CC="$CC"
@@ -991,6 +1051,7 @@ PLUGIN_TEST
          build_I386_CLANG6_SSA_PLUGIN=yes;
          build_I386_CLANG6_SSA_PLUGINCPP=yes;
          build_I386_CLANG6_TOPFNAME_PLUGIN=yes;
+         build_I386_CLANG6_ASTANALYZER_PLUGIN=yes;
       done
       if test "x$I386_CLANG6_PLUGIN_COMPILER" != x; then
          break;
@@ -1006,10 +1067,12 @@ if test x$I386_CLANG6_PLUGIN_COMPILER != x; then
   I386_CLANG6_SSA_PLUGIN=clang6_plugin_dumpGimpleSSA
   I386_CLANG6_SSA_PLUGINCPP=clang6_plugin_dumpGimpleSSACpp
   I386_CLANG6_TOPFNAME_PLUGIN=clang6_plugin_topfname
+  I386_CLANG6_ASTANALYZER_PLUGIN=clang6_plugin_ASTAnalyzer
   AC_SUBST(I386_CLANG6_EMPTY_PLUGIN)
   AC_SUBST(I386_CLANG6_SSA_PLUGIN)
   AC_SUBST(I386_CLANG6_SSA_PLUGINCPP)
   AC_SUBST(I386_CLANG6_TOPFNAME_PLUGIN)
+  AC_SUBST(I386_CLANG6_ASTANALYZER_PLUGIN)
   AC_SUBST(I386_LLVM6_HEADER_DIR)
   AC_SUBST(I386_CLANG6_EXE)
   AC_SUBST(I386_CLANG6_VERSION)
@@ -1018,10 +1081,13 @@ if test x$I386_CLANG6_PLUGIN_COMPILER != x; then
   AC_DEFINE_UNQUOTED(I386_CLANG6_EXE, "${I386_CLANG6_EXE}", "Define the plugin clang")
   AC_DEFINE_UNQUOTED(I386_CLANG_CPP6_EXE, "${I386_CLANG_CPP6_EXE}", "Define the plugin cpp")
   AC_DEFINE_UNQUOTED(I386_CLANGPP6_EXE, "${I386_CLANGPP6_EXE}", "Define the plugin clang++")
+  AC_DEFINE_UNQUOTED(I386_LLVM6_LINK_EXE, "${I386_LLVM6_LINK_EXE}", "Define the plugin clang++")
+  AC_DEFINE_UNQUOTED(I386_LLVM6_OPT_EXE, "${I386_LLVM6_OPT_EXE}", "Define the plugin clang++")
   AC_DEFINE_UNQUOTED(I386_CLANG6_EMPTY_PLUGIN, "${I386_CLANG6_EMPTY_PLUGIN}", "Define the filename of the CLANG PandA Empty plugin")
   AC_DEFINE_UNQUOTED(I386_CLANG6_SSA_PLUGIN, "${I386_CLANG6_SSA_PLUGIN}", "Define the filename of the CLANG PandA SSA plugin")
   AC_DEFINE_UNQUOTED(I386_CLANG6_SSA_PLUGINCPP, "${I386_CLANG6_SSA_PLUGINCPP}", "Define the filename of the CLANG PandA C++ SSA plugin")
   AC_DEFINE_UNQUOTED(I386_CLANG6_TOPFNAME_PLUGIN, "${I386_CLANG6_TOPFNAME_PLUGIN}", "Define the filename of the CLANG PandA topfname plugin")
+  AC_DEFINE_UNQUOTED(I386_CLANG6_ASTANALYZER_PLUGIN, "${I386_CLANG6_ASTANALYZER_PLUGIN}", "Define the filename of the CLANG PandA ASTAnalyzer plugin")
   AC_DEFINE_UNQUOTED(I386_CLANG6_VERSION, "${I386_CLANG6_VERSION}", "Define the clang version")
   AC_DEFINE_UNQUOTED(I386_CLANG6_PLUGIN_COMPILER, "${I386_CLANG6_PLUGIN_COMPILER}", "Define the plugin compiler")
 fi

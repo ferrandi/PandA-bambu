@@ -1,5 +1,5 @@
 #This is etc/clang_plugin/Makefile.am
-EXTRA_DIST = $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp gcc/cp-tree.def gcc/sync-builtins.def gcc/gtm-builtins.def gcc/sanitizer.def gcc/hsa-builtins.def gcc/c-common.def gcc/gimple.def gcc/builtins.def gcc/brig-builtins.def gcc/cilkplus.def gcc/omp-builtins.def gcc/tree.def gcc/cilk-builtins.def gcc/chkp-builtins.def gcc/COPYING3 HardekopfLin_AA.hpp HardekopfLin_AA.cpp llvm/eSSA.hpp llvm/eSSA.cpp llvm/RangeAnalysis.hpp llvm/RangeAnalysis.cpp llvm/LICENSE.TXT  llvm/my_OrderedInstructions.cpp  llvm/my_OrderedInstructions.hpp
+EXTRA_DIST = $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp gcc/cp-tree.def gcc/sync-builtins.def gcc/gtm-builtins.def gcc/sanitizer.def gcc/hsa-builtins.def gcc/c-common.def gcc/gimple.def gcc/builtins.def gcc/brig-builtins.def gcc/cilkplus.def gcc/omp-builtins.def gcc/tree.def gcc/cilk-builtins.def gcc/chkp-builtins.def gcc/COPYING3 HardekopfLin_AA.hpp HardekopfLin_AA.cpp llvm/eSSA.hpp llvm/eSSA.cpp llvm/RangeAnalysis.hpp llvm/RangeAnalysis.cpp llvm/LICENSE.TXT  llvm/my_OrderedInstructions.cpp  llvm/my_OrderedInstructions.hpp
 
 
 LD_LIBRARY_PATH=
@@ -47,6 +47,10 @@ if BUILD_I386_CLANG4_TOPFNAME_PLUGIN
 all: $(I386_CLANG4_TOPFNAME_PLUGIN)
 endif
 
+if BUILD_I386_CLANG4_ASTANALYZER_PLUGIN
+all: $(I386_CLANG4_ASTANALYZER_PLUGIN)
+endif
+
 if BUILD_PTAA
 $(I386_CLANG4_SSA_PLUGIN) : clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_my_OrderedInstructions.o clang4_eSSA.o
 	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_my_OrderedInstructions.o clang4_eSSA.o -o clang4_plugin_dumpGimpleSSA.so -lbdd
@@ -74,6 +78,9 @@ endif
 $(I386_CLANG4_TOPFNAME_PLUGIN) : clang4_plugin_topfname.o 
 	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang4_plugin_topfname.o -o clang4_plugin_topfname.so
 
+$(I386_CLANG4_ASTANALYZER_PLUGIN) : clang4_plugin_ASTAnalyzer.o 
+	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang4_plugin_ASTAnalyzer.o -o clang4_plugin_ASTAnalyzer.so
+
 clang4_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp -o clang4_plugin_dumpGimpleEmpty.o -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS)
 
@@ -85,6 +92,9 @@ clang4_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGim
 
 clang4_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp -o clang4_plugin_topfname.o -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS)
+
+clang4_plugin_ASTAnalyzer.o : $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp -o clang4_plugin_ASTAnalyzer.o -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS)
 
 if BUILD_PTAA
 clang4_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp
@@ -128,6 +138,10 @@ if BUILD_I386_CLANG5_TOPFNAME_PLUGIN
 all: $(I386_CLANG5_TOPFNAME_PLUGIN)
 endif
 
+if BUILD_I386_CLANG5_ASTANALYZER_PLUGIN
+all: $(I386_CLANG5_ASTANALYZER_PLUGIN)
+endif
+
 if BUILD_PTAA
 $(I386_CLANG5_SSA_PLUGIN) : clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple.o  clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o
 	$(I386_CLANG5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o -o clang5_plugin_dumpGimpleSSA.so -lbdd
@@ -154,6 +168,9 @@ endif
 $(I386_CLANG5_TOPFNAME_PLUGIN) : clang5_plugin_topfname.o 
 	$(I386_CLANG5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang5_plugin_topfname.o -o clang5_plugin_topfname.so
 
+$(I386_CLANG5_ASTANALYZER_PLUGIN) : clang5_plugin_ASTAnalyzer.o 
+	$(I386_CLANG5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang5_plugin_ASTAnalyzer.o -o clang5_plugin_ASTAnalyzer.so
+
 clang5_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp -o clang5_plugin_dumpGimpleEmpty.o -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS)
 
@@ -165,6 +182,9 @@ clang5_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGim
 
 clang5_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp -o clang5_plugin_topfname.o -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS)
+
+clang5_plugin_ASTAnalyzer.o : $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp -o clang5_plugin_ASTAnalyzer.o -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS)
 
 if BUILD_PTAA
 clang5_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp  $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp
@@ -204,6 +224,10 @@ if BUILD_I386_CLANG6_TOPFNAME_PLUGIN
 all: $(I386_CLANG6_TOPFNAME_PLUGIN)
 endif
 
+if BUILD_I386_CLANG6_ASTANALYZER_PLUGIN
+all: $(I386_CLANG6_ASTANALYZER_PLUGIN)
+endif
+
 if BUILD_PTAA
 $(I386_CLANG6_SSA_PLUGIN) : clang6_plugin_dumpGimpleSSA.o clang6_dumpGimple.o  clang6_HardekopfLin_AA.o clang6_RangeAnalysis.o clang6_eSSA.o
 	$(I386_CLANG6_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang6_plugin_dumpGimpleSSA.o clang6_dumpGimple.o clang6_HardekopfLin_AA.o clang6_RangeAnalysis.o clang6_eSSA.o -o clang6_plugin_dumpGimpleSSA.so -lbdd
@@ -230,6 +254,9 @@ endif
 $(I386_CLANG6_TOPFNAME_PLUGIN) : clang6_plugin_topfname.o 
 	$(I386_CLANG6_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang6_plugin_topfname.o -o clang6_plugin_topfname.so
 
+$(I386_CLANG6_ASTANALYZER_PLUGIN) : clang6_plugin_ASTAnalyzer.o 
+	$(I386_CLANG6_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang6_plugin_ASTAnalyzer.o -o clang6_plugin_ASTAnalyzer.so
+
 clang6_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	$(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp -o clang6_plugin_dumpGimpleEmpty.o -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS)
 
@@ -241,6 +268,9 @@ clang6_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGim
 
 clang6_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	$(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp -o clang6_plugin_topfname.o -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS)
+
+clang6_plugin_ASTAnalyzer.o : $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	$(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp -o clang6_plugin_ASTAnalyzer.o -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS)
 
 if BUILD_PTAA
 clang6_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp  $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp

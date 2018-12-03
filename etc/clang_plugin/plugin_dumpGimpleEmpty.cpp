@@ -39,103 +39,36 @@
  */
 #include "plugin_includes.hpp"
 
-#include "clang/AST/AST.h"
-#include "clang/AST/ASTConsumer.h"
-#include "clang/AST/RecursiveASTVisitor.h"
-#include "clang/Frontend/CompilerInstance.h"
-#include "clang/Frontend/FrontendPluginRegistry.h"
-#include "clang/Sema/Sema.h"
-#include "llvm/Support/raw_ostream.h"
-
-static clang::DumpGimpleRaw* gimpleRawWriter;
-
-namespace clang
-{
-   class CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty) : public PluginASTAction
-   {
-      std::string outdir_name;
-
-    protected:
-      std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance& CI, llvm::StringRef InFile) override
-      {
-         DiagnosticsEngine& D = CI.getDiagnostics();
-         if(outdir_name.empty())
-         {
-            D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "outputdir not specified"));
-         }
-         gimpleRawWriter = new DumpGimpleRaw(CI, outdir_name, InFile, true, nullptr);
-         return llvm::make_unique<dummyConsumer>();
-      }
-
-      bool ParseArgs(const CompilerInstance& CI, const std::vector<std::string>& args) override
-      {
-         DiagnosticsEngine& D = CI.getDiagnostics();
-         for(size_t i = 0, e = args.size(); i != e; ++i)
-         {
-            if(args.at(i) == "-outputdir")
-            {
-               if(i + 1 >= e)
-               {
-                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "missing outputdir argument"));
-                  return false;
-               }
-               ++i;
-               outdir_name = args.at(i);
-            }
-         }
-         if(!args.empty() && args.at(0) == "-help")
-         {
-            PrintHelp(llvm::errs());
-         }
-
-         if(outdir_name.empty())
-         {
-            D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "outputdir not specified"));
-         }
-         return true;
-      }
-      void PrintHelp(llvm::raw_ostream& ros)
-      {
-         ros << "Help for " CLANG_VERSION_STRING(_plugin_dumpGimpleEmpty) " plugin\n";
-         ros << "-outputdir <directory>\n";
-         ros << "  Directory where the raw file will be written\n";
-      }
-
-      PluginASTAction::ActionType getActionType() override
-      {
-         return AddAfterMainAction;
-      }
-   };
-
-} // namespace clang
-
-static clang::FrontendPluginRegistry::Add<clang::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)> X(CLANG_VERSION_STRING(_plugin_dumpGimpleEmpty), "Dump globals in a gimple ssa raw format starting from LLVM IR");
-
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/InitializePasses.h"
 #include "llvm/Pass.h"
 #include "llvm/PassRegistry.h"
+#include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Utils/LoopUtils.h"
 
 namespace llvm
 {
-   struct CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyPass) : public ModulePass
+   cl::opt<std::string> outdir_name("panda-outputdir", cl::desc("Specify the directory where the gimple raw file will be written"), cl::value_desc("directory path"));
+   cl::opt<std::string> InFile("panda-infile", cl::desc("Specify the name of the compiled source file"), cl::value_desc("filename path"));
+   struct CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty) : public ModulePass
    {
       static char ID;
-      CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyPass)() : ModulePass(ID)
+      CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)() : ModulePass(ID)
       {
          initializeLoopPassPass(*PassRegistry::getPassRegistry());
       }
       bool runOnModule(Module& M) override
       {
-         assert(gimpleRawWriter);
+         if(outdir_name.empty())
+            llvm::report_fatal_error("-panda-outputdir parameter not specified");
+         if(InFile.empty())
+            llvm::report_fatal_error("-panda-infile parameter not specified");
+         DumpGimpleRaw gimpleRawWriter(outdir_name, InFile, true, nullptr);
          const std::string empty;
-         auto res = gimpleRawWriter->runOnModule(M, this, empty);
-         delete gimpleRawWriter;
-         gimpleRawWriter = nullptr;
+         auto res = gimpleRawWriter.runOnModule(M, this, empty);
          return res;
       }
       StringRef getPassName() const override
@@ -149,17 +82,17 @@ namespace llvm
       }
    };
 
-   char CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyPass)::ID = 0;
+   char CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)::ID = 0;
 
 } // namespace llvm
 
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyPass)> XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleEmptyPass), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false /* Only looks at CFG */,
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)> XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleEmpty), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false /* Only looks at CFG */,
                                                                                          false /* Analysis Pass */);
 
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
-   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyPass)());
+   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)());
 }
 // These constructors add our pass to a list of global extensions.
 static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyLoader_Ox)(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);

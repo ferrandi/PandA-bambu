@@ -3,7 +3,7 @@ Seventh public release of PandA framework.
 
 New features introduced:
 - Added an initial support to C++/fortran high-level synthesis. Now, Ubuntu distributions require the installation of g++-multilib package.
-- Added support to CLANG/LLVM compiler version 4, 5 and 6. 
+- Added support to CLANG/LLVM compiler version 4, 5 and 6. On multiple files LTO is exploited.
 - Added support to GCC compiler version 8.
 - Added support to mingw-w64. A Windows-7 64bit binary distribution is now available. This minimal msys2 binary distribution includes bambu and GCC8 with plugin and multilib enabled (see https://github.com/ferrandi/PandAW-installer for the details).
 - Added FPT tutorial material.
