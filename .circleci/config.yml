@@ -10,14 +10,12 @@ jobs:
     - image: ubuntu:18.04
     working_directory: ~/ferrandi/PandA-bambu
     steps:
-      - run:
-          name: Install essential packages
-          command: apt-get update && apt-get install -y ca-certificates curl git openssh-client
+      - run: apt-get -qq update && apt-get install -y ca-certificates curl git openssh-client
       - run: echo 'export PATH=/usr/lib/ccache:$PATH' >> $BASH_ENV 
       - checkout
       - run: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
-    # Dependencies
-    # Restore the dependency cache
+      # Dependencies
+      # Restore the dependency cache
       - restore_cache:
           keys:
           # This branch if available
@@ -25,7 +23,7 @@ jobs:
           # Default branch if not
           - v1-dep-master-
           # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
-         - v1-dep-
+          - v1-dep-
       - run: sudo apt-get -qq update
       - run: sudo apt-get install ccache autoconf autoconf-archive automake libtool gcc-7 g++-7 gcc-7 gcc-7-plugin-dev gcc-7-multilib g++-7-multilib gfortran-7 gfortran-7-multilib clang-6.0 libclang-6.0-dev libboost-all-dev libmpc-dev libmpfi-dev libmpfr-dev libxml2-dev liblzma-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config libsuitesparse-dev libglpk-dev make
       - run:
