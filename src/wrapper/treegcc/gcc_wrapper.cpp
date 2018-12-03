@@ -281,7 +281,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
 #endif
    }
    command += " -D__NO_INLINE__ "; /// needed to avoid problem with glibc inlines
-   command += "-D_GLIBCXX_IOSTREAM"; /// needed to avoid problem with iostream
+   command += " -D_GLIBCXX_IOSTREAM "; /// needed to avoid problem with iostream
    if(Param->isOption(OPT_discrepancy) and Param->getOption<bool>(OPT_discrepancy) and (cm==GccWrapper_CompilerMode::CM_STD || cm==GccWrapper_CompilerMode::CM_EMPTY))
    {
       command += " -D__BAMBU_DISCREPANCY__ ";
