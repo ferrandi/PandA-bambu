@@ -10,43 +10,44 @@ jobs:
     - image: ubuntu:18.04
     working_directory: ~/ferrandi/PandA-bambu
     steps:
-      - run: apt-get -qq update && apt-get install -y ca-certificates curl git openssh-client
-      - run: echo 'export PATH=/usr/lib/ccache:$PATH' >> $BASH_ENV 
-      - checkout
-      - run: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
-      # Dependencies
-      # Restore the dependency cache
-      - restore_cache:
-          keys:
-          # This branch if available
-          - v1-dep-{{ .Branch }}-
-          # Default branch if not
-          - v1-dep-master-
-          # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
-          - v1-dep-
-      - run: sudo apt-get -qq update
-      - run: sudo apt-get install ccache autoconf autoconf-archive automake libtool gcc-7 g++-7 gcc-7 gcc-7-plugin-dev gcc-7-multilib g++-7-multilib gfortran-7 gfortran-7-multilib clang-6.0 libclang-6.0-dev libboost-all-dev libmpc-dev libmpfi-dev libmpfr-dev libxml2-dev liblzma-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config libsuitesparse-dev libglpk-dev make
-      - run:
+    - run: echo 'export PATH=/usr/lib/ccache:$PATH' >> $BASH_ENV 
+    - checkout
+    - run: apt-get -qq update && apt-get install -y ca-certificates curl git openssh-client
+    - run: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
+    # Dependencies
+    # Restore the dependency cache
+    - restore_cache:
+        keys:
+        # This branch if available
+        - v1-dep-{{ .Branch }}-
+        # Default branch if not
+        - v1-dep-master-
+        # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
+        - v1-dep-
+    - run: sudo apt-get -qq update
+    - run: sudo apt-get install ccache autoconf autoconf-archive automake libtool gcc-7 g++-7 gcc-7 gcc-7-plugin-dev gcc-7-multilib g++-7-multilib gfortran-7 gfortran-7-multilib clang-6.0 libclang-6.0-dev libboost-all-dev libmpc-dev libmpfi-dev libmpfr-dev libxml2-dev liblzma-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config libsuitesparse-dev libglpk-dev make
+    - run:
         name: make -f Makefile.init
         command: if [ "$CIRCLE_NODE_INDEX" == "0" ]; then make -f Makefile.init; fi
-      - run:
+    - run:
         name: mkdir build && cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-verilator --enable-glpk --enable-opt && make -j4
         command: if [ "$CIRCLE_NODE_INDEX" == "0" ]; then mkdir build && cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-verilator --enable-glpk --enable-opt && make -j4; fi
-      - save_cache:
-         key: v1-dep-{{ .Branch }}-{{ epoch }}
-         paths:
-         - vendor/bundle
-         - ~/virtualenvs
-         - ~/.m2
-         - ~/.ivy2
-         - ~/.bundle
-         - ~/.gradle
-         - ~/.cache/bower
-         - ~/.ccache
+    - save_cache:
+        key: v1-dep-{{ .Branch }}-{{ epoch }}
+        paths:
+        - vendor/bundle
+        - ~/virtualenvs
+        - ~/.m2
+        - ~/.ivy2
+        - ~/.bundle
+        - ~/.gradle
+        - ~/.cache/bower
+        - ~/.ccache
     # Save test results
-      - store_test_results:
+    - store_test_results:
         path: /tmp/circleci-test-results
     # Save artifacts
-      - store_artifacts:
+    - store_artifacts:
         path: /tmp/circleci-artifacts
-      - store_artifacts:
+    - store_artifacts:
+        path: /tmp/circleci-test-results
