@@ -44,8 +44,8 @@
 #include "cpu_stats.hpp"
 #include "string_manipulation.hpp"
 #ifdef _WIN32
-#include <psapi.h>
 #include <windows.h>
+#include <psapi.h>
 #include <winsock2.h>
 #else
 #include <bits/types/struct_rusage.h>
