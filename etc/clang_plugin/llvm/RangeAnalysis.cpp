@@ -4266,6 +4266,7 @@ namespace RangeAnalysis
       }
       else if(auto st = dyn_cast<StoreInst>(mInstr))
       {
+#if HAVE_LIBBDD
          auto PO = st->getPointerOperand();
          for(auto var : *PtoSets_AA->pointsToSet(PO))
          {
@@ -4277,6 +4278,10 @@ namespace RangeAnalysis
                break;
             }
          }
+#else
+         GVfound = true;
+
+#endif
          if(GVfound)
          {
             //            llvm::errs() << "      added0 ";

@@ -29,6 +29,7 @@ addons:
     - gfortran-8-multilib
     - clang++-6.0
     - libclang-6.0-dev
+    - libbdd-dev 
     - libboost-all-dev
     - libmpc-dev
     - libmpfi-dev
