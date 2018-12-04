@@ -5954,6 +5954,7 @@ namespace llvm
             auto curInstIterator = BB->getInstList().begin();
             while(curInstIterator != BB->getInstList().end())
             {
+#if HAVE_LIBBDD
                llvm::Instruction* I = &*curInstIterator;
                if(dyn_cast<llvm::StoreInst>(I) || dyn_cast<llvm::LoadInst>(I))
                {
@@ -5995,9 +5996,11 @@ namespace llvm
                      }
                   }
                }
+#endif
                ++curInstIterator;
             }
          }
+#if HAVE_LIBBDD
          for(auto& I : StoreLoadList)
          {
             if(llvm::StoreInst* SI = dyn_cast<llvm::StoreInst>(I))
@@ -6180,6 +6183,7 @@ namespace llvm
             else
                llvm_unreachable("unexpected condition");
          }
+#endif
          for(auto& I : StoreLoadList)
             I->eraseFromParent();
       }
