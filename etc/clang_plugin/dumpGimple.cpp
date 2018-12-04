@@ -219,7 +219,11 @@ namespace llvm
        : outdir_name(_outdir_name),
          InFile(_InFile),
          filename(create_file_name_string(_outdir_name, _InFile)),
+#if __clang_major__ >= 7
+         stream(create_file_name_string(_outdir_name, _InFile), EC, sys::fs::FA_Read | sys::fs::FA_Write),
+#else
          stream(create_file_name_string(_outdir_name, _InFile), EC, llvm::sys::fs::F_RW),
+#endif
          onlyGlobals(_onlyGlobals),
          fun2params(_fun2params),
          DL(nullptr),
