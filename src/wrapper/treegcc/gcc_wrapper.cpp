@@ -324,6 +324,8 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
    }
    else if(cm==GccWrapper_CompilerMode::CM_ANALYZER)
    {
+      /// remove some extra option not compatible with clang
+      boost::replace_all(command, "-mlong-double-64", "");
       std::string fname;
       bool addTopFName = false;
       if(isWholeProgram && compiler.is_clang)
