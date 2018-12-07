@@ -118,10 +118,8 @@ INITIALIZE_PASS_END(clang6_plugin_dumpGimpleEmpty, "clang6_plugin_dumpGimpleEmpt
 
 namespace llvm
 {
-
-  PassManagerBuilder::ExtensionFn clang6_plugin_dumpGimpleEmpty_Loader()
+  void clang6_plugin_dumpGimpleEmpty_init()
   {
-    return loadPass;
   }
 }
 #endif

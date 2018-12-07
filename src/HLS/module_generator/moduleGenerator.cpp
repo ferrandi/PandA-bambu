@@ -69,7 +69,9 @@
 #include "memory.hpp"
 
 /// STD includes
-#include <fstream>
+#include <boost/filesystem/fstream.hpp>
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
 #include <iosfwd>
 
 /// technology include
@@ -138,21 +140,17 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Reading cpp-template input file '" << (path_dynamic_generators + "/" + hdl_template).c_str() << "'...");
 
-   std::string cpp_input_file_path_string = path_dynamic_generators + "/" + hdl_template;
+   boost::filesystem::path cpp_input_file_path = path_dynamic_generators + "/" + hdl_template;
 
-   const char* cpp_input_file_path = cpp_input_file_path_string.c_str();
    std::string cpp_input = "";
    std::string line;
-   std::ifstream cpp_infile;
-   cpp_infile.open(cpp_input_file_path, std::ifstream::in);
-   if(cpp_infile.is_open())
+   boost::filesystem::ifstream cpp_infile(cpp_input_file_path);
+   if ( cpp_infile )
    {
-      while(cpp_infile.good())
-      {
-         getline(cpp_infile, line);
-         cpp_input += line + "\n";
-      }
-      cpp_infile.close();
+          while ( std::getline( cpp_infile, line ) )
+          {
+            cpp_input += line + "\n";
+          }
    }
    else
       THROW_ERROR("Unable to open file " + hdl_template);

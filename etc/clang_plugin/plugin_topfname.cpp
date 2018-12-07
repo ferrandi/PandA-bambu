@@ -210,10 +210,8 @@ INITIALIZE_PASS_END(clang6_plugin_topfname, "clang6_plugin_topfname",
                 "Make all private/static but the top function", false, false)
 namespace llvm
 {
-
-  PassManagerBuilder::ExtensionFn clang6_plugin_topfname_Loader()
+  void clang6_plugin_topfname_init()
   {
-    return loadPass;
   }
 }
 #endif

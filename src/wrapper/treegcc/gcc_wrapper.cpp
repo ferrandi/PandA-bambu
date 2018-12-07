@@ -284,7 +284,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
    command += " -D_GLIBCXX_IOSTREAM "; /// needed to avoid problem with iostream
 #ifdef _WIN32
    if(compiler.is_clang)
-     command += " -isystem /mingw64/include -isystem /mingw64/x86_64-w64-mingw32/include"; /// needed by clang compiler
+     command += " -isystem /mingw64/include -isystem /mingw64/x86_64-w64-mingw32/include -isystem /mingw64/include/c++/v1/"; /// needed by clang compiler
 #endif
    if(Param->isOption(OPT_discrepancy) and Param->getOption<bool>(OPT_discrepancy) and (cm==GccWrapper_CompilerMode::CM_STD || cm==GccWrapper_CompilerMode::CM_EMPTY))
    {
@@ -2162,6 +2162,7 @@ void GccWrapper::CreateExecutable(const std::list<std::string>& file_names, cons
    std::string command;
 
    Compiler compiler = GetCompiler();
+   if(compiler.is_clang)
    command = compiler.gcc.string() + " ";
 
    command += file_names_string + " ";
@@ -2175,6 +2176,12 @@ void GccWrapper::CreateExecutable(const std::list<std::string>& file_names, cons
    std::string local_compiler_extra_options = compiler.extra_options;
    if(extra_gcc_options.find("-m32") != std::string::npos)
       boost::replace_all(local_compiler_extra_options, "-mx32", "");
+
+#ifdef _WIN32
+   if(local_compiler_extra_options.find("-m32") != std::string::npos)
+      boost::replace_all(local_compiler_extra_options, "-m32", "");
+#endif
+
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Extra options are " + local_compiler_extra_options);
    command += local_compiler_extra_options + " " + extra_gcc_options + " ";
 
