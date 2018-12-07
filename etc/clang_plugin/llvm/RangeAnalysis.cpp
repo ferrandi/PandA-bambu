@@ -6796,7 +6796,7 @@ namespace RangeAnalysis
       // the matching
       SmallVector<PhiOp*, 4> matchers(F.arg_size(), nullptr);
 
-      for(auto i = 0ul, e = parameters.size(); i < e; ++i)
+      for(unsigned long i = 0ul, e = parameters.size(); i < e; ++i)
       {
          VarNode* sink = G.addVarNode(parameters[i].first, nullptr, DL);
          sink->setRange(Range(Regular, sink->getBitWidth(), Min, Max));

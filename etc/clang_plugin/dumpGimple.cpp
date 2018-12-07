@@ -3437,7 +3437,7 @@ namespace llvm
    void DumpGimpleRaw::serialize_pointer(const char* field, const void* ptr)
    {
       serialize_maybe_newline();
-      snprintf(buffer, LOCAL_BUFFER_LEN, "%-4s: %-8lx ", field, (unsigned long)ptr);
+      snprintf(buffer, LOCAL_BUFFER_LEN, "%-4s: %-8llx ", field, (unsigned long long)ptr);
       stream << buffer;
       column += 15;
    }
@@ -5009,7 +5009,11 @@ namespace llvm
       llvm::Value* DstAddr = Memset->getRawDest();
       llvm::Value* CopyLen = Memset->getLength();
       llvm::Value* SetValue = Memset->getValue();
+#if __clang_major__ >= 7
+      unsigned Align = Memset->getDestAlignment();
+#else
       unsigned Align = Memset->getAlignment();
+#endif
       bool IsVolatile = Memset->isVolatile();
       llvm::Type* TypeOfCopyLen = CopyLen->getType();
       llvm::BasicBlock* OrigBB = InsertBefore->getParent();

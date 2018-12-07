@@ -70,7 +70,9 @@
 #include "llvm/CodeGen/Passes.h"
 #include "llvm/InitializePasses.h"
 #include "llvm/Support/MemoryBuffer.h"
-
+#if __clang_major__ >= 7
+#include "llvm/Transforms/Utils.h"
+#endif
 #include <sstream>
 
 #define PRINT_DBG_MSG 0

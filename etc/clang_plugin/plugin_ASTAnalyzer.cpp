@@ -124,8 +124,11 @@ namespace clang
       void writeXML_interfaceFile(const std::string& filename, const std::string& TopFunctionName) const
       {
          std::error_code EC;
+#if __clang_major__ >= 7
+         llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::FA_Read | llvm::sys::fs::FA_Write);
+#else
          llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
-
+#endif
          stream << "<?xml version=\"1.0\"?>\n";
          stream << "<module>\n";
          for(auto funArgPair : Fun2Params)
@@ -161,7 +164,11 @@ namespace clang
       void writeFun2Params(const std::string& filename) const
       {
          std::error_code EC;
+#if __clang_major__ >= 7
+         llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::FA_Read | llvm::sys::fs::FA_Write);
+#else
          llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
+#endif
          for(auto fun2parms_el: Fun2Params)
          {
             stream << fun2parms_el.first;
