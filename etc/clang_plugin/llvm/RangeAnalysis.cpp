@@ -31,10 +31,9 @@
  *
  */
 /**
-  * The starting file was taken from this project:
-  *  https://code.google.com/archive/p/range-analysis/
-  * The code went through a deep revision and change to port to a recent version of LLVM and to extend its functionality.
-  * In particular, it has been:
+  * The implementation started from code available at this link:https://code.google.com/archive/p/range-analysis/.
+  * The original code went through a deep revision and it has been changed to be compatible to a recent version of LLVM.
+  * Some extensions have been also added:
   * - Added anti range support
   * - Redesigned many Range operations to take into account wrapping and to
   *   improve the reductions performed
