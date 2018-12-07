@@ -4875,7 +4875,7 @@ namespace RangeAnalysis
    {
       for(const BasicBlock& BB : F)
       {
-         const TerminatorInst* ti = BB.getTerminator();
+         const auto* ti = BB.getTerminator();
          const auto* br = dyn_cast<BranchInst>(ti);
          const auto* sw = dyn_cast<SwitchInst>(ti);
 

@@ -5797,7 +5797,7 @@ namespace llvm
                         assert(ci.use_empty() && "Lowering should have eliminated any uses of the intrinsic call!");
                         ci.eraseFromParent();
                      }
-#if __clang_major__ >= 8
+#if __clang_major__ >= 8 || defined(_WIN32)
                      else if(Callee->getIntrinsicID()==llvm::Intrinsic::is_constant)
                      {
                         auto C = llvm::ConstantInt::get(llvm::Type::getInt1Ty(ci.getContext()), 0, false);
