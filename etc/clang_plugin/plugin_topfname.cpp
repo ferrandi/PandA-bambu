@@ -102,7 +102,7 @@ namespace llvm
          bool changed = false;
          bool hasTopFun = false;
          if(TopFunctionName_DNEGP.empty())
-            llvm::report_fatal_error("-panda-TFN parameter not specified");
+            return false;
          for(auto& fun : M.getFunctionList())
          {
             if(!fun.isIntrinsic() && !fun.isDeclaration())
@@ -189,7 +189,9 @@ namespace llvm
 
 } // namespace llvm
 
+#ifndef _WIN32
 static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)> XPass(CLANG_VERSION_STRING(_plugin_topfname), "Make all private/static but the top function", false /* Only looks at CFG */, false /* Analysis Pass */);
+#endif
 
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
@@ -198,3 +200,20 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
 }
 // These constructors add our pass to a list of global extensions.
 static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_topfname_Ox)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
+
+#ifdef _WIN32
+using namespace llvm;
+
+INITIALIZE_PASS_BEGIN(clang6_plugin_topfname, "clang6_plugin_topfname",
+                "Make all private/static but the top function", false, false)
+INITIALIZE_PASS_END(clang6_plugin_topfname, "clang6_plugin_topfname",
+                "Make all private/static but the top function", false, false)
+namespace llvm
+{
+
+  PassManagerBuilder::ExtensionFn clang6_plugin_topfname_Loader()
+  {
+    return loadPass;
+  }
+}
+#endif
