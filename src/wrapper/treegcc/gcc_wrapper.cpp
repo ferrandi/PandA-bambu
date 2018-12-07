@@ -282,7 +282,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
    }
    command += " -D__NO_INLINE__ "; /// needed to avoid problem with glibc inlines
    command += " -D_GLIBCXX_IOSTREAM "; /// needed to avoid problem with iostream
-#if _WIN32
+#ifdef _WIN32
    if(compiler.is_clang)
      command += " -isystem /mingw64/include -isystem /mingw64/x86_64-w64-mingw32/include"; /// needed by clang compiler
 #endif
@@ -318,11 +318,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       }
       real_file_name = temp_file_name;
       if(compiler.is_clang)
-#if _WIN32
-         command += " -c -mllvm -pandaGE-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) + " -mllvm -pandaGE-infile=" + real_file_name;
-#else
          command += " -c -fplugin=" + compiler.empty_plugin_obj + " -mllvm -pandaGE-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) + " -mllvm -pandaGE-infile=" + real_file_name;
-#endif
       else
          command += " -c -fplugin=" + compiler.empty_plugin_obj + " -fplugin-arg-" + compiler.empty_plugin_name + "-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory);
    }
@@ -373,11 +369,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
             addTopFName = top_functions_names.size() == 1;
             fname = top_functions_names.front();
          }
-#if _WIN32
-         command += " -c -mllvm -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) + " -mllvm -panda-infile=" + real_file_name;
-#else
          command += " -c -fplugin=" + compiler.ssa_plugin_obj + " -mllvm -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) + " -mllvm -panda-infile=" + real_file_name;
-#endif
 
          if(addTopFName)
          {
@@ -412,11 +404,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       if(addPlugin)
       {
          if(compiler.is_clang)
-#if _WIN32
-            command += " -mllvm -panda-TFN=" + fname;
-#else
             command += " -fplugin=" + compiler.topfname_plugin_obj + " -mllvm -panda-TFN=" + fname;
-#endif
          else
             command += " -fplugin=" + compiler.topfname_plugin_obj + " -fplugin-arg-" + compiler.topfname_plugin_name + "-topfname=" + fname;
       }

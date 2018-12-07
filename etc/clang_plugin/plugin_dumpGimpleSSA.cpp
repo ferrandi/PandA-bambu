@@ -123,7 +123,7 @@ namespace llvm
       bool runOnModule(Module& M) override
       {
          if(outdir_name.empty())
-            llvm::report_fatal_error("-panda-outputdir parameter not specified");
+            return false;
          if(InFile.empty())
             llvm::report_fatal_error("-panda-infile parameter not specified");
          /// load parameter names
@@ -194,11 +194,13 @@ namespace llvm
 } // namespace llvm
 
 // Currently there is no difference between c++ or c serialization
+#ifndef _WIN32
 #if CPP_LANGUAGE
    static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)> XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleSSACpp), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false /* Only looks at CFG */,
                                                                                           false /* Analysis Pass */);
 #else
    static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)> XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleSSA), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false /* Only looks at CFG */,                                                                                          false /* Analysis Pass */);
+#endif
 #endif
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder& PMB, llvm::legacy::PassManagerBase& PM)
@@ -221,3 +223,46 @@ static void loadPass(const llvm::PassManagerBuilder& PMB, llvm::legacy::PassMana
 }
 // These constructors add our pass to a list of global extensions.
 static llvm::RegisterStandardPasses llvmtoolLoader_Ox(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);
+
+#ifdef _WIN32
+using namespace llvm;
+
+INITIALIZE_PASS_BEGIN(clang6_plugin_dumpGimpleSSA, "clang6_plugin_dumpGimpleSSA",
+                "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
+INITIALIZE_PASS_DEPENDENCY(MemoryDependenceWrapperPass)
+INITIALIZE_PASS_DEPENDENCY(MemorySSAWrapperPass)
+INITIALIZE_PASS_DEPENDENCY(LazyValueInfoWrapperPass)
+INITIALIZE_PASS_DEPENDENCY(AAResultsWrapperPass)
+INITIALIZE_PASS_DEPENDENCY(TargetTransformInfoWrapperPass)
+INITIALIZE_PASS_DEPENDENCY(TargetLibraryInfoWrapperPass)
+INITIALIZE_PASS_DEPENDENCY(AssumptionCacheTracker)
+INITIALIZE_PASS_DEPENDENCY(DominatorTreeWrapperPass)
+INITIALIZE_PASS_DEPENDENCY(DominanceFrontierWrapperPass)
+INITIALIZE_PASS_END(clang6_plugin_dumpGimpleSSA, "clang6_plugin_dumpGimpleSSA",
+                "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
+
+struct clang6_plugin_dumpGimpleSSACpp : public clang6_plugin_dumpGimpleSSA {};
+INITIALIZE_PASS_BEGIN(clang6_plugin_dumpGimpleSSACpp, "clang6_plugin_dumpGimpleSSACpp",
+                "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
+INITIALIZE_PASS_DEPENDENCY(MemoryDependenceWrapperPass)
+INITIALIZE_PASS_DEPENDENCY(MemorySSAWrapperPass)
+INITIALIZE_PASS_DEPENDENCY(LazyValueInfoWrapperPass)
+INITIALIZE_PASS_DEPENDENCY(AAResultsWrapperPass)
+INITIALIZE_PASS_DEPENDENCY(TargetTransformInfoWrapperPass)
+INITIALIZE_PASS_DEPENDENCY(TargetLibraryInfoWrapperPass)
+INITIALIZE_PASS_DEPENDENCY(AssumptionCacheTracker)
+INITIALIZE_PASS_DEPENDENCY(DominatorTreeWrapperPass)
+INITIALIZE_PASS_DEPENDENCY(DominanceFrontierWrapperPass)
+INITIALIZE_PASS_END(clang6_plugin_dumpGimpleSSACpp, "clang6_plugin_dumpGimpleSSACpp",
+                "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
+
+namespace llvm
+{
+
+  PassManagerBuilder::ExtensionFn clang6_plugin_dumpGimpleSSA_Loader()
+  {
+    return loadPass;
+  }
+}
+
+#endif

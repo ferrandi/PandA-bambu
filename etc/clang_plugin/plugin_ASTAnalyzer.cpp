@@ -231,7 +231,7 @@ namespace clang
          auto& SM = FD->getASTContext().getSourceManager();
          std::map<std::string, std::string> interface_PragmaMap;
          std::map<std::string, std::string> interface_PragmaMapArraySize;
-         auto locEnd = FD->getLocEnd();
+         auto locEnd = FD->getSourceRange().getEnd();
          auto filename = SM.getPresumedLoc(locEnd, false).getFilename();
          if(HLS_interface_PragmaMap.find(filename) != HLS_interface_PragmaMap.end())
          {
@@ -396,7 +396,7 @@ namespace clang
                      Fun2ParamSize[funName][parName] = arraySize;
                   if(auto BTD = getBaseTypeDecl(ND->getType()))
                   {
-                     Fun2ParamInclude[funName].push_back(SM.getPresumedLoc(BTD->getLocStart(), false).getFilename());
+                     Fun2ParamInclude[funName].push_back(SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename());
                   }
                   else
                   {
@@ -419,7 +419,7 @@ namespace clang
             if(const auto* FD = dyn_cast<FunctionDecl>(D))
             {
                AnalyzeFunctionDecl(FD);
-               auto endLoc = FD->getLocEnd();
+               auto endLoc = FD->getSourceRange().getEnd();
                auto& SM = FD->getASTContext().getSourceManager();
                auto filename = SM.getPresumedLoc(endLoc, false).getFilename();
                prevLoc[filename] = endLoc;
@@ -431,7 +431,7 @@ namespace clang
                   if(const FunctionDecl* fd = dyn_cast<FunctionDecl>(d))
                   {
                      AnalyzeFunctionDecl(fd);
-                     auto endLoc = fd->getLocEnd();
+                     auto endLoc = fd->getSourceRange().getEnd();
                      auto& SM = fd->getASTContext().getSourceManager();
                      auto filename = SM.getPresumedLoc(endLoc, false).getFilename();
                      prevLoc[filename] = endLoc;
@@ -607,7 +607,17 @@ namespace clang
       CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer) & operator=(const CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer) &) = delete;
    };
 
+#ifdef _WIN32
+
+void initializeplugin_ASTAnalyzer()
+{
+  static clang::FrontendPluginRegistry::Add<clang::CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)> X(CLANG_VERSION_STRING(_plugin_ASTAnalyzer), "Analyze Clang AST to retrieve information useful for PandA");
+}
+#endif
 } // namespace clang
 
+#ifndef _WIN32
 static clang::FrontendPluginRegistry::Add<clang::CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)> X(CLANG_VERSION_STRING(_plugin_ASTAnalyzer), "Analyze Clang AST to retrieve information useful for PandA");
+#endif
+
 

@@ -1041,8 +1041,7 @@ namespace llvm
             return GT(COND_EXPR);
          case llvm::Instruction::Br:
          {
-            const llvm::BranchInst* br = cast<const llvm::BranchInst>(inst);
-            assert(br->isConditional());
+            assert(cast<const llvm::BranchInst>(inst)->isConditional());
             return GT(SSA_NAME);
          }
          default:
@@ -1524,8 +1523,7 @@ namespace llvm
       if(gep_op->hasAllConstantIndices())
       {
          llvm::APInt OffsetAI(DL->getPointerTypeSizeInBits(gep_op->getType()), 0);
-         auto allconstantoffet = gep_op->accumulateConstantOffset(*DL, OffsetAI);
-         assert(allconstantoffet);
+         assert(gep_op->accumulateConstantOffset(*DL, OffsetAI));
          isZero = !OffsetAI;
          return assignCodeAuto(llvm::ConstantInt::get(gep_op->getContext(), OffsetAI));
       }
@@ -1537,7 +1535,7 @@ namespace llvm
             llvm::ConstantInt* OpC = dyn_cast<llvm::ConstantInt>(GTI.getOperand());
             if(!OpC)
             {
-               if(llvm::StructType* STy = GTI.getStructTypeOrNull())
+               if(GTI.getStructTypeOrNull())
                {
                   llvm_unreachable("unexpected condition: struct LowerGetElementPtrOffset");
                   // continue;
@@ -1876,7 +1874,7 @@ namespace llvm
 
    const void* DumpGimpleRaw::gimple_return_retval(const void* g)
    {
-      const llvm::TerminatorInst* ri = reinterpret_cast<const llvm::TerminatorInst*>(g);
+      const auto* ri = reinterpret_cast<const llvm::Instruction*>(g);
       if(isa<llvm::ReturnInst>(ri) && cast<llvm::ReturnInst>(ri)->getReturnValue())
       {
          auto op = getOperand(cast<llvm::ReturnInst>(ri)->getReturnValue(), ri->getFunction());
@@ -2329,6 +2327,12 @@ namespace llvm
             return assignCode(ty, GT(POINTER_TYPE));
          case llvm::Type::VectorTyID:
             return assignCode(ty, GT(VECTOR_TYPE));
+         default:
+         {
+           llvm::errs() << "type id not managed\n";
+           stream.close();
+           llvm_unreachable("Plugin error");
+         }
       }
    }
 
@@ -2416,6 +2420,12 @@ namespace llvm
                return assignCodeType(cast<llvm::PointerType>(ty)->getElementType());
             case llvm::Type::VectorTyID:
                return assignCodeType(cast<llvm::VectorType>(ty)->getElementType());
+            default:
+            {
+              llvm::errs() << "type id not managed\n";
+              stream.close();
+              llvm_unreachable("Plugin error");
+            }
          }
       }
       else if(IS_EXPR_CODE_CLASS(code_class))
@@ -2495,6 +2505,7 @@ namespace llvm
          case llvm::Type::ArrayTyID:
          case llvm::Type::PointerTyID:
          case llvm::Type::VectorTyID:
+         default:
             llvm::errs() << "TYPE_PRECISION kind not supported\n";
             llvm_unreachable("Plugin Error");
       }
@@ -2617,9 +2628,8 @@ namespace llvm
 
    const void* DumpGimpleRaw::TYPE_ARG_TYPES(const void* t)
    {
-      const llvm::Type* ty = reinterpret_cast<const llvm::Type*>(t);
-      assert(CheckSignedTag(ty) == 0);
-      assert(isa<llvm::FunctionType>(ty));
+      assert(CheckSignedTag(reinterpret_cast<const llvm::Type*>(t)) == 0);
+      assert(isa<llvm::FunctionType>(reinterpret_cast<const llvm::Type*>(t)));
       const llvm::FunctionType* llvm_obj = reinterpret_cast<const llvm::FunctionType*>(t);
       if(llvm_obj->params().empty())
          return nullptr;
@@ -2664,18 +2674,16 @@ namespace llvm
 
    bool DumpGimpleRaw::stdarg_p(const void* t) const
    {
-      const llvm::Type* ty = reinterpret_cast<const llvm::Type*>(t);
-      assert(CheckSignedTag(ty) == 0);
-      assert(isa<llvm::FunctionType>(ty));
+      assert(CheckSignedTag(reinterpret_cast<const llvm::Type*>(t)) == 0);
+      assert(isa<llvm::FunctionType>(reinterpret_cast<const llvm::Type*>(t)));
       const llvm::FunctionType* llvm_obj = reinterpret_cast<const llvm::FunctionType*>(t);
       return llvm_obj->isVarArg();
    }
 
    llvm::ArrayRef<llvm::Type*> DumpGimpleRaw::TYPE_FIELDS(const void* t)
    {
-      const llvm::Type* ty = reinterpret_cast<const llvm::Type*>(t);
-      assert(CheckSignedTag(ty) == 0);
-      assert(isa<llvm::StructType>(ty));
+      assert(CheckSignedTag(reinterpret_cast<const llvm::Type*>(t)) == 0);
+      assert(isa<llvm::StructType>(reinterpret_cast<const llvm::Type*>(t)));
       return reinterpret_cast<const llvm::StructType*>(t)->elements();
    }
 
@@ -3972,8 +3980,7 @@ namespace llvm
                bool isOp1Const = isa<llvm::ConstantFP>(llvm_op1);
                bool isOp2Const = isa<llvm::ConstantFP>(llvm_op2);
                auto prec1 = llvm_op1->getType()->getPrimitiveSizeInBits();
-               auto prec2 = llvm_op2->getType()->getPrimitiveSizeInBits();
-               assert(prec2 == prec1);
+               assert(llvm_op2->getType()->getPrimitiveSizeInBits() == prec1);
                auto intObjType = llvm::Type::getIntNTy(*moduleContext, static_cast<unsigned>(prec1));
                auto op1 = gimple_assign_rhs1(g);
                auto op2 = gimple_assign_rhs2(g);
@@ -5641,9 +5648,7 @@ namespace llvm
                               {
                                  llvm::Constant* Val;
                                  llvm::Constant* Ptr;
-                                 llvm::StoreInst* SI = dyn_cast<llvm::StoreInst>(CurInst);
-                                 auto Removable = SI && removableStore(SI, GV, TLI, *DL, Ptr, Val, false);
-                                 assert(Removable);
+                                 assert(dyn_cast<llvm::StoreInst>(CurInst) && removableStore(dyn_cast<llvm::StoreInst>(CurInst), GV, TLI, *DL, Ptr, Val, false));
                                  MutatedMemory[Ptr] = Val;
 
                                  auto me = CurInst;
@@ -5792,6 +5797,14 @@ namespace llvm
                         assert(ci.use_empty() && "Lowering should have eliminated any uses of the intrinsic call!");
                         ci.eraseFromParent();
                      }
+#if __clang_major__ >= 8
+                     else if(Callee->getIntrinsicID()==llvm::Intrinsic::is_constant)
+                     {
+                        auto C = llvm::ConstantInt::get(llvm::Type::getInt1Ty(ci.getContext()), 0, false);
+                        ci.replaceAllUsesWith(C);
+                        ci.eraseFromParent();
+                     }
+#endif
                      else
                         IL->LowerIntrinsicCall(&ci);
                      if(atBegin)
