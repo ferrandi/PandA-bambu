@@ -37,6 +37,11 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
+
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
+
 #include "plugin_includes.hpp"
 
 #include "llvm/Analysis/AssumptionCache.h"
