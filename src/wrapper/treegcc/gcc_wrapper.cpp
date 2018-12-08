@@ -2164,7 +2164,6 @@ void GccWrapper::CreateExecutable(const std::list<std::string>& file_names, cons
    std::string command;
 
    Compiler compiler = GetCompiler();
-   if(compiler.is_clang)
    command = compiler.gcc.string() + " ";
 
    command += file_names_string + " ";
