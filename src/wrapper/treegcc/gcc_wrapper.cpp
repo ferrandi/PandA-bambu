@@ -655,7 +655,11 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
       {
          if(compiler.is_clang)
          {
-            command = compiler.llvm_opt.string() + " -load=" + compiler.topfname_plugin_obj + " -panda-TFN=" + fname + " " + temporary_file_o_bc;
+            command = compiler.llvm_opt.string();
+#ifndef _WIN32
+            command += " -load=" + compiler.topfname_plugin_obj;
+#endif
+            command += " -panda-TFN=" + fname + " " + temporary_file_o_bc;
             temporary_file_o_bc = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string()).string();
             command += " -o " + temporary_file_o_bc;
             command += " -" + compiler.topfname_plugin_name;
@@ -706,7 +710,11 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
       std::string real_file_name = source_files.begin()->second;
       if(compiler.is_clang)
       {
-         command = compiler.llvm_opt.string() + " -load=" + compiler.ssa_plugin_obj + " -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) + " -panda-infile=" + real_file_name;
+         command = compiler.llvm_opt.string();
+#ifndef _WIN32
+         command += " -load=" + compiler.ssa_plugin_obj;
+#endif
+         command += " -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) + " -panda-infile=" + real_file_name;
          if(addTFNPlugin)
          {
             command += " -panda-topfname=" + fname;
@@ -2573,6 +2581,9 @@ const std::string GccWrapper::AddSourceCodeIncludes(const std::list<std::string>
    {
       boost::filesystem::path absolute_path = boost::filesystem::system_complete(source_file);
       std::string new_path = "-iquote " + absolute_path.branch_path().string() + " ";
+#ifdef _WIN32
+   boost::replace_all(new_path, "\\", "/");
+#endif
       if(gcc_compiling_parameters.find(new_path) == std::string::npos and includes.find(new_path) == std::string::npos)
          includes += new_path;
    }
