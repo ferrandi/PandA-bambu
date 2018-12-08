@@ -2787,7 +2787,7 @@ void Andersen_AA::print_struct_info(const llvm::Type* T) const
       llvm::errs() << " " << sz[i];
    }
    llvm::errs() << "\noff=";
-   for(size_t i = 0; off.size(); ++i)
+   for(size_t i = 0; i < off.size(); ++i)
    {
       llvm::errs() << " " << off[i];
    }
@@ -3090,7 +3090,7 @@ void Andersen_AA::print_all_nodes() const
 {
    llvm::errs() << "==========  Node list  =====================================\n";
    std::vector<std::string> lines;
-   for(size_t i = 0; nodes.size(); ++i)
+   for(size_t i = 0; i < nodes.size(); ++i)
    {
       const Node* N = nodes[i];
       print_node(i);
@@ -3273,7 +3273,7 @@ void Andersen_AA::list_ext_unknown(const llvm::Module& M) const
    {
       llvm::errs() << "!! Unknown ext. calls:\n";
    }
-   for(size_t i = 0; names.size(); ++i)
+   for(size_t i = 0; i < names.size(); ++i)
    {
       llvm::errs() << names[i] << "\n";
    }
