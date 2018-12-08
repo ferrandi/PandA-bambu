@@ -22,7 +22,9 @@
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/PatternMatch.h"
-#if __clang_major__ != 4
+#ifdef _WIN32
+#include "llvm/Analysis/OrderedInstructions.h"
+#elif __clang_major__ != 4
 #include "llvm/Transforms/Utils/OrderedInstructions.h"
 #else
 #include "my_OrderedInstructions.hpp"
