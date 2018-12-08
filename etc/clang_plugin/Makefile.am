@@ -359,7 +359,7 @@ if BUILD_PTAA
 clang6_HardekopfLin_AA.o : $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp
 	case $(host_os) in \
 	  mingw*) \
-	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp -o clang6_HardekopfLin_AA.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
+	    echo $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp -o clang6_HardekopfLin_AA.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
 	  *) \
 	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp -o clang6_HardekopfLin_AA.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
 	esac;
@@ -368,7 +368,7 @@ endif
 clang6_RangeAnalysis.o : $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp
 	case $(host_os) in \
 	  mingw*) \
-	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp -o clang6_RangeAnalysis.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
+	    echo $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp -o clang6_RangeAnalysis.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
 	  *) \
 	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp -o clang6_RangeAnalysis.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
 	esac;
@@ -376,7 +376,7 @@ clang6_RangeAnalysis.o : $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $
 clang6_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.hpp
 	case $(host_os) in \
 	  mingw*) \
-	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp -o clang6_eSSA.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
+	    echo $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp -o clang6_eSSA.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
 	  *) \
 	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp -o clang6_eSSA.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
 	esac;
