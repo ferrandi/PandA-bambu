@@ -70,7 +70,7 @@ namespace llvm
    class ImmutableCallSite;
    class TargetLibraryInfo;
    class CallInst;
-}; // namespace llvm
+} // namespace llvm
 
 #define NOVAR_ID ~0u
 
@@ -677,3 +677,4 @@ class Staged_Flow_Sensitive_AA : public Andersen_AA
    void computePointToSet(llvm::Module& M);
 };
 #endif
+

@@ -31,10 +31,9 @@
  *
  */
 /**
-  * The starting file was taken from this project:
-  *  https://code.google.com/archive/p/range-analysis/
-  * The code went through a deep revision and change to port to a recent version of LLVM and to extend its functionality.
-  * In particular, it has been:
+  * The implementation started from code available at this link:https://code.google.com/archive/p/range-analysis/.
+  * The original code went through a deep revision and it has been changed to be compatible to a recent version of LLVM.
+  * Some extensions have been also added:
   * - Added anti range support
   * - Redesigned many Range operations to take into account wrapping and to
   *   improve the reductions performed
@@ -4875,7 +4874,7 @@ namespace RangeAnalysis
    {
       for(const BasicBlock& BB : F)
       {
-         const TerminatorInst* ti = BB.getTerminator();
+         const auto* ti = BB.getTerminator();
          const auto* br = dyn_cast<BranchInst>(ti);
          const auto* sw = dyn_cast<SwitchInst>(ti);
 
@@ -6796,7 +6795,7 @@ namespace RangeAnalysis
       // the matching
       SmallVector<PhiOp*, 4> matchers(F.arg_size(), nullptr);
 
-      for(auto i = 0ul, e = parameters.size(); i < e; ++i)
+      for(unsigned long i = 0ul, e = parameters.size(); i < e; ++i)
       {
          VarNode* sink = G.addVarNode(parameters[i].first, nullptr, DL);
          sink->setRange(Range(Regular, sink->getBitWidth(), Min, Max));

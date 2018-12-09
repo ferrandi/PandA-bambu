@@ -3285,7 +3285,15 @@ void BambuParameter::SetDefaults()
 
    /// backend HDL
    setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
-   setOption("dynamic_generators_dir", PANDA_DATA_INSTALLDIR "/panda");
+   std::string mingw_prefix;
+   if(getenv("MINGW_INST_DIR"))
+      mingw_prefix = getenv("MINGW_INST_DIR");
+#ifdef _WIN32
+   else
+      mingw_prefix = "c:/msys64/";
+#endif
+
+   setOption("dynamic_generators_dir", mingw_prefix+PANDA_DATA_INSTALLDIR "/panda");
 
    /// -- Module Interfaces -- //
    setOption(OPT_interface, true);

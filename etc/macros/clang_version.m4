@@ -279,21 +279,22 @@ PLUGIN_TEST
          plugin_option=
          case $host_os in
            mingw*) 
-             plugin_option="-shared -O3"
+             plugin_option="-shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$I386_LLVM_CONFIG4_EXE --ldflags --libs --system-libs`"
            ;;
            *)
-             plugin_option='-fPIC -shared -O3'
+             plugin_option='-fPIC -shared'
            ;;
          esac
          if test -f plugin_test.so; then
             rm plugin_test.so
          fi
-         $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $plugin_option plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM4_HEADER_DIR 2> /dev/null
+         $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ `$I386_LLVM_CONFIG4_EXE --cxxflags` -c plugin_test.cpp -o plugin_test.o -std=c++11 2> /dev/null
+         $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so  2> /dev/null
          if test ! -f plugin_test.so; then
-            echo "checking $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $plugin_option plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM4_HEADER_DIR... no... Package libclang-4.0-dev missing?"
+            echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... no... Package libclang-4.0-dev missing?"
             continue
          fi
-         echo "checking $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $plugin_option plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM4_HEADER_DIR... yes"
+         echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... yes"
          ac_save_CC="$CC"
          ac_save_CFLAGS="$CFLAGS"
          CC=$I386_CLANG4_EXE
@@ -344,6 +345,7 @@ if test x$I386_CLANG4_PLUGIN_COMPILER != x; then
   AC_SUBST(I386_CLANG4_EXE)
   AC_SUBST(I386_CLANG4_VERSION)
   AC_SUBST(I386_CLANG4_PLUGIN_COMPILER)
+  AC_SUBST(I386_LLVM_CONFIG4_EXE)
   AC_DEFINE(HAVE_I386_CLANG4_COMPILER, 1, "Define if CLANG 4.0 I386 compiler is compliant")
   AC_DEFINE_UNQUOTED(I386_CLANG4_EXE, "${I386_CLANG4_EXE}", "Define the plugin clang")
   AC_DEFINE_UNQUOTED(I386_CLANG_CPP4_EXE, "${I386_CLANG_CPP4_EXE}", "Define the plugin cpp")
@@ -645,21 +647,22 @@ PLUGIN_TEST
          plugin_option=
          case $host_os in
            mingw*) 
-             plugin_option="-shared -O3"
+             plugin_option="-shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$I386_LLVM_CONFIG4_EXE --ldflags --libs --system-libs`"
            ;;
            *)
-             plugin_option='-fPIC -shared -O3'
+             plugin_option='-fPIC -shared '
            ;;
          esac
          if test -f plugin_test.so; then
             rm plugin_test.so
          fi
-         $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $plugin_option plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM5_HEADER_DIR 2> /dev/null
+         $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ `$I386_LLVM_CONFIG5_EXE --cxxflags` -c plugin_test.cpp -o plugin_test.o -std=c++11 2> /dev/null
+         $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so 2> /dev/null
          if test ! -f plugin_test.so; then
-            echo "checking $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $plugin_option plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM5_HEADER_DIR... no... Package libclang-5.0-dev missing?"
+            echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... no... Package libclang-5.0-dev missing?"
             continue
          fi
-         echo "checking $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $plugin_option plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM5_HEADER_DIR... yes"
+         echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... yes"
          ac_save_CC="$CC"
          ac_save_CFLAGS="$CFLAGS"
          CC=$I386_CLANG5_EXE
@@ -710,6 +713,7 @@ if test x$I386_CLANG5_PLUGIN_COMPILER != x; then
   AC_SUBST(I386_CLANG5_EXE)
   AC_SUBST(I386_CLANG5_VERSION)
   AC_SUBST(I386_CLANG5_PLUGIN_COMPILER)
+  AC_SUBST(I386_LLVM_CONFIG5_EXE)
   AC_DEFINE(HAVE_I386_CLANG5_COMPILER, 1, "Define if CLANG 5.0 I386 compiler is compliant")
   AC_DEFINE_UNQUOTED(I386_CLANG5_EXE, "${I386_CLANG5_EXE}", "Define the plugin clang")
   AC_DEFINE_UNQUOTED(I386_CLANG_CPP5_EXE, "${I386_CLANG_CPP5_EXE}", "Define the plugin cpp")
@@ -754,7 +758,7 @@ for compiler in $CLANG_TO_BE_CHECKED; do
    if test -f $compiler; then
       echo "checking $compiler..."
       dnl check for clang
-      I386_CLANG6_VERSION=`$compiler --version | grep "6\.0\."`
+      I386_CLANG6_VERSION=`$compiler --version | grep "\.0\."`
       if test x"$I386_CLANG6_VERSION" = "x"; then
          I386_CLANG6_VERSION=""
       else
@@ -762,7 +766,7 @@ for compiler in $CLANG_TO_BE_CHECKED; do
       fi
 
       AS_VERSION_COMPARE($1, [6.0.0], MIN_CLANG6=[6.0.0], MIN_CLANG6=$1, MIN_CLANG6=$1)
-      AS_VERSION_COMPARE([7.0.0], $2, MAX_CLANG6=[7.0.0], MAX_CLANG6=$2, MAX_CLANG6=$2)
+      AS_VERSION_COMPARE([8.0.0], $2, MAX_CLANG6=[8.0.0], MAX_CLANG6=$2, MAX_CLANG6=$2)
       AS_VERSION_COMPARE($I386_CLANG6_VERSION, $MIN_CLANG6, echo "checking $compiler >= $MIN_CLANG6... no"; min=no, echo "checking $compiler >= $MIN_CLANG6... yes"; min=yes, echo "checking $compiler >= $MIN_CLANG6... yes"; min=yes)
       if test "$min" = "no" ; then
          continue;
@@ -1004,29 +1008,68 @@ protected:
 };
 
 }
+#ifdef _WIN32
+#include <stdio.h>
+#include <windows.h>
 
+//extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD Reason, LPVOID LPV) {
+//This one was only necessary if you were using a C++ compiler
+
+extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
+
+    switch (fdwReason)
+    {
+        case DLL_PROCESS_ATTACH:
+            // Code to run when the DLL is loaded
+        printf ("Load working...\n");
+        static FrontendPluginRegistry::Add<PrintFunctionNamesAction>
+X1("print-fns", "print function names");
+            break;
+
+        case DLL_PROCESS_DETACH:
+            // Code to run when the DLL is freed
+        printf ("Unload working...\n");
+            break;
+
+        case DLL_THREAD_ATTACH:
+            // Code to run when a thread is created during the DLL's lifetime
+        printf ("ThreadLoad working...\n");
+            break;
+
+        case DLL_THREAD_DETACH:
+            // Code to run when a thread ends normally.
+        printf ("ThreadUnload working...\n");
+            break;
+    }
+
+    return TRUE;
+}
+#else
 static FrontendPluginRegistry::Add<PrintFunctionNamesAction>
-X("print-fns", "print function names");
+X1("print-fns", "print function names");
+#endif
+
 PLUGIN_TEST
       for plugin_compiler in $I386_CLANGPP6_EXE; do
          plugin_option=
          case $host_os in
            mingw*) 
-             plugin_option="-shared -O3"
+             plugin_option="-shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$I386_LLVM_CONFIG6_EXE --ldflags --libs --system-libs`"
            ;;
            *)
-             plugin_option='-fPIC -shared -O3'
+             plugin_option='-fPIC -shared '
            ;;
          esac
          if test -f plugin_test.so; then
             rm plugin_test.so
          fi
-         $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $plugin_option plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM6_HEADER_DIR 2> /dev/null
+         $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ `$I386_LLVM_CONFIG6_EXE --cxxflags` -c plugin_test.cpp -o plugin_test.o -std=c++11 2> /dev/null
+         $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so 2> /dev/null
          if test ! -f plugin_test.so; then
-            echo "checking $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $plugin_option plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM6_HEADER_DIR... no... Package libclang-6.0-dev missing?"
+            echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... no... Package libclang-6.0-dev missing?"
             continue
          fi
-         echo "checking $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $plugin_option plugin_test.cpp -o plugin_test.so -std=c++11 -I$I386_LLVM6_HEADER_DIR... yes"
+         echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... yes"
          ac_save_CC="$CC"
          ac_save_CFLAGS="$CFLAGS"
          CC=$I386_CLANG6_EXE
@@ -1077,6 +1120,7 @@ if test x$I386_CLANG6_PLUGIN_COMPILER != x; then
   AC_SUBST(I386_CLANG6_EXE)
   AC_SUBST(I386_CLANG6_VERSION)
   AC_SUBST(I386_CLANG6_PLUGIN_COMPILER)
+  AC_SUBST(I386_LLVM_CONFIG6_EXE)
   AC_DEFINE(HAVE_I386_CLANG6_COMPILER, 1, "Define if CLANG 6.0 I386 compiler is compliant")
   AC_DEFINE_UNQUOTED(I386_CLANG6_EXE, "${I386_CLANG6_EXE}", "Define the plugin clang")
   AC_DEFINE_UNQUOTED(I386_CLANG_CPP6_EXE, "${I386_CLANG_CPP6_EXE}", "Define the plugin cpp")

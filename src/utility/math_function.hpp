@@ -47,8 +47,12 @@
 
 /// Utility include
 #include "augmented_vector.hpp"
+#include <boost/version.hpp>
+#if BOOST_VERSION >= 105800
+#include <boost/integer/common_factor_rt.hpp>
+#else
 #include <boost/math/common_factor_rt.hpp>
-
+#endif
 /**
  * Return the distance between a point and a line (represented as a couple of points) in a n-dimensional space
  */
@@ -63,7 +67,11 @@ long double get_point_line_distance(const AugmentedVector<long double>& point, A
 template <typename Integer>
 Integer GreatestCommonDivisor(const Integer first, const Integer second)
 {
+#if BOOST_VERSION >= 105800
+   return boost::integer::gcd<Integer>(first, second);
+#else
    return boost::math::gcd<Integer>(first, second);
+#endif
 }
 
 /**
@@ -75,7 +83,11 @@ Integer GreatestCommonDivisor(const Integer first, const Integer second)
 template <typename Integer>
 Integer LeastCommonMultiple(const Integer first, const Integer second)
 {
+#if BOOST_VERSION >= 105800
+   return boost::integer::lcm<Integer>(first, second);
+#else
    return boost::math::lcm<Integer>(first, second);
+#endif
 }
 
 inline unsigned int resize_to_1_8_16_32_64_128_256_512(unsigned int value)

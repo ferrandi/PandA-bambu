@@ -70,6 +70,10 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
+#include "config_HAVE_LIBBDD.hpp"
+
+#if HAVE_LIBBDD
+
 #define DEBUG_AA 0
 #define NO_FIELD_SENSITIVE 1
 #include "HardekopfLin_AA.hpp"
@@ -1506,7 +1510,7 @@ Andersen_AA::~Andersen_AA()
 void Andersen_AA::releaseMemory()
 {
    run_cleanup();
-   for(auto i : boost::irange(0ul, nodes.size()))
+   for(size_t i=0 ; i < nodes.size();++i)
    {
       delete nodes[i];
       nodes[i] = nullptr;
@@ -1573,7 +1577,7 @@ void Andersen_AA::run_cleanup()
    ext_failed.clear();
    cplx_cons.clear();
    // Delete the constraint graph and prev_points_to.
-   for(auto i : boost::irange(0ul, nodes.size()))
+   for(size_t i = 0; i < nodes.size(); ++i)
    {
       Node* N = nodes[i];
       N->prev_points_to = bddfalse;
@@ -1590,7 +1594,7 @@ void Andersen_AA::pts_cleanup()
    // BDD id -> first ptr-eq. node.
    llvm::DenseMap<u32, u32> eq;
 
-   for(auto i : boost::irange(0ul, nodes.size()))
+   for(size_t i = 0; i < nodes.size(); ++i)
    {
       Node* N = nodes[i];
       if(N->obj_sz)
@@ -1681,7 +1685,7 @@ void Andersen_AA::verify_nodes()
    {
       llvm::errs() << "***** Checking node info consistency...\n";
    }
-   for(auto i : boost::irange(0ul, nodes.size()))
+   for(size_t i =0; i < nodes.size(); ++i)
    {
       const Node* N = nodes[i];
       auto V = N->get_val();
@@ -1779,7 +1783,7 @@ void Andersen_AA::analyze_struct(const llvm::StructType* T)
          const std::vector<u32>& szE = get_struct_sz(ST);
          auto nfE = szE.size();
          // Copy ST's info, whose element 0 is the size of ST itself.
-         for(auto j : boost::irange(0ul, nfE))
+         for(size_t j =0; j < nfE; ++j)
          {
             sz.push_back(szE[j]);
          }
@@ -2158,7 +2162,7 @@ bool Andersen_AA::trace_int(const llvm::Value* V, llvm::DenseSet<const llvm::Val
    {
       llvm::errs() << llvm::Instruction::getOpcodeName(opcode);
    }
-   for(auto i : boost::irange(0ul, ops.size()))
+   for(size_t i = 0; i < ops.size(); ++i)
    {
       if(DEBUG_AA)
       {
@@ -2326,7 +2330,7 @@ bool Andersen_AA::trace_int(const llvm::Value* V, llvm::DenseSet<const llvm::Val
          //  the result can point to i2p too).
       case llvm::Instruction::PHI:
          r = false;
-         for(auto i : boost::irange(0ul, ops.size()))
+         for(size_t i = 0; i < ops.size(); ++i)
          {
             // Sometimes a pointer or other value can come into an int-type phi node.
             const llvm::Type* T = ops[i]->getType();
@@ -2601,7 +2605,7 @@ void Andersen_AA::id_global(const llvm::GlobalVariable* G)
       const std::vector<u32>& sz = get_struct_sz(ST);
       auto nf = sz.size();
       // Make nodes for all the fields, with the same obj_sz (array => weak).
-      for(auto i : boost::irange(0UL, nf))
+      for(size_t i = 0; i < nf; ++i)
       {
          nodes.push_back(new Node(G, sz[i], is_array));
       }
@@ -2778,12 +2782,12 @@ void Andersen_AA::print_struct_info(const llvm::Type* T) const
    assert(it != struct_info.end());
    const std::pair<std::vector<u32>, std::vector<u32>>& info = it->second;
    const std::vector<u32>&sz = info.first, &off = info.second;
-   for(auto i : boost::irange(0ul, sz.size()))
+   for(size_t i = 0; i < sz.size(); ++i)
    {
       llvm::errs() << " " << sz[i];
    }
    llvm::errs() << "\noff=";
-   for(auto i : boost::irange(0ul, off.size()))
+   for(size_t i = 0; i < off.size(); ++i)
    {
       llvm::errs() << " " << off[i];
    }
@@ -3086,7 +3090,7 @@ void Andersen_AA::print_all_nodes() const
 {
    llvm::errs() << "==========  Node list  =====================================\n";
    std::vector<std::string> lines;
-   for(auto i : boost::irange(0ul, nodes.size()))
+   for(size_t i = 0; i < nodes.size(); ++i)
    {
       const Node* N = nodes[i];
       print_node(i);
@@ -3100,7 +3104,7 @@ void Andersen_AA::print_all_constraints() const
 {
    llvm::errs() << "==========  Constraint list  ===============================\n";
    std::vector<std::string> lines;
-   for(auto i : boost::irange(0ul, constraints.size()))
+   for(size_t i = 0; i < constraints.size(); ++i)
    {
       const Constraint& C = constraints[i];
       C.print(this);
@@ -3121,7 +3125,7 @@ void Andersen_AA::print_cons_graph(bool points_to_only) const
    }
    llvm::errs() << header;
    std::vector<std::string> lines;
-   for(auto i : boost::irange(0ul, nodes.size()))
+   for(size_t i = 0; i < nodes.size(); ++i)
    {
       if(!points_to_only && !nodes[i]->is_rep())
       {
@@ -3132,7 +3136,7 @@ void Andersen_AA::print_cons_graph(bool points_to_only) const
       // If node #i was merged, print the edges and constraints of the rep node.
       const Node* N = nodes[cget_node_rep(i)];
       const std::vector<u32>* pts = bdd2vec(N->points_to);
-      for(auto i : boost::irange(0ul, pts->size()))
+      for(size_t i = 0; i < pts->size(); ++i)
       {
          llvm::errs() << "  ";
          print_node((*pts)[i]);
@@ -3205,7 +3209,7 @@ void Andersen_AA::print_metrics() const
    u32 n_pts = 0, n_pts_uniq = 0;
    unsigned long long sum_pts = 0, sum_pts_uniq = 0;
    std::set<u32> pts_seen;
-   for(auto i : boost::irange(0ul, nn))
+   for(size_t i = 0; i < nn; ++i)
    {
       const Node* N = nodes[i];
       auto sz = static_cast<u32>(bdd_satcountset(N->points_to, pts_dom));
@@ -3269,7 +3273,7 @@ void Andersen_AA::list_ext_unknown(const llvm::Module& M) const
    {
       llvm::errs() << "!! Unknown ext. calls:\n";
    }
-   for(auto i : boost::irange(0ul, names.size()))
+   for(size_t i = 0; i < names.size(); ++i)
    {
       llvm::errs() << names[i] << "\n";
    }
@@ -3694,7 +3698,7 @@ void Andersen_AA::id_alloc_insn(const llvm::Instruction* I)
       const std::vector<u32>& sz = get_struct_sz(ST);
       auto nf = sz.size();
       // Make nodes for all the fields, with the same obj_sz.
-      for(auto i : boost::irange(0ul, nf))
+      for(size_t i = 0; i < nf; ++i)
       {
          nodes.push_back(new Node(AI, sz[i], weak));
       }
@@ -4119,7 +4123,7 @@ void Andersen_AA::id_call_obj(u32 vnI, const llvm::Function* F)
       {
          const std::vector<u32>& sz = get_struct_sz(ST);
          auto nf = sz.size();
-         for(auto i : boost::irange(0ul, nf))
+         for(size_t i = 0; i < nf; ++i)
          {
             nodes.push_back(new Node(I, sz[i], true));
          }
@@ -4182,7 +4186,7 @@ void Andersen_AA::id_call_obj(u32 vnI, const llvm::Function* F)
             {
                const std::vector<u32>& sz = get_struct_sz(ST);
                auto nf = sz.size();
-               for(auto i : boost::irange(0ul, nf))
+               for(size_t i = 0; i < nf; ++i)
                {
                   nodes.push_back(new Node(I, sz[i], true));
                }
@@ -4681,7 +4685,7 @@ void Andersen_AA::id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Fun
          {
             const std::vector<u32>& sz = get_struct_sz(ST);
             auto nf = sz.size();
-            for(auto i : boost::irange(0ul, nf))
+            for(size_t i = 0; i < nf; ++i)
             {
                // FIXME: X/0 shouldn't really have a value because it's not
                //  pointed to by any program variable, but for now we require
@@ -4741,7 +4745,7 @@ void Andersen_AA::add_store2_cons(const llvm::Value* D, const llvm::Value* S, si
       sz = std::min(get_max_offset(D), get_max_offset(S));
    }
    // For each field (i), add (Ti = *S + i) and (*D + i = Ti).
-   for(auto i : boost::irange(0ul, sz))
+   for(size_t i = 0; i < sz; ++i)
    {
       u32 tn = next_node++;
       nodes.push_back(new Node(nullptr));
@@ -4953,7 +4957,7 @@ void Andersen_AA::obj_cons_id(const llvm::Module& M, const llvm::Type* MS)
       }
    }
    // Now handle all remaining GEP CEs, since some of them are local.
-   for(auto i : boost::irange(0ul, gep_ce.size()))
+   for(size_t i = 0; i < gep_ce.size(); ++i)
    {
       proc_gep_ce(gep_ce[i]);
    }
@@ -4984,7 +4988,7 @@ void Andersen_AA::obj_cons_id(const llvm::Module& M, const llvm::Type* MS)
 #if CHECK_CONS_UNDEF
    // Look for nodes that are read by constraints but never written.
    std::set<u32> def;
-   for(auto i : boost::irange(0ul, constraints.size()))
+   for(size_t i = 0; i < constraints.size(); ++i)
    {
       if(constraints[i].get_type() != store_cons)
       {
@@ -4999,7 +5003,7 @@ void Andersen_AA::obj_cons_id(const llvm::Module& M, const llvm::Type* MS)
    }
    // The header should not appear if there is no problem.
    bool hdr_done = false;
-   for(auto i : boost::irange(0ul, constraints.size()))
+   for(size_t i = 0; i < constraints.size(); ++i)
    {
       const Constraint& C = constraints[i];
       assert(C.get_src());
@@ -5114,7 +5118,7 @@ void Andersen_AA::clump_addr_taken()
    }
 
    // Renumber the nodes in all constraints and value-node maps.
-   for(auto i : boost::irange(0ul, constraints.size()))
+   for(size_t i = 0; i < constraints.size(); ++i)
    {
       Constraint& C = constraints[i];
       C.dest = move_to[C.get_dest()];
@@ -5152,7 +5156,7 @@ void Andersen_AA::clump_addr_taken()
       old_icall_cons.push_back(*it);
    }
    icall_cons.clear();
-   for(auto i : boost::irange(0ul, old_icall_cons.size()))
+   for(size_t i = 0; i < old_icall_cons.size(); ++i)
    {
       Constraint& C = old_icall_cons[i].first;
       C.dest = move_to[C.get_dest()];
@@ -5360,7 +5364,8 @@ void Andersen_AA::hr(bool do_union, u32 min_del)
    // Note: we can optimize this by modifying the constraint graph at the end
    //  of each iteration (merging *X and *Y whenever X ptr_eq Y), then
    //  running the DFS on the same graph.
-   auto curr_n_cons = constraints.size(), prev_n_cons = 0ul;
+   auto curr_n_cons = constraints.size();
+   auto prev_n_cons = 0ull;
    if(DEBUG_AA)
    {
       llvm::errs() << "  running HR" << (do_union ? "U" : "") << ", constraint count:  " << curr_n_cons;
@@ -5468,7 +5473,7 @@ void Andersen_AA::add_off_edges(bool hcd)
       llvm::errs() << "***** Adding offline constraint edges\n";
    }
    u32 n_copy = 0, n_load = 0, n_store = 0, n_impl_addr = 0, n_impl_copy = 0;
-   for(auto i : boost::irange(0ul, constraints.size()))
+   for(size_t i = 0; i < constraints.size(); ++i)
    {
       const Constraint& C = constraints[i];
       // This may fail if the source of an addr_of is a non-rep (which is
@@ -5837,7 +5842,7 @@ void Andersen_AA::merge_ptr_eq()
    auto nn = nodes.size();
    // The first node (of the main graph) with the given ptr_eq.
    std::unordered_map<bitmap, u32> pe2node;
-   for(auto i : boost::irange(0ul, nn))
+   for(size_t i = 0; i < nn; ++i)
    {
       u32 on = main2off[i];
       // If this node has no offline version, it's not pointer-equivalent.
@@ -5874,7 +5879,7 @@ void Andersen_AA::merge_ptr_eq()
    std::vector<Constraint> old_cons;
    old_cons.swap(constraints);
    llvm::DenseSet<Constraint> cons_seen;
-   for(auto i : boost::irange(0ul, old_cons.size()))
+   for(size_t i = 0; i < old_cons.size(); ++i)
    {
       Constraint& C = old_cons[i];
       // Ignore this constraint if either side is a non-ptr.
@@ -5905,7 +5910,7 @@ void Andersen_AA::merge_ptr_eq()
       old_icall_cons.push_back(*it);
    }
    icall_cons.clear();
-   for(auto i : boost::irange(0ul, old_icall_cons.size()))
+   for(size_t i = 0; i < old_icall_cons.size(); ++i)
    {
       Constraint& C = old_icall_cons[i].first;
       if(nodes[C.get_dest()]->nonptr || nodes[C.get_src()]->nonptr)
@@ -5933,7 +5938,7 @@ void Andersen_AA::hcd()
    //(1) means don't make implicit edges or set the indirect flag.
    add_off_edges(true);
    // Map the offline nodes to the main graph.
-   for(auto i : boost::irange(0ul, main2off.size()))
+   for(size_t i = 0; i < main2off.size(); ++i)
    {
       u32 n = main2off[i];
       if(n)
@@ -5962,7 +5967,7 @@ void Andersen_AA::hcd()
    std::vector<Constraint> old_cons;
    old_cons.swap(constraints);
    llvm::DenseSet<Constraint> cons_seen;
-   for(auto i : boost::irange(0ul, old_cons.size()))
+   for(size_t i = 0; i < old_cons.size(); ++i)
    {
       const Constraint& C0 = old_cons[i];
       u32 dest = get_node_rep(C0.get_dest()), src = C0.get_src();
@@ -5984,7 +5989,7 @@ void Andersen_AA::hcd()
       old_icall_cons.push_back(*it);
    }
    icall_cons.clear();
-   for(auto i : boost::irange(0ul, old_icall_cons.size()))
+   for(size_t i = 0; i < old_icall_cons.size(); ++i)
    {
       Constraint& C = old_icall_cons[i].first;
       C.dest = get_node_rep(C.get_dest());
@@ -6091,7 +6096,7 @@ void Andersen_AA::hcd_dfs(u32 n)
          var_rep = merge_nodes(var_rep, off_nodes[var[i]].main_node);
       }
       // Now process the entire SCC.
-      for(auto i : boost::irange(0ul, scc.size()))
+      for(size_t i = 0; i < scc.size(); ++i)
       {
          u32 n = scc[i];
          assert(n);
@@ -6133,7 +6138,7 @@ void Andersen_AA::factor_ls()
    llvm::DenseMap<std::pair<u32, u32>, std::set<u32>> loads, stores;
    std::vector<Constraint> old_cons;
    old_cons.swap(constraints);
-   for(auto i : boost::irange(0ul, old_cons.size()))
+   for(size_t i = 0; i < old_cons.size(); ++i)
    {
       const Constraint& C = old_cons[i];
       if(C.get_type() == load_cons)
@@ -6168,7 +6173,7 @@ void Andersen_AA::factor_ls()
    }
    icall_cons.clear();
 
-   for(auto i : boost::irange(0ul, old_icall_cons.size()))
+   for(size_t i = 0; i < old_icall_cons.size(); ++i)
    {
       Constraint& C = old_icall_cons[i].first;
       auto i_fc = factored_cons.find(C);
@@ -6341,7 +6346,7 @@ static std::vector<u32>* bdd2vec(bdd x)
    // If the cache has reached its capacity, remove the oldest items.
    if(bv_cache.size() >= bvc_sz)
    {
-      for(auto i : boost::irange(0u, bvc_remove))
+      for(size_t i = 0; i < bvc_remove; ++i)
       {
          // Some LRU entries may have an older time than the cache entry.
          while(true)
@@ -6403,7 +6408,7 @@ void Andersen_AA::pts_init()
    {
       llvm::errs() << "PTS init\n";
    }
-   for(auto i : boost::irange(0ul, constraints.size()))
+   for(size_t i = 0; i < constraints.size(); ++i)
    {
       const Constraint& C = constraints[i];
       if(C.get_off())
@@ -6552,7 +6557,7 @@ void Andersen_AA::solve_init()
    // Note that prev_points_to remains empty for all nodes.
    u32 ncplx = 0;
    cplx_cons.clear();
-   for(auto i : boost::irange(0ul, constraints.size()))
+   for(size_t i = 0; i < constraints.size(); ++i)
    {
       const Constraint& C = constraints[i];
       u32 dest = get_node_rep(C.get_dest()), src = get_node_rep(C.get_src());
@@ -7885,7 +7890,7 @@ class PtsGraph
    {
       sort(vars.begin(), vars.end());
       pts.resize(vars.size(), pts_el());
-      for(auto i : boost::irange(0ul, vars.size()))
+      for(size_t i = 0; i < vars.size(); ++i)
       {
          pts[i].first = vars[i];
       }
@@ -8108,7 +8113,7 @@ class PartMap
 
    void erase_dst(size_t dst)
    {
-      for(auto i : boost::irange(0ul, pmap.size()))
+      for(size_t i = 0; i < pmap.size(); ++i)
       {
          if(pmap[i].first == dst)
          {
@@ -8286,16 +8291,16 @@ class DFG
       np_base = st_base + st_nodes.size();
 
       std::map<u32, std::vector<size_t>> v2d;
-      for(auto i : boost::irange(0ul, tp_nodes.size()))
+      for(size_t i = 0; i < tp_nodes.size(); ++i)
       {
          v2d[tp_nodes[i].inst.get_dest()].push_back(tp_base + i);
       }
-      for(auto i : boost::irange(0ul, ld_nodes.size()))
+      for(size_t i = 0; i < ld_nodes.size(); ++i)
       {
          v2d[ld_nodes[i].inst.get_dest()].push_back(ld_base + i);
       }
 
-      for(auto i : boost::irange(0ul, tp_nodes.size()))
+      for(size_t i = 0; i < tp_nodes.size(); ++i)
       {
          Constraint& C = tp_nodes[i].inst;
          if(C.get_type() != addr_of_cons && v2d.count(C.get_src()))
@@ -8308,7 +8313,7 @@ class DFG
          }
       }
 
-      for(auto i : boost::irange(0ul, ld_nodes.size()))
+      for(size_t i = 0; i < ld_nodes.size(); ++i)
       {
          Constraint& C = ld_nodes[i].inst;
          auto& def = v2d[C.get_src()];
@@ -8318,7 +8323,7 @@ class DFG
          }
       }
 
-      for(auto i : boost::irange(0ul, st_nodes.size()))
+      for(size_t  i = 0; i < st_nodes.size(); ++i)
       {
          Constraint& C = st_nodes[i].inst;
          auto &d1 = v2d[C.get_dest()], &d2 = v2d[C.get_src()];
@@ -8468,7 +8473,7 @@ class DFG
    u32 num_shared()
    {
       u32 cnt = 0;
-      for(auto i : boost::irange(0ul, ld_nodes.size()))
+      for(size_t i = 0; i < ld_nodes.size(); ++i)
       {
          if(ld_nodes[i].rep)
          {
@@ -8930,7 +8935,7 @@ void Staged_Flow_Sensitive_AA::make_off_graph()
    {
       OCG[i].idr = true;
    }
-   for(auto i : boost::irange(0ul, constraints.size()))
+   for(size_t i = 0; i < constraints.size(); ++i)
    {
       const Constraint& C = constraints[i];
       switch(C.get_type())
@@ -8989,7 +8994,7 @@ void Staged_Flow_Sensitive_AA::cons_opt(std::vector<u32>& redir)
    dfs_num = 1;
    make_off_graph();
    // use HU to detect equivalences
-   for(auto i : boost::irange(1ul, OCG.size()))
+   for(size_t i = 1; i < OCG.size(); ++i)
    {
       if(!OCG[i].dfs)
       {
@@ -8999,7 +9004,7 @@ void Staged_Flow_Sensitive_AA::cons_opt(std::vector<u32>& redir)
    assert(node_st.empty());
    // merge nodes based on the detected equivalences
    std::unordered_map<bitmap, u32> eq;
-   for(auto i : boost::irange(1ul, OCG.size()))
+   for(size_t i = 1; i < OCG.size(); ++i)
    {
       assert(nodes[i]->is_rep());
       OffNodeSFS& N = OCG[findOCG(i)];
@@ -9026,7 +9031,7 @@ void Staged_Flow_Sensitive_AA::cons_opt(std::vector<u32>& redir)
    std::vector<Constraint> old_cons;
    old_cons.swap(constraints);
    redir.assign(old_cons.size(), 0);
-   for(auto i : boost::irange(0ul, old_cons.size()))
+   for(size_t i = 0; i < old_cons.size(); ++i)
    {
       const Constraint& OC = old_cons[i];
       if(nodes[OC.get_dest()]->nonptr || nodes[OC.get_src()]->nonptr)
@@ -9160,7 +9165,7 @@ void Staged_Flow_Sensitive_AA::clean_G()
    u32 nn = 1; // 0 is reserved to detect errors
    std::map<u32, u32> redir;
    std::vector<SEGnode> newG;
-   for(auto i : boost::irange(1ul, ICFG.size()))
+   for(size_t i = 1; i < ICFG.size(); ++i)
    {
       if(RPP(i) && !DEL(i))
       {
@@ -9312,7 +9317,7 @@ void Staged_Flow_Sensitive_AA::T4()
    dfs_num = 1;
    rq.clear();
    topo.clear();
-   for(auto i : boost::irange(1ul, ICFG.size()))
+   for(size_t i = 1; i < ICFG.size(); ++i)
    {
       if(RPP(i))
       {
@@ -9446,7 +9451,7 @@ void Staged_Flow_Sensitive_AA::T6(bool t7)
          t6_visit(n, t7);
       }
    }
-   for(auto i : boost::irange(1ul, ICFG.size()))
+   for(size_t i = 1; i < ICFG.size(); ++i)
    {
       if(ICFG[i].del)
       {
@@ -10048,7 +10053,7 @@ void Staged_Flow_Sensitive_AA::cons_opt_wrap()
 #endif
    std::vector<u32> new_defs(defs.size()), new_uses(uses.size());
 
-   for(auto i : boost::irange(0ul, defs.size()))
+   for(size_t i = 0; i < defs.size(); ++i)
    {
       if(defs[i] && redir[i] != ~0u)
       {
@@ -10064,7 +10069,7 @@ void Staged_Flow_Sensitive_AA::cons_opt_wrap()
    uses.swap(new_uses);
 
 #if 1
-   for(auto i : boost::irange(0ul, defs.size()))
+   for(size_t i = 0; i < defs.size(); ++i)
    {
       assert(!defs[i] || constraints[i].get_type() == store_cons);
       assert(!uses[i] || constraints[i].get_type() == load_cons);
@@ -10351,7 +10356,7 @@ void Staged_Flow_Sensitive_AA::sfs_prep()
    // update defs[] and uses[]
    std::vector<u32> new_defs, new_uses;
 
-   for(auto i : boost::irange(0ul, constraints.size()))
+   for(size_t i = 0; i < constraints.size(); ++i)
    {
       Constraint& C = constraints[i];
       if(C.get_off() == ~0u)
@@ -10429,7 +10434,7 @@ std::pair<u32, u32> Staged_Flow_Sensitive_AA::unsqueeze(u32 n)
 //    same set of constraints
 void Staged_Flow_Sensitive_AA::partition_vars()
 {
-   for(auto i : boost::irange(0ul, defs.size()))
+   for(size_t i = 0; i < defs.size(); ++i)
    {
       if(!defs[i])
       {
@@ -10456,7 +10461,7 @@ void Staged_Flow_Sensitive_AA::partition_vars()
       }
    }
 
-   for(auto i : boost::irange(0ul, uses.size()))
+   for(size_t i = 0; i < uses.size(); ++i)
    {
       if(!uses[i])
       {
@@ -10529,7 +10534,7 @@ void Staged_Flow_Sensitive_AA::partition_vars()
    //
    o2p.assign(last_obj_node + 1, 0);
 
-   for(auto i : boost::irange(1ul, var_part.size()))
+   for(size_t i = 1; i < var_part.size(); ++i)
    {
       for(auto j : var_part[i])
       {
@@ -10556,7 +10561,7 @@ void Staged_Flow_Sensitive_AA::compute_seg()
    std::vector<u32> rst;
    std::vector<SEGnode> saveG(ICFG);
 
-   for(auto i : boost::irange(1ul, var_part.size()))
+   for(size_t i = 1; i < var_part.size(); ++i)
    {
       u32 rep = var_part[i].find_first();
       u32 np = 0, r = 0;
@@ -10764,7 +10769,7 @@ void Staged_Flow_Sensitive_AA::compute_seg()
       pass_uses.clear();
       pass_node.clear();
 
-      for(auto j : boost::irange(1ul, ICFG.size()))
+      for(size_t j =1; j < ICFG.size(); ++j)
       {
          SEGnode& N = ICFG[j];
 
@@ -10784,7 +10789,7 @@ void Staged_Flow_Sensitive_AA::compute_seg()
       }
 
       {
-         for(auto j : boost::irange(1ul, ICFG.size()))
+         for(size_t j = 1; j < ICFG.size(); ++j)
          {
             assert(ICFG[j].pred == saveG[j].pred);
          }
@@ -10853,7 +10858,7 @@ void Staged_Flow_Sensitive_AA::compute_seg()
          LdNode& R = dfg->get_ld(l);
          R.part_succ.erase_dsts(n);
 
-         for(auto j : boost::irange(1ul, n.size()))
+         for(size_t j = 1; j < n.size(); ++j)
          {
             dfg->set_rep(n[j], l);
             R.part_succ.insert(n[j], 0); // ensure rep has an edge to the non-rep
@@ -10979,7 +10984,7 @@ void Staged_Flow_Sensitive_AA::compute_seg()
    std::vector<u32> vars;
    std::map<u32, std::vector<u32>> p2v;
 
-   for(auto i : boost::irange(1ul, var_part.size()))
+   for(size_t i = 1; i < var_part.size(); ++i)
    {
       std::vector<u32>& v = p2v[i];
       for(auto j : var_part[i])
@@ -11102,7 +11107,7 @@ void Staged_Flow_Sensitive_AA::process_seg(u32 part, u32 n)
       // note that by construction, if there is no store then the load
       // with the least idx is 'first' -- this is important for sharing
       // points-to graphs, because we make the least idx the rep node
-      for(auto i : boost::irange(1ul, lds.size()))
+      for(size_t i = 1; i < lds.size(); ++i)
       {
          n2g[lds[i]].set(squeeze(n, part));
          dfg->add_edge(first, lds[i], part);
@@ -11538,3 +11543,5 @@ void Staged_Flow_Sensitive_AA::computePointToSet(llvm::Module& M)
    }
    llvm::errs() << "SFS analysis completed\n";
 }
+
+#endif

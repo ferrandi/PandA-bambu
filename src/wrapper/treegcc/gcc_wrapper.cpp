@@ -282,6 +282,10 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
    }
    command += " -D__NO_INLINE__ "; /// needed to avoid problem with glibc inlines
    command += " -D_GLIBCXX_IOSTREAM "; /// needed to avoid problem with iostream
+#ifdef _WIN32
+   if(compiler.is_clang)
+     command += " -isystem /mingw64/include -isystem /mingw64/x86_64-w64-mingw32/include -isystem /mingw64/include/c++/v1/"; /// needed by clang compiler
+#endif
    if(Param->isOption(OPT_discrepancy) and Param->getOption<bool>(OPT_discrepancy) and (cm==GccWrapper_CompilerMode::CM_STD || cm==GccWrapper_CompilerMode::CM_EMPTY))
    {
       command += " -D__BAMBU_DISCREPANCY__ ";
@@ -314,12 +318,14 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       }
       real_file_name = temp_file_name;
       if(compiler.is_clang)
-         command += " -c -fplugin=" + compiler.empty_plugin_obj + " -mllvm -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) + " -mllvm -panda-infile=" + real_file_name;
+         command += " -c -fplugin=" + compiler.empty_plugin_obj + " -mllvm -pandaGE-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) + " -mllvm -pandaGE-infile=" + real_file_name;
       else
          command += " -c -fplugin=" + compiler.empty_plugin_obj + " -fplugin-arg-" + compiler.empty_plugin_name + "-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory);
    }
    else if(cm==GccWrapper_CompilerMode::CM_ANALYZER)
    {
+      /// remove some extra option not compatible with clang
+      boost::replace_all(command, "-mlong-double-64", "");
       std::string fname;
       bool addTopFName = false;
       if(isWholeProgram && compiler.is_clang)
@@ -610,7 +616,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
             object_files += boost::filesystem::path(output_temporary_directory + "/" + leaf_name + ".o").string() + " ";
       }
       auto temporary_file_o_bc = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string()).string();
-      std::string command = compiler.llvm_link.string() + " -expensive-combines " + object_files + " -o " + temporary_file_o_bc;
+      std::string command = compiler.llvm_link.string() + " " + object_files + " -o " + temporary_file_o_bc;
       const std::string llvm_link_output_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
       int ret = PandaSystem(Param, command, llvm_link_output_file_name);
       if(IsError(ret))
@@ -649,7 +655,11 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
       {
          if(compiler.is_clang)
          {
-            command = compiler.llvm_opt.string() + " -load=" + compiler.topfname_plugin_obj + " -panda-TFN=" + fname + " " + temporary_file_o_bc;
+            command = compiler.llvm_opt.string();
+#ifndef _WIN32
+            command += " -load=" + compiler.topfname_plugin_obj;
+#endif
+            command += " -panda-TFN=" + fname + " " + temporary_file_o_bc;
             temporary_file_o_bc = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string()).string();
             command += " -o " + temporary_file_o_bc;
             command += " -" + compiler.topfname_plugin_name;
@@ -675,7 +685,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
       }
       if(compiler.is_clang)
       {
-         command = compiler.llvm_opt.string() + " -O2  " + temporary_file_o_bc;
+         command = compiler.llvm_opt.string() + " -O2 -disable-slp-vectorization -disable-loop-vectorization " + temporary_file_o_bc;
          temporary_file_o_bc = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string()).string();
          command += " -o " + temporary_file_o_bc;
          const std::string o2_output_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
@@ -700,7 +710,11 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
       std::string real_file_name = source_files.begin()->second;
       if(compiler.is_clang)
       {
-         command = compiler.llvm_opt.string() + " -load=" + compiler.ssa_plugin_obj + " -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) + " -panda-infile=" + real_file_name;
+         command = compiler.llvm_opt.string();
+#ifndef _WIN32
+         command += " -load=" + compiler.ssa_plugin_obj;
+#endif
+         command += " -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) + " -panda-infile=" + real_file_name;
          if(addTFNPlugin)
          {
             command += " -panda-topfname=" + fname;
@@ -2171,6 +2185,12 @@ void GccWrapper::CreateExecutable(const std::list<std::string>& file_names, cons
    std::string local_compiler_extra_options = compiler.extra_options;
    if(extra_gcc_options.find("-m32") != std::string::npos)
       boost::replace_all(local_compiler_extra_options, "-mx32", "");
+
+#ifdef _WIN32
+   if(local_compiler_extra_options.find("-m32") != std::string::npos)
+      boost::replace_all(local_compiler_extra_options, "-m32", "");
+#endif
+
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Extra options are " + local_compiler_extra_options);
    command += local_compiler_extra_options + " " + extra_gcc_options + " ";
 
@@ -2561,6 +2581,9 @@ const std::string GccWrapper::AddSourceCodeIncludes(const std::list<std::string>
    {
       boost::filesystem::path absolute_path = boost::filesystem::system_complete(source_file);
       std::string new_path = "-iquote " + absolute_path.branch_path().string() + " ";
+#ifdef _WIN32
+   boost::replace_all(new_path, "\\", "/");
+#endif
       if(gcc_compiling_parameters.find(new_path) == std::string::npos and includes.find(new_path) == std::string::npos)
          includes += new_path;
    }

@@ -1104,7 +1104,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                THROW_ASSERT(GetPointer<identifier_node>(argName), "unexpected condition");
                const std::string& argName_string = GetPointer<identifier_node>(argName)->strg;
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---parm_decl name: " + argName_string);
-               THROW_ASSERT(DesignInterfaceArgs.find(argName_string) != DesignInterfaceArgs.end(), "unexpected condition");
+               THROW_ASSERT(DesignInterfaceArgs.find(argName_string) != DesignInterfaceArgs.end(), "Not matched parameter name: " + argName_string);
                auto interfaceType = DesignInterfaceArgs.find(argName_string)->second;
                auto interfaceTypename = DesignInterfaceTypenameArgs.find(argName_string)->second;
                if(interfaceType != "default")

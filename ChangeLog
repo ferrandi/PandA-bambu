@@ -4,8 +4,20 @@ Seventh public release of PandA framework.
 New features introduced:
 - Added an initial support to C++/fortran high-level synthesis. Now, Ubuntu distributions require the installation of g++-multilib package.
 - Added support to CLANG/LLVM compiler version 4, 5 and 6. On multiple files LTO is exploited.
+- Added to CLANG/LLVM based analysis an interprocedural value range analysis based on the following paper: Fernando Magno Quintao Pereira, Raphael Ernani Rodrigues, and Victor Hugo Sperle Campos. "A fast and low-overhead technique to secure programs against integer overflows", In Proceedings of the 2013 IEEE/ACM International Symposium on Code Generation and Optimization (CGO) (CGO '13). Washington, DC, USA, 1-11.
+  The implementation started from code available at this link:https://code.google.com/archive/p/range-analysis/.
+  The original code went through a deep revision and it has been changed to be compatible to a recent version of LLVM. Some extensions have been also added:
+  - Added anti range support
+  - Redesigned many Range operations to take into account wrapping and to improve the reductions performed
+  - Integrated the LLVM lazy value range analysis.
+  - Added support to range value propagation of load from constant arrays.
+  - Added support to range value propagation of load and store from generic arrays.
+- Added to CLANG/LLVM based analysis an Andersen based pointer analysis . The specific version used is described in:
+  "The Ant and the Grasshopper: Fast and Accurate Pointer Analysis for
+  Millions of Lines of Code", by Ben Hardekopf & Calvin Lin, in PLDI 2007.
+  The bdd library used is the Buddy BDD package By Jørn Lind-Nielsen. Users working on a Debian/Ubuntu distribution can install the libbdd-dev package.
 - Added support to GCC compiler version 8.
-- Added support to mingw-w64. A Windows-7 64bit binary distribution is now available. This minimal msys2 binary distribution includes bambu and GCC8 with plugin and multilib enabled (see https://github.com/ferrandi/PandAW-installer for the details).
+- Added support to mingw-w64. A Windows-7 64bit binary distribution is now available. This minimal msys2 binary distribution includes bambu, GCC8 with plugin and multilib enabled (see https://github.com/ferrandi/PandAW-installer for the details) and a customized version of clang7.
 - Added FPT tutorial material.
 - Improved the vagrant based virtual machine generation scripts. Such scripts now create an Ubuntu 16.04 32bit VirtualBox image and an Ubuntu 18.04 64bit VirtualBox image.
 - Improved timing constraints and timing reports.
