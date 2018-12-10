@@ -48,9 +48,8 @@
 #include <psapi.h>
 #include <winsock2.h>
 #else
-#include <bits/types/struct_rusage.h>
-#include <bits/types/struct_timeval.h>
 #include <sys/resource.h>
+#include <sys/time.h>
 #endif
 #include <unistd.h>
 
