@@ -3364,7 +3364,7 @@ void BambuParameter::SetDefaults()
 
    /// -- GCC options -- //
 
-#if HAVE_I386_GCC49_COMPILER && defined(_WIN32)
+#if HAVE_I386_CLANG6_COMPILER && defined(_WIN32)
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6));
 #elif HAVE_I386_GCC49_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC49));
