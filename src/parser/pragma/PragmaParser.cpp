@@ -68,6 +68,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/version.hpp>
+#include <fstream>
 
 unsigned int PragmaParser::number = 0;
 
@@ -89,7 +90,7 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
 
    boost::filesystem::path old_path(OldFile);
    std::string FileName = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_pragma_prefix + boost::lexical_cast<std::string>(file_counter) + "_" + GetLeafFileName(old_path);
-   boost::filesystem::ofstream fileOutput(FileName.c_str(), std::ios::out);
+   std::ofstream fileOutput(FileName.c_str(), std::ios::out);
 
    file_counter++;
    level = 0;
