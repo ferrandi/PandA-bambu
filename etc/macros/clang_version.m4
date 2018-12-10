@@ -1029,7 +1029,9 @@ PLUGIN_TEST
             rm plugin_test.so
          fi
          case $host_os in
-           mingw*) ;;
+           mingw*) 
+             I386_CLANG6_PLUGIN_COMPILER=$plugin_compiler
+             ;;
            *)
              $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ `$I386_LLVM_CONFIG6_EXE --cxxflags` -c plugin_test.cpp -o plugin_test.o -std=c++11 2> /dev/null
              $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so 2> /dev/null
@@ -1073,7 +1075,6 @@ PLUGIN_TEST
       echo "checking $compiler... not found"
    fi
 done
-
 if test x$I386_CLANG6_PLUGIN_COMPILER != x; then
   dnl set configure and makefile variables
   I386_CLANG6_EMPTY_PLUGIN=clang6_plugin_dumpGimpleEmpty
