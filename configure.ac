@@ -42,10 +42,12 @@ AC_COMPILE_STDCXX_0X
 if test "x$ac_cv_cxx_compile_cxx11_native" = xno; then
    if test "x$ac_cv_cxx_compile_cxx11_cxx" = xyes; then
       CXXFLAGS+=" --std=c++11 "
+      CXXFLAGS_EXT+=" --std=c++11 "
    else
       if test "x$ac_cv_cxx_compile_cxx0x_native" != xyes; then
          if test "x$ac_cv_cxx_compile_cxx0x_cxx" = xyes; then
             CXXFLAGS+=" --std=c++0x "
+            CXXFLAGS_EXT+=" --std=c++0x "
          else
             AC_MSG_ERROR("Compiler does not support C++11 nor C++0X")
          fi
