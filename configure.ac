@@ -31,6 +31,7 @@ CFLAGS=
 CXXFLAGS=
 CFLAGS_EXT=-O2
 CXXFLAGS_EXT=-O2
+CXXFLAGS_EXTFPLL=-O2
 
 # Check if compiler support c++11
 AC_COMPILE_STDCXX_11
@@ -42,10 +43,12 @@ AC_COMPILE_STDCXX_0X
 if test "x$ac_cv_cxx_compile_cxx11_native" = xno; then
    if test "x$ac_cv_cxx_compile_cxx11_cxx" = xyes; then
       CXXFLAGS+=" --std=c++11 "
+      CXXFLAGS_EXT+=" --std=c++11 "
    else
       if test "x$ac_cv_cxx_compile_cxx0x_native" != xyes; then
          if test "x$ac_cv_cxx_compile_cxx0x_cxx" = xyes; then
             CXXFLAGS+=" --std=c++0x "
+            CXXFLAGS_EXT+=" --std=c++0x "
          else
             AC_MSG_ERROR("Compiler does not support C++11 nor C++0X")
          fi
@@ -950,6 +953,7 @@ if test "x$panda_RELEASE" = xyes; then
   CFLAGS+=" -DNDEBUG "
   CXXFLAGS_EXT+=" -DNDEBUG "
   CFLAGS_EXT+=" -DNDEBUG "
+  CXXFLAGS_EXTFPLL+=" -DNDEBUG "
   panda_USE_LIB_METRIC_PARTITIONING=no;
   panda_USE_SIMIT=no;
   panda_USE_DIOPSIS=no;
@@ -1137,6 +1141,7 @@ if test "x$panda_32BITS" != x; then
    CFLAGS+=" -m32 "
    CXXFLAGS_EXT+=" -m32 "
    CFLAGS_EXT+=" -m32 "
+   CXXFLAGS_EXTFPLL+=" -m32 "
    LDFLAGS+=" -m32 "
 fi
 
@@ -1230,7 +1235,7 @@ if test "x$panda_USE_FLOPOCO" = xyes; then
    if test -z $HAVE_LIBMPFR || test -z $HAVE_LIBGMP || test -z $HAVE_LIBGMPXX; then
       AC_MSG_ERROR(either libmpfr, libgmp or libgmpxx is missing)
    fi
-   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/libfplll-4.0.3 $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'" --prefix=${prefix}
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/libfplll-4.0.3 $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXTFPLL}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'" --prefix=${prefix}
    if test $? != 0; then
       AC_MSG_ERROR("Error in fplll configuration")
    fi
@@ -1245,7 +1250,7 @@ if test "x$panda_USE_FLOPOCO" = xyes; then
    AC_DEFINE(HAVE_SOLLYA, 1, "Define if Sollya is used")
    AC_DEFINE(HAVE_HOTBM, 1, "")
    AC_DEFINE(HAVE_LNS, 1, "LNS available")
-   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/sollya $ac_configure_args "'CFLAGS=${CFLAGS_EXT}'" "'CXXFLAGS=${CXXFLAGS_EXT} -I${prefix}/include'" "'LDFLAGS=${LDFLAGS} -L${prefix}/lib'";
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/sollya $ac_configure_args "'CFLAGS=${CFLAGS_EXT}'" "'CXXFLAGS=${CXXFLAGS_EXTFPLL} -I${prefix}/include'" "'LDFLAGS=${LDFLAGS} -L${prefix}/lib'";
    if test $? != 0; then
       AC_MSG_ERROR("Error in sollya configuration")
    fi

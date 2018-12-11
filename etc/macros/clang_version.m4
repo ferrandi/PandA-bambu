@@ -897,7 +897,9 @@ for compiler in $CLANG_TO_BE_CHECKED; do
 // in the input file.
 //
 //===----------------------------------------------------------------------===//
-
+#ifdef _WIN32
+int check;
+#else
 #include "clang/Frontend/FrontendPluginRegistry.h"
 #include "clang/AST/AST.h"
 #include "clang/AST/ASTConsumer.h"
@@ -1008,53 +1010,16 @@ protected:
 };
 
 }
-#ifdef _WIN32
-#include <stdio.h>
-#include <windows.h>
 
-//extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD Reason, LPVOID LPV) {
-//This one was only necessary if you were using a C++ compiler
-
-extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-
-    switch (fdwReason)
-    {
-        case DLL_PROCESS_ATTACH:
-            // Code to run when the DLL is loaded
-        printf ("Load working...\n");
-        static FrontendPluginRegistry::Add<PrintFunctionNamesAction>
-X1("print-fns", "print function names");
-            break;
-
-        case DLL_PROCESS_DETACH:
-            // Code to run when the DLL is freed
-        printf ("Unload working...\n");
-            break;
-
-        case DLL_THREAD_ATTACH:
-            // Code to run when a thread is created during the DLL's lifetime
-        printf ("ThreadLoad working...\n");
-            break;
-
-        case DLL_THREAD_DETACH:
-            // Code to run when a thread ends normally.
-        printf ("ThreadUnload working...\n");
-            break;
-    }
-
-    return TRUE;
-}
-#else
 static FrontendPluginRegistry::Add<PrintFunctionNamesAction>
 X1("print-fns", "print function names");
 #endif
-
 PLUGIN_TEST
       for plugin_compiler in $I386_CLANGPP6_EXE; do
          plugin_option=
          case $host_os in
            mingw*) 
-             plugin_option="-shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$I386_LLVM_CONFIG6_EXE --ldflags --libs --system-libs`"
+             echo plugin_option="-shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$I386_LLVM_CONFIG6_EXE --ldflags --libs --system-libs`"
            ;;
            *)
              plugin_option='-fPIC -shared '
@@ -1063,31 +1028,38 @@ PLUGIN_TEST
          if test -f plugin_test.so; then
             rm plugin_test.so
          fi
-         $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ `$I386_LLVM_CONFIG6_EXE --cxxflags` -c plugin_test.cpp -o plugin_test.o -std=c++11 2> /dev/null
-         $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so 2> /dev/null
-         if test ! -f plugin_test.so; then
-            echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... no... Package libclang-6.0-dev missing?"
-            continue
-         fi
-         echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... yes"
-         ac_save_CC="$CC"
-         ac_save_CFLAGS="$CFLAGS"
-         CC=$I386_CLANG6_EXE
-         CFLAGS="-fplugin=$BUILDDIR/plugin_test.so -Xclang -add-plugin -Xclang print-fns"
-         AC_LANG_PUSH([C])
-         AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+         case $host_os in
+           mingw*) 
+             I386_CLANG6_PLUGIN_COMPILER=$plugin_compiler
+             ;;
+           *)
+             $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ `$I386_LLVM_CONFIG6_EXE --cxxflags` -c plugin_test.cpp -o plugin_test.o -std=c++11 2> /dev/null
+             $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so 2> /dev/null
+             if test ! -f plugin_test.so; then
+               echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... no... Package libclang-6.0-dev missing?"
+              continue
+             fi
+             echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... yes"
+             ac_save_CC="$CC"
+             ac_save_CFLAGS="$CFLAGS"
+             CC=$I386_CLANG6_EXE
+             CFLAGS="-fplugin=$BUILDDIR/plugin_test.so -Xclang -add-plugin -Xclang print-fns"
+             AC_LANG_PUSH([C])
+             AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
                ]],[[
                   return 0;
                ]])],
-         I386_CLANG6_PLUGIN_COMPILER=$plugin_compiler,I386_CLANG6_PLUGIN_COMPILER=)
-         AC_LANG_POP([C])
-         CC=$ac_save_CC
-         CFLAGS=$ac_save_CFLAGS
-         #If plugin compilation fails, skip this executable
-         if test "x$I386_CLANG6_PLUGIN_COMPILER" = x; then
-            echo "plugin compilation does not work... $I386_CLANG6_EXE -fplugin=$BUILDDIR/plugin_test.so -Xclang -add-plugin -Xclang print-fns ?"
-            continue
-         fi
+             I386_CLANG6_PLUGIN_COMPILER=$plugin_compiler,I386_CLANG6_PLUGIN_COMPILER=)
+             AC_LANG_POP([C])
+             CC=$ac_save_CC
+             CFLAGS=$ac_save_CFLAGS
+             #If plugin compilation fails, skip this executable
+             if test "x$I386_CLANG6_PLUGIN_COMPILER" = x; then
+               echo "plugin compilation does not work... $I386_CLANG6_EXE -fplugin=$BUILDDIR/plugin_test.so -Xclang -add-plugin -Xclang print-fns ?"
+              continue
+             fi
+           ;;
+         esac
          echo "OK, we have found the compiler"
          build_I386_CLANG6=yes;
          build_I386_CLANG6_EMPTY_PLUGIN=yes;
@@ -1103,7 +1075,6 @@ PLUGIN_TEST
       echo "checking $compiler... not found"
    fi
 done
-
 if test x$I386_CLANG6_PLUGIN_COMPILER != x; then
   dnl set configure and makefile variables
   I386_CLANG6_EMPTY_PLUGIN=clang6_plugin_dumpGimpleEmpty
