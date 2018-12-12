@@ -445,6 +445,9 @@ Debian 9 (Stretch):
 - gcc-6-plugin-dev
 - gfortran
 - gfortran-multilib 
+- clang-4.0
+- libclang-4.0-dev
+- libbdd-dev
 - libcloog-ppl1
 - libboost-all-dev
 - libmpc-dev
@@ -465,7 +468,7 @@ Debian 9 (Stretch):
 - libglpk-dev
 
 In a single line (as root user):
-apt install autoconf autoconf-archive libtool make gcc g++ gcc-multilib gcc-6-plugin-dev gfortran gfortran-multilib libcloog-ppl1 libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config libsuitesparse-dev libglpk-dev
+apt install autoconf autoconf-archive libtool make gcc g++ gcc-multilib gcc-6-plugin-dev gfortran gfortran-multilib libcloog-ppl1 clang-4.0 libclang-4.0-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config libsuitesparse-dev libglpk-dev
 
 CentOS 6/Scientific Linux distributions
 *************
