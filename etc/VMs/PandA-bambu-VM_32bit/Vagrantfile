@@ -87,8 +87,8 @@ Vagrant.configure(2) do |config|
      ./configure
      make && make install && make clean
      cd ..
+     git clone https://github.com/ferrandi/PandA-bambu.git
      cd PandA-bambu
-     git checkout panda-0.9.6-candidate
      make -f Makefile.init
      mkdir build
      cd build && ../configure --prefix=/home/ubuntu/panda --enable-verilator --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast && make -j2 && make install && make clean
