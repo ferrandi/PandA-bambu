@@ -37,6 +37,8 @@ CXXFLAGS_EXTFPLL=-O2
 AC_COMPILE_STDCXX_11
 # Check if compiler support c++0x
 AC_COMPILE_STDCXX_0X
+# Check if compiler support std::hexfloat
+AC_HEXFLOAT
 
 
 ############################### c++0x/11 checking ##############################

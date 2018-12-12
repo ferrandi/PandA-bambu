@@ -158,3 +158,52 @@ AC_DEFUN([AC_COMPILE_STDCXX_0X], [
     STDCXX_0X=yes
   fi
 ])
+
+
+AC_DEFUN([AC_HEXFLOAT], [
+  AC_CACHE_CHECK(if g++ supports hexfloat features without additional flags,
+  ac_cv_cxx_compile_hexfloat_native,
+  [AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  AC_TRY_COMPILE([
+  #include <sstream>
+  #include <iostream>
+  ],[std::stringstream ssX;ssX << std::hexfloat << 1.5;return 0;],
+  ac_cv_cxx_compile_hexfloat_native=yes, ac_cv_cxx_compile_hexfloat_native=no)
+  AC_LANG_RESTORE
+  ])
+  AC_CACHE_CHECK(if g++ supports hexfloat features with -std=c++0x flag,
+  ac_cv_cxx_compile_hexfloat_c0x,
+  [AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  ac_save_CXXFLAGS="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAGS -std=c++0x"
+  AC_TRY_COMPILE([
+  #include <sstream>
+  #include <iostream>
+  ],[std::stringstream ssX;ssX << std::hexfloat << 1.5;return 0;],
+  ac_cv_cxx_compile_hexfloat_c0x=yes, ac_cv_cxx_compile_hexfloat_c0x=no)
+  CXXFLAGS="$ac_save_CXXFLAGS"
+  AC_LANG_RESTORE
+  ])
+
+  AC_CACHE_CHECK(if g++ supports hexfloat features with -std=c++11 flag,
+  ac_cv_cxx_compile_hexfloat_c11,
+  [AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  ac_save_CXXFLAGS="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAGS -std=c++11"
+  AC_TRY_COMPILE([
+  #include <sstream>
+  #include <iostream>
+  ],[std::stringstream ssX;ssX << std::hexfloat << 1.5;return 0;],
+  ac_cv_cxx_compile_hexfloat_c11=yes, ac_cv_cxx_compile_hexfloat_c11=no)
+  CXXFLAGS="$ac_save_CXXFLAGS"
+  AC_LANG_RESTORE
+  ])
+
+  if test "$ac_cv_cxx_compile_hexfloat_native" = yes || test "$ac_cv_cxx_compile_hexfloat_c0x" = yes ||
+     test "$ac_cv_cxx_compile_hexfloat_c11" = yes; then
+    AC_DEFINE(HAVE_HEXFLOAT,1,[Define if g++ supports std::hexfloat features. ])
+  fi
+])
