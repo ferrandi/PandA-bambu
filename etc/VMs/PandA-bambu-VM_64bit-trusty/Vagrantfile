@@ -2,26 +2,22 @@
 # vi: set ft=ruby :
 
 Vagrant.configure(2) do |config|
-  config.vm.box = "ubuntu/bionic64"
+  config.vm.box = "ubuntu/trusty64"
   config.vm.synced_folder '.', '/vagrant', disabled: true
+
   config.vm.provider "virtualbox" do |vb|
+  #   # Customize the amount of memory on the VM:
      vb.memory = "4096"
      vb.customize [ 'modifyvm', :id, '--uartmode1', 'disconnected']
      vb.customize [ 'modifyvm', :id, '--vram', '64']
-     vb.customize "pre-boot", ["storageattach", :id, "--storagectl", "IDE", "--port", "1", "--device", "0", "--type", "dvddrive", "--medium", "emptydrive"]
-     vb.name = "PandA-bambu-VM_64bit"
+     vb.name = "PandA-bambu-VM_64bit-trusty"
   end
-  #   apt-get install lubuntu-desktop -y
   config.vm.provision "shell", inline: <<-SHELL
-     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt bionic-security main restricted universe multiverse' /etc/apt/sources.list
-     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt bionic-backports main restricted universe multiverse' /etc/apt/sources.list
-     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt bionic-updates main restricted universe multiverse' /etc/apt/sources.list
-     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt bionic main restricted universe multiverse' /etc/apt/sources.list
      apt-get update -y
      apt-get upgrade -y
-     apt-get install -y linux-headers-$(uname -r) build-essential dkms
+     apt-get install -y linux-headers-$(uname -r) build-essential dkms git
      apt-get install -y virtualbox-guest-x11
-     apt-get install -y autoconf autoconf-archive automake libtool gcc-7 g++-7 gcc-7-plugin-dev gcc-7-multilib g++-7-multilib gfortran-7 gfortran-7-multilib libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz xdot verilator make libsuitesparse-dev libglpk-dev clang-6.0 libclang-6.0-dev libbdd-dev
+     apt-get install -y autoconf autoconf-archive automake libtool g++ gcc-4.6 g++-4.6 gcc-4.6-plugin-dev gcc-4.6-plugin-dev gcc-4.7 g++-4.7 gcc-4.8-plugin-dev gcc-4.7-plugin-dev gcc-4.6-multilib gcc-4.7-multilib gcc-4.8-multilib g++-4.8-multilib gfortran-4.6 gfortran-4.6-multilib gfortran-4.7 gfortran-4.7-multilib gfortran-4.8 gfortran-4.8-multilib libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator libsuitesparse-dev libglpk-dev make
      apt-get autoremove -y
      git clone https://github.com/ferrandi/PandA-bambu.git
      cd PandA-bambu
@@ -33,7 +29,6 @@ Vagrant.configure(2) do |config|
      cd /home/ubuntu/
      chown -R ubuntu.ubuntu panda
      cd /home/ubuntu/panda/share/panda/examples/arf && chmod +x bambu.sh && ./bambu.sh && rm -rf hls testbench && echo "Bambu is correctly working!!"
-     apt-get -y install ubuntu-gnome-desktop
      apt-get clean -y
      echo "export PATH=/home/ubuntu/panda/bin:$PATH" >> /home/ubuntu/.bashrc
      echo "ubuntu:password" | chpasswd
