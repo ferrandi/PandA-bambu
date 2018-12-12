@@ -45,6 +45,9 @@
  */
 /// Header include
 #include "tree_manipulation.hpp"
+
+#include "config_HAVE_HEXFLOAT.hpp"
+
 #include <algorithm>              // for find
 #include <boost/lexical_cast.hpp> // for lexical_cast
 #include <boost/range/adaptor/reversed.hpp>
@@ -64,6 +67,10 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 #include <iostream>
+#if !HAVE_HEXFLOAT
+#include <cstdio>
+#endif
+
 unsigned int tree_manipulation::goto_label_unique_id = 0;
 
 #define TREE_NOT_YET_IMPLEMENTED(token) THROW_ERROR(std::string("field not yet supported ") + STOK(token))
@@ -595,7 +602,15 @@ tree_nodeRef tree_manipulation::CreateRealCst(const tree_nodeConstRef& type, con
    IR_schema[TOK(TOK_VALR)] = ss.str();
 
    std::stringstream ssX;
+#if HAVE_HEXFLOAT
    ss << std::hexfloat << value;
+#else
+   {
+      char buffer[256];
+      sprintf(buffer, "%La", value);
+      ssX<<buffer;
+   }
+#endif
    IR_schema[TOK(TOK_VALX)] = ss.str();
 
    this->TreeM->create_tree_node(real_cst_nid, real_cst_K, IR_schema);

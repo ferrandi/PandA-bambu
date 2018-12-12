@@ -47,7 +47,7 @@
 #include "function_frontend_flow_step.hpp"
 
 #include <boost/tuple/tuple.hpp>
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
 
 #include "tree_common.hpp"
 
