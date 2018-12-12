@@ -542,6 +542,7 @@ The following packages have to be installed under Centos 7 to compile PandA:
 - make
 - mpfr-devel
 - suitesparse-static
+- verilator
 - xz-devel
 - zlib-devel
 
@@ -549,7 +550,7 @@ Extra packages for Enterprise Linux (EPEL) is required:
 yum install epel-release
 
 In a single line (as root):
-yum install autoconf autoconf-archive automake bison boost-devel flex gcc-c++ gcc-plugin-devel glibc-devel.i686 glpk-devel libgcc.i686 libicu-devel libtool libtool-ltdl-devel libxml2-devel make mpfr-devel suitesparse-static xz-devel zlib-devel
+yum install autoconf autoconf-archive automake bison boost-devel flex gcc-c++ gcc-plugin-devel glibc-devel.i686 glpk-devel libgcc.i686 libicu-devel libtool libtool-ltdl-devel libxml2-devel make mpfr-devel suitesparse-static verilator xz-devel zlib-devel
 
 FloPoCo is currently not supported by bambu under CentOS 7.
 
@@ -564,6 +565,9 @@ sudo dnf install autoconf autoconf-archive libtool boost-devel mpfr-devel xml2 l
 
 The following packages have to be installed under Fedora 25 (64 bit) to compile PandA:
 sudo dnf install autoconf autoconf-archive libtool boost-devel mpfr-devel xml2 lzma-devel mpfi-devel zlib-devel bison flex doxygen graphviz iverilog verilator gcc gcc-c++ gcc-plugin-devel.x86_64 gcc-plugin-devel.i686 libxml2-devel glibc glibc-devel glibc.i686 glibc-devel.i686 libgcc.i686 make suitesparse-static libtool-ltdl-devel glpk-devel gawk
+
+The following packages have to be installed under Fedora 29 (64 bit) to compile PandA:
+sudo dnf install autoconf autoconf-archive libtool boost-devel mpfr-devel xml2 lzma-devel mpfi-devel zlib-devel bison flex doxygen graphviz iverilog verilator gcc gcc-c++ gcc-plugin-devel.x86_64 gcc-plugin-devel.i686 libxml2-devel glibc glibc-devel glibc.i686 glibc-devel.i686 libgcc.i686 make suitesparse-static libtool-ltdl-devel glpk-devel gawk clang clang-devel 
 
 ArchLinux
 *************
