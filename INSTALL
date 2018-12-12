@@ -567,7 +567,7 @@ The following packages have to be installed under Fedora 25 (64 bit) to compile 
 sudo dnf install autoconf autoconf-archive libtool boost-devel mpfr-devel xml2 lzma-devel mpfi-devel zlib-devel bison flex doxygen graphviz iverilog verilator gcc gcc-c++ gcc-plugin-devel.x86_64 gcc-plugin-devel.i686 libxml2-devel glibc glibc-devel glibc.i686 glibc-devel.i686 libgcc.i686 make suitesparse-static libtool-ltdl-devel glpk-devel gawk
 
 The following packages have to be installed under Fedora 29 (64 bit) to compile PandA:
-sudo dnf install autoconf autoconf-archive libtool boost-devel mpfr-devel xml2 lzma-devel mpfi-devel zlib-devel bison flex doxygen graphviz iverilog verilator gcc gcc-c++ gcc-plugin-devel.x86_64 gcc-plugin-devel.i686 libxml2-devel glibc glibc-devel glibc.i686 glibc-devel.i686 libgcc.i686 make suitesparse-static libtool-ltdl-devel glpk-devel gawk clang clang-devel 
+sudo dnf install autoconf autoconf-archive libtool boost-devel mpfr-devel xml2 lzma-devel mpfi-devel zlib-devel bison flex doxygen graphviz iverilog verilator gcc gcc-c++ gcc-plugin-devel.x86_64 gcc-plugin-devel.i686 libxml2-devel glibc glibc-devel glibc.i686 glibc-devel.i686 libgcc.i686 make suitesparse-static libtool-ltdl-devel glpk-devel gawk clang clang-devel llvm llvm-devel
 
 ArchLinux
 *************
