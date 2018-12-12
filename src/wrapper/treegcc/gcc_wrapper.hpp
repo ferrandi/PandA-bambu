@@ -171,7 +171,6 @@ enum class GccWrapper_CompilerMode
    CM_LTO
 };
 
-
 /**
  * @class GccWrapper
  * Main class for wrapping the GCC compiler. It allows an XML configuration file to be specified where the parameters

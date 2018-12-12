@@ -608,7 +608,7 @@ tree_nodeRef tree_manipulation::CreateRealCst(const tree_nodeConstRef& type, con
    {
       char buffer[256];
       sprintf(buffer, "%La", value);
-      ssX<<buffer;
+      ssX << buffer;
    }
 #endif
    IR_schema[TOK(TOK_VALX)] = ss.str();

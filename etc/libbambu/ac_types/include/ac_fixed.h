@@ -568,11 +568,11 @@ namespace __AC_NAMESPACE
       {
          return ((ac_fixed<AC_MAX(I, 1), AC_MAX(I, 1), S>)*this).template slc<AC_MAX(I, 1)>(0);
       }
-      template<int W1, bool S1>
-      __FORCE_INLINE explicit operator ac_int<W1, S1> () const
+      template <int W1, bool S1>
+      __FORCE_INLINE explicit operator ac_int<W1, S1>() const
       {
          ac_int<AC_MAX(I, 1), S> temp = to_ac_int();
-         return (ac_int<W1,S1>)temp;
+         return (ac_int<W1, S1>)temp;
       }
 
       // Explicit conversion functions to C built-in types -------------

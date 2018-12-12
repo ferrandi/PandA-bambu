@@ -1510,7 +1510,7 @@ Andersen_AA::~Andersen_AA()
 void Andersen_AA::releaseMemory()
 {
    run_cleanup();
-   for(size_t i=0 ; i < nodes.size();++i)
+   for(size_t i = 0; i < nodes.size(); ++i)
    {
       delete nodes[i];
       nodes[i] = nullptr;
@@ -1685,7 +1685,7 @@ void Andersen_AA::verify_nodes()
    {
       llvm::errs() << "***** Checking node info consistency...\n";
    }
-   for(size_t i =0; i < nodes.size(); ++i)
+   for(size_t i = 0; i < nodes.size(); ++i)
    {
       const Node* N = nodes[i];
       auto V = N->get_val();
@@ -1783,7 +1783,7 @@ void Andersen_AA::analyze_struct(const llvm::StructType* T)
          const std::vector<u32>& szE = get_struct_sz(ST);
          auto nfE = szE.size();
          // Copy ST's info, whose element 0 is the size of ST itself.
-         for(size_t j =0; j < nfE; ++j)
+         for(size_t j = 0; j < nfE; ++j)
          {
             sz.push_back(szE[j]);
          }
@@ -8323,7 +8323,7 @@ class DFG
          }
       }
 
-      for(size_t  i = 0; i < st_nodes.size(); ++i)
+      for(size_t i = 0; i < st_nodes.size(); ++i)
       {
          Constraint& C = st_nodes[i].inst;
          auto &d1 = v2d[C.get_dest()], &d2 = v2d[C.get_src()];
@@ -10769,7 +10769,7 @@ void Staged_Flow_Sensitive_AA::compute_seg()
       pass_uses.clear();
       pass_node.clear();
 
-      for(size_t j =1; j < ICFG.size(); ++j)
+      for(size_t j = 1; j < ICFG.size(); ++j)
       {
          SEGnode& N = ICFG[j];
 

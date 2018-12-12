@@ -40,7 +40,6 @@
 
 #include "plugin_includes.hpp"
 
-
 #include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/DominanceFrontier.h"
@@ -77,7 +76,6 @@
 
 #define PRINT_DBG_MSG 0
 //#define UNIFYFUNCTIONEXITNODES
-
 
 namespace llvm
 {
@@ -130,24 +128,24 @@ namespace llvm
          std::map<std::string, std::vector<std::string>> Fun2Params;
          auto parms_file_name = create_file_basename_string(outdir_name, InFile) + ".params.txt";
          ErrorOr<std::unique_ptr<MemoryBuffer>> BufOrErr = MemoryBuffer::getFile(parms_file_name);
-         if (BufOrErr)
+         if(BufOrErr)
          {
             std::unique_ptr<MemoryBuffer> Buffer = std::move(BufOrErr.get());
             std::string buf = Buffer->getBuffer();
             std::stringstream ss(buf);
             std::string item;
-            while (std::getline(ss, item, '\n'))
+            while(std::getline(ss, item, '\n'))
             {
-               bool is_first=true;
+               bool is_first = true;
                std::stringstream ss_inner(item);
                std::string item_inner;
                std::string funName;
-               while (std::getline(ss_inner, item_inner, ' '))
+               while(std::getline(ss_inner, item_inner, ' '))
                {
                   if(is_first)
                   {
                      funName = item_inner;
-                     is_first=false;
+                     is_first = false;
                   }
                   else
                   {
@@ -196,10 +194,9 @@ namespace llvm
 // Currently there is no difference between c++ or c serialization
 #ifndef _WIN32
 #if CPP_LANGUAGE
-   static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)> XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleSSACpp), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false /* Only looks at CFG */,
-                                                                                          false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)> XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleSSACpp), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false /* Only looks at CFG */, false /* Analysis Pass */);
 #else
-   static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)> XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleSSA), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false /* Only looks at CFG */,                                                                                          false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)> XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleSSA), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 #endif
 // This function is of type PassManagerBuilder::ExtensionFn
@@ -227,8 +224,7 @@ static llvm::RegisterStandardPasses llvmtoolLoader_Ox(llvm::PassManagerBuilder::
 #ifdef _WIN32
 using namespace llvm;
 
-INITIALIZE_PASS_BEGIN(clang6_plugin_dumpGimpleSSA, "clang6_plugin_dumpGimpleSSA",
-                "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
+INITIALIZE_PASS_BEGIN(clang6_plugin_dumpGimpleSSA, "clang6_plugin_dumpGimpleSSA", "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
 INITIALIZE_PASS_DEPENDENCY(MemoryDependenceWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(MemorySSAWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(LazyValueInfoWrapperPass)
@@ -238,14 +234,13 @@ INITIALIZE_PASS_DEPENDENCY(TargetLibraryInfoWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(AssumptionCacheTracker)
 INITIALIZE_PASS_DEPENDENCY(DominatorTreeWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(DominanceFrontierWrapperPass)
-INITIALIZE_PASS_END(clang6_plugin_dumpGimpleSSA, "clang6_plugin_dumpGimpleSSA",
-                "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
+INITIALIZE_PASS_END(clang6_plugin_dumpGimpleSSA, "clang6_plugin_dumpGimpleSSA", "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
 
 namespace llvm
 {
-  void clang6_plugin_dumpGimpleSSA_init()
-  {
-  }
-}
+   void clang6_plugin_dumpGimpleSSA_init()
+   {
+   }
+} // namespace llvm
 
 #endif

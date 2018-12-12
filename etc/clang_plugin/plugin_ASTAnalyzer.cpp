@@ -58,7 +58,6 @@ static std::map<std::string, std::map<clang::SourceLocation, std::pair<std::stri
 
 namespace clang
 {
-
    class FunctionArgConsumer : public clang::ASTConsumer
    {
       CompilerInstance& CI;
@@ -169,7 +168,7 @@ namespace clang
 #else
          llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
 #endif
-         for(auto fun2parms_el: Fun2Params)
+         for(auto fun2parms_el : Fun2Params)
          {
             stream << fun2parms_el.first;
             for(auto par : fun2parms_el.second)
@@ -445,7 +444,7 @@ namespace clang
          return true;
       }
 
-      void HandleTranslationUnit(ASTContext &) override
+      void HandleTranslationUnit(ASTContext&) override
       {
          auto baseFilename = create_file_basename_string(outdir_name, InFile);
          std::string interface_XML_filename = baseFilename + ".interface.xml";
@@ -609,15 +608,13 @@ namespace clang
 
 #ifdef _WIN32
 
-void initializeplugin_ASTAnalyzer()
-{
-  static clang::FrontendPluginRegistry::Add<clang::CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)> X(CLANG_VERSION_STRING(_plugin_ASTAnalyzer), "Analyze Clang AST to retrieve information useful for PandA");
-}
+   void initializeplugin_ASTAnalyzer()
+   {
+      static clang::FrontendPluginRegistry::Add<clang::CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)> X(CLANG_VERSION_STRING(_plugin_ASTAnalyzer), "Analyze Clang AST to retrieve information useful for PandA");
+   }
 #endif
 } // namespace clang
 
 #ifndef _WIN32
 static clang::FrontendPluginRegistry::Add<clang::CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)> X(CLANG_VERSION_STRING(_plugin_ASTAnalyzer), "Analyze Clang AST to retrieve information useful for PandA");
 #endif
-
-

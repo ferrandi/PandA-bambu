@@ -183,7 +183,7 @@ double erfc(double x)
    hx = GET_HI(x);
    ix = hx & 0x7fffffff;
    if(ix >= 0x7ff00000)
-   {  /* erfc(nan)=nan */
+   { /* erfc(nan)=nan */
       /* erfc(+-inf)=0,2 */
       return (double)(((unsigned)hx >> 31) << 1) + one / x;
    }
