@@ -99,7 +99,7 @@ AC_CHECK_LIB([z], [gzopen])
 # Checks for header files.
 AC_FUNC_ALLOCA
 AC_HEADER_STDC
-AC_CHECK_HEADERS([float.h limits.h malloc.h sys/timeb.h zlib.h stddef.h getopt.h ], [],[AC_MSG_ERROR("$ac_header not found")])
+AC_CHECK_HEADERS([float.h limits.h sys/timeb.h zlib.h stddef.h getopt.h ], [],[AC_MSG_ERROR("$ac_header not found")])
 AC_HEADER_SYS_WAIT
 
 # Checks for typedefs, structures, and compiler characteristics.

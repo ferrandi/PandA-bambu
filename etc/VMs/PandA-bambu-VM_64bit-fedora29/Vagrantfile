@@ -16,12 +16,12 @@ Vagrant.configure(2) do |config|
      echo "fedora29:password" | chpasswd
      dnf -y update
      dnf -y install git
-     dnf -y install autoconf autoconf-archive libtool boost-devel mpfr-devel xml2 lzma-devel mpfi-devel zlib-devel bison flex doxygen graphviz iverilog verilator gcc gcc-c++ gcc-plugin-devel.x86_64 gcc-plugin-devel.i686 libxml2-devel glibc glibc-devel glibc.i686 glibc-devel.i686 libgcc.i686 make suitesparse-static libtool-ltdl-devel glpk-devel gawk clang clang-devel
+     dnf -y install autoconf autoconf-archive libtool boost-devel mpfr-devel xml2 lzma-devel mpfi-devel zlib-devel bison flex doxygen graphviz iverilog verilator gcc gcc-c++ gcc-plugin-devel.x86_64 gcc-plugin-devel.i686 libxml2-devel glibc glibc-devel glibc.i686 glibc-devel.i686 libgcc.i686 make suitesparse-static libtool-ltdl-devel glpk-devel gawk clang clang-devel llvm llvm-devel
      git clone https://github.com/ferrandi/PandA-bambu.git
      cd PandA-bambu
      make -f Makefile.init
      mkdir build
-     cd build && ../configure --prefix=/home/fedora29/panda --enable-verilator --enable-glpk --enable-opt --disable-flopoco --with-opt-level=fast && make -j2 && make install && make clean
+     cd build && ../configure --prefix=/home/fedora29/panda --enable-verilator --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast && make -j2 && make install && make clean
      cd ../.. && chown -R fedora29:fedora29 PandA-bambu
      mv PandA-bambu /home/fedora29/
      cd /home/fedora29/
