@@ -405,9 +405,10 @@ void DesignFlowManager::Exec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Writing initial design flow graph");
       feedback_design_flow_graph->WriteDot("Design_Flow_" + boost::lexical_cast<std::string>(step_counter));
    }
-#ifndef NDEBUG
+   size_t executed_passes = 0;
+   size_t skipped_passes = 0;
    size_t graph_changes = 0;
-#endif
+   long design_flow_manager_time = 0;
    while(possibly_ready.size())
    {
 #ifndef NDEBUG
@@ -558,17 +559,16 @@ void DesignFlowManager::Exec()
          }
 #endif
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ended iteration number " + boost::lexical_cast<std::string>(step_counter));
-#ifndef NDEBUG
          const size_t final_number_vertices = boost::num_vertices(*feedback_design_flow_graph);
          const size_t final_number_edges = boost::num_vertices(*feedback_design_flow_graph);
          if(final_number_vertices > initial_number_vertices or final_number_edges > initial_number_edges)
          {
             graph_changes++;
          }
-#endif
          continue;
       }
       STOP_TIME(before_time);
+      design_flow_manager_time += before_time;
       if(design_flow_step_info->status == DesignFlowStep_Status::UNNECESSARY)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Skipping execution of " + step->GetName() + " since unnecessary");
@@ -588,6 +588,7 @@ void DesignFlowManager::Exec()
             step->PrintInitialIR();
          }
          design_flow_step_info->status = step->Exec();
+         executed_passes++;
          if(step->CGetDebugLevel() >= DEBUG_LEVEL_VERY_PEDANTIC)
          {
             step->PrintFinalIR();
@@ -609,35 +610,42 @@ void DesignFlowManager::Exec()
       {
          INDENT_OUT_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Skipping execution of " + step->GetName());
          design_flow_step_info->status = DesignFlowStep_Status::UNCHANGED;
+         skipped_passes++;
       }
       long after_time;
       START_TIME(after_time);
-      /// Add steps and edges from post dependencies
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding post-dependencies of " + step->GetName());
-      DesignFlowStepSet relationships;
-      step->ComputeRelationships(relationships, DesignFlowStep::INVALIDATION_RELATIONSHIP);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Got steps");
 #ifndef NDEBUG
-      const bool invalidations = not relationships.empty();
+      bool invalidations = false;
 #endif
-      DesignFlowStepSet::const_iterator relationship, relationship_end = relationships.end();
-      for(relationship = relationships.begin(); relationship != relationship_end; ++relationship)
+      if(not parameters->IsParameter("disable-invalidations"))
       {
-         const std::string relationship_signature = (*relationship)->GetSignature();
-         vertex relationship_vertex = GetDesignFlowStep(relationship_signature);
-         THROW_ASSERT(relationship_vertex, "Missing vertex " + relationship_signature);
-         if(design_flow_graph->IsReachable(relationship_vertex, next))
+         ///Add steps and edges from post dependencies
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding post-dependencies of " + step->GetName());
+         DesignFlowStepSet relationships;
+         step->ComputeRelationships(relationships, DesignFlowStep::INVALIDATION_RELATIONSHIP);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Got steps");
+#ifndef NDEBUG
+         invalidations = not relationships.empty();
+#endif
+         DesignFlowStepSet::const_iterator relationship, relationship_end = relationships.end();
+         for(relationship = relationships.begin(); relationship != relationship_end; ++relationship)
          {
-            design_flow_graphs_collection->AddDesignFlowDependence(next, relationship_vertex, DesignFlowGraph::DEPENDENCE_FEEDBACK_SELECTOR);
-            DeExecute(relationship_vertex, true);
+            const std::string relationship_signature = (*relationship)->GetSignature();
+            vertex relationship_vertex = GetDesignFlowStep(relationship_signature);
+            THROW_ASSERT(relationship_vertex, "Missing vertex " + relationship_signature);
+            if(design_flow_graph->IsReachable(relationship_vertex, next))
+            {
+               design_flow_graphs_collection->AddDesignFlowDependence(next, relationship_vertex, DesignFlowGraph::DEPENDENCE_FEEDBACK_SELECTOR);
+               DeExecute(relationship_vertex, true);
+            }
+            else
+            {
+               feedback_design_flow_graph->WriteDot("Design_Flow_Error");
+               THROW_UNREACHABLE("Invalidating " + design_flow_graph->CGetDesignFlowStepInfo(relationship_vertex)->design_flow_step->GetName() + " which is not before the current one");
+            }
          }
-         else
-         {
-            feedback_design_flow_graph->WriteDot("Design_Flow_Error");
-            THROW_UNREACHABLE("Invalidating " + design_flow_graph->CGetDesignFlowStepInfo(relationship_vertex)->design_flow_step->GetName() + " which is not before the current one");
-         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added post-dependencies of " + step->GetName());
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added post-dependencies of " + step->GetName());
       OutEdgeIterator oe, oe_end;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Starting checking of new ready steps");
       for(boost::tie(oe, oe_end) = boost::out_edges(next, *design_flow_graph); oe != oe_end; oe++)
@@ -753,15 +761,52 @@ void DesignFlowManager::Exec()
 #endif
       }
       STOP_TIME(after_time);
+      design_flow_manager_time += after_time;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ended iteration number " + boost::lexical_cast<std::string>(step_counter) + " - Step " + step->GetName());
-#ifndef NDEBUG
       const size_t final_number_vertices = boost::num_vertices(*feedback_design_flow_graph);
       const size_t final_number_edges = boost::num_vertices(*feedback_design_flow_graph);
-      if(final_number_vertices > initial_number_vertices or final_number_edges > initial_number_edges or invalidations)
+      if(parameters->IsParameter("dfm_statistics"))
       {
-         graph_changes++;
+         if(final_number_vertices > initial_number_vertices or final_number_edges > initial_number_edges or invalidations)
+         {
+            graph_changes++;
+         }
+         VertexIterator v_stat, v_stat_end;
+         size_t executed_vertices = 0;
+         for(boost::tie(v_stat, v_stat_end) = boost::vertices(*design_flow_graph); v_stat != v_stat_end; v_stat++)
+         {
+            const DesignFlowStepInfoRef local_design_flow_step_info = design_flow_graph->GetDesignFlowStepInfo(*v_stat);
+            switch(local_design_flow_step_info->status)
+            {
+               case DesignFlowStep_Status::ABORTED:
+               case DesignFlowStep_Status::EMPTY:
+               case DesignFlowStep_Status::SUCCESS:
+               case DesignFlowStep_Status::UNCHANGED:
+               case DesignFlowStep_Status::SKIPPED:
+                  {
+                     executed_vertices++;
+                     break;
+                  }
+               case DesignFlowStep_Status::UNNECESSARY:
+               case DesignFlowStep_Status::UNEXECUTED:
+                  {
+                     break;
+                  }
+               case DesignFlowStep_Status::NONEXISTENT:
+                  {
+                     THROW_UNREACHABLE("Step with nonexitent status");
+                     break;
+                  }
+               default:
+                  {
+                     THROW_UNREACHABLE("");
+                  }
+            }
+
+         }
+         INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "dfm_statistics - number of vertices at the end of iteration " + STR(step_counter) + ": " + STR(executed_vertices) + " / " + STR(final_number_vertices));
+         INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "dfm_statistics - number of edges at the end of iteration " + STR(step_counter) + ": " + STR(final_number_edges));
       }
-#endif
    }
 #ifndef NDEBUG
    if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
@@ -782,8 +827,16 @@ void DesignFlowManager::Exec()
       feedback_design_flow_graph->WriteDot("Design_Flow_Error");
       THROW_UNREACHABLE("Design flow didn't end");
    }
+   if(parameters->IsParameter("dfm_statistics"))
+   {
+      INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "dfm_statistics - number of vertices in final graph: " + STR(boost::num_vertices(*design_flow_graph)));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "dfm_statistics - number of edges in final graph: " + STR(boost::num_edges(*design_flow_graph)));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "dfm_statistics - number of executed passes: " + STR(executed_passes));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "dfm_statistics - number of skipped passes: " + STR(skipped_passes));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "dfm_statistics - number of graph changes: " + STR(graph_changes));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "dfm_statistics - design flow manager time: " + print_cpu_time(design_flow_manager_time) + " seconds");
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Total number of iterations: " + STR(step_counter));
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Total number of graph changes: " + STR(graph_changes));
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ended execution of design flow");
 }
 
