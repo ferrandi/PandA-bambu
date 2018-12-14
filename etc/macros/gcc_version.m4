@@ -2025,6 +2025,9 @@ PLUGIN_TEST
            mingw*) 
              plugin_option="-shared -Wl,--export-all-symbols $I386_GCC8_PLUGIN_DIR/cc1plus.exe.a"
            ;;
+           darwin*)
+             plugin_option='-fPIC -shared -undefined dynamic_lookup'
+           ;;
            *)
              plugin_option='-fPIC -shared'
            ;;

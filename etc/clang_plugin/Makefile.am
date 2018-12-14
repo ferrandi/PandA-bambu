@@ -233,6 +233,8 @@ $(I386_CLANG6_SSA_PLUGIN) : clang6_plugin_dumpGimpleSSA.o clang6_dumpGimple.o cl
 	case $(host_os) in \
 	  mingw*) \
 	    echo $(I386_CLANG6_PLUGIN_COMPILER) clang6_plugin_dumpGimpleSSA.o clang6_dumpGimple.o clang6_HardekopfLin_AA.o clang6_RangeAnalysis.o clang6_eSSA.o -shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$(I386_LLVM_CONFIG6_EXE) --ldflags --libs --system-libs` -o clang6_plugin_dumpGimpleSSA.so -lbdd;; \
+	  darwin*) \
+	    $(I386_CLANG6_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti clang6_plugin_dumpGimpleSSA.o clang6_dumpGimple.o clang6_HardekopfLin_AA.o clang6_RangeAnalysis.o clang6_eSSA.o -o clang6_plugin_dumpGimpleSSA.so -lbdd;; \
 	  *) \
 	    $(I386_CLANG6_PLUGIN_COMPILER) -fPIC -shared -fno-rtti clang6_plugin_dumpGimpleSSA.o clang6_dumpGimple.o clang6_HardekopfLin_AA.o clang6_RangeAnalysis.o clang6_eSSA.o -o clang6_plugin_dumpGimpleSSA.so -lbdd;; \
 	esac;
@@ -241,6 +243,8 @@ $(I386_CLANG6_SSA_PLUGIN) : clang6_plugin_dumpGimpleSSA.o clang6_dumpGimple.o cl
 	case $(host_os) in \
 	  mingw*) \
 	    echo $(I386_CLANG6_PLUGIN_COMPILER) clang6_plugin_dumpGimpleSSA.o clang6_dumpGimple.o clang6_RangeAnalysis.o clang6_eSSA.o -shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$(I386_LLVM_CONFIG6_EXE) --ldflags --libs --system-libs` -o clang6_plugin_dumpGimpleSSA.so;; \
+	  darwin*) \
+	    $(I386_CLANG6_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti clang6_plugin_dumpGimpleSSA.o clang6_dumpGimple.o clang6_RangeAnalysis.o clang6_eSSA.o -o clang6_plugin_dumpGimpleSSA.so;; \
 	  *) \
 	    $(I386_CLANG6_PLUGIN_COMPILER) -fPIC -shared -fno-rtti clang6_plugin_dumpGimpleSSA.o clang6_dumpGimple.o clang6_RangeAnalysis.o clang6_eSSA.o -o clang6_plugin_dumpGimpleSSA.so;; \
 	esac;
@@ -250,6 +254,8 @@ $(I386_CLANG6_SSA_PLUGINCPP) : clang6_plugin_dumpGimpleSSACpp.o clang6_dumpGimpl
 	case $(host_os) in \
 	  mingw*) \
 	    echo $(I386_CLANG6_PLUGIN_COMPILER) clang6_plugin_dumpGimpleSSACpp.o clang6_dumpGimple.o clang6_HardekopfLin_AA.o clang6_RangeAnalysis.o clang6_eSSA.o -shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$(I386_LLVM_CONFIG6_EXE) --ldflags --libs --system-libs` -o clang6_plugin_dumpGimpleSSACpp.so -lbdd;; \
+	  darwin*) \
+	    $(I386_CLANG6_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti clang6_plugin_dumpGimpleSSACpp.o clang6_dumpGimple.o clang6_HardekopfLin_AA.o clang6_RangeAnalysis.o clang6_eSSA.o -o clang6_plugin_dumpGimpleSSACpp.so -lbdd;; \
 	  *) \
 	    $(I386_CLANG6_PLUGIN_COMPILER) -fPIC -shared -fno-rtti clang6_plugin_dumpGimpleSSACpp.o clang6_dumpGimple.o clang6_HardekopfLin_AA.o clang6_RangeAnalysis.o clang6_eSSA.o -o clang6_plugin_dumpGimpleSSACpp.so -lbdd;; \
 	esac;
@@ -258,6 +264,8 @@ $(I386_CLANG6_SSA_PLUGINCPP) : clang6_plugin_dumpGimpleSSACpp.o clang6_dumpGimpl
 	case $(host_os) in \
 	  mingw*) \
 	    echo $(I386_CLANG6_PLUGIN_COMPILER) clang6_plugin_dumpGimpleSSACpp.o clang6_dumpGimple.o clang6_RangeAnalysis.o clang6_eSSA.o -shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$(I386_LLVM_CONFIG6_EXE) --ldflags --libs --system-libs` -o clang6_plugin_dumpGimpleSSACpp.so;; \
+	  darwin*) \
+	    $(I386_CLANG6_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti clang6_plugin_dumpGimpleSSACpp.o clang6_dumpGimple.o clang6_RangeAnalysis.o clang6_eSSA.o -o clang6_plugin_dumpGimpleSSACpp.so;; \
 	  *) \
 	    $(I386_CLANG6_PLUGIN_COMPILER) -fPIC -shared -fno-rtti clang6_plugin_dumpGimpleSSACpp.o clang6_dumpGimple.o clang6_RangeAnalysis.o clang6_eSSA.o -o clang6_plugin_dumpGimpleSSACpp.so;; \
 	esac;
@@ -268,6 +276,8 @@ $(I386_CLANG6_EMPTY_PLUGIN) : clang6_plugin_dumpGimpleEmpty.o clang6_dumpGimple.
 	case $(host_os) in \
 	  mingw*) \
 	    echo $(I386_CLANG6_PLUGIN_COMPILER) clang6_plugin_dumpGimpleEmpty.o clang6_dumpGimple.o clang6_HardekopfLin_AA.o clang6_RangeAnalysis.o clang6_eSSA.o -shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$(I386_LLVM_CONFIG6_EXE) --ldflags --libs --system-libs` -o clang6_plugin_dumpGimpleEmpty.so -lbdd;; \
+	  darwin*) \
+	    $(I386_CLANG6_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti clang6_plugin_dumpGimpleEmpty.o clang6_dumpGimple.o clang6_HardekopfLin_AA.o clang6_RangeAnalysis.o clang6_eSSA.o -o clang6_plugin_dumpGimpleEmpty.so -lbdd;; \
 	  *) \
 	    $(I386_CLANG6_PLUGIN_COMPILER) -fPIC -shared -fno-rtti clang6_plugin_dumpGimpleEmpty.o clang6_dumpGimple.o clang6_HardekopfLin_AA.o clang6_RangeAnalysis.o clang6_eSSA.o -o clang6_plugin_dumpGimpleEmpty.so -lbdd;; \
 	esac;
@@ -276,6 +286,8 @@ $(I386_CLANG6_EMPTY_PLUGIN) : clang6_plugin_dumpGimpleEmpty.o clang6_dumpGimple.
 	case $(host_os) in \
 	  mingw*) \
 	    echo $(I386_CLANG6_PLUGIN_COMPILER) clang6_plugin_dumpGimpleEmpty.o clang6_dumpGimple.o clang6_RangeAnalysis.o clang6_eSSA.o -shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$(I386_LLVM_CONFIG6_EXE) --ldflags --libs --system-libs` -o clang6_plugin_dumpGimpleEmpty.so;; \
+	  darwin*) \
+	    $(I386_CLANG6_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti clang6_plugin_dumpGimpleEmpty.o clang6_dumpGimple.o clang6_RangeAnalysis.o clang6_eSSA.o -o clang6_plugin_dumpGimpleEmpty.so;; \
 	  *) \
 	    $(I386_CLANG6_PLUGIN_COMPILER) -fPIC -shared -fno-rtti clang6_plugin_dumpGimpleEmpty.o clang6_dumpGimple.o clang6_RangeAnalysis.o clang6_eSSA.o -o clang6_plugin_dumpGimpleEmpty.so;; \
 	esac;
@@ -285,6 +297,8 @@ $(I386_CLANG6_TOPFNAME_PLUGIN) : clang6_plugin_topfname.o
 	case $(host_os) in \
 	  mingw*) \
 	    echo $(I386_CLANG6_PLUGIN_COMPILER) clang6_plugin_topfname.o -shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$(I386_LLVM_CONFIG6_EXE) --ldflags --libs --system-libs` -o clang6_plugin_topfname.so;; \
+	  darwin*) \
+	    $(I386_CLANG6_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti clang6_plugin_topfname.o -o clang6_plugin_topfname.so;; \
 	  *) \
 	    $(I386_CLANG6_PLUGIN_COMPILER) -fPIC -shared -fno-rtti clang6_plugin_topfname.o -o clang6_plugin_topfname.so;; \
 	esac;
@@ -293,6 +307,8 @@ $(I386_CLANG6_ASTANALYZER_PLUGIN) : clang6_plugin_ASTAnalyzer.o
 	case $(host_os) in \
 	  mingw*) \
 	    echo $(I386_CLANG6_PLUGIN_COMPILER) clang6_plugin_ASTAnalyzer.o -shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$(I386_LLVM_CONFIG6_EXE) --ldflags --libs --system-libs` -o clang6_plugin_ASTAnalyzer.so;; \
+	  darwin*) \
+	    $(I386_CLANG6_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti clang6_plugin_ASTAnalyzer.o -o clang6_plugin_ASTAnalyzer.so;; \
 	  *) \
 	    $(I386_CLANG6_PLUGIN_COMPILER) -fPIC -shared -fno-rtti clang6_plugin_ASTAnalyzer.o -o clang6_plugin_ASTAnalyzer.so;; \
 	esac;

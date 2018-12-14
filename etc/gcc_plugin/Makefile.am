@@ -574,6 +574,8 @@ $(I386_GCC8_SSA_PLUGIN) : gcc8_plugin_dumpGimpleSSA.o gcc8_dumpGimple.o gcc8_tre
 	case $(host_os) in \
 	  mingw*) \
 	    $(I386_GCC8_PLUGIN_COMPILER) -shared -Wl,--export-all-symbols -fno-rtti gcc8_plugin_dumpGimpleSSA.o gcc8_dumpGimple.o gcc8_tree-sra.o -o gcc8_plugin_dumpGimpleSSA.so $(I386_GCC8_PLUGIN_DIR)/cc1.exe.a;; \
+	  darwin*) \
+	    $(I386_GCC8_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti gcc8_plugin_dumpGimpleSSA.o gcc8_dumpGimple.o gcc8_tree-sra.o -o gcc8_plugin_dumpGimpleSSA.so;; \
 	  *) \
 	    $(I386_GCC8_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc8_plugin_dumpGimpleSSA.o gcc8_dumpGimple.o gcc8_tree-sra.o -o gcc8_plugin_dumpGimpleSSA.so;; \
 	esac;
@@ -582,6 +584,8 @@ $(I386_GCC8_SSA_PLUGINCPP) : gcc8_plugin_dumpGimpleSSA.o gcc8_dumpGimpleCpp.o gc
 	case $(host_os) in \
 	  mingw*) \
 	    $(I386_GCC8_PLUGIN_COMPILER) -shared -Wl,--export-all-symbols -fno-rtti gcc8_plugin_dumpGimpleSSA.o gcc8_dumpGimpleCpp.o gcc8_tree-sra.o -o gcc8_plugin_dumpGimpleSSACpp.so $(I386_GCC8_PLUGIN_DIR)/cc1plus.exe.a;; \
+	  darwin*) \
+	    $(I386_GCC8_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti gcc8_plugin_dumpGimpleSSA.o gcc8_dumpGimpleCpp.o gcc8_tree-sra.o -o gcc8_plugin_dumpGimpleSSACpp.so;; \
 	  *) \
 	    $(I386_GCC8_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc8_plugin_dumpGimpleSSA.o gcc8_dumpGimpleCpp.o gcc8_tree-sra.o -o gcc8_plugin_dumpGimpleSSACpp.so;; \
 	esac;
@@ -590,6 +594,8 @@ $(I386_GCC8_EMPTY_PLUGIN) : gcc8_plugin_dumpGimpleEmpty.o gcc8_dumpGimple.o gcc8
 	case $(host_os) in \
 	  mingw*) \
 	    $(I386_GCC8_PLUGIN_COMPILER) -shared -Wl,--export-all-symbols -fno-rtti gcc8_plugin_dumpGimpleEmpty.o gcc8_dumpGimple.o gcc8_tree-sra.o -o gcc8_plugin_dumpGimpleEmpty.so $(I386_GCC8_PLUGIN_DIR)/cc1.exe.a;; \
+	  darwin*) \
+	    $(I386_GCC8_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti gcc8_plugin_dumpGimpleEmpty.o gcc8_dumpGimple.o gcc8_tree-sra.o -o gcc8_plugin_dumpGimpleEmpty.so;; \
 	  *) \
 	    $(I386_GCC8_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc8_plugin_dumpGimpleEmpty.o gcc8_dumpGimple.o gcc8_tree-sra.o -o gcc8_plugin_dumpGimpleEmpty.so;; \
 	esac;
@@ -598,6 +604,8 @@ $(I386_GCC8_TOPFNAME_PLUGIN) : gcc8_plugin_topfname.o gcc8_version.h
 	case $(host_os) in \
 	  mingw*) \
 	    $(I386_GCC8_PLUGIN_COMPILER) -shared -Wl,--export-all-symbols -fno-rtti gcc8_plugin_topfname.o -o gcc8_plugin_topfname.so $(I386_GCC8_PLUGIN_DIR)/cc1.exe.a;; \
+	  darwin*) \
+	    $(I386_GCC8_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti gcc8_plugin_topfname.o -o gcc8_plugin_topfname.so;; \
 	  *) \
 	    $(I386_GCC8_PLUGIN_COMPILER) -fPIC -shared -fno-rtti gcc8_plugin_topfname.o -o gcc8_plugin_topfname.so;; \
 	esac;
