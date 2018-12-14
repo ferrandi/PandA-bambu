@@ -28,11 +28,11 @@ Vagrant.configure(2) do |config|
      make -f Makefile.init
      mkdir build
      cd build && ../configure --prefix=/home/ubuntu/panda --enable-verilator --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast && make -j2 && make install && make clean
-     cd ../.. && chown -R ubuntu.ubuntu PandA-bambu
+     cd ../.. && chown -R ubuntu:ubuntu PandA-bambu
      mv PandA-bambu /home/ubuntu/
-     cd /home/ubuntu/
-     chown -R ubuntu.ubuntu panda
      cd /home/ubuntu/panda/share/panda/examples/arf && chmod +x bambu.sh && ./bambu.sh && rm -rf hls testbench && echo "Bambu is correctly working!!"
+     cd /home/ubuntu/
+     chown -R ubuntu:ubuntu panda
      apt-get -y install ubuntu-gnome-desktop
      apt-get clean -y
      echo "export PATH=/home/ubuntu/panda/bin:$PATH" >> /home/ubuntu/.bashrc
