@@ -113,10 +113,6 @@ DesignFlowManager::DesignFlowManager(const ParameterConstRef _parameters)
       design_flow_graph(new DesignFlowGraph(design_flow_graphs_collection, DesignFlowGraph::DEPENDENCE_SELECTOR | DesignFlowGraph::PRECEDENCE_SELECTOR | DesignFlowGraph::AUX_SELECTOR)),
       feedback_design_flow_graph(new DesignFlowGraph(design_flow_graphs_collection, DesignFlowGraph::DEPENDENCE_SELECTOR | DesignFlowGraph::PRECEDENCE_SELECTOR | DesignFlowGraph::AUX_SELECTOR | DesignFlowGraph::DEPENDENCE_FEEDBACK_SELECTOR)),
       possibly_ready(std::set<vertex, DesignFlowStepNecessitySorter>(DesignFlowStepNecessitySorter(design_flow_graph))),
-#if !HAVE_UNORDERED
-#ifndef NDEBUG
-#endif
-#endif
       parameters(_parameters),
       output_level(_parameters->getOption<int>(OPT_output_level))
 {
@@ -411,10 +407,8 @@ void DesignFlowManager::Exec()
    long design_flow_manager_time = 0;
    while(possibly_ready.size())
    {
-#ifndef NDEBUG
       const size_t initial_number_vertices = boost::num_vertices(*feedback_design_flow_graph);
       const size_t initial_number_edges = boost::num_vertices(*feedback_design_flow_graph);
-#endif
       long before_time;
       START_TIME(before_time);
       step_counter++;
@@ -614,9 +608,7 @@ void DesignFlowManager::Exec()
       }
       long after_time;
       START_TIME(after_time);
-#ifndef NDEBUG
       bool invalidations = false;
-#endif
       if(not parameters->IsParameter("disable-invalidations"))
       {
          ///Add steps and edges from post dependencies
@@ -624,9 +616,7 @@ void DesignFlowManager::Exec()
          DesignFlowStepSet relationships;
          step->ComputeRelationships(relationships, DesignFlowStep::INVALIDATION_RELATIONSHIP);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Got steps");
-#ifndef NDEBUG
          invalidations = not relationships.empty();
-#endif
          DesignFlowStepSet::const_iterator relationship, relationship_end = relationships.end();
          for(relationship = relationships.begin(); relationship != relationship_end; ++relationship)
          {
@@ -804,8 +794,11 @@ void DesignFlowManager::Exec()
             }
 
          }
-         INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "dfm_statistics - number of vertices at the end of iteration " + STR(step_counter) + ": " + STR(executed_vertices) + " / " + STR(final_number_vertices));
-         INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "dfm_statistics - number of edges at the end of iteration " + STR(step_counter) + ": " + STR(final_number_edges));
+         if(parameters->IsParameter("dfm_statistics"))
+         {
+            INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "dfm_statistics - number of vertices at the end of iteration " + STR(step_counter) + ": " + STR(executed_vertices) + " / " + STR(final_number_vertices));
+            INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "dfm_statistics - number of edges at the end of iteration " + STR(step_counter) + ": " + STR(final_number_edges));
+         }
       }
    }
 #ifndef NDEBUG
