@@ -61,10 +61,6 @@
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 
-/// design_flows includes
-#include "design_flow_graph.hpp"
-#include "design_flow_manager.hpp"
-
 /// design_flows/backend/ToHDL includes
 #include "HDL_manager.hpp"
 #include "language_writer.hpp"

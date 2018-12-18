@@ -137,8 +137,6 @@ class vcd_utility : public HLS_step
     */
    const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
-
    bool detect_mismatch(const vcd_trace_head& t, const uint64_t c_context, const std::string& c_val);
 
    bool detect_regular_mismatch(const vcd_trace_head& t, const std::string& c_val, const std::string& vcd_val) const;

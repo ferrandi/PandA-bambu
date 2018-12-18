@@ -71,6 +71,10 @@
 #include "c_backend_step_factory.hpp"
 #include "hls_c_backend_information.hpp"
 
+// include from frontend_analysis/
+#include "application_frontend_flow_step.hpp"
+#include "frontend_flow_step_factory.hpp"
+
 // include from HLS/
 #include "hls_manager.hpp"
 
@@ -341,52 +345,50 @@ bool CTestbenchExecution::HasToBeExecuted() const
    return true;
 }
 
-void CTestbenchExecution::ComputeRelationships(DesignFlowStepSet& design_flow_step_set, const DesignFlowStep::RelationshipType relationship_type)
+void CTestbenchExecution::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
 {
-   HLS_step::ComputeRelationships(design_flow_step_set, relationship_type);
-
+   HLS_step::ComputeRelationships(relationship, relationship_type);
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         const auto* c_backend_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
+         const FrontendFlowStepFactory* frontend_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
 
-         CBackend::Type hls_c_backend_type;
-#if HAVE_HLS_BUILT
-         if((parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)) or (parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw)))
-         {
-            hls_c_backend_type = CBackend::CB_DISCREPANCY_ANALYSIS;
-         }
-         else
-#endif
-         {
-            hls_c_backend_type = CBackend::CB_HLS;
-            if(parameters->isOption(OPT_pretty_print))
-            {
-               const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-               const auto* c_backend_step_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
-               const std::string output_file_name = parameters->getOption<std::string>(OPT_pretty_print);
-               const vertex c_backend_vertex = design_flow_manager.lock()->GetDesignFlowStep(CBackend::ComputeSignature(CBackend::CB_SEQUENTIAL));
-               const DesignFlowStepRef c_backend_step =
-                   c_backend_vertex ? design_flow_graph->CGetDesignFlowStepInfo(c_backend_vertex)->design_flow_step : c_backend_step_factory->CreateCBackendStep(CBackend::CB_SEQUENTIAL, output_file_name, CBackendInformationConstRef());
-               design_flow_step_set.insert(c_backend_step);
-            }
-         }
+         const vertex call_graph_computation_step = design_flow_manager.lock()->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
 
-         const DesignFlowStepRef hls_c_backend_step =
-             c_backend_factory->CreateCBackendStep(hls_c_backend_type, output_directory + testbench_basename + ".c", CBackendInformationConstRef(new HLSCBackendInformation(output_directory + testbench_basename + ".txt", HLSMgr)));
-         design_flow_step_set.insert(hls_c_backend_step);
-         break;
+         const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+
+         const DesignFlowStepRef cg_design_flow_step = call_graph_computation_step ? design_flow_graph->CGetDesignFlowStepInfo(call_graph_computation_step)->design_flow_step : frontend_step_factory->CreateApplicationFrontendFlowStep(FUNCTION_ANALYSIS);
+
+         relationship.insert(cg_design_flow_step);
+
+         // Root function cannot be computed at the beginning so if the
+         // call graph is not ready yet we exit. The relationships will
+         // be computed again after the call graph computation.
+         const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
+         if(boost::num_vertices(*(call_graph_manager->CGetCallGraph())) == 0)
+            return;
+
+         const CBackendStepFactory* c_backend_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
+
+         const bool is_discrepancy = (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)) or (parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw));
+         CBackend::Type hls_c_backend_type = is_discrepancy ? CBackend::CB_DISCREPANCY_ANALYSIS : CBackend::CB_HLS;
+         vertex hls_c_backend_step = design_flow_manager.lock()->GetDesignFlowStep(CBackend::ComputeSignature(hls_c_backend_type));
+
+         THROW_ASSERT(HLSMgr->CGetCallGraphManager()->GetRootFunctions().size() == 1, "Multiple top functions");
+         const DesignFlowStepRef design_flow_step =
+             hls_c_backend_step ? design_flow_graph->CGetDesignFlowStepInfo(hls_c_backend_step)->design_flow_step :
+                                  c_backend_factory->CreateCBackendStep(hls_c_backend_type, output_directory + testbench_basename + ".c", CBackendInformationConstRef(new HLSCBackendInformation(output_directory + testbench_basename + ".txt", HLSMgr)));
+         relationship.insert(design_flow_step);
       }
-      case INVALIDATION_RELATIONSHIP:
       case PRECEDENCE_RELATIONSHIP:
+      case INVALIDATION_RELATIONSHIP:
       {
          break;
       }
       default:
       {
          THROW_UNREACHABLE("");
-         break;
       }
    }
 }

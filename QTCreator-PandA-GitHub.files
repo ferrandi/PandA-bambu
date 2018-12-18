@@ -1426,6 +1426,8 @@ src/HLS/vcd/CallSitesCollectorVisitor.hpp
 src/HLS/vcd/Discrepancy.hpp
 src/HLS/vcd/HWCallPathCalculator.cpp
 src/HLS/vcd/HWCallPathCalculator.hpp
+src/HLS/vcd/HWDiscrepancyAnalysis.cpp
+src/HLS/vcd/HWDiscrepancyAnalysis.hpp
 src/HLS/vcd/UnfoldedCallGraph.hpp
 src/HLS/vcd/UnfoldedCallInfo.hpp
 src/HLS/vcd/UnfoldedFunctionInfo.hpp

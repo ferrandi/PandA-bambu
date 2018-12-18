@@ -495,6 +495,15 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships, const Desi
                {
                   relationships.insert(hls_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::VCD_SIGNAL_SELECTION, HLSFlowStepSpecializationConstRef()));
                }
+               if(parameters->isOption(OPT_pretty_print))
+               {
+                  const auto* c_backend_step_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
+                  const std::string output_file_name = parameters->getOption<std::string>(OPT_pretty_print);
+                  const vertex c_backend_vertex = design_flow_manager.lock()->GetDesignFlowStep(CBackend::ComputeSignature(CBackend::CB_SEQUENTIAL));
+                  const DesignFlowStepRef c_backend_step =
+                      c_backend_vertex ? design_flow_graph->CGetDesignFlowStepInfo(c_backend_vertex)->design_flow_step : c_backend_step_factory->CreateCBackendStep(CBackend::CB_SEQUENTIAL, output_file_name, CBackendInformationConstRef());
+                  relationships.insert(c_backend_step);
+               }
 
                break;
             }

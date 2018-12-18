@@ -568,7 +568,9 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef behav
    // avoid collision with the main
    if(function_name == "main")
    {
-      if(not Param->isOption(OPT_discrepancy) or not Param->getOption<bool>(OPT_discrepancy))
+      bool is_discrepancy = false;
+      is_discrepancy = (Param->isOption(OPT_discrepancy) and Param->getOption<bool>(OPT_discrepancy)) or (Param->isOption(OPT_discrepancy_hw) and Param->getOption<bool>(OPT_discrepancy_hw));
+      if(not not is_discrepancy)
       {
          function_name = "system";
       }
