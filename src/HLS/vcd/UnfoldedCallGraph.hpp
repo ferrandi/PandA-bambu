@@ -38,8 +38,6 @@
 #ifndef UNFOLDED_CALL_GRAPH_HPP
 #define UNFOLDED_CALL_GRAPH_HPP
 
-#include "UnfoldedCallInfo.hpp"
-#include "UnfoldedFunctionInfo.hpp"
 #include "graph.hpp"
 
 class UnfoldedCallGraph : public RawGraph

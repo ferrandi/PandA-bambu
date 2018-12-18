@@ -39,9 +39,10 @@
 #ifndef DISCREPANCY_HPP
 #define DISCREPANCY_HPP
 
-#include "UnfoldedCallGraph.hpp"
-
 #include "Parameter.hpp"
+
+// include from HLS/vcd/
+#include "UnfoldedCallGraph.hpp"
 
 // includes from parser/discrepancy/
 #include "DiscrepancyOpInfo.hpp"
@@ -106,6 +107,11 @@ struct Discrepancy
     * primary key.
     */
    std::map<DiscrepancyOpInfo, std::list<std::pair<uint64_t, std::string>>> c_op_trace;
+
+   /**
+    *
+    */
+   std::unordered_map<unsigned int, std::unordered_map<uint64_t, std::list<unsigned int>>> c_control_flow_trace;
 
    /**
     * Address map used for address discrepancy analysis. The primary key is

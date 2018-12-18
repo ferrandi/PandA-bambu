@@ -43,47 +43,24 @@
 #include <unordered_map>
 #include <unordered_set>
 
-CONSTREF_FORWARD_DECL(CallGraphManager);
+CONSTREF_FORWARD_DECL(Parameter);
+REF_FORWARD_DECL(HLS_manager);
 
 class CallGraphUnfolder
 {
- protected:
-   /**
-    * A reference to the call graph to be unfolded
-    */
-   const CallGraphConstRef cg;
-
-   /**
-    * The function id of the function where to start to unfold
-    */
-   const unsigned int root_fun_id;
-
-   /// Maps every function to the calls it performs in cg.
-   // Must be correctly initialized with data from cg before calling Unfold()
-   const std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& caller_to_call_id;
-
-   /// Maps every id of a call site to the id of the called function
-   // Must be correctly initialized with data from cg before calling Unfold()
-   const std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& call_to_called_id;
-
-   /// Set of indirect calls
-   // Must be correctly initialized with data from cg before calling Unfold()
-   const std::unordered_set<unsigned int>& indirect_calls;
-
-   void RecursivelyUnfold(const UnfoldedVertexDescriptor caller_v, UnfoldedCallGraph& ucg) const;
-
  public:
    /**
-    * Unfolds the call graph cg, starting from the function with id
-    * root_fun_id.
-    * Returns the UnfoldedVertexDescritor representing the root of the
-    * unfolded call graph
+    * Unfolds the call graph cg contained in cgman, starting from the root
+    * function that must be unique.
+    * @param [in]: a refcount to the call graph manager whose call graph must be unfolded
+    * @param [out]: a refcount to the Discrepancy where the unfolded call graph must be stored
+    * @param [out]: maps the id of a caller function to all the ids of the calls it performs
+    * @param [out]: maps the id of a call site onto the ids of all the
+    * functions it calls. one single call site can call multiple functions if
+    * function pointers are involved
+    * @param [out]: set of all the indirect calls
     */
-   UnfoldedVertexDescriptor Unfold(UnfoldedCallGraph& ucg) const;
-
-   CallGraphUnfolder(CallGraphManagerConstRef cgman, std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& _caller_to_call_id, std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& _call_to_called_id,
-                     std::unordered_set<unsigned int>& _indirect_calls);
-
-   ~CallGraphUnfolder();
+   static void Unfold(const HLS_managerRef& HLSMgr, const ParameterConstRef& params, std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& caller_to_call_id,
+                      std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& call_to_called_id);
 };
 #endif

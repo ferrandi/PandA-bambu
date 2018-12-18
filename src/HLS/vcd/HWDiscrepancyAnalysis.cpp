@@ -51,6 +51,7 @@
 #include "hls_manager.hpp"
 
 // include from HLS/vcd/
+#include "CallGraphUnfolder.hpp"
 #include "Discrepancy.hpp"
 
 // include from parser/discrepancy/
@@ -95,11 +96,38 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 
 DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
 {
+   THROW_ASSERT(Discr, "Discr data structure is not correctly initialized");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Unfolding call graph");
+   std::unordered_map<unsigned int, std::unordered_set<unsigned int>> caller_to_call_id;
+   std::unordered_map<unsigned int, std::unordered_set<unsigned int>> call_to_called_id;
+   // unfold the call graph and compute data structures used for discrepancy analysis
+   const CallGraphManagerConstRef CGMan = HLSMgr->CGetCallGraphManager();
+   CallGraphUnfolder::Unfold(HLSMgr, parameters, caller_to_call_id, call_to_called_id);
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Unfolded call graph");
    // parse the file containing the C traces
    const std::string& ctrace_filename = Discr->c_trace_filename;
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Parsing C trace: " + ctrace_filename);
    parse_discrepancy(ctrace_filename, Discr);
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Parsed C trace: " + ctrace_filename);
+   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Printing parsed C control flow trace");
+      for(const auto& fid2ctxtrace : Discr->c_control_flow_trace)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->FUNCTION_ID: " + STR(fid2ctxtrace.first));
+         for(const auto& ctx2trace : fid2ctxtrace.second)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->CONTEXT: " + STR(ctx2trace.first));
+            for(const auto& bb_id : ctx2trace.second)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---BB: " + STR(bb_id));
+            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--End of parsed C control flow trace");
+   }
    return DesignFlowStep_Status::SUCCESS;
 }
 

@@ -77,9 +77,8 @@
 
 // includes from HLS/vcd
 #include "CallGraphUnfolder.hpp"
-#include "CallSitesCollectorVisitor.hpp"
 #include "Discrepancy.hpp"
-#include "HWCallPathCalculator.hpp"
+#include "UnfoldedFunctionInfo.hpp"
 
 // includes from technology/physical_library/
 #include "technology_node.hpp"
@@ -824,49 +823,17 @@ DesignFlowStep_Status VcdSignalSelection::Exec()
    THROW_ASSERT(Discr, "Discr data structure is not correctly initialized");
    std::unordered_map<unsigned int, std::unordered_set<unsigned int>> caller_to_call_id;
    std::unordered_map<unsigned int, std::unordered_set<unsigned int>> call_to_called_id;
-   std::unordered_set<unsigned int> indirect_calls;
+   /* unfold the call graph and compute data structures used for discrepancy analysis*/
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Preprocessing call graph for vcd signal selection");
    const CallGraphManagerConstRef CGMan = HLSMgr->CGetCallGraphManager();
-   const CallGraphConstRef cg = CGMan->CGetCallGraph();
-   if(parameters->isOption(OPT_print_dot) and parameters->getOption<bool>(OPT_print_dot))
-      cg->WriteDot("call_graph_discrepancy_analysis.dot");
-   /* initialize the maps defined above with data from the call graph, using a visitor to collect data */
-   CallSitesCollectorVisitor csc_vis(CGMan, caller_to_call_id, call_to_called_id, indirect_calls);
-   std::vector<boost::default_color_type> csc_color(boost::num_vertices(*cg));
-   const auto root_functions = CGMan->GetRootFunctions();
-   THROW_ASSERT(root_functions.size() == 1, STR(root_functions.size()));
-   const auto root_function = *(root_functions.begin());
-   boost::depth_first_visit(*cg, CGMan->GetVertex(root_function), csc_vis, boost::make_iterator_property_map(csc_color.begin(), boost::get(boost::vertex_index_t(), *cg), boost::white_color));
-   /* use the collected data to unfold the call graph */
-   CallGraphUnfolder unfolder(CGMan, caller_to_call_id, call_to_called_id, indirect_calls);
-   Discr->unfolded_root_v = unfolder.Unfold(Discr->DiscrepancyCallGraph);
+   CallGraphUnfolder::Unfold(HLSMgr, parameters, caller_to_call_id, call_to_called_id);
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--Preprocessed call graph for vcd signal selection");
    /* select the ssa representing addresses and ssa to skip in discrepancy analysis */
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Selecting discrepancy variables");
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Selecting discrepancy variables");
    SelectAddrSsa(caller_to_call_id, call_to_called_id);
-   /* fill the map used by the HWCallPathCalculator */
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Preprocessing call graph for vcd signal selection");
-   std::map<unsigned int, vertex> call_id_to_OpVertex;
-   std::set<unsigned int> reached_body_fun_ids = CGMan->GetReachedBodyFunctions();
-   VertexIterator cg_vi, cg_vi_end;
-   boost::tie(cg_vi, cg_vi_end) = boost::vertices(*cg);
-   Discr->n_total_operations = 0;
-   for(unsigned int fun_id : reached_body_fun_ids)
-   {
-      const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(fun_id);
-      const OpGraphConstRef op_graph = function_behavior->CGetOpGraph(FunctionBehavior::FCFG);
-      THROW_ASSERT(boost::num_vertices(*op_graph) >= 2, "at least ENTRY and EXIT vertices must exist");
-      Discr->n_total_operations += boost::num_vertices(*op_graph) - 2;
-      VertexIterator vi, vi_end;
-      boost::tie(vi, vi_end) = boost::vertices(*op_graph);
-      for(; vi != vi_end; vi++)
-         call_id_to_OpVertex[op_graph->CGetOpNodeInfo(*vi)->GetNodeId()] = *vi;
-   }
-   /* Calculate the HW paths */
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Visiting call graph for HW path calculation");
-   HWCallPathCalculator sig_sel_v(HLSMgr, parameters, call_id_to_OpVertex);
-   std::vector<boost::default_color_type> sig_sel_color(boost::num_vertices(Discr->DiscrepancyCallGraph), boost::white_color);
-   boost::depth_first_visit(Discr->DiscrepancyCallGraph, Discr->unfolded_root_v, sig_sel_v, boost::make_iterator_property_map(sig_sel_color.begin(), boost::get(boost::vertex_index_t(), Discr->DiscrepancyCallGraph), boost::white_color));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--Selected discrepancy variables");
    /* Calculate the internal signal names for every function */
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Selecting internal signals in functions");
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Selecting internal signals in functions");
    std::unordered_map<unsigned int, std::unordered_set<std::string>> fun_ids_to_local_sig_names;
    SelectInternalSignals(fun_ids_to_local_sig_names);
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Selected internal signals in functions");

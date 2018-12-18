@@ -39,9 +39,6 @@
 
 #include <utility>
 
-// headers from ./
-#include "Parameter.hpp"
-
 // headers from behavior/
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
@@ -63,11 +60,12 @@
 
 // headers from HLS/vcd
 #include "Discrepancy.hpp"
+#include "UnfoldedCallInfo.hpp"
+#include "UnfoldedFunctionInfo.hpp"
 
 HWCallPathCalculator::HWCallPathCalculator(HLS_managerRef _HLSMgr, ParameterConstRef _parameters, std::map<unsigned int, vertex>& _call_id_to_OpVertex)
     : HLSMgr(std::move(_HLSMgr)), parameters(std::move(_parameters)), call_id_to_OpVertex(_call_id_to_OpVertex)
 {
-   THROW_ASSERT(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy), "Step " + STR(__PRETTY_FUNCTION__) + " should not be added without discrepancy");
    THROW_ASSERT(HLSMgr->RDiscr, "Discr data structure is not correctly initialized");
 }
 

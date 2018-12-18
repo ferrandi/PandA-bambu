@@ -34,36 +34,28 @@
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
 
+#include "CallGraphUnfolder.hpp"
+
 // includes from behavior/
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
-#include <boost/graph/graphviz.hpp>
+#include "op_graph.hpp"
+
+// include from HLS/
+#include "hls_manager.hpp"
 
 // includes from HLS/vcd/
 #include "CallGraphUnfolder.hpp"
+#include "CallSitesCollectorVisitor.hpp"
+#include "Discrepancy.hpp"
+#include "HWCallPathCalculator.hpp"
+#include "UnfoldedCallGraph.hpp"
+#include "UnfoldedCallInfo.hpp"
+#include "UnfoldedFunctionInfo.hpp"
 #include "string_manipulation.hpp" // for STR
 
-CallGraphUnfolder::CallGraphUnfolder(CallGraphManagerConstRef cgman, std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& _caller_to_call_id, std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& _call_to_called_id,
-                                     std::unordered_set<unsigned int>& _indirect_calls)
-    : cg(cgman->CGetCallGraph()), root_fun_id(*(cgman->GetRootFunctions().begin())), caller_to_call_id(_caller_to_call_id), call_to_called_id(_call_to_called_id), indirect_calls(_indirect_calls)
-{
-   THROW_ASSERT(cgman->GetRootFunctions().size() == 1, STR(cgman->GetRootFunctions().size()));
-}
-
-CallGraphUnfolder::~CallGraphUnfolder() = default;
-
-UnfoldedVertexDescriptor CallGraphUnfolder::Unfold(UnfoldedCallGraph& ucg) const
-{
-   // insert in the unfolded call graph the root function node
-   UnfoldedVertexDescriptor v = ucg.AddVertex(NodeInfoRef(new UnfoldedFunctionInfo(root_fun_id)));
-   const auto b = cg->CGetCallGraphInfo()->behaviors.find(root_fun_id);
-   THROW_ASSERT(b != cg->CGetCallGraphInfo()->behaviors.end(), "no behavior for root function " + STR(root_fun_id));
-   get_node_info<UnfoldedFunctionInfo>(v, ucg)->behavior = b->second;
-   RecursivelyUnfold(v, ucg);
-   return v;
-}
-
-void CallGraphUnfolder::RecursivelyUnfold(const UnfoldedVertexDescriptor caller_v, UnfoldedCallGraph& ucg) const
+static void RecursivelyUnfold(const UnfoldedVertexDescriptor caller_v, UnfoldedCallGraph& ucg, const CallGraphConstRef& cg, std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& caller_to_call_id,
+                              std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& call_to_called_id, std::unordered_set<unsigned int>& indirect_calls)
 {
    const unsigned int caller_id = get_node_info<UnfoldedFunctionInfo>(caller_v, ucg)->f_id;
    // if this function does not call other functions we're done
@@ -78,16 +70,59 @@ void CallGraphUnfolder::RecursivelyUnfold(const UnfoldedVertexDescriptor caller_
       bool is_direct = indirect_calls.find(call_id) == indirect_calls.end();
       for(auto called_id : call_to_called_id.at(call_id)) // loop on the function called by call_id
       {
-         // add a new copy of the vertex representing the called function
-         UnfoldedVertexDescriptor called_v = ucg.AddVertex(NodeInfoRef(new UnfoldedFunctionInfo(called_id)));
-         // update the behavior of the new vertex
+         // compute the behavior of the new vertex
          const std::map<unsigned int, FunctionBehaviorRef>& behaviors = cg->CGetCallGraphInfo()->behaviors;
          const auto b = behaviors.find(called_id);
-         if(b != behaviors.end()) // the behavior can be not present if the called function is without body
-            get_node_info<UnfoldedFunctionInfo>(called_v, ucg)->behavior = b->second;
+         // add a new copy of the vertex representing the called function
+         UnfoldedVertexDescriptor called_v = ucg.AddVertex(NodeInfoRef(new UnfoldedFunctionInfo(called_id, (b != behaviors.end()) ? b->second : FunctionBehaviorConstRef())));
          // add an edge between the caller and the called
          ucg.AddEdge(caller_v, called_v, EdgeInfoRef(new UnfoldedCallInfo(call_id, is_direct)));
-         RecursivelyUnfold(called_v, ucg);
+         RecursivelyUnfold(called_v, ucg, cg, caller_to_call_id, call_to_called_id, indirect_calls);
       }
    }
+}
+
+void CallGraphUnfolder::Unfold(const HLS_managerRef& HLSMgr, const ParameterConstRef& params, std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& caller_to_call_id,
+                               std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& call_to_called_id)
+{
+   // check that there is only one root function
+   const CallGraphManagerConstRef cgman = HLSMgr->CGetCallGraphManager();
+   THROW_ASSERT(cgman->GetRootFunctions().size() == 1, STR(cgman->GetRootFunctions().size()));
+   const CallGraphConstRef cg = cgman->CGetCallGraph();
+   // initialize the maps with data from the call graph, using a visitor to collect data
+   std::unordered_set<unsigned int> indirect_calls;
+   CallSitesCollectorVisitor csc_vis(cgman, caller_to_call_id, call_to_called_id, indirect_calls);
+   std::vector<boost::default_color_type> csc_color(boost::num_vertices(*cg));
+   const auto root_functions = cgman->GetRootFunctions();
+   THROW_ASSERT(root_functions.size() == 1, STR(root_functions.size()));
+   const auto root_function = *(root_functions.begin());
+   boost::depth_first_visit(*cg, cgman->GetVertex(root_function), csc_vis, boost::make_iterator_property_map(csc_color.begin(), boost::get(boost::vertex_index_t(), *cg), boost::white_color));
+   // insert in the unfolded call graph the root function node
+   const unsigned int root_fun_id = *(cgman->GetRootFunctions().begin());
+   const auto b = cg->CGetCallGraphInfo()->behaviors.find(root_fun_id);
+   THROW_ASSERT(b != cg->CGetCallGraphInfo()->behaviors.end(), "no behavior for root function " + STR(root_fun_id));
+   HLSMgr->RDiscr->unfolded_root_v = HLSMgr->RDiscr->DiscrepancyCallGraph.AddVertex(NodeInfoRef(new UnfoldedFunctionInfo(root_fun_id, b->second)));
+   RecursivelyUnfold(HLSMgr->RDiscr->unfolded_root_v, HLSMgr->RDiscr->DiscrepancyCallGraph, cg, caller_to_call_id, call_to_called_id, indirect_calls);
+   /* fill the map used by the HWCallPathCalculator */
+   std::map<unsigned int, vertex> call_id_to_OpVertex;
+   std::set<unsigned int> reached_body_fun_ids = cgman->GetReachedBodyFunctions();
+   VertexIterator cg_vi, cg_vi_end;
+   boost::tie(cg_vi, cg_vi_end) = boost::vertices(*cg);
+   HLSMgr->RDiscr->n_total_operations = 0;
+   for(unsigned int fun_id : reached_body_fun_ids)
+   {
+      const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(fun_id);
+      const OpGraphConstRef op_graph = function_behavior->CGetOpGraph(FunctionBehavior::FCFG);
+      THROW_ASSERT(boost::num_vertices(*op_graph) >= 2, "at least ENTRY and EXIT vertices must exist");
+      HLSMgr->RDiscr->n_total_operations += boost::num_vertices(*op_graph) - 2;
+      VertexIterator vi, vi_end;
+      boost::tie(vi, vi_end) = boost::vertices(*op_graph);
+      for(; vi != vi_end; vi++)
+         call_id_to_OpVertex[op_graph->CGetOpNodeInfo(*vi)->GetNodeId()] = *vi;
+   }
+   // Calculate the HW paths and store them in Discrepancy
+   HWCallPathCalculator sig_sel_v(HLSMgr, params, call_id_to_OpVertex);
+   std::vector<boost::default_color_type> sig_sel_color(boost::num_vertices(HLSMgr->RDiscr->DiscrepancyCallGraph), boost::white_color);
+   boost::depth_first_visit(HLSMgr->RDiscr->DiscrepancyCallGraph, HLSMgr->RDiscr->unfolded_root_v, sig_sel_v,
+                            boost::make_iterator_property_map(sig_sel_color.begin(), boost::get(boost::vertex_index_t(), HLSMgr->RDiscr->DiscrepancyCallGraph), boost::white_color));
 }
