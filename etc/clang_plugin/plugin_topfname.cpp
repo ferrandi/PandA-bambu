@@ -117,7 +117,7 @@ namespace llvm
          }
          if(!hasTopFun)
             return changed;
-         /// check if the translation unit has the top function name
+            /// check if the translation unit has the top function name
 #if PRINT_DBG_MSG
          llvm::errs() << "Top function name: " << TopFunctionName_DNEGP << "\n";
 #endif
@@ -204,14 +204,12 @@ static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_topfname_Ox)(ll
 #ifdef _WIN32
 using namespace llvm;
 
-INITIALIZE_PASS_BEGIN(clang6_plugin_topfname, "clang6_plugin_topfname",
-                "Make all private/static but the top function", false, false)
-INITIALIZE_PASS_END(clang6_plugin_topfname, "clang6_plugin_topfname",
-                "Make all private/static but the top function", false, false)
+INITIALIZE_PASS_BEGIN(clang6_plugin_topfname, "clang6_plugin_topfname", "Make all private/static but the top function", false, false)
+INITIALIZE_PASS_END(clang6_plugin_topfname, "clang6_plugin_topfname", "Make all private/static but the top function", false, false)
 namespace llvm
 {
-  void clang6_plugin_topfname_init()
-  {
-  }
-}
+   void clang6_plugin_topfname_init()
+   {
+   }
+} // namespace llvm
 #endif

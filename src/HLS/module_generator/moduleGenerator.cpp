@@ -145,12 +145,12 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
    std::string cpp_input = "";
    std::string line;
    boost::filesystem::ifstream cpp_infile(cpp_input_file_path);
-   if ( cpp_infile )
+   if(cpp_infile)
    {
-          while ( std::getline( cpp_infile, line ) )
-          {
-            cpp_input += line + "\n";
-          }
+      while(std::getline(cpp_infile, line))
+      {
+         cpp_input += line + "\n";
+      }
    }
    else
       THROW_ERROR("Unable to open file " + hdl_template);

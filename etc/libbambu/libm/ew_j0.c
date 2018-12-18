@@ -168,7 +168,7 @@ double __hide_ieee754_y0(double x)
    if(hx < 0)
       return zero / zero;
    if(ix >= 0x40000000)
-   {  /* |x| >= 2.0 */
+   { /* |x| >= 2.0 */
       /* y0(x) = sqrt(2/(pi*x))*(p0(x)*sin(x0)+q0(x)*cos(x0))
        * where x0 = x-pi/4
        *      Better formula:
@@ -919,7 +919,7 @@ double __hide_ieee754_jn(int n, double x)
    {
       /* Safe to use J(n+1,x)=2n/x *J(n,x)-J(n-1,x) */
       if(ix >= 0x52D00000)
-      {  /* x > 2**302 */
+      { /* x > 2**302 */
          /* (x >> n**2)
           *	    Jn(x) = cos(x-(2n+1)*pi/4)*sqrt(2/x*pi)
           *	    Yn(x) = sin(x-(2n+1)*pi/4)*sqrt(2/x*pi)
@@ -1114,7 +1114,7 @@ double __hide_ieee754_yn(int n, double x)
    if(ix == 0x7ff00000)
       return zero;
    if(ix >= 0x52D00000)
-   {  /* x > 2**302 */
+   { /* x > 2**302 */
       /* (x >> n**2)
        *	    Jn(x) = cos(x-(2n+1)*pi/4)*sqrt(2/x*pi)
        *	    Yn(x) = sin(x-(2n+1)*pi/4)*sqrt(2/x*pi)

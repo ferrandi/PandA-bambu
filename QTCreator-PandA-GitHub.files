@@ -96,6 +96,7 @@ build/config_headers/config_HAVE_GMPXX_H.hpp
 build/config_headers/config_HAVE_GMP_H.hpp
 build/config_headers/config_HAVE_GRAPH_PARTITIONING_BUILT.hpp
 build/config_headers/config_HAVE_GRIZZLY_BUILT.hpp
+build/config_headers/config_HAVE_HEXFLOAT.hpp
 build/config_headers/config_HAVE_HLS_BUILT.hpp
 build/config_headers/config_HAVE_HOST_PROFILING_BUILT.hpp
 build/config_headers/config_HAVE_HOTBM.hpp

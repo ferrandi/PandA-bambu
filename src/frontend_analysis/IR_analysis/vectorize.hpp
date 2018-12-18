@@ -44,6 +44,7 @@
 /// utility include
 #include "custom_map.hpp"
 #include "utility.hpp"
+#include <unordered_map>
 
 REF_FORWARD_DECL(bloc);
 CONSTREF_FORWARD_DECL(Loop);

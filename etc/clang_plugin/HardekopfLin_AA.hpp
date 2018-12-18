@@ -677,4 +677,3 @@ class Staged_Flow_Sensitive_AA : public Andersen_AA
    void computePointToSet(llvm::Module& M);
 };
 #endif
-

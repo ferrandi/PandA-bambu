@@ -16,7 +16,7 @@ if BUILD_LATEX_TABLE_FORMAT
    DIST_SUBDIRS += latex_table_format
 endif
 
-EXTRA_DIST = Doxyfile VMs/PandA-bambu-VM_32bit/Vagrantfile VMs/PandA-bambu-VM_32bit/script.sh VMs/PandA-bambu-VM_64bit/Vagrantfile VMs/PandA-bambu-VM_64bit/script.sh
+EXTRA_DIST = Doxyfile VMs/PandA-bambu-VM_32bit/Vagrantfile VMs/PandA-bambu-VM_32bit/script.sh VMs/PandA-bambu-VM_64bit/Vagrantfile VMs/PandA-bambu-VM_64bit/script.sh VMs/PandA-bambu-VM_64bit-CentOS7/script.sh VMs/PandA-bambu-VM_64bit-CentOS7/Vagrantfile VMs/PandA-bambu-VM_64bit-trusty/script.sh VMs/PandA-bambu-VM_64bit-trusty/Vagrantfile VMs/PandA-bambu-VM_64bit-fedora29/script.sh VMs/PandA-bambu-VM_64bit-fedora29/Vagrantfile
 
 .PHONY documentation: documentation-recursive
 .PHONY documentation-tag:documentation-tag-recursive

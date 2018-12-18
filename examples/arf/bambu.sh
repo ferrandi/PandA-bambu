@@ -1,7 +1,7 @@
 #!/bin/bash
 script=$(readlink -e $0)
 root_dir=$(dirname $script)
-export PATH=../../src:../../../src:/opt/panda/bin:$PATH
+export PATH=../../src:../../../src:$root_dir/../../../../bin/:/opt/panda/bin:$PATH
 
 mkdir -p hls
 cd hls

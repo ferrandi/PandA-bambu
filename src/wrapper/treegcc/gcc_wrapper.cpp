@@ -77,36 +77,28 @@
 #include "config_HAVE_I386_GCC8_MX32.hpp"
 #include "config_HAVE_SPARC_COMPILER.hpp"
 #include "config_HAVE_SPARC_ELF_GCC.hpp"
+#include "config_I386_CLANG4_ASTANALYZER_PLUGIN.hpp"
 #include "config_I386_CLANG4_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG4_EXE.hpp"
 #include "config_I386_CLANG4_SSA_PLUGIN.hpp"
 #include "config_I386_CLANG4_SSA_PLUGINCPP.hpp"
 #include "config_I386_CLANG4_TOPFNAME_PLUGIN.hpp"
-#include "config_I386_CLANG4_ASTANALYZER_PLUGIN.hpp"
+#include "config_I386_CLANG5_ASTANALYZER_PLUGIN.hpp"
 #include "config_I386_CLANG5_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG5_EXE.hpp"
 #include "config_I386_CLANG5_SSA_PLUGIN.hpp"
 #include "config_I386_CLANG5_SSA_PLUGINCPP.hpp"
 #include "config_I386_CLANG5_TOPFNAME_PLUGIN.hpp"
-#include "config_I386_CLANG5_ASTANALYZER_PLUGIN.hpp"
+#include "config_I386_CLANG6_ASTANALYZER_PLUGIN.hpp"
 #include "config_I386_CLANG6_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG6_EXE.hpp"
 #include "config_I386_CLANG6_SSA_PLUGIN.hpp"
 #include "config_I386_CLANG6_SSA_PLUGINCPP.hpp"
 #include "config_I386_CLANG6_TOPFNAME_PLUGIN.hpp"
-#include "config_I386_CLANG6_ASTANALYZER_PLUGIN.hpp"
 #include "config_I386_CLANGPP4_EXE.hpp"
 #include "config_I386_CLANGPP5_EXE.hpp"
 #include "config_I386_CLANGPP6_EXE.hpp"
 #include "config_I386_CLANG_CPP4_EXE.hpp"
-#include "config_I386_CLANG_CPP5_EXE.hpp"
-#include "config_I386_CLANG_CPP6_EXE.hpp"
-#include "config_I386_LLVM4_LINK_EXE.hpp"
-#include "config_I386_LLVM5_LINK_EXE.hpp"
-#include "config_I386_LLVM6_LINK_EXE.hpp"
-#include "config_I386_LLVM4_OPT_EXE.hpp"
-#include "config_I386_LLVM5_OPT_EXE.hpp"
-#include "config_I386_LLVM6_OPT_EXE.hpp"
 #include "config_I386_CLANG_CPP5_EXE.hpp"
 #include "config_I386_CLANG_CPP6_EXE.hpp"
 #include "config_I386_CPP45_EXE.hpp"
@@ -176,6 +168,12 @@
 #include "config_I386_GPP6_EXE.hpp"
 #include "config_I386_GPP7_EXE.hpp"
 #include "config_I386_GPP8_EXE.hpp"
+#include "config_I386_LLVM4_LINK_EXE.hpp"
+#include "config_I386_LLVM4_OPT_EXE.hpp"
+#include "config_I386_LLVM5_LINK_EXE.hpp"
+#include "config_I386_LLVM5_OPT_EXE.hpp"
+#include "config_I386_LLVM6_LINK_EXE.hpp"
+#include "config_I386_LLVM6_OPT_EXE.hpp"
 #include "config_NPROFILE.hpp"
 #include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
 #include "config_PLUGIN_DIR.hpp"
@@ -263,7 +261,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
 
    const Compiler compiler = GetCompiler();
    std::string command = compiler.gcc.string();
-   if(cm==GccWrapper_CompilerMode::CM_ANALYZER && !compiler.is_clang)
+   if(cm == GccWrapper_CompilerMode::CM_ANALYZER && !compiler.is_clang)
    {
       bool flag_cpp;
       if(Param->isOption(OPT_input_format) && Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP)
@@ -277,16 +275,16 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
 #elif HAVE_I386_CLANG4_COMPILER
       command = flag_cpp ? I386_CLANGPP4_EXE : I386_CLANG4_EXE;
 #else
-     THROW_ERROR("unexpected condition");
+      THROW_ERROR("unexpected condition");
 #endif
    }
-   command += " -D__NO_INLINE__ "; /// needed to avoid problem with glibc inlines
+   command += " -D__NO_INLINE__ ";     /// needed to avoid problem with glibc inlines
    command += " -D_GLIBCXX_IOSTREAM "; /// needed to avoid problem with iostream
 #ifdef _WIN32
    if(compiler.is_clang)
-     command += " -isystem /mingw64/include -isystem /mingw64/x86_64-w64-mingw32/include -isystem /mingw64/include/c++/v1/"; /// needed by clang compiler
+      command += " -isystem /mingw64/include -isystem /mingw64/x86_64-w64-mingw32/include -isystem /mingw64/include/c++/v1/"; /// needed by clang compiler
 #endif
-   if(Param->isOption(OPT_discrepancy) and Param->getOption<bool>(OPT_discrepancy) and (cm==GccWrapper_CompilerMode::CM_STD || cm==GccWrapper_CompilerMode::CM_EMPTY))
+   if(Param->isOption(OPT_discrepancy) and Param->getOption<bool>(OPT_discrepancy) and (cm == GccWrapper_CompilerMode::CM_STD || cm == GccWrapper_CompilerMode::CM_EMPTY))
    {
       command += " -D__BAMBU_DISCREPANCY__ ";
    }
@@ -303,7 +301,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
    bool isWholeProgram =
        Param->isOption(OPT_gcc_optimizations) && Param->getOption<std::string>(OPT_gcc_optimizations).find("whole-program") != std::string::npos && Param->getOption<std::string>(OPT_gcc_optimizations).find("no-whole-program") == std::string::npos;
 
-   if(cm==GccWrapper_CompilerMode::CM_EMPTY)
+   if(cm == GccWrapper_CompilerMode::CM_EMPTY)
    {
       if(original_file_name == "-")
          THROW_ERROR("Reading from standard input which does not contain any function definition");
@@ -322,7 +320,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       else
          command += " -c -fplugin=" + compiler.empty_plugin_obj + " -fplugin-arg-" + compiler.empty_plugin_name + "-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory);
    }
-   else if(cm==GccWrapper_CompilerMode::CM_ANALYZER)
+   else if(cm == GccWrapper_CompilerMode::CM_ANALYZER)
    {
       /// remove some extra option not compatible with clang
       boost::replace_all(command, "-mlong-double-64", "");
@@ -340,8 +338,8 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
          fname = top_functions_names.front();
       }
       command += " -c -fplugin=" + compiler.ASTAnalyzer_plugin_obj;
-      command += " -Xclang -add-plugin -Xclang " + compiler.ASTAnalyzer_plugin_name + " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang -outputdir -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name +
-                 " -Xclang " + Param->getOption<std::string>(OPT_output_temporary_directory);
+      command += " -Xclang -add-plugin -Xclang " + compiler.ASTAnalyzer_plugin_name + " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang -outputdir -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang " +
+                 Param->getOption<std::string>(OPT_output_temporary_directory);
 
       if(addTopFName)
          command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang -topfname -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang " + fname;
@@ -354,7 +352,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       command += " -c -fplugin=" + compiler.rtl_plugin;
    }
 #endif
-   else if(cm==GccWrapper_CompilerMode::CM_STD)
+   else if(cm == GccWrapper_CompilerMode::CM_STD)
    {
       if(compiler.is_clang)
       {
@@ -381,11 +379,11 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       else
          command += " -c -fplugin=" + compiler.ssa_plugin_obj + " -fplugin-arg-" + compiler.ssa_plugin_name + "-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory);
    }
-   else if(cm==GccWrapper_CompilerMode::CM_LTO)
-      command += " -c -flto -o " + Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + GetBaseName(real_file_name)+".o ";
+   else if(cm == GccWrapper_CompilerMode::CM_LTO)
+      command += " -c -flto -o " + Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + GetBaseName(real_file_name) + ".o ";
    else
       THROW_ERROR("compilation mode not yet implemented");
-   if(cm!=GccWrapper_CompilerMode::CM_ANALYZER && cm!=GccWrapper_CompilerMode::CM_LTO && ((Param->isOption(OPT_top_functions_names) && Param->getOption<bool>(OPT_do_not_expose_globals)) || (isWholeProgram && compiler.is_clang)))
+   if(cm != GccWrapper_CompilerMode::CM_ANALYZER && cm != GccWrapper_CompilerMode::CM_LTO && ((Param->isOption(OPT_top_functions_names) && Param->getOption<bool>(OPT_do_not_expose_globals)) || (isWholeProgram && compiler.is_clang)))
    {
       std::string fname;
       bool addPlugin = false;
@@ -413,7 +411,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
    }
 
    std::string temporary_file_run_o;
-   if(cm!=GccWrapper_CompilerMode::CM_LTO)
+   if(cm != GccWrapper_CompilerMode::CM_LTO)
    {
       if((Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E)) or (Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S)))
       {
@@ -460,7 +458,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
    }
 #endif
 
-   if(!((Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E)) or (Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S)) or cm==GccWrapper_CompilerMode::CM_LTO))
+   if(!((Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E)) or (Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S)) or cm == GccWrapper_CompilerMode::CM_LTO))
       std::remove(temporary_file_run_o.c_str());
    if(IsError(ret))
    {
@@ -551,7 +549,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting compilation of single files");
-   bool enable_LTO = compiler.is_clang && source_files.size()>1;
+   bool enable_LTO = compiler.is_clang && source_files.size() > 1;
    for(auto& source_file : source_files)
    {
       if(already_processed_files.find(source_file.first) != already_processed_files.end())
@@ -749,18 +747,17 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
       boost::filesystem::path obj = boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
       tree_managerRef TreeM = ParseTreeFile(Param, obj.string());
 #if !NPROFILE
-         long int merge_time = 0;
-         START_TIME(merge_time);
+      long int merge_time = 0;
+      START_TIME(merge_time);
 #endif
-         TM->merge_tree_managers(TreeM);
+      TM->merge_tree_managers(TreeM);
 #if !NPROFILE
-         STOP_TIME(merge_time);
-         if(output_level >= OUTPUT_LEVEL_VERBOSE)
-         {
-            dump_exec_time("Tree merging time", merge_time);
-         }
+      STOP_TIME(merge_time);
+      if(output_level >= OUTPUT_LEVEL_VERBOSE)
+      {
+         dump_exec_time("Tree merging time", merge_time);
+      }
 #endif
-
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Ended compilation of single files");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -2582,7 +2579,7 @@ const std::string GccWrapper::AddSourceCodeIncludes(const std::list<std::string>
       boost::filesystem::path absolute_path = boost::filesystem::system_complete(source_file);
       std::string new_path = "-iquote " + absolute_path.branch_path().string() + " ";
 #ifdef _WIN32
-   boost::replace_all(new_path, "\\", "/");
+      boost::replace_all(new_path, "\\", "/");
 #endif
       if(gcc_compiling_parameters.find(new_path) == std::string::npos and includes.find(new_path) == std::string::npos)
          includes += new_path;

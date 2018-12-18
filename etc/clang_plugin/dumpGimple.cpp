@@ -1415,7 +1415,7 @@ namespace llvm
             llvm::ModuleSlotTracker MST(currentFunction->getParent());
             MST.incorporateFunction(*currentFunction);
             ssa_vers = MST.getLocalSlot(operand);
-            if(ssa_vers<0)
+            if(ssa_vers < 0)
             {
                if(memoryaccess2ssaindex.find(operand) == memoryaccess2ssaindex.end())
                {
@@ -2334,9 +2334,9 @@ namespace llvm
             return assignCode(ty, GT(VECTOR_TYPE));
          default:
          {
-           llvm::errs() << "type id not managed\n";
-           stream.close();
-           llvm_unreachable("Plugin error");
+            llvm::errs() << "type id not managed\n";
+            stream.close();
+            llvm_unreachable("Plugin error");
          }
       }
    }
@@ -2427,9 +2427,9 @@ namespace llvm
                return assignCodeType(cast<llvm::VectorType>(ty)->getElementType());
             default:
             {
-              llvm::errs() << "type id not managed\n";
-              stream.close();
-              llvm_unreachable("Plugin error");
+               llvm::errs() << "type id not managed\n";
+               stream.close();
+               llvm_unreachable("Plugin error");
             }
          }
       }
@@ -5803,7 +5803,7 @@ namespace llvm
                         ci.eraseFromParent();
                      }
 #if __clang_major__ >= 8 || defined(_WIN32)
-                     else if(Callee->getIntrinsicID()==llvm::Intrinsic::is_constant)
+                     else if(Callee->getIntrinsicID() == llvm::Intrinsic::is_constant)
                      {
                         auto C = llvm::ConstantInt::get(llvm::Type::getInt1Ty(ci.getContext()), 0, false);
                         ci.replaceAllUsesWith(C);

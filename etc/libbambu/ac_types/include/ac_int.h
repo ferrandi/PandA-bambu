@@ -444,7 +444,7 @@ typedef signed long long Slong;
          //  typedef int type __attribute__((vector_size(sizeof(int)*N)));
          //#endif
          //      type v = {};
-         int v[N-1] __INIT_VALUE;
+         int v[N - 1] __INIT_VALUE;
 
        public:
          template <int W, bool S>
@@ -461,7 +461,7 @@ typedef signed long long Slong;
 #if defined(__clang__)
 #pragma clang loop unroll(full)
 #endif
-               for(int i = 2; i < N-1; i++)
+               for(int i = 2; i < N - 1; i++)
                   set(i, (v[1] < 0) ? ~0 : 0);
             }
          }
@@ -475,17 +475,17 @@ typedef signed long long Slong;
 #if defined(__clang__)
 #pragma clang loop unroll(full)
 #endif
-               for(int i = 2; i < N-1; i++)
+               for(int i = 2; i < N - 1; i++)
                   set(i, 0);
             }
          }
 
          __FORCE_INLINE void set(int x, int value)
          {
-            if(x!=N-1)
+            if(x != N - 1)
                v[x] = value;
-//            else
-//               assert(value==0);
+            //            else
+            //               assert(value==0);
          }
 
          __FORCE_INLINE Slong to_int64() const
@@ -495,7 +495,7 @@ typedef signed long long Slong;
 
          __FORCE_INLINE constexpr int operator[](int x) const
          {
-            if(x!=N-1)
+            if(x != N - 1)
                return v[x];
             else
                return 0;
@@ -508,11 +508,11 @@ typedef signed long long Slong;
          template <int N2, bool C2>
          __FORCE_INLINE iv_base(const iv_base<N2, C2>& b)
          {
-            const int M = AC_MIN(N-1, N2);
+            const int M = AC_MIN(N - 1, N2);
             for(auto idx = 0; idx < M; ++idx)
                set(idx, b[idx]);
             auto last = v[M - 1] < 0 ? ~0 : 0;
-            for(auto idx = M; idx < N-1; ++idx)
+            for(auto idx = M; idx < N - 1; ++idx)
                set(idx, last);
          }
       };
@@ -561,7 +561,7 @@ typedef signed long long Slong;
       template <>
       class iv_base<1, true>
       {
-            /// not possible to instantiate this class specialization
+         /// not possible to instantiate this class specialization
       };
 
       template <>
@@ -870,7 +870,9 @@ typedef signed long long Slong;
       };
 
       template <>
-      class iv_base<4, true> : public iv_base<4, false>{};
+      class iv_base<4, true> : public iv_base<4, false>
+      {
+      };
 
       template <>
       class iv_base<5, true>
@@ -2635,8 +2637,8 @@ typedef signed long long Slong;
          operator Ulong() const
          {
             auto res = iv<N, C>::to_uint64();
-            if(W!=64)
-               res = (res<<(64-W))>>(64-W);
+            if(W != 64)
+               res = (res << (64 - W)) >> (64 - W);
             return res;
          }
 
@@ -2659,8 +2661,8 @@ typedef signed long long Slong;
          operator Slong() const
          {
             auto res = iv<N, C>::to_int64();
-            if(W!=64)
-               res = (res<<(64-W))>>(64-W);
+            if(W != 64)
+               res = (res << (64 - W)) >> (64 - W);
             return res;
          }
 
@@ -3083,7 +3085,7 @@ typedef signed long long Slong;
    //////////////////////////////////////////////////////////////////////////////
 
    template <int W, bool S = true>
-   class ac_int : public ac_private::iv_conv<(W + 31 + !S) / 32, S, W <= 64, !S && ((W%32)==0), W>
+   class ac_int : public ac_private::iv_conv<(W + 31 + !S) / 32, S, W <= 64, !S && ((W % 32) == 0), W>
 #ifndef __BAMBU__
                       __AC_INT_UTILITY_BASE
 #endif
@@ -3092,8 +3094,8 @@ typedef signed long long Slong;
       {
          N = (W + 31 + !S) / 32
       };
-      typedef ac_private::iv_conv<N, S, W <= 64, !S && ((W%32)==0), W> ConvBase;
-      typedef ac_private::iv<N, !S && ((W%32)==0)> Base;
+      typedef ac_private::iv_conv<N, S, W <= 64, !S && ((W % 32) == 0), W> ConvBase;
+      typedef ac_private::iv<N, !S && ((W % 32) == 0)> Base;
 
       __FORCE_INLINE void bit_adjust()
       {

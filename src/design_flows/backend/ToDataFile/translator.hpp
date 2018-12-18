@@ -52,6 +52,7 @@
 #endif
 
 /// STD include
+#include <ios>
 #include <list>
 #include <map>
 #include <set>

@@ -155,7 +155,7 @@ float __hide_ieee754_powf(float x, float y)
 
    /* |y| is huge */
    if(iy > 0x4d000000)
-   {  /* if |y| > 2**27 */
+   { /* if |y| > 2**27 */
       /* over/underflow if x is not close to one */
       if(ix < 0x3f7ffff8)
          return (hy < 0) ? huge * huge : tiny * tiny;

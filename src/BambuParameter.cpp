@@ -3293,7 +3293,7 @@ void BambuParameter::SetDefaults()
       mingw_prefix = "c:/msys64/";
 #endif
 
-   setOption("dynamic_generators_dir", mingw_prefix+PANDA_DATA_INSTALLDIR "/panda");
+   setOption("dynamic_generators_dir", mingw_prefix + PANDA_DATA_INSTALLDIR "/panda");
 
    /// -- Module Interfaces -- //
    setOption(OPT_interface, true);

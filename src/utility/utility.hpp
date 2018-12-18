@@ -53,7 +53,6 @@
 #include <boost/date_time/posix_time/ptime.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/type_index/type_index_facade.hpp>
 #include <cstdlib>
 #include <limits>
 #include <memory>

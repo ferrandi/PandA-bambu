@@ -168,7 +168,7 @@ float erfcf(float x)
    GET_FLOAT_WORD(hx, x);
    ix = hx & 0x7fffffff;
    if(!FLT_UWORD_IS_FINITE(ix))
-   {  /* erfc(nan)=nan */
+   { /* erfc(nan)=nan */
       /* erfc(+-inf)=0,2 */
       return (float)(((unsigned)hx >> 31) << 1) + one / x;
    }
