@@ -236,6 +236,7 @@
 #include "BB_based_stg.hpp"
 
 #if HAVE_VCD_BUILT
+#include "HWDiscrepancyAnalysis.hpp"
 #include "VcdSignalSelection.hpp"
 #include "vcd_utility.hpp"
 #endif
@@ -477,6 +478,11 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
       case HLSFlowStep_Type::HLS_SYNTHESIS_FLOW:
       {
          design_flow_step = DesignFlowStepRef(new HLSSynthesisFlow(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         break;
+      }
+      case HLSFlowStep_Type::HW_DISCREPANCY_ANALYSIS:
+      {
+         design_flow_step = DesignFlowStepRef(new HWDiscrepancyAnalysis(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
 #if HAVE_ILP_BUILT && HAVE_EXPERIMENTAL
@@ -762,6 +768,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
 #endif
          case HLSFlowStep_Type::GENERATE_SYNTHESIS_SCRIPT:
          case HLSFlowStep_Type::HLS_SYNTHESIS_FLOW:
+         case HLSFlowStep_Type::HW_DISCREPANCY_ANALYSIS:
          case HLSFlowStep_Type::TESTBENCH_GENERATION:
 #if HAVE_VCD_BUILT
          case HLSFlowStep_Type::VCD_SIGNAL_SELECTION:

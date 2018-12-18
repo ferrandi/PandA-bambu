@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
@@ -45,34 +45,26 @@ CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(Discrepancy);
 REF_FORWARD_DECL(HLS_manager);
 
-class HWDiscrepancyAnalysis : public HLS_step {
+class HWDiscrepancyAnalysis : public HLS_step
+{
+ public:
+   /**
+    * Constructor
+    */
+   HWDiscrepancyAnalysis(const ParameterConstRef parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
 
-   public :
-      /**
-       * Constructor
-       */
-      HWDiscrepancyAnalysis(
-            const ParameterConstRef parameters,
-            const HLS_managerRef HLSMgr,
-            const DesignFlowManagerConstRef design_flow_manager);
+   ~HWDiscrepancyAnalysis();
 
-      ~HWDiscrepancyAnalysis();
+   DesignFlowStep_Status Exec();
 
-      DesignFlowStep_Status Exec();
+   bool HasToBeExecuted() const;
 
-      bool HasToBeExecuted() const;
+ protected:
+   const DiscrepancyRef Discr;
 
-   protected :
+   const std::string present_state_name;
 
-      const DiscrepancyRef Discr;
-
-      const std::string present_state_name;
-
-      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> >
-      ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
-
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship,
-            const DesignFlowStep::RelationshipType relationship_type);
+   virtual void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type);
 };
 
 #endif
