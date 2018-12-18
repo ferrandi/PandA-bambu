@@ -50,6 +50,12 @@
 // include from HLS/
 #include "hls_manager.hpp"
 
+// include from HLS/vcd/
+#include "Discrepancy.hpp"
+
+// include from parser/discrepancy/
+#include "parse_discrepancy.hpp"
+
 // include from tree/
 #include "behavioral_helper.hpp"
 
@@ -61,16 +67,6 @@ HWDiscrepancyAnalysis::HWDiscrepancyAnalysis(const ParameterConstRef _parameters
       present_state_name(static_cast<HDLWriter_Language>(_parameters->getOption<unsigned int>(OPT_writer_language)) == HDLWriter_Language::VERILOG ? "_present_state" : "present_state")
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
-}
-
-DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
-{
-   return DesignFlowStep_Status::SUCCESS;
-}
-
-bool HWDiscrepancyAnalysis::HasToBeExecuted() const
-{
-   return true;
 }
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> HWDiscrepancyAnalysis::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -95,4 +91,19 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
       }
    }
    return ret;
+}
+
+DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
+{
+   // parse the file containing the C traces
+   const std::string& ctrace_filename = Discr->c_trace_filename;
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Parsing C trace: " + ctrace_filename);
+   parse_discrepancy(ctrace_filename, Discr);
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Parsed C trace: " + ctrace_filename);
+   return DesignFlowStep_Status::SUCCESS;
+}
+
+bool HWDiscrepancyAnalysis::HasToBeExecuted() const
+{
+   return true;
 }
