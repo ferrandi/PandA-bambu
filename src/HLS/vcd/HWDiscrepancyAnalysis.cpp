@@ -65,15 +65,14 @@
 // include from tree/
 #include "behavioral_helper.hpp"
 
+#include "string_manipulation.hpp" // for GET_CLASS
+
 HWDiscrepancyAnalysis::HWDiscrepancyAnalysis(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::HW_DISCREPANCY_ANALYSIS),
       Discr(_HLSMgr->RDiscr),
       present_state_name(static_cast<HDLWriter_Language>(_parameters->getOption<unsigned int>(OPT_writer_language)) == HDLWriter_Language::VERILOG ? "_present_state" : "present_state")
 {
-}
-
-HWDiscrepancyAnalysis::~HWDiscrepancyAnalysis()
-{
+   debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()

@@ -31,38 +31,37 @@
  *
  */
 /**
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Marco Minutoli <mminutoli@gmail.com>
+ * @author Manuel Beniani <manuel.beniani@gmail.com>
+ * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
-
-#ifndef HW_DISCREPANCY_ANALYSIS_HPP
-#define HW_DISCREPANCY_ANALYSIS_HPP
 
 // include superclass header
 #include "hls_step.hpp"
 
 CONSTREF_FORWARD_DECL(DesignFlowManager);
 CONSTREF_FORWARD_DECL(Parameter);
-REF_FORWARD_DECL(Discrepancy);
-REF_FORWARD_DECL(HLS_manager);
 
-class HWDiscrepancyAnalysis : public HLS_step
+class CTestbenchExecution : public HLS_step
 {
+ protected:
+   const std::string output_directory;
+
+   const std::string testbench_basename;
+
+   virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+
  public:
    /**
-    * Constructor
+    * constructor
     */
-   HWDiscrepancyAnalysis(const ParameterConstRef parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+   CTestbenchExecution(const ParameterConstRef Param, const HLS_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const std::string testbench_basename = "values");
 
-   DesignFlowStep_Status Exec();
+   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set, const DesignFlowStep::RelationshipType relationship_type);
 
-   bool HasToBeExecuted() const;
+   virtual DesignFlowStep_Status Exec();
 
- protected:
-   const DiscrepancyRef Discr;
-
-   const std::string present_state_name;
-
-   virtual void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type);
+   virtual bool HasToBeExecuted() const;
 };
-
-#endif

@@ -226,6 +226,7 @@
 #endif
 
 /// HLS/simulation includes
+#include "CTestbenchExecution.hpp"
 #include "minimal_interface_testbench.hpp"
 #include "test_vector_parser.hpp"
 #include "testbench_generation.hpp"
@@ -340,6 +341,11 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
       case HLSFlowStep_Type::COLORING_REGISTER_BINDING:
       {
          design_flow_step = DesignFlowStepRef(new vertex_coloring_register(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         break;
+      }
+      case HLSFlowStep_Type::C_TESTBENCH_EXECUTION:
+      {
+         design_flow_step = DesignFlowStepRef(new CTestbenchExecution(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION:
@@ -802,6 +808,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
          case HLSFlowStep_Type::CLOCK_SLACK_ESTIMATION:
 #endif
          case HLSFlowStep_Type::COLORING_REGISTER_BINDING:
+         case HLSFlowStep_Type::C_TESTBENCH_EXECUTION:
 #if HAVE_BEAGLE
          case HLSFlowStep_Type::DSE_DESIGN_FLOW:
 #endif

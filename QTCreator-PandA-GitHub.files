@@ -1394,6 +1394,8 @@ src/HLS/scheduling/scheduling.cpp
 src/HLS/scheduling/scheduling.hpp
 src/HLS/scheduling/sdc_scheduling.cpp
 src/HLS/scheduling/sdc_scheduling.hpp
+src/HLS/simulation/CTestbenchExecution.cpp
+src/HLS/simulation/CTestbenchExecution.hpp
 src/HLS/simulation/SimulationInformation.hpp
 src/HLS/simulation/minimal_interface_testbench.cpp
 src/HLS/simulation/minimal_interface_testbench.hpp

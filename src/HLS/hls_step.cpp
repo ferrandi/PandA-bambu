@@ -142,6 +142,8 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
 #endif
       case HLSFlowStep_Type::CHORDAL_COLORING_REGISTER_BINDING:
          return "ChordalColoringRegisterBinding";
+      case HLSFlowStep_Type::C_TESTBENCH_EXECUTION:
+         return "CTestbenchExecution";
       case HLSFlowStep_Type::CLASSIC_DATAPATH_CREATOR:
          return "ClassicDatapathCreator";
       case HLSFlowStep_Type::CLASSICAL_HLS_SYNTHESIS_FLOW:
