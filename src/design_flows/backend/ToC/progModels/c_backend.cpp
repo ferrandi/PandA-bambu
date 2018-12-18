@@ -490,7 +490,8 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships, const Desi
                relationships.insert(hls_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION, HLSFlowStepSpecializationConstRef()));
 
                relationships.insert(hls_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef()));
-               if(c_backend_type == CB_DISCREPANCY_ANALYSIS)
+               const bool is_hw_discrepancy = parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw);
+               if(c_backend_type == CB_DISCREPANCY_ANALYSIS and not is_hw_discrepancy)
                {
                   relationships.insert(hls_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::VCD_SIGNAL_SELECTION, HLSFlowStepSpecializationConstRef()));
                }
