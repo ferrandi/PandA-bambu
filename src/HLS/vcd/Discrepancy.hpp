@@ -120,6 +120,9 @@ struct Discrepancy
     */
    std::unordered_map<uint64_t, std::string> context_to_scope;
 
+   /// name of the file that contains the c trace to parse
+   std::string c_trace_filename;
+
    unsigned long long n_total_operations = 0;
 
    unsigned long long n_checked_operations = 0;

@@ -587,7 +587,8 @@ void DiscrepancyAnalysisCWriter::WriteExtraInitCode()
    const auto top_fun_id = *(top_function_ids.begin());
    const FunctionBehaviorConstRef fun_behavior = AppM->CGetFunctionBehavior(top_fun_id);
    const BehavioralHelperConstRef behavioral_helper = fun_behavior->CGetBehavioralHelper();
-   std::string discrepancy_data_filename = Param->getOption<std::string>(OPT_output_directory) + "/simulation/" + behavioral_helper->get_function_name() + "_discrepancy.data";
+   const std::string discrepancy_data_filename = Param->getOption<std::string>(OPT_output_directory) + "/simulation/" + behavioral_helper->get_function_name() + "_discrepancy.data";
+   Discrepancy->c_trace_filename = discrepancy_data_filename;
 
    indented_output_stream->Append("__bambu_discrepancy_fp = fopen(\"" + discrepancy_data_filename + "\", \"w\");\n");
    indented_output_stream->Append("if (!__bambu_discrepancy_fp) {\n");

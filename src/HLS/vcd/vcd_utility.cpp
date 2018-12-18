@@ -249,10 +249,7 @@ DesignFlowStep_Status vcd_utility::Exec()
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Parsed vcd file " + vcd_filename + " in " + print_cpu_time(vcd_parse_time) + " seconds");
 #endif
    /* parse the discrepancy trace coming from C execution */
-   const auto root_functions = cg_man->GetRootFunctions();
-   THROW_ASSERT(root_functions.size() == 1, STR(root_functions.size()));
-   const auto root_function = *(root_functions.begin());
-   std::string discrepancy_data_filename = parameters->getOption<std::string>(OPT_output_directory) + "/simulation/" + HLSMgr->CGetFunctionBehavior(root_function)->CGetBehavioralHelper()->get_function_name() + "_discrepancy.data";
+   const std::string& discrepancy_data_filename = HLSMgr->RDiscr->c_trace_filename;
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Parsing C trace file " + discrepancy_data_filename);
 #ifndef NDEBUG
    long ctrace_parse_time;
