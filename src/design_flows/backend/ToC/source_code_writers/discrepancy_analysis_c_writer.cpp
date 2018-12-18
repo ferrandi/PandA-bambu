@@ -675,9 +675,9 @@ void DiscrepancyAnalysisCWriter::WriteFunctionImplementation(unsigned int functi
       GetPointer<function_decl>(node_fun)->static_flag = false;
 }
 
-void DiscrepancyAnalysisCWriter::WriteBBHeader(unsigned int bb_number)
+void DiscrepancyAnalysisCWriter::WriteBBHeader(const unsigned int bb_number, const unsigned int function_index)
 {
-   indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"BB " + STR(bb_number) + "\\n\");\n");
+   indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"stg_id " + STR(function_index) + " BB " + STR(bb_number) + "\\n\");\n");
 }
 
 void DiscrepancyAnalysisCWriter::WriteFunctionDeclaration(const unsigned int funId)
