@@ -109,6 +109,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Parsing C trace: " + ctrace_filename);
    parse_discrepancy(ctrace_filename, Discr);
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Parsed C trace: " + ctrace_filename);
+#ifndef NDEBUG
    if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Printing parsed C control flow trace");
@@ -127,6 +128,24 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--End of parsed C control flow trace");
+   }
+#endif
+   std::map<std::string, std::list<unsigned int>> scope_to_bb_list;
+   for(auto& f : Discr->c_control_flow_trace)
+   {
+      const auto f_id = f.first;
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Untangling software control flow trace of function: " + STR(f_id));
+      for(auto& context2trace : f.second)
+      {
+         const auto context_id = context2trace.first;
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing context: " + STR(context_id));
+         const auto& scope = Discr->context_to_scope.at(context_id);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---scope: " + scope);
+         auto& bb_list = scope_to_bb_list[scope];
+         bb_list.splice(bb_list.end(), context2trace.second);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed context: " + STR(context_id));
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Untangled software control flow trace of function: " + STR(f_id));
    }
    return DesignFlowStep_Status::SUCCESS;
 }
