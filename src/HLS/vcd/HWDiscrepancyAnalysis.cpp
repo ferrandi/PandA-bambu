@@ -122,7 +122,7 @@ static void print_c_control_flow_trace(std::unordered_map<unsigned int, std::uno
 }
 #endif
 
-static inline std::pair<bool, vertex> find_next_state(const unsigned int bb_id, const StateTransitionGraphConstRef& stg, const vertex current_state)
+static inline std::pair<bool, vertex> find_next_state(const unsigned int bb_id, const StateTransitionGraphConstRef& stg, const vertex current_state, std::list<unsigned int>& dummy_trace, std::unordered_set<unsigned int>& have_dummy)
 {
    const auto& stg_info = stg->CGetStateTransitionGraphInfo();
    vertex next_state = nullptr;
@@ -132,13 +132,22 @@ static inline std::pair<bool, vertex> find_next_state(const unsigned int bb_id, 
    for(; out_ei != end_ei; out_ei++)
    {
       vertex neighbor_state = boost::target(*out_ei, *stg);
-      const auto state_info = stg->CGetStateInfo(neighbor_state);
-      if(bb_id == *state_info->BB_ids.begin() and not state_info->is_dummy)
+      const auto neighbor_info = stg->CGetStateInfo(neighbor_state);
+      if(bb_id == *neighbor_info->BB_ids.begin())
       {
          // this state is a good candidate
-         THROW_ASSERT(not found, "two neighbors of state " + STR(stg_info->vertex_to_state_id.at(next_state)) + " have the same BB id: " + STR(bb_id));
-         found = true;
-         next_state = neighbor_state;
+         if(not neighbor_info->is_dummy)
+         {
+            THROW_ASSERT(not found, "two neighbors of state S_" + STR(stg_info->vertex_to_state_id.at(current_state)) + ": S_" + STR(stg_info->vertex_to_state_id.at(next_state)) + " and S_" + STR(stg_info->vertex_to_state_id.at(neighbor_state)) +
+                                        " have the same BB id = " + STR(bb_id));
+            found = true;
+            next_state = neighbor_state;
+         }
+         else
+         {
+            dummy_trace.push_back(stg_info->vertex_to_state_id.at(neighbor_state));
+            have_dummy.insert(stg_info->vertex_to_state_id.at(current_state));
+         }
       }
    }
    return std::make_pair(found, next_state);
@@ -170,7 +179,9 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
    }
 #endif
    // untangle control flow traces
-   std::map<std::string, std::list<unsigned int>> scope_to_fsm_trace;
+   std::unordered_map<std::string, std::list<unsigned int>> scope_to_fsm_trace;
+   std::unordered_map<std::string, std::list<unsigned int>> scope_to_dummy_trace;
+   std::unordered_set<unsigned int> have_dummy_state;
    for(auto& f : Discr->c_control_flow_trace)
    {
       const auto f_id = f.first;
@@ -197,6 +208,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
             current_state = boost::target(*out_edge, *stg);
             scope_to_fsm_trace[scope].push_back(stg_info->vertex_to_state_id.at(current_state));
          }
+         auto& scope_dummy_trace = scope_to_dummy_trace[scope];
          auto bb_id_it = bb_trace.cbegin();
          const auto bb_id_end = bb_trace.cend();
          for(; bb_id_it != bb_id_end; bb_id_it++)
@@ -209,7 +221,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                continue;
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---find next state with bb_id: " + STR(bb_id));
-            std::pair<bool, vertex> found_next_state = find_next_state(bb_id, stg, current_state);
+            std::pair<bool, vertex> found_next_state = find_next_state(bb_id, stg, current_state, scope_dummy_trace, have_dummy_state);
             THROW_ASSERT(std::get<0>(found_next_state), "");
             const auto first_state_for_bb = std::get<1>(found_next_state);
             const auto first_state_info = stg->CGetStateInfo(first_state_for_bb);
@@ -246,7 +258,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                   THROW_ASSERT(*state_it == next_state_id, "");
                   scope_to_fsm_trace[scope].push_back(next_state_id);
                   current_state = next_state;
-                  found_next_state = find_next_state(bb_id, stg, current_state);
+                  found_next_state = find_next_state(bb_id, stg, current_state, scope_dummy_trace, have_dummy_state);
                   state_it++;
                } while(std::get<0>(found_next_state) and state_it != state_end); // there is another state with the same bb_id
             }
@@ -271,7 +283,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                   }
                   visited_states.insert(next_state_id);
                   current_state = next_state;
-                  found_next_state = find_next_state(bb_id, stg, current_state);
+                  found_next_state = find_next_state(bb_id, stg, current_state, scope_dummy_trace, have_dummy_state);
                } while(std::get<0>(found_next_state)); // there is another state with the same bb_id
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
