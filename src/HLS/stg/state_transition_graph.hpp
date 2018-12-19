@@ -228,6 +228,12 @@ class TransitionInfo : public EdgeInfo
  private:
    /// a map that stores for every selector the corresponding increment computed by Efficient Path Profiling
    std::map<StateTransitionType, unsigned int> selector_to_epp_increment;
+
+ public:
+   void set_epp_increment(StateTransitionType stt, unsigned int n)
+   {
+      selector_to_epp_increment[stt] = n;
+   }
 };
 /// refcount about edge info
 typedef refcount<TransitionInfo> TransitionInfoRef;

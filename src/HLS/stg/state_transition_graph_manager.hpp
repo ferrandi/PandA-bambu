@@ -143,6 +143,11 @@ class StateTransitionGraphManager
    /**
     * Returns pointer to acyclic STG with additional edges for Efficient Path Profiling
     */
+   StateTransitionGraphRef GetEPPStg();
+
+   /**
+    * Returns pointer to acyclic STG with additional edges for Efficient Path Profiling
+    */
    const StateTransitionGraphConstRef CGetEPPStg() const;
 
    /**

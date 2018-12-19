@@ -741,6 +741,12 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
+static bool is_EPP_leaf(const vertex, const StateTransitionGraphConstRef&)
+{
+   // TODO: this is a stub. make some real checks
+   return true;
+}
+
 static void add_EPP_edges(const StateTransitionGraphManagerRef& STG)
 {
    const auto stg = STG->GetStg();
@@ -815,10 +821,59 @@ static void add_EPP_edges(const StateTransitionGraphManagerRef& STG)
    {
       STG->STG_builder->connect_state(e.first, e.second, TransitionInfo::StateTransitionType::ST_EDGE_EPP);
    }
-   const auto epp_stg = STG->CGetEPPStg();
+   /*
+    * get the EPP stg, to avoid feedback edges
+    */
+   const auto epp_stg = STG->GetEPPStg();
    std::map<vertex, unsigned int> NumPaths;
    std::deque<vertex> reverse_topological_v_list;
    epp_stg->ReverseTopologicalSort(reverse_topological_v_list);
+   /*
+    * Execute the algorithm described in Figure 5 of the paper, to compute the
+    * edge increments. These increments are not definitive, because we have to
+    * propagate them on the feedback edges that are temporarily removed so that
+    * the algorithm can work properly.
+    */
+   for(const auto v : reverse_topological_v_list)
+   {
+      if(v == entry_state or v == exit_state)
+      {
+         /*
+          * entry and exit vertices of the STG are not real states of the
+          * generated FSM, so they are skipped
+          */
+         continue;
+      }
+      if(epp_stg->CGetStateInfo(v)->is_dummy)
+      {
+         /* dummy states are skipped */
+         continue;
+      }
+      if(is_EPP_leaf(v, epp_stg))
+      {
+         NumPaths[v] = 1;
+      }
+      else
+      {
+         unsigned int n = 0;
+         BOOST_FOREACH(EdgeDescriptor e, boost::out_edges(v, *epp_stg))
+         {
+            const auto selector = epp_stg->GetSelector(e);
+            const auto dst = boost::target(e, *epp_stg);
+            if(selector | TransitionInfo::StateTransitionType::ST_EDGE_EPP)
+            {
+               epp_stg->GetTransitionInfo(e)->set_epp_increment(TransitionInfo::StateTransitionType::ST_EDGE_EPP, n);
+               n += NumPaths.at(dst);
+            }
+            if(selector | TransitionInfo::StateTransitionType::ST_EDGE_NORMAL)
+            {
+               epp_stg->GetTransitionInfo(e)->set_epp_increment(TransitionInfo::StateTransitionType::ST_EDGE_NORMAL, n);
+               n += NumPaths.at(dst);
+            }
+         }
+         NumPaths[v] = n;
+      }
+   }
    return;
 }
 void BB_based_stg::compute_EPP_edge_increments() const

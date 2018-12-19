@@ -225,6 +225,11 @@ StateTransitionGraphRef StateTransitionGraphManager::GetStg()
    return STG_graph;
 }
 
+StateTransitionGraphRef StateTransitionGraphManager::GetEPPStg()
+{
+   return EPP_STG_graph;
+}
+
 unsigned int StateTransitionGraphManager::get_number_of_states() const
 {
    return static_cast<unsigned int>(boost::num_vertices(*state_transition_graphs_collection) - 2);
