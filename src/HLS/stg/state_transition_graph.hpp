@@ -219,10 +219,6 @@ class TransitionInfo : public EdgeInfo
       ST_EDGE_FEEDBACK = 1 << 1,
       /// Artificial edge for computation of Efficient Path Profiling edge increments
       ST_EDGE_EPP = 1 << 2,
-      /// Selector used to mark edges coming from entry vertex
-      ST_EDGE_FROM_ENTRY = 1 << 3,
-      /// Selector used to mark edges going to exit vertex
-      ST_EDGE_TO_EXIT = 1 << 4,
    };
 
  private:
