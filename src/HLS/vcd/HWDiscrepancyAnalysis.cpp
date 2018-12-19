@@ -94,6 +94,28 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    return ret;
 }
 
+#ifndef NDEBUG
+static void print_c_control_flow_trace(std::unordered_map<unsigned int, std::unordered_map<uint64_t, std::list<unsigned int>>>& c_control_flow_trace, int debug_level)
+{
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Printing parsed C control flow trace");
+   for(const auto& fid2ctxtrace : c_control_flow_trace)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->FUNCTION_ID: " + STR(fid2ctxtrace.first));
+      for(const auto& ctx2trace : fid2ctxtrace.second)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->CONTEXT: " + STR(ctx2trace.first));
+         for(const auto& bb_id : ctx2trace.second)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---BB: " + STR(bb_id));
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--End of parsed C control flow trace");
+}
+#endif
+
 DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
 {
    THROW_ASSERT(Discr, "Discr data structure is not correctly initialized");
@@ -112,22 +134,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
 #ifndef NDEBUG
    if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Printing parsed C control flow trace");
-      for(const auto& fid2ctxtrace : Discr->c_control_flow_trace)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->FUNCTION_ID: " + STR(fid2ctxtrace.first));
-         for(const auto& ctx2trace : fid2ctxtrace.second)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->CONTEXT: " + STR(ctx2trace.first));
-            for(const auto& bb_id : ctx2trace.second)
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---BB: " + STR(bb_id));
-            }
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
-         }
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--End of parsed C control flow trace");
+      print_c_control_flow_trace(Discr->c_control_flow_trace, debug_level);
    }
 #endif
    std::map<std::string, std::list<unsigned int>> scope_to_bb_list;
