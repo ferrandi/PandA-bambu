@@ -734,9 +734,17 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
 #endif
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked BB graph - ST graph consistency");
    }
+   if(parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw))
+   {
+      compute_EPP_edge_increments();
+   }
    return DesignFlowStep_Status::SUCCESS;
 }
 
+void BB_based_stg::compute_EPP_edge_increments() const
+{
+   return;
+}
 /**
  * Given two bb linked by a forwarding edge, this method tries to move
  * overlap the execution of the last state of the bb ending the cycle

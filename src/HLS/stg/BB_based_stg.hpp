@@ -152,5 +152,19 @@ class BB_based_stg : public STG_creator
     */
    void move_with_duplication(const vertex stateToMove, const vertex secondLastState, const vertex dest_first_state, const std::map<vertex, std::list<vertex>>& global_starting_ops, const std::map<vertex, std::list<vertex>>& global_executing_ops,
                               const std::map<vertex, std::list<vertex>>& global_ending_ops, const std::set<unsigned int>& defSet, const std::set<unsigned int>& useSet);
+   /**
+    * If hardware discrepancy analysis is activated, use this function to
+    * compute the edge increments for the Efficient Path Profiling (EPP) on the STG.
+    *
+    * Details on EPP and on the algorithm to compute edge increments are here:
+    * Thomas Ball and James R. Larus. 1996. Efficient path profiling. In
+    * Proceedings of the 29th annual ACM/IEEE international symposium on
+    * Microarchitecture (MICRO 29). IEEE Computer Society, Washington, DC, USA,
+    * 46-57.
+    *
+    * The computed data are stored in the Discrepancy data structure in the
+    * HLS_manager and used later in the HWDiscrepancyAnalysis step
+    */
+   void compute_EPP_edge_increments() const;
 };
 #endif
