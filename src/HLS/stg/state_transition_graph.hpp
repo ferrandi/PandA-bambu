@@ -171,6 +171,7 @@ class TransitionInfo : public EdgeInfo
  private:
    /// pointer to graph storing information about operations
    OpGraphConstRef op_function_graph;
+
    transition_type t{DONTCARE_COND};
    std::set<vertex> ops;
    bool has_default{false};
@@ -208,6 +209,25 @@ class TransitionInfo : public EdgeInfo
       return labels;
    }
    vertex get_ref_state() const;
+
+   /// Types associated with the edges of the graph.
+   enum StateTransitionType
+   {
+      /// Normal edge
+      ST_EDGE_NORMAL = 1 << 0,
+      /// Feedback edge
+      ST_EDGE_FEEDBACK = 1 << 1,
+      /// Artificial edge for computation of Efficient Path Profiling edge increments
+      ST_EDGE_EPP = 1 << 2,
+      /// Selector used to mark edges coming from entry vertex
+      ST_EDGE_FROM_ENTRY = 1 << 3,
+      /// Selector used to mark edges going to exit vertex
+      ST_EDGE_TO_EXIT = 1 << 4,
+   };
+
+ private:
+   /// a map that stores for every selector the corresponding increment computed by Efficient Path Profiling
+   std::map<StateTransitionType, unsigned int> selector_to_epp_increment;
 };
 /// refcount about edge info
 typedef refcount<TransitionInfo> TransitionInfoRef;
@@ -292,17 +312,6 @@ typedef refcount<const StateTransitionGraphsCollection> StateTransitionGraphsCol
 struct StateTransitionGraph : public graph
 {
  public:
-   /// Types associated with the edges of the graph.
-   enum StateTransitionType
-   {
-      /// Normal edge
-      ST_EDGE_NORMAL = 1 << 0,
-      /// Feedback edge
-      ST_EDGE_FEEDBACK = 1 << 1,
-      /// Artificial edge for computation of Efficient Path Profiling edge increments
-      ST_EDGE_EPP = 1 << 2,
-   };
-
    /**
     * Standard constructor.
     * @param state_transition_graphs_collection is the bulk graph.

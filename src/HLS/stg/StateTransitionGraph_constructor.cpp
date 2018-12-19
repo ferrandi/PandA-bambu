@@ -110,7 +110,7 @@ vertex StateTransitionGraph_constructor::create_state(const std::list<vertex>& e
 
 EdgeDescriptor StateTransitionGraph_constructor::connect_state(const vertex& src, const vertex& tgt, int type)
 {
-   if(type == StateTransitionGraph::StateTransitionType::ST_EDGE_FEEDBACK)
+   if(type == TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK)
       state_transition_graph->GetStateTransitionGraphInfo()->is_a_dag = false;
    // get the vertex iterator
    VertexIterator vIterBeg, vIterEnd;
@@ -121,6 +121,11 @@ EdgeDescriptor StateTransitionGraph_constructor::connect_state(const vertex& src
    bool exists;
    boost::tie(e, exists) = boost::edge(src, tgt, *state_transition_graphs_collection);
    THROW_ASSERT((not exists) or (not(state_transition_graph->GetSelector(e) & type)), "transition already present with the same selector");
+   // add additional helper flags if necessary
+   if(src == state_transition_graph->GetStateTransitionGraphInfo()->entry_node)
+      type |= TransitionInfo::StateTransitionType::ST_EDGE_FROM_ENTRY;
+   if(tgt == state_transition_graph->GetStateTransitionGraphInfo()->exit_node)
+      type |= TransitionInfo::StateTransitionType::ST_EDGE_TO_EXIT;
    // edge creation
    if(not exists)
    {
