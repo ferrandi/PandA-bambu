@@ -366,11 +366,11 @@ TransitionWriter::TransitionWriter(const graph* _stg, const OpGraphConstRef _op_
 void TransitionWriter::operator()(std::ostream& out, const EdgeDescriptor& e) const
 {
    const auto* temp = Cget_edge_info<TransitionInfo>(e, *printing_graph);
-   if(ST_EDGE_NORMAL_T & printing_graph->GetSelector(e))
+   if(StateTransitionGraph::StateTransitionType::ST_EDGE_NORMAL & printing_graph->GetSelector(e))
    {
       out << "[color=red3";
    }
-   else if(ST_EDGE_FEEDBACK_T & printing_graph->GetSelector(e))
+   else if(StateTransitionGraph::StateTransitionType::ST_EDGE_FEEDBACK & printing_graph->GetSelector(e))
    {
       out << "[color=green2";
    }

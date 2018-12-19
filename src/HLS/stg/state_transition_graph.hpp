@@ -74,13 +74,6 @@ class HLS_manager;
 CONSTREF_FORWARD_DECL(OpGraph);
 REF_FORWARD_DECL(Parameter);
 
-/// Types associated with the edges of the graph.
-/// Normal edge
-#define ST_EDGE_NORMAL_T 1 << 1
-
-/// Feedback edge
-#define ST_EDGE_FEEDBACK_T 1 << 2
-
 /**
  * Structure holding information about a node into graph. A node represent an execution state of the machine. It
  * contains operations to be started when execution will reach this state.
@@ -299,13 +292,15 @@ typedef refcount<const StateTransitionGraphsCollection> StateTransitionGraphsCol
 struct StateTransitionGraph : public graph
 {
  public:
-   /// These are graph type defined into this class:
-   ///  - COMPLETE is the complete finite state machine graph (also with feedback edges)
-   ///  - ACYCLIC is directed acyclic version of finite state machine graph (without feedback edges)
-   enum graph_type
+   /// Types associated with the edges of the graph.
+   enum StateTransitionType
    {
-      COMPLETE = 0,
-      ACYCLIC
+      /// Normal edge
+      ST_EDGE_NORMAL = 1 << 0,
+      /// Feedback edge
+      ST_EDGE_FEEDBACK = 1 << 1,
+      /// Artificial edge for computation of Efficient Path Profiling edge increments
+      ST_EDGE_EPP = 1 << 2,
    };
 
    /**

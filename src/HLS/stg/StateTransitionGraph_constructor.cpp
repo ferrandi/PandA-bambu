@@ -110,7 +110,7 @@ vertex StateTransitionGraph_constructor::create_state(const std::list<vertex>& e
 
 EdgeDescriptor StateTransitionGraph_constructor::connect_state(const vertex& src, const vertex& tgt, int type)
 {
-   if(type == ST_EDGE_FEEDBACK_T)
+   if(type == StateTransitionGraph::StateTransitionType::ST_EDGE_FEEDBACK)
       state_transition_graph->GetStateTransitionGraphInfo()->is_a_dag = false;
    // get the vertex iterator
    VertexIterator vIterBeg, vIterEnd;

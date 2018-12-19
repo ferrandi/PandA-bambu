@@ -321,7 +321,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                   std::set<unsigned int> BB_ids;
                   BB_ids.insert(entry_operations->get_bb_index());
                   vertex s_cur = STG_builder->create_state(exec_ops, start_ops, end_ops, BB_ids);
-                  STG_builder->connect_state(last_state[bb_src], s_cur, ST_EDGE_NORMAL_T);
+                  STG_builder->connect_state(last_state[bb_src], s_cur, StateTransitionGraph::StateTransitionType::ST_EDGE_NORMAL);
                   last_state[bb_src] = s_cur;
                   break;
                }
@@ -456,7 +456,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          {
             if(call_states.find(previous) == call_states.end())
             {
-               STG_builder->connect_state(previous, s_cur, ST_EDGE_NORMAL_T);
+               STG_builder->connect_state(previous, s_cur, StateTransitionGraph::StateTransitionType::ST_EDGE_NORMAL);
             }
             else
             {
@@ -467,10 +467,10 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                auto call_sets = call_states.find(previous)->second;
                for(auto& call_set : call_sets)
                {
-                  EdgeDescriptor s_e = STG_builder->connect_state(call_set, s_cur, ST_EDGE_NORMAL_T);
+                  EdgeDescriptor s_e = STG_builder->connect_state(call_set, s_cur, StateTransitionGraph::StateTransitionType::ST_EDGE_NORMAL);
                   STG_builder->set_unbounded_condition(s_e, ALL_FINISHED, ops, previous);
                }
-               EdgeDescriptor s_e = STG_builder->connect_state(previous, s_cur, ST_EDGE_NORMAL_T);
+               EdgeDescriptor s_e = STG_builder->connect_state(previous, s_cur, StateTransitionGraph::StateTransitionType::ST_EDGE_NORMAL);
                STG_builder->set_unbounded_condition(s_e, ALL_FINISHED, ops, previous);
             }
          }
@@ -487,13 +487,13 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
             THROW_ASSERT(call_operations.find(s_cur) != call_operations.end() && call_operations.find(s_cur)->second.begin() != call_operations.find(s_cur)->second.end(), "unexpected condition");
             THROW_ASSERT(call_states.find(s_cur) != call_states.end() && call_states.find(s_cur)->second.begin() != call_states.find(s_cur)->second.end(), "unexpected condition");
             vertex waiting_state = call_states.find(s_cur)->second.front();
-            EdgeDescriptor s_e = STG_builder->connect_state(s_cur, waiting_state, ST_EDGE_NORMAL_T);
+            EdgeDescriptor s_e = STG_builder->connect_state(s_cur, waiting_state, StateTransitionGraph::StateTransitionType::ST_EDGE_NORMAL);
 
             std::set<vertex> ops;
             ops.insert(call_operations.find(s_cur)->second.begin(), call_operations.find(s_cur)->second.end());
             STG_builder->set_unbounded_condition(s_e, NOT_ALL_FINISHED, ops, s_cur);
 
-            s_e = STG_builder->connect_state(waiting_state, waiting_state, ST_EDGE_FEEDBACK_T);
+            s_e = STG_builder->connect_state(waiting_state, waiting_state, StateTransitionGraph::StateTransitionType::ST_EDGE_FEEDBACK);
             STG_builder->set_unbounded_condition(s_e, NOT_ALL_FINISHED, ops, s_cur);
          }
          last_state[*vit] = s_cur;
@@ -543,7 +543,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       EdgeDescriptor s_e;
       if(FB_CFG_SELECTOR & fbb->GetSelector(*e))
       {
-         s_e = STG_builder->connect_state(s_src, s_tgt, ST_EDGE_FEEDBACK_T);
+         s_e = STG_builder->connect_state(s_src, s_tgt, StateTransitionGraph::StateTransitionType::ST_EDGE_FEEDBACK);
          if(call_states.find(s_src) != call_states.end())
          {
             auto call_sets = call_states.find(s_src)->second;
@@ -555,7 +555,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
             }
             for(auto& call_set : call_sets)
             {
-               EdgeDescriptor s_e1 = STG_builder->connect_state(call_set, s_tgt, ST_EDGE_FEEDBACK_T);
+               EdgeDescriptor s_e1 = STG_builder->connect_state(call_set, s_tgt, StateTransitionGraph::StateTransitionType::ST_EDGE_FEEDBACK);
                STG_builder->set_unbounded_condition(s_e1, ALL_FINISHED, ops, s_src);
             }
          }
@@ -563,7 +563,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       else
       {
          if(call_states.find(s_src) == call_states.end())
-            s_e = STG_builder->connect_state(s_src, s_tgt, ST_EDGE_NORMAL_T);
+            s_e = STG_builder->connect_state(s_src, s_tgt, StateTransitionGraph::StateTransitionType::ST_EDGE_NORMAL);
          else
          {
             THROW_ASSERT(call_operations.find(s_src) != call_operations.end() && call_operations.find(s_src)->second.size() != 0, "State " + HLS->STG->get_state_name(s_src) + " does not contain any call expression");
@@ -572,11 +572,11 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
             ops.insert(call_operations.find(s_src)->second.begin(), call_operations.find(s_src)->second.end());
             for(auto& call_set : call_sets)
             {
-               EdgeDescriptor s_edge = STG_builder->connect_state(call_set, s_tgt, ST_EDGE_NORMAL_T);
+               EdgeDescriptor s_edge = STG_builder->connect_state(call_set, s_tgt, StateTransitionGraph::StateTransitionType::ST_EDGE_NORMAL);
                STG_builder->set_unbounded_condition(s_edge, ALL_FINISHED, ops, s_src);
             }
 
-            s_e = STG_builder->connect_state(s_src, s_tgt, ST_EDGE_NORMAL_T);
+            s_e = STG_builder->connect_state(s_src, s_tgt, StateTransitionGraph::StateTransitionType::ST_EDGE_NORMAL);
             STG_builder->set_unbounded_condition(s_e, ALL_FINISHED, ops, s_src);
          }
       }
@@ -1462,7 +1462,7 @@ void BB_based_stg::move_with_duplication(const vertex stateToMove, const vertex 
     */
    EdgeDescriptor linkingEdge = stg->CGetEdge(stateToMove, stateToClone);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "existing edge: " + toMoveStateInfo->name + "->" + toCloneStateInfo->name);
-   EdgeDescriptor newEdge = HLS->STG->STG_builder->connect_state(secondLastState, clonedState, stateToClone != secondLastState ? stg->GetSelector(linkingEdge) : ST_EDGE_NORMAL_T);
+   EdgeDescriptor newEdge = HLS->STG->STG_builder->connect_state(secondLastState, clonedState, stateToClone != secondLastState ? stg->GetSelector(linkingEdge) : StateTransitionGraph::StateTransitionType::ST_EDGE_NORMAL);
    HLS->STG->STG_builder->copy_condition(newEdge, linkingEdge);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "new edge: " + secondLastStateInfo->name + "->" + clonedStateInfo->name);
    /*
@@ -1509,7 +1509,7 @@ void BB_based_stg::move_with_duplication(const vertex stateToMove, const vertex 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--state to move : " + toMoveStateInfo->name);
             continue;
          }
-         const auto sel = successor != clonedState ? stg->GetSelector(oe) : ST_EDGE_FEEDBACK_T;
+         const auto sel = successor != clonedState ? stg->GetSelector(oe) : StateTransitionGraph::StateTransitionType::ST_EDGE_FEEDBACK;
          EdgeDescriptor new_edge = HLS->STG->STG_builder->connect_state(clonedState, successor, sel);
          HLS->STG->STG_builder->copy_condition(new_edge, oe);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "new edge: " + clonedStateInfo->name + "->" + stg->GetStateInfo(successor)->name);
