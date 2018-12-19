@@ -266,6 +266,24 @@ void TransitionInfo::print(std::ostream& os) const
    }
    else
       THROW_ERROR("transition type not yet supported");
+   for(const auto& s_to_i : selector_to_epp_increment)
+   {
+      switch(s_to_i.first)
+      {
+         case ST_EDGE_NORMAL:
+            os << "n: " << s_to_i.second << "\\n";
+            break;
+         case ST_EDGE_FEEDBACK:
+            os << "f: " << s_to_i.second << "\\n";
+            break;
+         case ST_EDGE_EPP:
+            os << "epp: " << s_to_i.second << "\\n";
+            break;
+         default:
+            THROW_UNREACHABLE("");
+            break;
+      }
+   }
 }
 
 vertex TransitionInfo::get_operation() const
