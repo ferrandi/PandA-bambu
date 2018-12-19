@@ -230,6 +230,10 @@ class TransitionInfo : public EdgeInfo
    {
       selector_to_epp_increment[stt] = n;
    }
+   unsigned int get_epp_increment(StateTransitionType stt)
+   {
+      return selector_to_epp_increment.at(stt);
+   }
 };
 /// refcount about edge info
 typedef refcount<TransitionInfo> TransitionInfoRef;

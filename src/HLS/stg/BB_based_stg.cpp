@@ -741,49 +741,17 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-static bool is_EPP_leaf(const vertex, const StateTransitionGraphConstRef&)
-{
-   // TODO: this is a stub. make some real checks
-   return true;
-}
-
 static void add_EPP_edges(const StateTransitionGraphManagerRef& STG)
 {
    const auto stg = STG->GetStg();
-   /*
-    * select the entry state for EPP, which is not the artificial entry node of
-    * STG but must be a real state
-    */
    const auto entry_state = STG->get_entry_state();
    THROW_ASSERT(boost::out_degree(entry_state, *stg) == 1, "entry state has not 1 successor");
-   OutEdgeIterator e_it, e_end;
-   boost::tie(e_it, e_end) = boost::out_edges(entry_state, *stg);
-   const auto epp_entry_state = boost::target(*e_it, *stg);
-   /*
-    * select the exit state for EPP, which is not the artificial exit node of
-    * STG but must be a real state
-    */
    const auto exit_state = STG->get_exit_state();
    THROW_ASSERT(boost::in_degree(exit_state, *stg), "exit state has no predecessors");
-   vertex epp_exit_state = nullptr;
-   bool found = false;
-   BOOST_FOREACH(EdgeDescriptor e, boost::in_edges(exit_state, *stg))
-   {
-      const auto exit_parent = boost::source(e, *stg);
-      if(boost::out_degree(exit_parent, *stg))
-      {
-         found = true;
-         epp_exit_state = exit_parent;
-         break;
-      }
-   }
-   THROW_ASSERT(found, "no good candidate found for Efficient Path Profiling exit state");
    /*
     * Select pairs of vertices for which we have to add artificial edges for
     * Efficient Path Profiling, to handle feedback edges.
     * Dummy states are skipped, because they can be ignored.
-    * Self edges are saved and handled separately after computation of edge
-    * increments.
     */
    std::set<EdgeDescriptor> self_edges;
    std::unordered_set<std::pair<vertex, vertex>> epp_edges_to_add;
@@ -798,58 +766,42 @@ static void add_EPP_edges(const StateTransitionGraphManagerRef& STG)
       {
          if(stg->GetSelector(oe) & TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK)
          {
-            const auto dst = boost::target(oe, *stg);
-            if(v == dst)
-               self_edges.insert(oe); // handle self_edges separately after computation
-            else
-               epp_edges_to_add.insert(std::make_pair(v, epp_exit_state));
+            epp_edges_to_add.insert(std::make_pair(v, exit_state));
          }
       }
-      BOOST_FOREACH(EdgeDescriptor oe, boost::in_edges(v, *stg))
-      {
-         if(stg->GetSelector(oe) & TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK)
-         {
-            const auto src = boost::source(oe, *stg);
-            if(v == src)
-               ; // is inserted in self_edges when iterating of in out_edges
-            else
-               epp_edges_to_add.insert(std::make_pair(epp_entry_state, v));
-         }
-      }
+      BOOST_FOREACH(EdgeDescriptor ie, boost::in_edges(v, *stg))
+         if(stg->GetSelector(ie) & TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK)
+            epp_edges_to_add.insert(std::make_pair(entry_state, v));
    }
    for(const auto& e : epp_edges_to_add)
    {
       STG->STG_builder->connect_state(e.first, e.second, TransitionInfo::StateTransitionType::ST_EDGE_EPP);
    }
+}
+
+static void compute_edge_increments(const StateTransitionGraphManagerRef& STG)
+{
    /*
     * get the EPP stg, to avoid feedback edges
     */
    const auto epp_stg = STG->GetEPPStg();
-   std::map<vertex, unsigned int> NumPaths;
-   std::deque<vertex> reverse_topological_v_list;
-   epp_stg->ReverseTopologicalSort(reverse_topological_v_list);
    /*
     * Execute the algorithm described in Figure 5 of the paper, to compute the
     * edge increments. These increments are not definitive, because we have to
     * propagate them on the feedback edges that are temporarily removed so that
     * the algorithm can work properly.
     */
-   for(const auto v : reverse_topological_v_list)
+   std::map<vertex, unsigned int> NumPaths;
+   std::deque<vertex> reverse_v_list;
+   epp_stg->ReverseTopologicalSort(reverse_v_list);
+   for(const auto v : reverse_v_list)
    {
-      if(v == entry_state or v == exit_state)
-      {
-         /*
-          * entry and exit vertices of the STG are not real states of the
-          * generated FSM, so they are skipped
-          */
-         continue;
-      }
       if(epp_stg->CGetStateInfo(v)->is_dummy)
       {
          /* dummy states are skipped */
          continue;
       }
-      if(is_EPP_leaf(v, epp_stg))
+      if(boost::out_degree(v, *epp_stg) == 0) // is a leaf vertex
       {
          NumPaths[v] = 1;
       }
@@ -860,12 +812,14 @@ static void add_EPP_edges(const StateTransitionGraphManagerRef& STG)
          {
             const auto selector = epp_stg->GetSelector(e);
             const auto dst = boost::target(e, *epp_stg);
-            if(selector | TransitionInfo::StateTransitionType::ST_EDGE_EPP)
+            if(epp_stg->CGetStateInfo(dst)->is_dummy)
+               continue;
+            if(selector & TransitionInfo::StateTransitionType::ST_EDGE_EPP)
             {
                epp_stg->GetTransitionInfo(e)->set_epp_increment(TransitionInfo::StateTransitionType::ST_EDGE_EPP, n);
                n += NumPaths.at(dst);
             }
-            if(selector | TransitionInfo::StateTransitionType::ST_EDGE_NORMAL)
+            if(selector & TransitionInfo::StateTransitionType::ST_EDGE_NORMAL)
             {
                epp_stg->GetTransitionInfo(e)->set_epp_increment(TransitionInfo::StateTransitionType::ST_EDGE_NORMAL, n);
                n += NumPaths.at(dst);
@@ -876,13 +830,55 @@ static void add_EPP_edges(const StateTransitionGraphManagerRef& STG)
    }
    return;
 }
+static void propagate_EPP_increments_to_feedback_edges(const StateTransitionGraphManagerRef& STG)
+{
+   const auto stg = STG->GetStg();
+   const auto epp_stg = STG->GetEPPStg();
+   BOOST_FOREACH(EdgeDescriptor e, boost::edges(*stg))
+   {
+      // loop on stg here, cause we are looking for feedback edges
+      if(stg->GetSelector(e) & TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK)
+      {
+         unsigned int n = 0;
+         const auto feedback_src = boost::source(e, *stg);
+         const auto feedback_dst = boost::target(e, *stg);
+         if(stg->CGetStateInfo(feedback_src)->is_dummy or stg->CGetStateInfo(feedback_dst)->is_dummy)
+            continue;
+         // loop on epp_stg here, cause we are looking for epp edges
+         BOOST_FOREACH(EdgeDescriptor oe, boost::out_edges(feedback_src, *epp_stg))
+         {
+            if(epp_stg->GetSelector(oe) & TransitionInfo::StateTransitionType::ST_EDGE_EPP)
+               n += epp_stg->GetTransitionInfo(oe)->get_epp_increment(TransitionInfo::StateTransitionType::ST_EDGE_EPP);
+         }
+         // loop on epp_stg here, cause we are looking for epp edges
+         BOOST_FOREACH(EdgeDescriptor ie, boost::in_edges(feedback_dst, *epp_stg))
+         {
+            if(epp_stg->GetSelector(ie) & TransitionInfo::StateTransitionType::ST_EDGE_EPP)
+               n += epp_stg->GetTransitionInfo(ie)->get_epp_increment(TransitionInfo::StateTransitionType::ST_EDGE_EPP);
+         }
+         stg->GetTransitionInfo(e)->set_epp_increment(TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK, n);
+      }
+   }
+}
+
 void BB_based_stg::compute_EPP_edge_increments() const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Computing Efficient Path Profiling edge increments for HW discrepancy analysis");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding EPP edges");
    add_EPP_edges(HLS->STG);
-   const auto epp_stg = HLS->STG->CGetEPPStg();
-   epp_stg->WriteDot("EPP_STG.dot");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Added EPP edges");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Computing EPP edge increments");
+   compute_edge_increments(HLS->STG);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Computed EPP edge increments");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Propagating EPP increments to feedback edges");
+   propagate_EPP_increments_to_feedback_edges(HLS->STG);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Propagated EPP edge increments to feedback edges");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Computed Efficient Path Profiling edge increments for HW discrepancy analysis");
+   if(parameters->getOption<bool>(OPT_print_dot))
+   {
+      HLS->STG->CGetStg()->WriteDot("STG_EPP.dot");
+      HLS->STG->CGetEPPStg()->WriteDot("EPP.dot");
+   }
    return;
 }
 /**
