@@ -374,6 +374,10 @@ void TransitionWriter::operator()(std::ostream& out, const EdgeDescriptor& e) co
    {
       out << "[color=green2";
    }
+   else if(StateTransitionGraph::StateTransitionType::ST_EDGE_EPP & printing_graph->GetSelector(e))
+   {
+      out << "[color=blue";
+   }
    else
    {
       THROW_UNREACHABLE("InconsistentDataStructure");

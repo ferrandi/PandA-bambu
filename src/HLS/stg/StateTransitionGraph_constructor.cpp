@@ -120,10 +120,17 @@ EdgeDescriptor StateTransitionGraph_constructor::connect_state(const vertex& src
    EdgeDescriptor e;
    bool exists;
    boost::tie(e, exists) = boost::edge(src, tgt, *state_transition_graphs_collection);
-   THROW_ASSERT(!exists, "transition already added");
+   THROW_ASSERT((not exists) or (not(state_transition_graph->GetSelector(e) & type)), "transition already present with the same selector");
    // edge creation
-   const TransitionInfoRef eInfo = TransitionInfoRef(new TransitionInfo(HLSMgr.lock()->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG)));
-   e = state_transition_graphs_collection->AddEdge(src, tgt, type, eInfo);
+   if(not exists)
+   {
+      const TransitionInfoRef eInfo = TransitionInfoRef(new TransitionInfo(HLSMgr.lock()->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG)));
+      e = state_transition_graphs_collection->AddEdge(src, tgt, type, eInfo);
+   }
+   else
+   {
+      state_transition_graphs_collection->AddSelector(e, type);
+   }
    return e;
 }
 

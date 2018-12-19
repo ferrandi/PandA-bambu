@@ -86,6 +86,7 @@ StateTransitionGraphManager::StateTransitionGraphManager(const HLS_managerConstR
           StateTransitionGraphsCollectionRef(new StateTransitionGraphsCollection(StateTransitionGraphInfoRef(new StateTransitionGraphInfo(_HLSMgr->CGetFunctionBehavior(_HLS->functionId)->CGetOpGraph(FunctionBehavior::CFG))), _Param))),
       ACYCLIC_STG_graph(StateTransitionGraphRef(new StateTransitionGraph(state_transition_graphs_collection, StateTransitionGraph::StateTransitionType::ST_EDGE_NORMAL))),
       STG_graph(StateTransitionGraphRef(new StateTransitionGraph(state_transition_graphs_collection, StateTransitionGraph::StateTransitionType::ST_EDGE_NORMAL | StateTransitionGraph::StateTransitionType::ST_EDGE_FEEDBACK))),
+      EPP_STG_graph(StateTransitionGraphRef(new StateTransitionGraph(state_transition_graphs_collection, StateTransitionGraph::StateTransitionType::ST_EDGE_NORMAL | StateTransitionGraph::StateTransitionType::ST_EDGE_EPP))),
       op_function_graph(_HLSMgr->CGetFunctionBehavior(_HLS->functionId)->CGetOpGraph(FunctionBehavior::CFG)),
       Param(_Param),
       output_level(_Param->getOption<int>(OPT_output_level)),
@@ -107,6 +108,11 @@ const StateTransitionGraphConstRef StateTransitionGraphManager::CGetAstg() const
 const StateTransitionGraphConstRef StateTransitionGraphManager::CGetStg() const
 {
    return STG_graph;
+}
+
+const StateTransitionGraphConstRef StateTransitionGraphManager::CGetEPPStg() const
+{
+   return EPP_STG_graph;
 }
 
 void StateTransitionGraphManager::compute_min_max()

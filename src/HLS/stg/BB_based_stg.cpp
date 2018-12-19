@@ -741,8 +741,55 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
+static void add_EPP_edges(const StateTransitionGraphManagerRef& STG)
+{
+   const auto stg = STG->GetStg();
+   const auto entry_state = STG->get_entry_state();
+   const auto exit_state = STG->get_exit_state();
+   std::set<EdgeDescriptor> self_edges;
+   std::unordered_set<std::pair<vertex, vertex>> epp_edges_to_add;
+   BOOST_FOREACH(vertex v, boost::vertices(*stg))
+   {
+      if(stg->CGetStateInfo(v)->is_dummy)
+      {
+         continue;
+      }
+      BOOST_FOREACH(EdgeDescriptor oe, boost::out_edges(v, *stg))
+      {
+         if(stg->GetSelector(oe) & StateTransitionGraph::StateTransitionType::ST_EDGE_FEEDBACK)
+         {
+            const auto dst = boost::target(oe, *stg);
+            if(v == dst)
+               self_edges.insert(oe);
+            else
+               epp_edges_to_add.insert(std::make_pair(v, exit_state));
+         }
+      }
+      BOOST_FOREACH(EdgeDescriptor oe, boost::in_edges(v, *stg))
+      {
+         if(stg->GetSelector(oe) & StateTransitionGraph::StateTransitionType::ST_EDGE_FEEDBACK)
+         {
+            const auto src = boost::source(oe, *stg);
+            if(v == src)
+               ; // is inserted in self_edges when iterating of in out_edges
+            else
+               epp_edges_to_add.insert(std::make_pair(entry_state, v));
+         }
+      }
+   }
+   for(const auto& e : epp_edges_to_add)
+   {
+      STG->STG_builder->connect_state(e.first, e.second, StateTransitionGraph::StateTransitionType::ST_EDGE_EPP);
+   }
+   return;
+}
 void BB_based_stg::compute_EPP_edge_increments() const
 {
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Computing Efficient Path Profiling edge increments for HW discrepancy analysis");
+   add_EPP_edges(HLS->STG);
+   const auto epp_stg = HLS->STG->CGetEPPStg();
+   epp_stg->WriteDot("EPP_STG.dot");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Computed Efficient Path Profiling edge increments for HW discrepancy analysis");
    return;
 }
 /**
