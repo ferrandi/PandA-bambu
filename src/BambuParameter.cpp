@@ -3066,6 +3066,10 @@ void BambuParameter::CheckParameters()
    {
       THROW_ERROR("--discrepancy and --discrepancy-hw are mutually exclusive");
    }
+   if(isOption(OPT_discrepancy_hw) and getOption<bool>(OPT_discrepancy_hw) and getOption<HLSFlowStep_Type>(OPT_controller_architecture) != HLSFlowStep_Type::FSM_CONTROLLER_CREATOR)
+   {
+      THROW_ERROR("--discrepancy-hw is only compatible with classic FSM controllers");
+   }
    if(isOption(OPT_discrepancy) and getOption<bool>(OPT_discrepancy))
    {
       if(false
