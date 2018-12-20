@@ -40,6 +40,12 @@
 // include class header
 #include "control_flow_checker.hpp"
 
+// include from circuit/
+#include "structural_manager.hpp"
+
+// include from HLS/
+#include "hls.hpp"
+
 // includes from ./
 #include "Parameter.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
@@ -80,5 +86,6 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 
 DesignFlowStep_Status ControlFlowChecker::InternalExec()
 {
+   HLS->control_flow_checker = structural_managerRef(new structural_manager(HLS->Param));
    return DesignFlowStep_Status::SUCCESS;
 }
