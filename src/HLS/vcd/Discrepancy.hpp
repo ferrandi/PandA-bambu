@@ -132,6 +132,12 @@ struct Discrepancy
     */
    std::unordered_map<unsigned int, std::unordered_set<unsigned int>> fu_id_to_states_to_check;
 
+   /**
+    * Maps every function ID to a set EdgeDescriptors. Each edge
+    * represents an edge along which the epp counter have to be reset.
+    */
+   std::unordered_map<unsigned int, std::unordered_set<EdgeDescriptor>> fu_id_to_reset_edges;
+
    /// name of the file that contains the c trace to parse
    std::string c_trace_filename;
 

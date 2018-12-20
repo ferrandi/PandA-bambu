@@ -918,8 +918,10 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
    propagate_EPP_increments_to_dummy_edges(HLS->STG);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<-->Propagated EPP increments to out_edges of dummy states");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Computing call states where EPP trace must always be checked");
-   HLSMgr->RDiscr->fu_id_to_states_to_check.clear();
-   const auto stg_info = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo();
+   HLSMgr->RDiscr->fu_id_to_states_to_check[funId].clear();
+   HLSMgr->RDiscr->fu_id_to_reset_edges[funId].clear();
+   const auto& stg = HLS->STG->CGetStg();
+   const auto& stg_info = stg->CGetStateTransitionGraphInfo();
    const OpGraphConstRef dfgRef = HLSMgr->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::DFG);
    for(const auto& state_to_op : starting_ops)
    {
@@ -933,6 +935,31 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
             const auto state_id = stg_info->vertex_to_state_id.at(state_to_op.first);
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "state: S_" + STR(state_id) + " is always to check because it contains an unbounded operation");
             HLSMgr->RDiscr->fu_id_to_states_to_check[funId].insert(state_id);
+         }
+      }
+   }
+   BOOST_FOREACH(const EdgeDescriptor e, boost::edges(*stg))
+   {
+      if(stg->GetSelector(e) & TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK)
+      {
+         const auto src = boost::source(e, *stg);
+         const auto dst = boost::target(e, *stg);
+         const bool src_dummy = stg->CGetStateInfo(src)->is_dummy;
+         const bool dst_dummy = stg->CGetStateInfo(dst)->is_dummy;
+         if(not src_dummy and not dst_dummy)
+         {
+            const auto state_id = stg_info->vertex_to_state_id.at(src);
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "state: S_" + STR(state_id) + " is always to check because it is the source of a feedback edge");
+            HLSMgr->RDiscr->fu_id_to_states_to_check[funId].insert(state_id);
+         }
+
+         if(not dst_dummy)
+         {
+            HLSMgr->RDiscr->fu_id_to_reset_edges[funId].insert(e);
+         }
+         else
+         {
+            THROW_ASSERT(src_dummy and (src == dst), "");
          }
       }
    }
