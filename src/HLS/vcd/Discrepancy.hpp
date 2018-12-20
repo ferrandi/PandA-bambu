@@ -126,6 +126,12 @@ struct Discrepancy
     */
    std::unordered_map<uint64_t, std::string> context_to_scope;
 
+   /**
+    * Maps every function ID to a set of states that must always be checked
+    * by the hardware discrepancy control flow checker.
+    */
+   std::unordered_map<unsigned int, std::unordered_set<unsigned int>> fu_id_to_states_to_check;
+
    /// name of the file that contains the c trace to parse
    std::string c_trace_filename;
 

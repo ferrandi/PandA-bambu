@@ -162,9 +162,11 @@ class BB_based_stg : public STG_creator
     * Microarchitecture (MICRO 29). IEEE Computer Society, Washington, DC, USA,
     * 46-57.
     *
-    * The computed data are stored in the Discrepancy data structure in the
-    * HLS_manager and used later in the HWDiscrepancyAnalysis step
+    * @param starting_ops: maps every state to a list of operations starting in
+    * that state. They are necessary to compute a set of states when the HW
+    * discrepancy analysis has to check the EPP trace, in addition to states
+    * before taking feedback edges.
     */
-   void compute_EPP_edge_increments() const;
+   void compute_EPP_edge_increments(const std::map<vertex, std::list<vertex>>& starting_ops) const;
 };
 #endif

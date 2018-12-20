@@ -85,6 +85,9 @@
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
 
+/// HLS/vcd includes
+#include "Discrepancy.hpp"
+
 /// STD include
 #include <cmath>
 
@@ -736,7 +739,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    }
    if(parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw))
    {
-      compute_EPP_edge_increments();
+      compute_EPP_edge_increments(global_starting_ops);
    }
    return DesignFlowStep_Status::SUCCESS;
 }
@@ -861,7 +864,7 @@ static void propagate_EPP_increments_to_feedback_edges(const StateTransitionGrap
    }
 }
 
-void BB_based_stg::compute_EPP_edge_increments() const
+void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<vertex>>& starting_ops) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Computing Efficient Path Profiling edge increments for HW discrepancy analysis");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding EPP edges");
@@ -873,6 +876,26 @@ void BB_based_stg::compute_EPP_edge_increments() const
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Propagating EPP increments to feedback edges");
    propagate_EPP_increments_to_feedback_edges(HLS->STG);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Propagated EPP edge increments to feedback edges");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Computing call states where EPP trace must always be checked");
+   HLSMgr->RDiscr->fu_id_to_states_to_check.clear();
+   const auto stg_info = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo();
+   const OpGraphConstRef dfgRef = HLSMgr->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::DFG);
+   for(const auto& state_to_op : starting_ops)
+   {
+      for(const auto& op : state_to_op.second)
+      {
+         const technology_nodeConstRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(op));
+         const auto op_id = tree_helper::normalized_ID(dfgRef->CGetOpNodeInfo(op)->GetOperation());
+         const technology_nodeConstRef op_tn = GetPointer<const functional_unit>(tn)->get_operation(op_id);
+         if(not GetPointer<const operation>(op_tn)->is_bounded())
+         {
+            const auto state_id = stg_info->vertex_to_state_id.at(state_to_op.first);
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "state: S_" + STR(state_id) + " is always to check because it contains an unbounded operation");
+            HLSMgr->RDiscr->fu_id_to_states_to_check[funId].insert(state_id);
+         }
+      }
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Computed call states where EPP trace must always be checked");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Computed Efficient Path Profiling edge increments for HW discrepancy analysis");
    if(parameters->getOption<bool>(OPT_print_dot))
    {
