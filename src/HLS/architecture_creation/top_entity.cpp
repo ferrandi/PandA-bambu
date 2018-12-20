@@ -89,7 +89,13 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
       {
          ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_datapath_architecture), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          if(HLSMgr->get_HLS(funId))
+         {
             ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->controller_type, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            if(parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw))
+            {
+               ret.insert(std::make_tuple(HLSFlowStep_Type::CONTROL_FLOW_CHECKER, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            }
+         }
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -122,6 +128,12 @@ DesignFlowStep_Status top_entity::InternalExec()
    SM = HLS->top;
    structural_managerRef Datapath = HLS->datapath;
    structural_managerRef Controller = HLS->controller;
+   structural_managerRef CFChecker;
+   if(parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw))
+   {
+      THROW_ASSERT(HLS->control_flow_checker, "Control flow checker not created");
+      CFChecker = HLS->control_flow_checker;
+   }
 
    /// top circuit creation
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Top circuit creation");
