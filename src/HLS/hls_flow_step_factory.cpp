@@ -60,7 +60,8 @@
 /// HLS/architecture_creator/datapath_creation
 #include "classic_datapath.hpp"
 
-/// HLS/architecture_creator/fsm_creator/algorithms include
+/// ///HLS/architecture_creator/controller_creation
+#include "control_flow_checker.hpp"
 #include "fsm_controller.hpp"
 #if HAVE_EXPERIMENTAL
 #include "ParallelController.hpp"
@@ -341,6 +342,11 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
       case HLSFlowStep_Type::COLORING_REGISTER_BINDING:
       {
          design_flow_step = DesignFlowStepRef(new vertex_coloring_register(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         break;
+      }
+      case HLSFlowStep_Type::CONTROL_FLOW_CHECKER:
+      {
+         design_flow_step = DesignFlowStepRef(new ControlFlowChecker(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::C_TESTBENCH_EXECUTION:
@@ -808,6 +814,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
          case HLSFlowStep_Type::CLOCK_SLACK_ESTIMATION:
 #endif
          case HLSFlowStep_Type::COLORING_REGISTER_BINDING:
+         case HLSFlowStep_Type::CONTROL_FLOW_CHECKER:
          case HLSFlowStep_Type::C_TESTBENCH_EXECUTION:
 #if HAVE_BEAGLE
          case HLSFlowStep_Type::DSE_DESIGN_FLOW:

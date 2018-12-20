@@ -1228,6 +1228,8 @@ src/EucalyptusParameter.cpp
 src/EucalyptusParameter.hpp
 src/HLS/architecture_creation/TopEntityMemoryMapped.cpp
 src/HLS/architecture_creation/TopEntityMemoryMapped.hpp
+src/HLS/architecture_creation/controller_creation/control_flow_checker.cpp
+src/HLS/architecture_creation/controller_creation/control_flow_checker.hpp
 src/HLS/architecture_creation/controller_creation/controller_creator_base_step.cpp
 src/HLS/architecture_creation/controller_creation/controller_creator_base_step.hpp
 src/HLS/architecture_creation/controller_creation/fsm_controller.cpp
