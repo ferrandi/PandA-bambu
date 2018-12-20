@@ -817,15 +817,15 @@ static void compute_edge_increments(const StateTransitionGraphManagerRef& STG)
             const auto dst = boost::target(e, *epp_stg);
             if(epp_stg->CGetStateInfo(dst)->is_dummy)
                continue;
-            if(selector & TransitionInfo::StateTransitionType::ST_EDGE_EPP)
+            switch(selector)
             {
-               epp_stg->GetTransitionInfo(e)->set_epp_increment(TransitionInfo::StateTransitionType::ST_EDGE_EPP, n);
-               n += NumPaths.at(dst);
-            }
-            if(selector & TransitionInfo::StateTransitionType::ST_EDGE_NORMAL)
-            {
-               epp_stg->GetTransitionInfo(e)->set_epp_increment(TransitionInfo::StateTransitionType::ST_EDGE_NORMAL, n);
-               n += NumPaths.at(dst);
+               case TransitionInfo::StateTransitionType::ST_EDGE_EPP:
+               case TransitionInfo::StateTransitionType::ST_EDGE_NORMAL:
+                  epp_stg->GetTransitionInfo(e)->set_epp_increment(n);
+                  n += NumPaths.at(dst);
+                  break;
+               default:
+                  THROW_UNREACHABLE("");
             }
          }
          NumPaths[v] = n;
@@ -852,15 +852,15 @@ static void propagate_EPP_increments_to_feedback_edges(const StateTransitionGrap
          BOOST_FOREACH(EdgeDescriptor oe, boost::out_edges(feedback_src, *epp_stg))
          {
             if(epp_stg->GetSelector(oe) & TransitionInfo::StateTransitionType::ST_EDGE_EPP)
-               n += epp_stg->GetTransitionInfo(oe)->get_epp_increment(TransitionInfo::StateTransitionType::ST_EDGE_EPP);
+               n += epp_stg->GetTransitionInfo(oe)->get_epp_increment();
          }
          // loop on epp_stg here, cause we are looking for epp edges
          BOOST_FOREACH(EdgeDescriptor ie, boost::in_edges(feedback_dst, *epp_stg))
          {
             if(epp_stg->GetSelector(ie) & TransitionInfo::StateTransitionType::ST_EDGE_EPP)
-               n += epp_stg->GetTransitionInfo(ie)->get_epp_increment(TransitionInfo::StateTransitionType::ST_EDGE_EPP);
+               n += epp_stg->GetTransitionInfo(ie)->get_epp_increment();
          }
-         stg->GetTransitionInfo(e)->set_epp_increment(TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK, n);
+         stg->GetTransitionInfo(e)->set_epp_increment(n);
       }
    }
 }
@@ -895,9 +895,8 @@ static void propagate_EPP_increments_to_dummy_edges(const StateTransitionGraphMa
          THROW_ASSERT(prev != nullptr and next != nullptr, "");
          THROW_ASSERT(stg->ExistsEdge(prev, next), "");
          const EdgeDescriptor prev_to_next_edge = stg->CGetEdge(prev, next);
-         const auto selector = static_cast<TransitionInfo::StateTransitionType>(stg->GetSelector(prev_to_next_edge));
-         THROW_ASSERT(not(selector & TransitionInfo::StateTransitionType::ST_EDGE_EPP), "");
-         stg->GetTransitionInfo(edge_to_next)->set_epp_increment(selector, stg->GetTransitionInfo(prev_to_next_edge)->get_epp_increment(selector));
+         THROW_ASSERT(not(static_cast<TransitionInfo::StateTransitionType>(stg->GetSelector(prev_to_next_edge)) & TransitionInfo::StateTransitionType::ST_EDGE_EPP), "");
+         stg->GetTransitionInfo(edge_to_next)->set_epp_increment(stg->GetTransitionInfo(prev_to_next_edge)->get_epp_increment());
       }
    }
 }

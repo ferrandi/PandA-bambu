@@ -222,17 +222,17 @@ class TransitionInfo : public EdgeInfo
    };
 
  private:
-   /// a map that stores for every selector the corresponding increment computed by Efficient Path Profiling
-   std::map<StateTransitionType, unsigned int> selector_to_epp_increment;
+   /// the edge increment computed by Efficient Path Profiling
+   unsigned int epp_increment;
 
  public:
-   void set_epp_increment(StateTransitionType stt, unsigned int n)
+   void set_epp_increment(unsigned int n)
    {
-      selector_to_epp_increment[stt] = n;
+      epp_increment = n;
    }
-   unsigned int get_epp_increment(StateTransitionType stt)
+   unsigned int get_epp_increment()
    {
-      return selector_to_epp_increment.at(stt);
+      return epp_increment;
    }
 };
 /// refcount about edge info
