@@ -79,7 +79,7 @@
 #if HAVE_BAMBU_BUILT
 /// HLS include
 #include "hls_flow_step_factory.hpp"
-#include "hls_step.hpp"
+#include "hls_function_step.hpp"
 #endif
 
 /// Paramter include
@@ -549,13 +549,35 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships, const Desi
                FrontendFlowStep::CreateSteps(design_flow_manager.lock(), frontend_relationships, AppM, relationships);
                if(c_backend_type == CB_SEQUENTIAL)
                {
+                  // The first time this step is added, we add the dependence
+                  // from the complete call graph computation. Ideally we would
+                  // need also the dependence from the HLS steps,
+                  // but at this point we don't know the top function yet.
+                  // The trick is that the dependencies will be recomputed again
+                  // before this is executed. At that time the top
+                  // function will be ready. The dependencies from HLS steps are
+                  // added after the check on the call graph for this reason.
+                  const FrontendFlowStepFactory* frontend_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
+                  const vertex call_graph_computation_step = design_flow_manager.lock()->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
                   const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-                  const auto* hls_step_factory = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"));
+                  const DesignFlowStepRef cg_design_flow_step =
+                      call_graph_computation_step ? design_flow_graph->CGetDesignFlowStepInfo(call_graph_computation_step)->design_flow_step : frontend_step_factory->CreateApplicationFrontendFlowStep(FUNCTION_ANALYSIS);
+                  relationships.insert(cg_design_flow_step);
 
-                  const vertex classical_hls_synthesis_flow_vertex = design_flow_manager.lock()->GetDesignFlowStep(HLS_step::ComputeSignature(HLSFlowStep_Type::GENERATE_HDL, HLSFlowStepSpecializationConstRef()));
-                  const DesignFlowStepRef classical_hls_synthesis_flow_step = classical_hls_synthesis_flow_vertex ? design_flow_graph->CGetDesignFlowStepInfo(classical_hls_synthesis_flow_vertex)->design_flow_step :
-                                                                                                                    hls_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::GENERATE_HDL, HLSFlowStepSpecializationConstRef());
-                  relationships.insert(classical_hls_synthesis_flow_step);
+                  // Root function cannot be computed at the beginning so if the
+                  // call graph is not ready yet we exit. The relationships will
+                  // be computed again after the call graph computation.
+                  const CallGraphManagerConstRef call_graph_manager = AppM->CGetCallGraphManager();
+                  if(boost::num_vertices(*(call_graph_manager->CGetCallGraph())) == 0)
+                     break;
+                  const auto top_funs = call_graph_manager->GetRootFunctions();
+                  THROW_ASSERT(top_funs.size() == 1, "");
+                  const auto top_fu_id = *top_funs.begin();
+                  const HLSFlowStepFactory* hls_step_factory = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"));
+
+                  const vertex hls_top_function = design_flow_manager.lock()->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), top_fu_id));
+                  const DesignFlowStepRef hls_top_function_step = hls_top_function ? design_flow_graph->CGetDesignFlowStepInfo(hls_top_function)->design_flow_step : hls_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, top_fu_id);
+                  relationships.insert(hls_top_function_step);
                }
 #endif
                break;
