@@ -397,9 +397,9 @@ static std::string create_control_flow_checker(const std::string& f_name, const 
             const auto next_state_id = n2i.first;
             std::string n_s_string;
             if(one_hot_encoding)
-               n_s_string = STR(state_bitsize) + "'b" + encode_one_hot(max_value + 1, pres_state_id);
+               n_s_string = STR(state_bitsize) + "'b" + encode_one_hot(max_value+1, next_state_id);
             else
-               n_s_string = STR(state_bitsize) + "'d" + STR(pres_state_id);
+               n_s_string = STR(state_bitsize) + "'d" + STR(next_state_id);
             result += "   " + n_s_string +
                       ":\n"
                       "      begin\n";
