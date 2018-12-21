@@ -52,8 +52,10 @@
 class verilog_writer : public language_writer
 {
  protected:
-   /// map putting into relation standard gates with the corresponding built-in verilog statements.
-   CustomMap<std::string, std::string> builtin_to_verilog_keyword;
+   /// map putting into relation standard gates with the corresponding built-in Verilog statements.
+   static const std::map<std::string, std::string> builtin_to_verilog_keyword;
+
+   static const std::set<std::string> keywords;
 
  public:
    /**
@@ -257,10 +259,6 @@ class verilog_writer : public language_writer
     * @param component is the component to be printed
     */
    void WriteBuiltin(const structural_objectConstRef component) override;
-
- private:
-   static const char* tokenNames[];
-   std::set<std::string> keywords;
 };
 
 #endif
