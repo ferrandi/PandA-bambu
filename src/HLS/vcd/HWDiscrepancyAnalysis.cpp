@@ -67,9 +67,14 @@
 
 // include from tree/
 #include "behavioral_helper.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
 
-#include "string_manipulation.hpp" // for GET_CLASS
+/// MAX metadata bit size
+#define MAX_METADATA_BITSIZE 10
+
+/// FIXED metadata bit size
+#define FIXED_METADATA_SIZE 6
 
 HWDiscrepancyAnalysis::HWDiscrepancyAnalysis(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::HW_DISCREPANCY_ANALYSIS),
@@ -156,7 +161,8 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
    std::vector<size_t> tot_memory_usage_per_bits = std::vector<size_t>(10, 0);
    size_t min_memory_usage = 0;
    size_t total_state_of_the_art_memory_usage = 0;
-   size_t total_state_of_the_art_opt6_memory_usage = 0;
+   size_t total_state_of_the_art_fixed_memory_usage = 0;
+   size_t total_state_of_the_art_opt_memory_usage = 0;
    for(auto& f : Discr->c_control_flow_trace)
    {
       const auto f_id = f.first;
@@ -402,7 +408,8 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " STATE BITSIZE" + STR(state_bitsize));
 
          size_t f_state_of_the_art_usage = 0;
-         size_t f_state_of_the_art_usage_opt6 = 0;
+         size_t f_state_of_the_art_usage_fixed = 0;
+         size_t f_state_of_the_art_usage_opt = 0;
          for(const auto& scope : Discr->f_id_to_scope.at(f_id))
          {
             const auto& state_trace = scope_to_state_trace.at(scope);
@@ -412,36 +419,69 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
             f_state_of_the_art_usage += scope_memory_usage;
 
             size_t prev_state = std::numeric_limits<std::size_t>::max() - 1;
-            size_t incremental_counter = 0;
-            size_t scope_memory_usage_opt6 = 0;
+            size_t incremental_counter_fixed = 0;
+            CustomMap<unsigned int, size_t> incremental_counter_opt;
+            size_t scope_memory_usage_fixed = 0;
+            CustomMap<unsigned int, size_t> scope_memory_usage_opt;
             for(const auto state_id : state_trace)
             {
                if(state_id != (prev_state + 1))
                {
-                  scope_memory_usage_opt6 += state_bitsize + 6;
-                  incremental_counter = 0;
+                  scope_memory_usage_fixed += state_bitsize + FIXED_METADATA_SIZE;
+                  for(unsigned int metadata_bitsize = 1; metadata_bitsize <= MAX_METADATA_BITSIZE; metadata_bitsize++)
+                  {
+                     scope_memory_usage_opt[metadata_bitsize] += state_bitsize + metadata_bitsize;
+                  }
+                  incremental_counter_fixed = 0;
+                  for(unsigned int metadata_bitsize = 1; metadata_bitsize <= MAX_METADATA_BITSIZE; metadata_bitsize++)
+                  {
+                     incremental_counter_opt[metadata_bitsize] = 0;
+                  }
                }
                else
                {
-                  incremental_counter++;
-                  if(incremental_counter >= (1ULL << 6))
+                  incremental_counter_fixed++;
+                  for(unsigned int metadata_bitsize = 1; metadata_bitsize <= MAX_METADATA_BITSIZE; metadata_bitsize++)
                   {
-                     scope_memory_usage_opt6 += state_bitsize + 6;
-                     incremental_counter = 0;
+                     incremental_counter_opt[metadata_bitsize]++;
+                  }
+                  if(incremental_counter_fixed >= (1ULL << FIXED_METADATA_SIZE))
+                  {
+                     scope_memory_usage_fixed += state_bitsize + FIXED_METADATA_SIZE;
+                     incremental_counter_fixed = 0;
+                  }
+                  for(unsigned int metadata_bitsize = 1; metadata_bitsize <= MAX_METADATA_BITSIZE; metadata_bitsize++)
+                  {
+                     if(incremental_counter_opt[metadata_bitsize] >= (1ULL << metadata_bitsize))
+                     {
+                        scope_memory_usage_opt[metadata_bitsize] += state_bitsize + metadata_bitsize;
+                        incremental_counter_opt[metadata_bitsize] = 0;
+                     }
                   }
                }
                prev_state = state_id;
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---scope " + scope + " state_of_the_art opt6 memory usage (BITS): " + STR(scope_memory_usage_opt6));
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---scope " + scope + " state_of_the_art opt6memory usage (BYTES): " + STR((scope_memory_usage_opt6 / 8) + (((scope_memory_usage_opt6 % 8) == 0) ? 0 : 1)));
-            f_state_of_the_art_usage_opt6 += scope_memory_usage_opt6;
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---scope " + scope + " state_of_the_art fixed memory usage (BITS): " + STR(scope_memory_usage_fixed));
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---scope " + scope + " state_of_the_art fixed memory usage (BYTES): " + STR((scope_memory_usage_fixed / 8) + (((scope_memory_usage_fixed % 8) == 0) ? 0 : 1)));
+            f_state_of_the_art_usage_fixed += scope_memory_usage_fixed;
+            size_t min_scope_memory_usage_opt = std::numeric_limits<size_t>::max();
+            for(unsigned int metadata_bitsize = 1; metadata_bitsize <= MAX_METADATA_BITSIZE; metadata_bitsize++)
+            {
+               min_scope_memory_usage_opt = std::min(min_scope_memory_usage_opt, scope_memory_usage_opt[metadata_bitsize]);
+            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---scope " + scope + " state_of_the_art opt memory usage (BITS): " + STR(min_scope_memory_usage_opt));
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---scope " + scope + " state_of_the_art opt memory usage (BYTES): " + STR((min_scope_memory_usage_opt / 8) + (((min_scope_memory_usage_opt % 8) == 0) ? 0 : 1)));
+            f_state_of_the_art_usage_opt += min_scope_memory_usage_opt;
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " state_of_the_art memory usage (BITS): " + STR(f_state_of_the_art_usage));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " state_of_the_art memory usage (BYTES): " + STR((f_state_of_the_art_usage / 8) + (((f_state_of_the_art_usage % 8) == 0) ? 0 : 1)));
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " state_of_the_art opt6 memory usage (BITS): " + STR(f_state_of_the_art_usage_opt6));
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " state_of_the_art opt6 memory usage (BYTES): " + STR((f_state_of_the_art_usage_opt6 / 8) + (((f_state_of_the_art_usage_opt6 % 8) == 0) ? 0 : 1)));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " state_of_the_art fixed memory usage (BITS): " + STR(f_state_of_the_art_usage_fixed));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " state_of_the_art fixed memory usage (BYTES): " + STR((f_state_of_the_art_usage_fixed / 8) + (((f_state_of_the_art_usage_fixed % 8) == 0) ? 0 : 1)));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " state_of_the_art opt memory usage (BITS): " + STR(f_state_of_the_art_usage_opt));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " state_of_the_art opt memory usage (BYTES): " + STR((f_state_of_the_art_usage_opt / 8) + (((f_state_of_the_art_usage_opt % 8) == 0) ? 0 : 1)));
          total_state_of_the_art_memory_usage += f_state_of_the_art_usage;
-         total_state_of_the_art_opt6_memory_usage += f_state_of_the_art_usage_opt6;
+         total_state_of_the_art_fixed_memory_usage += f_state_of_the_art_usage_fixed;
+         total_state_of_the_art_opt_memory_usage += f_state_of_the_art_usage_opt;
       }
       // our memory usage
       {
@@ -547,16 +587,18 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---tot memory usage (METADATA) " + STR(i) + " (BITS): " + STR(tot_memory_usage_per_bits.at(i)));
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---tot memory usage (METADATA) " + STR(i) + " (BYTES): " + STR((tot_memory_usage_per_bits.at(i) / 8) + (((tot_memory_usage_per_bits.at(i) % 8) == 0) ? 0 : 1)));
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---tot memory usage BASE (BITS): " + STR(tot_memory_usage_per_bits.at(0)));
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---tot memory usage BASE (BYTES): " + STR((tot_memory_usage_per_bits.at(0) / 8) + (((tot_memory_usage_per_bits.at(0) % 8) == 0) ? 0 : 1)));
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---tot memory usage OPT6 (BITS): " + STR(tot_memory_usage_per_bits.at(6)));
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---tot memory usage OPT6 (BYTES): " + STR((tot_memory_usage_per_bits.at(6) / 8) + (((tot_memory_usage_per_bits.at(6) % 8) == 0) ? 0 : 1)));
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---minimal tot memory usage (BITS): " + STR(min_memory_usage));
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---minimal tot memory usage (BYTES): " + STR((min_memory_usage / 8) + (((min_memory_usage % 8) == 0) ? 0 : 1)));
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---total state_of_the_art memory usage (BITS): " + STR(total_state_of_the_art_memory_usage));
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---total state_of_the_art memory usage (BYTES): " + STR((total_state_of_the_art_memory_usage / 8) + (((total_state_of_the_art_memory_usage % 8) == 0) ? 0 : 1)));
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---total state_of_the_art opt6 memory usage (BITS): " + STR(total_state_of_the_art_opt6_memory_usage));
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---total state_of_the_art opt6 memory usage (BYTES): " + STR((total_state_of_the_art_opt6_memory_usage / 8) + (((total_state_of_the_art_opt6_memory_usage % 8) == 0) ? 0 : 1)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---tot memory usage BASE (BITS): " + STR(tot_memory_usage_per_bits.at(0)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---tot memory usage BASE (BYTES): " + STR((tot_memory_usage_per_bits.at(0) / 8) + (((tot_memory_usage_per_bits.at(0) % 8) == 0) ? 0 : 1)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---tot memory usage FIXED (BITS): " + STR(tot_memory_usage_per_bits.at(FIXED_METADATA_SIZE)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---tot memory usage FIXED (BYTES): " + STR((tot_memory_usage_per_bits.at(FIXED_METADATA_SIZE) / 8) + (((tot_memory_usage_per_bits.at(FIXED_METADATA_SIZE) % 8) == 0) ? 0 : 1)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---minimal tot memory usage (BITS): " + STR(min_memory_usage));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---minimal tot memory usage (BYTES): " + STR((min_memory_usage / 8) + (((min_memory_usage % 8) == 0) ? 0 : 1)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---total state_of_the_art memory usage (BITS): " + STR(total_state_of_the_art_memory_usage));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---total state_of_the_art memory usage (BYTES): " + STR((total_state_of_the_art_memory_usage / 8) + (((total_state_of_the_art_memory_usage % 8) == 0) ? 0 : 1)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---total state_of_the_art fixed memory usage (BITS): " + STR(total_state_of_the_art_fixed_memory_usage));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---total state_of_the_art fixed memory usage (BYTES): " + STR((total_state_of_the_art_fixed_memory_usage / 8) + (((total_state_of_the_art_fixed_memory_usage % 8) == 0) ? 0 : 1)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---total state_of_the_art opt memory usage (BITS): " + STR(total_state_of_the_art_opt_memory_usage));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---total state_of_the_art opt memory usage (BYTES): " + STR((total_state_of_the_art_opt_memory_usage / 8) + (((total_state_of_the_art_opt_memory_usage % 8) == 0) ? 0 : 1)));
    return DesignFlowStep_Status::SUCCESS;
 }
 
