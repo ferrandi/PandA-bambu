@@ -547,6 +547,10 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---tot memory usage (METADATA) " + STR(i) + " (BITS): " + STR(tot_memory_usage_per_bits.at(i)));
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---tot memory usage (METADATA) " + STR(i) + " (BYTES): " + STR((tot_memory_usage_per_bits.at(i) / 8) + (((tot_memory_usage_per_bits.at(i) % 8) == 0) ? 0 : 1)));
    }
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---tot memory usage BASE (BITS): " + STR(tot_memory_usage_per_bits.at(0)));
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---tot memory usage BASE (BYTES): " + STR((tot_memory_usage_per_bits.at(0) / 8) + (((tot_memory_usage_per_bits.at(0) % 8) == 0) ? 0 : 1)));
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---tot memory usage OPT6 (BITS): " + STR(tot_memory_usage_per_bits.at(6)));
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---tot memory usage OPT6 (BYTES): " + STR((tot_memory_usage_per_bits.at(6) / 8) + (((tot_memory_usage_per_bits.at(6) % 8) == 0) ? 0 : 1)));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---minimal tot memory usage (BITS): " + STR(min_memory_usage));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---minimal tot memory usage (BYTES): " + STR((min_memory_usage / 8) + (((min_memory_usage % 8) == 0) ? 0 : 1)));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---total state_of_the_art memory usage (BITS): " + STR(total_state_of_the_art_memory_usage));
