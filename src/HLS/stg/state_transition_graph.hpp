@@ -177,7 +177,8 @@ class TransitionInfo : public EdgeInfo
    bool has_default{false};
    std::set<unsigned> labels;
    vertex ref_state{NULL_VERTEX};
-
+   /// the edge increment computed by Efficient Path Profiling
+   size_t epp_increment{0};
  public:
    TransitionInfo(OpGraphConstRef g) : op_function_graph(g)
    {
@@ -221,11 +222,6 @@ class TransitionInfo : public EdgeInfo
       ST_EDGE_EPP = 1 << 2,
    };
 
- private:
-   /// the edge increment computed by Efficient Path Profiling
-   size_t epp_increment;
-
- public:
    void set_epp_increment(size_t n)
    {
       epp_increment = n;
