@@ -149,12 +149,14 @@ struct Discrepancy
 
    std::unordered_set<unsigned int> fu_id_control_flow_skip;
 
+   unsigned int epp_scope_id{0};
+
    /// name of the file that contains the c trace to parse
    std::string c_trace_filename;
 
-   unsigned long long n_total_operations = 0;
+   unsigned long long n_total_operations{0};
 
-   unsigned long long n_checked_operations = 0;
+   unsigned long long n_checked_operations{0};
 
    Discrepancy(void) : DiscrepancyCallGraph(GraphInfoRef(new GraphInfo()))
    {

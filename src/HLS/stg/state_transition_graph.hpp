@@ -179,6 +179,7 @@ class TransitionInfo : public EdgeInfo
    vertex ref_state{NULL_VERTEX};
    /// the edge increment computed by Efficient Path Profiling
    size_t epp_increment{0};
+
  public:
    TransitionInfo(OpGraphConstRef g) : op_function_graph(g)
    {
