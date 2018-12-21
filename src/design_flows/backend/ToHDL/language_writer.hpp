@@ -316,7 +316,7 @@ class language_writer
     * Counts the number of bits in an unsigned int.
     * @param n is the number.
     */
-   static unsigned int bitnumber(unsigned int n);
+   static unsigned int bitnumber(unsigned long long n);
 
    virtual bool check_keyword(std::string id) const = 0;
 
