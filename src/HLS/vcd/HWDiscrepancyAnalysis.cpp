@@ -428,12 +428,12 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                if(state_id != (prev_state + 1))
                {
                   scope_memory_usage_fixed += state_bitsize + FIXED_METADATA_SIZE;
-                  for(unsigned int metadata_bitsize = 1; metadata_bitsize <= MAX_METADATA_BITSIZE; metadata_bitsize++)
+                  for(unsigned int metadata_bitsize = 0; metadata_bitsize <= MAX_METADATA_BITSIZE; metadata_bitsize++)
                   {
                      scope_memory_usage_opt[metadata_bitsize] += state_bitsize + metadata_bitsize;
                   }
                   incremental_counter_fixed = 0;
-                  for(unsigned int metadata_bitsize = 1; metadata_bitsize <= MAX_METADATA_BITSIZE; metadata_bitsize++)
+                  for(unsigned int metadata_bitsize = 0; metadata_bitsize <= MAX_METADATA_BITSIZE; metadata_bitsize++)
                   {
                      incremental_counter_opt[metadata_bitsize] = 0;
                   }
@@ -441,7 +441,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                else
                {
                   incremental_counter_fixed++;
-                  for(unsigned int metadata_bitsize = 1; metadata_bitsize <= MAX_METADATA_BITSIZE; metadata_bitsize++)
+                  for(unsigned int metadata_bitsize = 0; metadata_bitsize <= MAX_METADATA_BITSIZE; metadata_bitsize++)
                   {
                      incremental_counter_opt[metadata_bitsize]++;
                   }
@@ -450,7 +450,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                      scope_memory_usage_fixed += state_bitsize + FIXED_METADATA_SIZE;
                      incremental_counter_fixed = 0;
                   }
-                  for(unsigned int metadata_bitsize = 1; metadata_bitsize <= MAX_METADATA_BITSIZE; metadata_bitsize++)
+                  for(unsigned int metadata_bitsize = 0; metadata_bitsize <= MAX_METADATA_BITSIZE; metadata_bitsize++)
                   {
                      if(incremental_counter_opt[metadata_bitsize] >= (1ULL << metadata_bitsize))
                      {
@@ -465,7 +465,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---scope " + scope + " state_of_the_art fixed memory usage (BYTES): " + STR((scope_memory_usage_fixed / 8) + (((scope_memory_usage_fixed % 8) == 0) ? 0 : 1)));
             f_state_of_the_art_usage_fixed += scope_memory_usage_fixed;
             size_t min_scope_memory_usage_opt = std::numeric_limits<size_t>::max();
-            for(unsigned int metadata_bitsize = 1; metadata_bitsize <= MAX_METADATA_BITSIZE; metadata_bitsize++)
+            for(unsigned int metadata_bitsize = 0; metadata_bitsize <= MAX_METADATA_BITSIZE; metadata_bitsize++)
             {
                min_scope_memory_usage_opt = std::min(min_scope_memory_usage_opt, scope_memory_usage_opt[metadata_bitsize]);
             }
