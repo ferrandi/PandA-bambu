@@ -145,6 +145,10 @@ struct Discrepancy
     */
    std::unordered_map<unsigned int, std::unordered_set<EdgeDescriptor>> fu_id_to_reset_edges;
 
+   std::unordered_map<unsigned int, size_t> fu_id_to_epp_trace_bitsize;
+
+   std::unordered_set<unsigned int> fu_id_control_flow_skip;
+
    /// name of the file that contains the c trace to parse
    std::string c_trace_filename;
 

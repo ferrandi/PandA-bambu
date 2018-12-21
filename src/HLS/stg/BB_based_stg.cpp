@@ -782,11 +782,12 @@ static void add_EPP_edges(const StateTransitionGraphManagerRef& STG)
    }
 }
 
-static void compute_edge_increments(const StateTransitionGraphManagerRef& STG)
+static size_t compute_edge_increments(const StateTransitionGraphManagerRef& STG)
 {
    /*
     * get the EPP stg, to avoid feedback edges
     */
+   size_t res = 0;
    const auto epp_stg = STG->GetEPPStg();
    /*
     * Execute the algorithm described in Figure 5 of the paper, to compute the
@@ -794,7 +795,7 @@ static void compute_edge_increments(const StateTransitionGraphManagerRef& STG)
     * propagate them on the feedback edges that are temporarily removed so that
     * the algorithm can work properly.
     */
-   std::map<vertex, unsigned int> NumPaths;
+   std::unordered_map<vertex, size_t> NumPaths;
    std::deque<vertex> reverse_v_list;
    epp_stg->ReverseTopologicalSort(reverse_v_list);
    for(const auto v : reverse_v_list)
@@ -810,7 +811,7 @@ static void compute_edge_increments(const StateTransitionGraphManagerRef& STG)
       }
       else
       {
-         unsigned int n = 0;
+         size_t n = 0;
          BOOST_FOREACH(EdgeDescriptor e, boost::out_edges(v, *epp_stg))
          {
             const auto selector = epp_stg->GetSelector(e);
@@ -830,8 +831,9 @@ static void compute_edge_increments(const StateTransitionGraphManagerRef& STG)
          }
          NumPaths[v] = n;
       }
+      res = std::max(res, NumPaths.at(v));
    }
-   return;
+   return res;
 }
 
 void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<vertex>>& starting_ops) const
@@ -841,8 +843,22 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
    add_EPP_edges(HLS->STG);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Added EPP edges");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Computing EPP edge increments");
-   compute_edge_increments(HLS->STG);
+   size_t max_path_val = compute_edge_increments(HLS->STG);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Computed EPP edge increments");
+   if(max_path_val > 1)
+   {
+      HLSMgr->RDiscr->fu_id_control_flow_skip.erase(funId);
+      double bits = std::ceil(std::log2(max_path_val - 1));
+      size_t epp_trace_bitsize = static_cast<size_t>(bits);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---fun id " + STR(funId) + "EPP path bits " + STR(epp_trace_bitsize));
+      HLSMgr->RDiscr->fu_id_to_epp_trace_bitsize[funId] = epp_trace_bitsize;
+   }
+   else
+   {
+      HLSMgr->RDiscr->fu_id_control_flow_skip.insert(funId);
+      HLSMgr->RDiscr->fu_id_to_epp_trace_bitsize[funId] = 0;
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---no control flow discrepancy is necessary");
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Computing states where EPP trace must be checked");
    auto& state_id_to_check = HLSMgr->RDiscr->fu_id_to_states_to_check[funId];
    state_id_to_check.clear();

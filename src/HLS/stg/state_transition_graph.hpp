@@ -223,14 +223,14 @@ class TransitionInfo : public EdgeInfo
 
  private:
    /// the edge increment computed by Efficient Path Profiling
-   unsigned int epp_increment;
+   size_t epp_increment;
 
  public:
-   void set_epp_increment(unsigned int n)
+   void set_epp_increment(size_t n)
    {
       epp_increment = n;
    }
-   unsigned int get_epp_increment() const
+   size_t get_epp_increment() const
    {
       return epp_increment;
    }
