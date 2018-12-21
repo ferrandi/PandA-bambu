@@ -133,6 +133,13 @@ struct Discrepancy
    std::unordered_map<unsigned int, std::unordered_set<unsigned int>> fu_id_to_states_to_check;
 
    /**
+    * Maps every function ID to a set of states that must be checked
+    * by the hardware discrepancy control flow checker if the execution flow
+    * comes from a feedback_edges
+    */
+   std::unordered_map<unsigned int, std::unordered_set<unsigned int>> fu_id_to_feedback_states_to_check;
+
+   /**
     * Maps every function ID to a set EdgeDescriptors. Each edge
     * represents an edge along which the epp counter have to be reset.
     */

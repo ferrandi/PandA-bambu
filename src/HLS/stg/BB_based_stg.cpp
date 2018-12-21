@@ -834,73 +834,6 @@ static void compute_edge_increments(const StateTransitionGraphManagerRef& STG)
    return;
 }
 
-static void propagate_EPP_increments_to_feedback_edges(const StateTransitionGraphManagerRef& STG)
-{
-   const auto stg = STG->GetStg();
-   const auto epp_stg = STG->GetEPPStg();
-   BOOST_FOREACH(EdgeDescriptor e, boost::edges(*stg))
-   {
-      // loop on stg here, cause we are looking for feedback edges
-      if(stg->GetSelector(e) & TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK)
-      {
-         unsigned int n = 0;
-         const auto feedback_src = boost::source(e, *stg);
-         const auto feedback_dst = boost::target(e, *stg);
-         if(stg->CGetStateInfo(feedback_src)->is_dummy or stg->CGetStateInfo(feedback_dst)->is_dummy)
-            continue;
-         // loop on epp_stg here, cause we are looking for epp edges
-         BOOST_FOREACH(EdgeDescriptor oe, boost::out_edges(feedback_src, *epp_stg))
-         {
-            if(epp_stg->GetSelector(oe) & TransitionInfo::StateTransitionType::ST_EDGE_EPP)
-               n += epp_stg->GetTransitionInfo(oe)->get_epp_increment();
-         }
-         // loop on epp_stg here, cause we are looking for epp edges
-         BOOST_FOREACH(EdgeDescriptor ie, boost::in_edges(feedback_dst, *epp_stg))
-         {
-            if(epp_stg->GetSelector(ie) & TransitionInfo::StateTransitionType::ST_EDGE_EPP)
-               n += epp_stg->GetTransitionInfo(ie)->get_epp_increment();
-         }
-         stg->GetTransitionInfo(e)->set_epp_increment(n);
-      }
-   }
-}
-
-static void propagate_EPP_increments_to_dummy_edges(const StateTransitionGraphManagerRef& STG)
-{
-   const auto stg = STG->GetStg();
-   BOOST_FOREACH(const vertex s, boost::vertices(*stg))
-   {
-      if(stg->CGetStateInfo(s)->is_dummy)
-      {
-         THROW_ASSERT(boost::in_degree(s, *stg) == 2, "");
-         THROW_ASSERT(boost::out_degree(s, *stg) == 2, "");
-         vertex prev = nullptr;
-         BOOST_FOREACH(EdgeDescriptor out_edge, boost::in_edges(s, *stg))
-         {
-            const auto p = boost::source(out_edge, *stg);
-            if(p != s)
-               prev = p;
-         }
-         vertex next = nullptr;
-         EdgeDescriptor edge_to_next;
-         BOOST_FOREACH(EdgeDescriptor out_edge, boost::out_edges(s, *stg))
-         {
-            const auto n = boost::target(out_edge, *stg);
-            if(n != s)
-            {
-               next = n;
-               edge_to_next = out_edge;
-            }
-         }
-         THROW_ASSERT(prev != nullptr and next != nullptr, "");
-         THROW_ASSERT(stg->ExistsEdge(prev, next), "");
-         const EdgeDescriptor prev_to_next_edge = stg->CGetEdge(prev, next);
-         THROW_ASSERT(not(static_cast<TransitionInfo::StateTransitionType>(stg->GetSelector(prev_to_next_edge)) & TransitionInfo::StateTransitionType::ST_EDGE_EPP), "");
-         stg->GetTransitionInfo(edge_to_next)->set_epp_increment(stg->GetTransitionInfo(prev_to_next_edge)->get_epp_increment());
-      }
-   }
-}
-
 void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<vertex>>& starting_ops) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Computing Efficient Path Profiling edge increments for HW discrepancy analysis");
@@ -910,14 +843,9 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Computing EPP edge increments");
    compute_edge_increments(HLS->STG);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Computed EPP edge increments");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Propagating EPP increments to feedback edges");
-   propagate_EPP_increments_to_feedback_edges(HLS->STG);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Propagated EPP edge increments to feedback edges");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Propagating EPP increments to out_edges of dummy states");
-   propagate_EPP_increments_to_dummy_edges(HLS->STG);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<-->Propagated EPP increments to out_edges of dummy states");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Computing call states where EPP trace must always be checked");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Computing states where EPP trace must be checked");
    HLSMgr->RDiscr->fu_id_to_states_to_check[funId].clear();
+   HLSMgr->RDiscr->fu_id_to_feedback_states_to_check[funId].clear();
    HLSMgr->RDiscr->fu_id_to_reset_edges[funId].clear();
    const auto& stg = HLS->STG->CGetStg();
    const auto& stg_info = stg->CGetStateTransitionGraphInfo();
@@ -929,7 +857,7 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
          const technology_nodeConstRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(op));
          const auto op_id = tree_helper::normalized_ID(dfgRef->CGetOpNodeInfo(op)->GetOperation());
          const technology_nodeConstRef op_tn = GetPointer<const functional_unit>(tn)->get_operation(op_id);
-         if(not GetPointer<const operation>(op_tn)->is_bounded())
+         if(not GetPointer<const operation>(op_tn)->is_bounded()) // TODO actual call, not unbounded
          {
             const auto state_id = stg_info->vertex_to_state_id.at(state_to_op.first);
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "state: S_" + STR(state_id) + " is always to check because it contains an unbounded operation");
@@ -945,15 +873,12 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
          const auto dst = boost::target(e, *stg);
          const bool src_dummy = stg->CGetStateInfo(src)->is_dummy;
          const bool dst_dummy = stg->CGetStateInfo(dst)->is_dummy;
-         if(not src_dummy and not dst_dummy)
-         {
-            const auto state_id = stg_info->vertex_to_state_id.at(src);
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "state: S_" + STR(state_id) + " is always to check because it is the source of a feedback edge");
-            HLSMgr->RDiscr->fu_id_to_states_to_check[funId].insert(state_id);
-         }
 
          if(not dst_dummy)
          {
+            const auto state_id = stg_info->vertex_to_state_id.at(dst);
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "state: S_" + STR(state_id) + " is to check on feedback because it is the destination of a feedback edge");
+            HLSMgr->RDiscr->fu_id_to_feedback_states_to_check[funId].insert(state_id);
             HLSMgr->RDiscr->fu_id_to_reset_edges[funId].insert(e);
          }
          else
@@ -962,11 +887,23 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
          }
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Computed call states where EPP trace must always be checked");
+   const auto exit_state = stg_info->exit_node;
+   BOOST_FOREACH(const EdgeDescriptor in_e, boost::in_edges(exit_state, *stg))
+   {
+      const auto src = boost::source(in_e, *stg);
+      const bool src_dummy = stg->CGetStateInfo(src)->is_dummy;
+      if(not src_dummy)
+      {
+         const auto state_id = stg_info->vertex_to_state_id.at(src);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "state: S_" + STR(state_id) + " is always to check because it is before end state");
+         HLSMgr->RDiscr->fu_id_to_states_to_check[funId].insert(state_id);
+      }
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Computed call states where EPP trace must be checked");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Computed Efficient Path Profiling edge increments for HW discrepancy analysis");
    if(parameters->getOption<bool>(OPT_print_dot))
    {
-      HLS->STG->CGetStg()->WriteDot("STG_EPP.dot");
+      stg->WriteDot("STG_EPP.dot");
       HLS->STG->CGetEPPStg()->WriteDot("EPP.dot");
    }
    return;
