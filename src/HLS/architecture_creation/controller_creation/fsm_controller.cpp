@@ -176,19 +176,18 @@ void fsm_controller::create_state_machine(std::string& parse)
    THROW_ASSERT(std::find(working_list.begin(), working_list.end(), first_state) != working_list.end(), "unexpected case");
    working_list.erase(std::find(working_list.begin(), working_list.end(), first_state));
    working_list.push_front(first_state); /// ensure that first_state is the really first one...
-   for(auto& v : working_list)
+   for(const auto& v : working_list)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + astg->CGetStateInfo(v)->name);
       present_state[v] = std::vector<long long int>(out_num, 0);
       if(selectors.find(conn_binding::IN) != selectors.end())
       {
-         auto connection_binding_sets = selectors.find(conn_binding::IN)->second;
-         for(std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>::const_iterator s = connection_binding_sets.begin(); s != connection_binding_sets.end(); ++s)
+         for(const auto& s : selectors.at(conn_binding::IN))
          {
 #ifndef NDEBUG
             std::map<vertex, std::set<vertex>> activations_check;
 #endif
-            const std::set<commandport_obj::transition>& activations = GetPointer<commandport_obj>(s->second)->get_activations();
+            const auto& activations = GetPointer<commandport_obj>(s.second)->get_activations();
             for(const auto& activation : activations)
             {
 #ifndef NDEBUG
@@ -210,19 +209,27 @@ void fsm_controller::create_state_machine(std::string& parse)
                   }
                }
                else
+               {
                   activations_check[std::get<0>(activation)].insert(std::get<1>(activation));
+               }
 #endif
                if(std::get<0>(activation) == v)
                {
-                  present_state[v][out_ports[s->second]] = 1;
-                  // std::cerr << "port " << s->second->get_string() << " " << out_ports[s->second] << " enabled from state " << HLS->STG->get_state_name(a->first) << " to " << HLS->STG->get_state_name(a->second) << std::endl;
+                  present_state[v][out_ports[s.second]] = 1;
                }
             }
          }
       }
+#ifndef NDEBUG
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->default output before considering unbounded:");
+      for(const auto a : present_state[v])
+         PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, STR(a));
+      PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "\n");
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
+#endif
 
-      const std::list<vertex>& operations = astg->CGetStateInfo(v)->executing_operations;
-      for(auto op : operations)
+      const auto& operations = astg->CGetStateInfo(v)->executing_operations;
+      for(const auto& op : operations)
       {
          technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(op));
          technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(tree_helper::normalized_ID(data->CGetOpNodeInfo(op)->GetOperation()));
@@ -247,6 +254,13 @@ void fsm_controller::create_state_machine(std::string& parse)
             present_state[v][unbounded_port] = 1;
          }
       }
+#ifndef NDEBUG
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->default output after considering unbounded:");
+      for(const auto a : present_state[v])
+         PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, STR(a));
+      PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "\n");
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
+#endif
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Computed default output of each state");
@@ -254,7 +268,7 @@ void fsm_controller::create_state_machine(std::string& parse)
    parse += "\n";
 
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
-   for(auto& v : working_list)
+   for(const auto& v : working_list)
    {
       if(HLS->STG->get_entry_state() == v or HLS->STG->get_exit_state() == v)
          continue;
@@ -405,19 +419,16 @@ void fsm_controller::create_state_machine(std::string& parse)
          }
          if(selectors.find(conn_binding::IN) != selectors.end())
          {
-            auto connection_binding_sets = selectors.find(conn_binding::IN)->second;
-            for(std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>::const_iterator s = connection_binding_sets.begin(); s != connection_binding_sets.end(); ++s)
+            for(const auto& s : selectors.at(conn_binding::IN))
             {
-               // std::cerr << jt->second->get_string() << std::endl;
-               const std::set<commandport_obj::transition>& activations = GetPointer<commandport_obj>(s->second)->get_activations();
-               for(const auto& activation : activations)
+               const auto& activations = GetPointer<commandport_obj>(s.second)->get_activations();
+               for(const auto& a : activations)
                {
-                  THROW_ASSERT(v != NULL_VERTEX && std::get<0>(activation) != NULL_VERTEX, "error on source vertex");
-                  if(std::get<0>(activation) == v && (std::get<1>(activation) == tgt || std::get<1>(activation) == NULL_VERTEX))
+                  THROW_ASSERT(v != NULL_VERTEX && std::get<0>(a) != NULL_VERTEX, "error on source vertex");
+                  if(std::get<0>(a) == v && (std::get<1>(a) == tgt || std::get<1>(a) == NULL_VERTEX))
                   {
-                     THROW_ASSERT(present_state[v][out_ports[s->second]] == 1, "unexpected condition");
-                     transition_outputs[out_ports[s->second]] = 1;
-                     // std::cerr << "Port " << s->second->get_string() << " " << out_ports[s->second] << " enabled from state " << HLS->STG->get_state_name(it->first) << " to " << HLS->STG->get_state_name(it->second) << std::endl;
+                     THROW_ASSERT(present_state[v][out_ports[s.second]] == 1, "unexpected condition");
+                     transition_outputs[out_ports[s.second]] = 1;
                   }
                }
             }
