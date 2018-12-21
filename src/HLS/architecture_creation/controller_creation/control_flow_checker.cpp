@@ -174,10 +174,14 @@ static std::string create_control_flow_checker(const std::string& f_name, const 
              "reg next_to_check_prev;\n"
              "reg [EPP_TRACE_OFFSET_BITSIZE - 1 : 0] epp_trace_offset;\n"
              "reg [EPP_TRACE_OFFSET_BITSIZE - 1 : 0] prev_epp_trace_offset;\n"
+             "wire [EPP_TRACE_OFFSET_BITSIZE - 1 : 0] next_prev_epp_trace_offset;\n"
              "wire [EPP_TRACE_OFFSET_BITSIZE - 1 : 0] next_epp_trace_offset;\n"
              "wire [1 : 0] trace_offset_increment;\n"
              "wire prev_trace_offset_increment;\n"
              "wire [EPP_TRACE_BITSIZE - 1 : 0] epp_trace_memory [0 : EPP_TRACE_LENGTH];\n"
+             "wire [EPP_TRACE_OFFSET_BITSIZE - 1 : 0] mismatch_trace_offset;\n"
+             "wire mismatch_now;\n"
+             "wire mismatch_prev;\n"
              "\n";
 
    result += "assign epp_incremented_counter = epp_counter + epp_increment_val;\n"
