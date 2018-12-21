@@ -158,7 +158,6 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       const auto& stg = HLSMgr->get_HLS(f_id)->STG->CGetStg();
       const auto& epp_stg = HLSMgr->get_HLS(f_id)->STG->CGetEPPStg();
       const auto& stg_info = stg->CGetStateTransitionGraphInfo();
-      const vertex exit_state = stg_info->exit_node;
       const auto fsm_entry_node = stg_info->entry_node;
       const auto fsm_exit_node = stg_info->exit_node;
       const auto& state_id_to_check = Discr->fu_id_to_states_to_check.at(f_id);
@@ -233,79 +232,104 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
                continue;
             }
-            bool next_bb = false;
+            bool goes_to_next_bb_execution = false;
             do
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---find next state with bb_id: " + STR(bb_id));
                // if the current state is to check, write the trace
                const auto cur_state_id = stg_info->vertex_to_state_id.at(current_state);
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---current_state is: " + STR(cur_state_id));
                if(state_id_to_check.find(cur_state_id) != state_id_to_check.cend())
                {
                   scope_to_epp_trace[scope].push_back(epp_counter);
                }
                /* detect the taken edge and the next state  */
-               bool found = false;
-               bool bb_trace_end = false;
+               bool found_valid_next_state = false;
+               bool end_of_bb_execution = false;
+               bool takes_feedback_edge = false;
                vertex next_state = nullptr;
                EdgeDescriptor taken_edge;
                BOOST_FOREACH(const EdgeDescriptor e, boost::out_edges(current_state, *stg))
                {
                   const auto dst = boost::target(e, *stg);
                   const auto dst_info = stg->CGetStateInfo(dst);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---analyzing next state: " + ((dst == fsm_exit_node) ? STR("EXIT") : STR(stg_info->vertex_to_state_id.at(dst))) + " in the same BB " + STR(bb_id));
                   if((not dst_info->is_dummy) and (*dst_info->BB_ids.begin() == bb_id))
                   {
-                     THROW_ASSERT(not found, "two neighbors of state S_" + STR(stg_info->vertex_to_state_id.at(current_state)) + " have the same BB id = " + STR(bb_id));
-                     found = true;
+                     THROW_ASSERT(not found_valid_next_state, "two neighbors of state S_" + STR(stg_info->vertex_to_state_id.at(current_state)) + " have the same BB id = " + STR(bb_id));
+                     found_valid_next_state = true;
                      taken_edge = e;
                      next_state = dst;
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---found next state: " + STR(stg_info->vertex_to_state_id.at(next_state)) + " in the same BB " + STR(bb_id));
+
+                     if(stg->GetSelector(taken_edge) & TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK)
+                     {
+                        takes_feedback_edge = true;
+                     }
+                  }
+               }
+               if(takes_feedback_edge)
+               {
+                  if(std::next(bb_id_it) == bb_id_end)
+                  {
+                     THROW_ERROR("the FSM expects a feedback edge, but the software execution");
                   }
                }
                // if the next state was not found there are two cases
-               if(not found)
+               if(takes_feedback_edge or not found_valid_next_state)
                {
                   if(std::next(bb_id_it) != bb_id_end)
                   {
                      // the execution branches to another BB
+                     const auto next_bb_id = *std::next(bb_id_it);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---look for next BB " + STR(next_bb_id));
+                     found_valid_next_state = false;
+                     takes_feedback_edge = false;
                      BOOST_FOREACH(const EdgeDescriptor e, boost::out_edges(current_state, *stg))
                      {
-                        const auto next_bb_id = *std::next(bb_id_it);
                         const auto dst = boost::target(e, *stg);
                         const auto dst_info = stg->CGetStateInfo(dst);
                         if((not dst_info->is_dummy) and (*dst_info->BB_ids.begin() == next_bb_id))
                         {
-                           THROW_ASSERT(not found, "two neighbors of state S_" + STR(stg_info->vertex_to_state_id.at(current_state)) + " have the same BB id = " + STR(next_bb_id));
-                           found = true;
-                           bb_trace_end = true;
+                           THROW_ASSERT(not found_valid_next_state, "two neighbors of state S_" + STR(stg_info->vertex_to_state_id.at(current_state)) + " have the same BB id = " + STR(next_bb_id));
                            taken_edge = e;
                            next_state = dst;
+                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---found next state: " + STR(stg_info->vertex_to_state_id.at(next_state)) + " in new BB " + STR(next_bb_id));
+                           if(stg->GetSelector(taken_edge) & TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK)
+                           {
+                              takes_feedback_edge = true;
+                           }
                         }
                      }
                   }
                   else
                   {
                      // the execution ends
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---look for EXIT");
                      BOOST_FOREACH(const EdgeDescriptor e, boost::out_edges(current_state, *stg))
                      {
                         const auto dst = boost::target(e, *stg);
                         if(dst == fsm_exit_node)
                         {
-                           found = true;
-                           bb_trace_end = true;
+                           found_valid_next_state = true;
+                           end_of_bb_execution = true;
                            taken_edge = e;
                            next_state = dst;
+                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---found next state: EXIT");
                         }
                      }
                   }
-                  THROW_ASSERT(bb_trace_end, "");
+                  THROW_ASSERT(end_of_bb_execution, "");
                }
 #if HAVE_ASSERTS
+               THROW_ASSERT(takes_feedback_edge == (reset_transitions.find(taken_edge) != reset_transitions.cend()), "");
                if(next_state != fsm_exit_node)
                {
                   const auto next_state_id = stg_info->vertex_to_state_id.at(next_state);
-                  THROW_ASSERT((reset_transitions.find(taken_edge) == reset_transitions.cend()) or (state_id_to_check_on_feedback.find(next_state_id) != state_id_to_check_on_feedback.cend()), "");
+                  THROW_ASSERT((not takes_feedback_edge) or (state_id_to_check_on_feedback.find(next_state_id) != state_id_to_check_on_feedback.cend()), "");
                }
 #endif
-               if(reset_transitions.find(taken_edge) != reset_transitions.cend())
+               if(takes_feedback_edge)
                {
                   /*
                    * the execution takes a feedback edge. feedback edges have no
@@ -330,26 +354,27 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                   epp_counter = from_entry_edge_info->get_epp_increment();
                }
                current_state = next_state;
-               next_bb = bb_trace_end;
-            } while(not next_bb);
+               goes_to_next_bb_execution = end_of_bb_execution;
+            } while(not goes_to_next_bb_execution);
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Untangled software control flow trace of function: " + STR(f_id));
       }
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Untangled software control flow trace of function: " + STR(f_id));
+   }
 #ifndef NDEBUG
-      for(const auto& i : scope_to_epp_trace)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->scope " + i.first);
-         for(const auto id : i.second)
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---" + STR(id));
-
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
-      }
-#endif
-      return DesignFlowStep_Status::SUCCESS;
-   }
-
-   bool HWDiscrepancyAnalysis::HasToBeExecuted() const
+   for(const auto& i : scope_to_epp_trace)
    {
-      return true;
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->scope " + i.first);
+      for(const auto id : i.second)
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---" + STR(id));
+
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
    }
+#endif
+   return DesignFlowStep_Status::SUCCESS;
+}
+
+bool HWDiscrepancyAnalysis::HasToBeExecuted() const
+{
+   return true;
+}
