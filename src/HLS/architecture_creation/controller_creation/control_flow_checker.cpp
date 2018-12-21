@@ -120,7 +120,7 @@ static std::string create_control_flow_checker(const std::string& f_name, const 
 
    unsigned int n_states = HLSMgr->get_HLS(f_id)->STG->get_number_of_states();
    unsigned int bitsnumber = language_writer::bitnumber(n_states - 1);
-   /// adjust in case states are not consecutives
+   /// adjust in case states are not consecutive
    unsigned max_value = 0;
    const auto& stg = STG->CGetStg();
    const auto& eppstg = STG->CGetEPPStg();
@@ -131,20 +131,12 @@ static std::string create_control_flow_checker(const std::string& f_name, const 
       bitsnumber = language_writer::bitnumber(max_value);
 
    const unsigned int state_bitsize = one_hot_encoding ? (max_value + 1) : bitsnumber;
-   result += "localparam STATE_BITSIZE = ";
+   result += "parameter STATE_BITSIZE = ";
    result += STR(state_bitsize);
-   result += ";\n"
-             "localparam EPP_TRACE_BITSIZE = ";
+   result += ", EPP_TRACE_BITSIZE = ";
    const auto epp_trace_bitsize = HLSMgr->RDiscr->fu_id_to_epp_trace_bitsize.at(f_id);
    result += STR(epp_trace_bitsize);
-   result += ";\n"
-             "localparam EPP_TRACE_LENGTH = ";
-   result += "1";
-   result += ";\n"
-             "localparam EPP_TRACE_OFFSET_BITSIZE = ";
-   result += "1";
-   result += ";\n"
-             "localparam EPP_MISMATCH_ID = ";
+   result += ", MEMORY_INIT_file=\"trace.mem\", EPP_TRACE_LENGTH = 1, EPP_TRACE_OFFSET_BITSIZE = 1, EPP_MISMATCH_ID = ";
    result += STR(HLSMgr->RDiscr->epp_scope_id);
    HLSMgr->RDiscr->epp_scope_id++;
    result += ";\n\n";
@@ -178,11 +170,16 @@ static std::string create_control_flow_checker(const std::string& f_name, const 
              "wire [EPP_TRACE_OFFSET_BITSIZE - 1 : 0] next_epp_trace_offset;\n"
              "wire [1 : 0] trace_offset_increment;\n"
              "wire prev_trace_offset_increment;\n"
-             "wire [EPP_TRACE_BITSIZE - 1 : 0] epp_trace_memory [0 : EPP_TRACE_LENGTH];\n"
+             "wire [EPP_TRACE_BITSIZE - 1 : 0] epp_trace_memory [0 : EPP_TRACE_LENGTH-1];\n"
              "wire [EPP_TRACE_OFFSET_BITSIZE - 1 : 0] mismatch_trace_offset;\n"
              "wire mismatch_now;\n"
              "wire mismatch_prev;\n"
              "\n";
+
+   result += "initial\n"
+             "begin\n"
+             "  $readmemb(MEMORY_INIT_file, epp_trace_memory, 0, EPP_TRACE_LENGTH-1);\n"
+             "end\n\n";
 
    result += "assign epp_incremented_counter = epp_counter + epp_increment_val;\n"
              "assign next_epp_counter = epp_to_reset ? epp_reset_val : epp_incremented_counter;\n\n";
@@ -283,11 +280,10 @@ static std::string create_control_flow_checker(const std::string& f_name, const 
                   else
                      state_string = STR(state_bitsize) + "'d" + STR(s_id);
 
-                  result +=
-                      "   " + state_string +
-                      ":\n"
-                      "   begin\n"
-                      "   case (next_state)\n";
+                  result += "   " + state_string +
+                            ":\n"
+                            "   begin\n"
+                            "   case (next_state)\n";
 
                   a = false;
                }
