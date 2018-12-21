@@ -220,7 +220,7 @@ static std::string create_control_flow_checker(const std::string& f_name, const 
              "end\n\n";
 
    result += "// compute if this state is to check\n"
-             "always @(present_state)\n"
+             "always @(*)\n"
              "begin\n"
              "   case (present_state)\n"
              "   default:\n"
@@ -284,7 +284,6 @@ static std::string create_control_flow_checker(const std::string& f_name, const 
                      state_string = STR(state_bitsize) + "'d" + STR(s_id);
 
                   result +=
-
                       "   " + state_string +
                       ":\n"
                       "   begin\n"
@@ -381,48 +380,92 @@ static std::string create_control_flow_checker(const std::string& f_name, const 
       result += "   case (present_state)\n";
       for(const auto& p2n2i : present_to_next_to_increment)
       {
-         const auto pres_state_id = p2n2i.first;
-         std::string p_s_string;
-         if(one_hot_encoding)
-            p_s_string = STR(state_bitsize) + "'b" + encode_one_hot(max_value + 1, pres_state_id);
-         else
-            p_s_string = STR(state_bitsize) + "'d" + STR(pres_state_id);
-         result += "   " + p_s_string +
-                   ":\n"
-                   "   begin\n"
-                   "   case (next_state)\n";
-
+         bool skip = true;
          for(const auto& n2i : p2n2i.second)
          {
-            const auto next_state_id = n2i.first;
-            std::string n_s_string;
-            if(one_hot_encoding)
-               n_s_string = STR(state_bitsize) + "'b" + encode_one_hot(max_value + 1, next_state_id);
-            else
-               n_s_string = STR(state_bitsize) + "'d" + STR(next_state_id);
-            result += "   " + n_s_string +
-                      ":\n"
-                      "      begin\n";
             const auto increment = n2i.second;
-            bool to_reset = present_to_next_to_reset.find(pres_state_id) != present_to_next_to_reset.end() and present_to_next_to_reset.at(pres_state_id).find(next_state_id) != present_to_next_to_reset.at(pres_state_id).end();
-            result += "         epp_increment_val = " + STR(epp_trace_bitsize) + "'d" + STR(increment) + ";\n";
-            if(to_reset)
+            if(increment != 0)
             {
-               result += "         epp_to_reset = 1'b1;\n"
-                         "         epp_reset_val = " +
-                         STR(epp_trace_bitsize) + "'d" + STR(present_to_next_to_reset.at(pres_state_id).at(next_state_id)) + ";\n";
+               skip = false;
+               break;
             }
-            result += "      end\n";
          }
-         result += "   endcase\n"
-                   "   end\n";
+         if(!skip)
+         {
+            const auto pres_state_id = p2n2i.first;
+            std::string p_s_string;
+            if(one_hot_encoding)
+               p_s_string = STR(state_bitsize) + "'b" + encode_one_hot(max_value + 1, pres_state_id);
+            else
+               p_s_string = STR(state_bitsize) + "'d" + STR(pres_state_id);
+            result += "   " + p_s_string +
+                      ":\n"
+                      "   begin\n"
+                      "   case (next_state)\n";
+            for(const auto& n2i : p2n2i.second)
+            {
+               const auto next_state_id = n2i.first;
+               std::string n_s_string;
+               if(one_hot_encoding)
+                  n_s_string = STR(state_bitsize) + "'b" + encode_one_hot(max_value + 1, next_state_id);
+               else
+                  n_s_string = STR(state_bitsize) + "'d" + STR(next_state_id);
+               result += "   " + n_s_string +
+                         ":\n"
+                         "      begin\n";
+               const auto increment = n2i.second;
+               bool to_reset = present_to_next_to_reset.find(pres_state_id) != present_to_next_to_reset.end() and present_to_next_to_reset.at(pres_state_id).find(next_state_id) != present_to_next_to_reset.at(pres_state_id).end();
+               result += "         epp_increment_val = " + STR(epp_trace_bitsize) + "'d" + STR(increment) + ";\n";
+               if(to_reset)
+               {
+                  result += "         epp_to_reset = 1'b1;\n"
+                            "         epp_reset_val = " +
+                            STR(epp_trace_bitsize) + "'d" + STR(present_to_next_to_reset.at(pres_state_id).at(next_state_id)) + ";\n";
+               }
+               result += "      end\n";
+            }
+            result += "   default:\n"
+                      "      begin\n"
+                      "         epp_increment_val = " +
+                      STR(epp_trace_bitsize) +
+                      "'d0;\n"
+                      "      end\n";
+            result += "   endcase\n"
+                      "   end\n";
+         }
       }
+      result += "   default:\n"
+                "      begin\n"
+                "         epp_increment_val = " +
+                STR(epp_trace_bitsize) +
+                "'d0;\n"
+                "      end\n";
       result += "   endcase\n";
    }
 
    result += "end\n\n";
 
-   result += "always @(posedge clock)\n"
+   std::string reset_type = HLSMgr->get_parameter()->getOption<std::string>(OPT_sync_reset);
+   if(reset_type == "no" || reset_type == "sync")
+      result += "always @(posedge clock)\n";
+   else if(!HLSMgr->get_parameter()->getOption<bool>(OPT_level_reset))
+      result += "always @(posedge clock or negedge reset)\n";
+   else
+      result += "always @(posedge clock or posedge reset)\n";
+
+   if(!HLSMgr->get_parameter()->getOption<bool>(OPT_level_reset))
+      result += "if (reset == 1'b0)\n";
+   else
+      result += "if (reset == 1'b1)\n";
+   result += "  begin\n"
+             "   prev_epp_counter <= 0;\n"
+             "   epp_counter <= 0;\n"
+             "   epp_trace_offset <= 0;\n"
+             "   prev_epp_trace_offset <= 0;\n"
+             "   to_check_prev <= 0;\n"
+             "   checker_state <= 0;\n"
+             "end\n"
+             "else\n"
              "begin\n"
              "   prev_epp_counter <= epp_counter;\n"
              "   epp_counter <= next_epp_counter;\n"
