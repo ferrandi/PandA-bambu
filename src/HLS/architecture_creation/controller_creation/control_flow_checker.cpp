@@ -330,7 +330,7 @@ static std::string create_control_flow_checker(const std::string& f_name, const 
    else
       initial_state_string = STR(state_bitsize) + "'d" + STR(initial_state_id);
 
-   initial_epp_counter = STR(stg->CGetTransitionInfo(*o_e_it)->epp_increment);
+   initial_epp_counter = STR(stg->CGetTransitionInfo(*o_e_it)->get_epp_increment());
 
    result += "   if (next_state == " + initial_state_string +
              ")\n"
@@ -352,7 +352,7 @@ static std::string create_control_flow_checker(const std::string& f_name, const 
          continue;
       const auto src_id = stg_info->vertex_to_state_id.at(src);
       const auto dst_id = stg_info->vertex_to_state_id.at(dst);
-      const auto increment_val = eppstg->CGetTransitionInfo(e)->epp_increment;
+      const auto increment_val = eppstg->CGetTransitionInfo(e)->get_epp_increment();
       present_to_next_to_increment[src_id][dst_id] = increment_val;
    }
    for(const auto& e : HLSMgr->RDiscr->fu_id_to_reset_edges.at(f_id))
@@ -366,12 +366,12 @@ static std::string create_control_flow_checker(const std::string& f_name, const 
          src = boost::source(*in_e_it, *astg);
       }
       const auto epp_edge_to_exit = eppstg->CGetEdge(src, fsm_exit_node);
-      const auto increment_val = eppstg->CGetTransitionInfo(epp_edge_to_exit)->epp_increment;
+      const auto increment_val = eppstg->CGetTransitionInfo(epp_edge_to_exit)->get_epp_increment();
 
       const vertex dst = boost::target(e, *stg);
       const auto dst_id = stg_info->vertex_to_state_id.at(dst);
       const auto epp_edge_from_entry = eppstg->CGetEdge(fsm_entry_node, dst);
-      const auto reset_val = eppstg->CGetTransitionInfo(epp_edge_from_entry)->epp_increment;
+      const auto reset_val = eppstg->CGetTransitionInfo(epp_edge_from_entry)->get_epp_increment();
       present_to_next_to_increment[src_id][dst_id] = increment_val;
       present_to_next_to_reset[src_id][dst_id] = reset_val;
    }
@@ -392,12 +392,12 @@ static std::string create_control_flow_checker(const std::string& f_name, const 
                    "   begin\n"
                    "   case (next_state)\n";
 
-         for(const auto n2i : p2n2i.second)
+         for(const auto& n2i : p2n2i.second)
          {
             const auto next_state_id = n2i.first;
             std::string n_s_string;
             if(one_hot_encoding)
-               n_s_string = STR(state_bitsize) + "'b" + encode_one_hot(max_value+1, next_state_id);
+               n_s_string = STR(state_bitsize) + "'b" + encode_one_hot(max_value + 1, next_state_id);
             else
                n_s_string = STR(state_bitsize) + "'d" + STR(next_state_id);
             result += "   " + n_s_string +
