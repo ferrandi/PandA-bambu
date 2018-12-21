@@ -230,7 +230,7 @@ class TransitionInfo : public EdgeInfo
    {
       epp_increment = n;
    }
-   unsigned int get_epp_increment()
+   unsigned int get_epp_increment() const
    {
       return epp_increment;
    }

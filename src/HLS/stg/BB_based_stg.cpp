@@ -844,9 +844,12 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
    compute_edge_increments(HLS->STG);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Computed EPP edge increments");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Computing states where EPP trace must be checked");
-   HLSMgr->RDiscr->fu_id_to_states_to_check[funId].clear();
-   HLSMgr->RDiscr->fu_id_to_feedback_states_to_check[funId].clear();
-   HLSMgr->RDiscr->fu_id_to_reset_edges[funId].clear();
+   auto& state_id_to_check = HLSMgr->RDiscr->fu_id_to_states_to_check[funId];
+   state_id_to_check.clear();
+   auto& state_id_to_check_on_feedback = HLSMgr->RDiscr->fu_id_to_feedback_states_to_check[funId];
+   state_id_to_check_on_feedback.clear();
+   auto& reset_edges = HLSMgr->RDiscr->fu_id_to_reset_edges[funId];
+   reset_edges.clear();
    const auto& stg = HLS->STG->CGetStg();
    const auto& stg_info = stg->CGetStateTransitionGraphInfo();
    const OpGraphConstRef dfgRef = HLSMgr->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::DFG);
@@ -861,7 +864,7 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
          {
             const auto state_id = stg_info->vertex_to_state_id.at(state_to_op.first);
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "state: S_" + STR(state_id) + " is always to check because it contains an unbounded operation");
-            HLSMgr->RDiscr->fu_id_to_states_to_check[funId].insert(state_id);
+            state_id_to_check.insert(state_id);
          }
       }
    }
@@ -878,8 +881,8 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
          {
             const auto state_id = stg_info->vertex_to_state_id.at(dst);
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "state: S_" + STR(state_id) + " is to check on feedback because it is the destination of a feedback edge");
-            HLSMgr->RDiscr->fu_id_to_feedback_states_to_check[funId].insert(state_id);
-            HLSMgr->RDiscr->fu_id_to_reset_edges[funId].insert(e);
+            state_id_to_check_on_feedback.insert(state_id);
+            reset_edges.insert(e);
          }
          else
          {
@@ -896,10 +899,10 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
       {
          const auto state_id = stg_info->vertex_to_state_id.at(src);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "state: S_" + STR(state_id) + " is always to check because it is before end state");
-         HLSMgr->RDiscr->fu_id_to_states_to_check[funId].insert(state_id);
+         state_id_to_check.insert(state_id);
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Computed call states where EPP trace must be checked");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Computed states where EPP trace must be checked");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Computed Efficient Path Profiling edge increments for HW discrepancy analysis");
    if(parameters->getOption<bool>(OPT_print_dot))
    {
