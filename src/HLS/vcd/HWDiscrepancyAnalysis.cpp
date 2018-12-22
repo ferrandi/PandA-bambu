@@ -43,6 +43,7 @@
 #include "Parameter.hpp"
 
 // include from behavior/
+#include "basic_block.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
 
@@ -162,6 +163,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
    // untangle control flow traces
    std::unordered_map<std::string, std::list<size_t>> scope_to_epp_trace;
    std::unordered_map<std::string, std::list<unsigned int>> scope_to_state_trace;
+   std::unordered_map<std::string, unsigned int> scope_to_function_id;
    std::vector<size_t> tot_memory_usage_per_bits = std::vector<size_t>(10, 0);
    size_t min_memory_usage = 0;
    size_t total_state_of_the_art_memory_usage = 0;
@@ -184,6 +186,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
          const auto context_id = context2trace.first;
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing context: " + STR(context_id));
          const auto& scope = Discr->context_to_scope.at(context_id);
+         scope_to_function_id[scope] = f_id;
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---scope: " + scope);
 
          size_t epp_counter = 0;
@@ -591,10 +594,22 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
    THROW_ASSERT(root_functions.size() == 1, "more than one root function is not supported");
    unsigned int top_function = *(root_functions.begin());
    structural_objectRef top_module = HLSMgr->get_HLS(top_function)->top->get_circ();
-   std::cerr << "PATH:" << top_module->get_path() << std::endl;
+   size_t counter = 0;
 
    for(const auto& i : scope_to_epp_trace)
    {
+      if(i.second.empty())
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Skipping scope " + i.first + " since it is not executed");
+         continue;
+      }
+      /// Check if there is just one basic block in the function
+      const auto bb_graph = HLSMgr->CGetFunctionBehavior(scope_to_function_id.at(i.first))->CGetBBGraph(FunctionBehavior::BB);
+      if(boost::num_vertices(*bb_graph) == 3)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Skipping scope " + i.first + " since it belongs to a single path function");
+         continue;
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Initialing EPP ROM for function scope: " + i.first + ": trace length " + STR(i.second.size()));
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->scope " + i.first);
       typedef boost::tokenizer<boost::char_separator<char>> tokenizer;
@@ -611,14 +626,13 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       THROW_ASSERT(tok_iter != tok_iter_end, "unexpected condition");
       ++tok_iter;
       THROW_ASSERT(tok_iter != tok_iter_end, "unexpected condition");
-      std::cerr << "FIRST:" << *tok_iter << std::endl;
       structural_objectRef curr_module = top_module;
       for(; tok_iter != tok_iter_end; ++tok_iter)
       {
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Looking for " + *tok_iter + " in " + curr_module->get_path());
          curr_module = curr_module->find_member(*tok_iter, component_o_K, curr_module);
          THROW_ASSERT(curr_module, "unexpected condition");
       }
-      std::cerr << "LAST:" << curr_module->get_typeRef()->id_type << std::endl;
       std::string datapath_id = "Datapath_i";
       curr_module = curr_module->find_member(datapath_id, component_o_K, curr_module);
       THROW_ASSERT(curr_module, "unexpected condition");
@@ -630,6 +644,16 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       for(const auto id : i.second)
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---EPP_" + STR(id));
 
+      const size_t word_size = boost::lexical_cast<size_t>(GetPointer<module>(curr_module)->get_parameter("EPP_TRACE_BITSIZE"));
+
+      std::string init_filename = "epp_" + STR(counter) + ".mem";
+      std::ofstream init_file((init_filename).c_str());
+
+      for(const auto id : i.second)
+         init_file << NumberToBinaryString(id, word_size) << std::endl;
+      init_file.close();
+      GetPointer<module>(curr_module)->set_parameter("MEMORY_INIT_file", "\"\"" + init_filename + "\"\"");
+      counter++;
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
    }
    for(size_t i = 0; i < 10; i++)
