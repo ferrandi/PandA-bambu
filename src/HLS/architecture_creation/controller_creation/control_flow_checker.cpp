@@ -137,7 +137,10 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
    const auto& eppstg = STG->CGetEPPStg();
    const auto& stg = STG->CGetStg();
    const auto& stg_info = stg->CGetStateTransitionGraphInfo();
-   std::string result = "// internal signals\n"
+   std::string result = "generate\n"
+                        "   if(EPP_TRACE_LENGTH>0)\n"
+                        "   begin\n"
+                        "// internal signals\n"
                         "reg checker_state;\n"
                         "reg next_checker_state;\n"
                         "wire is_checking;\n"
@@ -187,6 +190,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
    result += "// update state of the checker\n"
              "always @(*)\n"
              "begin\n"
+             "   next_checker_state = checker_state;\n"
              "   case (checker_state)\n"
              "   0:\n"
              "   begin\n"
@@ -201,7 +205,15 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
              "   default:\n"
              "      next_checker_state = 0;\n"
              "   endcase\n"
-             "end\n\n";
+             "end\n"
+             "end\n"
+             "else\n"
+             "begin\n"
+             "   assign out_mismatch = 0;\n"
+             "   assign out_mismatch_id = 0;\n"
+             "   assign out_mismatch_trace_offset = 0;\n"
+             "end\n"
+             "endgenerate\n\n";
 
    result += "// compute if this state is to check\n"
              "always @(*)\n"
@@ -579,7 +591,7 @@ DesignFlowStep_Status ControlFlowChecker::InternalExec()
    size_t epp_trace_bitsize = HLSMgr->RDiscr->fu_id_to_epp_trace_bitsize.at(funId);
    GetPointer<module>(checker_circuit)->set_parameter("EPP_TRACE_BITSIZE", STR(epp_trace_bitsize));
    GetPointer<module>(checker_circuit)->set_parameter("MEMORY_INIT_file", "\"\"trace.mem\"\"");
-   GetPointer<module>(checker_circuit)->set_parameter("EPP_TRACE_LENGTH", STR(1));
+   GetPointer<module>(checker_circuit)->set_parameter("EPP_TRACE_LENGTH", STR(0));
    GetPointer<module>(checker_circuit)->set_parameter("EPP_MISMATCH_ID", STR(STR(HLSMgr->RDiscr->epp_scope_id)));
    HLSMgr->RDiscr->epp_scope_id++;
 
