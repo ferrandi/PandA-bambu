@@ -277,6 +277,16 @@ DesignFlowStep_Status top_entity::InternalExec()
       PropagateComponents.insert(controller_flow_circuit);
       unsigned int unique_id = 0;
       fu_binding::manage_memory_ports_parallel_chained(SM, PropagateComponents, circuit, HLS, unique_id);
+      structural_objectRef controller_flow_present_state = controller_flow_circuit->find_member(PRESENT_STATE_PORT_NAME, port_o_K, controller_flow_circuit);
+      structural_objectRef controller_present_state = Controller->add_port(PRESENT_STATE_PORT_NAME, port_o::OUT, controller_circuit, controller_flow_present_state->get_typeRef());
+      structural_objectRef p_signal = SM->add_sign(PRESENT_STATE_PORT_NAME "_sig1", circuit, controller_flow_present_state->get_typeRef());
+      SM->add_connection(controller_present_state, p_signal);
+      SM->add_connection(p_signal, controller_flow_present_state);
+      structural_objectRef controller_flow_next_state = controller_flow_circuit->find_member(NEXT_STATE_PORT_NAME, port_o_K, controller_flow_circuit);
+      structural_objectRef controller_next_state = Controller->add_port(NEXT_STATE_PORT_NAME, port_o::OUT, controller_circuit, controller_flow_next_state->get_typeRef());
+      structural_objectRef n_signal = SM->add_sign(NEXT_STATE_PORT_NAME "_sig1", circuit, controller_flow_next_state->get_typeRef());
+      SM->add_connection(controller_next_state, n_signal);
+      SM->add_connection(n_signal, controller_flow_next_state);
    }
 
    /// add entry in in_port_map between port id and port index

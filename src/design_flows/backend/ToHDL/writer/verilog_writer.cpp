@@ -1010,6 +1010,10 @@ void verilog_writer::write_state_declaration(const structural_objectRef& cir, co
    /// enable buffers
    for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
    {
+      if(mod->get_out_port(i)->get_id() == PRESENT_STATE_PORT_NAME)
+         continue;
+      if(mod->get_out_port(i)->get_id() == NEXT_STATE_PORT_NAME)
+         continue;
       port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
       indented_output_stream->Append("reg " + port_name + ";\n");
    }
@@ -1017,7 +1021,7 @@ void verilog_writer::write_state_declaration(const structural_objectRef& cir, co
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Completed state declaration");
 }
 
-void verilog_writer::write_present_state_update(const std::string& reset_state, const std::string& reset_port, const std::string& clock_port, const std::string& reset_type)
+void verilog_writer::write_present_state_update(const std::string& reset_state, const std::string& reset_port, const std::string& clock_port, const std::string& reset_type, bool connect_present_next_state_signals)
 {
    if(reset_type == "no" || reset_type == "sync")
       indented_output_stream->Append("always @(posedge " + clock_port + ")\n");
@@ -1033,6 +1037,8 @@ void verilog_writer::write_present_state_update(const std::string& reset_state, 
       indented_output_stream->Append("if (" + reset_port + " == 1'b1) _present_state <= " + reset_state + ";\n");
    indented_output_stream->Append("else _present_state <= _next_state;\n");
    indented_output_stream->Deindent();
+   if(connect_present_next_state_signals)
+      indented_output_stream->Append("assign " PRESENT_STATE_PORT_NAME "= _present_state;\nassign " NEXT_STATE_PORT_NAME "= _next_state;\n");
 }
 
 void verilog_writer::write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state, const std::string& reset_port, const std::string& start_port,
@@ -1076,6 +1082,10 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
    // std::cerr << "Number of output ports: " << mod->get_out_port_size() << std::endl;
    for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
    {
+      if(mod->get_out_port(i)->get_id() == PRESENT_STATE_PORT_NAME)
+         continue;
+      if(mod->get_out_port(i)->get_id() == NEXT_STATE_PORT_NAME)
+         continue;
       default_output += "0";
       if(!single_proc && output_index != i)
          continue;
@@ -1154,6 +1164,10 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
       {
          for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
          {
+            if(mod->get_out_port(i)->get_id() == PRESENT_STATE_PORT_NAME)
+               continue;
+            if(mod->get_out_port(i)->get_id() == NEXT_STATE_PORT_NAME)
+               continue;
             port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
             // std::cerr << "setting output of port '" << port_name << "'" << std::endl;
             if(default_output[i] != current_output[i] and current_output[i] != '-')
@@ -1274,6 +1288,10 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
             indented_output_stream->Append("_next_state = " + next_state + ";\n");
          for(unsigned int ind = 0; ind < mod->get_out_port_size(); ind++)
          {
+            if(mod->get_out_port(ind)->get_id() == PRESENT_STATE_PORT_NAME)
+               continue;
+            if(mod->get_out_port(ind)->get_id() == NEXT_STATE_PORT_NAME)
+               continue;
             if(transition_outputs[ind] != '-')
             {
                port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(ind)->get_id());
@@ -1313,6 +1331,10 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
       indented_output_stream->Append("_next_state = " + reset_state + ";\n");
    for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
    {
+      if(mod->get_out_port(i)->get_id() == PRESENT_STATE_PORT_NAME)
+         continue;
+      if(mod->get_out_port(i)->get_id() == NEXT_STATE_PORT_NAME)
+         continue;
       port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
       if(!single_proc && output_index == i)
          indented_output_stream->Append(port_name + " = 1'b0;\n");

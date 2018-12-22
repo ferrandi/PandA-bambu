@@ -197,7 +197,7 @@ class verilog_writer : public language_writer
     * @param clock_port is the clock port.
     * @param reset_type specify the type of the reset
     */
-   void write_present_state_update(const std::string& reset_state, const std::string& reset_port, const std::string& clock_port, const std::string& reset_type) override;
+   void write_present_state_update(const std::string& reset_state, const std::string& reset_port, const std::string& clock_port, const std::string& reset_type, bool connect_present_next_state_signals) override;
    /**
     * Write the transition and output functions.
     * @param cir is the component.
