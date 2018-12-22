@@ -172,7 +172,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
    for(auto& f : Discr->c_control_flow_trace)
    {
       const auto f_id = f.first;
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Untangling software control flow trace of function: " + STR(f_id));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Untangling software control flow trace of function: " + STR(f_id) + HLSMgr->CGetFunctionBehavior(f_id)->CGetBehavioralHelper()->get_function_name());
       const auto& stg = HLSMgr->get_HLS(f_id)->STG->CGetStg();
       const auto& epp_stg = HLSMgr->get_HLS(f_id)->STG->CGetEPPStg();
       const auto& stg_info = stg->CGetStateTransitionGraphInfo();
@@ -598,16 +598,17 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
 
    for(const auto& i : scope_to_epp_trace)
    {
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Initializing checker for scope " + i.first);
       if(i.second.empty())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Skipping scope " + i.first + " since it is not executed");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Skipping scope " + i.first + " since it is not executed");
          continue;
       }
       /// Check if there is just one basic block in the function
       const auto bb_graph = HLSMgr->CGetFunctionBehavior(scope_to_function_id.at(i.first))->CGetBBGraph(FunctionBehavior::BB);
       if(boost::num_vertices(*bb_graph) == 3)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Skipping scope " + i.first + " since it belongs to a single path function");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Skipping scope " + i.first + " since it belongs to a single path function");
          continue;
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Initialing EPP ROM for function scope: " + i.first + ": trace length " + STR(i.second.size()));
@@ -639,6 +640,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       std::string cfc_id = "ControlFlowChecker_i";
       curr_module = curr_module->find_member(cfc_id, component_o_K, curr_module);
       THROW_ASSERT(curr_module, "unexpected condition");
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Found " + curr_module->get_path() + " of type " + GET_TYPE_NAME(curr_module));
       GetPointer<module>(curr_module)->set_parameter("EPP_TRACE_LENGTH", STR(i.second.size()));
 
       for(const auto id : i.second)
@@ -654,7 +656,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       init_file.close();
       GetPointer<module>(curr_module)->set_parameter("MEMORY_INIT_file", "\"\"" + init_filename + "\"\"");
       counter++;
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Initialized checker for scope " + i.first);
    }
    for(size_t i = 0; i < 10; i++)
    {
