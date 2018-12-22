@@ -160,15 +160,50 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
                         "wire [BITSIZE_out_mismatch_trace_offset - 1 : 0] next_epp_trace_offset;\n"
                         "wire [1 : 0] trace_offset_increment;\n"
                         "wire prev_trace_offset_increment;\n"
+                        "reg [EPP_TRACE_BITSIZE - 1 : 0] data_a;\n"
+                        "reg [EPP_TRACE_BITSIZE - 1 : 0] data_b;\n"
                         "reg [EPP_TRACE_BITSIZE - 1 : 0] epp_trace_memory [0 : EPP_TRACE_LENGTH-1] /* synthesis syn_ramstyle = \"no_rw_check\" */;\n"
                         "wire [BITSIZE_out_mismatch_trace_offset - 1 : 0] mismatch_trace_offset;\n"
                         "wire mismatch_now;\n"
                         "wire mismatch_prev;\n"
+                        "reg " START_PORT_NAME "_reg;\n"
+                        "reg " DONE_PORT_NAME "_reg;\n"
+                        "reg [STATE_BITSIZE-1:0] " PRESENT_STATE_PORT_NAME "_reg;\n"
+                        "reg [STATE_BITSIZE-1:0] " NEXT_STATE_PORT_NAME "_reg;\n"
                         "\n";
+
+   result += "always @(posedge clock)\n"
+             "begin\n"
+             "  " START_PORT_NAME "_reg <= " START_PORT_NAME ";\n"
+             "end\n\n";
+
+   result += "always @(posedge clock)\n"
+             "begin\n"
+             "  " DONE_PORT_NAME "_reg <= " DONE_PORT_NAME ";\n"
+             "end\n\n";
+
+   result += "always @(posedge clock)\n"
+             "begin\n"
+             "  " PRESENT_STATE_PORT_NAME "_reg <= " PRESENT_STATE_PORT_NAME ";\n"
+             "end\n\n";
+
+   result += "always @(posedge clock)\n"
+             "begin\n"
+             "  " NEXT_STATE_PORT_NAME "_reg <= " NEXT_STATE_PORT_NAME ";\n"
+             "end\n\n";
 
    result += "initial\n"
              "begin\n"
              "  $readmemb(MEMORY_INIT_file, epp_trace_memory, 0, EPP_TRACE_LENGTH-1);\n"
+             "end\n\n";
+
+   result += "always @(posedge clock)\n"
+             "begin\n"
+             "  data_a <= epp_trace_memory[next_epp_trace_offset];\n"
+             "end\n\n";
+   result += "always @(posedge clock)\n"
+             "begin\n"
+             "  data_b <= epp_trace_memory[next_prev_epp_trace_offset];\n"
              "end\n\n";
 
    result += "assign epp_incremented_counter = epp_counter + epp_increment_val;\n"
@@ -179,9 +214,9 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
              "assign prev_trace_offset_increment = to_check_now && next_to_check_prev;\n"
              "assign next_prev_epp_trace_offset = epp_trace_offset + prev_trace_offset_increment;\n\n";
 
-   result += "assign is_checking = checker_state || start_port;\n"
-             "assign mismatch_now = to_check_now && (epp_counter != epp_trace_memory[epp_trace_offset]);\n"
-             "assign mismatch_prev = to_check_prev && (prev_epp_counter != epp_trace_memory[prev_epp_trace_offset]);\n"
+   result += "assign is_checking = checker_state || " START_PORT_NAME "_reg;\n"
+             "assign mismatch_now = to_check_now && (epp_counter != data_a);\n"
+             "assign mismatch_prev = to_check_prev && (prev_epp_counter != data_b);\n"
              "assign out_mismatch = is_checking && (mismatch_now || mismatch_prev);\n"
              "assign out_mismatch_id = out_mismatch ? EPP_MISMATCH_ID : 0;\n"
              "assign mismatch_trace_offset = mismatch_prev ? prev_epp_trace_offset : epp_trace_offset;\n"
@@ -194,12 +229,12 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
              "   case (checker_state)\n"
              "   0:\n"
              "   begin\n"
-             "      if (start_port && ! done_port)\n"
+             "      if (" START_PORT_NAME "_reg && ! " DONE_PORT_NAME "_reg)\n"
              "         next_checker_state = 1;\n"
              "   end\n"
              "   1:\n"
              "   begin\n"
-             "      if (done_port)\n"
+             "      if (" DONE_PORT_NAME "_reg)\n"
              "         next_checker_state = 0;\n"
              "   end\n"
              "   default:\n"
@@ -218,7 +253,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
    result += "// compute if this state is to check\n"
              "always @(*)\n"
              "begin\n"
-             "   case (" PRESENT_STATE_PORT_NAME ")";
+             "   case (" PRESENT_STATE_PORT_NAME "_reg)";
 
    const auto encode_one_hot = [](unsigned int nstates, unsigned int val) -> std::string {
       std::string res;
@@ -251,7 +286,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
    result += "// compute if at the next cycle we have to check the previous state\n"
              "always @(*)\n"
              "begin\n"
-             "   case (" PRESENT_STATE_PORT_NAME ")\n";
+             "   case (" PRESENT_STATE_PORT_NAME "_reg)\n";
 
    const auto fsm_entry_node = stg_info->entry_node;
    const auto fsm_exit_node = stg_info->exit_node;
@@ -280,7 +315,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
                   result += "   " + state_string +
                             ":\n"
                             "   begin\n"
-                            "     case (" NEXT_STATE_PORT_NAME ")\n";
+                            "     case (" NEXT_STATE_PORT_NAME "_reg)\n";
 
                   a = false;
                }
@@ -332,7 +367,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
 
    initial_epp_counter = STR(stg->CGetTransitionInfo(*o_e_it)->get_epp_increment());
 
-   result += "   if (" NEXT_STATE_PORT_NAME " == " + initial_state_string +
+   result += "   if (" NEXT_STATE_PORT_NAME "_reg == " + initial_state_string +
              ")\n"
              "   begin\n"
              "      epp_reset_val = " +
@@ -378,7 +413,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
 
    if(present_to_next_to_increment.size())
    {
-      result += "   case (" PRESENT_STATE_PORT_NAME ")\n";
+      result += "   case (" PRESENT_STATE_PORT_NAME "_reg)\n";
       for(const auto& p2n2i : present_to_next_to_increment)
       {
          bool skip = true;
@@ -402,7 +437,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
             result += "   " + p_s_string +
                       ":\n"
                       "   begin\n"
-                      "   case (" NEXT_STATE_PORT_NAME ")\n";
+                      "   case (" NEXT_STATE_PORT_NAME "_reg)\n";
             for(const auto& n2i : p2n2i.second)
             {
                const auto next_state_id = n2i.first;
@@ -589,6 +624,7 @@ DesignFlowStep_Status ControlFlowChecker::InternalExec()
    const unsigned int state_bitsize = comp_state_bitsize(one_hot_encoding, HLSMgr, funId, max_value);
 
    size_t epp_trace_bitsize = HLSMgr->RDiscr->fu_id_to_epp_trace_bitsize.at(funId);
+   GetPointer<module>(checker_circuit)->set_parameter("STATE_BITSIZE", STR(state_bitsize));
    GetPointer<module>(checker_circuit)->set_parameter("EPP_TRACE_BITSIZE", STR(epp_trace_bitsize));
    GetPointer<module>(checker_circuit)->set_parameter("MEMORY_INIT_file", "\"\"trace.mem\"\"");
    GetPointer<module>(checker_circuit)->set_parameter("EPP_TRACE_LENGTH", STR(0));
@@ -597,7 +633,7 @@ DesignFlowStep_Status ControlFlowChecker::InternalExec()
 
    add_common_ports(checker_circuit, state_bitsize);
 
-   HLS->control_flow_checker->add_NP_functionality(checker_circuit, NP_functionality::LIBRARY, cfc_module_name + " out_mismatch_id out_mismatch_trace_offset EPP_TRACE_BITSIZE MEMORY_INIT_file EPP_TRACE_LENGTH EPP_MISMATCH_ID");
+   HLS->control_flow_checker->add_NP_functionality(checker_circuit, NP_functionality::LIBRARY, cfc_module_name + " out_mismatch_id out_mismatch_trace_offset STATE_BITSIZE EPP_TRACE_BITSIZE MEMORY_INIT_file EPP_TRACE_LENGTH EPP_MISMATCH_ID");
 
    std::string verilog_cf_checker_description = create_control_flow_checker(epp_trace_bitsize, funId, HLS->STG, HLSMgr, one_hot_encoding, max_value, state_bitsize, debug_level);
    add_escape(verilog_cf_checker_description, "\\");
