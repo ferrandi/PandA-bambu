@@ -640,6 +640,31 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       THROW_ASSERT(!done_port, "done port not connected");
    }
 
+   if(HLS->control_flow_checker)
+   {
+      std::cerr << "CFC" << std::endl;
+      structural_objectRef controller_flow_circuit = HLS->control_flow_checker->get_circ();
+      controller_flow_circuit->set_owner(circuit);
+      GetPointer<module>(circuit)->add_internal_object(controller_flow_circuit);
+      structural_objectRef controller_flow_clock = controller_flow_circuit->find_member(CLOCK_PORT_NAME, port_o_K, controller_flow_circuit);
+      SM->add_connection(controller_flow_clock, clock_port);
+      structural_objectRef controller_flow_reset = controller_flow_circuit->find_member(RESET_PORT_NAME, port_o_K, controller_flow_circuit);
+      SM->add_connection(controller_flow_reset, reset_port);
+      structural_objectRef controller_flow_start = controller_flow_circuit->find_member(START_PORT_NAME, port_o_K, controller_flow_circuit);
+      structural_objectRef start_CFC = SM->add_port(START_PORT_NAME_CFC, port_o::IN, circuit, structural_type_descriptorRef(new structural_type_descriptor("bool", 0)));
+      SM->add_connection(start_CFC, controller_flow_start);
+      structural_objectRef controller_flow_done = controller_flow_circuit->find_member(DONE_PORT_NAME, port_o_K, controller_flow_circuit);
+      structural_objectRef done_CFC = SM->add_port(DONE_PORT_NAME_CFC, port_o::IN, circuit, structural_type_descriptorRef(new structural_type_descriptor("bool", 0)));
+      SM->add_connection(done_CFC, controller_flow_done);
+      structural_objectRef controller_flow_present_state = controller_flow_circuit->find_member(PRESENT_STATE_PORT_NAME, port_o_K, controller_flow_circuit);
+      structural_objectRef controller_present_state = SM->add_port(PRESENT_STATE_PORT_NAME, port_o::OUT, circuit, controller_flow_present_state->get_typeRef());
+      SM->add_connection(controller_present_state, controller_flow_present_state);
+      structural_objectRef controller_flow_next_state = controller_flow_circuit->find_member(NEXT_STATE_PORT_NAME, port_o_K, controller_flow_circuit);
+      structural_objectRef controller_next_state = SM->add_port(NEXT_STATE_PORT_NAME, port_o::OUT, circuit, controller_flow_next_state->get_typeRef());
+      SM->add_connection(controller_next_state, controller_flow_next_state);
+      memory_modules.insert(controller_flow_circuit);
+   }
+
    std::map<unsigned int, unsigned int> memory_units = allocation_information->get_memory_units();
    std::map<unsigned int, structural_objectRef> mem_obj;
    for(const auto& m : memory_units)
@@ -1031,12 +1056,20 @@ bool fu_binding::manage_module_ports(const HLS_managerRef, const hlsRef, const s
    {
       structural_objectRef port_out = GetPointer<module>(curr_gate)->get_out_port(j);
       manage_extern_global_port(SM, port_out, port_o::OUT, circuit, num);
+      if(GetPointer<port_o>(port_out)->get_is_memory())
+      {
+         added_memory_element = true;
+      }
    }
    /// creating extern IO port on datapath starting from extern ports on module
    for(unsigned int j = 0; j < GetPointer<module>(curr_gate)->get_in_out_port_size(); j++)
    {
       structural_objectRef port_in_out = GetPointer<module>(curr_gate)->get_in_out_port(j);
       manage_extern_global_port(SM, port_in_out, port_o::IO, circuit, num);
+      if(GetPointer<port_o>(port_in_out)->get_is_memory())
+      {
+         added_memory_element = true;
+      }
    }
    return added_memory_element;
 }

@@ -83,7 +83,7 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::FSM_CONTROLLER_CREATOR, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_stg_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -524,7 +524,7 @@ void ControlFlowChecker::add_notifiers(structural_objectRef circuit)
    GetPointer<port_o>(pm)->set_is_memory(true);
    structural_objectRef pmi = SM->add_port(NOTIFIER_PORT_MISMATCH_ID, port_o::OUT, circuit, structural_type_descriptorRef(new structural_type_descriptor("bool", 32)));
    GetPointer<port_o>(pmi)->set_is_memory(true);
-   structural_objectRef pmo = SM->add_port(NOTIFIER_PORT_MISMATCH_OFFSET, port_o::OUT, circuit, structural_type_descriptorRef(new structural_type_descriptor("bool", 1)));
+   structural_objectRef pmo = SM->add_port(NOTIFIER_PORT_MISMATCH_OFFSET, port_o::OUT, circuit, structural_type_descriptorRef(new structural_type_descriptor("bool", 32)));
    GetPointer<port_o>(pmo)->set_is_memory(true);
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - notifier signals added!");
 }

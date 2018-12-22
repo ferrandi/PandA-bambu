@@ -91,10 +91,6 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
          if(HLSMgr->get_HLS(funId))
          {
             ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->controller_type, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            if(parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw))
-            {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::CONTROL_FLOW_CHECKER, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            }
          }
          break;
       }
@@ -258,31 +254,24 @@ DesignFlowStep_Status top_entity::InternalExec()
    /// check if checker has to be added
    if(HLS->control_flow_checker)
    {
-      structural_objectRef controller_flow_circuit = HLS->control_flow_checker->get_circ();
-      controller_flow_circuit->set_owner(circuit);
-      GetPointer<module>(circuit)->add_internal_object(controller_flow_circuit);
-      structural_objectRef controller_flow_clock = controller_flow_circuit->find_member(CLOCK_PORT_NAME, port_o_K, controller_flow_circuit);
-      SM->add_connection(controller_flow_clock, clock_obj);
-      structural_objectRef controller_flow_reset = controller_flow_circuit->find_member(RESET_PORT_NAME, port_o_K, controller_flow_circuit);
-      SM->add_connection(controller_flow_reset, reset_obj);
-      structural_objectRef controller_flow_start = controller_flow_circuit->find_member(START_PORT_NAME, port_o_K, controller_flow_circuit);
+      structural_objectRef controller_flow_start = datapath_circuit->find_member(START_PORT_NAME_CFC, port_o_K, datapath_circuit);
+      THROW_ASSERT(controller_flow_start, "controller flow start signal not found in the datapath");
       if(datapath_start)
          SM->add_connection(sync_datapath_controller, controller_flow_start);
       else
          SM->add_connection(start_obj, controller_flow_start);
       THROW_ASSERT(done_signal_out, "expected done signal");
-      structural_objectRef controller_flow_done = controller_flow_circuit->find_member(DONE_PORT_NAME, port_o_K, controller_flow_circuit);
+      structural_objectRef controller_flow_done = datapath_circuit->find_member(DONE_PORT_NAME_CFC, port_o_K, datapath_circuit);
+      THROW_ASSERT(controller_flow_done, "controller flow done signal not found in the datapath");
       SM->add_connection(done_signal_out, controller_flow_done);
-      std::set<structural_objectRef> PropagateComponents;
-      PropagateComponents.insert(controller_flow_circuit);
-      unsigned int unique_id = 0;
-      fu_binding::manage_memory_ports_parallel_chained(SM, PropagateComponents, circuit, HLS, unique_id);
-      structural_objectRef controller_flow_present_state = controller_flow_circuit->find_member(PRESENT_STATE_PORT_NAME, port_o_K, controller_flow_circuit);
+      structural_objectRef controller_flow_present_state = datapath_circuit->find_member(PRESENT_STATE_PORT_NAME, port_o_K, datapath_circuit);
+      THROW_ASSERT(controller_flow_present_state, "controller flow present state signal not found in the datapath");
+      structural_objectRef controller_flow_next_state = datapath_circuit->find_member(NEXT_STATE_PORT_NAME, port_o_K, datapath_circuit);
+      THROW_ASSERT(controller_flow_next_state, "controller flow next state signal not found in the datapath");
       structural_objectRef controller_present_state = Controller->add_port(PRESENT_STATE_PORT_NAME, port_o::OUT, controller_circuit, controller_flow_present_state->get_typeRef());
       structural_objectRef p_signal = SM->add_sign(PRESENT_STATE_PORT_NAME "_sig1", circuit, controller_flow_present_state->get_typeRef());
       SM->add_connection(controller_present_state, p_signal);
       SM->add_connection(p_signal, controller_flow_present_state);
-      structural_objectRef controller_flow_next_state = controller_flow_circuit->find_member(NEXT_STATE_PORT_NAME, port_o_K, controller_flow_circuit);
       structural_objectRef controller_next_state = Controller->add_port(NEXT_STATE_PORT_NAME, port_o::OUT, controller_circuit, controller_flow_next_state->get_typeRef());
       structural_objectRef n_signal = SM->add_sign(NEXT_STATE_PORT_NAME "_sig1", circuit, controller_flow_next_state->get_typeRef());
       SM->add_connection(controller_next_state, n_signal);
