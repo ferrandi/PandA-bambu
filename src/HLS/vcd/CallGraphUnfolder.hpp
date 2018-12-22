@@ -50,15 +50,13 @@ class CallGraphUnfolder
 {
  public:
    /**
-    * Unfolds the call graph cg contained in cgman, starting from the root
-    * function that must be unique.
-    * @param [in]: a refcount to the call graph manager whose call graph must be unfolded
-    * @param [out]: a refcount to the Discrepancy where the unfolded call graph must be stored
-    * @param [out]: maps the id of a caller function to all the ids of the calls it performs
-    * @param [out]: maps the id of a call site onto the ids of all the
+    * Unfolds the call graph contained in HLSMgr, starting from the root function that must be unique.
+    * @param [in] HLSMgr: a refcount to the HLS_manager whose call graph must be unfolded
+    * @param [in]: a refcount to parameters
+    * @param [out] caller_to_call_id: maps the id of a caller function to all the ids of the calls it performs
+    * @param [out] call_to_called_id: maps the id of a call site onto the ids of all the
     * functions it calls. one single call site can call multiple functions if
     * function pointers are involved
-    * @param [out]: set of all the indirect calls
     */
    static void Unfold(const HLS_managerRef& HLSMgr, const ParameterConstRef& params, std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& caller_to_call_id,
                       std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& call_to_called_id);
