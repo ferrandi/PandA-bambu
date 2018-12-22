@@ -42,6 +42,13 @@
 
 #include "hls_function_step.hpp"
 
+/**
+ * @name forward declarations
+ */
+//@{
+REF_FORWARD_DECL(structural_object);
+class module;
+//@}
 class ControlFlowChecker : public HLSFunctionStep
 {
  protected:
@@ -50,6 +57,18 @@ class ControlFlowChecker : public HLSFunctionStep
     * @param relationship_type is the type of relationship to be considered
     */
    virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+
+   void add_clock_reset(structural_objectRef circuit);
+
+   void add_done_port(structural_objectRef circuit);
+
+   void add_start_port(structural_objectRef circuit);
+
+   void add_present_state(structural_objectRef circuit, unsigned int state_bitsize);
+
+   void add_notifiers(structural_objectRef circuit);
+
+   void add_common_ports(structural_objectRef circuit, unsigned int state_bitsize);
 
  public:
    /**

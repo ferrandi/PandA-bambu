@@ -63,6 +63,7 @@
 
 // includes from ./
 #include "Parameter.hpp"
+#include "copyrights_strings.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
 ControlFlowChecker::ControlFlowChecker(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
@@ -99,12 +100,8 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    return ret;
 }
 
-static std::string create_control_flow_checker(const std::string& f_name, const unsigned int f_id, const StateTransitionGraphManagerRef& STG, const HLS_managerRef HLSMgr)
+static bool is_one_hot(const HLS_managerRef HLSMgr)
 {
-   if(HLSMgr->RDiscr->fu_id_control_flow_skip.find(f_id) != HLSMgr->RDiscr->fu_id_control_flow_skip.end())
-      return "";
-   std::string result = "module " + f_name + "_control_flow_checker(clock, reset, start_port, done_port, present_state, next_state, out_mismatch, out_mismatch_id, out_mismatch_trace_offset);\n";
-
    std::string vendor;
    const auto tgt_device = HLSMgr->get_HLS_target()->get_target_device();
    if(tgt_device->has_parameter("vendor"))
@@ -118,63 +115,53 @@ static std::string create_control_flow_checker(const std::string& f_name, const 
    else if(HLSMgr->get_parameter()->getOption<std::string>(OPT_fsm_encoding) == "auto" && vendor == "xilinx")
       one_hot_encoding = true;
 
+   return one_hot_encoding;
+}
+
+static unsigned int comp_state_bitsize(bool one_hot_encoding, const HLS_managerRef HLSMgr, const unsigned int f_id, unsigned max_value)
+{
    unsigned int n_states = HLSMgr->get_HLS(f_id)->STG->get_number_of_states();
    unsigned int bitsnumber = language_writer::bitnumber(n_states - 1);
-   /// adjust in case states are not consecutive
-   unsigned max_value = 0;
-   const auto& stg = STG->CGetStg();
-   const auto& eppstg = STG->CGetEPPStg();
-   const auto& stg_info = stg->CGetStateTransitionGraphInfo();
-   for(const auto& s : stg_info->state_id_to_vertex)
-      max_value = std::max(max_value, s.first);
    if(max_value != n_states - 1)
       bitsnumber = language_writer::bitnumber(max_value);
 
-   const unsigned int state_bitsize = one_hot_encoding ? (max_value + 1) : bitsnumber;
-   result += "parameter STATE_BITSIZE = ";
-   result += STR(state_bitsize);
-   result += ", EPP_TRACE_BITSIZE = ";
-   const auto epp_trace_bitsize = HLSMgr->RDiscr->fu_id_to_epp_trace_bitsize.at(f_id);
-   result += STR(epp_trace_bitsize);
-   result += ", MEMORY_INIT_file=\"trace.mem\", EPP_TRACE_LENGTH = 1, EPP_TRACE_OFFSET_BITSIZE = 1, EPP_MISMATCH_ID = ";
-   result += STR(HLSMgr->RDiscr->epp_scope_id);
-   HLSMgr->RDiscr->epp_scope_id++;
-   result += ";\n\n";
+   unsigned int state_bitsize = one_hot_encoding ? (max_value + 1) : bitsnumber;
 
-   result += "// input\n"
-             "input clock, reset, start_port, done_port;\n"
-             "input [STATE_BITSIZE - 1 : 0] present_state;\n"
-             "input [STATE_BITSIZE - 1 : 0] next_state;\n\n"
-             "// output\n"
-             "output out_mismatch;\n"
-             "output out_mismatch_id;\n"
-             "output [EPP_TRACE_OFFSET_BITSIZE - 1 : 0] out_mismatch_trace_offset;\n\n";
+   return state_bitsize;
+}
 
-   result += "// internal signals\n"
-             "reg checker_state;\n"
-             "reg next_checker_state;\n"
-             "wire is_checking;\n"
-             "reg [EPP_TRACE_BITSIZE - 1 : 0] epp_counter;\n"
-             "reg [EPP_TRACE_BITSIZE - 1 : 0] prev_epp_counter;\n"
-             "wire [EPP_TRACE_BITSIZE - 1 : 0] next_epp_counter;\n"
-             "wire [EPP_TRACE_BITSIZE - 1 : 0] epp_incremented_counter;\n"
-             "reg [EPP_TRACE_BITSIZE - 1 : 0] epp_increment_val;\n"
-             "reg [EPP_TRACE_BITSIZE - 1 : 0] epp_reset_val;\n"
-             "reg epp_to_reset;\n"
-             "reg to_check_now;\n"
-             "reg to_check_prev;\n"
-             "reg next_to_check_prev;\n"
-             "reg [EPP_TRACE_OFFSET_BITSIZE - 1 : 0] epp_trace_offset;\n"
-             "reg [EPP_TRACE_OFFSET_BITSIZE - 1 : 0] prev_epp_trace_offset;\n"
-             "wire [EPP_TRACE_OFFSET_BITSIZE - 1 : 0] next_prev_epp_trace_offset;\n"
-             "wire [EPP_TRACE_OFFSET_BITSIZE - 1 : 0] next_epp_trace_offset;\n"
-             "wire [1 : 0] trace_offset_increment;\n"
-             "wire prev_trace_offset_increment;\n"
-             "wire [EPP_TRACE_BITSIZE - 1 : 0] epp_trace_memory [0 : EPP_TRACE_LENGTH-1];\n"
-             "wire [EPP_TRACE_OFFSET_BITSIZE - 1 : 0] mismatch_trace_offset;\n"
-             "wire mismatch_now;\n"
-             "wire mismatch_prev;\n"
-             "\n";
+static std::string create_control_flow_checker(size_t epp_trace_bitsize, const unsigned int f_id, const StateTransitionGraphManagerRef& STG, const HLS_managerRef HLSMgr, bool one_hot_encoding, unsigned max_value, unsigned int state_bitsize,
+                                               int debug_level)
+{
+   /// adjust in case states are not consecutive
+   const auto& eppstg = STG->CGetEPPStg();
+   const auto& stg = STG->CGetStg();
+   const auto& stg_info = stg->CGetStateTransitionGraphInfo();
+   std::string result = "// internal signals\n"
+                        "reg checker_state;\n"
+                        "reg next_checker_state;\n"
+                        "wire is_checking;\n"
+                        "reg [EPP_TRACE_BITSIZE - 1 : 0] epp_counter;\n"
+                        "reg [EPP_TRACE_BITSIZE - 1 : 0] prev_epp_counter;\n"
+                        "wire [EPP_TRACE_BITSIZE - 1 : 0] next_epp_counter;\n"
+                        "wire [EPP_TRACE_BITSIZE - 1 : 0] epp_incremented_counter;\n"
+                        "reg [EPP_TRACE_BITSIZE - 1 : 0] epp_increment_val;\n"
+                        "reg [EPP_TRACE_BITSIZE - 1 : 0] epp_reset_val;\n"
+                        "reg epp_to_reset;\n"
+                        "reg to_check_now;\n"
+                        "reg to_check_prev;\n"
+                        "reg next_to_check_prev;\n"
+                        "reg [BITSIZE_out_mismatch_trace_offset - 1 : 0] epp_trace_offset;\n"
+                        "reg [BITSIZE_out_mismatch_trace_offset - 1 : 0] prev_epp_trace_offset;\n"
+                        "wire [BITSIZE_out_mismatch_trace_offset - 1 : 0] next_prev_epp_trace_offset;\n"
+                        "wire [BITSIZE_out_mismatch_trace_offset - 1 : 0] next_epp_trace_offset;\n"
+                        "wire [1 : 0] trace_offset_increment;\n"
+                        "wire prev_trace_offset_increment;\n"
+                        "wire [EPP_TRACE_BITSIZE - 1 : 0] epp_trace_memory [0 : EPP_TRACE_LENGTH-1];\n"
+                        "wire [BITSIZE_out_mismatch_trace_offset - 1 : 0] mismatch_trace_offset;\n"
+                        "wire mismatch_now;\n"
+                        "wire mismatch_prev;\n"
+                        "\n";
 
    result += "initial\n"
              "begin\n"
@@ -219,7 +206,7 @@ static std::string create_control_flow_checker(const std::string& f_name, const 
    result += "// compute if this state is to check\n"
              "always @(*)\n"
              "begin\n"
-             "   case (present_state)\n"
+             "   case (" PRESENT_STATE_PORT_NAME ")\n"
              "   default:\n"
              "   to_check_now = 0;\n";
 
@@ -252,7 +239,7 @@ static std::string create_control_flow_checker(const std::string& f_name, const 
    result += "// compute if at the next cycle we have to check the previous state\n"
              "always @(*)\n"
              "begin\n"
-             "   case (present_state)\n"
+             "   case (" PRESENT_STATE_PORT_NAME ")\n"
              "   default:\n"
              "   next_to_check_prev = 0;\n";
 
@@ -283,7 +270,7 @@ static std::string create_control_flow_checker(const std::string& f_name, const 
                   result += "   " + state_string +
                             ":\n"
                             "   begin\n"
-                            "   case (next_state)\n";
+                            "   case (" NEXT_STATE_PORT_NAME ")\n";
 
                   a = false;
                }
@@ -327,7 +314,7 @@ static std::string create_control_flow_checker(const std::string& f_name, const 
 
    initial_epp_counter = STR(stg->CGetTransitionInfo(*o_e_it)->get_epp_increment());
 
-   result += "   if (next_state == " + initial_state_string +
+   result += "   if (" NEXT_STATE_PORT_NAME " == " + initial_state_string +
              ")\n"
              "   begin\n"
              "      epp_reset_val = " +
@@ -373,7 +360,7 @@ static std::string create_control_flow_checker(const std::string& f_name, const 
 
    if(present_to_next_to_increment.size())
    {
-      result += "   case (present_state)\n";
+      result += "   case (" PRESENT_STATE_PORT_NAME ")\n";
       for(const auto& p2n2i : present_to_next_to_increment)
       {
          bool skip = true;
@@ -397,7 +384,7 @@ static std::string create_control_flow_checker(const std::string& f_name, const 
             result += "   " + p_s_string +
                       ":\n"
                       "   begin\n"
-                      "   case (next_state)\n";
+                      "   case (" NEXT_STATE_PORT_NAME ")\n";
             for(const auto& n2i : p2n2i.second)
             {
                const auto next_state_id = n2i.first;
@@ -443,16 +430,16 @@ static std::string create_control_flow_checker(const std::string& f_name, const 
 
    std::string reset_type = HLSMgr->get_parameter()->getOption<std::string>(OPT_sync_reset);
    if(reset_type == "no" || reset_type == "sync")
-      result += "always @(posedge clock)\n";
+      result += "always @(posedge " CLOCK_PORT_NAME ")\n";
    else if(!HLSMgr->get_parameter()->getOption<bool>(OPT_level_reset))
-      result += "always @(posedge clock or negedge reset)\n";
+      result += "always @(posedge " CLOCK_PORT_NAME " or negedge " RESET_PORT_NAME ")\n";
    else
-      result += "always @(posedge clock or posedge reset)\n";
+      result += "always @(posedge " CLOCK_PORT_NAME " or posedge " RESET_PORT_NAME ")\n";
 
    if(!HLSMgr->get_parameter()->getOption<bool>(OPT_level_reset))
-      result += "if (reset == 1'b0)\n";
+      result += "if (" RESET_PORT_NAME " == 1'b0)\n";
    else
-      result += "if (reset == 1'b1)\n";
+      result += "if (" RESET_PORT_NAME " == 1'b1)\n";
    result += "  begin\n"
              "   prev_epp_counter <= 0;\n"
              "   epp_counter <= 0;\n"
@@ -471,25 +458,131 @@ static std::string create_control_flow_checker(const std::string& f_name, const 
              "   checker_state <= next_checker_state;\n"
              "end\n\n";
 
-   result += "endmodule\n";
-   std::cerr << "AAAAAAAAAAAAAAA\n\n" << result << std::endl;
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Added control flow checker..." + result);
    return result;
+}
+void ControlFlowChecker::add_clock_reset(structural_objectRef circuit)
+{
+   structural_managerRef& SM = HLS->control_flow_checker;
+   /// define boolean type for the clock and reset signals
+   structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Start adding clock signal...");
+   /// add clock port
+   structural_objectRef clock_obj = SM->add_port(CLOCK_PORT_NAME, port_o::IN, circuit, port_type);
+   GetPointer<port_o>(clock_obj)->set_is_clock(true);
+   /// add entry in in_port_map between port id and port index
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - Clock signal added!");
+
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Start adding reset signal...");
+   /// add reset port
+   SM->add_port(RESET_PORT_NAME, port_o::IN, circuit, port_type);
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - Reset signal added!");
+}
+
+void ControlFlowChecker::add_done_port(structural_objectRef circuit)
+{
+   structural_managerRef& SM = HLS->control_flow_checker;
+   /// define boolean type for the done port
+   structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Start adding Done signal...");
+   /// add done port
+   SM->add_port(DONE_PORT_NAME, port_o::IN, circuit, port_type);
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - Done signal added!");
+}
+
+void ControlFlowChecker::add_start_port(structural_objectRef circuit)
+{
+   structural_managerRef& SM = HLS->control_flow_checker;
+   /// define boolean type for the start port
+   structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Start adding start signal...");
+   /// add the start port
+   SM->add_port(START_PORT_NAME, port_o::IN, circuit, port_type);
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - Start signal added!");
+}
+
+void ControlFlowChecker::add_present_state(structural_objectRef circuit, unsigned int state_bitsize)
+{
+   structural_managerRef& SM = HLS->control_flow_checker;
+   /// define boolean type for the start port
+   structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", state_bitsize));
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Adding present/next state signals...");
+   /// add the present/next state
+   SM->add_port(PRESENT_STATE_PORT_NAME, port_o::IN, circuit, port_type);
+   SM->add_port(NEXT_STATE_PORT_NAME, port_o::IN, circuit, port_type);
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - present/next state signals added!");
+}
+
+void ControlFlowChecker::add_notifiers(structural_objectRef circuit)
+{
+   structural_managerRef& SM = HLS->control_flow_checker;
+   /// define boolean type for the start port
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Adding notifier signals...");
+   /// add the notifiers
+   structural_objectRef pm = SM->add_port(NOTIFIER_PORT_MISMATCH, port_o::OUT, circuit, structural_type_descriptorRef(new structural_type_descriptor("bool", 0)));
+   GetPointer<port_o>(pm)->set_is_memory(true);
+   structural_objectRef pmi = SM->add_port(NOTIFIER_PORT_MISMATCH_ID, port_o::OUT, circuit, structural_type_descriptorRef(new structural_type_descriptor("bool", 32)));
+   GetPointer<port_o>(pmi)->set_is_memory(true);
+   structural_objectRef pmo = SM->add_port(NOTIFIER_PORT_MISMATCH_OFFSET, port_o::OUT, circuit, structural_type_descriptorRef(new structural_type_descriptor("bool", 1)));
+   GetPointer<port_o>(pmo)->set_is_memory(true);
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - notifier signals added!");
+}
+
+void ControlFlowChecker::add_common_ports(structural_objectRef circuit, unsigned int state_bitsize)
+{
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding clock and reset ports...");
+   add_clock_reset(circuit);
+
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding the start port...");
+   add_start_port(circuit);
+
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding the done port...");
+   add_done_port(circuit);
+
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding the present_state...");
+   add_present_state(circuit, state_bitsize);
+
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding notifiers...");
+   add_notifiers(circuit);
 }
 
 DesignFlowStep_Status ControlFlowChecker::InternalExec()
 {
+   if(HLSMgr->RDiscr->fu_id_control_flow_skip.find(funId) != HLSMgr->RDiscr->fu_id_control_flow_skip.end())
+      return DesignFlowStep_Status::SUCCESS;
    HLS->control_flow_checker = structural_managerRef(new structural_manager(HLS->Param));
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const std::string f_name = FB->CGetBehavioralHelper()->get_function_name();
-   structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor("control_flow_checker_" + f_name));
+   const std::string cfc_module_name = "control_flow_checker_" + f_name;
+   structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor(cfc_module_name));
    HLS->control_flow_checker->set_top_info("ControlFlowChecker_i", module_type);
    structural_objectRef checker_circuit = HLS->control_flow_checker->get_circ();
-   checker_circuit->set_black_box(false);
-   GetPointer<module>(checker_circuit)->set_description("Control Flow Checker for " + f_name);
-   GetPointer<module>(checker_circuit)->set_copyright("Copyright (C) 2016-2017 Politecnico di Milano");
-   GetPointer<module>(checker_circuit)->set_authors("Pietro Fezzardi pietro.fezzardi@polimi.it");
-   GetPointer<module>(checker_circuit)->set_license("PANDA_GPLv3");
-   std::string verilog_cf_checker_description = create_control_flow_checker(f_name, funId, HLS->STG, HLSMgr);
+   GetPointer<module>(checker_circuit)->set_copyright(GENERATED_COPYRIGHT);
+   GetPointer<module>(checker_circuit)->set_authors("Checker automatically generated by bambu");
+   GetPointer<module>(checker_circuit)->set_license(GENERATED_LICENSE);
+   bool one_hot_encoding = is_one_hot(HLSMgr);
+
+   const auto& stg = HLS->STG->CGetStg();
+   const auto& stg_info = stg->CGetStateTransitionGraphInfo();
+   unsigned max_value = 0;
+   for(const auto& s : stg_info->state_id_to_vertex)
+      max_value = std::max(max_value, s.first);
+   const unsigned int state_bitsize = comp_state_bitsize(one_hot_encoding, HLSMgr, funId, max_value);
+
+   size_t epp_trace_bitsize = HLSMgr->RDiscr->fu_id_to_epp_trace_bitsize.at(funId);
+   GetPointer<module>(checker_circuit)->set_parameter("EPP_TRACE_BITSIZE", STR(epp_trace_bitsize));
+   GetPointer<module>(checker_circuit)->set_parameter("MEMORY_INIT_file", "\"\"trace.mem\"\"");
+   GetPointer<module>(checker_circuit)->set_parameter("EPP_TRACE_LENGTH", STR(1));
+   GetPointer<module>(checker_circuit)->set_parameter("EPP_MISMATCH_ID", STR(STR(HLSMgr->RDiscr->epp_scope_id)));
+   HLSMgr->RDiscr->epp_scope_id++;
+
+   add_common_ports(checker_circuit, state_bitsize);
+
+   HLS->control_flow_checker->add_NP_functionality(checker_circuit, NP_functionality::LIBRARY, cfc_module_name + " out_mismatch_id out_mismatch_trace_offset EPP_TRACE_BITSIZE MEMORY_INIT_file EPP_TRACE_LENGTH EPP_MISMATCH_ID");
+
+   std::string verilog_cf_checker_description = create_control_flow_checker(epp_trace_bitsize, funId, HLS->STG, HLSMgr, one_hot_encoding, max_value, state_bitsize, debug_level);
+   add_escape(verilog_cf_checker_description, "\\");
    HLS->control_flow_checker->add_NP_functionality(checker_circuit, NP_functionality::VERILOG_PROVIDED, verilog_cf_checker_description);
    return DesignFlowStep_Status::SUCCESS;
 }

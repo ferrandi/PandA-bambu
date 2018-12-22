@@ -70,6 +70,8 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
 
+#include "structural_manager.hpp"
+
 /// MAX metadata bit size
 #define MAX_METADATA_BITSIZE 10
 
@@ -504,6 +506,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
 #endif
                const auto epp_trace = scope_to_epp_trace.at(scope);
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " scope " + scope + " EPP TRACE LENGTH " + STR(epp_trace.size()));
+               GetPointer<module>(HLSMgr->get_HLS(f_id)->control_flow_checker->get_circ())->set_parameter("EPP_TRACE_LENGTH", STR(epp_trace.size()));
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " scope " + scope + " expected baseline EPP TRACE LENGTH " + STR(f_id_epp_trace_bitsize * epp_trace.size()));
                for(size_t i = 0; i < 10; i++)
                {

@@ -37,6 +37,8 @@
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
+#ifndef CTESTBENCHEXECUTION_HPP
+#define CTESTBENCHEXECUTION_HPP
 
 // include superclass header
 #include "hls_step.hpp"
@@ -65,3 +67,4 @@ class CTestbenchExecution : public HLS_step
 
    virtual bool HasToBeExecuted() const;
 };
+#endif

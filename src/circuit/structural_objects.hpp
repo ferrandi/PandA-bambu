@@ -97,6 +97,11 @@ class simple_indent;
 #define RESET_PORT_NAME "reset"
 #define DONE_PORT_NAME "done_port"
 #define RETURN_PORT_NAME "return_port"
+#define PRESENT_STATE_PORT_NAME "present_state"
+#define NEXT_STATE_PORT_NAME "next_state"
+#define NOTIFIER_PORT_MISMATCH "out_mismatch"
+#define NOTIFIER_PORT_MISMATCH_ID "out_mismatch_id"
+#define NOTIFIER_PORT_MISMATCH_OFFSET "out_mismatch_trace_offset"
 #define PROXY_PREFIX "PROXY_PREF_"
 #define WRAPPED_PROXY_PREFIX "WRAPPED_PROXY_PREF_"
 
