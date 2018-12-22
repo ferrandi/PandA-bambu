@@ -594,7 +594,8 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
    THROW_ASSERT(root_functions.size() == 1, "more than one root function is not supported");
    unsigned int top_function = *(root_functions.begin());
    structural_objectRef top_module = HLSMgr->get_HLS(top_function)->top->get_circ();
-   size_t counter = 0;
+   // scope_id starts from 1 because 0 are the non-initialized ones
+   size_t scope_id = 1;
 
    for(const auto& i : scope_to_epp_trace)
    {
@@ -634,29 +635,29 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
          curr_module = curr_module->find_member(*tok_iter, component_o_K, curr_module);
          THROW_ASSERT(curr_module, "unexpected condition");
       }
-      std::string datapath_id = "Datapath_i";
+      const std::string datapath_id = "Datapath_i";
       curr_module = curr_module->find_member(datapath_id, component_o_K, curr_module);
       THROW_ASSERT(curr_module, "unexpected condition");
-      std::string cfc_id = "ControlFlowChecker_i";
+      const std::string cfc_id = "ControlFlowChecker_i";
       curr_module = curr_module->find_member(cfc_id, component_o_K, curr_module);
       THROW_ASSERT(curr_module, "unexpected condition");
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Found " + curr_module->get_path() + " of type " + GET_TYPE_NAME(curr_module));
-      GetPointer<module>(curr_module)->set_parameter("EPP_TRACE_LENGTH", STR(i.second.size()));
+      GetPointer<module>(curr_module)->set_parameter("EPP_MISMATCH_ID", STR(scope_id));
 
       for(const auto id : i.second)
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---EPP_" + STR(id));
 
       const size_t word_size = boost::lexical_cast<size_t>(GetPointer<module>(curr_module)->get_parameter("EPP_TRACE_BITSIZE"));
 
-      std::string init_filename = "epp_" + STR(counter) + ".mem";
+      const std::string init_filename = "epp_control_flow_trace_scope__" + STR(scope_id) + ".mem";
       std::ofstream init_file((init_filename).c_str());
 
       for(const auto id : i.second)
          init_file << NumberToBinaryString(id, word_size) << std::endl;
       init_file.close();
       GetPointer<module>(curr_module)->set_parameter("MEMORY_INIT_file", "\"\"" + init_filename + "\"\"");
-      counter++;
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Initialized checker for scope " + i.first);
+      scope_id++;
    }
    for(size_t i = 0; i < 10; i++)
    {
