@@ -206,9 +206,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
    result += "// compute if this state is to check\n"
              "always @(*)\n"
              "begin\n"
-             "   case (" PRESENT_STATE_PORT_NAME ")\n"
-             "   default:\n"
-             "   to_check_now = 0;\n";
+             "   case (" PRESENT_STATE_PORT_NAME ")";
 
    const auto encode_one_hot = [](unsigned int nstates, unsigned int val) -> std::string {
       std::string res;
@@ -231,17 +229,17 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
    }
 
    result += ":\n"
-             "   to_check_now = 1;\n";
+             "     to_check_now = 1;\n";
 
-   result += "   endcase\n"
+   result += "   default:\n"
+             "     to_check_now = 0;\n"
+             "   endcase\n"
              "end\n\n";
 
    result += "// compute if at the next cycle we have to check the previous state\n"
              "always @(*)\n"
              "begin\n"
-             "   case (" PRESENT_STATE_PORT_NAME ")\n"
-             "   default:\n"
-             "   next_to_check_prev = 0;\n";
+             "   case (" PRESENT_STATE_PORT_NAME ")\n";
 
    const auto fsm_entry_node = stg_info->entry_node;
    const auto fsm_exit_node = stg_info->exit_node;
@@ -270,7 +268,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
                   result += "   " + state_string +
                             ":\n"
                             "   begin\n"
-                            "   case (" NEXT_STATE_PORT_NAME ")\n";
+                            "     case (" NEXT_STATE_PORT_NAME ")\n";
 
                   a = false;
                }
@@ -282,20 +280,24 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
                if(not a)
                   result += ",\n";
                a = false;
-               result += "   " + state_string + "";
+               result += "     " + state_string + "";
             }
          }
       }
       if(not a)
       {
          result += ":\n";
-         result += "         next_to_check_prev = 1;\n"
-                   "   endcase\n"
+         result += "        next_to_check_prev = 1;\n"
+                   "     default:\n"
+                   "        next_to_check_prev = 0;\n"
+                   "     endcase\n"
                    "   end\n";
       }
    }
 
-   result += "   endcase\n"
+   result += "   default:\n"
+             "      next_to_check_prev = 0;\n"
+             "   endcase\n"
              "end\n\n";
 
    result += "// compute EPP increments and resets\n"
