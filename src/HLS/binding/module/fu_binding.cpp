@@ -961,12 +961,11 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Managed memory ports");
 
    /// rename back all the memory proxies ports
-   const std::set<std::pair<structural_objectRef, unsigned int>>::const_iterator pmutbrb_it_end = proxy_memory_units_to_be_renamed_back.end();
-   for(auto pmutbrb_it = proxy_memory_units_to_be_renamed_back.begin(); pmutbrb_it != pmutbrb_it_end; ++pmutbrb_it)
+   for(const auto& pmutbrb : proxy_memory_units_to_be_renamed_back)
    {
-      structural_objectRef curr_gate = pmutbrb_it->first;
+      structural_objectRef curr_gate = pmutbrb.first;
       THROW_ASSERT(curr_gate, "missing structural object");
-      std::string var_name = "_" + STR(pmutbrb_it->second);
+      std::string var_name = "_" + STR(pmutbrb.second);
       structural_objectRef port_proxy_in1 = curr_gate->find_member("proxy_in1" + var_name, port_o_K, curr_gate);
       structural_objectRef port_proxy_in2 = curr_gate->find_member("proxy_in2" + var_name, port_o_K, curr_gate);
       structural_objectRef port_proxy_in3 = curr_gate->find_member("proxy_in3" + var_name, port_o_K, curr_gate);
@@ -983,12 +982,11 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    manage_killing_memory_proxies(mem_obj, reverse_memory_units, var_call_sites_rel, SM, HLS, unique_id);
 
    /// rename back all the function proxies ports
-   const std::set<std::pair<structural_objectRef, std::string>>::const_iterator pfutbrb_it_end = proxy_function_units_to_be_renamed_back.end();
-   for(auto pfutbrb_it = proxy_function_units_to_be_renamed_back.begin(); pfutbrb_it != pfutbrb_it_end; ++pfutbrb_it)
+   for(const auto& pfutbrb : proxy_function_units_to_be_renamed_back)
    {
-      structural_objectRef curr_gate = pfutbrb_it->first;
+      structural_objectRef curr_gate = pfutbrb.first;
       THROW_ASSERT(curr_gate, "missing structural object");
-      std::string fun_name = "_" + STR(pfutbrb_it->second);
+      std::string fun_name = "_" + STR(pfutbrb.second);
       auto inPortSize = static_cast<unsigned int>(GetPointer<module>(curr_gate)->get_in_port_size());
       for(unsigned int currentPort = 0; currentPort < inPortSize; ++currentPort)
       {
