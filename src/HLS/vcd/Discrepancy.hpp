@@ -109,7 +109,10 @@ struct Discrepancy
    std::map<DiscrepancyOpInfo, std::list<std::pair<uint64_t, std::string>>> c_op_trace;
 
    /**
-    *
+    * This contains the control flow traces gathered from software execution.
+    * The primary key is is a function id, the secondary key is a software
+    * call context id, the mapped value is a list of BB identifiers traversed
+    * during the execution of the call in that context.
     */
    std::unordered_map<unsigned int, std::unordered_map<uint64_t, std::list<unsigned int>>> c_control_flow_trace;
 
@@ -142,11 +145,27 @@ struct Discrepancy
    /**
     * Maps every function ID to a set EdgeDescriptors. Each edge
     * represents an edge along which the epp counter have to be reset.
+    * These edges are StateTransition edges of the StateTransitionGraph of
+    * the associated function.
     */
    std::unordered_map<unsigned int, std::unordered_set<EdgeDescriptor>> fu_id_to_reset_edges;
 
+   /**
+    * Maps every function ID to the bitsize of the epp trace that is
+    * necessary for checking the control flow of that function.
+    * This bitsize is does not depend on the instance of the function, since
+    * the epp edge increments are always the same and this bitsize is the
+    * number of bits necessary to represent them
+    */
    std::unordered_map<unsigned int, size_t> fu_id_to_epp_trace_bitsize;
 
+   /**
+    * This set contains the ids of functions for which the control flow
+    * hardware discrepancy analyssi is not necessary.
+    * If the FSM of a function is linear, i.e. it does not contain branches
+    * or loops, the control flow cannot diverge during its execution, so it
+    * is not necessary to check it with control flow discrepancy analysis.
+    */
    std::unordered_set<unsigned int> fu_id_control_flow_skip;
 
    unsigned int epp_scope_id{0};
