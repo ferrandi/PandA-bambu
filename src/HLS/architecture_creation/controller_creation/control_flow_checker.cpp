@@ -279,12 +279,16 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
                   state_string = STR(state_bitsize) + "'b" + encode_one_hot(max_value + 1, dst_id);
                else
                   state_string = STR(state_bitsize) + "'d" + STR(dst_id);
-               result += "   " + state_string + ":\n";
+               if(not a)
+                  result += ",\n";
+               a = false;
+               result += "   " + state_string + "";
             }
          }
       }
       if(not a)
       {
+         result += ":\n";
          result += "         next_to_check_prev = 1;\n"
                    "   endcase\n"
                    "   end\n";
