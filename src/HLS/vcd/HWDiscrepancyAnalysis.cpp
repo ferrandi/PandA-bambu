@@ -72,6 +72,8 @@
 
 #include "structural_manager.hpp"
 
+#include <boost/tokenizer.hpp>
+
 /// MAX metadata bit size
 #define MAX_METADATA_BITSIZE 10
 
@@ -506,7 +508,6 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
 #endif
                const auto epp_trace = scope_to_epp_trace.at(scope);
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " scope " + scope + " EPP TRACE LENGTH " + STR(epp_trace.size()));
-               GetPointer<module>(HLSMgr->get_HLS(f_id)->control_flow_checker->get_circ())->set_parameter("EPP_TRACE_LENGTH", STR(epp_trace.size()));
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " scope " + scope + " expected baseline EPP TRACE LENGTH " + STR(f_id_epp_trace_bitsize * epp_trace.size()));
                for(size_t i = 0; i < 10; i++)
                {
@@ -568,7 +569,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
 #ifndef NDEBUG
    for(const auto& i : scope_to_state_trace)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---trace length for function scope: " + i.first + ": " + STR(i.second.size()));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---state trace length for function scope: " + i.first + ": " + STR(i.second.size()));
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->scope " + i.first);
       for(const auto id : i.second)
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---S_" + STR(id));
@@ -577,7 +578,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
    }
    for(const auto& i : scope_to_epp_trace)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---trace length for function scope: " + i.first + ": " + STR(i.second.size()));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---EPP trace length for function scope: " + i.first + ": " + STR(i.second.size()));
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->scope " + i.first);
       for(const auto id : i.second)
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---" + STR(id));
@@ -585,6 +586,52 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
    }
 #endif
+
+   const std::set<unsigned int> root_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
+   THROW_ASSERT(root_functions.size() == 1, "more than one root function is not supported");
+   unsigned int top_function = *(root_functions.begin());
+   structural_objectRef top_module = HLSMgr->get_HLS(top_function)->top->get_circ();
+   std::cerr << "PATH:" << top_module->get_path() << std::endl;
+
+   for(const auto& i : scope_to_epp_trace)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Initialing EPP ROM for function scope: " + i.first + ": trace length " + STR(i.second.size()));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->scope " + i.first);
+      typedef boost::tokenizer<boost::char_separator<char>> tokenizer;
+      boost::char_separator<char> sep("/", nullptr);
+      std::string module_path = i.first;
+      tokenizer module_path_tokens(module_path, sep);
+      tokenizer::iterator tok_iter;
+      tokenizer::iterator tok_iter_end = module_path_tokens.end();
+      for(tok_iter = module_path_tokens.begin(); tok_iter != tok_iter_end; ++tok_iter)
+      {
+         if(*tok_iter == top_module->get_id())
+            break;
+      }
+      THROW_ASSERT(tok_iter != tok_iter_end, "unexpected condition");
+      ++tok_iter;
+      THROW_ASSERT(tok_iter != tok_iter_end, "unexpected condition");
+      std::cerr << "FIRST:" << *tok_iter << std::endl;
+      structural_objectRef curr_module = top_module;
+      for(; tok_iter != tok_iter_end; ++tok_iter)
+      {
+         curr_module = curr_module->find_member(*tok_iter, component_o_K, curr_module);
+         THROW_ASSERT(curr_module, "unexpected condition");
+      }
+      std::cerr << "LAST:" << curr_module->get_typeRef()->id_type << std::endl;
+      std::string datapath_id = "Datapath_i";
+      curr_module = curr_module->find_member(datapath_id, component_o_K, curr_module);
+      THROW_ASSERT(curr_module, "unexpected condition");
+      std::string cfc_id = "ControlFlowChecker_i";
+      curr_module = curr_module->find_member(cfc_id, component_o_K, curr_module);
+      THROW_ASSERT(curr_module, "unexpected condition");
+      GetPointer<module>(curr_module)->set_parameter("EPP_TRACE_LENGTH", STR(i.second.size()));
+
+      for(const auto id : i.second)
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---EPP_" + STR(id));
+
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
+   }
    for(size_t i = 0; i < 10; i++)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---tot memory usage (METADATA) " + STR(i) + " (BITS): " + STR(tot_memory_usage_per_bits.at(i)));

@@ -642,27 +642,28 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
 
    if(HLS->control_flow_checker)
    {
-      std::cerr << "CFC" << std::endl;
       structural_objectRef controller_flow_circuit = HLS->control_flow_checker->get_circ();
-      controller_flow_circuit->set_owner(circuit);
-      GetPointer<module>(circuit)->add_internal_object(controller_flow_circuit);
-      structural_objectRef controller_flow_clock = controller_flow_circuit->find_member(CLOCK_PORT_NAME, port_o_K, controller_flow_circuit);
+      structural_objectRef curr_gate = structural_objectRef(new component_o(debug_level, circuit));
+      controller_flow_circuit->copy(curr_gate);
+      curr_gate->set_id("ControlFlowChecker_i");
+      GetPointer<module>(circuit)->add_internal_object(curr_gate);
+      structural_objectRef controller_flow_clock = curr_gate->find_member(CLOCK_PORT_NAME, port_o_K, curr_gate);
       SM->add_connection(controller_flow_clock, clock_port);
-      structural_objectRef controller_flow_reset = controller_flow_circuit->find_member(RESET_PORT_NAME, port_o_K, controller_flow_circuit);
+      structural_objectRef controller_flow_reset = curr_gate->find_member(RESET_PORT_NAME, port_o_K, curr_gate);
       SM->add_connection(controller_flow_reset, reset_port);
-      structural_objectRef controller_flow_start = controller_flow_circuit->find_member(START_PORT_NAME, port_o_K, controller_flow_circuit);
+      structural_objectRef controller_flow_start = curr_gate->find_member(START_PORT_NAME, port_o_K, curr_gate);
       structural_objectRef start_CFC = SM->add_port(START_PORT_NAME_CFC, port_o::IN, circuit, structural_type_descriptorRef(new structural_type_descriptor("bool", 0)));
       SM->add_connection(start_CFC, controller_flow_start);
-      structural_objectRef controller_flow_done = controller_flow_circuit->find_member(DONE_PORT_NAME, port_o_K, controller_flow_circuit);
+      structural_objectRef controller_flow_done = curr_gate->find_member(DONE_PORT_NAME, port_o_K, curr_gate);
       structural_objectRef done_CFC = SM->add_port(DONE_PORT_NAME_CFC, port_o::IN, circuit, structural_type_descriptorRef(new structural_type_descriptor("bool", 0)));
       SM->add_connection(done_CFC, controller_flow_done);
-      structural_objectRef controller_flow_present_state = controller_flow_circuit->find_member(PRESENT_STATE_PORT_NAME, port_o_K, controller_flow_circuit);
+      structural_objectRef controller_flow_present_state = curr_gate->find_member(PRESENT_STATE_PORT_NAME, port_o_K, curr_gate);
       structural_objectRef controller_present_state = SM->add_port(PRESENT_STATE_PORT_NAME, port_o::OUT, circuit, controller_flow_present_state->get_typeRef());
       SM->add_connection(controller_present_state, controller_flow_present_state);
-      structural_objectRef controller_flow_next_state = controller_flow_circuit->find_member(NEXT_STATE_PORT_NAME, port_o_K, controller_flow_circuit);
+      structural_objectRef controller_flow_next_state = curr_gate->find_member(NEXT_STATE_PORT_NAME, port_o_K, curr_gate);
       structural_objectRef controller_next_state = SM->add_port(NEXT_STATE_PORT_NAME, port_o::OUT, circuit, controller_flow_next_state->get_typeRef());
       SM->add_connection(controller_next_state, controller_flow_next_state);
-      memory_modules.insert(controller_flow_circuit);
+      memory_modules.insert(curr_gate);
    }
 
    std::map<unsigned int, unsigned int> memory_units = allocation_information->get_memory_units();
