@@ -157,7 +157,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
                         "wire [BITSIZE_out_mismatch_trace_offset - 1 : 0] next_epp_trace_offset;\n"
                         "wire [1 : 0] trace_offset_increment;\n"
                         "wire prev_trace_offset_increment;\n"
-                        "wire [EPP_TRACE_BITSIZE - 1 : 0] epp_trace_memory [0 : EPP_TRACE_LENGTH-1];\n"
+                        "reg [EPP_TRACE_BITSIZE - 1 : 0] epp_trace_memory [0 : EPP_TRACE_LENGTH-1] /* synthesis syn_ramstyle = \"no_rw_check\" */;\n"
                         "wire [BITSIZE_out_mismatch_trace_offset - 1 : 0] mismatch_trace_offset;\n"
                         "wire mismatch_now;\n"
                         "wire mismatch_prev;\n"
