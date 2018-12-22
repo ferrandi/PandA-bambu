@@ -57,6 +57,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+REF_FORWARD_DECL(structural_manager);
+
 struct Discrepancy
 {
    /// Reference to the unfolded call graph used for the discrepancy analysis
@@ -178,6 +180,8 @@ struct Discrepancy
    Discrepancy(void) : DiscrepancyCallGraph(GraphInfoRef(new GraphInfo()))
    {
    }
+
+   static void add_discrepancy_parameter(const structural_managerRef& SM, const std::string& name, const std::string& value);
 };
 
 typedef refcount<Discrepancy> DiscrepancyRef;
