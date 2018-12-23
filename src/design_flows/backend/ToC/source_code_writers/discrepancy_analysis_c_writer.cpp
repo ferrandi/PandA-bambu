@@ -376,7 +376,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
 
       indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"; type ");
 
-      THROW_ASSERT(not(is_discrepancy_address and (is_real or is_complex)), "type id = " + STR(type_id) + " is complex = " + STR(is_complex) + " is real = " + STR(is_real));
+      THROW_ASSERT(not(is_discrepancy_address and (is_real or is_complex)), "variable " + STR(var_name) + " with node id " + STR(ssa_node_index) + " has type id = " + STR(type_id) + " is complex = " + STR(is_complex) + " is real = " + STR(is_real));
 
       unsigned int vec_base_bitsize = type_bitsize;
       if(is_vector)
