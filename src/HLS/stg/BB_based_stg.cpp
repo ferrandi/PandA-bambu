@@ -846,11 +846,15 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Computing EPP edge increments");
    size_t max_path_val = compute_edge_increments(HLS->STG);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Computed EPP edge increments");
-   if(max_path_val > 1)
+   if(max_path_val)
    {
+      size_t epp_trace_bitsize = 0;
+      do
+      {
+         epp_trace_bitsize++;
+         max_path_val >>= 1;
+      } while(max_path_val);
       discr_info->fu_id_control_flow_skip.erase(funId);
-      double bits = std::ceil(std::log2(max_path_val - 1));
-      size_t epp_trace_bitsize = static_cast<size_t>(bits);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---fun id " + STR(funId) + "EPP path bits " + STR(epp_trace_bitsize));
       discr_info->fu_id_to_epp_trace_bitsize[funId] = epp_trace_bitsize;
    }
@@ -893,12 +897,13 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
          const auto dst = boost::target(e, *stg);
          const bool src_dummy = stg->CGetStateInfo(src)->is_dummy;
          const bool dst_dummy = stg->CGetStateInfo(dst)->is_dummy;
-
          if(not dst_dummy)
          {
-            const auto state_id = stg_info->vertex_to_state_id.at(dst);
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "state: S_" + STR(state_id) + " is to check on feedback because it is the destination of a feedback edge");
-            state_id_to_check_on_feedback.insert(state_id);
+            const auto dst_state_id = stg_info->vertex_to_state_id.at(dst);
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "state: S_" + STR(dst_state_id) + " is to check on feedback because it is the destination of a feedback edge");
+            state_id_to_check_on_feedback.insert(dst_state_id);
+            const auto src_state_id = stg_info->vertex_to_state_id.at(src);
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "edge from state: S_" + STR(src_state_id) + " to state: S_" + STR(dst_state_id) + " is to reset");
             reset_edges.insert(e);
          }
          else
@@ -928,6 +933,7 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
    }
    return;
 }
+
 /**
  * Given two bb linked by a forwarding edge, this method tries to move
  * overlap the execution of the last state of the bb ending the cycle
