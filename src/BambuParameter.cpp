@@ -3074,6 +3074,10 @@ void BambuParameter::CheckParameters()
    {
       THROW_ERROR("--discrepancy-hw is only compatible with Verilog");
    }
+   if(isOption(OPT_discrepancy_hw) and getOption<bool>(OPT_discrepancy_hw) and getOption<HLSFlowStep_Type>(OPT_function_allocation_algorithm) != HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION)
+   {
+      THROW_ERROR("--discrepancy-hw Hardware Discrepancy Analysis only works with dominator function allocation");
+   }
    if(isOption(OPT_discrepancy) and getOption<bool>(OPT_discrepancy))
    {
       if(false
