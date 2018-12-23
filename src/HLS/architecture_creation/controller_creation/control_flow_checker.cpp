@@ -223,11 +223,15 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
              "assign out_mismatch_trace_offset = out_mismatch ? mismatch_trace_offset : 0;\n\n";
 
    result += "// synthesis translate_off\n"
-             "always @(posedge out_mismatch)\n"
+             "always @(posedge clock)\n"
              "begin\n"
-             "  $display(\"DISCREPANCY FOUND at time %t:\", $time);\n"
-             "  $display(\"DISCREPANCY ID: %d\", out_mismatch_id);\n"
-             "  $display(\"trace_offset: %d\", out_mismatch_trace_offset);\n"
+             "  if (out_mismatch_id)\n"
+             "  begin\n"
+             "    $display(\"DISCREPANCY FOUND at time %t:\", $time);\n"
+             "    $display(\"DISCREPANCY ID: %d\", out_mismatch_id);\n"
+             "    $display(\"trace_offset: %d\", out_mismatch_trace_offset);\n"
+             "    $finish;\n"
+             "  end\n"
              "end\n"
              "// synthesis translate_on\n";
 
@@ -259,232 +263,250 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
              "end\n"
              "endgenerate\n\n";
 
-   result += "// compute if this state is to check\n"
-             "always @(*)\n"
-             "begin\n"
-             "   case (" PRESENT_STATE_PORT_NAME "_reg)";
-
+   // helper functions
    const auto encode_one_hot = [](unsigned int nstates, unsigned int val) -> std::string {
       std::string res;
       for(unsigned int i = 0; i < nstates; ++i)
          res = (val == i ? "1" : "0") + res;
       return res;
    };
-   bool is_first = true;
-   for(const auto s_id : discr_info->fu_id_to_states_to_check.at(f_id))
+   const auto compute_state_string = [one_hot_encoding, max_value, state_bitsize, encode_one_hot](unsigned int state_id) -> std::string {
+      return one_hot_encoding ? (STR(state_bitsize) + "'b" + encode_one_hot(max_value + 1, state_id)) : (STR(state_bitsize) + "'d" + STR(state_id));
+   };
+
+   // compute if this state is to check
    {
-      std::string state_string;
-      if(one_hot_encoding)
-         state_string = STR(state_bitsize) + "'b" + encode_one_hot(max_value + 1, s_id);
-      else
-         state_string = STR(state_bitsize) + "'d" + STR(s_id);
-      if(not is_first)
-         result += ',';
-      result += "\n   " + state_string;
-      is_first = false;
+      result += "// compute if this state is to check\n"
+                "always @(*)\n"
+                "begin\n"
+                "   case (" PRESENT_STATE_PORT_NAME "_reg)";
+
+      bool is_first = true;
+      for(const auto s_id : discr_info->fu_id_to_states_to_check.at(f_id))
+      {
+         const std::string state_string = compute_state_string(s_id);
+         if(not is_first)
+            result += ',';
+         result += "\n   " + state_string;
+         is_first = false;
+      }
+
+      result += ":\n"
+                "     to_check_now = 1;\n";
+
+      result += "   default:\n"
+                "     to_check_now = 0;\n"
+                "   endcase\n"
+                "end\n\n";
    }
-
-   result += ":\n"
-             "     to_check_now = 1;\n";
-
-   result += "   default:\n"
-             "     to_check_now = 0;\n"
-             "   endcase\n"
-             "end\n\n";
-
-   result += "// compute if at the next cycle we have to check the previous state\n"
-             "always @(*)\n"
-             "begin\n"
-             "   case (" PRESENT_STATE_PORT_NAME "_reg)\n";
 
    const auto fsm_entry_node = stg_info->entry_node;
    const auto fsm_exit_node = stg_info->exit_node;
-   BOOST_FOREACH(vertex state, boost::vertices(*stg))
+   // compute if at the next cycle we have to check the previous state
    {
-      if(state == fsm_entry_node or state == fsm_exit_node)
-         continue;
-      bool a = true;
-      BOOST_FOREACH(EdgeDescriptor out_edge, boost::out_edges(state, *stg))
-      {
-         if(stg->GetSelector(out_edge) & TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK)
-         {
-            const vertex dst = boost::target(out_edge, *stg);
-            const auto dst_id = stg_info->vertex_to_state_id.at(dst);
-            if(discr_info->fu_id_to_feedback_states_to_check.at(f_id).find(dst_id) != discr_info->fu_id_to_feedback_states_to_check.at(f_id).end())
-            {
-               if(a)
-               {
-                  const auto s_id = stg_info->vertex_to_state_id.at(state);
-                  std::string state_string;
-                  if(one_hot_encoding)
-                     state_string = STR(state_bitsize) + "'b" + encode_one_hot(max_value + 1, s_id);
-                  else
-                     state_string = STR(state_bitsize) + "'d" + STR(s_id);
+      result += "// compute if at the next cycle we have to check the previous state\n"
+                "always @(*)\n"
+                "begin\n"
+                "   case (" PRESENT_STATE_PORT_NAME "_reg)\n";
 
-                  result += "   " + state_string +
-                            ":\n"
-                            "   begin\n"
-                            "     case (" NEXT_STATE_PORT_NAME "_reg)\n";
+      BOOST_FOREACH(vertex state, boost::vertices(*stg))
+      {
+         if(state == fsm_entry_node or state == fsm_exit_node)
+            continue;
+         bool a = true;
+         BOOST_FOREACH(EdgeDescriptor out_edge, boost::out_edges(state, *stg))
+         {
+            if(stg->GetSelector(out_edge) & TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK)
+            {
+               const vertex dst = boost::target(out_edge, *stg);
+               const auto dst_id = stg_info->vertex_to_state_id.at(dst);
+               if(discr_info->fu_id_to_feedback_states_to_check.at(f_id).find(dst_id) != discr_info->fu_id_to_feedback_states_to_check.at(f_id).end())
+               {
+                  if(a)
+                  {
+                     const auto s_id = stg_info->vertex_to_state_id.at(state);
+                     const std::string state_string = compute_state_string(s_id);
+
+                     result += "   " + state_string +
+                               ":\n"
+                               "   begin\n"
+                               "     case (" NEXT_STATE_PORT_NAME "_reg)\n";
+                  }
+                  const std::string state_string = compute_state_string(dst_id);
+
+                  if(not a)
+                     result += ",\n";
 
                   a = false;
+
+                  result += "     " + state_string + "";
                }
-               std::string state_string;
-               if(one_hot_encoding)
-                  state_string = STR(state_bitsize) + "'b" + encode_one_hot(max_value + 1, dst_id);
-               else
-                  state_string = STR(state_bitsize) + "'d" + STR(dst_id);
-               if(not a)
-                  result += ",\n";
-               a = false;
-               result += "     " + state_string + "";
             }
          }
+         if(not a)
+         {
+            result += ":\n"
+                      "        next_to_check_prev = 1;\n"
+                      "     default:\n"
+                      "        next_to_check_prev = 0;\n"
+                      "     endcase\n"
+                      "   end\n";
+         }
       }
-      if(not a)
-      {
-         result += ":\n";
-         result += "        next_to_check_prev = 1;\n"
-                   "     default:\n"
-                   "        next_to_check_prev = 0;\n"
-                   "     endcase\n"
-                   "   end\n";
-      }
+
+      result += "   default:\n"
+                "      next_to_check_prev = 0;\n"
+                "   endcase\n"
+                "end\n\n";
    }
 
-   result += "   default:\n"
-             "      next_to_check_prev = 0;\n"
-             "   endcase\n"
-             "end\n\n";
-
+   const auto epp_val_string = [epp_trace_bitsize](size_t val) -> std::string { return STR(epp_trace_bitsize) + "'d" + STR(val); };
    result += "// compute EPP increments and resets\n"
              "always @(*)\n"
              "begin\n\n"
              "   epp_to_reset = 0;\n"
-             "   epp_increment_val = 0;\n"
-             "   epp_reset_val = 0;\n\n";
+             "   epp_increment_val = " +
+             epp_val_string(0) +
+             ";\n"
+             "   epp_reset_val = " +
+             epp_val_string(0) + ";\n\n";
 
-   std::string initial_state_string, initial_epp_counter;
+   std::map<unsigned int, std::map<unsigned int, size_t>> present_to_next_to_increment;
+   std::map<unsigned int, std::map<size_t, std::set<unsigned int>>> next_to_resetval_to_present;
+   {
+      const auto& astg = STG->CGetAstg();
+      BOOST_FOREACH(EdgeDescriptor e, boost::edges(*astg))
+      {
+         const vertex src = boost::source(e, *stg);
+         const vertex dst = boost::target(e, *stg);
+         if(src == fsm_entry_node or dst == fsm_exit_node)
+            continue;
+         const auto src_id = stg_info->vertex_to_state_id.at(src);
+         const auto dst_id = stg_info->vertex_to_state_id.at(dst);
+         const auto increment_val = eppstg->CGetTransitionInfo(e)->epp_increment;
+         if(increment_val != 0)
+            present_to_next_to_increment[src_id][dst_id] = increment_val;
+      }
+      for(const auto& e : discr_info->fu_id_to_reset_edges.at(f_id))
+      {
+         const vertex dst = boost::target(e, *stg);
+         const auto dst_id = stg_info->vertex_to_state_id.at(dst);
+         const auto epp_edge_from_entry = eppstg->CGetEdge(fsm_entry_node, dst);
+         const auto reset_val = eppstg->CGetTransitionInfo(epp_edge_from_entry)->epp_increment;
 
+         vertex src = boost::source(e, *stg);
+         const auto src_id = stg_info->vertex_to_state_id.at(src);
+         if(stg->CGetStateInfo(src)->is_dummy)
+         {
+            THROW_ASSERT(boost::in_degree(src, *astg) == 1, "");
+            InEdgeIterator in_e_it, in_e_end;
+            boost::tie(in_e_it, in_e_end) = boost::in_edges(src, *astg);
+            src = boost::source(*in_e_it, *astg);
+         }
+         const auto epp_edge_to_exit = eppstg->CGetEdge(src, fsm_exit_node);
+         const auto increment_val = eppstg->CGetTransitionInfo(epp_edge_to_exit)->epp_increment;
+
+         if(reset_val != 0)
+            next_to_resetval_to_present[dst_id][reset_val].insert(src_id);
+
+         if(increment_val != 0)
+            present_to_next_to_increment[src_id][dst_id] = increment_val;
+      }
+   }
+
+   THROW_ASSERT(boost::out_degree(fsm_entry_node, *stg) == 1, "");
    OutEdgeIterator o_e_it, o_e_end;
    boost::tie(o_e_it, o_e_end) = boost::out_edges(fsm_entry_node, *stg);
+   const std::string initial_epp_counter_str = epp_val_string((stg->CGetTransitionInfo(*o_e_it)->epp_increment));
    vertex initial_state = boost::target(*o_e_it, *stg);
    const auto initial_state_id = stg_info->vertex_to_state_id.at(initial_state);
-   if(one_hot_encoding)
-      initial_state_string = STR(state_bitsize) + "'b" + encode_one_hot(max_value + 1, initial_state_id);
-   else
-      initial_state_string = STR(state_bitsize) + "'d" + STR(initial_state_id);
+   const std::string initial_state_string = compute_state_string(initial_state_id);
 
-   initial_epp_counter = STR(stg->CGetTransitionInfo(*o_e_it)->get_epp_increment());
-
-   result += "   if (" NEXT_STATE_PORT_NAME "_reg == " + initial_state_string +
-             ")\n"
-             "   begin\n"
-             "      epp_reset_val = " +
-             initial_epp_counter +
-             ";\n"
-             "      epp_to_reset = 1'b1;\n"
-             "   end\n\n";
-
-   const auto& astg = STG->CGetAstg();
-   std::map<unsigned int, std::map<unsigned int, size_t>> present_to_next_to_increment;
-   std::map<unsigned int, std::map<unsigned int, size_t>> present_to_next_to_reset;
-   BOOST_FOREACH(EdgeDescriptor e, boost::edges(*astg))
+   // write the nested case to compute resets
+   result += "   // compute the epp resets\n";
+   if(not next_to_resetval_to_present.empty())
    {
-      const vertex src = boost::source(e, *stg);
-      const vertex dst = boost::target(e, *stg);
-      if(src == fsm_entry_node or dst == fsm_exit_node)
-         continue;
-      const auto src_id = stg_info->vertex_to_state_id.at(src);
-      const auto dst_id = stg_info->vertex_to_state_id.at(dst);
-      const auto increment_val = eppstg->CGetTransitionInfo(e)->get_epp_increment();
-      present_to_next_to_increment[src_id][dst_id] = increment_val;
-   }
-   for(const auto& e : discr_info->fu_id_to_reset_edges.at(f_id))
-   {
-      vertex src = boost::source(e, *stg);
-      const auto src_id = stg_info->vertex_to_state_id.at(src);
-      if(stg->CGetStateInfo(src)->is_dummy)
+      result += "   case (" NEXT_STATE_PORT_NAME "_reg)\n"
+                "   " +
+                initial_state_string +
+                ":\n"
+                "   begin\n"
+                "      epp_reset_val = " +
+                initial_epp_counter_str +
+                ";\n"
+                "      epp_to_reset = 1'b1;\n"
+                "   end\n";
+      for(const auto& n2r2p : next_to_resetval_to_present)
       {
-         InEdgeIterator in_e_it, in_e_end;
-         boost::tie(in_e_it, in_e_end) = boost::in_edges(src, *astg);
-         src = boost::source(*in_e_it, *astg);
-      }
-      const auto epp_edge_to_exit = eppstg->CGetEdge(src, fsm_exit_node);
-      const auto increment_val = eppstg->CGetTransitionInfo(epp_edge_to_exit)->get_epp_increment();
+         result += "   " + compute_state_string(n2r2p.first) +
+                   ":\n"
+                   "   begin\n"
+                   "      case (" PRESENT_STATE_PORT_NAME "_reg)\n";
+         for(const auto& r2p : n2r2p.second)
+         {
+            const auto resetval = r2p.first;
+            bool initial = true;
+            for(const auto present : r2p.second)
+            {
+               if(initial == false)
+                  result += ",\n";
+               else
+                  initial = false;
 
-      const vertex dst = boost::target(e, *stg);
-      const auto dst_id = stg_info->vertex_to_state_id.at(dst);
-      const auto epp_edge_from_entry = eppstg->CGetEdge(fsm_entry_node, dst);
-      const auto reset_val = eppstg->CGetTransitionInfo(epp_edge_from_entry)->get_epp_increment();
-      present_to_next_to_increment[src_id][dst_id] = increment_val;
-      present_to_next_to_reset[src_id][dst_id] = reset_val;
+               result += "      " + compute_state_string(present);
+            }
+            result += ":\n"
+                      "      begin\n"
+                      "         epp_reset_val = " +
+                      epp_val_string(resetval) +
+                      ";\n"
+                      "         epp_to_reset = 1'b1;\n"
+                      "      end\n";
+         }
+         result += "      endcase\n"
+                   "   end\n";
+      }
+      result += "   endcase\n\n";
+   }
+   else
+   {
+      // only reset on restart
+      result += "   if (" NEXT_STATE_PORT_NAME "_reg == " + initial_state_string +
+                ")\n"
+                "   begin\n"
+                "      epp_reset_val = " +
+                initial_epp_counter_str +
+                ";\n"
+                "      epp_to_reset = 1'b1;\n"
+                "   end\n\n";
    }
 
-   if(present_to_next_to_increment.size())
+   // write the nested case to compute increments
+   if(not present_to_next_to_increment.empty())
    {
-      result += "   case (" PRESENT_STATE_PORT_NAME "_reg)\n";
+      result += "   // nested case to compute epp increments\n"
+                "   case (" PRESENT_STATE_PORT_NAME "_reg)\n";
       for(const auto& p2n2i : present_to_next_to_increment)
       {
-         bool skip = true;
+         result += "   " + compute_state_string(p2n2i.first) +
+                   ":\n"
+                   "   begin\n"
+                   "      case (" NEXT_STATE_PORT_NAME "_reg)\n";
          for(const auto& n2i : p2n2i.second)
          {
+            const auto next_id = n2i.first;
             const auto increment = n2i.second;
-            if(increment != 0)
-            {
-               skip = false;
-               break;
-            }
-         }
-         if(!skip)
-         {
-            const auto pres_state_id = p2n2i.first;
-            std::string p_s_string;
-            if(one_hot_encoding)
-               p_s_string = STR(state_bitsize) + "'b" + encode_one_hot(max_value + 1, pres_state_id);
-            else
-               p_s_string = STR(state_bitsize) + "'d" + STR(pres_state_id);
-            result += "   " + p_s_string +
+            result += "      " + compute_state_string(next_id) +
                       ":\n"
-                      "   begin\n"
-                      "   case (" NEXT_STATE_PORT_NAME "_reg)\n";
-            for(const auto& n2i : p2n2i.second)
-            {
-               const auto next_state_id = n2i.first;
-               std::string n_s_string;
-               if(one_hot_encoding)
-                  n_s_string = STR(state_bitsize) + "'b" + encode_one_hot(max_value + 1, next_state_id);
-               else
-                  n_s_string = STR(state_bitsize) + "'d" + STR(next_state_id);
-               result += "   " + n_s_string +
-                         ":\n"
-                         "      begin\n";
-               const auto increment = n2i.second;
-               bool to_reset = present_to_next_to_reset.find(pres_state_id) != present_to_next_to_reset.end() and present_to_next_to_reset.at(pres_state_id).find(next_state_id) != present_to_next_to_reset.at(pres_state_id).end();
-               result += "         epp_increment_val = " + STR(epp_trace_bitsize) + "'d" + STR(increment) + ";\n";
-               if(to_reset)
-               {
-                  result += "         epp_to_reset = 1'b1;\n"
-                            "         epp_reset_val = " +
-                            STR(epp_trace_bitsize) + "'d" + STR(present_to_next_to_reset.at(pres_state_id).at(next_state_id)) + ";\n";
-               }
-               result += "      end\n";
-            }
-            result += "   default:\n"
                       "      begin\n"
                       "         epp_increment_val = " +
-                      STR(epp_trace_bitsize) +
-                      "'d0;\n"
+                      epp_val_string(increment) +
+                      ";\n"
                       "      end\n";
-            result += "   endcase\n"
-                      "   end\n";
          }
+         result += "      endcase\n"
+                   "   end\n";
       }
-      result += "   default:\n"
-                "      begin\n"
-                "         epp_increment_val = " +
-                STR(epp_trace_bitsize) +
-                "'d0;\n"
-                "      end\n";
       result += "   endcase\n";
    }
 
