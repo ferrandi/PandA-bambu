@@ -97,6 +97,7 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
       {
          ret.insert(std::make_tuple(HLSFlowStep_Type::C_TESTBENCH_EXECUTION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
          ret.insert(std::make_tuple(HLSFlowStep_Type::CALL_GRAPH_UNFOLDING, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::HW_PATH_COMPUTATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -163,15 +164,16 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
    for(auto& f : Discr->c_control_flow_trace)
    {
       const auto f_id = f.first;
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Untangling software control flow trace of function: " + STR(f_id) + HLSMgr->CGetFunctionBehavior(f_id)->CGetBehavioralHelper()->get_function_name());
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Untangling software control flow trace of function: " + STR(f_id) + " " + HLSMgr->CGetFunctionBehavior(f_id)->CGetBehavioralHelper()->get_function_name());
       const auto& stg = HLSMgr->get_HLS(f_id)->STG->CGetStg();
       const auto& epp_stg = HLSMgr->get_HLS(f_id)->STG->CGetEPPStg();
       const auto& stg_info = stg->CGetStateTransitionGraphInfo();
       const auto fsm_entry_node = stg_info->entry_node;
       const auto fsm_exit_node = stg_info->exit_node;
-      const auto& state_id_to_check = Discr->fu_id_to_states_to_check.at(f_id);
-      const auto& state_id_to_check_on_feedback = Discr->fu_id_to_feedback_states_to_check.at(f_id);
-      const auto& reset_transitions = Discr->fu_id_to_reset_edges.at(f_id);
+      const auto& state_id_to_check = Discr->hw_discrepancy_info->fu_id_to_states_to_check.at(f_id);
+      const auto& state_id_to_check_on_feedback = Discr->hw_discrepancy_info->fu_id_to_feedback_states_to_check.at(f_id);
+      const auto& reset_transitions = Discr->hw_discrepancy_info->fu_id_to_reset_edges.at(f_id);
+
       for(auto& context2trace : f.second)
       {
          const auto context_id = context2trace.first;
@@ -488,9 +490,9 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
          std::vector<size_t> f_memory_usage = std::vector<size_t>(10, 0);
          size_t f_min_memory_usage = 0;
          std::map<std::string, std::map<size_t, size_t>> scope_to_bits_to_usage;
-         if(Discr->fu_id_control_flow_skip.find(f_id) == Discr->fu_id_control_flow_skip.end())
+         if(Discr->hw_discrepancy_info->fu_id_control_flow_skip.find(f_id) == Discr->hw_discrepancy_info->fu_id_control_flow_skip.end())
          {
-            const size_t f_id_epp_trace_bitsize = Discr->fu_id_to_epp_trace_bitsize.at(f_id);
+            const size_t f_id_epp_trace_bitsize = Discr->hw_discrepancy_info->fu_id_to_epp_trace_bitsize.at(f_id);
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " EPP TRACE BITSIZE " + STR(f_id_epp_trace_bitsize));
             for(const auto& scope : Discr->f_id_to_scope.at(f_id))
             {

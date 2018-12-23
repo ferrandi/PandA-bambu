@@ -74,10 +74,58 @@ struct CallSitesInfo
 typedef refcount<CallSitesInfo> CallSitesInfoRef;
 typedef refcount<const CallSitesInfo> CallSitesInfoConstRef;
 
+struct HWDiscrepancyInfo
+{
+   /**
+    * Maps every function ID to a set of states that must always be checked
+    * by the hardware discrepancy control flow checker.
+    */
+   std::unordered_map<unsigned int, std::unordered_set<unsigned int>> fu_id_to_states_to_check;
+
+   /**
+    * Maps every function ID to a set of states that must be checked
+    * by the hardware discrepancy control flow checker if the execution flow
+    * comes from a feedback_edges
+    */
+   std::unordered_map<unsigned int, std::unordered_set<unsigned int>> fu_id_to_feedback_states_to_check;
+
+   /**
+    * Maps every function ID to a set EdgeDescriptors. Each edge
+    * represents an edge along which the epp counter have to be reset.
+    * These edges are StateTransition edges of the StateTransitionGraph of
+    * the associated function.
+    */
+   std::unordered_map<unsigned int, std::unordered_set<EdgeDescriptor>> fu_id_to_reset_edges;
+
+   /**
+    * Maps every function ID to the bitsize of the epp trace that is
+    * necessary for checking the control flow of that function.
+    * This bitsize is does not depend on the instance of the function, since
+    * the epp edge increments are always the same and this bitsize is the
+    * number of bits necessary to represent them
+    */
+   std::unordered_map<unsigned int, size_t> fu_id_to_epp_trace_bitsize;
+
+   /**
+    * This set contains the ids of functions for which the control flow
+    * hardware discrepancy analyssi is not necessary.
+    * If the FSM of a function is linear, i.e. it does not contain branches
+    * or loops, the control flow cannot diverge during its execution, so it
+    * is not necessary to check it with control flow discrepancy analysis.
+    */
+   std::unordered_set<unsigned int> fu_id_control_flow_skip;
+};
+
+typedef refcount<HWDiscrepancyInfo> HWDiscrepancyInfoRef;
+typedef refcount<const HWDiscrepancyInfo> HWDiscrepancyInfoConstRef;
+
 struct Discrepancy
 {
    /// Reference to a struct holding info on the call sites
    CallSitesInfoRef call_sites_info;
+
+   /// Reference to a struct holding info on the control flow traces for hw discrepancy analysis
+   HWDiscrepancyInfoRef hw_discrepancy_info;
 
    /// Reference to the unfolded call graph used for the discrepancy analysis
    UnfoldedCallGraph DiscrepancyCallGraph;
@@ -149,45 +197,6 @@ struct Discrepancy
     */
    std::unordered_map<uint64_t, std::string> context_to_scope;
 
-   /**
-    * Maps every function ID to a set of states that must always be checked
-    * by the hardware discrepancy control flow checker.
-    */
-   std::unordered_map<unsigned int, std::unordered_set<unsigned int>> fu_id_to_states_to_check;
-
-   /**
-    * Maps every function ID to a set of states that must be checked
-    * by the hardware discrepancy control flow checker if the execution flow
-    * comes from a feedback_edges
-    */
-   std::unordered_map<unsigned int, std::unordered_set<unsigned int>> fu_id_to_feedback_states_to_check;
-
-   /**
-    * Maps every function ID to a set EdgeDescriptors. Each edge
-    * represents an edge along which the epp counter have to be reset.
-    * These edges are StateTransition edges of the StateTransitionGraph of
-    * the associated function.
-    */
-   std::unordered_map<unsigned int, std::unordered_set<EdgeDescriptor>> fu_id_to_reset_edges;
-
-   /**
-    * Maps every function ID to the bitsize of the epp trace that is
-    * necessary for checking the control flow of that function.
-    * This bitsize is does not depend on the instance of the function, since
-    * the epp edge increments are always the same and this bitsize is the
-    * number of bits necessary to represent them
-    */
-   std::unordered_map<unsigned int, size_t> fu_id_to_epp_trace_bitsize;
-
-   /**
-    * This set contains the ids of functions for which the control flow
-    * hardware discrepancy analyssi is not necessary.
-    * If the FSM of a function is linear, i.e. it does not contain branches
-    * or loops, the control flow cannot diverge during its execution, so it
-    * is not necessary to check it with control flow discrepancy analysis.
-    */
-   std::unordered_set<unsigned int> fu_id_control_flow_skip;
-
    /// name of the file that contains the c trace to parse
    std::string c_trace_filename;
 
@@ -195,7 +204,7 @@ struct Discrepancy
 
    unsigned long long n_checked_operations = 0;
 
-   Discrepancy() : call_sites_info(CallSitesInfoRef(new CallSitesInfo())), DiscrepancyCallGraph(GraphInfoRef(new GraphInfo())){};
+   Discrepancy() : call_sites_info(CallSitesInfoRef(new CallSitesInfo())), hw_discrepancy_info(HWDiscrepancyInfoRef(new HWDiscrepancyInfo())), DiscrepancyCallGraph(GraphInfoRef(new GraphInfo())){};
 
    void clear()
    {

@@ -130,8 +130,8 @@ static unsigned int comp_state_bitsize(bool one_hot_encoding, const HLS_managerR
    return state_bitsize;
 }
 
-static std::string create_control_flow_checker(size_t epp_trace_bitsize, const unsigned int f_id, const StateTransitionGraphManagerRef& STG, const HLS_managerRef HLSMgr, bool one_hot_encoding, unsigned max_value, unsigned int state_bitsize,
-                                               int debug_level)
+static std::string create_control_flow_checker(size_t epp_trace_bitsize, const unsigned int f_id, const StateTransitionGraphManagerRef& STG, const HLS_managerRef HLSMgr, const HWDiscrepancyInfoConstRef& discr_info, bool one_hot_encoding,
+                                               unsigned max_value, unsigned int state_bitsize, int debug_level)
 {
    /// adjust in case states are not consecutive
    const auto& eppstg = STG->CGetEPPStg();
@@ -262,7 +262,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
       return res;
    };
    bool is_first = true;
-   for(const auto s_id : HLSMgr->RDiscr->fu_id_to_states_to_check.at(f_id))
+   for(const auto s_id : discr_info->fu_id_to_states_to_check.at(f_id))
    {
       std::string state_string;
       if(one_hot_encoding)
@@ -301,7 +301,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
          {
             const vertex dst = boost::target(out_edge, *stg);
             const auto dst_id = stg_info->vertex_to_state_id.at(dst);
-            if(HLSMgr->RDiscr->fu_id_to_feedback_states_to_check.at(f_id).find(dst_id) != HLSMgr->RDiscr->fu_id_to_feedback_states_to_check.at(f_id).end())
+            if(discr_info->fu_id_to_feedback_states_to_check.at(f_id).find(dst_id) != discr_info->fu_id_to_feedback_states_to_check.at(f_id).end())
             {
                if(a)
                {
@@ -390,7 +390,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
       const auto increment_val = eppstg->CGetTransitionInfo(e)->get_epp_increment();
       present_to_next_to_increment[src_id][dst_id] = increment_val;
    }
-   for(const auto& e : HLSMgr->RDiscr->fu_id_to_reset_edges.at(f_id))
+   for(const auto& e : discr_info->fu_id_to_reset_edges.at(f_id))
    {
       vertex src = boost::source(e, *stg);
       const auto src_id = stg_info->vertex_to_state_id.at(src);
@@ -602,7 +602,8 @@ void ControlFlowChecker::add_common_ports(structural_objectRef circuit, unsigned
 
 DesignFlowStep_Status ControlFlowChecker::InternalExec()
 {
-   if(HLSMgr->RDiscr->fu_id_control_flow_skip.find(funId) != HLSMgr->RDiscr->fu_id_control_flow_skip.end())
+   const HWDiscrepancyInfoConstRef discr_info = HLSMgr->RDiscr->hw_discrepancy_info;
+   if(discr_info->fu_id_control_flow_skip.find(funId) != discr_info->fu_id_control_flow_skip.end())
       return DesignFlowStep_Status::SUCCESS;
    HLS->control_flow_checker = structural_managerRef(new structural_manager(HLS->Param));
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
@@ -623,7 +624,7 @@ DesignFlowStep_Status ControlFlowChecker::InternalExec()
       max_value = std::max(max_value, s.first);
    const unsigned int state_bitsize = comp_state_bitsize(one_hot_encoding, HLSMgr, funId, max_value);
 
-   size_t epp_trace_bitsize = HLSMgr->RDiscr->fu_id_to_epp_trace_bitsize.at(funId);
+   size_t epp_trace_bitsize = discr_info->fu_id_to_epp_trace_bitsize.at(funId);
    GetPointer<module>(checker_circuit)->set_parameter("STATE_BITSIZE", STR(state_bitsize));
    GetPointer<module>(checker_circuit)->set_parameter("EPP_TRACE_BITSIZE", STR(epp_trace_bitsize));
    GetPointer<module>(checker_circuit)->set_parameter("MEMORY_INIT_file", "\"\"trace.mem\"\"");
@@ -634,7 +635,7 @@ DesignFlowStep_Status ControlFlowChecker::InternalExec()
 
    HLS->control_flow_checker->add_NP_functionality(checker_circuit, NP_functionality::LIBRARY, cfc_module_name + " out_mismatch_id out_mismatch_trace_offset STATE_BITSIZE EPP_TRACE_BITSIZE MEMORY_INIT_file EPP_TRACE_LENGTH EPP_MISMATCH_ID");
 
-   std::string verilog_cf_checker_description = create_control_flow_checker(epp_trace_bitsize, funId, HLS->STG, HLSMgr, one_hot_encoding, max_value, state_bitsize, debug_level);
+   std::string verilog_cf_checker_description = create_control_flow_checker(epp_trace_bitsize, funId, HLS->STG, HLSMgr, discr_info, one_hot_encoding, max_value, state_bitsize, debug_level);
    add_escape(verilog_cf_checker_description, "\\");
    HLS->control_flow_checker->add_NP_functionality(checker_circuit, NP_functionality::VERILOG_PROVIDED, verilog_cf_checker_description);
    return DesignFlowStep_Status::SUCCESS;

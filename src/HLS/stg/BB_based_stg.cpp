@@ -838,6 +838,7 @@ static size_t compute_edge_increments(const StateTransitionGraphManagerRef& STG)
 
 void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<vertex>>& starting_ops) const
 {
+   const HWDiscrepancyInfoRef discr_info = HLSMgr->RDiscr->hw_discrepancy_info;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Computing Efficient Path Profiling edge increments for HW discrepancy analysis");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding EPP edges");
    add_EPP_edges(HLS->STG);
@@ -847,24 +848,24 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Computed EPP edge increments");
    if(max_path_val > 1)
    {
-      HLSMgr->RDiscr->fu_id_control_flow_skip.erase(funId);
+      discr_info->fu_id_control_flow_skip.erase(funId);
       double bits = std::ceil(std::log2(max_path_val - 1));
       size_t epp_trace_bitsize = static_cast<size_t>(bits);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---fun id " + STR(funId) + "EPP path bits " + STR(epp_trace_bitsize));
-      HLSMgr->RDiscr->fu_id_to_epp_trace_bitsize[funId] = epp_trace_bitsize;
+      discr_info->fu_id_to_epp_trace_bitsize[funId] = epp_trace_bitsize;
    }
    else
    {
-      HLSMgr->RDiscr->fu_id_control_flow_skip.insert(funId);
-      HLSMgr->RDiscr->fu_id_to_epp_trace_bitsize[funId] = 0;
+      discr_info->fu_id_control_flow_skip.insert(funId);
+      discr_info->fu_id_to_epp_trace_bitsize[funId] = 0;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---no control flow discrepancy is necessary");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Computing states where EPP trace must be checked");
-   auto& state_id_to_check = HLSMgr->RDiscr->fu_id_to_states_to_check[funId];
+   auto& state_id_to_check = discr_info->fu_id_to_states_to_check[funId];
    state_id_to_check.clear();
-   auto& state_id_to_check_on_feedback = HLSMgr->RDiscr->fu_id_to_feedback_states_to_check[funId];
+   auto& state_id_to_check_on_feedback = discr_info->fu_id_to_feedback_states_to_check[funId];
    state_id_to_check_on_feedback.clear();
-   auto& reset_edges = HLSMgr->RDiscr->fu_id_to_reset_edges[funId];
+   auto& reset_edges = discr_info->fu_id_to_reset_edges[funId];
    reset_edges.clear();
    const auto& stg = HLS->STG->CGetStg();
    const auto& stg_info = stg->CGetStateTransitionGraphInfo();
