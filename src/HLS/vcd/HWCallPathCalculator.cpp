@@ -152,7 +152,7 @@ void HWCallPathCalculator::discover_vertex(const UnfoldedVertexDescriptor& v, co
    {
       for(const std::string& shared_fu_name : HLSMgr->Rfuns->get_shared_functions(f_id))
       {
-         shared_fun_scope[shared_fu_name] = scope.top() + "Datapath_i" + STR(HIERARCHY_SEPARATOR) + shared_fu_name + "_instance" + STR(HIERARCHY_SEPARATOR) + shared_fu_name + "_i" + STR(HIERARCHY_SEPARATOR);
+         shared_fun_scope[shared_fu_name] = scope.top() + "Datapath_i" + STR(HIERARCHY_SEPARATOR) + shared_fu_name + "_instance" + STR(HIERARCHY_SEPARATOR) + shared_fu_name + STR(HIERARCHY_SEPARATOR);
       }
    }
 }
