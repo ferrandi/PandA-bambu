@@ -189,5 +189,6 @@ class HLS_manager : public application_manager
 };
 /// refcount definition of the class
 typedef refcount<HLS_manager> HLS_managerRef;
+typedef refcount<const HLS_manager> HLS_managerConstRef;
 
 #endif
