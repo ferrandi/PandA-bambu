@@ -575,7 +575,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
 
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Untangled software control flow trace of function: " + STR(f_id));
    }
-#ifndef NDEBUG
+#if 0
    for(const auto& i : scope_to_state_trace)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---state trace length for function scope: " + i.first + ": " + STR(i.second.size()));
