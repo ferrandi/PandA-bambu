@@ -222,6 +222,15 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
              "assign mismatch_trace_offset = mismatch_prev ? prev_epp_trace_offset : epp_trace_offset;\n"
              "assign out_mismatch_trace_offset = out_mismatch ? mismatch_trace_offset : 0;\n\n";
 
+   result += "// synthesis translate_off\n"
+             "always @(posedge out_mismatch)\n"
+             "begin\n"
+             "  $display(\"DISCREPANCY FOUND at time %t:\", $time);\n"
+             "  $display(\"DISCREPANCY ID: %d\", out_mismatch_id);\n"
+             "  $display(\"trace_offset: %d\", out_mismatch_trace_offset);\n"
+             "end\n"
+             "// synthesis translate_on\n";
+
    result += "// update state of the checker\n"
              "always @(*)\n"
              "begin\n"
