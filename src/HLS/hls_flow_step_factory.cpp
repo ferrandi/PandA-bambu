@@ -240,6 +240,7 @@
 #include "CallGraphUnfolding.hpp"
 #if HAVE_VCD_BUILT
 #include "HWDiscrepancyAnalysis.hpp"
+#include "HWPathComputation.hpp"
 #include "VcdSignalSelection.hpp"
 #include "vcd_utility.hpp"
 #endif
@@ -496,6 +497,11 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
       case HLSFlowStep_Type::HLS_SYNTHESIS_FLOW:
       {
          design_flow_step = DesignFlowStepRef(new HLSSynthesisFlow(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         break;
+      }
+      case HLSFlowStep_Type::HW_PATH_COMPUTATION:
+      {
+         design_flow_step = DesignFlowStepRef(new HWPathComputation(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::HW_DISCREPANCY_ANALYSIS:
@@ -787,6 +793,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
 #endif
          case HLSFlowStep_Type::GENERATE_SYNTHESIS_SCRIPT:
          case HLSFlowStep_Type::HLS_SYNTHESIS_FLOW:
+         case HLSFlowStep_Type::HW_PATH_COMPUTATION:
          case HLSFlowStep_Type::HW_DISCREPANCY_ANALYSIS:
          case HLSFlowStep_Type::TESTBENCH_GENERATION:
 #if HAVE_VCD_BUILT

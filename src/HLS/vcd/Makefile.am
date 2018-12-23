@@ -36,7 +36,7 @@ noinst_HEADERS = \
    CallGraphUnfolding.hpp \
    CallSitesCollectorVisitor.hpp \
    Discrepancy.hpp \
-   HWCallPathCalculator.hpp \
+   HWPathComputation.hpp \
    HWDiscrepancyAnalysis.hpp \
    UnfoldedFunctionInfo.hpp \
    UnfoldedCallInfo.hpp \
@@ -49,7 +49,7 @@ lib_vcd_la_SOURCES = \
    CallGraphUnfolding.cpp \
    CallSitesCollectorVisitor.cpp \
    Discrepancy.cpp \
-   HWCallPathCalculator.cpp \
+   HWPathComputation.cpp \
    HWDiscrepancyAnalysis.cpp \
    vcd_trace_head.cpp \
    VcdSignalSelection.cpp \

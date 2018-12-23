@@ -50,7 +50,6 @@
 // includes from HLS/vcd/
 #include "CallSitesCollectorVisitor.hpp"
 #include "Discrepancy.hpp"
-#include "HWCallPathCalculator.hpp"
 #include "UnfoldedCallGraph.hpp"
 #include "UnfoldedCallInfo.hpp"
 #include "UnfoldedFunctionInfo.hpp"
@@ -110,11 +109,6 @@ static void Unfold(const HLS_managerRef& HLSMgr)
    THROW_ASSERT(b != cg->CGetCallGraphInfo()->behaviors.end(), "no behavior for root function " + STR(root_fun_id));
    HLSMgr->RDiscr->unfolded_root_v = HLSMgr->RDiscr->DiscrepancyCallGraph.AddVertex(NodeInfoRef(new UnfoldedFunctionInfo(root_fun_id, b->second)));
    RecursivelyUnfold(HLSMgr->RDiscr->unfolded_root_v, HLSMgr->RDiscr->DiscrepancyCallGraph, cg, HLSMgr->RDiscr->call_sites_info);
-   // Calculate the HW paths and store them in Discrepancy
-   HWCallPathCalculator sig_sel_v(HLSMgr);
-   std::vector<boost::default_color_type> sig_sel_color(boost::num_vertices(HLSMgr->RDiscr->DiscrepancyCallGraph), boost::white_color);
-   boost::depth_first_visit(HLSMgr->RDiscr->DiscrepancyCallGraph, HLSMgr->RDiscr->unfolded_root_v, sig_sel_v,
-                            boost::make_iterator_property_map(sig_sel_color.begin(), boost::get(boost::vertex_index_t(), HLSMgr->RDiscr->DiscrepancyCallGraph), boost::white_color));
 }
 
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> CallGraphUnfolding::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const

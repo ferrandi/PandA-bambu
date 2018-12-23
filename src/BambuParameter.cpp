@@ -3078,6 +3078,10 @@ void BambuParameter::CheckParameters()
    {
       THROW_ERROR("--discrepancy-hw Hardware Discrepancy Analysis only works with dominator function allocation");
    }
+   if(isOption(OPT_discrepancy_hw) and getOption<bool>(OPT_discrepancy_hw) and isOption(OPT_disable_function_proxy) and getOption<bool>(OPT_disable_function_proxy))
+   {
+      THROW_ERROR("--discrepancy-hw Hardware Discrepancy Analysis only works with function proxies");
+   }
    if(isOption(OPT_discrepancy) and getOption<bool>(OPT_discrepancy))
    {
       if(false

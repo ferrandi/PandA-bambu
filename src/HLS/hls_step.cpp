@@ -312,6 +312,8 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
       case HLSFlowStep_Type::VALUES_SCHEME_STORAGE_VALUE_INSERTION:
          return "ValuesSchemeStorageValueInsertion";
 #if HAVE_VCD_BUILT
+      case HLSFlowStep_Type::HW_PATH_COMPUTATION:
+         return "HWPathComputation";
       case HLSFlowStep_Type::HW_DISCREPANCY_ANALYSIS:
          return "HWDiscrepancyAnalysis";
       case HLSFlowStep_Type::VCD_SIGNAL_SELECTION:

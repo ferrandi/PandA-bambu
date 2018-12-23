@@ -35,7 +35,7 @@
  */
 
 // class header
-#include "HWCallPathCalculator.hpp"
+#include "HWPathComputation.hpp"
 
 #include <utility>
 
@@ -63,6 +63,37 @@
 #include "Discrepancy.hpp"
 #include "UnfoldedCallInfo.hpp"
 #include "UnfoldedFunctionInfo.hpp"
+
+#include "dbgPrintHelper.hpp"
+
+
+class HWCallPathCalculator : public boost::default_dfs_visitor
+{
+ protected:
+   /// a refcount to the HLS_manager
+   const HLS_managerRef HLSMgr;
+
+   /// a stack of scopes used during the traversal of the UnfoldedCallGraph
+   std::stack<std::string> scope;
+
+   /// The key is the name of a shared function, the mapped value is the HW
+   //  scope of that shared function
+   std::map<std::string, std::string> shared_fun_scope;
+
+   /// The scope of the top function. It depends on different parameters and
+   //  it is computed by start_vertex
+   std::string top_fun_scope;
+
+ public:
+   HWCallPathCalculator(const HLS_managerRef _HLSMgr);
+
+   ~HWCallPathCalculator();
+
+   void start_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph& ucg);
+   void discover_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph& ucg);
+   void finish_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph&);
+   void examine_edge(const EdgeDescriptor& e, const UnfoldedCallGraph& cg);
+};
 
 HWCallPathCalculator::HWCallPathCalculator(const HLS_managerRef _HLSMgr) : HLSMgr(_HLSMgr)
 {
@@ -188,9 +219,9 @@ void HWCallPathCalculator::examine_edge(const EdgeDescriptor& e, const UnfoldedC
          const UnfoldedVertexDescriptor src = boost::source(e, ufcg);
          const unsigned int caller_f_id = Cget_node_info<UnfoldedFunctionInfo>(src, ufcg)->f_id;
          const auto caller_behavior = Cget_node_info<UnfoldedFunctionInfo>(src, ufcg)->behavior;
-         const fu_bindingConstRef fu_bind = HLSMgr->get_HLS(caller_f_id)->Rfu;
-         const OpGraphConstRef op_graph = HLSMgr->CGetFunctionBehavior(caller_f_id)->CGetOpGraph(FunctionBehavior::FCFG);
+         const OpGraphConstRef op_graph = caller_behavior->CGetOpGraph(FunctionBehavior::CFG);
          const vertex call_op_v = op_graph->CGetOpGraphInfo()->tree_node_to_operation.at(call_id);
+         const fu_bindingConstRef fu_bind = HLSMgr->get_HLS(caller_f_id)->Rfu;
          unsigned int fu_type_id = fu_bind->get_assign(call_op_v);
          unsigned int fu_instance_id = fu_bind->get_index(call_op_v);
          std::string extra_path;
@@ -215,4 +246,54 @@ void HWCallPathCalculator::examine_edge(const EdgeDescriptor& e, const UnfoldedC
    }
    HLSMgr->RDiscr->f_id_to_scope[called_f_id].insert(called_scope);
    HLSMgr->RDiscr->unfolded_v_to_scope[tgt] = called_scope;
+}
+
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> HWPathComputation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+{
+   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+
+   switch(relationship_type)
+   {
+      case DEPENDENCE_RELATIONSHIP:
+      {
+         ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::CALL_GRAPH_UNFOLDING, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         break;
+      }
+      case INVALIDATION_RELATIONSHIP:
+      case PRECEDENCE_RELATIONSHIP:
+      {
+         break;
+      }
+      default:
+      {
+         THROW_UNREACHABLE("");
+      }
+   }
+   return ret;
+}
+
+DesignFlowStep_Status HWPathComputation::Exec()
+{
+   // Calculate the HW paths and store them in Discrepancy
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Unfolding call graph");
+   HWCallPathCalculator sig_sel_v(HLSMgr);
+   std::vector<boost::default_color_type> sig_sel_color(boost::num_vertices(HLSMgr->RDiscr->DiscrepancyCallGraph), boost::white_color);
+   boost::depth_first_visit(HLSMgr->RDiscr->DiscrepancyCallGraph, HLSMgr->RDiscr->unfolded_root_v, sig_sel_v,
+                            boost::make_iterator_property_map(sig_sel_color.begin(), boost::get(boost::vertex_index_t(), HLSMgr->RDiscr->DiscrepancyCallGraph), boost::white_color));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--Unfolded call graph");
+   return DesignFlowStep_Status::SUCCESS;
+}
+
+HWPathComputation::HWPathComputation(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) : HLS_step(_Param, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::HW_PATH_COMPUTATION)
+{
+}
+
+HWPathComputation::~HWPathComputation()
+{
+}
+
+bool HWPathComputation::HasToBeExecuted() const
+{
+   return true;
 }

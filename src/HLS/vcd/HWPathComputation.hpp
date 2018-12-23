@@ -33,41 +33,23 @@
 /**
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
+#ifndef HW_CALL_PATH_CALCULATOR_HPP
+#define HW_CALL_PATH_CALCULATOR_HPP
 
-#include "refcount.hpp"
+// include superclass header
+#include "hls_step.hpp"
 
-#include "UnfoldedCallGraph.hpp"
-
-#include <map>
-#include <stack>
-#include <string>
-
-REF_FORWARD_DECL(HLS_manager);
-CONSTREF_FORWARD_DECL(Parameter);
-
-class HWCallPathCalculator : public boost::default_dfs_visitor
+class HWPathComputation : public HLS_step
 {
- protected:
-   /// a refcount to the HLS_manager
-   const HLS_managerRef HLSMgr;
-
-   /// a stack of scopes used during the traversal of the UnfoldedCallGraph
-   std::stack<std::string> scope;
-
-   /// The key is the name of a shared function, the mapped value is the HW
-   /// scope of that shared function
-   std::map<std::string, std::string> shared_fun_scope;
-
-   /// The scope of the top function. It depends on different parameters and
-   ///  it is computed by start_vertex
-   std::string top_fun_scope;
-
  public:
-   HWCallPathCalculator(const HLS_managerRef _HLSMgr);
-   ~HWCallPathCalculator();
+   virtual DesignFlowStep_Status Exec();
 
-   void start_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph& ucg);
-   void discover_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph& ucg);
-   void finish_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph&);
-   void examine_edge(const EdgeDescriptor& e, const UnfoldedCallGraph& cg);
+   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+
+   HWPathComputation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+
+   virtual ~HWPathComputation();
+
+   virtual bool HasToBeExecuted() const;
 };
+#endif
