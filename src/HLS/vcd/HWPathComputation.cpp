@@ -66,7 +66,6 @@
 
 #include "dbgPrintHelper.hpp"
 
-
 class HWCallPathCalculator : public boost::default_dfs_visitor
 {
  protected:

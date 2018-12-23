@@ -196,7 +196,6 @@ struct Discrepancy
    unsigned long long n_checked_operations = 0;
 
    Discrepancy() : call_sites_info(CallSitesInfoRef(new CallSitesInfo())), DiscrepancyCallGraph(GraphInfoRef(new GraphInfo())){};
-
 };
 
 typedef refcount<Discrepancy> DiscrepancyRef;
