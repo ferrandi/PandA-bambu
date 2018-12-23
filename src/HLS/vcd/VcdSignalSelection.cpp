@@ -116,6 +116,7 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    {
       case DEPENDENCE_RELATIONSHIP:
       {
+         ret.insert(std::make_tuple(HLSFlowStep_Type::HW_PATH_COMPUTATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
          ret.insert(std::make_tuple(HLSFlowStep_Type::CALL_GRAPH_UNFOLDING, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
          break;
       }
