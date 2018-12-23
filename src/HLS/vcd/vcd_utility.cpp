@@ -109,6 +109,7 @@ DiscrepancyLog::DiscrepancyLog(const HLS_managerConstRef HLSMgr, const vcd_trace
       op_end_time(t.op_end_time),
       type(t.op_info.type),
       op_id(t.op_info.op_id),
+      ssa_id(t.op_info.ssa_name_node_id),
       fun_id(t.op_info.stg_fun_id),
       op_start_state(t.fsm_ss_it->value),
       fu_name(HLSMgr->CGetFunctionBehavior(t.op_info.stg_fun_id)->CGetBehavioralHelper()->get_function_name()),
@@ -904,13 +905,15 @@ bool vcd_utility::detect_address_mismatch(const DiscrepancyOpInfo& op_info, cons
       else
       {
          base_index = 0;
+         uint64_t possible_base_address = 0;
          const uint64_t c_addr = static_cast<unsigned int>(std::stoull(c_val.c_str(), nullptr, 2));
 
          for(const auto& addr : Discr->c_addr_map.at(c_context))
          {
-            if(addr.second > 0 and addr.second <= c_addr)
+            if(addr.second > possible_base_address and addr.second <= c_addr)
             {
                base_index = addr.first;
+               possible_base_address = addr.second;
                break;
             }
          }
@@ -973,7 +976,7 @@ bool vcd_utility::detect_regular_mismatch(const vcd_trace_head& t, const std::st
    else // is an integer
    {
       std::string bitvalue = GetPointer<const ssa_name>(GET_NODE(TM->CGetTreeReindex(t.op_info.ssa_name_node_id)))->bit_values;
-      const auto first_not_x_pos = bitvalue.find_first_not_of("X");
+      const auto first_not_x_pos = bitvalue.find_first_not_of("xX");
       if(first_not_x_pos == std::string::npos)
          return false;
       const std::string vcd_trimmed_val = vcd_val.substr(first_not_x_pos);
@@ -1019,7 +1022,13 @@ void vcd_utility::print_discrepancy(const DiscrepancyLog& l, const int verbosity
                          STR(l.op_start_time) +
                          "\n"
                          "|  when fsm state is " +
-                         compute_fsm_state_from_vcd_string(l.op_start_state) + "\n";
+                         compute_fsm_state_from_vcd_string(l.op_start_state) +
+                         "\n"
+                         "|  assigned ssa id " +
+                         STR(GetPointer<const ssa_name>(GET_NODE(TM->CGetTreeReindex(l.ssa_id)))) +
+                         "\n"
+                         "|  bitvalue string for ssa id is " +
+                         GetPointer<const ssa_name>(GET_NODE(TM->CGetTreeReindex(l.ssa_id)))->bit_values + "\n";
 
    if(l.type & DISCR_ADDR)
    {

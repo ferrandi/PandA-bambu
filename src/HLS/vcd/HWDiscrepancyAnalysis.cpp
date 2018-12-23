@@ -68,9 +68,9 @@
 // include from tree/
 #include "behavioral_helper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
-#include "tree_basic_block.hpp"
-
 #include "structural_manager.hpp"
+#include "tree_basic_block.hpp"
+#include "tree_helper.hpp"
 
 #include <boost/tokenizer.hpp>
 
@@ -114,28 +114,6 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    return ret;
 }
 
-#ifndef NDEBUG
-static void print_c_control_flow_trace(std::unordered_map<unsigned int, std::unordered_map<uint64_t, std::list<unsigned int>>>& c_control_flow_trace, int debug_level)
-{
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Printing parsed C control flow trace");
-   for(const auto& fid2ctxtrace : c_control_flow_trace)
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->FUNCTION_ID: " + STR(fid2ctxtrace.first));
-      for(const auto& ctx2trace : fid2ctxtrace.second)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->CONTEXT: " + STR(ctx2trace.first));
-         for(const auto& bb_id : ctx2trace.second)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---BB: " + STR(bb_id));
-         }
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
-   }
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--End of parsed C control flow trace");
-}
-#endif
-
 DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
 {
    THROW_ASSERT(Discr, "Discr data structure is not correctly initialized");
@@ -146,16 +124,34 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       parse_discrepancy(ctrace_filename, Discr);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Parsed C trace: " + ctrace_filename);
    }
-#ifndef NDEBUG
-   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+#if 1
    {
-      print_c_control_flow_trace(Discr->c_control_flow_trace, debug_level);
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Printing parsed C control flow trace");
+      for(const auto& fid2ctxtrace : Discr->c_control_flow_trace)
+      {
+         const auto f_id = fid2ctxtrace.first;
+         const std::string f_name = tree_helper::name_function(HLSMgr->get_tree_manager(), f_id);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->FUNCTION_ID " + STR(f_id) + ": " + f_name);
+         for(const auto& ctx2trace : fid2ctxtrace.second)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->CONTEXT: " + STR(ctx2trace.first));
+            for(const auto& bb_id : ctx2trace.second)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---BB: " + STR(bb_id));
+            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--End of parsed C control flow trace");
    }
 #endif
    // untangle control flow traces
    std::unordered_map<std::string, std::list<size_t>> scope_to_epp_trace;
+   std::unordered_map<std::string, std::list<std::pair<size_t, size_t>>> scope_to_best_epp_trace_with_metadata;
    std::unordered_map<std::string, std::list<unsigned int>> scope_to_state_trace;
    std::unordered_map<std::string, unsigned int> scope_to_function_id;
+   std::unordered_map<std::string, size_t> scope_to_best_metadata_bits;
    std::vector<size_t> tot_memory_usage_per_bits = std::vector<size_t>(MAX_METADATA_BITSIZE, 0);
    size_t min_memory_usage = 0;
    size_t total_state_of_the_art_memory_usage = 0;
@@ -184,6 +180,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
 
          size_t epp_counter = 0;
          vertex current_state = fsm_entry_node;
+         bool takes_feedback_edge = false;
          {
             /*
              * the entry state is not a real FSM state, so it is never to check.
@@ -204,7 +201,6 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
             current_state = boost::target(taken_edge, *stg);
             // check that the first state is not a loop header
             const auto next_state_id = stg_info->vertex_to_state_id.at(current_state);
-            scope_to_state_trace[scope].push_back(next_state_id);
             THROW_ASSERT(state_id_to_check_on_feedback.find(next_state_id) == state_id_to_check_on_feedback.cend(), "");
          }
          if(HLSMgr->get_HLS(f_id)->registered_inputs)
@@ -233,6 +229,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
             current_state = boost::target(taken_edge, *stg);
             // check that the first state is not a loop header
             const auto next_state_id = stg_info->vertex_to_state_id.at(current_state);
+            scope_to_state_trace[scope].push_back(next_state_id);
             THROW_ASSERT(state_id_to_check_on_feedback.find(next_state_id) == state_id_to_check_on_feedback.cend(), "");
          }
          const std::list<unsigned int>& bb_trace = context2trace.second;
@@ -251,10 +248,10 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
             do
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---find next state with bb_id: " + STR(bb_id));
-               // if the current state is to check, write the trace
                const auto cur_state_id = stg_info->vertex_to_state_id.at(current_state);
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---current_state is: " + STR(cur_state_id));
-               if(state_id_to_check.find(cur_state_id) != state_id_to_check.cend())
+               // if the current state is to check, write the trace
+               if(not takes_feedback_edge and state_id_to_check.find(cur_state_id) != state_id_to_check.cend())
                {
                   scope_to_epp_trace[scope].push_back(epp_counter);
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "epp_trace " + STR(epp_counter));
@@ -262,9 +259,10 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                /* detect the taken edge and the next state  */
                bool found_valid_next_state = false;
                bool end_of_bb_execution = false;
-               bool takes_feedback_edge = false;
+               takes_feedback_edge = false;
                vertex next_state = nullptr;
                EdgeDescriptor taken_edge;
+               // look for the next state belonging to the same bb, without following a feedback edge
                BOOST_FOREACH(const EdgeDescriptor e, boost::out_edges(current_state, *stg))
                {
                   const auto dst = boost::target(e, *stg);
@@ -272,43 +270,28 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---analyzing next state: " + ((dst == fsm_exit_node) ? STR("EXIT") : STR(stg_info->vertex_to_state_id.at(dst))) + " in the same BB " + STR(bb_id));
                   if((not dst_info->is_dummy) and (*dst_info->BB_ids.begin() == bb_id))
                   {
-                     THROW_ASSERT(not found_valid_next_state, "two neighbors of state S_" + STR(stg_info->vertex_to_state_id.at(current_state)) + " have the same BB id = " + STR(bb_id));
-                     found_valid_next_state = true;
-                     taken_edge = e;
-                     next_state = dst;
-                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---found next state: " + STR(stg_info->vertex_to_state_id.at(next_state)) + " in the same BB " + STR(bb_id));
-
-                     if(stg->GetSelector(taken_edge) & TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK)
+                     if(not(stg->GetSelector(e) & TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK))
                      {
-                        takes_feedback_edge = true;
-                     }
-                     else if(dst_info->is_dummy)
-                     {
-                        scope_to_state_trace[scope].push_back(stg_info->vertex_to_state_id.at(dst));
+                        THROW_ASSERT(not found_valid_next_state, "two neighbors of state S_" + STR(stg_info->vertex_to_state_id.at(current_state)) + " have the same BB id = " + STR(bb_id));
+                        found_valid_next_state = true;
+                        taken_edge = e;
+                        next_state = dst;
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---FOUND next state: " + STR(stg_info->vertex_to_state_id.at(next_state)) + " in the same BB " + STR(bb_id));
                      }
                   }
-               }
-               const auto taken_edge_info = epp_stg->CGetTransitionInfo(taken_edge);
-               epp_counter += taken_edge_info->get_epp_increment();
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "epp_counter " + STR(epp_counter));
-
-               if(takes_feedback_edge)
-               {
-                  if(std::next(bb_id_it) == bb_id_end)
+                  else if(dst_info->is_dummy)
                   {
-                     THROW_ERROR("the FSM expects a feedback edge, but the software execution");
+                     scope_to_state_trace[scope].push_back(stg_info->vertex_to_state_id.at(dst));
                   }
                }
-               // if the next state was not found there are two cases
-               if(takes_feedback_edge or not found_valid_next_state)
+               // if the next state was not found in the same BB without feedback edges there are two cases
+               if(not found_valid_next_state)
                {
                   if(std::next(bb_id_it) != bb_id_end)
                   {
-                     // the execution branches to another BB
+                     // the execution branches to another BB (or to the same with a feedback edge)
                      const auto next_bb_id = *std::next(bb_id_it);
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---look for next BB " + STR(next_bb_id));
-                     found_valid_next_state = false;
-                     takes_feedback_edge = false;
                      BOOST_FOREACH(const EdgeDescriptor e, boost::out_edges(current_state, *stg))
                      {
                         const auto dst = boost::target(e, *stg);
@@ -316,13 +299,19 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                         if((not dst_info->is_dummy) and (*dst_info->BB_ids.begin() == next_bb_id))
                         {
                            THROW_ASSERT(not found_valid_next_state, "two neighbors of state S_" + STR(stg_info->vertex_to_state_id.at(current_state)) + " have the same BB id = " + STR(next_bb_id));
+                           found_valid_next_state = true;
+                           end_of_bb_execution = true;
                            taken_edge = e;
                            next_state = dst;
-                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---found next state: " + STR(stg_info->vertex_to_state_id.at(next_state)) + " in new BB " + STR(next_bb_id));
+                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---FOUND next state: " + STR(stg_info->vertex_to_state_id.at(next_state)) + " in new BB " + STR(next_bb_id));
                            if(stg->GetSelector(taken_edge) & TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK)
                            {
                               takes_feedback_edge = true;
                            }
+                        }
+                        else if(dst_info->is_dummy)
+                        {
+                           scope_to_state_trace[scope].push_back(stg_info->vertex_to_state_id.at(dst));
                         }
                      }
                   }
@@ -345,7 +334,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                   }
                   THROW_ASSERT(end_of_bb_execution, "");
                }
-#if HAVE_ASSERTS
+               THROW_ASSERT(found_valid_next_state, "next valid state not found");
                THROW_ASSERT(takes_feedback_edge == (reset_transitions.find(taken_edge) != reset_transitions.cend()), "");
                if(next_state != fsm_exit_node)
                {
@@ -353,7 +342,10 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                   scope_to_state_trace[scope].push_back(next_state_id);
                   THROW_ASSERT((not takes_feedback_edge) or (state_id_to_check_on_feedback.find(next_state_id) != state_id_to_check_on_feedback.cend()), "");
                }
-#endif
+               const auto taken_edge_info = epp_stg->CGetTransitionInfo(taken_edge);
+               epp_counter += taken_edge_info->get_epp_increment();
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "epp_counter " + STR(epp_counter));
+
                if(takes_feedback_edge)
                {
                   /*
@@ -501,50 +493,64 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
          std::map<std::string, std::map<size_t, size_t>> scope_to_bits_to_usage;
          if(Discr->hw_discrepancy_info->fu_id_control_flow_skip.find(f_id) == Discr->hw_discrepancy_info->fu_id_control_flow_skip.end())
          {
-            const size_t f_id_epp_trace_bitsize = Discr->hw_discrepancy_info->fu_id_to_epp_trace_bitsize.at(f_id);
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " EPP TRACE BITSIZE " + STR(f_id_epp_trace_bitsize));
+            size_t f_id_epp_trace_memory_word_bitsize = Discr->hw_discrepancy_info->fu_id_to_epp_trace_bitsize.at(f_id);
+            if((Discr->hw_discrepancy_info->fu_id_to_max_epp_path_val.at(f_id) + 1) == (1ULL << f_id_epp_trace_memory_word_bitsize))
+            {
+               f_id_epp_trace_memory_word_bitsize++;
+            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " EPP TRACE BITSIZE " + STR(f_id_epp_trace_memory_word_bitsize));
             for(const auto& scope : Discr->f_id_to_scope.at(f_id))
             {
-#if 0
-                  size_t scope_memory_usage = f_id_epp_trace_bitsize * scope_to_epp_trace.at(scope).size();
-                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                 "---scope " + scope + " memory usage (BITS): " + STR(scope_memory_usage));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                 "---scope " + scope + " memory usage (BYTES): " + STR((scope_memory_usage / 8) + (((scope_memory_usage % 8) == 0) ? 0 : 1)));
-                  f_memory_usage += scope_memory_usage;
-#endif
                if(scope_to_epp_trace.find(scope) == scope_to_epp_trace.end())
                   continue;
                const auto epp_trace = scope_to_epp_trace.at(scope);
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " scope " + scope + " EPP TRACE LENGTH " + STR(epp_trace.size()));
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " scope " + scope + " expected baseline EPP TRACE LENGTH " + STR(f_id_epp_trace_bitsize * epp_trace.size()));
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " scope " + scope + " expected baseline EPP TRACE LENGTH " + STR(f_id_epp_trace_memory_word_bitsize * epp_trace.size()));
+               size_t best_metadata_bitsize = 0;
+               size_t min_scope_memory_usage = std::numeric_limits<size_t>::max();
                for(size_t i = 0; i < MAX_METADATA_BITSIZE; i++)
                {
-                  size_t prev_epp_counter = std::numeric_limits<size_t>::max();
-                  size_t incremental_counter = 0;
-                  size_t scope_memory_usage = 0;
-                  for(const auto epp_counter : epp_trace)
+                  std::list<std::pair<size_t, size_t>> compressed_epp_trace_with_metadata;
+                  if(epp_trace.size())
                   {
-                     if(epp_counter != prev_epp_counter)
+                     size_t prev_epp_counter = epp_trace.front();
+                     // this represents the number of subsequent entries that
+                     // are repeated in the trace
+                     size_t metadata_counter = 0;
+                     for(const auto epp_counter : epp_trace)
                      {
-                        scope_memory_usage += f_id_epp_trace_bitsize + i;
-                        incremental_counter = 0;
-                     }
-                     else
-                     {
-                        incremental_counter++;
-                        if(incremental_counter >= (1ULL << i))
+                        if(epp_counter != prev_epp_counter)
                         {
-                           scope_memory_usage += f_id_epp_trace_bitsize + i;
-                           incremental_counter = 0;
+                           compressed_epp_trace_with_metadata.emplace_back(metadata_counter - 1, prev_epp_counter);
+                           metadata_counter = 0;
                         }
+                        else
+                        {
+                           if(metadata_counter > ((1ULL << i) - 1))
+                           {
+                              compressed_epp_trace_with_metadata.emplace_back(metadata_counter - 1, prev_epp_counter);
+                              metadata_counter = 0;
+                           }
+                        }
+                        metadata_counter++;
+                        prev_epp_counter = epp_counter;
                      }
-                     prev_epp_counter = epp_counter;
+                     if(metadata_counter)
+                        compressed_epp_trace_with_metadata.emplace_back(metadata_counter - 1, prev_epp_counter);
                   }
+                  size_t scope_memory_usage = (f_id_epp_trace_memory_word_bitsize + i) * compressed_epp_trace_with_metadata.size();
                   scope_to_bits_to_usage[scope][i] = scope_memory_usage;
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---scope " + scope + " memory usage (METADATA) " + STR(i) + " (BITS): " + STR(scope_memory_usage));
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---scope " + scope + " memory usage (METADATA) " + STR(i) + " (BYTES): " + STR((scope_memory_usage / 8) + (((scope_memory_usage % 8) == 0) ? 0 : 1)));
+                  if(scope_memory_usage < min_scope_memory_usage)
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---new best metadata bitsize = " + STR(i));
+                     best_metadata_bitsize = i;
+                     min_scope_memory_usage = scope_memory_usage;
+                     scope_to_best_epp_trace_with_metadata[scope].swap(compressed_epp_trace_with_metadata);
+                  }
                }
+               scope_to_best_metadata_bits[scope] = best_metadata_bitsize;
             }
             for(const auto& s2b2u : scope_to_bits_to_usage)
             {
@@ -572,10 +578,9 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " memory usage (BITS): " + STR(f_min_memory_usage));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " memory usage (BYTES): " + STR((f_min_memory_usage / 8) + (((f_min_memory_usage % 8) == 0) ? 0 : 1)));
       }
-
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Untangled software control flow trace of function: " + STR(f_id));
    }
-#if 0
+#if 1
    for(const auto& i : scope_to_state_trace)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---state trace length for function scope: " + i.first + ": " + STR(i.second.size()));
@@ -590,7 +595,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---EPP trace length for function scope: " + i.first + ": " + STR(i.second.size()));
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->scope " + i.first);
       for(const auto id : i.second)
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---" + STR(id));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---EPP_" + STR(id));
 
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
    }
@@ -600,30 +605,29 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
    THROW_ASSERT(root_functions.size() == 1, "more than one root function is not supported");
    unsigned int top_function = *(root_functions.begin());
    structural_objectRef top_module = HLSMgr->get_HLS(top_function)->top->get_circ();
+
    // scope_id starts from 1 because 0 are the non-initialized ones
    size_t scope_id = 1;
-
-   for(const auto& i : scope_to_epp_trace)
+   for(const auto& i : scope_to_best_epp_trace_with_metadata)
    {
+      const std::string& scope = i.first;
+      const auto f_id = scope_to_function_id.at(i.first);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Initializing checker for scope " + i.first);
-      if(i.second.empty())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Skipping scope " + i.first + " since it is not executed");
-         continue;
+         if(i.second.empty())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Skipping scope " + i.first + " since it is not executed");
+            continue;
+         }
+         if(Discr->hw_discrepancy_info->fu_id_control_flow_skip.find(f_id) != Discr->hw_discrepancy_info->fu_id_control_flow_skip.end())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Skipping scope " + i.first + " since it is belongs to a function without control flow instructions");
+            continue;
+         }
       }
-      /// Check if there is just one basic block in the function
-      const auto bb_graph = HLSMgr->CGetFunctionBehavior(scope_to_function_id.at(i.first))->CGetBBGraph(FunctionBehavior::BB);
-      if(boost::num_vertices(*bb_graph) == 3)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Skipping scope " + i.first + " since it belongs to a single path function");
-         continue;
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Initialing EPP ROM for function scope: " + i.first + ": trace length " + STR(i.second.size()));
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->scope " + i.first);
       typedef boost::tokenizer<boost::char_separator<char>> tokenizer;
       boost::char_separator<char> sep("/", nullptr);
-      std::string module_path = i.first;
-      tokenizer module_path_tokens(module_path, sep);
+      tokenizer module_path_tokens(scope, sep);
       tokenizer::iterator tok_iter;
       tokenizer::iterator tok_iter_end = module_path_tokens.end();
       for(tok_iter = module_path_tokens.begin(); tok_iter != tok_iter_end; ++tok_iter)
@@ -650,16 +654,40 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Found " + curr_module->get_path() + " of type " + GET_TYPE_NAME(curr_module));
       GetPointer<module>(curr_module)->set_parameter("EPP_MISMATCH_ID", STR(scope_id));
 
-      for(const auto id : i.second)
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---EPP_" + STR(id));
+      const size_t trace_len = i.second.size() + 1; // use one entry more in the trace to avoid ever accessing out of bounds
+      const size_t metadata_word_size = scope_to_best_metadata_bits.at(scope);
+      size_t data_word_size = boost::lexical_cast<size_t>(GetPointer<module>(curr_module)->get_parameter("EPP_TRACE_BITSIZE"));
+      if((Discr->hw_discrepancy_info->fu_id_to_max_epp_path_val.at(f_id) + 1) == (1ULL << data_word_size))
+      {
+         data_word_size++;
+         GetPointer<module>(curr_module)->set_parameter("EPP_TRACE_BITSIZE", STR(data_word_size));
+      }
+      const size_t invalid_epp_id = (1ULL << data_word_size) - 1;
+      GetPointer<module>(curr_module)->set_parameter("EPP_TRACE_LENGTH", STR(trace_len));
+      GetPointer<module>(curr_module)->set_parameter("EPP_TRACE_METADATA_BITSIZE", STR(metadata_word_size));
+      GetPointer<module>(curr_module)->set_parameter("EPP_TRACE_INITIAL_METADATA", STR(i.second.begin()->first));
 
-      const size_t word_size = boost::lexical_cast<size_t>(GetPointer<module>(curr_module)->get_parameter("EPP_TRACE_BITSIZE"));
+      for(const auto& id : i.second)
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---COMPRESSED_EPP " + STR(id.first) + ":" + STR(id.second));
 
       const std::string init_filename = "epp_control_flow_trace_scope__" + STR(scope_id) + ".mem";
       std::ofstream init_file((init_filename).c_str());
 
-      for(const auto id : i.second)
-         init_file << NumberToBinaryString(id, word_size) << std::endl;
+      for(const auto& id : i.second)
+      {
+         const auto metadata = id.first;
+         const auto data = id.second;
+         if(metadata >> metadata_word_size)
+            THROW_ERROR("metadata " + STR(metadata) + " cannot be represented with " + STR(metadata_word_size) + " bits");
+         if(data >> data_word_size)
+            THROW_ERROR("data " + STR(data) + " cannot be represented with " + STR(data_word_size) + " bits");
+         if(metadata_word_size)
+            init_file << NumberToBinaryString(metadata, metadata_word_size);
+         init_file << NumberToBinaryString(data, data_word_size) << std::endl;
+      }
+      if(metadata_word_size)
+         init_file << NumberToBinaryString(0, metadata_word_size);
+      init_file << NumberToBinaryString(invalid_epp_id, data_word_size) << std::endl;
       init_file.close();
       GetPointer<module>(curr_module)->set_parameter("MEMORY_INIT_file", "\"\"" + init_filename + "\"\"");
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Initialized checker for scope " + i.first);

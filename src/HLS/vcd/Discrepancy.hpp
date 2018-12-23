@@ -106,6 +106,8 @@ struct HWDiscrepancyInfo
     */
    std::unordered_map<unsigned int, size_t> fu_id_to_epp_trace_bitsize;
 
+   std::unordered_map<unsigned int, size_t> fu_id_to_max_epp_path_val;
+
    /**
     * This set contains the ids of functions for which the control flow
     * hardware discrepancy analyssi is not necessary.
@@ -182,7 +184,7 @@ struct Discrepancy
     * call context id, the mapped value is a list of BB identifiers traversed
     * during the execution of the call in that context.
     */
-   std::unordered_map<unsigned int, std::unordered_map<uint64_t, std::list<unsigned int>>> c_control_flow_trace;
+   std::unordered_map<unsigned int, std::map<uint64_t, std::list<unsigned int>>> c_control_flow_trace;
 
    /**
     * Address map used for address discrepancy analysis. The primary key is

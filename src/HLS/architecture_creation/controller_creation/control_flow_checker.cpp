@@ -137,40 +137,54 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
    const auto& eppstg = STG->CGetEPPStg();
    const auto& stg = STG->CGetStg();
    const auto& stg_info = stg->CGetStateTransitionGraphInfo();
-   std::string result = "generate\n"
-                        "   if(EPP_TRACE_LENGTH>0)\n"
-                        "   begin\n"
+
+   std::string result = "parameter METADATA_BITS_HELPER_SIZE = (EPP_TRACE_METADATA_BITSIZE > 0) ? EPP_TRACE_METADATA_BITSIZE : 1;\n"
+                        "generate\n"
+                        "if(EPP_TRACE_LENGTH>0)\n"
+                        "begin\n"
                         "// internal signals\n"
+                        "// signals concering the state of the checker\n"
                         "reg checker_state;\n"
                         "reg next_checker_state;\n"
-                        "wire is_checking;\n"
-                        "reg [EPP_TRACE_BITSIZE - 1 : 0] epp_counter;\n"
-                        "reg [EPP_TRACE_BITSIZE - 1 : 0] prev_epp_counter;\n"
+                        "wire is_checking;\n\n"
+                        "// epp counters, increments, and resets\n"
+                        "reg  [EPP_TRACE_BITSIZE - 1 : 0] prev_epp_counter;\n"
+                        "reg  [EPP_TRACE_BITSIZE - 1 : 0] epp_counter;\n"
                         "wire [EPP_TRACE_BITSIZE - 1 : 0] next_epp_counter;\n"
                         "wire [EPP_TRACE_BITSIZE - 1 : 0] epp_incremented_counter;\n"
-                        "reg [EPP_TRACE_BITSIZE - 1 : 0] epp_increment_val;\n"
-                        "reg [EPP_TRACE_BITSIZE - 1 : 0] epp_reset_val;\n"
+                        "reg  [EPP_TRACE_BITSIZE - 1 : 0] epp_increment_val;\n"
+                        "reg  [EPP_TRACE_BITSIZE - 1 : 0] epp_reset_val;\n\n"
                         "reg epp_to_reset;\n"
+                        "// info about if we're checking now or the previous feedback edge\n"
                         "reg to_check_now;\n"
                         "reg to_check_prev;\n"
-                        "reg next_to_check_prev;\n"
-                        "reg [BITSIZE_out_mismatch_trace_offset - 1 : 0] epp_trace_offset;\n"
-                        "reg [BITSIZE_out_mismatch_trace_offset - 1 : 0] prev_epp_trace_offset;\n"
-                        "wire [BITSIZE_out_mismatch_trace_offset - 1 : 0] next_prev_epp_trace_offset;\n"
+                        "reg next_to_check_prev;\n\n"
+                        "// trace offsets and increments\n"
+                        "reg  [BITSIZE_out_mismatch_trace_offset - 1 : 0] prev_epp_trace_offset;\n"
+                        "reg  [BITSIZE_out_mismatch_trace_offset - 1 : 0] epp_trace_offset;\n"
                         "wire [BITSIZE_out_mismatch_trace_offset - 1 : 0] next_epp_trace_offset;\n"
-                        "wire [1 : 0] trace_offset_increment;\n"
-                        "wire prev_trace_offset_increment;\n"
-                        "reg [EPP_TRACE_BITSIZE - 1 : 0] data_a;\n"
-                        "reg [EPP_TRACE_BITSIZE - 1 : 0] data_b;\n"
-                        "reg [EPP_TRACE_BITSIZE - 1 : 0] epp_trace_memory [0 : EPP_TRACE_LENGTH-1] /* synthesis syn_ramstyle = \"no_rw_check\" */;\n"
+                        "wire trace_offset_increment;\n"
+                        "wire trace_offset_increment_compressed;\n"
+                        "reg  trace_offset_increment_compressed_reg;\n\n"
+                        "// wires and register for data read from the trace\n"
+                        "wire [METADATA_BITS_HELPER_SIZE - 1 : 0] trace_metadata;\n"
+                        "wire [METADATA_BITS_HELPER_SIZE - 1 : 0] metadata;\n"
+                        "wire [METADATA_BITS_HELPER_SIZE - 1 : 0] decremented_metadata;\n"
+                        "reg  [METADATA_BITS_HELPER_SIZE - 1 : 0] decremented_metadata_reg;\n"
+                        "wire [EPP_TRACE_BITSIZE - 1 : 0] trace_data;\n"
+                        "reg  [EPP_TRACE_BITSIZE - 1 : 0] prev_data;\n\n"
+                        "// trace memory\n"
+                        "reg [EPP_TRACE_METADATA_BITSIZE + EPP_TRACE_BITSIZE - 1 : 0] epp_trace_memory [0 : EPP_TRACE_LENGTH-1] /* synthesis syn_ramstyle = \"no_rw_check, M20K\" */;\n"
+                        "reg [EPP_TRACE_METADATA_BITSIZE + EPP_TRACE_BITSIZE - 1 : 0] epp_trace_reg;\n\n"
+                        "// mismatch conditions\n"
                         "wire [BITSIZE_out_mismatch_trace_offset - 1 : 0] mismatch_trace_offset;\n"
                         "wire mismatch_now;\n"
-                        "wire mismatch_prev;\n"
+                        "wire mismatch_prev;\n\n"
+                        "// registered inputs\n"
                         "reg " START_PORT_NAME "_reg;\n"
                         "reg " DONE_PORT_NAME "_reg;\n"
                         "reg [STATE_BITSIZE-1:0] " PRESENT_STATE_PORT_NAME "_reg;\n"
-                        "reg [STATE_BITSIZE-1:0] " NEXT_STATE_PORT_NAME "_reg;\n"
-                        "\n";
+                        "reg [STATE_BITSIZE-1:0] " NEXT_STATE_PORT_NAME "_reg;\n\n";
 
    result += "always @(posedge clock)\n"
              "begin\n"
@@ -197,26 +211,27 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
              "  $readmemb(MEMORY_INIT_file, epp_trace_memory, 0, EPP_TRACE_LENGTH-1);\n"
              "end\n\n";
 
-   result += "always @(posedge clock)\n"
-             "begin\n"
-             "  data_a <= epp_trace_memory[next_epp_trace_offset];\n"
-             "end\n\n";
-   result += "always @(posedge clock)\n"
-             "begin\n"
-             "  data_b <= epp_trace_memory[next_prev_epp_trace_offset];\n"
-             "end\n\n";
-
    result += "assign epp_incremented_counter = epp_counter + epp_increment_val;\n"
              "assign next_epp_counter = epp_to_reset ? epp_reset_val : epp_incremented_counter;\n\n";
 
-   result += "assign trace_offset_increment = to_check_now + next_to_check_prev;\n"
-             "assign next_epp_trace_offset = epp_trace_offset + trace_offset_increment;\n\n"
-             "assign prev_trace_offset_increment = to_check_now && next_to_check_prev;\n"
-             "assign next_prev_epp_trace_offset = epp_trace_offset + prev_trace_offset_increment;\n\n";
+   result += "assign trace_offset_increment = is_checking && ((to_check_now && !to_check_prev) || next_to_check_prev);\n"
+             "if (EPP_TRACE_METADATA_BITSIZE > 0)\n"
+             "begin\n"
+             "  assign {trace_metadata, trace_data} = epp_trace_reg;\n"
+             "  assign metadata = (trace_offset_increment_compressed_reg) ? trace_metadata : decremented_metadata_reg;\n"
+             "  assign decremented_metadata = metadata - trace_offset_increment;\n"
+             "  assign trace_offset_increment_compressed = (metadata == 0) && trace_offset_increment;\n"
+             "end\n"
+             "else\n"
+             "begin\n"
+             "  assign trace_data = epp_trace_reg;\n"
+             "  assign trace_offset_increment_compressed = trace_offset_increment;\n"
+             "end\n"
+             "assign next_epp_trace_offset = epp_trace_offset + trace_offset_increment_compressed;\n\n";
 
    result += "assign is_checking = checker_state || " START_PORT_NAME "_reg;\n"
-             "assign mismatch_now = to_check_now && (epp_counter != data_a);\n"
-             "assign mismatch_prev = to_check_prev && (prev_epp_counter != data_b);\n"
+             "assign mismatch_now = (!to_check_prev) && to_check_now && (epp_counter != trace_data);\n"
+             "assign mismatch_prev = to_check_prev && (prev_epp_counter != prev_data);\n"
              "assign out_mismatch = is_checking && (mismatch_now || mismatch_prev);\n"
              "assign out_mismatch_id = out_mismatch ? EPP_MISMATCH_ID : 0;\n"
              "assign mismatch_trace_offset = mismatch_prev ? prev_epp_trace_offset : epp_trace_offset;\n"
@@ -225,7 +240,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
    result += "// synthesis translate_off\n"
              "always @(posedge clock)\n"
              "begin\n"
-             "  if (out_mismatch_id)\n"
+             "  if (out_mismatch)\n"
              "  begin\n"
              "    $display(\"DISCREPANCY FOUND at time %t:\", $time);\n"
              "    $display(\"DISCREPANCY ID: %d\", out_mismatch_id);\n"
@@ -253,15 +268,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
              "   default:\n"
              "      next_checker_state = 0;\n"
              "   endcase\n"
-             "end\n"
-             "end\n"
-             "else\n"
-             "begin\n"
-             "   assign out_mismatch = 0;\n"
-             "   assign out_mismatch_id = 0;\n"
-             "   assign out_mismatch_trace_offset = 0;\n"
-             "end\n"
-             "endgenerate\n\n";
+             "end\n\n";
 
    // helper functions
    const auto encode_one_hot = [](unsigned int nstates, unsigned int val) -> std::string {
@@ -383,7 +390,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
             continue;
          const auto src_id = stg_info->vertex_to_state_id.at(src);
          const auto dst_id = stg_info->vertex_to_state_id.at(dst);
-         const auto increment_val = eppstg->CGetTransitionInfo(e)->epp_increment;
+         const auto increment_val = eppstg->CGetTransitionInfo(e)->get_epp_increment();
          if(increment_val != 0)
             present_to_next_to_increment[src_id][dst_id] = increment_val;
       }
@@ -392,7 +399,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
          const vertex dst = boost::target(e, *stg);
          const auto dst_id = stg_info->vertex_to_state_id.at(dst);
          const auto epp_edge_from_entry = eppstg->CGetEdge(fsm_entry_node, dst);
-         const auto reset_val = eppstg->CGetTransitionInfo(epp_edge_from_entry)->epp_increment;
+         const auto reset_val = eppstg->CGetTransitionInfo(epp_edge_from_entry)->get_epp_increment();
 
          vertex src = boost::source(e, *stg);
          const auto src_id = stg_info->vertex_to_state_id.at(src);
@@ -404,7 +411,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
             src = boost::source(*in_e_it, *astg);
          }
          const auto epp_edge_to_exit = eppstg->CGetEdge(src, fsm_exit_node);
-         const auto increment_val = eppstg->CGetTransitionInfo(epp_edge_to_exit)->epp_increment;
+         const auto increment_val = eppstg->CGetTransitionInfo(epp_edge_to_exit)->get_epp_increment();
 
          if(reset_val != 0)
             next_to_resetval_to_present[dst_id][reset_val].insert(src_id);
@@ -417,7 +424,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
    THROW_ASSERT(boost::out_degree(fsm_entry_node, *stg) == 1, "");
    OutEdgeIterator o_e_it, o_e_end;
    boost::tie(o_e_it, o_e_end) = boost::out_edges(fsm_entry_node, *stg);
-   const std::string initial_epp_counter_str = epp_val_string((stg->CGetTransitionInfo(*o_e_it)->epp_increment));
+   const std::string initial_epp_counter_str = epp_val_string((stg->CGetTransitionInfo(*o_e_it)->get_epp_increment()));
    vertex initial_state = boost::target(*o_e_it, *stg);
    const auto initial_state_id = stg_info->vertex_to_state_id.at(initial_state);
    const std::string initial_state_string = compute_state_string(initial_state_id);
@@ -512,7 +519,12 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
 
    result += "end\n\n";
 
-   std::string reset_type = HLSMgr->get_parameter()->getOption<std::string>(OPT_sync_reset);
+   result += "always @(posedge " CLOCK_PORT_NAME ")\n"
+             "begin\n"
+             "   epp_trace_reg <= epp_trace_memory[next_epp_trace_offset];\n"
+             "end\n\n";
+
+   const std::string reset_type = HLSMgr->get_parameter()->getOption<std::string>(OPT_sync_reset);
    if(reset_type == "no" || reset_type == "sync")
       result += "always @(posedge " CLOCK_PORT_NAME ")\n";
    else if(!HLSMgr->get_parameter()->getOption<bool>(OPT_level_reset))
@@ -524,6 +536,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
       result += "if (" RESET_PORT_NAME " == 1'b0)\n";
    else
       result += "if (" RESET_PORT_NAME " == 1'b1)\n";
+
    result += "  begin\n"
              "   prev_epp_counter <= 0;\n"
              "   epp_counter <= 0;\n"
@@ -531,20 +544,43 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
              "   prev_epp_trace_offset <= 0;\n"
              "   to_check_prev <= 0;\n"
              "   checker_state <= 0;\n"
+             "   if (EPP_TRACE_METADATA_BITSIZE > 0)\n"
+             "   begin\n"
+             "      decremented_metadata_reg <= EPP_TRACE_INITIAL_METADATA;\n"
+             "      trace_offset_increment_compressed_reg <= 0;\n"
+             "   end\n"
              "end\n"
              "else\n"
              "begin\n"
-             "   prev_epp_counter <= epp_counter;\n"
+             "   if (trace_offset_increment)\n"
+             "   begin\n"
+             "      prev_epp_trace_offset <= epp_trace_offset;\n"
+             "      prev_data <= trace_data;\n"
+             "   end\n"
+             "   prev_epp_counter <= epp_incremented_counter;\n"
              "   epp_counter <= next_epp_counter;\n"
              "   epp_trace_offset <= next_epp_trace_offset;\n"
-             "   prev_epp_trace_offset <= next_prev_epp_trace_offset;\n"
              "   to_check_prev <= next_to_check_prev;\n"
              "   checker_state <= next_checker_state;\n"
-             "end\n\n";
+             "   if (EPP_TRACE_METADATA_BITSIZE > 0)\n"
+             "   begin\n"
+             "      decremented_metadata_reg <= decremented_metadata;\n"
+             "      trace_offset_increment_compressed_reg <= trace_offset_increment_compressed;\n"
+             "   end\n"
+             "end\n"
+             "end\n"
+             "else\n"
+             "begin\n"
+             "   assign out_mismatch = 0;\n"
+             "   assign out_mismatch_id = 0;\n"
+             "   assign out_mismatch_trace_offset = 0;\n"
+             "end\n"
+             "endgenerate\n\n";
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Added control flow checker..." + result);
    return result;
 }
+
 void ControlFlowChecker::add_clock_reset(structural_objectRef circuit)
 {
    structural_managerRef& SM = HLS->control_flow_checker;
@@ -643,6 +679,7 @@ DesignFlowStep_Status ControlFlowChecker::InternalExec()
    structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor(cfc_module_name));
    HLS->control_flow_checker->set_top_info("ControlFlowChecker_i", module_type);
    structural_objectRef checker_circuit = HLS->control_flow_checker->get_circ();
+   GetPointer<module>(checker_circuit)->set_description("Control Flow Checker for " + f_name);
    GetPointer<module>(checker_circuit)->set_copyright(GENERATED_COPYRIGHT);
    GetPointer<module>(checker_circuit)->set_authors("Checker automatically generated by bambu");
    GetPointer<module>(checker_circuit)->set_license(GENERATED_LICENSE);
@@ -658,13 +695,17 @@ DesignFlowStep_Status ControlFlowChecker::InternalExec()
    size_t epp_trace_bitsize = discr_info->fu_id_to_epp_trace_bitsize.at(funId);
    GetPointer<module>(checker_circuit)->set_parameter("STATE_BITSIZE", STR(state_bitsize));
    GetPointer<module>(checker_circuit)->set_parameter("EPP_TRACE_BITSIZE", STR(epp_trace_bitsize));
+   GetPointer<module>(checker_circuit)->set_parameter("EPP_TRACE_METADATA_BITSIZE", STR(0));
    GetPointer<module>(checker_circuit)->set_parameter("MEMORY_INIT_file", "\"\"trace.mem\"\"");
    GetPointer<module>(checker_circuit)->set_parameter("EPP_TRACE_LENGTH", STR(0));
    GetPointer<module>(checker_circuit)->set_parameter("EPP_MISMATCH_ID", STR(0));
+   GetPointer<module>(checker_circuit)->set_parameter("EPP_TRACE_INITIAL_METADATA", STR(0));
 
    add_common_ports(checker_circuit, state_bitsize);
 
-   HLS->control_flow_checker->add_NP_functionality(checker_circuit, NP_functionality::LIBRARY, cfc_module_name + " out_mismatch_id out_mismatch_trace_offset STATE_BITSIZE EPP_TRACE_BITSIZE MEMORY_INIT_file EPP_TRACE_LENGTH EPP_MISMATCH_ID");
+   HLS->control_flow_checker->add_NP_functionality(checker_circuit, NP_functionality::LIBRARY,
+                                                   cfc_module_name +
+                                                       " out_mismatch out_mismatch_id out_mismatch_trace_offset STATE_BITSIZE EPP_TRACE_BITSIZE EPP_TRACE_METADATA_BITSIZE EPP_TRACE_INITIAL_METADATA MEMORY_INIT_file EPP_TRACE_LENGTH EPP_MISMATCH_ID");
 
    std::string verilog_cf_checker_description = create_control_flow_checker(epp_trace_bitsize, funId, HLS->STG, HLSMgr, discr_info, one_hot_encoding, max_value, state_bitsize, debug_level);
    add_escape(verilog_cf_checker_description, "\\");

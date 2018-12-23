@@ -65,6 +65,7 @@ struct DiscrepancyLog
    unsigned long long op_end_time;
    enum discrepancy_type_mask type;
    unsigned int op_id;
+   unsigned int ssa_id;
    unsigned int fun_id;
    std::string op_start_state;
    std::string fu_name;

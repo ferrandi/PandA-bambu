@@ -49,6 +49,7 @@
 REF_FORWARD_DECL(structural_object);
 class module;
 //@}
+
 class ControlFlowChecker : public HLSFunctionStep
 {
  protected:

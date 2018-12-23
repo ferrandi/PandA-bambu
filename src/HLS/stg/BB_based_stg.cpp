@@ -845,7 +845,7 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Added EPP edges");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Computing EPP edge increments");
    size_t max_path_val = compute_edge_increments(HLS->STG);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Computed EPP edge increments");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Computed EPP edge increments: max_path_val = " + STR(max_path_val));
    if(max_path_val)
    {
       size_t epp_trace_bitsize = 0;
@@ -857,11 +857,13 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
       discr_info->fu_id_control_flow_skip.erase(funId);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---fun id " + STR(funId) + "EPP path bits " + STR(epp_trace_bitsize));
       discr_info->fu_id_to_epp_trace_bitsize[funId] = epp_trace_bitsize;
+      discr_info->fu_id_to_max_epp_path_val[funId] = max_path_val;
    }
    else
    {
       discr_info->fu_id_control_flow_skip.insert(funId);
       discr_info->fu_id_to_epp_trace_bitsize[funId] = 0;
+      discr_info->fu_id_to_max_epp_path_val[funId] = 0;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---no control flow discrepancy is necessary");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Computing states where EPP trace must be checked");
