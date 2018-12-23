@@ -199,6 +199,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
             // update epp counter
             const auto taken_edge_info = stg->CGetTransitionInfo(taken_edge);
             epp_counter += taken_edge_info->get_epp_increment();
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "epp_counter " + STR(epp_counter));
             // update the current_state with the only successor of entry
             current_state = boost::target(taken_edge, *stg);
             // check that the first state is not a loop header
@@ -227,6 +228,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
             // update epp counter
             const auto taken_edge_info = stg->CGetTransitionInfo(taken_edge);
             epp_counter += taken_edge_info->get_epp_increment();
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "epp_counter " + STR(epp_counter));
             // update the current_state with the only successor of entry
             current_state = boost::target(taken_edge, *stg);
             // check that the first state is not a loop header
@@ -255,6 +257,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                if(state_id_to_check.find(cur_state_id) != state_id_to_check.cend())
                {
                   scope_to_epp_trace[scope].push_back(epp_counter);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "epp_trace " + STR(epp_counter));
                }
                /* detect the taken edge and the next state  */
                bool found_valid_next_state = false;
@@ -369,7 +372,9 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                   const auto from_entry_edge_info = epp_stg->CGetTransitionInfo(epp_edge_from_entry);
                   const auto to_exit_edge_info = epp_stg->CGetTransitionInfo(epp_edge_to_exit);
                   scope_to_epp_trace[scope].push_back(epp_counter + to_exit_edge_info->get_epp_increment());
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "epp_trace " + STR(epp_counter + to_exit_edge_info->get_epp_increment()));
                   epp_counter = from_entry_edge_info->get_epp_increment();
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "reset epp_counter " + STR(epp_counter));
                }
                current_state = next_state;
                goes_to_next_bb_execution = end_of_bb_execution;
