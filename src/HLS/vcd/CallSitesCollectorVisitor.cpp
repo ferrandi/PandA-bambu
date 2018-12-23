@@ -53,11 +53,6 @@ CallSitesCollectorVisitor::~CallSitesCollectorVisitor() = default;
 void CallSitesCollectorVisitor::start_vertex(const vertex&, const CallGraph&)
 {
    THROW_ASSERT(HLSMgr->RDiscr, "Discrepancy data structure not initialized");
-   // cleanup shared info before recomputing it
-   HLSMgr->RDiscr->call_sites_info->fu_id_to_call_ids.clear();
-   HLSMgr->RDiscr->call_sites_info->call_id_to_called_id.clear();
-   HLSMgr->RDiscr->call_sites_info->indirect_calls.clear();
-   HLSMgr->RDiscr->call_sites_info->taken_addresses.clear();
 }
 
 void CallSitesCollectorVisitor::discover_vertex(const vertex& v, const CallGraph&)

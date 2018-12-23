@@ -77,7 +77,7 @@ typedef refcount<const CallSitesInfo> CallSitesInfoConstRef;
 struct Discrepancy
 {
    /// Reference to a struct holding info on the call sites
-   const CallSitesInfoRef call_sites_info;
+   CallSitesInfoRef call_sites_info;
 
    /// Reference to the unfolded call graph used for the discrepancy analysis
    UnfoldedCallGraph DiscrepancyCallGraph;
@@ -196,6 +196,24 @@ struct Discrepancy
    unsigned long long n_checked_operations = 0;
 
    Discrepancy() : call_sites_info(CallSitesInfoRef(new CallSitesInfo())), DiscrepancyCallGraph(GraphInfoRef(new GraphInfo())){};
+
+   void clear()
+   {
+      call_sites_info.reset(new CallSitesInfo);
+      DiscrepancyCallGraph = UnfoldedCallGraph(GraphInfoRef(new GraphInfo()));
+      unfolded_root_v = {};
+      selected_vcd_signals.clear();
+      opid_to_outsignal.clear();
+      unfolded_v_to_scope.clear();
+      f_id_to_scope.clear();
+      c_op_trace.clear();
+      c_control_flow_trace.clear();
+      c_addr_map.clear();
+      context_to_scope.clear();
+      c_trace_filename.clear();
+      n_total_operations = 0;
+      n_checked_operations = 0;
+   }
 };
 
 typedef refcount<Discrepancy> DiscrepancyRef;

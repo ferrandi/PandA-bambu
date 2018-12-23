@@ -103,10 +103,17 @@ static void Unfold(const HLS_managerRef& HLSMgr)
     * After the collection of the data on the call sites we can actually start
     * to unfold the call graph
     */
-   // insert in the unfolded call graph the root function node
+   // get the id of the root function
    const unsigned int root_fun_id = *(root_functions.begin());
    const auto b = cg->CGetCallGraphInfo()->behaviors.find(root_fun_id);
    THROW_ASSERT(b != cg->CGetCallGraphInfo()->behaviors.end(), "no behavior for root function " + STR(root_fun_id));
+   for(const auto fun_id : cgman->GetReachedBodyFunctionsFrom(root_fun_id))
+   {
+      const OpGraphConstRef op_graph = HLSMgr->CGetFunctionBehavior(fun_id)->CGetOpGraph(FunctionBehavior::FCFG);
+      THROW_ASSERT(boost::num_vertices(*op_graph) >= 2, "at least ENTRY and EXIT node must exist for op graph of function " + STR(fun_id));
+      HLSMgr->RDiscr->n_total_operations += boost::num_vertices(*op_graph) - 2;
+   }
+   // insert in the unfolded call graph the root function node
    HLSMgr->RDiscr->unfolded_root_v = HLSMgr->RDiscr->DiscrepancyCallGraph.AddVertex(NodeInfoRef(new UnfoldedFunctionInfo(root_fun_id, b->second)));
    RecursivelyUnfold(HLSMgr->RDiscr->unfolded_root_v, HLSMgr->RDiscr->DiscrepancyCallGraph, cg, HLSMgr->RDiscr->call_sites_info);
 }
@@ -137,6 +144,8 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 
 DesignFlowStep_Status CallGraphUnfolding::Exec()
 {
+   // cleanup data structure if this is not the first execution
+   HLSMgr->RDiscr->clear();
    /* unfold the call graph and compute data structures used for discrepancy analysis*/
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Unfolding call graph");
    Unfold(HLSMgr);
