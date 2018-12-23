@@ -288,6 +288,10 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                      }
                   }
                }
+               const auto taken_edge_info = epp_stg->CGetTransitionInfo(taken_edge);
+               epp_counter += taken_edge_info->get_epp_increment();
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "epp_counter " + STR(epp_counter));
+
                if(takes_feedback_edge)
                {
                   if(std::next(bb_id_it) == bb_id_end)
