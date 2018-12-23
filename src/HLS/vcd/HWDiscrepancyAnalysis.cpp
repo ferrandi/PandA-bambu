@@ -403,13 +403,15 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " ONE HOT" + STR(one_hot_encoding ? "  true" : " false"));
 
          const unsigned int state_bitsize = one_hot_encoding ? (max_value + 1) : bitsnumber;
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " STATE BITSIZE" + STR(state_bitsize));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " STATE BITSIZE " + STR(state_bitsize));
 
          size_t f_state_of_the_art_usage = 0;
          size_t f_state_of_the_art_usage_fixed = 0;
          size_t f_state_of_the_art_usage_opt = 0;
          for(const auto& scope : Discr->f_id_to_scope.at(f_id))
          {
+            if(scope_to_state_trace.find(scope) == scope_to_state_trace.end())
+               continue;
             const auto& state_trace = scope_to_state_trace.at(scope);
             size_t scope_memory_usage = state_bitsize * state_trace.size();
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---scope " + scope + " state_of_the_art memory usage (BITS): " + STR(scope_memory_usage));
@@ -500,6 +502,8 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                                  "---scope " + scope + " memory usage (BYTES): " + STR((scope_memory_usage / 8) + (((scope_memory_usage % 8) == 0) ? 0 : 1)));
                   f_memory_usage += scope_memory_usage;
 #endif
+               if(scope_to_epp_trace.find(scope) == scope_to_epp_trace.end())
+                  continue;
                const auto epp_trace = scope_to_epp_trace.at(scope);
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " scope " + scope + " EPP TRACE LENGTH " + STR(epp_trace.size()));
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " scope " + scope + " expected baseline EPP TRACE LENGTH " + STR(f_id_epp_trace_bitsize * epp_trace.size()));
