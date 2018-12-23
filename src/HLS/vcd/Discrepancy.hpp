@@ -197,7 +197,6 @@ struct Discrepancy
 
    Discrepancy() : call_sites_info(CallSitesInfoRef(new CallSitesInfo())), DiscrepancyCallGraph(GraphInfoRef(new GraphInfo())){};
 
-   static void add_discrepancy_parameter(const structural_managerRef& SM, const std::string& name, const std::string& value);
 };
 
 typedef refcount<Discrepancy> DiscrepancyRef;

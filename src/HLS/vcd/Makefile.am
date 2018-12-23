@@ -48,7 +48,6 @@ noinst_HEADERS = \
 lib_vcd_la_SOURCES = \
    CallGraphUnfolding.cpp \
    CallSitesCollectorVisitor.cpp \
-   Discrepancy.cpp \
    HWPathComputation.cpp \
    HWDiscrepancyAnalysis.cpp \
    vcd_trace_head.cpp \
