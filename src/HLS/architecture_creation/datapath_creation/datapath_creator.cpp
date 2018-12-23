@@ -84,15 +84,14 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
          break;
       }
       case INVALIDATION_RELATIONSHIP:
-      {
-         break;
-      }
       case PRECEDENCE_RELATIONSHIP:
       {
          break;
       }
       default:
+      {
          THROW_UNREACHABLE("");
+      }
    }
    return ret;
 }
