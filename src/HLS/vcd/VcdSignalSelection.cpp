@@ -76,7 +76,6 @@
 #include "allocation_information.hpp"
 
 // includes from HLS/vcd
-#include "CallGraphUnfolder.hpp"
 #include "Discrepancy.hpp"
 #include "UnfoldedFunctionInfo.hpp"
 
@@ -117,19 +116,19 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::CALL_GRAPH_UNFOLDING, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
-      {
-         break;
-      }
       case PRECEDENCE_RELATIONSHIP:
       {
          break;
       }
       default:
+      {
          THROW_UNREACHABLE("");
+         break;
+      }
    }
    return ret;
 }
@@ -820,16 +819,9 @@ void VcdSignalSelection::SelectInternalSignals(std::unordered_map<unsigned int, 
 DesignFlowStep_Status VcdSignalSelection::Exec()
 {
    THROW_ASSERT(Discr, "Discr data structure is not correctly initialized");
-   std::unordered_map<unsigned int, std::unordered_set<unsigned int>> caller_to_call_id;
-   std::unordered_map<unsigned int, std::unordered_set<unsigned int>> call_to_called_id;
-   /* unfold the call graph and compute data structures used for discrepancy analysis*/
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Preprocessing call graph for vcd signal selection");
-   const CallGraphManagerConstRef CGMan = HLSMgr->CGetCallGraphManager();
-   CallGraphUnfolder::Unfold(HLSMgr, parameters, caller_to_call_id, call_to_called_id);
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--Preprocessed call graph for vcd signal selection");
    /* select the ssa representing addresses and ssa to skip in discrepancy analysis */
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Selecting discrepancy variables");
-   SelectAddrSsa(caller_to_call_id, call_to_called_id);
+   SelectAddrSsa(Discr->call_sites_info->fu_id_to_call_ids, Discr->call_sites_info->call_id_to_called_id);
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--Selected discrepancy variables");
    /* Calculate the internal signal names for every function */
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Selecting internal signals in functions");

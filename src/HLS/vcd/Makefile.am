@@ -33,7 +33,7 @@ lib_vcd_la_CPPFLAGS = \
    -I$(BOOST_DIR) $(all_includes)
 
 noinst_HEADERS = \
-   CallGraphUnfolder.hpp \
+   CallGraphUnfolding.hpp \
    CallSitesCollectorVisitor.hpp \
    Discrepancy.hpp \
    HWCallPathCalculator.hpp \
@@ -46,7 +46,7 @@ noinst_HEADERS = \
    vcd_utility.hpp
 
 lib_vcd_la_SOURCES = \
-   CallGraphUnfolder.cpp \
+   CallGraphUnfolding.cpp \
    CallSitesCollectorVisitor.cpp \
    Discrepancy.cpp \
    HWCallPathCalculator.cpp \

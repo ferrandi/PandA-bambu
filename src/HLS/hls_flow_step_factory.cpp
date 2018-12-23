@@ -237,6 +237,7 @@
 /// HLS/stg
 #include "BB_based_stg.hpp"
 
+#include "CallGraphUnfolding.hpp"
 #if HAVE_VCD_BUILT
 #include "HWDiscrepancyAnalysis.hpp"
 #include "VcdSignalSelection.hpp"
@@ -303,6 +304,11 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
       case HLSFlowStep_Type::HLS_BIT_VALUE:
       {
          design_flow_step = DesignFlowStepRef(new hls_bit_value(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         break;
+      }
+      case HLSFlowStep_Type::CALL_GRAPH_UNFOLDING:
+      {
+         design_flow_step = DesignFlowStepRef(new CallGraphUnfolding(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::CDFC_MODULE_BINDING:
@@ -772,6 +778,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
             ret.insert(CreateHLSFlowStep(hls_flow_step.first, 0, hls_flow_step.second));
             break;
          }
+         case HLSFlowStep_Type::CALL_GRAPH_UNFOLDING:
          case HLSFlowStep_Type::CLASSICAL_HLS_SYNTHESIS_FLOW:
          case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION:
          case HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION:

@@ -59,8 +59,26 @@
 
 REF_FORWARD_DECL(structural_manager);
 
+struct CallSitesInfo
+{
+   /// Maps every function to the calls it performs
+   std::unordered_map<unsigned int, std::unordered_set<unsigned int>> fu_id_to_call_ids;
+   /// Maps every id of a call site to the id of the called function
+   std::unordered_map<unsigned int, std::unordered_set<unsigned int>> call_id_to_called_id;
+   /// Set of indirect calls
+   std::unordered_set<unsigned int> indirect_calls;
+   /// Set of taken addresses
+   std::unordered_set<unsigned int> taken_addresses;
+};
+
+typedef refcount<CallSitesInfo> CallSitesInfoRef;
+typedef refcount<const CallSitesInfo> CallSitesInfoConstRef;
+
 struct Discrepancy
 {
+   /// Reference to a struct holding info on the call sites
+   const CallSitesInfoRef call_sites_info;
+
    /// Reference to the unfolded call graph used for the discrepancy analysis
    UnfoldedCallGraph DiscrepancyCallGraph;
 
@@ -173,13 +191,11 @@ struct Discrepancy
    /// name of the file that contains the c trace to parse
    std::string c_trace_filename;
 
-   unsigned long long n_total_operations{0};
+   unsigned long long n_total_operations = 0;
 
-   unsigned long long n_checked_operations{0};
+   unsigned long long n_checked_operations = 0;
 
-   Discrepancy(void) : DiscrepancyCallGraph(GraphInfoRef(new GraphInfo()))
-   {
-   }
+   Discrepancy() : call_sites_info(CallSitesInfoRef(new CallSitesInfo())), DiscrepancyCallGraph(GraphInfoRef(new GraphInfo())){};
 
    static void add_discrepancy_parameter(const structural_managerRef& SM, const std::string& name, const std::string& value);
 };

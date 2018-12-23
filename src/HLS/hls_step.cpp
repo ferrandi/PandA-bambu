@@ -136,6 +136,8 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "HLSBitValue";
       case HLSFlowStep_Type::CDFC_MODULE_BINDING:
          return "CdfcModuleBinding";
+      case HLSFlowStep_Type::CALL_GRAPH_UNFOLDING:
+         return "CallGraphUnfolding";
 #if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::CHAINING_BASED_LIVENESS:
          return "ChainingBasedLiveness";

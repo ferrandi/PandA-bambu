@@ -60,7 +60,6 @@
 #include "state_transition_graph_manager.hpp"
 
 // include from HLS/vcd/
-#include "CallGraphUnfolder.hpp"
 #include "Discrepancy.hpp"
 
 // include from parser/discrepancy/
@@ -97,6 +96,7 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
       case DEPENDENCE_RELATIONSHIP:
       {
          ret.insert(std::make_tuple(HLSFlowStep_Type::C_TESTBENCH_EXECUTION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::CALL_GRAPH_UNFOLDING, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -138,15 +138,6 @@ static void print_c_control_flow_trace(std::unordered_map<unsigned int, std::uno
 DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
 {
    THROW_ASSERT(Discr, "Discr data structure is not correctly initialized");
-   // unfold the call graph and compute data structures used for discrepancy analysis
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Unfolding call graph");
-      std::unordered_map<unsigned int, std::unordered_set<unsigned int>> caller_to_call_id;
-      std::unordered_map<unsigned int, std::unordered_set<unsigned int>> call_to_called_id;
-      const CallGraphManagerConstRef CGMan = HLSMgr->CGetCallGraphManager();
-      CallGraphUnfolder::Unfold(HLSMgr, parameters, caller_to_call_id, call_to_called_id);
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Unfolded call graph");
-   }
    // parse the file containing the C traces
    {
       const std::string& ctrace_filename = Discr->c_trace_filename;

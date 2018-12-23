@@ -48,25 +48,22 @@ CONSTREF_FORWARD_DECL(Parameter);
 class HWCallPathCalculator : public boost::default_dfs_visitor
 {
  protected:
+   /// a refcount to the HLS_manager
    const HLS_managerRef HLSMgr;
 
-   const ParameterConstRef parameters;
-
-   std::map<unsigned int, vertex>& call_id_to_OpVertex;
-
+   /// a stack of scopes used during the traversal of the UnfoldedCallGraph
    std::stack<std::string> scope;
 
-   std::stack<vertex> caller;
-
-   // The key is the name of a shared function, the mapped value is the HW
-   // scope of that shared function
+   /// The key is the name of a shared function, the mapped value is the HW
+   /// scope of that shared function
    std::map<std::string, std::string> shared_fun_scope;
 
+   /// The scope of the top function. It depends on different parameters and
+   ///  it is computed by start_vertex
    std::string top_fun_scope;
 
  public:
-   HWCallPathCalculator(HLS_managerRef _HLSMgr, ParameterConstRef _parameters, std::map<unsigned int, vertex>& _call_id_to_OpVertex);
-
+   HWCallPathCalculator(const HLS_managerRef _HLSMgr);
    ~HWCallPathCalculator();
 
    void start_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph& ucg);

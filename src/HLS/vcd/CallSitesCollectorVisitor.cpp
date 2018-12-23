@@ -39,45 +39,58 @@
 
 #include <utility>
 
-// includes from behavior/
+#include "Discrepancy.hpp"
 #include "call_graph_manager.hpp"
+#include "hls_manager.hpp"
 #include "string_manipulation.hpp" // for STR
 
-CallSitesCollectorVisitor::CallSitesCollectorVisitor(CallGraphManagerConstRef cgman, std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& _fu_id_to_call_ids,
-                                                     std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& _call_id_to_called_id, std::unordered_set<unsigned int>& _indirect_calls)
-    : CGMan(std::move(cgman)), fu_id_to_call_ids(_fu_id_to_call_ids), call_id_to_called_id(_call_id_to_called_id), indirect_calls(_indirect_calls)
+CallSitesCollectorVisitor::CallSitesCollectorVisitor(const HLS_managerRef& _HLSMgr) : HLSMgr(_HLSMgr), CGMan(_HLSMgr->CGetCallGraphManager())
 {
 }
 
 CallSitesCollectorVisitor::~CallSitesCollectorVisitor() = default;
 
+void CallSitesCollectorVisitor::start_vertex(const vertex&, const CallGraph&)
+{
+   THROW_ASSERT(HLSMgr->RDiscr, "Discrepancy data structure not initialized");
+   // cleanup shared info before recomputing it
+   HLSMgr->RDiscr->call_sites_info->fu_id_to_call_ids.clear();
+   HLSMgr->RDiscr->call_sites_info->call_id_to_called_id.clear();
+   HLSMgr->RDiscr->call_sites_info->indirect_calls.clear();
+   HLSMgr->RDiscr->call_sites_info->taken_addresses.clear();
+}
+
 void CallSitesCollectorVisitor::discover_vertex(const vertex& v, const CallGraph&)
 {
    const unsigned int this_fun_id = CGMan->get_function(v);
-   fu_id_to_call_ids[this_fun_id];
+   HLSMgr->RDiscr->call_sites_info->fu_id_to_call_ids[this_fun_id];
 }
 
 void CallSitesCollectorVisitor::back_edge(const EdgeDescriptor&, const CallGraph&)
 {
-   THROW_ERROR("Recursive functions not yet supported");
+   THROW_ERROR("Recursive functions not supported");
 }
 
 void CallSitesCollectorVisitor::examine_edge(const EdgeDescriptor& e, const CallGraph& g)
 {
    const unsigned int called_id = CGMan->get_function(boost::target(e, g));
    const unsigned int caller_id = CGMan->get_function(boost::source(e, g));
-   const std::set<unsigned int>& direct_calls = g.CGetFunctionEdgeInfo(e)->direct_call_points;
-   const std::set<unsigned int>& indir_calls = g.CGetFunctionEdgeInfo(e)->indirect_call_points;
-   for(const unsigned int callid : direct_calls)
+   for(const unsigned int callid : g.CGetFunctionEdgeInfo(e)->direct_call_points)
    {
-      fu_id_to_call_ids[caller_id].insert(callid);
-      THROW_ASSERT(call_id_to_called_id[callid].empty() or callid == 0, "direct call " + STR(callid) + " calls more than one function");
-      call_id_to_called_id[callid].insert(called_id);
+      HLSMgr->RDiscr->call_sites_info->fu_id_to_call_ids[caller_id].insert(callid);
+      THROW_ASSERT(HLSMgr->RDiscr->call_sites_info->call_id_to_called_id[callid].empty() or callid == 0, "direct call " + STR(callid) + " calls more than one function");
+      HLSMgr->RDiscr->call_sites_info->call_id_to_called_id[callid].insert(called_id);
    }
-   for(const unsigned int callid : indir_calls)
+   for(const unsigned int callid : g.CGetFunctionEdgeInfo(e)->indirect_call_points)
    {
-      fu_id_to_call_ids[caller_id].insert(callid);
-      call_id_to_called_id[callid].insert(called_id);
-      indirect_calls.insert(callid);
+      HLSMgr->RDiscr->call_sites_info->fu_id_to_call_ids[caller_id].insert(callid);
+      HLSMgr->RDiscr->call_sites_info->call_id_to_called_id[callid].insert(called_id);
+      HLSMgr->RDiscr->call_sites_info->indirect_calls.insert(callid);
+   }
+   for(const unsigned int callid : g.CGetFunctionEdgeInfo(e)->function_addresses)
+   {
+      HLSMgr->RDiscr->call_sites_info->fu_id_to_call_ids[caller_id].insert(callid);
+      HLSMgr->RDiscr->call_sites_info->call_id_to_called_id[callid].insert(called_id);
+      HLSMgr->RDiscr->call_sites_info->taken_addresses.insert(callid);
    }
 }

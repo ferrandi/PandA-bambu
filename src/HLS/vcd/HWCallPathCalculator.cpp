@@ -43,6 +43,7 @@
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
+#include "op_graph.hpp"
 
 // headers from circuit/
 #include "structural_objects.hpp"
@@ -63,8 +64,7 @@
 #include "UnfoldedCallInfo.hpp"
 #include "UnfoldedFunctionInfo.hpp"
 
-HWCallPathCalculator::HWCallPathCalculator(HLS_managerRef _HLSMgr, ParameterConstRef _parameters, std::map<unsigned int, vertex>& _call_id_to_OpVertex)
-    : HLSMgr(std::move(_HLSMgr)), parameters(std::move(_parameters)), call_id_to_OpVertex(_call_id_to_OpVertex)
+HWCallPathCalculator::HWCallPathCalculator(const HLS_managerRef _HLSMgr) : HLSMgr(_HLSMgr)
 {
    THROW_ASSERT(HLSMgr->RDiscr, "Discr data structure is not correctly initialized");
 }
@@ -73,6 +73,12 @@ HWCallPathCalculator::~HWCallPathCalculator() = default;
 
 void HWCallPathCalculator::start_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph& ufcg)
 {
+   // cleanup internal data structures
+   scope = std::stack<std::string>();
+   shared_fun_scope.clear();
+   top_fun_scope.clear();
+   // start doing the real things
+   const ParameterConstRef parameters = HLSMgr->get_parameter();
    std::string interface_scope;
    std::string top_interface_name;
    std::string simulator_scope;
@@ -178,29 +184,13 @@ void HWCallPathCalculator::examine_edge(const EdgeDescriptor& e, const UnfoldedC
       if(Cget_raw_edge_info<UnfoldedCallInfo>(e, ufcg)->is_direct)
       {
          const unsigned int call_id = Cget_raw_edge_info<UnfoldedCallInfo>(e, ufcg)->call_id;
+         THROW_ASSERT(call_id != 0, "No artificial calls allowed in UnfoldedCallGraph");
          const UnfoldedVertexDescriptor src = boost::source(e, ufcg);
          const unsigned int caller_f_id = Cget_node_info<UnfoldedFunctionInfo>(src, ufcg)->f_id;
-         THROW_ASSERT(call_id != 0, "No artificial calls allowed in UnfoldedCallGraph");
-         THROW_ASSERT(call_id_to_OpVertex.find(call_id) != call_id_to_OpVertex.end(), "cannot find op vertex for call id:\n\t"
-                                                                                      "caller function = " +
-                                                                                          STR(Cget_node_info<UnfoldedFunctionInfo>(src, ufcg)->behavior->CGetBehavioralHelper()->get_function_name()) +
-                                                                                          "\n\t"
-                                                                                          "caller id = " +
-                                                                                          STR(caller_f_id) +
-                                                                                          "\n\t"
-                                                                                          "call id = " +
-                                                                                          STR(call_id) +
-                                                                                          "\n\t"
-                                                                                          "called function = " +
-                                                                                          STR(called_fu_name) +
-                                                                                          "\n\t"
-                                                                                          "called id = " +
-                                                                                          STR(called_f_id) +
-                                                                                          "\n\t"
-                                                                                          "the call code was probably dead, but the call edge was not removed from the call graph\n");
+         const auto caller_behavior = Cget_node_info<UnfoldedFunctionInfo>(src, ufcg)->behavior;
          const fu_bindingConstRef fu_bind = HLSMgr->get_HLS(caller_f_id)->Rfu;
          const OpGraphConstRef op_graph = HLSMgr->CGetFunctionBehavior(caller_f_id)->CGetOpGraph(FunctionBehavior::FCFG);
-         const vertex call_op_v = call_id_to_OpVertex.at(call_id);
+         const vertex call_op_v = op_graph->CGetOpGraphInfo()->tree_node_to_operation.at(call_id);
          unsigned int fu_type_id = fu_bind->get_assign(call_op_v);
          unsigned int fu_instance_id = fu_bind->get_index(call_op_v);
          std::string extra_path;

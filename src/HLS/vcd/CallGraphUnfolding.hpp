@@ -35,30 +35,23 @@
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  *
  */
-#ifndef CALL_GRAPH_UNFOLDER_HPP
-#define CALL_GRAPH_UNFOLDER_HPP
+#ifndef CALL_GRAPH_UNFOLDING_HPP
+#define CALL_GRAPH_UNFOLDING_HPP
 
-#include "UnfoldedCallGraph.hpp"
+// include superclass header
+#include "hls_step.hpp"
 
-#include <unordered_map>
-#include <unordered_set>
-
-CONSTREF_FORWARD_DECL(Parameter);
-REF_FORWARD_DECL(HLS_manager);
-
-class CallGraphUnfolder
+class CallGraphUnfolding : public HLS_step
 {
  public:
-   /**
-    * Unfolds the call graph contained in HLSMgr, starting from the root function that must be unique.
-    * @param [in] HLSMgr: a refcount to the HLS_manager whose call graph must be unfolded
-    * @param [in]: a refcount to parameters
-    * @param [out] caller_to_call_id: maps the id of a caller function to all the ids of the calls it performs
-    * @param [out] call_to_called_id: maps the id of a call site onto the ids of all the
-    * functions it calls. one single call site can call multiple functions if
-    * function pointers are involved
-    */
-   static void Unfold(const HLS_managerRef& HLSMgr, const ParameterConstRef& params, std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& caller_to_call_id,
-                      std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& call_to_called_id);
+   virtual DesignFlowStep_Status Exec();
+
+   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+
+   CallGraphUnfolding(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+
+   virtual ~CallGraphUnfolding();
+
+   virtual bool HasToBeExecuted() const;
 };
 #endif
