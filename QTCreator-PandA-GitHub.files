@@ -1229,6 +1229,8 @@ src/EucalyptusParameter.hpp
 src/HLS/architecture_creation/TopEntityMemoryMapped.cpp
 src/HLS/architecture_creation/TopEntityMemoryMapped.hpp
 src/HLS/architecture_creation/controller_creation/control_flow_checker.cpp
+src/HLS/architecture_creation/controller_creation/control_flow_checker.cpp
+src/HLS/architecture_creation/controller_creation/control_flow_checker.hpp
 src/HLS/architecture_creation/controller_creation/control_flow_checker.hpp
 src/HLS/architecture_creation/controller_creation/controller_creator_base_step.cpp
 src/HLS/architecture_creation/controller_creation/controller_creator_base_step.hpp
@@ -2031,6 +2033,8 @@ src/wrapper/synthesis/altera/quartus_13_report_wrapper.cpp
 src/wrapper/synthesis/altera/quartus_13_report_wrapper.hpp
 src/wrapper/synthesis/altera/quartus_13_wrapper.cpp
 src/wrapper/synthesis/altera/quartus_13_wrapper.hpp
+src/wrapper/synthesis/altera/quartus_power_wrapper.cpp
+src/wrapper/synthesis/altera/quartus_power_wrapper.hpp
 src/wrapper/synthesis/altera/quartus_report_wrapper.cpp
 src/wrapper/synthesis/altera/quartus_report_wrapper.hpp
 src/wrapper/synthesis/altera/quartus_wrapper.cpp
