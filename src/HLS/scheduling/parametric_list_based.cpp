@@ -206,7 +206,7 @@ class compare_vertex_by_name : std::binary_function<vertex, vertex, bool>
    {
    }
 
-   bool operator()(const vertex& a, const vertex& b)
+   bool operator()(const vertex& a, const vertex& b) const
    {
       return GET_NAME(op_graph, a) < GET_NAME(op_graph, b);
    }
