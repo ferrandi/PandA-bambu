@@ -40,6 +40,9 @@
 #include "ToolManager.hpp"
 #include "dbgPrintHelper.hpp"
 #include "xml_script_command.hpp"
+#include "string_manipulation.hpp"
+
+#include <boost/filesystem.hpp>
 
 // constructor
 QuartusPowerWrapper::QuartusPowerWrapper(const ParameterConstRef _Param, const std::string& _output_dir, const target_deviceRef _device) : AlteraWrapper(_Param, QUARTUS_POWER_TOOL_EXEC, _device, _output_dir, QUARTUS_POWER_TOOL_ID)
@@ -74,4 +77,34 @@ std::string QuartusPowerWrapper::get_command_line(const DesignParametersRef& dp)
    }
    s << std::endl;
    return s.str();
+}
+
+void QuartusPowerWrapper::generate_synthesis_script(const DesignParametersRef& dp, const std::string& file_name)
+{
+   // Export reserved (constant) values to design parameters
+   for(auto it = xml_reserved_vars.begin(); it != xml_reserved_vars.end(); ++it)
+   {
+      const xml_set_variable_tRef& var = (*it);
+      dp->assign(var->name, getStringValue(var, dp), false);
+   }
+
+   // Bare script generation
+   std::ostringstream script;
+   script << generate_bare_script(xml_script_nodes, dp);
+
+   // Replace all reserved variables with their value
+   std::string script_string = script.str();
+   replace_parameters(dp, script_string);
+   /// replace some of the escape sequences
+   remove_escaped(script_string);
+
+   // Save the generated script
+   if(boost::filesystem::exists(file_name))
+   {
+      boost::filesystem::remove_all(file_name);
+   }
+   script_name = file_name;
+   std::ofstream file_stream(file_name.c_str());
+   file_stream << script_string << std::endl;
+   file_stream.close();
 }

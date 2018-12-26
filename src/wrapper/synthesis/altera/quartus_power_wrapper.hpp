@@ -52,7 +52,7 @@ class QuartusPowerWrapper : public AlteraWrapper
    /**
     * Evaluates the design variables
     */
-   void EvaluateVariables(const DesignParametersRef dp);
+   void EvaluateVariables(const DesignParametersRef dp) override;
 
  public:
    /**
@@ -64,11 +64,16 @@ class QuartusPowerWrapper : public AlteraWrapper
    /**
     * Destructor
     */
-   virtual ~QuartusPowerWrapper();
+   ~QuartusPowerWrapper() override;
 
    /**
     * Returns the proper command line
     */
-   std::string get_command_line(const DesignParametersRef& dp) const;
+   std::string get_command_line(const DesignParametersRef& dp) const override;
+
+   /**
+    * Creates the proper configuration script
+    */
+   void generate_synthesis_script(const DesignParametersRef& dp, const std::string& file_name) override;
 };
 #endif
