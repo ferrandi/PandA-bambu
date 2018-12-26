@@ -52,12 +52,13 @@
 #include <sys/time.h>
 #endif
 #include <unistd.h>
-
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 
 std::string PrintVirtualDataMemoryUsage()
 {
 #ifdef _WIN32
+   return STR("unavailable");
+#elif __APPLE__
    return STR("unavailable");
 #else
    extern int end, etext, edata;
@@ -143,6 +144,8 @@ void util_print_cpu_stats(std::ostream& os)
    else
       os << vm_limit << "\n";
    os << "Page faults       = " << page_faults << "\n";
+#elif __APPLE__
+   ;// do nothing
 #else
    extern int end, etext, edata;
    struct rusage rusage;
