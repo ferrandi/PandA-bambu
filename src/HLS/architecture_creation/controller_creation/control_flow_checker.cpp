@@ -186,22 +186,22 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
                         "reg [STATE_BITSIZE-1:0] " PRESENT_STATE_PORT_NAME "_reg;\n"
                         "reg [STATE_BITSIZE-1:0] " NEXT_STATE_PORT_NAME "_reg;\n\n";
 
-   result += "always @(posedge clock)\n"
+   result += "always @(posedge " CLOCK_PORT_NAME ")\n"
              "begin\n"
              "  " START_PORT_NAME "_reg <= " START_PORT_NAME ";\n"
              "end\n\n";
 
-   result += "always @(posedge clock)\n"
+   result += "always @(posedge " CLOCK_PORT_NAME ")\n"
              "begin\n"
              "  " DONE_PORT_NAME "_reg <= " DONE_PORT_NAME ";\n"
              "end\n\n";
 
-   result += "always @(posedge clock)\n"
+   result += "always @(posedge " CLOCK_PORT_NAME ")\n"
              "begin\n"
              "  " PRESENT_STATE_PORT_NAME "_reg <= " PRESENT_STATE_PORT_NAME ";\n"
              "end\n\n";
 
-   result += "always @(posedge clock)\n"
+   result += "always @(posedge " CLOCK_PORT_NAME ")\n"
              "begin\n"
              "  " NEXT_STATE_PORT_NAME "_reg <= " NEXT_STATE_PORT_NAME ";\n"
              "end\n\n";
@@ -238,7 +238,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
              "assign out_mismatch_trace_offset = out_mismatch ? mismatch_trace_offset : 0;\n\n";
 
    result += "// synthesis translate_off\n"
-             "always @(posedge clock)\n"
+             "always @(posedge " CLOCK_PORT_NAME ")\n"
              "begin\n"
              "  if (out_mismatch)\n"
              "  begin\n"
