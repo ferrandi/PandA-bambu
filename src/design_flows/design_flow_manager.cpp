@@ -611,7 +611,7 @@ void DesignFlowManager::Exec()
       bool invalidations = false;
       if(not parameters->IsParameter("disable-invalidations"))
       {
-         ///Add steps and edges from post dependencies
+         /// Add steps and edges from post dependencies
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding post-dependencies of " + step->GetName());
          DesignFlowStepSet relationships;
          step->ComputeRelationships(relationships, DesignFlowStep::INVALIDATION_RELATIONSHIP);
@@ -773,26 +773,25 @@ void DesignFlowManager::Exec()
                case DesignFlowStep_Status::SUCCESS:
                case DesignFlowStep_Status::UNCHANGED:
                case DesignFlowStep_Status::SKIPPED:
-                  {
-                     executed_vertices++;
-                     break;
-                  }
+               {
+                  executed_vertices++;
+                  break;
+               }
                case DesignFlowStep_Status::UNNECESSARY:
                case DesignFlowStep_Status::UNEXECUTED:
-                  {
-                     break;
-                  }
+               {
+                  break;
+               }
                case DesignFlowStep_Status::NONEXISTENT:
-                  {
-                     THROW_UNREACHABLE("Step with nonexitent status");
-                     break;
-                  }
+               {
+                  THROW_UNREACHABLE("Step with nonexitent status");
+                  break;
+               }
                default:
-                  {
-                     THROW_UNREACHABLE("");
-                  }
+               {
+                  THROW_UNREACHABLE("");
+               }
             }
-
          }
          if(parameters->IsParameter("dfm_statistics"))
          {
