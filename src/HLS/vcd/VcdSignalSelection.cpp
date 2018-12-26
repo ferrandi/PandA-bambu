@@ -828,7 +828,7 @@ DesignFlowStep_Status VcdSignalSelection::Exec()
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Selecting internal signals in functions");
    std::unordered_map<unsigned int, std::unordered_set<std::string>> fun_ids_to_local_sig_names;
    SelectInternalSignals(fun_ids_to_local_sig_names);
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Selected internal signals in functions");
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--Selected internal signals in functions");
    // helper strings
    const std::string controller_str = "Controller_i" + STR(HIERARCHY_SEPARATOR);
    const std::string datapath_str = "Datapath_i" + STR(HIERARCHY_SEPARATOR);
