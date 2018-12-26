@@ -21,7 +21,7 @@ noinst_HEADERS = aadl_parser.hpp aadl_lexer.hpp aadl_parser_node.hpp
 
 lib_aadlparser_la_SOURCES = aadl_yparser.ypp aadl_lexer.lpp aadl_parser.cpp aadl_parser_node.cpp
 
-AM_YFLAGS = -d -l --report=state,lookahead,itemset -Wnone
+AM_YFLAGS = -d -l --report=state,lookahead,itemset
 
 if BISON_2_7_OR_GREATER
 BUILT_SOURCES = aadl_yparser.hpp aadl_lexer.cpp aadl_yparser.cpp

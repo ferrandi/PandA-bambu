@@ -237,7 +237,7 @@ element_type_list : element_type {$$ = AsnParserNode(); $$.element_type_list.pus
                   ;
 
 element_type_list_opt : /* empty */ {$$ = AsnParserNode();}
-                      | element_type_list_opt {$$ = $1;}
+                      | element_type_list {$$ = $1;}
                       ;
 
 enumerated_type : ENUMERATED_TOK named_number_list {$$ = AsnParserNode(); $$.asn_type = AsnTypeRef(new EnumeratedAsnType($2.named_number_list));};
