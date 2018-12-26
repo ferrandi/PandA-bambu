@@ -698,18 +698,21 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---tot memory usage (METADATA) " + STR(i) + " (BITS): " + STR(tot_memory_usage_per_bits.at(i)));
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---tot memory usage (METADATA) " + STR(i) + " (BYTES): " + STR((tot_memory_usage_per_bits.at(i) / 8) + (((tot_memory_usage_per_bits.at(i) % 8) == 0) ? 0 : 1)));
    }
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---tot memory usage BASE (BITS): " + STR(tot_memory_usage_per_bits.at(0)));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---tot memory usage BASE (BYTES): " + STR((tot_memory_usage_per_bits.at(0) / 8) + (((tot_memory_usage_per_bits.at(0) % 8) == 0) ? 0 : 1)));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---tot memory usage FIXED (BITS): " + STR(tot_memory_usage_per_bits.at(FIXED_METADATA_SIZE)));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---tot memory usage FIXED (BYTES): " + STR((tot_memory_usage_per_bits.at(FIXED_METADATA_SIZE) / 8) + (((tot_memory_usage_per_bits.at(FIXED_METADATA_SIZE) % 8) == 0) ? 0 : 1)));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---minimal tot memory usage (BITS): " + STR(min_memory_usage));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---minimal tot memory usage (BYTES): " + STR((min_memory_usage / 8) + (((min_memory_usage % 8) == 0) ? 0 : 1)));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---total state_of_the_art memory usage (BITS): " + STR(total_state_of_the_art_memory_usage));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---total state_of_the_art memory usage (BYTES): " + STR((total_state_of_the_art_memory_usage / 8) + (((total_state_of_the_art_memory_usage % 8) == 0) ? 0 : 1)));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---total state_of_the_art fixed memory usage (BITS): " + STR(total_state_of_the_art_fixed_memory_usage));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---total state_of_the_art fixed memory usage (BYTES): " + STR((total_state_of_the_art_fixed_memory_usage / 8) + (((total_state_of_the_art_fixed_memory_usage % 8) == 0) ? 0 : 1)));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---total state_of_the_art opt memory usage (BITS): " + STR(total_state_of_the_art_opt_memory_usage));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---total state_of_the_art opt memory usage (BYTES): " + STR((total_state_of_the_art_opt_memory_usage / 8) + (((total_state_of_the_art_opt_memory_usage % 8) == 0) ? 0 : 1)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---");
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---HW Discrepancy Analysis results:");
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---tot memory usage BASE (BITS): " + STR(tot_memory_usage_per_bits.at(0)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---tot memory usage BASE (BYTES): " + STR((tot_memory_usage_per_bits.at(0) / 8) + (((tot_memory_usage_per_bits.at(0) % 8) == 0) ? 0 : 1)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---tot memory usage FIXED (BITS): " + STR(tot_memory_usage_per_bits.at(FIXED_METADATA_SIZE)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---tot memory usage FIXED (BYTES): " + STR((tot_memory_usage_per_bits.at(FIXED_METADATA_SIZE) / 8) + (((tot_memory_usage_per_bits.at(FIXED_METADATA_SIZE) % 8) == 0) ? 0 : 1)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---minimal tot memory usage (BITS): " + STR(min_memory_usage));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---minimal tot memory usage (BYTES): " + STR((min_memory_usage / 8) + (((min_memory_usage % 8) == 0) ? 0 : 1)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---total state_of_the_art memory usage (BITS): " + STR(total_state_of_the_art_memory_usage));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---total state_of_the_art memory usage (BYTES): " + STR((total_state_of_the_art_memory_usage / 8) + (((total_state_of_the_art_memory_usage % 8) == 0) ? 0 : 1)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---total state_of_the_art fixed memory usage (BITS): " + STR(total_state_of_the_art_fixed_memory_usage));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---total state_of_the_art fixed memory usage (BYTES): " + STR((total_state_of_the_art_fixed_memory_usage / 8) + (((total_state_of_the_art_fixed_memory_usage % 8) == 0) ? 0 : 1)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---total state_of_the_art opt memory usage (BITS): " + STR(total_state_of_the_art_opt_memory_usage));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---total state_of_the_art opt memory usage (BYTES): " + STR((total_state_of_the_art_opt_memory_usage / 8) + (((total_state_of_the_art_opt_memory_usage % 8) == 0) ? 0 : 1)));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "\n");
    return DesignFlowStep_Status::SUCCESS;
 }
 
