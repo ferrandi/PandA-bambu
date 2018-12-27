@@ -110,12 +110,6 @@ BuildVirtualPhi::~BuildVirtualPhi() = default;
 
 DesignFlowStep_Status BuildVirtualPhi::InternalExec()
 {
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      WriteBBGraphDot("BB_Before_" + GetName() + ".dot");
-      PrintTreeManager(true);
-   }
-
    const auto loops = function_behavior->CGetLoops();
    const auto bb_index_map = basic_block_graph->CGetBBGraphInfo()->bb_index_map;
 
@@ -625,11 +619,6 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
    if(parameters->getOption<bool>(OPT_print_dot))
    {
       function_behavior->GetBBGraph(FunctionBehavior::FBB)->WriteDot("BB_FCFG.dot");
-   }
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(false);
-      WriteBBGraphDot("BB_After_" + GetName() + ".dot");
    }
 #ifndef NDEBUG
    if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
