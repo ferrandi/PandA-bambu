@@ -361,7 +361,6 @@ static void serialize_globals()
 }
 
 static void serialize_symbols (const char * field, bitmap syms);
-static void serialize_gimple_aliased_reaching_defs (GIMPLE_type stmt, tree ref);
 static void serialize_vops (GIMPLE_type stmt);
 static tree gimple_call_expr_arglist (GIMPLE_type g);
 static tree build_custom_function_call_expr (location_t loc, tree fn, tree arglist);
@@ -1349,31 +1348,26 @@ serialize_vops (GIMPLE_type gs)
       ///Serialize gimple pairs because of use after def chain
       serialize_gimple_dependent_stmts_load(gs);
       ///Serialize gimple pairs because of def after use chain
-      if(gimple_store_p(gs))
+
+      ///The other uses
+      ssa_use_operand_t * other_uses = &(SSA_NAME_IMM_USE_NODE(vuse));
+
+      ///Iterate over all the gimple using the same ssa virtual
+      ssa_use_operand_t * ptr;
+      for (ptr = other_uses->next; ptr != other_uses; ptr = ptr->next)
       {
-         tree lhs = gimple_assign_lhs(gs);
-         serialize_gimple_aliased_reaching_defs (gs, lhs);
+         GIMPLE_type other_use_stmt = USE_STMT(ptr);
+         ///If this is one of the next element of the chain
+         if(gimple_vdef(other_use_stmt))
+         {
+            ///Check if the operation containing the next vdef in the chain is the current one, we do not need to add anti dependency
+            if(other_use_stmt == gs)
+            {
+               continue;
+            }
+            SerializeGimpleUseDefs(gs, other_use_stmt);
+         }
       }
-
-//      ///The other uses
-//      ssa_use_operand_t * other_uses = &(SSA_NAME_IMM_USE_NODE(vuse));
-
-//      ///Iterate over all the gimple using the same ssa virtual
-//      ssa_use_operand_t * ptr;
-//      for (ptr = other_uses->next; ptr != other_uses; ptr = ptr->next)
-//      {
-//         GIMPLE_type other_use_stmt = USE_STMT(ptr);
-//         ///If this is one of the next element of the chain
-//         if(gimple_vdef(other_use_stmt))
-//         {
-//            ///Check if the operation containing the next vdef in the chain is the current one, we do not need to add anti dependency
-//            if(other_use_stmt == gs)
-//            {
-//               continue;
-//            }
-//            SerializeGimpleUseDefs(gs, other_use_stmt);
-//         }
-//      }
    }
 
    if(vdef != NULL_TREE)
