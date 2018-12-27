@@ -151,6 +151,29 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
          {
             vovers[vover].insert(stmt);
          }
+         /// clean not reachable vuses
+         std::list<tree_nodeRef> to_be_removed;
+         for(const auto& vu : gn->vuses)
+         {
+            auto sn = GetPointer<ssa_name>(GET_NODE(vu));
+            auto def_stmt = sn->CGetDefStmt();
+            const auto use_bb_index = GetPointer<const gimple_node>(GET_NODE(def_stmt))->bb_index;
+            const auto use_bb = bb_index_map.find(use_bb_index)->second;
+            const auto def_bb_index = gn->bb_index;
+            const auto def_bb = bb_index_map.find(def_bb_index)->second;
+            if(use_bb_index == def_bb_index)
+            {
+               /// here we may have a Use-Def or a Def-Use. They are both perfectly fine.
+            }
+            else if(!function_behavior->CheckBBReachability(use_bb, def_bb))
+            {
+               sn->RemoveUse(stmt);
+               to_be_removed.push_back(vu);
+            }
+         }
+         for(auto vu : to_be_removed)
+            gn->vuses.erase(gn->vuses.find(vu));
+
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed stmt " + STR(stmt));
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(basic_block_graph->CGetBBNodeInfo(*basic_block)->block->number));
