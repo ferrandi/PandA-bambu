@@ -169,10 +169,11 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
             {
                /// here we may have a Use-Def or a Def-Use. They are both perfectly fine.
             }
-            else if(!function_behavior->CheckBBReachability(use_bb, cur_bb))
+            else if(!function_behavior->CheckBBReachability(use_bb, cur_bb) && !function_behavior->CheckBBReachability(cur_bb, use_bb))
             {
                sn->RemoveUse(stmt);
                to_be_removed.push_back(vu);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + STR(vu) + " from vuses of unreachable stmt: " + STR(sn));
             }
          }
          for(auto vu : to_be_removed)
