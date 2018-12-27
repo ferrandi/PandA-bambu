@@ -1347,6 +1347,8 @@ serialize_vops (GIMPLE_type gs)
    {
       ///Serialize gimple pairs because of use after def chain
       serialize_gimple_dependent_stmts_load(gs);
+      if(SSA_NAME_IS_DEFAULT_DEF(vuse))
+         serialize_child ("vuse", vuse);
       ///Serialize gimple pairs because of def after use chain
 
       ///The other uses
