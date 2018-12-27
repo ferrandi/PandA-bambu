@@ -149,7 +149,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
          }
          const auto cur_bb_index = gn->bb_index;
          const auto cur_bb = bb_index_map.find(cur_bb_index)->second;
-         if(gn->vovers.find(gn->vdef) != gn->vovers.end() && !function_behavior->CheckBBReachability(cur_bb, cur_bb))
+         if(gn->vdef && gn->vovers.find(gn->vdef) != gn->vovers.end() && !function_behavior->CheckBBReachability(cur_bb, cur_bb))
          {
             gn->vovers.erase(gn->vdef);
          }
