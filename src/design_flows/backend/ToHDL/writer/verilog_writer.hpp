@@ -47,7 +47,7 @@
 #include "language_writer.hpp"
 
 /// Utility include
-#include "custom_map.hpp"
+#include <map>
 
 class verilog_writer : public language_writer
 {
