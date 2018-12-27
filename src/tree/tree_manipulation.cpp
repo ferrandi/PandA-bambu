@@ -2044,6 +2044,8 @@ tree_nodeRef tree_manipulation::create_function_decl(const std::string& function
 
 tree_nodeRef tree_manipulation::CreateOrExpr(const tree_nodeConstRef& first_condition, const tree_nodeConstRef& second_condition, const blocRef& block) const
 {
+   if(first_condition->index == second_condition->index)
+      return TreeM->GetTreeReindex(first_condition->index);
    if(block and reuse)
    {
       for(const auto& statement : block->CGetStmtList())
@@ -2099,6 +2101,8 @@ tree_nodeRef tree_manipulation::CreateOrExpr(const tree_nodeConstRef& first_cond
 
 tree_nodeRef tree_manipulation::CreateAndExpr(const tree_nodeConstRef& first_condition, const tree_nodeConstRef& second_condition, const blocRef& block) const
 {
+   if(first_condition->index == second_condition->index)
+      return TreeM->GetTreeReindex(first_condition->index);
    if(block and reuse)
    {
       for(const auto& statement : block->CGetStmtList())
