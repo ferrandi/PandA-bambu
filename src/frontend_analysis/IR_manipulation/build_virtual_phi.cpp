@@ -223,6 +223,8 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
 
          /// Check if this use can be ignored because of transitive reduction
          bool skip = [&]() -> bool {
+            if(definition_bb_index == use_bb_index)
+               return false;
             if(vovers.find(virtual_ssa_definition.first) != vovers.end())
             {
                for(const auto& vover_stmt : vovers.find(virtual_ssa_definition.first)->second)
