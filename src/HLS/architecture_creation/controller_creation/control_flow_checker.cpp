@@ -131,7 +131,7 @@ static unsigned int comp_state_bitsize(bool one_hot_encoding, const HLS_managerR
 }
 
 static std::string create_control_flow_checker(size_t epp_trace_bitsize, const unsigned int f_id, const StateTransitionGraphManagerRef& STG, const HLS_managerRef HLSMgr, const HWDiscrepancyInfoConstRef& discr_info, bool one_hot_encoding,
-                                               unsigned max_value, unsigned int state_bitsize, int debug_level)
+                                               unsigned max_value, unsigned int state_bitsize, int DEBUG_PARAMETER(debug_level))
 {
    /// adjust in case states are not consecutive
    const auto& eppstg = STG->CGetEPPStg();
