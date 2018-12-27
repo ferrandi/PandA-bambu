@@ -641,7 +641,7 @@ void VarComputation::AnalyzeVops(const vertex op_vertex, const gimple_node* vop)
    }
    if(vop->vovers.size())
    {
-      for(auto const vover : vop->vovers)
+      for(auto const& vover : vop->vovers)
       {
          ogc->AddVariable(op_vertex, GET_INDEX_NODE(vover), FunctionBehavior_VariableType::VIRTUAL, FunctionBehavior_VariableAccessType::OVER);
       }
