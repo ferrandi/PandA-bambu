@@ -167,8 +167,10 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       const auto fsm_entry_node = stg_info->entry_node;
       const auto fsm_exit_node = stg_info->exit_node;
       const auto& state_id_to_check = Discr->hw_discrepancy_info->fu_id_to_states_to_check.at(f_id);
+#if HAVE_ASSERTS
       const auto& state_id_to_check_on_feedback = Discr->hw_discrepancy_info->fu_id_to_feedback_states_to_check.at(f_id);
       const auto& reset_transitions = Discr->hw_discrepancy_info->fu_id_to_reset_edges.at(f_id);
+#endif
 
       for(auto& context2trace : f.second)
       {
@@ -200,8 +202,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
             // update the current_state with the only successor of entry
             current_state = boost::target(taken_edge, *stg);
             // check that the first state is not a loop header
-            const auto next_state_id = stg_info->vertex_to_state_id.at(current_state);
-            THROW_ASSERT(state_id_to_check_on_feedback.find(next_state_id) == state_id_to_check_on_feedback.cend(), "");
+            THROW_ASSERT(state_id_to_check_on_feedback.find(stg_info->vertex_to_state_id.at(current_state)) == state_id_to_check_on_feedback.cend(), "");
          }
          if(HLSMgr->get_HLS(f_id)->registered_inputs)
          {
@@ -214,8 +215,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
              * so we must check it and potentially add it to the epp_counter
              */
             THROW_ASSERT(boost::out_degree(current_state, *stg) == 1, "registered input state has out degree = " + STR(boost::out_degree(current_state, *stg)));
-            const auto cur_state_id = stg_info->vertex_to_state_id.at(current_state);
-            THROW_ASSERT(state_id_to_check.find(cur_state_id) == state_id_to_check.cend(), "");
+            THROW_ASSERT(state_id_to_check.find(stg_info->vertex_to_state_id.at(current_state)) == state_id_to_check.cend(), "");
             // select the only outgoing edge (must not be a feedback edge)
             OutEdgeIterator out_edge, out_end;
             boost::tie(out_edge, out_end) = boost::out_edges(current_state, *stg);
