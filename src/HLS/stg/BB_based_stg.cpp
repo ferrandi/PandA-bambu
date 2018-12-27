@@ -897,20 +897,18 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
       {
          const auto src = boost::source(e, *stg);
          const auto dst = boost::target(e, *stg);
-         const bool src_dummy = stg->CGetStateInfo(src)->is_dummy;
          const bool dst_dummy = stg->CGetStateInfo(dst)->is_dummy;
          if(not dst_dummy)
          {
             const auto dst_state_id = stg_info->vertex_to_state_id.at(dst);
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "state: S_" + STR(dst_state_id) + " is to check on feedback because it is the destination of a feedback edge");
             state_id_to_check_on_feedback.insert(dst_state_id);
-            const auto src_state_id = stg_info->vertex_to_state_id.at(src);
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "edge from state: S_" + STR(src_state_id) + " to state: S_" + STR(dst_state_id) + " is to reset");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "edge from state: S_" + STR(stg_info->vertex_to_state_id.at(src)) + " to state: S_" + STR(dst_state_id) + " is to reset");
             reset_edges.insert(e);
          }
          else
          {
-            THROW_ASSERT(src_dummy and (src == dst), "");
+            THROW_ASSERT(stg->CGetStateInfo(src)->is_dummy and (src == dst), "");
          }
       }
    }
