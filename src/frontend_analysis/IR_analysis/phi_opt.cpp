@@ -537,14 +537,16 @@ DesignFlowStep_Status PhiOpt::InternalExec()
                   while(virtual_ssa->CGetUseStmts().size())
                   {
                      auto use_stmt = virtual_ssa->CGetUseStmts().begin()->first;
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- use stmt " + GET_NODE(use_stmt)->ToString());
                      auto us = GetPointer<gimple_node>(GET_NODE(use_stmt));
                      THROW_ASSERT(us->vuses.find(gn->vdef) != gn->vuses.end(), "unexpected condition");
                      us->vuses.erase(us->vuses.find(gn->vdef));
                      virtual_ssa->RemoveUse(use_stmt);
                      for(const auto& vuse : gn->vuses)
                      {
-                        if(gn->vuses.find(vuse) == gn->vuses.end())
+                        if(us->vuses.find(vuse) == us->vuses.end())
                         {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---   add vuse " + GET_NODE(vuse)->ToString());
                            us->AddVuse(vuse);
                            auto defSSA = GetPointer<ssa_name>(GET_NODE(vuse));
                            const auto& defssaStmt = defSSA->CGetUseStmts();
