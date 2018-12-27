@@ -895,7 +895,9 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
    {
       if(stg->GetSelector(e) & TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK)
       {
+#if HAVE_ASSERTS || !defined(NDEBUG)
          const auto src = boost::source(e, *stg);
+#endif
          const auto dst = boost::target(e, *stg);
          const bool dst_dummy = stg->CGetStateInfo(dst)->is_dummy;
          if(not dst_dummy)

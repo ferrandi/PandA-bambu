@@ -124,7 +124,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       parse_discrepancy(ctrace_filename, Discr);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Parsed C trace: " + ctrace_filename);
    }
-#if 1
+#ifndef NDEBUG
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Printing parsed C control flow trace");
       for(const auto& fid2ctxtrace : Discr->c_control_flow_trace)
@@ -580,7 +580,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Untangled software control flow trace of function: " + STR(f_id));
    }
-#if 1
+#ifndef NDEBUG
    for(const auto& i : scope_to_state_trace)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---state trace length for function scope: " + i.first + ": " + STR(i.second.size()));
@@ -666,10 +666,10 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       GetPointer<module>(curr_module)->set_parameter("EPP_TRACE_LENGTH", STR(trace_len));
       GetPointer<module>(curr_module)->set_parameter("EPP_TRACE_METADATA_BITSIZE", STR(metadata_word_size));
       GetPointer<module>(curr_module)->set_parameter("EPP_TRACE_INITIAL_METADATA", STR(i.second.begin()->first));
-
+#ifndef NDEBUG
       for(const auto& id : i.second)
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---COMPRESSED_EPP " + STR(id.first) + ":" + STR(id.second));
-
+#endif
       const std::string init_filename = "epp_control_flow_trace_scope__" + STR(scope_id) + ".mem";
       std::ofstream init_file((init_filename).c_str());
 
