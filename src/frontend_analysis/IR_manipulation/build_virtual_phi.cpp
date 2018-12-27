@@ -147,6 +147,12 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
             GetPointer<ssa_name>(GET_NODE(gn->memuse))->RemoveUse(stmt);
             gn->memuse = tree_nodeRef();
          }
+         const auto cur_bb_index = gn->bb_index;
+         const auto cur_bb = bb_index_map.find(cur_bb_index)->second;
+         if(gn->vovers.find(gn->vdef) != gn->vovers.end() && !function_behavior->CheckBBReachability(cur_bb, cur_bb))
+         {
+            gn->vovers.erase(gn->vdef);
+         }
          for(const auto& vover : gn->vovers)
          {
             vovers[vover].insert(stmt);
@@ -159,13 +165,11 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
             auto def_stmt = sn->CGetDefStmt();
             const auto use_bb_index = GetPointer<const gimple_node>(GET_NODE(def_stmt))->bb_index;
             const auto use_bb = bb_index_map.find(use_bb_index)->second;
-            const auto def_bb_index = gn->bb_index;
-            const auto def_bb = bb_index_map.find(def_bb_index)->second;
-            if(use_bb_index == def_bb_index)
+            if(use_bb_index == cur_bb_index)
             {
                /// here we may have a Use-Def or a Def-Use. They are both perfectly fine.
             }
-            else if(!function_behavior->CheckBBReachability(use_bb, def_bb))
+            else if(!function_behavior->CheckBBReachability(use_bb, cur_bb))
             {
                sn->RemoveUse(stmt);
                to_be_removed.push_back(vu);
