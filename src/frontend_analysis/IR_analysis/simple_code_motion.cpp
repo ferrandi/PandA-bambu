@@ -813,6 +813,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             /// compute the SSA variables used by stmt
             std::set<ssa_name*> stmt_ssa_uses;
             tree_helper::compute_ssa_uses_rec_ptr(*statement, stmt_ssa_uses);
+            for(auto vo : gn->vovers)
+               tree_helper::compute_ssa_uses_rec_ptr(vo, stmt_ssa_uses);
 
             /// compute BB where the SSA variables are defined
             std::set<unsigned int> BB_def;
