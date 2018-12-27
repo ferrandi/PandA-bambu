@@ -2,7 +2,7 @@
 #include <sstream>
 #include <list>
 #include <vector>
-#include <tr1/memory>
+#include <memory>
 
 #include "gmp.h"
 #include "mpfr.h"

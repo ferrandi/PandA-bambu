@@ -74,7 +74,7 @@ class DesignFlowStepFactory
    /**
     * Destructor
     */
-   virtual ~DesignFlowStepFactory() = 0;
+   virtual ~DesignFlowStepFactory();
 
    /**
     * Return the prefix of the steps created by the factory
