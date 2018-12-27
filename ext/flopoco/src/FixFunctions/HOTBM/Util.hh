@@ -5,9 +5,9 @@
 #include <mpfr.h>
 #include "FlopocoStream.hpp"
 
-extern "C" {
+
 #include <cmath>
-}
+
 
 using namespace std;
 

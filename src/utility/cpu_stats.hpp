@@ -47,7 +47,7 @@
 #include <ostream>
 #include <string>
 
-extern void util_print_cpu_stats(std::ostream& os);
-extern std::string PrintVirtualDataMemoryUsage();
+void util_print_cpu_stats(std::ostream& os);
+std::string PrintVirtualDataMemoryUsage();
 
 #endif
