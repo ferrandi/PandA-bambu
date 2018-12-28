@@ -894,18 +894,17 @@ bool vcd_utility::detect_address_mismatch(const DiscrepancyOpInfo& op_info, cons
       else
       {
          base_index = 0;
-         uint64_t possible_base_address = 0;
          const uint64_t c_addr = static_cast<unsigned int>(std::stoull(c_val.c_str(), nullptr, 2));
-
+         std::unordered_map<uint64_t, unsigned int> addr2base_index;
+         std::set<uint64_t> addrSet;
          for(const auto& addr : Discr->c_addr_map.at(c_context))
          {
-            if(addr.second > possible_base_address and addr.second <= c_addr)
-            {
-               base_index = addr.first;
-               possible_base_address = addr.second;
-               break;
-            }
+            addr2base_index[addr.second] = addr.first;
+            addrSet.insert(addr.second);
          }
+         for(auto it_set=addrSet.rbegin(); it_set!=addrSet.rend();++it_set)
+            if(c_addr<=*it_set)
+               base_index=addr2base_index.at(*it_set);
 
          if(base_index)
          {
