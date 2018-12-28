@@ -277,8 +277,8 @@
 #define OPT_LEVEL_RESET (1 + OPT_RESET)
 #define OPT_DISABLE_REG_INIT_VALUE (1 + OPT_LEVEL_RESET)
 #define OPT_SCHEDULING_MUX_MARGINS (1 + OPT_DISABLE_REG_INIT_VALUE)
-#define OPT_SDC_SCHEDULING (1 + OPT_SCHEDULING_MUX_MARGINS)
-#define OPT_SERIALIZE_MEMORY_ACCESSES (1 + OPT_SDC_SCHEDULING)
+#define OPT_SPECULATIVE (1 + OPT_SCHEDULING_MUX_MARGINS)
+#define OPT_SERIALIZE_MEMORY_ACCESSES (1 + OPT_SPECULATIVE)
 #define OPT_SILP (1 + OPT_SERIALIZE_MEMORY_ACCESSES)
 #define OPT_SIMULATE (1 + OPT_SILP)
 #define OPT_SKIP_PIPE_PARAMETER (1 + OPT_SIMULATE)
@@ -432,9 +432,11 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Perform scheduling by using the scheduling and allocation with ILP\n"
       << "        formulation. Default: off.\n\n"
 #endif
-      << "    --speculative-sdc-scheduling\n"
+      << "    --speculative-sdc-scheduling,-s\n"
       << "        Perform scheduling by using speculative sdc.\n\n"
 #endif
+      << "    --pipelining,-p\n"
+      << "        Perform functional pipelining starting from the top function.\n\n"
       << "    --fixed-scheduling=<file>\n"
       << "        Provide scheduling as an XML file.\n\n"
       << "    --no-chaining\n"
@@ -1016,7 +1018,7 @@ int BambuParameter::Exec()
    // Bambu short option. An option character in this string can be followed by a colon (`:') to indicate that it
    // takes a required argument. If an option character is followed by two colons (`::'), its argument is optional;
    // this is a GNU extension.
-   const char* const short_options = COMMON_SHORT_OPTIONS_STRING "t:u:H:SC::b:w:" GCC_SHORT_OPTIONS_STRING;
+   const char* const short_options = COMMON_SHORT_OPTIONS_STRING "t:u:H:sC::b:w:p" GCC_SHORT_OPTIONS_STRING;
 
    const struct option long_options[] = {
       COMMON_LONG_OPTIONS,
@@ -1063,8 +1065,9 @@ int BambuParameter::Exec()
       /// Scheduling options
       {FIXED_SCHEDULING_OPT, required_argument, nullptr, OPT_FIXED_SCHED},
 #if HAVE_ILP_BUILT
-      {"speculative-sdc-scheduling", no_argument, nullptr, OPT_SDC_SCHEDULING},
+      {"speculative-sdc-scheduling", no_argument, nullptr, 's'},
 #endif
+      {"pipelining", no_argument, nullptr, 'p'},
       {"serialize-memory-accesses", no_argument, nullptr, OPT_SERIALIZE_MEMORY_ACCESSES},
       {PAR_LIST_BASED_OPT, optional_argument, nullptr, OPT_LIST_BASED}, // no short option
       {"post-rescheduling", no_argument, nullptr, OPT_POST_RESCHEDULING},
@@ -1074,7 +1077,7 @@ int BambuParameter::Exec()
       {"ilp-newform", no_argument, nullptr, OPT_ILP_NEWFORM},
       {"silp", no_argument, nullptr, OPT_SILP},
 #endif
-      {"speculative", no_argument, nullptr, 'S'},
+      {"speculative", no_argument, nullptr, OPT_SPECULATIVE},
       {"no-chaining", no_argument, nullptr, 0},
       /// Finite state machine options
       {"stg", required_argument, nullptr, OPT_STG},
@@ -1816,7 +1819,7 @@ int BambuParameter::Exec()
             break;
          }
 #if HAVE_ILP_BUILT
-         case OPT_SDC_SCHEDULING:
+         case 's':
          {
             if(scheduling_set_p and getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) != HLSFlowStep_Type::SDC_SCHEDULING)
                THROW_ERROR("BadParameters: only one scheduler can be specified");
@@ -1830,6 +1833,11 @@ int BambuParameter::Exec()
             break;
          }
 #endif
+         case 'p':
+         {
+            setOption(OPT_pipelining, true);
+            break;
+         }
          case OPT_SERIALIZE_MEMORY_ACCESSES:
          {
             setOption(OPT_gcc_serialize_memory_accesses, true);

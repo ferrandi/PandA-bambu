@@ -383,7 +383,7 @@ class FunctionBehavior
    /// The set of input parameters
    const ParameterConstRef parameters;
 
-   /// the function derefernce a pointer initialized with constant address.
+   /// the function dereference a pointer initialized with constant address.
    bool dereference_unknown_address;
 
    /// true when at least one pointer conversion happen
@@ -405,6 +405,9 @@ class FunctionBehavior
 
    /// set of global variables
    std::set<unsigned int> state_variables;
+
+   /// when true pipelining has been requested for this function
+   bool pipelining_enabled;
 
  public:
    /**
@@ -835,6 +838,15 @@ class FunctionBehavior
    bool has_packed_vars() const
    {
       return packed_vars;
+   }
+   bool is_pipelining_enabled() const
+   {
+      return pipelining_enabled;
+   }
+
+   void set_pipelining_enabled(bool f)
+   {
+      pipelining_enabled = f;
    }
 
    /**
