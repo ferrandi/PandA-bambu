@@ -640,6 +640,32 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       THROW_ASSERT(!done_port, "done port not connected");
    }
 
+   if(HLS->control_flow_checker)
+   {
+      structural_objectRef controller_flow_circuit = HLS->control_flow_checker->get_circ();
+      structural_objectRef curr_gate = structural_objectRef(new component_o(debug_level, circuit));
+      controller_flow_circuit->copy(curr_gate);
+      curr_gate->set_id("ControlFlowChecker_i");
+      GetPointer<module>(circuit)->add_internal_object(curr_gate);
+      structural_objectRef controller_flow_clock = curr_gate->find_member(CLOCK_PORT_NAME, port_o_K, curr_gate);
+      SM->add_connection(controller_flow_clock, clock_port);
+      structural_objectRef controller_flow_reset = curr_gate->find_member(RESET_PORT_NAME, port_o_K, curr_gate);
+      SM->add_connection(controller_flow_reset, reset_port);
+      structural_objectRef controller_flow_start = curr_gate->find_member(START_PORT_NAME, port_o_K, curr_gate);
+      structural_objectRef start_CFC = SM->add_port(START_PORT_NAME_CFC, port_o::IN, circuit, structural_type_descriptorRef(new structural_type_descriptor("bool", 0)));
+      SM->add_connection(start_CFC, controller_flow_start);
+      structural_objectRef controller_flow_done = curr_gate->find_member(DONE_PORT_NAME, port_o_K, curr_gate);
+      structural_objectRef done_CFC = SM->add_port(DONE_PORT_NAME_CFC, port_o::IN, circuit, structural_type_descriptorRef(new structural_type_descriptor("bool", 0)));
+      SM->add_connection(done_CFC, controller_flow_done);
+      structural_objectRef controller_flow_present_state = curr_gate->find_member(PRESENT_STATE_PORT_NAME, port_o_K, curr_gate);
+      structural_objectRef controller_present_state = SM->add_port(PRESENT_STATE_PORT_NAME, port_o::IN, circuit, controller_flow_present_state->get_typeRef());
+      SM->add_connection(controller_present_state, controller_flow_present_state);
+      structural_objectRef controller_flow_next_state = curr_gate->find_member(NEXT_STATE_PORT_NAME, port_o_K, curr_gate);
+      structural_objectRef controller_next_state = SM->add_port(NEXT_STATE_PORT_NAME, port_o::IN, circuit, controller_flow_next_state->get_typeRef());
+      SM->add_connection(controller_next_state, controller_flow_next_state);
+      memory_modules.insert(curr_gate);
+   }
+
    std::map<unsigned int, unsigned int> memory_units = allocation_information->get_memory_units();
    std::map<unsigned int, structural_objectRef> mem_obj;
    for(const auto& m : memory_units)
@@ -935,12 +961,11 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Managed memory ports");
 
    /// rename back all the memory proxies ports
-   const std::set<std::pair<structural_objectRef, unsigned int>>::const_iterator pmutbrb_it_end = proxy_memory_units_to_be_renamed_back.end();
-   for(auto pmutbrb_it = proxy_memory_units_to_be_renamed_back.begin(); pmutbrb_it != pmutbrb_it_end; ++pmutbrb_it)
+   for(const auto& pmutbrb : proxy_memory_units_to_be_renamed_back)
    {
-      structural_objectRef curr_gate = pmutbrb_it->first;
+      structural_objectRef curr_gate = pmutbrb.first;
       THROW_ASSERT(curr_gate, "missing structural object");
-      std::string var_name = "_" + STR(pmutbrb_it->second);
+      std::string var_name = "_" + STR(pmutbrb.second);
       structural_objectRef port_proxy_in1 = curr_gate->find_member("proxy_in1" + var_name, port_o_K, curr_gate);
       structural_objectRef port_proxy_in2 = curr_gate->find_member("proxy_in2" + var_name, port_o_K, curr_gate);
       structural_objectRef port_proxy_in3 = curr_gate->find_member("proxy_in3" + var_name, port_o_K, curr_gate);
@@ -957,12 +982,11 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    manage_killing_memory_proxies(mem_obj, reverse_memory_units, var_call_sites_rel, SM, HLS, unique_id);
 
    /// rename back all the function proxies ports
-   const std::set<std::pair<structural_objectRef, std::string>>::const_iterator pfutbrb_it_end = proxy_function_units_to_be_renamed_back.end();
-   for(auto pfutbrb_it = proxy_function_units_to_be_renamed_back.begin(); pfutbrb_it != pfutbrb_it_end; ++pfutbrb_it)
+   for(const auto& pfutbrb : proxy_function_units_to_be_renamed_back)
    {
-      structural_objectRef curr_gate = pfutbrb_it->first;
+      structural_objectRef curr_gate = pfutbrb.first;
       THROW_ASSERT(curr_gate, "missing structural object");
-      std::string fun_name = "_" + STR(pfutbrb_it->second);
+      std::string fun_name = "_" + STR(pfutbrb.second);
       auto inPortSize = static_cast<unsigned int>(GetPointer<module>(curr_gate)->get_in_port_size());
       for(unsigned int currentPort = 0; currentPort < inPortSize; ++currentPort)
       {
@@ -1031,12 +1055,20 @@ bool fu_binding::manage_module_ports(const HLS_managerRef, const hlsRef, const s
    {
       structural_objectRef port_out = GetPointer<module>(curr_gate)->get_out_port(j);
       manage_extern_global_port(SM, port_out, port_o::OUT, circuit, num);
+      if(GetPointer<port_o>(port_out)->get_is_memory())
+      {
+         added_memory_element = true;
+      }
    }
    /// creating extern IO port on datapath starting from extern ports on module
    for(unsigned int j = 0; j < GetPointer<module>(curr_gate)->get_in_out_port_size(); j++)
    {
       structural_objectRef port_in_out = GetPointer<module>(curr_gate)->get_in_out_port(j);
       manage_extern_global_port(SM, port_in_out, port_o::IO, circuit, num);
+      if(GetPointer<port_o>(port_in_out)->get_is_memory())
+      {
+         added_memory_element = true;
+      }
    }
    return added_memory_element;
 }

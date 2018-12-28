@@ -336,9 +336,9 @@ void CWriter::Initialize()
    writtenIncludes.clear();
 }
 
-void CWriter::WriteBodyLoop(const FunctionBehaviorConstRef, const unsigned int, vertex current_vertex, bool bracket)
+void CWriter::WriteBodyLoop(const unsigned int function_index, const unsigned int, vertex current_vertex, bool bracket)
 {
-   writeRoutineInstructions_rec(current_vertex, bracket);
+   writeRoutineInstructions_rec(current_vertex, bracket, function_index);
 }
 
 void CWriter::WriteFunctionBody(unsigned int function_id)
@@ -529,7 +529,7 @@ void CWriter::writePostInstructionInfo(const FunctionBehaviorConstRef, const ver
 {
 }
 
-void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
+void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, const unsigned int function_index)
 {
    const BBGraphInfoConstRef& bb_graph_info = local_rec_bb_fcfgGraph->CGetBBGraphInfo();
    const BBNodeInfoConstRef& bb_node_info = local_rec_bb_fcfgGraph->CGetBBNodeInfo(current_vertex);
@@ -664,7 +664,7 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
    {
       add_semicolon = true;
    }
-   WriteBBHeader(bb_number);
+   WriteBBHeader(bb_number, function_index);
 
    std::list<vertex>::const_iterator vIter, vIterBegin;
    vIter = stmts_list.begin();
@@ -750,7 +750,7 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
                   add_false_to_goto = true;
                }
                if(bb_analyzed.find(true_vertex) == bb_analyzed.end())
-                  writeRoutineInstructions_rec(true_vertex, true);
+                  writeRoutineInstructions_rec(true_vertex, true, function_index);
                else
                {
                   THROW_ASSERT(basic_blocks_labels.find(bb_true_number) != basic_blocks_labels.end(), "I do not know the destination");
@@ -771,7 +771,7 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
                {
                   indented_output_stream->Append("else\n");
                   if(bb_analyzed.find(false_vertex) == bb_analyzed.end())
-                     writeRoutineInstructions_rec(false_vertex, true);
+                     writeRoutineInstructions_rec(false_vertex, true, function_index);
                   else
                   {
                      THROW_ASSERT(basic_blocks_labels.find(bb_node_info->block->false_edge) != basic_blocks_labels.end(), "I do not know the destination");
@@ -803,7 +803,7 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
             {
                if(bb_analyzed.find(true_vertex) == bb_analyzed.end())
                {
-                  WriteBodyLoop(local_rec_function_behavior, bb_node_info->block->number, true_vertex, true);
+                  WriteBodyLoop(local_rec_function_behavior->CGetBehavioralHelper()->get_function_index(), bb_node_info->block->number, true_vertex, true);
                }
                else
                {
@@ -821,7 +821,7 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
             {
                if(bb_analyzed.find(false_vertex) == bb_analyzed.end())
                {
-                  writeRoutineInstructions_rec(false_vertex, false);
+                  writeRoutineInstructions_rec(false_vertex, false, function_index);
                }
                else
                {
@@ -873,7 +873,7 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
                {
                   if(bb_analyzed.find(bb_vertex) == bb_analyzed.end())
                   {
-                     writeRoutineInstructions_rec(bb_vertex, true);
+                     writeRoutineInstructions_rec(bb_vertex, true, function_index);
                   }
                   else
                   {
@@ -940,7 +940,7 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
                }
                if(bb_analyzed.find(next_bb) == bb_analyzed.end())
                {
-                  writeRoutineInstructions_rec(next_bb, true);
+                  writeRoutineInstructions_rec(next_bb, true, function_index);
                   indented_output_stream->Append("break;\n");
                }
                else
@@ -1002,7 +1002,7 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
                }
                if(boost::in_degree(next_bb, *local_rec_bb_fcfgGraph) == 1)
                {
-                  writeRoutineInstructions_rec(next_bb, false);
+                  writeRoutineInstructions_rec(next_bb, false, function_index);
                }
                else
                {
@@ -1071,7 +1071,7 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket)
       bb_frontier.erase(bb_PD);
       THROW_ASSERT(bb_analyzed.find(bb_PD) == bb_analyzed.end(), "something of wrong happen " + STR(local_rec_bb_fcfgGraph->CGetBBNodeInfo(bb_PD)->block->number) + " Fun(" + STR(local_rec_behavioral_helper->get_function_index()) + ")");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Printing the post dominator");
-      writeRoutineInstructions_rec(bb_PD, false);
+      writeRoutineInstructions_rec(bb_PD, false, function_index);
    }
    if((analyze_bb_PD || is_there || add_bb_label || add_phi_nodes_assignment || add_phi_nodes_assignment_prefix) && bracket)
       indented_output_stream->Append("}\n");
@@ -1191,7 +1191,7 @@ void CWriter::writeRoutineInstructions(const unsigned int function_index, const 
    local_rec_behavioral_helper = local_rec_function_behavior->CGetBehavioralHelper();
 
    /// some statements can be in entry
-   writeRoutineInstructions_rec(bbentry, false);
+   writeRoutineInstructions_rec(bbentry, false, function_index);
    if(!bb_start && bb_end.size() == 0)
    {
       OutEdgeIterator oE, oEEnd;
@@ -1201,7 +1201,7 @@ void CWriter::writeRoutineInstructions(const unsigned int function_index, const 
             continue;
          else
          {
-            writeRoutineInstructions_rec(boost::target(*oE, *bb_fcfgGraph), false);
+            writeRoutineInstructions_rec(boost::target(*oE, *bb_fcfgGraph), false, function_index);
          }
       }
    }
@@ -1213,7 +1213,7 @@ void CWriter::writeRoutineInstructions(const unsigned int function_index, const 
    {
       vertex next_bb = *not_yet_considered.begin();
       not_yet_considered.erase(next_bb);
-      writeRoutineInstructions_rec(next_bb, false);
+      writeRoutineInstructions_rec(next_bb, false, function_index);
       not_yet_considered.clear();
       std::set_difference(goto_list.begin(), goto_list.end(),     /*first set*/
                           bb_analyzed.begin(), bb_analyzed.end(), /*second set*/
@@ -1812,7 +1812,7 @@ void CWriter::WriteFile(const std::string& file_name)
    indented_output_stream->WriteFile(file_name);
 }
 
-void CWriter::WriteBBHeader(unsigned int)
+void CWriter::WriteBBHeader(const unsigned int, const unsigned int)
 {
 }
 

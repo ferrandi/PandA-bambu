@@ -49,6 +49,7 @@
 /// wrapper/synthesis/altera includes
 #include "quartus_13_report_wrapper.hpp"
 #include "quartus_13_wrapper.hpp"
+#include "quartus_power_wrapper.hpp"
 #include "quartus_report_wrapper.hpp"
 #include "quartus_wrapper.hpp"
 
@@ -146,6 +147,9 @@ SynthesisToolRef SynthesisTool::create_synthesis_tool(type_t type, const Paramet
          break;
       case QUARTUS_FLOW:
          return SynthesisToolRef(new QuartusWrapper(_Param, _output_dir, _device));
+         break;
+      case QUARTUS_POW:
+         return SynthesisToolRef(new QuartusPowerWrapper(_Param, _output_dir, _device));
          break;
       case QUARTUS_STA:
          return SynthesisToolRef(new QuartusReportWrapper(_Param, _output_dir, _device));

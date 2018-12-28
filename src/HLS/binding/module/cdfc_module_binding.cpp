@@ -1048,14 +1048,11 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       }
 
       /// merge easy bound vertices
-      const std::unordered_map<unsigned int, std::set<vertex>>::const_iterator fu_eb_it_end = easy_bound_vertices.end();
-      for(std::unordered_map<unsigned int, std::set<vertex>>::const_iterator fu_eb_it = easy_bound_vertices.begin(); fu_eb_it != fu_eb_it_end; ++fu_eb_it)
+      for(const auto& fu_eb : easy_bound_vertices)
       {
          std::map<unsigned int, vertex> rep_vertex;
-         const std::set<vertex>::const_iterator eb_it_end = fu_eb_it->second.end();
-         for(auto eb_it = fu_eb_it->second.begin(); eb_it != eb_it_end; ++eb_it)
+         for(const auto& cur_v : fu_eb.second)
          {
-            vertex cur_v = *eb_it;
             unsigned int vertex_index = fu->get_index(cur_v);
             if(rep_vertex.find(vertex_index) == rep_vertex.end())
                rep_vertex[vertex_index] = cur_v;
@@ -1131,20 +1128,19 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       spec_hierarchical_clustering hc;
 
       /// add the vertices to the clustering graph graph
-      for(const auto fu_cv : candidate_vertices)
+      for(const auto& fu_cv : candidate_vertices)
       {
-         const std::set<vertex>::const_iterator cv_it_end = fu_cv.second.end();
-         for(std::set<vertex>::const_iterator cv_it = fu_cv.second.begin(); cv_it != cv_it_end; ++cv_it)
+         for(const auto& cv : fu_cv.second)
          {
             unsigned int fu_s1 = fu_cv.first;
             const double mux_time = MODULE_BINDING_MUX_MARGIN * allocation_information->estimate_mux_time(fu_s1);
-            if(!can_be_clustered(*cv_it, fsdg, fu, slack_time, mux_time))
+            if(!can_be_clustered(cv, fsdg, fu, slack_time, mux_time))
             {
-               // fu_s1 = fu->get_assign(*cv_it);
+               // fu_s1 = fu->get_assign(cv);
                // double exec_time = allocation_information->get_worst_execution_time(fu_s1);
                // double stage_time = allocation_information->get_worst_stage_period(fu_s1);
                // double resource_area = allocation_information->compute_normalized_area(fu_s1, vars_read1.size());
-               // std::cerr << "NOPERATION=" << fsdg->CGetOpNodeInfo(*cv_it)->GetOperation() << " area " << resource_area  << "-" << has_a_constant_in << " e=" << exec_time << " s=" << stage_time << std::endl;
+               // std::cerr << "NOPERATION=" << fsdg->CGetOpNodeInfo(cv)->GetOperation() << " area " << resource_area  << "-" << has_a_constant_in << " e=" << exec_time << " s=" << stage_time << std::endl;
                continue;
             }
             double resource_area = allocation_information->compute_normalized_area(fu_s1);
@@ -1152,11 +1148,11 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
 
             // double exec_time = allocation_information->get_worst_execution_time(fu_s1);
             // double stage_time = allocation_information->get_worst_stage_period(fu_s1);
-            hc.add_vertex(boost::get(boost::vertex_index, *fsdg, *cv_it), GET_NAME(fsdg, *cv_it), fu->get_assign(*cv_it), resource_area);
+            hc.add_vertex(boost::get(boost::vertex_index, *fsdg, cv), GET_NAME(fsdg, cv), fu->get_assign(cv), resource_area);
          }
       }
       /// add tabu for each pair of vertices in conflict: vertices concurrently running
-      for(const auto fu_cv : candidate_vertices)
+      for(const auto& fu_cv : candidate_vertices)
       {
          const std::set<vertex>::const_iterator cv_it_end = fu_cv.second.end();
          for(std::set<vertex>::const_iterator cv_it = fu_cv.second.begin(); cv_it != cv_it_end;)
@@ -1181,21 +1177,20 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          }
       }
       /// add the control dependencies edges and the chained edges to the HC graph
-      for(std::map<unsigned int, std::set<vertex>>::const_iterator fu_cv_it = candidate_vertices.begin(); fu_cv_it != fu_cv_it_end; ++fu_cv_it)
+      for(const auto& fu_cv : candidate_vertices)
       {
-         const std::set<vertex>::const_iterator cv_it_end = fu_cv_it->second.end();
-         for(std::set<vertex>::const_iterator cv_it = fu_cv_it->second.begin(); cv_it != cv_it_end; ++cv_it)
+         for(const auto& cv : fu_cv.second)
          {
-            unsigned int fu_s1 = fu_cv_it->first;
+            unsigned int fu_s1 = fu_cv.first;
             const double mux_time = MODULE_BINDING_MUX_MARGIN * allocation_information->estimate_mux_time(fu_s1);
-            if(!can_be_clustered(*cv_it, fsdg, fu, slack_time, mux_time))
+            if(!can_be_clustered(cv, fsdg, fu, slack_time, mux_time))
                continue;
-            std::vector<HLS_manager::io_binding_type> vars_read1 = HLSMgr->get_required_values(HLS->functionId, *cv_it);
+            std::vector<HLS_manager::io_binding_type> vars_read1 = HLSMgr->get_required_values(HLS->functionId, cv);
             unsigned int index = 0;
             for(auto var_pair : vars_read1)
             {
                unsigned int var_written = std::get<0>(var_pair);
-               vertex tgt = *cv_it;
+               vertex tgt = cv;
                vertex src = get_src_vertex(var_written, tgt, HLSMgr, HLS->functionId, fsdg);
                if(src != NULL_VERTEX)
                {

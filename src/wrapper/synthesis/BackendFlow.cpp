@@ -473,6 +473,12 @@ void BackendFlow::xload(const xml_element* node)
             if(step->script_name.size() == 0)
                step->script_name = "quartus_flow.tcl";
          }
+         else if(id == QUARTUS_POWER_TOOL_ID)
+         {
+            type = SynthesisTool::QUARTUS_POW;
+            if(step->script_name.size() == 0)
+               step->script_name = "quartus_pow_arguments";
+         }
          else if(id == QUARTUS_REPORT_TOOL_ID)
          {
             type = SynthesisTool::QUARTUS_STA;

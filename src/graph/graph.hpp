@@ -89,9 +89,6 @@ typedef boost::adjacency_list<boost::listS, boost::listS, boost::bidirectionalS,
 struct RawGraph : public boost_raw_graph
 {
  public:
-   /// Set of parameters
-   const ParameterConstRef parameters;
-
    /**
     * Constructor
     * @param g_info is the property associated with the graph

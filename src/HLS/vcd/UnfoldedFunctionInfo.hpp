@@ -39,18 +39,23 @@
 #define UNFOLDED_FUNCTION_INFO_HPP
 #include "node_info.hpp"
 
-#include "refcount.hpp"
+// include from behavior/
+#include "function_behavior.hpp"
 
-CONSTREF_FORWARD_DECL(FunctionBehavior);
+// include from utility/
+#include "refcount.hpp"
 
 class UnfoldedFunctionInfo : public NodeInfo
 {
  public:
    const unsigned int f_id;
 
-   FunctionBehaviorConstRef behavior;
+   const FunctionBehaviorConstRef behavior;
 
    explicit UnfoldedFunctionInfo(unsigned int _f_id = 0) : f_id(_f_id)
+   {
+   }
+   explicit UnfoldedFunctionInfo(unsigned int _f_id, const FunctionBehaviorConstRef b) : f_id(_f_id), behavior(b)
    {
    }
 

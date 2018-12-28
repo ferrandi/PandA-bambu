@@ -73,11 +73,14 @@ class StateTransitionGraphManager
    /// The bulk graph
    const StateTransitionGraphsCollectionRef state_transition_graphs_collection;
 
-   /// The acyclic version of STG
+   /// The acyclic version of the STG
    const StateTransitionGraphRef ACYCLIC_STG_graph;
 
-   /// The complete version of std
+   /// The complete version of the STG
    const StateTransitionGraphRef STG_graph;
+
+   /// The acyclic version of stg with additional edges necessary for Efficient Path Profiling
+   const StateTransitionGraphRef EPP_STG_graph;
 
    /// reference to operation graph
    const OpGraphConstRef op_function_graph;
@@ -136,6 +139,16 @@ class StateTransitionGraphManager
     * @return reference to a graph that contains information about operations to be executed and control edges
     */
    StateTransitionGraphRef GetStg();
+
+   /**
+    * Returns pointer to acyclic STG with additional edges for Efficient Path Profiling
+    */
+   StateTransitionGraphRef GetEPPStg();
+
+   /**
+    * Returns pointer to acyclic STG with additional edges for Efficient Path Profiling
+    */
+   const StateTransitionGraphConstRef CGetEPPStg() const;
 
    /**
     * Returns pointer to state transition graph created.

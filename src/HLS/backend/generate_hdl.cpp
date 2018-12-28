@@ -75,6 +75,10 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
       case DEPENDENCE_RELATIONSHIP:
       {
          ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
+         if(parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw))
+         {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::HW_DISCREPANCY_ANALYSIS, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         }
          break;
       }
       case INVALIDATION_RELATIONSHIP:

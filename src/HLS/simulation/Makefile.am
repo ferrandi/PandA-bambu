@@ -39,21 +39,23 @@ lib_simulation_la_CPPFLAGS = \
 METASOURCES = AUTO
 
 noinst_HEADERS = \
+   CTestbenchExecution.hpp \
    minimal_interface_testbench.hpp \
+   SimulationInformation.hpp \
    testbench_generation.hpp \
    testbench_generation_base_step.hpp \
-   wishbone_interface_testbench.hpp \
+   testbench_memory_allocation.hpp \
    test_vector_parser.hpp \
-	testbench_memory_allocation.hpp \
-	SimulationInformation.hpp
+   wishbone_interface_testbench.hpp
 
 lib_simulation_la_SOURCES = \
+   CTestbenchExecution.cpp \
    minimal_interface_testbench.cpp \
    testbench_generation.cpp \
    testbench_generation_base_step.cpp \
-   wishbone_interface_testbench.cpp \
+   testbench_memory_allocation.cpp \
    test_vector_parser.cpp \
-	testbench_memory_allocation.cpp
+   wishbone_interface_testbench.cpp
 
 #DOCUMENTATION STUFF
 

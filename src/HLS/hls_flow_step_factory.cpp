@@ -60,7 +60,8 @@
 /// HLS/architecture_creator/datapath_creation
 #include "classic_datapath.hpp"
 
-/// HLS/architecture_creator/fsm_creator/algorithms include
+/// ///HLS/architecture_creator/controller_creation
+#include "control_flow_checker.hpp"
 #include "fsm_controller.hpp"
 #if HAVE_EXPERIMENTAL
 #include "ParallelController.hpp"
@@ -226,6 +227,7 @@
 #endif
 
 /// HLS/simulation includes
+#include "CTestbenchExecution.hpp"
 #include "minimal_interface_testbench.hpp"
 #include "test_vector_parser.hpp"
 #include "testbench_generation.hpp"
@@ -235,7 +237,10 @@
 /// HLS/stg
 #include "BB_based_stg.hpp"
 
+#include "CallGraphUnfolding.hpp"
 #if HAVE_VCD_BUILT
+#include "HWDiscrepancyAnalysis.hpp"
+#include "HWPathComputation.hpp"
 #include "VcdSignalSelection.hpp"
 #include "vcd_utility.hpp"
 #endif
@@ -302,6 +307,11 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
          design_flow_step = DesignFlowStepRef(new hls_bit_value(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
+      case HLSFlowStep_Type::CALL_GRAPH_UNFOLDING:
+      {
+         design_flow_step = DesignFlowStepRef(new CallGraphUnfolding(parameters, HLS_mgr, design_flow_manager.lock()));
+         break;
+      }
       case HLSFlowStep_Type::CDFC_MODULE_BINDING:
       {
          design_flow_step = DesignFlowStepRef(new cdfc_module_binding(parameters, HLS_mgr, funId, design_flow_manager.lock(), hls_flow_step_specialization));
@@ -339,6 +349,16 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
       case HLSFlowStep_Type::COLORING_REGISTER_BINDING:
       {
          design_flow_step = DesignFlowStepRef(new vertex_coloring_register(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         break;
+      }
+      case HLSFlowStep_Type::CONTROL_FLOW_CHECKER:
+      {
+         design_flow_step = DesignFlowStepRef(new ControlFlowChecker(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         break;
+      }
+      case HLSFlowStep_Type::C_TESTBENCH_EXECUTION:
+      {
+         design_flow_step = DesignFlowStepRef(new CTestbenchExecution(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION:
@@ -477,6 +497,16 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
       case HLSFlowStep_Type::HLS_SYNTHESIS_FLOW:
       {
          design_flow_step = DesignFlowStepRef(new HLSSynthesisFlow(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         break;
+      }
+      case HLSFlowStep_Type::HW_PATH_COMPUTATION:
+      {
+         design_flow_step = DesignFlowStepRef(new HWPathComputation(parameters, HLS_mgr, design_flow_manager.lock()));
+         break;
+      }
+      case HLSFlowStep_Type::HW_DISCREPANCY_ANALYSIS:
+      {
+         design_flow_step = DesignFlowStepRef(new HWDiscrepancyAnalysis(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
 #if HAVE_ILP_BUILT && HAVE_EXPERIMENTAL
@@ -754,6 +784,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
             ret.insert(CreateHLSFlowStep(hls_flow_step.first, 0, hls_flow_step.second));
             break;
          }
+         case HLSFlowStep_Type::CALL_GRAPH_UNFOLDING:
          case HLSFlowStep_Type::CLASSICAL_HLS_SYNTHESIS_FLOW:
          case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION:
          case HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION:
@@ -762,6 +793,8 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
 #endif
          case HLSFlowStep_Type::GENERATE_SYNTHESIS_SCRIPT:
          case HLSFlowStep_Type::HLS_SYNTHESIS_FLOW:
+         case HLSFlowStep_Type::HW_PATH_COMPUTATION:
+         case HLSFlowStep_Type::HW_DISCREPANCY_ANALYSIS:
          case HLSFlowStep_Type::TESTBENCH_GENERATION:
 #if HAVE_VCD_BUILT
          case HLSFlowStep_Type::VCD_SIGNAL_SELECTION:
@@ -795,6 +828,8 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
          case HLSFlowStep_Type::CLOCK_SLACK_ESTIMATION:
 #endif
          case HLSFlowStep_Type::COLORING_REGISTER_BINDING:
+         case HLSFlowStep_Type::CONTROL_FLOW_CHECKER:
+         case HLSFlowStep_Type::C_TESTBENCH_EXECUTION:
 #if HAVE_BEAGLE
          case HLSFlowStep_Type::DSE_DESIGN_FLOW:
 #endif

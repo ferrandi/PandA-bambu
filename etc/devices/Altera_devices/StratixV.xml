@@ -4,12 +4,22 @@
       <step id="quartus_setup" config="quartus_setup"/>
       <step id="quartus_flow" config="quartus_flow"/>
       <step id="quartus_sta" config="quartus_sta"/>
+      <step id="quartus_pow" config="quartus_pow"/>
    </flow>
    <flow name="Characterization">
       <step id="quartus_setup" config="quartus_setupC"/>
       <step id="quartus_flow" config="quartus_flow"/>
       <step id="quartus_sta" config="quartus_sta"/>
    </flow>
+   <quartus_pow config="quartus_pow">
+      <cmd name="${__top_id__}.qpf"/>
+      <cmd name="-c ${__top_id__}.qsf"/>
+      <cmd name="--estimate_power=on"/>
+      <cmd name="--use_vectorless_estimation=on"/>
+      <cmd name="--output_saf=result.saf"/>
+      <cmd name="--output_epe=result.epe"/>
+      <cmd name="--vcd_filter_glitches=on"/>
+   </quartus_pow>
    <quartus_sh config="quartus_setupC">
       <!--Create the design setup -->
       <cmd name="project_new ${__top_id__} -overwrite"/>

@@ -163,8 +163,9 @@ class CWriter
     * Write recursively instructions belonging to a basic block of task or of a function
     * @param current_vertex is the basic block which is being printed
     * @param bracket tells if bracket should be added before and after this basic block
+    * @param function_index is the identifier of the function to which instructions belong
     */
-   void writeRoutineInstructions_rec(vertex current_vertex, bool bracket);
+   void writeRoutineInstructions_rec(vertex current_vertex, bool bracket, const unsigned int function_index);
 
    /**
     * Write additional information on the given statement vertex, before the
@@ -184,12 +185,12 @@ class CWriter
 
    /**
     * Write the instructions belonging to a body loop
-    * @param function_behavior is the function to which instructions belong
+    * @param function_index is the identifier of the function to which instructions belong
     * @param loop_id is the index of the loop to be printed
     * @param current_vertex is the first basic block of the loop
     * @param bracket tells if bracket should be added before and after this basic block
     */
-   virtual void WriteBodyLoop(const FunctionBehaviorConstRef function_behavior, const unsigned int loop_index, vertex current_vertex, bool bracket);
+   virtual void WriteBodyLoop(const unsigned int function_index, const unsigned int, vertex current_vertex, bool bracket);
 
    /**
     * Determines the instructions coming out from phi-node splitting
@@ -245,10 +246,11 @@ class CWriter
 
    /*
     * writes code at the beginning of the basic block denoted by the
-    * identifier bb_number. the code is written before all the instructions
+    * identifier bb_number in the function function_index.
+    * the code is written before all the instructions
     * of the BB, but after the goto label of the BB (if present)
     */
-   virtual void WriteBBHeader(unsigned int bb_number);
+   virtual void WriteBBHeader(const unsigned int bb_number, const unsigned int function_index);
 
  protected:
    /**

@@ -3,6 +3,7 @@ noinst_LTLIBRARIES = lib_discrepancy_parser.la
 
 lib_discrepancy_parser_la_CPPFLAGS = \
    -I$(top_srcdir)/src/ \
+   -I$(top_srcdir)/src/behavior \
    -I$(top_srcdir)/src/constants \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/HLS/vcd \

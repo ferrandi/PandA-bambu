@@ -86,7 +86,7 @@ application_manager::application_manager(const FunctionExpanderConstRef function
       debug_level(_Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE))
 #if HAVE_FROM_DISCREPANCY_BUILT
       ,
-      RDiscr((_Param->isOption(OPT_discrepancy) and _Param->getOption<bool>(OPT_discrepancy)) ? new Discrepancy() : nullptr)
+      RDiscr(((_Param->isOption(OPT_discrepancy) and _Param->getOption<bool>(OPT_discrepancy)) or (_Param->isOption(OPT_discrepancy_hw) and _Param->getOption<bool>(OPT_discrepancy_hw))) ? new Discrepancy() : nullptr)
 #endif
 {
    const auto original_file_names = Param->getOption<const CustomSet<std::string>>(OPT_input_file);

@@ -109,6 +109,7 @@ DiscrepancyLog::DiscrepancyLog(const HLS_managerConstRef HLSMgr, const vcd_trace
       op_end_time(t.op_end_time),
       type(t.op_info.type),
       op_id(t.op_info.op_id),
+      ssa_id(t.op_info.ssa_name_node_id),
       fun_id(t.op_info.stg_fun_id),
       op_start_state(t.fsm_ss_it->value),
       fu_name(HLSMgr->CGetFunctionBehavior(t.op_info.stg_fun_id)->CGetBehavioralHelper()->get_function_name()),
@@ -139,44 +140,6 @@ vcd_utility::vcd_utility(const ParameterConstRef _parameters, const HLS_managerR
    THROW_ASSERT(HLSMgr->RDiscr, "Discr data structure is not correctly initialized");
 }
 
-void vcd_utility::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
-{
-   HLS_step::ComputeRelationships(relationship, relationship_type);
-   if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy) and relationship_type == DEPENDENCE_RELATIONSHIP)
-   {
-      const auto* frontend_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
-
-      const vertex call_graph_computation_step = design_flow_manager.lock()->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
-
-      const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-
-      const DesignFlowStepRef cg_design_flow_step = call_graph_computation_step ? design_flow_graph->CGetDesignFlowStepInfo(call_graph_computation_step)->design_flow_step : frontend_step_factory->CreateApplicationFrontendFlowStep(FUNCTION_ANALYSIS);
-
-      relationship.insert(cg_design_flow_step);
-
-      // Root function cannot be computed at the beginning so if the
-      // call graph is not ready yet we exit. The relationships will
-      // be computed again after the call graph computation.
-      const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
-      if(boost::num_vertices(*(call_graph_manager->CGetCallGraph())) == 0)
-         return;
-
-      const auto* c_backend_step_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
-
-      vertex vcd_debug_step = design_flow_manager.lock()->GetDesignFlowStep(CBackend::ComputeSignature(CBackend::CB_DISCREPANCY_ANALYSIS));
-      const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-      THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
-      const auto top_function_id = *(top_function_ids.begin());
-      std::string out_dir = parameters->getOption<std::string>(OPT_output_directory) + "/simulation/";
-      std::string c_file_name = HLSMgr->GetFunctionBehavior(top_function_id)->CGetBehavioralHelper()->get_function_name() + "_discrepancy.c";
-      std::string dump_file_name = HLSMgr->GetFunctionBehavior(top_function_id)->CGetBehavioralHelper()->get_function_name() + "_discrepancy.txt";
-      const DesignFlowStepRef design_flow_step = vcd_debug_step ?
-                                                     design_flow_graph->CGetDesignFlowStepInfo(vcd_debug_step)->design_flow_step :
-                                                     c_backend_step_factory->CreateCBackendStep(CBackend::CB_DISCREPANCY_ANALYSIS, out_dir + c_file_name, CBackendInformationConstRef(new HLSCBackendInformation(out_dir + dump_file_name, HLSMgr)));
-      relationship.insert(design_flow_step);
-   }
-}
-
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> vcd_utility::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
@@ -187,6 +150,7 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
          ret.insert(std::make_tuple(HLSFlowStep_Type::SIMULATION_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
          ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_GENERATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
          ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_SIGNAL_SELECTION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::C_TESTBENCH_EXECUTION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -272,34 +236,23 @@ DesignFlowStep_Status vcd_utility::Exec()
 
    std::string vcd_filename = parameters->getOption<std::string>(OPT_output_directory) + "/simulation/test.vcd";
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Parsing vcd file " + vcd_filename);
-#ifndef NDEBUG
    long vcd_parse_time;
    START_TIME(vcd_parse_time);
-#endif
    /* create vcd parser obj */
    vcd_parser vcd_parser(parameters);
    /* parse the selected signals */
    vcd_parser::vcd_trace_t vcd_trace = vcd_parser.parse_vcd(vcd_filename, HLSMgr->RDiscr->selected_vcd_signals);
 
-#ifndef NDEBUG
    STOP_TIME(vcd_parse_time);
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Parsed vcd file " + vcd_filename + " in " + print_cpu_time(vcd_parse_time) + " seconds");
-#endif
    /* parse the discrepancy trace coming from C execution */
-   const auto root_functions = cg_man->GetRootFunctions();
-   THROW_ASSERT(root_functions.size() == 1, STR(root_functions.size()));
-   const auto root_function = *(root_functions.begin());
-   std::string discrepancy_data_filename = parameters->getOption<std::string>(OPT_output_directory) + "/simulation/" + HLSMgr->CGetFunctionBehavior(root_function)->CGetBehavioralHelper()->get_function_name() + "_discrepancy.data";
+   const std::string& discrepancy_data_filename = HLSMgr->RDiscr->c_trace_filename;
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Parsing C trace file " + discrepancy_data_filename);
-#ifndef NDEBUG
    long ctrace_parse_time;
    START_TIME(ctrace_parse_time);
-#endif
    parse_discrepancy(discrepancy_data_filename, Discr);
-#ifndef NDEBUG
    STOP_TIME(ctrace_parse_time);
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Parsed C trace file " + discrepancy_data_filename + " in " + print_cpu_time(ctrace_parse_time) + " seconds");
-#endif
 
    auto& c_op_trace = Discr->c_op_trace;
    if(c_op_trace.empty())
@@ -321,11 +274,10 @@ DesignFlowStep_Status vcd_utility::Exec()
    }
 
    std::map<unsigned int, std::map<std::string, struct vcd_trace_head>> op_id_to_scope_to_vcd_head;
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Starting discrepancy analysis");
-#ifndef NDEBUG
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---");
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Starting discrepancy analysis");
    long discrepancy_time;
    START_TIME(discrepancy_time);
-#endif
    for(const auto& c : c_op_trace)
    {
       const DiscrepancyOpInfo& op_info = c.first;
@@ -353,9 +305,9 @@ DesignFlowStep_Status vcd_utility::Exec()
          /* select the variations of the start port signals */
          const std::list<sig_variation>& start_vars = get_signal_variations(vcd_trace, controller_scope, STR(START_PORT_NAME));
          /*
-          * calculate the initial state of the fsm. this is used by the
-          * vcd_trace_head to comput the exact starting time for the operation,
-          * when the initial state of the fsm is a starting state for this operation
+          * calculate the initial state of the FSM. this is used by the
+          * vcd_trace_head to compute the exact starting time for the operation,
+          * when the initial state of the FSM is a starting state for this operation
           */
          const StateTransitionGraphManagerConstRef stg_man = HLSMgr->get_HLS(op_info.stg_fun_id)->STG;
          vertex entry = stg_man->get_entry_state();
@@ -445,11 +397,9 @@ DesignFlowStep_Status vcd_utility::Exec()
       }
    }
 
-#ifndef NDEBUG
    STOP_TIME(discrepancy_time);
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Discrepancy analysis executed in " + print_cpu_time(discrepancy_time) + " seconds");
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Possibly lost address checks = " + STR(possibly_lost_address));
-#endif
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Discrepancy analysis executed in " + print_cpu_time(discrepancy_time) + " seconds");
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Possibly lost address checks = " + STR(possibly_lost_address));
 
    disc_stat_file << "Possibly lost address checks = ";
    disc_stat_file << possibly_lost_address << "\n";
@@ -458,7 +408,7 @@ DesignFlowStep_Status vcd_utility::Exec()
    disc_stat_file.flush();
    disc_stat_file.close();
 
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "DISCREPANCY CHECKS: " + STR(Discr->n_checked_operations) + "/" + STR(Discr->n_total_operations));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---DISCREPANCY CHECKS: " + STR(Discr->n_checked_operations) + "/" + STR(Discr->n_total_operations));
 
    bool first_discrepancy_print = true;
    if(not discr_list.empty() or not soft_discr_list.empty())
@@ -533,7 +483,7 @@ DesignFlowStep_Status vcd_utility::Exec()
    }
    else
    {
-      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "DISCREPANCY NOT FOUND");
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---DISCREPANCY NOT FOUND");
       if((not parameters->isOption(OPT_no_clean)) or (!parameters->getOption<bool>(OPT_no_clean)))
       {
          if((not parameters->isOption(OPT_generate_vcd)) or (!parameters->getOption<bool>(OPT_generate_vcd)))
@@ -945,15 +895,16 @@ bool vcd_utility::detect_address_mismatch(const DiscrepancyOpInfo& op_info, cons
       {
          base_index = 0;
          const uint64_t c_addr = static_cast<unsigned int>(std::stoull(c_val.c_str(), nullptr, 2));
-
+         std::unordered_map<uint64_t, unsigned int> addr2base_index;
+         std::set<uint64_t> addrSet;
          for(const auto& addr : Discr->c_addr_map.at(c_context))
          {
-            if(addr.second > 0 and addr.second <= c_addr)
-            {
-               base_index = addr.first;
-               break;
-            }
+            addr2base_index[addr.second] = addr.first;
+            addrSet.insert(addr.second);
          }
+         for(auto it_set=addrSet.rbegin(); it_set!=addrSet.rend();++it_set)
+            if(c_addr<=*it_set)
+               base_index=addr2base_index.at(*it_set);
 
          if(base_index)
          {
@@ -1013,7 +964,7 @@ bool vcd_utility::detect_regular_mismatch(const vcd_trace_head& t, const std::st
    else // is an integer
    {
       std::string bitvalue = GetPointer<const ssa_name>(GET_NODE(TM->CGetTreeReindex(t.op_info.ssa_name_node_id)))->bit_values;
-      const auto first_not_x_pos = bitvalue.find_first_not_of("X");
+      const auto first_not_x_pos = bitvalue.find_first_not_of("xX");
       if(first_not_x_pos == std::string::npos)
          return false;
       const std::string vcd_trimmed_val = vcd_val.substr(first_not_x_pos);
@@ -1059,7 +1010,13 @@ void vcd_utility::print_discrepancy(const DiscrepancyLog& l, const int verbosity
                          STR(l.op_start_time) +
                          "\n"
                          "|  when fsm state is " +
-                         compute_fsm_state_from_vcd_string(l.op_start_state) + "\n";
+                         compute_fsm_state_from_vcd_string(l.op_start_state) +
+                         "\n"
+                         "|  assigned ssa id " +
+                         STR(GetPointer<const ssa_name>(GET_NODE(TM->CGetTreeReindex(l.ssa_id)))) +
+                         "\n"
+                         "|  bitvalue string for ssa id is " +
+                         GetPointer<const ssa_name>(GET_NODE(TM->CGetTreeReindex(l.ssa_id)))->bit_values + "\n";
 
    if(l.type & DISCR_ADDR)
    {

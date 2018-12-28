@@ -86,6 +86,7 @@ class simple_indent;
 
 #define HIERARCHY_SEPARATOR "/"
 
+#define DISCREPANCY_PARAMETER "DISCREPANCY_PARAMETER"
 #define MEMORY_PARAMETER "MEMORY_PARAMETER"
 #define PIPE_PARAMETER "PIPE_PARAMETER"
 #define VALUE_PARAMETER "VALUE_PARAMETER"
@@ -97,6 +98,13 @@ class simple_indent;
 #define RESET_PORT_NAME "reset"
 #define DONE_PORT_NAME "done_port"
 #define RETURN_PORT_NAME "return_port"
+#define START_PORT_NAME_CFC "start_port_CFC"
+#define DONE_PORT_NAME_CFC "done_port_CFC"
+#define PRESENT_STATE_PORT_NAME "present_state"
+#define NEXT_STATE_PORT_NAME "next_state"
+#define NOTIFIER_PORT_MISMATCH "out_mismatch"
+#define NOTIFIER_PORT_MISMATCH_ID "out_mismatch_id"
+#define NOTIFIER_PORT_MISMATCH_OFFSET "out_mismatch_trace_offset"
 #define PROXY_PREFIX "PROXY_PREF_"
 #define WRAPPED_PROXY_PREFIX "WRAPPED_PROXY_PREF_"
 

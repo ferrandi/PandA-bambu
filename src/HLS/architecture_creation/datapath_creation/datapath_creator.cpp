@@ -77,18 +77,21 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
             synthesis_flow = HLSFlowStep_Type::FU_REG_BINDING_DESIGN_FLOW;
 #endif
          ret.insert(std::make_tuple(synthesis_flow, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         if(parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw))
+         {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::CONTROL_FLOW_CHECKER, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         }
          break;
       }
       case INVALIDATION_RELATIONSHIP:
-      {
-         break;
-      }
       case PRECEDENCE_RELATIONSHIP:
       {
          break;
       }
       default:
+      {
          THROW_UNREACHABLE("");
+      }
    }
    return ret;
 }

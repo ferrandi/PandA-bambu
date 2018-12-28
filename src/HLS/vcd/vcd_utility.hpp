@@ -65,6 +65,7 @@ struct DiscrepancyLog
    unsigned long long op_end_time;
    enum discrepancy_type_mask type;
    unsigned int op_id;
+   unsigned int ssa_id;
    unsigned int fun_id;
    std::string op_start_state;
    std::string fu_name;
@@ -136,8 +137,6 @@ class vcd_utility : public HLS_step
     * @param relationship_type is the type of relationship to be considered
     */
    const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
-
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 
    bool detect_mismatch(const vcd_trace_head& t, const uint64_t c_context, const std::string& c_val);
 
