@@ -928,8 +928,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             unsigned int prev_dest_bb_index = curr_bb;
             if(gn->vdef || gn->vuses.size() || (tn->get_kind() == gimple_assign_K && GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K))
             {
-               if(list_of_bloc[curr_bb]->list_of_pred.size() == 1 && *list_of_bloc[curr_bb]->list_of_pred.begin() != bloc::ENTRY_BLOCK_ID && tn->get_kind() == gimple_assign_K &&
-                  (GET_NODE(GetPointer<gimple_assign>(tn)->op0)->get_kind() == mem_ref_K || GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K) &&
+               if(list_of_bloc[curr_bb]->list_of_pred.size() == 1 && *list_of_bloc[curr_bb]->list_of_pred.begin() != bloc::ENTRY_BLOCK_ID &&
+                  ((tn->get_kind() == gimple_assign_K && (GET_NODE(GetPointer<gimple_assign>(tn)->op0)->get_kind() == mem_ref_K || GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K)) || tn->get_kind() == gimple_nop_K) &&
                   list_of_bloc[*list_of_bloc[curr_bb]->list_of_pred.begin()]->loop_id == list_of_bloc[curr_bb]->loop_id)
                {
                   dest_bb_index = *list_of_bloc[curr_bb]->list_of_pred.begin();
