@@ -15,8 +15,7 @@
       <cmd name="${__top_id__}.qpf"/>
       <cmd name="-c ${__top_id__}.qsf"/>
       <cmd name="--estimate_power=on"/>
-      <cmd name="--use_vectorless_estimation=off"/>
-      <cmd name="--input_vcd=HLS_output/simulation/test.vcd"/>
+      <cmd name="--use_vectorless_estimation=on"/>
       <cmd name="--output_saf=result.saf"/>
       <cmd name="--output_epe=result.epe"/>
       <cmd name="--vcd_filter_glitches=on"/>
