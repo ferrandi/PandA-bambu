@@ -12,8 +12,8 @@
       <step id="quartus_sta" config="quartus_sta"/>
    </flow>
    <quartus_pow config="quartus_pow">
-      <cmd name="main_minimal_interface.qpf"/>
-      <cmd name="-c main_minimal_interface.qsf"/>
+      <cmd name="${__top_id__}.qpf"/>
+      <cmd name="-c ${__top_id__}.qsf"/>
       <cmd name="--estimate_power=on"/>
       <cmd name="--use_vectorless_estimation=off"/>
       <cmd name="--input_vcd=HLS_output/simulation/test.vcd"/>
