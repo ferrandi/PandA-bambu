@@ -108,5 +108,7 @@ class BuildVirtualPhi : public FunctionFrontendFlowStep
     * @return true if the step has to be executed
     */
    bool HasToBeExecuted() const override;
+
+   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 };
 #endif
