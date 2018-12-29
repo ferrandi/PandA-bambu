@@ -115,9 +115,9 @@ class vcd_utility : public HLS_step
 
    const DiscrepancyRef Discr;
 
-   unsigned long long possibly_lost_address;
+   unsigned long long possibly_lost_address{0};
 
-   unsigned long long mismatched_integers;
+   unsigned long long mismatched_integers{0};
 
    bool allow_uninitialized;
 
@@ -128,7 +128,7 @@ class vcd_utility : public HLS_step
    /// The name of the present state signal
    std::string present_state_name;
 
-   bool one_hot_encoding;
+   bool one_hot_encoding{false};
 
    unsigned long long GetClockPeriod(const vcd_parser::vcd_trace_t& vcd_trace) const;
 

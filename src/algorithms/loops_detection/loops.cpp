@@ -173,11 +173,6 @@ struct djgraph_dfs_tree_visitor : public boost::default_dfs_visitor
    }
 };
 
-Loops::Loops()
-{
-   THROW_UNREACHABLE("Empty constructor should never be called");
-}
-
 Loops::Loops(const FunctionBehaviorRef _FB, const ParameterConstRef parameters) : FB(FunctionBehaviorRef(_FB.get(), null_deleter())), Param(parameters), debug_level(parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE))
 {
    /// Detect loops
@@ -434,7 +429,7 @@ void Loops::DetectIrreducibleLoop(const BBGraphRef djg, unsigned int min_level, 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Detecting irreducible loop - Min level " + STR(min_level) + " - Max level " + STR(max_level));
    std::set<vertex> u;
 
-   /// Popoulate u with all the non-visisted node whose level is >= min_level
+   /// Populate u with all the non-visited node whose level is >= min_level
    for(auto level = min_level; level <= max_level; ++level)
    {
       for(auto v : level_vertices_rel[level])

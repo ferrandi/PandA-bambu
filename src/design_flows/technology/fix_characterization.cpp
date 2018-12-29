@@ -62,7 +62,7 @@
 #include "target_device.hpp"
 
 FixCharacterization::FixCharacterization(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::FIX_CHARACTERIZATION, _parameters), assignment_execution_time(0.0)
+    : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::FIX_CHARACTERIZATION, _parameters), assignment_execution_time(0.0), connection_time(0.0)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }

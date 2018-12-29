@@ -300,6 +300,7 @@ parametric_list_based::parametric_list_based(const ParameterConstRef _parameters
                  _hls_flow_step_specialization ? _hls_flow_step_specialization :
                                                  HLSFlowStepSpecializationConstRef(new ParametricListBasedSpecialization(static_cast<ParametricListBased_Metric>(_parameters->getOption<unsigned int>(OPT_scheduling_priority))))),
       parametric_list_based_metric(GetPointer<const ParametricListBasedSpecialization>(hls_flow_step_specialization)->parametric_list_based_metric),
+      entry_vertex(NULL_VERTEX),
       ending_time(OpGraphConstRef()),
       clock_cycle(0.0),
       executions_number(0)

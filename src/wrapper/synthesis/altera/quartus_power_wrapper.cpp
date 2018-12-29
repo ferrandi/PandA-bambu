@@ -39,8 +39,8 @@
 #include "Parameter.hpp"
 #include "ToolManager.hpp"
 #include "dbgPrintHelper.hpp"
-#include "xml_script_command.hpp"
 #include "string_manipulation.hpp"
+#include "xml_script_command.hpp"
 
 #include <boost/filesystem.hpp>
 

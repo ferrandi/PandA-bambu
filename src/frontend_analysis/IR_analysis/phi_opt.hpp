@@ -95,7 +95,7 @@ class PhiOpt : public FunctionFrontendFlowStep
    tree_manipulationConstRef tree_man;
 
    /// The basic block graph of the function
-   statement_list* sl;
+   statement_list* sl{nullptr};
 
    /// flag to check if initial tree has been dumped
    static bool tree_dumped;

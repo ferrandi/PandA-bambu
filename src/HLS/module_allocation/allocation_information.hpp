@@ -128,7 +128,7 @@ class AllocationInformation : public HLSFunctionIR
    double fanout_coefficient;
 
    /// The maximum size of fanout
-   size_t max_fanout_size;
+   size_t max_fanout_size{0};
 
    /// coefficient used to modify DSPs execution time
    double DSPs_margin;
@@ -163,7 +163,7 @@ class AllocationInformation : public HLSFunctionIR
    double minimumSlack;
 
    /// number of complex operations
-   unsigned int n_complex_operations;
+   unsigned int n_complex_operations{0};
 
    /// map between the functional unit identifier and the pair (library, fu) of names for the unit
    std::unordered_map<unsigned int, std::pair<std::string, std::string>> id_to_fu_names;
@@ -212,10 +212,10 @@ class AllocationInformation : public HLSFunctionIR
    /// map between variables and associated memory_units
    std::map<unsigned int, unsigned int> vars_to_memory_units;
 
-   /// store the precomputed pipeline unit: given a functional unit it return the pipeline id compliant
+   /// store the pre-computed pipeline unit: given a functional unit it return the pipeline id compliant
    std::map<std::string, std::string> precomputed_pipeline_unit;
 
-   /// store all cond_expr units having a boolean condition
+   /// store all cond_expr units having a Boolean condition
    std::unordered_set<unsigned int> single_bool_test_cond_expr_units;
 
    /// in case of pointer plus expr between constants: no wire delay
@@ -579,7 +579,7 @@ class AllocationInformation : public HLSFunctionIR
    /**
     * Checks if the given operation has a bounded execution time or not
     * if the operation is assigned to a functional unit, check if execution time on it is bounded or not
-    * if the operation is not assigned to a functional unit, return true for small operations (i.e., boolean expression)
+    * if the operation is not assigned to a functional unit, return true for small operations (i.e., Boolean expression)
     */
    bool is_operation_bounded(const unsigned int index) const;
 
@@ -946,8 +946,8 @@ class AllocationInformation : public HLSFunctionIR
    unsigned int get_n_complex_operations() const;
 
    /**
-    * return an estimation of the inteconnection time
-    * @return an estimation of the inteconnection time based on setup/hold time
+    * return an estimation of the interconnection time
+    * @return an estimation of the interconnection time based on setup/hold time
     */
    double get_connection_time(unsigned fu_type, bool add_delay1, bool add_delay2, size_t n_complex_ops, size_t n_mem_ops) const;
 
@@ -977,7 +977,7 @@ class AllocationInformation : public HLSFunctionIR
    bool is_proxy_memory_unit(const unsigned int fu_name) const;
 
    /**
-    * return true in case the functiona unit is a read-only memory unit
+    * return true in case the functional unit is a read-only memory unit
     * @param fu_name is the functional unit
     * @return true when fu_name is a read-only memory unit
     */
@@ -989,7 +989,7 @@ class AllocationInformation : public HLSFunctionIR
    double GetClockPeriodMargin() const;
 
    /**
-    * return true in case the functional unit implement a cond_expr operation and the condition is a boolean one
+    * return true in case the functional unit implement a cond_expr operation and the condition is a Boolean one
     * @param fu_name is the functional unit
     * @return true in case the functional unit is a mux
     */
@@ -1064,13 +1064,13 @@ struct updatecopy_HLS_constraints_functor
  * @ingroup allocation
  *
  * This structure collect the information of input and output
- * precisions of nodes and the node kind.
+ * precision of nodes and the node kind.
  */
 struct node_kind_prec_info
 {
    ///  Node kind.
    std::string node_kind;
-   ///  Vector of input precisions.
+   ///  Vector of input precision.
    std::vector<unsigned int> input_prec;
    /// vector storing the number of elements in case the input is a vector, 0 otherwise (used for mapping with library fus - it can be different from the real one)
    std::vector<unsigned int> base128_input_nelem;

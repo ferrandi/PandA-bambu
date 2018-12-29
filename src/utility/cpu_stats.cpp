@@ -145,11 +145,15 @@ void util_print_cpu_stats(std::ostream& os)
       os << vm_limit << "\n";
    os << "Page faults       = " << page_faults << "\n";
 #elif defined(__APPLE__)
-   ;// do nothing
+   ; // do nothing
 #else
    extern int end, etext, edata;
-   struct rusage rusage;
-   struct rlimit rlp;
+   struct rusage rusage
+   {
+   };
+   struct rlimit rlp
+   {
+   };
    int text, data;
    rlim_t vm_limit, vm_soft_limit;
    long double user, system, scale;
