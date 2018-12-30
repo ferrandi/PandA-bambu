@@ -50,6 +50,7 @@ noinst_HEADERS = \
    AlteraWrapper.hpp \
    quartus_13_report_wrapper.hpp \
    quartus_13_wrapper.hpp \
+   quartus_power_wrapper.hpp \
    quartus_report_wrapper.hpp \
    quartus_wrapper.hpp
 
@@ -58,6 +59,7 @@ lib_Alterawrapper_la_SOURCES = \
    AlteraWrapper.cpp \
    quartus_13_report_wrapper.cpp \
    quartus_13_wrapper.cpp \
+   quartus_power_wrapper.cpp \
    quartus_report_wrapper.cpp \
    quartus_wrapper.cpp
 

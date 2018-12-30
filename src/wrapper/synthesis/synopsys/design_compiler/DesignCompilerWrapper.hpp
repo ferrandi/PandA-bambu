@@ -157,7 +157,7 @@ class DesignCompilerWrapper : public SynopsysWrapper
    std::map<unsigned int, double> area;
 
    /// synthesis time
-   double synthesis_time;
+   double synthesis_time{0.0};
    /// results of the synthesis
    bool synthesis_result;
 

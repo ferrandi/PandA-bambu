@@ -266,6 +266,7 @@ void TransitionInfo::print(std::ostream& os) const
    }
    else
       THROW_ERROR("transition type not yet supported");
+   os << "epp: " << epp_increment << "\\n";
 }
 
 vertex TransitionInfo::get_operation() const
@@ -280,7 +281,7 @@ vertex TransitionInfo::get_ref_state() const
    return ref_state;
 }
 
-StateTransitionGraphInfo::StateTransitionGraphInfo(const OpGraphConstRef _op_function_graph) : op_function_graph(_op_function_graph), is_a_dag(true), min_cycles(0), max_cycles(0)
+StateTransitionGraphInfo::StateTransitionGraphInfo(const OpGraphConstRef _op_function_graph) : op_function_graph(_op_function_graph), entry_node(NULL_VERTEX), exit_node(NULL_VERTEX), is_a_dag(true), min_cycles(0), max_cycles(0)
 {
 }
 
@@ -366,13 +367,17 @@ TransitionWriter::TransitionWriter(const graph* _stg, const OpGraphConstRef _op_
 void TransitionWriter::operator()(std::ostream& out, const EdgeDescriptor& e) const
 {
    const auto* temp = Cget_edge_info<TransitionInfo>(e, *printing_graph);
-   if(ST_EDGE_NORMAL_T & printing_graph->GetSelector(e))
+   if(TransitionInfo::StateTransitionType::ST_EDGE_NORMAL & printing_graph->GetSelector(e))
    {
       out << "[color=red3";
    }
-   else if(ST_EDGE_FEEDBACK_T & printing_graph->GetSelector(e))
+   else if(TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK & printing_graph->GetSelector(e))
    {
       out << "[color=green2";
+   }
+   else if(TransitionInfo::StateTransitionType::ST_EDGE_EPP & printing_graph->GetSelector(e))
+   {
+      out << "[color=blue";
    }
    else
    {

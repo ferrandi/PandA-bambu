@@ -65,6 +65,9 @@
 REF_FORWARD_DECL(DiscrepancyFlexLexer);
 REF_FORWARD_DECL(Discrepancy);
 #include "DiscrepancyOpInfo.hpp"
+#include "UnfoldedCallGraph.hpp"
+#include "UnfoldedCallInfo.hpp"
+#include "UnfoldedFunctionInfo.hpp"
 
 #include <set>
 #include <string>
@@ -159,7 +162,7 @@ void yyerror
                                TOKENS
 =========================================================================*/
 
-%token SSA_ID CALL_ID CALLED_ID CONTEXT CONTEXT_END VARDECL_ID VAR_ADDR VALUE BITSIZE STARTSTATE EXSTATE ENDSTATE STGFUNID OPID SSA ASSIGNMENT SCHEDULE INSTRUCTION SEMI TYPE BB;
+%token SSA_ID CALL_ID CALLED_ID CONTEXT CONTEXT_END VARDECL_ID VAR_ADDR VALUE BITSIZE STARTSTATE EXSTATE ENDSTATE STGFUNID OPID SSA ASSIGNMENT SCHEDULE INSTRUCTION SEMI TYPE BB_header;
 
 %token <uintval> UNUMBER;
 %token <lluintval> LL_UNUMBER;
@@ -294,9 +297,13 @@ addr_table_line   : VARDECL_ID UNUMBER VAR_ADDR LL_UNUMBER
                      $$ = new std::pair<unsigned int, uint64_t> ($2, $4);
                   };
 
-control_flow_trace   : BB UNUMBER
+control_flow_trace   : STGFUNID UNUMBER BB_header UNUMBER
                      {
-                     ;
+                        if (context_stack.empty())
+                        {
+                           yyerror(Discr, lexer, "malformed call stack trace\n");
+                        }
+                        Discr->c_control_flow_trace[$2][context_stack.top()].emplace_back($4);
                      };
 
 optrace  : instr_data sched_data assign_data

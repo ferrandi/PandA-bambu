@@ -89,7 +89,9 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
       {
          ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_datapath_architecture), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          if(HLSMgr->get_HLS(funId))
+         {
             ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->controller_type, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         }
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -148,15 +150,15 @@ DesignFlowStep_Status top_entity::InternalExec()
    structural_objectRef controller_circuit = Controller->get_circ();
    THROW_ASSERT(controller_circuit, "Missing controller circuit");
 
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating controller object");
-   /// creating structural_manager
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Adding controller");
-   datapath_circuit->set_owner(circuit);
-   GetPointer<module>(circuit)->add_internal_object(datapath_circuit);
-
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating datapath object");
    /// creating structural_manager
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Adding datapath");
+   datapath_circuit->set_owner(circuit);
+   GetPointer<module>(circuit)->add_internal_object(datapath_circuit);
+
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating controller object");
+   /// creating structural_manager
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Adding controller");
    controller_circuit->set_owner(circuit);
    GetPointer<module>(circuit)->add_internal_object(controller_circuit);
 
@@ -211,6 +213,7 @@ DesignFlowStep_Status top_entity::InternalExec()
    THROW_ASSERT(controller_done, "Done signal not found in the controller");
    if(datapath_start)
       SM->add_connection(sync_datapath_controller, controller_start);
+   structural_objectRef done_signal_out;
    if(HLS->registered_done_port && parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR)
    {
       const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
@@ -231,13 +234,49 @@ DesignFlowStep_Status top_entity::InternalExec()
       structural_objectRef done_signal_in = SM->add_sign("done_delayed_REG_signal_in", circuit, GetPointer<module>(delay_gate)->get_in_port(2)->get_typeRef());
       SM->add_connection(GetPointer<module>(delay_gate)->get_in_port(2), done_signal_in);
       SM->add_connection(controller_done, done_signal_in);
-      structural_objectRef done_signal_out = SM->add_sign("done_delayed_REG_signal_out", circuit, GetPointer<module>(delay_gate)->get_out_port(0)->get_typeRef());
+      done_signal_out = SM->add_sign("done_delayed_REG_signal_out", circuit, GetPointer<module>(delay_gate)->get_out_port(0)->get_typeRef());
       SM->add_connection(GetPointer<module>(delay_gate)->get_out_port(0), done_signal_out);
       SM->add_connection(done_obj, done_signal_out);
    }
    else
-      SM->add_connection(controller_done, done_obj);
+   {
+      if(HLS->control_flow_checker)
+      {
+         done_signal_out = SM->add_sign("done_signal_out", circuit, bool_type);
+         SM->add_connection(controller_done, done_signal_out);
+         SM->add_connection(done_signal_out, done_obj);
+      }
+      else
+         SM->add_connection(controller_done, done_obj);
+   }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tDone signal added!");
+
+   /// check if checker has to be added
+   if(HLS->control_flow_checker)
+   {
+      structural_objectRef controller_flow_start = datapath_circuit->find_member(START_PORT_NAME_CFC, port_o_K, datapath_circuit);
+      THROW_ASSERT(controller_flow_start, "controller flow start signal not found in the datapath");
+      if(datapath_start)
+         SM->add_connection(sync_datapath_controller, controller_flow_start);
+      else
+         SM->add_connection(start_obj, controller_flow_start);
+      THROW_ASSERT(done_signal_out, "expected done signal");
+      structural_objectRef controller_flow_done = datapath_circuit->find_member(DONE_PORT_NAME_CFC, port_o_K, datapath_circuit);
+      THROW_ASSERT(controller_flow_done, "controller flow done signal not found in the datapath");
+      SM->add_connection(done_signal_out, controller_flow_done);
+      structural_objectRef controller_flow_present_state = datapath_circuit->find_member(PRESENT_STATE_PORT_NAME, port_o_K, datapath_circuit);
+      THROW_ASSERT(controller_flow_present_state, "controller flow present state signal not found in the datapath");
+      structural_objectRef controller_present_state = Controller->add_port(PRESENT_STATE_PORT_NAME, port_o::OUT, controller_circuit, controller_flow_present_state->get_typeRef());
+      structural_objectRef p_signal = SM->add_sign(PRESENT_STATE_PORT_NAME "_sig1", circuit, controller_flow_present_state->get_typeRef());
+      SM->add_connection(controller_present_state, p_signal);
+      SM->add_connection(p_signal, controller_flow_present_state);
+      structural_objectRef controller_flow_next_state = datapath_circuit->find_member(NEXT_STATE_PORT_NAME, port_o_K, datapath_circuit);
+      THROW_ASSERT(controller_flow_next_state, "controller flow next state signal not found in the datapath");
+      structural_objectRef controller_next_state = Controller->add_port(NEXT_STATE_PORT_NAME, port_o::OUT, controller_circuit, controller_flow_next_state->get_typeRef());
+      structural_objectRef n_signal = SM->add_sign(NEXT_STATE_PORT_NAME "_sig1", circuit, controller_flow_next_state->get_typeRef());
+      SM->add_connection(controller_next_state, n_signal);
+      SM->add_connection(n_signal, controller_flow_next_state);
+   }
 
    /// add entry in in_port_map between port id and port index
 

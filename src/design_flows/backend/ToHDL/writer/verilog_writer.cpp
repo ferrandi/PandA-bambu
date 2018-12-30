@@ -80,6 +80,32 @@
 
 #define VERILOG_2001_SUPPORTED
 
+const std::map<std::string, std::string> verilog_writer::builtin_to_verilog_keyword = {
+    {AND_GATE_STD, "and"}, {NAND_GATE_STD, "nand"}, {OR_GATE_STD, "or"}, {NOR_GATE_STD, "nor"}, {XOR_GATE_STD, "xor"}, {XNOR_GATE_STD, "xnor"}, {NOT_GATE_STD, "not"}, {DFF_GATE_STD, "dff"}, {BUFF_GATE_STD, "buf"},
+};
+
+const std::set<std::string> verilog_writer::keywords = {
+    "abs", "abstol", "access", "acos", "acosh", "always", "analog", "and", "asin", "asinh", "assign", "atan", "atan2", "atanh", "automatic", "begin", "bool", "buf", "bufif0", "bufif1", "case", "casex", "casez", "ceil", "cell", "cmos", "config",
+    "continuous", "cos", "cosh", "ddt_nature", "deassign", "default", "defparam", "design", "disable", "discipline", "discrete", "domain", "edge", "else", "end", "endcase", "endconfig", "enddiscipline", "endfunction", "endgenerate", "endmodule",
+    "endnature", "endprimitive", "endspecify", "endtable", "endtask", "event", "exclude", "exp", "floor", "flow", "for", "force", "forever", "fork", "from", "function", "generate", "genvar", "ground", "highz0", "highz1", "hypot", "idt_nature", "if",
+    "ifnone", "incdir", "include", "inf", "initial", "inout", "input", "instance", "integer", "join", "large", "liblist", "library", "ln", "localparam", "log", "macromodule", "max", "medium", "min", "module", "nand", "nature", "negedge", "nmos", "nor",
+    "noshowcancelled", "not", "notif0", "notif1", "or", "output", "parameter", "pmos", "posedge", "potential", "pow", "primitive", "pull0", "pull1", "pulldown", "pullup", "pulsestyle_onevent", "pulsestyle_ondetect", "rcmos", "real", "realtime", "reg",
+    "release", "repeat", "rnmos", "rpmos", "rtran", "rtranif0", "rtranif1", "scalared", "showcancelled", "signed", "sin", "sinh", "small", "specify", "specparam", "sqrt", "strong0", "strong1", "supply0", "supply1", "table", "tan", "tanh", "task", "time",
+    "tran", "tranif0", "tranif1", "tri", "tri0", "tri1", "triand", "trior", "trireg", "units", "unsigned", "use", "uwire", "vectored", "wait", "wand", "weak0", "weak1", "while", "wire", "wone", "wor", "xnor", "xor",
+    /// some System Verilog 2005 keywords
+    "alias", "always_comb", "always_ff", "always_latch", "assert", "assume", "before", "bind", "bins", "binsof", "bit", "break", "byte", "chandle", "class", "clocking", "const", "constraint", "context", "continue", "cover", "covergroup", "coverpoint",
+    "cross", "dist", "do", "endclass", "endgroup",
+    "endsequence"
+    "endclocking",
+    "endpackage", "endinterface", "endprogram", "endproperty", "enum", "expect", "export", "extends", "extern", "final", "first_match", "foreach", "forkjoin", "iff", "ignore_bins", "illegal_bins", "import", "intersect", "inside", "interface", "int",
+    "join_any", "join_none", "local", "logic", "longint", "matches", "modport", "new", "null", "package", "packed", "priority", "program", "property", "protected", "pure", "rand", "randc", "randcase", "randomize", "randsequence", "ref", "return",
+    "sequence", "shortint", "shortreal", "solve", "static", "string", "struct", "super", "tagged", "this", "throughout", "timeprecision", "timeunit", "type", "typedef", "unique", "var", "virtual", "void", "wait_order", "wildcard", "with", "within",
+    /// some System Verilog 2009 keywords
+    "accept_on", "checker", "endchecker", "eventually", "global", "implies", "let", "nexttime", "reject_on", "restrict", "s_always", "s_eventually", "s_nexttime", "s_until", "s_until_with", "strong", "sync_accept_on", "sync_reject_on", "unique0", "until",
+    "until_with", "untyped", "weak",
+    /// some System Verilog 2012 keywords
+    "implements", "interconnect", "nettype", "soft"};
+
 void verilog_writer::write_comment(const std::string& comment_string)
 {
    indented_output_stream->Append("// " + comment_string);
@@ -539,6 +565,7 @@ void verilog_writer::write_module_instance_begin(const structural_objectRef& cir
       write_module_parametrization(cir);
    indented_output_stream->Append(" " + HDL_manager::convert_to_identifier(this, cir->get_id()) + " (");
 }
+
 void verilog_writer::write_module_instance_end(const structural_objectRef&)
 {
    indented_output_stream->Append(");\n");
@@ -983,6 +1010,10 @@ void verilog_writer::write_state_declaration(const structural_objectRef& cir, co
    /// enable buffers
    for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
    {
+      if(mod->get_out_port(i)->get_id() == PRESENT_STATE_PORT_NAME)
+         continue;
+      if(mod->get_out_port(i)->get_id() == NEXT_STATE_PORT_NAME)
+         continue;
       port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
       indented_output_stream->Append("reg " + port_name + ";\n");
    }
@@ -990,7 +1021,7 @@ void verilog_writer::write_state_declaration(const structural_objectRef& cir, co
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Completed state declaration");
 }
 
-void verilog_writer::write_present_state_update(const std::string& reset_state, const std::string& reset_port, const std::string& clock_port, const std::string& reset_type)
+void verilog_writer::write_present_state_update(const std::string& reset_state, const std::string& reset_port, const std::string& clock_port, const std::string& reset_type, bool connect_present_next_state_signals)
 {
    if(reset_type == "no" || reset_type == "sync")
       indented_output_stream->Append("always @(posedge " + clock_port + ")\n");
@@ -1006,6 +1037,8 @@ void verilog_writer::write_present_state_update(const std::string& reset_state, 
       indented_output_stream->Append("if (" + reset_port + " == 1'b1) _present_state <= " + reset_state + ";\n");
    indented_output_stream->Append("else _present_state <= _next_state;\n");
    indented_output_stream->Deindent();
+   if(connect_present_next_state_signals)
+      indented_output_stream->Append("assign " PRESENT_STATE_PORT_NAME "= _present_state;\nassign " NEXT_STATE_PORT_NAME "= _next_state;\n");
 }
 
 void verilog_writer::write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state, const std::string& reset_port, const std::string& start_port,
@@ -1049,6 +1082,10 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
    // std::cerr << "Number of output ports: " << mod->get_out_port_size() << std::endl;
    for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
    {
+      if(mod->get_out_port(i)->get_id() == PRESENT_STATE_PORT_NAME)
+         continue;
+      if(mod->get_out_port(i)->get_id() == NEXT_STATE_PORT_NAME)
+         continue;
       default_output += "0";
       if(!single_proc && output_index != i)
          continue;
@@ -1127,6 +1164,10 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
       {
          for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
          {
+            if(mod->get_out_port(i)->get_id() == PRESENT_STATE_PORT_NAME)
+               continue;
+            if(mod->get_out_port(i)->get_id() == NEXT_STATE_PORT_NAME)
+               continue;
             port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
             // std::cerr << "setting output of port '" << port_name << "'" << std::endl;
             if(default_output[i] != current_output[i] and current_output[i] != '-')
@@ -1247,6 +1288,10 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
             indented_output_stream->Append("_next_state = " + next_state + ";\n");
          for(unsigned int ind = 0; ind < mod->get_out_port_size(); ind++)
          {
+            if(mod->get_out_port(ind)->get_id() == PRESENT_STATE_PORT_NAME)
+               continue;
+            if(mod->get_out_port(ind)->get_id() == NEXT_STATE_PORT_NAME)
+               continue;
             if(transition_outputs[ind] != '-')
             {
                port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(ind)->get_id());
@@ -1286,6 +1331,10 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
       indented_output_stream->Append("_next_state = " + reset_state + ";\n");
    for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
    {
+      if(mod->get_out_port(i)->get_id() == PRESENT_STATE_PORT_NAME)
+         continue;
+      if(mod->get_out_port(i)->get_id() == NEXT_STATE_PORT_NAME)
+         continue;
       port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
       if(!single_proc && output_index == i)
          indented_output_stream->Append(port_name + " = 1'b0;\n");
@@ -1448,42 +1497,9 @@ void verilog_writer::write_module_parametrization_decl(const structural_objectRe
       indented_output_stream->Append(";\n");
 }
 
-const char* verilog_writer::tokenNames[] = {
-    "abs", "abstol", "access", "acos", "acosh", "always", "analog", "and", "asin", "asinh", "assign", "atan", "atan2", "atanh", "automatic", "begin", "bool", "buf", "bufif0", "bufif1", "case", "casex", "casez", "ceil", "cell", "cmos", "config",
-    "continuous", "cos", "cosh", "ddt_nature", "deassign", "default", "defparam", "design", "disable", "discipline", "discrete", "domain", "edge", "else", "end", "endcase", "endconfig", "enddiscipline", "endfunction", "endgenerate", "endmodule",
-    "endnature", "endprimitive", "endspecify", "endtable", "endtask", "event", "exclude", "exp", "floor", "flow", "for", "force", "forever", "fork", "from", "function", "generate", "genvar", "ground", "highz0", "highz1", "hypot", "idt_nature", "if",
-    "ifnone", "incdir", "include", "inf", "initial", "inout", "input", "instance", "integer", "join", "large", "liblist", "library", "ln", "localparam", "log", "macromodule", "max", "medium", "min", "module", "nand", "nature", "negedge", "nmos", "nor",
-    "noshowcancelled", "not", "notif0", "notif1", "or", "output", "parameter", "pmos", "posedge", "potential", "pow", "primitive", "pull0", "pull1", "pulldown", "pullup", "pulsestyle_onevent", "pulsestyle_ondetect", "rcmos", "real", "realtime", "reg",
-    "release", "repeat", "rnmos", "rpmos", "rtran", "rtranif0", "rtranif1", "scalared", "showcancelled", "signed", "sin", "sinh", "small", "specify", "specparam", "sqrt", "strong0", "strong1", "supply0", "supply1", "table", "tan", "tanh", "task", "time",
-    "tran", "tranif0", "tranif1", "tri", "tri0", "tri1", "triand", "trior", "trireg", "units", "unsigned", "use", "uwire", "vectored", "wait", "wand", "weak0", "weak1", "while", "wire", "wone", "wor", "xnor", "xor",
-    /// some System Verilog 2005 keywords
-    "alias", "always_comb", "always_ff", "always_latch", "assert", "assume", "before", "bind", "bins", "binsof", "bit", "break", "byte", "chandle", "class", "clocking", "const", "constraint", "context", "continue", "cover", "covergroup", "coverpoint",
-    "cross", "dist", "do", "endclass", "endgroup",
-    "endsequence"
-    "endclocking",
-    "endpackage", "endinterface", "endprogram", "endproperty", "enum", "expect", "export", "extends", "extern", "final", "first_match", "foreach", "forkjoin", "iff", "ignore_bins", "illegal_bins", "import", "intersect", "inside", "interface", "int",
-    "join_any", "join_none", "local", "logic", "longint", "matches", "modport", "new", "null", "package", "packed", "priority", "program", "property", "protected", "pure", "rand", "randc", "randcase", "randomize", "randsequence", "ref", "return",
-    "sequence", "shortint", "shortreal", "solve", "static", "string", "struct", "super", "tagged", "this", "throughout", "timeprecision", "timeunit", "type", "typedef", "unique", "var", "virtual", "void", "wait_order", "wildcard", "with", "within",
-    /// some System Verilog 2009 keywords
-    "accept_on", "checker", "endchecker", "eventually", "global", "implies", "let", "nexttime", "reject_on", "restrict", "s_always", "s_eventually", "s_nexttime", "s_until", "s_until_with", "strong", "sync_accept_on", "sync_reject_on", "unique0", "until",
-    "until_with", "untyped", "weak",
-    /// some System Verilog 2012 keywords
-    "implements", "interconnect", "nettype", "soft"};
-
 verilog_writer::verilog_writer(const ParameterConstRef _parameters) : language_writer(STD_OPENING_CHAR, STD_CLOSING_CHAR, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
-   for(auto& tokenName : tokenNames)
-      keywords.insert(tokenName);
-   builtin_to_verilog_keyword[AND_GATE_STD] = "and";
-   builtin_to_verilog_keyword[NAND_GATE_STD] = "nand";
-   builtin_to_verilog_keyword[OR_GATE_STD] = "or";
-   builtin_to_verilog_keyword[NOR_GATE_STD] = "nor";
-   builtin_to_verilog_keyword[XOR_GATE_STD] = "xor";
-   builtin_to_verilog_keyword[XNOR_GATE_STD] = "xnor";
-   builtin_to_verilog_keyword[NOT_GATE_STD] = "not";
-   builtin_to_verilog_keyword[DFF_GATE_STD] = "dff";
-   builtin_to_verilog_keyword[BUFF_GATE_STD] = "buf";
 }
 
 verilog_writer::~verilog_writer() = default;

@@ -239,17 +239,16 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
          vert_dominator = cg_dominator_map.find(current_vertex)->second;
       else
          vert_dominator = current_vertex;
-      OutEdgeIterator eo, eo_end;
-      for(boost::tie(eo, eo_end) = boost::out_edges(current_vertex, *cg); eo != eo_end; ++eo)
+      BOOST_FOREACH(EdgeDescriptor eo, boost::out_edges(current_vertex, *cg))
       {
-         const FunctionBehaviorConstRef called_function_behavior = HLSMgr->CGetFunctionBehavior(CG->get_function(boost::target(*eo, *cg)));
+         const FunctionBehaviorConstRef called_function_behavior = HLSMgr->CGetFunctionBehavior(CG->get_function(boost::target(eo, *cg)));
          const BehavioralHelperConstRef called_BH = called_function_behavior->CGetBehavioralHelper();
          std::string called_fu_name = called_BH->get_function_name();
          if(HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY) == INFINITE_UINT || // without constraints
             HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY) == 1)               // or single instance functions
          {
             fun_dom_map[called_fu_name].insert(vert_dominator);
-            const auto* info = Cget_edge_info<FunctionEdgeInfo, const CallGraph>(*eo, *cg);
+            const auto* info = Cget_edge_info<FunctionEdgeInfo, const CallGraph>(eo, *cg);
 
             if(info->direct_call_points.size())
                where_used[called_fu_name].insert(funID);
@@ -278,11 +277,10 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
       THROW_ASSERT(num_instances.find(CG->GetVertex(funID)) != num_instances.end(), "missing number of instances of function " + HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name());
       function_allocation_map[funID];
       unsigned int cur_instances = num_instances.at(cur);
-      OutEdgeIterator eo, eo_end;
-      for(boost::tie(eo, eo_end) = boost::out_edges(cur, *cg); eo != eo_end; ++eo)
+      BOOST_FOREACH(EdgeDescriptor eo, boost::out_edges(cur, *cg))
       {
-         vertex tgt = boost::target(*eo, *cg);
-         unsigned int n_call_points = static_cast<unsigned int>(Cget_edge_info<FunctionEdgeInfo, const CallGraph>(*eo, *cg)->direct_call_points.size());
+         vertex tgt = boost::target(eo, *cg);
+         unsigned int n_call_points = static_cast<unsigned int>(Cget_edge_info<FunctionEdgeInfo, const CallGraph>(eo, *cg)->direct_call_points.size());
          if(num_instances.find(tgt) == num_instances.end())
             num_instances[tgt] = cur_instances * n_call_points;
          else
@@ -357,55 +355,50 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
 
    for(const auto& funID : reached_fu_ids)
    {
-      for(const auto& fun_vertex : function_allocation_map.at(funID))
+      for(const auto& fun_name : function_allocation_map.at(funID))
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, fun_vertex + " has to be allocated in " + HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name());
-         THROW_ASSERT(where_used.at(fun_vertex).size() > 0 or indirectlyCalled.at(fun_vertex),
-                      fun_vertex + " function not used anywhere: used size = " + STR(where_used.at(fun_vertex).size()) + " indirectlyCalled = " + STR(indirectlyCalled.at(fun_vertex)));
-         if(where_used.at(fun_vertex).size() == 1)
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, fun_name + " has to be allocated in " + HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name());
+         THROW_ASSERT(where_used.at(fun_name).size() > 0 or indirectlyCalled.at(fun_name), fun_name + " function not used anywhere: used size = " + STR(where_used.at(fun_name).size()) + " indirectlyCalled = " + STR(indirectlyCalled.at(fun_name)));
+         if(where_used.at(fun_name).size() == 1)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Skipped because used only once");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Skipped " + fun_name + " because called only by one other function");
             continue;
          }
-         if(HLSMgr->hasToBeInterfaced(HLSMgr->get_tree_manager()->function_index(fun_vertex)))
+         if(HLSMgr->hasToBeInterfaced(HLSMgr->get_tree_manager()->function_index(fun_name)))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Skipped because it has to be interfaced");
-            continue;
-         }
-         if(where_used.at(fun_vertex).size() == 0 && indirectlyCalled.at(fun_vertex))
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Skipped because indirect call");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Skipped " + fun_name + " because it has to be interfaced");
             continue;
          }
 #if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
-         if(fun_vertex == "panda_pthread_mutex")
+         if(fun_name == "panda_pthread_mutex")
          {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Skipped " + fun_name);
             continue;
          }
 #endif
-         std::string library_name = TM->get_library(fun_vertex);
+         std::string library_name = TM->get_library(fun_name);
          if(library_name != "")
          {
             const library_managerRef libraryManager = TM->get_library_manager(library_name);
-            technology_nodeRef techNode_obj = libraryManager->get_fu(fun_vertex);
+            technology_nodeRef techNode_obj = libraryManager->get_fu(fun_name);
             if(GetPointer<functional_unit_template>(techNode_obj))
                continue;
          }
 
-         HLSMgr->Rfuns->map_shared_function(funID, fun_vertex);
+         HLSMgr->Rfuns->map_shared_function(funID, fun_name);
 
          const FunctionBehaviorConstRef cur_function_behavior = HLSMgr->CGetFunctionBehavior(funID);
          const BehavioralHelperConstRef cur_BH = cur_function_behavior->CGetBehavioralHelper();
-         PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Adding proxy wrapper: " + fun_vertex + " in function " + cur_BH->get_function_name());
+         PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Adding proxy wrapper: " + fun_name + " in function " + cur_BH->get_function_name());
          /// add proxies
-         for(const auto& wu_id : where_used.at(fun_vertex))
+         for(const auto& wu_id : where_used.at(fun_name))
          {
             if(wu_id != funID)
             {
                const FunctionBehaviorConstRef wiu_function_behavior = HLSMgr->CGetFunctionBehavior(wu_id);
                const BehavioralHelperConstRef wiu_BH = wiu_function_behavior->CGetBehavioralHelper();
-               PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Adding proxy function: " + fun_vertex + " in function " + wiu_BH->get_function_name());
-               HLSMgr->Rfuns->add_shared_function_proxy(wu_id, fun_vertex);
+               PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Adding proxy function: " + fun_name + " in function " + wiu_BH->get_function_name());
+               HLSMgr->Rfuns->add_shared_function_proxy(wu_id, fun_name);
             }
          }
       }

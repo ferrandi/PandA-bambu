@@ -2,6 +2,7 @@
 Seventh public release of PandA framework.
 
 New features introduced:
+- Added support for Hardware Discrepancy Analysis.  Reference paper: Pietro Fezzardi, Marco Lattuada, Fabrizio Ferrandi, Using Efficient Path Profiling to Optimize Memory Consumption of On-Chip Debugging for High-Level Synthesis. ACM Trans. Embedded Comput. Syst. 16(5): 149:1-149:19 (2017).
 - Added an initial support to C++/fortran high-level synthesis. Now, Ubuntu distributions require the installation of g++-multilib package.
 - Added support to CLANG/LLVM compiler version 4, 5 and 6. On multiple files LTO is exploited.
 - Added to CLANG/LLVM based analysis an interprocedural value range analysis based on the following paper: Fernando Magno Quintao Pereira, Raphael Ernani Rodrigues, and Victor Hugo Sperle Campos. "A fast and low-overhead technique to secure programs against integer overflows", In Proceedings of the 2013 IEEE/ACM International Symposium on Code Generation and Optimization (CGO) (CGO '13). Washington, DC, USA, 1-11.

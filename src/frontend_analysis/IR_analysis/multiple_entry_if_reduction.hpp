@@ -108,10 +108,10 @@ class MultipleEntryIfReduction : public FunctionFrontendFlowStep
    tree_manipulationRef tree_man;
 
    /// The statement list
-   statement_list* sl;
+   statement_list* sl{nullptr};
 
    /// Modified file
-   bool bb_modified;
+   bool bb_modified{false};
 
    /// The scheduling solution
    ScheduleRef schedule;

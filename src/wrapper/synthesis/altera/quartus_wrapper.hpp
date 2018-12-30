@@ -47,6 +47,7 @@
 
 #define QUARTUS_SETUP_TOOL_ID "quartus_setup"
 #define QUARTUS_FLOW_TOOL_ID "quartus_flow"
+#define QUARTUS_POWER_TOOL_ID "quartus_pow"
 #define QUARTUS_FLOW_TOOL_EXEC "quartus_sh"
 
 class QuartusWrapper : public AlteraWrapper

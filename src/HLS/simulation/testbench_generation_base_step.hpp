@@ -92,7 +92,7 @@ class TestbenchGenerationBaseStep : public HLS_step
    const std::string c_testbench_basename;
 
    /// testbench basename
-   std::string testbench_basename;
+   std::string hdl_testbench_basename;
 
    /**
     * Creates the HDL testbench file associated with the given component
@@ -180,7 +180,6 @@ class TestbenchGenerationBaseStep : public HLS_step
     */
    void Initialize() override;
 
- protected:
    virtual void write_signals(const tree_managerConstRef TreeM, bool& withMemory, bool& hasMultiIrq) const = 0;
 
    virtual void write_slave_initializations(bool withMemory) const = 0;
@@ -216,19 +215,7 @@ class TestbenchGenerationBaseStep : public HLS_step
     */
    ~TestbenchGenerationBaseStep() override;
 
-   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set, const DesignFlowStep::RelationshipType relationship_type) override;
-
    static std::string print_var_init(const tree_managerConstRef TreeM, unsigned int var, const memoryRef mem);
-
-   /**
-    * Compiles and executes the C testbench, on top of which the hdl
-    * testbench is based. The execution of the C testbench generates a file
-    * containing the results, which is later used to generate the hdl
-    * testbench. The hdl testbench includes checks to match the hdl test
-    * results against the C testbench test results. If they don't match the
-    * simulation fails.
-    */
-   void exec_C_testbench();
 
    /**
     * Execute the step

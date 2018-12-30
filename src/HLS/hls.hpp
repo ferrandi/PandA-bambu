@@ -165,6 +165,9 @@ class hls
    /// Store the controller description.
    structural_managerRef controller;
 
+   /// Store the description of the control flow checker
+   structural_managerRef control_flow_checker;
+
    /// Store the top description.
    structural_managerRef top;
 

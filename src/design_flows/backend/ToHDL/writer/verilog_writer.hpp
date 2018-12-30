@@ -47,13 +47,15 @@
 #include "language_writer.hpp"
 
 /// Utility include
-#include "custom_map.hpp"
+#include <map>
 
 class verilog_writer : public language_writer
 {
  protected:
-   /// map putting into relation standard gates with the corresponding built-in verilog statements.
-   CustomMap<std::string, std::string> builtin_to_verilog_keyword;
+   /// map putting into relation standard gates with the corresponding built-in Verilog statements.
+   static const std::map<std::string, std::string> builtin_to_verilog_keyword;
+
+   static const std::set<std::string> keywords;
 
  public:
    /**
@@ -195,7 +197,7 @@ class verilog_writer : public language_writer
     * @param clock_port is the clock port.
     * @param reset_type specify the type of the reset
     */
-   void write_present_state_update(const std::string& reset_state, const std::string& reset_port, const std::string& clock_port, const std::string& reset_type) override;
+   void write_present_state_update(const std::string& reset_state, const std::string& reset_port, const std::string& clock_port, const std::string& reset_type, bool connect_present_next_state_signals) override;
    /**
     * Write the transition and output functions.
     * @param cir is the component.
@@ -257,10 +259,6 @@ class verilog_writer : public language_writer
     * @param component is the component to be printed
     */
    void WriteBuiltin(const structural_objectConstRef component) override;
-
- private:
-   static const char* tokenNames[];
-   std::set<std::string> keywords;
 };
 
 #endif

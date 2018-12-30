@@ -136,6 +136,8 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "HLSBitValue";
       case HLSFlowStep_Type::CDFC_MODULE_BINDING:
          return "CdfcModuleBinding";
+      case HLSFlowStep_Type::CALL_GRAPH_UNFOLDING:
+         return "CallGraphUnfolding";
 #if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::CHAINING_BASED_LIVENESS:
          return "ChainingBasedLiveness";
@@ -152,6 +154,10 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
 #endif
       case HLSFlowStep_Type::COLORING_REGISTER_BINDING:
          return "ColoringRegisterBinding";
+      case HLSFlowStep_Type::CONTROL_FLOW_CHECKER:
+         return "ControlFlowChecker";
+      case HLSFlowStep_Type::C_TESTBENCH_EXECUTION:
+         return "CTestbenchExecution";
       case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION:
          return "DominatorMemoryAllocation";
       case HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION:
@@ -306,6 +312,10 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
       case HLSFlowStep_Type::VALUES_SCHEME_STORAGE_VALUE_INSERTION:
          return "ValuesSchemeStorageValueInsertion";
 #if HAVE_VCD_BUILT
+      case HLSFlowStep_Type::HW_PATH_COMPUTATION:
+         return "HWPathComputation";
+      case HLSFlowStep_Type::HW_DISCREPANCY_ANALYSIS:
+         return "HWDiscrepancyAnalysis";
       case HLSFlowStep_Type::VCD_SIGNAL_SELECTION:
          return "VcdSignalSelection";
       case HLSFlowStep_Type::VCD_UTILITY:

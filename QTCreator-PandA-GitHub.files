@@ -1228,6 +1228,10 @@ src/EucalyptusParameter.cpp
 src/EucalyptusParameter.hpp
 src/HLS/architecture_creation/TopEntityMemoryMapped.cpp
 src/HLS/architecture_creation/TopEntityMemoryMapped.hpp
+src/HLS/architecture_creation/controller_creation/control_flow_checker.cpp
+src/HLS/architecture_creation/controller_creation/control_flow_checker.cpp
+src/HLS/architecture_creation/controller_creation/control_flow_checker.hpp
+src/HLS/architecture_creation/controller_creation/control_flow_checker.hpp
 src/HLS/architecture_creation/controller_creation/controller_creator_base_step.cpp
 src/HLS/architecture_creation/controller_creation/controller_creator_base_step.hpp
 src/HLS/architecture_creation/controller_creation/fsm_controller.cpp
@@ -1394,6 +1398,8 @@ src/HLS/scheduling/scheduling.cpp
 src/HLS/scheduling/scheduling.hpp
 src/HLS/scheduling/sdc_scheduling.cpp
 src/HLS/scheduling/sdc_scheduling.hpp
+src/HLS/simulation/CTestbenchExecution.cpp
+src/HLS/simulation/CTestbenchExecution.hpp
 src/HLS/simulation/SimulationInformation.hpp
 src/HLS/simulation/minimal_interface_testbench.cpp
 src/HLS/simulation/minimal_interface_testbench.hpp
@@ -1424,6 +1430,8 @@ src/HLS/vcd/CallSitesCollectorVisitor.hpp
 src/HLS/vcd/Discrepancy.hpp
 src/HLS/vcd/HWCallPathCalculator.cpp
 src/HLS/vcd/HWCallPathCalculator.hpp
+src/HLS/vcd/HWDiscrepancyAnalysis.cpp
+src/HLS/vcd/HWDiscrepancyAnalysis.hpp
 src/HLS/vcd/UnfoldedCallGraph.hpp
 src/HLS/vcd/UnfoldedCallInfo.hpp
 src/HLS/vcd/UnfoldedFunctionInfo.hpp
@@ -2025,6 +2033,8 @@ src/wrapper/synthesis/altera/quartus_13_report_wrapper.cpp
 src/wrapper/synthesis/altera/quartus_13_report_wrapper.hpp
 src/wrapper/synthesis/altera/quartus_13_wrapper.cpp
 src/wrapper/synthesis/altera/quartus_13_wrapper.hpp
+src/wrapper/synthesis/altera/quartus_power_wrapper.cpp
+src/wrapper/synthesis/altera/quartus_power_wrapper.hpp
 src/wrapper/synthesis/altera/quartus_report_wrapper.cpp
 src/wrapper/synthesis/altera/quartus_report_wrapper.hpp
 src/wrapper/synthesis/altera/quartus_wrapper.cpp
