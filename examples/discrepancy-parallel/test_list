@@ -1,0 +1,7 @@
+dfdiv/dfdiv.c
+dfsin/dfsin.c
+los/los.c
+mandelbrot/mandelbrot.c
+mcml/tiny_fixed.c
+hash/hash.c
+blackscholes/black_scholes.c blackscholes/fixedptc.c blackscholes/main.c --benchmark-name=blackscholes
