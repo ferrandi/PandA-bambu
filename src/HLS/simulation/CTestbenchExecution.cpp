@@ -375,7 +375,6 @@ void CTestbenchExecution::ComputeRelationships(DesignFlowStepSet& relationship, 
          CBackend::Type hls_c_backend_type = is_discrepancy ? CBackend::CB_DISCREPANCY_ANALYSIS : CBackend::CB_HLS;
          vertex hls_c_backend_step = design_flow_manager.lock()->GetDesignFlowStep(CBackend::ComputeSignature(hls_c_backend_type));
 
-         THROW_ASSERT(HLSMgr->CGetCallGraphManager()->GetRootFunctions().size() == 1, "Multiple top functions");
          const DesignFlowStepRef design_flow_step =
              hls_c_backend_step ? design_flow_graph->CGetDesignFlowStepInfo(hls_c_backend_step)->design_flow_step :
                                   c_backend_factory->CreateCBackendStep(hls_c_backend_type, output_directory + testbench_basename + ".c", CBackendInformationConstRef(new HLSCBackendInformation(output_directory + testbench_basename + ".txt", HLSMgr)));

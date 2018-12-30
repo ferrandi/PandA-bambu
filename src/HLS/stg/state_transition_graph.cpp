@@ -281,7 +281,7 @@ vertex TransitionInfo::get_ref_state() const
    return ref_state;
 }
 
-StateTransitionGraphInfo::StateTransitionGraphInfo(const OpGraphConstRef _op_function_graph) : op_function_graph(_op_function_graph), is_a_dag(true), min_cycles(0), max_cycles(0)
+StateTransitionGraphInfo::StateTransitionGraphInfo(const OpGraphConstRef _op_function_graph) : op_function_graph(_op_function_graph), entry_node(NULL_VERTEX), exit_node(NULL_VERTEX), is_a_dag(true), min_cycles(0), max_cycles(0)
 {
 }
 

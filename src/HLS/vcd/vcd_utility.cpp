@@ -902,9 +902,9 @@ bool vcd_utility::detect_address_mismatch(const DiscrepancyOpInfo& op_info, cons
             addr2base_index[addr.second] = addr.first;
             addrSet.insert(addr.second);
          }
-         for(auto it_set=addrSet.rbegin(); it_set!=addrSet.rend();++it_set)
-            if(c_addr<=*it_set)
-               base_index=addr2base_index.at(*it_set);
+         for(auto it_set = addrSet.rbegin(); it_set != addrSet.rend(); ++it_set)
+            if(c_addr <= *it_set)
+               base_index = addr2base_index.at(*it_set);
 
          if(base_index)
          {
