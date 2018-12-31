@@ -2433,22 +2433,23 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          }
          break;
       }
+      case view_convert_expr_K:
       case nop_expr_K:
       {
-         auto* ne = GetPointer<nop_expr>(init_node);
-         if(GetPointer<addr_expr>(GET_NODE(ne->op)))
+         auto* ue = GetPointer<unary_expr>(init_node);
+         if(GetPointer<addr_expr>(GET_NODE(ue->op)))
          {
-            write_init(TreeM, GET_NODE(ne->op), GET_NODE(ne->op), init_file, mem, element_precision);
+            write_init(TreeM, GET_NODE(ue->op), GET_NODE(ue->op), init_file, mem, element_precision);
          }
-         else if(GetPointer<integer_cst>(GET_NODE(ne->op)))
+         else if(GetPointer<integer_cst>(GET_NODE(ue->op)))
          {
             unsigned int type_index;
             tree_helper::get_type_node(init_node, type_index);
             unsigned int precision = std::max(std::max(8u, element_precision), tree_helper::size(TreeM, type_index));
-            write_init(TreeM, GET_NODE(ne->op), GET_NODE(ne->op), init_file, mem, precision);
+            write_init(TreeM, GET_NODE(ue->op), GET_NODE(ue->op), init_file, mem, precision);
          }
          else
-            THROW_ERROR("Something of unexpected happened: " + STR(init_node->index) + " | " + GET_NODE(ne->op)->get_kind_text());
+            THROW_ERROR("Something of unexpected happened: " + STR(init_node->index) + " | " + GET_NODE(ue->op)->get_kind_text());
          break;
       }
       case addr_expr_K:
@@ -2717,7 +2718,6 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       case truth_not_expr_K:
       case unsave_expr_K:
       case va_arg_expr_K:
-      case view_convert_expr_K:
       case reduc_max_expr_K:
       case reduc_min_expr_K:
       case reduc_plus_expr_K:
@@ -2734,7 +2734,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       case CASE_TERNARY_EXPRESSION:
       case CASE_TYPE_NODES:
       default:
-         THROW_ERROR("elements not yet supported: " + init_node->get_kind_text());
+         THROW_ERROR("elements not yet supported: " + init_node->get_kind_text() + init_node->ToString() + (var_node ? var_node->ToString(): ""));
    }
 }
 
