@@ -623,7 +623,8 @@ void VcdSignalSelection::CrossPropagateAddrSsa(std::unordered_map<unsigned int, 
             else
             {
                /* it's indirect call */
-               THROW_ASSERT(GetPointer<const identifier_node>(GET_NODE(direct_fu_dec->name))->strg == BUILTIN_WAIT_CALL, GetPointer<const identifier_node>(GET_NODE(direct_fu_dec->name))->strg + " called_id=" +STR(called_id) + " direct_called_id=" + STR(direct_called_id));
+               THROW_ASSERT(GetPointer<const identifier_node>(GET_NODE(direct_fu_dec->name))->strg == BUILTIN_WAIT_CALL,
+                            GetPointer<const identifier_node>(GET_NODE(direct_fu_dec->name))->strg + " called_id=" + STR(called_id) + " direct_called_id=" + STR(direct_called_id));
                THROW_ASSERT(callopinfo->actual_parameters.size() == fu_dec->list_of_args.size() + 2 or callopinfo->actual_parameters.size() == fu_dec->list_of_args.size() + 3, "fun decl " + STR(called_fun_decl_node->index) +
                                                                                                                                                                                     ", "
                                                                                                                                                                                     "call id " +
