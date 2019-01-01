@@ -1248,7 +1248,7 @@ namespace RangeAnalysis
          {
             return Range(Regular, getBitWidth(), Min, Max);
          }
-         is_zero_in = c1.sle(Zero) && d1.sge(Zero);
+         is_zero_in = c1.slt(Zero) && d1.sgt(Zero);
          if(is_zero_in)
          {
             d1 = -One;
@@ -1257,8 +1257,16 @@ namespace RangeAnalysis
          else
          {
             c2 = other.getLower();
+            if(c2.eq(Zero))
+            {
+               c1 = c2 = One;
+            }
          }
          d2 = other.getUpper();
+         if(d2.eq(Zero))
+         {
+            d1 = d2 = -One;
+         }
       }
       auto n_iters = (is_zero_in || other.isAnti()) ? 8u : 4u;
 
@@ -1288,7 +1296,7 @@ namespace RangeAnalysis
             min = &candidates[i];
          }
       }
-      return Range(Regular, getBitWidth(), *min, *max);
+      return Range(Regular, getBitWidth(), *min, *max);;
    }
 
    Range Range::urem(const Range& other) const

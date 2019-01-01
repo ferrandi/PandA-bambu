@@ -572,7 +572,7 @@ void VcdSignalSelection::CrossPropagateAddrSsa(std::unordered_map<unsigned int, 
                              "\n\t"
                              "call id " +
                              STR(callid) + "\ncall was probably removed by dead code elimination\n");
-               continue;
+               return;
             }
             /*
              * retrieve the OpNodeInfo related to the tree node corresponding to
@@ -589,8 +589,8 @@ void VcdSignalSelection::CrossPropagateAddrSsa(std::unordered_map<unsigned int, 
              * called_fun_decl_node is the fun_decl of the function called
              * according to the call graph. directly_called_fun_decl_node is the
              * fun_decl of the function called according to the tree
-             * representation. they may not be the same only in one case: when
-             * there is an indirect call (through function pointers). in this
+             * representation. They may not be the same only in one case: when
+             * there is an indirect call (through function pointers). In this
              * case the call graph has the correct information on the real
              * called function, while the tree representation has a call to
              * __builtin_wait_call().  we retrieve both the declaration to tell
@@ -623,7 +623,7 @@ void VcdSignalSelection::CrossPropagateAddrSsa(std::unordered_map<unsigned int, 
             else
             {
                /* it's indirect call */
-               THROW_ASSERT(GetPointer<const identifier_node>(GET_NODE(direct_fu_dec->name))->strg == BUILTIN_WAIT_CALL, GetPointer<const identifier_node>(GET_NODE(direct_fu_dec->name))->strg);
+               THROW_ASSERT(GetPointer<const identifier_node>(GET_NODE(direct_fu_dec->name))->strg == BUILTIN_WAIT_CALL, GetPointer<const identifier_node>(GET_NODE(direct_fu_dec->name))->strg + " called_id=" +STR(called_id) + " direct_called_id=" + STR(direct_called_id));
                THROW_ASSERT(callopinfo->actual_parameters.size() == fu_dec->list_of_args.size() + 2 or callopinfo->actual_parameters.size() == fu_dec->list_of_args.size() + 3, "fun decl " + STR(called_fun_decl_node->index) +
                                                                                                                                                                                     ", "
                                                                                                                                                                                     "call id " +

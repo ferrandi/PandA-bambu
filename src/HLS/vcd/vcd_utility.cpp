@@ -832,8 +832,8 @@ bool vcd_utility::detect_fixed_address_mismatch(const DiscrepancyOpInfo& op_info
    if(c_offset_is_negative)
       c_addr_offset = c_base_addr - c_addr;
    /* don't detect mismatch for out of bounds address */
-   const uint64_t memory_area_bitsize = tree_helper::size(TM, base_index);
-   THROW_ASSERT(memory_area_bitsize % 8 == 0, "bitsize of a variable in memory must be mutliple of 8 --> is " + STR(memory_area_bitsize));
+   const uint64_t memory_area_bitsize = std::max(8u, tree_helper::size(TM, tree_helper::get_type_index(TM, base_index)));
+   THROW_ASSERT(memory_area_bitsize % 8 == 0, "bitsize of a variable in memory must be multiple of 8 --> is " + STR(memory_area_bitsize));
    if(c_offset_is_negative or ((memory_area_bitsize / 8) <= (c_addr - c_base_addr)))
       return false;
    /*
@@ -1041,8 +1041,8 @@ void vcd_utility::print_discrepancy(const DiscrepancyLog& l, const int verbosity
                                                  STR(c_addr) + " c_base_addr = " + STR(c_base_addr));
          out_msg += "|  address offset in C: " + STR(c_addr_offset) + "\n";
 #if HAVE_ASSERTS
-         const uint64_t memory_area_bitsize = tree_helper::size(TM, l.base_index);
-         THROW_ASSERT(memory_area_bitsize % 8 == 0, "bitsize of a variable in memory must be mutliple of 8 --> is " + STR(memory_area_bitsize) + ": this should be catched by an assertion earlier");
+         const uint64_t memory_area_bitsize = std::max(8u, tree_helper::size(TM, tree_helper::get_type_index(TM, l.base_index)));
+         THROW_ASSERT(memory_area_bitsize % 8 == 0, "bitsize of a variable in memory must be multiple of 8 --> is " + STR(memory_area_bitsize) + ": this should be catched by an assertion earlier");
 #endif
       }
       else
