@@ -83,7 +83,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
