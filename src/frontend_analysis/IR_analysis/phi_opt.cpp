@@ -502,7 +502,8 @@ DesignFlowStep_Status PhiOpt::InternalExec()
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing gimple nop " + STR(gn->index));
             auto virtual_ssa = GetPointer<ssa_name>(GET_NODE(gn->vdef));
-            THROW_ASSERT(virtual_ssa, "");
+            THROW_ASSERT(virtual_ssa, "unexpected condition");
+            THROW_ASSERT(virtual_ssa->virtual_flag, "unexpected condition");
 
             /// If there is only a single vuse replace vdef with vuse in all the uses of vdef
             if(gn->vuses.size() == 1)
