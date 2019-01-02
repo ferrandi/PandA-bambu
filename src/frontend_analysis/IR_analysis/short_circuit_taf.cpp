@@ -108,10 +108,31 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(UPDATE_SCHEDULE, SAME_FUNCTION));
          }
 #endif
+         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
       {
+         switch(GetStatus())
+         {
+            case DesignFlowStep_Status::SUCCESS:
+            {
+               relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
+               break;
+            }
+            case DesignFlowStep_Status::SKIPPED:
+            case DesignFlowStep_Status::UNCHANGED:
+            case DesignFlowStep_Status::UNEXECUTED:
+            case DesignFlowStep_Status::UNNECESSARY:
+            {
+               break;
+            }
+            case DesignFlowStep_Status::ABORTED:
+            case DesignFlowStep_Status::EMPTY:
+            case DesignFlowStep_Status::NONEXISTENT:
+            default:
+               THROW_UNREACHABLE("");
+         }
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
@@ -119,7 +140,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(REMOVE_CLOBBER_GA, SAME_FUNCTION));
          relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
          relationships.insert(std::make_pair(INTERFACE_INFER, SAME_FUNCTION));
-         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
          break;
       }
       default:
