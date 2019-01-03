@@ -99,10 +99,10 @@ class TopEntityMemoryMapped : public top_entity
 
    std::list<std::string> ParametersName;
    std::set<structural_objectRef> AddedComponents;
-   bool needMemoryMappedRegisters;
+   bool needMemoryMappedRegisters{false};
 
    /// true when the module is a root function
-   bool is_root_function;
+   bool is_root_function{false};
 
    void resizing_IO(module* fu_module, unsigned int max_n_ports) const;
 

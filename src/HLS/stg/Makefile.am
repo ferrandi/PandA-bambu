@@ -22,8 +22,10 @@ lib_stg_la_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS/binding/register \
    -I$(top_srcdir)/src/HLS/liveness \
    -I$(top_srcdir)/src/HLS/scheduling \
+   -I$(top_srcdir)/src/HLS/vcd \
    -I$(top_srcdir)/src/intermediate_representations \
    -I$(top_srcdir)/src/intermediate_representations/hls \
+   -I$(top_srcdir)/src/parser/discrepancy \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/technology \
    -I$(top_srcdir)/src/technology/physical_library \

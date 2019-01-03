@@ -284,7 +284,8 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
    if(compiler.is_clang)
       command += " -isystem /mingw64/include -isystem /mingw64/x86_64-w64-mingw32/include -isystem /mingw64/include/c++/v1/"; /// needed by clang compiler
 #endif
-   if(Param->isOption(OPT_discrepancy) and Param->getOption<bool>(OPT_discrepancy) and (cm == GccWrapper_CompilerMode::CM_STD || cm == GccWrapper_CompilerMode::CM_EMPTY))
+   if(((Param->isOption(OPT_discrepancy) and Param->getOption<bool>(OPT_discrepancy)) || (Param->isOption(OPT_discrepancy_hw) and Param->getOption<bool>(OPT_discrepancy_hw))) and
+      (cm == GccWrapper_CompilerMode::CM_STD || cm == GccWrapper_CompilerMode::CM_EMPTY))
    {
       command += " -D__BAMBU_DISCREPANCY__ ";
    }

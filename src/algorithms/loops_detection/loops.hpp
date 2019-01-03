@@ -109,7 +109,7 @@ class Loops
 
    bool is_edge_in_list(std::unordered_set<vertex_pair>& l, vertex source, vertex target);
 
-   Loops();
+   Loops() = delete;
 
    /**
     * Computes the loops of the control flow graph

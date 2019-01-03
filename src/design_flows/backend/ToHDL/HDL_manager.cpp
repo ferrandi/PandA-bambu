@@ -1030,7 +1030,7 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "write the present_state update");
    /// write the present_state update
-   writer->write_present_state_update(reset_state, reset_port, clock_port, parameters->getOption<std::string>(OPT_sync_reset));
+   writer->write_present_state_update(reset_state, reset_port, clock_port, parameters->getOption<std::string>(OPT_sync_reset), cir->find_member(PRESENT_STATE_PORT_NAME, port_o_K, cir).get() != nullptr);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "write transition and output functions");
    /// write transition and output functions
@@ -1038,7 +1038,13 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
    {
       auto* mod = GetPointer<module>(cir);
       for(unsigned int output_index = 0; output_index <= mod->get_out_port_size(); output_index++)
+      {
+         if(mod->get_out_port(output_index)->get_id() == PRESENT_STATE_PORT_NAME)
+            continue;
+         if(mod->get_out_port(output_index)->get_id() == NEXT_STATE_PORT_NAME)
+            continue;
          writer->write_transition_output_functions(false, output_index, cir, reset_state, reset_port, start_port, clock_port, first, end);
+      }
    }
    else
       writer->write_transition_output_functions(true, 0, cir, reset_state, reset_port, start_port, clock_port, first, end);

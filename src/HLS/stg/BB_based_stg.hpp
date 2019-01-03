@@ -152,5 +152,21 @@ class BB_based_stg : public STG_creator
     */
    void move_with_duplication(const vertex stateToMove, const vertex secondLastState, const vertex dest_first_state, const std::map<vertex, std::list<vertex>>& global_starting_ops, const std::map<vertex, std::list<vertex>>& global_executing_ops,
                               const std::map<vertex, std::list<vertex>>& global_ending_ops, const std::set<unsigned int>& defSet, const std::set<unsigned int>& useSet);
+   /**
+    * If hardware discrepancy analysis is activated, use this function to
+    * compute the edge increments for the Efficient Path Profiling (EPP) on the STG.
+    *
+    * Details on EPP and on the algorithm to compute edge increments are here:
+    * Thomas Ball and James R. Larus. 1996. Efficient path profiling. In
+    * Proceedings of the 29th annual ACM/IEEE international symposium on
+    * Microarchitecture (MICRO 29). IEEE Computer Society, Washington, DC, USA,
+    * 46-57.
+    *
+    * @param starting_ops: maps every state to a list of operations starting in
+    * that state. They are necessary to compute a set of states when the HW
+    * discrepancy analysis has to check the EPP trace, in addition to states
+    * before taking feedback edges.
+    */
+   void compute_EPP_edge_increments(const std::map<vertex, std::list<vertex>>& starting_ops) const;
 };
 #endif

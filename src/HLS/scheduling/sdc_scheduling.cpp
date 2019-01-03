@@ -231,7 +231,7 @@ class SDCSorter : std::binary_function<vertex, vertex, bool>
 };
 
 SDCScheduling::SDCScheduling(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
-    : Scheduling(_parameters, _HLSMgr, _function_id, _design_flow_manager, HLSFlowStep_Type::SDC_SCHEDULING, _hls_flow_step_specialization), clock_period(0.0)
+    : Scheduling(_parameters, _HLSMgr, _function_id, _design_flow_manager, HLSFlowStep_Type::SDC_SCHEDULING, _hls_flow_step_specialization), clock_period(0.0), margin(0.0)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }

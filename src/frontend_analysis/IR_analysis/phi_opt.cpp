@@ -502,7 +502,8 @@ DesignFlowStep_Status PhiOpt::InternalExec()
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing gimple nop " + STR(gn->index));
             auto virtual_ssa = GetPointer<ssa_name>(GET_NODE(gn->vdef));
-            THROW_ASSERT(virtual_ssa, "");
+            THROW_ASSERT(virtual_ssa, "unexpected condition");
+            THROW_ASSERT(virtual_ssa->virtual_flag, "unexpected condition");
 
             /// If there is only a single vuse replace vdef with vuse in all the uses of vdef
             if(gn->vuses.size() == 1)
@@ -539,9 +540,10 @@ DesignFlowStep_Status PhiOpt::InternalExec()
                      auto use_stmt = virtual_ssa->CGetUseStmts().begin()->first;
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- use stmt " + GET_NODE(use_stmt)->ToString());
                      auto us = GetPointer<gimple_node>(GET_NODE(use_stmt));
-                     THROW_ASSERT(us->vuses.find(gn->vdef) != gn->vuses.end(), "unexpected condition");
+                     THROW_ASSERT(us->vuses.find(gn->vdef) != us->vuses.end(), "unexpected condition");
                      us->vuses.erase(us->vuses.find(gn->vdef));
-                     virtual_ssa->RemoveUse(use_stmt);
+                     while(virtual_ssa->CGetUseStmts().find(use_stmt) != virtual_ssa->CGetUseStmts().end())
+                        virtual_ssa->RemoveUse(use_stmt);
                      for(const auto& vuse : gn->vuses)
                      {
                         if(us->vuses.find(vuse) == us->vuses.end())

@@ -74,13 +74,6 @@ class HLS_manager;
 CONSTREF_FORWARD_DECL(OpGraph);
 REF_FORWARD_DECL(Parameter);
 
-/// Types associated with the edges of the graph.
-/// Normal edge
-#define ST_EDGE_NORMAL_T 1 << 1
-
-/// Feedback edge
-#define ST_EDGE_FEEDBACK_T 1 << 2
-
 /**
  * Structure holding information about a node into graph. A node represent an execution state of the machine. It
  * contains operations to be started when execution will reach this state.
@@ -178,11 +171,14 @@ class TransitionInfo : public EdgeInfo
  private:
    /// pointer to graph storing information about operations
    OpGraphConstRef op_function_graph;
+
    transition_type t{DONTCARE_COND};
    std::set<vertex> ops;
    bool has_default{false};
    std::set<unsigned> labels;
    vertex ref_state{NULL_VERTEX};
+   /// the edge increment computed by Efficient Path Profiling
+   size_t epp_increment{0};
 
  public:
    TransitionInfo(OpGraphConstRef g) : op_function_graph(g)
@@ -215,6 +211,26 @@ class TransitionInfo : public EdgeInfo
       return labels;
    }
    vertex get_ref_state() const;
+
+   /// Types associated with the edges of the graph.
+   enum StateTransitionType
+   {
+      /// Normal edge
+      ST_EDGE_NORMAL = 1 << 0,
+      /// Feedback edge
+      ST_EDGE_FEEDBACK = 1 << 1,
+      /// Artificial edge for computation of Efficient Path Profiling edge increments
+      ST_EDGE_EPP = 1 << 2,
+   };
+
+   void set_epp_increment(size_t n)
+   {
+      epp_increment = n;
+   }
+   size_t get_epp_increment() const
+   {
+      return epp_increment;
+   }
 };
 /// refcount about edge info
 typedef refcount<TransitionInfo> TransitionInfoRef;
@@ -299,15 +315,6 @@ typedef refcount<const StateTransitionGraphsCollection> StateTransitionGraphsCol
 struct StateTransitionGraph : public graph
 {
  public:
-   /// These are graph type defined into this class:
-   ///  - COMPLETE is the complete finite state machine graph (also with feedback edges)
-   ///  - ACYCLIC is directed acyclic version of finite state machine graph (without feedback edges)
-   enum graph_type
-   {
-      COMPLETE = 0,
-      ACYCLIC
-   };
-
    /**
     * Standard constructor.
     * @param state_transition_graphs_collection is the bulk graph.

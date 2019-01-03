@@ -31,46 +31,40 @@
  *
  */
 /**
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Marco Minutoli <mminutoli@gmail.com>
+ * @author Manuel Beniani <manuel.beniani@gmail.com>
+ * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
+#ifndef CTESTBENCHEXECUTION_HPP
+#define CTESTBENCHEXECUTION_HPP
 
-#include "refcount.hpp"
+// include superclass header
+#include "hls_step.hpp"
 
-#include "UnfoldedCallGraph.hpp"
-
-#include <map>
-#include <stack>
-#include <string>
-
-REF_FORWARD_DECL(HLS_manager);
+CONSTREF_FORWARD_DECL(DesignFlowManager);
 CONSTREF_FORWARD_DECL(Parameter);
 
-class HWCallPathCalculator : public boost::default_dfs_visitor
+class CTestbenchExecution : public HLS_step
 {
  protected:
-   const HLS_managerRef HLSMgr;
+   const std::string output_directory;
 
-   const ParameterConstRef parameters;
+   const std::string testbench_basename;
 
-   std::map<unsigned int, vertex>& call_id_to_OpVertex;
-
-   std::stack<std::string> scope;
-
-   std::stack<vertex> caller;
-
-   // The key is the name of a shared function, the mapped value is the HW
-   // scope of that shared function
-   std::map<std::string, std::string> shared_fun_scope;
-
-   std::string top_fun_scope;
+   virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
 
  public:
-   HWCallPathCalculator(HLS_managerRef _HLSMgr, ParameterConstRef _parameters, std::map<unsigned int, vertex>& _call_id_to_OpVertex);
+   /**
+    * constructor
+    */
+   CTestbenchExecution(const ParameterConstRef Param, const HLS_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const std::string testbench_basename = "values");
 
-   ~HWCallPathCalculator();
+   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set, const DesignFlowStep::RelationshipType relationship_type);
 
-   void start_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph& ucg);
-   void discover_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph& ucg);
-   void finish_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph&);
-   void examine_edge(const EdgeDescriptor& e, const UnfoldedCallGraph& cg);
+   virtual DesignFlowStep_Status Exec();
+
+   virtual bool HasToBeExecuted() const;
 };
+#endif

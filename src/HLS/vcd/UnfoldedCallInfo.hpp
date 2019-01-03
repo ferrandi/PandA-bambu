@@ -37,11 +37,11 @@
  */
 #ifndef UNFOLDED_CALL_INFO_HPP
 #define UNFOLDED_CALL_INFO_HPP
+
 #include "edge_info.hpp"
 
+// include from utility/
 #include "refcount.hpp"
-
-CONSTREF_FORWARD_DECL(CallBehavior);
 
 class UnfoldedCallInfo : public EdgeInfo
 {

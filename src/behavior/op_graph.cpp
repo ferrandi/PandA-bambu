@@ -211,7 +211,7 @@ void OpNodeInfo::Print(std::ostream& stream, const BehavioralHelperConstRef beha
 #endif
 }
 
-OpGraphInfo::OpGraphInfo(const BehavioralHelperConstRef _BH) : BH(_BH)
+OpGraphInfo::OpGraphInfo(const BehavioralHelperConstRef _BH) : entry_vertex(NULL_VERTEX), exit_vertex(NULL_VERTEX), BH(_BH)
 {
 }
 

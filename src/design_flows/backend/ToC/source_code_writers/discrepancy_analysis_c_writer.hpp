@@ -61,7 +61,7 @@ class DiscrepancyAnalysisCWriter : public HLSCWriter
 
    void WriteExtraCodeBeforeEveryMainCall() override;
 
-   void WriteBBHeader(unsigned int bb_number) override;
+   virtual void WriteBBHeader(const unsigned int bb_number, const unsigned int function_index) override;
 
    /**
     * Write extra information on the given statement vertex, before the
@@ -94,7 +94,7 @@ class DiscrepancyAnalysisCWriter : public HLSCWriter
    ~DiscrepancyAnalysisCWriter() override;
 
    /**
-    * Declares the local variable; in case the variable used in the intialization of
+    * Declares the local variable; in case the variable used in the initialization of
     * curVar hasn't been declared yet it get declared
     * @param to_be_declared is the set of variables which have to be declared
     * @param already_decl_variables is the set of already declared variables

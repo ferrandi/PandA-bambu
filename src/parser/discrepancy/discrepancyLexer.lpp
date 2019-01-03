@@ -189,7 +189,7 @@ ID          [a-z_A-Z][a-zA-Z_0-9]*
 "stg_id"       { return STGFUNID; }
 "op_id"        { return OPID; }
 "B"            { lvalp->boolval = true; return BOOLEAN; }
-"BB"           { return BB; }
+"BB"           { return BB_header; }
 "U"            { lvalp->boolval = false; return BOOLEAN; }
 "type"         { return TYPE; }
 "V"            { lvalp->boolval = true; return BOOLEAN; }

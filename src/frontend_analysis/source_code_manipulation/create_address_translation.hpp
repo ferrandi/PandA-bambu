@@ -76,7 +76,7 @@ class CreateAddressTranslation : public ApplicationFrontendFlowStep
    const AadlInformationRef aadl_information;
 
    /// True if it was already executed
-   bool already_executed;
+   bool already_executed{false};
 
    /**
     * Compute the addresses and add them to the writers

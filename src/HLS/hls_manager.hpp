@@ -102,12 +102,6 @@ class HLS_manager : public application_manager
    /// The HDL files
    std::list<std::string> hdl_files;
 
-   /**
-    * A map to store the vcd signals to be dumped. The key is the scope, and
-    * the mapped set contains all the signals to be dumped for that scope
-    */
-   std::map<std::string, std::set<std::string>> selected_vcd_signals;
-
 #if HAVE_TASTE
    /// The information collected from aadl files
    const AadlInformationRef aadl_information;
@@ -195,5 +189,6 @@ class HLS_manager : public application_manager
 };
 /// refcount definition of the class
 typedef refcount<HLS_manager> HLS_managerRef;
+typedef refcount<const HLS_manager> HLS_managerConstRef;
 
 #endif

@@ -106,6 +106,7 @@ class SynthesisTool
       QUARTUS_13_STA,
       QUARTUS_SETUP,
       QUARTUS_FLOW,
+      QUARTUS_POW,
       QUARTUS_STA,
       LATTICE_FLOW
    } type_t;

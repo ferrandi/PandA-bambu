@@ -113,7 +113,8 @@ DiscrepancyAnalysisCWriter::DiscrepancyAnalysisCWriter(const HLSCBackendInformat
                                                        const IndentedOutputStreamRef _indented_output_stream, const ParameterConstRef _parameters, bool _verbose)
     : HLSCWriter(_hls_c_backend_information, _AppM, _instruction_writer, _indented_output_stream, _parameters, _verbose), Discrepancy(_hls_c_backend_information->HLSMgr->RDiscr)
 {
-   THROW_ASSERT(Param->isOption(OPT_discrepancy) and Param->getOption<bool>(OPT_discrepancy), "Step " + STR(__PRETTY_FUNCTION__) + " should not be added without discrepancy");
+   THROW_ASSERT((Param->isOption(OPT_discrepancy) and Param->getOption<bool>(OPT_discrepancy)) or (Param->isOption(OPT_discrepancy_hw) and Param->getOption<bool>(OPT_discrepancy_hw)),
+                "Step " + STR(__PRETTY_FUNCTION__) + " should not be added without discrepancy");
    THROW_ASSERT(Discrepancy, "Discrepancy data structure is not correctly initialized");
 }
 
@@ -173,6 +174,14 @@ void DiscrepancyAnalysisCWriter::writePreInstructionInfo(const FunctionBehaviorC
 
 void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehaviorConstRef fun_behavior, const vertex statement)
 {
+   if(Param->isOption(OPT_discrepancy_hw) and Param->getOption<bool>(OPT_discrepancy_hw))
+   {
+      /*
+       * if we're using hw discrepancy don't print anything after the
+       * instruction, because only control flow is checked
+       */
+      return;
+   }
    const OpGraphConstRef instrGraph = fun_behavior->CGetOpGraph(FunctionBehavior::FCFG);
    const unsigned int st_tn_id = instrGraph->CGetOpNodeInfo(statement)->GetNodeId();
    if(st_tn_id == 0 || st_tn_id == ENTRY_ID || st_tn_id == EXIT_ID)
@@ -367,7 +376,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
 
       indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"; type ");
 
-      THROW_ASSERT(not(is_discrepancy_address and (is_real or is_complex)), "type id = " + STR(type_id) + " is complex = " + STR(is_complex) + " is real = " + STR(is_real));
+      THROW_ASSERT(not(is_discrepancy_address and (is_real or is_complex)), "variable " + STR(var_name) + " with node id " + STR(ssa_node_index) + " has type id = " + STR(type_id) + " is complex = " + STR(is_complex) + " is real = " + STR(is_real));
 
       unsigned int vec_base_bitsize = type_bitsize;
       if(is_vector)
@@ -503,26 +512,32 @@ void DiscrepancyAnalysisCWriter::WriteGlobalDeclarations()
    CWriter::WriteGlobalDeclarations();
    WriteTestbenchGlobalVars();
    WriteTestbenchHelperFunctions();
+   const bool is_hw_discrepancy = Param->isOption(OPT_discrepancy_hw) and Param->getOption<bool>(OPT_discrepancy_hw);
+
    indented_output_stream->Append("// Global declarations for printing of discrepancy data\n");
    /* global variable for fprintf to print discrepancy data */
    indented_output_stream->Append("FILE * __bambu_discrepancy_fp;\n\n");
    indented_output_stream->Append("long long unsigned int __bambu_discrepancy_context = 0;\n");
 
-   indented_output_stream->Append("long long unsigned int __bambu_discrepancy_tot_assigned_ssa = 0;\n");
+   if(not is_hw_discrepancy)
+   {
+      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_tot_assigned_ssa = 0;\n");
 
-   indented_output_stream->Append("long long unsigned int __bambu_discrepancy_tot_lost_ssa = 0;\n");
-   indented_output_stream->Append("long long unsigned int __bambu_discrepancy_tot_check_ssa = 0;\n");
+      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_tot_lost_ssa = 0;\n");
+      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_tot_check_ssa = 0;\n");
 
-   indented_output_stream->Append("long long unsigned int __bambu_discrepancy_tot_lost_addr_ssa = 0;\n");
-   indented_output_stream->Append("long long unsigned int __bambu_discrepancy_temp_lost_addr_ssa = 0;\n");
-   indented_output_stream->Append("long long unsigned int __bambu_discrepancy_opt_lost_addr_ssa = 0;\n");
-   indented_output_stream->Append("long long unsigned int __bambu_discrepancy_tot_lost_int_ssa = 0;\n");
-   indented_output_stream->Append("long long unsigned int __bambu_discrepancy_temp_lost_int_ssa = 0;\n");
+      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_tot_lost_addr_ssa = 0;\n");
+      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_temp_lost_addr_ssa = 0;\n");
+      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_opt_lost_addr_ssa = 0;\n");
+      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_tot_lost_int_ssa = 0;\n");
+      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_temp_lost_int_ssa = 0;\n");
 
-   indented_output_stream->Append("long long unsigned int __bambu_discrepancy_tot_check_addr_ssa = 0;\n");
-   indented_output_stream->Append("long long unsigned int __bambu_discrepancy_temp_check_addr_ssa = 0;\n");
-   indented_output_stream->Append("long long unsigned int __bambu_discrepancy_tot_check_int_ssa = 0;\n");
-   indented_output_stream->Append("long long unsigned int __bambu_discrepancy_temp_check_int_ssa = 0;\n");
+      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_tot_check_addr_ssa = 0;\n");
+      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_temp_check_addr_ssa = 0;\n");
+      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_tot_check_int_ssa = 0;\n");
+      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_temp_check_int_ssa = 0;\n");
+   }
+
    /*
     * extra exit function to print out the statistics even in case
     * __builtin_exit is called, which normally just terminates the program
@@ -534,24 +549,33 @@ void DiscrepancyAnalysisCWriter::WriteGlobalDeclarations()
    indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"CONTEXT_END\\n\");\n");
    indented_output_stream->Append("}\n");
    indented_output_stream->Append("fflush(__bambu_discrepancy_fp);\n");
-   indented_output_stream->Append("fputs(\"DISCREPANCY REPORT\\n\", stdout);\n");
-   if(Param->isOption(OPT_cat_args))
-      indented_output_stream->Append("fputs(\"" + Param->getOption<std::string>(OPT_program_name) + " executed with: " + Param->getOption<std::string>(OPT_cat_args) + "\\n\", stdout);\n");
-   indented_output_stream->Append("fprintf(stdout, "
-                                  "\"Assigned ssa = %llu\\nChecked ssa = %llu\\nLost ssa = %llu\\n\", "
-                                  "__bambu_discrepancy_tot_assigned_ssa, __bambu_discrepancy_tot_check_ssa, __bambu_discrepancy_tot_lost_ssa);\n");
-   indented_output_stream->Append("fprintf(stdout, "
-                                  "\"Normal ssa  = %llu\\nAddress ssa  = %llu\\n\", "
-                                  "__bambu_discrepancy_tot_lost_int_ssa + __bambu_discrepancy_tot_check_int_ssa, "
-                                  "__bambu_discrepancy_tot_lost_addr_ssa + __bambu_discrepancy_tot_check_addr_ssa);\n");
-   indented_output_stream->Append("fprintf(stdout, "
-                                  "\"CHECKED: %llu\\nNormal ssa = %llu\\nNormal tmp ssa = %llu\\nAddr ssa = %llu\\nAddr tmp ssa = %llu\\n\", "
-                                  "__bambu_discrepancy_tot_check_ssa, __bambu_discrepancy_tot_check_int_ssa, __bambu_discrepancy_temp_check_int_ssa, "
-                                  "__bambu_discrepancy_tot_check_addr_ssa, __bambu_discrepancy_temp_check_addr_ssa);\n");
-   indented_output_stream->Append("fprintf(stdout, "
-                                  "\"LOST: %llu\\nNormal ssa lost = %llu\\nNormal tmp ssa lost = %llu\\nAddr ssa lost = %llu\\nAddr tmp ssa lost = %llu\\nOpt tmp ssa lost = %llu\\n\", "
-                                  "__bambu_discrepancy_tot_lost_ssa, __bambu_discrepancy_tot_lost_int_ssa, __bambu_discrepancy_temp_lost_int_ssa, "
-                                  "__bambu_discrepancy_tot_lost_addr_ssa, __bambu_discrepancy_temp_lost_addr_ssa, __bambu_discrepancy_opt_lost_addr_ssa);\n");
+
+   /*
+    * if we're using hw discrepancy don't print anything related to ssa
+    * variables or to results of operations, because only control flow is
+    * checked
+    */
+   if(not is_hw_discrepancy)
+   {
+      indented_output_stream->Append("fputs(\"DISCREPANCY REPORT\\n\", stdout);\n");
+      if(Param->isOption(OPT_cat_args))
+         indented_output_stream->Append("fputs(\"" + Param->getOption<std::string>(OPT_program_name) + " executed with: " + Param->getOption<std::string>(OPT_cat_args) + "\\n\", stdout);\n");
+      indented_output_stream->Append("fprintf(stdout, "
+                                     "\"Assigned ssa = %llu\\nChecked ssa = %llu\\nLost ssa = %llu\\n\", "
+                                     "__bambu_discrepancy_tot_assigned_ssa, __bambu_discrepancy_tot_check_ssa, __bambu_discrepancy_tot_lost_ssa);\n");
+      indented_output_stream->Append("fprintf(stdout, "
+                                     "\"Normal ssa  = %llu\\nAddress ssa  = %llu\\n\", "
+                                     "__bambu_discrepancy_tot_lost_int_ssa + __bambu_discrepancy_tot_check_int_ssa, "
+                                     "__bambu_discrepancy_tot_lost_addr_ssa + __bambu_discrepancy_tot_check_addr_ssa);\n");
+      indented_output_stream->Append("fprintf(stdout, "
+                                     "\"CHECKED: %llu\\nNormal ssa = %llu\\nNormal tmp ssa = %llu\\nAddr ssa = %llu\\nAddr tmp ssa = %llu\\n\", "
+                                     "__bambu_discrepancy_tot_check_ssa, __bambu_discrepancy_tot_check_int_ssa, __bambu_discrepancy_temp_check_int_ssa, "
+                                     "__bambu_discrepancy_tot_check_addr_ssa, __bambu_discrepancy_temp_check_addr_ssa);\n");
+      indented_output_stream->Append("fprintf(stdout, "
+                                     "\"LOST: %llu\\nNormal ssa lost = %llu\\nNormal tmp ssa lost = %llu\\nAddr ssa lost = %llu\\nAddr tmp ssa lost = %llu\\nOpt tmp ssa lost = %llu\\n\", "
+                                     "__bambu_discrepancy_tot_lost_ssa, __bambu_discrepancy_tot_lost_int_ssa, __bambu_discrepancy_temp_lost_int_ssa, "
+                                     "__bambu_discrepancy_tot_lost_addr_ssa, __bambu_discrepancy_temp_lost_addr_ssa, __bambu_discrepancy_opt_lost_addr_ssa);\n");
+   }
    indented_output_stream->Append("}\n\n");
    return;
 }
@@ -563,7 +587,8 @@ void DiscrepancyAnalysisCWriter::WriteExtraInitCode()
    const auto top_fun_id = *(top_function_ids.begin());
    const FunctionBehaviorConstRef fun_behavior = AppM->CGetFunctionBehavior(top_fun_id);
    const BehavioralHelperConstRef behavioral_helper = fun_behavior->CGetBehavioralHelper();
-   std::string discrepancy_data_filename = Param->getOption<std::string>(OPT_output_directory) + "/simulation/" + behavioral_helper->get_function_name() + "_discrepancy.data";
+   const std::string discrepancy_data_filename = Param->getOption<std::string>(OPT_output_directory) + "/simulation/" + behavioral_helper->get_function_name() + "_discrepancy.data";
+   Discrepancy->c_trace_filename = discrepancy_data_filename;
 
    indented_output_stream->Append("__bambu_discrepancy_fp = fopen(\"" + discrepancy_data_filename + "\", \"w\");\n");
    indented_output_stream->Append("if (!__bambu_discrepancy_fp) {\n");
@@ -572,6 +597,14 @@ void DiscrepancyAnalysisCWriter::WriteExtraInitCode()
    indented_output_stream->Append("}\n\n");
 
    indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"CONTEXT LL_%llu\\n\", __bambu_discrepancy_context);\n");
+   if(Param->isOption(OPT_discrepancy_hw) and Param->getOption<bool>(OPT_discrepancy_hw))
+   {
+      /*
+       * if we're using hw discrepancy don't print anything related to global
+       * variables, because only control flow is checked
+       */
+      return;
+   }
    const CustomSet<unsigned int>& glbl_vars = hls_c_backend_information->HLSMgr->get_global_variables();
    for(const auto& var : glbl_vars)
    {
@@ -597,6 +630,14 @@ void DiscrepancyAnalysisCWriter::DeclareLocalVariables(const CustomSet<unsigned 
    indented_output_stream->Append("__bambu_discrepancy_context++;\n");
    indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"CONTEXT LL_%llu\\n\", __bambu_discrepancy_context);\n");
    indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"CALLED_ID " + STR(BH->get_function_index()) + "\\n\");\n");
+   if(Param->isOption(OPT_discrepancy_hw) and Param->getOption<bool>(OPT_discrepancy_hw))
+   {
+      /*
+       * if we're using hw discrepancy don't print anything related memory,
+       * because only control flow is checked
+       */
+      return;
+   }
    const FunctionBehaviorConstRef FB = hls_c_backend_information->HLSMgr->CGetFunctionBehavior(BH->get_function_index());
    const std::list<unsigned int>& params = BH->get_parameters();
    for(const auto& par : params)
@@ -634,9 +675,9 @@ void DiscrepancyAnalysisCWriter::WriteFunctionImplementation(unsigned int functi
       GetPointer<function_decl>(node_fun)->static_flag = false;
 }
 
-void DiscrepancyAnalysisCWriter::WriteBBHeader(unsigned int bb_number)
+void DiscrepancyAnalysisCWriter::WriteBBHeader(const unsigned int bb_number, const unsigned int function_index)
 {
-   indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"BB " + STR(bb_number) + "\\n\");\n");
+   indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"stg_id " + STR(function_index) + " BB " + STR(bb_number) + "\\n\");\n");
 }
 
 void DiscrepancyAnalysisCWriter::WriteFunctionDeclaration(const unsigned int funId)
