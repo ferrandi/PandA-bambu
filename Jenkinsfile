@@ -35,7 +35,7 @@ pipeline {
         sh 'cd $WORKSPACE/examples && nice -n 17 ./example.sh -j8 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/test-reports" --perfpublisherdir="$WORKSPACE/pp-reports" '
       }
     }
-    stage('Synthesis Step') {
+    stage('Copy data Step') {
       steps {
         sh 'cd $WORKSPACE/examples && cp CHStone*tex CHStone '
         sh 'cd $WORKSPACE/examples && cp hls_study*tex hls_study '
@@ -45,6 +45,15 @@ pipeline {
         sh 'cd $WORKSPACE/examples && cp omp_simd*tex omp_simd '
       }
     }
+    stage('build') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'git-pass-credentials-ID', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+          sh 'git commit --author="Jenkins CI <jenkins-ci@example.com>" -a -m "Updated synthesis results"  '
+          sh 'git push origin'
+        }
+      }
+    }
+
     stage('JunitCollect') {
       steps {
         junit allowEmptyResults: true, testResults: '$WORKSPACE/test-reports/*.xml'
