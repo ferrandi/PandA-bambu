@@ -249,11 +249,11 @@ static void queue_and_serialize_index (const char *field, tree t);
 static void queue_and_serialize_gimple_index (const char *field, GIMPLE_type t);
 static void queue_and_serialize_statement_index (const char *field, struct control_flow_graph * cfg);
 static void queue_and_serialize_type (const_tree t);
-static void dequeue_and_serialize ();
-static void dequeue_and_serialize_gimple ();
-static void dequeue_and_serialize_statement ();
-static void serialize_new_line ();
-static void serialize_maybe_newline ();
+static void dequeue_and_serialize(void);
+static void dequeue_and_serialize_gimple(void);
+static void dequeue_and_serialize_statement (void);
+static void serialize_new_line(void);
+static void serialize_maybe_newline(void);
 static void serialize_pointer (const char *field, void *ptr);
 static void serialize_int (const char *field, int i);
 static void serialize_wide_int (const char *field, HOST_WIDE_INT i);
@@ -265,7 +265,7 @@ static void serialize_string (const char *string);
 static void serialize_string_field (const char *field, const char *str);
 static void serialize_gimple_dependent_stmts_load(GIMPLE_type gs);
 static void add_referenced_var_map(tree var);
-static void compute_referenced_var_map();
+static void compute_referenced_var_map(void);
 
 
 /**
@@ -1347,6 +1347,8 @@ serialize_vops (GIMPLE_type gs)
    {
       ///Serialize gimple pairs because of use after def chain
       serialize_gimple_dependent_stmts_load(gs);
+      if(SSA_NAME_IS_DEFAULT_DEF(vuse))
+         serialize_child ("vuse", vuse);
       ///Serialize gimple pairs because of def after use chain
 
       ///The other uses
@@ -3552,7 +3554,7 @@ serialize_gimple_aliased_reaching_defs_1 (ao_ref *dummy_1, tree vdef, void *dumm
   tree vuse = gimple_vuse (def_stmt);
   GIMPLE_type vuse_stmt = SSA_NAME_DEF_STMT (vuse);
   if (gimple_code (vuse_stmt) == GIMPLE_PHI)
-     return true;
+     return false;
   else
      return false;
 }
@@ -3743,7 +3745,7 @@ SerializeGimpleUseDefs(GIMPLE_type current, GIMPLE_type next_def)
    ///Now check if there is an anti-dependence because of alias
    ///Get right operand of current gimple
    tree * use = GetRightOperand(current);
-   ///Get left oprand of other_use_stmt
+   ///Get left operand of other_use_stmt
    tree * def = GetLeftOperand(next_def);
 
    if(use == NULL || def == NULL)

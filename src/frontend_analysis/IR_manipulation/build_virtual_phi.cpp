@@ -110,12 +110,6 @@ BuildVirtualPhi::~BuildVirtualPhi() = default;
 
 DesignFlowStep_Status BuildVirtualPhi::InternalExec()
 {
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      WriteBBGraphDot("BB_Before_" + GetName() + ".dot");
-      PrintTreeManager(true);
-   }
-
    const auto loops = function_behavior->CGetLoops();
    const auto bb_index_map = basic_block_graph->CGetBBGraphInfo()->bb_index_map;
 
@@ -147,10 +141,38 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
             GetPointer<ssa_name>(GET_NODE(gn->memuse))->RemoveUse(stmt);
             gn->memuse = tree_nodeRef();
          }
+         const auto cur_bb_index = gn->bb_index;
+         const auto cur_bb = bb_index_map.find(cur_bb_index)->second;
+         if(gn->vdef && gn->vovers.find(gn->vdef) != gn->vovers.end() && !function_behavior->CheckBBReachability(cur_bb, cur_bb))
+         {
+            gn->vovers.erase(gn->vdef);
+         }
          for(const auto& vover : gn->vovers)
          {
             vovers[vover].insert(stmt);
          }
+         /// clean not reachable vuses
+         std::list<tree_nodeRef> to_be_removed;
+         for(const auto& vu : gn->vuses)
+         {
+            auto sn = GetPointer<ssa_name>(GET_NODE(vu));
+            auto def_stmt = sn->CGetDefStmt();
+            const auto use_bb_index = GetPointer<const gimple_node>(GET_NODE(def_stmt))->bb_index;
+            const auto use_bb = bb_index_map.find(use_bb_index)->second;
+            if(use_bb_index == cur_bb_index)
+            {
+               /// here we may have a Use-Def or a Def-Use. They are both perfectly fine.
+            }
+            else if(!function_behavior->CheckBBReachability(use_bb, cur_bb) && !function_behavior->CheckBBReachability(cur_bb, use_bb))
+            {
+               sn->RemoveUse(stmt);
+               to_be_removed.push_back(vu);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + STR(vu) + " from vuses of unreachable stmt: " + STR(sn));
+            }
+         }
+         for(auto vu : to_be_removed)
+            gn->vuses.erase(gn->vuses.find(vu));
+
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed stmt " + STR(stmt));
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(basic_block_graph->CGetBBNodeInfo(*basic_block)->block->number));
@@ -195,6 +217,8 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
 
          /// Check if this use can be ignored because of transitive reduction
          bool skip = [&]() -> bool {
+            if(definition_bb_index == use_bb_index)
+               return false;
             if(vovers.find(virtual_ssa_definition.first) != vovers.end())
             {
                for(const auto& vover_stmt : vovers.find(virtual_ssa_definition.first)->second)
@@ -595,11 +619,6 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
    if(parameters->getOption<bool>(OPT_print_dot))
    {
       function_behavior->GetBBGraph(FunctionBehavior::FBB)->WriteDot("BB_FCFG.dot");
-   }
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(false);
-      WriteBBGraphDot("BB_After_" + GetName() + ".dot");
    }
 #ifndef NDEBUG
    if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
