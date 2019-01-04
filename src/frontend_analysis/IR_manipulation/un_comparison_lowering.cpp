@@ -70,6 +70,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, SAME_FUNCTION));
          break;
       }
@@ -108,7 +109,7 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
          auto ga = GetPointer<gimple_assign>(GET_NODE(stmt));
          if(not ga)
             continue;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analysing " + STR(stmt));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + STR(stmt));
          auto be = GetPointer<binary_expr>(GET_NODE(ga->op1));
          auto sn = GetPointer<ssa_name>(GET_NODE(ga->op0));
          if(not be)

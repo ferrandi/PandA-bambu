@@ -813,9 +813,22 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             /// compute the SSA variables used by stmt
             std::set<ssa_name*> stmt_ssa_uses;
             tree_helper::compute_ssa_uses_rec_ptr(*statement, stmt_ssa_uses);
+            for(auto vo : gn->vovers)
+               tree_helper::compute_ssa_uses_rec_ptr(vo, stmt_ssa_uses);
 
             /// compute BB where the SSA variables are defined
             std::set<unsigned int> BB_def;
+            /// check for anti-dependencies
+            for(auto stmt0 = list_of_stmt.begin(); stmt0 != list_of_stmt.end() && *stmt0 != *statement && gn->vdef; stmt0++)
+            {
+               tree_nodeRef tn0 = GET_NODE(*stmt0);
+               auto* gn0 = GetPointer<gimple_node>(tn0);
+               if(gn0->vuses.find(gn->vdef) != gn0->vuses.end())
+               {
+                  BB_def.insert(curr_bb);
+               }
+            }
+
             const std::set<ssa_name*>::const_iterator ssu_it_end = stmt_ssa_uses.end();
             for(auto ssu_it = stmt_ssa_uses.begin(); ssu_it != ssu_it_end; ++ssu_it)
             {

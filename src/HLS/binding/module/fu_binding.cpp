@@ -2734,7 +2734,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       case CASE_TERNARY_EXPRESSION:
       case CASE_TYPE_NODES:
       default:
-         THROW_ERROR("elements not yet supported: " + init_node->get_kind_text() + init_node->ToString() + (var_node ? var_node->ToString(): ""));
+         THROW_ERROR("elements not yet supported: " + init_node->get_kind_text() + init_node->ToString() + (var_node ? var_node->ToString() : ""));
    }
 }
 
