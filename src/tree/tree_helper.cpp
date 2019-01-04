@@ -5746,9 +5746,13 @@ std::string tree_helper::print_type(const tree_managerConstRef& TM, unsigned int
          {
             res += print_type(TM, GET_INDEX_NODE(ft->prms), global, true);
          }
-         if(ft->varargs_flag)
+         if(ft->varargs_flag && ft->prms)
          {
             res += ", ... ";
+         }
+         else if(ft->varargs_flag)
+         {
+            THROW_ERROR("ISO C requires a named parameter before '...'");
          }
          res += ")";
          skip_var_printing = true;

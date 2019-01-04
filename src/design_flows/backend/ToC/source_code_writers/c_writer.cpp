@@ -104,11 +104,12 @@
 #include "hierarchical_path_profiling_c_writer.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
+#include "discrepancy_analysis_c_writer.hpp"
+#include "discrepancy_instruction_writer.hpp"
 #include "hls_c_backend_information.hpp"
 #include "hls_c_writer.hpp"
 #include "hls_instruction_writer.hpp"
 #endif
-#include "discrepancy_analysis_c_writer.hpp"
 #include "instruction_writer.hpp"
 #if HAVE_TARGET_PROFILING
 #include "instrument_c_writer.hpp"
@@ -229,7 +230,7 @@ CWriterRef CWriter::CreateCWriter(const CBackend::Type type,
 #if HAVE_HLS_BUILT
       case(CBackend::CB_DISCREPANCY_ANALYSIS):
       {
-         const InstructionWriterRef instruction_writer(new HLSInstructionWriter(app_man, indented_output_stream, parameters));
+         const InstructionWriterRef instruction_writer(new discrepancy_instruction_writer(app_man, indented_output_stream, parameters));
 
          return CWriterRef(new DiscrepancyAnalysisCWriter(RefcountCast<const HLSCBackendInformation>(c_backend_information), app_man, instruction_writer, indented_output_stream, parameters, verbose));
       }
@@ -1308,7 +1309,16 @@ void CWriter::DeclareVariable(unsigned int curVar, CustomSet<unsigned int>& alre
    {
       if(verbose)
          indented_output_stream->Append("//declaring variable " + STR(curVar) + " - type: " + STR(behavioral_helper->get_type(curVar)) + "\n");
-      indented_output_stream->Append(behavioral_helper->PrintVarDeclaration(curVar, varFunc, true) + ";\n");
+      const tree_nodeRef& curr_tn = TM->get_tree_node_const(curVar);
+      if(GetPointer<function_decl>(curr_tn))
+      {
+         instrWriter->declareFunction(curVar);
+         indented_output_stream->Append(";\n");
+      }
+      else
+      {
+         indented_output_stream->Append(behavioral_helper->PrintVarDeclaration(curVar, varFunc, true) + ";\n");
+      }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Declared variable " + behavioral_helper->PrintVariable(curVar));
 }

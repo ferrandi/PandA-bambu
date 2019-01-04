@@ -4542,12 +4542,14 @@ namespace llvm
             break;
 
          case GT(FUNCTION_TYPE):
+         {
             serialize_child("retn", TREE_TYPE(t));
-            serialize_child("prms", TYPE_ARG_TYPES(t));
-            if(stdarg_p(t))
+            auto args = TYPE_ARG_TYPES(t);
+            serialize_child("prms", args);
+            if(args && stdarg_p(t)) //ISO C requires a named parameter before '...'
                serialize_string("varargs");
             break;
-
+         }
          case GT(ARRAY_TYPE):
             serialize_child("elts", TREE_TYPE(t));
             serialize_child("domn", TYPE_DOMAIN(t));
