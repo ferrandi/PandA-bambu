@@ -1547,6 +1547,8 @@ src/design_flows/backend/ToC/source_code_writers/c_writer.cpp
 src/design_flows/backend/ToC/source_code_writers/c_writer.hpp
 src/design_flows/backend/ToC/source_code_writers/discrepancy_analysis_c_writer.cpp
 src/design_flows/backend/ToC/source_code_writers/discrepancy_analysis_c_writer.hpp
+src/design_flows/backend/ToC/source_code_writers/discrepancy_instruction_writer.cpp
+src/design_flows/backend/ToC/source_code_writers/discrepancy_instruction_writer.hpp
 src/design_flows/backend/ToC/source_code_writers/hls_c_writer.cpp
 src/design_flows/backend/ToC/source_code_writers/hls_c_writer.hpp
 src/design_flows/backend/ToC/source_code_writers/hls_instruction_writer.cpp
