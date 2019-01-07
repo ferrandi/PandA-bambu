@@ -17,8 +17,8 @@ If everything is fine, the output is the following (the last couple of lines may
                     Politecnico di Milano - DEIB
                      System Architectures Group
 *******************************************************************
-            Copyright (c) 2004-2018 Politecnico di Milano
-Version: PandA 0.9.4</pre>
+            Copyright (c) 2004-2019 Politecnico di Milano
+Version: PandA 0.9.6</pre>
 &nbsp;
 
 In the rest of the tutorial some examples that are already included in the <em>bambu</em> sources that you have downloaded will be used. Most of the tutorial does not require any vendor tool to be installed and configured along with <em>bambu</em>. However, to execute some common scenarios, some extra tools have to be installed. In particular:
