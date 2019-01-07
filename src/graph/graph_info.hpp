@@ -65,7 +65,9 @@ struct GraphInfo
    GraphInfo() = default;
 
    /// Destructor
-   virtual ~GraphInfo() = default;
+   virtual ~GraphInfo()
+   {
+   }
 };
 
 /**

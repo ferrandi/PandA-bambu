@@ -47,7 +47,9 @@
 template <typename vertex_type>
 struct filter_clique
 {
-   virtual ~filter_clique() = default;
+   virtual ~filter_clique()
+   {
+   }
 
    virtual bool select_candidate_to_remove(const std::set<C_vertex>& candidate_clique, C_vertex& v, const std::map<C_vertex, vertex_type>& converter, const cc_compatibility_graph& cg) const = 0;
 };

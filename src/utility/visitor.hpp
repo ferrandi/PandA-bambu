@@ -106,7 +106,9 @@ class object_visitor
 {
  public:
    /// destructor
-   virtual ~object_visitor() = default;
+   virtual ~object_visitor()
+   {
+   }
    /**
     * virtual template object functor
     * @param obj is the object visited

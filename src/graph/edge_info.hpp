@@ -58,7 +58,9 @@ struct EdgeInfo
    EdgeInfo() = default;
 
    /// Destructor
-   virtual ~EdgeInfo() = default;
+   virtual ~EdgeInfo()
+   {
+   }
 };
 
 /**

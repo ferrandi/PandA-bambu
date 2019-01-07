@@ -86,7 +86,9 @@ class connection_obj
    /**
     * Destructor.
     */
-   virtual ~connection_obj() = default;
+   virtual ~connection_obj()
+   {
+   }
 
    /**
     * Returns the name associated with the element

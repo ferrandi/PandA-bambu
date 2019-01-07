@@ -401,7 +401,9 @@ class structural_object
    structural_object(int debug_level, const structural_objectRef o);
 
    /// virtual destructor
-   virtual ~structural_object() = default;
+   virtual ~structural_object()
+   {
+   }
 
    /**
     * Return the owner.

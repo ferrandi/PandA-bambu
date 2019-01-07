@@ -63,7 +63,9 @@ REF_FORWARD_DECL(var_pp_functor);
 struct var_pp_functor
 {
    /// Destructor
-   virtual ~var_pp_functor() = default;
+   virtual ~var_pp_functor()
+   {
+   }
 
    /**
     * This functor returns a string representing the variable (usually the name of the variable). This can be used both in variable declaration and in variable use.

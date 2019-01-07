@@ -947,7 +947,9 @@ class FunctionExpander
    FunctionExpander();
 
    /// Destructor
-   virtual ~FunctionExpander() = default;
+   virtual ~FunctionExpander()
+   {
+   }
 };
 typedef refcount<FunctionExpander> FunctionExpanderRef;
 #endif

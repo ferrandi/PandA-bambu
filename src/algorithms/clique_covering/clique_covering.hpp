@@ -168,7 +168,9 @@ class clique_covering
    /**
     * Destructor
     */
-   virtual ~clique_covering() = default;
+   virtual ~clique_covering()
+   {
+   }
 
    /**
     * Creates a reference to desidered solver

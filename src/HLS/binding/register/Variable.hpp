@@ -67,7 +67,9 @@ struct variable2obj : public std::map<unsigned int, data_obj>
    /**
     * Destructor.
     */
-   virtual ~variable2obj() = default;
+   virtual ~variable2obj()
+   {
+   }
 
    /**
     * Function that print the information associated with a variable
