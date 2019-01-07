@@ -320,7 +320,7 @@ namespace llvm
          bool escaped;
          bool ipa_escaped;
          bool null;
-         std::list<const void*> vars;
+         std::set<const void*> vars;
          pt_solution() : anything(false), nonlocal(false), escaped(false), ipa_escaped(false), null(false)
          {
          }
