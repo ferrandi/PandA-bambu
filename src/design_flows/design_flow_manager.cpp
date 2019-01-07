@@ -455,9 +455,11 @@ void DesignFlowManager::Exec()
 
       /// Now check if next is actually ready
       /// First of all check if there are new dependence to add
-      DesignFlowStepSet pre_dependence_steps;
+      DesignFlowStepSet pre_dependence_steps, pre_precedence_steps;
       step->ComputeRelationships(pre_dependence_steps, DesignFlowStep::DEPENDENCE_RELATIONSHIP);
       RecursivelyAddSteps(pre_dependence_steps, design_flow_step_info->status == DesignFlowStep_Status::UNNECESSARY);
+      step->ComputeRelationships(pre_precedence_steps, DesignFlowStep::PRECEDENCE_RELATIONSHIP);
+      RecursivelyAddSteps(pre_precedence_steps, true);
       bool current_ready = true;
       DesignFlowStepSet::const_iterator pre_dependence_step, pre_dependence_step_end = pre_dependence_steps.end();
       for(pre_dependence_step = pre_dependence_steps.begin(); pre_dependence_step != pre_dependence_step_end; ++pre_dependence_step)
@@ -493,38 +495,35 @@ void DesignFlowManager::Exec()
          }
       }
       /// Now iterate on ingoing precedence edge
-      InEdgeIterator ie, ie_end;
-      for(boost::tie(ie, ie_end) = boost::in_edges(next, *design_flow_graph); ie != ie_end; ie++)
+      for(auto pre_precedence_step : pre_precedence_steps)
       {
-         if(design_flow_graph->GetSelector(*ie) & DesignFlowGraph::PRECEDENCE_SELECTOR)
+         const vertex pre_precedence_vertex = design_flow_graph->GetDesignFlowStep((pre_precedence_step)->GetSignature());
+         design_flow_graphs_collection->AddDesignFlowDependence(pre_precedence_vertex, next, DesignFlowGraph::PRECEDENCE_SELECTOR);
+         const DesignFlowStepInfoRef pre_info = design_flow_graph->GetDesignFlowStepInfo(pre_precedence_vertex);
+         switch(pre_info->status)
          {
-            const vertex precedence_vertex = boost::source(*ie, *design_flow_graph);
-            const DesignFlowStepInfoRef pre_info = design_flow_graph->GetDesignFlowStepInfo(precedence_vertex);
-            switch(pre_info->status)
+            case DesignFlowStep_Status::ABORTED:
+            case DesignFlowStep_Status::EMPTY:
+            case DesignFlowStep_Status::SKIPPED:
+            case DesignFlowStep_Status::SUCCESS:
+            case DesignFlowStep_Status::UNCHANGED:
             {
-               case DesignFlowStep_Status::ABORTED:
-               case DesignFlowStep_Status::EMPTY:
-               case DesignFlowStep_Status::SKIPPED:
-               case DesignFlowStep_Status::SUCCESS:
-               case DesignFlowStep_Status::UNCHANGED:
-               {
-                  break;
-               }
-               case DesignFlowStep_Status::UNNECESSARY:
-               case DesignFlowStep_Status::UNEXECUTED:
-               {
-                  current_ready = false;
-                  break;
-               }
-               case DesignFlowStep_Status::NONEXISTENT:
-               {
-                  THROW_UNREACHABLE("Step with nonexitent status");
-                  break;
-               }
-               default:
-               {
-                  THROW_UNREACHABLE("");
-               }
+               break;
+            }
+            case DesignFlowStep_Status::UNNECESSARY:
+            case DesignFlowStep_Status::UNEXECUTED:
+            {
+               current_ready = false;
+               break;
+            }
+            case DesignFlowStep_Status::NONEXISTENT:
+            {
+               THROW_UNREACHABLE("Step with nonexitent status");
+               break;
+            }
+            default:
+            {
+               THROW_UNREACHABLE("");
             }
          }
       }
@@ -671,6 +670,7 @@ void DesignFlowManager::Exec()
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining successor " + design_flow_graph->GetDesignFlowStepInfo(target)->design_flow_step->GetName());
          bool target_ready = true;
+         InEdgeIterator ie, ie_end;
          for(boost::tie(ie, ie_end) = boost::in_edges(target, *design_flow_graph); ie != ie_end; ie++)
          {
             const vertex source = boost::source(*ie, *design_flow_graph);
@@ -718,6 +718,7 @@ void DesignFlowManager::Exec()
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked new ready steps");
       std::set<EdgeDescriptor> to_be_removeds;
+      InEdgeIterator ie, ie_end;
       for(boost::tie(ie, ie_end) = boost::in_edges(design_flow_graph->CGetDesignFlowGraphInfo()->exit, *design_flow_graph); ie != ie_end; ie++)
       {
          const auto source = boost::source(*ie, *design_flow_graph);
