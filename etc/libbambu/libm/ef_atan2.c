@@ -39,7 +39,7 @@ float __hide_ieee754_atan2f(float y, float x)
    GET_FLOAT_WORD(hy, y);
    iy = hy & 0x7fffffff;
    if(FLT_UWORD_IS_NAN(ix) || FLT_UWORD_IS_NAN(iy)) /* x or y is NaN */
-      return nanf("");
+      return __builtin_nanf("");
    if(hx == 0x3f800000)
       return atanf(y);                      /* x=1.0 */
    m = ((hy >> 31) & 1) | ((hx >> 30) & 2); /* 2*sign(x)+sign(y) */

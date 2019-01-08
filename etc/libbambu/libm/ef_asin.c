@@ -50,7 +50,7 @@ float __hide_ieee754_asinf(float x)
    }
    else if(ix > 0x3f800000)
    {                   /* |x|>= 1 */
-      return nanf(""); /* asin(|x|>1) is NaN */
+      return __builtin_nanf(""); /* asin(|x|>1) is NaN */
    }
    else if(ix < 0x3f000000)
    { /* |x|<0.5 */

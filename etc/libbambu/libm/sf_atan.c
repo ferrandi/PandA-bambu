@@ -64,7 +64,7 @@ float atanf(float x)
    if(ix >= 0x50800000)
    { /* if |x| >= 2^34 */
       if(FLT_UWORD_IS_NAN(ix))
-         return nanf(""); /* NaN */
+         return __builtin_nanf(""); /* NaN */
       if(hx > 0)
          return atanhi[3] + atanlo[3];
       else

@@ -46,7 +46,7 @@ float __hide_ieee754_fmodf(float x, float y)
 
    /* purge off exception values */
    if(FLT_UWORD_IS_ZERO(hy) || !FLT_UWORD_IS_FINITE(hx) || FLT_UWORD_IS_NAN(hy))
-      return nanf("");
+      return __builtin_nanf("");
    if(hx < hy)
       return x; /* |x|<|y| return x */
    if(hx == hy)

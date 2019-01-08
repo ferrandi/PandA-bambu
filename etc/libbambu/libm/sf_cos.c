@@ -36,7 +36,7 @@ static inline float __hide_local_cosf(float x)
       return __hide_kernel_cosf(x, z);
    /* cos(Inf or NaN) is NaN */
    else if(!FLT_UWORD_IS_FINITE(ix))
-      return nanf("");
+      return __builtin_nanf("");
    /* argument reduction needed */
    else
    {

@@ -62,7 +62,7 @@ float modff(float x, float* iptr)
       *iptr = x * one;
       /* We must handle NaNs separately.  */
       if(j0 == 0x80 && (i0 & 0x7fffff))
-         return nanf("");
+         return __builtin_nanf("");
       GET_FLOAT_WORD(ix, x);
       SET_FLOAT_WORD(x, ix & 0x80000000); /* return +-0 */
       return x;
