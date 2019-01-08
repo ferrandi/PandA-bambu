@@ -80,6 +80,9 @@ tree_manipulation::tree_manipulation(const tree_managerRef& _TreeM, const Parame
     : TreeM(_TreeM), reuse(_parameters->IsParameter("reuse_gimple") ? _parameters->GetParameter<bool>("reuse_gimple") : true), parameters(_parameters), debug_level(_parameters->get_class_debug_level(GET_CLASS(*this)))
 {
 }
+tree_manipulation::tree_manipulation(const tree_managerRef& _TreeM, const ParameterConstRef& _parameters, bool _reuse) : TreeM(_TreeM), reuse(_reuse), parameters(_parameters), debug_level(_parameters->get_class_debug_level(GET_CLASS(*this)))
+{
+}
 
 /// Destructor
 tree_manipulation::~tree_manipulation() = default;
@@ -2044,8 +2047,6 @@ tree_nodeRef tree_manipulation::create_function_decl(const std::string& function
 
 tree_nodeRef tree_manipulation::CreateOrExpr(const tree_nodeConstRef& first_condition, const tree_nodeConstRef& second_condition, const blocRef& block) const
 {
-   if(first_condition->index == second_condition->index)
-      return TreeM->GetTreeReindex(first_condition->index);
    if(block and reuse)
    {
       for(const auto& statement : block->CGetStmtList())
@@ -2101,8 +2102,6 @@ tree_nodeRef tree_manipulation::CreateOrExpr(const tree_nodeConstRef& first_cond
 
 tree_nodeRef tree_manipulation::CreateAndExpr(const tree_nodeConstRef& first_condition, const tree_nodeConstRef& second_condition, const blocRef& block) const
 {
-   if(first_condition->index == second_condition->index)
-      return TreeM->GetTreeReindex(first_condition->index);
    if(block and reuse)
    {
       for(const auto& statement : block->CGetStmtList())
