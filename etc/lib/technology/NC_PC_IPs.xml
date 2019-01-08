@@ -9,7 +9,7 @@
         <component_o id="SIMPLEJOIN_FU">
           <structural_type_descriptor id_type="SIMPLEJOIN_FU"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2012-2018 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2012-2019 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">

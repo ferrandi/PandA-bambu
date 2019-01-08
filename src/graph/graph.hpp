@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -274,7 +274,9 @@ struct graphs_collection : public boost_graphs_collection
    }
 
    /// Destructor
-   virtual ~graphs_collection() = default;
+   virtual ~graphs_collection()
+   {
+   }
 
    /**
     * Add a selector to an existing edge
@@ -809,7 +811,9 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
    friend boost::graph_traits<graph>::vertex_descriptor VERTEX(const boost::graph_traits<graph>::vertices_size_type, const graph&);
 
    /// Destructor
-   virtual ~graph() = default;
+   virtual ~graph()
+   {
+   }
 
    /**
     * return true in case the vertex is a vertex of the subgraph.
@@ -1287,7 +1291,9 @@ class VertexWriter
    /**
     * Destructor
     */
-   virtual ~VertexWriter() = default;
+   virtual ~VertexWriter()
+   {
+   }
 
    /**
     * Functor actually called by the boost library to perform the writing
@@ -1325,7 +1331,9 @@ class EdgeWriter
    /**
     * Destructor
     */
-   virtual ~EdgeWriter() = default;
+   virtual ~EdgeWriter()
+   {
+   }
 
    /**
     * Functor actually called by the boost library to perform the writing
@@ -1360,7 +1368,9 @@ class GraphWriter
    /**
     * Destructor
     */
-   virtual ~GraphWriter() = default;
+   virtual ~GraphWriter()
+   {
+   }
 
    /**
     * Functor acturally called by the boost library to perform the writing
@@ -1394,7 +1404,9 @@ class UVertexWriter
    /**
     * Destructor
     */
-   virtual ~UVertexWriter() = default;
+   virtual ~UVertexWriter()
+   {
+   }
 
    /**
     * Functor actually called by the boost library to perform the writing
@@ -1432,7 +1444,9 @@ class UEdgeWriter
    /**
     * Destructor
     */
-   virtual ~UEdgeWriter() = default;
+   virtual ~UEdgeWriter()
+   {
+   }
 
    /**
     * Functor actually called by the boost library to perform the writing

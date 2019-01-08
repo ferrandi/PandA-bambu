@@ -1,5 +1,5 @@
 /* 64-bit division and modulus
-   Copyright (c) 2004-2018 Politecnico di Milano
+   Copyright (C) 2004-2019 Politecnico di Milano
    This file is part of the HLS-FP Library.
 
    author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>

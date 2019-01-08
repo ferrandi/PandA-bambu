@@ -164,8 +164,10 @@ extern void abort(void);
 
 int main()
 {
+#if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
   uint32_t r = helper_neon_rshl_s8 (0x05050505, 0x01010101);
   if (r != 0x0a0a0a0a)
     abort ();
+#endif
   return 0;
 }

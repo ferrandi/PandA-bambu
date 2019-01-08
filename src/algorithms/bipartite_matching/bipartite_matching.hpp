@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -47,15 +47,17 @@
 #define BIPARTITE_MATCHING_HPP
 
 #include <cassert>
+#include <limits>
 #include <vector>
-
 /**
  * Base class functor used bipartite_matching to manage the costs
  */
 struct BM_cost_functor
 {
    /// Destructor
-   virtual ~BM_cost_functor() = default;
+   virtual ~BM_cost_functor()
+   {
+   }
 
    /**
     * This functor returns a cost given x and y
