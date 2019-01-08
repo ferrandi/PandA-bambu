@@ -193,7 +193,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
 
          std::list<tree_nodeRef> new_tree_nodes;
 
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining " + STR(*stmt));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining " + (*stmt)->ToString());
          auto next_stmt_ptr = std::next(stmt);
          tree_nodeRef next_stmt = std::next(stmt) != list_of_stmt.end() ? *(std::next(stmt)) : tree_nodeRef();
          tree_nodeRef first_stmt = *stmt;
@@ -334,11 +334,12 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          gimple_assign_schema[TOK(TOK_OP0)] = STR(ssa_node_nid);
          gimple_assign_schema[TOK(TOK_OP1)] = STR(cond_expr_id);
          TM->create_tree_node(gimple_node_id, gimple_assign_K, gimple_assign_schema);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(TM->GetTreeReindex(gimple_node_id)));
+         auto curr_stmt = TM->GetTreeReindex(gimple_node_id);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(curr_stmt));
          /// Set the bit value for the intermediate ssa to correctly update execution time
          GetPointer<ssa_name>(TM->get_tree_node_const(ssa_node_nid))->bit_values = GetPointer<ssa_name>(GET_NODE(first_ga->op0))->bit_values;
-         block.second->PushBefore(TM->GetTreeReindex(gimple_node_id), *stmt);
-         new_tree_nodes.push_back(TM->GetTreeReindex(gimple_node_id));
+         block.second->PushBefore(curr_stmt, *stmt);
+         new_tree_nodes.push_back(curr_stmt);
 
          /// Condition of the old root
          tree_nodeRef first_cond;
@@ -370,10 +371,17 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
             new_tree_nodes.push_back(not_second_cond_def);
          }
          /// Building the condition of the root cond expr
-         tree_nodeRef and_first_cond = tree_man->CreateAndExpr(first_cond, second_cond, blocRef());
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(GetPointer<ssa_name>(GET_NODE(and_first_cond))->CGetDefStmt()));
-         block.second->PushBefore(GetPointer<ssa_name>(GET_NODE(and_first_cond))->CGetDefStmt(), *stmt);
-         new_tree_nodes.push_back(GetPointer<ssa_name>(GET_NODE(and_first_cond))->CGetDefStmt());
+         tree_nodeRef and_first_cond;
+         if(first_cond->index == second_cond->index)
+            and_first_cond = first_cond;
+         else
+         {
+            and_first_cond = tree_man->CreateAndExpr(first_cond, second_cond, blocRef());
+            auto curStmt = GetPointer<ssa_name>(GET_NODE(and_first_cond))->CGetDefStmt();
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(curStmt));
+            block.second->PushBefore(curStmt, *stmt);
+            new_tree_nodes.push_back(curStmt);
+         }
 
          /// Inserting last cond expr
          cond_expr_schema.clear();
