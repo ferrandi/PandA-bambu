@@ -30,11 +30,3 @@ EXTRA_DIST = ./mcml/fixedptc.h \
 ./test_list
 
 
-#do not touch the following line
-
-
-TESTS = \
-   bambu_dfadd_sdc.sh
-
-
-
