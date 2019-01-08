@@ -1440,7 +1440,18 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         ae->op = mr;
                         restart_analysis = true;
                      }
-                     else if(ae_code != var_decl_K && ae_code != parm_decl_K && ae_code != function_decl_K && ae_code != string_cst_K)
+                     else if(ae_code == var_decl_K || ae_code == parm_decl_K || ae_code == function_decl_K || ae_code == string_cst_K)
+                     {
+                        if(code0 == ssa_name_K)
+                        {
+                           auto ssa_var = GetPointer<const ssa_name>(GET_NODE(ga->op0));
+                           if(ssa_var->use_set->variables.empty())
+                           {
+                              ssa_var->use_set->variables.push_back(ae->op);
+                           }
+                        }
+                     }
+                     else
                         THROW_ERROR("not supported " + GET_NODE(ae->op)->get_kind_text());
 
                         /// check missing cast
