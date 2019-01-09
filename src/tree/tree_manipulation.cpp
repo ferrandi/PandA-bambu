@@ -2523,7 +2523,12 @@ tree_nodeRef tree_manipulation::CreateGimpleAssignAddrExpr(const tree_nodeConstR
    auto addr_tn = CreateAddrExpr(tn, srcp);
    const auto type_node = tree_helper::CGetType(tn);
    const auto ptr_type = create_pointer_type(type_node);
-   return CreateGimpleAssign(ptr_type, addr_tn, bb_index, srcp);
+   auto assign_node = CreateGimpleAssign(ptr_type, addr_tn, bb_index, srcp);
+   auto ga = GetPointer<gimple_assign>(GET_NODE(assign_node));
+   auto ssa = GetPointer<ssa_name>(GET_NODE(ga->op0));
+   ssa->use_set = PointToSolutionRef(new PointToSolution());
+   ssa->use_set->Add(TreeM->CGetTreeReindex(tn->index));
+   return assign_node;
 }
 
 tree_nodeRef tree_manipulation::CreateVectorBooleanType(const unsigned int number_of_elements) const
