@@ -6014,18 +6014,6 @@ CREATE_TREE_NODE_CLASS(widen_mult_expr, binary_expr);
  * This struct specifies the lut_expr node.
  *
  */
-struct lut_expr : public binary_expr
-{
-   GET_KIND_TEXT(lut_expr)
-   GET_KIND(lut_expr)
-   void visit(tree_node_visitor* const v) const override;
-   enum
-   {
-      GETID(binary_expr) = 0
-   };
-   explicit lut_expr(unsigned int i) : binary_expr(i)
-   {
-   }
-};
+CREATE_TREE_NODE_CLASS(lut_expr, binary_expr);
 
 #endif
