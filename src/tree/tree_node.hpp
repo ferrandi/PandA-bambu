@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -151,7 +151,9 @@ class tree_node
    }
 
    /// Destructor
-   virtual ~tree_node() = default;
+   virtual ~tree_node()
+   {
+   }
 
    /**
     * Virtual function returning the type of the actual class
@@ -6012,18 +6014,6 @@ CREATE_TREE_NODE_CLASS(widen_mult_expr, binary_expr);
  * This struct specifies the lut_expr node.
  *
  */
-struct lut_expr : public binary_expr
-{
-   GET_KIND_TEXT(lut_expr)
-   GET_KIND(lut_expr)
-   void visit(tree_node_visitor* const v) const override;
-   enum
-   {
-      GETID(binary_expr) = 0
-   };
-   explicit lut_expr(unsigned int i) : binary_expr(i)
-   {
-   }
-};
+CREATE_TREE_NODE_CLASS(lut_expr, binary_expr);
 
 #endif

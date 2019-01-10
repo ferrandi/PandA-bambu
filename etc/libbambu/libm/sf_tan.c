@@ -37,7 +37,7 @@ float tanf(float x)
 
    /* tan(Inf or NaN) is NaN */
    else if(!FLT_UWORD_IS_FINITE(ix))
-      return nanf(""); /* NaN */
+      return __builtin_nanf(""); /* NaN */
 
    /* argument reduction needed */
    else

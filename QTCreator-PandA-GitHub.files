@@ -522,6 +522,7 @@ etc/libbambu/ac_types/include/ac_int.h
 etc/libbambu/ac_types/include/ac_sc.h
 etc/libbambu/ac_types/include/ap_fixed.h
 etc/libbambu/ac_types/include/ap_int.h
+etc/libbambu/ac_types/include/ap_shift_reg.h
 etc/libbambu/assert.c
 etc/libbambu/bambu_macros.h
 etc/libbambu/byteswap.c
@@ -1425,6 +1426,8 @@ src/HLS/stg/state_transition_graph_manager.cpp
 src/HLS/stg/state_transition_graph_manager.hpp
 src/HLS/vcd/CallGraphUnfolder.cpp
 src/HLS/vcd/CallGraphUnfolder.hpp
+src/HLS/vcd/CallGraphUnfolding.cpp
+src/HLS/vcd/CallGraphUnfolding.hpp
 src/HLS/vcd/CallSitesCollectorVisitor.cpp
 src/HLS/vcd/CallSitesCollectorVisitor.hpp
 src/HLS/vcd/Discrepancy.hpp
@@ -1432,6 +1435,8 @@ src/HLS/vcd/HWCallPathCalculator.cpp
 src/HLS/vcd/HWCallPathCalculator.hpp
 src/HLS/vcd/HWDiscrepancyAnalysis.cpp
 src/HLS/vcd/HWDiscrepancyAnalysis.hpp
+src/HLS/vcd/HWPathComputation.cpp
+src/HLS/vcd/HWPathComputation.hpp
 src/HLS/vcd/UnfoldedCallGraph.hpp
 src/HLS/vcd/UnfoldedCallInfo.hpp
 src/HLS/vcd/UnfoldedFunctionInfo.hpp
@@ -1525,9 +1530,12 @@ src/constants/copyrights_strings.hpp
 src/constants/data_xml.hpp
 src/constants/experimental_setup_xml.hpp
 src/constants/file_IO_constants.hpp
+src/constants/host_profiling_constants.hpp
+src/constants/host_profiling_xml.hpp
 src/constants/latex_table_constants.hpp
 src/constants/latex_table_xml.hpp
 src/constants/pragma_constants.hpp
+src/constants/synthesis_constants.hpp
 src/constants/taste_constants.hpp
 src/constants/technology_xml.hpp
 src/constants/treegcc_constants.hpp
@@ -1543,10 +1551,16 @@ src/design_flows/backend/ToC/progModels/actor_graph_backend.cpp
 src/design_flows/backend/ToC/progModels/actor_graph_backend.hpp
 src/design_flows/backend/ToC/progModels/c_backend.cpp
 src/design_flows/backend/ToC/progModels/c_backend.hpp
+src/design_flows/backend/ToC/source_code_writers/basic_blocks_profiling_c_writer.cpp
+src/design_flows/backend/ToC/source_code_writers/basic_blocks_profiling_c_writer.hpp
 src/design_flows/backend/ToC/source_code_writers/c_writer.cpp
 src/design_flows/backend/ToC/source_code_writers/c_writer.hpp
 src/design_flows/backend/ToC/source_code_writers/discrepancy_analysis_c_writer.cpp
 src/design_flows/backend/ToC/source_code_writers/discrepancy_analysis_c_writer.hpp
+src/design_flows/backend/ToC/source_code_writers/discrepancy_instruction_writer.cpp
+src/design_flows/backend/ToC/source_code_writers/discrepancy_instruction_writer.hpp
+src/design_flows/backend/ToC/source_code_writers/edge_c_writer.cpp
+src/design_flows/backend/ToC/source_code_writers/edge_c_writer.hpp
 src/design_flows/backend/ToC/source_code_writers/hls_c_writer.cpp
 src/design_flows/backend/ToC/source_code_writers/hls_c_writer.hpp
 src/design_flows/backend/ToC/source_code_writers/hls_instruction_writer.cpp
@@ -1749,6 +1763,8 @@ src/frontend_analysis/behavior_analysis/add_op_phi_flow_edges.cpp
 src/frontend_analysis/behavior_analysis/add_op_phi_flow_edges.hpp
 src/frontend_analysis/behavior_analysis/aggregate_data_flow_analysis.cpp
 src/frontend_analysis/behavior_analysis/aggregate_data_flow_analysis.hpp
+src/frontend_analysis/behavior_analysis/basic_blocks_profiling.cpp
+src/frontend_analysis/behavior_analysis/basic_blocks_profiling.hpp
 src/frontend_analysis/behavior_analysis/bb_cdg_computation.cpp
 src/frontend_analysis/behavior_analysis/bb_cdg_computation.hpp
 src/frontend_analysis/behavior_analysis/bb_feedback_edges_computation.cpp
@@ -1761,6 +1777,8 @@ src/frontend_analysis/behavior_analysis/data_dependence_computation.cpp
 src/frontend_analysis/behavior_analysis/data_dependence_computation.hpp
 src/frontend_analysis/behavior_analysis/dom_post_dom_computation.cpp
 src/frontend_analysis/behavior_analysis/dom_post_dom_computation.hpp
+src/frontend_analysis/behavior_analysis/host_profiling.cpp
+src/frontend_analysis/behavior_analysis/host_profiling.hpp
 src/frontend_analysis/behavior_analysis/loops_computation.cpp
 src/frontend_analysis/behavior_analysis/loops_computation.hpp
 src/frontend_analysis/behavior_analysis/memory_data_flow_analysis.cpp

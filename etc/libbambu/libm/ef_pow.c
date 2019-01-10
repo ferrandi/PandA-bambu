@@ -84,7 +84,7 @@ float __hide_ieee754_powf(float x, float y)
 
    /* x|y==NaN return NaN unless x==1 then return 1 */
    if(FLT_UWORD_IS_NAN(ix) || FLT_UWORD_IS_NAN(iy))
-      return nanf("");
+      return __builtin_nanf("");
 
    /* determine if y is an odd int when x < 0
     * yisint = 0	... y is not an integer
@@ -141,7 +141,7 @@ float __hide_ieee754_powf(float x, float y)
       {
          if(((ix - 0x3f800000) | yisint) == 0)
          {
-            z = nanf(""); /* (-1)**non-int is NaN */
+            z = __builtin_nanf(""); /* (-1)**non-int is NaN */
          }
          else if(yisint == 1)
             z = -z; /* (x<0)**odd = -(|x|**odd) */
@@ -151,7 +151,7 @@ float __hide_ieee754_powf(float x, float y)
 
    /* (x<0)**(non-int) is NaN */
    if(((((unsigned)hx >> 31) - 1) | yisint) == 0)
-      return nanf("");
+      return __builtin_nanf("");
 
    /* |y| is huge */
    if(iy > 0x4d000000)

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -130,6 +130,7 @@ class tree_manipulation
     * @param parameters is the set of input parameters
     */
    tree_manipulation(const tree_managerRef& TreeM, const ParameterConstRef& parameters);
+   tree_manipulation(const tree_managerRef& TreeM, const ParameterConstRef& parameters, bool _reuse);
 
    /**
     * This is the destructor of the tree_manipulation.

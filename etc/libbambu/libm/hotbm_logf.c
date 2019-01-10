@@ -1,4 +1,4 @@
-/* Copyright (C) 2016-2018 Politecnico di Milano (Italy).
+/* Copyright (C) 2016-2019 Politecnico di Milano (Italy).
    This file is part of the HLS-FP Library.
 
    The HLS-FP Library is free software; you can redistribute it and/or
@@ -462,14 +462,14 @@ float ADD_BUILTIN_PREFIX(logf)(float x)
    if(fpX == 0x7F800000)
       return __builtin_inff();
    if(fpX == 0xFF800000)
-      return nanf("");
+      return __builtin_nanf("");
    if(e == 255)
    {
       func_in.b |= (0x7FC << 20);
       return func_in.f;
    }
    if(s == 1)
-      return nanf("");
+      return __builtin_nanf("");
    if(fpX == 0x3F800000)
       return 0;
 

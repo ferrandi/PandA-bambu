@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -92,7 +92,9 @@ struct priority_data
    /**
     * Destructor.
     */
-   virtual ~priority_data() = default;
+   virtual ~priority_data()
+   {
+   }
 
  private:
    /// data structure storing the priority values.

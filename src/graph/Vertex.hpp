@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,7 +66,9 @@ struct vertex2obj : public std::map<vertex, data_obj>
    /**
     * Destructor.
     */
-   virtual ~vertex2obj() = default;
+   virtual ~vertex2obj()
+   {
+   }
 
    /**
     * Function that print the information associated with a vertex.

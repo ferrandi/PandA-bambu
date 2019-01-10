@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -401,7 +401,9 @@ class structural_object
    structural_object(int debug_level, const structural_objectRef o);
 
    /// virtual destructor
-   virtual ~structural_object() = default;
+   virtual ~structural_object()
+   {
+   }
 
    /**
     * Return the owner.

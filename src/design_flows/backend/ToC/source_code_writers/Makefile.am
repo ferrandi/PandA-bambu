@@ -40,12 +40,14 @@ if BUILD_BAMBU
    noinst_HEADERS += \
       hls_c_writer.hpp \
       hls_instruction_writer.hpp\
-      discrepancy_analysis_c_writer.hpp
+      discrepancy_analysis_c_writer.hpp\
+      discrepancy_instruction_writer.hpp
 
    lib_source_code_writers_la_SOURCES += \
       hls_c_writer.cpp \
       hls_instruction_writer.cpp\
-      discrepancy_analysis_c_writer.cpp
+      discrepancy_analysis_c_writer.cpp\
+      discrepancy_instruction_writer.cpp
 
    lib_source_code_writers_la_CPPFLAGS += \
       -I$(top_srcdir)/src/circuit \

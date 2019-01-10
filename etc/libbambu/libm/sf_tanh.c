@@ -39,7 +39,7 @@ float tanhf(float x)
       if(jx >= 0)
          return one / x + one; /* tanh(+-inf)=+-1 */
       else
-         return nanf(""); /* tanh(NaN) = NaN */
+         return __builtin_nanf(""); /* tanh(NaN) = NaN */
    }
 
    /* |x| < 22 */

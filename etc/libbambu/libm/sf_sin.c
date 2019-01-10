@@ -37,7 +37,7 @@ static inline float __hide_local_sinf(float x)
 
    /* sin(Inf or NaN) is NaN */
    else if(!FLT_UWORD_IS_FINITE(ix))
-      return nanf("");
+      return __builtin_nanf("");
 
    /* argument reduction needed */
    else

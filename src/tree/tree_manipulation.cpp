@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -78,6 +78,9 @@ unsigned int tree_manipulation::goto_label_unique_id = 0;
 /// Constructor
 tree_manipulation::tree_manipulation(const tree_managerRef& _TreeM, const ParameterConstRef& _parameters)
     : TreeM(_TreeM), reuse(_parameters->IsParameter("reuse_gimple") ? _parameters->GetParameter<bool>("reuse_gimple") : true), parameters(_parameters), debug_level(_parameters->get_class_debug_level(GET_CLASS(*this)))
+{
+}
+tree_manipulation::tree_manipulation(const tree_managerRef& _TreeM, const ParameterConstRef& _parameters, bool _reuse) : TreeM(_TreeM), reuse(_reuse), parameters(_parameters), debug_level(_parameters->get_class_debug_level(GET_CLASS(*this)))
 {
 }
 
@@ -2044,8 +2047,6 @@ tree_nodeRef tree_manipulation::create_function_decl(const std::string& function
 
 tree_nodeRef tree_manipulation::CreateOrExpr(const tree_nodeConstRef& first_condition, const tree_nodeConstRef& second_condition, const blocRef& block) const
 {
-   if(first_condition->index == second_condition->index)
-      return TreeM->GetTreeReindex(first_condition->index);
    if(block and reuse)
    {
       for(const auto& statement : block->CGetStmtList())
@@ -2101,8 +2102,6 @@ tree_nodeRef tree_manipulation::CreateOrExpr(const tree_nodeConstRef& first_cond
 
 tree_nodeRef tree_manipulation::CreateAndExpr(const tree_nodeConstRef& first_condition, const tree_nodeConstRef& second_condition, const blocRef& block) const
 {
-   if(first_condition->index == second_condition->index)
-      return TreeM->GetTreeReindex(first_condition->index);
    if(block and reuse)
    {
       for(const auto& statement : block->CGetStmtList())
@@ -2524,7 +2523,12 @@ tree_nodeRef tree_manipulation::CreateGimpleAssignAddrExpr(const tree_nodeConstR
    auto addr_tn = CreateAddrExpr(tn, srcp);
    const auto type_node = tree_helper::CGetType(tn);
    const auto ptr_type = create_pointer_type(type_node);
-   return CreateGimpleAssign(ptr_type, addr_tn, bb_index, srcp);
+   auto assign_node = CreateGimpleAssign(ptr_type, addr_tn, bb_index, srcp);
+   auto ga = GetPointer<gimple_assign>(GET_NODE(assign_node));
+   auto ssa = GetPointer<ssa_name>(GET_NODE(ga->op0));
+   ssa->use_set = PointToSolutionRef(new PointToSolution());
+   ssa->use_set->Add(TreeM->CGetTreeReindex(tn->index));
+   return assign_node;
 }
 
 tree_nodeRef tree_manipulation::CreateVectorBooleanType(const unsigned int number_of_elements) const

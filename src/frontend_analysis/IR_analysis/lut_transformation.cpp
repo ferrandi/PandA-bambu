@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -279,7 +279,23 @@ std::vector<tree_nodeRef> lut_transformation::GetInputs(const tree_nodeRef nodeR
       {
          // If it's a concat i have to call the function on the two operand
          auto* concat = GetPointer<bit_ior_concat_expr>(node);
-         std::vector<tree_nodeRef> inputsOp0 = GetInputs(concat->op0);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---op0=" + GET_NODE(concat->op0)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---op1=" + GET_NODE(concat->op1)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---op2=" + GET_NODE(concat->op2)->ToString());
+         std::vector<tree_nodeRef> inputsOp0;
+         if(GET_NODE(concat->op0)->get_kind() == integer_cst_K)
+         {
+            auto op0_ic = GetPointer<integer_cst>(GET_NODE(concat->op0));
+            auto op0_val = tree_helper::get_integer_cst_value(op0_ic);
+            auto op2_ic = GetPointer<integer_cst>(GET_NODE(concat->op2));
+            auto op2_val = tree_helper::get_integer_cst_value(op2_ic);
+            auto res_val = op0_val >> op2_val;
+            THROW_ASSERT(res_val <= 1, "unexpected condition");
+            unsigned int res_id = TM->new_tree_node_id();
+            inputsOp0.push_back(tree_man->CreateIntegerCst(op0_ic->type, res_val, res_id));
+         }
+         else
+            inputsOp0 = GetInputs(concat->op0);
          std::vector<tree_nodeRef> inputsOp1 = GetInputs(concat->op1);
          allInputs.insert(allInputs.end(), inputsOp0.begin(), inputsOp0.end());
          allInputs.insert(allInputs.end(), inputsOp1.begin(), inputsOp1.end());

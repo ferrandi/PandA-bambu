@@ -35,12 +35,12 @@ float __hide_ieee754_sqrtf(float x)
    GET_FLOAT_WORD(ix, x);
    hx = ix & 0x7fffffff;
    if(FLT_UWORD_IS_NAN(hx)) /* sqrt(NaN)=NaN */
-      return nanf("");
+      return __builtin_nanf("");
    /* take care of zero and -ves */
    if(FLT_UWORD_IS_ZERO(hx))
       return x; /* sqrt(+-0) = +-0 */
    if(ix < 0)
-      return nanf(""); /* sqrt(-ve) = sNaN */
+      return __builtin_nanf(""); /* sqrt(-ve) = sNaN */
    /* take care of +Inf  */
    if(!FLT_UWORD_IS_FINITE(hx))
       return __builtin_inff(); /* sqrt(+inf)=+inf */

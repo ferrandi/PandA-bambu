@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2014-2018 Politecnico di Milano
+ *              Copyright (C) 2014-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *

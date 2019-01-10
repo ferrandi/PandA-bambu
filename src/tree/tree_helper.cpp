@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -5746,9 +5746,13 @@ std::string tree_helper::print_type(const tree_managerConstRef& TM, unsigned int
          {
             res += print_type(TM, GET_INDEX_NODE(ft->prms), global, true);
          }
-         if(ft->varargs_flag)
+         if(ft->varargs_flag && ft->prms)
          {
             res += ", ... ";
+         }
+         else if(ft->varargs_flag)
+         {
+            THROW_ERROR("ISO C requires a named parameter before '...'");
          }
          res += ")";
          skip_var_printing = true;

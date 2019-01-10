@@ -53,7 +53,7 @@ float __hide_ieee754_acosf(float x)
    }
    else if(ix > 0x3f800000)
    {                   /* |x| >= 1 */
-      return nanf(""); /* acos(|x|>1) is NaN */
+      return __builtin_nanf(""); /* acos(|x|>1) is NaN */
    }
    if(ix < 0x3f000000)
    { /* |x| < 0.5 */

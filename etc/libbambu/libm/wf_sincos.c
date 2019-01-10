@@ -25,7 +25,7 @@ void sincosf(float x, float* sinx, float* cosx)
    else if(!FLT_UWORD_IS_FINITE(ix))
    {
       /* sin(Inf or NaN) is NaN */
-      *sinx = *cosx = nanf("");
+      *sinx = *cosx = __builtin_nanf("");
    }
    else
    {
@@ -75,7 +75,7 @@ void sincos(double x, double* sinx, double* cosx)
    else if(!FLT_UWORD_IS_FINITE(ix))
    {
       /* sin(Inf or NaN) is NaN */
-      *sinx = *cosx = nanf("");
+      *sinx = *cosx = __builtin_nanf("");
    }
    else
    {
@@ -126,8 +126,8 @@ float _Complex cexpif(float x)
    else if(!FLT_UWORD_IS_FINITE(ix))
    {
       /* sin(Inf or NaN) is NaN */
-      __imag__ Res = nanf("");
-      __real__ Res = nanf("");
+      __imag__ Res = __builtin_nanf("");
+      __real__ Res = __builtin_nanf("");
    }
    else
    {

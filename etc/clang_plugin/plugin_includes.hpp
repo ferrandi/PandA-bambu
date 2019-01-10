@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018 Politecnico di Milano
+ *              Copyright (C) 2018-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -320,7 +320,7 @@ namespace llvm
          bool escaped;
          bool ipa_escaped;
          bool null;
-         std::list<const void*> vars;
+         std::set<const void*> vars;
          pt_solution() : anything(false), nonlocal(false), escaped(false), ipa_escaped(false), null(false)
          {
          }

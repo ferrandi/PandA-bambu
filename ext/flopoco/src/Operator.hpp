@@ -105,7 +105,7 @@ public:
 
 	/** Operator Destructor.
 	 */	
-	virtual ~Operator() = default;
+    virtual ~Operator() {}
 
 
  /*****************************************************************************/
