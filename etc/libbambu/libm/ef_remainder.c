@@ -39,7 +39,7 @@ float __hide_ieee754_remainderf(float x, float p)
 
    /* purge off exception values */
    if(FLT_UWORD_IS_ZERO(hp) || !FLT_UWORD_IS_FINITE(hx) || FLT_UWORD_IS_NAN(hp))
-      return nanf("");
+      return __builtin_nanf("");
 
    if(hp <= FLT_UWORD_HALF_MAX)
       x = __hide_ieee754_fmodf(x, p + p); /* now x < 2p */

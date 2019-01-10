@@ -169,7 +169,7 @@ int __hide_ieee754_rem_pio2f(float x, float* y)
     */
    if(!FLT_UWORD_IS_FINITE(ix))
    {
-      y[0] = y[1] = nanf("");
+      y[0] = y[1] = __builtin_nanf("");
       return 0;
    }
    /* set z = scalbn(|x|,ilogb(x)-7) */

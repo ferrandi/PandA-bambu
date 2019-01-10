@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -1178,7 +1178,7 @@ DesignFlowStep_Status allocation::InternalExec()
             var = tree_helper::get_base_index(TreeM, GET_INDEX_NODE(me->op0));
          else
             var = tree_helper::get_base_index(TreeM, GET_INDEX_NODE(me->op1));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variable is " + (var != 0 ? STR(TreeM->CGetTreeNode(var)) : "0"));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variable is " + (var != 0 ? TreeM->CGetTreeNode(var)->ToString() : "0"));
          if(var == 0 ||
             (function_vars.find(var) == function_vars.end() && (!HLSMgr->Rmem->has_proxied_internal_variables(funId) || HLSMgr->Rmem->get_proxied_internal_variables(funId).find(var) == HLSMgr->Rmem->get_proxied_internal_variables(funId).end())))
          {

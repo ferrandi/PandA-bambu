@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -106,7 +106,9 @@ class object_visitor
 {
  public:
    /// destructor
-   virtual ~object_visitor() = default;
+   virtual ~object_visitor()
+   {
+   }
    /**
     * virtual template object functor
     * @param obj is the object visited

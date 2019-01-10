@@ -303,11 +303,11 @@ In the following the current Bambu options are reported:
                          Politecnico di Milano - DEIB
                           System Architectures Group
 ********************************************************************************
-                Copyright (c) 2004-2016 Politecnico di Milano
-Version: PandA 0.9.4
+                Copyright (c) 2004-2019 Politecnico di Milano
+Version: PandA 0.9.6
 
 Usage:
-       bambu [Options] &lt;source_file&gt; [&lt;constraints_file&gt;] [&lt;technology_file&gt;]
+       bambu [Options] <source_file> [<constraints_file>] [<technology_file>]
 
 Options:
 
@@ -319,12 +319,18 @@ Options:
     --version, -V
         Display the version of the program.
 
+    --read-parameters-XML=<xml_file_name>
+        Read command line options from a XML file.
+
+    --write-parameters-XML=<xml_file_name>
+        Dump the parsed command line options into a XML file.
+
 
   Output options:
 
-    --verbosity, -v &lt;level&gt;
+    --verbosity, -v <level>
         Set the output verbosity level
-        Possible values for &lt;level&gt;:
+        Possible values for <level>:
             0 - NONE
             1 - MINIMUM
             2 - VERBOSE
@@ -332,14 +338,30 @@ Options:
             4 - VERY PEDANTIC
         (default = 1)
 
+    --debug, -d <level>
+        Set the verbosity level of debugging information
+        Possible values for <level>:
+            0 - NONE
+            1 - MINIMUM
+            2 - VERBOSE
+            3 - PEDANTIC
+            4 - VERY PEDANTIC
+        (default = 1).
+
+    --debug-classes=<classes_list>
+        Set maximum debug level for classes in <classes_list>
+
+    --cfg-max-transformations=<number>
+        Set a maximum number of cfg transformations for each function.
+
     --no-clean
         Do not remove temporary files.
 
-    --benchmark-name=&lt;name&gt;
+    --benchmark-name=<name>
         Set the name of the current benchmark for data collection.
         Mainly useful for data collection from extensive regression tests.
 
-    --configuration-name=&lt;name&gt;
+    --configuration-name=<name>
         Set the name of the current tool configuration for data collection.
         Mainly useful for data collection from extensive regression tests.
 
@@ -348,7 +370,7 @@ Options:
         string are not actually used, but they are used for data collection in
         extensive regression tests.
 
-    --output-temporary-directory=&lt;path&gt;
+    --output-temporary-directory=<path>
         Set the directory where temporary files are saved.
         Default is 'panda-temp'
 
@@ -356,10 +378,13 @@ Options:
         Dump to file several different graphs used in the IR of the tool.
         The graphs are saved in .dot files, in graphviz format
 
-    --pretty-print=&lt;file&gt;
+    --error-on-warning
+        Convert all runtime warnings to errors.
+
+    --pretty-print=<file>
         C-based pretty print of the internal IR.
 
-    --writer,-w&lt;language&gt;
+    --writer,-w<language>
         Output RTL language:
             V - Verilog (default)
             H - VHDL
@@ -367,84 +392,93 @@ Options:
     --no-mixed-design
         Avoid mixed design.
 
-    --generate-tb=&lt;file&gt;
+    --generate-tb=<file>
         Generate testbench for the input values defined in the specified XML
         file.
 
-    --top-fname=&lt;fun_name&gt;
+    --top-fname=<fun_name>
         Define the top function to be synthesized.
 
-    --top-rtldesign-name=&lt;top_name&gt;
+    --top-rtldesign-name=<top_name>
         Define the top module name for the RTL backend.
 
-    --file-input-data=&lt;file_list&gt;
+    --file-input-data=<file_list>
         A comma-separated list of input files used by the C specification.
 
-    --C-no-parse=&lt;file&gt;
+    --C-no-parse=<file>
         Specify a comma-separated list of C files used only during the
         co-simulation phase.
 
 
   GCC options:
 
-    --compiler=&lt;gcc_version&gt;
+    --compiler=<compiler_version>
         Specify which compiler is used.
-        Possible values for &lt;processor&gt;:
-            I386_GCC45
-            I386_GCC46
-            I386_GCC47
+        Possible values for <compiler_version> are:
             I386_GCC48
             I386_GCC49
             I386_GCC5
+            I386_GCC6
+            I386_GCC7
+            I386_GCC8
+            I386_CLANG4
+            I386_CLANG5
+            I386_CLANG6
 
-    -O&lt;level&gt;
+    -O<level>
         Enable a specific optimization level. Possible values are the usual
         optimization flags accepted by compilers, plus some others:
         -O0,-O1,-O2,-O3,-Os,-O4,-O5.
 
-    -f&lt;option&gt;
+    -f<option>
         Enable or disable a GCC optimization option. All the -f or -fno options
         are supported. In particular, -ftree-vectorize option triggers the
         high-level synthesis of vectorized operations.
 
-    -I&lt;path&gt;
+    -I<path>
         Specify a path where headers are searched for.
 
-    -W&lt;warning&gt;
+    -W<warning>
         Specify a warning option passed to GCC. All the -W options available in
         GCC are supported.
 
     -E
         Enable preprocessing mode of GCC.
 
-    --std=&lt;standard&gt;
-        Assume that the input sources are for &lt;standard&gt; (default=gnu89). All
+    --std=<standard>
+        Assume that the input sources are for <standard>. All
         the --std options available in GCC are supported.
 
-    -D&lt;name&gt;
+    -D<name>
         Predefine name as a macro, with definition 1.
 
     -D<name=definition>
         Tokenize <definition> and process as if it appeared as a #define directive.
 
-    -U&lt;name&gt;
-        Remove existing definition for macro &lt;name&gt;.
+    -U<name>
+        Remove existing definition for macro <name>.
 
-    --param &lt;name&gt;=&lt;value&gt;
-        Set the amount &lt;value&gt; for the GCC parameter &lt;name&gt; that could be used for
+    --param <name>=<value>
+        Set the amount <value> for the GCC parameter <name> that could be used for
         some optimizations.
 
-    -l&lt;library&gt;
-        Search the library named &lt;library&gt; when linking.
+    -l<library>
+        Search the library named <library> when linking.
 
-    -L&lt;dir&gt;
-        Add directory &lt;dir&gt; to the list of directories to be searched for -l.
+    -L<dir>
+        Add directory <dir> to the list of directories to be searched for -l.
 
     --use-raw
-        Specify that input file is already a GIMPLE file and not a source file.
+        Specify that input file is already a raw file and not a source file.
 
-    -m&lt;machine-option&gt;
-        Specify machine dependent options (currently not used).
+    -m<machine-option>
+        Specify machine dependend options (currently not used).
+
+    --read-GCC-XML=<xml_file_name>
+        Read GCC options from a XML file.
+
+    --write-GCC-XML=<xml_file_name>
+        Dump the parsed GCC compiler options into a XML file.
 
     --Include-sysdir
         Return the system include directory used by the wrapped GCC compiler.
@@ -452,27 +486,32 @@ Options:
     --gcc-config
         Return the GCC configuration.
 
+    --compute-sizeof
+        Replace sizeof with the computed valued for the considered target
+        architecture.
+
     --extra-gcc-options
         Specify custom extra options to the compiler.
 
 
   Target:
 
-    --target-file=file, -b&lt;file&gt;
+    --target-file=file, -b<file>
         Specify an XML description of the target device.
 
-    --generate-interface=&lt;type&gt;
+    --generate-interface=<type>
         Wrap the top level module with an external interface.
-        Possible values for &lt;type&gt; and related interfaces:
-            minimal  -  (minimal interface - default)
+        Possible values for <type> and related interfaces:
+            MINIMAL  -  (minimal interface - default)
+            INFER    -  (top function is built with an hardware interface inferred from the pragmas or from the top function signature)
             WB4      -  (WishBone 4 interface)
 
 
-  High Level Synthesis:
+  Scheduling:
 
-    --parametric-list-based[=&lt;type&gt;]
+    --parametric-list-based[=<type>]
         Perform priority list-based scheduling. This is the default scheduling algorithm
-        in bambu. The optional &lt;type&gt; argument can be used to set options for
+        in bambu. The optional <type> argument can be used to set options for
         list-based scheduling as follows:
             0 - Dynamic mobility (default)
             1 - Static mobility
@@ -484,7 +523,7 @@ Options:
     --speculative-sdc-scheduling
         Perform scheduling by using speculative sdc.
 
-    --fixed-scheduling=&lt;file&gt;
+    --fixed-scheduling=<file>
         Provide scheduling as an XML file.
 
     --no-chaining
@@ -493,19 +532,22 @@ Options:
 
   Binding:
 
-    --register-allocation=&lt;type&gt;
+    --register-allocation=<type>
         Set the algorithm used for register allocation. Possible values for the
-        &lt;type&gt; argument are the following:
-            WEIGHTED_COLORING   - use weighted coloring algorithm (default)
+        <type> argument are the following:
+            WEIGHTED_TS        - solve the weighted clique covering problem by
+                                 exploiting the Tseng&Siewiorek heuristics
+                                 (default)
+            WEIGHTED_COLORING   - use weighted coloring algorithm
             COLORING            - use simple coloring algorithm
             CHORDAL_COLORING    - use chordal coloring algorithm
             BIPARTITE_MATCHING  - use bipartite matching algorithm
             TTT_CLIQUE_COVERING - use a weighted clique covering algorithm
             UNIQUE_BINDING      - unique binding algorithm
 
-    --module-binding=&lt;type&gt;
+    --module-binding=<type>
         Set the algorithm used for module binding. Possible values for the
-        &lt;type&gt; argument are one the following:
+        <type> argument are one the following:
             WEIGHTED_TS        - solve the weighted clique covering problem by
                                  exploiting the Tseng&Siewiorek heuristics
                                  (default)
@@ -534,7 +576,7 @@ Options:
 
   Memory allocation:
 
-    --memory-allocation=&lt;type&gt;
+    --memory-allocation=<type>
         Set the algorithm used for memory allocation. Possible values for the
         type argument are the following:
             DOMINATOR          - all local variables, static variables and
@@ -542,11 +584,11 @@ Options:
             XML_SPECIFICATION  - import the memory allocation from an XML
                                  specification
 
-    --xml-memory-allocation=&lt;xml_file_name&gt;
+    --xml-memory-allocation=<xml_file_name>
         Specify the file where the XML configuration has been defined.
 
-    --memory-allocation-policy=&lt;type&gt;
-        Set the policy for memory allocation. Possible values for the &lt;type&gt;
+    --memory-allocation-policy=<type>
+        Set the policy for memory allocation. Possible values for the <type>
         argument are the following:
             ALL_BRAM           - all objects that need to be stored in memory
                                  are allocated on BRAMs (default)
@@ -567,9 +609,9 @@ Options:
         Define the starting address for the objects allocated internally to the
         top module.
 
-   --channels-type=&lt;type&gt;
+   --channels-type=<type>
         Set the type of memory connections.
-        Possible values for &lt;type&gt; are:
+        Possible values for <type> are:
             MEM_ACC_11 - the accesses to the memory have a single direct
                          connection or a single indirect connection (default)
             MEM_ACC_N1 - the accesses to the memory have n parallel direct
@@ -577,12 +619,12 @@ Options:
             MEM_ACC_NN - the accesses to the memory have n parallel direct
                          connections or n parallel indirect connections
 
-   --channels-number=&lt;n&gt;
+   --channels-number=<n>
         Define the number of parallel direct or indirect accesses.
 
    --memory-ctrl-type=type
         Define which type of memory controller is used. Possible values for the
-        &lt;type&gt; argument are the following:
+        <type> argument are the following:
             D00 - no extra delay (default)
             D10 - 1 clock cycle extra-delay for LOAD, 0 for STORE
             D11 - 1 clock cycle extra-delay for LOAD, 1 for STORE
@@ -591,7 +633,7 @@ Options:
     --sparse-memory[=on/off]
         Control how the memory allocation happens.
             on - allocate the data in addresses which reduce the decoding logic (default)
-            off - allocate the data in a contiguous addresses.
+           off - allocate the data in a contiguous addresses.
 
     --do-not-use-asynchronous-memories
         Do not add asynchronous memories to the possible set of memories used
@@ -609,15 +651,21 @@ Options:
 
     --aligned-access
         Assume that all accesses are aligned and so only memories supporting aligned
+
         accesses are used.
 
     --do-not-chain-memories
         When enabled LOADs and STOREs will not be chained with other
         operations.
 
-    --bram-high-latency
+    --rom-duplication
+        Assume that read-only memories can be duplicated in case timing requires.
+
+    --bram-high-latency=[3,4]
         Assume a 'high latency bram'-'faster clock frequency' block RAM memory
-        based architecture: LOAD(II=1,L=3) STORE(1).
+        based architectures:
+        3 => LOAD(II=1,L=3) STORE(1).
+        4 => LOAD(II=1,L=4) STORE(II=1,L=2).
 
     --mem-delay-read=value
         Define the external memory latency when LOAD are performed (default 2).
@@ -628,10 +676,10 @@ Options:
     --do-not-expose-globals
         All global variables are considered local to the compilation units.
 
-    --data-bus-bitsize=&lt;bitsize&gt;
+    --data-bus-bitsize=<bitsize>
         Set the bitsize of the external data bus.
 
-    --addr-bus-bitsize=&lt;bitsize&gt;
+    --addr-bus-bitsize=<bitsize>
         Set the bitsize of the external address bus.
 
 
@@ -640,7 +688,7 @@ Options:
     --simulate
         Simulate the RTL implementation.
 
-    --simulator=&lt;type&gt;
+    --simulator=<type>
         Specify the simulator used in generated simulation scripts:
             MODELSIM - Mentor Modelsim
             XSIM - Xilinx XSim
@@ -648,7 +696,7 @@ Options:
             ICARUS - Verilog Icarus simulator
             VERILATOR - Verilator simulator
 
-    --max-sim-cycles=&lt;cycles&gt;
+    --max-sim-cycles=<cycles>
         Specify the maximum number of cycles a HDL simulation may run.
         (default 20000000).
 
@@ -660,7 +708,7 @@ Options:
         testbench generation).
 
     --evaluation[=type]
-        Perform evaluation of the generated solution.
+        Perform evaluation of the results.
         The value of 'type' selects the objectives to be evaluated
         If nothing is specified all the following are evaluated
         The 'type' argument can be a string containing any of the following
@@ -677,12 +725,6 @@ Options:
             FREQUENCY       - Maximum target frequency
             PERIOD          - Actual clock period
             REGISTERS       - number of registers
-
-
-  Checks and debugging:
-
-    --assert-debug
-        Enable assertion debugging performed by Modelsim.
 
 
   RTL synthesis:
@@ -716,22 +758,44 @@ Options:
         primary input and outpur ports to IOBs).
 
     --soft-float
-        Enable use of soft-based implementation of floating-point operations.
+        Enable the soft-based implementation of floating-point operations.
+        Bambu uses as default a faithfully rounded version of softfloat with rounding mode equal to round to nearest even.
+
         This is the default for bambu.
 
     --flopoco
-        Enable use of flopoco-based implementation of floating-point operations
+        Enable the flopoco-based implementation of floating-point operations.
+
+    --softfloat-subnormal
+        Enable the soft-based implementation of floating-point operations with subnormals support.
+
+    --libm-std-rounding
+        Enable the use of classical libm. This library combines a customized version of glibc, newlib and musl libm implementations into a single libm library synthetizable with bambu.
+        Without this option, Bambu uses as default a faithfully rounded version of libm.
+
+    --soft-fp
+        Enable the use of soft_fp GCC library instead of bambu customized version of John R. Hauser softfloat library.
 
     --max-ulp
         Define the maximal ULP (Unit in the last place, i.e., is the spacing
         between floating-point numbers) accepted.
 
-    --hls-div
+    --hls-div=<method>
         Perform the high-level synthesis of integer division and modulo
-        operations starting from a C library based implementation.
+        operations starting from a C library based implementation or a HDL component:
+             none  - use a HDL based pipelined restoring division
+             nr1   - use a C-based non-restoring division with unrolling factor equal to 1 (default)
+             nr2   - use a C-based non-restoring division with unrolling factor equal to 2
+             NR    - use a C-based Newton-Raphson division
+             as    - use a C-based align divisor shift dividend method
 
-    --skip-pipe-parameter=&lt;value&gt;
-        Used during the allocation of pipelined units. &lt;value&gt; specifies how
+    --hls-fpdiv=<method>
+        Perform the high-level synthesis of floating point division 
+        operations starting from a C library based implementation:
+             SRT4 - use a C-based Sweeney, Robertson, Tocher floating point division with radix 4 (default)
+             G    - use a C-based Goldschmidt floating point division.
+    --skip-pipe-parameter=<value>
+        Used during the allocation of pipelined units. <value> specifies how
         many pipelined units, compliant with the clock period, will be skipped.
         (default=0).
 
@@ -746,11 +810,20 @@ Options:
              low   - use registers with active low reset (default)
              high  - use registers with active high reset
 
+    --disable-reg-init-value
+        Used to remove the INIT value from registers (useful for ASIC designs)
+
     --registered-inputs=value
         Specify if inputs are registered or not:
              auto  - inputs are registered only for proxy functions (default)
+             top   - inputs are registred only for top and proxy functions
              yes   - all inputs are registered
              no    - none of the inputs is registered
+
+    --fsm-encoding=value
+             auto    - it depends on the target technology. VVD prefers one encoding while the other are fine with the standard binary encoding. (default)
+             one-hot - one hot encoding
+             binary  - binary encoding
 
     --cprf=value
         Clock Period Resource Fraction (default = 1.0).
@@ -775,12 +848,12 @@ Options:
         Specify the timing model used by HLS:
              EC     - estimate timing overhead of glue logics and connections
                       between resources (default)
-             SIMPLE - just consider the resource delay 
+             SIMPLE - just consider the resource delay
 
-    --experimental-setup=&lt;setup&gt;
+    --experimental-setup=<setup>
         Specify the experimental setup. This is a shorthand to set multiple
         options with a single command.
-        Available values for &lt;setup&gt; are the follwing:
+        Available values for <setup> are the follwing:
              BAMBU-AREA           - this setup implies:
                                     -Os  -D'printf(fmt, ...)='
                                     --memory-allocation-policy=ALL_BRAM
@@ -798,7 +871,7 @@ Options:
                                     --memory-allocation-policy=ALL_BRAM
                                     -fgcse-after-reload  -fipa-cp-clone
                                     -ftree-partial-pre  -funswitch-loops
-                                    -finline-functions  -fno-ivopts
+                                    -finline-functions  -fdisable-tree-bswap
                                     --param max-inline-insns-auto=25
                                     -fno-tree-loop-ivcanon
                                     --distram-threshold=256
@@ -808,7 +881,7 @@ Options:
                                     --memory-allocation-policy=ALL_BRAM
                                     -fgcse-after-reload  -fipa-cp-clone
                                     -ftree-partial-pre  -funswitch-loops
-                                    -finline-functions  -fno-ivopts
+                                    -finline-functions  -fdisable-tree-bswap
                                     --param max-inline-insns-auto=25
                                     -fno-tree-loop-ivcanon
                                     --distram-threshold=256
@@ -844,8 +917,14 @@ Options:
 
   Other options:
 
-    --time, -t &lt;time&gt;
+    --time, -t <time>
         Set maximum execution time (in seconds) for ILP solvers. (infinite).
+
+    --host-profiling
+        Perform host-profiling.
+
+    --bitvalue-ipa
+        Enables interprocedural bitvalue analysis.
 
 
   Debug options:
@@ -882,4 +961,15 @@ Options:
            If you can guarantee that your code always manipulates addresses
            using pointers and never using plain int, then you can use this
            option to get more precise bug reports.
+
+    --discrepancy-only=comma,separated,list,of,function,names
+           Restricts the discrepancy analysis only to the functions whose
+           name is in the list passed as argument.
+
+    --discrepancy-permissive-ptrs
+           Do not trigger hard errors on pointer variables.
+
+    --assert-debug
+        Enable assertion debugging performed by Modelsim.
+
 </pre>

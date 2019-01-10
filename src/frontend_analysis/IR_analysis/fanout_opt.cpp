@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2017 Politecnico di Milano
+ *              Copyright (C) 2017-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -255,7 +255,7 @@ DesignFlowStep_Status fanout_opt::InternalExec()
 #endif
       if(IR_changed && schedule)
       {
-         for(const auto stmt : block.second->CGetStmtList())
+         for(const auto& stmt : block.second->CGetStmtList())
             schedule->UpdateTime(GET_INDEX_NODE(stmt));
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered BB" + STR(block.first));

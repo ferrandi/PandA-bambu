@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018 Politecnico di Milano
+ *              Copyright (C) 2018-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -196,7 +196,7 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
 
          std::list<tree_nodeRef> new_tree_nodes;
 
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining " + STR(*stmt));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining " + (*stmt)->ToString());
          auto next_stmt_ptr = std::next(stmt);
          tree_nodeRef next_stmt = std::next(stmt) != list_of_stmt.end() ? *(std::next(stmt)) : tree_nodeRef();
          tree_nodeRef first_stmt = *stmt;

@@ -29,7 +29,7 @@
       <circuit>
         <component_o id="ARRAY_1D_STD_BRAM">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>LATTICE-LatticeECP3</specialized>
@@ -150,7 +150,7 @@
       <circuit>
         <component_o id="ARRAY_1D_STD_BRAM_3">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>LATTICE-LatticeECP3</specialized>
@@ -271,7 +271,7 @@
       <circuit>
         <component_o id="ARRAY_1D_STD_BRAM_4">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>LATTICE-LatticeECP3</specialized>
@@ -391,7 +391,7 @@
       <circuit>
         <component_o id="ARRAY_1D_STD_BRAM_N1">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>LATTICE-LatticeECP3</specialized>
@@ -512,7 +512,7 @@
       <circuit>
         <component_o id="ARRAY_1D_STD_BRAM_N1_3">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>LATTICE-LatticeECP3</specialized>
@@ -633,7 +633,7 @@
       <circuit>
         <component_o id="ARRAY_1D_STD_BRAM_N1_4">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>LATTICE-LatticeECP3</specialized>
@@ -754,7 +754,7 @@
       <circuit>
         <component_o id="ARRAY_1D_STD_BRAM_NN">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>LATTICE-LatticeECP3</specialized>
@@ -875,7 +875,7 @@
       <circuit>
         <component_o id="ARRAY_1D_STD_BRAM_NN_3">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>LATTICE-LatticeECP3</specialized>
@@ -996,7 +996,7 @@
       <circuit>
         <component_o id="ARRAY_1D_STD_BRAM_NN_4">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>LATTICE-LatticeECP3</specialized>
@@ -1114,7 +1114,7 @@
       <circuit>
         <component_o id="mult_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2016-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>LATTICE-LatticeECP3</specialized>
@@ -1198,7 +1198,7 @@ pmi_dsp_mult #(.pmi_dataa_width(BITSIZE_in1),
       <circuit>
         <component_o id="ui_mult_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2016-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>LATTICE-LatticeECP3</specialized>
@@ -1290,7 +1290,7 @@ pmi_dsp_mult #(.pmi_dataa_width(BITSIZE_in1),
       <circuit>
         <component_o id="STD_BRAM">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>LATTICE-LatticeECP3</specialized>
@@ -1359,7 +1359,7 @@ pmi_dsp_mult #(.pmi_dataa_width(BITSIZE_in1),
       <circuit>
         <component_o id="STD_BRAM_3">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>LATTICE-LatticeECP3</specialized>
@@ -1428,7 +1428,7 @@ pmi_dsp_mult #(.pmi_dataa_width(BITSIZE_in1),
       <circuit>
         <component_o id="STD_BRAM_4">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>LATTICE-LatticeECP3</specialized>
@@ -1496,7 +1496,7 @@ pmi_dsp_mult #(.pmi_dataa_width(BITSIZE_in1),
       <circuit>
         <component_o id="STD_BRAMN">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>LATTICE-LatticeECP3</specialized>
@@ -1565,7 +1565,7 @@ pmi_dsp_mult #(.pmi_dataa_width(BITSIZE_in1),
       <circuit>
         <component_o id="STD_BRAMN_3">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>LATTICE-LatticeECP3</specialized>
@@ -1634,7 +1634,7 @@ pmi_dsp_mult #(.pmi_dataa_width(BITSIZE_in1),
       <circuit>
         <component_o id="STD_BRAMN_4">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>LATTICE-LatticeECP3</specialized>

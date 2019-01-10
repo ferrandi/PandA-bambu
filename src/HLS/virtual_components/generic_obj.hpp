@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -114,7 +114,9 @@ class generic_obj
    /**
     * Destructor.
     */
-   virtual ~generic_obj() = default;
+   virtual ~generic_obj()
+   {
+   }
 
    /**
     * Prints elements into given stream

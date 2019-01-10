@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright(c) 2018 Politecnico di Milano
+ *              Copyright (C) 2018-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -1196,7 +1196,7 @@ namespace llvm
       ssa_name* lhs_ssa = const_cast<ssa_name*>(reinterpret_cast<const ssa_name*>(lhs));
       const void* vd = TREE_OPERAND(rhs, 0);
       lhs_ssa->ptr_info.valid = true;
-      lhs_ssa->ptr_info.pt.vars.push_back(vd);
+      lhs_ssa->ptr_info.pt.vars.insert(vd);
    }
 
    const void* DumpGimpleRaw::getGimpleNop(const llvm::Value* operand, const void* scpe)
@@ -1450,9 +1450,9 @@ namespace llvm
                         sn.ptr_info.valid = true;
                         auto vid = val->getValueID();
                         if(vid == llvm::Value::InstructionVal + llvm::Instruction::Alloca)
-                           sn.ptr_info.pt.vars.push_back(TREE_OPERAND(gimple_assign_rhs_alloca(val), 0));
+                           sn.ptr_info.pt.vars.insert(TREE_OPERAND(gimple_assign_rhs_alloca(val), 0));
                         else if(vid == llvm::Value::GlobalVariableVal)
-                           sn.ptr_info.pt.vars.push_back(assignCodeAuto(val));
+                           sn.ptr_info.pt.vars.insert(assignCodeAuto(val));
                         else if(vid == llvm::Value::FunctionVal)
                         {
                            /// pointers to function are managed as point to anything objects
@@ -4542,12 +4542,14 @@ namespace llvm
             break;
 
          case GT(FUNCTION_TYPE):
+         {
             serialize_child("retn", TREE_TYPE(t));
-            serialize_child("prms", TYPE_ARG_TYPES(t));
-            if(stdarg_p(t))
+            auto args = TYPE_ARG_TYPES(t);
+            serialize_child("prms", args);
+            if(args && stdarg_p(t)) //ISO C requires a named parameter before '...'
                serialize_string("varargs");
             break;
-
+         }
          case GT(ARRAY_TYPE):
             serialize_child("elts", TREE_TYPE(t));
             serialize_child("domn", TYPE_DOMAIN(t));

@@ -54,7 +54,7 @@ namespace flopoco{
 		}
 	
 		/** The destructor */
-		virtual ~Target() = default;
+        virtual ~Target() {}
 
 
 

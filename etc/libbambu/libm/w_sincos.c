@@ -30,8 +30,8 @@ void sincos(double x, double* sinx, double* cosx)
    else if(ix >= 0x7ff00000)
    {
       /* sin(Inf or NaN) is NaN */
-      *sinx = nanf("");
-      *cosx = nanf("");
+      *sinx = __builtin_nanf("");
+      *cosx = __builtin_nanf("");
    }
    else
    {
@@ -83,8 +83,8 @@ double _Complex cexpi(double x)
    else if(ix >= 0x7ff00000)
    {
       /* sin(Inf or NaN) is NaN */
-      __real__ Res = nanf("");
-      __imag__ Res = nanf("");
+      __real__ Res = __builtin_nanf("");
+      __imag__ Res = __builtin_nanf("");
    }
    else
    {

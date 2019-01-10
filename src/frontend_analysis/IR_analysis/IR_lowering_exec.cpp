@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -1440,7 +1440,18 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         ae->op = mr;
                         restart_analysis = true;
                      }
-                     else if(ae_code != var_decl_K && ae_code != parm_decl_K && ae_code != function_decl_K && ae_code != string_cst_K)
+                     else if(ae_code == var_decl_K || ae_code == parm_decl_K || ae_code == function_decl_K || ae_code == string_cst_K)
+                     {
+                        if(code0 == ssa_name_K && ae_code != function_decl_K && ae_code != parm_decl_K)
+                        {
+                           auto ssa_var = GetPointer<const ssa_name>(GET_NODE(ga->op0));
+                           if(ssa_var->use_set->variables.empty())
+                           {
+                              ssa_var->use_set->variables.push_back(ae->op);
+                           }
+                        }
+                     }
+                     else
                         THROW_ERROR("not supported " + GET_NODE(ae->op)->get_kind_text());
 
                         /// check missing cast
@@ -2546,7 +2557,10 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
                      restart_analysis = true;
                   }
-                  if(GET_NODE(ga->op1)->get_kind() != ssa_name_K && !GetPointer<cst_node>(GET_NODE(ga->op1)) && GET_NODE(ga->op1)->get_kind() != mem_ref_K && GET_NODE(ga->op1)->get_kind() != constructor_K)
+                  unsigned int op1_type_index;
+                  tree_nodeRef op1_type = tree_helper::get_type_node(GET_NODE(ga->op1), op1_type_index);
+                  auto view_convert_pattern = op1_type->get_kind() == record_type_K && GET_NODE(ga->op1)->get_kind() == view_convert_expr_K;
+                  if(!view_convert_pattern && GET_NODE(ga->op1)->get_kind() != ssa_name_K && !GetPointer<cst_node>(GET_NODE(ga->op1)) && GET_NODE(ga->op1)->get_kind() != mem_ref_K && GET_NODE(ga->op1)->get_kind() != constructor_K)
                   {
                      unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op1));
                      tree_nodeRef op_type = TM->GetTreeReindex(type_index);
