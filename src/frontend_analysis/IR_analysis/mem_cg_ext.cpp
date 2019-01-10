@@ -108,8 +108,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 DesignFlowStep_Status mem_cg_ext::Exec()
 {
-   THROW_ASSERT(not already_executed, "should not be executed twice");
-
    const CallGraphManagerRef CGMan = AppM->GetCallGraphManager();
    const CallGraphConstRef cg = CGMan->CGetCallGraph();
    const tree_managerRef TM = AppM->get_tree_manager();
