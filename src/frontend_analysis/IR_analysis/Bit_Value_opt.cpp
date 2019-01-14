@@ -1261,7 +1261,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                else if(GET_NODE(ga->op1)->get_kind() == truth_and_expr_K)
                {
                   auto* tae = GetPointer<truth_and_expr>(GET_NODE(ga->op1));
-                  if(GET_NODE(tae->op0)->get_kind() == integer_cst_K || GET_NODE(tae->op1)->get_kind() == integer_cst_K)
+                  if(GET_NODE(tae->op0)->get_kind() == integer_cst_K || GET_NODE(tae->op1)->get_kind() == integer_cst_K || GET_INDEX_NODE(tae->op0) == GET_INDEX_NODE(tae->op1))
                   {
                      tree_nodeRef val;
                      if(GET_NODE(tae->op0)->get_kind() == integer_cst_K)
@@ -1272,13 +1272,17 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         else
                            val = tae->op1;
                      }
-                     else
+                     else if(GET_NODE(tae->op1)->get_kind() == integer_cst_K)
                      {
                         auto* int_const = GetPointer<integer_cst>(GET_NODE(tae->op1));
                         if(int_const->value == 0)
                            val = tae->op1;
                         else
                            val = tae->op0;
+                     }
+                     else
+                     {
+                        val = tae->op0;
                      }
                      const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
                      for(const auto& use : StmtUses)
@@ -1301,7 +1305,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                else if(GET_NODE(ga->op1)->get_kind() == truth_or_expr_K)
                {
                   auto* toe = GetPointer<truth_or_expr>(GET_NODE(ga->op1));
-                  if(GET_NODE(toe->op0)->get_kind() == integer_cst_K || GET_NODE(toe->op1)->get_kind() == integer_cst_K)
+                  if(GET_NODE(toe->op0)->get_kind() == integer_cst_K || GET_NODE(toe->op1)->get_kind() == integer_cst_K || GET_INDEX_NODE(toe->op0) == GET_INDEX_NODE(toe->op1))
                   {
                      tree_nodeRef val;
                      if(GET_NODE(toe->op0)->get_kind() == integer_cst_K)
@@ -1312,13 +1316,17 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         else
                            val = toe->op0;
                      }
-                     else
+                     else if(GET_NODE(toe->op1)->get_kind() == integer_cst_K)
                      {
                         auto* int_const = GetPointer<integer_cst>(GET_NODE(toe->op1));
                         if(int_const->value == 0)
                            val = toe->op0;
                         else
                            val = toe->op1;
+                     }
+                     else
+                     {
+                        val = toe->op0;
                      }
                      const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
                      for(const auto& use : StmtUses)

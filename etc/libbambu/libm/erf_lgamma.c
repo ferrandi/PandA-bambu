@@ -168,7 +168,7 @@ float __hide_ieee754_lgammaf_r(float x, int* signgamp)
    *signgamp = 1;
    ix = hx & 0x7fffffff;
    if(FLT_UWORD_IS_NAN(ix))
-      return nanf("");
+      return __builtin_nanf("");
    if(!FLT_UWORD_IS_FINITE(ix))
       return __builtin_inff();
    if(FLT_UWORD_IS_ZERO(ix))

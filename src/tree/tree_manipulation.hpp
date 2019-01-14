@@ -130,6 +130,7 @@ class tree_manipulation
     * @param parameters is the set of input parameters
     */
    tree_manipulation(const tree_managerRef& TreeM, const ParameterConstRef& parameters);
+   tree_manipulation(const tree_managerRef& TreeM, const ParameterConstRef& parameters, bool _reuse);
 
    /**
     * This is the destructor of the tree_manipulation.
