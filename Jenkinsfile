@@ -18,7 +18,7 @@ pipeline {
         }
         stage('sdc scheduling') {
           steps {
-           sh 'mkdir $WORKSPACE/panda_regressions/sdc_tests && cd $WORKSPACE/panda_regressions/sdc_tests && nice -n 17 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j24 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/test-reports" -c="--speculative-sdc-scheduling" --returnfail '
+           sh 'mkdir $WORKSPACE/panda_regressions/sdc_tests && cd $WORKSPACE/panda_regressions/sdc_tests && nice -n 17 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j24 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/test-reports" -t 120m -c="--speculative-sdc-scheduling" --returnfail '
           }
         }
         stage('VHDL') {
