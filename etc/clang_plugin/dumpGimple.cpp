@@ -1547,10 +1547,28 @@ namespace llvm
                }
                // For array or vector indices, scale the index by the size of the type.
                auto index = getOperand(GTI.getOperand(), currentFunction);
+               auto index_type=TREE_TYPE(index);
+               bool isSignedIndexType=CheckSignedTag(index_type);
                auto array_elmt_size = llvm::APInt(ConstantIndexOffset.getBitWidth(), DL->getTypeAllocSize(GTI.getIndexedType()));
                auto array_elmt_sizeCI = llvm::ConstantInt::get(gep_op->getContext(), array_elmt_size);
+               auto array_elmt_sizeCI_type = array_elmt_sizeCI->getType();
                auto array_elmt_size_node = assignCodeAuto(array_elmt_sizeCI);
-               auto index_times_size = build2(GT(MULT_EXPR), array_elmt_sizeCI->getType(), index, array_elmt_size_node);
+               if(isSignedIndexType)
+               {
+                  if(index2integer_cst_signed.find(array_elmt_size_node) == index2integer_cst_signed.end())
+                  {
+                     auto& ics_obj = index2integer_cst_signed[array_elmt_size_node];
+                     auto type_operand=TREE_TYPE(array_elmt_size_node);
+                     ics_obj.ic = array_elmt_size_node;
+                     ics_obj.type = AddSignedTag(type_operand);
+                     array_elmt_size_node = assignCode(&ics_obj, GT(INTEGER_CST_SIGNED));
+                  }
+                  else
+                     array_elmt_size_node = &index2integer_cst_signed.find(array_elmt_size_node)->second;
+               }
+               auto index_times_size = build2(GT(MULT_EXPR), isSignedIndexType?AddSignedTag(array_elmt_sizeCI_type):array_elmt_sizeCI_type, index, array_elmt_size_node);
+               if(isSignedIndexType)
+                  index_times_size = build1(GT(NOP_EXPR), array_elmt_sizeCI_type, index_times_size);
                auto accu = build2(GT(POINTER_PLUS_EXPR), TREE_TYPE(base_node), base_node, index_times_size);
                base_node = accu;
                continue;
@@ -1708,7 +1726,6 @@ namespace llvm
             if(index2integer_cst_signed.find(op) == index2integer_cst_signed.end())
             {
                auto& ics_obj = index2integer_cst_signed[op];
-               AddSignedTag(type_operand);
                ics_obj.ic = op;
                ics_obj.type = AddSignedTag(type_operand);
                ics = assignCode(&ics_obj, GT(INTEGER_CST_SIGNED));
