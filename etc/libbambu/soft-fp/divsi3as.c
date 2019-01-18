@@ -26,7 +26,11 @@ typedef unsigned int USItype __attribute__((mode(SI)));
 typedef unsigned int UDItype __attribute__((mode(DI)));
 /* Define ALIASNAME as a strong alias for NAME.  */
 #define strong_alias(name, aliasname) _strong_alias(name, aliasname)
+#ifdef __APPLE__
+#define _strong_alias(name, aliasname)
+#else
 #define _strong_alias(name, aliasname) extern __typeof(name) aliasname __attribute__((alias(#name)));
+#endif
 
 static USItype lsl(USItype a, USItype b)
 {
