@@ -491,9 +491,9 @@ namespace flopoco{
 	FPConstMult::~FPConstMult() {
 		// TODO but who cares really
 		// clean up memory -- with ifs, because in some cases they have not been init'd
-		if(mpfrC) mpfr_clear(mpfrC);
-		if(cstSig) mpfr_clear(cstSig);
-		if(mpfr_xcut_sig) mpfr_clear(mpfr_xcut_sig);
+        mpfr_clear(mpfrC);
+        mpfr_clear(cstSig);
+        mpfr_clear(mpfr_xcut_sig);
 	}
 
 
