@@ -32,7 +32,6 @@ endif
 if BUILD_LIB_GRAPHHELPER
    SUBDIRS += graph_helpers
    DIST_SUBDIRS += graph_helpers
-   lib_algorithms_la_LIBADD += $(top_builddir)/src/algorithms/graph_helpers/lib_graph_helpers.la
 endif
 
 if BUILD_LIB_LOOPS

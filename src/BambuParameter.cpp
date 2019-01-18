@@ -60,6 +60,9 @@
 #include "config_HAVE_I386_CLANG5_M64.hpp"
 #include "config_HAVE_I386_CLANG5_MX32.hpp"
 #include "config_HAVE_I386_CLANG6_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG6_M32.hpp"
+#include "config_HAVE_I386_CLANG6_M64.hpp"
+#include "config_HAVE_I386_CLANG6_MX32.hpp"
 #include "config_HAVE_I386_GCC45_COMPILER.hpp"
 #include "config_HAVE_I386_GCC46_COMPILER.hpp"
 #include "config_HAVE_I386_GCC47_COMPILER.hpp"
@@ -3522,6 +3525,12 @@ void BambuParameter::SetDefaults()
 #elif(HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX32)
    setOption(OPT_gcc_m32_mx32, "-mx32 ");
 #elif(HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64)
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
+#elif(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M32)
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#elif(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_MX32)
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+#elif(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M64)
    setOption(OPT_gcc_m32_mx32, "-m64 ");
 #else
    THROW_ERROR("None of -m32, -mx32, -m64 GCC option is supported");

@@ -88,5 +88,5 @@ documentation-tag:
 
 if USE_GRLIB
 install-exec-hook:
-	cp $(top_srcdir)/ext/GRLIB  $(libdir) -r
+	cp -r $(top_srcdir)/ext/GRLIB  $(libdir)
 endif

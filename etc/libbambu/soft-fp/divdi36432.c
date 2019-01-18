@@ -47,7 +47,11 @@ extern UDItype __udivdi36432(UDItype u, USItype v);
 extern UDItype __umoddi36432(UDItype u, USItype v);
 /* Define ALIASNAME as a strong alias for NAME.  */
 #define strong_alias(name, aliasname) _strong_alias(name, aliasname)
+#ifdef __APPLE__
+#define _strong_alias(name, aliasname)
+#else
 #define _strong_alias(name, aliasname) extern __typeof(name) aliasname __attribute__((alias(#name)));
+#endif
 
 static UDItype mul64(UDItype u, UDItype v)
 {
