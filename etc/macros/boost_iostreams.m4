@@ -47,7 +47,7 @@ AC_DEFUN([AX_BOOST_IOSTREAMS],
                                 AC_LANG_POP([C++])
                         ])
                 if test "x$ax_cv_boost_iostreams" = "xyes"; then
-                        AC_DEFINE(HAVE_BOOST_IOSTREAMS,1,[define if the Boost::Filesystem library is available])
+                        AC_DEFINE(HAVE_BOOST_IOSTREAMS,1,[define if the Boost::IOStreams library is available])
                         BN=boost_iostreams
                         if test "x$ax_boost_user_iostreams_lib" = "x"; then
                                 for ax_lib in  $BN $BN-mt $BN-st $BN-$CC $BN-$CC-mt $BN-$CC-mt-s $BN-$CC-s lib$BN lib$BN-$CC lib$BN-$CC-mt lib$BN-$CC-mt-s lib$BN-$CC-s lib$BN-mgw lib$BN-mgw-mt lib$BN-mgw-mt-s lib$BN-mgw-s $BN-mgw $BN-mgw-mt $BN-mgw-mt-s $BN-mgw-s $BN-gcc42-mt $BN-gcc41-mt; do
