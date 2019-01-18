@@ -12,20 +12,17 @@ pipeline {
       parallel {
         stage('list based') {
           steps {
-           sh 'cd $WORKSPACE/panda_regressions && nice -n 17 ./panda_regression_hls.sh -j24 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider '
-           sh 'cd $WORKSPACE/panda_regressions && nice -n 17 ./panda_regression_hls.sh -j24 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/test-reports" --returnfail --restart '
+           sh 'cd $WORKSPACE/panda_regressions && nice -n 17 ./panda_regression_hls.sh -j24 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/test-reports" -t 120m --returnfail '
           }
         }
         stage('sdc scheduling') {
           steps {
-           sh 'mkdir $WORKSPACE/panda_regressions/sdc_tests && cd $WORKSPACE/panda_regressions/sdc_tests && nice -n 17 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j24 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/test-reports" -c="--speculative-sdc-scheduling" --returnfail '
+           sh 'mkdir $WORKSPACE/panda_regressions/sdc_tests && cd $WORKSPACE/panda_regressions/sdc_tests && nice -n 15 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j24 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/test-reports" -t 120m -c="--speculative-sdc-scheduling" --returnfail '
           }
         }
         stage('VHDL') {
           steps {
-           sh 'mkdir $WORKSPACE/panda_regressions/vhdl_tests && cd $WORKSPACE/panda_regressions/vhdl_tests && nice -n 17 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j24 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider -c="-wH" --name="_VHDL" '
-           sh 'cd $WORKSPACE/panda_regressions/vhdl_tests && nice -n 17 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j24 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider -c="-wH" --name="_VHDL" --restart '
-           sh 'cd $WORKSPACE/panda_regressions/vhdl_tests && nice -n 17 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j24 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/test-reports" -c="-wH" --name="_VHDL" --returnfail --restart '
+           sh 'cd $WORKSPACE/panda_regressions/vhdl_tests && nice -n 16 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j24 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/test-reports" -t 120m -c="-wH" --name="_VHDL" --returnfail '
           }
         }
       }
