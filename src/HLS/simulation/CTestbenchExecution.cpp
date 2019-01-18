@@ -262,7 +262,26 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
       }
       else
       {
-         compiler_flags += " -Wl,--allow-multiple-definition ";
+         if(false
+   #if HAVE_I386_GCC49_COMPILER
+            or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
+   #endif
+   #if HAVE_I386_GCC5_COMPILER
+            or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
+   #endif
+   #if HAVE_I386_GCC6_COMPILER
+            or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
+   #endif
+   #if HAVE_I386_GCC7_COMPILER
+            or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+   #endif
+   #if HAVE_I386_GCC8_COMPILER
+            or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
+   #endif
+         )
+         {
+            compiler_flags += " -Wl,--allow-multiple-definition ";
+         }
          for(const auto& input_file : parameters->getOption<const CustomSet<std::string>>(OPT_input_file))
          {
             file_sources.push_back(input_file);
