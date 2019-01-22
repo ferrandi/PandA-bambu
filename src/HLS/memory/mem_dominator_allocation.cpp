@@ -924,8 +924,6 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    bool changed = HLSMgr->Rmem->notEQ(prevRmem);
    if(changed)
-      std::cerr<<"Changed\n";
-   else
-      std::cerr<<"Not Changed\n";
+      HLSMgr->UpdateMemVersion();
    return changed ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }

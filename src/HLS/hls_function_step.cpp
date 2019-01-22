@@ -68,7 +68,7 @@
 
 HLSFunctionStep::HLSFunctionStep(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type,
                                  const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
-    : HLS_step(_Param, _HLSMgr, _design_flow_manager, _hls_flow_step_type, _hls_flow_step_specialization), funId(_funId), bb_version(0)
+    : HLS_step(_Param, _HLSMgr, _design_flow_manager, _hls_flow_step_type, _hls_flow_step_specialization), funId(_funId), bb_version(0), memory_version(0)
 {
 }
 
@@ -81,6 +81,8 @@ bool HLSFunctionStep::HasToBeExecuted() const
    if(funId and funcs.find(funId) == funcs.end())
       return false;
    if(bb_version == 0 or bb_version != HLSMgr->GetFunctionBehavior(funId)->GetBBVersion())
+      return true;
+   if(memory_version == 0 or memory_version != HLSMgr->GetMemVersion())
       return true;
    const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
    vertex current_step = design_flow_manager.lock()->GetDesignFlowStep(GetSignature());
@@ -118,7 +120,7 @@ const std::string HLSFunctionStep::ComputeSignature(const HLSFlowStep_Type hls_f
 const std::string HLSFunctionStep::GetName() const
 {
 #ifndef NDEBUG
-   const std::string version = bb_version != 0 ? ("(" + STR(bb_version) + ")") : "";
+   const std::string version = std::string(bb_version != 0 ? ("(" + STR(bb_version) + ")") : "") + std::string(memory_version != 0 ? ("(" + STR(memory_version) + ")") : "");
 #else
    const std::string version = "";
 #endif
@@ -191,5 +193,6 @@ DesignFlowStep_Status HLSFunctionStep::Exec()
    const auto status = InternalExec();
    if(funId)
       bb_version = HLSMgr->GetFunctionBehavior(funId)->GetBBVersion();
+   memory_version = HLSMgr->GetMemVersion();
    return status;
 }
