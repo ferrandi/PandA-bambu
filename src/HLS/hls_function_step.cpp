@@ -91,9 +91,7 @@ bool HLSFunctionStep::HasToBeExecuted() const
       const DesignFlowStepInfoConstRef pre_info = design_flow_graph->CGetDesignFlowStepInfo(pre_dependence_vertex);
       if(pre_info->status != DesignFlowStep_Status::SUCCESS and pre_info->status != DesignFlowStep_Status::EMPTY)
          continue;
-      if(!GetPointer<HLSFunctionStep>(pre_info->design_flow_step))
-         continue;
-      if(GetPointer<HLSFunctionStep>(pre_info->design_flow_step)->funId != funId)
+      if(GetPointer<HLSFunctionStep>(pre_info->design_flow_step) && GetPointer<HLSFunctionStep>(pre_info->design_flow_step)->funId != funId)
          continue;
       return true;
    }

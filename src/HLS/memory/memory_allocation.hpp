@@ -109,9 +109,6 @@ class MemoryAllocationSpecialization : public HLSFlowStepSpecialization
 class memory_allocation : public HLS_step
 {
  protected:
-   /// True if this step has already been executed
-   bool already_executed;
-
    /// list of functions to be analyzed
    std::set<unsigned int> func_list;
 

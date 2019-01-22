@@ -152,6 +152,7 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
          null_pointer_check = false;
    }
    /// information about memory allocation to be shared across the functions
+   memoryRef prevRmem = HLSMgr->Rmem;
    HLSMgr->Rmem = memoryRef(new memory(TreeM, base_address, max_bram, null_pointer_check, initial_internal_address_p, initial_internal_address, HLSMgr->Rget_address_bitsize()));
    setup_memory_allocation();
 
@@ -921,6 +922,10 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Time to perform memory allocation: " + print_cpu_time(step_time) + " seconds");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
-   already_executed = true;
-   return DesignFlowStep_Status::SUCCESS;
+   bool changed = HLSMgr->Rmem->notEQ(prevRmem);
+   if(changed)
+      std::cerr<<"Changed\n";
+   else
+      std::cerr<<"Not Changed\n";
+   return changed ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }

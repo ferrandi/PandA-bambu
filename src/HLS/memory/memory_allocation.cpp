@@ -131,7 +131,6 @@ memory_allocation::memory_allocation(const ParameterConstRef _parameters, const 
                _hls_flow_step_specialization and GetPointer<const MemoryAllocationSpecialization>(_hls_flow_step_specialization) ?
                    _hls_flow_step_specialization :
                    HLSFlowStepSpecializationConstRef(new MemoryAllocationSpecialization(_parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy), _parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type)))),
-      already_executed(false),
       /// NOTE: hls_flow_step_specialization and not _hls_flow_step_specialization is correct
       memory_allocation_policy(GetPointer<const MemoryAllocationSpecialization>(hls_flow_step_specialization)->memory_allocation_policy)
 {
