@@ -1225,7 +1225,7 @@ namespace llvm
             else if(dyn_cast<llvm::ConstantInt>(op1) && dyn_cast<InstructionOrConstantExpr>(op0))
                return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0));
             else if(dyn_cast<InstructionOrConstantExpr>(op0) && dyn_cast<InstructionOrConstantExpr>(op1))
-               return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0)) && isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0));
+               return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0)) && isSignedResult(dyn_cast<InstructionOrConstantExpr>(op1));
             else
                return false;
          }
@@ -1240,7 +1240,7 @@ namespace llvm
             else if(dyn_cast<llvm::ConstantInt>(op1) && dyn_cast<InstructionOrConstantExpr>(op0))
                return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0));
             else if(dyn_cast<InstructionOrConstantExpr>(op0) && dyn_cast<InstructionOrConstantExpr>(op1))
-               return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0)) && isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0));
+               return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0)) && isSignedResult(dyn_cast<InstructionOrConstantExpr>(op1));
             else
                return false;
          }
@@ -1283,6 +1283,8 @@ namespace llvm
    template <class InstructionOrConstantExpr>
    bool DumpGimpleRaw::isSignedOperand(const InstructionOrConstantExpr* inst, unsigned index) const
    {
+      if(!inst->getOperand(index)->getType()->isIntegerTy())
+         return false;
       auto opcode = inst->getOpcode();
       switch(opcode)
       {
@@ -1318,14 +1320,22 @@ namespace llvm
                return isSignedInstruction(inst);
             }
          }
-         default:
+         case llvm::Instruction::Add:
+         case llvm::Instruction::Sub:
+         case llvm::Instruction::Mul:
+         {
             return isSignedInstruction(inst);
+         }
+         default:
+            return false;
       }
    }
 
    template <class InstructionOrConstantExpr>
    bool DumpGimpleRaw::isUnsignedOperand(const InstructionOrConstantExpr* inst, unsigned index) const
    {
+      if(!inst->getOperand(index)->getType()->isIntegerTy())
+         return false;
       auto opcode = inst->getOpcode();
       switch(opcode)
       {
