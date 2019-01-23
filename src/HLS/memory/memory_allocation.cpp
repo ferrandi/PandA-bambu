@@ -48,6 +48,7 @@
 #include "memory.hpp"
 #include "target_device.hpp"
 
+#include "application_manager.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
@@ -533,5 +534,28 @@ void memory_allocation::allocate_parameters(unsigned int functionId)
 
 bool memory_allocation::HasToBeExecuted() const
 {
-   return true;
+   if(memory_version == 0 or memory_version != HLSMgr->GetMemVersion())
+      return true;
+   std::map<unsigned int, unsigned int> cur_bb_ver;
+   const CallGraphManagerConstRef CGMan = HLSMgr->CGetCallGraphManager();
+   for(const auto i : CGMan->GetReachedBodyFunctions())
+   {
+      const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(i);
+      cur_bb_ver[i] = FB->GetBBVersion();
+   }
+   return cur_bb_ver != last_bb_ver;
 }
+
+DesignFlowStep_Status memory_allocation::Exec()
+{
+   const auto status = InternalExec();
+   const CallGraphManagerConstRef CGMan = HLSMgr->CGetCallGraphManager();
+   for(const auto i : CGMan->GetReachedBodyFunctions())
+   {
+      const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(i);
+      last_bb_ver[i] = FB->GetBBVersion();
+   }
+   memory_version = HLSMgr->GetMemVersion();
+   return status;
+}
+

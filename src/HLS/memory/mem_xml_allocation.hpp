@@ -95,7 +95,7 @@ class mem_xml_allocation : public memory_allocation
     * Execute the step
     * @return the exit status of this step
     */
-   DesignFlowStep_Status Exec() override;
+   DesignFlowStep_Status InternalExec() override;
 };
 
 #endif

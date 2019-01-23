@@ -61,6 +61,7 @@ class HLSFunctionStep : public HLS_step
 
    /// The version of memory representation on which this step was applied
    unsigned int memory_version;
+
    /**
     * Execute the step
     * @return the exit status of this step

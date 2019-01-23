@@ -64,7 +64,7 @@ mem_xml_allocation::mem_xml_allocation(const ParameterConstRef _parameters, cons
 
 mem_xml_allocation::~mem_xml_allocation() = default;
 
-DesignFlowStep_Status mem_xml_allocation::Exec()
+DesignFlowStep_Status mem_xml_allocation::InternalExec()
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Reading memory allocation from XML file...");
    memoryRef prevRmem = HLSMgr->Rmem;

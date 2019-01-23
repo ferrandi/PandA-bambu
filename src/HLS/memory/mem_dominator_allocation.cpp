@@ -129,7 +129,7 @@ static vertex get_remapped_vertex(vertex current_vertex, const CallGraphManagerC
    return current_vertex;
 }
 
-DesignFlowStep_Status mem_dominator_allocation::Exec()
+DesignFlowStep_Status mem_dominator_allocation::InternalExec()
 {
    long int step_time;
    START_TIME(step_time);
