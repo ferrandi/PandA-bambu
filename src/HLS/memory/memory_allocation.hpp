@@ -121,6 +121,9 @@ class memory_allocation : public HLS_step
    /// The version of BB IR representation on which this step was applied
    std::map<unsigned int, unsigned int> last_bb_ver;
 
+   /// The version of bit value IR representation on which this step was applied
+   std::map<unsigned int, unsigned int> last_bitvalue_ver;
+
    /**
     * Prepares the datastructures for the memory allocation
     */

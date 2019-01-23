@@ -537,13 +537,15 @@ bool memory_allocation::HasToBeExecuted() const
    if(memory_version == 0 or memory_version != HLSMgr->GetMemVersion())
       return true;
    std::map<unsigned int, unsigned int> cur_bb_ver;
+   std::map<unsigned int, unsigned int> cur_bitvalue_ver;
    const CallGraphManagerConstRef CGMan = HLSMgr->CGetCallGraphManager();
    for(const auto i : CGMan->GetReachedBodyFunctions())
    {
       const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(i);
       cur_bb_ver[i] = FB->GetBBVersion();
+      cur_bitvalue_ver[i] = FB->GetBitValueVersion();
    }
-   return cur_bb_ver != last_bb_ver;
+   return cur_bb_ver != last_bb_ver || cur_bitvalue_ver != last_bitvalue_ver;
 }
 
 DesignFlowStep_Status memory_allocation::Exec()
@@ -554,8 +556,8 @@ DesignFlowStep_Status memory_allocation::Exec()
    {
       const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(i);
       last_bb_ver[i] = FB->GetBBVersion();
+      last_bitvalue_ver[i] = FB->GetBitValueVersion();
    }
    memory_version = HLSMgr->GetMemVersion();
    return status;
 }
-
