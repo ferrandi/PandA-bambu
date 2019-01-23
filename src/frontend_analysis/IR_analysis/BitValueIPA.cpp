@@ -137,8 +137,7 @@ bool BitValueIPA::HasToBeExecuted() const
       cur_bitvalue_ver[i] = FB->GetBitValueVersion();
       cur_bb_ver[i] = FB->GetBBVersion();
    }
-
-   return not std::equal(cur_bb_ver.begin(), cur_bb_ver.end(), last_bb_ver.begin()) or not std::equal(cur_bitvalue_ver.begin(), cur_bitvalue_ver.end(), last_bitvalue_ver.begin());
+   return cur_bb_ver != last_bb_ver || cur_bitvalue_ver != last_bitvalue_ver;
 }
 
 DesignFlowStep_Status BitValueIPA::Exec()
@@ -870,22 +869,18 @@ DesignFlowStep_Status BitValueIPA::Exec()
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Updated IR");
 
    BitLatticeManipulator::clear();
-   fun_id_to_restart.clear();
+
+   std::map<unsigned int, unsigned int> cur_bitvalue_ver;
+   std::map<unsigned int, unsigned int> cur_bb_ver;
+   for(const auto i : CGMan->GetReachedBodyFunctions())
+   {
+      const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(i);
+      last_bitvalue_ver[i] = FB->GetBitValueVersion();
+      last_bb_ver[i] = FB->GetBBVersion();
+   }
    return DesignFlowStep_Status::SUCCESS;
 }
 
 void BitValueIPA::Initialize()
 {
-   std::map<unsigned int, unsigned int> cur_bitvalue_ver;
-   std::map<unsigned int, unsigned int> cur_bb_ver;
-   const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
-   for(const auto i : CGMan->GetReachedBodyFunctions())
-   {
-      const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(i);
-      cur_bitvalue_ver[i] = FB->GetBitValueVersion();
-      cur_bb_ver[i] = FB->GetBBVersion();
-   }
-
-   last_bitvalue_ver = std::move(cur_bitvalue_ver);
-   last_bb_ver = std::move(cur_bb_ver);
 }
