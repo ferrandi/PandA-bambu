@@ -1,0 +1,42 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure(2) do |config|
+  config.vm.box = "ubuntu/precise64"
+  config.vm.synced_folder '.', '/vagrant', disabled: true
+  config.vm.provider "virtualbox" do |vb|
+     vb.memory = "4096"
+     vb.customize [ 'modifyvm', :id, '--uartmode1', 'disconnected']
+     vb.customize [ 'modifyvm', :id, '--vram', '64']
+     vb.name = "PandA-bambu-VM_64bit-precise"
+  end
+  #   apt-get install lubuntu-desktop -y
+  config.vm.provision "shell", inline: <<-SHELL
+     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt precise-security main restricted universe multiverse' /etc/apt/sources.list
+     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt precise-backports main restricted universe multiverse' /etc/apt/sources.list
+     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt precise-updates main restricted universe multiverse' /etc/apt/sources.list
+     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt precise main restricted universe multiverse' /etc/apt/sources.list
+     apt-get update -y
+     apt-get upgrade -y
+     apt-get install -y linux-headers-$(uname -r) build-essential dkms git
+     apt-get install -y virtualbox-guest-x11
+     apt-get install -y autoconf autoconf-archive automake libtool gcc-4.5 g++-4.5 gcc-4.5-plugin-dev gcc-4.5-multilib g++-4.5-multilib gfortran-4.5 gfortran-4.5-multilib libboost1.48-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz xdot verilator make libsuitesparse-dev libglpk-dev
+     apt-get autoremove -y
+     git clone https://github.com/ferrandi/PandA-bambu.git
+     cd PandA-bambu
+     git checkout panda-0.9.6-candidate
+     make -f Makefile.init
+     mkdir build
+     cd build && ../configure --prefix=/home/ubuntu/panda --enable-verilator --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast && make -j2 && make install && make clean
+     cd ../.. && chown -R ubuntu:ubuntu PandA-bambu
+     mv PandA-bambu /home/ubuntu/
+     cd /home/ubuntu/panda/share/panda/examples/arf && chmod +x bambu.sh && ./bambu.sh && rm -rf hls testbench && echo "Bambu is correctly working!!"
+     cd /home/ubuntu/
+     chown -R ubuntu:ubuntu panda
+     apt-get clean -y
+     echo "export PATH=/home/ubuntu/panda/bin:$PATH" >> /home/ubuntu/.bashrc
+     echo "ubuntu:password" | chpasswd
+     dd if=/dev/zero of=/EMPTY bs=1M
+     rm -f /EMPTY
+  SHELL
+end

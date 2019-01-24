@@ -48,6 +48,7 @@
 #include "memory.hpp"
 #include "target_device.hpp"
 
+#include "application_manager.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
@@ -131,7 +132,6 @@ memory_allocation::memory_allocation(const ParameterConstRef _parameters, const 
                _hls_flow_step_specialization and GetPointer<const MemoryAllocationSpecialization>(_hls_flow_step_specialization) ?
                    _hls_flow_step_specialization :
                    HLSFlowStepSpecializationConstRef(new MemoryAllocationSpecialization(_parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy), _parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type)))),
-      already_executed(false),
       /// NOTE: hls_flow_step_specialization and not _hls_flow_step_specialization is correct
       memory_allocation_policy(GetPointer<const MemoryAllocationSpecialization>(hls_flow_step_specialization)->memory_allocation_policy)
 {
@@ -534,5 +534,30 @@ void memory_allocation::allocate_parameters(unsigned int functionId)
 
 bool memory_allocation::HasToBeExecuted() const
 {
-   return true;
+   if(memory_version == 0 or memory_version != HLSMgr->GetMemVersion())
+      return true;
+   std::map<unsigned int, unsigned int> cur_bb_ver;
+   std::map<unsigned int, unsigned int> cur_bitvalue_ver;
+   const CallGraphManagerConstRef CGMan = HLSMgr->CGetCallGraphManager();
+   for(const auto i : CGMan->GetReachedBodyFunctions())
+   {
+      const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(i);
+      cur_bb_ver[i] = FB->GetBBVersion();
+      cur_bitvalue_ver[i] = FB->GetBitValueVersion();
+   }
+   return cur_bb_ver != last_bb_ver || cur_bitvalue_ver != last_bitvalue_ver;
+}
+
+DesignFlowStep_Status memory_allocation::Exec()
+{
+   const auto status = InternalExec();
+   const CallGraphManagerConstRef CGMan = HLSMgr->CGetCallGraphManager();
+   for(const auto i : CGMan->GetReachedBodyFunctions())
+   {
+      const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(i);
+      last_bb_ver[i] = FB->GetBBVersion();
+      last_bitvalue_ver[i] = FB->GetBitValueVersion();
+   }
+   memory_version = HLSMgr->GetMemVersion();
+   return status;
 }

@@ -110,6 +110,11 @@ class memory_symbol
     * @param precision is the number of bits which the address should be represented
     */
    std::string get_address_string(unsigned int precision) const;
+
+   bool notEQ(const memory_symbol& ref) const
+   {
+      return variable != ref.variable || name != ref.name || address != ref.address || resolved != ref.resolved;
+   }
 };
 /// refcount definition of the class
 typedef refcount<memory_symbol> memory_symbolRef;

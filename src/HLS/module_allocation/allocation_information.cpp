@@ -734,6 +734,8 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index) const
    }
    if(GetPointer<const gimple_nop>(tn))
       return true;
+   if(GetPointer<const gimple_phi>(tn))
+      return true;
    THROW_ERROR("Unexpected operation in AllocationInformation::is_operation_bounded: " + tn->get_kind_text());
    return false;
 }

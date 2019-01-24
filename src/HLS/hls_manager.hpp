@@ -77,6 +77,9 @@ class HLS_manager : public application_manager
    /// reference to the datastructure implementing the backend flow
    BackendFlowRef back_flow;
 
+   /// The version of memory representation on which this step was applied
+   unsigned int memory_version;
+
  public:
    /// base address for memory space addressing
    unsigned int base_address;
@@ -186,6 +189,18 @@ class HLS_manager : public application_manager
     * Return if single write memory is exploited
     */
    bool IsSingleWriteMemory() const;
+
+   /**
+    * Return the version of the memory intermediate representation
+    * @return bb_version
+    */
+   unsigned int GetMemVersion() const;
+
+   /**
+    * Update the version of the memory intermediate representation
+    * @return the new version
+    */
+   unsigned int UpdateMemVersion();
 };
 /// refcount definition of the class
 typedef refcount<HLS_manager> HLS_managerRef;

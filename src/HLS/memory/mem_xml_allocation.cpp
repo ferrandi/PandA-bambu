@@ -64,9 +64,10 @@ mem_xml_allocation::mem_xml_allocation(const ParameterConstRef _parameters, cons
 
 mem_xml_allocation::~mem_xml_allocation() = default;
 
-DesignFlowStep_Status mem_xml_allocation::Exec()
+DesignFlowStep_Status mem_xml_allocation::InternalExec()
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Reading memory allocation from XML file...");
+   memoryRef prevRmem = HLSMgr->Rmem;
    std::string xml_file;
    if(parameters->isOption(OPT_xml_memory_allocation))
       xml_file = parameters->getOption<std::string>(OPT_xml_memory_allocation);
@@ -78,8 +79,8 @@ DesignFlowStep_Status mem_xml_allocation::Exec()
       THROW_ERROR("Memory configuration file \"" + xml_file + "\" does not exist");
    if(!parse_xml_allocation(xml_file))
       THROW_ERROR("Memory configuration not found in file \"" + xml_file + "\"");
-   already_executed = true;
-   return DesignFlowStep_Status::SUCCESS;
+   bool changed = HLSMgr->Rmem->notEQ(prevRmem);
+   return changed ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
 
 bool mem_xml_allocation::parse_xml_allocation(const std::string& xml_file)

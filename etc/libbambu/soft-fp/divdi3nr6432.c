@@ -37,7 +37,11 @@ extern UDWtype __udivdi36432(UDWtype u, USItype v);
 extern UDWtype __umoddi36432(UDWtype u, USItype v);
 /* Define ALIASNAME as a strong alias for NAME.  */
 #define strong_alias(name, aliasname) _strong_alias(name, aliasname)
+#ifdef __APPLE__
+#define _strong_alias(name, aliasname)
+#else
 #define _strong_alias(name, aliasname) extern __typeof(name) aliasname __attribute__((alias(#name)));
+#endif
 
 #define DIV_NUM_BIT 64
 

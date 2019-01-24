@@ -76,7 +76,7 @@ namespace flopoco{
 		/* Cleanup */
 		for (i = 0; i <= degree; i++)
 			mpfr_clear(coef[i]);
-		delete coef;
+        delete[] coef;
 		free_memory(nDiff);	/* XXX: also frees nRemez and f */
 		free_memory(w);
 		mpfr_clear(ia);

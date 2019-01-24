@@ -29,7 +29,6 @@ WFLAGS=$(all_includes) -I$(top_srcdir)/etc/clang_plugin/
 
 check:all
 
-
 ###### clang 4.0
 if BUILD_I386_CLANG4_EMPTY_PLUGIN
 all: $(I386_CLANG4_EMPTY_PLUGIN)
@@ -404,7 +403,7 @@ clean :
 	rm -rf *.o *.so *.h
 
 install: all
-	if test "`ls *so`" != ""; then mkdir -p $(DESTDIR)$(PLUGIN_DIR); cp *.so $(DESTDIR)$(PLUGIN_DIR) -v; fi
+	if test "`ls *so`" != ""; then mkdir -p $(DESTDIR)$(PLUGIN_DIR); cp -v *.so $(DESTDIR)$(PLUGIN_DIR); fi
 
 #do not touch the following line
 

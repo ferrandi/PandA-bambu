@@ -262,7 +262,7 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
       }
       else
       {
-         compiler_flags += " -Wl,--allow-multiple-definition ";
+         compiler_flags += " -Dmain=_undefined_main ";
          for(const auto& input_file : parameters->getOption<const CustomSet<std::string>>(OPT_input_file))
          {
             file_sources.push_back(input_file);
