@@ -750,8 +750,9 @@ bool memory::notEQ(refcount<memory> ref) const
       return true;
    if(same_data_size_accesses != ref->same_data_size_accesses)
       return true;
-   if(source_values != ref->source_values)
-      return true;
+// may oscillate
+//   if(source_values != ref->source_values)
+//      return true;
    if(parm_decl_copied != ref->parm_decl_copied)
       return true;
    if(parm_decl_stored != ref->parm_decl_stored)
