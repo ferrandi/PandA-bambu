@@ -2331,7 +2331,7 @@ void allocation::IntegrateTechnologyLibraries()
             THROW_ASSERT(techNode_obj, "function not yet built: " + shared_fu_name);
             const std::string wrapped_fu_name = WRAPPED_PROXY_PREFIX + shared_fu_name;
             technology_nodeRef wrapper_tn = TM->get_fu(wrapped_fu_name, PROXY_LIBRARY);
-            if(!wrapper_tn)
+//            if(!wrapper_tn)
             {
                add_proxy_function_wrapper(wrapper_tn, library_name, techNode_obj, shared_fu_name);
             }
@@ -2366,7 +2366,7 @@ void allocation::IntegrateTechnologyLibraries()
             technology_nodeRef techNode_obj = libraryManager->get_fu(original_proxied_fu_name);
             THROW_ASSERT(techNode_obj, "function not yet built: " + original_proxied_fu_name);
             technology_nodeRef proxy_tn = TM->get_fu(PROXY_PREFIX + original_proxied_fu_name, PROXY_LIBRARY);
-            if(!proxy_tn)
+//            if(!proxy_tn)
             {
                add_proxy_function_module(proxy_tn, HLS_C, techNode_obj, original_proxied_fu_name);
             }
