@@ -336,7 +336,7 @@ namespace llvm
       };
       const pt_info* SSA_NAME_PTR_INFO(const void* t) const;
       Andersen_AA* PtoSets_AA;
-      ///integer type used to convert a pointer in a signed integer type
+      /// integer type used to convert a pointer in a signed integer type
       unsigned int SignedPointerTypeReference;
 
       struct ssa_name

@@ -1296,7 +1296,8 @@ namespace RangeAnalysis
             min = &candidates[i];
          }
       }
-      return Range(Regular, getBitWidth(), *min, *max);;
+      return Range(Regular, getBitWidth(), *min, *max);
+      ;
    }
 
    Range Range::urem(const Range& other) const
