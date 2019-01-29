@@ -37,6 +37,7 @@
  * This file contains the necessary data structures used to represent a state transition graph
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
@@ -177,7 +178,7 @@ void StateInfo::print(std::ostream& os, const int detail_level) const
 
    if(BB_ids.size())
    {
-      os << "BB_ids = ";
+      os << "BB";
       for(const auto& bb_i : BB_ids)
          os << bb_i << " <br align=\"left\"/>";
    }
@@ -199,19 +200,30 @@ void StateInfo::print(std::ostream& os, const int detail_level) const
    os << ">";
 }
 
-void TransitionInfo::print(std::ostream& os) const
+void TransitionInfo::print(std::ostream& os, const int detail_level) const
 {
    const BehavioralHelperConstRef BH = op_function_graph->CGetOpGraphInfo()->BH;
    if(t == DONTCARE_COND)
       ; // nothing to print
    else if(t == TRUE_COND)
-      os << GET_NAME(op_function_graph, get_operation()) << "(T)\\n";
+   {
+      if(detail_level == 0)
+         os << GET_NAME(op_function_graph, get_operation()) << "(T)\\n";
+      else
+         os << "(T)\\n";
+   }
    else if(t == FALSE_COND)
-      os << GET_NAME(op_function_graph, get_operation()) << "(F)\\n";
+   {
+      if(detail_level == 0)
+         os << GET_NAME(op_function_graph, get_operation()) << "(F)\\n";
+      else
+         os << "(F)\\n";
+   }
    else if(t == CASE_COND)
    {
       auto op = get_operation();
-      os << GET_NAME(op_function_graph, op);
+      if(detail_level == 0)
+         os << GET_NAME(op_function_graph, op);
       os << " (";
       const var_pp_functorConstRef std(new std_var_pp_functor(BH));
       bool first = true;
@@ -266,7 +278,8 @@ void TransitionInfo::print(std::ostream& os) const
    }
    else
       THROW_ERROR("transition type not yet supported");
-   os << "epp: " << epp_increment << "\\n";
+   if(epp_incrementValid)
+      os << "epp: " << epp_increment << "\\n";
 }
 
 vertex TransitionInfo::get_operation() const
@@ -320,7 +333,7 @@ void StateTransitionGraph::WriteDot(const std::string& file_name, const int deta
    if(!boost::filesystem::exists(complete_file_name))
       boost::filesystem::create_directories(complete_file_name);
    const VertexWriterConstRef state_writer(new StateWriter(this, op_function_graph, detail_level));
-   const EdgeWriterConstRef transition_writer(new TransitionWriter(this, op_function_graph));
+   const EdgeWriterConstRef transition_writer(new TransitionWriter(this, op_function_graph, detail_level));
    InternalWriteDot<const StateWriter, const TransitionWriter>(complete_file_name + file_name, state_writer, transition_writer);
    for(boost::tie(state, state_end) = boost::vertices(*this); state != state_end; state++)
    {
@@ -360,7 +373,7 @@ void StateWriter::operator()(std::ostream& out, const vertex& v) const
    out << "]";
 }
 
-TransitionWriter::TransitionWriter(const graph* _stg, const OpGraphConstRef _op_function_graph) : EdgeWriter(_stg, 0), BH(_op_function_graph->CGetOpGraphInfo()->BH), op_function_graph(_op_function_graph)
+TransitionWriter::TransitionWriter(const graph* _stg, const OpGraphConstRef _op_function_graph, int _detail_level) : EdgeWriter(_stg, _detail_level), BH(_op_function_graph->CGetOpGraphInfo()->BH), op_function_graph(_op_function_graph)
 {
 }
 
@@ -384,6 +397,6 @@ void TransitionWriter::operator()(std::ostream& out, const EdgeDescriptor& e) co
       THROW_UNREACHABLE("InconsistentDataStructure");
    }
    out << ",label=\"";
-   temp->print(out);
+   temp->print(out, detail_level);
    out << "\"]";
 }
