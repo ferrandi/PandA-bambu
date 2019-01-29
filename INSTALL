@@ -629,6 +629,21 @@ make and make install sequence.
 At the time of writing ArchLinux comes with gcc-4.8 but in the future
 you will need to pass --with-gcc49.
 
+Mac OSX
+*************
+To compile PandA on MacOSX you need to install MacPorts (version 2.5.4 or later).
+
+Here the list of commands required: 
+     $sudo port -N -q install git autoconf autoconf-archive automake bison flex boost libtool SuiteSparse glpk iverilog clang-6.0 gcc8 mpfi coreutils
+     $sudo cp /opt/local/bin/greadlink /opt/local/bin/readlink
+     $git clone https://github.com/ferrandi/PandA-bambu.git
+     $cd PandA-bambu
+     $make -f Makefile.init
+     $mkdir build
+     $cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast --with-clang6=/opt/local/bin/clang-mp-6.0 --with-gcc8=/opt/local/bin/gcc-mp-8 LDFLAGS=-L/opt/local/lib CPPFLAGS=-I/opt/local/include/ && make -j3 && make install && make clean
+
+
+
 Notes on Ubuntu 13.04 64bit and XILINX ISE 14.6
 *************
 
