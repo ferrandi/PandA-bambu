@@ -37,8 +37,7 @@ New features introduced:
   modernize-use-bool-literals, modernize-use-equals-default, modernize-use-equals-delete, modernize-loop-convert and modernize-use-override.
 - Added a SRT4 implementation. Added --hls-fpdiv to select which floating point division will be used. Current options: SRT4 for Sweeney, Robertson, Tocher floating point division with radix 4 and G for Goldschmidt floating point division.
 - Added support to ac_types and ac_math library from Mentor Graphics. With respect to the original library, the bambu/PandA library does support both LLVM/Clang and GCC compiler and it requires c++14 standard for the compilation. An initial support to ap_* objects used by VIVADO HLS has been added as well.
-- Added support to top design interfaces: none (ap_none), acknowledge (ap_ack), valid (ap_vld), ovalid (ap_ovld), handshake (ap_hs), fifo (ap_fifo) and array (ap_memory).
-
+- Added support to top design interfaces: none (ap_none), acknowledge (ap_ack), valid (ap_vld), ovalid (ap_ovld), handshake (ap_hs), fifo (ap_fifo) and array (ap_memory). These interfaces are activated by pragmas added to the source code and when the option --generate-interface=INFER is passed to bambu. Examples of pragma use can be found in panda_regressions/hls/bambu_specific_test4.
 
 This release includes also a set of fixes:
     on COND_EXPR_RESTRUCTURING step
