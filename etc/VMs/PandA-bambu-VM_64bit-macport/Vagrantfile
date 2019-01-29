@@ -23,7 +23,6 @@ Vagrant.configure(2) do |config|
      sudo cp /opt/local/bin/greadlink /opt/local/bin/readlink
      git clone https://github.com/ferrandi/PandA-bambu.git
      cd PandA-bambu
-     git checkout panda-0.9.6-candidate
      make -f Makefile.init
      mkdir build
      cd build && ../configure --prefix=/Users/vagrant/panda --enable-icarus --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast --with-clang6=/opt/local/bin/clang-mp-6.0 LDFLAGS=-L/opt/local/lib CPPFLAGS=-I/opt/local/include/ && make -j3 && make install && make clean
