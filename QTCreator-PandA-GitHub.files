@@ -443,6 +443,8 @@ build/src/parser/treegcc/treeParser.hpp
 build/src/revision_hash.hpp
 etc/clang_plugin/HardekopfLin_AA.cpp
 etc/clang_plugin/HardekopfLin_AA.hpp
+etc/clang_plugin/bambuS2S.cpp
+etc/clang_plugin/bambuS2S.cpp
 etc/clang_plugin/dumpGimple.cpp
 etc/clang_plugin/llvm/RangeAnalysis.cpp
 etc/clang_plugin/llvm/RangeAnalysis.hpp

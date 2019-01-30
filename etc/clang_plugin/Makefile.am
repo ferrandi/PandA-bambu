@@ -1,5 +1,5 @@
 #This is etc/clang_plugin/Makefile.am
-EXTRA_DIST = $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp gcc/cp-tree.def gcc/sync-builtins.def gcc/gtm-builtins.def gcc/sanitizer.def gcc/hsa-builtins.def gcc/c-common.def gcc/gimple.def gcc/builtins.def gcc/brig-builtins.def gcc/cilkplus.def gcc/omp-builtins.def gcc/tree.def gcc/cilk-builtins.def gcc/chkp-builtins.def gcc/COPYING3 HardekopfLin_AA.hpp HardekopfLin_AA.cpp llvm/eSSA.hpp llvm/eSSA.cpp llvm/RangeAnalysis.hpp llvm/RangeAnalysis.cpp llvm/LICENSE.TXT  llvm/my_OrderedInstructions.cpp  llvm/my_OrderedInstructions.hpp
+EXTRA_DIST = $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(top_srcdir)/etc/clang_plugin/gcc/cp-tree.def $(top_srcdir)/etc/clang_plugin/gcc/sync-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/gtm-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/sanitizer.def $(top_srcdir)/etc/clang_plugin/gcc/hsa-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/c-common.def $(top_srcdir)/etc/clang_plugin/gcc/gimple.def $(top_srcdir)/etc/clang_plugin/gcc/builtins.def $(top_srcdir)/etc/clang_plugin/gcc/brig-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/cilkplus.def $(top_srcdir)/etc/clang_plugin/gcc/omp-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/tree.def $(top_srcdir)/etc/clang_plugin/gcc/cilk-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/chkp-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/COPYING3 $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $(top_srcdir)/etc/clang_plugin/llvm/LICENSE.TXT $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.cpp $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.hpp $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
 
 
 LD_LIBRARY_PATH=
@@ -29,9 +29,16 @@ WFLAGS=$(all_includes) -I$(top_srcdir)/etc/clang_plugin/
 
 check:all
 
+CLANG_LIBS=-lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat
+CLANG4_LIBS=-Wl,--start-group $(CLANG_LIBS) -Wl,--end-group
+
+CLANG5_LIBS=-Wl,--start-group $(CLANG_LIBS) -Wl,--end-group
+
+CLANG6_LIBS=-Wl,--start-group $(CLANG_LIBS) -lclangCrossTU -Wl,--end-group
+
 ###### clang 4.0
 if BUILD_I386_CLANG4_EMPTY_PLUGIN
-all: $(I386_CLANG4_EMPTY_PLUGIN)
+all: $(I386_CLANG4_EMPTY_PLUGIN) bambuS2S-4
 endif
 
 if BUILD_I386_CLANG4_SSA_PLUGIN
@@ -118,11 +125,15 @@ clang4_my_OrderedInstructions.o : $(top_srcdir)/etc/clang_plugin/llvm/my_Ordered
 clang4_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp
 	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp -o clang4_eSSA.o -I. -I$(I386_LLVM4_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
 
+bambuS2S-4: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
+	$(I386_CLANG4_PLUGIN_COMPILER) -fno-rtti -O3 -std=c++14 `$(I386_LLVM_CONFIG4_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG4_LIBS)  -o $@
+
+
 ###### 
 
 ###### clang 5.0
 if BUILD_I386_CLANG5_EMPTY_PLUGIN
-all: $(I386_CLANG5_EMPTY_PLUGIN)
+all: $(I386_CLANG5_EMPTY_PLUGIN) bambuS2S-5
 endif
 
 if BUILD_I386_CLANG5_SSA_PLUGIN
@@ -204,11 +215,14 @@ clang5_RangeAnalysis.o : $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $
 clang5_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.hpp
 	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp -o clang5_eSSA.o -I. -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
 
+bambuS2S-5: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
+	$(I386_CLANG5_PLUGIN_COMPILER) -fno-rtti -O3 -std=c++14 `$(I386_LLVM_CONFIG5_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG5_LIBS)  -o $@
+
 ###### 
 
 ###### clang 6.0
 if BUILD_I386_CLANG6_EMPTY_PLUGIN
-all: $(I386_CLANG6_EMPTY_PLUGIN)
+all: $(I386_CLANG6_EMPTY_PLUGIN) bambuS2S-6
 endif
 
 if BUILD_I386_CLANG6_SSA_PLUGIN
@@ -396,6 +410,8 @@ clang6_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/c
 	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp -o clang6_eSSA.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
 	esac;
 
+bambuS2S-6: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
+	$(I386_CLANG6_PLUGIN_COMPILER) -fno-rtti -O3 -std=c++14 `$(I386_LLVM_CONFIG6_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG6_LIBS)  -o $@
 
 ###### 
 
@@ -404,6 +420,7 @@ clean :
 
 install: all
 	if test "`ls *so`" != ""; then mkdir -p $(DESTDIR)$(PLUGIN_DIR); cp -v *.so $(DESTDIR)$(PLUGIN_DIR); fi
+	if test "`ls bambuS2S-*`" != ""; then mkdir -p $(DESTDIR)$(bindir); cp -v  bambuS2S-* $(DESTDIR)$(bindir); fi
 
 #do not touch the following line
 
