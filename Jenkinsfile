@@ -17,34 +17,34 @@ pipeline {
       parallel {
         stage('list based') {
           steps {
-           sh 'mkdir $WORKSPACE/list && mkdir $WORKSPACE/list/test-reports && cd $WORKSPACE/panda_regressions && nice -n 17 ./panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/list/test-reports" -t 120m --returnfail -c=--help'
+           sh '#mkdir $WORKSPACE/list && mkdir $WORKSPACE/list/test-reports && cd $WORKSPACE/panda_regressions && nice -n 17 ./panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/list/test-reports" -t 120m --returnfail -c=--help'
           }
         }
         stage('sdc scheduling') {
           steps {
-           sh 'mkdir $WORKSPACE/sdc_tests/ && mkdir $WORKSPACE/sdc_tests/test-reports && mkdir $WORKSPACE/panda_regressions/sdc_tests && cd $WORKSPACE/panda_regressions/sdc_tests && nice -n 15 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/sdc_tests/test-reports" -t 120m -c="--speculative-sdc-scheduling" --returnfail -c=--help'
+           sh '#mkdir $WORKSPACE/sdc_tests/ && mkdir $WORKSPACE/sdc_tests/test-reports && mkdir $WORKSPACE/panda_regressions/sdc_tests && cd $WORKSPACE/panda_regressions/sdc_tests && nice -n 15 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/sdc_tests/test-reports" -t 120m -c="--speculative-sdc-scheduling" --returnfail -c=--help'
           }
         }
         stage('VHDL') {
           steps {
-           sh 'mkdir $WORKSPACE/panda_regressions/vhdl_tests && mkdir $WORKSPACE/vhdl_tests/ && mkdir $WORKSPACE/vhdl_tests/test-reports && cd $WORKSPACE/panda_regressions/vhdl_tests && nice -n 16 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/vhdl_tests/test-reports" -t 120m -c="-wH" --name="_VHDL" --returnfail -c=--help'
+           sh '#mkdir $WORKSPACE/panda_regressions/vhdl_tests && mkdir $WORKSPACE/vhdl_tests/ && mkdir $WORKSPACE/vhdl_tests/test-reports && cd $WORKSPACE/panda_regressions/vhdl_tests && nice -n 16 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/vhdl_tests/test-reports" -t 120m -c="-wH" --name="_VHDL" --returnfail -c=--help'
           }
         }
       }
     }
     stage('Synthesis Step') {
       steps {
-        sh 'mkdir $WORKSPACE/example/test-reports && mkdir $WORKSPACE/example/pp-reports && cd $WORKSPACE/examples && nice -n 17 ./example.sh -j8 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/example/test-reports" --perfpublisherdir="$WORKSPACE/example/pp-reports" '
+        sh 'mkdir $WORKSPACE/examples/test-reports && mkdir $WORKSPACE/examples/pp-reports && cd $WORKSPACE/examples && nice -n 17 ./example.sh -j8 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/examples/test-reports" --perfpublisherdir="$WORKSPACE/examples/pp-reports" '
       }
     }
     stage('Publish Junits results') {
       steps {
-        junit allowEmptyResults: true, testResults: 'vhdl_tests/test-reports/*.xml,sdc_tests/test-reports/*.xml,list/test-reports/*.xml,example/test-reports/*.xml'
+        junit allowEmptyResults: true, testResults: 'vhdl_tests/test-reports/*.xml,sdc_tests/test-reports/*.xml,list/test-reports/*.xml,examples/test-reports/*.xml'
       }
     }
     stage('Publish Perf results') {
       steps {
-        perfpublisher healthy: '0', metrics: 'AreaxTime=areatime;Slices=slices;sliceluts=sliceluts;registers=registers;dsps=dsps;brams=brams;period=period;slack=slack;frequency=frequency', name: 'example/pp-reports/*.xml', parseAllMetrics: false, threshold: '', unhealthy: '0', unstableThreshold: ''
+        perfpublisher healthy: '0', metrics: 'AreaxTime=areatime;Slices=slices;sliceluts=sliceluts;registers=registers;dsps=dsps;brams=brams;period=period;slack=slack;frequency=frequency', name: 'examples/pp-reports/*.xml', parseAllMetrics: false, threshold: '', unhealthy: '0', unstableThreshold: ''
       }
     }
     stage('Copy data Step') {
