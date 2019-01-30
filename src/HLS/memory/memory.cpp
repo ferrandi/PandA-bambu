@@ -801,8 +801,8 @@ bool memory::notEQ(refcount<memory> ref) const
       return true;
    if(parameter_alignment != ref->parameter_alignment)
       return true;
-   if(n_mem_operations_per_var != ref->n_mem_operations_per_var)
-      return true;
+   // if(n_mem_operations_per_var != ref->n_mem_operations_per_var)
+   //   return true;
    if(null_pointer_check != ref->null_pointer_check)
       return true;
    if(maximum_references != ref->maximum_references)
