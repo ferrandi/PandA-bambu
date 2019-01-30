@@ -572,62 +572,31 @@ sudo dnf install autoconf autoconf-archive libtool boost-devel mpfr-devel xml2 l
 ArchLinux
 *************
 
-First of all let's start installing all the dependencies. Before starting you
-will need to enable the multilib repository in pacman. If you don't know how to
-do it, take a look at
-https://wiki.archlinux.org/index.php/multilib.
+The following packages have to be installed under ArchLinux to compile PandA:
 
-After a `pacman -Sy` you can proceed to install part of the
-dependencies with
+- base-devel 
+- multilib-devel 
+- boost 
+- iverilog 
+- gcc-multilib 
+- autoconf-archive 
+- verilator 
+- mpfi 
+- clang 
+- llvm 
+- gcc 
+- gcc-fortran 
+- git 
+- tar 
+- suitesparse 
+- glpk 
+- readline
 
-    $ pacman -S base-devel multilib-devel boost iverilog gcc-multilib autoconf-archive
+In a single line:
+sudo pacman -S base-devel multilib-devel boost iverilog gcc-multilib autoconf-archive verilator mpfi clang llvm gcc gcc-fortran git tar suitesparse glpk readline
 
-After this command has completed, you only miss mpfi that unfortunately is not in the official repositories. However you can find it in the AUR at https://aur.archlinux.org.
-
-If you have never installed something from AUR, these are the instruction to install yaourt, a wrapper for pacman which adds automated access to the AUR using the same syntax as pacman.
-- Open pacman's configuration file to add the custom repository.
-
-    $ sudo vi /etc/pacman.conf
-
-- Add the archlinuxfr repository to the bottom.
-
-[archlinuxfr]
-SigLevel = Never
-Server = http://repo.archlinux.fr/$arch
-
-The $arch variable just specifies whether your distribution is x86 or x86_64. It will be replaced when the file is processed.
-- After the custom repository has been added to pacman.conf, the package database needs to be synchronized to include packages from archlinuxfr and any updates from standard packages that yaourt or its dependencies need.
-
-sudo pacman -Sy
-
-- Now, yaourt and its dependencies can be installed just like any other package via pacman.
-
-sudo pacman -S yaourt
-
-yaour can now be used to install aur packages:
-
-    $ yaourt --noconfirm -Sb mpfi
-
-Anyway you can find more information at
-https://wiki.archlinux.org/index.php/Arch_User_Repository.
-
-As an option you can install verilator. Again, it is not available on
-the official repos but you can find the PKGBUILD in the AUR at
-https://aur.archlinux.org/packages/verilator/.
-
-Once all the dependencies are installed you're ready to compile PandA.
-Extract PandA from the archive and procede with the usual configure,
-make and make install sequence.
-
-    $ ../configure --with-gcc48=/usr/bin/gcc --enable-bambu \
-         --enable-icarus  --prefix=/opt/panda --enable-flopoco \
-         --enable-verilator --disable-release
-
-    $ make -j4
-    $ make install
-
-At the time of writing ArchLinux comes with gcc-4.8 but in the future
-you will need to pass --with-gcc49.
+A working configure example is:
+../configure --prefix=$HOME/panda --enable-verilator --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast
 
 Mac OSX
 *************
