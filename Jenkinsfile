@@ -60,10 +60,11 @@ pipeline {
     stage('Push results Step') {
       steps {
         withCredentials([usernamePassword(credentialsId: '91bbe76a-aa1b-465b-bcf8-3faaa27471af', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
-          sh 'git config --global user.name "Jenkins CI" '
+          sh 'git config --global user.name "JenkinsCI" '
           sh 'git config --global user.email "jenkins-ci@example.com" '
           sh 'git commit -a -m "Updated synthesis results"  '
           sh 'git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/ferrandi/PandA-bambu.git  $GIT_LOCAL_BRANCH:$CHANGE_BRANCH'
+          sh 'printenv'
         }
       }
     }
