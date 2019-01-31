@@ -9,7 +9,7 @@ pipeline {
             script {
                 result = sh (script: "git log -1 | grep 'Author: JenkinsCI.*'", returnStatus: true) 
                 if (result == 0) {
-                    echo ("'Jenkins commit no build.")
+                    echo ("'It's a Jenkins commit: nothing to do.")
                     shouldBuild = false
                 }
             }
@@ -116,9 +116,8 @@ pipeline {
         withCredentials([usernamePassword(credentialsId: '91bbe76a-aa1b-465b-bcf8-3faaa27471af', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
           sh 'git config --global user.name "JenkinsCI" '
           sh 'git config --global user.email "jenkins-ci@example.com" '
-          sh 'git commit -a -m "Updated synthesis results"  '
+          sh 'git commit -a -m "Updated synthesis results [skip ci]"  '
           sh 'git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/ferrandi/PandA-bambu.git  $GIT_LOCAL_BRANCH:$CHANGE_BRANCH'
-          sh 'printenv'
         }
       }
     }
