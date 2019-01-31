@@ -1,9 +1,9 @@
 pipeline {
+  environment {
+    shouldBuild = "true"
+  }
   agent any
   stages {
-    environment {
-      shouldBuild = "true"
-    }
     stage ("Shall we build") {
         steps {
             script {
