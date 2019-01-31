@@ -61,8 +61,7 @@ pipeline {
       steps {
         withCredentials([usernamePassword(credentialsId: '91bbe76a-aa1b-465b-bcf8-3faaa27471af', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
           sh 'git commit --author="Jenkins CI <jenkins-ci@example.com>" -a -m "Updated synthesis results"  '
-          sh 'printenv'
-          sh 'git push origin'
+          sh 'git push --set-upstream origin $(CHANGE_BRANCH)'
         }
       }
     }
