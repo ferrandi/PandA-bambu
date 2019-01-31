@@ -59,8 +59,9 @@ pipeline {
     }
     stage('Push results Step') {
       steps {
-        withCredentials([usernamePassword(credentialsId: 'PandA-GitHub', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+        withCredentials([usernamePassword(credentialsId: '91bbe76a-aa1b-465b-bcf8-3faaa27471af', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
           sh 'git commit --author="Jenkins CI <jenkins-ci@example.com>" -a -m "Updated synthesis results"  '
+          sh 'echo $(env.BRANCH_NAME)'
           sh 'git push origin'
         }
       }

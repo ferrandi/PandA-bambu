@@ -1,7 +1,8 @@
 #!/bin/bash
 abs_script=$(readlink -e $0)
 dir_script=$(dirname $abs_script)
-$dir_script/softfloat/all.sh $@
+#$dir_script/softfloat/all.sh $@
+$dir_script/softfloat/xc7z020-1clg484-VVD_10.0_OSF_sdc.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
