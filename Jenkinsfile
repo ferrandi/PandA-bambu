@@ -1,6 +1,6 @@
 pipeline {
   environment {
-    shouldBuild = "true"
+    shouldBuild = true
   }
   agent any
   stages {
@@ -10,7 +10,7 @@ pipeline {
                 result = sh (script: "git log -1 | grep 'Author: JenkinsCI.*'", returnStatus: true) 
                 if (result == 0) {
                     echo ("'Jenkins commit no build.")
-                    shouldBuild = "false"
+                    shouldBuild = false
                 }
             }
         }
