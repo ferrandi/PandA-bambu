@@ -924,6 +924,12 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    bool changed = HLSMgr->Rmem->notEQ(prevRmem);
    if(changed)
+   {
       HLSMgr->UpdateMemVersion();
+      /// clean proxy library
+      auto TM = HLS_T->get_technology_manager();
+      TM->erase_library(PROXY_LIBRARY);
+      TM->erase_library(WORK_LIBRARY);
+   }
    return changed ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
