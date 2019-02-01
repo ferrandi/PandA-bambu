@@ -91,6 +91,8 @@
 #include "constant_strings.hpp"
 #include "copyrights_strings.hpp"
 
+#include "language_writer.hpp"
+
 #define EPSILON 0.000000001
 #define ENCODE_FDNAME(argName_string, MODE, interfaceType) (argName_string + STR_CST_interface_parameter_keyword + (MODE) + interfaceType)
 
@@ -714,7 +716,11 @@ void interface_infer::create_resource_Write_simple(const std::vector<std::string
       }
 
       CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "in1 in2");
-      CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR, "Write_" + interfaceType + ((isDiffSize && !isAVH) ? "DS" : "") + ".cpp");
+      const auto writer = static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
+      if(interfaceType=="none" && !(isDiffSize && !isAVH) && writer == HDLWriter_Language::VHDL)
+         CM->add_NP_functionality(interface_top, NP_functionality::VHDL_GENERATOR, "Write_" + interfaceType + ((isDiffSize && !isAVH) ? "DS" : "") + "_VHDL.cpp");
+      else
+         CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR, "Write_" + interfaceType + ((isDiffSize && !isAVH) ? "DS" : "") + ".cpp");
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
       for(auto fdName : operations)
          TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
@@ -1165,8 +1171,16 @@ DesignFlowStep_Status interface_infer::InternalExec()
                         std::cerr << "IO arg\n";
                         if(interfaceType == "ptrdefault")
                         {
-                           DesignInterfaceArgs[argName_string] = "ovalid";
-                           interfaceType = "ovalid";
+                           if(parameters->IsParameter("none-ptrdefault") && parameters->GetParameter<int>("none-ptrdefault") == 1)
+                           {
+                              DesignInterfaceArgs[argName_string] = "none";
+                              interfaceType = "none";
+                           }
+                           else
+                           {
+                              DesignInterfaceArgs[argName_string] = "ovalid";
+                              interfaceType = "ovalid";
+                           }
                         }
                         else if(interfaceType == "fifo")
                         {
@@ -1191,8 +1205,16 @@ DesignFlowStep_Status interface_infer::InternalExec()
                         std::cerr << "O arg\n";
                         if(interfaceType == "ptrdefault")
                         {
-                           DesignInterfaceArgs[argName_string] = "valid";
-                           interfaceType = "valid";
+                           if(parameters->IsParameter("none-ptrdefault") && parameters->GetParameter<int>("none-ptrdefault") == 1)
+                           {
+                              DesignInterfaceArgs[argName_string] = "none";
+                              interfaceType = "none";
+                           }
+                           else
+                           {
+                              DesignInterfaceArgs[argName_string] = "valid";
+                              interfaceType = "valid";
+                           }
                         }
                      }
                      else

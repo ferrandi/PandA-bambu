@@ -138,12 +138,12 @@ namespace boost
       for(boost::tie(v, vend) = vertices(G); v != vend; ++v)
       {
          Vertex current = *v;
-         typename GraphTraits::adjacency_iterator v, vend;
+         typename GraphTraits::adjacency_iterator v1, vend1;
 
          // Mark the colors of vertices adjacent to current.
          // i can be the value for marking since i increases successively
-         for(boost::tie(v, vend) = adjacent_vertices(current, G); v != vend; ++v)
-            mark[get(color, *v)] = i;
+         for(boost::tie(v1, vend1) = adjacent_vertices(current, G); v1 != vend1; ++v1)
+            mark[get(color, *v1)] = i;
 
          // Next step is to assign the smallest un-marked color
          // to the current vertex.
@@ -242,14 +242,13 @@ namespace boost
             filter(&support),
             FG(G, keep_all(), filter)
       {
-         typename GraphTraits::vertex_iterator v, vend;
          unsigned int i, iheap = 0;
          heap_container = new size_type[_num_node - clique_size];
          for(i = 0; i < num_node; i++)
          {
             Vertex v = vertex(i, G);
             support.insert(v);
-            DegreeCount[i] = degree(v, _G);
+            DegreeCount[i] = degree(v, G);
             heap_container[iheap] = i;
             iheap++;
          }
@@ -261,6 +260,7 @@ namespace boost
       }
       // no copy constructor
       maxclique_dsatur_coloring_helper(const maxclique_dsatur_coloring_helper& inst) = delete;
+      maxclique_dsatur_coloring_helper& operator=(const maxclique_dsatur_coloring_helper& inst) = delete;
       size_type MaxCliqueGreedy()
       {
          SET_container GreedySupport, G1_support;

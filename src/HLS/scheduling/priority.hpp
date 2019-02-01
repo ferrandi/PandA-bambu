@@ -185,7 +185,7 @@ struct priority_compare_functor
     * Constructor
     * @param pri is the priority data structure which associate at each vertex a priority value of type Type.
     */
-   priority_compare_functor(const refcount<priority_data<Type>> pri) : priority_values(pri)
+   explicit priority_compare_functor(const refcount<priority_data<Type>> pri) : priority_values(pri)
    {
    }
 

@@ -1557,8 +1557,8 @@ namespace llvm
                }
                // For array or vector indices, scale the index by the size of the type.
                auto index = getOperand(GTI.getOperand(), currentFunction);
-               auto index_type=TREE_TYPE(index);
-               bool isSignedIndexType=CheckSignedTag(index_type);
+               auto index_type = TREE_TYPE(index);
+               bool isSignedIndexType = CheckSignedTag(index_type);
                auto array_elmt_size = llvm::APInt(ConstantIndexOffset.getBitWidth(), DL->getTypeAllocSize(GTI.getIndexedType()));
                auto array_elmt_sizeCI = llvm::ConstantInt::get(gep_op->getContext(), array_elmt_size);
                auto array_elmt_sizeCI_type = array_elmt_sizeCI->getType();
@@ -1568,7 +1568,7 @@ namespace llvm
                   if(index2integer_cst_signed.find(array_elmt_size_node) == index2integer_cst_signed.end())
                   {
                      auto& ics_obj = index2integer_cst_signed[array_elmt_size_node];
-                     auto type_operand=TREE_TYPE(array_elmt_size_node);
+                     auto type_operand = TREE_TYPE(array_elmt_size_node);
                      ics_obj.ic = array_elmt_size_node;
                      ics_obj.type = AddSignedTag(type_operand);
                      array_elmt_size_node = assignCode(&ics_obj, GT(INTEGER_CST_SIGNED));
@@ -1576,7 +1576,7 @@ namespace llvm
                   else
                      array_elmt_size_node = &index2integer_cst_signed.find(array_elmt_size_node)->second;
                }
-               auto index_times_size = build2(GT(MULT_EXPR), isSignedIndexType?AddSignedTag(array_elmt_sizeCI_type):array_elmt_sizeCI_type, index, array_elmt_size_node);
+               auto index_times_size = build2(GT(MULT_EXPR), isSignedIndexType ? AddSignedTag(array_elmt_sizeCI_type) : array_elmt_sizeCI_type, index, array_elmt_size_node);
                if(isSignedIndexType)
                   index_times_size = build1(GT(NOP_EXPR), array_elmt_sizeCI_type, index_times_size);
                auto accu = build2(GT(POINTER_PLUS_EXPR), TREE_TYPE(base_node), base_node, index_times_size);
@@ -4573,7 +4573,7 @@ namespace llvm
             serialize_child("retn", TREE_TYPE(t));
             auto args = TYPE_ARG_TYPES(t);
             serialize_child("prms", args);
-            if(args && stdarg_p(t)) //ISO C requires a named parameter before '...'
+            if(args && stdarg_p(t)) // ISO C requires a named parameter before '...'
                serialize_string("varargs");
             break;
          }

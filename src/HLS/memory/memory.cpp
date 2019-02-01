@@ -750,9 +750,9 @@ bool memory::notEQ(refcount<memory> ref) const
       return true;
    if(same_data_size_accesses != ref->same_data_size_accesses)
       return true;
-// may oscillate
-//   if(source_values != ref->source_values)
-//      return true;
+   // may oscillate
+   //   if(source_values != ref->source_values)
+   //      return true;
    if(parm_decl_copied != ref->parm_decl_copied)
       return true;
    if(parm_decl_stored != ref->parm_decl_stored)
@@ -801,8 +801,8 @@ bool memory::notEQ(refcount<memory> ref) const
       return true;
    if(parameter_alignment != ref->parameter_alignment)
       return true;
-   if(n_mem_operations_per_var != ref->n_mem_operations_per_var)
-      return true;
+   // if(n_mem_operations_per_var != ref->n_mem_operations_per_var)
+   //   return true;
    if(null_pointer_check != ref->null_pointer_check)
       return true;
    if(maximum_references != ref->maximum_references)
