@@ -56,15 +56,27 @@ static llvm::cl::OptionCategory bambuSource2SourceCategory("bambu source to sour
 
 static llvm::cl::opt<std::string> top_fun_names("topf", llvm::cl::desc("top function names, separated by commas if needed. -topf=\"fun1,fun2,fun3\""), llvm::cl::value_desc("top-function-names"), llvm::cl::cat(bambuSource2SourceCategory));
 
+/**
+ * Matchers
+*/
+
+/// non void return expression matcher
 auto return_expr_matcher(std::string const& fname)
 {
    using namespace clang::ast_matchers;
    return returnStmt(hasAncestor(functionDecl(unless(isExpansionInSystemHeader()), hasName(fname), returns(unless(hasCanonicalType(asString("void"))))).bind("function"))).bind("return_expr");
 }
+/// function declaration returning non-void values matchers
 auto function_decl_matcher(std::string const& fname)
 {
    using namespace clang::ast_matchers;
    return functionDecl(unless(isExpansionInSystemHeader()), hasName(fname), returns(unless(hasCanonicalType(asString("void"))))).bind("function");
+}
+/// parameter of struct type matcher
+auto struct_parm_decl_matcher(std::string const& fname)
+{
+   using namespace clang::ast_matchers;
+   return parmVarDecl(hasAncestor(functionDecl(unless(isExpansionInSystemHeader()), hasName(fname))),hasType(hasCanonicalType(pointsTo(recordDecl(isStruct()).bind("record_type_decl"))))).bind("struct_parm_decl");
 }
 
 // Returns the text that makes up 'node' in the source.
