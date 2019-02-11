@@ -815,7 +815,20 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                if(port_in->get_kind() == port_vector_o_K)
                   ext_port = SM_minimal_interface->add_port_vector(port_name, port_o::IN, GetPointer<port_o>(port_in)->get_ports_size(), interfaceObj, port_in->get_typeRef());
                else
-                  ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, port_in->get_typeRef());
+               {
+                  if(port_in->get_typeRef()->type == structural_type_descriptor::UINT)
+                  {
+                     structural_type_descriptorRef vecbool = structural_type_descriptorRef(new structural_type_descriptor("bool", port_in->get_typeRef()->size));
+                     ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, vecbool);
+                  }
+                  else if(port_in->get_typeRef()->type == structural_type_descriptor::INT)
+                  {
+                     structural_type_descriptorRef vecbool = structural_type_descriptorRef(new structural_type_descriptor("bool", port_in->get_typeRef()->size));
+                     ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, vecbool);
+                  }
+                  else
+                     ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, port_in->get_typeRef());
+               }
             }
             port_o::fix_port_properties(port_in, ext_port);
             SM_minimal_interface->add_connection(port_in, ext_port);
