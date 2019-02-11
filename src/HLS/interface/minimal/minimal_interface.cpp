@@ -783,6 +783,13 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
          }
       }
 
+      if(parameters->isOption(OPT_clock_name) && port_name == CLOCK_PORT_NAME)
+         port_name = parameters->getOption<std::string>(OPT_clock_name);
+      else if(parameters->isOption(OPT_reset_name) && port_name == RESET_PORT_NAME)
+         port_name = parameters->getOption<std::string>(OPT_reset_name);
+      else if(parameters->isOption(OPT_start_name) && port_name == START_PORT_NAME)
+         port_name = parameters->getOption<std::string>(OPT_start_name);
+
       if(portsToSkip.find(port_in) == portsToSkip.end() && portsToConnect.find(port_in) == portsToConnect.end() && portsToConstant.find(port_in) == portsToConstant.end())
       {
          if(GetPointer<port_o>(port_in)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
@@ -875,11 +882,14 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       }
       if(portsToSkip.find(port_out) == portsToSkip.end() && portsToConnect.find(port_out) == portsToConnect.end())
       {
+         auto port_name = GetPointer<port_o>(port_out)->get_id();
+         if(parameters->isOption(OPT_done_name) && port_name == DONE_PORT_NAME)
+            port_name = parameters->getOption<std::string>(OPT_done_name);
          structural_objectRef ext_port;
          if(port_out->get_kind() == port_vector_o_K)
-            ext_port = SM_minimal_interface->add_port_vector(GetPointer<port_o>(port_out)->get_id(), port_o::OUT, GetPointer<port_o>(port_out)->get_ports_size(), interfaceObj, port_out->get_typeRef());
+            ext_port = SM_minimal_interface->add_port_vector(port_name, port_o::OUT, GetPointer<port_o>(port_out)->get_ports_size(), interfaceObj, port_out->get_typeRef());
          else
-            ext_port = SM_minimal_interface->add_port(GetPointer<port_o>(port_out)->get_id(), port_o::OUT, interfaceObj, port_out->get_typeRef());
+            ext_port = SM_minimal_interface->add_port(port_name, port_o::OUT, interfaceObj, port_out->get_typeRef());
 
          port_o::fix_port_properties(port_out, ext_port);
          SM_minimal_interface->add_connection(port_out, ext_port);

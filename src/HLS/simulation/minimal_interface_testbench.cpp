@@ -606,6 +606,8 @@ void MinimalInterfaceTestbench::write_input_signal_declaration(const tree_manage
                with_memory = true;
             writer->write("wire ");
          }
+         else if (parameters->isOption(OPT_clock_name) && GetPointer<port_o>(port_obj)->get_id() == parameters->getOption<std::string>(OPT_clock_name))
+            writer->write("input ");
          else if(GetPointer<port_o>(port_obj)->get_id() == CLOCK_PORT_NAME)
             writer->write("input ");
          else
@@ -614,7 +616,14 @@ void MinimalInterfaceTestbench::write_input_signal_declaration(const tree_manage
          }
 
          writer->write(writer->type_converter(port_obj->get_typeRef()) + writer->type_converter_size(port_obj));
-         writer->write(HDL_manager::convert_to_identifier(writer.get(), mod->get_in_port(i)->get_id()) + ";\n");
+         auto port_name = mod->get_in_port(i)->get_id();
+         if(parameters->isOption(OPT_clock_name) && GetPointer<port_o>(port_obj)->get_id() == parameters->getOption<std::string>(OPT_clock_name))
+            port_name = CLOCK_PORT_NAME;
+         else if(parameters->isOption(OPT_reset_name) && GetPointer<port_o>(port_obj)->get_id() == parameters->getOption<std::string>(OPT_reset_name))
+            port_name = RESET_PORT_NAME;
+         else if(parameters->isOption(OPT_start_name) && GetPointer<port_o>(port_obj)->get_id() == parameters->getOption<std::string>(OPT_start_name))
+            port_name = START_PORT_NAME;
+         writer->write(HDL_manager::convert_to_identifier(writer.get(), port_name) + ";\n");
          if(port_obj->get_typeRef()->treenode > 0 && tree_helper::is_a_pointer(TreeM, port_obj->get_typeRef()->treenode))
          {
             unsigned int pt_type_index = tree_helper::get_pointed_type(TreeM, tree_helper::get_type_index(TreeM, port_obj->get_typeRef()->treenode));
@@ -647,25 +656,28 @@ void MinimalInterfaceTestbench::write_output_signal_declaration() const
       {
          auto portInst = mod->get_out_port(i);
          writer->write("wire " + writer->type_converter(portInst->get_typeRef()) + writer->type_converter_size(portInst));
-         writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + ";\n");
-         if(portInst->get_id() == RETURN_PORT_NAME)
+         auto port_name = portInst->get_id();
+         if(parameters->isOption(OPT_done_name) && port_name == parameters->getOption<std::string>(OPT_done_name))
+            port_name = DONE_PORT_NAME;
+         writer->write(HDL_manager::convert_to_identifier(writer.get(), port_name) + ";\n");
+         if(port_name == RETURN_PORT_NAME)
          {
             writer->write("reg " + writer->type_converter(portInst->get_typeRef()) + writer->type_converter_size(portInst));
-            writer->write("ex_" + HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + ";\n");
+            writer->write("ex_" + HDL_manager::convert_to_identifier(writer.get(), port_name) + ";\n");
             writer->write("reg " + writer->type_converter(portInst->get_typeRef()) + writer->type_converter_size(portInst));
-            writer->write("registered_" + HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + ";\n");
+            writer->write("registered_" + HDL_manager::convert_to_identifier(writer.get(), port_name) + ";\n");
          }
          if(GetPointer<port_o>(portInst)->get_port_interface() == port_o::port_interface::PI_WNONE)
          {
             writer->write("reg " + writer->type_converter(portInst->get_typeRef()) + writer->type_converter_size(portInst));
-            writer->write("ex_" + HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + ";\n");
+            writer->write("ex_" + HDL_manager::convert_to_identifier(writer.get(), port_name) + ";\n");
             writer->write("reg " + writer->type_converter(portInst->get_typeRef()) + writer->type_converter_size(portInst));
-            writer->write("registered_" + HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + ";\n");
+            writer->write("registered_" + HDL_manager::convert_to_identifier(writer.get(), port_name) + ";\n");
          }
          else if(GetPointer<port_o>(portInst)->get_port_interface() == port_o::port_interface::PI_DOUT)
          {
             writer->write("reg " + writer->type_converter(portInst->get_typeRef()) + writer->type_converter_size(portInst));
-            writer->write("ex_" + HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + ";\n");
+            writer->write("ex_" + HDL_manager::convert_to_identifier(writer.get(), port_name) + ";\n");
          }
       }
       writer->write("\n");
