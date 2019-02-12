@@ -52,12 +52,12 @@
 #include "schedule.hpp"             // for ControlStep, AbsControlStep, HLS...
 #include "string_manipulation.hpp"  // for STR GET_CLASS
 #include "structural_manager.hpp"
-#include "technology_manager.hpp"   // for LIBRARY_STD_FU
-#include "technology_node.hpp"      // for technology_nodeRef, MEMORY_CTRL_...
-#include "tree_node.hpp"            // for GET_NODE, GET_CONST_NODE, TreeNo...
-#include "typed_node_info.hpp"      // for GET_NAME
-#include <cmath>                    // for exp, ceil
-#include <limits>                   // for numeric_limits
+#include "technology_manager.hpp" // for LIBRARY_STD_FU
+#include "technology_node.hpp"    // for technology_nodeRef, MEMORY_CTRL_...
+#include "tree_node.hpp"          // for GET_NODE, GET_CONST_NODE, TreeNo...
+#include "typed_node_info.hpp"    // for GET_NAME
+#include <cmath>                  // for exp, ceil
+#include <limits>                 // for numeric_limits
 
 #include "basic_block.hpp"
 #include "clb_model.hpp"

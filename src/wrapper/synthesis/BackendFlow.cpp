@@ -278,7 +278,7 @@ BackendFlowRef BackendFlow::CreateFlow(const ParameterConstRef Param, const std:
 std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, const structural_managerRef SM, const std::list<std::string>& hdl_files, const std::list<std::string>& aux_files)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Generating synthesis scripts");
-   std::string fu_base_name = fu_name;
+   auto resource_name = "_" + fu_name;
    std::string synthesis_file_list;
    for(const auto& hdl_file : hdl_files)
    {
@@ -298,16 +298,14 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
 
    actual_parameters->parameter_values[PARAM_HDL_files] = synthesis_file_list;
    const technology_managerRef TM = target->get_technology_manager();
-   std::string library = TM->get_library(fu_name);
+   std::string library = TM->get_library(resource_name);
    bool is_combinational = false;
    if(library.size())
    {
-      const technology_nodeRef tn = TM->get_fu(fu_name, library);
+      const technology_nodeRef tn = TM->get_fu(resource_name, library);
       actual_parameters->parameter_values[PARAM_clk_period] = STR(GetPointer<functional_unit>(tn)->get_clock_period());
       if(GetPointer<functional_unit>(tn)->logical_type == functional_unit::COMBINATIONAL)
          is_combinational = true;
-      if(GetPointer<functional_unit>(tn)->fu_template_name.size())
-         fu_base_name = GetPointer<functional_unit>(tn)->fu_template_name;
    }
    actual_parameters->parameter_values[PARAM_is_combinational] = STR(is_combinational);
    bool time_constrained = false;
@@ -319,8 +317,6 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
       actual_parameters->parameter_values[PARAM_clk_period] = STR(PARAM_clk_period_default);
    }
    actual_parameters->parameter_values[PARAM_clk_freq] = STR(1000 / boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]));
-
-   actual_parameters->parameter_values[PARAM_fu] = fu_base_name;
 
    InitDesignParameters();
 

@@ -71,7 +71,6 @@ class xml_element;
 #define PARAM_clk_period "clk_period"
 #define PARAM_clk_period_default (1.0 / 50)
 #define PARAM_clk_freq "clk_freq"
-#define PARAM_fu "fu"
 #define PARAM_time_constrained "time_constrained"
 #define PARAM_is_combinational "is_combinational"
 #define PARAM_sdc_file "sdc_file"

@@ -475,7 +475,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
       /// Preparing and connecting data_size
       THROW_ASSERT(parameters->getOption<std::string>(OPT_top_functions_names).find(STR_CST_taste_data_size + function_name) != std::string::npos, "");
       THROW_ASSERT(HLSMgr->get_HLS(HLSMgr->get_tree_manager()->function_index(STR_CST_taste_data_size + function_name))->STG->get_number_of_states() == 1, "");
-      const auto data_size = SM_taste_interface->add_module_from_technology_library("data_size", STR_CST_taste_data_size + function_name , WORK_LIBRARY, taste_interface_circuit, TM);
+      const auto data_size = SM_taste_interface->add_module_from_technology_library("data_size", STR_CST_taste_data_size + function_name, WORK_LIBRARY, taste_interface_circuit, TM);
       AddSignal(SM_taste_interface, filtered_address, "out1", data_size, "arg", "data_size_arg");
       AddConnection(SM_taste_interface, taste_interface_circuit, CLOCK_PORT_NAME, data_size, CLOCK_PORT_NAME);
       AddConnection(SM_taste_interface, taste_interface_circuit, RESET_PORT_NAME, data_size, RESET_PORT_NAME);
