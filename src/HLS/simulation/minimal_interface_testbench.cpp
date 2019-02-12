@@ -606,7 +606,7 @@ void MinimalInterfaceTestbench::write_input_signal_declaration(const tree_manage
                with_memory = true;
             writer->write("wire ");
          }
-         else if (parameters->isOption(OPT_clock_name) && GetPointer<port_o>(port_obj)->get_id() == parameters->getOption<std::string>(OPT_clock_name))
+         else if(parameters->isOption(OPT_clock_name) && GetPointer<port_o>(port_obj)->get_id() == parameters->getOption<std::string>(OPT_clock_name))
             writer->write("input ");
          else if(GetPointer<port_o>(port_obj)->get_id() == CLOCK_PORT_NAME)
             writer->write("input ");

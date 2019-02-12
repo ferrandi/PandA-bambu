@@ -58,7 +58,7 @@ static llvm::cl::opt<std::string> top_fun_names("topf", llvm::cl::desc("top func
 
 /**
  * Matchers
-*/
+ */
 
 /// non void return expression matcher
 auto return_expr_matcher(std::string const& fname)
@@ -76,7 +76,7 @@ auto function_decl_matcher(std::string const& fname)
 auto struct_parm_decl_matcher(std::string const& fname)
 {
    using namespace clang::ast_matchers;
-   return parmVarDecl(hasAncestor(functionDecl(unless(isExpansionInSystemHeader()), hasName(fname))),hasType(hasCanonicalType(pointsTo(recordDecl(isStruct()).bind("record_type_decl"))))).bind("struct_parm_decl");
+   return parmVarDecl(hasAncestor(functionDecl(unless(isExpansionInSystemHeader()), hasName(fname))), hasType(hasCanonicalType(pointsTo(recordDecl(isStruct()).bind("record_type_decl"))))).bind("struct_parm_decl");
 }
 
 // Returns the text that makes up 'node' in the source.
