@@ -40,6 +40,7 @@ New features introduced:
 - Added support to top design interfaces: none (ap_none), acknowledge (ap_ack), valid (ap_vld), ovalid (ap_ovld), handshake (ap_hs), fifo (ap_fifo) and array (ap_memory). These interfaces are activated by pragmas added to the source code and when the option --generate-interface=INFER is passed to bambu. Examples of pragma use can be found in panda_regressions/hls/bambu_specific_test4.
 - Added some examples taken from https://github.com/Xilinx/HLx_Examples
 - Added option --clock-name, --reset-name, --start-name and --done-name to specify the top component controlling signal names.
+- Renamed top component and removed the suffix _minimal_interface. Now, the top component has the same name of the top function.
 
 This release includes also a set of fixes:
     on COND_EXPR_RESTRUCTURING step

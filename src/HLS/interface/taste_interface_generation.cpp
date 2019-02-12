@@ -214,7 +214,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding reg_status");
 
    /// Preparing and connecting reg_status_update
-   const auto reg_status_update = SM_taste_interface->add_module_from_technology_library("reg_status_update", STR_CST_taste_reg_status "_minimal_interface", WORK_LIBRARY, taste_interface_circuit, TM);
+   const auto reg_status_update = SM_taste_interface->add_module_from_technology_library("reg_status_update", STR_CST_taste_reg_status, WORK_LIBRARY, taste_interface_circuit, TM);
    const auto done_port_converter = SM_taste_interface->add_module_from_technology_library("done_port_converter", UUDATA_CONVERTER_STD, TM->get_library(UUDATA_CONVERTER_STD), taste_interface_circuit, TM);
    AddSignal(SM_taste_interface, minimal_interface, DONE_PORT_NAME, done_port_converter, "in1", "done_port_output");
    AddSignal(SM_taste_interface, done_port_converter, "out1", reg_status_update, "from_done", "done_port_converter_output");
@@ -263,7 +263,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
    THROW_ASSERT(parameters->getOption<std::string>(OPT_top_functions_names).find(STR_CST_taste_endianess_check + function_name) != std::string::npos, );
    THROW_ASSERT(HLSMgr->get_HLS(HLSMgr->get_tree_manager()->function_index(STR_CST_taste_endianess_check + function_name))->STG->get_number_of_states() == 1,
                 "Number of states of " STR_CST_taste_endianess_check + function_name + " is " + STR(HLSMgr->get_HLS(HLSMgr->get_tree_manager()->function_index(STR_CST_taste_endianess_check + function_name))->STG->get_number_of_states()));
-   const auto endianess_check = SM_taste_interface->add_module_from_technology_library("endianess_check", STR_CST_taste_endianess_check + function_name + "_minimal_interface", WORK_LIBRARY, taste_interface_circuit, TM);
+   const auto endianess_check = SM_taste_interface->add_module_from_technology_library("endianess_check", STR_CST_taste_endianess_check + function_name, WORK_LIBRARY, taste_interface_circuit, TM);
    AddConnection(SM_taste_interface, taste_interface_circuit, "apbi_pwdata", endianess_check, "arg");
    AddConnection(SM_taste_interface, taste_interface_circuit, CLOCK_PORT_NAME, endianess_check, CLOCK_PORT_NAME);
    AddConnection(SM_taste_interface, taste_interface_circuit, RESET_PORT_NAME, endianess_check, RESET_PORT_NAME);
@@ -273,7 +273,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
    /// Preparing and connecting endianess_inversion
    THROW_ASSERT(parameters->getOption<std::string>(OPT_top_functions_names).find(STR_CST_taste_endianess_inversion) != std::string::npos, "");
    THROW_ASSERT(HLSMgr->get_HLS(HLSMgr->get_tree_manager()->function_index(STR_CST_taste_endianess_inversion))->STG->get_number_of_states() == 1, "");
-   const auto swap32_in = SM_taste_interface->add_module_from_technology_library("swap32_in", STR_CST_taste_endianess_inversion "_minimal_interface", WORK_LIBRARY, taste_interface_circuit, TM);
+   const auto swap32_in = SM_taste_interface->add_module_from_technology_library("swap32_in", STR_CST_taste_endianess_inversion, WORK_LIBRARY, taste_interface_circuit, TM);
    const auto swap32_in_cond_expr = SM_taste_interface->add_module_from_technology_library("swap32_in_cond_expr", "ui_cond_expr_FU", TM->get_library("ui_cond_expr_FU"), taste_interface_circuit, TM);
    AddConnection(SM_taste_interface, taste_interface_circuit, "apbi_pwdata", swap32_in, "x");
    AddConnection(SM_taste_interface, taste_interface_circuit, CLOCK_PORT_NAME, swap32_in, CLOCK_PORT_NAME);
@@ -466,7 +466,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
       /// Preparing and connecting memory_translation
       THROW_ASSERT(parameters->getOption<std::string>(OPT_top_functions_names).find(STR_CST_taste_address_translation + function_name) != std::string::npos, "");
       THROW_ASSERT(HLSMgr->get_HLS(HLSMgr->get_tree_manager()->function_index(STR_CST_taste_address_translation + function_name))->STG->get_number_of_states() == 1, "");
-      const auto memory_translation = SM_taste_interface->add_module_from_technology_library("memory_translation", STR_CST_taste_address_translation + function_name + "_minimal_interface", WORK_LIBRARY, taste_interface_circuit, TM);
+      const auto memory_translation = SM_taste_interface->add_module_from_technology_library("memory_translation", STR_CST_taste_address_translation + function_name, WORK_LIBRARY, taste_interface_circuit, TM);
       AddSignal(SM_taste_interface, filtered_address, "out1", memory_translation, "arg", "memory_translation_arg");
       AddConnection(SM_taste_interface, taste_interface_circuit, CLOCK_PORT_NAME, memory_translation, CLOCK_PORT_NAME);
       AddConnection(SM_taste_interface, taste_interface_circuit, RESET_PORT_NAME, memory_translation, RESET_PORT_NAME);
@@ -475,7 +475,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
       /// Preparing and connecting data_size
       THROW_ASSERT(parameters->getOption<std::string>(OPT_top_functions_names).find(STR_CST_taste_data_size + function_name) != std::string::npos, "");
       THROW_ASSERT(HLSMgr->get_HLS(HLSMgr->get_tree_manager()->function_index(STR_CST_taste_data_size + function_name))->STG->get_number_of_states() == 1, "");
-      const auto data_size = SM_taste_interface->add_module_from_technology_library("data_size", STR_CST_taste_data_size + function_name + "_minimal_interface", WORK_LIBRARY, taste_interface_circuit, TM);
+      const auto data_size = SM_taste_interface->add_module_from_technology_library("data_size", STR_CST_taste_data_size + function_name , WORK_LIBRARY, taste_interface_circuit, TM);
       AddSignal(SM_taste_interface, filtered_address, "out1", data_size, "arg", "data_size_arg");
       AddConnection(SM_taste_interface, taste_interface_circuit, CLOCK_PORT_NAME, data_size, CLOCK_PORT_NAME);
       AddConnection(SM_taste_interface, taste_interface_circuit, RESET_PORT_NAME, data_size, RESET_PORT_NAME);
@@ -484,7 +484,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
       /// Preparing and connecting memory_enabling
       THROW_ASSERT(parameters->getOption<std::string>(OPT_top_functions_names).find(STR_CST_taste_memory_enabling + function_name) != std::string::npos, "");
       THROW_ASSERT(HLSMgr->get_HLS(HLSMgr->get_tree_manager()->function_index(STR_CST_taste_memory_enabling + function_name))->STG->get_number_of_states() == 1, "");
-      const auto memory_enabling = SM_taste_interface->add_module_from_technology_library("memory_enabling", STR_CST_taste_memory_enabling + function_name + "_minimal_interface", WORK_LIBRARY, taste_interface_circuit, TM);
+      const auto memory_enabling = SM_taste_interface->add_module_from_technology_library("memory_enabling", STR_CST_taste_memory_enabling + function_name, WORK_LIBRARY, taste_interface_circuit, TM);
       AddSignal(SM_taste_interface, filtered_address, "out1", memory_enabling, "arg", "memory_enabling_arg");
       AddConnection(SM_taste_interface, taste_interface_circuit, CLOCK_PORT_NAME, memory_enabling, CLOCK_PORT_NAME);
       AddConnection(SM_taste_interface, taste_interface_circuit, RESET_PORT_NAME, memory_enabling, RESET_PORT_NAME);
@@ -537,7 +537,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
    /// Preparing output
    THROW_ASSERT(parameters->getOption<std::string>(OPT_top_functions_names).find(STR_CST_taste_output_multiplexer + function_name) != std::string::npos, "");
    THROW_ASSERT(HLSMgr->get_HLS(HLSMgr->get_tree_manager()->function_index(STR_CST_taste_output_multiplexer + function_name))->STG->get_number_of_states() == 1, "");
-   const auto output_multiplexer = SM_taste_interface->add_module_from_technology_library("output_multiplexer", STR_CST_taste_output_multiplexer + function_name + "_minimal_interface", WORK_LIBRARY, taste_interface_circuit, TM);
+   const auto output_multiplexer = SM_taste_interface->add_module_from_technology_library("output_multiplexer", STR_CST_taste_output_multiplexer + function_name, WORK_LIBRARY, taste_interface_circuit, TM);
    AddSignal(SM_taste_interface, filtered_address, "out1", output_multiplexer, "address", "memory_enabling_arg");
    AddSignal(SM_taste_interface, reg_status, "out1", output_multiplexer, "reg_status", "reg_status_output");
    const auto return_port = minimal_interface->find_member(RETURN_PORT_NAME, port_o_K, minimal_interface);
@@ -556,7 +556,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
    /// Output endianess conversion
    THROW_ASSERT(parameters->getOption<std::string>(OPT_top_functions_names).find(STR_CST_taste_endianess_inversion) != std::string::npos, "");
    THROW_ASSERT(HLSMgr->get_HLS(HLSMgr->get_tree_manager()->function_index(STR_CST_taste_endianess_inversion))->STG->get_number_of_states() == 1, "");
-   const auto swap32_out = SM_taste_interface->add_module_from_technology_library("swap32_out", STR_CST_taste_endianess_inversion "_minimal_interface", WORK_LIBRARY, taste_interface_circuit, TM);
+   const auto swap32_out = SM_taste_interface->add_module_from_technology_library("swap32_out", STR_CST_taste_endianess_inversion, WORK_LIBRARY, taste_interface_circuit, TM);
    const auto swap32_out_cond_expr = SM_taste_interface->add_module_from_technology_library("swap32_iout_cond_expr", "ui_cond_expr_FU", TM->get_library("ui_cond_expr_FU"), taste_interface_circuit, TM);
    AddSignal(SM_taste_interface, output_multiplexer, RETURN_PORT_NAME, swap32_out, "x", "output_multiplexer_output");
    AddConnection(SM_taste_interface, taste_interface_circuit, CLOCK_PORT_NAME, output_multiplexer, CLOCK_PORT_NAME);
