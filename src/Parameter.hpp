@@ -146,10 +146,10 @@ enum class DiopsisInstrumentWriter_Type;
        regularity_forward)(regularity_hierarchical)(regularity_include_sequential)(regularity_max_inputs)(regularity_min_frequency)(regularity_min_size)(regularity_window_size)(reordering)(perform_resynthesis)(print_templates)(                           \
        reimplement_standard_cells)(separate_templates)(set_constraint)(set_optimization_goal)(skew_values)(split_roots)(store_library_creator_db)(synthesis_tool_xml)(template_file)(xml_library_cells)(xml_library_statistics)
 
-#define SYNTHESIS_OPTIONS                                                                                                                                                                                                                        \
-   (clock_period)(design_analysis_steps)(design_compiler_compile_log)(design_compiler_split_log)(design_parameters)(design_hierarchy)(device_string)(dump_genlib)(estimate_library)(export_ip_core)(import_ip_core)(input_liberty_library_file)( \
-       ip_xact_architecture_template)(ip_xact_parameters)(is_structural)(lib2xml)(min_metric)(parse_edif)(rtl)(synthesis_flow)(structural_HDL)(target_device)(target_library)(target_library_source)(target_technology)(target_technology_file)( \
-       target_device_file)(target_device_script)(target_device_type)(top_component)(uniquify)(writer_language)
+#define SYNTHESIS_OPTIONS                                                                                                                                                                                                                           \
+   (clock_period)(clock_name)(reset_name)(start_name)(done_name)(design_analysis_steps)(design_compiler_compile_log)(design_compiler_split_log)(design_parameters)(design_hierarchy)(device_string)(dump_genlib)(estimate_library)(export_ip_core)( \
+       import_ip_core)(input_liberty_library_file)(ip_xact_architecture_template)(ip_xact_parameters)(is_structural)(lib2xml)(min_metric)(parse_edif)(rtl)(synthesis_flow)(structural_HDL)(target_device)(target_library)(target_library_source)(   \
+       target_technology)(target_technology_file)(target_device_file)(target_device_script)(target_device_type)(top_component)(uniquify)(writer_language)
 
 #define SPIDER_OPTIONS                                                                                                                                                                                                                              \
    (accuracy)(aggregated_features)(cross_validation)(experimental_setup_file)(interval_level)(latex_format_file)(max_bound)(maximum_error)(min_bound)(minimum_significance)(normalization_file)(normalization_sequences)(output_format)(precision)( \

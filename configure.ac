@@ -257,7 +257,7 @@ AC_ARG_ENABLE(Werror,              [  --enable-Werror              compile the s
 AC_ARG_ENABLE(asserts,             [  --disable-asserts            disable most of the runtime check (default enabled)],                                    [panda_ASSERTS="$enableval"], [panda_ASSERTS="yes"])
 AC_ARG_ENABLE(debug,               [  --enable-debug               compile the source code with debug symbols (default disabled)],                          [panda_DEBUG="$enableval"], [panda_DEBUG="no"])
 AC_ARG_ENABLE(opt,                 [  --enable-opt                 compile the source code with -O2 (default enabled) ],                                    [panda_OPT="$enableval"], [panda_OPT="yes"])
-AC_ARG_ENABLE(allstatic,           [  --enable-allstatic           create static binaries ],                                                                [panda_ALLSTATIC="$enableval"])
+AC_ARG_ENABLE(allstatic,           [  --enable-allstatic           create static binaries ],                                                                [panda_ALLSTATIC="$enableval"], [panda_ALLSTATIC="yes"])
 AC_ARG_ENABLE(32bits,              [  --enable-32bits              create 32bits binaries ],                                                                [panda_32BITS="$enableval"])
 
 
@@ -939,8 +939,8 @@ if test "x$panda_USE_LIB_TO_DATAFILE" = xyes || test "x$panda_USE_LIB_DESIGN_FLO
    panda_USE_LIB_GRAPH=yes;
 fi
 
-if test "x$panda_RELEASE" = xyes && test "$DISTRO" != "arch"; then
-   panda_ALLSTATIC=yes;
+if test "$DISTRO" = "arch"; then
+   panda_ALLSTATIC=no;
 fi
 
 if test "x$panda_USE_TASTE" = xyes; then

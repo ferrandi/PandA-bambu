@@ -706,14 +706,26 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
       }
       else
          THROW_ERROR("LTO compilation not yet implemented with GCC");
-      std::string real_file_name = source_files.begin()->second;
+
+      std::string real_file_names;
+      bool first_file = true;
+      for(const auto& fsname : source_files)
+      {
+         if(first_file)
+         {
+            real_file_names = fsname.second;
+            first_file = false;
+         }
+         else
+            real_file_names = real_file_names + "," + fsname.second;
+      }
       if(compiler.is_clang)
       {
          command = compiler.llvm_opt.string();
 #ifndef _WIN32
          command += " -load=" + compiler.ssa_plugin_obj;
 #endif
-         command += " -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) + " -panda-infile=" + real_file_name;
+         command += " -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) + " -panda-infile=" + real_file_names;
          if(addTFNPlugin)
          {
             command += " -panda-topfname=" + fname;
@@ -742,9 +754,9 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
       }
       else
          THROW_ERROR("LTO compilation not yet implemented with GCC");
-      std::string leaf_name = GetLeafFileName(real_file_name);
+      std::string leaf_name = GetLeafFileName(source_files.begin()->second);
       if(not(boost::filesystem::exists(boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix))))
-         THROW_ERROR(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix + " not found: impossible to create raw file for " + real_file_name);
+         THROW_ERROR(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix + " not found: impossible to create raw file for " + real_file_names);
       boost::filesystem::path obj = boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
       tree_managerRef TreeM = ParseTreeFile(Param, obj.string());
 #if !NPROFILE

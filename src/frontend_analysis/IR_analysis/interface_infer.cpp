@@ -717,7 +717,7 @@ void interface_infer::create_resource_Write_simple(const std::vector<std::string
 
       CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "in1 in2");
       const auto writer = static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
-      if(interfaceType=="none" && !(isDiffSize && !isAVH) && writer == HDLWriter_Language::VHDL)
+      if(interfaceType == "none" && !(isDiffSize && !isAVH) && writer == HDLWriter_Language::VHDL)
          CM->add_NP_functionality(interface_top, NP_functionality::VHDL_GENERATOR, "Write_" + interfaceType + ((isDiffSize && !isAVH) ? "DS" : "") + "_VHDL.cpp");
       else
          CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR, "Write_" + interfaceType + ((isDiffSize && !isAVH) ? "DS" : "") + ".cpp");
