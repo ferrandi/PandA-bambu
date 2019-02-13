@@ -193,7 +193,6 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
       }
    }
 
-   script << std::string("export MGLS_CONN_TIMEOUT=300;");
    /// add modelsim license variable
    auto mentor_license = STR(MENTOR_LICENSE);
    if(!mentor_license.empty() && mentor_license != "0")
