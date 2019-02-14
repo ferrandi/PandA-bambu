@@ -55,6 +55,7 @@
 #include "fileIO.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_script_command.hpp"
+#include "structural_objects.hpp"
 
 ASICBackendFlow::ASICBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _target) : BackendFlow(_Param, _flow_name, _target)
 {
@@ -100,6 +101,10 @@ void ASICBackendFlow::create_sdc(const DesignParametersRef dp)
 
 void ASICBackendFlow::InitDesignParameters()
 {
+   if(Param->isOption(OPT_clock_name))
+      actual_parameters->parameter_values[PARAM_clk_name] = Param->getOption<std::string>(OPT_clock_name);
+   else
+      actual_parameters->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
    create_sdc(actual_parameters);
 
    for(auto& step : steps)
