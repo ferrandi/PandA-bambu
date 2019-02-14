@@ -310,7 +310,10 @@ void AlteraBackendFlow::InitDesignParameters()
       actual_parameters->parameter_values[PARAM_top_id] = Param->getOption<std::string>(OPT_top_design_name);
    else
       actual_parameters->parameter_values[PARAM_top_id] = actual_parameters->component_name;
-   actual_parameters->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
+   if(Param->isOption(OPT_clock_name))
+      actual_parameters->parameter_values[PARAM_clk_name] = Param->getOption<std::string>(OPT_clock_name);
+   else
+      actual_parameters->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
 
    bool connect_iob = false;
    if(Param->isOption(OPT_connect_iob) && Param->getOption<bool>(OPT_connect_iob))

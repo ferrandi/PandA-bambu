@@ -776,7 +776,10 @@ void XilinxBackendFlow::InitDesignParameters()
       ise_style = std::string(INTSTYLE_SILENT);
    actual_parameters->parameter_values[PARAM_ise_style] = ise_style;
 
-   actual_parameters->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
+   if(Param->isOption(OPT_clock_name))
+      actual_parameters->parameter_values[PARAM_clk_name] = Param->getOption<std::string>(OPT_clock_name);
+   else
+      actual_parameters->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
 
    /// determine if power optimization has to be performed
    bool xpwr_enabled = false;
