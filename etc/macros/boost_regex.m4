@@ -79,19 +79,15 @@ AC_DEFUN([AX_BOOST_REGEX],
                AC_CHECK_LIB($ax_lib, exit,
                   [
                      BOOST_REGEX_LIB="-l$ax_lib";
-                     AC_CHECK_PROG(AX_ICU_LIBS, icu-config, `icu-config --ldflags`,AC_MSG_ERROR(libicu library missing))
-                     BOOST_REGEX_LIB+=" $AX_ICU_LIBS"
                      AC_SUBST(BOOST_REGEX_LIB) link_regex="yes";
                      break],
                   [link_regex="no"])
             done
          else
             for ax_lib in $ax_boost_user_regex_lib $BN-$ax_boost_user_regex_lib; do
-               AC_CHECK_LIB($ax_lib, exit,
+               AC_CHECK_LIB($ax_lib, main,
                   [
                      BOOST_REGEX_LIB="-l$ax_lib"
-                     AC_CHECK_PROG(AX_ICU_LIBS, icu-config, `icu-config --ldflags`,AC_MSG_ERROR(libicu library missing))
-                     BOOST_REGEX_LIB+=" $AX_ICU_LIBS"
                      AC_SUBST(BOOST_REGEX_LIB) link_regex="yes"
                      break],
                   [link_regex="no"])
