@@ -118,7 +118,7 @@ void HWCallPathCalculator::start_vertex(const UnfoldedVertexDescriptor& v, const
    std::string top_name = "_" + top_fu_name + "_i0" + STR(HIERARCHY_SEPARATOR);
    if(HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction() or (parameters->isOption(OPT_interface_type) and parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION))
    {
-      top_name += top_fu_name + "_int_i0" + STR(HIERARCHY_SEPARATOR);
+      top_name += "_" + top_fu_name + "_int_i0" + STR(HIERARCHY_SEPARATOR);
    }
 
    // top interface scope (depending on the interface)
