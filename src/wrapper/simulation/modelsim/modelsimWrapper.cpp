@@ -193,6 +193,10 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
       }
    }
 
+   script << "set -o pipefail" << std::endl;
+   script << "MAXITERATIONS=30"<< std::endl;
+   script << "ITERATION=2"<< std::endl;
+   script << "while : ; do" << std::endl;
    /// add modelsim license variable
    auto mentor_license = STR(MENTOR_LICENSE);
    if(!mentor_license.empty() && mentor_license != "0")
@@ -233,7 +237,12 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
          script << " -c -voptargs=\"" + MODELSIM_OPTIMIZER_FLAGS_DEF + "\" -do \"set StdArithNoWarnings 1; set StdNumNoWarnings 1; set NumericStdNoWarnings 1; onerror {quit -f -code 1;}; run -all; exit -f;\" work." + top_filename + "_tb_top";
       }
    }
-   script << " 2>&1 | tee " << log_file << std::endl << std::endl;
+   script << " 2>&1 | tee " << log_file << std::endl;
+   script << "return_value=$?" << std::endl << std::endl;
+   script << "[[ 12 == $return_value ]] || break" << std::endl;
+   script << "[[ $MAXITERATIONS > $ITERATION ]] || break" << std::endl;
+   script << "let ITERATION+=1" << std::endl;
+   script << "done" << std::endl;
 #if HAVE_MENTOR_VISUALIZER_EXE
    if(Param->isOption(OPT_visualizer) && Param->getOption<bool>(OPT_visualizer))
    {

@@ -370,6 +370,11 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
    {
       script << "cat " << log_file << std::endl << std::endl;
    }
+   script << "if test $return_value != 0; then" <<  std::endl;
+   script << "    exit $return_value" <<  std::endl;
+   script << "fi" <<  std::endl;
+   script << "exit 0" <<  std::endl;
+
 
    // Create the simulation script
    generated_script = std::string("simulate_") + top_filename + std::string(".sh");
