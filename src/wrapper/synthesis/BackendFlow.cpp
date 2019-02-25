@@ -49,6 +49,7 @@
 /// wrapper/synthesis/altera includes
 #include "AlteraBackendFlow.hpp"
 #include "quartus_wrapper.hpp"
+#include "quartus_13_wrapper.hpp"
 
 /// wrapper/synthesis/xilinx includes
 #include "XilinxBackendFlow.hpp"
@@ -83,6 +84,7 @@
 #include "xst_wrapper.hpp"
 // Altera
 #include "quartus_report_wrapper.hpp"
+#include "quartus_13_report_wrapper.hpp"
 // Lattice
 #include "lattice_flow_wrapper.hpp"
 // Under development
@@ -463,9 +465,21 @@ void BackendFlow::xload(const xml_element* node)
             if(step->script_name.size() == 0)
                step->script_name = "quartus_setup.tcl";
          }
+         else if(id == QUARTUS_13_SETUP_TOOL_ID)
+         {
+            type = SynthesisTool::QUARTUS_13_SETUP;
+            if(step->script_name.size() == 0)
+               step->script_name = "quartus_setup.tcl";
+         }
          else if(id == QUARTUS_FLOW_TOOL_ID)
          {
             type = SynthesisTool::QUARTUS_FLOW;
+            if(step->script_name.size() == 0)
+               step->script_name = "quartus_flow.tcl";
+         }
+         else if(id == QUARTUS_13_FLOW_TOOL_ID)
+         {
+            type = SynthesisTool::QUARTUS_13_FLOW;
             if(step->script_name.size() == 0)
                step->script_name = "quartus_flow.tcl";
          }
@@ -478,6 +492,12 @@ void BackendFlow::xload(const xml_element* node)
          else if(id == QUARTUS_REPORT_TOOL_ID)
          {
             type = SynthesisTool::QUARTUS_STA;
+            if(step->script_name.size() == 0)
+               step->script_name = "report_sta.tcl";
+         }
+         else if(id == QUARTUS_13_REPORT_TOOL_ID)
+         {
+            type = SynthesisTool::QUARTUS_13_STA;
             if(step->script_name.size() == 0)
                step->script_name = "report_sta.tcl";
          }

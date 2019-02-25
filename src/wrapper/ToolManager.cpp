@@ -92,7 +92,7 @@ int ToolManager::execute_command(const std::string& _command_, const std::string
       }
       else
       {
-         /// Safe approache for release where assertion is disabled
+         /// Safe approach for release where assertions are disabled
          if(!log_file.empty())
          {
             CopyStdout(log_file);
