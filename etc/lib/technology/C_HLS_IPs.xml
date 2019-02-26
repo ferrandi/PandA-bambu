@@ -914,11 +914,7 @@ VHDL_PROVIDED=
 "begin
   process(in1, in2)
   begin
-    if(BITSIZE_in2 &gt; integer(ceil(log2(real(PRECISION))))) then
-      out1 &lt;= shift_left(resize_signed(in1, BITSIZE_out1), to_integer(unsigned(in2(integer(ceil(log2(real(PRECISION))))-1 downto 0))));
-    else
-      out1 &lt;= shift_left(resize_signed(in1, BITSIZE_out1), to_integer(unsigned(in2)));
-    end if;
+    out1 &lt;= shift_left(resize_signed(in1, BITSIZE_out1), to_integer(unsigned(in2) rem PRECISION));
   end process;
 "/>
         </component_o>
@@ -975,11 +971,7 @@ VHDL_PROVIDED=
 "begin
   process(in1, in2)
   begin
-    if(BITSIZE_in2 &gt; integer(ceil(log2(real(PRECISION))))) then
-      out1 &lt;= shift_left(resize(in1, BITSIZE_out1), to_integer(unsigned(in2(integer(ceil(log2(real(PRECISION))))-1 downto 0))));
-    else
-      out1 &lt;= shift_left(resize(in1, BITSIZE_out1), to_integer(unsigned(in2)));
-    end if;
+    out1 &lt;= shift_left(resize(in1, BITSIZE_out1), to_integer(unsigned(in2) rem PRECISION));
   end process;
 "/>
         </component_o>
@@ -1747,11 +1739,7 @@ VHDL_PROVIDED=
 "begin
   process(in1, in2)
   begin
-    if(BITSIZE_in2 &gt; integer(ceil(log2(real(PRECISION))))) then
-      out1 &lt;= resize_signed(shift_right(in1, to_integer(unsigned(in2(integer(ceil(log2(real(PRECISION))))-1 downto 0)))), BITSIZE_out1);
-    else
-      out1 &lt;= resize_signed(shift_right(in1, to_integer(unsigned(in2))), BITSIZE_out1);
-    end if;
+    out1 &lt;= resize_signed(shift_right(in1, to_integer(unsigned(in2) rem PRECISION)), BITSIZE_out1);
   end process;
 "/>
         </component_o>
@@ -1808,11 +1796,7 @@ endgenerate
 "begin
   process(in1, in2)
   begin
-    if(BITSIZE_in2 &gt; integer(ceil(log2(real(PRECISION))))) then
-      out1 &lt;= resize(shift_right(in1, to_integer(unsigned(in2(integer(ceil(log2(real(PRECISION))))-1 downto 0)))), BITSIZE_out1);
-    else
-      out1 &lt;= resize(shift_right(in1, to_integer(unsigned(in2))), BITSIZE_out1);
-    end if;
+    out1 &lt;= resize(shift_right(in1, to_integer(unsigned(in2) rem PRECISION)), BITSIZE_out1);
   end process;
 "/>
         </component_o>
