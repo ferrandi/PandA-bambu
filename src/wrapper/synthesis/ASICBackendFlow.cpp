@@ -53,9 +53,9 @@
 
 #include "Parameter.hpp"
 #include "fileIO.hpp"
+#include "structural_objects.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_script_command.hpp"
-#include "structural_objects.hpp"
 
 ASICBackendFlow::ASICBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _target) : BackendFlow(_Param, _flow_name, _target)
 {
