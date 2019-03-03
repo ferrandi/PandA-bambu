@@ -185,7 +185,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
       for(const auto reached_f_id : CG->GetReachedBodyFunctionsFrom(f_id))
          reached_fu_ids.insert(reached_f_id);
 
-   if(!parameters->isOption(OPT_top_functions_names) or !parameters->getOption<bool>(OPT_top_functions_names))
+   if(!parameters->isOption(OPT_top_functions_names))
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
       for(const auto f_id : root_functions)
