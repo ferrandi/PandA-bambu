@@ -48,8 +48,8 @@
 
 /// wrapper/synthesis/altera includes
 #include "AlteraBackendFlow.hpp"
-#include "quartus_wrapper.hpp"
 #include "quartus_13_wrapper.hpp"
+#include "quartus_wrapper.hpp"
 
 /// wrapper/synthesis/xilinx includes
 #include "XilinxBackendFlow.hpp"
@@ -83,8 +83,8 @@
 #include "vivado_flow_wrapper.hpp"
 #include "xst_wrapper.hpp"
 // Altera
-#include "quartus_report_wrapper.hpp"
 #include "quartus_13_report_wrapper.hpp"
+#include "quartus_report_wrapper.hpp"
 // Lattice
 #include "lattice_flow_wrapper.hpp"
 // Under development

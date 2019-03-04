@@ -263,11 +263,13 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
    std::string command = compiler.gcc.string();
    if(cm == GccWrapper_CompilerMode::CM_ANALYZER && !compiler.is_clang)
    {
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER
       bool flag_cpp;
       if(Param->isOption(OPT_input_format) && Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP)
          flag_cpp = true;
       else
          flag_cpp = false;
+#endif
 #if HAVE_I386_CLANG6_COMPILER
       command = flag_cpp ? I386_CLANGPP6_EXE : I386_CLANG6_EXE;
 #elif HAVE_I386_CLANG5_COMPILER
@@ -1050,11 +1052,13 @@ void GccWrapper::SetBambuDefault()
     HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER
    GccWrapper_CompilerTarget compiler = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
 #endif
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER
    bool flag_cpp;
    if(Param->isOption(OPT_input_format) && Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP)
       flag_cpp = true;
    else
       flag_cpp = false;
+#endif
 #if HAVE_I386_CLANG4_COMPILER
    if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG4)
    {

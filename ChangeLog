@@ -41,6 +41,7 @@ New features introduced:
 - Added some examples taken from https://github.com/Xilinx/HLx_Examples
 - Added option --clock-name, --reset-name, --start-name and --done-name to specify the top component controlling signal names.
 - Renamed top component and removed the suffix _minimal_interface. Now, the top component has the same name of the top function.
+- Improved and fixed the synthesis of empty functions.
 
 This release includes also a set of fixes:
     on COND_EXPR_RESTRUCTURING step

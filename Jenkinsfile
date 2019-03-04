@@ -33,7 +33,7 @@ pipeline {
       }
       steps {
         withEnv(['PATH+EXTRACCACHE=/usr/lib/ccache']) {
-          sh 'make -f Makefile.init J=20 && mkdir -p build && cd build  && ../configure --prefix=$WORKSPACE/panda-bin --enable-flopoco --enable-xilinx --enable-modelsim --enable-icarus --enable-verilator --enable-altera --enable-lattice --enable-glpk --enable-release --enable-unordered --disable-asserts --enable-opt --with-gcc49=/distros/ubuntu_last_64/usr/bin/gcc-4.9 --with-gcc5=/distros/ubuntu_16-04_64/usr/bin/gcc-5 --with-mentor-license=2003@lmw-2d.polimi.it  && nice -n 17 make -j20  install  '
+          sh 'make -f Makefile.init J=20 && mkdir -p build && cd build  && ../configure --prefix=$WORKSPACE/panda-bin --enable-flopoco --enable-xilinx --enable-modelsim --enable-icarus --enable-verilator --enable-altera --enable-lattice --enable-glpk --enable-release --enable-unordered --disable-asserts --enable-opt --with-mentor-license=2003@lmw-2d.polimi.it  && nice -n 17 make -j20  install  '
         }
       }
     }
@@ -46,20 +46,17 @@ pipeline {
       parallel {
         stage('list based') {
           steps {
-           sh 'mkdir -p $WORKSPACE/list && mkdir -p $WORKSPACE/list/test-reports && cd $WORKSPACE/panda_regressions && nice -n 17 ./panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider -t 120m --restart '
-           sh 'cd $WORKSPACE/panda_regressions && nice -n 17 ./panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/list/test-reports" -t 120m --returnfail --restart '
+           sh 'mkdir -p $WORKSPACE/list && mkdir -p $WORKSPACE/list/test-reports && cd $WORKSPACE/panda_regressions && nice -n 17 ./panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/list/test-reports" -t 120m --returnfail --restart '
           }
         }
         stage('sdc scheduling') {
           steps {
-           sh 'mkdir -p $WORKSPACE/sdc_tests/ && mkdir -p $WORKSPACE/sdc_tests/test-reports && mkdir -p $WORKSPACE/panda_regressions/sdc_tests && cd $WORKSPACE/panda_regressions/sdc_tests && nice -n 15 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider -t 120m -c="--speculative-sdc-scheduling" --restart '
-           sh 'cd $WORKSPACE/panda_regressions/sdc_tests && nice -n 15 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/sdc_tests/test-reports" -t 120m -c="--speculative-sdc-scheduling" --returnfail --restart '
+           sh 'mkdir -p $WORKSPACE/sdc_tests/ && mkdir -p $WORKSPACE/sdc_tests/test-reports && mkdir -p $WORKSPACE/panda_regressions/sdc_tests && cd $WORKSPACE/panda_regressions/sdc_tests && nice -n 15 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/sdc_tests/test-reports" -t 120m -c="--speculative-sdc-scheduling" --returnfail --restart '
           }
         }
         stage('VHDL') {
           steps {
-           sh 'mkdir -p $WORKSPACE/panda_regressions/vhdl_tests && mkdir -p $WORKSPACE/vhdl_tests/ && mkdir -p $WORKSPACE/vhdl_tests/test-reports && cd $WORKSPACE/panda_regressions/vhdl_tests && nice -n 16 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider -t 120m -c="-wH" --name="_VHDL" --restart '
-           sh 'cd $WORKSPACE/panda_regressions/vhdl_tests && nice -n 16 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/vhdl_tests/test-reports" -t 120m -c="-wH" --name="_VHDL" --returnfail --restart '
+           sh 'mkdir -p $WORKSPACE/panda_regressions/vhdl_tests && mkdir -p $WORKSPACE/vhdl_tests/ && mkdir -p $WORKSPACE/vhdl_tests/test-reports && cd $WORKSPACE/panda_regressions/vhdl_tests && nice -n 16 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/vhdl_tests/test-reports" -t 120m -c="-wH" --name="_VHDL" --returnfail --restart '
           }
         }
       }
@@ -71,7 +68,7 @@ pipeline {
         }
       }
       steps {
-        sh 'mkdir -p $WORKSPACE/examples/test-reports && mkdir -p $WORKSPACE/examples/pp-reports && cd $WORKSPACE/examples && nice -n 17 ./example.sh -j8 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/examples/test-reports" --perfpublisherdir="$WORKSPACE/examples/pp-reports" --restart '
+        sh 'mkdir -p $WORKSPACE/examples/test-reports && mkdir -p $WORKSPACE/examples/pp-reports && cd $WORKSPACE/examples && nice -n 17 ./example.sh -j20 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/examples/test-reports" --perfpublisherdir="$WORKSPACE/examples/pp-reports" --restart '
       }
     }
     stage('Publish Junits results') {
