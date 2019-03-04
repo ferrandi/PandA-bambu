@@ -50,9 +50,10 @@
 
 #include "Parameter.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#define PARAM_quartus_report "quartus_report"
 
 // constructor
-Quartus13ReportWrapper::Quartus13ReportWrapper(const ParameterConstRef& _Param, const std::string& _output_dir, const target_deviceRef& _device) : AlteraWrapper(_Param, QUARTUS_REPORT_TOOL_EXEC, _device, _output_dir, QUARTUS_REPORT_TOOL_ID)
+Quartus13ReportWrapper::Quartus13ReportWrapper(const ParameterConstRef& _Param, const std::string& _output_dir, const target_deviceRef& _device) : AlteraWrapper(_Param, QUARTUS_13_REPORT_TOOL_EXEC, _device, _output_dir, QUARTUS_13_REPORT_TOOL_ID)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the QUARTUS_REPORT wrapper...");
 }

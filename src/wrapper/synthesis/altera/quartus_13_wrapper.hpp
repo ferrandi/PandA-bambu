@@ -45,9 +45,9 @@
 /// superclass include
 #include "AlteraWrapper.hpp"
 
-#define QUARTUS_SETUP_TOOL_ID "quartus_setup"
-#define QUARTUS_FLOW_TOOL_ID "quartus_flow"
-#define QUARTUS_FLOW_TOOL_EXEC "quartus_sh"
+#define QUARTUS_13_SETUP_TOOL_ID "quartus_13_setup"
+#define QUARTUS_13_FLOW_TOOL_ID "quartus_13_flow"
+#define QUARTUS_13_FLOW_TOOL_EXEC "quartus_sh"
 
 class Quartus13Wrapper : public AlteraWrapper
 {

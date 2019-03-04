@@ -115,23 +115,23 @@ void HWCallPathCalculator::start_vertex(const UnfoldedVertexDescriptor& v, const
 
    const std::string top_fu_name = Cget_node_info<UnfoldedFunctionInfo>(v, ufcg)->behavior->CGetBehavioralHelper()->get_function_name();
    // top module scope
-   std::string top_name = top_fu_name + "_i0" + STR(HIERARCHY_SEPARATOR);
+   std::string top_name = "_" + top_fu_name + "_i0" + STR(HIERARCHY_SEPARATOR);
    if(HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction() or (parameters->isOption(OPT_interface_type) and parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION))
    {
-      top_name += top_fu_name + "_int_i0" + STR(HIERARCHY_SEPARATOR);
+      top_name += "_" + top_fu_name + "_int_i0" + STR(HIERARCHY_SEPARATOR);
    }
 
    // top interface scope (depending on the interface)
    if(parameters->isOption(OPT_interface_type) and
       (parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION || parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION))
    {
-      top_interface_name = top_fu_name + "_minimal_interface";
+      top_interface_name = top_fu_name;
       interface_scope = top_interface_name + STR(HIERARCHY_SEPARATOR);
    }
    else if(parameters->isOption(OPT_interface_type) and parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
    {
       top_interface_name = top_fu_name + "_minimal_interface_wb4_interface";
-      interface_scope = top_interface_name + STR(HIERARCHY_SEPARATOR) + top_fu_name + "_minimal_interface_i0" + STR(HIERARCHY_SEPARATOR);
+      interface_scope = top_interface_name + STR(HIERARCHY_SEPARATOR) + top_fu_name + "_i0" + STR(HIERARCHY_SEPARATOR);
    }
    else
    {

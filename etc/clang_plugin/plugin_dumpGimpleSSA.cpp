@@ -74,6 +74,8 @@
 #endif
 #include <sstream>
 
+#include <boost/tokenizer.hpp>
+
 #define PRINT_DBG_MSG 0
 //#define UNIFYFUNCTIONEXITNODES
 
@@ -125,36 +127,41 @@ namespace llvm
          if(InFile.empty())
             llvm::report_fatal_error("-panda-infile parameter not specified");
          /// load parameter names
+         boost::char_separator<char> sep(",");
+         boost::tokenizer<boost::char_separator<char>> FileTokenizer(InFile, sep);
          std::map<std::string, std::vector<std::string>> Fun2Params;
-         auto parms_file_name = create_file_basename_string(outdir_name, InFile) + ".params.txt";
-         ErrorOr<std::unique_ptr<MemoryBuffer>> BufOrErr = MemoryBuffer::getFile(parms_file_name);
-         if(BufOrErr)
+         for(auto file_string : FileTokenizer)
          {
-            std::unique_ptr<MemoryBuffer> Buffer = std::move(BufOrErr.get());
-            std::string buf = Buffer->getBuffer();
-            std::stringstream ss(buf);
-            std::string item;
-            while(std::getline(ss, item, '\n'))
+            auto parms_file_name = create_file_basename_string(outdir_name, file_string) + ".params.txt";
+            ErrorOr<std::unique_ptr<MemoryBuffer>> BufOrErr = MemoryBuffer::getFile(parms_file_name);
+            if(BufOrErr)
             {
-               bool is_first = true;
-               std::stringstream ss_inner(item);
-               std::string item_inner;
-               std::string funName;
-               while(std::getline(ss_inner, item_inner, ' '))
+               std::unique_ptr<MemoryBuffer> Buffer = std::move(BufOrErr.get());
+               std::string buf = Buffer->getBuffer();
+               std::stringstream ss(buf);
+               std::string item;
+               while(std::getline(ss, item, '\n'))
                {
-                  if(is_first)
+                  bool is_first = true;
+                  std::stringstream ss_inner(item);
+                  std::string item_inner;
+                  std::string funName;
+                  while(std::getline(ss_inner, item_inner, ' '))
                   {
-                     funName = item_inner;
-                     is_first = false;
-                  }
-                  else
-                  {
-                     Fun2Params[funName].push_back(item_inner);
+                     if(is_first)
+                     {
+                        funName = item_inner;
+                        is_first = false;
+                     }
+                     else
+                     {
+                        Fun2Params[funName].push_back(item_inner);
+                     }
                   }
                }
             }
          }
-         DumpGimpleRaw gimpleRawWriter(outdir_name, InFile, false, &Fun2Params);
+         DumpGimpleRaw gimpleRawWriter(outdir_name, *(FileTokenizer.begin()), false, &Fun2Params);
 
 #if PRINT_DBG_MSG
          if(!TopFunctionName.empty())

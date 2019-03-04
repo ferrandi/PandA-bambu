@@ -51,12 +51,13 @@
 #include "math_function.hpp"        // for resize_to_1_8_16_32_64_128_256_512
 #include "schedule.hpp"             // for ControlStep, AbsControlStep, HLS...
 #include "string_manipulation.hpp"  // for STR GET_CLASS
-#include "technology_manager.hpp"   // for LIBRARY_STD_FU
-#include "technology_node.hpp"      // for technology_nodeRef, MEMORY_CTRL_...
-#include "tree_node.hpp"            // for GET_NODE, GET_CONST_NODE, TreeNo...
-#include "typed_node_info.hpp"      // for GET_NAME
-#include <cmath>                    // for exp, ceil
-#include <limits>                   // for numeric_limits
+#include "structural_manager.hpp"
+#include "technology_manager.hpp" // for LIBRARY_STD_FU
+#include "technology_node.hpp"    // for technology_nodeRef, MEMORY_CTRL_...
+#include "tree_node.hpp"          // for GET_NODE, GET_CONST_NODE, TreeNo...
+#include "typed_node_info.hpp"    // for GET_NAME
+#include <cmath>                  // for exp, ceil
+#include <limits>                 // for numeric_limits
 
 #include "basic_block.hpp"
 #include "clb_model.hpp"
@@ -2460,7 +2461,8 @@ double AllocationInformation::estimate_call_delay() const
       call_delay = ctrl_delay;
    /// Check if the operation mapped on this fu is bounded
    std::string function_name = behavioral_helper->get_function_name();
-   auto* fu = GetPointer<functional_unit>(HLS_T->get_technology_manager()->get_fu(function_name, WORK_LIBRARY));
+   auto module_name = hls->top->get_circ()->get_typeRef()->id_type;
+   auto* fu = GetPointer<functional_unit>(HLS_T->get_technology_manager()->get_fu(module_name, WORK_LIBRARY));
    auto* op = GetPointer<operation>(fu->get_operation(function_name));
    if(not op->bounded)
    {
