@@ -96,6 +96,9 @@ const std::string MemoryAllocationSpecialization::GetKindText() const
       case MemoryAllocation_Policy::EXT_PIPELINED_BRAM:
          ret += "EXT_PIPELINED_BRAM";
          break;
+      case MemoryAllocation_Policy::INTERN_UNALIGNED:
+         ret += "INTERN_UNALIGNED";
+         break;
       case MemoryAllocation_Policy::NONE:
       default:
          THROW_UNREACHABLE("");
@@ -393,7 +396,6 @@ void memory_allocation::finalize_memory_allocation()
    }
 
    const HLS_targetRef HLS_T = HLSMgr->get_HLS_target();
-   unsigned int aligned_bitsize;
    unsigned int bram_bitsize = 0, data_bus_bitsize, addr_bus_bitsize, size_bus_bitsize;
    auto bram_bitsize_min = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_min");
    auto bram_bitsize_max = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max");
@@ -422,11 +424,6 @@ void memory_allocation::finalize_memory_allocation()
 
    if(bram_bitsize < 8)
       bram_bitsize = 8;
-
-   if(!use_databus_width || use_unknown_address)
-      aligned_bitsize = 8;
-   else
-      aligned_bitsize = 2 * bram_bitsize;
 
    if(parameters->isOption(OPT_addr_bus_bitsize))
       addr_bus_bitsize = parameters->getOption<unsigned int>(OPT_addr_bus_bitsize);
@@ -460,7 +457,6 @@ void memory_allocation::finalize_memory_allocation()
       ;
    HLSMgr->Rmem->set_bus_size_bitsize(size_bus_bitsize);
 
-   HLSMgr->Rmem->set_aligned_bitsize(aligned_bitsize);
    HLSMgr->Rmem->set_bram_bitsize(bram_bitsize);
    HLSMgr->Rmem->set_intern_shared_data(has_intern_shared_data);
    HLSMgr->Rmem->set_use_unknown_addresses(use_unknown_address);
@@ -471,8 +467,7 @@ void memory_allocation::finalize_memory_allocation()
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---BRAM bitsize: " + STR(bram_bitsize));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---" + (use_databus_width ? std::string("Spec may exploit DATA bus width") : std::string("Spec may not exploit DATA bus width")));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---" + (!use_unknown_address ? std::string("All the data have a known address") : std::string("Spec accesses data having an address unknown at compile time")));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---" + (!has_intern_shared_data ? std::string("Intern data is not externally accessible") : std::string("Intern data may be accessed")));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Aligned bitsize: " + STR(aligned_bitsize));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---" + (!has_intern_shared_data ? std::string("Internal data is not externally accessible") : std::string("Internal data may be accessed")));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---DATA bus bitsize: " + STR(data_bus_bitsize));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---ADDRESS bus bitsize: " + STR(addr_bus_bitsize));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---SIZE bus bitsize: " + STR(size_bus_bitsize));

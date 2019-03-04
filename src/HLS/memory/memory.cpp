@@ -77,7 +77,6 @@ memory::memory(const tree_managerRef _TreeM, unsigned int _off_base_address, uns
       next_off_base_address(_off_base_address),
       bus_data_bitsize(0),
       bus_size_bitsize(0),
-      aligned_bitsize(0),
       bram_bitsize(0),
       maxbram_bitsize(0),
       intern_shared_data(false),
@@ -776,8 +775,6 @@ bool memory::notEQ(refcount<memory> ref) const
    if(bus_data_bitsize != ref->bus_data_bitsize)
       return true;
    if(bus_size_bitsize != ref->bus_size_bitsize)
-      return true;
-   if(aligned_bitsize != ref->aligned_bitsize)
       return true;
    if(bram_bitsize != ref->bram_bitsize)
       return true;

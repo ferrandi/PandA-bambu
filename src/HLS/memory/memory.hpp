@@ -138,9 +138,6 @@ class memory
    /// bus size bitsize
    unsigned int bus_size_bitsize;
 
-   /// maximum bitsize that can be accessed aligned
-   unsigned int aligned_bitsize;
-
    /// bram bitsize
    unsigned int bram_bitsize;
 
@@ -562,22 +559,6 @@ class memory
    unsigned int get_bus_size_bitsize() const
    {
       return bus_size_bitsize;
-   }
-
-   /**
-    * set the maximum the bitsize of the aligned accesses
-    */
-   void set_aligned_bitsize(unsigned int bitsize)
-   {
-      aligned_bitsize = bitsize;
-   }
-
-   /**
-    * return the maximum bitsize of the aligned accesses
-    */
-   unsigned int get_aligned_bitsize() const
-   {
-      return aligned_bitsize;
    }
 
    /**
