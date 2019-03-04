@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
       STOP_TIME(cpu_time);
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Parameters parsed in " + print_cpu_time(cpu_time) + " seconds\n");
 
-      // up to now all parameters have been parsed and datastructures created, so synthesis can start
+      // up to now all parameters have been parsed and data structures created, so synthesis can start
 
       /// ==== Creating target for the synthesis ==== ///
       HLS_targetRef HLS_T = HLS_target::create_target(parameters);

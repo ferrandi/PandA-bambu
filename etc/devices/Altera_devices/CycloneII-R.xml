@@ -1,16 +1,16 @@
 <?xml version="1.0"?>
 <synthesis>
    <flow name="Synthesis">
-      <step id="quartus_setup" config="quartus_setup"/>
-      <step id="quartus_flow" config="quartus_flow"/>
-      <step id="quartus_sta" config="quartus_sta"/>
+      <step id="quartus_13_setup" config="quartus_13_setup"/>
+      <step id="quartus_13_flow" config="quartus_13_flow"/>
+      <step id="quartus_13_sta" config="quartus_13_sta"/>
    </flow>
    <flow name="Characterization">
-      <step id="quartus_setup" config="quartus_setupC"/>
-      <step id="quartus_flow" config="quartus_flow"/>
-      <step id="quartus_sta" config="quartus_sta"/>
+      <step id="quartus_13_setup" config="quartus_13_setupC"/>
+      <step id="quartus_13_flow" config="quartus_13_flow"/>
+      <step id="quartus_13_sta" config="quartus_13_sta"/>
    </flow>
-   <quartus_sh config="quartus_setupC">
+   <quartus_sh config="quartus_13_setupC">
       <!--Create the design setup -->
       <cmd name="project_new ${__top_id__} -overwrite"/>
       <cmd name="set_global_assignment -name FAMILY ${__target_family__}"/>
@@ -66,7 +66,7 @@
       <cmd name="source ${__backend_script_extensions__}" condition="${__has_script_extensions__}"/>
       <cmd name="project_close"/>
    </quartus_sh>
-   <quartus_sh config="quartus_setup">
+   <quartus_sh config="quartus_13_setup">
       <!--Create the design setup -->
       <cmd name="project_new ${__top_id__} -overwrite"/>
       <cmd name="set_global_assignment -name FAMILY ${__target_family__}"/>
@@ -101,7 +101,7 @@
       <cmd name="source ${__backend_script_extensions__}" condition="${__has_script_extensions__}"/>
       <cmd name="project_close"/>
    </quartus_sh>
-   <quartus_sh config="quartus_flow">
+   <quartus_sh config="quartus_13_flow">
       <!--run the flow -->
       <cmd name="load_package flow"/>
       <cmd name="project_open ${__top_id__}"/>
@@ -119,8 +119,8 @@
       <cmd name="execute_flow -compile"/>
       <cmd name="project_close"/>
    </quartus_sh>
-   <quartus_sta config="quartus_sta">
-      <!--report all the info of the design by using quartus_sta-->
+   <quartus_sta config="quartus_13_sta">
+      <!--report all the info of the design by using quartus_13_sta-->
       <cmd name="load_package report"/>
       <cmd name="project_open ${__top_id__}"/>
       <cmd name="load_report"/>

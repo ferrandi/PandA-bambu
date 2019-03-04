@@ -263,11 +263,13 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
    std::string command = compiler.gcc.string();
    if(cm == GccWrapper_CompilerMode::CM_ANALYZER && !compiler.is_clang)
    {
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER
       bool flag_cpp;
       if(Param->isOption(OPT_input_format) && Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP)
          flag_cpp = true;
       else
          flag_cpp = false;
+#endif
 #if HAVE_I386_CLANG6_COMPILER
       command = flag_cpp ? I386_CLANGPP6_EXE : I386_CLANG6_EXE;
 #elif HAVE_I386_CLANG5_COMPILER
@@ -684,7 +686,8 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
       }
       if(compiler.is_clang)
       {
-         command = compiler.llvm_opt.string() + " -O2 -disable-slp-vectorization -disable-loop-vectorization " + temporary_file_o_bc;
+         const auto opt_level = WriteOptimizationLevel(optimization_level);
+         command = compiler.llvm_opt.string() + " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization " + temporary_file_o_bc;
          temporary_file_o_bc = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string()).string();
          command += " -o " + temporary_file_o_bc;
          const std::string o2_output_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
@@ -706,14 +709,26 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
       }
       else
          THROW_ERROR("LTO compilation not yet implemented with GCC");
-      std::string real_file_name = source_files.begin()->second;
+
+      std::string real_file_names;
+      bool first_file = true;
+      for(const auto& fsname : source_files)
+      {
+         if(first_file)
+         {
+            real_file_names = fsname.second;
+            first_file = false;
+         }
+         else
+            real_file_names = real_file_names + "," + fsname.second;
+      }
       if(compiler.is_clang)
       {
          command = compiler.llvm_opt.string();
 #ifndef _WIN32
          command += " -load=" + compiler.ssa_plugin_obj;
 #endif
-         command += " -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) + " -panda-infile=" + real_file_name;
+         command += " -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) + " -panda-infile=" + real_file_names;
          if(addTFNPlugin)
          {
             command += " -panda-topfname=" + fname;
@@ -742,9 +757,9 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
       }
       else
          THROW_ERROR("LTO compilation not yet implemented with GCC");
-      std::string leaf_name = GetLeafFileName(real_file_name);
+      std::string leaf_name = GetLeafFileName(source_files.begin()->second);
       if(not(boost::filesystem::exists(boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix))))
-         THROW_ERROR(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix + " not found: impossible to create raw file for " + real_file_name);
+         THROW_ERROR(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix + " not found: impossible to create raw file for " + real_file_names);
       boost::filesystem::path obj = boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
       tree_managerRef TreeM = ParseTreeFile(Param, obj.string());
 #if !NPROFILE
@@ -1037,11 +1052,13 @@ void GccWrapper::SetBambuDefault()
     HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER
    GccWrapper_CompilerTarget compiler = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
 #endif
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER
    bool flag_cpp;
    if(Param->isOption(OPT_input_format) && Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP)
       flag_cpp = true;
    else
       flag_cpp = false;
+#endif
 #if HAVE_I386_CLANG4_COMPILER
    if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG4)
    {

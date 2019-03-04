@@ -270,7 +270,11 @@
 #define OPT_NUM_THREADS (1 + OPT_NO_MIXED_DESIGN)
 #define OPT_PARALLEL_CONTROLLER (1 + OPT_NUM_THREADS)
 #define OPT_PERIOD_CLOCK (1 + OPT_PARALLEL_CONTROLLER)
-#define OPT_POWER_OPTIMIZATION (1 + OPT_PERIOD_CLOCK)
+#define OPT_CLOCK_NAME (1 + OPT_PERIOD_CLOCK)
+#define OPT_RESET_NAME (1 + OPT_CLOCK_NAME)
+#define OPT_START_NAME (1 + OPT_RESET_NAME)
+#define OPT_DONE_NAME (1 + OPT_START_NAME)
+#define OPT_POWER_OPTIMIZATION (1 + OPT_DONE_NAME)
 #define OPT_PRAGMA_PARSE (1 + OPT_POWER_OPTIMIZATION)
 #define OPT_PRETTY_PRINT (1 + OPT_PRAGMA_PARSE)
 #define OPT_POST_RESCHEDULING (1 + OPT_PRETTY_PRINT)
@@ -736,7 +740,14 @@ void BambuParameter::PrintHelp(std::ostream& os) const
 
    // RTL synthesis options
    os << "  RTL synthesis:\n\n"
-      << "    Note: for a more complete evaluation you should use the option --evaluation\n\n"
+      << "    --clock-name=id\n"
+      << "        Specify the clock signal name of the top interface (default = clock).\n\n"
+      << "    --reset-name=id\n"
+      << "        Specify the reset signal name of the top interface (default = reset).\n\n"
+      << "    --start-name=id\n"
+      << "        Specify the start signal name of the top interface (default = start_port).\n\n"
+      << "    --done-name=id\n"
+      << "        Specify the done signal name of the top interface (default = done_port).\n\n"
       << "    --clock-period=value\n"
       << "        Specify the period of the clock signal (default = 10ns).\n\n"
       << "    --backend-script-extensions=file\n"
@@ -1116,6 +1127,10 @@ int BambuParameter::Exec()
       {"assert-debug", no_argument, nullptr, 0},
       {"device-name", required_argument, nullptr, OPT_DEVICE_NAME},
       {"clock-period", required_argument, nullptr, OPT_PERIOD_CLOCK},
+      {"clock-name", required_argument, nullptr, OPT_CLOCK_NAME},
+      {"reset-name", required_argument, nullptr, OPT_RESET_NAME},
+      {"start-name", required_argument, nullptr, OPT_START_NAME},
+      {"done-name", required_argument, nullptr, OPT_DONE_NAME},
       {"power-optimization", no_argument, nullptr, OPT_POWER_OPTIMIZATION},
       {"no-iob", no_argument, nullptr, OPT_DISABLE_IOB},
       {"reset-type", required_argument, nullptr, OPT_RESET},
@@ -1781,6 +1796,26 @@ int BambuParameter::Exec()
          case OPT_PERIOD_CLOCK:
          {
             setOption(OPT_clock_period, optarg);
+            break;
+         }
+         case OPT_CLOCK_NAME:
+         {
+            setOption(OPT_clock_name, optarg);
+            break;
+         }
+         case OPT_RESET_NAME:
+         {
+            setOption(OPT_reset_name, optarg);
+            break;
+         }
+         case OPT_START_NAME:
+         {
+            setOption(OPT_start_name, optarg);
+            break;
+         }
+         case OPT_DONE_NAME:
+         {
+            setOption(OPT_done_name, optarg);
             break;
          }
          case OPT_POWER_OPTIMIZATION:
@@ -3043,6 +3078,9 @@ void BambuParameter::CheckParameters()
    }
    if(getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN and isOption(OPT_interface_type) and getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
       THROW_ERROR("Wishbone 4 interface does not yet support multi-channel architectures (MEM_ACC_NN)");
+
+   if(isOption(OPT_interface_type) and getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION and (isOption(OPT_clock_name) or isOption(OPT_reset_name) or isOption(OPT_start_name) or isOption(OPT_done_name)))
+      THROW_ERROR("Wishbone 4 interface does not allow the renaming of the control signals");
 
    if(not getOption<bool>(OPT_gcc_include_sysdir))
    {

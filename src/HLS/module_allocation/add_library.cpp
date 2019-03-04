@@ -43,6 +43,7 @@
  */
 #include "add_library.hpp"
 #include "Parameter.hpp" // for ParameterConstRef
+#include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
 #include "dbgPrintHelper.hpp"      // for INDENT_DBG_MEX, DEBUG_LEVEL_VERY_...
 #include "exceptions.hpp"          // for THROW_ASSERT, THROW_UNREACHABLE
@@ -130,18 +131,21 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 
 DesignFlowStep_Status add_library::InternalExec()
 {
-   /*const tree_managerRef TreeM = HLSMgr->get_tree_manager();*/
-   std::string function_name = /*tree_helper::normalized_ID(tree_helper::name_function(TreeM, HLS->functionId));*/ HLS->top->get_circ()->get_typeRef()->id_type;
+   const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
+   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
+   const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+   std::string function_name = BH->get_function_name();
+   std::string module_name = HLS->top->get_circ()->get_typeRef()->id_type;
    const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
    THROW_ASSERT(HLS->top, "Top has not been set");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Adding " + function_name + " to " + WORK_LIBRARY + " - Object is " + HLS->top->get_circ()->get_path());
-   TM->add_resource(WORK_LIBRARY, function_name, HLS->top);
-   TM->add_operation(WORK_LIBRARY, function_name, function_name);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Adding " + module_name + " to " + WORK_LIBRARY + " - Object is " + HLS->top->get_circ()->get_path());
+   TM->add_resource(WORK_LIBRARY, module_name, HLS->top);
+   TM->add_operation(WORK_LIBRARY, module_name, function_name);
    double clock_period_value = HLS->HLS_C->get_clock_period();
    double cprf = HLS->HLS_C->get_clock_period_resource_fraction();
    double clk = cprf * clock_period_value;
    const target_deviceRef device = HLS->HLS_T->get_target_device();
-   auto* fu = GetPointer<functional_unit>(TM->get_fu(function_name, WORK_LIBRARY));
+   auto* fu = GetPointer<functional_unit>(TM->get_fu(module_name, WORK_LIBRARY));
    fu->set_clock_period(clock_period_value);
    fu->set_clock_period_resource_fraction(cprf);
    std::string module_parameters = (HLS->top->get_circ() and GetPointer<module>(HLS->top->get_circ()) and GetPointer<module>(HLS->top->get_circ())->get_NP_functionality()) ?
@@ -149,7 +153,7 @@ DesignFlowStep_Status add_library::InternalExec()
                                        "";
    if(module_parameters.find(" ") != std::string::npos)
       module_parameters = module_parameters.substr(module_parameters.find(" "));
-   fu->CM->add_NP_functionality(HLS->top->get_circ(), NP_functionality::LIBRARY, function_name + module_parameters);
+   fu->CM->add_NP_functionality(HLS->top->get_circ(), NP_functionality::LIBRARY, module_name + module_parameters);
    auto* op = GetPointer<operation>(fu->get_operation(function_name));
    op->time_m = time_model::create_model(device->get_type(), parameters);
    op->primary_inputs_registered = HLS->registered_inputs;
@@ -227,7 +231,7 @@ DesignFlowStep_Status add_library::InternalExec()
    op->time_m->set_synthesis_dependent(true);
    fu->area_m = area_model::create_model(device->get_type(), parameters);
    fu->area_m->set_area_value(2000); /// fake number to avoid sharing of functions
-   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Added " + function_name + (op->bounded ? "" : "(unbounded)") + " to WORK_LIBRARY");
+   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Added " + module_name + (op->bounded ? "" : "(unbounded)") + " to WORK_LIBRARY");
 
    return DesignFlowStep_Status::SUCCESS;
 }

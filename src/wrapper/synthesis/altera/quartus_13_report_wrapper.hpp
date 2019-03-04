@@ -45,8 +45,8 @@
 /// Superclass include
 #include "AlteraWrapper.hpp"
 
-#define QUARTUS_REPORT_TOOL_ID "quartus_sta"
-#define QUARTUS_REPORT_TOOL_EXEC "quartus_sta"
+#define QUARTUS_13_REPORT_TOOL_ID "quartus_13_sta"
+#define QUARTUS_13_REPORT_TOOL_EXEC "quartus_sta"
 
 /**
  * @class Quartus13ReportWrapper

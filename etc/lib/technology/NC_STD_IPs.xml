@@ -2255,7 +2255,7 @@ begin
    out1 &lt;= reg_out1;
    process(clock)
    begin
-      if(clock = &apos;1&apos;) then
+      if(clock&apos;event and clock=&apos;1&apos;) then
          if(1RESET_VALUE) then
             reg_out1 &lt;= &apos;0&apos;;
          else
