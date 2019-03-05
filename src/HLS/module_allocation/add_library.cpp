@@ -131,6 +131,9 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 
 DesignFlowStep_Status add_library::InternalExec()
 {
+   const auto* const add_library_specialization = GetPointer<const AddLibrarySpecialization>(hls_flow_step_specialization);
+   if(add_library_specialization->interfaced)
+      return DesignFlowStep_Status::SUCCESS;
    const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
