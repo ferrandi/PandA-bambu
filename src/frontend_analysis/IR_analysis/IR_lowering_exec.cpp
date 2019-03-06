@@ -1996,7 +1996,22 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   else if(code1 == view_convert_expr_K || code1 == nop_expr_K)
                   {
                      auto* ue = GetPointer<unary_expr>(GET_NODE(ga->op1));
-                     if(GET_NODE(ue->op)->get_kind() != ssa_name_K && !GetPointer<cst_node>(GET_NODE(ue->op)))
+                     if(GET_NODE(ue->op)->get_kind() == var_decl_K)
+                     {
+                        auto vc = GetPointer<view_convert_expr>(GET_NODE(ga->op1));
+                        tree_nodeRef pt = tree_man->create_pointer_type(vc->type);
+                        tree_nodeRef ae = tree_man->create_unary_operation(pt, ue->op, srcp_default, addr_expr_K);
+                        tree_nodeRef new_ga = CreateGimpleAssign(pt, ae, block.first, srcp_default);
+                        GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = true;
+                        tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                        tree_nodeRef offset = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(pt));
+                        tree_nodeRef mr = tree_man->create_binary_operation(vc->type, ssa_vd, offset, srcp_default, mem_ref_K);
+                        ga->op1 = mr;
+                        block.second->PushBefore(new_ga, *it_los);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
+                        restart_analysis = true;
+                     }
+                     else if(GET_NODE(ue->op)->get_kind() != ssa_name_K && !GetPointer<cst_node>(GET_NODE(ue->op)))
                      {
                         unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ue->op));
                         tree_nodeRef op_type = TM->GetTreeReindex(type_index);
