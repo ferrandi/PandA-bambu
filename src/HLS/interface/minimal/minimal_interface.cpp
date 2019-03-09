@@ -144,8 +144,6 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                                  (parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::NO_BRAM) ||
                                  (top_function_ids.find(funId) != top_function_ids.end() and parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION) ||
                                  (HLSMgr->hasToBeInterfaced(funId) and top_function_ids.find(funId) == top_function_ids.end()) || parameters->getOption<bool>(OPT_memory_mapped_top);
-   std::cerr<< "----------Has_intern_shared_data="<< (Has_intern_shared_data?"T":"F")<<"\n";
-   std::cerr<< "----------Has_extern_allocated_data="<< (Has_extern_allocated_data?"T":"F")<<"\n";
    bool with_master = false;
    bool with_slave = false;
    for(unsigned int i = 0; i < GetPointer<module>(wrappedObj)->get_in_port_size(); i++)
@@ -217,8 +215,6 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       }
    }
 
-   std::cerr<< "----------with_master="<< (with_master?"T":"F")<<"\n";
-   std::cerr<< "----------with_slave="<< (with_slave?"T":"F")<<"\n";
    if(!Has_intern_shared_data)
    {
       if(!Has_extern_allocated_data)
