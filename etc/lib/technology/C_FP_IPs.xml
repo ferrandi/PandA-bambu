@@ -941,10 +941,11 @@
             <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="__builtin_signbit X R" VERILOG_PROVIDED=
-"assign R = X[BITSIZE_X-1];"
+"assign R = X[BITSIZE_X-1];\nassign done_port = start_port;"
 VHDL_PROVIDED=
 "begin
   R &lt;= (others =&gt; X(BITSIZE_X-1));
+  done_port &lt;= start_port;
 "/>
         </component_o>
       </circuit>
@@ -985,7 +986,7 @@ VHDL_PROVIDED=
             <structural_type_descriptor type="REAL" size="1"/>
             <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="__builtin_fabs X R" VERILOG_PROVIDED="assign R = {1&apos;b0,X[BITSIZE_X-2:0]};" VHDL_PROVIDED="begin\n  R &lt;= &apos;0&apos; &amp; X(BITSIZE_X-2 downto 0);\n"/>
+          <NP_functionality LIBRARY="__builtin_fabs X R" VERILOG_PROVIDED="assign R = {1&apos;b0,X[BITSIZE_X-2:0]};\nassign done_port = start_port;" VHDL_PROVIDED="begin\n  R &lt;= &apos;0&apos; &amp; X(BITSIZE_X-2 downto 0);\n  done_port &lt;= start_port;"/>
         </component_o>
       </circuit>
     </cell>
@@ -1025,7 +1026,7 @@ VHDL_PROVIDED=
             <structural_type_descriptor type="REAL" size="1"/>
             <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="__builtin_fabsf X R" VERILOG_PROVIDED="assign R = {1&apos;b0,X[BITSIZE_X-2:0]};" VHDL_PROVIDED="begin\n  R &lt;= &apos;0&apos; &amp; X(BITSIZE_X-2 downto 0);\n"/>
+          <NP_functionality LIBRARY="__builtin_fabsf X R" VERILOG_PROVIDED="assign R = {1&apos;b0,X[BITSIZE_X-2:0]};\nassign done_port = start_port;" VHDL_PROVIDED="begin\n  R &lt;= &apos;0&apos; &amp; X(BITSIZE_X-2 downto 0);\n  done_port &lt;= start_port;"/>
         </component_o>
       </circuit>
     </cell>
