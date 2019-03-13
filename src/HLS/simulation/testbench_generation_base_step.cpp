@@ -362,7 +362,7 @@ void TestbenchGenerationBaseStep::write_initial_block(const std::string& simulat
       writer->write("$dumpfile(\"" + vcd_output_filename + "\");\n");
       bool simulator_supports_dumpvars_directive = parameters->getOption<std::string>(OPT_simulator) == "MODELSIM" || parameters->getOption<std::string>(OPT_simulator) == "ICARUS";
       bool dump_all_signals = parameters->isOption(OPT_generate_vcd) && parameters->getOption<bool>(OPT_generate_vcd);
-      if(dump_all_signals or not simulator_supports_dumpvars_directive
+      if(dump_all_signals or not simulator_supports_dumpvars_directive or (static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)) == HDLWriter_Language::VHDL)
 #if HAVE_FROM_DISCREPANCY_BUILT
          or not parameters->isOption(OPT_discrepancy) or not parameters->getOption<bool>(OPT_discrepancy) or HLSMgr->RDiscr->selected_vcd_signals.empty()
 #endif
