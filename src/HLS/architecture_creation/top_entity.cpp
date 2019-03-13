@@ -120,7 +120,7 @@ DesignFlowStep_Status top_entity::InternalExec()
    if(is_top)
       module_name = "_" + function_name;
 
-   /// Test on previuos steps. They checks if datapath and controller have been created. If they didn't,
+   /// Test on previous steps. They checks if datapath and controller have been created. If they didn't,
    /// top circuit cannot be created.
    THROW_ASSERT(HLS->datapath, "Datapath not created");
    THROW_ASSERT(HLS->controller, "Controller not created");
