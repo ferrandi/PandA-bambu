@@ -46,20 +46,20 @@ pipeline {
       parallel {
         stage('list based') {
           steps {
-           sh 'mkdir -p $WORKSPACE/list && mkdir -p $WORKSPACE/list/test-reports && cd $WORKSPACE/panda_regressions && nice -n 17 ./panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider  -t 120m --restart '
-           sh 'cd $WORKSPACE/panda_regressions && nice -n 17 ./panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/list/test-reports" -t 120m --returnfail --restart '
+           sh 'mkdir -p $WORKSPACE/list && mkdir -p $WORKSPACE/list/test-reports && cd $WORKSPACE/panda_regressions && nice -n 17 ./panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --restart '
+           sh 'cd $WORKSPACE/panda_regressions && nice -n 17 ./panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/list/test-reports" --returnfail --restart '
           }
         }
         stage('sdc scheduling') {
           steps {
-           sh 'mkdir -p $WORKSPACE/sdc_tests/ && mkdir -p $WORKSPACE/sdc_tests/test-reports && mkdir -p $WORKSPACE/panda_regressions/sdc_tests && cd $WORKSPACE/panda_regressions/sdc_tests && nice -n 15 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider -t 120m -c="--speculative-sdc-scheduling" --restart '
-           sh 'cd $WORKSPACE/panda_regressions/sdc_tests && nice -n 15 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/sdc_tests/test-reports" -t 120m -c="--speculative-sdc-scheduling" --returnfail --restart '
+           sh 'mkdir -p $WORKSPACE/sdc_tests/ && mkdir -p $WORKSPACE/sdc_tests/test-reports && mkdir -p $WORKSPACE/panda_regressions/sdc_tests && cd $WORKSPACE/panda_regressions/sdc_tests && nice -n 15 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider -c="--speculative-sdc-scheduling" --restart '
+           sh 'cd $WORKSPACE/panda_regressions/sdc_tests && nice -n 15 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/sdc_tests/test-reports" -c="--speculative-sdc-scheduling" --returnfail --restart '
           }
         }
         stage('VHDL') {
           steps {
-           sh 'mkdir -p $WORKSPACE/panda_regressions/vhdl_tests && mkdir -p $WORKSPACE/vhdl_tests/ && mkdir -p $WORKSPACE/vhdl_tests/test-reports && cd $WORKSPACE/panda_regressions/vhdl_tests && nice -n 16 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider -t 120m -c="-wH" --name="_VHDL" --restart '
-           sh 'cd $WORKSPACE/panda_regressions/vhdl_tests && nice -n 16 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/vhdl_tests/test-reports" -t 120m -c="-wH" --name="_VHDL" --returnfail --restart '
+           sh 'mkdir -p $WORKSPACE/panda_regressions/vhdl_tests && mkdir -p $WORKSPACE/vhdl_tests/ && mkdir -p $WORKSPACE/vhdl_tests/test-reports && cd $WORKSPACE/panda_regressions/vhdl_tests && nice -n 16 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider -c="-wH" --name="_VHDL" --restart '
+           sh 'cd $WORKSPACE/panda_regressions/vhdl_tests && nice -n 16 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j10 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/vhdl_tests/test-reports" -c="-wH" --name="_VHDL" --returnfail --restart '
           }
         }
       }
