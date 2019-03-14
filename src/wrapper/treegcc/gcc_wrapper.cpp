@@ -687,7 +687,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
       if(compiler.is_clang)
       {
          const auto opt_level = WriteOptimizationLevel(optimization_level);
-         command = compiler.llvm_opt.string() + " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization " + temporary_file_o_bc;
+         command = compiler.llvm_opt.string() + " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer " + temporary_file_o_bc;
          temporary_file_o_bc = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string()).string();
          command += " -o " + temporary_file_o_bc;
          const std::string o2_output_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
