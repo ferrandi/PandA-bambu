@@ -1,82 +1,82 @@
-%Generated at 2018-02-22 11:28:23.362402 with bambu Version: PandA 0.9.6-dev - Revision 90076efec9fae82a9f0e9c3a14bd3974e800e278-HEAD with arguments --soft-float --hls-div --device=TO_BE_OVERWRITTEN --evaluation --clock-period=10 --speculative-sdc-scheduling --device=xc7vx330t-1ffg1157
+%Generated at 2019-03-14 00:32:45.885880 with bambu Version: PandA 0.9.6-dev - Revision a1a71be1cf8001d30dac26a8cfe19906c3d64c61-PR-5 with arguments --soft-float --hls-div --device=TO_BE_OVERWRITTEN --evaluation --clock-period=10 --speculative-sdc-scheduling --device=xc7vx330t-1ffg1157
 \begin{tabular}{|l|c|c|c|c|c|c|c|c|c|c|}
 \hline
-Benchmark Name                            & Tot. Latency            & Num Cycles & LUTs      & Slices    & Registers & DSPs    & BRAMs & Clock Frequency & Clock Slack & HLS Time(s) \\
+Benchmark Name               & Tot. Latency            & Num Cycles & LUTs      & Slices    & Registers & DSPs    & BRAMs & Clock Frequency & Clock Slack & HLS Time(s) \\
 \hline
-acosf:\_\_builtin\_acosf\_0               & $ 8.744 \cdot 10^{-1} $ & $ 90     $ & $ 3206  $ & $ 986   $ & $ 2188  $ & $ 19  $ & $ 0 $ & $ 102.92      $ & $ 0.28    $ & $ 24.90   $ \\
-acoshf:\_\_builtin\_acoshf\_0             & $ 4.432 \cdot 10^{-1} $ & $ 45     $ & $ 4654  $ & $ 1593  $ & $ 2660  $ & $ 20  $ & $ 0 $ & $ 101.52      $ & $ 0.15    $ & $ 44.56   $ \\
-asinf:\_\_builtin\_asinf\_0               & $ 9.782 \cdot 10^{-1} $ & $ 102    $ & $ 3416  $ & $ 1149  $ & $ 2275  $ & $ 19  $ & $ 0 $ & $ 104.28      $ & $ 0.41    $ & $ 25.22   $ \\
-asinhf:\_\_builtin\_asinhf\_0             & $ 7.889 \cdot 10^{-1} $ & $ 81     $ & $ 4719  $ & $ 1537  $ & $ 2619  $ & $ 20  $ & $ 0 $ & $ 102.68      $ & $ 0.26    $ & $ 44.99   $ \\
-atan2f:\_\_builtin\_atan2f\_0             & $ 1.072 \cdot 10^{0}  $ & $ 108    $ & $ 2710  $ & $ 881   $ & $ 1965  $ & $ 15  $ & $ 0 $ & $ 100.74      $ & $ 0.07    $ & $ 25.79   $ \\
-atanf:\_\_builtin\_atanf\_0               & $ 8.503 \cdot 10^{-1} $ & $ 86     $ & $ 2360  $ & $ 750   $ & $ 1628  $ & $ 15  $ & $ 0 $ & $ 101.14      $ & $ 0.11    $ & $ 24.16   $ \\
-atanhf:\_\_builtin\_atanhf\_0             & $ 1.494 \cdot 10^{0}  $ & $ 152    $ & $ 3131  $ & $ 1108  $ & $ 2110  $ & $ 13  $ & $ 0 $ & $ 101.72      $ & $ 0.17    $ & $ 26.07   $ \\
-cbrtf:\_\_builtin\_cbrtf\_0               & $ 6.026 \cdot 10^{-1} $ & $ 61     $ & $ 1655  $ & $ 547   $ & $ 1037  $ & $ 13  $ & $ 0 $ & $ 101.24      $ & $ 0.12    $ & $ 17.97   $ \\
-ceilf:\_\_builtin\_ceilf\_0               & $ 1.165 \cdot 10^{-2} $ & $ 1      $ & $ 116   $ & $ 36    $ & $ 0     $ & $ 0   $ & $ 0 $ & $ 85.86       $ & $ -1.65   $ & $ 2.74    $ \\
-cosf:\_\_builtin\_cosf\_0                 & $ 1.077 \cdot 10^{-1} $ & $ 11     $ & $ 1982  $ & $ 632   $ & $ 817   $ & $ 11  $ & $ 0 $ & $ 102.17      $ & $ 0.21    $ & $ 14.70   $ \\
-coshf:\_\_builtin\_coshf\_0               & $ 3.172 \cdot 10^{-1} $ & $ 32     $ & $ 3447  $ & $ 1323  $ & $ 2081  $ & $ 22  $ & $ 0 $ & $ 100.90      $ & $ 0.09    $ & $ 31.09   $ \\
-erfcf:\_\_builtin\_erfcf\_0               & $ 6.495 \cdot 10^{-1} $ & $ 68     $ & $ 4549  $ & $ 1458  $ & $ 2325  $ & $ 24  $ & $ 0 $ & $ 104.69      $ & $ 0.45    $ & $ 29.12   $ \\
-erff:\_\_builtin\_erff\_0                 & $ 6.279 \cdot 10^{-1} $ & $ 63     $ & $ 4403  $ & $ 1450  $ & $ 2320  $ & $ 24  $ & $ 0 $ & $ 100.33      $ & $ 0.03    $ & $ 29.26   $ \\
-expf:\_\_builtin\_expf\_0                 & $ 8.666 \cdot 10^{-2} $ & $ 10     $ & $ 686   $ & $ 234   $ & $ 260   $ & $ 9   $ & $ 0 $ & $ 115.39      $ & $ 1.33    $ & $ 5.24    $ \\
-expm1f:\_\_builtin\_expm1f\_0             & $ 1.209 \cdot 10^{0}  $ & $ 123    $ & $ 3144  $ & $ 978   $ & $ 1992  $ & $ 14  $ & $ 0 $ & $ 101.76      $ & $ 0.17    $ & $ 26.97   $ \\
-floorf:\_\_builtin\_floorf\_0             & $ 1.110 \cdot 10^{-2} $ & $ 1      $ & $ 107   $ & $ 33    $ & $ 1     $ & $ 0   $ & $ 0 $ & $ 90.13       $ & $ -1.10   $ & $ 2.83    $ \\
-fmodf:\_\_builtin\_fmodf\_0               & $ 4.148 \cdot 10^{-2} $ & $ 6      $ & $ 631   $ & $ 220   $ & $ 303   $ & $ 0   $ & $ 0 $ & $ 144.65      $ & $ 3.09    $ & $ 3.39    $ \\
-hypotf:\_\_builtin\_hypotf\_0             & $ 2.553 \cdot 10^{-1} $ & $ 32     $ & $ 3013  $ & $ 928   $ & $ 1866  $ & $ 4   $ & $ 0 $ & $ 125.34      $ & $ 2.02    $ & $ 21.30   $ \\
-ilogbf:\_\_builtin\_ilogbf\_0             & $ 1.240 \cdot 10^{-2} $ & $ 1      $ & $ 27    $ & $ 14    $ & $ 0     $ & $ 0   $ & $ 0 $ & $ 80.66       $ & $ -2.40   $ & $ 2.44    $ \\
-ldexpf:\_\_builtin\_ldexpf\_0             & $ 3.696 \cdot 10^{-2} $ & $ 6      $ & $ 381   $ & $ 155   $ & $ 351   $ & $ 2   $ & $ 0 $ & $ 162.34      $ & $ 3.84    $ & $ 17.08   $ \\
-log10f:\_\_builtin\_log10f\_0             & $ 7.406 \cdot 10^{-1} $ & $ 80     $ & $ 2920  $ & $ 1079  $ & $ 2165  $ & $ 16  $ & $ 0 $ & $ 108.01      $ & $ 0.74    $ & $ 24.72   $ \\
-log1pf:\_\_builtin\_log1pf\_0             & $ 9.037 \cdot 10^{-1} $ & $ 95     $ & $ 3010  $ & $ 954   $ & $ 2067  $ & $ 17  $ & $ 0 $ & $ 105.12      $ & $ 0.49    $ & $ 25.20   $ \\
-logbf:\_\_builtin\_logbf\_0               & $ 7.719 \cdot 10^{-3} $ & $ 3      $ & $ 146   $ & $ 50    $ & $ 68    $ & $ 0   $ & $ 0 $ & $ 388.65      $ & $ 7.43    $ & $ 8.45    $ \\
-logf:\_\_builtin\_logf\_0                 & $ 7.546 \cdot 10^{-2} $ & $ 8      $ & $ 1140  $ & $ 364   $ & $ 389   $ & $ 5   $ & $ 0 $ & $ 106.01      $ & $ 0.57    $ & $ 19.61   $ \\
-powf:\_\_builtin\_powf\_0                 & $ 2.674 \cdot 10^{0}  $ & $ 285    $ & $ 5905  $ & $ 2030  $ & $ 2876  $ & $ 15  $ & $ 0 $ & $ 106.59      $ & $ 0.62    $ & $ 38.15   $ \\
-remainderf:\_\_builtin\_remainderf\_0     & $ 1.923 \cdot 10^{-1} $ & $ 24     $ & $ 1809  $ & $ 568   $ & $ 873   $ & $ 2   $ & $ 0 $ & $ 124.78      $ & $ 1.99    $ & $ 14.87   $ \\
-rintf:\_\_builtin\_rintf\_0               & $ 7.113 \cdot 10^{-2} $ & $ 9      $ & $ 1138  $ & $ 379   $ & $ 476   $ & $ 0   $ & $ 0 $ & $ 126.53      $ & $ 2.10    $ & $ 15.32   $ \\
-scalbnf:\_\_builtin\_scalbnf\_0           & $ 1.740 \cdot 10^{-2} $ & $ 3      $ & $ 305   $ & $ 126   $ & $ 301   $ & $ 2   $ & $ 0 $ & $ 172.44      $ & $ 4.20    $ & $ 6.34    $ \\
-significandf:\_\_builtin\_significandf\_0 & $ 1.655 \cdot 10^{-1} $ & $ 17     $ & $ 2470  $ & $ 790   $ & $ 1571  $ & $ 13  $ & $ 0 $ & $ 102.74      $ & $ 0.27    $ & $ 29.16   $ \\
-sinf:\_\_builtin\_sinf\_0                 & $ 1.077 \cdot 10^{-1} $ & $ 11     $ & $ 1918  $ & $ 624   $ & $ 801   $ & $ 11  $ & $ 0 $ & $ 102.09      $ & $ 0.21    $ & $ 15.49   $ \\
-sinhf:\_\_builtin\_sinhf\_0               & $ 1.456 \cdot 10^{0}  $ & $ 156    $ & $ 4196  $ & $ 1294  $ & $ 2482  $ & $ 22  $ & $ 0 $ & $ 107.14      $ & $ 0.67    $ & $ 31.90   $ \\
-sqrtf:\_\_builtin\_sqrtf\_0               & $ 3.079 \cdot 10^{-2} $ & $ 5      $ & $ 444   $ & $ 148   $ & $ 133   $ & $ 2   $ & $ 0 $ & $ 162.42      $ & $ 3.84    $ & $ 3.01    $ \\
-tanf:\_\_builtin\_tanf\_0                 & $ 2.173 \cdot 10^{-1} $ & $ 24     $ & $ 2484  $ & $ 865   $ & $ 1482  $ & $ 24  $ & $ 0 $ & $ 110.42      $ & $ 0.94    $ & $ 23.77   $ \\
-tanhf:\_\_builtin\_tanhf\_0               & $ 1.536 \cdot 10^{0}  $ & $ 161    $ & $ 3385  $ & $ 1339  $ & $ 2121  $ & $ 13  $ & $ 0 $ & $ 104.80      $ & $ 0.46    $ & $ 27.88   $ \\
-tgammaf:\_\_builtin\_tgammaf\_0           & $ 1.149 \cdot 10^{0}  $ & $ 115    $ & $ 8151  $ & $ 3080  $ & $ 4536  $ & $ 27  $ & $ 0 $ & $ 100.09      $ & $ 0.01    $ & $ 52.76   $ \\
+acosf:acosf\_0               & $ 8.188 \cdot 10^{-1} $ & $ 110    $ & $ 3266  $ & $ 1059  $ & $ 2216  $ & $ 8   $ & $ 0 $ & $ 134.34      $ & $ 2.56    $ & $ 19.60   $ \\
+acoshf:acoshf\_0             & $ 4.851 \cdot 10^{-1} $ & $ 52     $ & $ 4808  $ & $ 1891  $ & $ 2710  $ & $ 9   $ & $ 0 $ & $ 107.19      $ & $ 0.67    $ & $ 33.52   $ \\
+asinf:asinf\_0               & $ 9.566 \cdot 10^{-1} $ & $ 122    $ & $ 3492  $ & $ 1109  $ & $ 2290  $ & $ 8   $ & $ 0 $ & $ 127.53      $ & $ 2.16    $ & $ 19.68   $ \\
+asinhf:asinhf\_0             & $ 9.181 \cdot 10^{-1} $ & $ 101    $ & $ 4830  $ & $ 1611  $ & $ 2635  $ & $ 9   $ & $ 0 $ & $ 110.01      $ & $ 0.91    $ & $ 33.51   $ \\
+atan2f:atan2f\_0             & $ 1.020 \cdot 10^{0}  $ & $ 122    $ & $ 2742  $ & $ 912   $ & $ 1937  $ & $ 4   $ & $ 0 $ & $ 119.57      $ & $ 1.64    $ & $ 20.10   $ \\
+atanf:atanf\_0               & $ 8.377 \cdot 10^{-1} $ & $ 99     $ & $ 2422  $ & $ 833   $ & $ 1584  $ & $ 4   $ & $ 0 $ & $ 118.18      $ & $ 1.54    $ & $ 18.98   $ \\
+atanhf:atanhf\_0             & $ 1.575 \cdot 10^{0}  $ & $ 179    $ & $ 3229  $ & $ 1168  $ & $ 2151  $ & $ 2   $ & $ 0 $ & $ 113.66      $ & $ 1.20    $ & $ 20.60   $ \\
+cbrtf:cbrtf\_0               & $ 6.608 \cdot 10^{-1} $ & $ 81     $ & $ 1719  $ & $ 544   $ & $ 995   $ & $ 2   $ & $ 0 $ & $ 122.58      $ & $ 1.84    $ & $ 14.32   $ \\
+ceilf:ceilf\_0               & $ 1.082 \cdot 10^{-2} $ & $ 1      $ & $ 107   $ & $ 35    $ & $ 2     $ & $ 0   $ & $ 0 $ & $ 92.42       $ & $ -0.82   $ & $ 2.38    $ \\
+cosf:cosf\_0                 & $ 9.858 \cdot 10^{-2} $ & $ 11     $ & $ 2148  $ & $ 747   $ & $ 791   $ & $ 11  $ & $ 0 $ & $ 111.58      $ & $ 1.04    $ & $ 11.23   $ \\
+coshf:coshf\_0               & $ 3.611 \cdot 10^{-1} $ & $ 39     $ & $ 4234  $ & $ 1618  $ & $ 2502  $ & $ 11  $ & $ 0 $ & $ 107.99      $ & $ 0.74    $ & $ 23.85   $ \\
+erfcf:erfcf\_0               & $ 6.891 \cdot 10^{-1} $ & $ 75     $ & $ 4683  $ & $ 1423  $ & $ 2456  $ & $ 15  $ & $ 0 $ & $ 108.84      $ & $ 0.81    $ & $ 22.83   $ \\
+erff:erff\_0                 & $ 6.840 \cdot 10^{-1} $ & $ 70     $ & $ 4715  $ & $ 1800  $ & $ 2457  $ & $ 15  $ & $ 0 $ & $ 102.33      $ & $ 0.23    $ & $ 22.61   $ \\
+expf:expf\_0                 & $ 8.046 \cdot 10^{-2} $ & $ 10     $ & $ 669   $ & $ 213   $ & $ 257   $ & $ 9   $ & $ 0 $ & $ 124.29      $ & $ 1.95    $ & $ 4.35    $ \\
+expm1f:expm1f\_0             & $ 1.212 \cdot 10^{0}  $ & $ 130    $ & $ 3140  $ & $ 1056  $ & $ 2062  $ & $ 4   $ & $ 0 $ & $ 107.24      $ & $ 0.68    $ & $ 20.89   $ \\
+floorf:floorf\_0             & $ 1.238 \cdot 10^{-2} $ & $ 1      $ & $ 105   $ & $ 52    $ & $ 0     $ & $ 0   $ & $ 0 $ & $ 80.78       $ & $ -2.38   $ & $ 2.47    $ \\
+fmodf:fmodf\_0               & $ 3.581 \cdot 10^{-2} $ & $ 6      $ & $ 638   $ & $ 190   $ & $ 303   $ & $ 0   $ & $ 0 $ & $ 167.56      $ & $ 4.03    $ & $ 2.84    $ \\
+hypotf:hypotf\_0             & $ 2.491 \cdot 10^{-1} $ & $ 32     $ & $ 3081  $ & $ 925   $ & $ 1870  $ & $ 4   $ & $ 0 $ & $ 128.49      $ & $ 2.22    $ & $ 15.79   $ \\
+ilogbf:ilogbf\_0             & $ 1.377 \cdot 10^{-2} $ & $ 1      $ & $ 27    $ & $ 13    $ & $ 0     $ & $ 0   $ & $ 0 $ & $ 72.62       $ & $ -3.77   $ & $ 2.18    $ \\
+ldexpf:ldexpf\_0             & $ 3.736 \cdot 10^{-2} $ & $ 6      $ & $ 399   $ & $ 173   $ & $ 364   $ & $ 2   $ & $ 0 $ & $ 160.62      $ & $ 3.77    $ & $ 14.22   $ \\
+log10f:log10f\_0             & $ 7.254 \cdot 10^{-1} $ & $ 87     $ & $ 2938  $ & $ 1034  $ & $ 2090  $ & $ 6   $ & $ 0 $ & $ 119.93      $ & $ 1.66    $ & $ 19.58   $ \\
+log1pf:log1pf\_0             & $ 8.666 \cdot 10^{-1} $ & $ 102    $ & $ 3146  $ & $ 1082  $ & $ 2108  $ & $ 6   $ & $ 0 $ & $ 117.70      $ & $ 1.50    $ & $ 20.23   $ \\
+logbf:logbf\_0               & $ 8.145 \cdot 10^{-3} $ & $ 3      $ & $ 156   $ & $ 65    $ & $ 72    $ & $ 0   $ & $ 0 $ & $ 368.32      $ & $ 7.29    $ & $ 7.53    $ \\
+logf:logf\_0                 & $ 7.733 \cdot 10^{-2} $ & $ 8      $ & $ 1137  $ & $ 384   $ & $ 382   $ & $ 5   $ & $ 0 $ & $ 103.46      $ & $ 0.33    $ & $ 14.57   $ \\
+powf:powf\_0                 & $ 1.946 \cdot 10^{-1} $ & $ 21     $ & $ 10431 $ & $ 3012  $ & $ 990   $ & $ 5   $ & $ 1 $ & $ 107.89      $ & $ 0.73    $ & $ 54.17   $ \\
+remainderf:remainderf\_0     & $ 1.841 \cdot 10^{-1} $ & $ 24     $ & $ 1803  $ & $ 582   $ & $ 867   $ & $ 2   $ & $ 0 $ & $ 130.34      $ & $ 2.33    $ & $ 11.19   $ \\
+rintf:rintf\_0               & $ 7.016 \cdot 10^{-2} $ & $ 9      $ & $ 1014  $ & $ 351   $ & $ 362   $ & $ 0   $ & $ 0 $ & $ 128.27      $ & $ 2.20    $ & $ 11.45   $ \\
+scalbnf:scalbnf\_0           & $ 1.794 \cdot 10^{-2} $ & $ 3      $ & $ 308   $ & $ 123   $ & $ 301   $ & $ 2   $ & $ 0 $ & $ 167.25      $ & $ 4.02    $ & $ 5.15    $ \\
+significandf:significandf\_0 & $ 1.565 \cdot 10^{-1} $ & $ 17     $ & $ 2623  $ & $ 865   $ & $ 1595  $ & $ 2   $ & $ 0 $ & $ 108.60      $ & $ 0.79    $ & $ 21.79   $ \\
+sinf:sinf\_0                 & $ 9.931 \cdot 10^{-2} $ & $ 11     $ & $ 2107  $ & $ 742   $ & $ 772   $ & $ 11  $ & $ 0 $ & $ 110.77      $ & $ 0.97    $ & $ 11.98   $ \\
+sinhf:sinhf\_0               & $ 1.669 \cdot 10^{0}  $ & $ 170    $ & $ 4229  $ & $ 1308  $ & $ 2523  $ & $ 11  $ & $ 0 $ & $ 101.85      $ & $ 0.18    $ & $ 24.11   $ \\
+sqrtf:sqrtf\_0               & $ 3.138 \cdot 10^{-2} $ & $ 5      $ & $ 445   $ & $ 160   $ & $ 132   $ & $ 2   $ & $ 0 $ & $ 159.34      $ & $ 3.72    $ & $ 2.54    $ \\
+tanf:tanf\_0                 & $ 2.966 \cdot 10^{-1} $ & $ 30     $ & $ 2580  $ & $ 852   $ & $ 1437  $ & $ 13  $ & $ 0 $ & $ 101.13      $ & $ 0.11    $ & $ 19.20   $ \\
+tanhf:tanhf\_0               & $ 1.627 \cdot 10^{0}  $ & $ 175    $ & $ 3348  $ & $ 1028  $ & $ 2196  $ & $ 2   $ & $ 0 $ & $ 107.56      $ & $ 0.70    $ & $ 21.80   $ \\
+tgammaf:tgammaf\_0           & $ 1.120 \cdot 10^{0}  $ & $ 116    $ & $ 8658  $ & $ 2842  $ & $ 4706  $ & $ 16  $ & $ 0 $ & $ 103.56      $ & $ 0.34    $ & $ 41.13   $ \\
 \hline
-Average                                   & $                     $ & $        $ & $       $ & $       $ & $       $ & $     $ & $   $ & $ 118.81      $ & $ 0.92    $ & $         $ \\
+Average                      & $                     $ & $        $ & $       $ & $       $ & $       $ & $     $ & $   $ & $ 124.39      $ & $ 1.37    $ & $         $ \\
 \hline
-Overall                                   & $ 1.982 \cdot 10^{1}  $ & $ 2075   $ & $ 87758 $ & $ 29702 $ & $ 51139 $ & $ 413 $ & $ 0 $ & $             $ & $         $ & $ 756.45  $ \\
+Overall                      & $ 1.790 \cdot 10^{1}  $ & $ 2029   $ & $ 95377 $ & $ 31802 $ & $ 50115 $ & $ 200 $ & $ 1 $ & $             $ & $         $ & $ 612.37  $ \\
 \hline
 \end{tabular}
 %Benchmarks:
-%empty.c -lm --top-fname=__builtin_acosf --benchmark-name=acosf --generate-tb=x=0.5
-%empty.c -lm --top-fname=__builtin_acoshf --benchmark-name=acoshf --generate-tb=x=7
-%empty.c -lm --top-fname=__builtin_asinf --benchmark-name=asinf --generate-tb=x=0.5
-%empty.c -lm --top-fname=__builtin_asinhf --benchmark-name=asinhf --generate-tb=x=0.75
-%empty.c -lm --top-fname=__builtin_atan2f --benchmark-name=atan2f --generate-tb=y=1.390625\\\,x=0.9296875
-%empty.c -lm --top-fname=__builtin_atanf --benchmark-name=atanf --generate-tb=x=0.5
-%empty.c -lm --top-fname=__builtin_atanhf --benchmark-name=atanhf --generate-tb=x=0.75
-%empty.c -lm --top-fname=__builtin_cbrtf --benchmark-name=cbrtf --generate-tb=x=-27
-%empty.c -lm --top-fname=__builtin_ceilf --benchmark-name=ceilf --generate-tb=x=-1.7
-%empty.c -lm --top-fname=__builtin_cosf --benchmark-name=cosf --generate-tb=x=0.75
-%empty.c -lm --top-fname=__builtin_coshf --benchmark-name=coshf --generate-tb=x=0.75
-%empty.c -lm --top-fname=__builtin_erfcf --benchmark-name=erfcf --generate-tb=x=0.75
-%empty.c -lm --top-fname=__builtin_erff --benchmark-name=erff --generate-tb=x=0.75
-%empty.c -lm --top-fname=__builtin_expf --benchmark-name=expf --generate-tb=x=0.75
-%empty.c -lm --top-fname=__builtin_expm1f --benchmark-name=expm1f --generate-tb=x=0.75
-%empty.c -lm --top-fname=__builtin_floorf --benchmark-name=floorf --generate-tb=x=-1.7
-%empty.c -lm --top-fname=__builtin_fmodf --benchmark-name=fmodf --generate-tb=x=-6.5\\\,y=2.25
-%empty.c -lm --top-fname=__builtin_tgammaf --benchmark-name=tgammaf --generate-tb=x=0.5
-%empty.c -lm --top-fname=__builtin_hypotf --benchmark-name=hypotf --generate-tb=x=12.4\\\,y=0.7
-%empty.c -lm --top-fname=__builtin_ilogbf --benchmark-name=ilogbf --generate-tb=x=-2000
-%empty.c -lm --top-fname=__builtin_ldexpf --benchmark-name=ldexpf --generate-tb=value=0.8\\\,exp=4
-%empty.c -lm --top-fname=__builtin_log10f --benchmark-name=log10f --generate-tb=x=0.75
-%empty.c -lm --top-fname=__builtin_log1pf --benchmark-name=log1pf --generate-tb=x=-0.25
-%empty.c -lm --top-fname=__builtin_logbf --benchmark-name=logbf --generate-tb=x=-2000
-%empty.c -lm --top-fname=__builtin_logf --benchmark-name=logf --generate-tb=x=0.75
-%empty.c -lm --top-fname=__builtin_powf --benchmark-name=powf --generate-tb=x=0.75\\\,y=1.25
-%empty.c -lm --top-fname=__builtin_remainderf --benchmark-name=remainderf --generate-tb=x=-1.625\\\,y=1.0
-%empty.c -lm --top-fname=__builtin_rintf --benchmark-name=rintf --generate-tb=x=-1.5
-%empty.c -lm --top-fname=__builtin_scalbnf --benchmark-name=scalbnf --generate-tb=x=-0.854375\\\,n=5
-%empty.c -lm --top-fname=__builtin_significandf --benchmark-name=significandf --generate-tb=x=6
-%empty.c -lm --top-fname=__builtin_sinf --benchmark-name=sinf --generate-tb=x=0.75
-%empty.c -lm --top-fname=__builtin_sinhf --benchmark-name=sinhf --generate-tb=x=0.75
-%empty.c -lm --top-fname=__builtin_sqrtf --benchmark-name=sqrtf --generate-tb=x=15190.5625
-%empty.c -lm --top-fname=__builtin_tanf --benchmark-name=tanf --generate-tb=x=0.75
-%empty.c -lm --top-fname=__builtin_tanhf --benchmark-name=tanhf --generate-tb=x=0.75
+%empty.c -lm --top-fname=acosf --benchmark-name=acosf --generate-tb=x=0.5
+%empty.c -lm --top-fname=acoshf --benchmark-name=acoshf --generate-tb=x=7
+%empty.c -lm --top-fname=asinf --benchmark-name=asinf --generate-tb=x=0.5
+%empty.c -lm --top-fname=asinhf --benchmark-name=asinhf --generate-tb=x=0.75
+%empty.c -lm --top-fname=atan2f --benchmark-name=atan2f --generate-tb=y=1.390625\\\,x=0.9296875
+%empty.c -lm --top-fname=atanf --benchmark-name=atanf --generate-tb=x=0.5
+%empty.c -lm --top-fname=atanhf --benchmark-name=atanhf --generate-tb=x=0.75
+%empty.c -lm --top-fname=cbrtf --benchmark-name=cbrtf --generate-tb=x=-27
+%empty.c -lm --top-fname=ceilf --benchmark-name=ceilf --generate-tb=x=-1.7
+%empty.c -lm --top-fname=cosf --benchmark-name=cosf --generate-tb=x=0.75
+%empty.c -lm --top-fname=coshf --benchmark-name=coshf --generate-tb=x=0.75
+%empty.c -lm --top-fname=erfcf --benchmark-name=erfcf --generate-tb=x=0.75
+%empty.c -lm --top-fname=erff --benchmark-name=erff --generate-tb=x=0.75
+%empty.c -lm --top-fname=expf --benchmark-name=expf --generate-tb=x=0.75
+%empty.c -lm --top-fname=expm1f --benchmark-name=expm1f --generate-tb=x=0.75
+%empty.c -lm --top-fname=floorf --benchmark-name=floorf --generate-tb=x=-1.7
+%empty.c -lm --top-fname=fmodf --benchmark-name=fmodf --generate-tb=x=-6.5\\\,y=2.25
+%empty.c -lm --top-fname=tgammaf --benchmark-name=tgammaf --generate-tb=x=0.5
+%empty.c -lm --top-fname=hypotf --benchmark-name=hypotf --generate-tb=x=12.4\\\,y=0.7
+%empty.c -lm --top-fname=ilogbf --benchmark-name=ilogbf --generate-tb=x=-2000
+%empty.c -lm --top-fname=ldexpf --benchmark-name=ldexpf --generate-tb=value=0.8\\\,exp=4
+%empty.c -lm --top-fname=log10f --benchmark-name=log10f --generate-tb=x=0.75
+%empty.c -lm --top-fname=log1pf --benchmark-name=log1pf --generate-tb=x=-0.25
+%empty.c -lm --top-fname=logbf --benchmark-name=logbf --generate-tb=x=-2000
+%empty.c -lm --top-fname=logf --benchmark-name=logf --generate-tb=x=0.75
+%empty.c -lm --top-fname=powf --benchmark-name=powf --generate-tb=x=0.75\\\,y=1.25
+%empty.c -lm --top-fname=remainderf --benchmark-name=remainderf --generate-tb=x=-1.625\\\,y=1.0
+%empty.c -lm --top-fname=rintf --benchmark-name=rintf --generate-tb=x=-1.5
+%empty.c -lm --top-fname=scalbnf --benchmark-name=scalbnf --generate-tb=x=-0.854375\\\,n=5
+%empty.c -lm --top-fname=significandf --benchmark-name=significandf --generate-tb=x=6
+%empty.c -lm --top-fname=sinf --benchmark-name=sinf --generate-tb=x=0.75
+%empty.c -lm --top-fname=sinhf --benchmark-name=sinhf --generate-tb=x=0.75
+%empty.c -lm --top-fname=sqrtf --benchmark-name=sqrtf --generate-tb=x=15190.5625
+%empty.c -lm --top-fname=tanf --benchmark-name=tanf --generate-tb=x=0.75
+%empty.c -lm --top-fname=tanhf --benchmark-name=tanhf --generate-tb=x=0.75
