@@ -193,7 +193,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
          const auto function_behavior = HLSMgr->CGetFunctionBehavior(f_id);
          const auto BH = function_behavior->CGetBehavioralHelper();
          auto fname = BH->get_function_name();
-         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Top function inferred from the specification is: " + fname);
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---The top function inferred from the specification is: " + fname);
       }
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
    }

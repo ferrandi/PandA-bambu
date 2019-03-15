@@ -323,7 +323,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             shared_memory_module->set_parameter("n_elements", std::to_string(vec_size));
             shared_memory_module->set_parameter("data_size", std::to_string(bus_data_bitsize));
             shared_memory_module->set_parameter("BRAM_BITSIZE", std::to_string(bram_bitsize));
-            if(Has_extern_allocated_data || Has_unknown_addresses)
+            if((Has_extern_allocated_data && parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::INTERN_UNALIGNED) || Has_unknown_addresses)
                shared_memory_module->set_parameter("BUS_PIPELINED", std::to_string(0));
             else
                shared_memory_module->set_parameter("BUS_PIPELINED", std::to_string(1));

@@ -551,6 +551,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                                 are allocated on an external memory\n"
       << "            EXT_PIPELINED_BRAM - all objects that need to be stored in memory\n"
       << "                                 are allocated on an external pipelined memory\n\n"
+      << "            INTERN_UNALIGNED   - all objects with an unaligned access are\n"
+      << "                                 clustered on a single STD_BRAM\n\n"
       << "   --base-address=address\n"
       << "        Define the starting address for objects allocated externally to the top\n"
       << "        module.\n\n"
@@ -2353,6 +2355,8 @@ int BambuParameter::Exec()
                   setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::NO_BRAM);
                else if(std::string(optarg) == "EXT_PIPELINED_BRAM")
                   setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
+               else if(std::string(optarg) == "INTERN_UNALIGNED")
+                  setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::INTERN_UNALIGNED);
                else
                   throw "BadParameters: memory allocation policy option not correctly specified";
                break;
@@ -2797,12 +2801,17 @@ void BambuParameter::CheckParameters()
    }
 #endif
 
+   if(isOption(OPT_interface_type) && getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+   {
+      setOption(OPT_do_not_expose_globals, true);
+   }
+
    if(getOption<bool>(OPT_do_not_expose_globals))
    {
       if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::NONE)
          setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::ALL_BRAM);
-      else if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM)
-         THROW_ERROR("BadParameters: --do-not-expose-globals implies --memory-allocation-policy=ALL_BRAM");
+      else if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM && getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::INTERN_UNALIGNED)
+         THROW_ERROR("BadParameters: --do-not-expose-globals implies --memory-allocation-policy=ALL_BRAM or --memory-allocation-policy=INTERN_UNALIGNED");
    }
    tree_helper::debug_level = get_class_debug_level("tree_helper");
 
@@ -2999,10 +3008,6 @@ void BambuParameter::CheckParameters()
    {
       THROW_ERROR("Experimental setup not recognized: " + getOption<std::string>(OPT_experimental_setup));
    }
-   if(isOption(OPT_interface_type) && getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
-   {
-      setOption(OPT_do_not_expose_globals, true);
-   }
 
    add_bambu_library("bambu");
 
@@ -3081,7 +3086,8 @@ void BambuParameter::CheckParameters()
 
    if(isOption(OPT_interface_type) and getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION and (isOption(OPT_clock_name) or isOption(OPT_reset_name) or isOption(OPT_start_name) or isOption(OPT_done_name)))
       THROW_ERROR("Wishbone 4 interface does not allow the renaming of the control signals");
-
+   if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::INTERN_UNALIGNED && !getOption<bool>(OPT_do_not_expose_globals))
+      THROW_ERROR("--memory-allocation-policy=INTERN_UNALIGNED implies --do-not-expose-globals");
    if(not getOption<bool>(OPT_gcc_include_sysdir))
    {
       if(not isOption(OPT_input_file))
