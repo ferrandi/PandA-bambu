@@ -1417,7 +1417,7 @@ PLUGIN_TEST
              I386_CLANG7_PLUGIN_COMPILER=$plugin_compiler
              ;;
            *)
-             $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ `$I386_LLVM_CONFIG7_EXE --cxxflags` -c plugin_test.cpp -o plugin_test.o -std=c++11 2> /dev/null
+             $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ `$I386_LLVM_CONFIG7_EXE --cxxflags` -c plugin_test.cpp -o plugin_test.o -std=c++11 -fPIC 2> /dev/null
              $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so 2> /dev/null
              if test ! -f plugin_test.so; then
                echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... no... Package libclang-7.0-dev missing?"
