@@ -101,7 +101,7 @@ static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty
 #ifdef _WIN32
 using namespace llvm;
 
-INITIALIZE_PASS_BEGIN(clang6_plugin_dumpGimpleEmpty, "clang6_plugin_dumpGimpleEmpty", "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
+INITIALIZE_PASS_BEGIN(clang7_plugin_dumpGimpleEmpty, "clang7_plugin_dumpGimpleEmpty", "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
 INITIALIZE_PASS_DEPENDENCY(MemoryDependenceWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(MemorySSAWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(LazyValueInfoWrapperPass)
@@ -111,11 +111,11 @@ INITIALIZE_PASS_DEPENDENCY(TargetLibraryInfoWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(AssumptionCacheTracker)
 INITIALIZE_PASS_DEPENDENCY(DominatorTreeWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(DominanceFrontierWrapperPass)
-INITIALIZE_PASS_END(clang6_plugin_dumpGimpleEmpty, "clang6_plugin_dumpGimpleEmpty", "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
+INITIALIZE_PASS_END(clang7_plugin_dumpGimpleEmpty, "clang7_plugin_dumpGimpleEmpty", "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
 
 namespace llvm
 {
-   void clang6_plugin_dumpGimpleEmpty_init()
+   void clang7_plugin_dumpGimpleEmpty_init()
    {
    }
 } // namespace llvm

@@ -109,3 +109,10 @@ libsoftfloat_subnormals_clang6_a_SOURCES = softfloat.c
 libsoftfloat_subnormals_clang6_a_CFLAGS = -O3 --compiler=I386_CLANG6 $(common_cflags_subnormals_clang) -I$(BOOST_DIR) -finline-functions --extra-gcc-options="-mllvm -inline-threshold=10000"
 endif 
 
+if BUILD_I386_CLANG7
+pkglib_LIBRARIES += libsoftfloat_clang7.a libsoftfloat_subnormals_clang7.a
+libsoftfloat_clang7_a_SOURCES = softfloat.c
+libsoftfloat_clang7_a_CFLAGS = -O3 --compiler=I386_CLANG7 $(common_cflags_clang) -I$(BOOST_DIR) -finline-functions --extra-gcc-options="-mllvm -inline-threshold=10000"
+libsoftfloat_subnormals_clang7_a_SOURCES = softfloat.c
+libsoftfloat_subnormals_clang7_a_CFLAGS = -O3 --compiler=I386_CLANG7 $(common_cflags_subnormals_clang) -I$(BOOST_DIR) -finline-functions --extra-gcc-options="-mllvm -inline-threshold=10000"
+endif 

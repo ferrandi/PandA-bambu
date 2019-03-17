@@ -204,11 +204,11 @@ static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_topfname_Ox)(ll
 #ifdef _WIN32
 using namespace llvm;
 
-INITIALIZE_PASS_BEGIN(clang6_plugin_topfname, "clang6_plugin_topfname", "Make all private/static but the top function", false, false)
-INITIALIZE_PASS_END(clang6_plugin_topfname, "clang6_plugin_topfname", "Make all private/static but the top function", false, false)
+INITIALIZE_PASS_BEGIN(clang7_plugin_topfname, "clang7_plugin_topfname", "Make all private/static but the top function", false, false)
+INITIALIZE_PASS_END(clang7_plugin_topfname, "clang7_plugin_topfname", "Make all private/static but the top function", false, false)
 namespace llvm
 {
-   void clang6_plugin_topfname_init()
+   void clang7_plugin_topfname_init()
    {
    }
 } // namespace llvm

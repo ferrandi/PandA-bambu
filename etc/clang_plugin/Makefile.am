@@ -36,6 +36,8 @@ CLANG5_LIBS=-Wl,--start-group $(CLANG_LIBS) -Wl,--end-group
 
 CLANG6_LIBS=-Wl,--start-group $(CLANG_LIBS) -lclangCrossTU -Wl,--end-group
 
+CLANG7_LIBS=-Wl,--start-group $(CLANG_LIBS) -lclangCrossTU -lclangToolingInclusions -Wl,--end-group
+
 ###### clang 4.0
 if BUILD_I386_CLANG4_EMPTY_PLUGIN
 all: $(I386_CLANG4_EMPTY_PLUGIN) bambuS2S-4
@@ -59,74 +61,74 @@ endif
 
 if BUILD_PTAA
 $(I386_CLANG4_SSA_PLUGIN) : clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_my_OrderedInstructions.o clang4_eSSA.o
-	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_my_OrderedInstructions.o clang4_eSSA.o -o clang4_plugin_dumpGimpleSSA.so -lbdd
+	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O0 clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_my_OrderedInstructions.o clang4_eSSA.o -o clang4_plugin_dumpGimpleSSA.so -lbdd
 else
 $(I386_CLANG4_SSA_PLUGIN) : clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_my_OrderedInstructions.o clang4_eSSA.o
-	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_my_OrderedInstructions.o clang4_eSSA.o -o clang4_plugin_dumpGimpleSSA.so
+	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O0 clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_my_OrderedInstructions.o clang4_eSSA.o -o clang4_plugin_dumpGimpleSSA.so
 endif
 
 if BUILD_PTAA
 $(I386_CLANG4_SSA_PLUGINCPP) : clang4_plugin_dumpGimpleSSACpp.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_my_OrderedInstructions.o clang4_eSSA.o
-	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang4_plugin_dumpGimpleSSACpp.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_my_OrderedInstructions.o clang4_eSSA.o -o clang4_plugin_dumpGimpleSSACpp.so -lbdd
+	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O0 clang4_plugin_dumpGimpleSSACpp.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_my_OrderedInstructions.o clang4_eSSA.o -o clang4_plugin_dumpGimpleSSACpp.so -lbdd
 else
 $(I386_CLANG4_SSA_PLUGINCPP) : clang4_plugin_dumpGimpleSSACpp.o clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_my_OrderedInstructions.o clang4_eSSA.o
-	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang4_plugin_dumpGimpleSSACpp.o clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_my_OrderedInstructions.o clang4_eSSA.o -o clang4_plugin_dumpGimpleSSACpp.so
+	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O0 clang4_plugin_dumpGimpleSSACpp.o clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_my_OrderedInstructions.o clang4_eSSA.o -o clang4_plugin_dumpGimpleSSACpp.so
 endif
 
 if BUILD_PTAA
 $(I386_CLANG4_EMPTY_PLUGIN) : clang4_plugin_dumpGimpleEmpty.o clang4_dumpGimple.o  clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_my_OrderedInstructions.o clang4_eSSA.o
-	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang4_plugin_dumpGimpleEmpty.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_my_OrderedInstructions.o clang4_eSSA.o -o clang4_plugin_dumpGimpleEmpty.so -lbdd
+	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O0 clang4_plugin_dumpGimpleEmpty.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_my_OrderedInstructions.o clang4_eSSA.o -o clang4_plugin_dumpGimpleEmpty.so -lbdd
 else
 $(I386_CLANG4_EMPTY_PLUGIN) : clang4_plugin_dumpGimpleEmpty.o clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_my_OrderedInstructions.o clang4_eSSA.o
-	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang4_plugin_dumpGimpleEmpty.o clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_my_OrderedInstructions.o clang4_eSSA.o -o clang4_plugin_dumpGimpleEmpty.so
+	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O0 clang4_plugin_dumpGimpleEmpty.o clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_my_OrderedInstructions.o clang4_eSSA.o -o clang4_plugin_dumpGimpleEmpty.so
 endif
 
 $(I386_CLANG4_TOPFNAME_PLUGIN) : clang4_plugin_topfname.o 
-	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang4_plugin_topfname.o -o clang4_plugin_topfname.so
+	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O0 clang4_plugin_topfname.o -o clang4_plugin_topfname.so
 
 $(I386_CLANG4_ASTANALYZER_PLUGIN) : clang4_plugin_ASTAnalyzer.o 
-	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang4_plugin_ASTAnalyzer.o -o clang4_plugin_ASTAnalyzer.so
+	$(I386_CLANG4_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O0 clang4_plugin_ASTAnalyzer.o -o clang4_plugin_ASTAnalyzer.so
 
 clang4_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
-	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp -o clang4_plugin_dumpGimpleEmpty.o -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS)
+	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp -o clang4_plugin_dumpGimpleEmpty.o -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS)
 
 clang4_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
-	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang4_plugin_dumpGimpleSSA.o -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS)
+	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang4_plugin_dumpGimpleSSA.o -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS)
 
 clang4_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
-	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -DCPP_LANGUAGE -o clang4_plugin_dumpGimpleSSACpp.o -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS)
+	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -DCPP_LANGUAGE -o clang4_plugin_dumpGimpleSSACpp.o -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS)
 
 clang4_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
-	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp -o clang4_plugin_topfname.o -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS)
+	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp -o clang4_plugin_topfname.o -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS)
 
 clang4_plugin_ASTAnalyzer.o : $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
-	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp -o clang4_plugin_ASTAnalyzer.o -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS)
+	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp -o clang4_plugin_ASTAnalyzer.o -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS)
 
 if BUILD_PTAA
 clang4_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp
-	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang4_dumpGimple.o -I. -I$(I386_LLVM4_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
+	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang4_dumpGimple.o -I. -I$(I386_LLVM4_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
 else
 clang4_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp
-	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang4_dumpGimple.o -I. -I$(I386_LLVM4_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
+	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang4_dumpGimple.o -I. -I$(I386_LLVM4_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
 endif
 
 if BUILD_PTAA
 clang4_HardekopfLin_AA.o : $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp
-	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp -o clang4_HardekopfLin_AA.o -I. -I$(I386_LLVM4_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
+	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp -o clang4_HardekopfLin_AA.o -I. -I$(I386_LLVM4_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
 endif
 
 clang4_RangeAnalysis.o : $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp
-	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp -o clang4_RangeAnalysis.o -I. -I$(I386_LLVM4_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
+	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp -o clang4_RangeAnalysis.o -I. -I$(I386_LLVM4_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
 
 clang4_my_OrderedInstructions.o : $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.cpp $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.hpp
-	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.cpp -o clang4_my_OrderedInstructions.o -I. -I$(I386_LLVM4_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
+	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.cpp -o clang4_my_OrderedInstructions.o -I. -I$(I386_LLVM4_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
 
 
 clang4_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp
-	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp -o clang4_eSSA.o -I. -I$(I386_LLVM4_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
+	$(I386_CLANG4_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp -o clang4_eSSA.o -I. -I$(I386_LLVM4_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
 
 bambuS2S-4: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
-	$(I386_CLANG4_PLUGIN_COMPILER) -fno-rtti -O3 -std=c++14 `$(I386_LLVM_CONFIG4_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG4_LIBS)  -o $@
+	$(I386_CLANG4_PLUGIN_COMPILER) -fno-rtti -O0 -std=c++14 `$(I386_LLVM_CONFIG4_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG4_LIBS)  -o $@
 
 
 ###### 
@@ -154,69 +156,69 @@ endif
 
 if BUILD_PTAA
 $(I386_CLANG5_SSA_PLUGIN) : clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple.o  clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o
-	$(I386_CLANG5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o -o clang5_plugin_dumpGimpleSSA.so -lbdd
+	$(I386_CLANG5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O0 clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o -o clang5_plugin_dumpGimpleSSA.so -lbdd
 else
 $(I386_CLANG5_SSA_PLUGIN) : clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o
-	$(I386_CLANG5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o -o clang5_plugin_dumpGimpleSSA.so
+	$(I386_CLANG5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O0 clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o -o clang5_plugin_dumpGimpleSSA.so
 endif
 if BUILD_PTAA
 $(I386_CLANG5_SSA_PLUGINCPP) : clang5_plugin_dumpGimpleSSACpp.o clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o
-	$(I386_CLANG5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang5_plugin_dumpGimpleSSACpp.o clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o -o clang5_plugin_dumpGimpleSSACpp.so -lbdd
+	$(I386_CLANG5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O0 clang5_plugin_dumpGimpleSSACpp.o clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o -o clang5_plugin_dumpGimpleSSACpp.so -lbdd
 else
 $(I386_CLANG5_SSA_PLUGINCPP) : clang5_plugin_dumpGimpleSSACpp.o clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o
-	$(I386_CLANG5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang5_plugin_dumpGimpleSSACpp.o clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o -o clang5_plugin_dumpGimpleSSACpp.so
+	$(I386_CLANG5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O0 clang5_plugin_dumpGimpleSSACpp.o clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o -o clang5_plugin_dumpGimpleSSACpp.so
 endif
 
 if BUILD_PTAA
 $(I386_CLANG5_EMPTY_PLUGIN) : clang5_plugin_dumpGimpleEmpty.o clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o
-	$(I386_CLANG5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang5_plugin_dumpGimpleEmpty.o clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o -o clang5_plugin_dumpGimpleEmpty.so -lbdd
+	$(I386_CLANG5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O0 clang5_plugin_dumpGimpleEmpty.o clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o -o clang5_plugin_dumpGimpleEmpty.so -lbdd
 else
 $(I386_CLANG5_EMPTY_PLUGIN) : clang5_plugin_dumpGimpleEmpty.o clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o
-	$(I386_CLANG5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang5_plugin_dumpGimpleEmpty.o clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o -o clang5_plugin_dumpGimpleEmpty.so
+	$(I386_CLANG5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O0 clang5_plugin_dumpGimpleEmpty.o clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o -o clang5_plugin_dumpGimpleEmpty.so
 endif
 
 $(I386_CLANG5_TOPFNAME_PLUGIN) : clang5_plugin_topfname.o 
-	$(I386_CLANG5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang5_plugin_topfname.o -o clang5_plugin_topfname.so
+	$(I386_CLANG5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O0 clang5_plugin_topfname.o -o clang5_plugin_topfname.so
 
 $(I386_CLANG5_ASTANALYZER_PLUGIN) : clang5_plugin_ASTAnalyzer.o 
-	$(I386_CLANG5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O3 clang5_plugin_ASTAnalyzer.o -o clang5_plugin_ASTAnalyzer.so
+	$(I386_CLANG5_PLUGIN_COMPILER) -fPIC -shared -fno-rtti -O0 clang5_plugin_ASTAnalyzer.o -o clang5_plugin_ASTAnalyzer.so
 
 clang5_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
-	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp -o clang5_plugin_dumpGimpleEmpty.o -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS)
+	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp -o clang5_plugin_dumpGimpleEmpty.o -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS)
 
 clang5_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
-	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang5_plugin_dumpGimpleSSA.o -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS)
+	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang5_plugin_dumpGimpleSSA.o -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS)
 
 clang5_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
-	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -DCPP_LANGUAGE -o clang5_plugin_dumpGimpleSSACpp.o -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS)
+	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -DCPP_LANGUAGE -o clang5_plugin_dumpGimpleSSACpp.o -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS)
 
 clang5_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
-	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp -o clang5_plugin_topfname.o -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS)
+	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp -o clang5_plugin_topfname.o -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS)
 
 clang5_plugin_ASTAnalyzer.o : $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
-	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp -o clang5_plugin_ASTAnalyzer.o -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS)
+	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp -o clang5_plugin_ASTAnalyzer.o -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS)
 
 if BUILD_PTAA
 clang5_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp  $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp
-	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang5_dumpGimple.o -I. -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
+	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang5_dumpGimple.o -I. -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
 else
 clang5_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp  $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp
-	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang5_dumpGimple.o -I. -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
+	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang5_dumpGimple.o -I. -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
 endif
 
 if BUILD_PTAA
 clang5_HardekopfLin_AA.o : $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp
-	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp -o clang5_HardekopfLin_AA.o -I. -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
+	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp -o clang5_HardekopfLin_AA.o -I. -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
 endif
 
 clang5_RangeAnalysis.o : $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp
-	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp -o clang5_RangeAnalysis.o -I. -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
+	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp -o clang5_RangeAnalysis.o -I. -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
 
 clang5_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.hpp
-	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp -o clang5_eSSA.o -I. -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
+	$(I386_CLANG5_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp -o clang5_eSSA.o -I. -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS)
 
 bambuS2S-5: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
-	$(I386_CLANG5_PLUGIN_COMPILER) -fno-rtti -O3 -std=c++14 `$(I386_LLVM_CONFIG5_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG5_LIBS)  -o $@
+	$(I386_CLANG5_PLUGIN_COMPILER) -fno-rtti -O0 -std=c++14 `$(I386_LLVM_CONFIG5_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG5_LIBS)  -o $@
 
 ###### 
 
@@ -329,58 +331,58 @@ $(I386_CLANG6_ASTANALYZER_PLUGIN) : clang6_plugin_ASTAnalyzer.o
 clang6_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    echo $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp -o clang6_plugin_dumpGimpleEmpty.o -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS);; \
+	    echo $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp -o clang6_plugin_dumpGimpleEmpty.o -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS);; \
 	  *) \
-	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp -o clang6_plugin_dumpGimpleEmpty.o -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS);; \
+	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp -o clang6_plugin_dumpGimpleEmpty.o -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS);; \
 	esac;
 
 clang6_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    echo $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang6_plugin_dumpGimpleSSA.o -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS);; \
+	    echo $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang6_plugin_dumpGimpleSSA.o -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS);; \
 	  *) \
-	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang6_plugin_dumpGimpleSSA.o -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS);; \
+	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang6_plugin_dumpGimpleSSA.o -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS);; \
 	esac;
 
 clang6_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    echo $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -DCPP_LANGUAGE -o clang6_plugin_dumpGimpleSSACpp.o -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS);; \
+	    echo $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -DCPP_LANGUAGE -o clang6_plugin_dumpGimpleSSACpp.o -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS);; \
 	  *) \
-	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -DCPP_LANGUAGE -o clang6_plugin_dumpGimpleSSACpp.o -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS);; \
+	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -DCPP_LANGUAGE -o clang6_plugin_dumpGimpleSSACpp.o -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS);; \
 	esac;
 
 clang6_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    echo $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp -o clang6_plugin_topfname.o -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS);; \
+	    echo $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp -o clang6_plugin_topfname.o -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS);; \
 	  *) \
-	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp -o clang6_plugin_topfname.o -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS);; \
+	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp -o clang6_plugin_topfname.o -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS);; \
 	esac;
 
 clang6_plugin_ASTAnalyzer.o : $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    echo $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp -o clang6_plugin_ASTAnalyzer.o -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS);; \
+	    echo $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp -o clang6_plugin_ASTAnalyzer.o -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS);; \
 	  *) \
-	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp -o clang6_plugin_ASTAnalyzer.o -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS);; \
+	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp -o clang6_plugin_ASTAnalyzer.o -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS);; \
 	esac;
 
 if BUILD_PTAA
 clang6_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp  $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp
 	case $(host_os) in \
 	  mingw*) \
-	    echo $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang6_dumpGimple.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
+	    echo $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang6_dumpGimple.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
 	  *) \
-	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang6_dumpGimple.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
+	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang6_dumpGimple.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
 	esac;
 else
 clang6_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp  $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp
 	case $(host_os) in \
 	  mingw*) \
-	    echo $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang6_dumpGimple.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
+	    echo $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang6_dumpGimple.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
 	  *) \
-	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang6_dumpGimple.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
+	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang6_dumpGimple.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
 	esac;
 endif
 
@@ -388,32 +390,228 @@ if BUILD_PTAA
 clang6_HardekopfLin_AA.o : $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp
 	case $(host_os) in \
 	  mingw*) \
-	    echo $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp -o clang6_HardekopfLin_AA.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
+	    echo $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp -o clang6_HardekopfLin_AA.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
 	  *) \
-	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp -o clang6_HardekopfLin_AA.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
+	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp -o clang6_HardekopfLin_AA.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
 	esac;
 endif
 
 clang6_RangeAnalysis.o : $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp
 	case $(host_os) in \
 	  mingw*) \
-	    echo $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp -o clang6_RangeAnalysis.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
+	    echo $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp -o clang6_RangeAnalysis.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
 	  *) \
-	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp -o clang6_RangeAnalysis.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
+	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp -o clang6_RangeAnalysis.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
 	esac;
 
 clang6_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.hpp
 	case $(host_os) in \
 	  mingw*) \
-	    echo $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp -o clang6_eSSA.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
+	    echo $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp -o clang6_eSSA.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
 	  *) \
-	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O3 -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp -o clang6_eSSA.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
+	    $(I386_CLANG6_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp -o clang6_eSSA.o -I. -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
 	esac;
 
 bambuS2S-6: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
-	$(I386_CLANG6_PLUGIN_COMPILER) -fno-rtti -O3 -std=c++14 `$(I386_LLVM_CONFIG6_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG6_LIBS)  -o $@
+	$(I386_CLANG6_PLUGIN_COMPILER) -fno-rtti -O0 -std=c++14 `$(I386_LLVM_CONFIG6_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG6_LIBS)  -o $@
 
 ###### 
+
+###### clang 7.0
+if BUILD_I386_CLANG7_EMPTY_PLUGIN
+all: $(I386_CLANG7_EMPTY_PLUGIN) bambuS2S-7
+endif
+
+if BUILD_I386_CLANG7_SSA_PLUGIN
+all: $(I386_CLANG7_SSA_PLUGIN)
+endif
+
+if BUILD_I386_CLANG7_SSA_PLUGINCPP
+all: $(I386_CLANG7_SSA_PLUGINCPP)
+endif
+
+if BUILD_I386_CLANG7_TOPFNAME_PLUGIN
+all: $(I386_CLANG7_TOPFNAME_PLUGIN)
+endif
+
+if BUILD_I386_CLANG7_ASTANALYZER_PLUGIN
+all: $(I386_CLANG7_ASTANALYZER_PLUGIN)
+endif
+
+if BUILD_PTAA
+$(I386_CLANG7_SSA_PLUGIN) : clang7_plugin_dumpGimpleSSA.o clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o
+	case $(host_os) in \
+	  mingw*) \
+	    echo $(I386_CLANG7_PLUGIN_COMPILER) clang7_plugin_dumpGimpleSSA.o clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o -shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$(I386_LLVM_CONFIG7_EXE) --ldflags --libs --system-libs` -o clang7_plugin_dumpGimpleSSA.so -lbdd;; \
+	  darwin*) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti clang7_plugin_dumpGimpleSSA.o clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o -o clang7_plugin_dumpGimpleSSA.so -lbdd;; \
+	  *) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -fPIC -shared -fno-rtti clang7_plugin_dumpGimpleSSA.o clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o -o clang7_plugin_dumpGimpleSSA.so -lbdd;; \
+	esac;
+else
+$(I386_CLANG7_SSA_PLUGIN) : clang7_plugin_dumpGimpleSSA.o clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o
+	case $(host_os) in \
+	  mingw*) \
+	    echo $(I386_CLANG7_PLUGIN_COMPILER) clang7_plugin_dumpGimpleSSA.o clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o -shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$(I386_LLVM_CONFIG7_EXE) --ldflags --libs --system-libs` -o clang7_plugin_dumpGimpleSSA.so;; \
+	  darwin*) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti clang7_plugin_dumpGimpleSSA.o clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o -o clang7_plugin_dumpGimpleSSA.so;; \
+	  *) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -fPIC -shared -fno-rtti clang7_plugin_dumpGimpleSSA.o clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o -o clang7_plugin_dumpGimpleSSA.so;; \
+	esac;
+endif
+if BUILD_PTAA
+$(I386_CLANG7_SSA_PLUGINCPP) : clang7_plugin_dumpGimpleSSACpp.o clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o
+	case $(host_os) in \
+	  mingw*) \
+	    echo $(I386_CLANG7_PLUGIN_COMPILER) clang7_plugin_dumpGimpleSSACpp.o clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o -shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$(I386_LLVM_CONFIG7_EXE) --ldflags --libs --system-libs` -o clang7_plugin_dumpGimpleSSACpp.so -lbdd;; \
+	  darwin*) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti clang7_plugin_dumpGimpleSSACpp.o clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o -o clang7_plugin_dumpGimpleSSACpp.so -lbdd;; \
+	  *) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -fPIC -shared -fno-rtti clang7_plugin_dumpGimpleSSACpp.o clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o -o clang7_plugin_dumpGimpleSSACpp.so -lbdd;; \
+	esac;
+else
+$(I386_CLANG7_SSA_PLUGINCPP) : clang7_plugin_dumpGimpleSSACpp.o clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o
+	case $(host_os) in \
+	  mingw*) \
+	    echo $(I386_CLANG7_PLUGIN_COMPILER) clang7_plugin_dumpGimpleSSACpp.o clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o -shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$(I386_LLVM_CONFIG7_EXE) --ldflags --libs --system-libs` -o clang7_plugin_dumpGimpleSSACpp.so;; \
+	  darwin*) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti clang7_plugin_dumpGimpleSSACpp.o clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o -o clang7_plugin_dumpGimpleSSACpp.so;; \
+	  *) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -fPIC -shared -fno-rtti clang7_plugin_dumpGimpleSSACpp.o clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o -o clang7_plugin_dumpGimpleSSACpp.so;; \
+	esac;
+endif
+
+if BUILD_PTAA
+$(I386_CLANG7_EMPTY_PLUGIN) : clang7_plugin_dumpGimpleEmpty.o clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o
+	case $(host_os) in \
+	  mingw*) \
+	    echo $(I386_CLANG7_PLUGIN_COMPILER) clang7_plugin_dumpGimpleEmpty.o clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o -shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$(I386_LLVM_CONFIG7_EXE) --ldflags --libs --system-libs` -o clang7_plugin_dumpGimpleEmpty.so -lbdd;; \
+	  darwin*) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti clang7_plugin_dumpGimpleEmpty.o clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o -o clang7_plugin_dumpGimpleEmpty.so -lbdd;; \
+	  *) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -fPIC -shared -fno-rtti clang7_plugin_dumpGimpleEmpty.o clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o -o clang7_plugin_dumpGimpleEmpty.so -lbdd;; \
+	esac;
+else
+$(I386_CLANG7_EMPTY_PLUGIN) : clang7_plugin_dumpGimpleEmpty.o clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o
+	case $(host_os) in \
+	  mingw*) \
+	    echo $(I386_CLANG7_PLUGIN_COMPILER) clang7_plugin_dumpGimpleEmpty.o clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o -shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$(I386_LLVM_CONFIG7_EXE) --ldflags --libs --system-libs` -o clang7_plugin_dumpGimpleEmpty.so;; \
+	  darwin*) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti clang7_plugin_dumpGimpleEmpty.o clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o -o clang7_plugin_dumpGimpleEmpty.so;; \
+	  *) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -fPIC -shared -fno-rtti clang7_plugin_dumpGimpleEmpty.o clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o -o clang7_plugin_dumpGimpleEmpty.so;; \
+	esac;
+endif
+
+$(I386_CLANG7_TOPFNAME_PLUGIN) : clang7_plugin_topfname.o 
+	case $(host_os) in \
+	  mingw*) \
+	    echo $(I386_CLANG7_PLUGIN_COMPILER) clang7_plugin_topfname.o -shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$(I386_LLVM_CONFIG7_EXE) --ldflags --libs --system-libs` -o clang7_plugin_topfname.so;; \
+	  darwin*) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti clang7_plugin_topfname.o -o clang7_plugin_topfname.so;; \
+	  *) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -fPIC -shared -fno-rtti clang7_plugin_topfname.o -o clang7_plugin_topfname.so;; \
+	esac;
+
+$(I386_CLANG7_ASTANALYZER_PLUGIN) : clang7_plugin_ASTAnalyzer.o 
+	case $(host_os) in \
+	  mingw*) \
+	    echo $(I386_CLANG7_PLUGIN_COMPILER) clang7_plugin_ASTAnalyzer.o -shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$(I386_LLVM_CONFIG7_EXE) --ldflags --libs --system-libs` -o clang7_plugin_ASTAnalyzer.so;; \
+	  darwin*) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -fPIC -shared -undefined dynamic_lookup -fno-rtti clang7_plugin_ASTAnalyzer.o -o clang7_plugin_ASTAnalyzer.so;; \
+	  *) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -fPIC -shared -fno-rtti clang7_plugin_ASTAnalyzer.o -o clang7_plugin_ASTAnalyzer.so;; \
+	esac;
+
+clang7_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	case $(host_os) in \
+	  mingw*) \
+	    echo $(I386_CLANG7_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp -o clang7_plugin_dumpGimpleEmpty.o -I$(I386_LLVM7_HEADER_DIR) $(WFLAGS);; \
+	  *) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp -o clang7_plugin_dumpGimpleEmpty.o -I$(I386_LLVM7_HEADER_DIR) $(WFLAGS);; \
+	esac;
+
+clang7_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	case $(host_os) in \
+	  mingw*) \
+	    echo $(I386_CLANG7_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang7_plugin_dumpGimpleSSA.o -I$(I386_LLVM7_HEADER_DIR) $(WFLAGS);; \
+	  *) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang7_plugin_dumpGimpleSSA.o -I$(I386_LLVM7_HEADER_DIR) $(WFLAGS);; \
+	esac;
+
+clang7_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	case $(host_os) in \
+	  mingw*) \
+	    echo $(I386_CLANG7_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -DCPP_LANGUAGE -o clang7_plugin_dumpGimpleSSACpp.o -I$(I386_LLVM7_HEADER_DIR) $(WFLAGS);; \
+	  *) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -DCPP_LANGUAGE -o clang7_plugin_dumpGimpleSSACpp.o -I$(I386_LLVM7_HEADER_DIR) $(WFLAGS);; \
+	esac;
+
+clang7_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	case $(host_os) in \
+	  mingw*) \
+	    echo $(I386_CLANG7_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp -o clang7_plugin_topfname.o -I$(I386_LLVM7_HEADER_DIR) $(WFLAGS);; \
+	  *) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp -o clang7_plugin_topfname.o -I$(I386_LLVM7_HEADER_DIR) $(WFLAGS);; \
+	esac;
+
+clang7_plugin_ASTAnalyzer.o : $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	case $(host_os) in \
+	  mingw*) \
+	    echo $(I386_CLANG7_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp -o clang7_plugin_ASTAnalyzer.o -I$(I386_LLVM7_HEADER_DIR) $(WFLAGS);; \
+	  *) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp -o clang7_plugin_ASTAnalyzer.o -I$(I386_LLVM7_HEADER_DIR) $(WFLAGS);; \
+	esac;
+
+if BUILD_PTAA
+clang7_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp  $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp
+	case $(host_os) in \
+	  mingw*) \
+	    echo $(I386_CLANG7_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang7_dumpGimple.o -I. -I$(I386_LLVM7_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
+	  *) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang7_dumpGimple.o -I. -I$(I386_LLVM7_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
+	esac;
+else
+clang7_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp  $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp
+	case $(host_os) in \
+	  mingw*) \
+	    echo $(I386_CLANG7_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang7_dumpGimple.o -I. -I$(I386_LLVM7_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
+	  *) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang7_dumpGimple.o -I. -I$(I386_LLVM7_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
+	esac;
+endif
+
+if BUILD_PTAA
+clang7_HardekopfLin_AA.o : $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp
+	case $(host_os) in \
+	  mingw*) \
+	    echo $(I386_CLANG7_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp -o clang7_HardekopfLin_AA.o -I. -I$(I386_LLVM7_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
+	  *) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp -o clang7_HardekopfLin_AA.o -I. -I$(I386_LLVM7_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
+	esac;
+endif
+
+clang7_RangeAnalysis.o : $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp
+	case $(host_os) in \
+	  mingw*) \
+	    echo $(I386_CLANG7_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp -o clang7_RangeAnalysis.o -I. -I$(I386_LLVM7_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
+	  *) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp -o clang7_RangeAnalysis.o -I. -I$(I386_LLVM7_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
+	esac;
+
+clang7_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.hpp
+	case $(host_os) in \
+	  mingw*) \
+	    echo $(I386_CLANG7_PLUGIN_COMPILER) -std=c++11 -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp -o clang7_eSSA.o -I. -I$(I386_LLVM7_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
+	  *) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -std=c++11 -fPIC -fno-rtti -O0 -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp -o clang7_eSSA.o -I. -I$(I386_LLVM7_HEADER_DIR) -DPANDA_PLUGIN_VERSION=\"$(PANDA_PLUGIN_VERSION)\" $(WFLAGS);; \
+	esac;
+
+bambuS2S-7: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
+	$(I386_CLANG7_PLUGIN_COMPILER) -fno-rtti -O0 -std=c++14 `$(I386_LLVM_CONFIG7_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG7_LIBS)  -o $@
+
+###### 
+
 
 clean :
 	rm -rf *.o *.so *.h
