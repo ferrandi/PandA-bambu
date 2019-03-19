@@ -60,7 +60,7 @@ all: $(I386_CLANG4_ASTANALYZER_PLUGIN)
 endif
 
 if BUILD_PTAA
-$(I386_CLANG4_SSA_PLUGIN) : clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o
+$(I386_CLANG4_SSA_PLUGIN) : clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG4_LIBS) -lversion `$(I386_LLVM_CONFIG4_EXE) --ldflags --libs --system-libs` -lbdd';\
@@ -70,13 +70,13 @@ $(I386_CLANG4_SSA_PLUGIN) : clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o cl
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -lbdd';;\
 	esac;\
-	obj_list='clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o';\
+	obj_list='clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG4_PLUGIN_COMPILER) opt_clang4_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleSSA_opt.so;\
 	  $(I386_CLANG4_PLUGIN_COMPILER) clang4_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleSSA.so ; \
 	fi;
 else
-$(I386_CLANG4_SSA_PLUGIN) : clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_eSSA.o
+$(I386_CLANG4_SSA_PLUGIN) : clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG4_LIBS) -lversion `$(I386_LLVM_CONFIG4_EXE) --ldflags --libs --system-libs`'; \
@@ -86,14 +86,14 @@ $(I386_CLANG4_SSA_PLUGIN) : clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o cl
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti';;\
 	esac;\
-	obj_list='clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o';\
+	obj_list='clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG4_PLUGIN_COMPILER) opt_clang4_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleSSA_opt.so;\
 	  $(I386_CLANG4_PLUGIN_COMPILER) clang4_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleSSA.so ; 
 	fi;
 endif
 if BUILD_PTAA
-$(I386_CLANG4_SSA_PLUGINCPP) : clang4_plugin_dumpGimpleSSACpp.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o
+$(I386_CLANG4_SSA_PLUGINCPP) : clang4_plugin_dumpGimpleSSACpp.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG4_LIBS) -lversion `$(I386_LLVM_CONFIG4_EXE) --ldflags --libs --system-libs` -lbdd'; \
@@ -103,13 +103,13 @@ $(I386_CLANG4_SSA_PLUGINCPP) : clang4_plugin_dumpGimpleSSACpp.o clang4_dumpGimpl
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -lbdd';;\
 	esac;\
-	obj_list='clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o';\
+	obj_list='clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG4_PLUGIN_COMPILER) opt_clang4_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleSSACpp_opt.so;\
 	  $(I386_CLANG4_PLUGIN_COMPILER) clang4_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleSSACpp.so;\
 	fi;
 else
-$(I386_CLANG4_SSA_PLUGINCPP) : clang4_plugin_dumpGimpleSSACpp.o clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_eSSA.o
+$(I386_CLANG4_SSA_PLUGINCPP) : clang4_plugin_dumpGimpleSSACpp.o clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG4_LIBS) -lversion `$(I386_LLVM_CONFIG4_EXE) --ldflags --libs --system-libs`'; \
@@ -119,7 +119,7 @@ $(I386_CLANG4_SSA_PLUGINCPP) : clang4_plugin_dumpGimpleSSACpp.o clang4_dumpGimpl
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti';;\
 	esac;\
-	obj_list='clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o';\
+	obj_list='clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG4_PLUGIN_COMPILER) opt_clang4_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleSSACpp_opt.so;\
 	  $(I386_CLANG4_PLUGIN_COMPILER) clang4_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleSSACpp.so;\
@@ -127,7 +127,7 @@ $(I386_CLANG4_SSA_PLUGINCPP) : clang4_plugin_dumpGimpleSSACpp.o clang4_dumpGimpl
 endif
 
 if BUILD_PTAA
-$(I386_CLANG4_EMPTY_PLUGIN) : clang4_plugin_dumpGimpleEmpty.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o
+$(I386_CLANG4_EMPTY_PLUGIN) : clang4_plugin_dumpGimpleEmpty.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG4_LIBS) -lversion `$(I386_LLVM_CONFIG4_EXE) --ldflags --libs --system-libs` -lbdd'; \
@@ -137,13 +137,13 @@ $(I386_CLANG4_EMPTY_PLUGIN) : clang4_plugin_dumpGimpleEmpty.o clang4_dumpGimple.
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -lbdd';;\
 	esac;\
-	obj_list='clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o';\
+	obj_list='clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG4_PLUGIN_COMPILER) opt_clang4_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleEmpty_opt.so; \
 	  $(I386_CLANG4_PLUGIN_COMPILER) clang4_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleEmpty.so; \
 	fi;
 else
-$(I386_CLANG4_EMPTY_PLUGIN) : clang4_plugin_dumpGimpleEmpty.o clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_eSSA.o
+$(I386_CLANG4_EMPTY_PLUGIN) : clang4_plugin_dumpGimpleEmpty.o clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG4_LIBS) -lversion `$(I386_LLVM_CONFIG4_EXE) --ldflags --libs --system-libs`'; \
@@ -153,7 +153,7 @@ $(I386_CLANG4_EMPTY_PLUGIN) : clang4_plugin_dumpGimpleEmpty.o clang4_dumpGimple.
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti';;\
 	esac;\
-	obj_list='clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o';\
+	obj_list='clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG4_PLUGIN_COMPILER) opt_clang4_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleEmpty_opt.so; \
 	  $(I386_CLANG4_PLUGIN_COMPILER) clang4_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleEmpty.so; \
@@ -251,6 +251,18 @@ clang4_plugin_ASTAnalyzer.o : $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG4_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp -o clang4_plugin_ASTAnalyzer.o;\
+	fi;
+
+clang4_my_OrderedInstructions.o : $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.cpp $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.hpp
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM4_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM4_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG4_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.cpp -o clang4_my_OrderedInstructions.o;\
 	fi;
 
 clang4_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp  $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp
