@@ -672,7 +672,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
          {
             command = compiler.llvm_opt.string();
 #ifndef _WIN32
-            auto renamed_plugin=compiler.topfname_plugin_obj;
+            auto renamed_plugin = compiler.topfname_plugin_obj;
             boost::replace_all(renamed_plugin, ".so", "_opt.so");
             command += " -load=" + renamed_plugin;
 #endif
@@ -742,7 +742,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
       {
          command = compiler.llvm_opt.string();
 #ifndef _WIN32
-         auto renamed_plugin=compiler.ssa_plugin_obj;
+         auto renamed_plugin = compiler.ssa_plugin_obj;
          boost::replace_all(renamed_plugin, ".so", "_opt.so");
          command += " -load=" + renamed_plugin;
 #endif
