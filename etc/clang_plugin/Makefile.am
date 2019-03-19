@@ -218,10 +218,10 @@ clang4_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimple
 clang4_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS) -I. -DCPP_LANGUAGE'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS) -I.';; \
+	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS) -I. -DCPP_LANGUAGE';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG4_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang4_plugin_dumpGimpleSSACpp.o;\
@@ -500,10 +500,10 @@ clang5_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimple
 clang5_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I. -DCPP_LANGUAGE'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.';; \
+	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I. -DCPP_LANGUAGE';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang5_plugin_dumpGimpleSSACpp.o;\
@@ -771,10 +771,10 @@ clang6_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimple
 clang6_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS) -I. -DCPP_LANGUAGE'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS) -I.';; \
+	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS) -I. -DCPP_LANGUAGE';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG6_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang6_plugin_dumpGimpleSSACpp.o;\
@@ -1041,10 +1041,10 @@ clang7_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimple
 clang7_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM7_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM7_HEADER_DIR) $(WFLAGS) -I. -DCPP_LANGUAGE'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM7_HEADER_DIR) $(WFLAGS) -I.';; \
+	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM7_HEADER_DIR) $(WFLAGS) -I. -DCPP_LANGUAGE';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG7_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang7_plugin_dumpGimpleSSACpp.o;\

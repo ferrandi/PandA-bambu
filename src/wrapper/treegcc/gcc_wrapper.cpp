@@ -566,7 +566,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting compilation of single files");
-   bool enable_LTO = compiler.is_clang && source_files.size() >= 1;
+   bool enable_LTO = compiler.is_clang && source_files.size() > 1;
    for(auto& source_file : source_files)
    {
       if(already_processed_files.find(source_file.first) != already_processed_files.end())
