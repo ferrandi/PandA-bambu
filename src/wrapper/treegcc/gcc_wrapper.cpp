@@ -672,7 +672,9 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
          {
             command = compiler.llvm_opt.string();
 #ifndef _WIN32
-            command += " -load=" + compiler.topfname_plugin_obj;
+            auto renamed_plugin=compiler.topfname_plugin_obj;
+            boost::replace_all(renamed_plugin, ".so", "_opt.so");
+            command += " -load=" + renamed_plugin;
 #endif
             command += " -panda-TFN=" + fname + " " + temporary_file_o_bc;
             temporary_file_o_bc = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string()).string();
@@ -740,7 +742,9 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
       {
          command = compiler.llvm_opt.string();
 #ifndef _WIN32
-         command += " -load=" + compiler.ssa_plugin_obj;
+         auto renamed_plugin=compiler.ssa_plugin_obj;
+         boost::replace_all(renamed_plugin, ".so", "_opt.so");
+         command += " -load=" + renamed_plugin;
 #endif
          command += " -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) + " -panda-infile=" + real_file_names;
          if(addTFNPlugin)

@@ -96,7 +96,9 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)());
 }
 // These constructors add our pass to a list of global extensions.
+#if ADD_RSP
 static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyLoader_Ox)(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);
+#endif
 
 #ifdef _WIN32
 using namespace llvm;

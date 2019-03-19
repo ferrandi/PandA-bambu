@@ -5028,7 +5028,7 @@ namespace llvm
 
          for(auto OpTy : RemainingOps)
          {
-            // Calaculate the new index
+            // Calculate the new index
             unsigned OperandSize = getLoopOperandSizeInBytesLocal(OpTy);
             uint64_t GepIndex = BytesCopied / OperandSize;
             assert(GepIndex * OperandSize == BytesCopied && "Division should have no Remainder!");
