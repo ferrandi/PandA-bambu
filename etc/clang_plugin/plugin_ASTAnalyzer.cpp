@@ -348,8 +348,8 @@ namespace clang
                      interfaceType = "ptrdefault";
                      if(UDIT_p)
                      {
-                        if(UserDefinedInterfaceType != "none" && UserDefinedInterfaceType != "none_registered" && UserDefinedInterfaceType != "handshake" && UserDefinedInterfaceType != "valid" && UserDefinedInterfaceType != "ovalid" && UserDefinedInterfaceType != "acknowledge" &&
-                           UserDefinedInterfaceType != "fifo" && UserDefinedInterfaceType != "bus")
+                        if(UserDefinedInterfaceType != "none" && UserDefinedInterfaceType != "none_registered" && UserDefinedInterfaceType != "handshake" && UserDefinedInterfaceType != "valid" && UserDefinedInterfaceType != "ovalid" &&
+                           UserDefinedInterfaceType != "acknowledge" && UserDefinedInterfaceType != "fifo" && UserDefinedInterfaceType != "bus")
                         {
                            DiagnosticsEngine& D = CI.getDiagnostics();
                            D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface non-consistent with parameter of pointer type, where user defined interface is: %0")).AddString(UserDefinedInterfaceType);
@@ -370,7 +370,8 @@ namespace clang
                      }
                      if(UDIT_p)
                      {
-                        if(UserDefinedInterfaceType != "none" && UserDefinedInterfaceType != "none_registered" && UserDefinedInterfaceType != "handshake" && UserDefinedInterfaceType != "valid" && UserDefinedInterfaceType != "ovalid" && UserDefinedInterfaceType != "acknowledge")
+                        if(UserDefinedInterfaceType != "none" && UserDefinedInterfaceType != "none_registered" && UserDefinedInterfaceType != "handshake" && UserDefinedInterfaceType != "valid" && UserDefinedInterfaceType != "ovalid" &&
+                           UserDefinedInterfaceType != "acknowledge")
                         {
                            DiagnosticsEngine& D = CI.getDiagnostics();
                            D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface non-consistent with parameter of builtin type, where user defined interface is: %0")).AddString(UserDefinedInterfaceType);
