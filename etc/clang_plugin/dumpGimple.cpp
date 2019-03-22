@@ -101,7 +101,7 @@
 
 #include <float.h>
 
-#define PRINT_DBG_MSG 0
+#define PRINT_DBG_MSG 1
 
 static std::string create_file_name_string(const std::string& outdir_name, const std::string& original_filename)
 {
@@ -2729,9 +2729,8 @@ namespace llvm
          if(identifierTable.find(fdName) == identifierTable.end())
             identifierTable.insert(fdName);
          index2field_decl[std::make_pair(scpe, pos)].name = assignCode(identifierTable.find(fdName)->c_str(), GT(IDENTIFIER_NODE));
-         auto fty = reinterpret_cast<const llvm::Type*>(t);
-         assert(CheckSignedTag(fty) == 0);
-         index2field_decl[std::make_pair(scpe, pos)].type = assignCodeType(fty);
+         assert(CheckSignedTag(reinterpret_cast<const llvm::Type*>(t)) == 0);
+         index2field_decl[std::make_pair(scpe, pos)].type = assignCodeType(scty->getElementType(pos));
          index2field_decl[std::make_pair(scpe, pos)].scpe = assignCodeAuto(scpe);
          index2field_decl[std::make_pair(scpe, pos)].size = TYPE_SIZE(t);
          index2field_decl[std::make_pair(scpe, pos)].algn = TYPE_ALIGN(t);
