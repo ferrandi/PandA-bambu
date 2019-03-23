@@ -109,7 +109,7 @@ namespace llvm
             {
                auto funName = fun.getName();
                auto demangled = getDemangled(funName);
-               if(!fun.hasInternalLinkage() && (funName == TopFunctionName_DNEGP || demangled == TopFunctionName_DNEGP))
+               if(!fun.hasInternalLinkage() && !fun.hasExternalLinkage() && !fun.hasExternalWeakLinkage() && (funName == TopFunctionName_DNEGP || demangled == TopFunctionName_DNEGP))
                {
                   hasTopFun = true;
                }
@@ -133,7 +133,7 @@ namespace llvm
                llvm::errs() << "Global intrinsic skipped: " << globalVar.getName() << "\n";
 #endif
             }
-            else if(!globalVar.hasInternalLinkage())
+            else if(!globalVar.hasInternalLinkage() && !globalVar.hasExternalLinkage() && !globalVar.hasExternalWeakLinkage())
             {
 #if PRINT_DBG_MSG
                llvm::errs() << "it becomes internal\n";
