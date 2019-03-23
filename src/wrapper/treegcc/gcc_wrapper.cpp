@@ -421,7 +421,10 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       if(addPlugin)
       {
          if(compiler.is_clang)
+         {
             command += " -fplugin=" + compiler.topfname_plugin_obj + " -mllvm -panda-TFN=" + fname;
+            command += " -mllvm -panda-Internalize";
+         }
          else
             command += " -fplugin=" + compiler.topfname_plugin_obj + " -fplugin-arg-" + compiler.topfname_plugin_name + "-topfname=" + fname;
       }
@@ -677,6 +680,8 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
             command += " -load=" + renamed_plugin;
 #endif
             command += " -panda-TFN=" + fname + " " + temporary_file_o_bc;
+            if(isWholeProgram || Param->getOption<bool>(OPT_do_not_expose_globals))
+               command += " -panda-Internalize";
             temporary_file_o_bc = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string()).string();
             command += " -o " + temporary_file_o_bc;
             command += " -" + compiler.topfname_plugin_name;
