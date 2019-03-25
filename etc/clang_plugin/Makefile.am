@@ -1,5 +1,5 @@
 #This is etc/clang_plugin/Makefile.am
-EXTRA_DIST = $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(top_srcdir)/etc/clang_plugin/gcc/cp-tree.def $(top_srcdir)/etc/clang_plugin/gcc/sync-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/gtm-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/sanitizer.def $(top_srcdir)/etc/clang_plugin/gcc/hsa-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/c-common.def $(top_srcdir)/etc/clang_plugin/gcc/gimple.def $(top_srcdir)/etc/clang_plugin/gcc/builtins.def $(top_srcdir)/etc/clang_plugin/gcc/brig-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/cilkplus.def $(top_srcdir)/etc/clang_plugin/gcc/omp-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/tree.def $(top_srcdir)/etc/clang_plugin/gcc/cilk-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/chkp-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/COPYING3 $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $(top_srcdir)/etc/clang_plugin/llvm/LICENSE.TXT $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.cpp $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.hpp $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
+EXTRA_DIST = $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(top_srcdir)/etc/clang_plugin/gcc/cp-tree.def $(top_srcdir)/etc/clang_plugin/gcc/sync-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/gtm-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/sanitizer.def $(top_srcdir)/etc/clang_plugin/gcc/hsa-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/c-common.def $(top_srcdir)/etc/clang_plugin/gcc/gimple.def $(top_srcdir)/etc/clang_plugin/gcc/builtins.def $(top_srcdir)/etc/clang_plugin/gcc/brig-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/cilkplus.def $(top_srcdir)/etc/clang_plugin/gcc/omp-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/tree.def $(top_srcdir)/etc/clang_plugin/gcc/cilk-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/chkp-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/COPYING3 $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $(top_srcdir)/etc/clang_plugin/llvm/LICENSE.TXT $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.cpp $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.hpp $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
 
 
 LD_LIBRARY_PATH=
@@ -49,6 +49,10 @@ endif
 
 if BUILD_I386_CLANG4_SSA_PLUGINCPP
 all: $(I386_CLANG4_SSA_PLUGINCPP)
+endif
+
+if BUILD_I386_CLANG4_EXPANDMEMOPS_PLUGIN
+all: $(I386_CLANG4_EXPANDMEMOPS_PLUGIN)
 endif
 
 if BUILD_I386_CLANG4_TOPFNAME_PLUGIN
@@ -160,6 +164,21 @@ $(I386_CLANG4_EMPTY_PLUGIN) : clang4_plugin_dumpGimpleEmpty.o clang4_dumpGimple.
 	fi;
 endif
 
+$(I386_CLANG4_EXPANDMEMOPS_PLUGIN) : clang4_plugin_expandMemOps.o 
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options='$(CLANG4_LIBS) -lversion `$(I386_LLVM_CONFIG4_EXE) --ldflags --libs --system-libs`'; \
+	    compile_options='';; \
+	  darwin*) \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	  *) \
+	    compile_options='-fPIC -shared -fno-rtti';;\
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG4_PLUGIN_COMPILER) opt_clang4_plugin_expandMemOps.o $$compile_options -o clang4_plugin_expandMemOps_opt.so; \
+	  $(I386_CLANG4_PLUGIN_COMPILER) clang4_plugin_expandMemOps.o $$compile_options -o clang4_plugin_expandMemOps.so; \
+	fi;
+
 $(I386_CLANG4_TOPFNAME_PLUGIN) : clang4_plugin_topfname.o 
 	case $(host_os) in \
 	  mingw*) \
@@ -226,6 +245,19 @@ clang4_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGim
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG4_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang4_plugin_dumpGimpleSSACpp.o;\
 	  $(I386_CLANG4_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang4_plugin_dumpGimpleSSACpp.o;\
+	fi;
+
+clang4_plugin_expandMemOps.o : $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG4_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp -o opt_clang4_plugin_expandMemOps.o; \
+	  $(I386_CLANG4_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp -o clang4_plugin_expandMemOps.o; \
 	fi;
 
 clang4_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
@@ -331,6 +363,10 @@ endif
 
 if BUILD_I386_CLANG5_SSA_PLUGINCPP
 all: $(I386_CLANG5_SSA_PLUGINCPP)
+endif
+
+if BUILD_I386_CLANG5_EXPANDMEMOPS_PLUGIN
+all: $(I386_CLANG5_EXPANDMEMOPS_PLUGIN)
 endif
 
 if BUILD_I386_CLANG5_TOPFNAME_PLUGIN
@@ -442,6 +478,21 @@ $(I386_CLANG5_EMPTY_PLUGIN) : clang5_plugin_dumpGimpleEmpty.o clang5_dumpGimple.
 	fi;
 endif
 
+$(I386_CLANG5_EXPANDMEMOPS_PLUGIN) : clang5_plugin_expandMemOps.o 
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options='$(CLANG5_LIBS) -lversion `$(I386_LLVM_CONFIG5_EXE) --ldflags --libs --system-libs`'; \
+	    compile_options='';; \
+	  darwin*) \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	  *) \
+	    compile_options='-fPIC -shared -fno-rtti';;\
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG5_PLUGIN_COMPILER) opt_clang5_plugin_expandMemOps.o $$compile_options -o clang5_plugin_expandMemOps_opt.so; \
+	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_expandMemOps.o $$compile_options -o clang5_plugin_expandMemOps.so; \
+	fi;
+
 $(I386_CLANG5_TOPFNAME_PLUGIN) : clang5_plugin_topfname.o 
 	case $(host_os) in \
 	  mingw*) \
@@ -508,6 +559,19 @@ clang5_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGim
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang5_plugin_dumpGimpleSSACpp.o;\
 	  $(I386_CLANG5_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang5_plugin_dumpGimpleSSACpp.o;\
+	fi;
+
+clang5_plugin_expandMemOps.o : $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG5_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp -o opt_clang5_plugin_expandMemOps.o; \
+	  $(I386_CLANG5_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp -o clang5_plugin_expandMemOps.o; \
 	fi;
 
 clang5_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
@@ -602,6 +666,10 @@ endif
 
 if BUILD_I386_CLANG6_SSA_PLUGINCPP
 all: $(I386_CLANG6_SSA_PLUGINCPP)
+endif
+
+if BUILD_I386_CLANG6_EXPANDMEMOPS_PLUGIN
+all: $(I386_CLANG6_EXPANDMEMOPS_PLUGIN)
 endif
 
 if BUILD_I386_CLANG6_TOPFNAME_PLUGIN
@@ -713,6 +781,21 @@ $(I386_CLANG6_EMPTY_PLUGIN) : clang6_plugin_dumpGimpleEmpty.o clang6_dumpGimple.
 	fi;
 endif
 
+$(I386_CLANG6_EXPANDMEMOPS_PLUGIN) : clang6_plugin_expandMemOps.o 
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options='$(CLANG6_LIBS) -lversion `$(I386_LLVM_CONFIG6_EXE) --ldflags --libs --system-libs`'; \
+	    compile_options='';; \
+	  darwin*) \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	  *) \
+	    compile_options='-fPIC -shared -fno-rtti';;\
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG6_PLUGIN_COMPILER) opt_clang6_plugin_expandMemOps.o $$compile_options -o clang6_plugin_expandMemOps_opt.so; \
+	  $(I386_CLANG6_PLUGIN_COMPILER) clang6_plugin_expandMemOps.o $$compile_options -o clang6_plugin_expandMemOps.so; \
+	fi;
+
 $(I386_CLANG6_TOPFNAME_PLUGIN) : clang6_plugin_topfname.o 
 	case $(host_os) in \
 	  mingw*) \
@@ -779,6 +862,19 @@ clang6_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGim
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG6_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang6_plugin_dumpGimpleSSACpp.o;\
 	  $(I386_CLANG6_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang6_plugin_dumpGimpleSSACpp.o;\
+	fi;
+
+clang6_plugin_expandMemOps.o : $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG6_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp -o opt_clang6_plugin_expandMemOps.o; \
+	  $(I386_CLANG6_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp -o clang6_plugin_expandMemOps.o; \
 	fi;
 
 clang6_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
@@ -872,6 +968,10 @@ endif
 
 if BUILD_I386_CLANG7_SSA_PLUGINCPP
 all: $(I386_CLANG7_SSA_PLUGINCPP)
+endif
+
+if BUILD_I386_CLANG7_EXPANDMEMOPS_PLUGIN
+all: $(I386_CLANG7_EXPANDMEMOPS_PLUGIN)
 endif
 
 if BUILD_I386_CLANG7_TOPFNAME_PLUGIN
@@ -983,6 +1083,21 @@ $(I386_CLANG7_EMPTY_PLUGIN) : clang7_plugin_dumpGimpleEmpty.o clang7_dumpGimple.
 	fi;
 endif
 
+$(I386_CLANG7_EXPANDMEMOPS_PLUGIN) : clang7_plugin_expandMemOps.o 
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options='$(CLANG7_LIBS) -lversion `$(I386_LLVM_CONFIG7_EXE) --ldflags --libs --system-libs`'; \
+	    compile_options='';; \
+	  darwin*) \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	  *) \
+	    compile_options='-fPIC -shared -fno-rtti';;\
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG7_PLUGIN_COMPILER) opt_clang7_plugin_expandMemOps.o $$compile_options -o clang7_plugin_expandMemOps_opt.so; \
+	  $(I386_CLANG7_PLUGIN_COMPILER) clang7_plugin_expandMemOps.o $$compile_options -o clang7_plugin_expandMemOps.so; \
+	fi;
+
 $(I386_CLANG7_TOPFNAME_PLUGIN) : clang7_plugin_topfname.o 
 	case $(host_os) in \
 	  mingw*) \
@@ -1049,6 +1164,19 @@ clang7_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGim
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG7_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang7_plugin_dumpGimpleSSACpp.o;\
 	  $(I386_CLANG7_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang7_plugin_dumpGimpleSSACpp.o;\
+	fi;
+
+clang7_plugin_expandMemOps.o : $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM7_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM7_HEADER_DIR) $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG7_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp -o opt_clang7_plugin_expandMemOps.o; \
+	  $(I386_CLANG7_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp -o clang7_plugin_expandMemOps.o; \
 	fi;
 
 clang7_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 

@@ -204,6 +204,10 @@ class GccWrapper
       std::string ssa_plugin_obj;
       std::string ssa_plugin_name;
 
+      /// The plugin expanding MemOps calls
+      std::string expandMemOps_plugin_obj;
+      std::string expandMemOps_plugin_name;
+
       /// The plugin making visible only the top function
       std::string topfname_plugin_obj;
       std::string topfname_plugin_name;
@@ -331,6 +335,8 @@ class GccWrapper
     * @return the corresponding number
     */
    static size_t ConvertVersion(const std::string& version);
+
+   std::string clang_recipes(const GccWrapper_OptimizationSet optimization_level, const GccWrapper_CompilerTarget compiler_target, const std::string& expandMemOps_plugin_obj, const std::string& expandMemOps_plugin_name);
 
  public:
    /// The version of the gcc

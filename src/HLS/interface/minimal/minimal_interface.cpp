@@ -450,12 +450,18 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             }
 
             structural_objectRef clock_port, reset_port;
-            structural_objectRef port_ck = shared_memory->find_member(CLOCK_PORT_NAME, port_o_K, shared_memory);
-            clock_port = SM_minimal_interface->add_port(GetPointer<port_o>(port_ck)->get_id(), port_o::IN, interfaceObj, port_ck->get_typeRef());
+            structural_objectRef port_ck= shared_memory->find_member(CLOCK_PORT_NAME, port_o_K, shared_memory);
+            if(parameters->isOption(OPT_clock_name))
+               clock_port = SM_minimal_interface->add_port(parameters->getOption<std::string>(OPT_clock_name), port_o::IN, interfaceObj, port_ck->get_typeRef());
+            else
+               clock_port = SM_minimal_interface->add_port(GetPointer<port_o>(port_ck)->get_id(), port_o::IN, interfaceObj, port_ck->get_typeRef());
             SM_minimal_interface->add_connection(clock_port, port_ck);
 
             structural_objectRef port_rst = shared_memory->find_member(RESET_PORT_NAME, port_o_K, shared_memory);
-            reset_port = SM_minimal_interface->add_port(GetPointer<port_o>(port_rst)->get_id(), port_o::IN, interfaceObj, port_rst->get_typeRef());
+            if(parameters->isOption(OPT_reset_name))
+               reset_port = SM_minimal_interface->add_port(parameters->getOption<std::string>(OPT_reset_name), port_o::IN, interfaceObj, port_rst->get_typeRef());
+            else
+               reset_port = SM_minimal_interface->add_port(GetPointer<port_o>(port_rst)->get_id(), port_o::IN, interfaceObj, port_rst->get_typeRef());
             SM_minimal_interface->add_connection(reset_port, port_rst);
 
             if(!with_slave)

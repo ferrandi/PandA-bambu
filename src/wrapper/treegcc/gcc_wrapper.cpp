@@ -82,24 +82,28 @@
 #include "config_I386_CLANG4_ASTANALYZER_PLUGIN.hpp"
 #include "config_I386_CLANG4_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG4_EXE.hpp"
+#include "config_I386_CLANG4_EXPANDMEMOPS_PLUGIN.hpp"
 #include "config_I386_CLANG4_SSA_PLUGIN.hpp"
 #include "config_I386_CLANG4_SSA_PLUGINCPP.hpp"
 #include "config_I386_CLANG4_TOPFNAME_PLUGIN.hpp"
 #include "config_I386_CLANG5_ASTANALYZER_PLUGIN.hpp"
 #include "config_I386_CLANG5_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG5_EXE.hpp"
+#include "config_I386_CLANG5_EXPANDMEMOPS_PLUGIN.hpp"
 #include "config_I386_CLANG5_SSA_PLUGIN.hpp"
 #include "config_I386_CLANG5_SSA_PLUGINCPP.hpp"
 #include "config_I386_CLANG5_TOPFNAME_PLUGIN.hpp"
 #include "config_I386_CLANG6_ASTANALYZER_PLUGIN.hpp"
 #include "config_I386_CLANG6_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG6_EXE.hpp"
+#include "config_I386_CLANG6_EXPANDMEMOPS_PLUGIN.hpp"
 #include "config_I386_CLANG6_SSA_PLUGIN.hpp"
 #include "config_I386_CLANG6_SSA_PLUGINCPP.hpp"
 #include "config_I386_CLANG6_TOPFNAME_PLUGIN.hpp"
 #include "config_I386_CLANG7_ASTANALYZER_PLUGIN.hpp"
 #include "config_I386_CLANG7_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG7_EXE.hpp"
+#include "config_I386_CLANG7_EXPANDMEMOPS_PLUGIN.hpp"
 #include "config_I386_CLANG7_SSA_PLUGIN.hpp"
 #include "config_I386_CLANG7_SSA_PLUGINCPP.hpp"
 #include "config_I386_CLANG7_TOPFNAME_PLUGIN.hpp"
@@ -707,8 +711,8 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
       }
       if(compiler.is_clang)
       {
-         const auto opt_level = WriteOptimizationLevel(optimization_level);
-         command = compiler.llvm_opt.string() + " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer " + temporary_file_o_bc;
+         const auto recipe = clang_recipes(optimization_level, Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler), compiler.expandMemOps_plugin_obj, compiler.expandMemOps_plugin_name);
+         command = compiler.llvm_opt.string() + recipe + temporary_file_o_bc;
          temporary_file_o_bc = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string()).string();
          command += " -o " + temporary_file_o_bc;
          const std::string o2_output_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
@@ -2037,6 +2041,8 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.empty_plugin_name = I386_CLANG4_EMPTY_PLUGIN;
       compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_CLANG4_SSA_PLUGINCPP : I386_CLANG4_SSA_PLUGIN) + plugin_ext;
       compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG4_SSA_PLUGINCPP : I386_CLANG4_SSA_PLUGIN);
+      compiler.expandMemOps_plugin_obj = plugin_dir + I386_CLANG4_EXPANDMEMOPS_PLUGIN + plugin_ext;
+      compiler.expandMemOps_plugin_name = I386_CLANG4_EXPANDMEMOPS_PLUGIN;
       compiler.topfname_plugin_obj = plugin_dir + I386_CLANG4_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_CLANG4_TOPFNAME_PLUGIN;
       compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
@@ -2062,6 +2068,8 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.empty_plugin_name = I386_CLANG5_EMPTY_PLUGIN;
       compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_CLANG5_SSA_PLUGINCPP : I386_CLANG5_SSA_PLUGIN) + plugin_ext;
       compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG5_SSA_PLUGINCPP : I386_CLANG5_SSA_PLUGIN);
+      compiler.expandMemOps_plugin_obj = plugin_dir + I386_CLANG5_EXPANDMEMOPS_PLUGIN + plugin_ext;
+      compiler.expandMemOps_plugin_name = I386_CLANG5_EXPANDMEMOPS_PLUGIN;
       compiler.topfname_plugin_obj = plugin_dir + I386_CLANG5_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_CLANG5_TOPFNAME_PLUGIN;
       compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
@@ -2087,6 +2095,8 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.empty_plugin_name = I386_CLANG6_EMPTY_PLUGIN;
       compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_CLANG6_SSA_PLUGINCPP : I386_CLANG6_SSA_PLUGIN) + plugin_ext;
       compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG6_SSA_PLUGINCPP : I386_CLANG6_SSA_PLUGIN);
+      compiler.expandMemOps_plugin_obj = plugin_dir + I386_CLANG6_EXPANDMEMOPS_PLUGIN + plugin_ext;
+      compiler.expandMemOps_plugin_name = I386_CLANG6_EXPANDMEMOPS_PLUGIN;
       compiler.topfname_plugin_obj = plugin_dir + I386_CLANG6_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_CLANG6_TOPFNAME_PLUGIN;
       compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
@@ -2112,6 +2122,8 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.empty_plugin_name = I386_CLANG7_EMPTY_PLUGIN;
       compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_CLANG7_SSA_PLUGINCPP : I386_CLANG7_SSA_PLUGIN) + plugin_ext;
       compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG7_SSA_PLUGINCPP : I386_CLANG7_SSA_PLUGIN);
+      compiler.expandMemOps_plugin_obj = plugin_dir + I386_CLANG7_EXPANDMEMOPS_PLUGIN + plugin_ext;
+      compiler.expandMemOps_plugin_name = I386_CLANG7_EXPANDMEMOPS_PLUGIN;
       compiler.topfname_plugin_obj = plugin_dir + I386_CLANG7_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_CLANG7_TOPFNAME_PLUGIN;
       compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
@@ -2718,6 +2730,247 @@ size_t GccWrapper::ConvertVersion(const std::string& version)
       ret_value += (value * shifter);
    }
    return ret_value;
+}
+
+std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimization_level, const GccWrapper_CompilerTarget compiler, const std::string& expandMemOps_plugin_obj, const std::string& expandMemOps_plugin_name)
+{
+   std::string recipe = "";
+#ifndef _WIN32
+   auto renamed_plugin = expandMemOps_plugin_obj;
+   boost::replace_all(renamed_plugin, ".so", "_opt.so");
+   recipe += " -load=" + renamed_plugin;
+#endif
+   if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG4)
+   {
+      if(optimization_level == GccWrapper_OptimizationSet::O2)
+      {
+         recipe += " -targetlibinfo "
+                   "-tti "
+                   "-tbaa "
+                   "-scoped-noalias "
+                   "-assumption-cache-tracker "
+                   "-profile-summary-info "
+                   "-forceattrs "
+                   "-inferattrs "
+                   "-ipsccp "
+                   "-globalopt "
+                   "-domtree "
+                   "-mem2reg "
+                   "-deadargelim "
+                   "-domtree "
+                   "-basicaa "
+                   "-aa ";
+         recipe += " -" + expandMemOps_plugin_name +
+                   " -dse -loop-unroll "
+                   /// "-instcombine "
+                   "-simplifycfg "
+                   "-pgo-icall-prom "
+                   "-basiccg "
+                   "-globals-aa "
+                   "-prune-eh "
+                   "-inline "
+                   "-functionattrs "
+                   "-domtree "
+                   "-sroa "
+                   "-early-cse "
+                   "-speculative-execution "
+                   "-lazy-value-info "
+                   "-jump-threading "
+                   "-correlated-propagation "
+                   "-simplifycfg "
+                   "-domtree "
+                   "-basicaa "
+                   "-aa ";
+         recipe += " -" + expandMemOps_plugin_name +
+                   " -dse -loop-unroll "
+                   /// "-instcombine "
+                   "-libcalls-shrinkwrap "
+                   "-tailcallelim "
+                   "-simplifycfg "
+                   "-reassociate "
+                   "-domtree "
+                   "-loops "
+                   "-loop-simplify "
+                   "-lcssa-verification "
+                   "-lcssa "
+                   "-basicaa "
+                   "-aa "
+                   "-scalar-evolution "
+                   "-loop-rotate "
+                   "-licm "
+                   "-loop-unswitch "
+                   "-simplifycfg "
+                   "-domtree "
+                   "-basicaa "
+                   "-aa ";
+         recipe += " -" + expandMemOps_plugin_name +
+                   " -dse -loop-unroll "
+                   /// "-instcombine "
+                   "-loops "
+                   "-loop-simplify "
+                   "-lcssa-verification "
+                   "-lcssa "
+                   "-scalar-evolution "
+                   "-indvars "
+                   "-loop-idiom "
+                   "-loop-deletion "
+                   "-loop-unroll "
+                   "-mldst-motion "
+                   "-aa "
+                   "-memdep "
+                   "-lazy-branch-prob "
+                   "-lazy-block-freq "
+                   "-opt-remark-emitter "
+                   "-gvn "
+                   "-basicaa "
+                   "-aa "
+                   "-memdep "
+                   "-memcpyopt "
+                   "-sccp "
+                   "-domtree "
+                   "-demanded-bits "
+                   "-bdce "
+                   "-basicaa "
+                   "-aa ";
+         recipe += " -" + expandMemOps_plugin_name +
+                   " -dse -loop-unroll "
+                   /// "-instcombine "
+                   "-lazy-value-info "
+                   "-jump-threading "
+                   "-correlated-propagation "
+                   "-domtree "
+                   "-basicaa "
+                   "-aa "
+                   "-memdep "
+                   "-dse "
+                   "-loops "
+                   "-loop-simplify "
+                   "-lcssa-verification "
+                   "-lcssa "
+                   "-aa "
+                   "-scalar-evolution "
+                   "-licm "
+                   "-postdomtree "
+                   "-adce "
+                   "-simplifycfg "
+                   "-domtree "
+                   "-basicaa "
+                   "-aa ";
+         recipe += " -" + expandMemOps_plugin_name +
+                   " -loop-unroll "
+                   /// "-instcombine "
+                   "-barrier "
+                   "-elim-avail-extern "
+                   "-basiccg "
+                   "-rpo-functionattrs "
+                   "-globals-aa "
+                   "-float2int "
+                   "-domtree "
+                   "-loops "
+                   "-loop-simplify "
+                   "-lcssa-verification "
+                   "-lcssa "
+                   "-basicaa "
+                   "-aa "
+                   "-scalar-evolution "
+                   "-loop-rotate "
+                   "-loop-accesses "
+                   "-lazy-branch-prob "
+                   "-lazy-block-freq "
+                   "-opt-remark-emitter "
+                   "-loop-distribute "
+                   "-loop-simplify "
+                   "-lcssa-verification "
+                   "-lcssa "
+                   "-branch-prob "
+                   "-block-freq "
+                   "-scalar-evolution "
+                   "-basicaa "
+                   "-aa "
+                   "-loop-accesses "
+                   "-demanded-bits "
+                   "-lazy-branch-prob "
+                   "-lazy-block-freq "
+                   "-opt-remark-emitter "
+                   /// "-loop-vectorize "
+                   "-loop-simplify "
+                   "-scalar-evolution "
+                   "-aa "
+                   "-loop-accesses "
+                   "-loop-load-elim "
+                   "-basicaa "
+                   "-aa ";
+         recipe += " -" + expandMemOps_plugin_name +
+                   " -dse -loop-unroll "
+                   /// "-instcombine "
+                   "-simplifycfg "
+                   "-domtree "
+                   "-basicaa "
+                   "-aa ";
+         recipe += " -" + expandMemOps_plugin_name +
+                   " -dse -loop-unroll "
+                   /// "-instcombine "
+                   "-loops "
+                   "-loop-simplify "
+                   "-lcssa-verification "
+                   "-lcssa "
+                   "-scalar-evolution "
+                   "-loop-unroll ";
+         recipe += " -" + expandMemOps_plugin_name +
+                   " -dse -loop-unroll "
+                   /// "-instcombine "
+                   "-loop-simplify "
+                   "-lcssa-verification "
+                   "-lcssa "
+                   "-scalar-evolution "
+                   "-licm "
+                   "-alignment-from-assumptions "
+                   "-strip-dead-prototypes "
+                   "-globaldce "
+                   "-constmerge "
+                   "-domtree "
+                   "-loops "
+                   "-branch-prob "
+                   "-block-freq "
+                   "-loop-simplify "
+                   "-lcssa-verification "
+                   "-lcssa "
+                   "-basicaa "
+                   "-aa "
+                   "-scalar-evolution "
+                   "-branch-prob "
+                   "-block-freq "
+                   "-loop-sink "
+                   "-instsimplify ";
+      }
+      else
+      {
+         const auto opt_level = WriteOptimizationLevel(optimization_level);
+         recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
+         recipe += " -" + expandMemOps_plugin_name + "-loop-unroll -simplifycfg ";
+      }
+   }
+   else if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG5)
+   {
+      const auto opt_level = WriteOptimizationLevel(optimization_level);
+      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
+      recipe += " -" + expandMemOps_plugin_name + "-loop-unroll -simplifycfg ";
+   }
+   else if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG6)
+   {
+      const auto opt_level = WriteOptimizationLevel(optimization_level);
+      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
+      recipe += " -" + expandMemOps_plugin_name + "-loop-unroll -simplifycfg ";
+   }
+   else if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG7)
+   {
+      const auto opt_level = WriteOptimizationLevel(optimization_level);
+      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
+      recipe += " -" + expandMemOps_plugin_name + "-loop-unroll -simplifycfg ";
+   }
+   else
+      THROW_ERROR("Clang compiler not yet supported");
+   return " " + recipe + " ";
 }
 
 void GccWrapper::CheckGccCompatibleVersion(const std::string& gcc_version, const std::string& plugin_version)
