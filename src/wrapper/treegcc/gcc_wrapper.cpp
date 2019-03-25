@@ -588,7 +588,10 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
       std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Compiling file " + source_file.second);
       /// create obj
-      CompileFile(source_file.first, source_file.second, gcc_compiling_parameters, enable_LTO ? GccWrapper_CompilerMode::CM_LTO : GccWrapper_CompilerMode::CM_STD);
+      auto compiler_parameters = gcc_compiling_parameters;
+      if(enable_LTO)
+         boost::replace_all(compiler_parameters, "-O"+WriteOptimizationLevel(optimization_level), "");
+      CompileFile(source_file.first, source_file.second, compiler_parameters, enable_LTO ? GccWrapper_CompilerMode::CM_LTO : GccWrapper_CompilerMode::CM_STD);
       if(!Param->isOption(OPT_gcc_E) and !Param->isOption(OPT_gcc_S) and !enable_LTO)
       {
          if(!(boost::filesystem::exists(boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix))))
@@ -2947,26 +2950,26 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimizat
       {
          const auto opt_level = WriteOptimizationLevel(optimization_level);
          recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
-         recipe += " -" + expandMemOps_plugin_name + "-loop-unroll -simplifycfg ";
+         recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
       }
    }
    else if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG5)
    {
       const auto opt_level = WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name + "-loop-unroll -simplifycfg ";
+      recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
    }
    else if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG6)
    {
       const auto opt_level = WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name + "-loop-unroll -simplifycfg ";
+      recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
    }
    else if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG7)
    {
       const auto opt_level = WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name + "-loop-unroll -simplifycfg ";
+      recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
    }
    else
       THROW_ERROR("Clang compiler not yet supported");
