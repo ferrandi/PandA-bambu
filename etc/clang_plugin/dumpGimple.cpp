@@ -632,9 +632,17 @@ namespace llvm
             llvm::ModuleSlotTracker MST(currentFunction->getParent());
             MST.incorporateFunction(*currentFunction);
             auto id = MST.getLocalSlot(arg);
-            assert(id >= 0);
-            snprintf(buffer, LOCAL_BUFFER_LEN, "P%d", id);
-            declname = buffer;
+            if(id >= 0)
+            {
+               snprintf(buffer, LOCAL_BUFFER_LEN, "P%d", id);
+               declname = buffer;
+            }
+            else
+            {
+               assert(llvm2index.find(t) != llvm2index.end());
+               snprintf(buffer, LOCAL_BUFFER_LEN, "Pd%d", llvm2index.find(t)->second);
+               declname = buffer;
+            }
          }
          if(identifierTable.find(declname) == identifierTable.end())
             identifierTable.insert(declname);

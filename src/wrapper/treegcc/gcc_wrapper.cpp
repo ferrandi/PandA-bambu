@@ -588,10 +588,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
       std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Compiling file " + source_file.second);
       /// create obj
-      auto compiler_parameters = gcc_compiling_parameters;
-      if(enable_LTO)
-         boost::replace_all(compiler_parameters, "-O"+WriteOptimizationLevel(optimization_level), "");
-      CompileFile(source_file.first, source_file.second, compiler_parameters, enable_LTO ? GccWrapper_CompilerMode::CM_LTO : GccWrapper_CompilerMode::CM_STD);
+      CompileFile(source_file.first, source_file.second, gcc_compiling_parameters, enable_LTO ? GccWrapper_CompilerMode::CM_LTO : GccWrapper_CompilerMode::CM_STD);
       if(!Param->isOption(OPT_gcc_E) and !Param->isOption(OPT_gcc_S) and !enable_LTO)
       {
          if(!(boost::filesystem::exists(boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix))))
@@ -2745,10 +2742,10 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimizat
 #endif
    if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG4)
    {
-      if(optimization_level == GccWrapper_OptimizationSet::O2)
+      if(optimization_level == GccWrapper_OptimizationSet::O2 || optimization_level == GccWrapper_OptimizationSet::O3)
       {
-         recipe += " -targetlibinfo "
-                   "-tti "
+         recipe += " -tti "
+                   "-targetlibinfo "
                    "-tbaa "
                    "-scoped-noalias "
                    "-assumption-cache-tracker "
@@ -2773,6 +2770,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimizat
                    "-prune-eh "
                    "-inline "
                    "-functionattrs "
+                   "-argpromotion "
                    "-domtree "
                    "-sroa "
                    "-early-cse "
@@ -2945,6 +2943,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimizat
                    "-block-freq "
                    "-loop-sink "
                    "-instsimplify ";
+         recipe += recipe;
       }
       else
       {
