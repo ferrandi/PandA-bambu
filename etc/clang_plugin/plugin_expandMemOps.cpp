@@ -63,6 +63,8 @@ namespace llvm
    struct CLANG_VERSION_SYMBOL(_plugin_expandMemOps);
 }
 
+#define PEEL_THRESHOLD 16
+
 namespace llvm
 {
    struct CLANG_VERSION_SYMBOL(_plugin_expandMemOps) : public ModulePass
@@ -94,8 +96,23 @@ namespace llvm
                      return elType->isIntegerTy();
                   }
                }
+               else if(pointee->isStructTy())
+               {
+                  auto st = cast<llvm::StructType>(pointee);
+                  if(st->getNumElements() == 1 && st->getElementType(0)->isArrayTy())
+                  {
+                     auto elType = llvm::cast<llvm::ArrayType>(st->getElementType(0))->getArrayElementType();
+                     auto size = elType->isSized() ? DL->getTypeAllocSizeInBits(elType) : 8ULL;
+                     if(size <= Align * 8)
+                     {
+                        Align = size / 8;
+                        return elType->isIntegerTy();
+                     }
+                  }
+               }
             }
          }
+
          return false;
       }
 
@@ -168,13 +185,24 @@ namespace llvm
 #else
          do_unrolling = true;
 #endif
-         if(do_unrolling && !SrcIsVolatile && !DstIsVolatile && llvm::dyn_cast<llvm::ConstantExpr>(SrcAddr) && cast<llvm::ConstantExpr>(SrcAddr)->getOpcode() == llvm::Instruction::BitCast &&
-            dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0)) && dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0))->isConstant() && llvm::dyn_cast<llvm::BitCastInst>(DstAddr) && PeelCandidate)
+         bool srcIsAlloca = false;
+         bool srcIsGlobal = false;
+         if(llvm::dyn_cast<llvm::BitCastInst>(SrcAddr) && dyn_cast<llvm::AllocaInst>(llvm::dyn_cast<llvm::BitCastInst>(SrcAddr)->getOperand(0)))
+         {
+            srcIsAlloca = true;
+            do_unrolling = do_unrolling && (LoopEndCount <= PEEL_THRESHOLD);
+         }
+         else if(llvm::dyn_cast<llvm::ConstantExpr>(SrcAddr) && cast<llvm::ConstantExpr>(SrcAddr)->getOpcode() == llvm::Instruction::BitCast && dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0)))
+         {
+            srcIsGlobal = true;
+            do_unrolling = do_unrolling && (dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0))->isConstant() || (LoopEndCount <= PEEL_THRESHOLD));
+         }
+         if(do_unrolling && !SrcIsVolatile && !DstIsVolatile && (srcIsAlloca || srcIsGlobal) && llvm::dyn_cast<llvm::BitCastInst>(DstAddr) && PeelCandidate)
          {
             llvm::PointerType* SrcOpType = llvm::PointerType::get(LoopOpType, SrcAS);
             llvm::PointerType* DstOpType = llvm::PointerType::get(LoopOpType, DstAS);
             llvm::IRBuilder<> Builder(InsertBefore);
-            auto srcAddress = Builder.CreateBitCast(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0), SrcOpType);
+            auto srcAddress = Builder.CreateBitCast(srcIsAlloca ? llvm::dyn_cast<llvm::BitCastInst>(SrcAddr)->getOperand(0) : cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0), SrcOpType);
             auto dstAddress = Builder.CreateBitCast(llvm::dyn_cast<llvm::BitCastInst>(DstAddr)->getOperand(0), DstOpType);
             for(auto LI = 0u; LI < LoopEndCount; ++LI)
             {
@@ -199,12 +227,10 @@ namespace llvm
             llvm::PointerType* DstOpType = llvm::PointerType::get(LoopOpType, DstAS);
             if(SrcAddr->getType() != SrcOpType)
             {
-               llvm::errs() << "Cast src\n";
                SrcAddr = PLBuilder.CreateBitCast(SrcAddr, SrcOpType);
             }
             if(DstAddr->getType() != DstOpType)
             {
-               llvm::errs() << "Cast dst\n";
                DstAddr = PLBuilder.CreateBitCast(DstAddr, DstOpType);
             }
 
