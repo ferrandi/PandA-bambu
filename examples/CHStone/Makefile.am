@@ -134,9 +134,11 @@ CHStone_xc7z020-1clg484-VVD_15.0_O3_sdc.tex\
 xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang4.sh\
 xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang5.sh\
 xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang6.sh\
+xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang7.sh\
 CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang4.tex\
 CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang5.tex\
 CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang6.tex\
+CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang7.tex\
 xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC5.sh\
 xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC6.sh\
 xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC7.sh\
