@@ -36,13 +36,18 @@
  * @author Marco Siracusa <marco.siracusa@mail.polimi.it>
  *
  */
+#include "plugin_includes.hpp"
 
 #include <llvm/Analysis/ScalarEvolution.h>
 #include <llvm/Analysis/ScalarEvolutionExpressions.h>
 #include <llvm/IR/IntrinsicInst.h>
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/IR/PassManager.h"
 #include <llvm/Support/Debug.h>
 #include <llvm/Support/raw_ostream.h>
+#include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include <llvm/Transforms/Utils/Cloning.h>
+#include "llvm/Analysis/TargetTransformInfo.h"
 
 #define DEBUG_TYPE "csroa"
 
@@ -1344,7 +1349,7 @@ void CustomScalarReplacementOfAggregatesPass::cleanup(std::map<llvm::Function*, 
          }
          else
          {
-            llvm::errs() << "Funsction use should be call\n";
+            llvm::errs() << "Function use should be call\n";
             exit(-1);
          }
       }
@@ -1358,3 +1363,63 @@ CustomScalarReplacementOfAggregatesPass* createCustomScalarReplacementOfAggregat
 {
    return new CustomScalarReplacementOfAggregatesPass(kernel_name);
 }
+
+namespace llvm
+{
+   struct CLANG_VERSION_SYMBOL(_plugin_CSROA);
+}
+
+namespace llvm
+{
+   cl::opt<std::string> TopFunctionName_CSROAP("panda-KN", cl::desc("Specify the name of the top function"), cl::value_desc("name of the top function"));
+   struct CLANG_VERSION_SYMBOL(_plugin_CSROA) : public CustomScalarReplacementOfAggregatesPass
+   {
+
+    public:
+      static char ID;
+      CLANG_VERSION_SYMBOL(_plugin_CSROA)() : CustomScalarReplacementOfAggregatesPass(TopFunctionName_CSROAP, ID)
+      {
+         initializeTargetTransformInfoWrapperPassPass(*PassRegistry::getPassRegistry());
+         initializeLoopPassPass(*PassRegistry::getPassRegistry());
+      }
+
+      bool runOnModule(Module& M) override
+      {
+         return CustomScalarReplacementOfAggregatesPass::runOnModule(M);
+      }
+      StringRef getPassName() const override
+      {
+         return CLANG_VERSION_STRING(_plugin_CSROA);
+      }
+   };
+
+   char CLANG_VERSION_SYMBOL(_plugin_CSROA)::ID = 0;
+
+} // namespace llvm
+
+#ifndef _WIN32
+      static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA)> XPass(CLANG_VERSION_STRING(_plugin_CSROA), "Custom SROA", false /* Only looks at CFG */, false /* Analysis Pass */);
+#endif
+
+      // This function is of type PassManagerBuilder::ExtensionFn
+      static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
+      {
+         PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA)());
+      }
+#if ADD_RSP
+      // These constructors add our pass to a list of global extensions.
+      static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_CSROA_Ox)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
+#endif
+
+#ifdef _WIN32
+      using namespace llvm;
+
+      INITIALIZE_PASS_BEGIN(clang7_plugin_CSROA, "clang7_plugin_CSROA", "Custom SROA", false, false)
+      INITIALIZE_PASS_END(clang7_plugin_CSROA, "clang7_plugin_CSROA", "Custom SROA", false, false)
+      namespace llvm
+      {
+         void clang7_plugin_CSROA_init()
+         {
+         }
+      } // namespace llvm
+#endif
