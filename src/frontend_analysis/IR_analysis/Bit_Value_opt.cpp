@@ -1170,11 +1170,19 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         else if(precision == 1 && s0 == "1" && s1 == "0")
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Cond expr with true and false");
+                           tree_nodeRef ga_nop = IRman->CreateNopExpr(me->op0, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type);
+                           B->PushBefore(ga_nop, stmt);
+                           modified = true;
+#ifndef NDEBUG
+                           AppM->RegisterTransformation(GetName(), ga_nop);
+#endif
+                           tree_nodeRef nop_ga_var = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
+
                            const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
                            for(const auto& use : StmtUses)
                            {
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage before: " + use.first->ToString());
-                              TM->ReplaceTreeNode(use.first, ga->op0, me->op0);
+                              TM->ReplaceTreeNode(use.first, ga->op0, nop_ga_var);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage after: " + use.first->ToString());
                               modified = true;
                            }
@@ -1194,11 +1202,14 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                            const auto new_ssa = IRman->CreateNotExpr(me->op0, blocRef());
                            const auto new_stmt = GetPointer<const ssa_name>(GET_CONST_NODE(new_ssa))->CGetDefStmt();
                            B->PushBefore(new_stmt, stmt);
+                           tree_nodeRef ga_nop = IRman->CreateNopExpr(new_ssa, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type);
+                           B->PushBefore(ga_nop, stmt);
+                           tree_nodeRef nop_ga_var = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
                            const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
                            for(const auto& use : StmtUses)
                            {
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage before: " + use.first->ToString());
-                              TM->ReplaceTreeNode(use.first, ga->op0, new_ssa);
+                              TM->ReplaceTreeNode(use.first, ga->op0, nop_ga_var);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage after: " + use.first->ToString());
                               modified = true;
                            }

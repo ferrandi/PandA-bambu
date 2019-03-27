@@ -2620,6 +2620,76 @@ bool tree_helper::is_a_complex(const tree_managerConstRef& TM, const unsigned in
    return Type->get_kind() == complex_type_K;
 }
 
+
+//static void getBuiltinFieldTypes(const tree_nodeConstRef& type, std::list<tree_nodeConstRef> &listOfTypes, std::unordered_set<unsigned int> &already_visited)
+//{
+//   if(already_visited.find(type->index) != already_visited.end())
+//      return;
+//   already_visited.insert(type->index);
+//   if(type->get_kind() == record_type_K)
+//   {
+//      const auto* rt = GetPointer<const record_type>(type);
+//      for(const auto& fld : rt->list_of_flds)
+//      {
+//         if(GET_CONST_NODE(fld)->get_kind() == type_decl_K)
+//         {
+//            continue;
+//         }
+//         if(GET_CONST_NODE(fld)->get_kind() == function_decl_K)
+//         {
+//            continue;
+//         }
+//         auto fdType = tree_helper::CGetType(GET_CONST_NODE(fld));
+//         if(fdType->get_kind() == record_type_K || fdType->get_kind() == union_type_K || fdType->get_kind() == array_type_K || fdType->get_kind() == vector_type_K)
+//            getBuiltinFieldTypes(fdType, listOfTypes, already_visited);
+//         else
+//            listOfTypes.push_back(fdType);
+//      }
+//   }
+//   else if(type->get_kind() == union_type_K)
+//   {
+//      const auto* ut = GetPointer<const union_type>(type);
+//      for(const auto& fld : ut->list_of_flds)
+//      {
+//         auto fdType = tree_helper::CGetType(GET_CONST_NODE(fld));
+//         if(fdType->get_kind() == record_type_K || fdType->get_kind() == union_type_K || fdType->get_kind() == array_type_K || fdType->get_kind() == vector_type_K)
+//            getBuiltinFieldTypes(fdType, listOfTypes, already_visited);
+//         else
+//            listOfTypes.push_back(fdType);
+//      }
+//   }
+//   else if(type->get_kind() == array_type_K)
+//   {
+//      auto* at = GetPointer<const array_type>(type);
+//      THROW_ASSERT(at->elts, "elements type expected");
+//      getBuiltinFieldTypes(GET_NODE(at->elts), listOfTypes, already_visited);
+//   }
+//   else if(type->get_kind() == vector_type_K)
+//   {
+//      auto* vt = GetPointer<const vector_type>(type);
+//      THROW_ASSERT(vt->elts, "elements type expected");
+//      getBuiltinFieldTypes(GET_NODE(vt->elts), listOfTypes, already_visited);
+//   }
+//   else
+//      listOfTypes.push_back(type);
+//}
+
+//static bool same_size_fields(const tree_nodeConstRef& t)
+//{
+//   std::list<tree_nodeConstRef> listOfTypes;
+//   std::unordered_set<unsigned int> already_visited;
+//   getBuiltinFieldTypes(t, listOfTypes, already_visited);
+//   auto sizeFlds = 0u;
+//   for(auto fldType : listOfTypes)
+//   {
+//      if(!sizeFlds)
+//         sizeFlds = tree_helper::Size(fldType);
+//      else if(sizeFlds != tree_helper::Size(fldType))
+//         return false;
+//   }
+//   return true;
+//}
+
 bool tree_helper::is_an_array(const tree_managerConstRef& TM, const unsigned int index)
 {
    const tree_nodeRef T = TM->get_tree_node_const(index);
@@ -2664,6 +2734,7 @@ bool tree_helper::is_an_array(const tree_managerConstRef& TM, const unsigned int
       {
          return false;
       }
+//      return same_size_fields(Type);
    }
    return false;
 }
