@@ -82,7 +82,7 @@ class CustomScalarReplacementOfAggregatesPass : public llvm::ModulePass
    char ID;
 
  private:
-   const std::string & kernel_name;
+   const std::string& kernel_name;
 
    call_set_ty visited_memcpy;
    inst_set_ty inst_to_remove;
@@ -93,10 +93,10 @@ class CustomScalarReplacementOfAggregatesPass : public llvm::ModulePass
    std::map<llvm::Argument*, std::vector<llvm::Argument*>> exp_args_map;
 
  public:
-   explicit CustomScalarReplacementOfAggregatesPass(const std::string &kernel_name, char &_ID) : llvm::ModulePass(_ID), kernel_name(kernel_name)
+   explicit CustomScalarReplacementOfAggregatesPass(const std::string& kernel_name, char& _ID) : llvm::ModulePass(_ID), kernel_name(kernel_name)
    {
    }
-   explicit CustomScalarReplacementOfAggregatesPass(const std::string &kernel_name) : llvm::ModulePass(ID), kernel_name(kernel_name)
+   explicit CustomScalarReplacementOfAggregatesPass(const std::string& kernel_name) : llvm::ModulePass(ID), kernel_name(kernel_name)
    {
    }
 
