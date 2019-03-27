@@ -46,7 +46,7 @@
 
 #define DEBUG_TYPE "csroa"
 
-#include "CustomScalarReplacementOfAggregatesPass.hpp"
+#include "plugin_CSROA.hpp"
 
 
 bool CustomScalarReplacementOfAggregatesPass::runOnModule(llvm::Module &module) {
