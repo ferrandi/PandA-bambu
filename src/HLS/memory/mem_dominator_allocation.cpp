@@ -742,7 +742,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    for(const auto& funID : getFunctionAllocationOrder(top_functions))
    {
       memory_allocation_map[funID];
-      for(const auto& mem_map : memory_allocation_map.at(funID))
+      for(auto& mem_map : memory_allocation_map.at(funID))
       {
          unsigned int var_index = mem_map.first;
          THROW_ASSERT(var_index, "null var index unexpected");
@@ -810,6 +810,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   }
                }
             }
+            if(memory_allocation_policy==MemoryAllocation_Policy::INTERN_UNALIGNED && !HLSMgr->Rmem->is_sds_var(var_index))
+               mem_map.second = false;
          }
          else
          {
