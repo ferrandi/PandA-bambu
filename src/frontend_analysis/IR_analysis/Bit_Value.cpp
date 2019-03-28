@@ -70,6 +70,8 @@
 
 /// HLS include
 #include "hls_manager.hpp"
+#include "hls_target.hpp"
+
 
 /// HLS/memory include
 #include "memory.hpp"
@@ -838,6 +840,39 @@ unsigned int Bit_Value::pointer_resizing(unsigned int output_id) const
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Pointer bitsize " + STR(address_bitsize));
    }
    return address_bitsize;
+}
+
+unsigned int Bit_Value::lsb_to_zero() const
+{
+   auto* hm = GetPointer<HLS_manager>(AppM);
+   if(hm and hm->Rmem)
+   {
+      unsigned int align = hm->Rmem->get_internal_base_address_alignment();
+      auto index=0u;
+      bool found= false;
+      for(;index < AppM->get_address_bitsize(); ++index)
+         if((1ULL<<index)&align)
+         {
+            found = true;
+            break;
+         }
+      return found ? index : 0;
+   }
+   else if(hm)
+   {
+      unsigned int align = (2*hm->get_HLS_target()->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max"))/8;
+      auto index=0u;
+      bool found= false;
+      for(;index < AppM->get_address_bitsize(); ++index)
+         if((1ULL<<index)&align)
+         {
+            found = true;
+            break;
+         }
+      return found ? index : 0;
+   }
+   else
+      return 0;
 }
 
 Bit_Value::Bit_Value(const ParameterConstRef params, const application_managerRef AM, unsigned int f_id, const DesignFlowManagerConstRef dfm)

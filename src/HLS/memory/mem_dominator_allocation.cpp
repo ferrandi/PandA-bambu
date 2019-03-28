@@ -194,11 +194,11 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
       const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(fun_id);
       const BehavioralHelperConstRef BH = function_behavior->CGetBehavioralHelper();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Analyzing function: " + BH->get_function_name());
-      if(function_behavior->get_has_globals())
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Pointers not resolved: it has global variables");
-         all_pointers_resolved = false;
-      }
+//      if(function_behavior->get_has_globals())
+//      {
+//         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Pointers not resolved: it has global variables");
+//         all_pointers_resolved = false;
+//      }
       if(function_behavior->get_has_undefined_function_receiving_pointers())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Pointers not resolved: it has undefined function receiving pointers");
