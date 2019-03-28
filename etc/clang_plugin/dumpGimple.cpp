@@ -632,9 +632,17 @@ namespace llvm
             llvm::ModuleSlotTracker MST(currentFunction->getParent());
             MST.incorporateFunction(*currentFunction);
             auto id = MST.getLocalSlot(arg);
-            assert(id >= 0);
-            snprintf(buffer, LOCAL_BUFFER_LEN, "P%d", id);
-            declname = buffer;
+            if(id >= 0)
+            {
+               snprintf(buffer, LOCAL_BUFFER_LEN, "P%d", id);
+               declname = buffer;
+            }
+            else
+            {
+               assert(llvm2index.find(t) != llvm2index.end());
+               snprintf(buffer, LOCAL_BUFFER_LEN, "Pd%d", llvm2index.find(t)->second);
+               declname = buffer;
+            }
          }
          if(identifierTable.find(declname) == identifierTable.end())
             identifierTable.insert(declname);
@@ -2729,9 +2737,8 @@ namespace llvm
          if(identifierTable.find(fdName) == identifierTable.end())
             identifierTable.insert(fdName);
          index2field_decl[std::make_pair(scpe, pos)].name = assignCode(identifierTable.find(fdName)->c_str(), GT(IDENTIFIER_NODE));
-         auto fty = reinterpret_cast<const llvm::Type*>(t);
-         assert(CheckSignedTag(fty) == 0);
-         index2field_decl[std::make_pair(scpe, pos)].type = assignCodeType(fty);
+         assert(CheckSignedTag(reinterpret_cast<const llvm::Type*>(t)) == 0);
+         index2field_decl[std::make_pair(scpe, pos)].type = assignCodeType(scty->getElementType(pos));
          index2field_decl[std::make_pair(scpe, pos)].scpe = assignCodeAuto(scpe);
          index2field_decl[std::make_pair(scpe, pos)].size = TYPE_SIZE(t);
          index2field_decl[std::make_pair(scpe, pos)].algn = TYPE_ALIGN(t);
@@ -4952,8 +4959,14 @@ namespace llvm
       uint64_t BytesCopied = LoopEndCount * LoopOpSize;
       uint64_t RemainingBytes = CopyLen->getZExtValue() - BytesCopied;
 
-      if(!SrcIsVolatile && !DstIsVolatile && llvm::dyn_cast<llvm::ConstantExpr>(SrcAddr) && cast<llvm::ConstantExpr>(SrcAddr)->getOpcode() == llvm::Instruction::BitCast && dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0)) &&
-         dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0))->isConstant() && llvm::dyn_cast<llvm::BitCastInst>(DstAddr) && PeelCandidate)
+      bool do_unrolling;
+#if __clang_major__ == 7
+      do_unrolling = false;
+#else
+      do_unrolling = true;
+#endif
+      if(do_unrolling && !SrcIsVolatile && !DstIsVolatile && llvm::dyn_cast<llvm::ConstantExpr>(SrcAddr) && cast<llvm::ConstantExpr>(SrcAddr)->getOpcode() == llvm::Instruction::BitCast &&
+         dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0)) && dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0))->isConstant() && llvm::dyn_cast<llvm::BitCastInst>(DstAddr) && PeelCandidate)
       {
          llvm::PointerType* SrcOpType = llvm::PointerType::get(LoopOpType, SrcAS);
          llvm::PointerType* DstOpType = llvm::PointerType::get(LoopOpType, DstAS);
@@ -5022,7 +5035,7 @@ namespace llvm
 
          for(auto OpTy : RemainingOps)
          {
-            // Calaculate the new index
+            // Calculate the new index
             unsigned OperandSize = getLoopOperandSizeInBytesLocal(OpTy);
             uint64_t GepIndex = BytesCopied / OperandSize;
             assert(GepIndex * OperandSize == BytesCopied && "Division should have no Remainder!");

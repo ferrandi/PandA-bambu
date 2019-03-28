@@ -61,7 +61,8 @@ namespace llvm
 
 namespace llvm
 {
-   cl::opt<std::string> TopFunctionName_DNEGP("panda-TFN", cl::desc("Specify the name of the top function"), cl::value_desc("name of the top function"));
+   cl::opt<std::string> TopFunctionName_TFP("panda-TFN", cl::desc("Specify the name of the top function"), cl::value_desc("name of the top function"));
+   cl::opt<bool> Internalize_TFP("panda-Internalize", cl::init(true), cl::desc("Specify if the global variables has to be internalize"));
    struct CLANG_VERSION_SYMBOL(_plugin_topfname) : public ModulePass
    {
       static char ID;
@@ -101,15 +102,16 @@ namespace llvm
       {
          bool changed = false;
          bool hasTopFun = false;
-         if(TopFunctionName_DNEGP.empty())
+         if(TopFunctionName_TFP.empty())
             return false;
+         /// check if the translation unit has the top function name
          for(auto& fun : M.getFunctionList())
          {
             if(!fun.isIntrinsic() && !fun.isDeclaration())
             {
                auto funName = fun.getName();
                auto demangled = getDemangled(funName);
-               if(!fun.hasInternalLinkage() && (funName == TopFunctionName_DNEGP || demangled == TopFunctionName_DNEGP))
+               if(!fun.hasInternalLinkage() && (funName == TopFunctionName_TFP || demangled == TopFunctionName_TFP))
                {
                   hasTopFun = true;
                }
@@ -117,29 +119,31 @@ namespace llvm
          }
          if(!hasTopFun)
             return changed;
-            /// check if the translation unit has the top function name
 #if PRINT_DBG_MSG
-         llvm::errs() << "Top function name: " << TopFunctionName_DNEGP << "\n";
+         llvm::errs() << "Top function name: " << TopFunctionName_TFP << "\n";
 #endif
-         for(auto& globalVar : M.getGlobalList())
+         if(Internalize_TFP)
          {
-            std::string varName = std::string(globalVar.getName());
-#if PRINT_DBG_MSG
-            llvm::errs() << "Found global name: " << varName << "\n";
-#endif
-            if(varName == "llvm.global_ctors" || varName == "llvm.global_dtors" || varName == "llvm.used" || varName == "llvm.compiler.used")
+            for(auto& globalVar : M.getGlobalList())
             {
+               std::string varName = std::string(globalVar.getName());
 #if PRINT_DBG_MSG
-               llvm::errs() << "Global intrinsic skipped: " << globalVar.getName() << "\n";
+               llvm::errs() << "Found global name: " << varName << "\n";
 #endif
-            }
-            else if(!globalVar.hasInternalLinkage())
-            {
+               if(varName == "llvm.global_ctors" || varName == "llvm.global_dtors" || varName == "llvm.used" || varName == "llvm.compiler.used")
+               {
 #if PRINT_DBG_MSG
-               llvm::errs() << "it becomes internal\n";
+                  llvm::errs() << "Global intrinsic skipped: " << globalVar.getName() << "\n";
 #endif
-               changed = true;
-               globalVar.setLinkage(llvm::GlobalValue::InternalLinkage);
+               }
+               else if(!globalVar.hasInternalLinkage() && !globalVar.hasExternalLinkage() && !globalVar.hasExternalWeakLinkage())
+               {
+#if PRINT_DBG_MSG
+                  llvm::errs() << "it becomes internal\n";
+#endif
+                  changed = true;
+                  globalVar.setLinkage(llvm::GlobalValue::InternalLinkage);
+               }
             }
          }
          for(auto& fun : M.getFunctionList())
@@ -157,7 +161,7 @@ namespace llvm
 #if PRINT_DBG_MSG
                llvm::errs() << "Found function: " << funName << "|" << demangled << "\n";
 #endif
-               if(!fun.hasInternalLinkage() && funName != TopFunctionName_DNEGP && demangled != TopFunctionName_DNEGP && !is_builtin_fn(funName) && !is_builtin_fn(demangled))
+               if(!fun.hasInternalLinkage() && funName != TopFunctionName_TFP && demangled != TopFunctionName_TFP && !is_builtin_fn(funName) && !is_builtin_fn(demangled))
                {
 #if PRINT_DBG_MSG
                   llvm::errs() << "it becomes internal\n";
@@ -198,17 +202,20 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
 {
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)());
 }
+
+#if ADD_RSP
 // These constructors add our pass to a list of global extensions.
 static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_topfname_Ox)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
+#endif
 
 #ifdef _WIN32
 using namespace llvm;
 
-INITIALIZE_PASS_BEGIN(clang6_plugin_topfname, "clang6_plugin_topfname", "Make all private/static but the top function", false, false)
-INITIALIZE_PASS_END(clang6_plugin_topfname, "clang6_plugin_topfname", "Make all private/static but the top function", false, false)
+INITIALIZE_PASS_BEGIN(clang7_plugin_topfname, "clang7_plugin_topfname", "Make all private/static but the top function", false, false)
+INITIALIZE_PASS_END(clang7_plugin_topfname, "clang7_plugin_topfname", "Make all private/static but the top function", false, false)
 namespace llvm
 {
-   void clang6_plugin_topfname_init()
+   void clang7_plugin_topfname_init()
    {
    }
 } // namespace llvm

@@ -5437,16 +5437,19 @@ namespace RangeAnalysis
                op->getSink()->setRange(Range(Regular, bw, smin, oUpper));
             }
          }
-         if(oUpper.eq(Max) && nUpper.ne(Max))
+         if(!op->getSink()->getRange().isAnti())
          {
-            op->getSink()->setRange(Range(Regular, bw, op->getSink()->getRange().getLower(), nUpper));
-         }
-         else
-         {
-            const APInt& smax = APIntOps::smax(oUpper, nUpper);
-            if(oUpper.ne(smax))
+            if(oUpper.eq(Max) && nUpper.ne(Max))
             {
-               op->getSink()->setRange(Range(Regular, bw, op->getSink()->getRange().getLower(), smax));
+               op->getSink()->setRange(Range(Regular, bw, op->getSink()->getRange().getLower(), nUpper));
+            }
+            else
+            {
+               const APInt& smax = APIntOps::smax(oUpper, nUpper);
+               if(oUpper.ne(smax))
+               {
+                  op->getSink()->setRange(Range(Regular, bw, op->getSink()->getRange().getLower(), smax));
+               }
             }
          }
       }
