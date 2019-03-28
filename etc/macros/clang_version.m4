@@ -695,7 +695,7 @@ PLUGIN_TEST
          build_I386_CLANG5_SSA_PLUGIN=yes;
          build_I386_CLANG5_SSA_PLUGINCPP=yes;
          build_I386_CLANG5_EXPANDMEMOPS_PLUGIN=yes;
-         build_I386_CLANG5_CSROA_PLUGIN=no;
+         build_I386_CLANG5_CSROA_PLUGIN=yes;
          build_I386_CLANG5_TOPFNAME_PLUGIN=yes;
          build_I386_CLANG5_ASTANALYZER_PLUGIN=yes;
       done
@@ -1085,7 +1085,7 @@ PLUGIN_TEST
          build_I386_CLANG6_SSA_PLUGIN=yes;
          build_I386_CLANG6_SSA_PLUGINCPP=yes;
          build_I386_CLANG6_EXPANDMEMOPS_PLUGIN=yes;
-         build_I386_CLANG6_CSROA_PLUGIN=no;
+         build_I386_CLANG6_CSROA_PLUGIN=yes;
          build_I386_CLANG6_TOPFNAME_PLUGIN=yes;
          build_I386_CLANG6_ASTANALYZER_PLUGIN=yes;
       done

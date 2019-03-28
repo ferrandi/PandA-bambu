@@ -88,6 +88,7 @@ class CustomScalarReplacementOfAggregatesPass : public llvm::ModulePass
    inst_set_ty inst_to_remove;
    fun_to_args_map_ty args_to_remove;
    fun_to_alloca_map_ty alloca_to_remove;
+   const llvm::DataLayout* DL;
 
    // Map specifying how arguments have been expanded
    std::map<llvm::Argument*, std::vector<llvm::Argument*>> exp_args_map;

@@ -55,6 +55,7 @@
 
 bool CustomScalarReplacementOfAggregatesPass::runOnModule(llvm::Module& module)
 {
+   DL = &module.getDataLayout();
    llvm::Function* kernel_function = module.getFunction(kernel_name);
 
    assert(kernel_function != nullptr && "Unknown kernel function!");
@@ -342,7 +343,11 @@ void CustomScalarReplacementOfAggregatesPass::expandValue(llvm::Value* use, llvm
 
             llvm::Type* new_alloca_type = llvm::PointerType::getUnqual(element);
             std::string new_alloca_name = alloca_inst->getName().str() + ".csroa.alloca." + std::to_string(idx);
-            llvm::AllocaInst* new_alloca_inst = new llvm::AllocaInst(/*new_alloca_type*/ element, new_alloca_name, alloca_inst);
+            llvm::AllocaInst* new_alloca_inst = new llvm::AllocaInst(/*new_alloca_type*/ element,
+#if __clang_major__ > 4
+                                                                     DL->getAllocaAddrSpace(),
+#endif
+                                                                     new_alloca_name, alloca_inst);
 
             expanded.insert(expanded.begin() + idx, new_alloca_inst);
          }
@@ -355,7 +360,11 @@ void CustomScalarReplacementOfAggregatesPass::expandValue(llvm::Value* use, llvm
 
             llvm::Type* new_alloca_type = llvm::PointerType::getUnqual(element_ty);
             std::string new_alloca_name = alloca_inst->getName().str() + ".csroa.alloca." + std::to_string(idx);
-            llvm::AllocaInst* new_alloca_inst = new llvm::AllocaInst(/*new_alloca_type*/ element_ty, new_alloca_name, alloca_inst);
+            llvm::AllocaInst* new_alloca_inst = new llvm::AllocaInst(/*new_alloca_type*/ element_ty,
+#if __clang_major__ > 4
+                                                                     DL->getAllocaAddrSpace(),
+#endif
+                                                                     new_alloca_name, alloca_inst);
 
             expanded.insert(expanded.begin() + idx, new_alloca_inst);
          }
@@ -812,12 +821,20 @@ void CustomScalarReplacementOfAggregatesPass::expand_signatures_and_call_sites(s
                         llvm::Attribute attr = llvm::Attribute::getWithDereferenceableBytes(arg->getContext(), eBytes);
                         attr_builder.addAttribute(attr);
 
-                        auto attr_set = llvm::AttributeSet::get(arg->getContext(), 0, attr_builder);
+#if __clang_major__ == 4
+                        auto attr_set = llvm::AttributeSet::get(arg->getContext(),
+                                                                0,
+                                                                attr_builder);
+#endif
 
                         llvm::Type* new_arg_ty = llvm::PointerType::getUnqual(arr_ty->getArrayElementType());
                         llvm::Argument* new_arg = new llvm::Argument(new_arg_ty, new_arg_name, arg->getParent());
 
+#if __clang_major__ == 4
                         new_arg->addAttr(attr_set);
+#else
+                        new_arg->addAttrs(attr_builder);
+#endif
 
                         exp_args_map_ref[arg].push_back(new_arg);
 
@@ -898,11 +915,26 @@ void CustomScalarReplacementOfAggregatesPass::expand_signatures_and_call_sites(s
                llvm::Attribute attr = llvm::Attribute::getWithDereferenceableBytes(new_arg->getContext(), dBytes);
                attr_builder.addAttribute(attr);
 
-               auto attr_set = llvm::AttributeSet::get(new_arg->getContext(), 0, attr_builder);
+#if __clang_major__ == 4
+               auto attr_set = llvm::AttributeSet::get(new_arg->getContext(),
+                                                       0,
+                                                       attr_builder);
                new_arg->addAttr(attr_set);
+#else
+               new_arg->addAttrs(attr_builder);
+#endif
             }
 
-            mock_VMap[arg] = &new_mock_function->getArgumentList().back();
+#if __clang_major__ == 4
+            llvm::Argument* lastArg = &new_mock_function->getArgumentList().back();
+#else
+            llvm::Argument* lastArg=nullptr;
+            for (auto& arg : new_mock_function->args())
+            {
+               lastArg = &arg;
+            }
+#endif
+            mock_VMap[arg] = lastArg;
             idxs_of_exp_args[new_arg->getArgNo()] = arg;
 
             ExpArgs::rec(new_arg, mock_exp_args_map);
@@ -956,8 +988,14 @@ void CustomScalarReplacementOfAggregatesPass::expand_signatures_and_call_sites(s
             llvm::Attribute attr = llvm::Attribute::getWithDereferenceableBytes(nf_arg->getContext(), dBytes);
             attr_builder.addAttribute(attr);
 
-            auto attr_set = llvm::AttributeSet::get(nf_arg->getContext(), 0, attr_builder);
+#if __clang_major__ == 4
+            auto attr_set = llvm::AttributeSet::get(nf_arg->getContext(),
+                                                    0,
+                                                    attr_builder);
             nf_arg->addAttr(attr_set);
+#else
+            nf_arg->addAttrs(attr_builder);
+#endif
          }
       }
 
