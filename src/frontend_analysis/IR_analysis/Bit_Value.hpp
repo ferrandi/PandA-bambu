@@ -62,6 +62,7 @@ enum class bit_lattice;
 class gimple_assign;
 class ssa_name;
 class statement_list;
+class addr_expr;
 REF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(tree_manager);
 //@}
@@ -124,7 +125,7 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
 
    unsigned int pointer_resizing(unsigned int output_id) const;
 
-   unsigned int lsb_to_zero() const;
+   unsigned int lsb_to_zero(const addr_expr* ae) const;
 
    /**
     * Initializes best with C type as bitstring, signed_var and arguments using the information taken from the syntax tree given by the application manager.

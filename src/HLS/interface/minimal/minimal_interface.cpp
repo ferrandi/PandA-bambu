@@ -450,7 +450,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             }
 
             structural_objectRef clock_port, reset_port;
-            structural_objectRef port_ck= shared_memory->find_member(CLOCK_PORT_NAME, port_o_K, shared_memory);
+            structural_objectRef port_ck = shared_memory->find_member(CLOCK_PORT_NAME, port_o_K, shared_memory);
             if(parameters->isOption(OPT_clock_name))
                clock_port = SM_minimal_interface->add_port(parameters->getOption<std::string>(OPT_clock_name), port_o::IN, interfaceObj, port_ck->get_typeRef());
             else

@@ -321,12 +321,13 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       tree_nodeRef init_var = mr->op0;
       const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
       auto type_index = tree_helper::get_type_index(TM, var);
-      tree_nodeConstRef type_node = TM->CGetTreeNode(type_index);
-      THROW_ASSERT(type_node->get_kind() == array_type_K, "unexpected condition");
-      while(type_node->get_kind() == array_type_K)
-         type_node = tree_helper::CGetElements(type_node);
+      tree_nodeConstRef type_node1 = TM->CGetTreeNode(type_index);
+      auto algn = GetPointer<const type_node>(type_node1)->algn;
+      THROW_ASSERT(type_node1->get_kind() == array_type_K, "unexpected condition");
+      while(type_node1->get_kind() == array_type_K)
+         type_node1 = tree_helper::CGetElements(type_node1);
       tree_nodeRef offset_type = tree_man->create_size_type();
-      tree_nodeRef pt = tree_man->create_pointer_type(type_node);
+      tree_nodeRef pt = tree_man->create_pointer_type(type_node1, algn);
 
       /// add a cast
       tree_nodeRef nop_init_var = tree_man->create_unary_operation(pt, init_var, srcp_default, nop_expr_K);
@@ -361,7 +362,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       GetPointer<ssa_name>(GET_NODE(vd_limit))->use_set->variables.push_back(TM->GetTreeReindex(var));
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(pp_ga)->ToString());
-      tree_nodeRef size_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(tree_helper::Size(type_node) / 8), GET_INDEX_NODE(offset_type));
+      tree_nodeRef size_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(tree_helper::Size(type_node1) / 8), GET_INDEX_NODE(offset_type));
       tree_nodeRef pp_ind = tree_man->create_binary_operation(pt, gp->res, size_node, srcp_default, pointer_plus_expr_K);
       tree_nodeRef pp_ga_ind = tree_man->CreateGimpleAssign(pt, pp_ind, BBN1_block_index, srcp_default);
       GetPointer<gimple_assign>(GET_NODE(pp_ga_ind))->temporary_address = true;
@@ -386,9 +387,9 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
 
       /// restructure of the implicit memset statement
       tree_nodeRef zero_offset = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(pt));
-      tree_nodeRef new_mem_ref = tree_man->create_binary_operation(TM->GetTreeReindex(type_node->index), gp->res, zero_offset, srcp_default, mem_ref_K);
+      tree_nodeRef new_mem_ref = tree_man->create_binary_operation(TM->GetTreeReindex(type_node1->index), gp->res, zero_offset, srcp_default, mem_ref_K);
       ga->op0 = new_mem_ref;
-      tree_nodeRef zero_value = TM->CreateUniqueIntegerCst(0, type_node->index);
+      tree_nodeRef zero_value = TM->CreateUniqueIntegerCst(0, type_node1->index);
       ga->op1 = zero_value;
 
       const auto list_of_stmt = BB1_block->CGetStmtList();

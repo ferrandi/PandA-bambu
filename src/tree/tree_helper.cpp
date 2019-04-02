@@ -2620,8 +2620,7 @@ bool tree_helper::is_a_complex(const tree_managerConstRef& TM, const unsigned in
    return Type->get_kind() == complex_type_K;
 }
 
-
-//static void getBuiltinFieldTypes(const tree_nodeConstRef& type, std::list<tree_nodeConstRef> &listOfTypes, std::unordered_set<unsigned int> &already_visited)
+// static void getBuiltinFieldTypes(const tree_nodeConstRef& type, std::list<tree_nodeConstRef> &listOfTypes, std::unordered_set<unsigned int> &already_visited)
 //{
 //   if(already_visited.find(type->index) != already_visited.end())
 //      return;
@@ -2674,7 +2673,7 @@ bool tree_helper::is_a_complex(const tree_managerConstRef& TM, const unsigned in
 //      listOfTypes.push_back(type);
 //}
 
-//static bool same_size_fields(const tree_nodeConstRef& t)
+// static bool same_size_fields(const tree_nodeConstRef& t)
 //{
 //   std::list<tree_nodeConstRef> listOfTypes;
 //   std::unordered_set<unsigned int> already_visited;
@@ -2734,7 +2733,7 @@ bool tree_helper::is_an_array(const tree_managerConstRef& TM, const unsigned int
       {
          return false;
       }
-//      return same_size_fields(Type);
+      //      return same_size_fields(Type);
    }
    return false;
 }

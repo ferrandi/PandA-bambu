@@ -1839,7 +1839,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
    }
 #endif
 #if 1
-   else if(op_kind == nop_expr_K || op_kind == convert_expr_K)
+   else if(op_kind == nop_expr_K || op_kind == convert_expr_K || op_kind == view_convert_expr_K)
    {
       auto* operation = GetPointer<unary_expr>(GET_NODE(ga->op1));
       const auto right_id = GET_INDEX_NODE(operation->op);
@@ -2070,20 +2070,18 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
 #endif
    else if(op_kind == addr_expr_K)
    {
-//      auto address_size = AppM->get_address_bitsize();
-//      std::cerr << "address_size "<<address_size<<"\n";
-//      auto lt0 = lsb_to_zero();
-//      std::cerr << "lsb_to_zero "<< lt0 <<"\n";
-//      if(lt0 && address_size>lt0)
-//      {
-//         res = create_u_bitstring(address_size-lt0);
-//         for(auto index=0u; index<lt0; ++index)
-//            res.push_back(bit_lattice::ZERO);
-//         return res;
-//      }
+      const auto* ae = GetPointer<addr_expr>(GET_NODE(ga->op1));
+      auto address_size = AppM->get_address_bitsize();
+      auto lt0 = lsb_to_zero(ae);
+      if(lt0 && address_size > lt0)
+      {
+         res = create_u_bitstring(address_size - lt0);
+         for(auto index = 0u; index < lt0; ++index)
+            res.push_back(bit_lattice::ZERO);
+      }
    }
 #if 1
-   else if(op_kind == mem_ref_K || op_kind == component_ref_K || op_kind == var_decl_K || op_kind == array_ref_K || op_kind == view_convert_expr_K)
+   else if(op_kind == mem_ref_K || op_kind == component_ref_K || op_kind == var_decl_K || op_kind == array_ref_K)
    {
       // do nothing
    }

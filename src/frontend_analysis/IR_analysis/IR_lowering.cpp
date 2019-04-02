@@ -98,6 +98,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(SWITCH_FIX, SAME_FUNCTION));
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, SAME_FUNCTION));
          relationships.insert(std::make_pair(REMOVE_CLOBBER_GA, SAME_FUNCTION));
+         relationships.insert(std::make_pair(HWCALL_INJECTION, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -1294,7 +1295,7 @@ bool IR_lowering::expand_target_mem_ref(target_mem_ref461* tmr, const tree_nodeR
    if(accum)
    {
       tree_nodeRef type = tmr->type;
-      tree_nodeRef pt = tree_man->create_pointer_type(type);
+      tree_nodeRef pt = tree_man->create_pointer_type(type, 8);
 
       tree_nodeRef ppe_expr = tree_man->create_binary_operation(pt, tmr->base, accum, srcp_default, pointer_plus_expr_K);
       tree_nodeRef ppe_ga = CreateGimpleAssign(pt, ppe_expr, block->number, srcp_default);
@@ -1516,7 +1517,8 @@ tree_nodeRef IR_lowering::array_ref_lowering(array_ref* AR, const std::string& s
 {
    tree_nodeRef type = AR->type;
 
-   tree_nodeRef pt = tree_man->create_pointer_type(type);
+   std::cerr << "align" << GetPointer<type_node>(GET_NODE(type))->algn << "\n";
+   tree_nodeRef pt = tree_man->create_pointer_type(type, GetPointer<type_node>(GET_NODE(type))->algn);
    tree_nodeRef ae = tree_man->create_unary_operation(pt, AR->op0, srcp_default, addr_expr_K);
    tree_nodeRef ae_ga = CreateGimpleAssign(pt, ae, block.first, srcp_default);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ae_ga)->ToString());
