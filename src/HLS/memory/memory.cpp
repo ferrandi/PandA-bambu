@@ -137,9 +137,20 @@ void memory::add_internal_variable(unsigned int funID_scope, unsigned int var)
    if(in_vars.find(var) != in_vars.end())
       m_sym = in_vars[var];
    else if(is_private_memory(var))
-      m_sym = memory_symbolRef(new memory_symbol(var, null_pointer_check ? internal_base_address_start : 0, funID_scope));
+   {
+      if(null_pointer_check)
+      {
+         align(internal_base_address_start, tree_helper::get_var_alignment(TreeM, var));
+         m_sym = memory_symbolRef(new memory_symbol(var, internal_base_address_start, funID_scope));
+      }
+      else
+         m_sym = memory_symbolRef(new memory_symbol(var, 0, funID_scope));
+   }
    else
+   {
+      align(next_base_address, tree_helper::get_var_alignment(TreeM, var));
       m_sym = memory_symbolRef(new memory_symbol(var, next_base_address, funID_scope));
+   }
    add_internal_symbol(funID_scope, var, m_sym);
 }
 
@@ -218,6 +229,7 @@ unsigned int memory::count_non_private_internal_symbols() const
 
 void memory::add_external_variable(unsigned int var)
 {
+   align(next_off_base_address, tree_helper::get_var_alignment(TreeM, var));
    memory_symbolRef m_sym = memory_symbolRef(new memory_symbol(var, next_off_base_address, 0));
    add_external_symbol(var, m_sym);
 }

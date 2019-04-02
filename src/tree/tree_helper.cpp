@@ -5246,6 +5246,14 @@ bool tree_helper::IsAligned(const tree_managerConstRef& TM, unsigned int type)
    return tn->unql and tn->algn != GetPointer<type_node>(GET_NODE(tn->unql))->algn;
 }
 
+unsigned int tree_helper::get_var_alignment(const tree_managerConstRef& TM, unsigned int var)
+ {
+    const tree_nodeRef varnode = TM->get_tree_node_const(var);
+    const auto* vd = GetPointer<var_decl>(varnode);
+    THROW_ASSERT(vd, "Tree node " + boost::lexical_cast<std::string>(var) + " is of type " + varnode->get_kind_text());
+    return vd->algn;
+ }
+
 std::string tree_helper::normalized_ID(const std::string& id)
 {
    std::string strg = id;
