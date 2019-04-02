@@ -423,10 +423,14 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                                     "---Variable " + STR(var) + " not sds because alignment " + STR(alignment) + " is less than the value loaded or written or than the size of the array elements " + STR(value_bitsize));
                      if(assume_aligned_access_p)
                      {
-                        THROW_WARNING("Option --aligned-access have been specified on a function with unaligned accesses:\n\tVariable " + BH->PrintVariable(var) + " could be accessed in unaligned way");
+                        THROW_WARNING("Option --aligned-access have been specified on a function with not compiler-proved unaligned accesses:\n\tVariable " + BH->PrintVariable(var) + " could be accessed in unaligned way");
                         THROW_WARNING("\tStatement is " + gm->ToString());
                      }
-                     HLSMgr->Rmem->set_sds_var(var, false);
+                     else
+                     {
+                        HLSMgr->Rmem->set_sds_var(var, false);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(var_size.find(var)->second));
+                     }
                   }
                   else
                   {
@@ -448,11 +452,14 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   {
                      if(assume_aligned_access_p)
                      {
-                        THROW_WARNING("Option --aligned-access have been specified on a function with unaligned accesses:\n\tVariable " + BH->PrintVariable(var) + " could be accessed in unaligned way");
+                        THROW_WARNING("Option --aligned-access have been specified on a function with not compiler-proved unaligned accesses:\n\tVariable " + BH->PrintVariable(var) + " could be accessed in unaligned way");
                         THROW_WARNING("\tStatement is " + gm->ToString());
                      }
-                     HLSMgr->Rmem->set_sds_var(var, false);
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(var_size.find(var)->second));
+                     else
+                     {
+                        HLSMgr->Rmem->set_sds_var(var, false);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(var_size.find(var)->second));
+                     }
                   }
                }
                /// var referring vertex map

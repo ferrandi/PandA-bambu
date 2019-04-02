@@ -1517,7 +1517,6 @@ tree_nodeRef IR_lowering::array_ref_lowering(array_ref* AR, const std::string& s
 {
    tree_nodeRef type = AR->type;
 
-   std::cerr << "align" << GetPointer<type_node>(GET_NODE(type))->algn << "\n";
    tree_nodeRef pt = tree_man->create_pointer_type(type, GetPointer<type_node>(GET_NODE(type))->algn);
    tree_nodeRef ae = tree_man->create_unary_operation(pt, AR->op0, srcp_default, addr_expr_K);
    tree_nodeRef ae_ga = CreateGimpleAssign(pt, ae, block.first, srcp_default);
