@@ -1319,14 +1319,14 @@ tree_nodeRef tree_manipulation::create_default_integer_type() const
 }
 
 /// Create a pointer type
-tree_nodeRef tree_manipulation::create_pointer_type(const tree_nodeConstRef& ptd) const
+tree_nodeRef tree_manipulation::create_pointer_type(const tree_nodeConstRef& ptd, unsigned int algn) const
 {
    ///@15     pointer_type     size: @12      algn: 32       ptd : @9     @9 type
    /// of the pointer
    ///@12     integer_cst      type: @26      low : 32       @26 is bit_size_type
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    IR_schema[TOK(TOK_PTD)] = STR(ptd->index);
-   IR_schema[TOK(TOK_ALGN)] = STR(ALGN_POINTER);
+   IR_schema[TOK(TOK_ALGN)] = STR(algn);
 
    tree_nodeRef pointer_type_node;
 
@@ -1465,7 +1465,7 @@ tree_nodeRef tree_manipulation::create_gimple_call(const tree_nodeConstRef& call
 
    const auto function_type = tree_helper::CGetType(GET_CONST_NODE(called_function));
    ae_IR_schema[TOK(TOK_OP)] = STR(called_function->index);
-   ae_IR_schema[TOK(TOK_TYPE)] = STR(create_pointer_type(function_type)->index);
+   ae_IR_schema[TOK(TOK_TYPE)] = STR(create_pointer_type(function_type, ALGN_POINTER)->index);
    ae_IR_schema[TOK(TOK_SRCP)] = srcp;
 
    std::string args_string;
@@ -2482,7 +2482,7 @@ tree_nodeRef tree_manipulation::CreateCallExpr(const tree_nodeConstRef& called_f
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ae_IR_schema, ce_IR_schema;
    ae_IR_schema[TOK(TOK_OP)] = STR(called_function->index);
    const auto function_type = tree_helper::CGetType(GET_CONST_NODE(called_function));
-   ae_IR_schema[TOK(TOK_TYPE)] = STR(create_pointer_type(function_type)->index);
+   ae_IR_schema[TOK(TOK_TYPE)] = STR(create_pointer_type(function_type, ALGN_POINTER)->index);
    ae_IR_schema[TOK(TOK_SRCP)] = srcp;
    const unsigned int ae_id = TreeM->new_tree_node_id();
    TreeM->create_tree_node(ae_id, addr_expr_K, ae_IR_schema);
@@ -2510,7 +2510,13 @@ tree_nodeRef tree_manipulation::CreateAddrExpr(const tree_nodeConstRef& tn, cons
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ae_IR_schema;
    const auto type_node = tree_helper::CGetType(tn);
    ae_IR_schema[TOK(TOK_OP)] = STR(tn->index);
-   const auto ptr_type = create_pointer_type(type_node);
+   auto align = 8u;
+   if(tn->get_kind() == var_decl_K)
+   {
+      auto vd = GetPointer<const var_decl>(tn);
+      align = vd->algn;
+   }
+   const auto ptr_type = create_pointer_type(type_node, align);
    ae_IR_schema[TOK(TOK_TYPE)] = STR(ptr_type->index);
    ae_IR_schema[TOK(TOK_SRCP)] = srcp;
    const unsigned int ae_id = TreeM->new_tree_node_id();
@@ -2521,8 +2527,7 @@ tree_nodeRef tree_manipulation::CreateAddrExpr(const tree_nodeConstRef& tn, cons
 tree_nodeRef tree_manipulation::CreateGimpleAssignAddrExpr(const tree_nodeConstRef& tn, const unsigned int bb_index, const std::string& srcp) const
 {
    auto addr_tn = CreateAddrExpr(tn, srcp);
-   const auto type_node = tree_helper::CGetType(tn);
-   const auto ptr_type = create_pointer_type(type_node);
+   const auto ptr_type = GetPointer<addr_expr>(GET_NODE(addr_tn))->type;
    auto assign_node = CreateGimpleAssign(ptr_type, addr_tn, bb_index, srcp);
    auto ga = GetPointer<gimple_assign>(GET_NODE(assign_node));
    auto ssa = GetPointer<ssa_name>(GET_NODE(ga->op0));

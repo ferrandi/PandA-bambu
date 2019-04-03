@@ -72,7 +72,6 @@
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
 
-
 /// HLS/memory include
 #include "memory.hpp"
 
@@ -803,9 +802,9 @@ const std::map<bit_lattice, std::map<bit_lattice, bit_lattice>> Bit_Value::bit_a
 
 unsigned int Bit_Value::pointer_resizing(unsigned int output_id) const
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Pointer resizing starting from " + STR(TM->CGetTreeNode(output_id)));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Pointer resizing starting from " + TM->CGetTreeNode(output_id)->ToString());
    unsigned int var = tree_helper::get_base_index(TM, output_id);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Base variable is " + STR(TM->CGetTreeNode(var)));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Base variable is " + TM->CGetTreeNode(var)->ToString());
    unsigned int address_bitsize;
    if(not_frontend)
    {
@@ -815,10 +814,27 @@ unsigned int Bit_Value::pointer_resizing(unsigned int output_id) const
          if(var and function_behavior->is_variable_mem(var))
          {
             unsigned int max_addr = hm->Rmem->get_base_address(var, function_id) + tree_helper::size(TM, var) / 8;
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Maximum address is " + STR(max_addr));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Maximum address is " + STR(max_addr - 1));
             for(address_bitsize = 1; max_addr > (1u << address_bitsize); ++address_bitsize)
             {
                ;
+            }
+            /// check if it clash with the alignment:
+            auto vd = GetPointer<const var_decl>(TM->CGetTreeNode(var));
+            if(hm->Rmem->get_base_address(var, function_id) == 0 && vd)
+            {
+               auto align = vd->algn;
+               align = align < 8 ? 1 : (align / 8);
+               auto index = 0u;
+               bool found = false;
+               for(; index < address_bitsize; ++index)
+                  if((1ULL << index) & align)
+                  {
+                     found = true;
+                     break;
+                  }
+               if(!found)
+                  ++address_bitsize;
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Memory variable " + STR(address_bitsize));
          }
@@ -842,37 +858,22 @@ unsigned int Bit_Value::pointer_resizing(unsigned int output_id) const
    return address_bitsize;
 }
 
-unsigned int Bit_Value::lsb_to_zero() const
+unsigned int Bit_Value::lsb_to_zero(const addr_expr* ae) const
 {
-   auto* hm = GetPointer<HLS_manager>(AppM);
-   if(hm and hm->Rmem)
-   {
-      unsigned int align = hm->Rmem->get_internal_base_address_alignment();
-      auto index=0u;
-      bool found= false;
-      for(;index < AppM->get_address_bitsize(); ++index)
-         if((1ULL<<index)&align)
-         {
-            found = true;
-            break;
-         }
-      return found ? index : 0;
-   }
-   else if(hm)
-   {
-      unsigned int align = (2*hm->get_HLS_target()->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max"))/8;
-      auto index=0u;
-      bool found= false;
-      for(;index < AppM->get_address_bitsize(); ++index)
-         if((1ULL<<index)&align)
-         {
-            found = true;
-            break;
-         }
-      return found ? index : 0;
-   }
-   else
+   auto vd = GetPointer<var_decl>(GET_NODE(ae->op));
+   if(!vd)
       return 0;
+   auto align = vd->algn;
+   align = align < 8 ? 1 : (align / 8);
+   auto index = 0u;
+   bool found = false;
+   for(; index < AppM->get_address_bitsize(); ++index)
+      if((1ULL << index) & align)
+      {
+         found = true;
+         break;
+      }
+   return found ? index : 0;
 }
 
 Bit_Value::Bit_Value(const ParameterConstRef params, const application_managerRef AM, unsigned int f_id, const DesignFlowManagerConstRef dfm)
@@ -1104,10 +1105,10 @@ void Bit_Value::initialize()
    {
       /*
        * Compute initialization bitstrings for ssa loaded from ROMs. This
-       * initialization has to be performed before the other ssa are inizialized
+       * initialization has to be performed before the other ssa are initialized
        * because we must be sure that bitstrings computed in previous executions
        * of bitvalues analysis are not thrown away before computing inf() on
-       * bitvalues used for roms. If this initialization is interleaved with the
+       * bitvalues used for ROMs. If this initialization is interleaved with the
        * initialization of bitvalues of other ssa we may lose some information,
        * because some of the old bitstrings attached to ssa are cleared during the
        * initialization. If this happens, optimizations on ROMs cannot be

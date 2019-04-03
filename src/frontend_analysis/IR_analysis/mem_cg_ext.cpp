@@ -277,7 +277,7 @@ DesignFlowStep_Status mem_cg_ext::Exec()
 
                         // compute the size in bytes of the copied memory
                         const auto dst_type = tree_helper::CGetType(GET_NODE(mr_lhs->op0));
-                        const auto src_type = GET_NODE(tree_man->create_pointer_type(tree_helper::CGetType(rhs_node)));
+                        const auto src_type = GET_NODE(tree_man->create_pointer_type(tree_helper::CGetType(rhs_node), 8));
                         const auto* dst_ptr_t = GetPointer<const pointer_type>(dst_type);
                         const auto* src_ptr_t = GetPointer<const pointer_type>(src_type);
                         THROW_ASSERT(dst_ptr_t, "");

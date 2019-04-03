@@ -206,7 +206,7 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
 
    unsigned int addrExprBuiltinCall = TM->new_tree_node_id();
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> addrExprBuiltinCallMap;
-   addrExprBuiltinCallMap[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(IRman->create_pointer_type(functionDecl->type)));
+   addrExprBuiltinCallMap[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(IRman->create_pointer_type(functionDecl->type, 8)));
    addrExprBuiltinCallMap[TOK(TOK_OP)] = STR(builtinWaitCallDeclIdx);
    addrExprBuiltinCallMap[TOK(TOK_SRCP)] = srcPtr->include_name + ":" + STR(srcPtr->line_number) + ":" + STR(srcPtr->column_number);
    TM->create_tree_node(addrExprBuiltinCall, addr_expr_K, addrExprBuiltinCallMap);
@@ -331,7 +331,8 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
 
          unsigned int addrExprReturnValue = TM->new_tree_node_id();
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> addrExprReturnValueMap;
-         addrExprReturnValueMap[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(IRman->create_pointer_type(TM->GetTreeReindex(tree_helper::get_type_index(TM, retVar)))));
+         auto typeRetVar = TM->GetTreeReindex(tree_helper::get_type_index(TM, retVar));
+         addrExprReturnValueMap[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(IRman->create_pointer_type(typeRetVar, ALGN_POINTER)));
          addrExprReturnValueMap[TOK(TOK_OP)] = STR(retVar);
          addrExprReturnValueMap[TOK(TOK_SRCP)] = GA->include_name + ":" + STR(GA->line_number) + ":" + STR(GA->column_number);
          TM->create_tree_node(addrExprReturnValue, addr_expr_K, addrExprReturnValueMap);

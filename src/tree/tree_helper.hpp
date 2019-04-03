@@ -740,6 +740,14 @@ class tree_helper
    static bool IsAligned(const tree_managerConstRef& TM, unsigned int type);
 
    /**
+    * Return the var alignment
+    * @param TM is the tree manager
+    * @param index is the index of the variable
+    * @return the variable alignment
+    */
+   static unsigned int get_var_alignment(const tree_managerConstRef& TM, unsigned int var);
+
+   /**
     * Return the normalized the name of types and variables
     * @param id is the initial ID
     */
