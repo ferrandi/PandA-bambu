@@ -231,7 +231,10 @@ void LatticeBackendFlow::create_sdc(const DesignParametersRef dp)
    std::string sdc_filename = out_dir + "/" + dp->component_name + ".ldc";
    std::ofstream sdc_file(sdc_filename.c_str());
    if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
+   {
       sdc_file << "create_clock -period " + dp->parameter_values[PARAM_clk_period] + " -name " + clock + " [get_ports " + clock + "]\n";
+      sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_outputs]\n";
+   }
    else
       sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_outputs]\n";
    if(Param->isOption(OPT_backend_sdc_extensions))
