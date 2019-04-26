@@ -262,12 +262,21 @@ void LatticeBackendFlow::InitDesignParameters()
    std::string HDL_files = actual_parameters->parameter_values[PARAM_HDL_files];
    std::vector<std::string> file_list = convert_string_to_vector<std::string>(HDL_files, ";");
    std::string sources_macro_list;
+   bool has_vhdl_library = Param->isOption(OPT_VHDL_library);
+   std::string vhdl_library;
+   if(has_vhdl_library)
+      vhdl_library = Param->getOption<std::string>(OPT_VHDL_library);
    for(auto& v : file_list)
    {
       boost::filesystem::path file_path(v);
       std::string extension = GetExtension(file_path);
       if(extension == "vhd" || extension == "vhdl" || extension == "VHD" || extension == "VHDL")
-         sources_macro_list += "prj_src add -format VHDL " + v + "\n";
+      {
+         if(has_vhdl_library)
+            sources_macro_list += "prj_src add -format VHDL -work " + vhdl_library + " " + v + "\n";
+         else
+            sources_macro_list += "prj_src add -format VHDL " + v + "\n";
+      }
       else if(extension == "v" || extension == "V" || extension == "sv" || extension == "SV")
          sources_macro_list += "prj_src add -format VERILOG " + v + "\n";
       else

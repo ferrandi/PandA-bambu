@@ -247,6 +247,7 @@ AC_ARG_ENABLE(modelsim,               [  --enable-modelsim            enable mod
 AC_ARG_ENABLE(xilinx,                 [  --enable-xilinx              compile the wrapper for interfacing with Xilinx tools],[panda_USE_WRAPPER_XILINX="$enableval"])
 AC_ARG_ENABLE(altera,                 [  --enable-altera              compile the wrapper for interfacing with Altera tools],[panda_USE_WRAPPER_ALTERA="$enableval"])
 AC_ARG_ENABLE(lattice,                [  --enable-lattice             compile the wrapper for interfacing with Lattice tools],[panda_USE_WRAPPER_LATTICE="$enableval"])
+AC_ARG_ENABLE(nanoxplore,             [  --enable-nanoxplore          compile the wrapper for interfacing with NanoXplore tools],[panda_USE_WRAPPER_NANOXPLORE="$enableval"])
 AC_ARG_ENABLE(verilator,              [  --disable-verilator          disable the/ wrapper to Verilator Verilog compiler],   [panda_USE_VERILATOR="$enableval"], [panda_USE_VERILATOR="yes"])
 
 
@@ -443,7 +444,7 @@ if test "x$panda_USE_BAMBU" = xyes; then
   panda_USE_TASTE=yes;
 
   #characterization requires to configure at least one synthesis toolchain
-  if test "x$panda_USE_DESIGN_COMPILER" = xyes || test "x$panda_USE_WRAPPER_XILINX" = xyes || test "x$panda_USE_WRAPPER_ALTERA" = xyes || test "x$panda_USE_WRAPPER_LATTICE" = xyes; then
+  if test "x$panda_USE_DESIGN_COMPILER" = xyes || test "x$panda_USE_WRAPPER_XILINX" = xyes || test "x$panda_USE_WRAPPER_ALTERA" = xyes || test "x$panda_USE_WRAPPER_LATTICE" = xyes || test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes; then
     AC_APPEND(ENABLE_DOC,"EUCALYPTUS")
     panda_USE_EUCALYPTUS=yes;
   fi
@@ -888,7 +889,7 @@ if test "x$panda_USE_LIB_TARGET_PROFILING" != xyes && test "x$panda_USE_LIB_COMP
    panda_USE_LIB_COMPARE_MODELS=no;
 fi
 
-if (test "x$panda_USE_LIB_HLS" = xyes && (test "x$panda_USE_WRAPPER_XILINX" = xyes || test "x$panda_USE_WRAPPER_ALTERA" = xyes  || test "x$panda_USE_WRAPPER_LATTICE" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes)) then
+if (test "x$panda_USE_LIB_HLS" = xyes && (test "x$panda_USE_WRAPPER_XILINX" = xyes || test "x$panda_USE_WRAPPER_ALTERA" = xyes || test "x$panda_USE_WRAPPER_LATTICE" = xyes || test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes)) then
    panda_USE_LIB_RTL_CHARACTERIZATION=yes;
 fi
 
@@ -1069,6 +1070,11 @@ AM_CONDITIONAL(BUILD_GSL,  test "x$panda_USE_LIB_GSL" = xyes)
 ################################ Lattice checks #################################
 if test "x$panda_USE_WRAPPER_LATTICE" = xyes; then
   AC_CHECK_LATTICE
+fi
+
+################################ NanoXplore checks #################################
+if test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes; then
+  AC_CHECK_NANOXPLORE
 fi
 
 
@@ -2451,6 +2457,7 @@ if test "x$panda_USE_LIB_SYNTHESIS_WRAPPER" = xyes; then
                    src/wrapper/synthesis/Makefile
                    src/wrapper/synthesis/altera/Makefile
                    src/wrapper/synthesis/lattice/Makefile
+                   src/wrapper/synthesis/nanoxplore/Makefile
                    src/wrapper/synthesis/synopsys/Makefile
                    src/wrapper/synthesis/synopsys/design_compiler/Makefile
                    src/wrapper/synthesis/xilinx/Makefile
@@ -2490,6 +2497,12 @@ if test "x$panda_USE_WRAPPER_LATTICE" = xyes; then
   AC_DEFINE(HAVE_LATTICE, 1, "Define if Lattice wrapper library is built")
 fi
 AM_CONDITIONAL(BUILD_LATTICE, test "x$panda_USE_WRAPPER_LATTICE" = xyes)
+
+################ NanoXplore stuff ########################
+if test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes; then
+  AC_DEFINE(HAVE_NANOXPLORE, 1, "Define if NanoXplore wrapper library is built")
+fi
+AM_CONDITIONAL(BUILD_NANOXPLORE, test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes)
 
 
 ################ Design Compiler stuff #####################
@@ -2670,6 +2683,7 @@ AC_CONFIG_FILES(
    etc/devices/Xilinx_devices/Makefile
    etc/devices/ASIC_devices/Makefile
    etc/devices/Lattice_devices/Makefile
+   etc/devices/NanoXplore_devices/Makefile
    )
 
 

@@ -76,6 +76,8 @@ class xml_element;
 #define PARAM_sdc_file "sdc_file"
 #define PARAM_backend_script_extensions "backend_script_extensions"
 #define PARAM_has_script_extensions "has_script_extensions"
+#define PARAM_has_VHDL_library "has_VHDL_library"
+#define PARAM_VHDL_library "VHDL_library"
 
 class SynthesisTool
 {
@@ -107,7 +109,8 @@ class SynthesisTool
       QUARTUS_FLOW,
       QUARTUS_POW,
       QUARTUS_STA,
-      LATTICE_FLOW
+      LATTICE_FLOW,
+      NXPYTHON_FLOW
    } type_t;
 
  protected:

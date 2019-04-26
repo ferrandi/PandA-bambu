@@ -815,6 +815,10 @@ void XilinxBackendFlow::InitDesignParameters()
       std::string HDL_files = actual_parameters->parameter_values[PARAM_HDL_files];
       std::vector<std::string> file_list = convert_string_to_vector<std::string>(HDL_files, ";");
       std::string sources_macro_list;
+      bool has_vhdl_library = Param->isOption(OPT_VHDL_library);
+      std::string vhdl_library;
+      if(has_vhdl_library)
+         vhdl_library = Param->getOption<std::string>(OPT_VHDL_library);
       for(unsigned int v = 0; v < file_list.size(); v++)
       {
          if(v)
@@ -822,7 +826,12 @@ void XilinxBackendFlow::InitDesignParameters()
          boost::filesystem::path file_path(file_list[v]);
          std::string extension = GetExtension(file_path);
          if(extension == "vhd" || extension == "vhdl" || extension == "VHD" || extension == "VHDL")
-            sources_macro_list += "read_vhdl " + file_list[v];
+         {
+            if(has_vhdl_library)
+               sources_macro_list += "read_vhdl -library " + vhdl_library + " " + file_list[v];
+            else
+               sources_macro_list += "read_vhdl " + file_list[v];
+         }
          else if(extension == "v" || extension == "V")
             sources_macro_list += "read_verilog " + file_list[v];
          else if(extension == "sv" || extension == "SV")

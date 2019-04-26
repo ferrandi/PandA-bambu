@@ -5913,7 +5913,7 @@ assign Sout_DataRdy = Sin_DataRdy;
   type mem_type is array (n_mem_elements-1 downto 0) of std_logic_vector(data_size-1 downto 0);
 
   impure function InitMemFromFile (MemFileName : in string) return mem_type is
-    FILE memfile : text is in MemFileName;
+    FILE memfile : text open READ_MODE is MemFileName;
     variable MemFileLine : line;
     variable mem : mem_type;
     begin
