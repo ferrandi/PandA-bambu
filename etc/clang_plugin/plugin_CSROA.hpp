@@ -79,10 +79,10 @@ typedef std::map<llvm::Function*, std::set<llvm::AllocaInst*>> fun_to_alloca_map
 class CustomScalarReplacementOfAggregatesPass : public llvm::ModulePass
 {
  public:
-   char ID;
+   char ID = 0;
 
  private:
-   const std::string& kernel_name;
+   const std::string kernel_name;
 
    call_set_ty visited_memcpy;
    inst_set_ty inst_to_remove;
@@ -92,12 +92,18 @@ class CustomScalarReplacementOfAggregatesPass : public llvm::ModulePass
 
    // Map specifying how arguments have been expanded
    std::map<llvm::Argument*, std::vector<llvm::Argument*>> exp_args_map;
+   // Map specifying how allocas have been expanded
+   std::map<llvm::AllocaInst*, std::vector<llvm::AllocaInst*>> exp_allocas_map;
+   // Map specifying how global variables have been expanded
+   std::map<llvm::GlobalVariable*, std::vector<llvm::GlobalVariable*>> exp_globals_map;
+   // Map specifying array argument sizes
+   std::map<llvm::Argument*, std::vector<unsigned long long>> arg_size_map;
 
  public:
-   explicit CustomScalarReplacementOfAggregatesPass(const std::string& kernel_name, char& _ID) : llvm::ModulePass(_ID), kernel_name(kernel_name)
+   explicit CustomScalarReplacementOfAggregatesPass(const std::string& kernel_name, char& _ID) : llvm::ModulePass(_ID), kernel_name(kernel_name), DL(nullptr)
    {
    }
-   explicit CustomScalarReplacementOfAggregatesPass(const std::string& kernel_name) : llvm::ModulePass(ID), kernel_name(kernel_name)
+   explicit CustomScalarReplacementOfAggregatesPass(const std::string& kernel_name) : llvm::ModulePass(ID), kernel_name(kernel_name), DL(nullptr)
    {
    }
 
@@ -106,22 +112,30 @@ class CustomScalarReplacementOfAggregatesPass : public llvm::ModulePass
    void getAnalysisUsage(llvm::AnalysisUsage& AU) const override;
 
  private:
-   void populate_inner_functions(llvm::Function* kernel_function, std::vector<llvm::Function*>& inner_functions);
+   bool check_assumptions(llvm::Function* kernel_function);
 
-   void expand_signatures_and_call_sites(std::vector<llvm::Function*>& inner_functions, std::map<llvm::Function*, llvm::Function*>& exp_fun_map, std::map<llvm::Function*, std::set<unsigned long long>>& exp_idx_args_map,
-                                         // std::map<llvm::Argument *, std::vector<llvm::Argument *>> &exp_args_map,
-                                         llvm::Function* kernel_function);
+   void spot_accessed_globals(llvm::Function* kernel_function, std::vector<llvm::Function*>& inner_functions, std::set<llvm::GlobalVariable*>& accessed_globals);
 
-   void processFunction(llvm::Function* function);
+   void replicate_calls(llvm::Function* kernel_function, std::vector<llvm::Function*>& inner_functions);
 
-   void expandArguments(              // llvm::Function *called_function,
-       llvm::Function* new_function); //,
-   // std::set<unsigned long long> arg_map,
-   // std::map<llvm::Argument *, std::vector<llvm::Argument *>> &exp_args_map);
+   void expand_ptrs(llvm::Function* kernel_function, std::vector<llvm::Function*>& inner_functions);
 
-   void expandValue(llvm::Value* use, llvm::Value* prev, llvm::Type* ty, std::vector<llvm::Value*>& expanded);
+   void process_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb);
 
-   void cleanup(std::map<llvm::Function*, std::set<unsigned long long>>& exp_idx_args_map, std::map<llvm::Function*, llvm::Function*>& exp_fun_map);
+   void compute_base_and_offset(llvm::Use* ptr_use, llvm::Value*& base_address, std::vector<llvm::Value*>& offset_chain);
+
+   template <class I>
+   llvm::Value* get_element_at_offset(I* base_address, std::map<I*, std::vector<I*>>& map, signed long long offset, unsigned long long accessed_size, const llvm::DataLayout* DL);
+
+   llvm::Value* get_expanded_value(llvm::Value* base_address, signed long long offset, unsigned long long accessed_size);
+
+   void expand_signatures_and_call_sites(std::vector<llvm::Function*>& inner_functions, std::map<llvm::Function*, llvm::Function*>& exp_fun_map, std::map<llvm::Function*, std::set<unsigned long long>>& exp_idx_args_map, llvm::Function* kernel_function);
+
+   void expand_allocas(llvm::Function* function);
+
+   void expand_globals(std::set<llvm::GlobalVariable*> accessed_variables);
+
+   void cleanup(std::map<llvm::Function*, std::set<unsigned long long>>& exp_idx_args_map, std::map<llvm::Function*, llvm::Function*>& exp_fun_map, std::vector<llvm::Function*>& inner_functions);
 };
 
 CustomScalarReplacementOfAggregatesPass* createCustomScalarReplacementOfAggregatesPass(std::string kernel_name);
