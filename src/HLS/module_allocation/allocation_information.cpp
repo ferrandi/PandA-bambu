@@ -3176,11 +3176,11 @@ bool AllocationInformation::CanBeChained(const unsigned int first_statement_inde
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking if (" + STR(second_statement_index) + ") " + STR(second_tree_node) + " can be chained with (" + STR(first_statement_index) + ") " + STR(first_tree_node));
    const auto first_operation = GetPointer<const gimple_node>(first_tree_node)->operation;
    const auto second_operation = GetPointer<const gimple_node>(second_tree_node)->operation;
-   auto fu_type_first = GetFuType(first_statement_index);
-   bool is_array_first = is_direct_access_memory_unit(fu_type_first);
-   unsigned var_first = is_array_first ? (is_memory_unit(fu_type_first) ? get_memory_var(fu_type_first) : get_proxy_memory_var(fu_type_first)) : 0;
+   //auto fu_type_first = GetFuType(first_statement_index);
+   //bool is_array_first = is_direct_access_memory_unit(fu_type_first);
+   //unsigned var_first = is_array_first ? (is_memory_unit(fu_type_first) ? get_memory_var(fu_type_first) : get_proxy_memory_var(fu_type_first)) : 0;
 
-   if(behavioral_helper->IsStore(first_statement_index) && (!var_first || !Rmem->is_private_memory(var_first)))
+   if(behavioral_helper->IsStore(first_statement_index) /*&& (!var_first || !Rmem->is_private_memory(var_first))*/)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because first is a store");
       return false;
