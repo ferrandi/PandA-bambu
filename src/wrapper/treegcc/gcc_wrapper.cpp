@@ -83,6 +83,7 @@
 #include "config_I386_CLANG4_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG4_EXE.hpp"
 #include "config_I386_CLANG4_EXPANDMEMOPS_PLUGIN.hpp"
+#include "config_I386_CLANG4_CSROA_PLUGIN.hpp"
 #include "config_I386_CLANG4_SSA_PLUGIN.hpp"
 #include "config_I386_CLANG4_SSA_PLUGINCPP.hpp"
 #include "config_I386_CLANG4_TOPFNAME_PLUGIN.hpp"
@@ -90,6 +91,7 @@
 #include "config_I386_CLANG5_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG5_EXE.hpp"
 #include "config_I386_CLANG5_EXPANDMEMOPS_PLUGIN.hpp"
+#include "config_I386_CLANG5_CSROA_PLUGIN.hpp"
 #include "config_I386_CLANG5_SSA_PLUGIN.hpp"
 #include "config_I386_CLANG5_SSA_PLUGINCPP.hpp"
 #include "config_I386_CLANG5_TOPFNAME_PLUGIN.hpp"
@@ -97,6 +99,7 @@
 #include "config_I386_CLANG6_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG6_EXE.hpp"
 #include "config_I386_CLANG6_EXPANDMEMOPS_PLUGIN.hpp"
+#include "config_I386_CLANG6_CSROA_PLUGIN.hpp"
 #include "config_I386_CLANG6_SSA_PLUGIN.hpp"
 #include "config_I386_CLANG6_SSA_PLUGINCPP.hpp"
 #include "config_I386_CLANG6_TOPFNAME_PLUGIN.hpp"
@@ -104,6 +107,7 @@
 #include "config_I386_CLANG7_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG7_EXE.hpp"
 #include "config_I386_CLANG7_EXPANDMEMOPS_PLUGIN.hpp"
+#include "config_I386_CLANG7_CSROA_PLUGIN.hpp"
 #include "config_I386_CLANG7_SSA_PLUGIN.hpp"
 #include "config_I386_CLANG7_SSA_PLUGINCPP.hpp"
 #include "config_I386_CLANG7_TOPFNAME_PLUGIN.hpp"
@@ -428,6 +432,11 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
          {
             command += " -fplugin=" + compiler.topfname_plugin_obj + " -mllvm -panda-TFN=" + fname;
             command += " -mllvm -panda-Internalize";
+            if(Param->IsParameter("enable-CSROA") && !compiler.CSROA_plugin_obj.empty() && !compiler.expandMemOps_plugin_obj.empty())
+            {
+               command += " -fplugin=" + compiler.expandMemOps_plugin_obj;
+               command += " -fplugin=" + compiler.CSROA_plugin_obj + " -mllvm -panda-KN=" + fname;
+            }
          }
          else
             command += " -fplugin=" + compiler.topfname_plugin_obj + " -fplugin-arg-" + compiler.topfname_plugin_name + "-topfname=" + fname;
@@ -711,7 +720,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
       }
       if(compiler.is_clang)
       {
-         const auto recipe = clang_recipes(optimization_level, Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler), compiler.expandMemOps_plugin_obj, compiler.expandMemOps_plugin_name);
+         const auto recipe = clang_recipes(optimization_level, Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler), compiler.expandMemOps_plugin_obj, compiler.expandMemOps_plugin_name, compiler.CSROA_plugin_obj, compiler.CSROA_plugin_name);
          command = compiler.llvm_opt.string() + recipe + temporary_file_o_bc;
          temporary_file_o_bc = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string()).string();
          command += " -o " + temporary_file_o_bc;
@@ -2043,6 +2052,8 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG4_SSA_PLUGINCPP : I386_CLANG4_SSA_PLUGIN);
       compiler.expandMemOps_plugin_obj = plugin_dir + I386_CLANG4_EXPANDMEMOPS_PLUGIN + plugin_ext;
       compiler.expandMemOps_plugin_name = I386_CLANG4_EXPANDMEMOPS_PLUGIN;
+      compiler.CSROA_plugin_obj = plugin_dir + I386_CLANG4_CSROA_PLUGIN + plugin_ext;
+      compiler.CSROA_plugin_name = I386_CLANG4_CSROA_PLUGIN;
       compiler.topfname_plugin_obj = plugin_dir + I386_CLANG4_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_CLANG4_TOPFNAME_PLUGIN;
       compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
@@ -2070,6 +2081,8 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG5_SSA_PLUGINCPP : I386_CLANG5_SSA_PLUGIN);
       compiler.expandMemOps_plugin_obj = plugin_dir + I386_CLANG5_EXPANDMEMOPS_PLUGIN + plugin_ext;
       compiler.expandMemOps_plugin_name = I386_CLANG5_EXPANDMEMOPS_PLUGIN;
+      compiler.CSROA_plugin_obj = plugin_dir + I386_CLANG5_CSROA_PLUGIN + plugin_ext;
+      compiler.CSROA_plugin_name = I386_CLANG5_CSROA_PLUGIN;
       compiler.topfname_plugin_obj = plugin_dir + I386_CLANG5_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_CLANG5_TOPFNAME_PLUGIN;
       compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
@@ -2097,6 +2110,8 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG6_SSA_PLUGINCPP : I386_CLANG6_SSA_PLUGIN);
       compiler.expandMemOps_plugin_obj = plugin_dir + I386_CLANG6_EXPANDMEMOPS_PLUGIN + plugin_ext;
       compiler.expandMemOps_plugin_name = I386_CLANG6_EXPANDMEMOPS_PLUGIN;
+      compiler.CSROA_plugin_obj = plugin_dir + I386_CLANG6_CSROA_PLUGIN + plugin_ext;
+      compiler.CSROA_plugin_name = I386_CLANG6_CSROA_PLUGIN;
       compiler.topfname_plugin_obj = plugin_dir + I386_CLANG6_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_CLANG6_TOPFNAME_PLUGIN;
       compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
@@ -2124,6 +2139,8 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG7_SSA_PLUGINCPP : I386_CLANG7_SSA_PLUGIN);
       compiler.expandMemOps_plugin_obj = plugin_dir + I386_CLANG7_EXPANDMEMOPS_PLUGIN + plugin_ext;
       compiler.expandMemOps_plugin_name = I386_CLANG7_EXPANDMEMOPS_PLUGIN;
+      compiler.CSROA_plugin_obj = plugin_dir + I386_CLANG7_CSROA_PLUGIN + plugin_ext;
+      compiler.CSROA_plugin_name = I386_CLANG7_CSROA_PLUGIN;
       compiler.topfname_plugin_obj = plugin_dir + I386_CLANG7_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_CLANG7_TOPFNAME_PLUGIN;
       compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
@@ -2732,13 +2749,18 @@ size_t GccWrapper::ConvertVersion(const std::string& version)
    return ret_value;
 }
 
-std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimization_level, const GccWrapper_CompilerTarget compiler, const std::string& expandMemOps_plugin_obj, const std::string& expandMemOps_plugin_name)
+std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimization_level, const GccWrapper_CompilerTarget compiler, const std::string& expandMemOps_plugin_obj, const std::string& expandMemOps_plugin_name, const std::string& CSROA_plugin_obj, const std::string& CSROA_plugin_name)
 {
    std::string recipe = "";
 #ifndef _WIN32
-   auto renamed_plugin = expandMemOps_plugin_obj;
-   boost::replace_all(renamed_plugin, ".so", "_opt.so");
-   recipe += " -load=" + renamed_plugin;
+   auto renamed_pluginEMO = expandMemOps_plugin_obj;
+   boost::replace_all(renamed_pluginEMO, ".so", "_opt.so");
+   recipe += " -load=" + renamed_pluginEMO;
+#endif
+#ifndef _WIN32
+   auto renamed_pluginCSROA = CSROA_plugin_obj;
+   boost::replace_all(renamed_pluginCSROA, ".so", "_opt.so");
+   recipe += " -load=" + renamed_pluginCSROA;
 #endif
    if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG4)
    {
@@ -2761,6 +2783,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimizat
                    "-basicaa "
                    "-aa ";
          recipe += " -" + expandMemOps_plugin_name +
+                   " -" + CSROA_plugin_name +
                    " -dse -loop-unroll "
                    /// "-instcombine "
                    "-simplifycfg "
@@ -2944,6 +2967,28 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimizat
                    "-loop-sink "
                    "-instsimplify ";
          recipe += recipe;
+      }
+      else if(optimization_level == GccWrapper_OptimizationSet::O0)
+      {
+         recipe += " -tti "
+                   "-targetlibinfo "
+                   "-tbaa "
+                   "-scoped-noalias "
+                   "-assumption-cache-tracker "
+                   "-profile-summary-info "
+                   "-forceattrs "
+                   "-inferattrs "
+                   "-ipsccp "
+                   "-globalopt "
+                   "-domtree "
+                   "-mem2reg "
+                   "-deadargelim "
+                   "-domtree "
+                   "-basicaa "
+                   "-aa ";
+         recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg "
+                   " -" + CSROA_plugin_name;
+
       }
       else
       {

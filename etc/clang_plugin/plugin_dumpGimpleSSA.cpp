@@ -213,6 +213,7 @@ static void loadPass(const llvm::PassManagerBuilder& PMB, llvm::legacy::PassMana
    PM.add(llvm::createCFGSimplificationPass());
    PM.add(llvm::createPromoteMemoryToRegisterPass());
    PM.add(llvm::createGlobalOptimizerPass());
+   PM.add(llvm::createDeadArgEliminationPass());
    PM.add(llvm::createBreakCriticalEdgesPass());
 #ifdef UNIFYFUNCTIONEXITNODES
    PM.add(llvm::createUnifyFunctionExitNodesPass());
