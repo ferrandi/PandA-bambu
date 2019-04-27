@@ -66,6 +66,7 @@
 /// implemented flows
 #include "ASICBackendFlow.hpp"
 #include "LatticeBackendFlow.hpp"
+#include "NanoXploreBackendFlow.hpp"
 /// target devices
 #include "FPGA_device.hpp"
 #include "IC_device.hpp"
@@ -87,6 +88,9 @@
 #include "quartus_report_wrapper.hpp"
 // Lattice
 #include "lattice_flow_wrapper.hpp"
+// NanoXplore
+#include "nxpython_flow_wrapper.hpp"
+
 // Under development
 #if HAVE_EXPERIMENTAL
 #include "FormalityWrapper.hpp"
@@ -247,6 +251,8 @@ BackendFlow::type_t BackendFlow::DetermineBackendFlowType(const target_deviceRef
          return ALTERA_FPGA;
       else if(vendor == "lattice")
          return LATTICE_FPGA;
+      else if(vendor == "nanoxplore")
+         return NANOXPLORE_FPGA;
       else
          THROW_ERROR("FPGA device vendor \"" + vendor + "\" not supported");
    }
@@ -270,6 +276,8 @@ BackendFlowRef BackendFlow::CreateFlow(const ParameterConstRef Param, const std:
          return BackendFlowRef(new AlteraBackendFlow(Param, flow_name, target));
       case LATTICE_FPGA:
          return BackendFlowRef(new LatticeBackendFlow(Param, flow_name, target));
+      case NANOXPLORE_FPGA:
+         return BackendFlowRef(new NanoXploreBackendFlow(Param, flow_name, target));
       case UNKNOWN:
       default:
          THROW_UNREACHABLE("Backend flow not supported");
@@ -506,6 +514,12 @@ void BackendFlow::xload(const xml_element* node)
             type = SynthesisTool::LATTICE_FLOW;
             if(step->script_name.size() == 0)
                step->script_name = "project.tcl";
+         }
+         else if(id == NXPYTHON_FLOW_TOOL_ID)
+         {
+            type = SynthesisTool::NXPYTHON_FLOW;
+            if(step->script_name.size() == 0)
+               step->script_name = "script.py";
          }
          else
             THROW_ERROR("Step <" + id + "> is currently not supported");

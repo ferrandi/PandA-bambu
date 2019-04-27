@@ -106,7 +106,8 @@ class BackendFlow
       XILINX_TASTE_FPGA,
 #endif
       ALTERA_FPGA,
-      LATTICE_FPGA
+      LATTICE_FPGA,
+      NANOXPLORE_FPGA,
    } type_t;
 
  protected:

@@ -66,6 +66,7 @@ class clb_model : public area_model
       LUT_FF_PAIRS,
       ALMS,
       LOGIC_ELEMENTS,
+      FUNCTIONAL_ELEMENTS,
       DSP,
       BRAM
    } value_t;
