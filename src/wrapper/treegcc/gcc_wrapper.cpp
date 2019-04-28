@@ -394,6 +394,14 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
             addTopFName = top_functions_names.size() == 1;
             fname = top_functions_names.front();
          }
+         if(addTopFName)
+         {
+            if(Param->IsParameter("enable-CSROA") && !compiler.CSROA_plugin_obj.empty() && !compiler.expandMemOps_plugin_obj.empty())
+            {
+               command += " -fplugin=" + compiler.expandMemOps_plugin_obj;
+               command += " -fplugin=" + compiler.CSROA_plugin_obj + " -mllvm -panda-KN=" + fname;
+            }
+         }
          command += " -c -fplugin=" + compiler.ssa_plugin_obj + " -mllvm -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) + " -mllvm -panda-infile=" + real_file_name;
 
          if(addTopFName)
@@ -432,11 +440,6 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
          {
             command += " -fplugin=" + compiler.topfname_plugin_obj + " -mllvm -panda-TFN=" + fname;
             command += " -mllvm -panda-Internalize";
-            if(Param->IsParameter("enable-CSROA") && !compiler.CSROA_plugin_obj.empty() && !compiler.expandMemOps_plugin_obj.empty())
-            {
-               command += " -fplugin=" + compiler.expandMemOps_plugin_obj;
-               command += " -fplugin=" + compiler.CSROA_plugin_obj + " -mllvm -panda-KN=" + fname;
-            }
          }
          else
             command += " -fplugin=" + compiler.topfname_plugin_obj + " -fplugin-arg-" + compiler.topfname_plugin_name + "-topfname=" + fname;
