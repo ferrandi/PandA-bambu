@@ -698,7 +698,6 @@ gcc_regression_simple/pr35163.c
 gcc_regression_simple/pr35231.c
 gcc_regression_simple/pr35390.c
 gcc_regression_simple/pr35456.c
-gcc_regression_simple/pr35472.c
 gcc_regression_simple/pr35800.c
 gcc_regression_simple/pr36034-1.c
 gcc_regression_simple/pr36034-2.c

@@ -201,6 +201,8 @@ flopoco_wrapper::flopoco_wrapper(int
       target = new flopoco::StratixIV();
    else if(FU_target.find("LatticeECP3") != std::string::npos)
       target = new flopoco::CycloneII();
+   else if("NG-medium" == FU_target) /// does not exist so we use Virtex 6 target
+      target = new flopoco::Virtex6();
    else
       THROW_UNREACHABLE("Non supported target architecture.");
 

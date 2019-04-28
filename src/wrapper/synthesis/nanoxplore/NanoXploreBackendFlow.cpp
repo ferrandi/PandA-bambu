@@ -31,30 +31,22 @@
  *
  */
 /**
- * @file AlteraBackendFlow.cpp
- * @brief Implementation of the wrapper to Altera tools
+ * @file NanoXploreBackendFlow.cpp
+ * @brief Wrapper to NanoXplore synthesis tools
  *
- * Implementation of the methods to wrap synthesis tools by Altera
- *
- * @author Christian Pilato <pilato@elet.polimi.it>
- * @author Silvia Lovergine <lovergine@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Date$
- * Last modified by $Author$
  *
  */
 /// Header include
-#include "AlteraBackendFlow.hpp"
+#include "NanoXploreBackendFlow.hpp"
 
-/// Autoheader includes
-#include "config_HAVE_ALTERA.hpp"
-#include "config_QUARTUS_13_SETTINGS.hpp"
-#include "config_QUARTUS_SETTINGS.hpp"
+#include "config_HAVE_NANOXPLORE.hpp"
+#include "config_NANOXPLORE_BYPASS.hpp"
+#include "config_NANOXPLORE_LICENSE.hpp"
+#include "config_NANOXPLORE_SETTINGS.hpp"
 
 /// constants include
 #include "synthesis_constants.hpp"
-
-#include "AlteraWrapper.hpp"
 
 #include "LUT_model.hpp"
 #include "area_model.hpp"
@@ -63,76 +55,68 @@
 #include "target_manager.hpp"
 #include "time_model.hpp"
 
+#include "NanoXploreWrapper.hpp"
+
 #include "Parameter.hpp"
 #include "fileIO.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_script_command.hpp"
 
 /// circuit include
-#include "string_manipulation.hpp" // for GET_CLASS
 #include "structural_objects.hpp"
 
-#define ALTERA_LE "ALTERA_LE"
-#define ALTERA_LAB "ALTERA_LAB"
-#define ALTERA_FMAX "ALTERA_FMAX"
-#define ALTERA_FMAX_RESTRICTED "ALTERA_FMAX_RESTRICTED"
-#define ALTERA_REGISTERS "ALTERA_REGISTERS"
-#define ALTERA_IOPIN "ALTERA_IOPIN"
-#define ALTERA_ALUT "ALTERA_ALUT"
-#define ALTERA_ALM "ALTERA_ALM"
-#define ALTERA_DSP "ALTERA_DSP"
-#define ALTERA_MEM "ALTERA_MEM"
+#include "string_manipulation.hpp" // for GET_CLASS
 
-AlteraBackendFlow::AlteraBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _target) : BackendFlow(_Param, _flow_name, _target)
+#define NANOXPLORE_FE "NANOXPLORE_FE"
+#define NANOXPLORE_LUTS "NANOXPLORE_LUTS"
+#define NANOXPLORE_SLACK "NANOXPLORE_SLACK"
+#define NANOXPLORE_REGISTERS "NANOXPLORE_REGISTERS"
+#define NANOXPLORE_IOPIN "NANOXPLORE_IOPIN"
+#define NANOXPLORE_DSP "NANOXPLORE_DSPS"
+#define NANOXPLORE_MEM "NANOXPLORE_MEM"
+#define NANOXPLORE_POWER "NANOXPLORE_POWER"
+
+
+#define NANOXPLORE_LICENSE_SET std::string("export LM_LICENSE_FILE=") + STR(NANOXPLORE_LICENSE) + std::string(";")
+#define NANOXPLORE_BYPASS_SET std::string("export NANOXPLORE_BYPASS=") + STR(NANOXPLORE_BYPASS) + std::string(";")
+
+NanoXploreBackendFlow::NanoXploreBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _target) : BackendFlow(_Param, _flow_name, _target)
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
-   PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " .:: Creating Altera Backend Flow ::.");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Creating NanoXplore Backend Flow ::.");
 
-   default_data["CycloneII"] =
-#include "CycloneII.data"
-       ;
-
-   default_data["CycloneII-R"] =
-#include "CycloneII-R.data"
+   default_data["NG-medium"] =
+#include "NG-medium.data"
        ;
 
-   default_data["CycloneV"] =
-#include "CycloneV.data"
-       ;
-   default_data["StratixV"] =
-#include "StratixV.data"
-       ;
-   default_data["StratixIV"] =
-#include "StratixIV.data"
-       ;
    XMLDomParserRef parser;
    if(Param->isOption(OPT_target_device_script))
    {
       std::string xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
       if(!boost::filesystem::exists(xml_file_path))
          THROW_ERROR("File \"" + xml_file_path + "\" does not exist!");
-      PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Importing scripts from file: " + xml_file_path);
+      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Importing scripts from file: " + xml_file_path);
       parser = XMLDomParserRef(new XMLDomParser(xml_file_path));
    }
    else
    {
+      const target_deviceRef device = target->get_target_device();
       std::string device_string;
-      target_deviceRef device = target->get_target_device();
       if(device->has_parameter("family"))
          device_string = device->get_parameter<std::string>("family");
       else
-         device_string = "CycloneII";
+         device_string = "NG-medium";
       if(default_data.find(device_string) == default_data.end())
          THROW_ERROR("Device family \"" + device_string + "\" not supported!");
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Importing default scripts for target device family: " + device_string);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Importing default scripts for target device family: " + device_string);
       parser = XMLDomParserRef(new XMLDomParser(device_string, default_data[device_string]));
    }
    parse_flow(parser);
 }
 
-AlteraBackendFlow::~AlteraBackendFlow() = default;
+NanoXploreBackendFlow::~NanoXploreBackendFlow() = default;
 
-void AlteraBackendFlow::xparse_utilization(const std::string& fn)
+void NanoXploreBackendFlow::xparse_utilization(const std::string& fn)
 {
    try
    {
@@ -165,7 +149,7 @@ void AlteraBackendFlow::xparse_utilization(const std::string& fn)
                      std::string stringID;
                      if(CE_XVM(stringID, nodeS))
                         LOAD_XVM(stringID, nodeS);
-                     if(stringID == "QUARTUS_SYNTHESIS_SUMMARY")
+                     if(stringID == "NANOXPLORE_SYNTHESIS_SUMMARY")
                      {
                         const xml_node::node_list list_item = nodeS->get_children();
                         for(const auto& it_item : list_item)
@@ -209,62 +193,47 @@ void AlteraBackendFlow::xparse_utilization(const std::string& fn)
    {
       std::cerr << "unknown exception" << std::endl;
    }
-   THROW_ERROR("Error during QUARTUS_SH report parsing: " + fn);
+   THROW_ERROR("Error during NanoXplore report parsing: " + fn);
 }
 
-void AlteraBackendFlow::CheckSynthesisResults()
+void NanoXploreBackendFlow::CheckSynthesisResults()
 {
-   PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Analyzing Altera synthesis results");
-   std::string report_filename = actual_parameters->parameter_values[PARAM_quartus_report];
+   PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Analyzing NanoXplore synthesis results");
+   std::string report_filename = actual_parameters->parameter_values[PARAM_nxpython_report];
    xparse_utilization(report_filename);
 
-   THROW_ASSERT(design_values.find(ALTERA_LE) != design_values.end(), "Missing logic elements");
+   THROW_ASSERT(design_values.find(NANOXPLORE_FE) != design_values.end(), "Missing logic elements");
    area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
-   if(design_values[ALTERA_LE] != 0.0)
-      area_m->set_area_value(design_values[ALTERA_LE]);
-   else
-      area_m->set_area_value(design_values[ALTERA_ALM]);
+   area_m->set_area_value(design_values[NANOXPLORE_FE]);
    auto* area_clb_model = GetPointer<clb_model>(area_m);
-   if(design_values[ALTERA_LE] != 0.0)
-      area_clb_model->set_resource_value(clb_model::LOGIC_ELEMENTS, design_values[ALTERA_LE]);
-   else
-      area_clb_model->set_resource_value(clb_model::ALMS, design_values[ALTERA_ALM]);
-
-   area_clb_model->set_resource_value(clb_model::REGISTERS, design_values[ALTERA_REGISTERS]);
-   area_clb_model->set_resource_value(clb_model::DSP, design_values[ALTERA_DSP]);
-   area_clb_model->set_resource_value(clb_model::BRAM, design_values[ALTERA_MEM]);
+   area_clb_model->set_resource_value(clb_model::FUNCTIONAL_ELEMENTS, design_values[NANOXPLORE_FE]);
+   area_clb_model->set_resource_value(clb_model::SLICE_LUTS, design_values[NANOXPLORE_LUTS]);
+   area_clb_model->set_resource_value(clb_model::REGISTERS, design_values[NANOXPLORE_REGISTERS]);
+   area_clb_model->set_resource_value(clb_model::DSP, design_values[NANOXPLORE_DSP]);
+   area_clb_model->set_resource_value(clb_model::BRAM, design_values[NANOXPLORE_MEM]);
 
    time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
    auto* lut_m = GetPointer<LUT_model>(time_m);
-   const auto combinational_delay = [&]() -> double {
-      if(design_values[ALTERA_FMAX] != 0.0)
-         return 1000 / design_values[ALTERA_FMAX];
-      else if(design_values.find("SLACK") != design_values.end())
-         return Param->getOption<double>(OPT_clock_period) - design_values.find("SLACK")->second;
-      else
-         return 0.0;
-   }();
-   lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, combinational_delay);
-   if(combinational_delay > Param->getOption<double>(OPT_clock_period))
+   if(design_values[NANOXPLORE_SLACK] != 0.0)
+      lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period])-design_values[NANOXPLORE_SLACK]);
+   else
+      lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, 0);
+   if((output_level >= OUTPUT_LEVEL_VERY_PEDANTIC or (Param->IsParameter("DumpingTimingReport") and Param->GetParameter<int>("DumpingTimingReport"))) and
+      ((actual_parameters->parameter_values.find(PARAM_nxpython_timing_report) != actual_parameters->parameter_values.end() and ExistFile(actual_parameters->parameter_values.find(PARAM_nxpython_timing_report)->second))))
    {
-      CopyFile(actual_parameters->parameter_values[PARAM_top_id] + ".sta.rpt", STR_CST_synthesis_timing_violation_report);
+      CopyStdout(actual_parameters->parameter_values.find(PARAM_nxpython_timing_report)->second);
    }
 }
 
-void AlteraBackendFlow::WriteFlowConfiguration(std::ostream& script)
+void NanoXploreBackendFlow::WriteFlowConfiguration(std::ostream& script)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing flow configuration");
-   std::string device_string = Param->getOption<std::string>(OPT_device_string);
    std::string setupscr;
-   if(STR(QUARTUS_SETTINGS) != "0" and device_string.find("EP2C") == std::string::npos)
+   if(STR(NANOXPLORE_SETTINGS) != "0")
    {
-      setupscr = STR(QUARTUS_SETTINGS);
+      setupscr = STR(NANOXPLORE_SETTINGS);
    }
-   else if(STR(QUARTUS_13_SETTINGS) != "0")
-   {
-      setupscr = STR(QUARTUS_13_SETTINGS);
-   }
-   if(setupscr.size())
+   if(setupscr.size() and setupscr != "0")
    {
       script << "#configuration" << std::endl;
       if(boost::algorithm::starts_with(setupscr, "export"))
@@ -273,73 +242,57 @@ void AlteraBackendFlow::WriteFlowConfiguration(std::ostream& script)
          script << ". " << setupscr << " >& /dev/null; ";
       script << std::endl << std::endl;
    }
+   auto nanoxplore_license = STR(NANOXPLORE_LICENSE);
+   if(!nanoxplore_license.empty() && nanoxplore_license != "0")
+   {
+      script << NANOXPLORE_LICENSE_SET << std::endl ;
+   }
+   auto nanoxplore_bypass = STR(NANOXPLORE_BYPASS);
+   if(!nanoxplore_bypass.empty() && nanoxplore_bypass != "0")
+   {
+      script << NANOXPLORE_BYPASS_SET << std::endl ;
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written flow configuration");
 }
 
-void AlteraBackendFlow::create_sdc(const DesignParametersRef dp)
+void NanoXploreBackendFlow::ExecuteSynthesis()
 {
-   std::string clock = dp->parameter_values[PARAM_clk_name];
-
-   std::string sdc_filename = out_dir + "/" + dp->component_name + ".sdc";
-   std::ofstream sdc_file(sdc_filename.c_str());
-   if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
-   {
-      sdc_file << "create_clock -period " + dp->parameter_values[PARAM_clk_period] + " -name " + clock + " [get_ports " + clock + "]\n";
-      sdc_file << "set_min_delay 0 -from [all_inputs] -to [all_registers]\n";
-      sdc_file << "set_min_delay 0 -from [all_registers] -to [all_outputs]\n";
-      sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_registers]\n";
-      sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_registers] -to [all_outputs]\n";
-      sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_outputs]\n";
-      sdc_file << "derive_pll_clocks\n";
-      sdc_file << "derive_clock_uncertainty\n";
-   }
-   else
-      sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_outputs]\n";
-
-   if(Param->isOption(OPT_backend_sdc_extensions))
-      sdc_file << "source " + Param->getOption<std::string>(OPT_backend_sdc_extensions) + "\n";
-   sdc_file.close();
-   dp->parameter_values[PARAM_sdc_file] = sdc_filename;
+#if HAVE_NANOXPLORE
+   BackendFlow::ExecuteSynthesis();
+#else
+   THROW_ERROR("NanoXplore tools not configured; Execution of the synthesis flow is not possible");
+#endif
 }
 
-void AlteraBackendFlow::InitDesignParameters()
+void NanoXploreBackendFlow::InitDesignParameters()
 {
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->NanoXploreBackendFlow - Init Design Parameters");
    if(Param->isOption(OPT_top_design_name))
       actual_parameters->parameter_values[PARAM_top_id] = Param->getOption<std::string>(OPT_top_design_name);
    else
       actual_parameters->parameter_values[PARAM_top_id] = actual_parameters->component_name;
+
    if(Param->isOption(OPT_clock_name))
       actual_parameters->parameter_values[PARAM_clk_name] = Param->getOption<std::string>(OPT_clock_name);
    else
       actual_parameters->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
 
+   /// determine if power optimization has to be performed
+   bool xpwr_enabled = false;
+   if(Param->isOption("power_optimization") && Param->getOption<bool>("power_optimization"))
+      xpwr_enabled = true;
+   actual_parameters->parameter_values[PARAM_power_optimization] = STR(xpwr_enabled);
    bool connect_iob = false;
    if(Param->isOption(OPT_connect_iob) && Param->getOption<bool>(OPT_connect_iob))
       connect_iob = true;
    actual_parameters->parameter_values[PARAM_connect_iob] = STR(connect_iob);
-
    const target_deviceRef device = target->get_target_device();
-   actual_parameters->parameter_values[PARAM_target_device] = device->get_parameter<std::string>("model");
-   std::string device_family = device->get_parameter<std::string>("family");
-   if(device_family.find('-') != std::string::npos)
-      device_family = device_family.substr(0, device_family.find('-'));
-   actual_parameters->parameter_values[PARAM_target_family] = device_family;
+   std::string device_name = device->get_parameter<std::string>("model");
+   std::string package = device->get_parameter<std::string>("package");
+   std::string speed_grade = device->get_parameter<std::string>("speed_grade");
+   std::string device_string = device_name + package + speed_grade;
+   actual_parameters->parameter_values[PARAM_target_device] = device_string;
 
-   std::string HDL_files = actual_parameters->parameter_values[PARAM_HDL_files];
-   std::vector<std::string> file_list = convert_string_to_vector<std::string>(HDL_files, ";");
-   std::string sources_macro_list;
-   bool has_vhdl_library = Param->isOption(OPT_VHDL_library);
-   std::string vhdl_library;
-   if(has_vhdl_library)
-      vhdl_library = Param->getOption<std::string>(OPT_VHDL_library);
-   for(const auto& v : file_list)
-   {
-      if(has_vhdl_library)
-         sources_macro_list += "set_global_assignment -name SOURCE_FILE " + v + " -library " + vhdl_library + "\n";
-      else
-         sources_macro_list += "set_global_assignment -name SOURCE_FILE " + v + "\n";
-   }
-   actual_parameters->parameter_values[PARAM_sources_macro_list] = sources_macro_list;
    if(Param->isOption(OPT_backend_script_extensions))
    {
       actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(true);
@@ -348,19 +301,30 @@ void AlteraBackendFlow::InitDesignParameters()
    else
       actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(false);
 
-   create_sdc(actual_parameters);
+   if(Param->isOption(OPT_VHDL_library))
+   {
+      actual_parameters->parameter_values[PARAM_has_VHDL_library] = STR(true);
+      actual_parameters->parameter_values[PARAM_VHDL_library] = Param->getOption<std::string>(OPT_VHDL_library);
+   }
+   else
+      actual_parameters->parameter_values[PARAM_has_VHDL_library] = STR(false);
+
+   std::string HDL_files = actual_parameters->parameter_values[PARAM_HDL_files];
+   std::vector<std::string> file_list = convert_string_to_vector<std::string>(HDL_files, ";");
+   std::string sources_macro_list;
+   for(unsigned int v = 0; v < file_list.size(); v++)
+   {
+      if(v)
+         sources_macro_list += ", ";
+      sources_macro_list += "'" + file_list[v] + "'";
+   }
+   actual_parameters->parameter_values[PARAM_nxpython_sources_macro_list] = sources_macro_list;
 
    for(auto& step : steps)
    {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Evaluating variables of step " + step->name);
       step->tool->EvaluateVariables(actual_parameters);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Evaluated variables of step " + step->name);
    }
-}
-
-void AlteraBackendFlow::ExecuteSynthesis()
-{
-#if HAVE_ALTERA
-   BackendFlow::ExecuteSynthesis();
-#else
-   THROW_ERROR("Altera tools not configured; Execution of the synthesis flow is not possible");
-#endif
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--NanoXploreBackendFlow - Init Design Parameters");
 }

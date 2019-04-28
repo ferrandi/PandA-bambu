@@ -210,6 +210,12 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + GET_NODE(stmt)->ToString());
                   continue;
                }
+               if(GetPointer<addr_expr>(GET_NODE(ga->op1)))
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---addr_expr cannot be optimized" + STR(GET_INDEX_NODE(ga->op1)));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + GET_NODE(stmt)->ToString());
+                  continue;
+               }
                unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0));
                tree_nodeRef ga_op_type = TM->GetTreeReindex(type_index);
                tree_nodeRef Scpe = TM->GetTreeReindex(function_id);

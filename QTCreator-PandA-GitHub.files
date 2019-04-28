@@ -176,6 +176,7 @@ build/config_headers/config_HAVE_MODF.hpp
 build/config_headers/config_HAVE_MONGOOSE_BUILT.hpp
 build/config_headers/config_HAVE_MPFR_H.hpp
 build/config_headers/config_HAVE_MPPB.hpp
+build/config_headers/config_HAVE_NANOXPLORE.hpp
 build/config_headers/config_HAVE_NODELIB.hpp
 build/config_headers/config_HAVE_OBJECT_CODE_WRAPPER_BUILT.hpp
 build/config_headers/config_HAVE_OPENMP.hpp
@@ -387,6 +388,9 @@ build/config_headers/config_MPPB_ELF_GCC.hpp
 build/config_headers/config_MPPB_ELF_OBJCOPY.hpp
 build/config_headers/config_MPPB_ELF_OBJDUMP.hpp
 build/config_headers/config_MPPB_SREC_UPLOAD.hpp
+build/config_headers/config_NANOXPLORE_BYPASS.hpp
+build/config_headers/config_NANOXPLORE_LICENSE.hpp
+build/config_headers/config_NANOXPLORE_SETTINGS.hpp
 build/config_headers/config_NPROFILE.hpp
 build/config_headers/config_PACKAGE.hpp
 build/config_headers/config_PACKAGE_BUGREPORT.hpp
@@ -2094,6 +2098,12 @@ src/wrapper/synthesis/lattice/LatticeWrapper.cpp
 src/wrapper/synthesis/lattice/LatticeWrapper.hpp
 src/wrapper/synthesis/lattice/lattice_flow_wrapper.cpp
 src/wrapper/synthesis/lattice/lattice_flow_wrapper.hpp
+src/wrapper/synthesis/nanoxplore/NanoXploreBackendFlow.cpp
+src/wrapper/synthesis/nanoxplore/NanoXploreBackendFlow.hpp
+src/wrapper/synthesis/nanoxplore/NanoXploreWrapper.cpp
+src/wrapper/synthesis/nanoxplore/NanoXploreWrapper.hpp
+src/wrapper/synthesis/nanoxplore/nxpython_flow_wrapper.cpp
+src/wrapper/synthesis/nanoxplore/nxpython_flow_wrapper.hpp
 src/wrapper/synthesis/synopsys/SynopsysWrapper.cpp
 src/wrapper/synthesis/synopsys/SynopsysWrapper.hpp
 src/wrapper/synthesis/synopsys/design_compiler/DesignCompilerWrapper.cpp

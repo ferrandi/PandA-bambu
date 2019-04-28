@@ -320,7 +320,7 @@ class tree_manipulation
     * @param  ptd type pointed by the pointer type (tree_reindex).
     * @return the tree_reindex node of the pointer type.
     */
-   tree_nodeRef create_pointer_type(const tree_nodeConstRef& ptd) const;
+   tree_nodeRef create_pointer_type(const tree_nodeConstRef& ptd, unsigned int algn) const;
 
    /**
     * @brief create an integer type starting from a given prec

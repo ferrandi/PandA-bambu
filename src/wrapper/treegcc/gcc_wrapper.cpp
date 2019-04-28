@@ -582,7 +582,9 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting compilation of single files");
-   bool enable_LTO = (compiler.is_clang && source_files.size() > 1) || (GccWrapper_CompilerTarget::CT_I386_CLANG7 == Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler));
+   bool enable_LTO = (compiler.is_clang && source_files.size() > 1);
+   if(HAVE_I386_CLANG7_COMPILER)
+      enable_LTO = enable_LTO || (GccWrapper_CompilerTarget::CT_I386_CLANG7 == Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler));
    for(auto& source_file : source_files)
    {
       if(already_processed_files.find(source_file.first) != already_processed_files.end())
@@ -2762,6 +2764,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimizat
    boost::replace_all(renamed_pluginCSROA, ".so", "_opt.so");
    recipe += " -load=" + renamed_pluginCSROA;
 #endif
+#if HAVE_I386_CLANG4_COMPILER
    if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG4)
    {
       if(optimization_level == GccWrapper_OptimizationSet::O2 || optimization_level == GccWrapper_OptimizationSet::O3)
@@ -2997,25 +3000,35 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimizat
          recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
       }
    }
-   else if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG5)
-   {
-      const auto opt_level = WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
-   }
-   else if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG6)
-   {
-      const auto opt_level = WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
-   }
-   else if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG7)
+   else
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+       if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG5)
    {
       const auto opt_level = WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
       recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
    }
    else
+#endif
+#if HAVE_I386_CLANG6_COMPILER
+       if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG6)
+   {
+      const auto opt_level = WriteOptimizationLevel(optimization_level);
+      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
+      recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
+   }
+   else
+#endif
+#if HAVE_I386_CLANG7_COMPILER
+       if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG7)
+   {
+      const auto opt_level = WriteOptimizationLevel(optimization_level);
+      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
+      recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
+   }
+   else
+#endif
       THROW_ERROR("Clang compiler not yet supported");
    return " " + recipe + " ";
 }

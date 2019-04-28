@@ -2620,8 +2620,7 @@ bool tree_helper::is_a_complex(const tree_managerConstRef& TM, const unsigned in
    return Type->get_kind() == complex_type_K;
 }
 
-
-//static void getBuiltinFieldTypes(const tree_nodeConstRef& type, std::list<tree_nodeConstRef> &listOfTypes, std::unordered_set<unsigned int> &already_visited)
+// static void getBuiltinFieldTypes(const tree_nodeConstRef& type, std::list<tree_nodeConstRef> &listOfTypes, std::unordered_set<unsigned int> &already_visited)
 //{
 //   if(already_visited.find(type->index) != already_visited.end())
 //      return;
@@ -2674,7 +2673,7 @@ bool tree_helper::is_a_complex(const tree_managerConstRef& TM, const unsigned in
 //      listOfTypes.push_back(type);
 //}
 
-//static bool same_size_fields(const tree_nodeConstRef& t)
+// static bool same_size_fields(const tree_nodeConstRef& t)
 //{
 //   std::list<tree_nodeConstRef> listOfTypes;
 //   std::unordered_set<unsigned int> already_visited;
@@ -2734,7 +2733,7 @@ bool tree_helper::is_an_array(const tree_managerConstRef& TM, const unsigned int
       {
          return false;
       }
-//      return same_size_fields(Type);
+      //      return same_size_fields(Type);
    }
    return false;
 }
@@ -5245,6 +5244,15 @@ bool tree_helper::IsAligned(const tree_managerConstRef& TM, unsigned int type)
    const type_node* tn = GetPointer<type_node>(node);
    THROW_ASSERT(tn, "Tree node " + boost::lexical_cast<std::string>(type) + " is of type " + node->get_kind_text());
    return tn->unql and tn->algn != GetPointer<type_node>(GET_NODE(tn->unql))->algn;
+}
+
+unsigned int tree_helper::get_var_alignment(const tree_managerConstRef& TM, unsigned int var)
+{
+   const tree_nodeRef varnode = TM->get_tree_node_const(var);
+   const auto* vd = GetPointer<var_decl>(varnode);
+   if(vd)
+      return vd->algn < 8 ? 1 : (vd->algn / 8);
+   return 1;
 }
 
 std::string tree_helper::normalized_ID(const std::string& id)

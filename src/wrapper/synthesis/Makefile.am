@@ -1,7 +1,7 @@
 #this file is src/wrapper/synthesis/Makefile.am
 METASOURCES = AUTO
-SUBDIRS = xilinx altera synopsys lattice
-DIST_SUBDIRS = xilinx altera synopsys lattice
+SUBDIRS = xilinx altera synopsys lattice nanoxplore
+DIST_SUBDIRS = xilinx altera synopsys lattice nanoxplore
 
 noinst_LTLIBRARIES = lib_synthesis.la
 
@@ -28,6 +28,7 @@ lib_synthesis_la_CPPFLAGS = \
                  -I$(top_srcdir)/src/wrapper/synthesis/xilinx/ise \
                  -I$(top_srcdir)/src/wrapper/synthesis/altera \
                  -I$(top_srcdir)/src/wrapper/synthesis/lattice \
+                 -I$(top_srcdir)/src/wrapper/synthesis/nanoxplore \
                  -I$(top_srcdir)/src/technology \
                  -I$(top_srcdir)/src/technology/physical_library \
                  -I$(top_srcdir)/src/utility \
@@ -55,6 +56,7 @@ lib_synthesis_la_LIBADD = \
                         $(top_builddir)/src/wrapper/synthesis/xilinx/lib_Xilinxwrapper.la \
                         $(top_builddir)/src/wrapper/synthesis/altera/lib_Alterawrapper.la \
                         $(top_builddir)/src/wrapper/synthesis/lattice/lib_Latticewrapper.la \
+                        $(top_builddir)/src/wrapper/synthesis/nanoxplore/lib_NanoXplorewrapper.la \
                         $(top_builddir)/src/wrapper/synthesis/synopsys/lib_Synopsyswrapper.la
 
 

@@ -212,7 +212,8 @@
 #define OPT_AREA_WEIGHT (1 + OPT_ALIGNED_ACCESS_PARAMETER)
 #define OPT_BACKEND_SCRIPT_EXTENSIONS_PARAMETER (1 + OPT_AREA_WEIGHT)
 #define OPT_BACKEND_SDC_EXTENSIONS_PARAMETER (1 + OPT_BACKEND_SCRIPT_EXTENSIONS_PARAMETER)
-#define OPT_BITVALUE_IPA (1 + OPT_BACKEND_SDC_EXTENSIONS_PARAMETER)
+#define OPT_VHDL_LIBRARY_PARAMETER (1 + OPT_BACKEND_SDC_EXTENSIONS_PARAMETER)
+#define OPT_BITVALUE_IPA (1 + OPT_VHDL_LIBRARY_PARAMETER)
 #define OPT_BRAM_HIGH_LATENCY (1 + OPT_BITVALUE_IPA)
 #define OPT_CHANNELS_NUMBER (1 + OPT_BRAM_HIGH_LATENCY)
 #define OPT_CHANNELS_TYPE (1 + OPT_CHANNELS_NUMBER)
@@ -762,6 +763,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --backend-sdc-extensions=file\n"
       << "        Specify a file that will be included in the Synopsys Design Constraints\n"
       << "        file (SDC).\n\n"
+      << "    --VHDL-library=libraryname\n"
+      << "        Specify the library in which the VHDL generated files are compiled.\n\n"
       << "    --device-name=value\n"
       << "        Specify the name of the device. Three different cases are foreseen:\n"
       << "            - Xilinx:  a comma separated string specifying device, speed grade\n"
@@ -823,7 +826,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --registered-inputs=value\n"
       << "        Specify if inputs are registered or not:\n"
       << "             auto  - inputs are registered only for proxy functions (default)\n"
-      << "             top   - inputs are registred only for top and proxy functions\n"
+      << "             top   - inputs are registered only for top and proxy functions\n"
       << "             yes   - all inputs are registered\n"
       << "             no    - none of the inputs is registered\n\n"
       << "    --fsm-encoding=value\n"
@@ -852,7 +855,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --experimental-setup=<setup>\n"
       << "        Specify the experimental setup. This is a shorthand to set multiple\n"
       << "        options with a single command.\n"
-      << "        Available values for <setup> are the follwing:\n"
+      << "        Available values for <setup> are the following:\n"
       << "             BAMBU-AREA           - this setup implies:\n"
       << "                                    -Os  -D'printf(fmt, ...)='\n"
       << "                                    --memory-allocation-policy=ALL_BRAM\n"
@@ -956,7 +959,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Perform host-profiling.\n\n";
 #endif
    os << "    --bitvalue-ipa\n"
-      << "        Enables interprocedural bitvalue analysis.\n\n";
+      << "        Enables inter-procedural bitvalue analysis.\n\n";
 #if HAVE_EXPERIMENTAL || HAVE_ILP_BUILT
    os << std::endl;
 #endif
@@ -1157,6 +1160,7 @@ int BambuParameter::Exec()
       {"aligned-access", no_argument, nullptr, OPT_ALIGNED_ACCESS_PARAMETER},
       {"backend-script-extensions", required_argument, nullptr, OPT_BACKEND_SCRIPT_EXTENSIONS_PARAMETER},
       {"backend-sdc-extensions", required_argument, nullptr, OPT_BACKEND_SDC_EXTENSIONS_PARAMETER},
+      {"VHDL-library", required_argument, nullptr, OPT_VHDL_LIBRARY_PARAMETER},
       {"do-not-use-asynchronous-memories", no_argument, nullptr, OPT_DO_NOT_USE_ASYNCHRONOUS_MEMORIES},
       {"do-not-chain-memories", no_argument, nullptr, OPT_DO_NOT_CHAIN_MEMORIES},
       {"rom-duplication", no_argument, nullptr, OPT_ROM_DUPLICATION},
@@ -1986,6 +1990,11 @@ int BambuParameter::Exec()
          case OPT_BACKEND_SDC_EXTENSIONS_PARAMETER:
          {
             setOption(OPT_backend_sdc_extensions, optarg);
+            break;
+         }
+         case OPT_VHDL_LIBRARY_PARAMETER:
+         {
+            setOption(OPT_VHDL_library, optarg);
             break;
          }
          case OPT_DO_NOT_USE_ASYNCHRONOUS_MEMORIES:
