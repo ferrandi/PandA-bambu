@@ -210,7 +210,7 @@ static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)> XPa
 static void loadPass(const llvm::PassManagerBuilder& PMB, llvm::legacy::PassManagerBase& PM)
 {
    // PM.add(llvm::createCodeGenPreparePass());
-   PM.add(llvm::createCFGSimplificationPass());
+   //PM.add(llvm::createCFGSimplificationPass());
    PM.add(llvm::createPromoteMemoryToRegisterPass());
    PM.add(llvm::createGlobalOptimizerPass());
    PM.add(llvm::createDeadArgEliminationPass());
