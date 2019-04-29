@@ -721,7 +721,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             }
             case MemoryAllocation_Policy::INTERN_UNALIGNED:
             {
-               is_internal = HLSMgr->Rmem->is_sds_var(var_index);
+               is_internal = HLSMgr->Rmem->has_sds_var(var_index) && HLSMgr->Rmem->is_sds_var(var_index);
                break;
             }
             case MemoryAllocation_Policy::NONE:
@@ -810,7 +810,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   }
                }
             }
-            if(memory_allocation_policy==MemoryAllocation_Policy::INTERN_UNALIGNED && !HLSMgr->Rmem->is_sds_var(var_index))
+            if(memory_allocation_policy == MemoryAllocation_Policy::INTERN_UNALIGNED && (!HLSMgr->Rmem->has_sds_var(var_index) || !HLSMgr->Rmem->is_sds_var(var_index)))
                mem_map.second = false;
          }
          else
