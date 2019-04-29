@@ -70,7 +70,6 @@ void nxpython_flow_wrapper::EvaluateVariables(const DesignParametersRef dp)
    dp->parameter_values[PARAM_nxpython_timing_report] = output_dir + "/post_route_timing_summary.rpt";
 }
 
-
 std::string nxpython_flow_wrapper::get_command_line(const DesignParametersRef& dp) const
 {
    std::ostringstream s;
