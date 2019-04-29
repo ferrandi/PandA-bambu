@@ -224,7 +224,7 @@ DesignFlowStep_Status add_library::InternalExec()
          }
          else
             op->time_m->set_stage_period(0.0);
-         if(min_cycles <= 1 && (HLSMgr->Rmem->get_allocated_space()+HLSMgr->Rmem->get_allocated_parameters_memory())==0)
+         if(min_cycles <= 1 && (HLSMgr->Rmem->get_allocated_space() + HLSMgr->Rmem->get_allocated_parameters_memory()) == 0)
             fu->logical_type = functional_unit::COMBINATIONAL;
       }
       else
