@@ -94,7 +94,7 @@ bool CustomScalarReplacementOfAggregatesPass::runOnModule(llvm::Module& module)
    expand_ptrs(kernel_function, inner_functions);
 
    // Cleanup the remaining code
-   // cleanup(exp_idx_args_map, exp_fun_map, inner_functions);
+   cleanup(exp_idx_args_map, exp_fun_map, inner_functions);
 
    return true;
 }
@@ -2047,7 +2047,7 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
 }
 #if ADD_RSP
 // These constructors add our pass to a list of global extensions.
-static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_CSROA_Ox)(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);
+static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_CSROA_Ox)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
 #endif
 
 #ifdef _WIN32
