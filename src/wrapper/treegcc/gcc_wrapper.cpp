@@ -80,34 +80,34 @@
 #include "config_HAVE_SPARC_COMPILER.hpp"
 #include "config_HAVE_SPARC_ELF_GCC.hpp"
 #include "config_I386_CLANG4_ASTANALYZER_PLUGIN.hpp"
+#include "config_I386_CLANG4_CSROA_PLUGIN.hpp"
 #include "config_I386_CLANG4_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG4_EXE.hpp"
 #include "config_I386_CLANG4_EXPANDMEMOPS_PLUGIN.hpp"
-#include "config_I386_CLANG4_CSROA_PLUGIN.hpp"
 #include "config_I386_CLANG4_SSA_PLUGIN.hpp"
 #include "config_I386_CLANG4_SSA_PLUGINCPP.hpp"
 #include "config_I386_CLANG4_TOPFNAME_PLUGIN.hpp"
 #include "config_I386_CLANG5_ASTANALYZER_PLUGIN.hpp"
+#include "config_I386_CLANG5_CSROA_PLUGIN.hpp"
 #include "config_I386_CLANG5_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG5_EXE.hpp"
 #include "config_I386_CLANG5_EXPANDMEMOPS_PLUGIN.hpp"
-#include "config_I386_CLANG5_CSROA_PLUGIN.hpp"
 #include "config_I386_CLANG5_SSA_PLUGIN.hpp"
 #include "config_I386_CLANG5_SSA_PLUGINCPP.hpp"
 #include "config_I386_CLANG5_TOPFNAME_PLUGIN.hpp"
 #include "config_I386_CLANG6_ASTANALYZER_PLUGIN.hpp"
+#include "config_I386_CLANG6_CSROA_PLUGIN.hpp"
 #include "config_I386_CLANG6_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG6_EXE.hpp"
 #include "config_I386_CLANG6_EXPANDMEMOPS_PLUGIN.hpp"
-#include "config_I386_CLANG6_CSROA_PLUGIN.hpp"
 #include "config_I386_CLANG6_SSA_PLUGIN.hpp"
 #include "config_I386_CLANG6_SSA_PLUGINCPP.hpp"
 #include "config_I386_CLANG6_TOPFNAME_PLUGIN.hpp"
 #include "config_I386_CLANG7_ASTANALYZER_PLUGIN.hpp"
+#include "config_I386_CLANG7_CSROA_PLUGIN.hpp"
 #include "config_I386_CLANG7_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG7_EXE.hpp"
 #include "config_I386_CLANG7_EXPANDMEMOPS_PLUGIN.hpp"
-#include "config_I386_CLANG7_CSROA_PLUGIN.hpp"
 #include "config_I386_CLANG7_SSA_PLUGIN.hpp"
 #include "config_I386_CLANG7_SSA_PLUGINCPP.hpp"
 #include "config_I386_CLANG7_TOPFNAME_PLUGIN.hpp"
@@ -379,31 +379,37 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
 #endif
    else if(cm == GccWrapper_CompilerMode::CM_STD)
    {
-      if(compiler.is_clang)
+      std::string fname;
+      bool addTopFName = false;
+      if(isWholeProgram)
       {
-         std::string fname;
-         bool addTopFName = false;
-         if(isWholeProgram && compiler.is_clang)
+         fname = "main";
+         addTopFName = compiler.is_clang;
+      }
+      else if(Param->isOption(OPT_top_functions_names))
+      {
+         const auto top_functions_names = Param->getOption<const std::list<std::string>>(OPT_top_functions_names);
+         addTopFName = top_functions_names.size() == 1;
+         fname = top_functions_names.front();
+      }
+      if(addTopFName && Param->getOption<bool>(OPT_do_not_expose_globals))
+      {
+         if(compiler.is_clang)
          {
-            fname = "main";
-            addTopFName = true;
-         }
-         else if(Param->isOption(OPT_top_functions_names))
-         {
-            const auto top_functions_names = Param->getOption<const std::list<std::string>>(OPT_top_functions_names);
-            addTopFName = top_functions_names.size() == 1;
-            fname = top_functions_names.front();
-         }
-         if(addTopFName)
-         {
+            command += " -fplugin=" + compiler.topfname_plugin_obj + " -mllvm -panda-TFN=" + fname;
+            command += " -mllvm -panda-Internalize";
             if(Param->IsParameter("enable-CSROA") && !compiler.CSROA_plugin_obj.empty() && !compiler.expandMemOps_plugin_obj.empty())
             {
                command += " -fplugin=" + compiler.expandMemOps_plugin_obj;
                command += " -fplugin=" + compiler.CSROA_plugin_obj + " -mllvm -panda-KN=" + fname;
             }
          }
+         else
+            command += " -fplugin=" + compiler.topfname_plugin_obj + " -fplugin-arg-" + compiler.topfname_plugin_name + "-topfname=" + fname;
+      }
+      if(compiler.is_clang)
+      {
          command += " -c -fplugin=" + compiler.ssa_plugin_obj + " -mllvm -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) + " -mllvm -panda-infile=" + real_file_name;
-
          if(addTopFName)
          {
             command += " -mllvm -panda-topfname=" + fname;
@@ -416,35 +422,6 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       command += " -c -flto -o " + Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + GetBaseName(real_file_name) + ".o ";
    else
       THROW_ERROR("compilation mode not yet implemented");
-   if(cm != GccWrapper_CompilerMode::CM_ANALYZER && cm != GccWrapper_CompilerMode::CM_LTO && ((Param->isOption(OPT_top_functions_names) && Param->getOption<bool>(OPT_do_not_expose_globals)) || (isWholeProgram && compiler.is_clang)))
-   {
-      std::string fname;
-      bool addPlugin = false;
-      if(isWholeProgram && compiler.is_clang)
-      {
-         fname = "main";
-         addPlugin = true;
-      }
-      else
-      {
-         const auto top_functions_names = Param->getOption<const std::list<std::string>>(OPT_top_functions_names);
-         addPlugin = top_functions_names.size() == 1;
-         fname = top_functions_names.front();
-         if(fname == "main" && !compiler.is_clang)
-            addPlugin = false;
-      }
-
-      if(addPlugin)
-      {
-         if(compiler.is_clang)
-         {
-            command += " -fplugin=" + compiler.topfname_plugin_obj + " -mllvm -panda-TFN=" + fname;
-            command += " -mllvm -panda-Internalize";
-         }
-         else
-            command += " -fplugin=" + compiler.topfname_plugin_obj + " -fplugin-arg-" + compiler.topfname_plugin_name + "-topfname=" + fname;
-      }
-   }
 
    std::string temporary_file_run_o;
    if(cm != GccWrapper_CompilerMode::CM_LTO)
@@ -2755,7 +2732,8 @@ size_t GccWrapper::ConvertVersion(const std::string& version)
    return ret_value;
 }
 
-std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimization_level, const GccWrapper_CompilerTarget compiler, const std::string& expandMemOps_plugin_obj, const std::string& expandMemOps_plugin_name, const std::string& CSROA_plugin_obj, const std::string& CSROA_plugin_name)
+std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimization_level, const GccWrapper_CompilerTarget compiler, const std::string& expandMemOps_plugin_obj, const std::string& expandMemOps_plugin_name,
+                                      const std::string& CSROA_plugin_obj, const std::string& CSROA_plugin_name)
 {
    std::string recipe = "";
 #ifndef _WIN32
@@ -2789,8 +2767,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimizat
                    "-domtree "
                    "-basicaa "
                    "-aa ";
-         recipe += " -" + expandMemOps_plugin_name +
-                   " -" + CSROA_plugin_name +
+         recipe += " -" + expandMemOps_plugin_name + " -" + CSROA_plugin_name +
                    " -dse -loop-unroll "
                    /// "-instcombine "
                    "-simplifycfg "
@@ -2993,9 +2970,10 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimizat
                    "-domtree "
                    "-basicaa "
                    "-aa ";
-         recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg "
-                   " -" + CSROA_plugin_name;
-
+         recipe += " -" + expandMemOps_plugin_name +
+                   " -loop-unroll -simplifycfg "
+                   " -" +
+                   CSROA_plugin_name;
       }
       else
       {
