@@ -53,7 +53,6 @@
  */
 class nxpython_flow_wrapper : public NanoXploreWrapper
 {
-
  protected:
    /**
     * Evaluates the design variables

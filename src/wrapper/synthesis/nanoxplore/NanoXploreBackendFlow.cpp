@@ -76,7 +76,6 @@
 #define NANOXPLORE_MEM "NANOXPLORE_MEM"
 #define NANOXPLORE_POWER "NANOXPLORE_POWER"
 
-
 #define NANOXPLORE_LICENSE_SET std::string("export LM_LICENSE_FILE=") + STR(NANOXPLORE_LICENSE) + std::string(";")
 #define NANOXPLORE_BYPASS_SET std::string("export NANOXPLORE_BYPASS=") + STR(NANOXPLORE_BYPASS) + std::string(";")
 
@@ -215,7 +214,7 @@ void NanoXploreBackendFlow::CheckSynthesisResults()
    time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
    auto* lut_m = GetPointer<LUT_model>(time_m);
    if(design_values[NANOXPLORE_SLACK] != 0.0)
-      lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period])-design_values[NANOXPLORE_SLACK]);
+      lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]) - design_values[NANOXPLORE_SLACK]);
    else
       lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, 0);
    if((output_level >= OUTPUT_LEVEL_VERY_PEDANTIC or (Param->IsParameter("DumpingTimingReport") and Param->GetParameter<int>("DumpingTimingReport"))) and
@@ -245,12 +244,12 @@ void NanoXploreBackendFlow::WriteFlowConfiguration(std::ostream& script)
    auto nanoxplore_license = STR(NANOXPLORE_LICENSE);
    if(!nanoxplore_license.empty() && nanoxplore_license != "0")
    {
-      script << NANOXPLORE_LICENSE_SET << std::endl ;
+      script << NANOXPLORE_LICENSE_SET << std::endl;
    }
    auto nanoxplore_bypass = STR(NANOXPLORE_BYPASS);
    if(!nanoxplore_bypass.empty() && nanoxplore_bypass != "0")
    {
-      script << NANOXPLORE_BYPASS_SET << std::endl ;
+      script << NANOXPLORE_BYPASS_SET << std::endl;
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written flow configuration");
 }
