@@ -283,6 +283,7 @@ PLUGIN_TEST
            ;;
            darwin*)
              plugin_option='-fPIC -shared -undefined dynamic_lookup '
+           ;;
            *)
              plugin_option='-fPIC -shared'
            ;;
@@ -661,6 +662,7 @@ PLUGIN_TEST
            ;;
            darwin*)
              plugin_option='-fPIC -shared -undefined dynamic_lookup '
+           ;;
            *)
              plugin_option='-fPIC -shared '
            ;;
