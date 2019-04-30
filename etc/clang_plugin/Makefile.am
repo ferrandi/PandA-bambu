@@ -30,12 +30,16 @@ check:all
 
 CLANG_LIBS=-lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat
 CLANG4_LIBS=-Wl,--start-group $(CLANG_LIBS) -Wl,--end-group
+CLANG4_LIBSD=$(CLANG_LIBS)
 
 CLANG5_LIBS=-Wl,--start-group $(CLANG_LIBS) -Wl,--end-group
+CLANG5_LIBSD=$(CLANG_LIBS)
 
 CLANG6_LIBS=-Wl,--start-group $(CLANG_LIBS) -lclangCrossTU -Wl,--end-group
+CLANG6_LIBSD=$(CLANG_LIBS) -lclangCrossTU
 
 CLANG7_LIBS=-Wl,--start-group $(CLANG_LIBS) -lclangCrossTU -lclangToolingInclusions -Wl,--end-group
+CLANG7_LIBSD=$(CLANG_LIBS) -lclangCrossTU -lclangToolingInclusions
 
 ###### clang 4.0
 if BUILD_I386_CLANG4_EMPTY_PLUGIN
@@ -380,7 +384,13 @@ clang4_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/c
 	fi;
 
 bambuS2S-4: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
-	$(I386_CLANG4_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG4_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG4_LIBS)  -o $@
+	case $(host_os) in \
+	  darwin*) \
+	    $(I386_CLANG4_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG4_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG4_LIBSD)  -o $@;;\
+	  *) \
+	    $(I386_CLANG4_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG4_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG4_LIBS)  -o $@;;\
+	esac;
+
 
 ###### 
 
@@ -715,7 +725,12 @@ clang5_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/c
 	fi;
 
 bambuS2S-5: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
-	$(I386_CLANG5_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG5_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG5_LIBS)  -o $@
+	case $(host_os) in \
+	  darwin*) \
+	    $(I386_CLANG5_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG5_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG5_LIBSD)  -o $@;;\
+	  *) \
+	    $(I386_CLANG5_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG5_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG5_LIBS)  -o $@;;\
+	esac;
 
 ###### 
 
@@ -1050,7 +1065,12 @@ clang6_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/c
 	fi;
 
 bambuS2S-6: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
-	$(I386_CLANG6_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG6_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG6_LIBS)  -o $@
+	case $(host_os) in \
+	  darwin*) \
+	    $(I386_CLANG6_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG6_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG6_LIBSD)  -o $@;;\
+	  *) \
+	    $(I386_CLANG6_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG6_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG6_LIBS)  -o $@;;\
+	esac;
 
 ###### 
 
@@ -1384,7 +1404,12 @@ clang7_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/c
 	fi;
 
 bambuS2S-7: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
-	$(I386_CLANG7_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG7_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG7_LIBS)  -o $@
+	case $(host_os) in \
+	  darwin*) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG7_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG7_LIBSD)  -o $@;;\
+	  *) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG7_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG7_LIBS)  -o $@;;\
+	esac;
 
 ###### 
 
