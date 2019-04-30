@@ -281,6 +281,8 @@ PLUGIN_TEST
            mingw*) 
              plugin_option="-shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$I386_LLVM_CONFIG4_EXE --ldflags --libs --system-libs`"
            ;;
+           darwin*)
+             plugin_option='-fPIC -shared -undefined dynamic_lookup '
            *)
              plugin_option='-fPIC -shared'
            ;;
@@ -657,6 +659,8 @@ PLUGIN_TEST
            mingw*) 
              plugin_option="-shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$I386_LLVM_CONFIG4_EXE --ldflags --libs --system-libs`"
            ;;
+           darwin*)
+             plugin_option='-fPIC -shared -undefined dynamic_lookup '
            *)
              plugin_option='-fPIC -shared '
            ;;
