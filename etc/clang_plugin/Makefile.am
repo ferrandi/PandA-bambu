@@ -100,7 +100,7 @@ $(I386_CLANG4_SSA_PLUGIN) : clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o cl
 	obj_list='clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG4_PLUGIN_COMPILER) opt_clang4_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleSSA_opt.so;\
-	  $(I386_CLANG4_PLUGIN_COMPILER) clang4_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleSSA.so ; 
+	  $(I386_CLANG4_PLUGIN_COMPILER) clang4_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleSSA.so ; \
 	fi;
 endif
 if BUILD_PTAA
@@ -454,7 +454,7 @@ $(I386_CLANG5_SSA_PLUGIN) : clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple.o cl
 	obj_list='clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) opt_clang5_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleSSA_opt.so;\
-	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleSSA.so ; 
+	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleSSA.so ; \
 	fi;
 endif
 if BUILD_PTAA
@@ -794,7 +794,7 @@ $(I386_CLANG6_SSA_PLUGIN) : clang6_plugin_dumpGimpleSSA.o clang6_dumpGimple.o cl
 	obj_list='clang6_dumpGimple.o clang6_RangeAnalysis.o clang6_eSSA.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG6_PLUGIN_COMPILER) opt_clang6_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang6_plugin_dumpGimpleSSA_opt.so;\
-	  $(I386_CLANG6_PLUGIN_COMPILER) clang6_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang6_plugin_dumpGimpleSSA.so ; 
+	  $(I386_CLANG6_PLUGIN_COMPILER) clang6_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang6_plugin_dumpGimpleSSA.so ; \
 	fi;
 endif
 if BUILD_PTAA
@@ -1133,7 +1133,7 @@ $(I386_CLANG7_SSA_PLUGIN) : clang7_plugin_dumpGimpleSSA.o clang7_dumpGimple.o cl
 	obj_list='clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG7_PLUGIN_COMPILER) opt_clang7_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang7_plugin_dumpGimpleSSA_opt.so;\
-	  $(I386_CLANG7_PLUGIN_COMPILER) clang7_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang7_plugin_dumpGimpleSSA.so ; 
+	  $(I386_CLANG7_PLUGIN_COMPILER) clang7_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang7_plugin_dumpGimpleSSA.so ; \
 	fi;
 endif
 if BUILD_PTAA
