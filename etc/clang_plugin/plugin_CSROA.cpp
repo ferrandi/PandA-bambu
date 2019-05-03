@@ -48,6 +48,7 @@
 #include <llvm/IR/IntrinsicInst.h>
 #include <llvm/Support/Debug.h>
 #include <llvm/Support/raw_ostream.h>
+#include <llvm/Transforms/Scalar.h>
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
 #include <llvm/Transforms/Utils/Cloning.h>
 
@@ -2043,6 +2044,7 @@ static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA)> XPass(CLANG
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
+   PM.add(llvm::createSimpleLoopUnrollPass());
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA)());
 }
 #if ADD_RSP
