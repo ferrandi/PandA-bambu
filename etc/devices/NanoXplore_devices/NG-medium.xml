@@ -14,7 +14,8 @@
       <cmd name="from nanoxmap import *"/>
       <cmd name="result = StringIO()"/>
       <cmd name="dir = &quot;.&quot;"/>
-      <cmd name="os.remove(dir + '/pads.py')" condition="!${__connect_iob__}"/>
+      <cmd name="if path.exists(dir + '/pads.py'):" condition="!${__connect_iob__}"/>
+      <cmd name="    os.remove(dir + '/pads.py')" condition="!${__connect_iob__}"/>
       <cmd name="sys.path.append(dir)"/>
       <cmd name="project = createProject(dir)"/>
       <cmd name="project.setVariantName('NG-MEDIUM-EMBEDDED')" condition="!${__connect_iob__}"/>
