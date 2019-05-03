@@ -87,6 +87,9 @@ NanoXploreBackendFlow::NanoXploreBackendFlow(const ParameterConstRef _Param, con
    default_data["NG-medium"] =
 #include "NG-medium.data"
        ;
+   default_data["NG-large"] =
+#include "NG-large.data"
+       ;
 
    XMLDomParserRef parser;
    if(Param->isOption(OPT_target_device_script))

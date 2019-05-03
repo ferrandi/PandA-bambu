@@ -139,6 +139,9 @@ void FPGA_device::load_devices(const target_deviceRef device)
    default_device_data["nx1h35S"] =
 #include "nx1h35S.data"
        ;
+   default_device_data["nx1h140tsp"] =
+#include "nx1h140tsp.data"
+       ;
 
    auto output_level = Param->getOption<unsigned int>(OPT_output_level);
 

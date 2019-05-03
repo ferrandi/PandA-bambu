@@ -28,11 +28,14 @@ lib_NanoXplorewrapper_la_CPPFLAGS = \
 
 lib_NanoXplorewrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
 
-NanoXploreBackendFlow.cpp : NG-medium.data
+NanoXploreBackendFlow.cpp : NG-medium.data NG-large.data
+
 #The tab in this rule can't be replaced by blanks
 NG-medium.data: $(top_srcdir)/etc/devices/NanoXplore_devices/NG-medium.xml
 	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/NanoXplore_devices/NG-medium.xml NG-medium.data
 
+NG-large.data: $(top_srcdir)/etc/devices/NanoXplore_devices/NG-large.xml
+	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/NanoXplore_devices/NG-large.xml NG-large.data
 
 noinst_HEADERS = \
    NanoXploreBackendFlow.hpp \

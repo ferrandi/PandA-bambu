@@ -28,7 +28,7 @@ xc7z020-1clg484-VVD.data xc7vx485t-2ffg1761-VVD.data xc7vx690t-3ffg1930-VVD.data
 xc7a100t-1csg324-VVD.data\
 xc7z020-1clg484-YOSYS-VVD.data \
 LFE335EA8FN484C.data \
-nx1h35S.data
+nx1h35S.data nx1h140tsp.data
 
 FPGA_device.cpp : xc4vlx100-10ff1513.data xc5vlx110t-1ff1136.data xc5vlx330t-2ff1738.data xc5vlx50-3ff1153.data xc6vlx240t-1ff1156.data xc7vx330t-1ffg1157.data xc7z020-1clg484.data \
 EP2C70F896C6.data EP2C70F896C6-R.data \
@@ -38,7 +38,7 @@ xc7z020-1clg484-VVD.data xc7vx485t-2ffg1761-VVD.data xc7vx690t-3ffg1930-VVD.data
 xc7a100t-1csg324-VVD.data\
 xc7z020-1clg484-YOSYS-VVD.data \
 LFE335EA8FN484C.data \
-nx1h35S.data
+nx1h35S.data nx1h140tsp.data
 
 #The tab in this rule can't be replaced by blanks
 
@@ -103,6 +103,8 @@ LFE335EA8FN484C.data: $(top_srcdir)/etc/devices/Lattice_devices/LFE335EA8FN484C.
 nx1h35S.data: $(top_srcdir)/etc/devices/NanoXplore_devices/nx1h35S.xml
 	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/NanoXplore_devices/nx1h35S.xml nx1h35S.data
 
+nx1h140tsp.data: $(top_srcdir)/etc/devices/NanoXplore_devices/nx1h140tsp.xml
+	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/NanoXplore_devices/nx1h140tsp.xml nx1h140tsp.data
 
 #do not touch the following line
 
