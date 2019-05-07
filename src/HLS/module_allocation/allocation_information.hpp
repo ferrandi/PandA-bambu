@@ -87,9 +87,6 @@ struct operation;
 #define ENTRY_STD "entry_FU"
 #define EXIT_STD "exit_FU"
 #define NOP_STD "nop_FU"
-#define VIEW_CONVERT_STD_INT "view_convert_expr_FU"
-#define VIEW_CONVERT_STD_UINT "ui_view_convert_expr_FU"
-#define VIEW_CONVERT_STD_REAL "fp_view_convert_expr_FU"
 
 #define ALLOCATION_MUX_MARGIN 1.0
 
