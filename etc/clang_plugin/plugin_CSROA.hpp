@@ -46,34 +46,7 @@
 
 #include <set>
 
-typedef std::pair<llvm::Function*, unsigned long long> fun_arg_key_ty;
-
-struct Compare_fun_arg_key
-{
-   bool operator()(const fun_arg_key_ty& lhs, const fun_arg_key_ty& rhs)
-   {
-      if(lhs.first < rhs.first)
-      {
-         return true;
-      }
-      else if(lhs.first == rhs.first)
-      {
-         return lhs.second < rhs.second;
-      }
-      else
-      {
-         return false;
-      }
-   }
-};
-
-typedef std::map<fun_arg_key_ty, std::vector<unsigned long long>, Compare_fun_arg_key> expanded_elements_in_args_ty;
-typedef std::map<llvm::Function*, llvm::Function*> fun_fun_map_ty;
-typedef std::map<llvm::Function*, llvm::Function*> fun_to_fun_map_ty;
-typedef std::map<llvm::CallInst*, llvm::CallInst*> call_to_call_map_ty;
-typedef std::set<llvm::CallInst*> call_set_ty;
 typedef std::set<llvm::Instruction*> inst_set_ty;
-typedef std::map<llvm::Function*, std::set<llvm::Argument*>> fun_to_args_map_ty;
 typedef std::map<llvm::Function*, std::set<llvm::AllocaInst*>> fun_to_alloca_map_ty;
 
 class CustomScalarReplacementOfAggregatesPass : public llvm::ModulePass
@@ -84,9 +57,7 @@ class CustomScalarReplacementOfAggregatesPass : public llvm::ModulePass
  private:
    const std::string kernel_name;
 
-   call_set_ty visited_memcpy;
    inst_set_ty inst_to_remove;
-   fun_to_args_map_ty args_to_remove;
    fun_to_alloca_map_ty alloca_to_remove;
    const llvm::DataLayout* DL;
 
@@ -114,6 +85,8 @@ class CustomScalarReplacementOfAggregatesPass : public llvm::ModulePass
  private:
    bool check_assumptions(llvm::Function* kernel_function);
 
+   bool expansion_allowed(llvm::Value* aggregate);
+
    void spot_accessed_globals(llvm::Function* kernel_function, std::vector<llvm::Function*>& inner_functions, std::set<llvm::GlobalVariable*>& accessed_globals);
 
    void replicate_calls(llvm::Function* kernel_function, std::vector<llvm::Function*>& inner_functions);
@@ -122,12 +95,12 @@ class CustomScalarReplacementOfAggregatesPass : public llvm::ModulePass
 
    void process_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb);
 
-   void compute_base_and_offset(llvm::Use* ptr_use, llvm::Value*& base_address, std::vector<llvm::Value*>& offset_chain);
+   void compute_base_and_offset(llvm::Use* ptr_use, llvm::Value*& base_address, std::vector<llvm::Value*>& offset_chain, std::vector<llvm::Instruction*>& inst_chain);
 
    template <class I>
    llvm::Value* get_element_at_offset(I* base_address, std::map<I*, std::vector<I*>>& map, signed long long offset, unsigned long long accessed_size, const llvm::DataLayout* DL);
 
-   llvm::Value* get_expanded_value(llvm::Value* base_address, signed long long offset, unsigned long long accessed_size);
+   llvm::Value* get_expanded_value(llvm::Value* base_address, signed long long offset, unsigned long long accessed_size, llvm::Argument* arg_if_any = nullptr, llvm::Use* use = nullptr);
 
    void expand_signatures_and_call_sites(std::vector<llvm::Function*>& inner_functions, std::map<llvm::Function*, llvm::Function*>& exp_fun_map, std::map<llvm::Function*, std::set<unsigned long long>>& exp_idx_args_map, llvm::Function* kernel_function);
 
