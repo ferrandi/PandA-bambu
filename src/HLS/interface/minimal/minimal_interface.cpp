@@ -831,12 +831,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                   ext_port = SM_minimal_interface->add_port_vector(port_name, port_o::IN, GetPointer<port_o>(port_in)->get_ports_size(), interfaceObj, port_in->get_typeRef());
                else
                {
-                  if(port_in->get_typeRef()->type == structural_type_descriptor::UINT)
-                  {
-                     structural_type_descriptorRef vecbool = structural_type_descriptorRef(new structural_type_descriptor("bool", port_in->get_typeRef()->size));
-                     ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, vecbool);
-                  }
-                  else if(port_in->get_typeRef()->type == structural_type_descriptor::INT)
+                  if(port_in->get_typeRef()->type == structural_type_descriptor::UINT || port_in->get_typeRef()->type == structural_type_descriptor::INT)
                   {
                      structural_type_descriptorRef vecbool = structural_type_descriptorRef(new structural_type_descriptor("bool", port_in->get_typeRef()->size));
                      ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, vecbool);
@@ -917,8 +912,46 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
          if(port_out->get_kind() == port_vector_o_K)
             ext_port = SM_minimal_interface->add_port_vector(port_name, port_o::OUT, GetPointer<port_o>(port_out)->get_ports_size(), interfaceObj, port_out->get_typeRef());
          else
-            ext_port = SM_minimal_interface->add_port(port_name, port_o::OUT, interfaceObj, port_out->get_typeRef());
-
+         {
+            if(port_out->get_typeRef()->type == structural_type_descriptor::INT)
+            {
+               auto TM = HLSMgr->get_HLS_target()->get_technology_manager();
+               std::string library_name = TM->get_library(VIEW_CONVERT_STD_INT);
+               auto c_obj = SM_minimal_interface->add_module_from_technology_library(port_name+"_"+VIEW_CONVERT_STD_INT, VIEW_CONVERT_STD_INT, library_name, interfaceObj, TM);
+               auto bit_size_port = port_out->get_typeRef()->size;
+               structural_objectRef in1 = GetPointer<module>(c_obj)->get_in_port(0);
+               in1->type_resize(bit_size_port);
+               structural_objectRef sign = SM_minimal_interface->add_sign("out_" + c_obj->get_id(), interfaceObj, port_out->get_typeRef());
+               SM_minimal_interface->add_connection(port_out, sign);
+               SM_minimal_interface->add_connection(sign, in1);
+               structural_objectRef out0 = GetPointer<module>(c_obj)->get_out_port(0);
+               out0->type_resize(bit_size_port);
+               THROW_ASSERT(out0->get_typeRef()->size, "size greater than one expected");
+               structural_type_descriptorRef vecbool = structural_type_descriptorRef(new structural_type_descriptor("bool", port_out->get_typeRef()->size));
+               ext_port = SM_minimal_interface->add_port(port_name, port_o::OUT, interfaceObj, vecbool);
+               port_out = out0;
+            }
+            else if(port_out->get_typeRef()->type == structural_type_descriptor::UINT)
+            {
+               auto TM = HLSMgr->get_HLS_target()->get_technology_manager();
+               std::string library_name = TM->get_library(VIEW_CONVERT_STD_UINT);
+               auto c_obj = SM_minimal_interface->add_module_from_technology_library(port_name+"_"+VIEW_CONVERT_STD_UINT, VIEW_CONVERT_STD_UINT, library_name, interfaceObj, TM);
+               auto bit_size_port = port_out->get_typeRef()->size;
+               structural_objectRef in1 = GetPointer<module>(c_obj)->get_in_port(0);
+               in1->type_resize(bit_size_port);
+               structural_objectRef sign = SM_minimal_interface->add_sign("out_" + c_obj->get_id(), interfaceObj, port_out->get_typeRef());
+               SM_minimal_interface->add_connection(port_out, sign);
+               SM_minimal_interface->add_connection(sign, in1);
+               structural_objectRef out0 = GetPointer<module>(c_obj)->get_out_port(0);
+               out0->type_resize(bit_size_port);
+               THROW_ASSERT(out0->get_typeRef()->size, "size greater than one expected");
+               structural_type_descriptorRef vecbool = structural_type_descriptorRef(new structural_type_descriptor("bool", port_out->get_typeRef()->size));
+               ext_port = SM_minimal_interface->add_port(port_name, port_o::OUT, interfaceObj, vecbool);
+               port_out = out0;
+            }
+            else
+               ext_port = SM_minimal_interface->add_port(port_name, port_o::OUT, interfaceObj, port_out->get_typeRef());
+         }
          port_o::fix_port_properties(port_out, ext_port);
          SM_minimal_interface->add_connection(port_out, ext_port);
       }
