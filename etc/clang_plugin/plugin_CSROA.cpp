@@ -56,6 +56,17 @@
 
 #include "plugin_CSROA.hpp"
 
+static llvm::cl::opt<uint32_t> MaxNumScalarTypes("csroa-expanded-scalar-threshold",
+                                                 llvm::cl::Hidden,
+                                                 llvm::cl::init(64),
+                                                 llvm::cl::desc(
+                                                         "Max amount of scalar types contained in a type for allowing disaggregation"));
+
+static llvm::cl::opt<uint32_t> MaxTypeByteSize("csroa-type-byte-size",
+                                               llvm::cl::Hidden,
+                                               llvm::cl::init(32*8),
+                                               llvm::cl::desc("Max type size (in bytes) allowed for disaggregation"));
+
 bool CustomScalarReplacementOfAggregatesPass::runOnModule(llvm::Module& module)
 {
    DL = &module.getDataLayout();
@@ -2477,7 +2488,7 @@ bool CustomScalarReplacementOfAggregatesPass::expansion_allowed(llvm::Value* agg
             DL = &alloca_inst->getModule()->getDataLayout();
          }
 
-         unsigned long long allocated_size = 0; // DL->getTypeAllocSize(ptr_ty);
+          unsigned long long allocated_size = DL->getTypeAllocSize(ptr_ty);
 
          auto size_it = arg_size_map.find(llvm::dyn_cast<llvm::Argument>(aggregate));
          if(size_it != arg_size_map.end() and !size_it->second.empty())
@@ -2486,14 +2497,7 @@ bool CustomScalarReplacementOfAggregatesPass::expansion_allowed(llvm::Value* agg
             allocated_size *= size_it->second.front();
          }
 
-         if(!(non_aggregates_types <= 64 and allocated_size <= 32*8))
-         {
-            llvm::errs()<<"1)Expansion not allowed for ";
-            aggregate->print(llvm::errs());
-            llvm::errs()<<"\n";
-         }
-
-         return non_aggregates_types <= 64 and allocated_size <= 32*8;
+          return non_aggregates_types <= MaxNumScalarTypes and allocated_size <= MaxTypeByteSize;
       }
       else
       {
