@@ -2417,11 +2417,11 @@ bool CustomScalarReplacementOfAggregatesPass::expansion_allowed(llvm::Value* agg
    if(aggregate->getType()->isPointerTy())
    {
       auto arg_it = arg_size_map.find(llvm::dyn_cast<llvm::Argument>(aggregate));
-      if(aggregate->getType()->getPointerElementType()->isAggregateType() or arg_it != arg_size_map.end() and !arg_it->second.empty() and arg_it->second.front() > 1)
+      if(aggregate->getType()->getPointerElementType()->isAggregateType() or (llvm::isa<llvm::GlobalValue>(aggregate) && llvm::dyn_cast<llvm::GlobalValue>(aggregate)->getValueType()->isAggregateType()) or (arg_it != arg_size_map.end() and !arg_it->second.empty() and arg_it->second.front() > 1))
       {
          std::vector<llvm::Type*> contained_types;
 
-         llvm::Type* ptr_ty = aggregate->getType()->getPointerElementType();
+         llvm::Type* ptr_ty = llvm::isa<llvm::GlobalValue>(aggregate) ? llvm::dyn_cast<llvm::GlobalValue>(aggregate)->getValueType() : aggregate->getType()->getPointerElementType();
          if(arg_it != arg_size_map.end() and !arg_it->second.empty() and arg_it->second.front() > 1)
          {
             for(unsigned long long e_idx = 0; e_idx < arg_it->second.front(); e_idx++)
@@ -2436,7 +2436,7 @@ bool CustomScalarReplacementOfAggregatesPass::expansion_allowed(llvm::Value* agg
 
          unsigned long long non_aggregates_types = 0;
 
-         for(auto c_idx = 0; c_idx < contained_types.size(); c_idx++)
+         for(auto c_idx = 0u; c_idx < contained_types.size(); c_idx++)
          {
             llvm::Type* el_ty = contained_types.at(c_idx);
 
@@ -2444,7 +2444,7 @@ bool CustomScalarReplacementOfAggregatesPass::expansion_allowed(llvm::Value* agg
             {
                if(el_ty->isStructTy())
                {
-                  for(unsigned long long e_idx = 0; e_idx < el_ty->getStructNumElements(); ++e_idx)
+                  for(unsigned int e_idx = 0; e_idx < el_ty->getStructNumElements(); ++e_idx)
                   {
                      contained_types.push_back(el_ty->getStructElementType(e_idx));
                   }
@@ -2486,15 +2486,28 @@ bool CustomScalarReplacementOfAggregatesPass::expansion_allowed(llvm::Value* agg
             allocated_size *= size_it->second.front();
          }
 
-         return non_aggregates_types <= 10 and allocated_size <= 30;
+         if(!(non_aggregates_types <= 64 and allocated_size <= 32*8))
+         {
+            llvm::errs()<<"1)Expansion not allowed for ";
+            aggregate->print(llvm::errs());
+            llvm::errs()<<"\n";
+         }
+
+         return non_aggregates_types <= 64 and allocated_size <= 32*8;
       }
       else
       {
+         llvm::errs()<<"2)Expansion not allowed for ";
+         aggregate->print(llvm::errs());
+         llvm::errs()<<"\n";
          return false;
       }
    }
    else
    {
+      llvm::errs()<<"3)Expansion not allowed for ";
+      aggregate->print(llvm::errs());
+      llvm::errs()<<"\n";
       return false;
    }
 }
@@ -2549,6 +2562,7 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
 #if ADD_RSP
 // These constructors add our pass to a list of global extensions.
 static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_CSROA_Ox)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
+
 #endif
 
 #ifdef _WIN32
