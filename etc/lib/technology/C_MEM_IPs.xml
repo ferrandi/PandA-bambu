@@ -5544,7 +5544,7 @@ begin
   end process;
 
   out1 &lt;= dout_a;
-  proxy_out1 &lt;= dout_a;
+  proxy_out1 &lt;= std_logic_vector(resize(unsigned(dout_a), BITSIZE_proxy_out1));
   Sout_Rdata_ram &lt;= Sin_Rdata_ram;
   Sout_DataRdy &lt;= Sin_DataRdy;
 "/>
