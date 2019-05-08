@@ -1747,7 +1747,7 @@ function CONV(po2 : std_logic_vector(n_byte_on_databus-1 downto 0)) return std_l
    signal delayed_byte_offset_registered : std_logic_vector(nbits_byte_offset-1 downto 0) 1INIT_ZERO_VALUE;
    signal delayed_byte_offset_registered1 : std_logic_vector(nbits_byte_offset-1 downto 0) 1INIT_ZERO_VALUE;
 begin
-   tmp_addr &lt;= proxy_in2 when (proxy_sel_LOAD or proxy_sel_STORE) else in2;
+   tmp_addr &lt;= proxy_in2 when ((proxy_sel_LOAD or proxy_sel_STORE) = &apos;1&apos;) else in2;
 
    dout(BRAM_BITSIZE-1 downto 0) &lt;= dout_a;
    dout(2*BRAM_BITSIZE-1 downto BRAM_BITSIZE) &lt;= dout_b;
