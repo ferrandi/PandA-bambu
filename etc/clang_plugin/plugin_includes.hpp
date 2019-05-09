@@ -214,6 +214,7 @@ namespace llvm
       /// current module pass
       llvm::ModulePass* modulePass;
       llvm::LLVMContext* moduleContext;
+      std::string TopFunctionName;
 
       /// relation between LLVM object and serialization index
       std::map<const void*, unsigned int> llvm2index;

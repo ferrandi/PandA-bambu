@@ -221,6 +221,30 @@ namespace llvm
    };
 #undef DEF_BUILTIN
 
+
+   static std::string getDemangled(const std::string& declname)
+   {
+      int status;
+      char* demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), nullptr, nullptr, &status);
+      if(status == 0)
+      {
+         std::string res = declname;
+         if(std::string(demangled_outbuffer).find_last_of('(') != std::string::npos)
+         {
+            res = demangled_outbuffer;
+            auto parPos = res.find('(');
+            assert(parPos != std::string::npos);
+            res = res.substr(0, parPos);
+         }
+         free(demangled_outbuffer);
+         return res;
+      }
+
+      assert(demangled_outbuffer == nullptr);
+
+      return declname;
+   }
+
    DumpGimpleRaw::DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool _onlyGlobals, std::map<std::string, std::vector<std::string>>* _fun2params)
        : outdir_name(_outdir_name),
          InFile(_InFile),
@@ -1094,7 +1118,10 @@ namespace llvm
          auto ty = store.getValueOperand()->getType();
          auto type = assignCodeType(ty);
          auto written_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         if(store.getAlignment() && written_obj_size > (8 * store.getAlignment()))
+         auto funName = store.getFunction()->getName();
+         auto demangled = getDemangled(funName);
+         bool is_a_top_parameter = isa<llvm::Argument>(store.getPointerOperand()) &&  (funName == TopFunctionName || demangled == TopFunctionName);
+         if(store.getAlignment() && written_obj_size > (8 * store.getAlignment()) && !is_a_top_parameter)
             return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
          else
             return build2(GT(MEM_REF), type, addr, zero);
@@ -1785,7 +1812,11 @@ namespace llvm
          auto ty = load.getType();
          auto type = assignCodeType(ty);
          auto read_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         if(load.getAlignment() && read_obj_size > (8 * load.getAlignment()))
+         auto funName = load.getFunction()->getName();
+         auto demangled = getDemangled(funName);
+         bool is_a_top_parameter = isa<llvm::Argument>(load.getPointerOperand()) &&  (funName == TopFunctionName || demangled == TopFunctionName);
+
+         if(load.getAlignment() && read_obj_size > (8 * load.getAlignment()) && !is_a_top_parameter)
             return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
          else
             return build2(GT(MEM_REF), type, addr, zero);
@@ -6280,11 +6311,12 @@ namespace llvm
          }
       }
    }
-   bool DumpGimpleRaw::runOnModule(llvm::Module& M, llvm::ModulePass* _modulePass, const std::string& TopFunctionName)
+   bool DumpGimpleRaw::runOnModule(llvm::Module& M, llvm::ModulePass* _modulePass, const std::string& _TopFunctionName)
    {
       DL = &M.getDataLayout();
       modulePass = _modulePass;
       moduleContext = &M.getContext();
+      TopFunctionName = _TopFunctionName;
       buildMetaDataMap(M);
       auto res = lowerMemIntrinsics(M);
       res = res | RebuildConstants(M);
