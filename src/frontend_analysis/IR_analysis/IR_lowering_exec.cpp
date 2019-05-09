@@ -2614,7 +2614,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         /// check if there is a misaligned access
                         unsigned int obj_size = tree_helper::Size(tree_helper::CGetType(GET_NODE(ga->op0)));
                         unsigned int bram_size = std::max(8u, obj_size / 2);
-                        /// chech if the mem_ref corresponds to an implicit memset and then it will be lowered to simple loop initializing the variable
+                        /// check if the mem_ref corresponds to an implicit memset and then it will be lowered to simple loop initializing the variable
                         bool implicit_memset = GET_NODE(ga->op1)->get_kind() == constructor_K && GetPointer<constructor>(GET_NODE(ga->op1)) && GetPointer<constructor>(GET_NODE(ga->op1))->list_of_idx_valu.size() == 0;
                         if(implicit_memset)
                         {
@@ -2856,7 +2856,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                {
                   auto* vd = GetPointer<var_decl>(GET_NODE(ga->op0));
                   tree_nodeRef type = vd->type;
-                  std::cerr << "algn" << GetPointer<type_node>(GET_NODE(type))->algn << "\n";
+                  //std::cerr << "algn" << GetPointer<type_node>(GET_NODE(type))->algn << "\n";
                   tree_nodeRef pt = tree_man->create_pointer_type(type, GetPointer<type_node>(GET_NODE(type))->algn);
                   tree_nodeRef ae = tree_man->create_unary_operation(pt, ga->op0, srcp_default, addr_expr_K);
                   tree_nodeRef new_ga = CreateGimpleAssign(pt, ae, block.first, srcp_default);
