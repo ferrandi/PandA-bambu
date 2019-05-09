@@ -44,6 +44,7 @@ New features introduced:
 - Renamed top component and removed the suffix _minimal_interface. Now, the top component has the same name of the top function.
 - Improved and fixed the synthesis of empty functions.
 - Added option --VHDL-library=libraryname to specify the library in which the synthesized function has to be compiled.
+- Extented the VHDL support to other bambu library components.
 
 This release includes also a set of fixes:
     on COND_EXPR_RESTRUCTURING step
