@@ -1699,25 +1699,25 @@ assign bram_write = sel_STORE || proxy_sel_STORE || we_ram_cs;
       end if;
    end integer_ternary_operator;
 
-function CONV(po2 : std_logic_vector(n_byte_on_databus-1 downto 0)) return std_logic_vector is
+function CONV(po2 : std_logic_vector(2*n_byte_on_databus-1 downto 0)) return std_logic_vector is
   variable int_po2 : integer;
   begin
       int_po2 := to_integer(unsigned(po2));
       case int_po2 is
          when 1 =&gt;
-            return std_logic_vector(shift_left(to_unsigned(1,n_byte_on_databus),1) -1);
+            return std_logic_vector(shift_left(to_unsigned(1,2*n_byte_on_databus),1) -1);
          when 2 =&gt;
-            return std_logic_vector(shift_left(to_unsigned(1,n_byte_on_databus),2) -1);
+            return std_logic_vector(shift_left(to_unsigned(1,2*n_byte_on_databus),2) -1);
          when 4 =&gt;
-            return std_logic_vector(shift_left(to_unsigned(1,n_byte_on_databus),4) -1);
+            return std_logic_vector(shift_left(to_unsigned(1,2*n_byte_on_databus),4) -1);
          when 8 =&gt;
-            return std_logic_vector(shift_left(to_unsigned(1,n_byte_on_databus),8) -1);
+            return std_logic_vector(shift_left(to_unsigned(1,2*n_byte_on_databus),8) -1);
          when 16 =&gt;
-            return std_logic_vector(shift_left(to_unsigned(1,n_byte_on_databus),16) -1);
+            return std_logic_vector(shift_left(to_unsigned(1,2*n_byte_on_databus),16) -1);
          when 32 =&gt;
-            return std_logic_vector(shift_left(to_unsigned(1,n_byte_on_databus),32) -1);
+            return std_logic_vector(shift_left(to_unsigned(1,2*n_byte_on_databus),32) -1);
          when others =&gt;
-            return std_logic_vector(to_signed(-1,n_byte_on_databus));
+            return std_logic_vector(to_signed(-1,2*n_byte_on_databus));
       end case;
    end CONV;
 
@@ -1836,26 +1836,24 @@ begin
    begin
       if(PRIVATE_MEMORY=0) then
          if(proxy_sel_STORE /= &apos;0&apos;) then
-            conv_in(n_byte_on_databus-1 downto 0) &lt;= std_logic_vector(resize(unsigned(proxy_in3(BITSIZE_proxy_in3-1 downto 3)), n_byte_on_databus));
+            conv_in &lt;= std_logic_vector(resize(unsigned(proxy_in3(BITSIZE_proxy_in3-1 downto 3)), 2*n_byte_on_databus));
          else
             if(sel_STORE /= &apos;0&apos;) then
-               conv_in(n_byte_on_databus-1 downto 0) &lt;= std_logic_vector(resize(unsigned(in3(BITSIZE_in3-1 downto 3)), n_byte_on_databus));
+               conv_in &lt;= std_logic_vector(resize(unsigned(in3(BITSIZE_in3-1 downto 3)), 2*n_byte_on_databus));
             else
-               conv_in(n_byte_on_databus-1 downto 0) &lt;= std_logic_vector(resize(unsigned(S_data_ram_size(BITSIZE_S_data_ram_size-1 downto 3)), n_byte_on_databus));
+               conv_in &lt;= std_logic_vector(resize(unsigned(S_data_ram_size(BITSIZE_S_data_ram_size-1 downto 3)), 2*n_byte_on_databus));
             end if;
          end if;
       else
          if(proxy_sel_STORE /= &apos;0&apos;) then
-            conv_in(n_byte_on_databus-1 downto 0) &lt;= std_logic_vector(resize(unsigned(proxy_in3(BITSIZE_proxy_in3-1 downto 3)), n_byte_on_databus));
+            conv_in &lt;= std_logic_vector(resize(unsigned(proxy_in3(BITSIZE_proxy_in3-1 downto 3)), 2*n_byte_on_databus));
          else
-            conv_in(n_byte_on_databus-1 downto 0) &lt;= std_logic_vector(resize(unsigned(in3(BITSIZE_in3-1 downto 3)), n_byte_on_databus));
+            conv_in &lt;= std_logic_vector(resize(unsigned(in3(BITSIZE_in3-1 downto 3)), 2*n_byte_on_databus));
          end if;
       end  if;
    end process;
 
-   conv_out(n_byte_on_databus-1 downto 0) &lt;= std_logic_vector(resize(unsigned(CONV(conv_in(n_byte_on_databus-1 downto 0))),n_byte_on_databus));
-   conv_out(2*n_byte_on_databus-1 downto n_byte_on_databus) &lt;= (others =&gt; &apos;0&apos;);
-
+   conv_out &lt;= CONV(conv_in);
    be &lt;= std_logic_vector(shift_left(unsigned(conv_out), to_integer(unsigned(byte_offset))));
 
 
