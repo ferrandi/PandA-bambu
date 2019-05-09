@@ -5508,7 +5508,7 @@ assign Sout_DataRdy = Sin_DataRdy;
 
 begin
 
-  din_a &lt;=  proxy_in1 when (proxy_sel_STORE = &apos;1&apos;) else in1;
+  din_a &lt;=  std_logic_vector(resize(unsigned(proxy_in1), data_size)) when (proxy_sel_STORE = &apos;1&apos;) else in1;
   bram_write &lt;= (sel_STORE and in4) or proxy_sel_STORE;
 
   L1_single_write : process(clock)
