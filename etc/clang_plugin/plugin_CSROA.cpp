@@ -2696,8 +2696,6 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
 #if ADD_RSP
 // These constructors add our pass to a list of global extensions.
 static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_CSROA_Ox1)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
-/// repeated at the end
-static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_CSROA_Ox2)(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);
 
 #endif
 
