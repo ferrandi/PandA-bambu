@@ -1762,7 +1762,7 @@ begin
          end if;
       else
          if(PRIVATE_MEMORY=0) then
-            if S_addr_ram = std_logic_vector(address_space_begin_u(nbit_addr-1 downto nbits_address_space_rangesize)) then
+            if S_addr_ram(nbit_addr-1 downto nbits_address_space_rangesize) = std_logic_vector(address_space_begin_u(nbit_addr-1 downto nbits_address_space_rangesize)) then
                cs &lt;= &apos;1&apos;;
             else
                cs &lt;= &apos;0&apos;;
