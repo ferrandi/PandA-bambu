@@ -97,6 +97,8 @@
 #include "llvm/RangeAnalysis.hpp"
 #include "llvm/eSSA.hpp"
 
+#include "CSROA.hpp"
+
 #include <cxxabi.h>
 #include <iomanip>
 
@@ -220,7 +222,6 @@ namespace llvm
 #include "gcc/builtins.def"
    };
 #undef DEF_BUILTIN
-
 
    static std::string getDemangled(const std::string& declname)
    {
@@ -1120,7 +1121,7 @@ namespace llvm
          auto written_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
          auto funName = store.getFunction()->getName();
          auto demangled = getDemangled(funName);
-         bool is_a_top_parameter = isa<llvm::Argument>(store.getPointerOperand()) &&  (funName == TopFunctionName || demangled == TopFunctionName);
+         bool is_a_top_parameter = isa<llvm::Argument>(store.getPointerOperand()) && (funName == TopFunctionName || demangled == TopFunctionName);
          if(store.getAlignment() && written_obj_size > (8 * store.getAlignment()) && !is_a_top_parameter)
             return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
          else
@@ -1814,7 +1815,7 @@ namespace llvm
          auto read_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
          auto funName = load.getFunction()->getName();
          auto demangled = getDemangled(funName);
-         bool is_a_top_parameter = isa<llvm::Argument>(load.getPointerOperand()) &&  (funName == TopFunctionName || demangled == TopFunctionName);
+         bool is_a_top_parameter = isa<llvm::Argument>(load.getPointerOperand()) && (funName == TopFunctionName || demangled == TopFunctionName);
 
          if(load.getAlignment() && read_obj_size > (8 * load.getAlignment()) && !is_a_top_parameter)
             return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
@@ -6354,6 +6355,11 @@ namespace llvm
 #ifdef DEBUG_RA
       assert(!llvm::verifyModule(M, &llvm::errs()));
 #endif
+      assert(!llvm::verifyModule(M, &llvm::errs()));
+      // M.print(llvm::errs(),nullptr);
+      res = res | CustomScalarReplacementOfAggregatesPass::SROA_wrapperInliningStep(M.getFunction(TopFunctionName), M, modulePass);
+      assert(!llvm::verifyModule(M, &llvm::errs()));
+
       if(!onlyGlobals)
       {
          for(const auto& fun : M.getFunctionList())
