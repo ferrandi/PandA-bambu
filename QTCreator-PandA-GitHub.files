@@ -471,6 +471,8 @@ build/src/parser/treegcc/treeLexer.cpp
 build/src/parser/treegcc/treeParser.cpp
 build/src/parser/treegcc/treeParser.hpp
 build/src/revision_hash.hpp
+etc/clang_plugin/CSROA.cpp
+etc/clang_plugin/CSROA.hpp
 etc/clang_plugin/HardekopfLin_AA.cpp
 etc/clang_plugin/HardekopfLin_AA.hpp
 etc/clang_plugin/bambuS2S.cpp
@@ -484,7 +486,6 @@ etc/clang_plugin/llvm/my_OrderedInstructions.cpp
 etc/clang_plugin/llvm/my_OrderedInstructions.hpp
 etc/clang_plugin/plugin_ASTAnalyzer.cpp
 etc/clang_plugin/plugin_CSROA.cpp
-etc/clang_plugin/plugin_CSROA.hpp
 etc/clang_plugin/plugin_dumpGimpleEmpty.cpp
 etc/clang_plugin/plugin_dumpGimpleSSA.cpp
 etc/clang_plugin/plugin_expandMemOps.cpp
