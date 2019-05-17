@@ -207,26 +207,16 @@ static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)> XPa
 #endif
 #endif
 // This function is of type PassManagerBuilder::ExtensionFn
-static void loadPass(const llvm::PassManagerBuilder& PMB, llvm::legacy::PassManagerBase& PM)
+static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
-   // PM.add(llvm::createCodeGenPreparePass());
-   // PM.add(llvm::createCFGSimplificationPass());
    PM.add(llvm::createPromoteMemoryToRegisterPass());
    PM.add(llvm::createGlobalOptimizerPass());
    PM.add(llvm::createBreakCriticalEdgesPass());
-#ifdef UNIFYFUNCTIONEXITNODES
-   PM.add(llvm::createUnifyFunctionExitNodesPass());
-#endif
-   if(PMB.OptLevel >= 2)
-   {
-      PM.add(llvm::createDeadStoreEliminationPass());
-      PM.add(llvm::createAggressiveDCEPass());
-      PM.add(llvm::createLoopLoadEliminationPass());
-   }
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)());
 }
 // These constructors add our pass to a list of global extensions.
 #if ADD_RSP
+static llvm::RegisterStandardPasses llvmtoolLoader_O0(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
 static llvm::RegisterStandardPasses llvmtoolLoader_Ox(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);
 #endif
 

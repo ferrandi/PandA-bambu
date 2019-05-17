@@ -6397,6 +6397,7 @@ static void clear_bdd2vec()
    bv_time = 0;
 }
 
+static bool BDD_INIT_DONE = false;
 // Initialize the BDDs for points-to sets and GEPs.
 void Andersen_AA::pts_init()
 {
@@ -6469,7 +6470,11 @@ void Andersen_AA::pts_init()
 
    // Use at least 8M nodes, with 1 cache entry per 8 nodes.
    // The second parameter doesn't matter because cacheratio overrides it.
-   bdd_init(8000000, 1000);
+   if(!BDD_INIT_DONE)
+   {
+      bdd_init(8000000, 1000);
+      BDD_INIT_DONE = true;
+   }
    bdd_setcacheratio(8);
    // Grow the node table by 1M at a time, when <40% is free.
    bdd_setmaxincrease(1000000);

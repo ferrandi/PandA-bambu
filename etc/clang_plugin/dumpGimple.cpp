@@ -6320,6 +6320,7 @@ namespace llvm
       TopFunctionName = _TopFunctionName;
       buildMetaDataMap(M);
       auto res = lowerMemIntrinsics(M);
+
       res = res | RebuildConstants(M);
       res = res | lowerIntrinsics(M);
       compute_eSSA(M);
@@ -6355,10 +6356,6 @@ namespace llvm
 #ifdef DEBUG_RA
       assert(!llvm::verifyModule(M, &llvm::errs()));
 #endif
-      assert(!llvm::verifyModule(M, &llvm::errs()));
-      // M.print(llvm::errs(),nullptr);
-      res = res | CustomScalarReplacementOfAggregatesPass::SROA_wrapperInliningStep(M.getFunction(TopFunctionName), M, modulePass);
-      assert(!llvm::verifyModule(M, &llvm::errs()));
 
       if(!onlyGlobals)
       {
