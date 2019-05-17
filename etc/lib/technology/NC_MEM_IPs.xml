@@ -11186,7 +11186,7 @@ begin
   Mout_oe_ram  &lt;= &apos;1&apos; when (int_sel_LOAD = &apos;1&apos;) else  Min_oe_ram;
   Mout_we_ram  &lt;= &apos;1&apos; when (int_sel_STORE = &apos;1&apos;) else  Min_we_ram;
   out1  &lt;= M_Rdata_ram(BITSIZE_out1-1 downto 0);
-  Mout_Wdata_ram  &lt;= in1 when (int_sel_STORE = &apos;1&apos;) else Min_Wdata_ram;
+  Mout_Wdata_ram  &lt;= std_logic_vector(resize(unsigned(in1), BITSIZE_Mout_Wdata_ram)) when (int_sel_STORE = &apos;1&apos;) else Min_Wdata_ram;
   Mout_data_ram_size &lt;= in3(BITSIZE_in3-1 downto 0) when ((int_sel_STORE or int_sel_LOAD) = &apos;1&apos;) else Min_data_ram_size;
   int_sel_LOAD &lt;= sel_LOAD and in4;
   int_sel_STORE &lt;= sel_STORE and in4;
