@@ -170,9 +170,10 @@ bool CustomScalarReplacementOfAggregatesPass::SROA_wrapperInliningStep(llvm::Fun
 
    inline_wrappers(kernel_function, inner_functions, modulePass);
 
-   //cleanup(exp_fun_map, inner_functions, inst_to_remove, exp_args_map, exp_globals_map);
+   cleanup(exp_fun_map, inner_functions, inst_to_remove, exp_args_map, exp_globals_map);
 
    assert(!llvm::verifyModule(module, &llvm::errs()));
+
    return true;
 }
 
@@ -493,7 +494,7 @@ void CustomScalarReplacementOfAggregatesPass::process_pointer(llvm::Use* ptr_u, 
                   if(ty1->getTypeID() == ty2->getTypeID() and DL->getTypeAllocSize(ty1) > DL->getTypeAllocSize(ty2))
                   {
                      // bitcast_type = ty2;
-                     llvm::errs() << "ERR: bitcast brokes everything";
+                     llvm::errs() << "ERR: bitcast broke everything";
                   }
                   else if(ty1 != ty2)
                   {
@@ -574,7 +575,7 @@ void CustomScalarReplacementOfAggregatesPass::process_pointer(llvm::Use* ptr_u, 
                if(ty1->getTypeID() == ty2->getTypeID() and DL->getTypeAllocSize(ty1) > DL->getTypeAllocSize(ty2))
                {
                   // bitcast_type = ty2;
-                  llvm::errs() << "ERR: bitcast brokes anything";
+                  llvm::errs() << "ERR: bitcast broke anything";
                }
                else if(ty1 != ty2)
                {
@@ -1190,7 +1191,7 @@ bool CustomScalarReplacementOfAggregatesPass::check_assumptions(llvm::Function* 
             {
                llvm::errs() << "WAR: ";
                ptr_rec->print(llvm::errs());
-               llvm::errs() << " inhibits transfrmation\n";
+               llvm::errs() << " inhibits transformation\n";
                return false;
             }
          } while(true);
@@ -1227,7 +1228,7 @@ bool CustomScalarReplacementOfAggregatesPass::check_assumptions(llvm::Function* 
                {
                   if(check_ptr(op))
                   {
-                     // TODO improve this (if an expandeable arg goes in a "unsupported" function kill anything
+                     // TODO improve this (if an expendable arg goes in a "unsupported" function kill anything
 
                      if(called_function->isIntrinsic())
                      {
@@ -1239,7 +1240,7 @@ bool CustomScalarReplacementOfAggregatesPass::check_assumptions(llvm::Function* 
                   {
                      llvm::errs() << "WAR: Argument ";
                      op->print(llvm::errs());
-                     llvm::errs() << " inhibits transfrmation\n";
+                     llvm::errs() << " inhibits transformation\n";
                      return false;
                   }
                }
@@ -1271,7 +1272,7 @@ bool CustomScalarReplacementOfAggregatesPass::check_assumptions(llvm::Function* 
          {
             llvm::errs() << "WAR: ";
             i.print(llvm::errs());
-            llvm::errs() << " inhibits transfrmation\n";
+            llvm::errs() << " inhibits transformation\n";
             return false;
          }
 
@@ -1303,7 +1304,7 @@ bool CustomScalarReplacementOfAggregatesPass::check_assumptions(llvm::Function* 
             {
                llvm::errs() << "WAR: ";
                i.print(llvm::errs());
-               llvm::errs() << " inhibits transfrmation\n";
+               llvm::errs() << " inhibits transformation\n";
                return false;
             }
 
@@ -1795,6 +1796,10 @@ std::vector<unsigned long long> CustomScalarReplacementOfAggregatesPass::get_op_
 void CustomScalarReplacementOfAggregatesPass::getAnalysisUsage(llvm::AnalysisUsage& AU) const
 {
    AU.addRequiredTransitive<llvm::ScalarEvolutionWrapperPass>();
+   AU.addRequiredTransitive<llvm::TargetTransformInfoWrapperPass>();
+   AU.addRequiredTransitive<llvm::TargetLibraryInfoWrapperPass>();
+   AU.addRequiredTransitive<llvm::DominatorTreeWrapperPass>();
+   AU.addRequiredTransitive<llvm::AssumptionCacheTracker>();
 }
 
 void CustomScalarReplacementOfAggregatesPass::expand_allocas(llvm::Function* function, fun_to_alloca_map_ty& alloca_to_remove, std::map<llvm::AllocaInst*, std::vector<llvm::AllocaInst*>>& exp_allocas_map,
@@ -2095,7 +2100,7 @@ void CustomScalarReplacementOfAggregatesPass::expand_signatures_and_call_sites(s
 
       llvm::FunctionType* new_mock_function_type = llvm::FunctionType::get(new_mock_return_type, false);
       llvm::GlobalValue::LinkageTypes mock_linkage = called_function->getLinkage();
-      std::string new_mock_function_name = called_function->getName().str() + ".csroa.mock";
+      std::string new_mock_function_name = called_function->getName().str() + ".C.mock";
 
       // Create function prototype
       llvm::Function* new_mock_function = llvm::Function::Create(new_mock_function_type, mock_linkage, new_mock_function_name, called_function->getParent());
@@ -2160,7 +2165,7 @@ void CustomScalarReplacementOfAggregatesPass::expand_signatures_and_call_sites(s
 
       llvm::FunctionType* new_function_type = llvm::FunctionType::get(new_return_type, new_arg_ty_vec, false);
       llvm::GlobalValue::LinkageTypes linkage = called_function->getLinkage();
-      std::string new_function_name = called_function->getName().str() + ".csroa";
+      std::string new_function_name = called_function->getName().str() + ".C";
 
       // Create function prototype
       llvm::Function* new_function = llvm::Function::Create(new_function_type, linkage, new_function_name, called_function->getParent());
@@ -2298,7 +2303,7 @@ void CustomScalarReplacementOfAggregatesPass::expand_signatures_and_call_sites(s
                }
 
                // Build the new call site
-               std::string new_call_name = call_inst->getName().str() + ".csroa";
+               std::string new_call_name = call_inst->getName().str() + ".C";
                llvm::CallInst* new_call_inst = llvm::CallInst::Create(new_function, new_call_ops, (call_inst->hasName() ? new_call_name : ""), call_inst);
 
                // Replace the old one
@@ -2553,8 +2558,8 @@ void CustomScalarReplacementOfAggregatesPass::cleanup(std::map<llvm::Function*, 
                   {
                      if(a.hasAttribute((llvm::Attribute::AttrKind)attr_idx))
                      {
-                        llvm::errs() << "Function: " << function->getName() << "\n  ";
-                        llvm::errs() << " " << attr_idx;
+                        //llvm::errs() << "Function: " << function->getName() << "\n  ";
+                        //llvm::errs() << " " << attr_idx;
                         a.removeAttr((llvm::Attribute::AttrKind)attr_idx);
                      }
                   }
@@ -2608,10 +2613,11 @@ void CustomScalarReplacementOfAggregatesPass::cleanup(std::map<llvm::Function*, 
       }
       llvm::FunctionType* new_fun_ty = llvm::FunctionType::get(return_type, arg_tys, function->isVarArg());
 
-      std::string new_fun_name = function->getName().str() + ".clean";
+      std::string new_fun_name = function->getName().str() + ".c";
       llvm::Function* new_function = llvm::Function::Create(new_fun_ty, function->getLinkage(), new_fun_name, function->getParent());
       new_function->copyAttributesFrom(function);
       new_function->setComdat(function->getComdat());
+      new_function->setCallingConv(function->getCallingConv());
 
       new_function->getBasicBlockList().splice(new_function->begin(), function->getBasicBlockList());
 
@@ -2738,8 +2744,12 @@ void CustomScalarReplacementOfAggregatesPass::cleanup(std::map<llvm::Function*, 
                }
             }
 
-            std::string new_call_name = call_inst->getName().str() + ".clean";
+            std::string new_call_name = call_inst->getName().str() + ".c";
             llvm::CallInst* new_call_inst = llvm::CallInst::Create(new_function, call_ops, (call_inst->hasName() ? new_call_name : ""), call_inst);
+
+            new_call_inst->setTailCall(call_inst->isTailCall());
+            new_call_inst->setTailCallKind(call_inst->getTailCallKind());
+            new_call_inst->setCallingConv(new_function->getCallingConv());
 
             if(arg_stored_once != nullptr)
             {
@@ -2757,7 +2767,7 @@ void CustomScalarReplacementOfAggregatesPass::cleanup(std::map<llvm::Function*, 
          }
          else
          {
-            llvm::errs() << "Funsction use should be call\n";
+            llvm::errs() << "Function use should be call\n";
             exit(-1);
          }
       }
@@ -2978,17 +2988,11 @@ bool CustomScalarReplacementOfAggregatesPass::expansion_allowed(llvm::Value* agg
       }
       else
       {
-         llvm::errs() << "2)Expansion not allowed for ";
-         aggregate->print(llvm::errs());
-         llvm::errs() << "\n";
          return false;
       }
    }
    else
    {
-      llvm::errs() << "3)Expansion not allowed for ";
-      aggregate->print(llvm::errs());
-      llvm::errs() << "\n";
       return false;
    }
 }
@@ -2999,24 +3003,23 @@ void CustomScalarReplacementOfAggregatesPass::inline_wrappers(llvm::Function* ke
 
    std::set<llvm::Function*> fun_to_del;
 
-   llvm::errs()<<"Pre\n";
    for(llvm::Function* f : inner_functions)
    {
       bool doOpt = false;
    process_function:
-      llvm::errs()<<"F" << f->getName()<<"\n";
-      for(llvm::BasicBlock& bb : *f)
+      for(auto& bb : *f)
       {
-
-         for(llvm::Instruction& inst : bb)
+         for(auto& inst : bb)
          {
-            if(llvm::CallInst* call_inst = llvm::dyn_cast<llvm::CallInst>(&inst))
+            if(auto call_inst = llvm::dyn_cast<llvm::CallInst>(&inst))
             {
-               bool is_wrapper = strncmp(call_inst->getCalledFunction()->getName().str().c_str(), std::string(wrapper_function_name).c_str(), std::string(wrapper_function_name).size()) == 0;
+               auto cf = call_inst->getCalledFunction();
+               assert(cf);
+               bool is_wrapper = strncmp(cf->getName().str().c_str(), std::string(wrapper_function_name).c_str(), std::string(wrapper_function_name).size()) == 0;
                if(is_wrapper)
                {
-                  call_inst->getCalledFunction()->removeFnAttr(llvm::Attribute::NoInline);
-                  call_inst->getCalledFunction()->removeFnAttr(llvm::Attribute::OptimizeNone);
+                  cf->removeFnAttr(llvm::Attribute::NoInline);
+                  cf->removeFnAttr(llvm::Attribute::OptimizeNone);
                   llvm::InlineFunctionInfo IFI = llvm::InlineFunctionInfo();
                   if(!llvm::InlineFunction(call_inst, IFI))
                   {
@@ -3024,7 +3027,7 @@ void CustomScalarReplacementOfAggregatesPass::inline_wrappers(llvm::Function* ke
                      exit(-1);
                   }
 
-                  fun_to_del.insert(call_inst->getCalledFunction());
+                  fun_to_del.insert(cf);
                   doOpt = true;
 
                   goto process_function;
@@ -3034,13 +3037,12 @@ void CustomScalarReplacementOfAggregatesPass::inline_wrappers(llvm::Function* ke
       }
       if(doOpt)
       {
-         llvm::errs()<<"Opt\n";
          llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
          const llvm::TargetTransformInfo& TTI = modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(*f);
          for(llvm::Function::iterator BBIt = f->begin(); BBIt != f->end();)
                  llvm::SimplifyInstructionsInBlock(&*BBIt++, &TLI);
          for(llvm::Function::iterator BBIt = f->begin(); BBIt != f->end();)
-#if __clang_major__ >= 6
+#if __clang_major__ >= 6 && !defined(__APPLE__)
             llvm::simplifyCFG(&*BBIt++, TTI, 1);
 #else
             llvm::SimplifyCFG(&*BBIt++, TTI, 1);
@@ -3066,7 +3068,7 @@ void CustomScalarReplacementOfAggregatesPass::inline_wrappers(llvm::Function* ke
 
                if (Allocas.empty())
                   break;
-#if __clang_major__ != 4
+#if __clang_major__ != 4 && !defined(__APPLE__)
                llvm::PromoteMemToReg(Allocas, DT, &AC);
 #else
                llvm::PromoteMemToReg(Allocas, DT, nullptr, &AC);
