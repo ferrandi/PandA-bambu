@@ -184,6 +184,9 @@ enum class TargetDevice_Type;
 #define IUCONVERTER_EXPR_STD "IUconvert_expr_FU"
 #define UICONVERTER_EXPR_STD "UIconvert_expr_FU"
 #define IICONVERTER_EXPR_STD "IIconvert_expr_FU"
+#define VIEW_CONVERT_STD_INT "view_convert_expr_FU"
+#define VIEW_CONVERT_STD_UINT "ui_view_convert_expr_FU"
+#define VIEW_CONVERT_STD_REAL "fp_view_convert_expr_FU"
 
 // For distributed controller
 #define CE_STD "CE_FU"
