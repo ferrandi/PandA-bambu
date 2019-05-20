@@ -3323,7 +3323,9 @@ signal we_a1 : std_logic_vector(n_byte_on_databus-1 downto 0) 1INIT_ZERO_VALUE;
 signal we_b1 : std_logic_vector(n_byte_on_databus-1 downto 0) 1INIT_ZERO_VALUE;
 signal din_value_aggregated1 : std_logic_vector(BITSIZE_din_value_aggregated-1 downto 0) 1INIT_ZERO_VALUE;
 
+signal dout_a_0 : std_logic_vector(BITSIZE_dout_a-1 downto 0) 1INIT_ZERO_VALUE;
 signal dout_a_registered : std_logic_vector(BITSIZE_dout_a-1 downto 0) 1INIT_ZERO_VALUE;
+signal dout_b_0 : std_logic_vector(BITSIZE_dout_a-1 downto 0) 1INIT_ZERO_VALUE;
 signal dout_b_registered : std_logic_vector(BITSIZE_dout_a-1 downto 0) 1INIT_ZERO_VALUE;
 signal memory_addr_a1 : std_logic_vector(BITSIZE_memory_addr_a-1 downto 0) 1INIT_ZERO_VALUE;
 signal memory_addr_b1 : std_logic_vector(BITSIZE_memory_addr_b-1 downto 0) 1INIT_ZERO_VALUE;
@@ -3342,8 +3344,11 @@ impure function InitMemFromFile (MemFileName : in string) return mem_type is
     return mem;
 end function;
 
-signal memory : mem_type := InitMemFromFile(MEMORY_INIT_file);
+shared variable memory : mem_type := InitMemFromFile(MEMORY_INIT_file);
 begin
+
+dout_a &lt;= dout_a_0;
+dout_b &lt;= dout_b_0;
 
 single_element : process(clock)
 begin
@@ -3352,10 +3357,10 @@ begin
 -- synthesis translate_off
          if (to_integer(unsigned(memory_addr_a)) &lt; n_mem_elements) then
 -- synthesis translate_on
-            dout_a  &lt;= memory(to_integer(unsigned(memory_addr_a)));
+            dout_a_0  &lt;= memory(to_integer(unsigned(memory_addr_a)));
 -- synthesis translate_off
          else
-            dout_a  &lt;= (others =&gt; &apos;X&apos;);
+            dout_a_0  &lt;= (others =&gt; &apos;X&apos;);
          end if;
 -- synthesis translate_on
       elsif(HIGH_LATENCY = 1) then
@@ -3368,7 +3373,7 @@ begin
             dout_a_registered  &lt;= (others =&gt; &apos;X&apos;);
          end if;
 -- synthesis translate_on
-         dout_a  &lt;= dout_a_registered;
+         dout_a_0  &lt;= dout_a_registered;
       else
 -- synthesis translate_off
          if (to_integer(unsigned(memory_addr_a1)) &lt; n_mem_elements) then
@@ -3382,21 +3387,21 @@ begin
          memory_addr_a1 &lt;= memory_addr_a;
          we_a1 &lt;= we_a;
          din_value_aggregated1 &lt;= din_value_aggregated;
-         dout_a &lt;= dout_a_registered;
+         dout_a_0 &lt;= dout_a_registered;
       end if;
    end if;
 end process;
 
 L1_single_write : process(clock)
 begin
-   if (clock&apos;event and clock=&apos;1&apos;) then
       for index1 in 0 to n_byte_on_databus-1 loop
+   if (clock&apos;event and clock=&apos;1&apos;) then
          if(HIGH_LATENCY= 0 or HIGH_LATENCY = 1) then
             if(we_a(index1)=&apos;1&apos;) then
 -- synthesis translate_off
                if (to_integer(unsigned(memory_addr_a)) &lt; n_mem_elements) then
 -- synthesis translate_on
-                  memory(to_integer(unsigned(memory_addr_a)))((index1+1)*8-1 downto index1*8) &lt;= din_value_aggregated((index1+1)*8-1 downto index1*8);
+                  memory(to_integer(unsigned(memory_addr_a)))((index1+1)*8-1 downto index1*8) := din_value_aggregated((index1+1)*8-1 downto index1*8);
 -- synthesis translate_off
                end if;
 -- synthesis translate_on
@@ -3406,14 +3411,14 @@ begin
 -- synthesis translate_off
                if (to_integer(unsigned(memory_addr_a1)) &lt; n_mem_elements) then
 -- synthesis translate_on
-                  memory(to_integer(unsigned(memory_addr_a1)))((index1+1)*8-1 downto index1*8) &lt;= din_value_aggregated1((index1+1)*8-1 downto index1*8);
+                  memory(to_integer(unsigned(memory_addr_a1)))((index1+1)*8-1 downto index1*8) := din_value_aggregated1((index1+1)*8-1 downto index1*8);
 -- synthesis translate_off
                end if;
 -- synthesis translate_on
             end if;
          end if;
-      end loop;
    end if;
+      end loop;
 end process;
 
 second_element : process(clock)
@@ -3424,10 +3429,10 @@ begin
 -- synthesis translate_off
             if (to_integer(unsigned(memory_addr_b)) &lt; n_mem_elements) then
 -- synthesis translate_on
-               dout_b  &lt;= memory(to_integer(unsigned(memory_addr_b)));
+               dout_b_0  &lt;= memory(to_integer(unsigned(memory_addr_b)));
 -- synthesis translate_off
             else
-               dout_b  &lt;= (others =&gt; &apos;X&apos;);
+               dout_b_0  &lt;= (others =&gt; &apos;X&apos;);
             end if;
   -- synthesis translate_on
          elsif(HIGH_LATENCY = 1) then
@@ -3440,7 +3445,7 @@ begin
                dout_b_registered  &lt;= (others =&gt; &apos;X&apos;);
             end if;
 -- synthesis translate_on
-            dout_b  &lt;= dout_b_registered;
+            dout_b_0  &lt;= dout_b_registered;
          else
 -- synthesis translate_off
             if (to_integer(unsigned(memory_addr_b1)) &lt; n_mem_elements) then
@@ -3453,7 +3458,7 @@ begin
 -- synthesis translate_on
             memory_addr_b1 &lt;= memory_addr_b;
             we_b1 &lt;= we_b;
-            dout_b &lt;= dout_b_registered;
+            dout_b_0 &lt;= dout_b_registered;
          end if;
       end if;
    end if;
@@ -3469,7 +3474,7 @@ begin
 -- synthesis translate_off
                   if (to_integer(unsigned(memory_addr_b)) &lt; n_mem_elements) then
 -- synthesis translate_on
-                     memory(to_integer(unsigned(memory_addr_b)))((index2+1)*8-1 downto index2*8) &lt;= din_value_aggregated((index2+1+n_byte_on_databus)*8-1 downto (index2+n_byte_on_databus)*8);
+                     memory(to_integer(unsigned(memory_addr_b)))((index2+1)*8-1 downto index2*8) := din_value_aggregated((index2+1+n_byte_on_databus)*8-1 downto (index2+n_byte_on_databus)*8);
 -- synthesis translate_off
                   end if;
 -- synthesis translate_on
@@ -3479,7 +3484,7 @@ begin
 -- synthesis translate_off
                   if (to_integer(unsigned(memory_addr_b1)) &lt; n_mem_elements) then
 -- synthesis translate_on
-                     memory(to_integer(unsigned(memory_addr_b1)))((index2+1)*8-1 downto index2*8) &lt;= din_value_aggregated1((index2+1+n_byte_on_databus)*8-1 downto (index2+n_byte_on_databus)*8);
+                     memory(to_integer(unsigned(memory_addr_b1)))((index2+1)*8-1 downto index2*8) := din_value_aggregated1((index2+1+n_byte_on_databus)*8-1 downto (index2+n_byte_on_databus)*8);
 -- synthesis translate_off
                   end if;
 -- synthesis translate_on
