@@ -3588,7 +3588,7 @@ begin
       else
 -- synthesis translate_off
          if (to_integer(unsigned(memory_addr_a_0)) &gt;= n_mem_elements) then
-            din_a_0((i0_0+1)*8-1 downto i0_0*8) &lt;= (others =&gt; &apos;0&apos;);
+            din_a_0((i0_0+1)*8-1 downto i0_0*8) &lt;= (others =&gt; &apos;X&apos;);
          else
 -- synthesis translate_on
             din_a_0((i0_0+1)*8-1 downto i0_0*8) &lt;= memory(to_integer(unsigned(memory_addr_a_0)))((i0_0+1)*8-1 downto i0_0*8);
@@ -3607,7 +3607,7 @@ begin
       else
 -- synthesis translate_off
          if (to_integer(unsigned(memory_addr_a_1)) &gt;= n_mem_elements) then
-            din_a_1((i0_1+1)*8-1 downto i0_1*8) &lt;= (others =&gt; &apos;0&apos;);
+            din_a_1((i0_1+1)*8-1 downto i0_1*8) &lt;= (others =&gt; &apos;X&apos;);
          else
 -- synthesis translate_on
             din_a_1((i0_1+1)*8-1 downto i0_1*8) &lt;= memory(to_integer(unsigned(memory_addr_a_1)))((i0_1+1)*8-1 downto i0_1*8);
@@ -3656,7 +3656,7 @@ begin
          if(HIGH_LATENCY = 0) then
 -- synthesis translate_off
             if (to_integer(unsigned(memory_addr_a_0)) &gt;= n_mem_elements) then
-               dout_a_0 &lt;= (others =&gt; &apos;0&apos;);
+               dout_a_0 &lt;= (others =&gt; &apos;X&apos;);
             else
 -- synthesis translate_on
                dout_a_0 &lt;= memory(to_integer(unsigned(memory_addr_a_0)));
@@ -3666,7 +3666,7 @@ begin
          else
 -- synthesis translate_off
             if (to_integer(unsigned(memory_addr_a_0)) &gt;= n_mem_elements) then
-               dout_a_0_registered &lt;= (others =&gt; &apos;0&apos;);
+               dout_a_0_registered &lt;= (others =&gt; &apos;X&apos;);
             else
 -- synthesis translate_on
                dout_a_0_registered &lt;= memory(to_integer(unsigned(memory_addr_a_0)));
@@ -3687,7 +3687,7 @@ begin
          if(HIGH_LATENCY = 0) then
 -- synthesis translate_off
             if (to_integer(unsigned(memory_addr_a_1)) &gt;= n_mem_elements) then
-               dout_a_1 &lt;= (others =&gt; &apos;0&apos;);
+               dout_a_1 &lt;= (others =&gt; &apos;X&apos;);
             else
 -- synthesis translate_on
                dout_a_1 &lt;= memory(to_integer(unsigned(memory_addr_a_1)));
@@ -3697,7 +3697,7 @@ begin
          else
 -- synthesis translate_off
             if (to_integer(unsigned(memory_addr_a_1)) &gt;= n_mem_elements) then
-               dout_a_1_registered &lt;= (others =&gt; &apos;0&apos;);
+               dout_a_1_registered &lt;= (others =&gt; &apos;X&apos;);
             else
 -- synthesis translate_on
                dout_a_1_registered &lt;= memory(to_integer(unsigned(memory_addr_a_1)));
@@ -9962,21 +9962,43 @@ begin
   L1_single_write : process(clock)
   begin
     if (clock&apos;event and clock=&apos;1&apos;) then
-       if(READ_ONLY_MEMORY=0) then
-         if(bram_write_mem='1') then
-           mem(to_integer(unsigned(memory_addr_a_mem))) &lt;= din_a_mem;
+      if(READ_ONLY_MEMORY=0) then
+        if(bram_write_mem='1') then
+-- synthesis translate_off
+          if (to_integer(unsigned(memory_addr_a_mem)) &lt; n_mem_elements) then
+-- synthesis translate_on
+            mem(to_integer(unsigned(memory_addr_a_mem))) &lt;= din_a_mem;
+-- synthesis translate_off
+          end if;
+-- synthesis translate_on
         end if;
-       end if;
+      end if;
     end if;
   end process;
 
   L1_single_read : process(clock)
   begin
     if (clock&apos;event and clock=&apos;1&apos;) then
-       if(HIGH_LATENCY=0) then
-         dout_a &lt;= mem(to_integer(unsigned(memory_addr_a_mem)));
-       else
+      if(HIGH_LATENCY=0) then
+-- synthesis translate_off
+        if (to_integer(unsigned(memory_addr_a_mem)) &lt; n_mem_elements) then
+-- synthesis translate_on
+          dout_a &lt;= mem(to_integer(unsigned(memory_addr_a_mem)));
+-- synthesis translate_off
+        else
+          dout_a &lt;= (others =&gt; &apos;X&apos;);
+        end if;
+-- synthesis translate_on
+      else
+-- synthesis translate_off
+        if (to_integer(unsigned(memory_addr_a_mem)) &lt; n_mem_elements) then
+-- synthesis translate_on
          dout_a_registered &lt;= mem(to_integer(unsigned(memory_addr_a_mem)));
+-- synthesis translate_off
+        else
+          dout_a_registered &lt;= (others =&gt; &apos;X&apos;);
+        end if;
+-- synthesis translate_on
          dout_a &lt;= dout_a_registered;
        end if;
     end if;

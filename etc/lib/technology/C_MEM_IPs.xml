@@ -5544,9 +5544,15 @@ begin
   L1_single_write : process(clock)
   begin
     if (clock&apos;event and clock=&apos;1&apos;) then
-       if(READ_ONLY_MEMORY=0) then
-         if(bram_write='1') then
-           mem(to_integer(unsigned(memory_addr_a))) &lt;= din_a;
+      if(READ_ONLY_MEMORY=0) then
+        if(bram_write='1') then
+-- synthesis translate_off
+          if (to_integer(unsigned(memory_addr_a)) &lt; n_mem_elements) then
+-- synthesis translate_on
+            mem(to_integer(unsigned(memory_addr_a))) &lt;= din_a;
+-- synthesis translate_off
+          end if;
+-- synthesis translate_on
         end if;
        end if;
     end if;
