@@ -1228,7 +1228,7 @@ bool CustomScalarReplacementOfAggregatesPass::check_assumptions(llvm::Function* 
                {
                   if(check_ptr(op))
                   {
-                     // TODO improve this (if an expendable arg goes in a "unsupported" function kill anything
+                     // TODO improve this (if an expandable arg goes in a "unsupported" function kill anything
 
                      if(called_function->isIntrinsic())
                      {
