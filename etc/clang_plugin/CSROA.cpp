@@ -2568,7 +2568,7 @@ void CustomScalarReplacementOfAggregatesPass::cleanup(std::map<llvm::Function*, 
                else
                {
                   // If it is not only used as argument recursively
-                  if(!CheckArg::usedByArgsOnly_wrapper(&a) or true)
+                  if(!CheckArg::usedByArgsOnly_wrapper(&a))
                   {
                      // Check whether recursively loaded only
                      if(CheckArg::loadedOnly_wrapper(&a))
@@ -2615,7 +2615,13 @@ void CustomScalarReplacementOfAggregatesPass::cleanup(std::map<llvm::Function*, 
 
       std::string new_fun_name = function->getName().str() + ".c";
       llvm::Function* new_function = llvm::Function::Create(new_fun_ty, function->getLinkage(), new_fun_name, function->getParent());
-      new_function->copyAttributesFrom(function);
+      if(function->hasFnAttribute(llvm::Attribute::NoInline))
+         new_function->addFnAttr(llvm::Attribute::NoInline);
+      if(function->hasFnAttribute(llvm::Attribute::AlwaysInline))
+         new_function->addFnAttr(llvm::Attribute::AlwaysInline);
+      if(function->hasFnAttribute(llvm::Attribute::InlineHint))
+         new_function->addFnAttr(llvm::Attribute::InlineHint);
+      //new_function->copyAttributesFrom(function);
       new_function->setComdat(function->getComdat());
       new_function->setCallingConv(function->getCallingConv());
 
@@ -2640,7 +2646,7 @@ void CustomScalarReplacementOfAggregatesPass::cleanup(std::map<llvm::Function*, 
                else
                {
                   // If it is not only used as argument recursively
-                  if(!CheckArg::usedByArgsOnly_wrapper(&*fun_arg_it) or true)
+                  if(!CheckArg::usedByArgsOnly_wrapper(&*fun_arg_it))
                   {
                      // Check whether recursively loaded only
                      if(CheckArg::loadedOnly_wrapper(&*fun_arg_it))
