@@ -3394,8 +3394,8 @@ end process;
 
 L1_single_write : process(clock)
 begin
-      for index1 in 0 to n_byte_on_databus-1 loop
    if (clock&apos;event and clock=&apos;1&apos;) then
+      for index1 in 0 to n_byte_on_databus-1 loop
          if(HIGH_LATENCY= 0 or HIGH_LATENCY = 1) then
             if(we_a(index1)=&apos;1&apos;) then
 -- synthesis translate_off
@@ -3417,8 +3417,8 @@ begin
 -- synthesis translate_on
             end if;
          end if;
-   end if;
       end loop;
+   end if;
 end process;
 
 second_element : process(clock)
