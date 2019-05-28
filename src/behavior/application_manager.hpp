@@ -175,7 +175,7 @@ class application_manager
    bool hasToBeInterfaced(unsigned int funId) const;
 
    /**
-    * Returns the datastructure associated with the given identifier. This method returns an error if the function does not exist.
+    * Returns the data structure associated with the given identifier. This method returns an error if the function does not exist.
     * @param index is the identified of the function to be returned
     * @return the FunctionBehavior associated with the given function
     */
