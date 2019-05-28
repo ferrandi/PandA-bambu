@@ -96,6 +96,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          }
          relationships.insert(std::make_pair(CALL_GRAPH_BUILTIN_CALL, SAME_FUNCTION));
          relationships.insert(std::make_pair(PARM_DECL_TAKEN_ADDRESS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(PARM2SSA, WHOLE_APPLICATION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -455,6 +456,11 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not local");
                         return false;
                      }
+                     if(vd->scpe)
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---local variable of another function");
+                        return true;
+                     }
                      if(tree_helper::is_volatile(TM, ref_var))
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Volatile");
@@ -610,14 +616,21 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                /// check if the actual parameter has been allocated in memory
                if(function_behavior->is_variable_mem(actual_par_index))
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable for which the dynamic address is used-5: " + behavioral_helper->PrintVariable(actual_par_index));
-                  function_behavior->add_dynamic_address(actual_par_index);
-                  AppM->add_written_object(actual_par_index);
-                  /// if the formal parameter has not been allocated in memory then it has to be initialized
-                  if(!FBcalled->is_variable_mem(formal_par_index) && GET_INDEX_NODE(*arg) == actual_par_index)
+                  auto formal_ssa_index = AppM->getSSAFromParm(formal_par_index);
+                  auto formal_ssa_node = TM->get_tree_node_const(formal_ssa_index);
+                  auto formal_ssa = GetPointer<ssa_name>(formal_ssa_node);
+                  auto is_singleton = formal_ssa->use_set->is_a_singleton() && actual_par_index == formal_ssa->use_set->variables.front()->index;
+                  if(!is_singleton)
                   {
-                     PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  Analyzing node: actual parameter loaded " + STR(actual_par_index));
-                     function_behavior->add_parm_decl_loaded(actual_par_index);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable for which the dynamic address is used-5: " + behavioral_helper->PrintVariable(actual_par_index));
+                     function_behavior->add_dynamic_address(actual_par_index);
+                     AppM->add_written_object(actual_par_index);
+                     /// if the formal parameter has not been allocated in memory then it has to be initialized
+                     if(!FBcalled->is_variable_mem(formal_par_index) && GET_INDEX_NODE(*arg) == actual_par_index)
+                     {
+                        PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  Analyzing node: actual parameter loaded " + STR(actual_par_index));
+                        function_behavior->add_parm_decl_loaded(actual_par_index);
+                     }
                   }
                }
                /// check if the formal parameter has been allocated in memory.
@@ -812,14 +825,21 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                /// check if the actual parameter has been allocated in memory
                if(function_behavior->is_variable_mem(actual_par_index))
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable for which the dynamic address is used-7: " + behavioral_helper->PrintVariable(actual_par_index));
-                  function_behavior->add_dynamic_address(actual_par_index);
-                  AppM->add_written_object(actual_par_index);
-                  /// if the formal parameter has not been allocated in memory then it has to be initialized
-                  if(!FBcalled->is_variable_mem(formal_par_index) && GET_INDEX_NODE(*arg) == actual_par_index)
+                  auto formal_ssa_index = AppM->getSSAFromParm(formal_par_index);
+                  auto formal_ssa_node = TM->get_tree_node_const(formal_ssa_index);
+                  auto formal_ssa = GetPointer<ssa_name>(formal_ssa_node);
+                  auto is_singleton = formal_ssa->use_set->is_a_singleton() && actual_par_index == formal_ssa->use_set->variables.front()->index;
+                  if(!is_singleton)
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---actual parameter loaded " + STR(actual_par_index));
-                     function_behavior->add_parm_decl_loaded(actual_par_index);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable for which the dynamic address is used-7: " + behavioral_helper->PrintVariable(actual_par_index));
+                     function_behavior->add_dynamic_address(actual_par_index);
+                     AppM->add_written_object(actual_par_index);
+                     /// if the formal parameter has not been allocated in memory then it has to be initialized
+                     if(!FBcalled->is_variable_mem(formal_par_index) && GET_INDEX_NODE(*arg) == actual_par_index)
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---actual parameter loaded " + STR(actual_par_index));
+                        function_behavior->add_parm_decl_loaded(actual_par_index);
+                     }
                   }
                }
                /// check if the formal parameter has been allocated in memory.

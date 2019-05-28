@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,8 +31,8 @@
  *
  */
 /**
- * @file string_cst_fix.cpp
- * @brief Pre-analysis step fixing readonly initializations and string_cst references.
+ * @file parm2ssa.cpp
+ * @brief Pre-analysis step computing the relation between parm_decl and the associated ssa_name.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
@@ -41,7 +41,7 @@
  *
  */
 /// Header include
-#include "string_cst_fix.hpp"
+#include "parm2ssa.hpp"
 
 /// Behavior include
 #include "application_manager.hpp"
@@ -75,21 +75,21 @@
 #include "exceptions.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-string_cst_fix::string_cst_fix(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) : ApplicationFrontendFlowStep(_AppM, STRING_CST_FIX, _design_flow_manager, _parameters)
+parm2ssa::parm2ssa(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) : ApplicationFrontendFlowStep(_AppM, PARM2SSA, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-string_cst_fix::~string_cst_fix() = default;
+parm2ssa::~parm2ssa() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> string_cst_fix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> parm2ssa::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, ALL_FUNCTIONS));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -108,11 +108,12 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-DesignFlowStep_Status string_cst_fix::Exec()
+DesignFlowStep_Status parm2ssa::Exec()
 {
    const CallGraphManagerConstRef CG = AppM->CGetCallGraphManager();
    const tree_managerRef TM = AppM->get_tree_manager();
    std::set<unsigned int> reached_body_fun_ids = CG->GetReachedBodyFunctions();
+   AppM->clearParm2SSA();
 
    for(unsigned int function_id : reached_body_fun_ids)
    {
@@ -143,7 +144,7 @@ DesignFlowStep_Status string_cst_fix::Exec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& srcp)
+void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp)
 {
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    const tree_managerRef TM = AppM->get_tree_manager();
@@ -175,39 +176,8 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
          auto* gm = GetPointer<gimple_assign>(curr_tn);
          if(!gm->clobber)
          {
-            if(GET_NODE(gm->op0)->get_kind() == var_decl_K && (GET_NODE(gm->op1)->get_kind() == string_cst_K || GET_NODE(gm->op1)->get_kind() == constructor_K))
-            {
-               auto* vd = GetPointer<var_decl>(GET_NODE(gm->op0));
-               THROW_ASSERT(vd, "not valid variable");
-               if(vd->readonly_flag)
-               {
-                  vd->init = gm->op1;
-                  gm->init_assignment = true; /// Removing statements create more problems than what it may solve.
-                  /// So the solution for bambu is to not synthesize them.
-               }
-            }
-            else if(GET_NODE(gm->op0)->get_kind() == var_decl_K && GET_NODE(gm->op1)->get_kind() == var_decl_K && GetPointer<var_decl>(GET_NODE(gm->op1))->init && GetPointer<var_decl>(GET_NODE(gm->op1))->used == 0)
-            {
-               auto* vd = GetPointer<var_decl>(GET_NODE(gm->op0));
-               THROW_ASSERT(vd, "not valid variable");
-               if(vd->readonly_flag)
-               {
-                  vd->init = GetPointer<var_decl>(GET_NODE(gm->op1))->init;
-                  gm->init_assignment = true;
-               }
-               else
-               {
-                  /// makes the var_decl visible
-                  auto* vd1 = GetPointer<var_decl>(GET_NODE(gm->op1));
-                  vd1->include_name = gm->include_name;
-                  vd1->line_number = gm->line_number;
-                  vd1->column_number = gm->column_number;
-               }
-            }
             if(!gm->init_assignment)
             {
-               if(GET_NODE(gm->op0)->get_kind() == var_decl_K && GetPointer<var_decl>(GET_NODE(gm->op0))->readonly_flag && GET_NODE(gm->op1)->get_kind() == ssa_name_K)
-                  GetPointer<var_decl>(GET_NODE(gm->op0))->readonly_flag = false;
                recursive_analysis(gm->op0, srcp);
                recursive_analysis(gm->op1, srcp);
                if(gm->predicate)
@@ -229,7 +199,13 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
       {
          auto* sn = GetPointer<ssa_name>(curr_tn);
          if(sn->var)
+         {
+            if(GET_NODE(sn->var)->get_kind() == parm_decl_K)
+            {
+               AppM->setSSAFromParm(GET_INDEX_NODE(sn->var), GET_INDEX_NODE(tn));
+            }
             recursive_analysis(sn->var, srcp);
+         }
          break;
       }
       case tree_list_K:
@@ -375,21 +351,6 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
       }
       case string_cst_K:
       {
-         if(string_cst_map.find(GET_INDEX_NODE(tn)) == string_cst_map.end())
-         {
-            auto* sc = GetPointer<string_cst>(curr_tn);
-            const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
-            const auto* type_sc = GetPointer<const type_node>(GET_NODE(sc->type));
-            const std::string local_var_name = "__bambu_artificial_var_string_cst_" + STR(GET_INDEX_NODE(tn));
-            auto local_var_identifier = tree_man->create_identifier_node(local_var_name);
-            auto global_scpe = tree_man->create_translation_unit_decl();
-            auto new_var_decl = tree_man->create_var_decl(local_var_identifier, TM->CGetTreeReindex(GET_INDEX_NODE(sc->type)), global_scpe, TM->CGetTreeReindex(GET_INDEX_NODE(type_sc->size)), tree_nodeRef(), TM->CGetTreeReindex(GET_INDEX_NODE(tn)), srcp,
-                                                          type_sc->algn, 1, true, -1, false, false, true, false, true);
-            string_cst_map[GET_INDEX_NODE(tn)] = new_var_decl;
-            tn = new_var_decl;
-         }
-         else
-            tn = string_cst_map.find(GET_INDEX_NODE(tn))->second;
          break;
       }
       case real_cst_K:

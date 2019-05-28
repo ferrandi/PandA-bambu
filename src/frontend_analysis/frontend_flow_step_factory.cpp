@@ -210,6 +210,7 @@
 #include "parallel_loop_swap.hpp"
 #include "parallel_loops_analysis.hpp"
 #endif
+#include "parm2ssa.hpp"
 #if HAVE_BAMBU_BUILT
 #include "parm_decl_taken_address_fix.hpp"
 #include "phi_opt.hpp"
@@ -597,6 +598,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #if HAVE_ZEBU_BUILT
       case POINTED_DATA_EVALUATION:
 #endif
+      case PARM2SSA:
 #if HAVE_FROM_PRAGMA_BUILT
       case(PRAGMA_ANALYSIS):
 #endif
@@ -697,6 +699,10 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
       case MEM_CG_EXT:
       {
          return DesignFlowStepRef(new mem_cg_ext(AppM, design_flow_manager.lock(), parameters));
+      }
+      case PARM2SSA:
+      {
+         return DesignFlowStepRef(new parm2ssa(AppM, design_flow_manager.lock(), parameters));
       }
 #if HAVE_ZEBU_BUILT
       case(POINTED_DATA_EVALUATION):
@@ -1549,6 +1555,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       case(IPA_POINT_TO_ANALYSIS):
 #endif
       case MEM_CG_EXT:
+      case PARM2SSA:
 #if HAVE_ZEBU_BUILT
       case(POINTED_DATA_EVALUATION):
 #endif
