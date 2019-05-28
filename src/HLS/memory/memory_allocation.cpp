@@ -282,12 +282,52 @@ void memory_allocation::finalize_memory_allocation()
       for(unsigned int p : parm_decl_stored)
       {
          maximum_bus_size = std::max(maximum_bus_size, tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, p)));
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "param with maximum_bus_size=" + STR(maximum_bus_size));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Analyzing function for bus size: " + behavioral_helper->get_function_name());
       const OpGraphConstRef g = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
       graph::vertex_iterator v, v_end;
+      const auto TM = HLSMgr->get_tree_manager();
+      auto fnode = TM->get_tree_node_const(fun_id);
+      auto fd = GetPointer<function_decl>(fnode);
+      std::string fname;
+      tree_helper::get_mangled_fname(fd, fname);
+      std::unordered_set<vertex> RW_stmts;
+      if(HLSMgr->design_interface_loads.find(fname) != HLSMgr->design_interface_loads.end())
+      {
+         for(auto bb2arg2stmtsR : HLSMgr->design_interface_loads.find(fname)->second)
+         {
+            for(auto arg2stms : bb2arg2stmtsR.second)
+            {
+               if(arg2stms.second.size() > 0)
+                  for(auto stmt : arg2stms.second)
+                  {
+                     THROW_ASSERT(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != g->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition: STMT=" + STR(stmt));
+                     RW_stmts.insert(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
+                  }
+            }
+         }
+      }
+      if(HLSMgr->design_interface_stores.find(fname) != HLSMgr->design_interface_stores.end())
+      {
+         for(auto bb2arg2stmtsW : HLSMgr->design_interface_stores.find(fname)->second)
+         {
+            for(auto arg2stms : bb2arg2stmtsW.second)
+            {
+               if(arg2stms.second.size() > 0)
+                  for(auto stmt : arg2stms.second)
+                  {
+                     THROW_ASSERT(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != g->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition");
+                     RW_stmts.insert(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
+                  }
+            }
+         }
+      }
+
       for(boost::tie(v, v_end) = boost::vertices(*g); v != v_end; ++v)
       {
+         if(RW_stmts.find(*v) != RW_stmts.end())
+            continue;
          std::string current_op = g->CGetOpNodeInfo(*v)->GetOperation();
          std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(fun_id, *v);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing operation " + GET_NAME(g, *v));
@@ -323,16 +363,18 @@ void memory_allocation::finalize_memory_allocation()
                unsigned int size_var = std::get<0>(var_read[0]);
                unsigned int size_type_index = tree_helper::get_type_index(TreeM, size_var);
                value_bitsize = tree_helper::size(TreeM, size_type_index);
+               PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "store with value_bitsize=" + STR(value_bitsize));
             }
             else
             {
                unsigned int size_var = HLSMgr->get_produced_value(fun_id, *v);
                unsigned int size_type_index = tree_helper::get_type_index(TreeM, size_var);
                value_bitsize = tree_helper::size(TreeM, size_type_index);
+               PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "load with value_bitsize=" + STR(value_bitsize));
             }
             if(!(function_behavior->is_variable_mem(var) && HLSMgr->Rmem->is_private_memory(var)))
                maximum_bus_size = std::max(maximum_bus_size, value_bitsize);
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " with maximum_bus_size=" + STR(maximum_bus_size));
+            PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " with maximum_bus_size=" + STR(maximum_bus_size) + " " + curr_tn->ToString());
          }
          else
          {
@@ -343,6 +385,7 @@ void memory_allocation::finalize_memory_allocation()
                if(assume_aligned_access_p)
                   THROW_ERROR("Option --aligned-access cannot be used in presence of memcpy, memcmp or memset");
             }
+
             std::vector<HLS_manager::io_binding_type>::const_iterator vr_it_end = var_read.end();
             for(std::vector<HLS_manager::io_binding_type>::const_iterator vr_it = var_read.begin(); vr_it != vr_it_end; ++vr_it)
             {
@@ -362,6 +405,7 @@ void memory_allocation::finalize_memory_allocation()
                   unsigned bitsize = 1;
                   tree_helper::accessed_greatest_bitsize(TreeM, GET_NODE(type_node_ptd), GET_INDEX_NODE(type_node_ptd), bitsize);
                   maximum_bus_size = std::max(maximum_bus_size, bitsize);
+                  PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " with maximum_bus_size=" + STR(maximum_bus_size) + " " + TreeM->get_tree_node_const(g->CGetOpNodeInfo(*v)->GetNodeId())->ToString());
                }
             }
          }
