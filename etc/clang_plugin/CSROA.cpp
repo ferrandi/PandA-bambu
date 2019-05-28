@@ -34,6 +34,7 @@
  * The implementation performs scalar replacement of aggregates.
  *
  * @author Marco Siracusa <marco.siracusa@mail.polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
 
@@ -634,12 +635,6 @@ void CustomScalarReplacementOfAggregatesPass::process_pointer(llvm::Use* ptr_u, 
 
                llvm::Value* exp_val = get_expanded_value(exp_args_map, exp_allocas_map, exp_globals_map, arg_size_map, DL, base_address, bytes_acc - type_size, type_size, nullptr, ptr_u);
 
-               /*if (bitcast_type != nullptr) {
-                   std::string bitcast_name = user_inst->getName().str() + ".bitcast";
-                   llvm::BitCastInst *bitcast_inst = new llvm::BitCastInst(exp_val, bitcast_type, bitcast_name, new_inst);
-                   exp_val = bitcast_inst;
-               }*/
-
                if(wrap_non_const)
                {
                   std::string arg_name = "arg" + std::to_string(arg_it->getArgNo());
@@ -833,7 +828,6 @@ llvm::Value* CustomScalarReplacementOfAggregatesPass::get_element_at_offset(I* b
       }
 
       auto arg_size_it = arg_size_map.find(llvm::dyn_cast<llvm::Argument>(el_to_exp));
-      llvm::Argument* arg = llvm::dyn_cast<llvm::Argument>(el_to_exp);
       if(arg_size_it != arg_size_map.end() and !arg_size_it->second.empty())
       {
          expanded_size *= arg_size_it->second.front();
@@ -1432,6 +1426,7 @@ void CustomScalarReplacementOfAggregatesPass::compute_op_dims_and_perform_functi
       llvm::Function* synthesized_function = nullptr;
 
       FunctionDimKey search_key = FunctionDimKey(called_function, dimensions);
+      std::map<std::string,std::set<std::string>> used_names;
       auto fd_it = function_dim_map.find(search_key);
       if(fd_it != function_dim_map.end())
       {
@@ -1453,6 +1448,7 @@ void CustomScalarReplacementOfAggregatesPass::compute_op_dims_and_perform_functi
                cloned_function->addFnAttr(llvm::Attribute::InlineHint);
 
             called_cloned_functions.insert(called_function);
+#ifdef DEBUG_CSROA
             std::string new_name = called_function->getName().str() + "_";
             for(auto d1 : dimensions)
             {
@@ -1462,7 +1458,28 @@ void CustomScalarReplacementOfAggregatesPass::compute_op_dims_and_perform_functi
                }
                new_name.append(".");
             }
+#else
+            const auto Fname = called_function->getName().str();
+            std::string new_name = called_function->getName().str() + ".";
 
+            if(used_names.find(Fname) != used_names.end())
+            {
+               unsigned int index = 0;
+               std::string s = std::to_string(index);
+               while (used_names.find(Fname)->second.find(new_name+s) != used_names.find(Fname)->second.end())
+               {
+                  ++index;
+               }
+               used_names[Fname].insert(new_name+s);
+               new_name = new_name+s;
+            }
+            else
+            {
+               std::string s = std::to_string(0);
+               used_names[Fname].insert(new_name+s);
+               new_name = new_name+s;
+            }
+#endif
             cloned_function->setName(new_name);
 
             synthesized_function = cloned_function;
@@ -1652,7 +1669,6 @@ std::vector<unsigned long long> CustomScalarReplacementOfAggregatesPass::get_op_
          {
             // Spot the last and last but one index
             llvm::Value* last_idx = gep_op_op->getOperand(gep_op_op->getNumOperands() - 1);
-            llvm::Value* last_but_one_idx = gep_op_op->getOperand(gep_op_op->getNumOperands() - 2);
 
             // Get the last and last but one indexed type
             llvm::Type* last_idx_type = nullptr;
@@ -1870,9 +1886,8 @@ void CustomScalarReplacementOfAggregatesPass::expand_allocas(llvm::Function* fun
                   {
                      llvm::Type* element = str_ty->getStructElementType(idx);
 
-                     llvm::Type* new_alloca_type = llvm::PointerType::getUnqual(element);
                      std::string new_alloca_name = alloca_inst->getName().str() + "." + std::to_string(idx);
-                     llvm::AllocaInst* new_alloca_inst = new llvm::AllocaInst(/*new_alloca_type*/ element,
+                     llvm::AllocaInst* new_alloca_inst = new llvm::AllocaInst(element,
 #if __clang_major__ > 4 && !defined(__APPLE__)
                                                                               DL->getAllocaAddrSpace(),
 #endif
@@ -1887,9 +1902,8 @@ void CustomScalarReplacementOfAggregatesPass::expand_allocas(llvm::Function* fun
                   {
                      llvm::Type* element_ty = arr_ty->getArrayElementType();
 
-                     llvm::Type* new_alloca_type = llvm::PointerType::getUnqual(element_ty);
                      std::string new_alloca_name = alloca_inst->getName().str() + "." + std::to_string(idx);
-                     llvm::AllocaInst* new_alloca_inst = new llvm::AllocaInst(/*new_alloca_type*/ element_ty,
+                     llvm::AllocaInst* new_alloca_inst = new llvm::AllocaInst(element_ty,
 #if __clang_major__ > 4 && !defined(__APPLE__)
                                                                               DL->getAllocaAddrSpace(),
 #endif
@@ -2192,12 +2206,10 @@ void CustomScalarReplacementOfAggregatesPass::expand_signatures_and_call_sites(s
       llvm::ValueToValueMapTy VMap;
 
       std::map<llvm::Argument*, llvm::Argument*> mock_to_new_arg_map;
-      llvm::Function::arg_iterator mf_arg_it_b = new_mock_function->arg_begin();
-      llvm::Function::arg_iterator mf_arg_it_e = new_mock_function->arg_end();
       llvm::Function::arg_iterator nf_arg_it_b = new_function->arg_begin();
       llvm::Function::arg_iterator nf_arg_it_e = new_function->arg_end();
       llvm::Function::arg_iterator nf_arg_it = nf_arg_it_b;
-      llvm::Function::arg_iterator mf_arg_it = mf_arg_it_b;
+      llvm::Function::arg_iterator mf_arg_it = new_mock_function->arg_begin();
       for(; nf_arg_it != nf_arg_it_e; nf_arg_it++, mf_arg_it++)
       {
          llvm::Argument* nf_arg = &*nf_arg_it;
@@ -2301,7 +2313,6 @@ void CustomScalarReplacementOfAggregatesPass::expand_signatures_and_call_sites(s
             {
                // Recursively populate the operand vector, expanding with null pointers
                std::vector<llvm::Value*> new_call_ops = std::vector<llvm::Value*>();
-               llvm::Function::arg_iterator arg_it = new_function->arg_begin();
                for(auto& op : call_inst->arg_operands())
                {
                   llvm::Value* operand = op.get();
@@ -2309,7 +2320,7 @@ void CustomScalarReplacementOfAggregatesPass::expand_signatures_and_call_sites(s
                   llvm::Argument* arg = nullptr;
                   {
                      llvm::Function::arg_iterator arg_it = new_function->arg_begin();
-                     for(int i = 0; i < new_call_ops.size(); i++)
+                     for(auto i = 0u; i < new_call_ops.size(); i++)
                      {
                         arg_it++;
                      }
