@@ -10579,8 +10579,8 @@ VHDL_PROVIDED=
 
 begin
 
-  din_a &lt;= std_logic_vector(resize(unsigned(proxy_in1), data_size))  when (proxy_sel_STORE = &apos;1&apos;) else std_logic_vector(resize(unsigned(in1), data_size));
-  bram_write &lt;= sel_STORE or proxy_sel_STORE;
+  din_a &lt;= std_logic_vector(resize(unsigned(proxy_in1), data_size))  when (proxy_sel_STORE = &apos;1&apos;) else std_logic_vector(resize(unsigned(in1), data_size)) when  (sel_STORE = &apos;1&apos;) else std_logic_vector(resize(unsigned(S_Wdata_ram), data_size));
+  bram_write &lt;= sel_STORE or proxy_sel_STORE or we_ram_cs;
 
   DelayProcess : process(clock)
   begin
