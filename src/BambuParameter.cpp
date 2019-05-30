@@ -213,8 +213,8 @@
 #define OPT_BACKEND_SCRIPT_EXTENSIONS_PARAMETER (1 + OPT_AREA_WEIGHT)
 #define OPT_BACKEND_SDC_EXTENSIONS_PARAMETER (1 + OPT_BACKEND_SCRIPT_EXTENSIONS_PARAMETER)
 #define OPT_VHDL_LIBRARY_PARAMETER (1 + OPT_BACKEND_SDC_EXTENSIONS_PARAMETER)
-#define OPT_BITVALUE_IPA (1 + OPT_VHDL_LIBRARY_PARAMETER)
-#define OPT_BRAM_HIGH_LATENCY (1 + OPT_BITVALUE_IPA)
+#define OPT_DISABLE_BITVALUE_IPA (1 + OPT_VHDL_LIBRARY_PARAMETER)
+#define OPT_BRAM_HIGH_LATENCY (1 + OPT_DISABLE_BITVALUE_IPA)
 #define OPT_CHANNELS_NUMBER (1 + OPT_BRAM_HIGH_LATENCY)
 #define OPT_CHANNELS_TYPE (1 + OPT_CHANNELS_NUMBER)
 #define OPT_CLOCK_PERIOD_RESOURCE_FRACTION (1 + OPT_CHANNELS_TYPE)
@@ -958,8 +958,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
    os << "    --host-profiling\n"
       << "        Perform host-profiling.\n\n";
 #endif
-   os << "    --bitvalue-ipa\n"
-      << "        Enables inter-procedural bitvalue analysis.\n\n";
+   os << "    --disable-bitvalue-ipa\n"
+      << "        Disable inter-procedural bitvalue analysis.\n\n";
 #if HAVE_EXPERIMENTAL || HAVE_ILP_BUILT
    os << std::endl;
 #endif
@@ -1213,7 +1213,7 @@ int BambuParameter::Exec()
       {"mem-delay-read", required_argument, nullptr, OPT_MEM_DELAY_READ},
       {"mem-delay-write", required_argument, nullptr, OPT_MEM_DELAY_WRITE},
       {"host-profiling", no_argument, nullptr, OPT_HOST_PROFILING},
-      {"bitvalue-ipa", no_argument, nullptr, OPT_BITVALUE_IPA},
+      {"disable-bitvalue-ipa", no_argument, nullptr, OPT_DISABLE_BITVALUE_IPA},
       {"discrepancy", no_argument, nullptr, OPT_DISCREPANCY},
       {"discrepancy-force-uninitialized", no_argument, nullptr, OPT_DISCREPANCY_FORCE},
       {"discrepancy-hw", no_argument, nullptr, OPT_DISCREPANCY_HW},
@@ -2160,9 +2160,9 @@ int BambuParameter::Exec()
             setOption<bool>(OPT_mixed_design, false);
             break;
          }
-         case OPT_BITVALUE_IPA:
+         case OPT_DISABLE_BITVALUE_IPA:
          {
-            setOption(OPT_bitvalue_ipa, true);
+            setOption(OPT_bitvalue_ipa, false);
             break;
          }
          case OPT_DISCREPANCY:
@@ -3644,6 +3644,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_fsm_encoding, "auto");
    setOption(OPT_scheduling_mux_margins, 0.0);
    setOption(OPT_no_return_zero, false);
+   setOption(OPT_bitvalue_ipa, true);
 
 #if HAVE_HOST_PROFILING_BUILT
    setOption(OPT_exec_argv, STR_CST_string_separator);
