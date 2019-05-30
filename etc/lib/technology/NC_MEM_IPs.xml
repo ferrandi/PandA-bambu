@@ -10520,7 +10520,271 @@ endgenerate
 // Add assertion here
 // psl default clock = (posedge clock);
 // psl ERROR_SDS_data_ram_size: assert never {(BRAM_BITSIZE != in3 &amp;&amp; (sel_LOAD || sel_STORE)) || (BRAM_BITSIZE != proxy_in3 &amp;&amp; (proxy_sel_LOAD || proxy_sel_STORE))};
-// psl ERROR_SDS_alignment: assert never {(((in2-address_space_begin) %(BRAM_BITSIZE/8) != 0) &amp;&amp; (sel_LOAD || sel_STORE)) || (((proxy_in2-address_space_begin) %(BRAM_BITSIZE/8) != 0) &amp;&amp; (proxy_sel_LOAD || proxy_sel_STORE))};"/>
+// psl ERROR_SDS_alignment: assert never {(((in2-address_space_begin) %(BRAM_BITSIZE/8) != 0) &amp;&amp; (sel_LOAD || sel_STORE)) || (((proxy_in2-address_space_begin) %(BRAM_BITSIZE/8) != 0) &amp;&amp; (proxy_sel_LOAD || proxy_sel_STORE))};"
+VHDL_PROVIDED=
+"  function integer_ternary_operator(cond : boolean; op1 : integer; op2 : integer) return integer is
+  begin
+    if cond then
+      return op1;
+    else
+      return op2;
+    end if;
+  end integer_ternary_operator;
+  constant n_bytes           : integer := n_elements*(BRAM_BITSIZE/8);
+  constant n_byte_on_databus : integer := BRAM_BITSIZE/8;
+  constant n_mem_elements    : integer := n_bytes/(n_byte_on_databus) + integer_ternary_operator((n_bytes mod n_byte_on_databus) = 0, 0, 1);
+  constant nbit_addr         : integer := integer_ternary_operator(BITSIZE_in2 &gt; BITSIZE_proxy_in2, BITSIZE_in2, BITSIZE_proxy_in2);
+  constant nbit_read_addr    : integer := integer_ternary_operator(n_elements = 1, 1, integer(ceil(log2(real(n_elements)))));
+  constant nbits_byte_offset : integer := integer_ternary_operator(n_byte_on_databus = 1, 0, integer(ceil(log2(real(n_byte_on_databus)))));
+
+  constant nbits_address_space_rangesize  : integer := integer(ceil(log2(real(address_space_rangesize))));
+  constant address_space_begin_u         : unsigned(nbit_addr-1 downto 0) := to_unsigned(address_space_begin, nbit_addr);
+  signal memory_addr_a : std_logic_vector(nbit_read_addr-1 downto 0);
+  signal memory_addr_a_mem : std_logic_vector(nbit_read_addr-1 downto 0);
+  signal memory_addr_a1 : std_logic_vector(nbit_read_addr-1 downto 0) 1INIT_ZERO_VALUE;
+
+  signal bram_write : std_logic;
+  signal bram_write_mem : std_logic;
+  signal bram_write1 : std_logic 1INIT_ZERO_VALUEb;
+
+  signal dout_a : std_logic_vector(data_size-1 downto 0) 1INIT_ZERO_VALUE;
+  signal dout_a_registered : std_logic_vector(data_size-1 downto 0) 1INIT_ZERO_VALUE;
+  signal cs, oe_ram_cs, we_ram_cs: std_logic;
+  signal we_ram_cs_delayed : std_logic 1INIT_ZERO_VALUEb;
+  signal oe_ram_cs_delayed : std_logic 1INIT_ZERO_VALUEb;
+  signal oe_ram_cs_delayed_registered : std_logic 1INIT_ZERO_VALUEb;
+  signal oe_ram_cs_delayed_registered1 : std_logic 1INIT_ZERO_VALUEb;
+
+  signal relative_addr : std_logic_vector(nbit_addr-1 downto 0);
+  signal tmp_addr : std_logic_vector(nbit_addr-1 downto 0);
+  signal din_a : std_logic_vector(data_size-1 downto 0);
+  signal din_a_mem : std_logic_vector(data_size-1 downto 0);
+  signal din_a1 : std_logic_vector(data_size-1 downto 0) 1INIT_ZERO_VALUE;
+
+  type mem_type is array (n_elements-1 downto 0) of std_logic_vector(data_size-1 downto 0);
+
+  impure function InitMemFromFile (MemFileName : in string) return mem_type is
+    FILE memfile : text open READ_MODE is MemFileName;
+    variable MemFileLine : line;
+    variable mem : mem_type;
+    begin
+       for i in 0 to n_elements-1 loop
+        readline(memfile, MemFileLine);
+        read(MemFileLine, mem(i));
+      end loop;
+      return mem;
+  end function;
+
+  signal mem : mem_type := InitMemFromFile(MEMORY_INIT_file);
+
+begin
+
+  din_a &lt;= std_logic_vector(resize(unsigned(proxy_in1), data_size))  when (proxy_sel_STORE = &apos;1&apos;) else std_logic_vector(resize(unsigned(in1), data_size)) when  (sel_STORE = &apos;1&apos;) else std_logic_vector(resize(unsigned(S_Wdata_ram), data_size));
+  bram_write &lt;= sel_STORE or proxy_sel_STORE or we_ram_cs;
+
+  DelayProcess : process(clock)
+  begin
+    if (clock&apos;event and clock=&apos;1&apos;) then
+       if(HIGH_LATENCY=2) then
+         memory_addr_a1 &lt;= memory_addr_a;
+         bram_write1 &lt;= bram_write;
+         din_a1 &lt;= din_a;
+       end if;
+    end if;
+  end process;
+
+  memory_addr_a_mem &lt;= memory_addr_a1 when (HIGH_LATENCY=2) else memory_addr_a;
+  bram_write_mem &lt;= bram_write1 when (HIGH_LATENCY=2) else bram_write;
+  din_a_mem &lt;= din_a1 when (HIGH_LATENCY=2) else din_a;
+
+  L1_single_write : process(clock)
+  begin
+    if (clock&apos;event and clock=&apos;1&apos;) then
+      if(bram_write_mem='1') then
+-- synthesis translate_off
+        if (to_integer(unsigned(memory_addr_a_mem)) &lt; n_mem_elements) then
+-- synthesis translate_on
+          mem(to_integer(unsigned(memory_addr_a_mem))) &lt;= din_a_mem;
+-- synthesis translate_off
+        end if;
+-- synthesis translate_on
+      end if;
+    end if;
+  end process;
+
+  L1_single_read : process(clock)
+  begin
+    if (clock&apos;event and clock=&apos;1&apos;) then
+      if(HIGH_LATENCY=0) then
+-- synthesis translate_off
+        if (to_integer(unsigned(memory_addr_a_mem)) &lt; n_mem_elements) then
+-- synthesis translate_on
+          dout_a &lt;= mem(to_integer(unsigned(memory_addr_a_mem)));
+-- synthesis translate_off
+        else
+          dout_a &lt;= (others =&gt; &apos;X&apos;);
+        end if;
+-- synthesis translate_on
+      else
+-- synthesis translate_off
+        if (to_integer(unsigned(memory_addr_a_mem)) &lt; n_mem_elements) then
+-- synthesis translate_on
+         dout_a_registered &lt;= mem(to_integer(unsigned(memory_addr_a_mem)));
+-- synthesis translate_off
+        else
+          dout_a_registered &lt;= (others =&gt; &apos;X&apos;);
+        end if;
+-- synthesis translate_on
+         dout_a &lt;= dout_a_registered;
+       end if;
+    end if;
+  end process;
+
+  tmp_addr &lt;= proxy_in2 when ((proxy_sel_LOAD or proxy_sel_STORE)=&apos;1&apos;) else in2;
+
+  L3 : process(S_addr_ram)
+  begin
+    if(PRIVATE_MEMORY = 0 and USE_SPARSE_MEMORY = 0) then
+       if(to_integer(unsigned(S_addr_ram)) &gt;= (address_space_begin)) and (to_integer(unsigned(S_addr_ram)) &lt; (address_space_begin+address_space_rangesize)) then
+          cs &lt;= &apos;1&apos;;
+       else
+          cs &lt;= &apos;0&apos;;
+       end if;
+    else
+       if(PRIVATE_MEMORY=0) then
+          if S_addr_ram(nbit_addr-1 downto nbits_address_space_rangesize) = std_logic_vector(address_space_begin_u(nbit_addr-1 downto nbits_address_space_rangesize)) then
+             cs &lt;= &apos;1&apos;;
+          else
+             cs &lt;= &apos;0&apos;;
+          end if;
+       else
+          cs &lt;= &apos;0&apos;;
+       end if;
+    end if;
+  end process;
+  
+  oe_ram_cs &lt;= S_oe_ram and cs;
+  we_ram_cs &lt;= S_we_ram and cs;
+
+  L6 : process(sel_STORE, proxy_sel_STORE, sel_LOAD, proxy_sel_LOAD, tmp_addr, S_addr_ram)
+  begin
+      if(PRIVATE_MEMORY=0 and USE_SPARSE_MEMORY=0) then
+         if(sel_STORE = &apos;1&apos; or sel_LOAD = &apos;1&apos; or proxy_sel_STORE = &apos;1&apos; or proxy_sel_LOAD = &apos;1&apos;) then
+            relative_addr &lt;= std_logic_vector(unsigned(tmp_addr)-(to_unsigned(address_space_begin, nbit_addr)));
+         else
+            relative_addr &lt;= std_logic_vector(unsigned(S_addr_ram) - (to_unsigned(address_space_begin, nbit_addr)));
+         end if;
+      else
+         if(PRIVATE_MEMORY=0) then
+            if(sel_STORE = &apos;1&apos; or sel_LOAD = &apos;1&apos; or proxy_sel_STORE = &apos;1&apos; or proxy_sel_LOAD = &apos;1&apos;) then
+               relative_addr &lt;= std_logic_vector(resize(unsigned(tmp_addr(nbits_address_space_rangesize-1 downto 0)), nbit_addr));
+            else
+               relative_addr &lt;= std_logic_vector(resize(unsigned(S_addr_ram(nbits_address_space_rangesize-1 downto 0)), nbit_addr));
+            end if;
+         else
+            if(USE_SPARSE_MEMORY=1) then
+               relative_addr &lt;= std_logic_vector(resize(unsigned(tmp_addr(nbits_address_space_rangesize-1 downto 0)), nbit_addr));
+            else
+               relative_addr &lt;= std_logic_vector(unsigned(tmp_addr) - to_unsigned(address_space_begin, nbit_addr));
+            end if;
+         end if;
+      end if;
+   end process;
+
+   L7_A : process(relative_addr)
+   begin
+      if (n_mem_elements=1) then
+         memory_addr_a &lt;= (others =&gt; &apos;0&apos;);
+      elsif (n_byte_on_databus=1) then
+         memory_addr_a &lt;= relative_addr(nbit_read_addr-1 downto 0);
+      else
+         memory_addr_a &lt;= relative_addr(nbit_read_addr+nbits_byte_offset-1 downto nbits_byte_offset);
+      end if;
+   end process;
+
+   out1 &lt;= dout_a(BITSIZE_out1-1 downto 0);
+   proxy_out1 &lt;= std_logic_vector(resize(unsigned(dout_a), BITSIZE_proxy_out1));
+
+   L16 : process(reset, clock)
+   begin
+      if(1RESET_VALUE) then
+         oe_ram_cs_delayed &lt;= &apos;0&apos;;
+         if(HIGH_LATENCY /= 0) then
+            oe_ram_cs_delayed_registered &lt;= &apos;0&apos;;
+         end if;
+         if(HIGH_LATENCY = 2) then
+            oe_ram_cs_delayed_registered1 &lt;= &apos;0&apos;;
+         end if;
+      else
+         if (clock&apos;event and clock = &apos;1&apos;) then
+            if(HIGH_LATENCY = 0) then
+               if(BUS_PIPELINED /= 0) then
+                  oe_ram_cs_delayed &lt;= oe_ram_cs;
+               else
+                  oe_ram_cs_delayed &lt;= oe_ram_cs and (not oe_ram_cs_delayed);
+               end if;
+            elsif(HIGH_LATENCY = 1) then
+               if(BUS_PIPELINED /= 0) then
+                  oe_ram_cs_delayed_registered &lt;= oe_ram_cs;
+               else
+                  oe_ram_cs_delayed_registered &lt;= oe_ram_cs and ((not oe_ram_cs_delayed_registered and not oe_ram_cs_delayed));
+               end if;
+               oe_ram_cs_delayed &lt;= oe_ram_cs_delayed_registered;
+            else
+               if(BUS_PIPELINED /= 0) then
+                  oe_ram_cs_delayed_registered1 &lt;= oe_ram_cs;
+               else
+                  oe_ram_cs_delayed_registered1 &lt;= oe_ram_cs and ((not oe_ram_cs_delayed_registered1 and not oe_ram_cs_delayed_registered and not oe_ram_cs_delayed));
+               end if;
+               oe_ram_cs_delayed_registered &lt;= oe_ram_cs_delayed_registered1;
+               oe_ram_cs_delayed &lt;= oe_ram_cs_delayed_registered;
+            end if;
+         end if;
+      end if;
+   end process;
+
+   process(clock, reset)
+   begin
+      if(1RESET_VALUE) then
+         we_ram_cs_delayed &lt;= &apos;0&apos;;
+      else
+         if (clock&apos;event and clock = &apos;1&apos;) then
+            we_ram_cs_delayed &lt;= we_ram_cs and not we_ram_cs_delayed;
+         end if;
+      end if;
+   end process;
+
+   L18 : process(Sin_Rdata_ram, dout_a, oe_ram_cs_delayed)
+   begin
+      if(PRIVATE_MEMORY=1) then
+         Sout_Rdata_ram(BITSIZE_Sout_Rdata_ram-1 downto 0) &lt;= Sin_Rdata_ram(BITSIZE_Sin_Rdata_ram-1 downto 0);
+      else
+         if (BITSIZE_Sout_Rdata_ram &lt;= data_size) then
+            if(oe_ram_cs_delayed /= &apos;0&apos;) then
+               Sout_Rdata_ram &lt;= dout_a(BITSIZE_Sout_Rdata_ram-1 downto 0);
+            else
+               Sout_Rdata_ram &lt;= Sin_Rdata_ram;
+            end if;
+         else
+            if(oe_ram_cs_delayed /= &apos;0&apos;) then
+               Sout_Rdata_ram &lt;= std_logic_vector(resize(unsigned(dout_a), BITSIZE_Sout_Rdata_ram));
+            else
+               Sout_Rdata_ram &lt;= Sin_Rdata_ram;
+            end if;
+         end if;
+      end if;
+   end process;
+
+   L19 : process(oe_ram_cs_delayed, Sin_DataRdy, we_ram_cs_delayed)
+   begin
+      if(PRIVATE_MEMORY=0) then
+         Sout_DataRdy &lt;= oe_ram_cs_delayed or Sin_DataRdy or we_ram_cs_delayed;
+      else
+         Sout_DataRdy &lt;= Sin_DataRdy;
+      end if;
+   end process;
+" 
+/>
         </component_o>
       </circuit>
     </cell>
