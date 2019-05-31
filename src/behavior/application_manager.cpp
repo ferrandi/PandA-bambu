@@ -347,6 +347,11 @@ void application_manager::RegisterTransformation(const std::string& step, const 
 }
 #endif
 
+bool application_manager::isParmUsed(unsigned parm_index) const
+{
+   return Parm2SSA_map.find(parm_index) != Parm2SSA_map.end();
+}
+
 unsigned application_manager::getSSAFromParm(unsigned parm_index) const
 {
    THROW_ASSERT(parm_index, "unexpected null parm_decl index");

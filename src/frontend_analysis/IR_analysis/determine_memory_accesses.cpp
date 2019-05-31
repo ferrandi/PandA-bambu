@@ -612,7 +612,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                   actual_par_index = tree_helper::get_base_index(TM, actual_par_index);
                const FunctionBehaviorRef FBcalled = AppM->GetFunctionBehavior(calledFundID);
                /// check if the actual parameter has been allocated in memory
-               if(function_behavior->is_variable_mem(actual_par_index))
+               if(function_behavior->is_variable_mem(actual_par_index) && AppM->isParmUsed(formal_par_index))
                {
                   auto formal_ssa_index = AppM->getSSAFromParm(formal_par_index);
                   auto formal_ssa_node = TM->get_tree_node_const(formal_ssa_index);
@@ -821,7 +821,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                   actual_par_index = tree_helper::get_base_index(TM, actual_par_index);
                const FunctionBehaviorRef FBcalled = AppM->GetFunctionBehavior(calledFundID);
                /// check if the actual parameter has been allocated in memory
-               if(function_behavior->is_variable_mem(actual_par_index))
+               if(function_behavior->is_variable_mem(actual_par_index) && AppM->isParmUsed(formal_par_index))
                {
                   auto formal_ssa_index = AppM->getSSAFromParm(formal_par_index);
                   auto formal_ssa_node = TM->get_tree_node_const(formal_ssa_index);
