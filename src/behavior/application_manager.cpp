@@ -361,7 +361,9 @@ void application_manager::setSSAFromParm(unsigned int parm_index, unsigned ssa_i
    if(Parm2SSA_map.find(parm_index) == Parm2SSA_map.end())
       Parm2SSA_map[parm_index] = ssa_index;
    else
+   {
       THROW_ASSERT(Parm2SSA_map.find(parm_index)->second == ssa_index, "unexpected condition");
+   }
 }
 void application_manager::clearParm2SSA()
 {
