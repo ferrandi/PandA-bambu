@@ -203,8 +203,10 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp)
          auto* sn = GetPointer<ssa_name>(curr_tn);
          if(sn->var)
          {
-            if(GET_NODE(sn->var)->get_kind() == parm_decl_K)
+            auto defStmt = sn->CGetDefStmt();
+            if(GET_NODE(sn->var)->get_kind() == parm_decl_K && GET_NODE(defStmt)->get_kind() == gimple_nop_K)
             {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Setting " +STR(GET_INDEX_NODE(sn->var)) + "-> " + STR(GET_INDEX_NODE(tn)) + " " + STR(GET_INDEX_NODE(tn)));
                AppM->setSSAFromParm(GET_INDEX_NODE(sn->var), GET_INDEX_NODE(tn));
             }
             recursive_analysis(sn->var, srcp);
