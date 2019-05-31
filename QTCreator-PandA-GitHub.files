@@ -1722,6 +1722,8 @@ src/frontend_analysis/IR_analysis/multiple_entry_if_reduction.cpp
 src/frontend_analysis/IR_analysis/multiple_entry_if_reduction.hpp
 src/frontend_analysis/IR_analysis/operations_cfg_computation.cpp
 src/frontend_analysis/IR_analysis/operations_cfg_computation.hpp
+src/frontend_analysis/IR_analysis/parm2ssa.cpp
+src/frontend_analysis/IR_analysis/parm2ssa.hpp
 src/frontend_analysis/IR_analysis/parm_decl_taken_address_fix.cpp
 src/frontend_analysis/IR_analysis/parm_decl_taken_address_fix.hpp
 src/frontend_analysis/IR_analysis/phi_opt.cpp

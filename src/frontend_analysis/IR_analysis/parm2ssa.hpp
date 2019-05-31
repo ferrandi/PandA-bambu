@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,8 +31,8 @@
  *
  */
 /**
- * @file string_cst_fix.hpp
- * @brief Pre-analysis step fixing readonly initializations and string_cst references.
+ * @file parm2ssa.hpp
+ * @brief Pre-analysis step computing the relation between parm_decl and the associated ssa_name.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
@@ -40,8 +40,8 @@
  * Last modified by $Author$
  *
  */
-#ifndef STRING_CST_FIX_HPP
-#define STRING_CST_FIX_HPP
+#ifndef PARM2SSA_HPP
+#define PARM2SSA_HPP
 
 /// Superclass include
 #include "application_frontend_flow_step.hpp"
@@ -62,17 +62,13 @@ REF_FORWARD_DECL(tree_node);
 //@}
 
 /**
- * Pre-analysis step. It transforms the raw intermediate representation by removing
- * direct references to string_cst.
+ * Pre-analysis step. computing the relation between parm_decl and the associated ssa_name.
  */
-class string_cst_fix : public ApplicationFrontendFlowStep
+class parm2ssa : public ApplicationFrontendFlowStep
 {
  protected:
    /// Already visited address expression (used to avoid infinite recursion)
    std::unordered_set<unsigned int> already_visited_ae;
-
-   /// relation between constant string and read-only variable initialized with the string_cst.
-   std::unordered_map<unsigned int, tree_nodeRef> string_cst_map;
 
    /**
     * Recursive tree node analysis
@@ -92,12 +88,12 @@ class string_cst_fix : public ApplicationFrontendFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   string_cst_fix(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   parm2ssa(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     * Destructor
     */
-   ~string_cst_fix() override;
+   ~parm2ssa() override;
 
    /**
     * Fixes the var_decl duplication.
