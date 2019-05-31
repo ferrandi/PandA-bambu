@@ -65,6 +65,7 @@
 #include "behavioral_helper.hpp"
 #include "ext_tree_node.hpp"
 #include "tree_basic_block.hpp"
+#include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
@@ -121,6 +122,7 @@ DesignFlowStep_Status parm2ssa::Exec()
       auto* fd = GetPointer<function_decl>(curr_tn);
       auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
       const std::string srcp_default = fd->include_name + ":" + STR(fd->line_number) + ":" + STR(fd->column_number);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing function " + STR(function_id) + ": " + tree_helper::print_function_name(TM,fd));
 
       for(auto arg : fd->list_of_args)
          recursive_analysis(arg, srcp_default);
@@ -140,6 +142,7 @@ DesignFlowStep_Status parm2ssa::Exec()
             recursive_analysis(phi, srcp_default);
          }
       }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed function " + STR(function_id) + ": " + tree_helper::print_function_name(TM,fd));
    }
    return DesignFlowStep_Status::SUCCESS;
 }

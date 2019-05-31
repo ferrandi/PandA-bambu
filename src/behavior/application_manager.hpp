@@ -314,6 +314,12 @@ class application_manager
 #endif
 
    /**
+    * @brief isParmUsed return true in case the parameter is used
+    * @param parm_index is the parm_decl index
+    * @return true in case the parameter is used
+    */
+   bool isParmUsed(unsigned parm_index) const;
+   /**
     * \brief getSSAFromParm returns the ssa_name index associated with the parm_decl index, 0 in case there is not an associated index
     * \param parm_index is the parm_decl index for which we look for the associated ssa_name index
     */
