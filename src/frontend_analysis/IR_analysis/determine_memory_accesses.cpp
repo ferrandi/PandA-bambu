@@ -633,6 +633,9 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                      }
                   }
                }
+               else if(!AppM->isParmUsed(formal_par_index))
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter is not used in the function body.");
+
                /// check if the formal parameter has been allocated in memory.
                if(FBcalled->is_variable_mem(formal_par_index))
                {
@@ -842,6 +845,8 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                      }
                   }
                }
+               else if(!AppM->isParmUsed(formal_par_index))
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter is not used in the function body.");
                /// check if the formal parameter has been allocated in memory.
                if(FBcalled->is_variable_mem(formal_par_index))
                {
