@@ -35,8 +35,8 @@
  * @brief Collapse and if and its "then" branch only if it is shorter than one cycle and the else is a BB composed only by return and PHI statements.
  *
  * Complete description:
- * This step collpapses an if block and its "then" branch only if the branch lasts one cycle and doesn't contain store and call. Furthermore,
- * the BB following the if should be the last BB (preceeding the EXTI) and has to contain only a return statement ad a PHI statement, also the "then" BB
+ * This step collapses an if block and its "then" branch only if the branch lasts one cycle and doesn't contain store and call. Furthermore,
+ * the BB following the if should be the last BB (preceding the EXTI) and has to contain only a return statement ad a PHI statement, also the "then" BB
  * has to be linked to this block.
  *                                    |
  *                             _ _ _ _| _ _ _                                             _ _ _ _ _ _ _ _
@@ -78,7 +78,7 @@
  *       3. Update the scheduling for the moved stmt
  *    The void bloc will be removed by other steps.
  *
- * @author Marco Arnabdoli <marco1.arnaboldi@polimi.it>
+ * @author Marco Arnaboldi <marco1.arnaboldi@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
