@@ -131,15 +131,20 @@ bool BitValueIPA::HasToBeExecuted() const
    std::map<unsigned int, unsigned int> cur_bitvalue_ver;
    std::map<unsigned int, unsigned int> cur_bb_ver;
    const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
+   bool sr_done = false;
    for(const auto i : CGMan->GetReachedBodyFunctions())
    {
       const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(i);
       cur_bitvalue_ver[i] = FB->GetBitValueVersion();
       cur_bb_ver[i] = FB->GetBBVersion();
+      const auto sr_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::SPLIT_RETURN, i));
+      if(sr_step)
+         sr_done = true;
    }
-   if(cur_bb_ver != last_bb_ver || cur_bitvalue_ver != last_bitvalue_ver)
-      std::cerr << "BitValueIPA::HasToBeExecuted T\n";
-
+   if(sr_done)
+   {
+      return false;
+   }
    return cur_bb_ver != last_bb_ver || cur_bitvalue_ver != last_bitvalue_ver;
 }
 
