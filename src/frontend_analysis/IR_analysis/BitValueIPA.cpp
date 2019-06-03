@@ -137,6 +137,9 @@ bool BitValueIPA::HasToBeExecuted() const
       cur_bitvalue_ver[i] = FB->GetBitValueVersion();
       cur_bb_ver[i] = FB->GetBBVersion();
    }
+   if(cur_bb_ver != last_bb_ver || cur_bitvalue_ver != last_bitvalue_ver)
+      std::cerr << "BitValueIPA::HasToBeExecuted T\n";
+
    return cur_bb_ver != last_bb_ver || cur_bitvalue_ver != last_bitvalue_ver;
 }
 
@@ -878,7 +881,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
       last_bitvalue_ver[i] = FB->GetBitValueVersion();
       last_bb_ver[i] = FB->GetBBVersion();
    }
-   return DesignFlowStep_Status::SUCCESS;
+   return fun_id_to_restart.empty() ? DesignFlowStep_Status::UNCHANGED : DesignFlowStep_Status::SUCCESS;
 }
 
 void BitValueIPA::Initialize()
