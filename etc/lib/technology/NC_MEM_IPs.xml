@@ -10702,7 +10702,7 @@ begin
       end if;
    end process;
 
-   out1 &lt;= dout_a(BITSIZE_out1-1 downto 0);
+   out1 &lt;= std_logic_vector(resize(unsigned(dout_a), BITSIZE_out1));
    proxy_out1 &lt;= std_logic_vector(resize(unsigned(dout_a), BITSIZE_proxy_out1));
 
    L16 : process(reset, clock)
