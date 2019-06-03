@@ -131,19 +131,11 @@ bool BitValueIPA::HasToBeExecuted() const
    std::map<unsigned int, unsigned int> cur_bitvalue_ver;
    std::map<unsigned int, unsigned int> cur_bb_ver;
    const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
-   bool sr_done = false;
    for(const auto i : CGMan->GetReachedBodyFunctions())
    {
       const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(i);
       cur_bitvalue_ver[i] = FB->GetBitValueVersion();
       cur_bb_ver[i] = FB->GetBBVersion();
-      const auto sr_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::SPLIT_RETURN, i));
-      if(sr_step)
-         sr_done = true;
-   }
-   if(sr_done)
-   {
-      return false;
    }
    return cur_bb_ver != last_bb_ver || cur_bitvalue_ver != last_bitvalue_ver;
 }
@@ -282,8 +274,8 @@ DesignFlowStep_Status BitValueIPA::Exec()
          bool fu_signed = signed_var.find(fu_id) != signed_var.cend();
 
          /*
-          * for root functions, don't perform bacward propagation from assigned
-          * ssa to returned value, becaue this could lead to unsafe
+          * for root functions, don't perform backward propagation from assigned
+          * ssa to returned value, because this could lead to unsafe
           * optimizations if some external piece of code that was not
           * synthesized with bambu calls the top function from the bus
           */
@@ -614,7 +606,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
 
             /*
              * for root functions, don't perform forward propagation from actual
-             * parameters to formal parameters, becaue this could lead to unsafe
+             * parameters to formal parameters, because this could lead to unsafe
              * optimizations if some external piece of code that was not
              * synthesized with bambu calls the top function from the bus
              */
