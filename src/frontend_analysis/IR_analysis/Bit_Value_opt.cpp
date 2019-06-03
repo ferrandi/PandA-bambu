@@ -104,11 +104,12 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case DEPENDENCE_RELATIONSHIP:
       {
-         relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
          if(parameters->isOption(OPT_bitvalue_ipa) and parameters->getOption<bool>(OPT_bitvalue_ipa))
          {
             relationships.insert(std::make_pair(BIT_VALUE_IPA, WHOLE_APPLICATION));
          }
+         else
+            relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
          relationships.insert(std::make_pair(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
          break;

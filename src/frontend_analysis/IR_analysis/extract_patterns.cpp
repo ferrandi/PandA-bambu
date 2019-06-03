@@ -82,8 +82,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(PRECEDENCE_RELATIONSHIP):
       {
-         if(parameters->isOption(OPT_bitvalue_ipa) and parameters->getOption<bool>(OPT_bitvalue_ipa))
-            relationships.insert(std::make_pair(BIT_VALUE_IPA, WHOLE_APPLICATION));
 #if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
          relationships.insert(std::make_pair(SDC_CODE_MOTION, SAME_FUNCTION));
 #endif
