@@ -140,7 +140,7 @@
 #include "tree_manipulation.hpp"
 #include "tree_reindex.hpp"
 
-/// Constructure implementation
+/// Constructor implementation
 RemoveEndingIf::RemoveEndingIf(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, REMOVE_ENDING_IF, _design_flow_manager, _parameters), sl(nullptr), schedule(ScheduleRef())
 {
