@@ -78,6 +78,7 @@
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "token_interface.hpp"
 
 /// Utility include
 #include "dbgPrintHelper.hpp"
@@ -86,7 +87,7 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 
 hls_div_cg_ext::hls_div_cg_ext(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, HLS_DIV_CG_EXT, _design_flow_manager, _parameters), TreeM(_AppM->get_tree_manager()), tree_man(new tree_manipulation(TreeM, parameters)), already_executed(false), changed_call_graph(false)
+    : FunctionFrontendFlowStep(_AppM, _function_id, HLS_DIV_CG_EXT, _design_flow_manager, _parameters), TreeM(_AppM->get_tree_manager()), tree_man(new tree_manipulation(TreeM, parameters)), already_executed(false), changed_call_graph(false), fix_nop(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -94,6 +95,7 @@ hls_div_cg_ext::hls_div_cg_ext(const ParameterConstRef _parameters, const applic
 void hls_div_cg_ext::Initialize()
 {
    changed_call_graph = false;
+   fix_nop = false;
 }
 
 hls_div_cg_ext::~hls_div_cg_ext() = default;
@@ -162,6 +164,76 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
       for(const auto& stmt : it->second->CGetStmtList())
       {
          recursive_examinate(stmt, stmt);
+      }
+   }
+
+   if(fix_nop)
+   {
+      for(it = blocks.begin(); it != it_end; ++it)
+      {
+         const auto& list_of_stmt = it->second->CGetStmtList();
+         auto it_los_end = list_of_stmt.end();
+         auto it_los = list_of_stmt.begin();
+         while(it_los != it_los_end)
+         {
+            if(GET_NODE(*it_los)->get_kind() == gimple_assign_K)
+            {
+               auto* ga = GetPointer<gimple_assign>(GET_NODE(*it_los));
+               const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
+               if(GET_NODE(ga->op1)->get_kind() == nop_expr_K)
+               {
+                  auto* ue = GetPointer<unary_expr>(GET_NODE(ga->op1));
+                  if(GET_NODE(ue->op)->get_kind() == call_expr_K)
+                  {
+                     unsigned int arg_n = 0;
+                     auto ce = GetPointer<call_expr>(GET_NODE(ue->op));
+                     auto arg_it = ce->args.begin();
+                     for(; arg_it != ce->args.end(); arg_it++, arg_n++)
+                     {
+                        if(GET_NODE(*arg_it)->get_kind() == integer_cst_K or GET_NODE(*arg_it)->get_kind() == ssa_name_K)
+                        {
+                           unsigned int formal_type_id = tree_helper::get_formal_ith(TreeM, ce->index, arg_n);
+                           const tree_nodeConstRef formal_type_node = TreeM->get_tree_node_const(formal_type_id);
+                           const tree_nodeConstRef actual_type_node = tree_helper::CGetType(GET_NODE(*arg_it));
+                           if(formal_type_id != actual_type_node->index)
+                           {
+                              const auto ga_nop = tree_man->CreateNopExpr(*arg_it, formal_type_node);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ga_nop)->ToString());
+                              it->second->PushBefore(ga_nop, *it_los);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---old call statement " + GET_NODE(*it_los)->ToString());
+                              unsigned int k = 0;
+                              auto new_ssa = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
+                              auto tmp_arg_it = ce->args.begin();
+                              for(; tmp_arg_it != ce->args.end(); tmp_arg_it++, k++)
+                              {
+                                 if(GET_INDEX_NODE(*arg_it) == GET_INDEX_NODE(*tmp_arg_it) and tree_helper::get_formal_ith(TreeM, ce->index, k) == formal_type_id)
+                                 {
+                                    TreeM->RecursiveReplaceTreeNode(*tmp_arg_it, *tmp_arg_it, new_ssa, *it_los, false);
+                                    tmp_arg_it = std::next(ce->args.begin(), static_cast<int>(k));
+                                    arg_it = std::next(ce->args.begin(), static_cast<int>(arg_n));
+                                    continue;
+                                 }
+                              }
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---new call statement " + GET_NODE(*it_los)->ToString());
+                              THROW_ASSERT(k, "");
+                           }
+                        }
+                     }
+                     unsigned int type_index = tree_helper::get_type_index(TreeM, GET_INDEX_NODE(ue->op));
+                     tree_nodeRef op_type = TreeM->GetTreeReindex(type_index);
+                     tree_nodeRef op_ga = tree_man->CreateGimpleAssign(op_type, ue->op, it->first, srcp_default);
+                     tree_nodeRef op_vd = GetPointer<gimple_assign>(GET_NODE(op_ga))->op0;
+                     it->second->PushBefore(op_ga, *it_los);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(op_ga)->ToString());
+                     TreeM->ReplaceTreeNode(*it_los, ue->op, op_vd);
+                     unsigned int called_function_id = GET_INDEX_NODE(GetPointer<addr_expr>(GET_NODE(ce->fn))->op);
+                     AppM->GetCallGraphManager()->RemoveCallPoint(function_id, called_function_id, ga->index);
+                     AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, op_ga->index, FunctionEdgeInfo::CallType::direct_call);
+                  }
+               }
+            }
+            it_los++;
+         }
       }
    }
    already_executed = true;
@@ -303,7 +375,20 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                   std::vector<tree_nodeRef> args;
                   args.push_back(be->op0);
                   args.push_back(be->op1);
-                  TreeM->ReplaceTreeNode(current_statement, current_tree_node, tree_man->CreateCallExpr(TreeM->GetTreeReindex(called_function_id), args, current_srcp));
+                  auto callExpr = tree_man->CreateCallExpr(TreeM->GetTreeReindex(called_function_id), args, current_srcp);
+                  bool CEunsignedp = tree_helper::is_unsigned(TreeM, GET_INDEX_NODE(callExpr));
+                  if(CEunsignedp != unsignedp)
+                  {
+                     std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ne_schema, ga_schema;
+                     ne_schema[TOK(TOK_TYPE)] = STR(expr_type_index);
+                     ne_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+                     ne_schema[TOK(TOK_OP)] = STR(callExpr->index);
+                     const auto ne_id = TreeM->new_tree_node_id();
+                     TreeM->create_tree_node(ne_id, nop_expr_K, ne_schema);
+                     callExpr = TreeM->GetTreeReindex(ne_id);
+                     fix_nop = true;
+                  }
+                  TreeM->ReplaceTreeNode(current_statement, current_tree_node, callExpr);
 
                   AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, current_statement->index, FunctionEdgeInfo::CallType::direct_call);
                   const std::set<unsigned int> called_by_set = AppM->CGetCallGraphManager()->get_called_by(function_id);
