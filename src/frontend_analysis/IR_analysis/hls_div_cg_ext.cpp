@@ -390,12 +390,12 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                   }
                   TreeM->ReplaceTreeNode(current_statement, current_tree_node, callExpr);
 
-                  AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, current_statement->index, FunctionEdgeInfo::CallType::direct_call);
                   const std::set<unsigned int> called_by_set = AppM->CGetCallGraphManager()->get_called_by(function_id);
                   if(called_by_set.find(called_function_id) == called_by_set.end())
                   {
                      changed_call_graph = true;
                   }
+                  AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, current_statement->index, FunctionEdgeInfo::CallType::direct_call);
                }
                break;
             }
