@@ -125,10 +125,18 @@ namespace llvm
          return Type->getPrimitiveSizeInBits() / 8;
       }
 
-      llvm::Type* getMemcpyLoopLoweringTypeLocal(llvm::LLVMContext& Context, llvm::Value* Length, unsigned SrcAlign, unsigned DestAlign, llvm::Value* SrcAddr, llvm::Value* DstAddr, const llvm::DataLayout* DL, bool isVolatile, bool& Optimize)
+      llvm::Type* getMemcpyLoopLoweringTypeLocal(llvm::LLVMContext& Context, llvm::ConstantInt* Length, unsigned SrcAlign, unsigned DestAlign, llvm::Value* SrcAddr, llvm::Value* DstAddr, const llvm::DataLayout* DL, bool isVolatile, bool& Optimize)
       {
          if(!isVolatile)
          {
+            if(SrcAlign==DestAlign && DestAlign==Length->getZExtValue() && DestAlign<=8)
+            {
+#if PRINT_DBG_MSG
+               llvm::errs() << "memcpy can be optimized\n";
+               llvm::errs() << "Align=" << SrcAlign << "\n";
+#endif
+               return llvm::Type::getIntNTy(Context, SrcAlign * 8);
+            }
             unsigned localSrcAlign = SrcAlign;
             auto srcCheck = addrIsOfIntArrayType(SrcAddr, localSrcAlign, DL);
             if(srcCheck)
@@ -197,6 +205,8 @@ namespace llvm
             srcIsGlobal = true;
             do_unrolling = do_unrolling && (dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0))->isConstant() || (LoopEndCount <= PEEL_THRESHOLD));
          }
+         else if(LoopEndCount==1)
+            do_unrolling = true;
          if(do_unrolling && !SrcIsVolatile && !DstIsVolatile && (srcIsAlloca || srcIsGlobal) && llvm::dyn_cast<llvm::BitCastInst>(DstAddr) && PeelCandidate)
          {
             llvm::PointerType* SrcOpType = llvm::PointerType::get(LoopOpType, SrcAS);
