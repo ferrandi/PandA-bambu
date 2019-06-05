@@ -726,7 +726,7 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index) const
    {
       const auto right = GET_NODE(ga->op1);
       /// currently all the operations introduced after the allocation has been performed are bounded
-      THROW_ASSERT(right->get_kind() == vec_cond_expr_K or right->get_kind() == nop_expr_K or right->get_kind() == lut_expr_K or right->get_kind() == lshift_expr_K or right->get_kind() == rshift_expr_K or right->get_kind() == bit_xor_expr_K or
+      THROW_ASSERT(GetPointer<cst_node>(right) or right->get_kind() == vec_cond_expr_K or right->get_kind() == nop_expr_K or right->get_kind() == lut_expr_K or right->get_kind() == lshift_expr_K or right->get_kind() == rshift_expr_K or right->get_kind() == bit_xor_expr_K or
                        right->get_kind() == bit_not_expr_K or right->get_kind() == bit_ior_concat_expr_K or right->get_kind() == bit_ior_expr_K or right->get_kind() == bit_and_expr_K or right->get_kind() == convert_expr_K or
                        right->get_kind() == truth_and_expr_K or right->get_kind() == truth_or_expr_K or right->get_kind() == truth_not_expr_K or right->get_kind() == cond_expr_K or right->get_kind() == ternary_plus_expr_K or
                        right->get_kind() == ternary_mp_expr_K or right->get_kind() == ternary_pm_expr_K or right->get_kind() == ternary_mm_expr_K or right->get_kind() == ssa_name_K,

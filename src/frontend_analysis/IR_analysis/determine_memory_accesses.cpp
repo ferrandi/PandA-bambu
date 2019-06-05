@@ -580,12 +580,14 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
 
          // The first parameter of a call_expr can be a ssa_name in
          // case of function pointer usage.  When it happens skip the
-         // following analysys.
+         // following analysis.
          if(!ae)
             break;
 
          if(AppM->GetFunctionBehavior(GET_INDEX_NODE(ae->op))->get_unaligned_accesses())
+         {
             function_behavior->set_unaligned_accesses(true);
+         }
          auto* fd = GetPointer<function_decl>(GET_NODE(ae->op));
          bool is_var_args_p = GetPointer<function_type>(GET_NODE(fd->type))->varargs_flag;
          THROW_ASSERT(fd, "expected a function_decl");
@@ -788,7 +790,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
          auto* ae = GetPointer<addr_expr>(GET_NODE(ce->fn));
          // The first parameter of a call_expr can be a ssa_name in
          // case of function pointer usage.  When it happens skip the
-         // following analysys.
+         // following analysis.
          if(!ae)
             break;
 

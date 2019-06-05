@@ -75,6 +75,8 @@ class hls_div_cg_ext : public FunctionFrontendFlowStep
 
    bool changed_call_graph;
 
+   bool fix_nop;
+
    /**
     * Recursive examinate tree node
     */
