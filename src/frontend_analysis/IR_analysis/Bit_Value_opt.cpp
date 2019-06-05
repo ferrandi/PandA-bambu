@@ -221,7 +221,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                tree_nodeRef ga_op_type = TM->GetTreeReindex(type_index);
                tree_nodeRef Scpe = TM->GetTreeReindex(function_id);
                const std::string& bit_values = ssa->bit_values;
-               bool is_constant = bit_values.size() != 0;
+               bool is_constant = bit_values.size() != 0 && !tree_helper::is_a_pointer(TM, GET_INDEX_NODE(ga->op1));
                for(auto current_el : bit_values)
                {
                   if(current_el == 'U')

@@ -150,6 +150,19 @@ DesignFlowStep_Status BitValueIPA::Exec()
    std::set<unsigned int> reached_body_fun_ids = CGMan->GetReachedBodyFunctions();
    std::set<unsigned int> root_fun_ids = CGMan->GetRootFunctions();
 
+   /// In case of indirect calls (e.g., pointer to function) no Bit Value IPA can be done.
+   std::unordered_set<vertex> vertex_subset;
+   for(auto cvertex : reached_body_fun_ids)
+      vertex_subset.insert(CGMan->GetVertex(cvertex));
+   const CallGraphConstRef subgraph = CGMan->CGetCallSubGraph(vertex_subset);
+   EdgeIterator e_it, e_it_end;
+   for(boost::tie(e_it, e_it_end) = boost::edges(*subgraph); e_it != e_it_end; ++e_it)
+   {
+      const auto* info = Cget_edge_info<FunctionEdgeInfo, const CallGraph>(*e_it, *subgraph);
+      if(info->indirect_call_points.size())
+         return DesignFlowStep_Status::UNCHANGED;
+   }
+
    // ---- initialization phase ----
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Initialize data structures");
    for(unsigned int fu_id : reached_body_fun_ids)
