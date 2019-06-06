@@ -136,12 +136,15 @@ namespace llvm
                   llvm::errs() << "Global intrinsic skipped: " << globalVar.getName() << "\n";
 #endif
                }
-               else if(!globalVar.hasInternalLinkage() && !globalVar.hasExternalLinkage() && !globalVar.hasExternalWeakLinkage())
+               else if(!globalVar.hasInternalLinkage() && !globalVar.hasAvailableExternallyLinkage() && !globalVar.hasDLLExportStorageClass())
                {
 #if PRINT_DBG_MSG
                   llvm::errs() << "it becomes internal\n";
 #endif
                   changed = true;
+                  if (auto GO = llvm::dyn_cast<llvm::GlobalObject>(&globalVar))
+                     GO->setComdat(nullptr);
+                  globalVar.setVisibility(llvm::GlobalValue::DefaultVisibility);
                   globalVar.setLinkage(llvm::GlobalValue::InternalLinkage);
                }
             }
