@@ -300,7 +300,7 @@ class tree_manipulation
    tree_nodeRef create_default_unsigned_integer_type() const;
 
    /**
-    * Function that creates a long long unsigned int type if it is not already presnte, otherwise return the existing type
+    * Function that creates a long long unsigned int type if it is not already present, otherwise return the existing type
     */
    tree_nodeRef CreateDefaultUnsignedLongLongInt() const;
 
