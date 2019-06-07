@@ -5458,7 +5458,7 @@ begin
   $readmemb(MEMORY_INIT_file, memory, 0, n_elements-1);
 end
 
-assign din_a = proxy_sel_STORE ? proxy_in1 : in1;
+assign din_a = (sel_STORE &amp; in4) ? in1 : proxy_in1;
 assign bram_write = (sel_STORE &amp; in4) || proxy_sel_STORE;
 
 generate if(READ_ONLY_MEMORY==0)
@@ -5472,7 +5472,7 @@ generate if(READ_ONLY_MEMORY==0)
 endgenerate
 
 assign dout_a = memory[memory_addr_a];
-assign tmp_addr = (proxy_sel_LOAD||proxy_sel_STORE) ? proxy_in2 : in2;
+assign tmp_addr = (in4 &amp; (sel_LOAD||sel_STORE)) ? in2 : proxy_in2;
 generate
   if(USE_SPARSE_MEMORY==1)
     assign relative_addr = tmp_addr[nbit_addr-1:0];
@@ -5538,7 +5538,7 @@ assign Sout_DataRdy = Sin_DataRdy;
 
 begin
 
-  din_a &lt;=  std_logic_vector(resize(unsigned(proxy_in1), data_size)) when (proxy_sel_STORE = &apos;1&apos;) else in1;
+  din_a &lt;= in1 when ((in4 and sel_STORE) = &apos;1&apos;) else std_logic_vector(resize(unsigned(proxy_in1), data_size));
   bram_write &lt;= (sel_STORE and in4) or proxy_sel_STORE;
 
   L1_single_write : process(clock)
@@ -5559,7 +5559,7 @@ begin
   end process;
 
   dout_a &lt;= mem(to_integer(unsigned(memory_addr_a))) when (to_integer(unsigned(memory_addr_a)) &lt; n_elements) else (others =&gt; &apos;X&apos;);
-  tmp_addr &lt;= proxy_in2 when ((proxy_sel_LOAD or proxy_sel_STORE) = &apos;1&apos;) else in2;
+  tmp_addr &lt;= in2 when ((in4 and (sel_LOAD or sel_STORE)) = &apos;1&apos;) else proxy_in2;
 
   L2 : process(relative_addr)
   begin
