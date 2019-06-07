@@ -841,8 +841,6 @@ DesignFlowStep_Status BitValueIPA::Exec()
          THROW_UNREACHABLE("unexpected condition: variable of kind " + tn->get_kind_text());
       }
 
-      THROW_ASSERT(old_bitvalue->empty() or old_bitvalue->size() >= new_bitvalue.size(), "old bitvalue: \"" + *old_bitvalue + "\" size = " + STR(old_bitvalue->size()) + " new best bitvalue: \"" + new_bitvalue + "\" size = " + STR(new_bitvalue.size()));
-
       bool restart = false;
       if(old_bitvalue->empty())
       {

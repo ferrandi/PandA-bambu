@@ -136,7 +136,13 @@ namespace llvm
                   llvm::errs() << "Global intrinsic skipped: " << globalVar.getName() << "\n";
 #endif
                }
-               else if(!globalVar.hasInternalLinkage() && !globalVar.hasExternalLinkage() && !globalVar.hasExternalWeakLinkage())
+               else if(varName == "signgam")
+               {
+#if PRINT_DBG_MSG
+                  llvm::errs() << "Global defined in the libbambu library skipped: " << globalVar.getName() << "\n";
+#endif
+               }
+               else if(!globalVar.hasInternalLinkage() && !globalVar.hasAvailableExternallyLinkage() && !globalVar.hasDLLExportStorageClass() && !globalVar.hasExternalWeakLinkage())
                {
 #if PRINT_DBG_MSG
                   llvm::errs() << "it becomes internal\n";
