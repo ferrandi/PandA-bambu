@@ -114,6 +114,8 @@ static std::string create_file_name_string(const std::string& outdir_name, const
    return outdir_name + "/" + dump_base_name + ".gimplePSSA";
 }
 
+#define PEEL_THRESHOLD 16
+
 namespace llvm
 {
    char DumpGimpleRaw::buffer[LOCAL_BUFFER_LEN];
@@ -219,6 +221,29 @@ namespace llvm
 #include "gcc/builtins.def"
    };
 #undef DEF_BUILTIN
+
+   static std::string getDemangled(const std::string& declname)
+   {
+      int status;
+      char* demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), nullptr, nullptr, &status);
+      if(status == 0)
+      {
+         std::string res = declname;
+         if(std::string(demangled_outbuffer).find_last_of('(') != std::string::npos)
+         {
+            res = demangled_outbuffer;
+            auto parPos = res.find('(');
+            assert(parPos != std::string::npos);
+            res = res.substr(0, parPos);
+         }
+         free(demangled_outbuffer);
+         return res;
+      }
+
+      assert(demangled_outbuffer == nullptr);
+
+      return declname;
+   }
 
    DumpGimpleRaw::DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool _onlyGlobals, std::map<std::string, std::vector<std::string>>* _fun2params)
        : outdir_name(_outdir_name),
@@ -1093,7 +1118,10 @@ namespace llvm
          auto ty = store.getValueOperand()->getType();
          auto type = assignCodeType(ty);
          auto written_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         if(store.getAlignment() && written_obj_size > (8 * store.getAlignment()))
+         auto funName = store.getFunction()->getName();
+         auto demangled = getDemangled(funName);
+         bool is_a_top_parameter = isa<llvm::Argument>(store.getPointerOperand()) && (funName == TopFunctionName || demangled == TopFunctionName);
+         if(store.getAlignment() && written_obj_size > (8 * store.getAlignment()) && !is_a_top_parameter)
             return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
          else
             return build2(GT(MEM_REF), type, addr, zero);
@@ -1784,7 +1812,11 @@ namespace llvm
          auto ty = load.getType();
          auto type = assignCodeType(ty);
          auto read_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         if(load.getAlignment() && read_obj_size > (8 * load.getAlignment()))
+         auto funName = load.getFunction()->getName();
+         auto demangled = getDemangled(funName);
+         bool is_a_top_parameter = isa<llvm::Argument>(load.getPointerOperand()) && (funName == TopFunctionName || demangled == TopFunctionName);
+
+         if(load.getAlignment() && read_obj_size > (8 * load.getAlignment()) && !is_a_top_parameter)
             return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
          else
             return build2(GT(MEM_REF), type, addr, zero);
@@ -4904,10 +4936,18 @@ namespace llvm
       return Type->getPrimitiveSizeInBits() / 8;
    }
 
-   static llvm::Type* getMemcpyLoopLoweringTypeLocal(llvm::LLVMContext& Context, llvm::Value* Length, unsigned SrcAlign, unsigned DestAlign, llvm::Value* SrcAddr, llvm::Value* DstAddr, const llvm::DataLayout* DL, bool isVolatile, bool& Optimize)
+   static llvm::Type* getMemcpyLoopLoweringTypeLocal(llvm::LLVMContext& Context, llvm::ConstantInt* Length, unsigned SrcAlign, unsigned DestAlign, llvm::Value* SrcAddr, llvm::Value* DstAddr, const llvm::DataLayout* DL, bool isVolatile, bool& Optimize)
    {
       if(!isVolatile)
       {
+         if(SrcAlign==DestAlign && DestAlign==Length->getZExtValue() && DestAlign<=8)
+         {
+#if PRINT_DBG_MSG
+            llvm::errs() << "memcpy can be optimized\n";
+            llvm::errs() << "Align=" << SrcAlign << "\n";
+#endif
+            return llvm::Type::getIntNTy(Context, SrcAlign * 8);
+         }
          unsigned localSrcAlign = SrcAlign;
          auto srcCheck = addrIsOfIntArrayType(SrcAddr, localSrcAlign, DL);
          if(srcCheck)
@@ -4965,13 +5005,26 @@ namespace llvm
 #else
       do_unrolling = true;
 #endif
-      if(do_unrolling && !SrcIsVolatile && !DstIsVolatile && llvm::dyn_cast<llvm::ConstantExpr>(SrcAddr) && cast<llvm::ConstantExpr>(SrcAddr)->getOpcode() == llvm::Instruction::BitCast &&
-         dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0)) && dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0))->isConstant() && llvm::dyn_cast<llvm::BitCastInst>(DstAddr) && PeelCandidate)
+      bool srcIsAlloca = false;
+      bool srcIsGlobal = false;
+      if(llvm::dyn_cast<llvm::BitCastInst>(SrcAddr) && dyn_cast<llvm::AllocaInst>(llvm::dyn_cast<llvm::BitCastInst>(SrcAddr)->getOperand(0)))
+      {
+         srcIsAlloca = true;
+         do_unrolling = do_unrolling && (LoopEndCount <= PEEL_THRESHOLD);
+      }
+      else if(llvm::dyn_cast<llvm::ConstantExpr>(SrcAddr) && cast<llvm::ConstantExpr>(SrcAddr)->getOpcode() == llvm::Instruction::BitCast && dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0)))
+      {
+         srcIsGlobal = true;
+         do_unrolling = do_unrolling && (dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0))->isConstant() || (LoopEndCount <= PEEL_THRESHOLD));
+      }
+      else if(LoopEndCount==1)
+         do_unrolling = true;
+      if(do_unrolling && !SrcIsVolatile && !DstIsVolatile && (srcIsAlloca || srcIsGlobal) && llvm::dyn_cast<llvm::BitCastInst>(DstAddr) && PeelCandidate)
       {
          llvm::PointerType* SrcOpType = llvm::PointerType::get(LoopOpType, SrcAS);
          llvm::PointerType* DstOpType = llvm::PointerType::get(LoopOpType, DstAS);
          llvm::IRBuilder<> Builder(InsertBefore);
-         auto srcAddress = Builder.CreateBitCast(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0), SrcOpType);
+         auto srcAddress = Builder.CreateBitCast(srcIsAlloca ? llvm::dyn_cast<llvm::BitCastInst>(SrcAddr)->getOperand(0) : cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0), SrcOpType);
          auto dstAddress = Builder.CreateBitCast(llvm::dyn_cast<llvm::BitCastInst>(DstAddr)->getOperand(0), DstOpType);
          for(auto LI = 0u; LI < LoopEndCount; ++LI)
          {
@@ -4996,12 +5049,10 @@ namespace llvm
          llvm::PointerType* DstOpType = llvm::PointerType::get(LoopOpType, DstAS);
          if(SrcAddr->getType() != SrcOpType)
          {
-            llvm::errs() << "Cast src\n";
             SrcAddr = PLBuilder.CreateBitCast(SrcAddr, SrcOpType);
          }
          if(DstAddr->getType() != DstOpType)
          {
-            llvm::errs() << "Cast dst\n";
             DstAddr = PLBuilder.CreateBitCast(DstAddr, DstOpType);
          }
 
@@ -6279,13 +6330,15 @@ namespace llvm
          }
       }
    }
-   bool DumpGimpleRaw::runOnModule(llvm::Module& M, llvm::ModulePass* _modulePass, const std::string& TopFunctionName)
+   bool DumpGimpleRaw::runOnModule(llvm::Module& M, llvm::ModulePass* _modulePass, const std::string& _TopFunctionName)
    {
       DL = &M.getDataLayout();
       modulePass = _modulePass;
       moduleContext = &M.getContext();
+      TopFunctionName = _TopFunctionName;
       buildMetaDataMap(M);
       auto res = lowerMemIntrinsics(M);
+
       res = res | RebuildConstants(M);
       res = res | lowerIntrinsics(M);
       compute_eSSA(M);
@@ -6321,6 +6374,7 @@ namespace llvm
 #ifdef DEBUG_RA
       assert(!llvm::verifyModule(M, &llvm::errs()));
 #endif
+
       if(!onlyGlobals)
       {
          for(const auto& fun : M.getFunctionList())
