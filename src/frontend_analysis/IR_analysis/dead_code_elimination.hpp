@@ -32,10 +32,11 @@
  */
 /**
  * @file dead_code_elimination.hpp
- * @brief Eliminates unuseful definitions
+ * @brief Eliminate dead code
  *
  * @author Andrea Cuoccio <andrea.cuoccio@gmail.com>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
@@ -58,15 +59,27 @@
 /// Tree include
 #include "tree_manager.hpp"
 
+/**
+ * @name forward declarations
+ */
+//@{
+REF_FORWARD_DECL(bloc);
+class statement_list;
+//@}
+
 class dead_code_elimination : public FunctionFrontendFlowStep
 {
  private:
+
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
    const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
+   void kill_uses(const tree_managerRef TM, tree_nodeRef op0) const;
+   void kill_vdef(const tree_managerRef TM, tree_nodeRef vdef);
+   unsigned move2emptyBB(const tree_managerRef TM, statement_list* sl, unsigned pred, blocRef bb_pred, unsigned cand_bb_dest, unsigned bb_dest) const;
  public:
    /**
     * Constructor
@@ -83,7 +96,7 @@ class dead_code_elimination : public FunctionFrontendFlowStep
    ~dead_code_elimination() override;
 
    /**
-    * Performes dead code elimination.
+    * Performs dead code elimination.
     * @return the exit status of this step
     */
    DesignFlowStep_Status InternalExec() override;
