@@ -173,9 +173,59 @@ enum ConsType : unsigned int;
 
 typedef unsigned int u32;
 
+// The starting union-find rank of any node.
+const u32 node_rank_min = 0xf0000000;
+
+//------------------------------------------------------------------------------
+// A node for the offline constraint graph.
+// This graph has VAL nodes for the top-level pointer variables (aka value
+//  nodes) and AFP nodes for the parameters and return values of address-taken
+//  functions (which are object nodes in the main graph but are used as normal
+//  variables within the function). There is also a corresponding
+//  REF node for the dereference (*p) of any VAL/AFP node (p).
+class OffNode
+{
+ public:
+   // Outgoing constraint edges: X -> Y for any cons. X = Y (where X/Y may
+   //  be VAR or REF nodes).
+   bitmap edges;
+   // Outgoing implicit edges:
+   //  any cons. edge X -> Y has a corresponding impl. edge *X -> *Y.
+   bitmap impl_edges;
+   // The union-find rank of this node if >= node_rank_min, else the number of
+   //  another node in the same SCC.
+   u32 rep;
+   // The set of pointer-equivalence labels (singleton for HVN, any size for HU).
+   //  This is empty for unlabeled nodes, and contains 0 for non-pointers.
+   bitmap ptr_eq;
+   // The node of the main graph corresponding to us (for HCD).
+   u32 main_node{0};
+   // The number of the DFS call that first visited us (0 if unvisited).
+   u32 dfs_id{0};
+   // True if this is the root of an already processed SCC.
+   bool scc_root{false};
+   // A VAL node is indirect if it's the LHS of a load+offset constraint;
+   //  the LHS of addr_of and GEP are pre-labeled when building the graph
+   //  and so don't need another unique label.
+   // All AFP and REF nodes are indirect.
+   bool indirect;
+
+   OffNode(bool ind = false) : rep(node_rank_min), indirect(ind)
+   {
+   }
+
+   bool is_rep() const
+   {
+      return rep >= node_rank_min;
+   }
+};
+
+
 class Andersen_AA
 {
    friend Constraint;
+
+   bool BDD_INIT_DONE;
 
  protected:
    // top function name
@@ -410,7 +460,7 @@ class Andersen_AA
    void id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Function* F);
    void add_store2_cons(const llvm::Value* D, const llvm::Value* S, size_t sz = 0);
 
-   void processBlock(const llvm::BasicBlock* BB);
+   void processBlock(const llvm::BasicBlock* BB, std::set<const llvm::BasicBlock *> &bb_seen);
 
  protected:
    u32 merge_nodes(u32 n1, u32 n2);
@@ -418,17 +468,17 @@ class Andersen_AA
  private:
    void hvn(bool do_union);
    void hr(bool do_union, u32 min_del);
-   void make_off_nodes();
-   void add_off_edges(bool hcd = false);
-   void hvn_dfs(u32 n, bool do_union);
-   void hvn_check_edge(u32 n, u32 dest, bool do_union);
-   void hvn_label(u32 n);
-   void hu_label(u32 n);
-   void merge_ptr_eq();
+   void make_off_nodes(std::vector<u32> &main2off, std::vector<OffNode> &off_nodes);
+   void add_off_edges(std::vector<u32> &main2off, std::vector<OffNode> &off_nodes, u32 &next_ptr_eq, bool hcd = false);
+   void hvn_dfs(std::unordered_map<bitmap, u32> &lbl2pe, std::stack<u32> &dfs_stk, u32 &curr_dfs, std::vector<OffNode> &off_nodes, u32 &next_ptr_eq, u32 n, bool do_union);
+   void hvn_check_edge(std::unordered_map<bitmap, u32> &lbl2pe, std::stack<u32> &dfs_stk, u32 &curr_dfs, std::vector<OffNode> &off_nodes, u32 &next_ptr_eq, u32 n, u32 dest, bool do_union);
+   void hvn_label(std::unordered_map<bitmap, u32> &lbl2pe, std::vector<OffNode> &off_nodes, u32 &next_ptr_eq, u32 n);
+   void hu_label(std::vector<OffNode> &off_nodes,u32 &next_ptr_eq, u32 n);
+   void merge_ptr_eq(std::vector<u32> &main2off, std::vector<OffNode> &off_nodes);
    void hcd();
-   void hcd_dfs(u32 n);
+   void hcd_dfs(std::stack<u32> &dfs_stk, u32 &curr_dfs, std::vector<OffNode> &off_nodes, u32 n);
    void factor_ls();
-   void factor_ls(const std::set<u32>& other, u32 ref, u32 off, bool load);
+   void factor_ls(llvm::DenseMap<Constraint, u32> &factored_cons, const std::set<u32>& other, u32 ref, u32 off, bool load);
    void cons_opt();
 
    void pts_init();

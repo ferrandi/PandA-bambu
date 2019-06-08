@@ -150,8 +150,6 @@ const u32 lcd_size = 600, lcd_period = 999999999;
 
 // The offsets from a function's obj node to the return value and first arg.
 const u32 func_node_off_ret = 1, func_node_off_arg0 = 2;
-// The starting union-find rank of any node.
-const u32 node_rank_min = 0xf0000000;
 // The max. number of entries in bv_cache, and how many to remove at once
 //  when it gets full (which may be faster than one at a time).
 const u32 bvc_sz = 5000000, bvc_remove = 10000;
@@ -162,73 +160,14 @@ const u32 bvc_sz = 5000000, bvc_remove = 10000;
 //  first_var_node - the 1st node representing a real variable.
 static const u32 i2p = 1, p_i2p = 2, any = 3, first_var_node = 4;
 
-static std::set<const llvm::BasicBlock*> bb_seen; // for processBlock()
-
 static std::vector<u32>* bdd2vec(bdd x);
 static void clear_bdd2vec();
 
-//------------------------------------------------------------------------------
-// A node for the offline constraint graph.
-// This graph has VAL nodes for the top-level pointer variables (aka value
-//  nodes) and AFP nodes for the parameters and return values of address-taken
-//  functions (which are object nodes in the main graph but are used as normal
-//  variables within the function). There is also a corresponding
-//  REF node for the dereference (*p) of any VAL/AFP node (p).
-class OffNode
-{
- public:
-   // Outgoing constraint edges: X -> Y for any cons. X = Y (where X/Y may
-   //  be VAR or REF nodes).
-   bitmap edges;
-   // Outgoing implicit edges:
-   //  any cons. edge X -> Y has a corresponding impl. edge *X -> *Y.
-   bitmap impl_edges;
-   // The union-find rank of this node if >= node_rank_min, else the number of
-   //  another node in the same SCC.
-   u32 rep;
-   // The set of pointer-equivalence labels (singleton for HVN, any size for HU).
-   //  This is empty for unlabeled nodes, and contains 0 for non-pointers.
-   bitmap ptr_eq;
-   // The node of the main graph corresponding to us (for HCD).
-   u32 main_node{0};
-   // The number of the DFS call that first visited us (0 if unvisited).
-   u32 dfs_id{0};
-   // True if this is the root of an already processed SCC.
-   bool scc_root{false};
-   // A VAL node is indirect if it's the LHS of a load+offset constraint;
-   //  the LHS of addr_of and GEP are pre-labeled when building the graph
-   //  and so don't need another unique label.
-   // All AFP and REF nodes are indirect.
-   bool indirect;
 
-   OffNode(bool ind = false) : rep(node_rank_min), indirect(ind)
-   {
-   }
-
-   bool is_rep() const
-   {
-      return rep >= node_rank_min;
-   }
-};
-
-// The nodes of the offline graph: | null | AFP | VAL | REF |.
-static std::vector<OffNode> off_nodes;
-// The offline node corresponding to each node of the main graph (0 = none).
-static std::vector<u32> main2off;
 // The number of each type of node and the index of the first of each type.
 static u32 nVAL, nAFP, nREF, firstVAL, firstAFP, firstREF;
 // Use REF(p) to get the REF node for any VAL/AFP node (p).
 #define REF(p) ((p)-firstAFP + firstREF)
-// The ptr_eq label to use next.
-static u32 next_ptr_eq;
-// The number of the current DFS.
-static u32 curr_dfs;
-// The non-root nodes in the current SCC.
-static std::stack<u32> dfs_stk;
-// The ptr_eq for each set of incoming labels (HVN only).
-static std::unordered_map<bitmap, u32> lbl2pe;
-// The RHS of any GEP constraint is mapped to a label.
-static llvm::DenseMap<std::pair<u32, u32>, u32> gep2pe;
 
 struct ei_pair
 {
@@ -1496,13 +1435,18 @@ class Worklist
    }
 };
 
-Andersen_AA::Andersen_AA(std::string _TopFunctionName) : TopFunctionName(std::move(_TopFunctionName)), last_obj_node(0), gep2pts(nullptr), extinfo(nullptr), WL(nullptr)
+Andersen_AA::Andersen_AA(std::string _TopFunctionName) : BDD_INIT_DONE(false), TopFunctionName(std::move(_TopFunctionName)), last_obj_node(0), gep2pts(nullptr), extinfo(nullptr), WL(nullptr)
 {
 }
 
 Andersen_AA::~Andersen_AA()
 {
    releaseMemory();
+   if(BDD_INIT_DONE)
+   {
+      bdd_done();
+      BDD_INIT_DONE = false;
+   }
 }
 
 //------------------------------------------------------------------------------
@@ -1539,6 +1483,12 @@ void Andersen_AA::run_init()
 {
    releaseMemory();
    extinfo = new ExtInfo;
+   if(BDD_INIT_DONE)
+   {
+      bdd_done();
+      BDD_INIT_DONE = false;
+   }
+
 }
 
 //------------------------------------------------------------------------------
@@ -4754,7 +4704,7 @@ void Andersen_AA::add_store2_cons(const llvm::Value* D, const llvm::Value* S, si
    }
 }
 
-void Andersen_AA::processBlock(const llvm::BasicBlock* BB)
+void Andersen_AA::processBlock(const llvm::BasicBlock* BB, std::set<const llvm::BasicBlock*> &bb_seen)
 {
    if(bb_seen.count(BB))
    {
@@ -4843,7 +4793,7 @@ void Andersen_AA::processBlock(const llvm::BasicBlock* BB)
    //
    for(auto i = llvm::succ_begin(BB), e = llvm::succ_end(BB); i != e; ++i)
    {
-      processBlock(*i);
+      processBlock(*i,bb_seen);
    }
 }
 
@@ -4893,7 +4843,8 @@ void Andersen_AA::visit_func(const llvm::Function* F)
    // nodes as this analysis, and (2) it must process the basic blocks
    // in CFG depth-first order)
    //
-   processBlock(&F->getEntryBlock());
+   std::set<const llvm::BasicBlock*> bb_seen;
+   processBlock(&F->getEntryBlock(),bb_seen);
    bb_seen.clear();
 }
 
@@ -5322,35 +5273,45 @@ void Andersen_AA::pre_opt_cleanup()
 //  and union all incoming labels.
 void Andersen_AA::hvn(bool do_union)
 {
+   // The non-root nodes in the current SCC.
+   std::stack<u32> dfs_stk;
+   // The nodes of the offline graph: | null | AFP | VAL | REF |.
+   std::vector<OffNode> off_nodes;
+   // The offline node corresponding to each node of the main graph (0 = none).
+   std::vector<u32> main2off;
+
    if(DEBUG_AA)
    {
       llvm::errs() << "***** Starting HVN\n";
    }
-   make_off_nodes();
+   make_off_nodes(main2off,off_nodes);
    // The LHS of GEP's will be pre-labeled, so start the counter here.
    //  The labels must be disjoint from node IDs because addr_of_cons
    //  use the source ID as a label.
-   next_ptr_eq = nodes.size();
-   gep2pe.clear();
-   add_off_edges();
+
+   // The ptr_eq label to use next.
+   u32 next_ptr_eq = nodes.size();
+   // The ptr_eq for each set of incoming labels (HVN only).
+   std::unordered_map<bitmap, u32> lbl2pe;
+   add_off_edges(main2off,off_nodes,next_ptr_eq);
 
    // Run the DFS starting from every node, unless it's already been processed.
-   curr_dfs = 1;
+   // The number of the current DFS.
+   u32 curr_dfs = 1;
    lbl2pe.clear();
    for(u32 i = firstAFP; i < firstREF + nREF; ++i)
    {
       if(!off_nodes[i].dfs_id)
       {
-         hvn_dfs(i, do_union);
+         hvn_dfs(lbl2pe,dfs_stk,curr_dfs,off_nodes,next_ptr_eq,i,do_union);
       }
    }
    assert(dfs_stk.empty());
 
-   merge_ptr_eq();
+   merge_ptr_eq(main2off,off_nodes);
    off_nodes.clear();
    main2off.clear();
    lbl2pe.clear();
-   gep2pe.clear();
 }
 
 //------------------------------------------------------------------------------
@@ -5388,7 +5349,7 @@ void Andersen_AA::hr(bool do_union, u32 min_del)
 
 //------------------------------------------------------------------------------
 // Make the offline nodes corresponding to the rep nodes of the main graph.
-void Andersen_AA::make_off_nodes()
+void Andersen_AA::make_off_nodes(std::vector<u32> &main2off, std::vector<OffNode> &off_nodes)
 {
    if(DEBUG_AA)
    {
@@ -5466,8 +5427,9 @@ void Andersen_AA::make_off_nodes()
 // Add the offline constraint edges based on the current constraint list.
 // If hcd is off (default), also add the implicit edges and mark some nodes
 //  as indirect.
-void Andersen_AA::add_off_edges(bool hcd)
+void Andersen_AA::add_off_edges(std::vector<u32> &main2off, std::vector<OffNode> &off_nodes,u32 &next_ptr_eq, bool hcd)
 {
+   llvm::DenseMap<std::pair<u32, u32>, u32> gep2pe;
    if(DEBUG_AA)
    {
       llvm::errs() << "***** Adding offline constraint edges\n";
@@ -5592,7 +5554,7 @@ void Andersen_AA::add_off_edges(bool hcd)
 
 //------------------------------------------------------------------------------
 // Return the rep node of the SCC containing (n), with path compression.
-static u32 get_off_rep(u32 n)
+static u32 get_off_rep(std::vector<OffNode> &off_nodes, u32 n)
 {
    u32& r0 = off_nodes[n].rep;
    // If (n) has a rank, it is the rep.
@@ -5601,7 +5563,7 @@ static u32 get_off_rep(u32 n)
       return n;
    }
    // Recurse on the parent to get the real rep.
-   u32 r = get_off_rep(r0);
+   u32 r = get_off_rep(off_nodes,r0);
    r0 = r; // set n's parent to the rep
    return r;
 }
@@ -5609,7 +5571,7 @@ static u32 get_off_rep(u32 n)
 //------------------------------------------------------------------------------
 // Unify offline nodes #n1 and #n2, returning the # of the parent (the one of
 //  higher rank). The node of lower rank has the rep field set to the parent.
-static u32 merge_off_nodes(u32 n1, u32 n2)
+static u32 merge_off_nodes(std::vector<OffNode> &off_nodes, u32 n1, u32 n2)
 {
    assert(n1 && n1 < off_nodes.size() && "invalid node 1");
    assert(n2 && n2 < off_nodes.size() && "invalid node 2");
@@ -5655,7 +5617,7 @@ static u32 merge_off_nodes(u32 n1, u32 n2)
 // Part of HVN: using Tarjan's algorithm, collapse cycles in the offline graph
 //  and assign pointer-equivalence labels to the offline nodes.
 // The DFS starts from (n); (do_union) is passed on to hvn_label().
-void Andersen_AA::hvn_dfs(u32 n, bool do_union)
+void Andersen_AA::hvn_dfs(std::unordered_map<bitmap, u32> &lbl2pe, std::stack<u32> &dfs_stk, u32 &curr_dfs, std::vector<OffNode> &off_nodes, u32 &next_ptr_eq,u32 n, bool do_union)
 {
    assert(n);
    OffNode* N = &off_nodes[n];
@@ -5666,11 +5628,11 @@ void Andersen_AA::hvn_dfs(u32 n, bool do_union)
    // Look for SCCs using all edges.
    for(unsigned int edge : N->edges)
    {
-      hvn_check_edge(n, edge, do_union);
+      hvn_check_edge(lbl2pe,dfs_stk,curr_dfs,off_nodes,next_ptr_eq,n, edge, do_union);
    }
    for(unsigned int impl_edge : N->impl_edges)
    {
-      hvn_check_edge(n, impl_edge, do_union);
+      hvn_check_edge(lbl2pe,dfs_stk,curr_dfs,off_nodes,next_ptr_eq,n, impl_edge, do_union);
    }
    assert(N->is_rep());
 
@@ -5686,7 +5648,7 @@ void Andersen_AA::hvn_dfs(u32 n, bool do_union)
             break;
          }
          dfs_stk.pop();
-         n = merge_off_nodes(n, n2);
+         n = merge_off_nodes(off_nodes, n, n2);
       }
       // Note: the SCC root may be different from the node we started from
       //  if one of the stack nodes had a higher rank.
@@ -5698,11 +5660,11 @@ void Andersen_AA::hvn_dfs(u32 n, bool do_union)
       //  from its neighbors.
       if(do_union)
       {
-         hu_label(n);
+         hu_label(off_nodes,next_ptr_eq,n);
       }
       else
       {
-         hvn_label(n);
+         hvn_label(lbl2pe,off_nodes,next_ptr_eq,n);
       }
    }
    else
@@ -5714,12 +5676,12 @@ void Andersen_AA::hvn_dfs(u32 n, bool do_union)
 //------------------------------------------------------------------------------
 // Look at the offline constraint edge from (n) to (dest) and possibly
 //  continue the DFS along it; (do_union) is passed on to hvn_label().
-void Andersen_AA::hvn_check_edge(u32 n, u32 dest, bool do_union)
+void Andersen_AA::hvn_check_edge(std::unordered_map<bitmap, u32> &lbl2pe, std::stack<u32> &dfs_stk, u32 &curr_dfs, std::vector<OffNode> &off_nodes,u32 &next_ptr_eq, u32 n, u32 dest, bool do_union)
 {
    OffNode* N = &off_nodes[n];
    assert(N->is_rep());
    // dest comes from a bitmap entry, so it may be out of date.
-   u32 n2 = get_off_rep(dest);
+   u32 n2 = get_off_rep(off_nodes,dest);
    const OffNode* N2 = &off_nodes[n2];
    // Skip this neighbor if it was merged into N or is a collapsed SCC.
    if(n2 == n || N2->scc_root)
@@ -5729,7 +5691,7 @@ void Andersen_AA::hvn_check_edge(u32 n, u32 dest, bool do_union)
    // If it's unvisited, continue the DFS.
    if(!N2->dfs_id)
    {
-      hvn_dfs(n2, do_union);
+      hvn_dfs(lbl2pe,dfs_stk,curr_dfs,off_nodes,next_ptr_eq,n2, do_union);
    }
    // Set our dfs_id to the minimum reachable ID.
    if(N2->dfs_id < N->dfs_id)
@@ -5741,7 +5703,7 @@ void Andersen_AA::hvn_check_edge(u32 n, u32 dest, bool do_union)
 
 //------------------------------------------------------------------------------
 // Label a node based on its neighbors' labels (for HVN).
-void Andersen_AA::hvn_label(u32 n)
+void Andersen_AA::hvn_label(std::unordered_map<bitmap, u32> &lbl2pe, std::vector<OffNode> &off_nodes,u32 &next_ptr_eq, u32 n)
 {
    OffNode* N = &off_nodes[n];
    bitmap& pe = N->ptr_eq;
@@ -5758,7 +5720,7 @@ void Andersen_AA::hvn_label(u32 n)
    // Collect all incoming labels into the current node.
    for(unsigned int edge : N->edges)
    {
-      u32 n2 = get_off_rep(edge);
+      u32 n2 = get_off_rep(off_nodes,edge);
       if(n2 == n)
       {
          continue;
@@ -5798,7 +5760,7 @@ void Andersen_AA::hvn_label(u32 n)
 
 //------------------------------------------------------------------------------
 // Label a node with the union of incoming labels (for HU).
-void Andersen_AA::hu_label(u32 n)
+void Andersen_AA::hu_label(std::vector<OffNode> &off_nodes,u32 &next_ptr_eq, u32 n)
 {
    OffNode* N = &off_nodes[n];
    bitmap& pe = N->ptr_eq;
@@ -5811,7 +5773,7 @@ void Andersen_AA::hu_label(u32 n)
    // Collect all incoming labels into the current node.
    for(unsigned int edge : N->edges)
    {
-      u32 n2 = get_off_rep(edge);
+      u32 n2 = get_off_rep(off_nodes,edge);
       if(n2 == n)
       {
          continue;
@@ -5833,7 +5795,7 @@ void Andersen_AA::hu_label(u32 n)
 
 //------------------------------------------------------------------------------
 // Merge all pointer-equivalent nodes and update the constraint list.
-void Andersen_AA::merge_ptr_eq()
+void Andersen_AA::merge_ptr_eq(std::vector<u32> &main2off, std::vector<OffNode> &off_nodes)
 {
    if(DEBUG_AA)
    {
@@ -5850,7 +5812,7 @@ void Andersen_AA::merge_ptr_eq()
       {
          continue;
       }
-      bitmap& pe = off_nodes[get_off_rep(on)].ptr_eq;
+      bitmap& pe = off_nodes[get_off_rep(off_nodes,on)].ptr_eq;
       assert(!pe.empty());
       // Non-ptr nodes should be deleted from the constraints.
       if(pe.test(0))
@@ -5930,13 +5892,21 @@ void Andersen_AA::merge_ptr_eq()
 //  non-REF node.
 void Andersen_AA::hcd()
 {
+   // The ptr_eq label to use next.
+   u32 next_ptr_eq;
+   // The nodes of the offline graph: | null | AFP | VAL | REF |.
+   std::vector<OffNode> off_nodes;
+   // The offline node corresponding to each node of the main graph (0 = none).
+   std::vector<u32> main2off;
+   // The non-root nodes in the current SCC.
+   std::stack<u32> dfs_stk;
    if(DEBUG_AA)
    {
       llvm::errs() << "***** Starting HCD\n";
    }
-   make_off_nodes();
+   make_off_nodes(main2off,off_nodes);
    //(1) means don't make implicit edges or set the indirect flag.
-   add_off_edges(true);
+   add_off_edges(main2off,off_nodes,next_ptr_eq,true);
    // Map the offline nodes to the main graph.
    for(size_t i = 0; i < main2off.size(); ++i)
    {
@@ -5949,12 +5919,13 @@ void Andersen_AA::hcd()
    }
 
    // Run the DFS starting from every node, unless it's already been processed.
-   curr_dfs = 1;
+   // The number of the current DFS.
+   u32 curr_dfs = 1;
    for(u32 i = firstAFP; i < firstREF + nREF; ++i)
    {
       if(!off_nodes[i].dfs_id)
       {
-         hcd_dfs(i);
+         hcd_dfs(dfs_stk,curr_dfs,off_nodes,i);
       }
    }
    assert(dfs_stk.empty());
@@ -6001,7 +5972,7 @@ void Andersen_AA::hcd()
 
 // Part of HCD: using Tarjan's algorithm, find SCCs containing both VAR and REF
 //  nodes, then map all REFs to the VAR. We don't collapse SCCs here.
-void Andersen_AA::hcd_dfs(u32 n)
+void Andersen_AA::hcd_dfs(std::stack<u32> &dfs_stk, u32 &curr_dfs, std::vector<OffNode> &off_nodes, u32 n)
 {
    assert(n);
    if(DEBUG_AA)
@@ -6026,7 +5997,7 @@ void Andersen_AA::hcd_dfs(u32 n)
       // If it's unvisited, continue the DFS.
       if(!N2->dfs_id)
       {
-         hcd_dfs(*it);
+         hcd_dfs(dfs_stk,curr_dfs,off_nodes,*it);
       }
       // Set our dfs_id to the minimum reachable ID.
       if(N2->dfs_id < N->dfs_id)
@@ -6119,8 +6090,6 @@ void Andersen_AA::hcd_dfs(u32 n)
 
 // Don't factor any constraint sets smaller than this (must be >1).
 static const u32 factor_min_sz = 2;
-// Map each factored constraint to the temp node of the result.
-static llvm::DenseMap<Constraint, u32> factored_cons;
 
 //------------------------------------------------------------------------------
 // Factor load/store constraints.
@@ -6137,6 +6106,8 @@ void Andersen_AA::factor_ls()
    // Also delete all load/store cons. from the main list.
    llvm::DenseMap<std::pair<u32, u32>, std::set<u32>> loads, stores;
    std::vector<Constraint> old_cons;
+   // Map each factored constraint to the temp node of the result.
+   llvm::DenseMap<Constraint, u32> factored_cons;
    old_cons.swap(constraints);
    for(size_t i = 0; i < old_cons.size(); ++i)
    {
@@ -6158,11 +6129,11 @@ void Andersen_AA::factor_ls()
 
    for(auto it = loads.begin(), ie = loads.end(); it != ie; ++it)
    {
-      factor_ls(it->second, it->first.first, it->first.second, true);
+      factor_ls(factored_cons,it->second, it->first.first, it->first.second, true);
    }
    for(auto it = stores.begin(), ie = stores.end(); it != ie; ++it)
    {
-      factor_ls(it->second, it->first.first, it->first.second, false);
+      factor_ls(factored_cons,it->second, it->first.first, it->first.second, false);
    }
 
    // Update icall_cons to the new constraints.
@@ -6196,7 +6167,7 @@ void Andersen_AA::factor_ls()
 
 //------------------------------------------------------------------------------
 // Factor a cons. of the form (other = *ref + off) or (*ref + off = other).
-void Andersen_AA::factor_ls(const std::set<u32>& other, u32 ref, u32 off, bool load)
+void Andersen_AA::factor_ls(llvm::DenseMap<Constraint, u32> &factored_cons, const std::set<u32>& other, u32 ref, u32 off, bool load)
 {
    auto szo = other.size();
    assert(szo);
@@ -6231,6 +6202,7 @@ void Andersen_AA::factor_ls(const std::set<u32>& other, u32 ref, u32 off, bool l
 
 void Andersen_AA::cons_opt()
 {
+
    // Do 1 pass of regular HVN, to reduce HU's memory usage.
    hvn(false);
    // Run HRU until it can no longer remove 100 constraints.
@@ -6397,7 +6369,6 @@ static void clear_bdd2vec()
    bv_time = 0;
 }
 
-static bool BDD_INIT_DONE = false;
 // Initialize the BDDs for points-to sets and GEPs.
 void Andersen_AA::pts_init()
 {
@@ -8934,6 +8905,7 @@ void Staged_Flow_Sensitive_AA::hu(u32 n)
 
 void Staged_Flow_Sensitive_AA::make_off_graph()
 {
+   llvm::DenseMap<std::pair<u32, u32>, u32> gep2pe;
    OCG.assign(nodes.size(), OffNodeSFS());
    // address-taken variables are indirect
    for(auto i : boost::irange(1u, last_obj_node + 1))
@@ -8982,7 +8954,6 @@ void Staged_Flow_Sensitive_AA::make_off_graph()
             assert(0 && "unknown constraint type!");
       }
    }
-   gep2pe.clear();
 }
 
 // we'll do HU, except not using any REF nodes (because they can have
@@ -9675,6 +9646,7 @@ void Staged_Flow_Sensitive_AA::visit_func(const llvm::Function* F)
       defs.assign(constraints.size(), 0);
       uses.assign(constraints.size(), 0);
    }
+
 
    processBlock(~0u, &F->getEntryBlock());
    bb_start.clear();
