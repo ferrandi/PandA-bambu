@@ -392,7 +392,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
          addTopFName = top_functions_names.size() == 1;
          fname = top_functions_names.front();
       }
-      if(addTopFName && Param->getOption<bool>(OPT_do_not_expose_globals))
+      if(addTopFName && (isWholeProgram || Param->getOption<bool>(OPT_do_not_expose_globals)))
       {
          if(compiler.is_clang)
          {
