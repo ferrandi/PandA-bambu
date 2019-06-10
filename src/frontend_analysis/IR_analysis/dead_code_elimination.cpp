@@ -478,6 +478,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          {
             auto curr = to_be_processed.front();
             to_be_processed.pop();
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Analyzing BB" + STR(curr));
             for(auto bb: blocks.at(curr)->list_of_succ)
             {
                if(BB_reached.find(bb) == BB_reached.end())
@@ -492,8 +493,8 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          {
             if(BB_reached.find(bb_pair.first) == BB_reached.end())
             {
-               THROW_ASSERT(bb_pair.first != bloc::EXIT_BLOCK_ID, "unexpected condition");
-               bb_to_remove.insert(bb_pair.first);
+               if(bb_pair.first != bloc::EXIT_BLOCK_ID)
+                  bb_to_remove.insert(bb_pair.first);
             }
          }
 
