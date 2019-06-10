@@ -87,6 +87,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, CALLED_FUNCTIONS));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, SAME_FUNCTION));
          break;
       }
@@ -108,6 +109,23 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    }
    return relationships;
 }
+
+bool dead_code_elimination::HasToBeExecuted() const
+{
+   std::map<unsigned int, unsigned int> cur_bitvalue_ver;
+   std::map<unsigned int, unsigned int> cur_bb_ver;
+   const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
+   const std::set<unsigned int> calledSet = AppM->CGetCallGraphManager()->get_called_by(function_id);
+   for(const auto i : calledSet)
+   {
+      const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(i);
+      cur_bitvalue_ver[i] = FB->GetBitValueVersion();
+      cur_bb_ver[i] = FB->GetBBVersion();
+   }
+   return cur_bb_ver != last_bb_ver || cur_bitvalue_ver != last_bitvalue_ver;
+}
+
+
 
 
 void dead_code_elimination::kill_uses(const tree_managerRef TM, tree_nodeRef op0) const
@@ -382,6 +400,50 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   }
                }
             }
+            else if(GET_NODE(*stmt)->get_kind() == gimple_call_K)
+            {
+
+               auto* gc = GetPointer<gimple_call>(GET_NODE(*stmt));
+               tree_nodeRef temp_node = GET_NODE(gc->fn);
+               function_decl* fdCalled = nullptr;
+
+               if(temp_node->get_kind() == addr_expr_K)
+               {
+                  auto* ue = GetPointer<unary_expr>(temp_node);
+                  temp_node = ue->op;
+                  fdCalled = GetPointer<function_decl>(GET_NODE(temp_node));
+               }
+               else if(temp_node->get_kind() == obj_type_ref_K)
+               {
+                  temp_node = tree_helper::find_obj_type_ref_function(gc->fn);
+                  fdCalled = GetPointer<function_decl>(GET_NODE(temp_node));
+               }
+               if(fdCalled)
+               {
+                  if(tree_helper::is_a_nop_function_decl(fdCalled))
+                  {
+                     if(gc->vdef && !is_single_write_memory)
+                     {
+                        kill_vdef(TM,gc->vdef);
+                        gc->vdef = tree_nodeRef();
+                     }
+                     else if(gc->memdef && !is_single_write_memory)
+                     {
+                        kill_vdef(TM,gc->memdef);
+                        gc->memdef = tree_nodeRef();
+                     }
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--Restart dead code");
+                     restart_analysis = true;
+                     modified = true;
+                     stmts_to_be_removed.push_back(*stmt);
+#ifndef NDEBUG
+                     AppM->RegisterTransformation(GetName(), *stmt);
+#endif
+                  }
+//                  else if(!gc->vdef && !is_single_write_memory)
+//                     THROW_ERROR("check this condition");
+               }
+            }
             else
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not gimple_assign statement");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement");
@@ -396,7 +458,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          for(auto curr_el : stmts_to_be_removed)
          {
             auto* ga = GetPointer<gimple_assign>(GET_NODE(curr_el));
-            if(ga and (GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K))
+            if((ga and (GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K)) or GetPointer<gimple_call>(GET_NODE(curr_el)))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call expr in the right part can be removed");
                const CallGraphManagerRef cg_man = AppM->GetCallGraphManager();

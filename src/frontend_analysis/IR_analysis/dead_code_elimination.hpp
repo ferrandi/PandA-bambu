@@ -71,6 +71,10 @@ class dead_code_elimination : public FunctionFrontendFlowStep
 {
  private:
 
+   std::map<unsigned int, unsigned int> last_bitvalue_ver;
+
+   std::map<unsigned int, unsigned int> last_bb_ver;
+
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
@@ -100,6 +104,13 @@ class dead_code_elimination : public FunctionFrontendFlowStep
     * @return the exit status of this step
     */
    DesignFlowStep_Status InternalExec() override;
+
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
+
 };
 
 #endif
