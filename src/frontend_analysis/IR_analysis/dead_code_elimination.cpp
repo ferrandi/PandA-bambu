@@ -55,6 +55,7 @@
 #include <vector>
 
 #include "application_manager.hpp"
+#include "hls_manager.hpp"
 
 // includes from behavior
 #include "call_graph_manager.hpp"
@@ -234,6 +235,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
    std::map<unsigned int, blocRef>& blocks = sl->list_of_bloc;
    std::map<unsigned int, blocRef>::iterator block_it, block_it_end;
    block_it_end = blocks.end();
+   const bool is_single_write_memory = GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->IsSingleWriteMemory();
 
    bool modified = false;
    bool restart_analysis;
@@ -264,26 +266,31 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                /// in case of virtual uses it is better not perform the elimination
                if(ga->predicate && GET_NODE(ga->predicate)->get_kind() == integer_cst_K &&  GetPointer<integer_cst>(GET_NODE(ga->predicate))->value == 0)
                {
-                  if(ga->vdef)
-                  {
-                     kill_vdef(TM,ga->vdef);
-                     ga->vdef = tree_nodeRef();
-                  }
-                  else if(GET_NODE(ga->op0)->get_kind() == ssa_name_K)
-                  {
-                     kill_uses(TM,ga->op0);
-                  }
-                  else
-                     THROW_ERROR("unexpected condition");
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--Restart dead code");
-                  restart_analysis = true;
-                  modified = true;
-                  stmts_to_be_removed.push_back(*stmt);
+                     if(ga->vdef && !is_single_write_memory)
+                     {
+                        kill_vdef(TM,ga->vdef);
+                        ga->vdef = tree_nodeRef();
+                     }
+                     else if(ga->memdef && !is_single_write_memory)
+                     {
+                        kill_vdef(TM,ga->memdef);
+                        ga->memdef = tree_nodeRef();
+                     }
+                     else if(GET_NODE(ga->op0)->get_kind() == ssa_name_K)
+                     {
+                        kill_uses(TM,ga->op0);
+                     }
+                     else
+                        THROW_ERROR("unexpected condition");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--Restart dead code");
+                     restart_analysis = true;
+                     modified = true;
+                     stmts_to_be_removed.push_back(*stmt);
 #ifndef NDEBUG
-                  AppM->RegisterTransformation(GetName(), *stmt);
+                     AppM->RegisterTransformation(GetName(), *stmt);
 #endif
                }
-               else if(not ga->vdef)
+               else if((not ga->vdef && !is_single_write_memory) || (not ga->memdef && is_single_write_memory))
                {
                   /// op0 is the left side of the assignment, op1 is the right side
                   const tree_nodeRef op0 = GET_NODE(ga->op0);
@@ -535,10 +542,15 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             {
                auto node_stmt = GET_NODE(*stmt);
                auto gn = GetPointer<gimple_node>(node_stmt);
-               if(gn->vdef)
+               if(gn->vdef && !is_single_write_memory)
                {
                   kill_vdef(TM,gn->vdef);
                   gn->vdef = tree_nodeRef();
+               }
+               else if (gn->memdef && is_single_write_memory)
+               {
+                  kill_vdef(TM,gn->memdef);
+                  gn->memdef = tree_nodeRef();
                }
                else if (node_stmt->get_kind() == gimple_assign_K)
                {
@@ -588,8 +600,13 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed dead assignments");
             for(auto sblock: blocks.at(bb)->list_of_succ)
             {
+               if(sblock == bloc::EXIT_BLOCK_ID)
+                  continue;
+               THROW_ASSERT(blocks.find(sblock) != blocks.end(), "Already removed BB"+STR(sblock));
                auto succ_block = blocks.at(sblock);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---1 BB"+STR(sblock));
                succ_block->list_of_pred.erase(std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---2 BB"+STR(bb));
                ///Fix PHIs
                for(auto phi: succ_block->CGetPhiList())
                {
