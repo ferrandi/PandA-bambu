@@ -325,7 +325,8 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                               const auto* ae = GetPointer<const addr_expr>(addr_node);
                               const auto fu_decl_node = GET_NODE(ae->op);
                               THROW_ASSERT(fu_decl_node->get_kind() == function_decl_K, "node  " + STR(fu_decl_node) + " is not function_decl but " + fu_decl_node->get_kind_text());
-                              if(GetPointer<function_decl>(fu_decl_node)->writing_memory)
+                              auto fdCalled = GetPointer<function_decl>(fu_decl_node);
+                              if(fdCalled->writing_memory || (!fdCalled->body && ga->vdef))
                                  is_a_writing_memory_call = true;
                            }
                            else
@@ -438,7 +439,10 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                }
                if(fdCalled)
                {
-                  if(tree_helper::is_a_nop_function_decl(fdCalled) or !fdCalled->writing_memory)
+                  bool is_a_writing_memory_call = false;
+                  if(fdCalled->writing_memory or (!fdCalled->body and gc->vdef))
+                     is_a_writing_memory_call = true;
+                  if(tree_helper::is_a_nop_function_decl(fdCalled) or !is_a_writing_memory_call)
                   {
                      if(gc->vdef && !is_single_write_memory)
                      {
@@ -469,7 +473,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             modified = true;
             restart_analysis = true;
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing " + STR(stmts_to_be_removed.size()) + " dead assignments");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing " + STR(stmts_to_be_removed.size()) + " dead statements");
          for(auto curr_el : stmts_to_be_removed)
          {
             auto* ga = GetPointer<gimple_assign>(GET_NODE(curr_el));
@@ -505,7 +509,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             block_it->second->RemoveStmt(curr_el);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removed " + STR(curr_el));
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed dead assignments");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed dead statements");
          /*
           * check also phi operations. if a phi assigns an ssa which is not used
           * anymore, the phi can be removed
@@ -581,7 +585,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   bb_to_remove.insert(bb_pair.first);
             }
          }
-
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + STR(bb_to_remove.size()) + " unreachable BBs");
          for(auto bb: bb_to_remove)
          {
             do_reachability = true;
@@ -638,7 +642,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                stmts_to_be_removed.push_back(*stmt);
             }
 
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing " + STR(stmts_to_be_removed.size()) + " dead assignments");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing " + STR(stmts_to_be_removed.size()) + " dead statements");
             for(auto curr_el : stmts_to_be_removed)
             {
                auto* ga = GetPointer<gimple_assign>(GET_NODE(curr_el));
@@ -674,7 +678,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                blocks.at(bb)->RemoveStmt(curr_el);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removed " + STR(curr_el));
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed dead assignments");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed dead statements");
             for(auto sblock: blocks.at(bb)->list_of_succ)
             {
                if(sblock == bloc::EXIT_BLOCK_ID)
@@ -763,7 +767,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             }
             if(fdCalled)
             {
-               if(fdCalled->writing_memory)
+               if(fdCalled->writing_memory || (!fdCalled->body && gc->vdef))
                   fd->writing_memory = true;
             }
             else
