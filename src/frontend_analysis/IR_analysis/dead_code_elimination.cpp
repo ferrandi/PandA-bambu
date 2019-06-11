@@ -115,7 +115,8 @@ bool dead_code_elimination::HasToBeExecuted() const
    std::map<unsigned int, unsigned int> cur_bitvalue_ver;
    std::map<unsigned int, unsigned int> cur_bb_ver;
    const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
-   const std::set<unsigned int> calledSet = AppM->CGetCallGraphManager()->get_called_by(function_id);
+   std::set<unsigned int> calledSet = AppM->CGetCallGraphManager()->get_called_by(function_id);
+   calledSet.insert(function_id);/// add the function itself
    for(const auto i : calledSet)
    {
       const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(i);
@@ -242,6 +243,7 @@ unsigned dead_code_elimination::move2emptyBB(const tree_managerRef TM, statement
 
 /// single sweep analysis, block by block, from the bottom to up. Each ssa which is used zero times is eliminated and the uses of the variables used in the assignment are recomputed
 /// multi-way and two way IFs simplified when conditions are constants
+/// gimple_call without side effects are removed
 DesignFlowStep_Status dead_code_elimination::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
@@ -685,9 +687,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   continue;
                THROW_ASSERT(blocks.find(sblock) != blocks.end(), "Already removed BB"+STR(sblock));
                auto succ_block = blocks.at(sblock);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---1 BB"+STR(sblock));
                succ_block->list_of_pred.erase(std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb));
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---2 BB"+STR(bb));
                ///Fix PHIs
                for(auto phi: succ_block->CGetPhiList())
                {
