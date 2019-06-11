@@ -2784,6 +2784,9 @@ struct function_decl : public decl_node, public attr
    /// True if parameters are not alias after its invocation
    bool reverse_restrict_flag;
 
+   /// True if function write in memory somehow
+   bool writing_memory;
+
 #if HAVE_FROM_PRAGMA_BUILT
    /// If different from zero, the parallel degree of the contained openmp loop
    size_t omp_for_wrapper;
