@@ -241,6 +241,51 @@ unsigned dead_code_elimination::move2emptyBB(const tree_managerRef TM, statement
    return new_basic_block_index;
 }
 
+void dead_code_elimination::add_gimple_nop(gimple_node* gc, const tree_managerRef TM, tree_nodeRef cur_stmt, blocRef bb)
+{
+   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_IR_schema;
+   gimple_nop_IR_schema[TOK(TOK_SRCP)] = gc->include_name + ":" + STR(gc->line_number) + ":" + STR(gc->column_number);
+   unsigned int gimple_nop_node_id = TM->new_tree_node_id();
+   TM->create_tree_node(gimple_nop_node_id, gimple_nop_K, gimple_nop_IR_schema);
+   tree_nodeRef gimple_nop_node_ref = TM->GetTreeReindex(gimple_nop_node_id);
+   const auto old_gc = GetPointer<gimple_node>(GET_NODE(cur_stmt));
+   const auto new_gc = GetPointer<gimple_node>(GET_NODE(gimple_nop_node_ref));
+   THROW_ASSERT(old_gc, "");
+   THROW_ASSERT(new_gc, "");
+   if(old_gc->memdef)
+   {
+      new_gc->memdef = old_gc->memdef;
+      GetPointer<ssa_name>(GET_NODE(new_gc->memdef))->SetDefStmt(gimple_nop_node_ref);
+      old_gc->memdef = tree_nodeRef();
+   }
+   if(old_gc->memuse)
+   {
+      new_gc->memuse = old_gc->memuse;
+      GetPointer<ssa_name>(GET_NODE(new_gc->memuse))->AddUseStmt(gimple_nop_node_ref);
+   }
+   if(old_gc->vdef)
+   {
+      new_gc->vdef = old_gc->vdef;
+      GetPointer<ssa_name>(GET_NODE(new_gc->vdef))->SetDefStmt(gimple_nop_node_ref);
+      old_gc->vdef = tree_nodeRef();
+   }
+   if(old_gc->vuses.size())
+   {
+      new_gc->vuses = old_gc->vuses;
+      for(const auto& v : new_gc->vuses)
+      {
+         GetPointer<ssa_name>(GET_NODE(v))->AddUseStmt(gimple_nop_node_ref);
+      }
+   }
+   if(old_gc->vovers.size())
+   {
+      new_gc->vovers = old_gc->vovers;
+   }
+   bb->PushBefore(gimple_nop_node_ref, cur_stmt);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added statement " + GET_NODE(gimple_nop_node_ref)->ToString());
+}
+
+
 /// single sweep analysis, block by block, from the bottom to up. Each ssa which is used zero times is eliminated and the uses of the variables used in the assignment are recomputed
 /// multi-way and two way IFs simplified when conditions are constants
 /// gimple_call without side effects are removed
@@ -423,7 +468,6 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             }
             else if(GET_NODE(*stmt)->get_kind() == gimple_call_K)
             {
-
                auto* gc = GetPointer<gimple_call>(GET_NODE(*stmt));
                tree_nodeRef temp_node = GET_NODE(gc->fn);
                function_decl* fdCalled = nullptr;
@@ -446,19 +490,11 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                      is_a_writing_memory_call = true;
                   if(tree_helper::is_a_nop_function_decl(fdCalled) or !is_a_writing_memory_call)
                   {
-                     if(gc->vdef && !is_single_write_memory)
-                     {
-                        kill_vdef(TM,gc->vdef);
-                        gc->vdef = tree_nodeRef();
-                     }
-                     else if(gc->memdef && is_single_write_memory)
-                     {
-                        kill_vdef(TM,gc->memdef);
-                        gc->memdef = tree_nodeRef();
-                     }
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--Restart dead code");
                      restart_analysis = true;
                      modified = true;
+                     add_gimple_nop(gc,TM,*stmt,(block_it)->second);
+
                      stmts_to_be_removed.push_back(*stmt);
 #ifndef NDEBUG
                      AppM->RegisterTransformation(GetName(), *stmt);
