@@ -48,6 +48,7 @@
 #include "memory.hpp"
 #include "target_device.hpp"
 
+#include "application_manager.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
@@ -95,6 +96,9 @@ const std::string MemoryAllocationSpecialization::GetKindText() const
       case MemoryAllocation_Policy::EXT_PIPELINED_BRAM:
          ret += "EXT_PIPELINED_BRAM";
          break;
+      case MemoryAllocation_Policy::INTERN_UNALIGNED:
+         ret += "INTERN_UNALIGNED";
+         break;
       case MemoryAllocation_Policy::NONE:
       default:
          THROW_UNREACHABLE("");
@@ -131,7 +135,6 @@ memory_allocation::memory_allocation(const ParameterConstRef _parameters, const 
                _hls_flow_step_specialization and GetPointer<const MemoryAllocationSpecialization>(_hls_flow_step_specialization) ?
                    _hls_flow_step_specialization :
                    HLSFlowStepSpecializationConstRef(new MemoryAllocationSpecialization(_parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy), _parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type)))),
-      already_executed(false),
       /// NOTE: hls_flow_step_specialization and not _hls_flow_step_specialization is correct
       memory_allocation_policy(GetPointer<const MemoryAllocationSpecialization>(hls_flow_step_specialization)->memory_allocation_policy)
 {
@@ -279,12 +282,52 @@ void memory_allocation::finalize_memory_allocation()
       for(unsigned int p : parm_decl_stored)
       {
          maximum_bus_size = std::max(maximum_bus_size, tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, p)));
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "param with maximum_bus_size=" + STR(maximum_bus_size));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Analyzing function for bus size: " + behavioral_helper->get_function_name());
       const OpGraphConstRef g = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
       graph::vertex_iterator v, v_end;
+      const auto TM = HLSMgr->get_tree_manager();
+      auto fnode = TM->get_tree_node_const(fun_id);
+      auto fd = GetPointer<function_decl>(fnode);
+      std::string fname;
+      tree_helper::get_mangled_fname(fd, fname);
+      std::unordered_set<vertex> RW_stmts;
+      if(HLSMgr->design_interface_loads.find(fname) != HLSMgr->design_interface_loads.end())
+      {
+         for(auto bb2arg2stmtsR : HLSMgr->design_interface_loads.find(fname)->second)
+         {
+            for(auto arg2stms : bb2arg2stmtsR.second)
+            {
+               if(arg2stms.second.size() > 0)
+                  for(auto stmt : arg2stms.second)
+                  {
+                     THROW_ASSERT(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != g->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition: STMT=" + STR(stmt));
+                     RW_stmts.insert(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
+                  }
+            }
+         }
+      }
+      if(HLSMgr->design_interface_stores.find(fname) != HLSMgr->design_interface_stores.end())
+      {
+         for(auto bb2arg2stmtsW : HLSMgr->design_interface_stores.find(fname)->second)
+         {
+            for(auto arg2stms : bb2arg2stmtsW.second)
+            {
+               if(arg2stms.second.size() > 0)
+                  for(auto stmt : arg2stms.second)
+                  {
+                     THROW_ASSERT(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != g->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition");
+                     RW_stmts.insert(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
+                  }
+            }
+         }
+      }
+
       for(boost::tie(v, v_end) = boost::vertices(*g); v != v_end; ++v)
       {
+         if(RW_stmts.find(*v) != RW_stmts.end())
+            continue;
          std::string current_op = g->CGetOpNodeInfo(*v)->GetOperation();
          std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(fun_id, *v);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing operation " + GET_NAME(g, *v));
@@ -320,16 +363,18 @@ void memory_allocation::finalize_memory_allocation()
                unsigned int size_var = std::get<0>(var_read[0]);
                unsigned int size_type_index = tree_helper::get_type_index(TreeM, size_var);
                value_bitsize = tree_helper::size(TreeM, size_type_index);
+               PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "store with value_bitsize=" + STR(value_bitsize));
             }
             else
             {
                unsigned int size_var = HLSMgr->get_produced_value(fun_id, *v);
                unsigned int size_type_index = tree_helper::get_type_index(TreeM, size_var);
                value_bitsize = tree_helper::size(TreeM, size_type_index);
+               PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "load with value_bitsize=" + STR(value_bitsize));
             }
             if(!(function_behavior->is_variable_mem(var) && HLSMgr->Rmem->is_private_memory(var)))
                maximum_bus_size = std::max(maximum_bus_size, value_bitsize);
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " with maximum_bus_size=" + STR(maximum_bus_size));
+            PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " with maximum_bus_size=" + STR(maximum_bus_size) + " " + curr_tn->ToString());
          }
          else
          {
@@ -340,6 +385,7 @@ void memory_allocation::finalize_memory_allocation()
                if(assume_aligned_access_p)
                   THROW_ERROR("Option --aligned-access cannot be used in presence of memcpy, memcmp or memset");
             }
+
             std::vector<HLS_manager::io_binding_type>::const_iterator vr_it_end = var_read.end();
             for(std::vector<HLS_manager::io_binding_type>::const_iterator vr_it = var_read.begin(); vr_it != vr_it_end; ++vr_it)
             {
@@ -359,6 +405,7 @@ void memory_allocation::finalize_memory_allocation()
                   unsigned bitsize = 1;
                   tree_helper::accessed_greatest_bitsize(TreeM, GET_NODE(type_node_ptd), GET_INDEX_NODE(type_node_ptd), bitsize);
                   maximum_bus_size = std::max(maximum_bus_size, bitsize);
+                  PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " with maximum_bus_size=" + STR(maximum_bus_size) + " " + TreeM->get_tree_node_const(g->CGetOpNodeInfo(*v)->GetNodeId())->ToString());
                }
             }
          }
@@ -393,7 +440,6 @@ void memory_allocation::finalize_memory_allocation()
    }
 
    const HLS_targetRef HLS_T = HLSMgr->get_HLS_target();
-   unsigned int aligned_bitsize;
    unsigned int bram_bitsize = 0, data_bus_bitsize, addr_bus_bitsize, size_bus_bitsize;
    auto bram_bitsize_min = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_min");
    auto bram_bitsize_max = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max");
@@ -422,11 +468,6 @@ void memory_allocation::finalize_memory_allocation()
 
    if(bram_bitsize < 8)
       bram_bitsize = 8;
-
-   if(!use_databus_width || use_unknown_address)
-      aligned_bitsize = 8;
-   else
-      aligned_bitsize = 2 * bram_bitsize;
 
    if(parameters->isOption(OPT_addr_bus_bitsize))
       addr_bus_bitsize = parameters->getOption<unsigned int>(OPT_addr_bus_bitsize);
@@ -460,7 +501,6 @@ void memory_allocation::finalize_memory_allocation()
       ;
    HLSMgr->Rmem->set_bus_size_bitsize(size_bus_bitsize);
 
-   HLSMgr->Rmem->set_aligned_bitsize(aligned_bitsize);
    HLSMgr->Rmem->set_bram_bitsize(bram_bitsize);
    HLSMgr->Rmem->set_intern_shared_data(has_intern_shared_data);
    HLSMgr->Rmem->set_use_unknown_addresses(use_unknown_address);
@@ -471,8 +511,7 @@ void memory_allocation::finalize_memory_allocation()
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---BRAM bitsize: " + STR(bram_bitsize));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---" + (use_databus_width ? std::string("Spec may exploit DATA bus width") : std::string("Spec may not exploit DATA bus width")));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---" + (!use_unknown_address ? std::string("All the data have a known address") : std::string("Spec accesses data having an address unknown at compile time")));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---" + (!has_intern_shared_data ? std::string("Intern data is not externally accessible") : std::string("Intern data may be accessed")));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Aligned bitsize: " + STR(aligned_bitsize));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---" + (!has_intern_shared_data ? std::string("Internal data is not externally accessible") : std::string("Internal data may be accessed")));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---DATA bus bitsize: " + STR(data_bus_bitsize));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---ADDRESS bus bitsize: " + STR(addr_bus_bitsize));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---SIZE bus bitsize: " + STR(size_bus_bitsize));
@@ -534,5 +573,30 @@ void memory_allocation::allocate_parameters(unsigned int functionId)
 
 bool memory_allocation::HasToBeExecuted() const
 {
-   return true;
+   if(memory_version == 0 or memory_version != HLSMgr->GetMemVersion())
+      return true;
+   std::map<unsigned int, unsigned int> cur_bb_ver;
+   // std::map<unsigned int, unsigned int> cur_bitvalue_ver;
+   const CallGraphManagerConstRef CGMan = HLSMgr->CGetCallGraphManager();
+   for(const auto i : CGMan->GetReachedBodyFunctions())
+   {
+      const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(i);
+      cur_bb_ver[i] = FB->GetBBVersion();
+      // cur_bitvalue_ver[i] = FB->GetBitValueVersion();
+   }
+   return cur_bb_ver != last_bb_ver /*|| cur_bitvalue_ver != last_bitvalue_ver*/;
+}
+
+DesignFlowStep_Status memory_allocation::Exec()
+{
+   const auto status = InternalExec();
+   const CallGraphManagerConstRef CGMan = HLSMgr->CGetCallGraphManager();
+   for(const auto i : CGMan->GetReachedBodyFunctions())
+   {
+      const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(i);
+      last_bb_ver[i] = FB->GetBBVersion();
+      last_bitvalue_ver[i] = FB->GetBitValueVersion();
+   }
+   memory_version = HLSMgr->GetMemVersion();
+   return status;
 }

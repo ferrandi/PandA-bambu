@@ -39,7 +39,7 @@
  *        The Andersen specific version used here is described in:
  *        "The Ant and the Grasshopper: Fast and Accurate Pointer Analysis for
  *        Millions of Lines of Code", by Ben Hardekopf & Calvin Lin, in PLDI 2007.
- *        To fulfil the sublicense requirements here it is the copyright permission
+ *        To fulfill the sublicense requirements here it is the copyright permission
  *        notice:
  *------------------------------------------------------------------------------
  *  Copyright 2008 Andrey Petrov, Ben Hardekopf

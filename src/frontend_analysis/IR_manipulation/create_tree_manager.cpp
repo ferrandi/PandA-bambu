@@ -179,6 +179,11 @@ DesignFlowStep_Status create_tree_manager::Exec()
          }
          for(auto& entry : boost::make_iterator_range(boost::filesystem::directory_iterator(temp_path_obtained), {}))
          {
+            auto fileExtension = GetExtension(entry.path());
+            if(fileExtension != "o" && fileExtension != "O")
+            {
+               continue;
+            }
             const tree_managerRef TM_new = ParseTreeFile(parameters, entry.path().string());
             TreeM->merge_tree_managers(TM_new);
          }

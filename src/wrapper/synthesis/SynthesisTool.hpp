@@ -71,12 +71,13 @@ class xml_element;
 #define PARAM_clk_period "clk_period"
 #define PARAM_clk_period_default (1.0 / 50)
 #define PARAM_clk_freq "clk_freq"
-#define PARAM_fu "fu"
 #define PARAM_time_constrained "time_constrained"
 #define PARAM_is_combinational "is_combinational"
 #define PARAM_sdc_file "sdc_file"
 #define PARAM_backend_script_extensions "backend_script_extensions"
 #define PARAM_has_script_extensions "has_script_extensions"
+#define PARAM_has_VHDL_library "has_VHDL_library"
+#define PARAM_VHDL_library "VHDL_library"
 
 class SynthesisTool
 {
@@ -108,7 +109,8 @@ class SynthesisTool
       QUARTUS_FLOW,
       QUARTUS_POW,
       QUARTUS_STA,
-      LATTICE_FLOW
+      LATTICE_FLOW,
+      NXPYTHON_FLOW
    } type_t;
 
  protected:

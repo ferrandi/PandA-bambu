@@ -49,7 +49,7 @@ float __hide_ieee754_asinf(float x)
       return x * pio2_hi + x * pio2_lo;
    }
    else if(ix > 0x3f800000)
-   {                   /* |x|>= 1 */
+   {                             /* |x|>= 1 */
       return __builtin_nanf(""); /* asin(|x|>1) is NaN */
    }
    else if(ix < 0x3f000000)

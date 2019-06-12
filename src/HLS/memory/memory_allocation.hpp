@@ -59,6 +59,7 @@ enum class MemoryAllocation_Policy
    ALL_BRAM,           /// all objects that need to be stored in memory are allocated on BRAMs
    NO_BRAM,            /// all objects that need to be stored in memory are allocated on an external memory
    EXT_PIPELINED_BRAM, /// all objects that need to be stored in memory are allocated on an external pipelined memory
+   INTERN_UNALIGNED,   /// all objects with an unaligned access are clustered on a single STD_BRAM
    NONE                /// no policy
 };
 
@@ -109,14 +110,20 @@ class MemoryAllocationSpecialization : public HLSFlowStepSpecialization
 class memory_allocation : public HLS_step
 {
  protected:
-   /// True if this step has already been executed
-   bool already_executed;
-
    /// list of functions to be analyzed
    std::set<unsigned int> func_list;
 
    /// The memory allocation policy
    const MemoryAllocation_Policy memory_allocation_policy;
+
+   /// The version of memory representation on which this step was applied
+   unsigned int memory_version;
+
+   /// The version of BB IR representation on which this step was applied
+   std::map<unsigned int, unsigned int> last_bb_ver;
+
+   /// The version of bit value IR representation on which this step was applied
+   std::map<unsigned int, unsigned int> last_bitvalue_ver;
 
    /**
     * Prepares the datastructures for the memory allocation
@@ -134,6 +141,12 @@ class memory_allocation : public HLS_step
     * @return the steps in relationship with this
     */
    const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   virtual DesignFlowStep_Status InternalExec() = 0;
 
  public:
    /**
@@ -156,6 +169,12 @@ class memory_allocation : public HLS_step
     * @return true if the step has to be executed
     */
    bool HasToBeExecuted() const override;
+
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status Exec() override;
 };
 
 #endif

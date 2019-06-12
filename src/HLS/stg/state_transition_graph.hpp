@@ -179,6 +179,7 @@ class TransitionInfo : public EdgeInfo
    vertex ref_state{NULL_VERTEX};
    /// the edge increment computed by Efficient Path Profiling
    size_t epp_increment{0};
+   bool epp_incrementValid{false};
 
  public:
    TransitionInfo(OpGraphConstRef g) : op_function_graph(g)
@@ -191,7 +192,7 @@ class TransitionInfo : public EdgeInfo
     * Print the information associated with the edge of the graph.
     * @param os is the output stream.
     */
-   void print(std::ostream& os) const;
+   void print(std::ostream& os, const int detail_level) const;
 
    bool get_has_default() const
    {
@@ -226,6 +227,7 @@ class TransitionInfo : public EdgeInfo
    void set_epp_increment(size_t n)
    {
       epp_increment = n;
+      epp_incrementValid = true;
    }
    size_t get_epp_increment() const
    {
@@ -467,7 +469,7 @@ class TransitionWriter : public EdgeWriter
     * @param stg is the graph to be printed
     * @param op_function_graph is the associated operation graph
     */
-   TransitionWriter(const graph* stg, const OpGraphConstRef op_function_graph);
+   TransitionWriter(const graph* stg, const OpGraphConstRef op_function_graph, int _detail_level);
 
    /**
     * Functor actually called by the boost library to perform the writing

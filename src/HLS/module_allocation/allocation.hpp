@@ -147,12 +147,12 @@ class allocation : public HLSFunctionStep
    /**
     * Add a proxy function to the WORK library.
     */
-   void add_proxy_function_module(technology_nodeRef tn, const HLS_constraintsRef HLS_C, technology_nodeRef techNode_obj, const std::string& orig_fun_name);
+   void add_proxy_function_module(const HLS_constraintsRef HLS_C, technology_nodeRef techNode_obj, const std::string& orig_fun_name);
 
    /**
     *  Add a proxy wrapper to the WORK library
     */
-   void add_proxy_function_wrapper(technology_nodeRef tn, const std::string& library_name, technology_nodeRef techNode_obj, const std::string& orig_fun_name);
+   void add_proxy_function_wrapper(const std::string& library_name, technology_nodeRef techNode_obj, const std::string& orig_fun_name);
 
    /**
     * Build the proxy wrapper

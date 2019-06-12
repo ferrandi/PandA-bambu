@@ -618,7 +618,9 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             if(is_multiport && port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
                GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(max_n_ports), port);
             if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
+            {
                port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, port);
+            }
          }
          for(unsigned int i = 0; i < GetPointer<module>(curr_gate)->get_out_port_size(); i++)
          {
@@ -626,7 +628,9 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             if(is_multiport && port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
                GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(max_n_ports), port);
             if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
+            {
                port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, port);
+            }
          }
          manage_module_ports(HLSMgr, HLS, SM, curr_gate, 0);
          memory_modules.insert(curr_gate);
@@ -1480,7 +1484,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
          THROW_ERROR("incorrect operation mapping on memory module");
 
       fu_module->set_parameter("BRAM_BITSIZE", std::to_string(bram_bitsize));
-      bool Has_extern_allocated_data = ((HLSMgr->Rmem->get_memory_address() - HLSMgr->base_address) > 0 and parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM) or
+      bool Has_extern_allocated_data = ((HLSMgr->Rmem->get_memory_address() - HLSMgr->base_address) > 0 and parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM and
+                                        parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::INTERN_UNALIGNED) or
                                        (HLSMgr->Rmem->has_unknown_addresses() and HLS->Param->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM and
                                         HLS->Param->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
       if(Has_extern_allocated_data)
@@ -1580,8 +1585,6 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                std::vector<std::string>::const_iterator it_end = param.end();
                for(std::vector<std::string>::const_iterator it = param.begin(); it != it_end; ++it)
                {
-                  if(*it == "ALIGNED_BITSIZE")
-                     fu_module->set_parameter("ALIGNED_BITSIZE", std::to_string(HLSMgr->Rmem->get_aligned_bitsize()));
                   if(*it == "LSB_PARAMETER" && op_name == "pointer_plus_expr")
                   {
                      unsigned int curr_LSB = 0;
@@ -1733,7 +1736,9 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       else if(is_multi_read_cond && port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
          GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(required_variables.size()), port);
       if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
+      {
          port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, port);
+      }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Resized input ports");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Resizing variables");
@@ -1757,7 +1762,9 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       if(is_multiport && port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
          GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(max_n_ports), port);
       if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
+      {
          port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, port);
+      }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Resized output ports");
    if(offset < fu_module->get_out_port_size())

@@ -571,7 +571,7 @@ std::string BehavioralHelper::PrintVariable(unsigned int var) const
       long long int offset = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(mr->op1)));
       tree_managerRef temp_TM(const_cast<tree_manager*>(TM.get()), null_deleter());
       const tree_manipulationRef tm(new tree_manipulation(temp_TM, Param));
-      const unsigned int pointer_type = tm->create_pointer_type(mr->type)->index;
+      const unsigned int pointer_type = tm->create_pointer_type(mr->type, 8)->index;
       const std::string type_string = tree_helper::print_type(TM, pointer_type);
       if(offset == 0)
          vars_symbol_table[var] = "*((" + type_string + ")(" + PrintVariable(GET_INDEX_NODE(mr->op0)) + "))";
@@ -2198,7 +2198,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          long long int offset = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(mr->op1)));
          tree_managerRef temp_TM(const_cast<tree_manager*>(TM.get()), null_deleter());
          const tree_manipulationRef tm(new tree_manipulation(temp_TM, Param));
-         const unsigned int pointer_type = tm->create_pointer_type(mr->type)->index;
+         const unsigned int pointer_type = tm->create_pointer_type(mr->type, 8)->index;
          const std::string type_string = tree_helper::print_type(TM, pointer_type);
          if(offset == 0)
          {

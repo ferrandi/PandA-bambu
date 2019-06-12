@@ -60,6 +60,13 @@
 #include "config_HAVE_I386_CLANG5_M64.hpp"
 #include "config_HAVE_I386_CLANG5_MX32.hpp"
 #include "config_HAVE_I386_CLANG6_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG6_M32.hpp"
+#include "config_HAVE_I386_CLANG6_M64.hpp"
+#include "config_HAVE_I386_CLANG6_MX32.hpp"
+#include "config_HAVE_I386_CLANG7_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG7_M32.hpp"
+#include "config_HAVE_I386_CLANG7_M64.hpp"
+#include "config_HAVE_I386_CLANG7_MX32.hpp"
 #include "config_HAVE_I386_GCC45_COMPILER.hpp"
 #include "config_HAVE_I386_GCC46_COMPILER.hpp"
 #include "config_HAVE_I386_GCC47_COMPILER.hpp"
@@ -205,8 +212,9 @@
 #define OPT_AREA_WEIGHT (1 + OPT_ALIGNED_ACCESS_PARAMETER)
 #define OPT_BACKEND_SCRIPT_EXTENSIONS_PARAMETER (1 + OPT_AREA_WEIGHT)
 #define OPT_BACKEND_SDC_EXTENSIONS_PARAMETER (1 + OPT_BACKEND_SCRIPT_EXTENSIONS_PARAMETER)
-#define OPT_BITVALUE_IPA (1 + OPT_BACKEND_SDC_EXTENSIONS_PARAMETER)
-#define OPT_BRAM_HIGH_LATENCY (1 + OPT_BITVALUE_IPA)
+#define OPT_VHDL_LIBRARY_PARAMETER (1 + OPT_BACKEND_SDC_EXTENSIONS_PARAMETER)
+#define OPT_DISABLE_BITVALUE_IPA (1 + OPT_VHDL_LIBRARY_PARAMETER)
+#define OPT_BRAM_HIGH_LATENCY (1 + OPT_DISABLE_BITVALUE_IPA)
 #define OPT_CHANNELS_NUMBER (1 + OPT_BRAM_HIGH_LATENCY)
 #define OPT_CHANNELS_TYPE (1 + OPT_CHANNELS_NUMBER)
 #define OPT_CLOCK_PERIOD_RESOURCE_FRACTION (1 + OPT_CHANNELS_TYPE)
@@ -267,7 +275,11 @@
 #define OPT_NUM_THREADS (1 + OPT_NO_MIXED_DESIGN)
 #define OPT_PARALLEL_CONTROLLER (1 + OPT_NUM_THREADS)
 #define OPT_PERIOD_CLOCK (1 + OPT_PARALLEL_CONTROLLER)
-#define OPT_POWER_OPTIMIZATION (1 + OPT_PERIOD_CLOCK)
+#define OPT_CLOCK_NAME (1 + OPT_PERIOD_CLOCK)
+#define OPT_RESET_NAME (1 + OPT_CLOCK_NAME)
+#define OPT_START_NAME (1 + OPT_RESET_NAME)
+#define OPT_DONE_NAME (1 + OPT_START_NAME)
+#define OPT_POWER_OPTIMIZATION (1 + OPT_DONE_NAME)
 #define OPT_PRAGMA_PARSE (1 + OPT_POWER_OPTIMIZATION)
 #define OPT_PRETTY_PRINT (1 + OPT_PRAGMA_PARSE)
 #define OPT_POST_RESCHEDULING (1 + OPT_PRETTY_PRINT)
@@ -546,6 +558,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                                 are allocated on an external memory\n"
       << "            EXT_PIPELINED_BRAM - all objects that need to be stored in memory\n"
       << "                                 are allocated on an external pipelined memory\n\n"
+      << "            INTERN_UNALIGNED   - all objects with an unaligned access are\n"
+      << "                                 clustered on a single STD_BRAM\n\n"
       << "   --base-address=address\n"
       << "        Define the starting address for objects allocated externally to the top\n"
       << "        module.\n\n"
@@ -735,7 +749,14 @@ void BambuParameter::PrintHelp(std::ostream& os) const
 
    // RTL synthesis options
    os << "  RTL synthesis:\n\n"
-      << "    Note: for a more complete evaluation you should use the option --evaluation\n\n"
+      << "    --clock-name=id\n"
+      << "        Specify the clock signal name of the top interface (default = clock).\n\n"
+      << "    --reset-name=id\n"
+      << "        Specify the reset signal name of the top interface (default = reset).\n\n"
+      << "    --start-name=id\n"
+      << "        Specify the start signal name of the top interface (default = start_port).\n\n"
+      << "    --done-name=id\n"
+      << "        Specify the done signal name of the top interface (default = done_port).\n\n"
       << "    --clock-period=value\n"
       << "        Specify the period of the clock signal (default = 10ns).\n\n"
       << "    --backend-script-extensions=file\n"
@@ -744,6 +765,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --backend-sdc-extensions=file\n"
       << "        Specify a file that will be included in the Synopsys Design Constraints\n"
       << "        file (SDC).\n\n"
+      << "    --VHDL-library=libraryname\n"
+      << "        Specify the library in which the VHDL generated files are compiled.\n\n"
       << "    --device-name=value\n"
       << "        Specify the name of the device. Three different cases are foreseen:\n"
       << "            - Xilinx:  a comma separated string specifying device, speed grade\n"
@@ -805,7 +828,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --registered-inputs=value\n"
       << "        Specify if inputs are registered or not:\n"
       << "             auto  - inputs are registered only for proxy functions (default)\n"
-      << "             top   - inputs are registred only for top and proxy functions\n"
+      << "             top   - inputs are registered only for top and proxy functions\n"
       << "             yes   - all inputs are registered\n"
       << "             no    - none of the inputs is registered\n\n"
       << "    --fsm-encoding=value\n"
@@ -834,7 +857,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --experimental-setup=<setup>\n"
       << "        Specify the experimental setup. This is a shorthand to set multiple\n"
       << "        options with a single command.\n"
-      << "        Available values for <setup> are the follwing:\n"
+      << "        Available values for <setup> are the following:\n"
       << "             BAMBU-AREA           - this setup implies:\n"
       << "                                    -Os  -D'printf(fmt, ...)='\n"
       << "                                    --memory-allocation-policy=ALL_BRAM\n"
@@ -937,8 +960,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
    os << "    --host-profiling\n"
       << "        Perform host-profiling.\n\n";
 #endif
-   os << "    --bitvalue-ipa\n"
-      << "        Enables interprocedural bitvalue analysis.\n\n";
+   os << "    --disable-bitvalue-ipa\n"
+      << "        Disable inter-procedural bitvalue analysis.\n\n";
 #if HAVE_EXPERIMENTAL || HAVE_ILP_BUILT
    os << std::endl;
 #endif
@@ -1116,6 +1139,10 @@ int BambuParameter::Exec()
       {"assert-debug", no_argument, nullptr, 0},
       {"device-name", required_argument, nullptr, OPT_DEVICE_NAME},
       {"clock-period", required_argument, nullptr, OPT_PERIOD_CLOCK},
+      {"clock-name", required_argument, nullptr, OPT_CLOCK_NAME},
+      {"reset-name", required_argument, nullptr, OPT_RESET_NAME},
+      {"start-name", required_argument, nullptr, OPT_START_NAME},
+      {"done-name", required_argument, nullptr, OPT_DONE_NAME},
       {"power-optimization", no_argument, nullptr, OPT_POWER_OPTIMIZATION},
       {"no-iob", no_argument, nullptr, OPT_DISABLE_IOB},
       {"reset-type", required_argument, nullptr, OPT_RESET},
@@ -1136,6 +1163,7 @@ int BambuParameter::Exec()
       {"aligned-access", no_argument, nullptr, OPT_ALIGNED_ACCESS_PARAMETER},
       {"backend-script-extensions", required_argument, nullptr, OPT_BACKEND_SCRIPT_EXTENSIONS_PARAMETER},
       {"backend-sdc-extensions", required_argument, nullptr, OPT_BACKEND_SDC_EXTENSIONS_PARAMETER},
+      {"VHDL-library", required_argument, nullptr, OPT_VHDL_LIBRARY_PARAMETER},
       {"do-not-use-asynchronous-memories", no_argument, nullptr, OPT_DO_NOT_USE_ASYNCHRONOUS_MEMORIES},
       {"do-not-chain-memories", no_argument, nullptr, OPT_DO_NOT_CHAIN_MEMORIES},
       {"rom-duplication", no_argument, nullptr, OPT_ROM_DUPLICATION},
@@ -1188,7 +1216,7 @@ int BambuParameter::Exec()
       {"mem-delay-read", required_argument, nullptr, OPT_MEM_DELAY_READ},
       {"mem-delay-write", required_argument, nullptr, OPT_MEM_DELAY_WRITE},
       {"host-profiling", no_argument, nullptr, OPT_HOST_PROFILING},
-      {"bitvalue-ipa", no_argument, nullptr, OPT_BITVALUE_IPA},
+      {"disable-bitvalue-ipa", no_argument, nullptr, OPT_DISABLE_BITVALUE_IPA},
       {"discrepancy", no_argument, nullptr, OPT_DISCREPANCY},
       {"discrepancy-force-uninitialized", no_argument, nullptr, OPT_DISCREPANCY_FORCE},
       {"discrepancy-hw", no_argument, nullptr, OPT_DISCREPANCY_HW},
@@ -1783,6 +1811,26 @@ int BambuParameter::Exec()
             setOption(OPT_clock_period, optarg);
             break;
          }
+         case OPT_CLOCK_NAME:
+         {
+            setOption(OPT_clock_name, optarg);
+            break;
+         }
+         case OPT_RESET_NAME:
+         {
+            setOption(OPT_reset_name, optarg);
+            break;
+         }
+         case OPT_START_NAME:
+         {
+            setOption(OPT_start_name, optarg);
+            break;
+         }
+         case OPT_DONE_NAME:
+         {
+            setOption(OPT_done_name, optarg);
+            break;
+         }
          case OPT_POWER_OPTIMIZATION:
          {
             setOption("power_optimization", true);
@@ -1952,6 +2000,11 @@ int BambuParameter::Exec()
             setOption(OPT_backend_sdc_extensions, optarg);
             break;
          }
+         case OPT_VHDL_LIBRARY_PARAMETER:
+         {
+            setOption(OPT_VHDL_library, optarg);
+            break;
+         }
          case OPT_DO_NOT_USE_ASYNCHRONOUS_MEMORIES:
          {
             setOption(OPT_use_asynchronous_memories, false);
@@ -2115,9 +2168,9 @@ int BambuParameter::Exec()
             setOption<bool>(OPT_mixed_design, false);
             break;
          }
-         case OPT_BITVALUE_IPA:
+         case OPT_DISABLE_BITVALUE_IPA:
          {
-            setOption(OPT_bitvalue_ipa, true);
+            setOption(OPT_bitvalue_ipa, false);
             break;
          }
          case OPT_DISCREPANCY:
@@ -2323,6 +2376,8 @@ int BambuParameter::Exec()
                   setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::NO_BRAM);
                else if(std::string(optarg) == "EXT_PIPELINED_BRAM")
                   setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
+               else if(std::string(optarg) == "INTERN_UNALIGNED")
+                  setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::INTERN_UNALIGNED);
                else
                   throw "BadParameters: memory allocation policy option not correctly specified";
                break;
@@ -2767,12 +2822,17 @@ void BambuParameter::CheckParameters()
    }
 #endif
 
+   if(isOption(OPT_interface_type) && getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+   {
+      setOption(OPT_do_not_expose_globals, true);
+   }
+
    if(getOption<bool>(OPT_do_not_expose_globals))
    {
       if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::NONE)
          setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::ALL_BRAM);
-      else if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM)
-         THROW_ERROR("BadParameters: --do-not-expose-globals implies --memory-allocation-policy=ALL_BRAM");
+      else if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM && getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::INTERN_UNALIGNED)
+         THROW_ERROR("BadParameters: --do-not-expose-globals implies --memory-allocation-policy=ALL_BRAM or --memory-allocation-policy=INTERN_UNALIGNED");
    }
    tree_helper::debug_level = get_class_debug_level("tree_helper");
 
@@ -2886,6 +2946,9 @@ void BambuParameter::CheckParameters()
 #if HAVE_I386_CLANG6_COMPILER
          && getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
+#if HAVE_I386_CLANG7_COMPILER
+         && getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG7
+#endif
       )
          setOption(OPT_gcc_optimizations, optimizations);
 #if 0
@@ -2969,10 +3032,6 @@ void BambuParameter::CheckParameters()
    {
       THROW_ERROR("Experimental setup not recognized: " + getOption<std::string>(OPT_experimental_setup));
    }
-   if(isOption(OPT_interface_type) && getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
-   {
-      setOption(OPT_do_not_expose_globals, true);
-   }
 
    add_bambu_library("bambu");
 
@@ -3049,6 +3108,10 @@ void BambuParameter::CheckParameters()
    if(getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN and isOption(OPT_interface_type) and getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
       THROW_ERROR("Wishbone 4 interface does not yet support multi-channel architectures (MEM_ACC_NN)");
 
+   if(isOption(OPT_interface_type) and getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION and (isOption(OPT_clock_name) or isOption(OPT_reset_name) or isOption(OPT_start_name) or isOption(OPT_done_name)))
+      THROW_ERROR("Wishbone 4 interface does not allow the renaming of the control signals");
+   if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::INTERN_UNALIGNED && !getOption<bool>(OPT_do_not_expose_globals))
+      THROW_ERROR("--memory-allocation-policy=INTERN_UNALIGNED implies --do-not-expose-globals");
    if(not getOption<bool>(OPT_gcc_include_sysdir))
    {
       if(not isOption(OPT_input_file))
@@ -3399,8 +3462,8 @@ void BambuParameter::SetDefaults()
 
    /// -- GCC options -- //
 
-#if HAVE_I386_CLANG6_COMPILER && defined(_WIN32)
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6));
+#if HAVE_I386_CLANG7_COMPILER && defined(_WIN32)
+   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG7));
 #elif HAVE_I386_GCC49_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC49));
 #elif HAVE_I386_GCC8_COMPILER
@@ -3425,6 +3488,8 @@ void BambuParameter::SetDefaults()
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5));
 #elif HAVE_I386_CLANG6_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6));
+#elif HAVE_I386_CLANG7_COMPILER
+   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG7));
 #else
    THROW_ERROR("No GCC compiler available");
 #endif
@@ -3464,6 +3529,9 @@ void BambuParameter::SetDefaults()
 #endif
 #if HAVE_I386_CLANG6_COMPILER
                                            | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6)
+#endif
+#if HAVE_I386_CLANG7_COMPILER
+                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG7)
 #endif
 #if HAVE_ARM_COMPILER
                                            | static_cast<int>(GccWrapper_CompilerTarget::CT_ARM_GCC)
@@ -3531,6 +3599,18 @@ void BambuParameter::SetDefaults()
    setOption(OPT_gcc_m32_mx32, "-mx32 ");
 #elif(HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64)
    setOption(OPT_gcc_m32_mx32, "-m64 ");
+#elif(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M32)
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#elif(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_MX32)
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+#elif(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M64)
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
+#elif(HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M32)
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+#elif(HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_MX32)
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+#elif(HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M64)
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
 #else
    THROW_ERROR("None of -m32, -mx32, -m64 GCC option is supported");
 #endif
@@ -3572,6 +3652,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_fsm_encoding, "auto");
    setOption(OPT_scheduling_mux_margins, 0.0);
    setOption(OPT_no_return_zero, false);
+   setOption(OPT_bitvalue_ipa, true);
 
 #if HAVE_HOST_PROFILING_BUILT
    setOption(OPT_exec_argv, STR_CST_string_separator);
@@ -3600,6 +3681,8 @@ void BambuParameter::SetDefaults()
    setOption(OPT_host_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5));
 #elif HAVE_I386_CLANG6_COMPILER
    setOption(OPT_host_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6));
+#elif HAVE_I386_CLANG7_COMPILER
+   setOption(OPT_host_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG7));
 #else
    THROW_ERROR("No GCC compiler available");
 #endif
@@ -3626,7 +3709,7 @@ void BambuParameter::SetDefaults()
 void BambuParameter::add_bambu_library(std::string lib)
 {
 #if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_GCC8_COMPILER || \
-    HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER
+    HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
    auto preferred_compiler = getOption<unsigned int>(OPT_default_compiler);
    std::string archive_files;
    bool is_subnormals = isOption(OPT_softfloat_subnormal) && getOption<bool>(OPT_softfloat_subnormal);
@@ -3724,6 +3807,12 @@ void BambuParameter::add_bambu_library(std::string lib)
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6))
    {
       setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang6" + VSuffix + ".a");
+   }
+#endif
+#if HAVE_I386_CLANG7_COMPILER
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG7))
+   {
+      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang7" + VSuffix + ".a");
    }
 #endif
 }

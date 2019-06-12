@@ -632,9 +632,17 @@ namespace llvm
             llvm::ModuleSlotTracker MST(currentFunction->getParent());
             MST.incorporateFunction(*currentFunction);
             auto id = MST.getLocalSlot(arg);
-            assert(id >= 0);
-            snprintf(buffer, LOCAL_BUFFER_LEN, "P%d", id);
-            declname = buffer;
+            if(id >= 0)
+            {
+               snprintf(buffer, LOCAL_BUFFER_LEN, "P%d", id);
+               declname = buffer;
+            }
+            else
+            {
+               assert(llvm2index.find(t) != llvm2index.end());
+               snprintf(buffer, LOCAL_BUFFER_LEN, "Pd%d", llvm2index.find(t)->second);
+               declname = buffer;
+            }
          }
          if(identifierTable.find(declname) == identifierTable.end())
             identifierTable.insert(declname);
@@ -1225,7 +1233,7 @@ namespace llvm
             else if(dyn_cast<llvm::ConstantInt>(op1) && dyn_cast<InstructionOrConstantExpr>(op0))
                return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0));
             else if(dyn_cast<InstructionOrConstantExpr>(op0) && dyn_cast<InstructionOrConstantExpr>(op1))
-               return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0)) && isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0));
+               return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0)) && isSignedResult(dyn_cast<InstructionOrConstantExpr>(op1));
             else
                return false;
          }
@@ -1240,7 +1248,7 @@ namespace llvm
             else if(dyn_cast<llvm::ConstantInt>(op1) && dyn_cast<InstructionOrConstantExpr>(op0))
                return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0));
             else if(dyn_cast<InstructionOrConstantExpr>(op0) && dyn_cast<InstructionOrConstantExpr>(op1))
-               return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0)) && isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0));
+               return isSignedResult(dyn_cast<InstructionOrConstantExpr>(op0)) && isSignedResult(dyn_cast<InstructionOrConstantExpr>(op1));
             else
                return false;
          }
@@ -1283,6 +1291,8 @@ namespace llvm
    template <class InstructionOrConstantExpr>
    bool DumpGimpleRaw::isSignedOperand(const InstructionOrConstantExpr* inst, unsigned index) const
    {
+      if(!inst->getOperand(index)->getType()->isIntegerTy())
+         return false;
       auto opcode = inst->getOpcode();
       switch(opcode)
       {
@@ -1318,14 +1328,22 @@ namespace llvm
                return isSignedInstruction(inst);
             }
          }
-         default:
+         case llvm::Instruction::Add:
+         case llvm::Instruction::Sub:
+         case llvm::Instruction::Mul:
+         {
             return isSignedInstruction(inst);
+         }
+         default:
+            return false;
       }
    }
 
    template <class InstructionOrConstantExpr>
    bool DumpGimpleRaw::isUnsignedOperand(const InstructionOrConstantExpr* inst, unsigned index) const
    {
+      if(!inst->getOperand(index)->getType()->isIntegerTy())
+         return false;
       auto opcode = inst->getOpcode();
       switch(opcode)
       {
@@ -1547,10 +1565,28 @@ namespace llvm
                }
                // For array or vector indices, scale the index by the size of the type.
                auto index = getOperand(GTI.getOperand(), currentFunction);
+               auto index_type = TREE_TYPE(index);
+               bool isSignedIndexType = CheckSignedTag(index_type);
                auto array_elmt_size = llvm::APInt(ConstantIndexOffset.getBitWidth(), DL->getTypeAllocSize(GTI.getIndexedType()));
                auto array_elmt_sizeCI = llvm::ConstantInt::get(gep_op->getContext(), array_elmt_size);
+               auto array_elmt_sizeCI_type = array_elmt_sizeCI->getType();
                auto array_elmt_size_node = assignCodeAuto(array_elmt_sizeCI);
-               auto index_times_size = build2(GT(MULT_EXPR), array_elmt_sizeCI->getType(), index, array_elmt_size_node);
+               if(isSignedIndexType)
+               {
+                  if(index2integer_cst_signed.find(array_elmt_size_node) == index2integer_cst_signed.end())
+                  {
+                     auto& ics_obj = index2integer_cst_signed[array_elmt_size_node];
+                     auto type_operand = TREE_TYPE(array_elmt_size_node);
+                     ics_obj.ic = array_elmt_size_node;
+                     ics_obj.type = AddSignedTag(type_operand);
+                     array_elmt_size_node = assignCode(&ics_obj, GT(INTEGER_CST_SIGNED));
+                  }
+                  else
+                     array_elmt_size_node = &index2integer_cst_signed.find(array_elmt_size_node)->second;
+               }
+               auto index_times_size = build2(GT(MULT_EXPR), isSignedIndexType ? AddSignedTag(array_elmt_sizeCI_type) : array_elmt_sizeCI_type, index, array_elmt_size_node);
+               if(isSignedIndexType)
+                  index_times_size = build1(GT(NOP_EXPR), array_elmt_sizeCI_type, index_times_size);
                auto accu = build2(GT(POINTER_PLUS_EXPR), TREE_TYPE(base_node), base_node, index_times_size);
                base_node = accu;
                continue;
@@ -1708,7 +1744,6 @@ namespace llvm
             if(index2integer_cst_signed.find(op) == index2integer_cst_signed.end())
             {
                auto& ics_obj = index2integer_cst_signed[op];
-               AddSignedTag(type_operand);
                ics_obj.ic = op;
                ics_obj.type = AddSignedTag(type_operand);
                ics = assignCode(&ics_obj, GT(INTEGER_CST_SIGNED));
@@ -2702,9 +2737,8 @@ namespace llvm
          if(identifierTable.find(fdName) == identifierTable.end())
             identifierTable.insert(fdName);
          index2field_decl[std::make_pair(scpe, pos)].name = assignCode(identifierTable.find(fdName)->c_str(), GT(IDENTIFIER_NODE));
-         auto fty = reinterpret_cast<const llvm::Type*>(t);
-         assert(CheckSignedTag(fty) == 0);
-         index2field_decl[std::make_pair(scpe, pos)].type = assignCodeType(fty);
+         assert(CheckSignedTag(reinterpret_cast<const llvm::Type*>(t)) == 0);
+         index2field_decl[std::make_pair(scpe, pos)].type = assignCodeType(scty->getElementType(pos));
          index2field_decl[std::make_pair(scpe, pos)].scpe = assignCodeAuto(scpe);
          index2field_decl[std::make_pair(scpe, pos)].size = TYPE_SIZE(t);
          index2field_decl[std::make_pair(scpe, pos)].algn = TYPE_ALIGN(t);
@@ -4546,7 +4580,7 @@ namespace llvm
             serialize_child("retn", TREE_TYPE(t));
             auto args = TYPE_ARG_TYPES(t);
             serialize_child("prms", args);
-            if(args && stdarg_p(t)) //ISO C requires a named parameter before '...'
+            if(args && stdarg_p(t)) // ISO C requires a named parameter before '...'
                serialize_string("varargs");
             break;
          }
@@ -4925,8 +4959,14 @@ namespace llvm
       uint64_t BytesCopied = LoopEndCount * LoopOpSize;
       uint64_t RemainingBytes = CopyLen->getZExtValue() - BytesCopied;
 
-      if(!SrcIsVolatile && !DstIsVolatile && llvm::dyn_cast<llvm::ConstantExpr>(SrcAddr) && cast<llvm::ConstantExpr>(SrcAddr)->getOpcode() == llvm::Instruction::BitCast && dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0)) &&
-         dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0))->isConstant() && llvm::dyn_cast<llvm::BitCastInst>(DstAddr) && PeelCandidate)
+      bool do_unrolling;
+#if __clang_major__ == 7
+      do_unrolling = false;
+#else
+      do_unrolling = true;
+#endif
+      if(do_unrolling && !SrcIsVolatile && !DstIsVolatile && llvm::dyn_cast<llvm::ConstantExpr>(SrcAddr) && cast<llvm::ConstantExpr>(SrcAddr)->getOpcode() == llvm::Instruction::BitCast &&
+         dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0)) && dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0))->isConstant() && llvm::dyn_cast<llvm::BitCastInst>(DstAddr) && PeelCandidate)
       {
          llvm::PointerType* SrcOpType = llvm::PointerType::get(LoopOpType, SrcAS);
          llvm::PointerType* DstOpType = llvm::PointerType::get(LoopOpType, DstAS);
@@ -4995,7 +5035,7 @@ namespace llvm
 
          for(auto OpTy : RemainingOps)
          {
-            // Calaculate the new index
+            // Calculate the new index
             unsigned OperandSize = getLoopOperandSizeInBytesLocal(OpTy);
             uint64_t GepIndex = BytesCopied / OperandSize;
             assert(GepIndex * OperandSize == BytesCopied && "Division should have no Remainder!");

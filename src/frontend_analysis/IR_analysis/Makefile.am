@@ -35,6 +35,7 @@ noinst_HEADERS = \
    call_graph_computation.hpp \
    check_system_type.hpp \
    operations_cfg_computation.hpp \
+   parm2ssa.hpp \
    string_cst_fix.hpp \
    switch_fix.hpp \
    use_counting.hpp \
@@ -48,6 +49,7 @@ lib_IR_analysis_la_SOURCES = \
    call_graph_computation.cpp \
    check_system_type.cpp \
    operations_cfg_computation.cpp \
+   parm2ssa.cpp \
    switch_fix.cpp \
    string_cst_fix.cpp \
    use_counting.cpp \

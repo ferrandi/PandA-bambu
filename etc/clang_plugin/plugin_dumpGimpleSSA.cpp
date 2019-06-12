@@ -74,6 +74,8 @@
 #endif
 #include <sstream>
 
+#include <boost/tokenizer.hpp>
+
 #define PRINT_DBG_MSG 0
 //#define UNIFYFUNCTIONEXITNODES
 
@@ -125,36 +127,41 @@ namespace llvm
          if(InFile.empty())
             llvm::report_fatal_error("-panda-infile parameter not specified");
          /// load parameter names
+         boost::char_separator<char> sep(",");
+         boost::tokenizer<boost::char_separator<char>> FileTokenizer(InFile, sep);
          std::map<std::string, std::vector<std::string>> Fun2Params;
-         auto parms_file_name = create_file_basename_string(outdir_name, InFile) + ".params.txt";
-         ErrorOr<std::unique_ptr<MemoryBuffer>> BufOrErr = MemoryBuffer::getFile(parms_file_name);
-         if(BufOrErr)
+         for(auto file_string : FileTokenizer)
          {
-            std::unique_ptr<MemoryBuffer> Buffer = std::move(BufOrErr.get());
-            std::string buf = Buffer->getBuffer();
-            std::stringstream ss(buf);
-            std::string item;
-            while(std::getline(ss, item, '\n'))
+            auto parms_file_name = create_file_basename_string(outdir_name, file_string) + ".params.txt";
+            ErrorOr<std::unique_ptr<MemoryBuffer>> BufOrErr = MemoryBuffer::getFile(parms_file_name);
+            if(BufOrErr)
             {
-               bool is_first = true;
-               std::stringstream ss_inner(item);
-               std::string item_inner;
-               std::string funName;
-               while(std::getline(ss_inner, item_inner, ' '))
+               std::unique_ptr<MemoryBuffer> Buffer = std::move(BufOrErr.get());
+               std::string buf = Buffer->getBuffer();
+               std::stringstream ss(buf);
+               std::string item;
+               while(std::getline(ss, item, '\n'))
                {
-                  if(is_first)
+                  bool is_first = true;
+                  std::stringstream ss_inner(item);
+                  std::string item_inner;
+                  std::string funName;
+                  while(std::getline(ss_inner, item_inner, ' '))
                   {
-                     funName = item_inner;
-                     is_first = false;
-                  }
-                  else
-                  {
-                     Fun2Params[funName].push_back(item_inner);
+                     if(is_first)
+                     {
+                        funName = item_inner;
+                        is_first = false;
+                     }
+                     else
+                     {
+                        Fun2Params[funName].push_back(item_inner);
+                     }
                   }
                }
             }
          }
-         DumpGimpleRaw gimpleRawWriter(outdir_name, InFile, false, &Fun2Params);
+         DumpGimpleRaw gimpleRawWriter(outdir_name, *(FileTokenizer.begin()), false, &Fun2Params);
 
 #if PRINT_DBG_MSG
          if(!TopFunctionName.empty())
@@ -219,12 +226,14 @@ static void loadPass(const llvm::PassManagerBuilder& PMB, llvm::legacy::PassMana
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)());
 }
 // These constructors add our pass to a list of global extensions.
+#if ADD_RSP
 static llvm::RegisterStandardPasses llvmtoolLoader_Ox(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);
+#endif
 
 #ifdef _WIN32
 using namespace llvm;
 
-INITIALIZE_PASS_BEGIN(clang6_plugin_dumpGimpleSSA, "clang6_plugin_dumpGimpleSSA", "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
+INITIALIZE_PASS_BEGIN(clang7_plugin_dumpGimpleSSA, "clang7_plugin_dumpGimpleSSA", "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
 INITIALIZE_PASS_DEPENDENCY(MemoryDependenceWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(MemorySSAWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(LazyValueInfoWrapperPass)
@@ -234,11 +243,11 @@ INITIALIZE_PASS_DEPENDENCY(TargetLibraryInfoWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(AssumptionCacheTracker)
 INITIALIZE_PASS_DEPENDENCY(DominatorTreeWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(DominanceFrontierWrapperPass)
-INITIALIZE_PASS_END(clang6_plugin_dumpGimpleSSA, "clang6_plugin_dumpGimpleSSA", "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
+INITIALIZE_PASS_END(clang7_plugin_dumpGimpleSSA, "clang7_plugin_dumpGimpleSSA", "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
 
 namespace llvm
 {
-   void clang6_plugin_dumpGimpleSSA_init()
+   void clang7_plugin_dumpGimpleSSA_init()
    {
    }
 } // namespace llvm

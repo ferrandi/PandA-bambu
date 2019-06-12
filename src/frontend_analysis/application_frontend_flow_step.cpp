@@ -325,6 +325,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case(IPA_POINT_TO_ANALYSIS):
 #endif
       case MEM_CG_EXT:
+      case PARM2SSA:
 #if HAVE_ZEBU_BUILT
       case POINTED_DATA_EVALUATION:
 #endif

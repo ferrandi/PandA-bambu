@@ -177,14 +177,6 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
          root_functions.insert(top_rtldesign_function_id);
       }
    }
-   for(const auto root_f_id : root_functions)
-   {
-      const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(root_f_id);
-      const BehavioralHelperConstRef BH = function_behavior->CGetBehavioralHelper();
-      std::string fname = BH->get_function_name();
-      if(tree_helper::is_a_nop_function_decl(GetPointer<function_decl>(HLSMgr->get_tree_manager()->get_tree_node_const(root_f_id))))
-         THROW_ERROR(fname + " function is empty or the compiler killed all the statements");
-   }
    if(parameters->isOption(OPT_disable_function_proxy) and parameters->getOption<bool>(OPT_disable_function_proxy))
       return DesignFlowStep_Status::UNCHANGED;
 
@@ -192,6 +184,19 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
    for(const auto f_id : root_functions)
       for(const auto reached_f_id : CG->GetReachedBodyFunctionsFrom(f_id))
          reached_fu_ids.insert(reached_f_id);
+
+   if(!parameters->isOption(OPT_top_functions_names))
+   {
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+      for(const auto f_id : root_functions)
+      {
+         const auto function_behavior = HLSMgr->CGetFunctionBehavior(f_id);
+         const auto BH = function_behavior->CGetBehavioralHelper();
+         auto fname = BH->get_function_name();
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---The top function inferred from the specification is: " + fname);
+      }
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+   }
 
    /// the analysis has to be performed only on the reachable functions
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
@@ -203,7 +208,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
       const BehavioralHelperConstRef BH = function_behavior->CGetBehavioralHelper();
       std::string fname = BH->get_function_name();
       if(tree_helper::is_a_nop_function_decl(GetPointer<function_decl>(HLSMgr->get_tree_manager()->get_tree_node_const(funID))))
-         THROW_WARNING(fname + " function is empty or the compiler killed all the statements");
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Warning: " + fname + " is empty or the compiler killed all the statements");
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---" + fname);
    }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");

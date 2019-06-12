@@ -129,7 +129,7 @@ static vertex get_remapped_vertex(vertex current_vertex, const CallGraphManagerC
    return current_vertex;
 }
 
-DesignFlowStep_Status mem_dominator_allocation::Exec()
+DesignFlowStep_Status mem_dominator_allocation::InternalExec()
 {
    long int step_time;
    START_TIME(step_time);
@@ -152,6 +152,7 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
          null_pointer_check = false;
    }
    /// information about memory allocation to be shared across the functions
+   memoryRef prevRmem = HLSMgr->Rmem;
    HLSMgr->Rmem = memoryRef(new memory(TreeM, base_address, max_bram, null_pointer_check, initial_internal_address_p, initial_internal_address, HLSMgr->Rget_address_bitsize()));
    setup_memory_allocation();
 
@@ -193,11 +194,11 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
       const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(fun_id);
       const BehavioralHelperConstRef BH = function_behavior->CGetBehavioralHelper();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Analyzing function: " + BH->get_function_name());
-      if(function_behavior->get_has_globals())
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Pointers not resolved: it has global variables");
-         all_pointers_resolved = false;
-      }
+      //      if(function_behavior->get_has_globals())
+      //      {
+      //         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Pointers not resolved: it has global variables");
+      //         all_pointers_resolved = false;
+      //      }
       if(function_behavior->get_has_undefined_function_receiving_pointers())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Pointers not resolved: it has undefined function receiving pointers");
@@ -287,10 +288,9 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
             else
             {
                expr_index = GET_INDEX_NODE(me->op1);
-               unsigned int var = 0;
                if(!tree_helper::is_fully_resolved(TreeM, expr_index, res_set))
                {
-                  var = tree_helper::get_base_index(TreeM, expr_index);
+                  auto var = tree_helper::get_base_index(TreeM, expr_index);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---var:" + STR(var));
                   if(var != 0 && function_behavior->is_variable_mem(var))
                   {
@@ -306,10 +306,42 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
             for(auto var : res_set)
             {
                assert(var);
+               THROW_ASSERT(function_behavior->is_variable_mem(var), "unexpected condition");
+               if(HLSMgr->Rmem->has_sds_var(var) && !HLSMgr->Rmem->is_sds_var(var))
+                  continue;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable is " + STR(var));
                unsigned int value_bitsize;
+               THROW_ASSERT(g->CGetOpNodeInfo(*v), "unexpected condition");
+               unsigned int node_id = g->CGetOpNodeInfo(*v)->GetNodeId();
+               const tree_nodeRef node = TreeM->get_tree_node_const(node_id);
+               auto* gm = GetPointer<gimple_assign>(node);
+               THROW_ASSERT(gm, "only gimple_assign's are allowed as memory operations");
+               auto alignment = 8ull;
                if(GET_TYPE(g, *v) & TYPE_STORE)
                {
+                  auto n_last_zerobits = 0u;
+                  if(GET_NODE(gm->op0)->get_kind() == mem_ref_K)
+                  {
+                     auto* mr = GetPointer<mem_ref>(GET_NODE(gm->op0));
+                     THROW_ASSERT(GetPointer<integer_cst>(GET_NODE(mr->op1)), "unexpected condition");
+                     THROW_ASSERT(tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(mr->op1))) == 0, "unexpected condition");
+                     if(GET_NODE(mr->op0)->get_kind() == ssa_name_K)
+                     {
+                        auto ssa_addr = GetPointer<ssa_name>(GET_NODE(mr->op0));
+                        for(auto it = ssa_addr->bit_values.rbegin(); it != ssa_addr->bit_values.rend(); ++it)
+                        {
+                           if(*it == '0')
+                              ++n_last_zerobits;
+                           else
+                              break;
+                        }
+                     }
+                     else
+                        THROW_ERROR("unexpected condition");
+                  }
+                  else
+                     THROW_ERROR("unexpected condition" + GET_NODE(gm->op0)->get_kind_text() + " " + gm->ToString());
+                  alignment = (1ull << n_last_zerobits) * 8;
                   std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(fun_id, *v);
                   unsigned int size_var = std::get<0>(var_read[0]);
                   unsigned int size_type_index = tree_helper::get_type_index(TreeM, size_var);
@@ -321,6 +353,29 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
                }
                else
                {
+                  auto n_last_zerobits = 0u;
+                  if(GET_NODE(gm->op1)->get_kind() == mem_ref_K)
+                  {
+                     auto* mr = GetPointer<mem_ref>(GET_NODE(gm->op1));
+                     THROW_ASSERT(GetPointer<integer_cst>(GET_NODE(mr->op1)), "unexpected condition");
+                     THROW_ASSERT(tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(mr->op1))) == 0, "unexpected condition");
+                     if(GET_NODE(mr->op0)->get_kind() == ssa_name_K)
+                     {
+                        auto ssa_addr = GetPointer<ssa_name>(GET_NODE(mr->op0));
+                        for(auto it = ssa_addr->bit_values.rbegin(); it != ssa_addr->bit_values.rend(); ++it)
+                        {
+                           if(*it == '0')
+                              ++n_last_zerobits;
+                           else
+                              break;
+                        }
+                     }
+                     else
+                        THROW_ERROR("unexpected condition");
+                  }
+                  else
+                     THROW_ERROR("unexpected condition " + GET_NODE(gm->op1)->get_kind_text() + " " + gm->ToString());
+                  alignment = (1ull << n_last_zerobits) * 8;
                   unsigned int size_var = HLSMgr->get_produced_value(fun_id, *v);
                   unsigned int size_type_index = tree_helper::get_type_index(TreeM, size_var);
                   value_bitsize = tree_helper::size(TreeM, size_type_index);
@@ -328,61 +383,90 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
                   if(!fd or !fd->is_bitfield())
                      value_bitsize = std::max(8u, value_bitsize);
                }
-               if(function_behavior->is_variable_mem(var))
+
+               if(var_size.find(var) == var_size.end())
                {
-                  if(var_size.find(var) == var_size.end())
+                  unsigned int elmt_bitsize = 1;
+                  unsigned int type_index = tree_helper::get_type_index(TreeM, var);
+                  bool is_a_struct_union = ((tree_helper::is_a_struct(TreeM, type_index)) && !tree_helper::is_an_array(TreeM, type_index)) || tree_helper::is_an_union(TreeM, type_index) || tree_helper::is_a_complex(TreeM, type_index);
+                  tree_nodeRef type_node = TreeM->get_tree_node_const(type_index);
+                  tree_helper::accessed_greatest_bitsize(TreeM, type_node, type_index, elmt_bitsize);
+                  unsigned int mim_elmt_bitsize = elmt_bitsize;
+                  tree_helper::accessed_minimum_bitsize(TreeM, type_node, type_index, mim_elmt_bitsize);
+                  unsigned int elts_size = elmt_bitsize;
+                  if(tree_helper::is_an_array(TreeM, type_index))
+                     elts_size = tree_helper::get_array_data_bitsize(TreeM, type_index);
+                  if(unaligned_access_p)
                   {
-                     unsigned int elmt_bitsize = 1;
-                     unsigned int type_index = tree_helper::get_type_index(TreeM, var);
-                     bool is_a_struct_union = ((tree_helper::is_a_struct(TreeM, type_index)) && !tree_helper::is_an_array(TreeM, type_index)) || tree_helper::is_an_union(TreeM, type_index) || tree_helper::is_a_complex(TreeM, type_index);
-                     tree_nodeRef type_node = TreeM->get_tree_node_const(type_index);
-                     tree_helper::accessed_greatest_bitsize(TreeM, type_node, type_index, elmt_bitsize);
-                     unsigned int mim_elmt_bitsize = elmt_bitsize;
-                     tree_helper::accessed_minimum_bitsize(TreeM, type_node, type_index, mim_elmt_bitsize);
-                     unsigned int elts_size = elmt_bitsize;
-                     if(tree_helper::is_an_array(TreeM, type_index))
-                        elts_size = tree_helper::get_array_data_bitsize(TreeM, type_index);
-                     if(unaligned_access_p || mim_elmt_bitsize != elmt_bitsize || is_a_struct_union || elts_size != elmt_bitsize)
+                     if(assume_aligned_access_p)
+                        THROW_ERROR("Option --aligned-access have been specified on a function with unaligned accesses:\n\tVariable " + BH->PrintVariable(var) + " could be accessed in unaligned way");
+                     HLSMgr->Rmem->set_sds_var(var, false);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds because unaligned_access option specified");
+                  }
+                  else if(mim_elmt_bitsize != elmt_bitsize || is_a_struct_union || elts_size != elmt_bitsize)
+                  {
+                     if(assume_aligned_access_p)
+                        THROW_ERROR("Option --aligned-access have been specified on a function with unaligned accesses:\n\tVariable " + BH->PrintVariable(var) + " could be accessed in unaligned way");
+                     HLSMgr->Rmem->set_sds_var(var, false);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(elmt_bitsize) + " vs " + STR(mim_elmt_bitsize) + " vs " + STR(elts_size));
+                  }
+                  else if(value_bitsize != elmt_bitsize)
+                  {
+                     if(assume_aligned_access_p)
+                        THROW_ERROR("Option --aligned-access have been specified on a function with unaligned accesses:\n\tVariable " + BH->PrintVariable(var) + " could be accessed in unaligned way: " + curr_tn->ToString());
+                     HLSMgr->Rmem->set_sds_var(var, false);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(elmt_bitsize));
+                  }
+                  else if(alignment < value_bitsize)
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Variable " + STR(var) + " not sds because alignment " + STR(alignment) + " is less than the value loaded or written or than the size of the array elements " + STR(value_bitsize));
+                     if(assume_aligned_access_p)
                      {
-                        if(assume_aligned_access_p)
-                           THROW_ERROR("Option --aligned-access have been specified on a function with unaligned accesses:\n\tVariable " + BH->PrintVariable(var) + " could be accessed in unaligned way");
-                        HLSMgr->Rmem->set_sds_var(var, false);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(elmt_bitsize) + " vs " + STR(mim_elmt_bitsize) + " vs " + STR(elts_size));
-                     }
-                     else if(value_bitsize != elmt_bitsize)
-                     {
-                        if(assume_aligned_access_p)
-                           THROW_ERROR("Option --aligned-access have been specified on a function with unaligned accesses:\n\tVariable " + BH->PrintVariable(var) + " could be accessed in unaligned way: " + curr_tn->ToString());
-                        HLSMgr->Rmem->set_sds_var(var, false);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(elmt_bitsize));
+                        THROW_WARNING("Option --aligned-access have been specified on a function with not compiler-proved unaligned accesses:\n\tVariable " + BH->PrintVariable(var) + " could be accessed in unaligned way");
+                        THROW_WARNING("\tStatement is " + gm->ToString());
                      }
                      else
                      {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " sds " + STR(value_bitsize) + " vs " + STR(elmt_bitsize));
-                        HLSMgr->Rmem->set_sds_var(var, true);
+                        HLSMgr->Rmem->set_sds_var(var, false);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(var_size.find(var)->second) + " alignment=" + STR(alignment) +  " value_bitsize1=" + STR(value_bitsize));
                      }
-                     var_size[var] = value_bitsize;
                   }
                   else
                   {
-                     if(var_size.find(var)->second != value_bitsize)
-                     {
-                        if(assume_aligned_access_p)
-                           THROW_ERROR("Option --aligned-access have been specified on a function with unaligned accesses:\n\tVariable " + BH->PrintVariable(var) + " could be accessed in unaligned way");
-                        HLSMgr->Rmem->set_sds_var(var, false);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(var_size.find(var)->second));
-                     }
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " sds " + STR(value_bitsize) + " vs " + STR(elmt_bitsize));
+                     HLSMgr->Rmem->set_sds_var(var, true);
                   }
-                  /// var referring vertex map
-                  var_referring_vertex_map[var][fun_id].insert(*v);
-                  if(GET_TYPE(g, *v) & TYPE_LOAD)
-                     var_load_vertex_map[var][fun_id].insert(*v);
-                  ;
+                  var_size[var] = value_bitsize;
                }
                else
                {
-                  THROW_ERROR("unexpected condition");
+                  if(var_size.find(var)->second != value_bitsize)
+                  {
+                     if(assume_aligned_access_p)
+                        THROW_ERROR("Option --aligned-access have been specified on a function with unaligned accesses:\n\tVariable " + BH->PrintVariable(var) + " could be accessed in unaligned way");
+                     HLSMgr->Rmem->set_sds_var(var, false);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(var_size.find(var)->second));
+                  }
+                  else if(alignment < var_size.find(var)->second)
+                  {
+                     if(assume_aligned_access_p)
+                     {
+                        THROW_WARNING("Option --aligned-access have been specified on a function with not compiler-proved unaligned accesses:\n\tVariable " + BH->PrintVariable(var) + " could be accessed in unaligned way");
+                        THROW_WARNING("\tStatement is " + gm->ToString());
+                     }
+                     else
+                     {
+                        HLSMgr->Rmem->set_sds_var(var, false);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(var_size.find(var)->second) + " alignment=" + STR(alignment) +  " value_bitsize2=" + STR(var_size.find(var)->second));
+                     }
+                  }
                }
+               /// var referring vertex map
+               var_referring_vertex_map[var][fun_id].insert(*v);
+               if(GET_TYPE(g, *v) & TYPE_LOAD)
+                  var_load_vertex_map[var][fun_id].insert(*v);
+               ;
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement " + GET_NAME(g, *v));
          }
@@ -635,6 +719,11 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
                is_internal = false;
                break;
             }
+            case MemoryAllocation_Policy::INTERN_UNALIGNED:
+            {
+               is_internal = HLSMgr->Rmem->has_sds_var(var_index) && HLSMgr->Rmem->is_sds_var(var_index);
+               break;
+            }
             case MemoryAllocation_Policy::NONE:
             default:
                THROW_UNREACHABLE("not supported memory allocation policy");
@@ -653,7 +742,7 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
    for(const auto& funID : getFunctionAllocationOrder(top_functions))
    {
       memory_allocation_map[funID];
-      for(const auto& mem_map : memory_allocation_map.at(funID))
+      for(auto& mem_map : memory_allocation_map.at(funID))
       {
          unsigned int var_index = mem_map.first;
          THROW_ASSERT(var_index, "null var index unexpected");
@@ -721,6 +810,8 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
                   }
                }
             }
+            if(memory_allocation_policy == MemoryAllocation_Policy::INTERN_UNALIGNED && (!HLSMgr->Rmem->has_sds_var(var_index) || !HLSMgr->Rmem->is_sds_var(var_index)))
+               mem_map.second = false;
          }
          else
          {
@@ -921,6 +1012,14 @@ DesignFlowStep_Status mem_dominator_allocation::Exec()
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Time to perform memory allocation: " + print_cpu_time(step_time) + " seconds");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
-   already_executed = true;
-   return DesignFlowStep_Status::SUCCESS;
+   bool changed = HLSMgr->Rmem->notEQ(prevRmem);
+   if(changed)
+   {
+      HLSMgr->UpdateMemVersion();
+      /// clean proxy library
+      auto TM = HLS_T->get_technology_manager();
+      TM->erase_library(PROXY_LIBRARY);
+      TM->erase_library(WORK_LIBRARY);
+   }
+   return changed ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }

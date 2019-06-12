@@ -40,6 +40,7 @@
 
 /// Header include
 #include "asn_parser_node.hpp"
+#include <ostream>
 
 std::ostream& operator<<(std::ostream& os, const AsnParserNode& asn_parser_node)
 {

@@ -36,6 +36,7 @@
  *
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
@@ -134,6 +135,12 @@ void FPGA_device::load_devices(const target_deviceRef device)
        ;
    default_device_data["LFE335EA8FN484C"] =
 #include "LFE335EA8FN484C.data"
+       ;
+   default_device_data["nx1h35S"] =
+#include "nx1h35S.data"
+       ;
+   default_device_data["nx1h140tsp"] =
+#include "nx1h140tsp.data"
        ;
 
    auto output_level = Param->getOption<unsigned int>(OPT_output_level);

@@ -3724,6 +3724,7 @@ struct gimple_phi : public gimple_node
  public:
    friend class tree_manager;
    friend class string_cst_fix;
+   friend class parm2ssa;
 
    /// The type of the def edge
    typedef std::pair<tree_nodeRef, unsigned int> DefEdge;

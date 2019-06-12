@@ -1077,6 +1077,7 @@ void HLSCWriter::WriteMainTestbench()
    const BehavioralHelperConstRef behavioral_helper = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
    const unsigned int return_type_index = behavioral_helper->GetFunctionReturnType(function_id);
 
+   indented_output_stream->Append("#undef main\n");
    indented_output_stream->Append("int main()\n{\n");
    indented_output_stream->Append("unsigned int __testbench_index, __testbench_index0, __testbench_index1, __testbench_index2;\n");
    indented_output_stream->Append("__standard_exit = 0;\n");

@@ -64,11 +64,11 @@
 #define LOCAL_BUFFER_LEN 512
 
 #if __clang_major__ == 8
-#define CLANG_VERSION_SYMBOL(SYMBOL) clang6##SYMBOL
-#define CLANG_VERSION_STRING(SYMBOL) "clang6" #SYMBOL
+#define CLANG_VERSION_SYMBOL(SYMBOL) clang7##SYMBOL
+#define CLANG_VERSION_STRING(SYMBOL) "clang7" #SYMBOL
 #elif __clang_major__ == 7
-#define CLANG_VERSION_SYMBOL(SYMBOL) clang6##SYMBOL
-#define CLANG_VERSION_STRING(SYMBOL) "clang6" #SYMBOL
+#define CLANG_VERSION_SYMBOL(SYMBOL) clang7##SYMBOL
+#define CLANG_VERSION_STRING(SYMBOL) "clang7" #SYMBOL
 #elif __clang_major__ == 6
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang6##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang6" #SYMBOL
@@ -336,6 +336,7 @@ namespace llvm
       };
       const pt_info* SSA_NAME_PTR_INFO(const void* t) const;
       Andersen_AA* PtoSets_AA;
+      /// integer type used to convert a pointer in a signed integer type
       unsigned int SignedPointerTypeReference;
 
       struct ssa_name

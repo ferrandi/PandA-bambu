@@ -231,7 +231,10 @@ void LatticeBackendFlow::create_sdc(const DesignParametersRef dp)
    std::string sdc_filename = out_dir + "/" + dp->component_name + ".ldc";
    std::ofstream sdc_file(sdc_filename.c_str());
    if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
+   {
       sdc_file << "create_clock -period " + dp->parameter_values[PARAM_clk_period] + " -name " + clock + " [get_ports " + clock + "]\n";
+      sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_outputs]\n";
+   }
    else
       sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_outputs]\n";
    if(Param->isOption(OPT_backend_sdc_extensions))
@@ -247,7 +250,10 @@ void LatticeBackendFlow::InitDesignParameters()
       actual_parameters->parameter_values[PARAM_top_id] = Param->getOption<std::string>(OPT_top_design_name);
    else
       actual_parameters->parameter_values[PARAM_top_id] = actual_parameters->component_name;
-   actual_parameters->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
+   if(Param->isOption(OPT_clock_name))
+      actual_parameters->parameter_values[PARAM_clk_name] = Param->getOption<std::string>(OPT_clock_name);
+   else
+      actual_parameters->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
 
    const target_deviceRef device = target->get_target_device();
    actual_parameters->parameter_values[PARAM_target_device] = device->get_parameter<std::string>("model");
@@ -259,12 +265,21 @@ void LatticeBackendFlow::InitDesignParameters()
    std::string HDL_files = actual_parameters->parameter_values[PARAM_HDL_files];
    std::vector<std::string> file_list = convert_string_to_vector<std::string>(HDL_files, ";");
    std::string sources_macro_list;
+   bool has_vhdl_library = Param->isOption(OPT_VHDL_library);
+   std::string vhdl_library;
+   if(has_vhdl_library)
+      vhdl_library = Param->getOption<std::string>(OPT_VHDL_library);
    for(auto& v : file_list)
    {
       boost::filesystem::path file_path(v);
       std::string extension = GetExtension(file_path);
       if(extension == "vhd" || extension == "vhdl" || extension == "VHD" || extension == "VHDL")
-         sources_macro_list += "prj_src add -format VHDL " + v + "\n";
+      {
+         if(has_vhdl_library)
+            sources_macro_list += "prj_src add -format VHDL -work " + vhdl_library + " " + v + "\n";
+         else
+            sources_macro_list += "prj_src add -format VHDL " + v + "\n";
+      }
       else if(extension == "v" || extension == "V" || extension == "sv" || extension == "SV")
          sources_macro_list += "prj_src add -format VERILOG " + v + "\n";
       else

@@ -138,9 +138,6 @@ class memory
    /// bus size bitsize
    unsigned int bus_size_bitsize;
 
-   /// maximum bitsize that can be accessed aligned
-   unsigned int aligned_bitsize;
-
    /// bram bitsize
    unsigned int bram_bitsize;
 
@@ -565,22 +562,6 @@ class memory
    }
 
    /**
-    * set the maximum the bitsize of the aligned accesses
-    */
-   void set_aligned_bitsize(unsigned int bitsize)
-   {
-      aligned_bitsize = bitsize;
-   }
-
-   /**
-    * return the maximum bitsize of the aligned accesses
-    */
-   unsigned int get_aligned_bitsize() const
-   {
-      return aligned_bitsize;
-   }
-
-   /**
     * set the BRAM bitsize
     */
    void set_bram_bitsize(unsigned int bitsize)
@@ -824,6 +805,9 @@ class memory
     * @return return the number of internal symbols non private
     */
    unsigned int count_non_private_internal_symbols() const;
+
+   /// return true in case the current memory object and the passed one are different
+   bool notEQ(refcount<memory> ref) const;
 };
 /// refcount definition of the class
 typedef refcount<memory> memoryRef;

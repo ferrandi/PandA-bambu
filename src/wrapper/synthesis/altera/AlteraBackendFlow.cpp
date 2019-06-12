@@ -285,13 +285,11 @@ void AlteraBackendFlow::create_sdc(const DesignParametersRef dp)
    if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
    {
       sdc_file << "create_clock -period " + dp->parameter_values[PARAM_clk_period] + " -name " + clock + " [get_ports " + clock + "]\n";
-      if(Param->getOption<std::string>(OPT_device_string) == "5CSEMA5F31C6")
-      {
-         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_registers]\n";
-         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_registers] -to [all_outputs]\n";
-         sdc_file << "set_min_delay 0 -from [all_inputs] -to [all_registers]\n";
-         sdc_file << "set_min_delay 0 -from [all_registers] -to [all_outputs]\n";
-      }
+      sdc_file << "set_min_delay 0 -from [all_inputs] -to [all_registers]\n";
+      sdc_file << "set_min_delay 0 -from [all_registers] -to [all_outputs]\n";
+      sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_registers]\n";
+      sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_registers] -to [all_outputs]\n";
+      sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_outputs]\n";
       sdc_file << "derive_pll_clocks\n";
       sdc_file << "derive_clock_uncertainty\n";
    }
@@ -310,7 +308,10 @@ void AlteraBackendFlow::InitDesignParameters()
       actual_parameters->parameter_values[PARAM_top_id] = Param->getOption<std::string>(OPT_top_design_name);
    else
       actual_parameters->parameter_values[PARAM_top_id] = actual_parameters->component_name;
-   actual_parameters->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
+   if(Param->isOption(OPT_clock_name))
+      actual_parameters->parameter_values[PARAM_clk_name] = Param->getOption<std::string>(OPT_clock_name);
+   else
+      actual_parameters->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
 
    bool connect_iob = false;
    if(Param->isOption(OPT_connect_iob) && Param->getOption<bool>(OPT_connect_iob))
@@ -327,9 +328,16 @@ void AlteraBackendFlow::InitDesignParameters()
    std::string HDL_files = actual_parameters->parameter_values[PARAM_HDL_files];
    std::vector<std::string> file_list = convert_string_to_vector<std::string>(HDL_files, ";");
    std::string sources_macro_list;
+   bool has_vhdl_library = Param->isOption(OPT_VHDL_library);
+   std::string vhdl_library;
+   if(has_vhdl_library)
+      vhdl_library = Param->getOption<std::string>(OPT_VHDL_library);
    for(const auto& v : file_list)
    {
-      sources_macro_list += "set_global_assignment -name SOURCE_FILE " + v + "\n";
+      if(has_vhdl_library)
+         sources_macro_list += "set_global_assignment -name SOURCE_FILE " + v + " -library " + vhdl_library + "\n";
+      else
+         sources_macro_list += "set_global_assignment -name SOURCE_FILE " + v + "\n";
    }
    actual_parameters->parameter_values[PARAM_sources_macro_list] = sources_macro_list;
    if(Param->isOption(OPT_backend_script_extensions))

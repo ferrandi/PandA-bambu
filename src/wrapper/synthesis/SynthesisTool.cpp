@@ -46,19 +46,18 @@
 /// Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
-/// wrapper/synthesis/altera includes
-#include "quartus_13_report_wrapper.hpp"
-#include "quartus_13_wrapper.hpp"
-#include "quartus_power_wrapper.hpp"
-#include "quartus_report_wrapper.hpp"
-#include "quartus_wrapper.hpp"
-
 /// supported synthesis tools
 #include "DesignCompilerWrapper.hpp"
 #include "lattice_flow_wrapper.hpp"
 #include "map_wrapper.hpp"
 #include "ngdbuild_wrapper.hpp"
+#include "nxpython_flow_wrapper.hpp"
 #include "par_wrapper.hpp"
+#include "quartus_13_report_wrapper.hpp"
+#include "quartus_13_wrapper.hpp"
+#include "quartus_power_wrapper.hpp"
+#include "quartus_report_wrapper.hpp"
+#include "quartus_wrapper.hpp"
 #include "trce_wrapper.hpp"
 #include "vivado_flow_wrapper.hpp"
 #include "xst_wrapper.hpp"
@@ -156,6 +155,9 @@ SynthesisToolRef SynthesisTool::create_synthesis_tool(type_t type, const Paramet
          break;
       case LATTICE_FLOW:
          return SynthesisToolRef(new lattice_flow_wrapper(_Param, _output_dir, _device));
+         break;
+      case NXPYTHON_FLOW:
+         return SynthesisToolRef(new nxpython_flow_wrapper(_Param, _output_dir, _device));
          break;
 #if(0 && HAVE_EXPERIMENTAL)
       case PRIME_TIME:

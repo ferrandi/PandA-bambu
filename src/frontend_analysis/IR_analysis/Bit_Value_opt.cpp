@@ -104,11 +104,12 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case DEPENDENCE_RELATIONSHIP:
       {
-         relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
          if(parameters->isOption(OPT_bitvalue_ipa) and parameters->getOption<bool>(OPT_bitvalue_ipa))
          {
             relationships.insert(std::make_pair(BIT_VALUE_IPA, WHOLE_APPLICATION));
          }
+         else
+            relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
          relationships.insert(std::make_pair(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
          break;
@@ -210,11 +211,17 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + GET_NODE(stmt)->ToString());
                   continue;
                }
+               if(GetPointer<addr_expr>(GET_NODE(ga->op1)))
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---addr_expr cannot be optimized" + STR(GET_INDEX_NODE(ga->op1)));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + GET_NODE(stmt)->ToString());
+                  continue;
+               }
                unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0));
                tree_nodeRef ga_op_type = TM->GetTreeReindex(type_index);
                tree_nodeRef Scpe = TM->GetTreeReindex(function_id);
                const std::string& bit_values = ssa->bit_values;
-               bool is_constant = bit_values.size() != 0;
+               bool is_constant = bit_values.size() != 0 && !tree_helper::is_a_pointer(TM, GET_INDEX_NODE(ga->op1));
                for(auto current_el : bit_values)
                {
                   if(current_el == 'U')
@@ -1170,11 +1177,19 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         else if(precision == 1 && s0 == "1" && s1 == "0")
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Cond expr with true and false");
+                           tree_nodeRef ga_nop = IRman->CreateNopExpr(me->op0, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type);
+                           B->PushBefore(ga_nop, stmt);
+                           modified = true;
+#ifndef NDEBUG
+                           AppM->RegisterTransformation(GetName(), ga_nop);
+#endif
+                           tree_nodeRef nop_ga_var = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
+
                            const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
                            for(const auto& use : StmtUses)
                            {
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage before: " + use.first->ToString());
-                              TM->ReplaceTreeNode(use.first, ga->op0, me->op0);
+                              TM->ReplaceTreeNode(use.first, ga->op0, nop_ga_var);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage after: " + use.first->ToString());
                               modified = true;
                            }
@@ -1194,11 +1209,14 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                            const auto new_ssa = IRman->CreateNotExpr(me->op0, blocRef());
                            const auto new_stmt = GetPointer<const ssa_name>(GET_CONST_NODE(new_ssa))->CGetDefStmt();
                            B->PushBefore(new_stmt, stmt);
+                           tree_nodeRef ga_nop = IRman->CreateNopExpr(new_ssa, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type);
+                           B->PushBefore(ga_nop, stmt);
+                           tree_nodeRef nop_ga_var = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
                            const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
                            for(const auto& use : StmtUses)
                            {
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage before: " + use.first->ToString());
-                              TM->ReplaceTreeNode(use.first, ga->op0, new_ssa);
+                              TM->ReplaceTreeNode(use.first, ga->op0, nop_ga_var);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage after: " + use.first->ToString());
                               modified = true;
                            }

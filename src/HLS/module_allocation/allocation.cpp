@@ -164,7 +164,7 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
       }
       case PRECEDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_BIT_VALUE, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_BIT_VALUE, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
          break;
       }
       default:
@@ -399,7 +399,7 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
    memory::propagate_memory_parameters(orig_top_obj, wrapper_SM);
 }
 
-void allocation::add_proxy_function_wrapper(technology_nodeRef wrapper_tn, const std::string& library_name, technology_nodeRef techNode_obj, const std::string& orig_fun_name)
+void allocation::add_proxy_function_wrapper(const std::string& library_name, technology_nodeRef techNode_obj, const std::string& orig_fun_name)
 {
    const std::string wrapped_fu_name = WRAPPED_PROXY_PREFIX + orig_fun_name;
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - adding proxy function wrapper " + wrapped_fu_name);
@@ -495,7 +495,7 @@ void allocation::add_proxy_function_wrapper(technology_nodeRef wrapper_tn, const
    GetPointer<module>(wrapper_top)->add_internal_object(fu_obj);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Created proxy wrapper " + wrapped_fu_name + " and added to library " + PROXY_LIBRARY);
 
-   wrapper_tn = TM->get_fu(wrapped_fu_name, PROXY_LIBRARY);
+   auto wrapper_tn = TM->get_fu(wrapped_fu_name, PROXY_LIBRARY);
    auto* wrapper_fu = GetPointer<functional_unit>(wrapper_tn);
    auto* orig_fu = GetPointer<functional_unit>(techNode_obj);
    wrapper_fu->ordered_attributes = orig_fu->ordered_attributes;
@@ -683,7 +683,7 @@ void allocation::BuildProxyFunction(functional_unit* current_fu)
    }
 }
 
-void allocation::add_proxy_function_module(technology_nodeRef proxy_tn, const HLS_constraintsRef HLS_C, technology_nodeRef techNode_obj, const std::string& orig_fun_name)
+void allocation::add_proxy_function_module(const HLS_constraintsRef HLS_C, technology_nodeRef techNode_obj, const std::string& orig_fun_name)
 {
    const std::string proxied_fu_name = PROXY_PREFIX + orig_fun_name;
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - adding proxied function " + proxied_fu_name);
@@ -831,7 +831,7 @@ void allocation::add_proxy_function_module(technology_nodeRef proxy_tn, const HL
    TM->add_resource(PROXY_LIBRARY, proxied_fu_name, CM);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Created proxy module " + proxied_fu_name + " and added to library " + PROXY_LIBRARY);
 
-   proxy_tn = TM->get_fu(proxied_fu_name, PROXY_LIBRARY);
+   auto proxy_tn = TM->get_fu(proxied_fu_name, PROXY_LIBRARY);
    auto* proxy_fu = GetPointer<functional_unit>(proxy_tn);
    auto* orig_fu = GetPointer<functional_unit>(techNode_obj);
    proxy_fu->ordered_attributes = orig_fu->ordered_attributes;
@@ -1127,7 +1127,8 @@ DesignFlowStep_Status allocation::InternalExec()
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Module allocation information for function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
    unsigned int base_address = HLSMgr->base_address;
-   bool Has_extern_allocated_data = ((HLSMgr->Rmem->get_memory_address() - base_address) > 0 && parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM) ||
+   bool Has_extern_allocated_data = ((HLSMgr->Rmem->get_memory_address() - base_address) > 0 && parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM &&
+                                     parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::INTERN_UNALIGNED) ||
                                     (HLSMgr->Rmem->has_unknown_addresses() && parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM &&
                                      parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
    IntegrateTechnologyLibraries();
@@ -2332,7 +2333,7 @@ void allocation::IntegrateTechnologyLibraries()
             technology_nodeRef wrapper_tn = TM->get_fu(wrapped_fu_name, PROXY_LIBRARY);
             if(!wrapper_tn)
             {
-               add_proxy_function_wrapper(wrapper_tn, library_name, techNode_obj, shared_fu_name);
+               add_proxy_function_wrapper(library_name, techNode_obj, shared_fu_name);
             }
             wrapper_tn = TM->get_fu(wrapped_fu_name, PROXY_LIBRARY);
             THROW_ASSERT(wrapper_tn, "Module not added");
@@ -2367,7 +2368,7 @@ void allocation::IntegrateTechnologyLibraries()
             technology_nodeRef proxy_tn = TM->get_fu(PROXY_PREFIX + original_proxied_fu_name, PROXY_LIBRARY);
             if(!proxy_tn)
             {
-               add_proxy_function_module(proxy_tn, HLS_C, techNode_obj, original_proxied_fu_name);
+               add_proxy_function_module(HLS_C, techNode_obj, original_proxied_fu_name);
             }
          }
       }

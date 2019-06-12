@@ -379,6 +379,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case(PARALLEL_REGIONS_GRAPH_COMPUTATION):
          return "ParallelRegionsGraphComputation";
 #endif
+      case PARM2SSA:
+         return "Parm2SSA";
 #if HAVE_BAMBU_BUILT
       case PARM_DECL_TAKEN_ADDRESS:
          return "ParmDeclTakenAddress";

@@ -31,7 +31,7 @@
  *
  */
 /**
- * @file var_decl_fix.cpp
+ * @file string_cst_fix.cpp
  * @brief Pre-analysis step fixing readonly initializations and string_cst references.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
@@ -122,7 +122,7 @@ DesignFlowStep_Status string_cst_fix::Exec()
       const std::string srcp_default = fd->include_name + ":" + STR(fd->line_number) + ":" + STR(fd->column_number);
 
       for(auto arg : fd->list_of_args)
-         recursive_examinate(arg, srcp_default);
+         recursive_analysis(arg, srcp_default);
 
       std::map<unsigned int, blocRef>& blocks = sl->list_of_bloc;
       std::map<unsigned int, blocRef>::iterator it, it_end;
@@ -132,18 +132,18 @@ DesignFlowStep_Status string_cst_fix::Exec()
       {
          for(auto stmt : it->second->CGetStmtList())
          {
-            recursive_examinate(stmt, srcp_default);
+            recursive_analysis(stmt, srcp_default);
          }
          for(auto phi : it->second->CGetPhiList())
          {
-            recursive_examinate(phi, srcp_default);
+            recursive_analysis(phi, srcp_default);
          }
       }
    }
    return DesignFlowStep_Status::SUCCESS;
 }
 
-void string_cst_fix::recursive_examinate(tree_nodeRef& tn, const std::string& srcp)
+void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& srcp)
 {
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    const tree_managerRef TM = AppM->get_tree_manager();
@@ -157,7 +157,7 @@ void string_cst_fix::recursive_examinate(tree_nodeRef& tn, const std::string& sr
          auto* ce = GetPointer<call_expr>(curr_tn);
          for(auto& arg : ce->args)
          {
-            recursive_examinate(arg, srcp);
+            recursive_analysis(arg, srcp);
          }
          break;
       }
@@ -166,7 +166,7 @@ void string_cst_fix::recursive_examinate(tree_nodeRef& tn, const std::string& sr
          auto* ce = GetPointer<gimple_call>(curr_tn);
          for(auto& arg : ce->args)
          {
-            recursive_examinate(arg, srcp);
+            recursive_analysis(arg, srcp);
          }
          break;
       }
@@ -208,10 +208,10 @@ void string_cst_fix::recursive_examinate(tree_nodeRef& tn, const std::string& sr
             {
                if(GET_NODE(gm->op0)->get_kind() == var_decl_K && GetPointer<var_decl>(GET_NODE(gm->op0))->readonly_flag && GET_NODE(gm->op1)->get_kind() == ssa_name_K)
                   GetPointer<var_decl>(GET_NODE(gm->op0))->readonly_flag = false;
-               recursive_examinate(gm->op0, srcp);
-               recursive_examinate(gm->op1, srcp);
+               recursive_analysis(gm->op0, srcp);
+               recursive_analysis(gm->op1, srcp);
                if(gm->predicate)
-                  recursive_examinate(gm->predicate, srcp);
+                  recursive_analysis(gm->predicate, srcp);
             }
          }
          break;
@@ -229,7 +229,7 @@ void string_cst_fix::recursive_examinate(tree_nodeRef& tn, const std::string& sr
       {
          auto* sn = GetPointer<ssa_name>(curr_tn);
          if(sn->var)
-            recursive_examinate(sn->var, srcp);
+            recursive_analysis(sn->var, srcp);
          break;
       }
       case tree_list_K:
@@ -237,7 +237,7 @@ void string_cst_fix::recursive_examinate(tree_nodeRef& tn, const std::string& sr
          tree_nodeRef current = tn;
          while(current)
          {
-            recursive_examinate(GetPointer<tree_list>(GET_NODE(current))->valu, srcp);
+            recursive_analysis(GetPointer<tree_list>(GET_NODE(current))->valu, srcp);
             current = GetPointer<tree_list>(GET_NODE(current))->chan;
          }
          break;
@@ -253,36 +253,36 @@ void string_cst_fix::recursive_examinate(tree_nodeRef& tn, const std::string& sr
             already_visited_ae.insert(GET_INDEX_NODE(tn));
          }
          auto* ue = GetPointer<unary_expr>(curr_tn);
-         recursive_examinate(ue->op, srcp);
+         recursive_analysis(ue->op, srcp);
          break;
       }
       case CASE_BINARY_EXPRESSION:
       {
          auto* be = GetPointer<binary_expr>(curr_tn);
-         recursive_examinate(be->op0, srcp);
-         recursive_examinate(be->op1, srcp);
+         recursive_analysis(be->op0, srcp);
+         recursive_analysis(be->op1, srcp);
          break;
       }
       case CASE_TERNARY_EXPRESSION:
       {
          auto* te = GetPointer<ternary_expr>(curr_tn);
-         recursive_examinate(te->op0, srcp);
+         recursive_analysis(te->op0, srcp);
          if(te->op1)
-            recursive_examinate(te->op1, srcp);
+            recursive_analysis(te->op1, srcp);
          if(te->op2)
-            recursive_examinate(te->op2, srcp);
+            recursive_analysis(te->op2, srcp);
          break;
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
          auto* qe = GetPointer<quaternary_expr>(curr_tn);
-         recursive_examinate(qe->op0, srcp);
+         recursive_analysis(qe->op0, srcp);
          if(qe->op1)
-            recursive_examinate(qe->op1, srcp);
+            recursive_analysis(qe->op1, srcp);
          if(qe->op2)
-            recursive_examinate(qe->op2, srcp);
+            recursive_analysis(qe->op2, srcp);
          if(qe->op3)
-            recursive_examinate(qe->op3, srcp);
+            recursive_analysis(qe->op3, srcp);
          break;
       }
       case constructor_K:
@@ -292,20 +292,20 @@ void string_cst_fix::recursive_examinate(tree_nodeRef& tn, const std::string& sr
          std::vector<std::pair<tree_nodeRef, tree_nodeRef>>::iterator it, it_end = list_of_idx_valu.end();
          for(it = list_of_idx_valu.begin(); it != it_end; ++it)
          {
-            recursive_examinate(it->second, srcp);
+            recursive_analysis(it->second, srcp);
          }
          break;
       }
       case gimple_cond_K:
       {
          auto* gc = GetPointer<gimple_cond>(curr_tn);
-         recursive_examinate(gc->op0, srcp);
+         recursive_analysis(gc->op0, srcp);
          break;
       }
       case gimple_switch_K:
       {
          auto* se = GetPointer<gimple_switch>(curr_tn);
-         recursive_examinate(se->op0, srcp);
+         recursive_analysis(se->op0, srcp);
          break;
       }
       case gimple_multi_way_if_K:
@@ -313,28 +313,28 @@ void string_cst_fix::recursive_examinate(tree_nodeRef& tn, const std::string& sr
          auto* gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
          for(auto cond : gmwi->list_of_cond)
             if(cond.first)
-               recursive_examinate(cond.first, srcp);
+               recursive_analysis(cond.first, srcp);
          break;
       }
       case gimple_return_K:
       {
          auto* re = GetPointer<gimple_return>(curr_tn);
          if(re->op)
-            recursive_examinate(re->op, srcp);
+            recursive_analysis(re->op, srcp);
          break;
       }
       case gimple_for_K:
       {
          auto* fe = GetPointer<gimple_for>(curr_tn);
-         recursive_examinate(fe->op0, srcp);
-         recursive_examinate(fe->op1, srcp);
-         recursive_examinate(fe->op2, srcp);
+         recursive_analysis(fe->op0, srcp);
+         recursive_analysis(fe->op1, srcp);
+         recursive_analysis(fe->op2, srcp);
          break;
       }
       case gimple_while_K:
       {
          auto* we = GetPointer<gimple_while>(curr_tn);
-         recursive_examinate(we->op0, srcp);
+         recursive_analysis(we->op0, srcp);
          break;
       }
       case gimple_phi_K:
@@ -342,7 +342,7 @@ void string_cst_fix::recursive_examinate(tree_nodeRef& tn, const std::string& sr
          auto* gp = GetPointer<gimple_phi>(curr_tn);
          for(auto def_edge_pair : gp->list_of_def_edge)
          {
-            recursive_examinate(def_edge_pair.first, srcp);
+            recursive_analysis(def_edge_pair.first, srcp);
          }
          break;
       }
@@ -355,22 +355,22 @@ void string_cst_fix::recursive_examinate(tree_nodeRef& tn, const std::string& sr
       {
          auto* tmr = GetPointer<target_mem_ref>(curr_tn);
          if(tmr->symbol)
-            recursive_examinate(tmr->symbol, srcp);
+            recursive_analysis(tmr->symbol, srcp);
          if(tmr->base)
-            recursive_examinate(tmr->base, srcp);
+            recursive_analysis(tmr->base, srcp);
          if(tmr->idx)
-            recursive_examinate(tmr->idx, srcp);
+            recursive_analysis(tmr->idx, srcp);
          break;
       }
       case target_mem_ref461_K:
       {
          auto* tmr = GetPointer<target_mem_ref461>(curr_tn);
          if(tmr->base)
-            recursive_examinate(tmr->base, srcp);
+            recursive_analysis(tmr->base, srcp);
          if(tmr->idx)
-            recursive_examinate(tmr->idx, srcp);
+            recursive_analysis(tmr->idx, srcp);
          if(tmr->idx2)
-            recursive_examinate(tmr->idx2, srcp);
+            recursive_analysis(tmr->idx2, srcp);
          break;
       }
       case string_cst_K:
@@ -439,7 +439,3 @@ void string_cst_fix::recursive_examinate(tree_nodeRef& tn, const std::string& sr
    return;
 }
 
-const std::string string_cst_fix::Normalize(const std::string& identifier) const
-{
-   return identifier;
-}

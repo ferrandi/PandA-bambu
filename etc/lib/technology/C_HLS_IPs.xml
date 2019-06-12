@@ -914,11 +914,7 @@ VHDL_PROVIDED=
 "begin
   process(in1, in2)
   begin
-    if(BITSIZE_in2 &gt; integer(ceil(log2(real(PRECISION))))) then
-      out1 &lt;= shift_left(resize_signed(in1, BITSIZE_out1), to_integer(unsigned(in2(integer(ceil(log2(real(PRECISION))))-1 downto 0))));
-    else
-      out1 &lt;= shift_left(resize_signed(in1, BITSIZE_out1), to_integer(unsigned(in2)));
-    end if;
+    out1 &lt;= shift_left(resize_signed(in1, BITSIZE_out1), to_integer(unsigned(in2) rem PRECISION));
   end process;
 "/>
         </component_o>
@@ -975,11 +971,7 @@ VHDL_PROVIDED=
 "begin
   process(in1, in2)
   begin
-    if(BITSIZE_in2 &gt; integer(ceil(log2(real(PRECISION))))) then
-      out1 &lt;= shift_left(resize(in1, BITSIZE_out1), to_integer(unsigned(in2(integer(ceil(log2(real(PRECISION))))-1 downto 0))));
-    else
-      out1 &lt;= shift_left(resize(in1, BITSIZE_out1), to_integer(unsigned(in2)));
-    end if;
+    out1 &lt;= shift_left(resize(in1, BITSIZE_out1), to_integer(unsigned(in2) rem PRECISION));
   end process;
 "/>
         </component_o>
@@ -1191,10 +1183,8 @@ assign out1 = (in1 &lt;&lt; (in2[marg2_bitsize-1:0]))|(in1 &gt;&gt; (PRECISION-(
   end
   endgenerate
 " VHDL_PROVIDED=
-"  type levels_of_registers is array (PIPE_PARAMETER-2 downto 0) of signed(BITSIZE_out1-1 downto 0);
-  signal in1_int : signed (BITSIZE_in1-1 downto 0);
+"  signal in1_int : signed (BITSIZE_in1-1 downto 0);
   signal in2_int : signed (BITSIZE_in2-1 downto 0);
-  signal out1_int : levels_of_registers;
 begin
   cond: if(PIPE_PARAMETER=0) generate
     out1 &lt;= signed(resize_signed(in1 * in2, BITSIZE_out1));
@@ -1210,7 +1200,9 @@ begin
     end process;
   end generate cond1;
   cond2 : if(PIPE_PARAMETER &gt;1) generate
-
+    type levels_of_registers is array (PIPE_PARAMETER-2 downto 0) of signed(BITSIZE_out1-1 downto 0);
+    signal out1_int : levels_of_registers;
+  begin
     process(clock)
     begin
       if clock'event and clock = '1' then
@@ -1324,10 +1316,8 @@ begin
   end
 endgenerate
 " VHDL_PROVIDED=
-"  type levels_of_registers is array (PIPE_PARAMETER-1 downto 0) of unsigned (BITSIZE_out1-1 downto 0);
-  signal in1_int : unsigned (BITSIZE_in1-1 downto 0);
+"  signal in1_int : unsigned (BITSIZE_in1-1 downto 0);
   signal in2_int : unsigned (BITSIZE_in2-1 downto 0);
-  signal out1_int : levels_of_registers;
 begin
   cond: if(PIPE_PARAMETER=0) generate
     out1 &lt;= resize(in1 * in2, BITSIZE_out1);
@@ -1343,8 +1333,10 @@ begin
     end process;
   end generate cond1;
   cond2 : if(PIPE_PARAMETER &gt;1) generate
+    type levels_of_registers is array (PIPE_PARAMETER-1 downto 0) of unsigned (BITSIZE_out1-1 downto 0);
+    signal out1_int : levels_of_registers;
+  begin
     out1 &lt;= out1_int (0);
-
     process(clock)
     begin
       if clock'event and clock = '1' then
@@ -1747,11 +1739,7 @@ VHDL_PROVIDED=
 "begin
   process(in1, in2)
   begin
-    if(BITSIZE_in2 &gt; integer(ceil(log2(real(PRECISION))))) then
-      out1 &lt;= resize_signed(shift_right(in1, to_integer(unsigned(in2(integer(ceil(log2(real(PRECISION))))-1 downto 0)))), BITSIZE_out1);
-    else
-      out1 &lt;= resize_signed(shift_right(in1, to_integer(unsigned(in2))), BITSIZE_out1);
-    end if;
+    out1 &lt;= resize_signed(shift_right(in1, to_integer(unsigned(in2) rem PRECISION)), BITSIZE_out1);
   end process;
 "/>
         </component_o>
@@ -1808,11 +1796,7 @@ endgenerate
 "begin
   process(in1, in2)
   begin
-    if(BITSIZE_in2 &gt; integer(ceil(log2(real(PRECISION))))) then
-      out1 &lt;= resize(shift_right(in1, to_integer(unsigned(in2(integer(ceil(log2(real(PRECISION))))-1 downto 0)))), BITSIZE_out1);
-    else
-      out1 &lt;= resize(shift_right(in1, to_integer(unsigned(in2))), BITSIZE_out1);
-    end if;
+    out1 &lt;= resize(shift_right(in1, to_integer(unsigned(in2) rem PRECISION)), BITSIZE_out1);
   end process;
 "/>
         </component_o>

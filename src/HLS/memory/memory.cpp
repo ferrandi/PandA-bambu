@@ -77,7 +77,6 @@ memory::memory(const tree_managerRef _TreeM, unsigned int _off_base_address, uns
       next_off_base_address(_off_base_address),
       bus_data_bitsize(0),
       bus_size_bitsize(0),
-      aligned_bitsize(0),
       bram_bitsize(0),
       maxbram_bitsize(0),
       intern_shared_data(false),
@@ -138,9 +137,20 @@ void memory::add_internal_variable(unsigned int funID_scope, unsigned int var)
    if(in_vars.find(var) != in_vars.end())
       m_sym = in_vars[var];
    else if(is_private_memory(var))
-      m_sym = memory_symbolRef(new memory_symbol(var, null_pointer_check ? internal_base_address_start : 0, funID_scope));
+   {
+      if(null_pointer_check)
+      {
+         align(internal_base_address_start, tree_helper::get_var_alignment(TreeM, var));
+         m_sym = memory_symbolRef(new memory_symbol(var, internal_base_address_start, funID_scope));
+      }
+      else
+         m_sym = memory_symbolRef(new memory_symbol(var, 0, funID_scope));
+   }
    else
+   {
+      align(next_base_address, tree_helper::get_var_alignment(TreeM, var));
       m_sym = memory_symbolRef(new memory_symbol(var, next_base_address, funID_scope));
+   }
    add_internal_symbol(funID_scope, var, m_sym);
 }
 
@@ -219,6 +229,7 @@ unsigned int memory::count_non_private_internal_symbols() const
 
 void memory::add_external_variable(unsigned int var)
 {
+   align(next_off_base_address, tree_helper::get_var_alignment(TreeM, var));
    memory_symbolRef m_sym = memory_symbolRef(new memory_symbol(var, next_off_base_address, 0));
    add_external_symbol(var, m_sym);
 }
@@ -688,4 +699,131 @@ void memory::xwrite(xml_element* node)
          WRITE_XNVM(symbol, var_name, VarNode);
       }
    }
+}
+
+bool memory::notEQ(refcount<memory> ref) const
+{
+   if(!ref)
+      return true;
+   auto neEQMapSymbolRef = [](const std::map<unsigned int, memory_symbolRef>& ref1, const std::map<unsigned int, memory_symbolRef>& ref2) -> bool {
+      if(ref1.size() != ref2.size())
+         return true;
+      else
+      {
+         std::map<unsigned int, memory_symbolRef>::const_iterator i_it, j_it;
+         for(i_it = ref1.begin(), j_it = ref2.begin(); i_it != ref1.end(); ++i_it, ++j_it)
+         {
+            if(i_it->first != j_it->first)
+               return true;
+            if((i_it->second)->notEQ(*(j_it->second)))
+               return true;
+         }
+      }
+      return false;
+   };
+   auto neEQ2MapSymbolRef = [&neEQMapSymbolRef](const std::map<unsigned int, std::map<unsigned int, memory_symbolRef>>& ref1, const std::map<unsigned int, std::map<unsigned int, memory_symbolRef>>& ref2) -> bool {
+      if(ref1.size() != ref2.size())
+         return true;
+      else
+      {
+         std::map<unsigned int, std::map<unsigned int, memory_symbolRef>>::const_iterator i_it, j_it;
+         for(i_it = ref1.begin(), j_it = ref2.begin(); i_it != ref1.end(); ++i_it, ++j_it)
+         {
+            if(i_it->first != j_it->first)
+               return true;
+            if(neEQMapSymbolRef(i_it->second, j_it->second))
+               return true;
+         }
+      }
+      return false;
+   };
+   if(neEQMapSymbolRef(external, ref->external))
+      return true;
+   if(neEQ2MapSymbolRef(internal, ref->internal))
+      return true;
+   if(internal_variable_proxy != ref->internal_variable_proxy)
+      return true;
+   if(proxied_variables != ref->proxied_variables)
+      return true;
+   if(read_only_vars != ref->read_only_vars)
+      return true;
+   if(neEQMapSymbolRef(in_vars, ref->in_vars))
+      return true;
+   if(rangesize != ref->rangesize)
+      return true;
+   if(neEQ2MapSymbolRef(parameter, ref->parameter))
+      return true;
+   if(neEQMapSymbolRef(params, ref->params))
+      return true;
+   if(neEQMapSymbolRef(callSites, ref->callSites))
+      return true;
+   if(private_memories != ref->private_memories)
+      return true;
+   if(same_data_size_accesses != ref->same_data_size_accesses)
+      return true;
+   // may oscillate
+   //   if(source_values != ref->source_values)
+   //      return true;
+   if(parm_decl_copied != ref->parm_decl_copied)
+      return true;
+   if(parm_decl_stored != ref->parm_decl_stored)
+      return true;
+   if(actual_parm_loaded != ref->actual_parm_loaded)
+      return true;
+   if(next_base_address != ref->next_base_address)
+      return true;
+   if(internal_base_address_start != ref->internal_base_address_start)
+      return true;
+   if(maximum_private_memory_size != ref->maximum_private_memory_size)
+      return true;
+   if(total_amount_of_private_memory != ref->total_amount_of_private_memory)
+      return true;
+   if(total_amount_of_parameter_memory != ref->total_amount_of_parameter_memory)
+      return true;
+   if(off_base_address != ref->off_base_address)
+      return true;
+   if(next_off_base_address != ref->next_off_base_address)
+      return true;
+   if(bus_data_bitsize != ref->bus_data_bitsize)
+      return true;
+   if(bus_size_bitsize != ref->bus_size_bitsize)
+      return true;
+   if(bram_bitsize != ref->bram_bitsize)
+      return true;
+   if(maxbram_bitsize != ref->maxbram_bitsize)
+      return true;
+   if(intern_shared_data != ref->intern_shared_data)
+      return true;
+   if(use_unknown_addresses != ref->use_unknown_addresses)
+      return true;
+   if(pointer_conversion != ref->pointer_conversion)
+      return true;
+   if(unaligned_accesses != ref->unaligned_accesses)
+      return true;
+   if(all_pointers_resolved != ref->all_pointers_resolved)
+      return true;
+   if(implicit_memcpy != ref->implicit_memcpy)
+      return true;
+   if(internal_base_address_alignment != ref->internal_base_address_alignment)
+      return true;
+   if(external_base_address_alignment != ref->external_base_address_alignment)
+      return true;
+   if(parameter_alignment != ref->parameter_alignment)
+      return true;
+   // if(n_mem_operations_per_var != ref->n_mem_operations_per_var)
+   //   return true;
+   if(null_pointer_check != ref->null_pointer_check)
+      return true;
+   if(maximum_references != ref->maximum_references)
+      return true;
+   if(maximum_loads != ref->maximum_loads)
+      return true;
+   if(need_bus != ref->need_bus)
+      return true;
+   if(packed_vars != ref->packed_vars)
+      return true;
+   if(bus_addr_bitsize != ref->bus_addr_bitsize)
+      return true;
+
+   return false;
 }

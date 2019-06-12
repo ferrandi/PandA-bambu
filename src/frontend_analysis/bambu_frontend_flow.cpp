@@ -123,11 +123,13 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(ADD_OP_PHI_FLOW_EDGES, WHOLE_APPLICATION));
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SDC_CODE_MOTION, WHOLE_APPLICATION));
+            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COMMUTATIVE_EXPR_RESTRUCTURING, WHOLE_APPLICATION));
+            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COND_EXPR_RESTRUCTURING, WHOLE_APPLICATION));
+            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REMOVE_ENDING_IF, WHOLE_APPLICATION));
          }
 #endif
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REMOVE_CLOBBER_GA, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SPLIT_RETURN, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REMOVE_ENDING_IF, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE, WHOLE_APPLICATION));
@@ -138,14 +140,13 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REBUILD_INITIALIZATION, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REBUILD_INITIALIZATION2, WHOLE_APPLICATION));
          //         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(IPA_POINT_TO_ANALYSIS, WHOLE_APPLICATION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PARM2SSA, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DETERMINE_MEMORY_ACCESSES, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(STRING_CST_FIX, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(NI_SSA_LIVENESS, WHOLE_APPLICATION));
          if(parameters->isOption(OPT_soft_float) && parameters->getOption<bool>(OPT_soft_float))
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SOFT_FLOAT_CG_EXT, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CALL_GRAPH_BUILTIN_CALL, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COMMUTATIVE_EXPR_RESTRUCTURING, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COND_EXPR_RESTRUCTURING, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CSE_STEP, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FANOUT_OPT, WHOLE_APPLICATION));
 #if HAVE_PRAGMA_BUILT

@@ -51,12 +51,13 @@
 #include "math_function.hpp"        // for resize_to_1_8_16_32_64_128_256_512
 #include "schedule.hpp"             // for ControlStep, AbsControlStep, HLS...
 #include "string_manipulation.hpp"  // for STR GET_CLASS
-#include "technology_manager.hpp"   // for LIBRARY_STD_FU
-#include "technology_node.hpp"      // for technology_nodeRef, MEMORY_CTRL_...
-#include "tree_node.hpp"            // for GET_NODE, GET_CONST_NODE, TreeNo...
-#include "typed_node_info.hpp"      // for GET_NAME
-#include <cmath>                    // for exp, ceil
-#include <limits>                   // for numeric_limits
+#include "structural_manager.hpp"
+#include "technology_manager.hpp" // for LIBRARY_STD_FU
+#include "technology_node.hpp"    // for technology_nodeRef, MEMORY_CTRL_...
+#include "tree_node.hpp"          // for GET_NODE, GET_CONST_NODE, TreeNo...
+#include "typed_node_info.hpp"    // for GET_NAME
+#include <cmath>                  // for exp, ceil
+#include <limits>                 // for numeric_limits
 
 #include "basic_block.hpp"
 #include "clb_model.hpp"
@@ -725,7 +726,7 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index) const
    {
       const auto right = GET_NODE(ga->op1);
       /// currently all the operations introduced after the allocation has been performed are bounded
-      THROW_ASSERT(right->get_kind() == vec_cond_expr_K or right->get_kind() == nop_expr_K or right->get_kind() == lut_expr_K or right->get_kind() == lshift_expr_K or right->get_kind() == rshift_expr_K or right->get_kind() == bit_xor_expr_K or
+      THROW_ASSERT(GetPointer<cst_node>(right) or right->get_kind() == vec_cond_expr_K or right->get_kind() == nop_expr_K or right->get_kind() == lut_expr_K or right->get_kind() == lshift_expr_K or right->get_kind() == rshift_expr_K or right->get_kind() == bit_xor_expr_K or
                        right->get_kind() == bit_not_expr_K or right->get_kind() == bit_ior_concat_expr_K or right->get_kind() == bit_ior_expr_K or right->get_kind() == bit_and_expr_K or right->get_kind() == convert_expr_K or
                        right->get_kind() == truth_and_expr_K or right->get_kind() == truth_or_expr_K or right->get_kind() == truth_not_expr_K or right->get_kind() == cond_expr_K or right->get_kind() == ternary_plus_expr_K or
                        right->get_kind() == ternary_mp_expr_K or right->get_kind() == ternary_pm_expr_K or right->get_kind() == ternary_mm_expr_K or right->get_kind() == ssa_name_K,
@@ -733,6 +734,8 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index) const
       return true;
    }
    if(GetPointer<const gimple_nop>(tn))
+      return true;
+   if(GetPointer<const gimple_phi>(tn))
       return true;
    THROW_ERROR("Unexpected operation in AllocationInformation::is_operation_bounded: " + tn->get_kind_text());
    return false;
@@ -2458,7 +2461,8 @@ double AllocationInformation::estimate_call_delay() const
       call_delay = ctrl_delay;
    /// Check if the operation mapped on this fu is bounded
    std::string function_name = behavioral_helper->get_function_name();
-   auto* fu = GetPointer<functional_unit>(HLS_T->get_technology_manager()->get_fu(function_name, WORK_LIBRARY));
+   auto module_name = hls->top->get_circ()->get_typeRef()->id_type;
+   auto* fu = GetPointer<functional_unit>(HLS_T->get_technology_manager()->get_fu(module_name, WORK_LIBRARY));
    auto* op = GetPointer<operation>(fu->get_operation(function_name));
    if(not op->bounded)
    {
@@ -3172,7 +3176,11 @@ bool AllocationInformation::CanBeChained(const unsigned int first_statement_inde
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking if (" + STR(second_statement_index) + ") " + STR(second_tree_node) + " can be chained with (" + STR(first_statement_index) + ") " + STR(first_tree_node));
    const auto first_operation = GetPointer<const gimple_node>(first_tree_node)->operation;
    const auto second_operation = GetPointer<const gimple_node>(second_tree_node)->operation;
-   if(behavioral_helper->IsStore(first_statement_index))
+   // auto fu_type_first = GetFuType(first_statement_index);
+   // bool is_array_first = is_direct_access_memory_unit(fu_type_first);
+   // unsigned var_first = is_array_first ? (is_memory_unit(fu_type_first) ? get_memory_var(fu_type_first) : get_proxy_memory_var(fu_type_first)) : 0;
+
+   if(behavioral_helper->IsStore(first_statement_index) /*&& (!var_first || !Rmem->is_private_memory(var_first))*/)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because first is a store");
       return false;

@@ -81,6 +81,7 @@
 HLS_manager::HLS_manager(const ParameterConstRef _Param, const HLS_targetRef _HLS_T)
     : application_manager(FunctionExpanderConstRef(new FunctionExpander()), true, false, _Param),
       HLS_T(_HLS_T),
+      memory_version(1),
       base_address(0),
       HLS_execution_time(0)
 #if HAVE_TASTE
@@ -268,4 +269,15 @@ bool HLS_manager::IsSingleWriteMemory() const
    if(Param->getOption<bool>(OPT_gcc_serialize_memory_accesses))
       return true;
    return get_HLS_target() and get_HLS_target()->get_target_device()->has_parameter("is_single_write_memory") and get_HLS_target()->get_target_device()->get_parameter<std::string>("is_single_write_memory") == "1";
+}
+
+unsigned int HLS_manager::GetMemVersion() const
+{
+   return memory_version;
+}
+
+unsigned int HLS_manager::UpdateMemVersion()
+{
+   memory_version++;
+   return memory_version;
 }

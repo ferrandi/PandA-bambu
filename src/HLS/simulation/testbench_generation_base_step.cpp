@@ -362,7 +362,7 @@ void TestbenchGenerationBaseStep::write_initial_block(const std::string& simulat
       writer->write("$dumpfile(\"" + vcd_output_filename + "\");\n");
       bool simulator_supports_dumpvars_directive = parameters->getOption<std::string>(OPT_simulator) == "MODELSIM" || parameters->getOption<std::string>(OPT_simulator) == "ICARUS";
       bool dump_all_signals = parameters->isOption(OPT_generate_vcd) && parameters->getOption<bool>(OPT_generate_vcd);
-      if(dump_all_signals or not simulator_supports_dumpvars_directive
+      if(dump_all_signals or not simulator_supports_dumpvars_directive or (static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)) == HDLWriter_Language::VHDL)
 #if HAVE_FROM_DISCREPANCY_BUILT
          or not parameters->isOption(OPT_discrepancy) or not parameters->getOption<bool>(OPT_discrepancy) or HLSMgr->RDiscr->selected_vcd_signals.empty()
 #endif
@@ -1593,14 +1593,26 @@ void TestbenchGenerationBaseStep::write_module_instantiation(bool xilinx_isim) c
          else
             prefix = ", .";
 
-         writer->write(prefix + HDL_manager::convert_to_identifier(writer.get(), mod->get_in_port(i)->get_id()) + "(" + HDL_manager::convert_to_identifier(writer.get(), mod->get_in_port(i)->get_id()) + ")");
+         auto port_name_formal = HDL_manager::convert_to_identifier(writer.get(), mod->get_in_port(i)->get_id());
+         auto port_name_actual = port_name_formal;
+         if(parameters->isOption(OPT_clock_name) && port_name_actual == parameters->getOption<std::string>(OPT_clock_name))
+            port_name_actual = CLOCK_PORT_NAME;
+         else if(parameters->isOption(OPT_reset_name) && port_name_actual == parameters->getOption<std::string>(OPT_reset_name))
+            port_name_actual = RESET_PORT_NAME;
+         else if(parameters->isOption(OPT_start_name) && port_name_actual == parameters->getOption<std::string>(OPT_start_name))
+            port_name_actual = START_PORT_NAME;
+         writer->write(prefix + port_name_formal + "(" + port_name_actual + ")");
       }
    }
    if(mod->get_out_port_size())
    {
       for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
       {
-         writer->write(prefix + HDL_manager::convert_to_identifier(writer.get(), mod->get_out_port(i)->get_id()) + "(" + HDL_manager::convert_to_identifier(writer.get(), mod->get_out_port(i)->get_id()) + ")");
+         auto port_name_formal = HDL_manager::convert_to_identifier(writer.get(), mod->get_out_port(i)->get_id());
+         auto port_name_actual = port_name_formal;
+         if(parameters->isOption(OPT_done_name) && port_name_actual == parameters->getOption<std::string>(OPT_done_name))
+            port_name_actual = DONE_PORT_NAME;
+         writer->write(prefix + port_name_formal + "(" + port_name_actual + ")");
       }
    }
 
@@ -1772,13 +1784,21 @@ void TestbenchGenerationBaseStep::initialize_input_signals(const tree_managerCon
       for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
       {
          const structural_objectRef& port_obj = mod->get_in_port(i);
-         if(GetPointer<port_o>(port_obj)->get_is_memory() || WB_ACKIM_PORT_NAME == port_obj->get_id())
+         auto port_name = port_obj->get_id();
+         if(parameters->isOption(OPT_clock_name) && port_name == parameters->getOption<std::string>(OPT_clock_name))
+            port_name = CLOCK_PORT_NAME;
+         else if(parameters->isOption(OPT_reset_name) && port_name == parameters->getOption<std::string>(OPT_reset_name))
+            port_name = RESET_PORT_NAME;
+         else if(parameters->isOption(OPT_start_name) && port_name == parameters->getOption<std::string>(OPT_start_name))
+            port_name = START_PORT_NAME;
+
+         if(GetPointer<port_o>(port_obj)->get_is_memory() || WB_ACKIM_PORT_NAME == port_name)
             continue;
-         if(CLOCK_PORT_NAME != port_obj->get_id() && START_PORT_NAME != port_obj->get_id() && RESET_PORT_NAME != port_obj->get_id())
-            writer->write(HDL_manager::convert_to_identifier(writer.get(), port_obj->get_id()) + " = 0;\n");
+         if(CLOCK_PORT_NAME != port_name && START_PORT_NAME != port_name && RESET_PORT_NAME != port_name)
+            writer->write(HDL_manager::convert_to_identifier(writer.get(), port_name) + " = 0;\n");
          if(port_obj->get_typeRef()->treenode > 0 && tree_helper::is_a_pointer(TreeM, port_obj->get_typeRef()->treenode))
          {
-            writer->write("ex_" + port_obj->get_id() + " = 0;\n");
+            writer->write("ex_" + port_name + " = 0;\n");
          }
       }
       writer->write("\n");

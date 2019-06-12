@@ -119,6 +119,9 @@ class application_manager
    /// debugging level of the class
    const int debug_level;
 
+   /// put into relation formal parameters and the associated ssa variables
+   CustomMap<unsigned,unsigned> Parm2SSA_map;
+
    /**
     * Returns the values produced by a vertex (recursive version)
     */
@@ -175,7 +178,7 @@ class application_manager
    bool hasToBeInterfaced(unsigned int funId) const;
 
    /**
-    * Returns the datastructure associated with the given identifier. This method returns an error if the function does not exist.
+    * Returns the data structure associated with the given identifier. This method returns an error if the function does not exist.
     * @param index is the identified of the function to be returned
     * @return the FunctionBehavior associated with the given function
     */
@@ -309,6 +312,28 @@ class application_manager
     */
    void RegisterTransformation(const std::string& step, const tree_nodeConstRef new_tn);
 #endif
+
+   /**
+    * @brief isParmUsed return true in case the parameter is used
+    * @param parm_index is the parm_decl index
+    * @return true in case the parameter is used
+    */
+   bool isParmUsed(unsigned parm_index) const;
+   /**
+    * \brief getSSAFromParm returns the ssa_name index associated with the parm_decl index, 0 in case there is not an associated index
+    * \param parm_index is the parm_decl index for which we look for the associated ssa_name index
+    */
+   unsigned getSSAFromParm(unsigned parm_index) const;
+   /**
+    * @brief setSSAFromParm defines the parm_decl versus ssa_name relation
+    * @param parm_index is the index of the parm_decl
+    * @param ssa_index is the index of the ssa_name
+    */
+   void setSSAFromParm(unsigned int parm_index, unsigned ssa_index);
+   /**
+    * @brief clearParm2SSA cleans the map putting into relation parm_decl and ssa_name
+    */
+   void clearParm2SSA();
 };
 /// refcount definition of the class
 typedef refcount<application_manager> application_managerRef;
