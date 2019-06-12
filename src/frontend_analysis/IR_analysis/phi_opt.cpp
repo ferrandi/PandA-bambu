@@ -514,7 +514,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
       for(auto stmt : block.second->CGetStmtList())
       {
          auto gn = GetPointer<gimple_node>(GET_NODE(stmt));
-         if(gn->get_kind() != gimple_nop_K or not gn->vdef)
+         if(gn->get_kind() != gimple_nop_K or not gn->vdef or (gn->vovers.find(gn->vdef) != gn->vovers.end() and gn->vovers.size()>1) or (gn->vovers.find(gn->vdef) == gn->vovers.end() and (not gn->vovers.empty())))
          {
             continue;
          }
@@ -522,7 +522,6 @@ DesignFlowStep_Status PhiOpt::InternalExec()
          if(AppM->ApplyNewTransformation())
 #endif
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing gimple nop " + STR(gn->index));
             auto virtual_ssa = GetPointer<ssa_name>(GET_NODE(gn->vdef));
             THROW_ASSERT(virtual_ssa, "unexpected condition");
             THROW_ASSERT(virtual_ssa->virtual_flag, "unexpected condition");
@@ -536,6 +535,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
                   auto use_stmt = virtual_ssa->CGetUseStmts().begin()->first;
                   TM->ReplaceTreeNode(use_stmt, gn->vdef, vuse);
                }
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing gimple nop " + STR(gn->index));
                to_be_removeds.insert(stmt);
 #ifndef NDEBUG
                AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
@@ -579,6 +579,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
                         }
                      }
                   }
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing gimple nop " + STR(gn->index));
                   to_be_removeds.insert(stmt);
 #ifndef NDEBUG
                   AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
