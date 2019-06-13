@@ -112,9 +112,6 @@ class mux_connection_binding : public conn_binding_creator
    /// store the current phi use. Used during the analysis of phi nodes
    unsigned int cur_phi_tree_var;
 
-   /// Last computed mux interconnection
-   conn_bindingRef last_conn_binding;
-
    bool is_PC;
 
    /**
