@@ -1383,8 +1383,7 @@ serialize_vops (GIMPLE_type gs)
    {
       ///The gimple which defines the use
       GIMPLE_type def_stmt = SSA_NAME_DEF_STMT (vdef);
-
-      //SerializeGimpleDefsDef(def_stmt, gs);
+      SerializeGimpleDefsDef(def_stmt, gs);
       SerializeGimpleDefsDef2(gs);
 
    }
