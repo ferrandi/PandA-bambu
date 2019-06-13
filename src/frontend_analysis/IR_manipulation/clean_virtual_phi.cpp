@@ -31,7 +31,7 @@
  *
  */
 /**
- * @file clean_virtual_phi.hcp
+ * @file clean_virtual_phi.hpp
  * @brief Manipulation step which removes virtual phi introduced by GCC
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
@@ -97,7 +97,7 @@ DesignFlowStep_Status CleanVirtualPhi::InternalExec()
    auto* fd = GetPointer<function_decl>(temp);
    auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
    /// Removing all the virtual phi
-   /// The virtual phis refer to memory definitions and uses instaed of virtual definitions and uses
+   /// The virtual phis refer to memory definitions and uses instead of virtual definitions and uses
 
    for(auto block : sl->list_of_bloc)
    {
