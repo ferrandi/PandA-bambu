@@ -304,11 +304,10 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
 
    bool modified = false;
    bool restart_analysis;
-   bool do_reachability=false;
    do
    {
       restart_analysis = false;
-      do_reachability=false;
+      bool do_reachability=false;
       for(block_it = blocks.begin(); block_it != block_it_end; ++block_it)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing BB" + boost::lexical_cast<std::string>(block_it->second->number));
@@ -352,7 +351,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                      AppM->RegisterTransformation(GetName(), *stmt);
 #endif
                }
-               else if((not ga->vdef && !is_single_write_memory) || (not ga->memdef && is_single_write_memory))
+               else
                {
                   /// op0 is the left side of the assignment, op1 is the right side
                   const tree_nodeRef op0 = GET_NODE(ga->op0);
@@ -395,8 +394,6 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   else
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---LHS not ssa");
                }
-               else
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---VDEF statement");
             }
             else if(GET_NODE(*stmt)->get_kind() == gimple_cond_K)
             {
