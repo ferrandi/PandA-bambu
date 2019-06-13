@@ -290,7 +290,7 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
    add_command_ports(HLSMgr, HLS, SM);
 
    /// add sparse logic
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Adding sparse logic to the datapath");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding sparse logic to the datapath");
    add_sparse_logic_dp(HLS, SM, HLSMgr);
 
 #ifndef NDEBUG
@@ -372,7 +372,7 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
 void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef SM)
 {
    structural_objectRef circuit = SM->get_circ();
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Datapath interconnection using mux architecture");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Datapath interconnection using mux architecture");
 
    // std::set<std::pair<std::string, std::string> > already_considered;
    for(std::map<std::tuple<generic_objRef, generic_objRef, unsigned int, unsigned int>, connection_objRef>::const_iterator i = conn_implementation.begin(); i != conn_implementation.end(); ++i)
@@ -383,7 +383,7 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
       THROW_ASSERT(src, "a NULL src may come from uninitialized variables. Target: " + tgt->get_string());
       unsigned int operand = std::get<2>(i->first);
       unsigned int port_index = std::get<3>(i->first);
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Creating CONNECTION between " + src->get_string() + " and " + tgt->get_string() + "(" + STR(operand) + ":" + STR(port_index) + ")");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Creating CONNECTION between " + src->get_string() + " and " + tgt->get_string() + "(" + STR(operand) + ":" + STR(port_index) + ")");
 
       structural_objectRef src_module = src->get_structural_obj();
       structural_objectRef tgt_module = tgt->get_structural_obj();
@@ -475,7 +475,7 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
          }
          case connection_obj::BY_MUX:
          {
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating MUX TREE");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Creating MUX TREE");
             mux_allocation(HLS, SM, sign, port_tgt, i->second);
             break;
          }
@@ -483,10 +483,10 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
             THROW_ERROR("Connection type not allowed: " + STR(i->second->get_type()));
       }
 
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- ");
    }
 
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Datapath interconnections completed!");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Datapath interconnections completed!");
 }
 
 void conn_binding::specialise_mux(const generic_objRef mux, unsigned int bits_tgt) const
@@ -497,7 +497,7 @@ void conn_binding::specialise_mux(const generic_objRef mux, unsigned int bits_tg
    structural_objectRef mux_obj = mux->get_structural_obj();
    const module* mux_module = GetPointer<module>(mux_obj);
 
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Specializing " + mux_obj->get_path() + ": " + STR(data_size));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Specializing " + mux_obj->get_path() + ": " + STR(data_size));
    /// specializing multiplexer ports
    mux_module->get_in_port(1)->type_resize(data_size);
    mux_module->get_in_port(2)->type_resize(data_size);
@@ -530,7 +530,7 @@ void conn_binding::mux_allocation(const hlsRef HLS, const structural_managerRef 
       bits_tgt = GET_TYPE_SIZE(tgt);
       conn_type = structural_type_descriptor::VECTOR_BOOL;
    }
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "conn_binding::mux_allocation between " + src->get_path() + " and " + tgt->get_path());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---conn_binding::mux_allocation between " + src->get_path() + " and " + tgt->get_path());
 
    THROW_ASSERT(GetPointer<mux_conn>(conn), "The connection is not implemented through multiplexers");
    auto* mux_alloc = GetPointer<mux_conn>(conn);
@@ -545,7 +545,7 @@ void conn_binding::mux_allocation(const hlsRef HLS, const structural_managerRef 
 
       if(mux)
       {
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "MUX exists");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---MUX exists");
          auto* mux_object = GetPointer<module>(mux);
 
          /// adding input connection
@@ -557,7 +557,7 @@ void conn_binding::mux_allocation(const hlsRef HLS, const structural_managerRef 
       }
       else
       {
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "MUX must be allocated");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---MUX must be allocated");
          std::string name = i.first->get_string();
          mux = SM->add_module_from_technology_library(name, MUX_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(MUX_GATE_STD), circuit, HLS->HLS_T->get_technology_manager());
          i.first->set_structural_obj(mux);
@@ -604,7 +604,8 @@ void conn_binding::add_datapath_connection(const technology_managerRef TM, const
    // std::cerr << "adding connection between " << src->get_path() << " and " << tgt->get_path() << " conn type " << conn_type << std::endl;
    if(bits_src == bits_tgt)
    {
-      THROW_ASSERT(src->get_owner() && tgt->get_owner(), "expected an owner for src and tgt");
+      THROW_ASSERT(src->get_owner(), "expected an owner for src: "+src->get_path());
+      THROW_ASSERT(tgt->get_owner(), "expected an owner for tgt: "+tgt->get_path());
       if(src->get_owner() == tgt->get_owner() && src->get_kind() == port_o_K && tgt->get_kind() == port_o_K)
       {
          std::string name = "io_signal_" + src->get_id() + "_" + tgt->get_id();
@@ -808,7 +809,7 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
       component->set_structural_obj(sparse_component);
       auto* sparse_module = GetPointer<module>(sparse_component);
 
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Specializing " + sparse_component->get_path() + ": " + STR(bitsize));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Specializing " + sparse_component->get_path() + ": " + STR(bitsize));
       /// specializing sparse module ports
       unsigned int shift_index = 0;
       if(component->get_type() == generic_obj::MULTIPLIER_CONN_OBJ && GetPointer<multiplier_conn_obj>(component)->is_multiplication_to_constant())
@@ -969,7 +970,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
             case generic_obj::CONNECTION_ELEMENT:
             {
                THROW_ASSERT(GetPointer<commandport_obj>(j->second), "Not valid command port");
-               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding selector_" + elem->get_string() + " " + STR(elem->get_type()));
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Adding selector_" + elem->get_string() + " " + STR(elem->get_type()));
                structural_objectRef sel_obj = SM->add_port("selector_" + elem->get_string(), port_o::IN, circuit, boolean_port_type);
                (j->second)->set_structural_obj(sel_obj);
 
