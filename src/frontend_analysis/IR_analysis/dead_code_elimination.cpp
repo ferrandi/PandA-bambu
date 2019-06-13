@@ -547,7 +547,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   }
                }
                block_it->second->RemoveStmt(curr_el);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removed " + STR(curr_el));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removed " + curr_el->ToString());
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed dead statements");
          }
@@ -592,7 +592,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             for(auto curr_phi : phis_to_be_removed)
             {
                block_it->second->RemovePhi(curr_phi);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removed " + STR(curr_phi));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removed " + curr_phi->ToString());
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed dead phis");
          }
@@ -660,10 +660,11 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   for(auto curr_phi : phis_to_be_removed)
                   {
                      blocks.at(bb)->RemovePhi(curr_phi);
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removed " + STR(curr_phi));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removed " + curr_phi->ToString());
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed dead phis");
                }
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing statements (RA)");
                const auto& stmt_list = blocks.at(bb)->CGetStmtList();
                std::list<tree_nodeRef> stmts_to_be_removed;
                for(auto stmt = stmt_list.rbegin(); stmt != stmt_list.rend(); stmt++)
@@ -688,7 +689,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   }
                   stmts_to_be_removed.push_back(*stmt);
                }
-
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statements");
                if(!stmts_to_be_removed.empty())
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing " + STR(stmts_to_be_removed.size()) + " dead statements");
@@ -725,7 +726,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                         }
                      }
                      blocks.at(bb)->RemoveStmt(curr_el);
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removed " + STR(curr_el));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removed " + curr_el->ToString());
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed dead statements");
                }
@@ -831,8 +832,6 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed BB" + boost::lexical_cast<std::string>(block_it->second->number));
    }
 
-
-   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "End of dead_code_elimination step");
    if(modified)
    {
       function_behavior->UpdateBBVersion();
