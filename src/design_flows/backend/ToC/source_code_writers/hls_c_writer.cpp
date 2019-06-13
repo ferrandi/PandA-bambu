@@ -37,9 +37,6 @@
  * @author Marco Minutoli <mminutoli@gmail.com>
  * @author Pietro Fezzardi <pietro.fezzardi@polimi.it>
  * @author Marco Lattuada <marco.lattuada@polimi.it>
- * $Revision: $
- * $Date: $
- * Last modified by $Author: $
  *
  */
 
@@ -110,6 +107,7 @@ void HLSCWriter::WriteHeader()
    indented_output_stream->Append("typedef bool _Bool;\n\n");
    indented_output_stream->Append("#else\n");
    indented_output_stream->Append("#include <stdio.h>\n\n");
+   indented_output_stream->Append("#include <stdlib.h>\n\n");
    indented_output_stream->Append("extern void exit(int status);\n");
    indented_output_stream->Append("#endif\n\n");
 
@@ -633,9 +631,17 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef behav
       indented_output_stream->Append("\"" + Param->getOption<std::string>(OPT_output_directory) + "/simulation/main_exec\"");
    }
    indented_output_stream->Append(");\n");
-   if(function_name == "system" and return_type_index and not Param->getOption<bool>(OPT_no_return_zero))
+   if(function_name == "system" and return_type_index)
    {
-      indented_output_stream->Append("if(" RETURN_PORT_NAME " != 0) exit(1);\n");
+      if(not Param->getOption<bool>(OPT_no_return_zero))
+      {
+         indented_output_stream->Append("if(" RETURN_PORT_NAME " != 0) exit(1);\n");
+      }
+      else
+      {
+         indented_output_stream->Append("if(!WIFEXITED(" RETURN_PORT_NAME ")) exit(1);\n");
+         indented_output_stream->Append(RETURN_PORT_NAME " = WEXITSTATUS(" RETURN_PORT_NAME ");\n");
+      }
    }
 }
 
