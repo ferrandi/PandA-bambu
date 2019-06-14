@@ -1990,49 +1990,63 @@ void CustomScalarReplacementOfAggregatesPass::expand_signatures_and_call_sites(s
    //  - adapting the call sites those are called in
    for(llvm::Function* called_function : inner_functions)
    {
+      struct ArgObj
+      {
+         unsigned long index={0};
+         llvm::Type* type={nullptr};
+         std::string arg_name;
+         std::vector<unsigned long long> size;
+      };
       class ExpArgs
       {
        public:
-         static void rec(llvm::Argument* arg, std::map<llvm::Argument*, std::vector<llvm::Argument*>>& exp_args_map_ref, std::map<llvm::Argument*, std::vector<unsigned long long>>& arg_size_map_ref)
+         static void rec(ArgObj* arg, std::map<ArgObj*, std::vector<ArgObj*>>& exp_args_map_ref, std::map<unsigned long,ArgObj> &newMockFunctionArgs)
          {
-            if(llvm::PointerType* ptr_ty = llvm::dyn_cast<llvm::PointerType>(arg->getType()))
+            if(llvm::PointerType* ptr_ty = llvm::dyn_cast<llvm::PointerType>(arg->type))
             {
-               auto a_it = arg_size_map_ref.find(arg);
-               if(a_it != arg_size_map_ref.end() and !a_it->second.empty())
+               if(!arg->size.empty())
                {
-                  unsigned long long elements = a_it->second.at(0);
+                  unsigned long long elements = arg->size.at(0);
 
                   for(int e_idx = 0; e_idx < elements; ++e_idx)
                   {
                      if(llvm::ArrayType* arr_ty = llvm::dyn_cast<llvm::ArrayType>(ptr_ty->getElementType()))
                      {
-                        std::string new_arg_name = arg->getName().str() + "." + std::to_string(e_idx);
+                        std::string new_arg_name = arg->arg_name + "." + std::to_string(e_idx);
 
                         llvm::Type* new_arg_ty = llvm::PointerType::getUnqual(arr_ty->getArrayElementType());
-                        llvm::Argument* new_arg = new llvm::Argument(new_arg_ty, new_arg_name, arg->getParent());
+                        auto argNo = newMockFunctionArgs.size();
+                        auto new_arg = &newMockFunctionArgs[argNo];
+                        new_arg->index = argNo;
+                        new_arg->type = new_arg_ty;
+                        new_arg->arg_name = new_arg_name;
 
-                        if(a_it->second.size() > 1)
+                        if(arg->size.size() > 1)
                         {
-                           arg_size_map_ref[new_arg] = std::vector<unsigned long long>(a_it->second.begin() + 1, a_it->second.end());
+                           new_arg->size = std::vector<unsigned long long>(arg->size.begin() + 1, arg->size.end());
                         }
                         else
                         {
-                           arg_size_map_ref[new_arg] = std::vector<unsigned long long>(1, 1);
+                           new_arg->size = std::vector<unsigned long long>(1, 1);
                         }
 
                         exp_args_map_ref[arg].push_back(new_arg);
 
-                        rec(new_arg, exp_args_map_ref, arg_size_map_ref);
+                        rec(new_arg, exp_args_map_ref, newMockFunctionArgs);
                      }
                      else
                      {
                         llvm::Type* new_arg_ty = llvm::PointerType::getUnqual(ptr_ty->getElementType());
-                        std::string new_arg_name = arg->getName().str() + "." + std::to_string(e_idx);
-                        llvm::Argument* new_arg = new llvm::Argument(new_arg_ty, new_arg_name, arg->getParent());
+                        std::string new_arg_name = arg->arg_name + "." + std::to_string(e_idx);
+                        auto argNo = newMockFunctionArgs.size();
+                        auto new_arg = &newMockFunctionArgs[argNo];
+                        new_arg->index = argNo;
+                        new_arg->type = new_arg_ty;
+                        new_arg->arg_name = new_arg_name;
 
                         exp_args_map_ref[arg].push_back(new_arg);
 
-                        rec(new_arg, exp_args_map_ref, arg_size_map_ref);
+                        rec(new_arg, exp_args_map_ref, newMockFunctionArgs);
                      }
                   }
                }
@@ -2050,8 +2064,12 @@ void CustomScalarReplacementOfAggregatesPass::expand_signatures_and_call_sites(s
                         new_arg_ty = llvm::PointerType::getUnqual(str_ty->getStructElementType(e_idx));
                      }
 
-                     std::string new_arg_name = arg->getName().str() + "." + std::to_string(e_idx);
-                     llvm::Argument* new_arg = new llvm::Argument(new_arg_ty, new_arg_name, arg->getParent());
+                     std::string new_arg_name = arg->arg_name + "." + std::to_string(e_idx);
+                     auto argNo = newMockFunctionArgs.size();
+                     auto new_arg = &newMockFunctionArgs[argNo];
+                     new_arg->index = argNo;
+                     new_arg->type = new_arg_ty;
+                     new_arg->arg_name = new_arg_name;
 
                      if(str_ty->getStructElementType(e_idx)->isArrayTy())
                      {
@@ -2071,12 +2089,12 @@ void CustomScalarReplacementOfAggregatesPass::expand_signatures_and_call_sites(s
                            }
                         } while(true);
 
-                        arg_size_map_ref[new_arg] = tmp_sizes;
+                        new_arg->size = tmp_sizes;
                      }
 
                      exp_args_map_ref[arg].push_back(new_arg);
 
-                     rec(new_arg, exp_args_map_ref, arg_size_map_ref);
+                     rec(new_arg, exp_args_map_ref, newMockFunctionArgs);
                   }
                }
                else if(llvm::ArrayType* arr_ty = llvm::dyn_cast<llvm::ArrayType>(ptr_ty->getElementType()))
@@ -2084,8 +2102,12 @@ void CustomScalarReplacementOfAggregatesPass::expand_signatures_and_call_sites(s
                   for(unsigned long long e_idx = 0; e_idx != arr_ty->getArrayNumElements(); ++e_idx)
                   {
                      llvm::Type* new_arg_ty = llvm::PointerType::getUnqual(arr_ty->getArrayElementType());
-                     std::string new_arg_name = arg->getName().str() + "." + std::to_string(e_idx);
-                     llvm::Argument* new_arg = new llvm::Argument(new_arg_ty, new_arg_name, arg->getParent());
+                     std::string new_arg_name = arg->arg_name + "." + std::to_string(e_idx);
+                     auto argNo = newMockFunctionArgs.size();
+                     auto new_arg = &newMockFunctionArgs[argNo];
+                     new_arg->index = argNo;
+                     new_arg->type = new_arg_ty;
+                     new_arg->arg_name = new_arg_name;
 
                      exp_args_map_ref[arg].push_back(new_arg);
 
@@ -2105,9 +2127,9 @@ void CustomScalarReplacementOfAggregatesPass::expand_signatures_and_call_sites(s
                         }
                      } while(true);
 
-                     arg_size_map_ref[new_arg] = tmp_sizes;
+                     new_arg->size = tmp_sizes;
 
-                     rec(new_arg, exp_args_map_ref, arg_size_map_ref);
+                     rec(new_arg, exp_args_map_ref, newMockFunctionArgs);
                   }
                }
             }
@@ -2115,76 +2137,48 @@ void CustomScalarReplacementOfAggregatesPass::expand_signatures_and_call_sites(s
       };
 
       std::vector<llvm::Type*> new_arg_ty_vec = std::vector<llvm::Type*>();
-
-      // Keep the same return type
-      llvm::Type* new_mock_return_type = called_function->getFunctionType()->getReturnType();
-
-      llvm::FunctionType* new_mock_function_type = llvm::FunctionType::get(new_mock_return_type, false);
-      llvm::GlobalValue::LinkageTypes mock_linkage = called_function->getLinkage();
-      std::string new_mock_function_name = called_function->getName().str() + ".C.mock";
-
-      // Create function prototype
-      llvm::Function* new_mock_function = llvm::Function::Create(new_mock_function_type, mock_linkage, new_mock_function_name, called_function->getParent());
-      if(called_function->hasFnAttribute(llvm::Attribute::NoInline))
-         new_mock_function->addFnAttr(llvm::Attribute::NoInline);
-      if(called_function->hasFnAttribute(llvm::Attribute::AlwaysInline))
-         new_mock_function->addFnAttr(llvm::Attribute::AlwaysInline);
-      if(called_function->hasFnAttribute(llvm::Attribute::InlineHint))
-         new_mock_function->addFnAttr(llvm::Attribute::InlineHint);
-
-      llvm::ValueToValueMapTy mock_VMap;
-
       std::map<unsigned long long, llvm::Argument*> idxs_of_exp_args;
-      std::map<llvm::Argument*, std::vector<llvm::Argument*>> mock_exp_args_map;
+      std::map<ArgObj*, std::vector<ArgObj*>> mock_exp_args_map;
 
       llvm::Function::arg_iterator arg_it_b = called_function->arg_begin();
       llvm::Function::arg_iterator arg_it_e = called_function->arg_end();
+
+      std::map<unsigned long,ArgObj> newMockFunctionArgs;
 
       // Go through all the function arguments
       for(auto arg_it = arg_it_b; arg_it != arg_it_e; arg_it++)
       {
          llvm::Argument* arg = &*arg_it;
+         llvm::Type* new_arg_ty = arg->getType();
+         std::string new_arg_name = arg->getName();
 
-         if(mock_VMap.count(arg) == 0 or true)
+         // Create the new argument and append it to the mock function
+         auto argNo = newMockFunctionArgs.size();
+         auto new_arg = &newMockFunctionArgs[argNo];
+         new_arg->index =  argNo;
+         new_arg->type = new_arg_ty;
+         new_arg->arg_name = new_arg_name;
+
+         // Assign the size to the new argument if the related argument had it
+         auto a_it = arg_size_map.find(arg);
+         if(a_it != arg_size_map.end())
          {
-            llvm::Type* new_arg_ty = arg->getType();
-            std::string new_arg_name = arg->getName();
-
-            // Create the new argument and append it to the mock function
-            llvm::Argument* new_arg = new llvm::Argument(new_arg_ty, new_arg_name, new_mock_function);
-
-            // Assign the size to the new argument if the related argument had it
-            auto a_it = arg_size_map.find(arg);
-            if(a_it != arg_size_map.end())
-            {
-               arg_size_map[new_arg] = a_it->second;
-            }
-
-#if __clang_major__ == 4 && !defined(__APPLE__)
-            llvm::Argument* lastArg = &new_mock_function->getArgumentList().back();
-#else
-            llvm::Argument* lastArg = nullptr;
-            for(auto& arg : new_mock_function->args())
-            {
-               lastArg = &arg;
-            }
-#endif
-            mock_VMap[arg] = lastArg;
-
-            idxs_of_exp_args[new_arg->getArgNo()] = arg;
-
-            if(!expansion_allowed(arg, arg_size_map, DL))
-            {
-               continue;
-            }
-
-            ExpArgs::rec(new_arg, mock_exp_args_map, arg_size_map);
+            new_arg->size = a_it->second;
          }
+
+         idxs_of_exp_args[new_arg->index] = arg;
+
+         if(!expansion_allowed(arg, arg_size_map, DL))
+         {
+            continue;
+         }
+
+         ExpArgs::rec(new_arg, mock_exp_args_map, newMockFunctionArgs);
       }
 
-      for(auto& a : new_mock_function->args())
+      for(auto& a : newMockFunctionArgs)
       {
-         new_arg_ty_vec.push_back(a.getType());
+         new_arg_ty_vec.push_back(a.second.type);
       }
 
       // Keep the same return type
@@ -2205,15 +2199,15 @@ void CustomScalarReplacementOfAggregatesPass::expand_signatures_and_call_sites(s
 
       llvm::ValueToValueMapTy VMap;
 
-      std::map<llvm::Argument*, llvm::Argument*> mock_to_new_arg_map;
+      std::map<ArgObj*, llvm::Argument*> mock_to_new_arg_map;
       llvm::Function::arg_iterator nf_arg_it_b = new_function->arg_begin();
       llvm::Function::arg_iterator nf_arg_it_e = new_function->arg_end();
       llvm::Function::arg_iterator nf_arg_it = nf_arg_it_b;
-      llvm::Function::arg_iterator mf_arg_it = new_mock_function->arg_begin();
-      for(; nf_arg_it != nf_arg_it_e; nf_arg_it++, mf_arg_it++)
+      unsigned long mock_arg_index = 0;
+      for(; nf_arg_it != nf_arg_it_e; nf_arg_it++, ++mock_arg_index)
       {
          llvm::Argument* nf_arg = &*nf_arg_it;
-         llvm::Argument* mf_arg = &*mf_arg_it;
+         auto* mf_arg = &newMockFunctionArgs.at(mock_arg_index);
 
          mock_to_new_arg_map[mf_arg] = nf_arg;
 
@@ -2222,25 +2216,21 @@ void CustomScalarReplacementOfAggregatesPass::expand_signatures_and_call_sites(s
             VMap[idxs_of_exp_args[nf_arg->getArgNo()]] = nf_arg;
          }
 
-         nf_arg->setName(mf_arg->getName());
+         nf_arg->setName(mf_arg->arg_name);
 
          // Assign the size to the new argument if the mock argument had it
-         auto a_it = arg_size_map.find(mf_arg);
-         if(a_it != arg_size_map.end())
-         {
-            arg_size_map.insert(std::make_pair(nf_arg, a_it->second));
-         }
+         arg_size_map.insert(std::make_pair(nf_arg, mf_arg->size));
       }
 
       for(auto& ma1 : mock_exp_args_map)
       {
-         llvm::Argument* mf1_arg = ma1.first;
-         llvm::Argument* nf1_arg = mock_to_new_arg_map[mf1_arg];
+         auto mf1_arg = ma1.first;
+         auto nf1_arg = mock_to_new_arg_map[mf1_arg];
 
          for(auto& ma2 : ma1.second)
          {
-            llvm::Argument* mf2_arg = ma2;
-            llvm::Argument* nf2_arg = mock_to_new_arg_map[mf2_arg];
+            auto mf2_arg = ma2;
+            auto nf2_arg = mock_to_new_arg_map[mf2_arg];
 
             exp_args_map[nf1_arg].push_back(nf2_arg);
          }
@@ -2248,17 +2238,11 @@ void CustomScalarReplacementOfAggregatesPass::expand_signatures_and_call_sites(s
 
       // Clone the function
       llvm::SmallVector<llvm::ReturnInst*, 8> returns;
-      llvm::ClonedCodeInfo* codeInfo = nullptr;
-      llvm::CloneFunctionInto(new_function, called_function, VMap, true, returns, "", codeInfo);
+      llvm::CloneFunctionInto(new_function, called_function, VMap, true, returns);
 
       // Track the function mapping (old->new)
       exp_fun_map[called_function] = new_function;
 
-      for(auto& mock_arg : new_mock_function->args())
-      {
-         arg_size_map.erase(&mock_arg);
-      }
-      new_mock_function->eraseFromParent();
 
       // Do not preserve any analysis
       llvm::PreservedAnalyses::none();
