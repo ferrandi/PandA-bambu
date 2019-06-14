@@ -474,7 +474,7 @@ void SDCScheduling::AddStageConstraints(const meilp_solverRef solver, const vert
 void SDCScheduling::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
 {
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
-   if(HLS && bb_version == FB->GetBBVersion())
+   if(GetStatus() == DesignFlowStep_Status::SUCCESS)
    {
       if(relationship_type == INVALIDATION_RELATIONSHIP)
       {

@@ -711,6 +711,7 @@ function_decl::function_decl(unsigned int i)
       fixd_flag(false),
       virt_flag(false),
       reverse_restrict_flag(false),
+      writing_memory(false),
 #if HAVE_FROM_PRAGMA_BUILT
       omp_for_wrapper(0),
       omp_body_loop(false),

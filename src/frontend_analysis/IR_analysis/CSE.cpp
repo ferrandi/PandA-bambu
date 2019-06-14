@@ -418,6 +418,7 @@ DesignFlowStep_Status CSE::InternalExec()
       TreeNodeSet to_be_removed;
       for(const auto& stmt : B->CGetStmtList())
       {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing " + GET_NODE(stmt)->ToString());
 #ifndef NDEBUG
          if(not AppM->ApplyNewTransformation())
          {
@@ -506,7 +507,7 @@ DesignFlowStep_Status CSE::InternalExec()
       }
       for(const auto& stmt : to_be_removed)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + STR(stmt));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + GET_NODE(stmt)->ToString());
          B->RemoveStmt(stmt);
       }
       if(B->CGetStmtList().empty() && B->CGetPhiList().empty() && !to_be_removed.empty())

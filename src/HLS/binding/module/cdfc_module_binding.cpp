@@ -845,8 +845,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
    double total_area_muxes = 0;
 
    unsigned int fu_unit;
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing unshared resources");
-   /// compute unshared resources
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing non-shared resources");
+   /// compute non-shared resources
    std::map<unsigned int, unsigned int> n_shared_fu;
    for(const auto operation : fdfg->CGetOperations())
    {
@@ -858,7 +858,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       else
          n_shared_fu[fu_unit] = 1 + n_shared_fu[fu_unit];
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed unshared resources");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed non-shared resources");
    /// check easy binding and compute the list of vertices for which a sharing is possible
    std::map<unsigned int, OpVertexSet, cdfc_resource_ordering_functor> candidate_vertices(r_functor);
    OpVertexSet all_candidate_vertices(fdfg);

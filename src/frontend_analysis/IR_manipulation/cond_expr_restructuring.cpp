@@ -476,6 +476,8 @@ void CondExprRestructuring::Initialize()
 
 bool CondExprRestructuring::HasToBeExecuted() const
 {
+   if(!FunctionFrontendFlowStep::HasToBeExecuted())
+      return false;
 #if HAVE_ILP_BUILT
    if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
       GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)

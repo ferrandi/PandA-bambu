@@ -92,7 +92,7 @@ void hls_bit_value::Initialize()
 void hls_bit_value::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
 {
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
-   if(HLS && bb_version == FB->GetBBVersion() && GetStatus() == DesignFlowStep_Status::SUCCESS)
+   if(GetStatus() == DesignFlowStep_Status::SUCCESS)
    {
       if(relationship_type == INVALIDATION_RELATIONSHIP)
       {
@@ -105,6 +105,7 @@ void hls_bit_value::ComputeRelationships(DesignFlowStepSet& relationship, const 
                                                            GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateApplicationFrontendFlowStep(FrontendFlowStepType::BIT_VALUE_IPA);
             relationship.insert(design_flow_step);
          }
+         else
          {
             vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE_OPT, funId));
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();

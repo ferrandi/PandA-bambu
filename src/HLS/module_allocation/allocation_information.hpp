@@ -929,8 +929,8 @@ class AllocationInformation : public HLSFunctionIR
     * @param operation is the operation
     * @return the number of cycles required to execute the operation
     */
-   unsigned int GetCycleLatency(const unsigned int operation) const;
-   unsigned int GetCycleLatency(const vertex operation) const;
+   unsigned int GetCycleLatency(const unsigned int operationID) const;
+   unsigned int GetCycleLatency(const vertex operationID) const;
 
    /**
     * Return the functional unit type used to execute an operation

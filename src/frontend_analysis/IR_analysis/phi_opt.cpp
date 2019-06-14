@@ -130,6 +130,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BLOCK_FIX, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SWITCH_FIX, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
@@ -143,6 +144,27 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
       }
       case(INVALIDATION_RELATIONSHIP):
       {
+         switch(GetStatus())
+         {
+            case DesignFlowStep_Status::SUCCESS:
+            {
+               if(tree_helper::is_a_nop_function_decl(GetPointer<function_decl>(TM->get_tree_node_const(function_id))))
+                  relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
+               break;
+            }
+            case DesignFlowStep_Status::SKIPPED:
+            case DesignFlowStep_Status::UNCHANGED:
+            case DesignFlowStep_Status::UNEXECUTED:
+            case DesignFlowStep_Status::UNNECESSARY:
+            {
+               break;
+            }
+            case DesignFlowStep_Status::ABORTED:
+            case DesignFlowStep_Status::EMPTY:
+            case DesignFlowStep_Status::NONEXISTENT:
+            default:
+               THROW_UNREACHABLE("");
+         }
          break;
       }
       default:
@@ -492,7 +514,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
       for(auto stmt : block.second->CGetStmtList())
       {
          auto gn = GetPointer<gimple_node>(GET_NODE(stmt));
-         if(gn->get_kind() != gimple_nop_K or not gn->vdef)
+         if(gn->get_kind() != gimple_nop_K or not gn->vdef or (gn->vovers.find(gn->vdef) != gn->vovers.end() and gn->vovers.size()>1) or (gn->vovers.find(gn->vdef) == gn->vovers.end() and (not gn->vovers.empty())))
          {
             continue;
          }
@@ -500,7 +522,6 @@ DesignFlowStep_Status PhiOpt::InternalExec()
          if(AppM->ApplyNewTransformation())
 #endif
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing gimple nop " + STR(gn->index));
             auto virtual_ssa = GetPointer<ssa_name>(GET_NODE(gn->vdef));
             THROW_ASSERT(virtual_ssa, "unexpected condition");
             THROW_ASSERT(virtual_ssa->virtual_flag, "unexpected condition");
@@ -514,6 +535,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
                   auto use_stmt = virtual_ssa->CGetUseStmts().begin()->first;
                   TM->ReplaceTreeNode(use_stmt, gn->vdef, vuse);
                }
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing gimple nop " + STR(gn->index));
                to_be_removeds.insert(stmt);
 #ifndef NDEBUG
                AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
@@ -521,18 +543,22 @@ DesignFlowStep_Status PhiOpt::InternalExec()
             }
             else
             {
-               /// Check that all the uses are not in phi
-               bool phi = [&]() -> bool {
+               /// Check that all the uses are not in phi or not defining a self loop
+               bool cannotBeProp = [&]() -> bool {
                   for(const auto& use_stmt : virtual_ssa->CGetUseStmts())
                   {
                      if(GET_NODE(use_stmt.first)->get_kind() == gimple_phi_K)
                      {
                         return true;
                      }
+                     if(GET_INDEX_NODE(use_stmt.first) == GET_INDEX_NODE(stmt))
+                     {
+                        return true;
+                     }
                   }
                   return false;
                }();
-               if(not phi)
+               if(not cannotBeProp)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Virtual op not used in any phi");
                   while(virtual_ssa->CGetUseStmts().size())
@@ -557,6 +583,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
                         }
                      }
                   }
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing gimple nop " + STR(gn->index));
                   to_be_removeds.insert(stmt);
 #ifndef NDEBUG
                   AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
