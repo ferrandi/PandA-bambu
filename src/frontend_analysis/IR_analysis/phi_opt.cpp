@@ -543,18 +543,22 @@ DesignFlowStep_Status PhiOpt::InternalExec()
             }
             else
             {
-               /// Check that all the uses are not in phi
-               bool phi = [&]() -> bool {
+               /// Check that all the uses are not in phi or not defining a self loop
+               bool cannotBeProp = [&]() -> bool {
                   for(const auto& use_stmt : virtual_ssa->CGetUseStmts())
                   {
                      if(GET_NODE(use_stmt.first)->get_kind() == gimple_phi_K)
                      {
                         return true;
                      }
+                     if(GET_INDEX_NODE(use_stmt.first) == GET_INDEX_NODE(stmt))
+                     {
+                        return true;
+                     }
                   }
                   return false;
                }();
-               if(not phi)
+               if(not cannotBeProp)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Virtual op not used in any phi");
                   while(virtual_ssa->CGetUseStmts().size())
