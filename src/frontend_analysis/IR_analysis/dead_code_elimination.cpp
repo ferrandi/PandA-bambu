@@ -382,6 +382,8 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                         }
                         if(!is_a_writing_memory_call)
                         {
+                           if(ga->vdef)
+                              add_gimple_nop(ga,TM,*stmt,(block_it)->second);
                            stmts_to_be_removed.push_back(*stmt);
 #ifndef NDEBUG
                            AppM->RegisterTransformation(GetName(), *stmt);
