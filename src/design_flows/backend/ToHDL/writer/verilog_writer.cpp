@@ -1122,7 +1122,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
       ++it;
       std::string current_output = *it;
 
-      if(!single_proc && output_index != mod->get_out_port_size() && (default_output[output_index] == current_output[output_index] || current_output[output_index] == '-'))
+      if(!single_proc && output_index != mod->get_out_port_size() && (default_output[output_index] == current_output[output_index]))
       {
          /// check if we can skip this state
          bool skip_state = true;
@@ -1170,10 +1170,23 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                continue;
             port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
             // std::cerr << "setting output of port '" << port_name << "'" << std::endl;
-            if(default_output[i] != current_output[i] and current_output[i] != '-')
+            if(default_output[i] != current_output[i])
             {
                if(single_proc || output_index == i)
-                  indented_output_stream->Append(port_name + " = 1'b" + current_output[i] + ";\n");
+                  switch (current_output[i])
+                  {
+                     case '1':
+                        indented_output_stream->Append(port_name + " = 1'b" + current_output[i] + ";\n");
+                        break;
+
+                     case '2':
+                        indented_output_stream->Append(port_name + " = 1'bX" + ";\n");
+                        break;
+
+                     default:
+                        THROW_ERROR("Unsupported value in current output");
+                        break;
+                  }
             }
          }
       }
