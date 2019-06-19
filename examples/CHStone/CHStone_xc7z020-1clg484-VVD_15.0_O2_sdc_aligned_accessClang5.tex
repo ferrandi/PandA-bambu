@@ -1,22 +1,22 @@
-%Generated at 2019-05-02 07:49:22.257305 with bambu Version: PandA 0.9.6-dev - Revision 84cb1a917c138490d755af465ec1aadb69e90333-PR-5 with arguments --compiler=I386_GCC49 --device-name=TO_BE_OVERWRITTEN --evaluation -fwhole-program -fno-delete-null-pointer-checks --clock-period=15 --speculative-sdc-scheduling --experimental-setup=BAMBU-BALANCED-MP --device=xc7z020-1clg484-VVD --aligned-access --compiler=I386_CLANG5
+%Generated at 2019-05-07 12:12:28.680760 with bambu Version: PandA 0.9.6-dev - Revision 372b9be5fe693bba909d1690b98e71fb8fcf0843-PR-5 with arguments --compiler=I386_GCC49 --device-name=TO_BE_OVERWRITTEN --evaluation -fwhole-program -fno-delete-null-pointer-checks --clock-period=15 --speculative-sdc-scheduling --experimental-setup=BAMBU-BALANCED-MP --device=xc7z020-1clg484-VVD --aligned-access --compiler=I386_CLANG5
 \begin{tabular}{|l|c|c|c|c|c|c|c|c|c|c|}
 \hline
 Benchmark Name          & Tot. Latency           & Num Cycles & LUTs      & Slices    & Registers & DSPs    & BRAMs  & Clock Frequency & Clock Slack & HLS Time(s) \\
 \hline
-bf:main\_0              & $ 1.067 \cdot 10^{3} $ & $ 93948  $ & $ 3350  $ & $ 1028  $ & $ 2200  $ & $ 0   $ & $ 14 $ & $ 88.01       $ & $ 3.64    $ & $ 18.53   $ \\
+bf:main\_0              & $ 1.138 \cdot 10^{3} $ & $ 93948  $ & $ 3258  $ & $ 1005  $ & $ 2200  $ & $ 0   $ & $ 14 $ & $ 82.56       $ & $ 2.89    $ & $ 18.72   $ \\
 dfadd:main\_0           & $ 2.811 \cdot 10^{0} $ & $ 254    $ & $ 1761  $ & $ 562   $ & $ 795   $ & $ 0   $ & $ 0  $ & $ 90.36       $ & $ 3.93    $ & $ 29.70   $ \\
-dfdiv:main\_0           & $ 2.356 \cdot 10^{1} $ & $ 1806   $ & $ 3225  $ & $ 975   $ & $ 1916  $ & $ 18  $ & $ 0  $ & $ 76.64       $ & $ 1.95    $ & $ 19.03   $ \\
-dfdiv\_hls\_div:main\_0 & $ 8.892 \cdot 10^{0} $ & $ 638    $ & $ 3885  $ & $ 1276  $ & $ 2161  $ & $ 59  $ & $ 0  $ & $ 71.75       $ & $ 1.06    $ & $ 20.39   $ \\
-dfmul:main\_0           & $ 1.199 \cdot 10^{0} $ & $ 111    $ & $ 1298  $ & $ 416   $ & $ 659   $ & $ 10  $ & $ 0  $ & $ 92.57       $ & $ 4.20    $ & $ 15.20   $ \\
-dfsin:main\_0           & $ 6.538 \cdot 10^{2} $ & $ 46339  $ & $ 8987  $ & $ 2661  $ & $ 4434  $ & $ 31  $ & $ 0  $ & $ 70.87       $ & $ 0.89    $ & $ 116.06  $ \\
-dfsin\_hls\_div:main\_0 & $ 2.877 \cdot 10^{2} $ & $ 20236  $ & $ 10297 $ & $ 3126  $ & $ 4918  $ & $ 72  $ & $ 0  $ & $ 70.35       $ & $ 0.79    $ & $ 112.73  $ \\
-mips:main\_0            & $ 3.227 \cdot 10^{1} $ & $ 2497   $ & $ 1217  $ & $ 367   $ & $ 570   $ & $ 8   $ & $ 4  $ & $ 77.39       $ & $ 2.08    $ & $ 13.75   $ \\
-mpeg2:main\_0           & $ 2.713 \cdot 10^{1} $ & $ 2193   $ & $ 6980  $ & $ 2408  $ & $ 5080  $ & $ 0   $ & $ 1  $ & $ 80.85       $ & $ 2.63    $ & $ 16.33   $ \\
-sha\_driver:main\_0     & $ 1.234 \cdot 10^{3} $ & $ 113318 $ & $ 2006  $ & $ 621   $ & $ 1379  $ & $ 0   $ & $ 12 $ & $ 91.85       $ & $ 4.11    $ & $ 5.67    $ \\
+dfdiv:main\_0           & $ 2.356 \cdot 10^{1} $ & $ 1806   $ & $ 3225  $ & $ 975   $ & $ 1916  $ & $ 18  $ & $ 0  $ & $ 76.64       $ & $ 1.95    $ & $ 19.21   $ \\
+dfdiv\_hls\_div:main\_0 & $ 8.892 \cdot 10^{0} $ & $ 638    $ & $ 3885  $ & $ 1276  $ & $ 2161  $ & $ 59  $ & $ 0  $ & $ 71.75       $ & $ 1.06    $ & $ 20.48   $ \\
+dfmul:main\_0           & $ 1.199 \cdot 10^{0} $ & $ 111    $ & $ 1298  $ & $ 416   $ & $ 659   $ & $ 10  $ & $ 0  $ & $ 92.57       $ & $ 4.20    $ & $ 15.19   $ \\
+dfsin:main\_0           & $ 6.538 \cdot 10^{2} $ & $ 46339  $ & $ 8987  $ & $ 2661  $ & $ 4434  $ & $ 31  $ & $ 0  $ & $ 70.87       $ & $ 0.89    $ & $ 116.54  $ \\
+dfsin\_hls\_div:main\_0 & $ 2.877 \cdot 10^{2} $ & $ 20236  $ & $ 10297 $ & $ 3126  $ & $ 4918  $ & $ 72  $ & $ 0  $ & $ 70.35       $ & $ 0.79    $ & $ 113.08  $ \\
+mips:main\_0            & $ 3.227 \cdot 10^{1} $ & $ 2497   $ & $ 1217  $ & $ 367   $ & $ 570   $ & $ 8   $ & $ 4  $ & $ 77.39       $ & $ 2.08    $ & $ 13.83   $ \\
+mpeg2:main\_0           & $ 2.713 \cdot 10^{1} $ & $ 2193   $ & $ 6980  $ & $ 2408  $ & $ 5080  $ & $ 0   $ & $ 1  $ & $ 80.85       $ & $ 2.63    $ & $ 16.41   $ \\
+sha\_driver:main\_0     & $ 1.234 \cdot 10^{3} $ & $ 113318 $ & $ 2006  $ & $ 621   $ & $ 1379  $ & $ 0   $ & $ 12 $ & $ 91.85       $ & $ 4.11    $ & $ 5.76    $ \\
 \hline
-Average                 & $                    $ & $        $ & $       $ & $       $ & $       $ & $     $ & $    $ & $ 81.06       $ & $ 2.53    $ & $         $ \\
+Average                 & $                    $ & $        $ & $       $ & $       $ & $       $ & $     $ & $    $ & $ 80.52       $ & $ 2.45    $ & $         $ \\
 \hline
-Overall                 & $ 3.338 \cdot 10^{3} $ & $ 281340 $ & $ 43006 $ & $ 13440 $ & $ 24112 $ & $ 198 $ & $ 31 $ & $             $ & $         $ & $ 367.39  $ \\
+Overall                 & $ 3.409 \cdot 10^{3} $ & $ 281340 $ & $ 42914 $ & $ 13417 $ & $ 24112 $ & $ 198 $ & $ 31 $ & $             $ & $         $ & $ 368.92  $ \\
 \hline
 \end{tabular}
 %Benchmarks:

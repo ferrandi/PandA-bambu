@@ -48,6 +48,7 @@
 
 #include "generic_obj.hpp"
 #include "refcount.hpp"
+#include "string_manipulation.hpp"
 
 /**
  * class modeling a register object
@@ -56,13 +57,17 @@ class register_obj : public generic_obj
 {
    generic_objRef wr_enable;
 
+ private:
+   unsigned int register_index;
+
  public:
    /**
     * This is the constructor of the object class, with a given id
     * @param new_value is the new value for register entry
     */
-   explicit register_obj(const std::string& _name) : generic_obj(REGISTER, _name)
+   explicit register_obj(const unsigned int index) : generic_obj(REGISTER, std::string("reg_") + STR(index))
    {
+      register_index = index;
    }
 
    /**
@@ -86,6 +91,15 @@ class register_obj : public generic_obj
    void set_wr_enable(const generic_objRef& wr_en)
    {
       wr_enable = wr_en;
+   }
+
+   /**
+    * Gets the index of the register represented by this object
+    * @return the index of the represented register
+    */
+   unsigned int get_register_index()
+   {
+      return register_index;
    }
 };
 
