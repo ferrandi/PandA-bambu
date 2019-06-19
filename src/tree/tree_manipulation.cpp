@@ -600,13 +600,10 @@ tree_nodeRef tree_manipulation::CreateRealCst(const tree_nodeConstRef& type, con
    unsigned int type_node_nid = type->index;
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    IR_schema[TOK(TOK_TYPE)] = STR(type_node_nid);
-   std::stringstream ss;
-   ss << value;
-   IR_schema[TOK(TOK_VALR)] = ss.str();
 
    std::stringstream ssX;
 #if HAVE_HEXFLOAT
-   ss << std::hexfloat << value;
+   ssX << std::hexfloat << value;
 #else
    {
       char buffer[256];
@@ -614,7 +611,8 @@ tree_nodeRef tree_manipulation::CreateRealCst(const tree_nodeConstRef& type, con
       ssX << buffer;
    }
 #endif
-   IR_schema[TOK(TOK_VALX)] = ss.str();
+   IR_schema[TOK(TOK_VALR)] = ssX.str();
+   IR_schema[TOK(TOK_VALX)] = ssX.str();
 
    this->TreeM->create_tree_node(real_cst_nid, real_cst_K, IR_schema);
    tree_nodeRef node_ref = TreeM->GetTreeReindex(real_cst_nid);
