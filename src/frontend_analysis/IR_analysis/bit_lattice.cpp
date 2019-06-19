@@ -182,12 +182,15 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>
       const bool b_sign_is_x = _b.front() == bit_lattice::X;
       const size_t final_size = std::min(out_type_size, ((a_sign_is_x == b_sign_is_x) ? (std::min(_a.size(), _b.size())) : (a_sign_is_x ? _a.size() : _b.size())));
       const auto sign_bit = res.front();
-      res.pop_front();
-      while(res.size() >= final_size)
+      while(res.size() > final_size)
       {
          res.pop_front();
       }
-      res.push_front(sign_bit);
+      if(sign_bit != bit_lattice::X)
+      {
+         res.pop_front();
+         res.push_front(sign_bit);
+      }
    }
    else
    {
