@@ -183,7 +183,151 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
             {
                if(tree_helper::is_real(TM, output_uid))
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---real variables not considered: " + STR(GET_INDEX_NODE(ga->op0)));
+                  if(GET_NODE(ga->op1)->get_kind() == cond_expr_K)
+                  {
+                     auto* me = GetPointer<cond_expr>(GET_NODE(ga->op1));
+                     tree_nodeRef op0 = GET_NODE(me->op1);
+                     tree_nodeRef op1 = GET_NODE(me->op2);
+                     tree_nodeRef condition = GET_NODE(me->op0);
+                     if(op0 == op1)
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Cond expr with equal operands");
+                        const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
+                        for(const auto& use : StmtUses)
+                        {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage before: " + use.first->ToString());
+                           TM->ReplaceTreeNode(use.first, ga->op0, me->op1);
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage after: " + use.first->ToString());
+                           modified = true;
+                        }
+                        if(ssa->CGetUseStmts().empty())
+                        {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
+                           restart_dead_code = true;
+                        }
+#ifndef NDEBUG
+                        AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                     }
+                     else if(condition->get_kind() == integer_cst_K)
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Cond expr with constant condition");
+                        auto* ic = GetPointer<integer_cst>(condition);
+                        auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
+                        const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
+                        for(const auto& use : StmtUses)
+                        {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage before: " + use.first->ToString());
+                           if(ull_value)
+                              TM->ReplaceTreeNode(use.first, ga->op0, me->op1);
+                           else
+                              TM->ReplaceTreeNode(use.first, ga->op0, me->op2);
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage after: " + use.first->ToString());
+                           modified = true;
+                        }
+                        if(ssa->CGetUseStmts().empty())
+                        {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
+                           restart_dead_code = true;
+                        }
+#ifndef NDEBUG
+                        AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                     }
+                     else
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---nothing more can be done");
+                  }
+                  else if(GetPointer<cst_node>(GET_NODE(ga->op1)))
+                  {
+                     const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
+                     for(const auto& use : StmtUses)
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
+                        TM->ReplaceTreeNode(use.first, ga->op0, ga->op1);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
+                        modified = true;
+                     }
+                     if(ssa->CGetUseStmts().empty())
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
+                        restart_dead_code = true;
+                     }
+#ifndef NDEBUG
+                     AppM->RegisterTransformation(GetName(), stmt);
+#endif
+
+                  }
+                  else if(GetPointer<ssa_name>(GET_NODE(ga->op1)))
+                  {
+                     const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
+                     for(const auto& use : StmtUses)
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace ssa usage before: " + use.first->ToString());
+                        TM->ReplaceTreeNode(use.first, ga->op0, ga->op1);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace ssa usage after: " + use.first->ToString());
+                        modified = true;
+                     }
+                     if(ssa->CGetUseStmts().empty())
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
+                        restart_dead_code = true;
+                     }
+#ifndef NDEBUG
+                     AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                  }
+                  else if(GET_NODE(ga->op1)->get_kind() == view_convert_expr_K)
+                  {
+                     auto vce = GetPointer<view_convert_expr>(GET_NODE(ga->op1));
+                     if(GetPointer<cst_node>(GET_NODE(vce->op)))
+                     {
+                        if(GET_NODE(vce->op)->get_kind() == integer_cst_K)
+                        {
+                           auto* int_const = GetPointer<integer_cst>(GET_NODE(vce->op));
+                           auto bitwidth_op = tree_helper::Size(vce->type);
+                           tree_nodeRef val;
+                           if(bitwidth_op == 32)
+                           {
+                              union {float dest; int source;} __conv_union;
+                              __conv_union.source = static_cast<int>(int_const->value);
+                              const auto data_value_id = TM->new_tree_node_id();
+                              const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
+                              val = tree_man->CreateRealCst(vce->type, static_cast<long double>(__conv_union.dest), data_value_id);
+                           }
+                           else if(bitwidth_op == 64)
+                           {
+                              union {double dest; long long int source;} __conv_union;
+                              __conv_union.source = int_const->value;
+                              const auto data_value_id = TM->new_tree_node_id();
+                              const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
+                              val = tree_man->CreateRealCst(vce->type, static_cast<long double>(__conv_union.dest), data_value_id);
+                           }
+                           else
+                              THROW_ERROR("not supported floating point bitwidth");
+
+                           const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
+                           for(const auto& use : StmtUses)
+                           {
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
+                              TM->ReplaceTreeNode(use.first, ga->op0, val);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
+                              modified = true;
+                           }
+                           if(ssa->CGetUseStmts().empty())
+                           {
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
+                              restart_dead_code = true;
+                           }
+#ifndef NDEBUG
+                           AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                        }
+                     }
+                  }
+                  else
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---real variables not considered: " + STR(GET_INDEX_NODE(ga->op0)));
+                  }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + GET_NODE(stmt)->ToString());
                   continue;
                }
