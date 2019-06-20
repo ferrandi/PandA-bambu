@@ -446,7 +446,6 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   }
                   else
                   {
-                     THROW_ASSERT(!one_is_const, "only one can be true");
                      all_false = false;
                   }
                }
