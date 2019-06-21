@@ -529,11 +529,27 @@ DesignFlowStep_Status PhiOpt::InternalExec()
             /// If there is only a single vuse replace vdef with vuse in all the uses of vdef
             if(gn->vuses.size() == 1)
             {
-               auto vuse = *(gn->vuses.begin());
                while(virtual_ssa->CGetUseStmts().size())
                {
                   auto use_stmt = virtual_ssa->CGetUseStmts().begin()->first;
-                  TM->ReplaceTreeNode(use_stmt, gn->vdef, vuse);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- use stmt " + GET_NODE(use_stmt)->ToString());
+                  auto us = GetPointer<gimple_node>(GET_NODE(use_stmt));
+                  THROW_ASSERT(us->vuses.find(gn->vdef) != us->vuses.end(), "unexpected condition");
+                  us->vuses.erase(us->vuses.find(gn->vdef));
+                  while(virtual_ssa->CGetUseStmts().find(use_stmt) != virtual_ssa->CGetUseStmts().end())
+                     virtual_ssa->RemoveUse(use_stmt);
+                  for(const auto& vuse : gn->vuses)
+                  {
+                     if(us->vuses.find(vuse) == us->vuses.end())
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---   add vuse " + GET_NODE(vuse)->ToString());
+                        us->AddVuse(vuse);
+                        auto defSSA = GetPointer<ssa_name>(GET_NODE(vuse));
+                        const auto& defssaStmt = defSSA->CGetUseStmts();
+                        if(defssaStmt.find(use_stmt) == defssaStmt.end())
+                           defSSA->AddUseStmt(use_stmt);
+                     }
+                  }
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing gimple nop " + STR(gn->index));
                to_be_removeds.insert(stmt);
