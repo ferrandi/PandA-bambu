@@ -34,6 +34,7 @@
  * The implementation performs scalar replacement of aggregates.
  *
  * @author Marco Siracusa <marco.siracusa@mail.polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
 
