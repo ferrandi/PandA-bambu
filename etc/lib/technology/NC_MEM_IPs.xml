@@ -8036,7 +8036,7 @@ begin
   end
   if(HIGH_LATENCY == 0||HIGH_LATENCY == 1)
   begin
-    if (bram_write1 &amp;&amp; n_bytes &gt; BRAM_BITSIZE/8)
+    if (bram_write1)
     begin : L22_write
       integer i22;
       for (i22=0; i22&lt;n_byte_on_databus; i22=i22+1)
@@ -8048,7 +8048,7 @@ begin
   end
   else
   begin
-    if (bram_write11 &amp;&amp; n_bytes &gt; BRAM_BITSIZE/8)
+    if (bram_write11)
     begin : L22_write1
       integer i22;
       for (i22=0; i22&lt;n_byte_on_databus; i22=i22+1)
@@ -8183,7 +8183,7 @@ begin
       end if;
 
       if(HIGH_LATENCY = 0 or HIGH_LATENCY = 1) then
-        if(bram_write1 =&apos;1&apos; and  n_bytes &gt; BRAM_BITSIZE/8) then
+        if(bram_write1 =&apos;1&apos;) then
           for index2 in 0 to n_byte_on_databus-1 loop
             if(be(index2+n_byte_on_databus)=&apos;1&apos;) then
 -- synthesis translate_off
@@ -8197,7 +8197,7 @@ begin
           end loop;
         end if;
       else
-        if(bram_write11 =&apos;1&apos; and  n_bytes &gt; BRAM_BITSIZE/8) then
+        if(bram_write11 =&apos;1&apos;) then
           for index2 in 0 to n_byte_on_databus-1 loop
             if(be(index2+n_byte_on_databus)=&apos;1&apos;) then
 -- synthesis translate_off
