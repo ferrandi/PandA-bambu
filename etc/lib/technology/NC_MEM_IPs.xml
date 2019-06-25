@@ -7634,11 +7634,15 @@ endgenerate"
 VHDL_PROVIDED=
 "signal we_a : std_logic_vector(n_byte_on_databus-1 downto 0);
 signal we_b : std_logic_vector(n_byte_on_databus-1 downto 0);
+signal dout_a_signal : std_logic_vector(BITSIZE_dout_a-1 downto 0) ;
+signal dout_b_signal : std_logic_vector(BITSIZE_dout_b-1 downto 0) ;
 begin
   N_TRUE_DUAL_PORT_GEN: 
     for i1 in 0 to n_byte_on_databus-1 generate
-      TRUE_DUAL_PORT_instance : TRUE_DUAL_PORT generic map (BITSIZE_Addr_a=&gt;BITSIZE_memory_addr_a, BITSIZE_Addr_b=&gt;BITSIZE_memory_addr_b, MEMORY_INIT_file=&gt;MEMORY_INIT_file, n_mem_elements=&gt;n_mem_elements, byte_offset=&gt;i1, BRAM_BITSIZE=&gt;BRAM_BITSIZE, HIGH_LATENCY=&gt;HIGH_LATENCY) port map (clock=&gt;clock, we_a=&gt;(we_a(i1)), we_b=&gt;(we_b(i1)), Addr_a=&gt;(memory_addr_a), Addr_b=&gt;(memory_addr_b), din_value_a=&gt;(din_value_aggregated((i1+1)*8-1 downto i1*8)), din_value_b=&gt;(din_value_aggregated((n_byte_on_databus+i1+1)*8-1 downto (n_byte_on_databus+i1)*8)), dout_value_a=&gt;(dout_a((i1+1)*8-1 downto i1*8)), dout_value_b=&gt;(dout_b((i1+1)*8-1 downto i1*8)));
+      TRUE_DUAL_PORT_instance : TRUE_DUAL_PORT generic map (BITSIZE_Addr_a=&gt;BITSIZE_memory_addr_a, BITSIZE_Addr_b=&gt;BITSIZE_memory_addr_b, MEMORY_INIT_file=&gt;MEMORY_INIT_file, n_mem_elements=&gt;n_mem_elements, byte_offset=&gt;i1, BRAM_BITSIZE=&gt;BRAM_BITSIZE, HIGH_LATENCY=&gt;HIGH_LATENCY) port map (clock=&gt;clock, we_a=&gt;(we_a(i1)), we_b=&gt;(we_b(i1)), Addr_a=&gt;(memory_addr_a), Addr_b=&gt;(memory_addr_b), din_value_a=&gt;(din_value_aggregated((i1+1)*8-1 downto i1*8)), din_value_b=&gt;(din_value_aggregated((n_byte_on_databus+i1+1)*8-1 downto (n_byte_on_databus+i1)*8)), dout_value_a=&gt;(dout_a_signal((i1+1)*8-1 downto i1*8)), dout_value_b=&gt;(dout_b_signal((i1+1)*8-1 downto i1*8)));
     end generate N_TRUE_DUAL_PORT_GEN;
+  dout_a &lt;= dout_a_signal;
+  dout_b &lt;= dout_b_signal;
 
   L_write_enable_a : process(bram_write0, be)
   begin
