@@ -7415,6 +7415,250 @@ endgenerate"/>
       </circuit>
     </cell>
     <cell>
+      <name>TRUE_DUAL_PORT</name>
+      <circuit>
+        <component_o id="TRUE_DUAL_PORT">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2013-2019 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TRUE_DUAL_PORT"/>
+          <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
+          <parameter name="n_mem_elements">32</parameter>
+          <parameter name="byte_offset">0</parameter>
+          <parameter name="BRAM_BITSIZE">32</parameter>
+          <parameter name="HIGH_LATENCY">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="we_a" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="we_b" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="Addr_a" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="Addr_b" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="din_value_a" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="din_value_b" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="dout_value_a" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="dout_value_b" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="TRUE_DUAL_PORT Addr_a Addr_b MEMORY_INIT_file n_mem_elements byte_offset BRAM_BITSIZE HIGH_LATENCY" 
+VERILOG_PROVIDED="
+reg [7:0] dout_value_a1 1INIT_ZERO_VALUE;
+reg [7:0] dout_value_b1 1INIT_ZERO_VALUE;
+reg [BRAM_BITSIZE-1:0] memory [0:n_mem_elements-1] /* synthesis syn_ramstyle = &quot;no_rw_check&quot; */;
+
+initial
+begin
+  $readmemb(MEMORY_INIT_file, memory, 0, n_mem_elements-1);
+end
+assign dout_value_a = dout_value_a1;
+assign dout_value_b = dout_value_b1;
+always @(posedge clock)
+begin
+  if(we_a)
+  begin
+    memory[Addr_a][(byte_offset+1)*8-1:byte_offset*8] &lt;= din_value_a;
+  end
+  dout_value_a1 &lt;= memory[Addr_a][(byte_offset+1)*8-1:byte_offset*8];
+  if(we_b)
+  begin
+    memory[Addr_b][(byte_offset+1)*8-1:byte_offset*8] &lt;= din_value_b;
+  end
+  dout_value_b1 &lt;= memory[Addr_b][(byte_offset+1)*8-1:byte_offset*8];
+end
+"
+VHDL_PROVIDED="
+  signal dout_value_a1 : std_logic_vector(7 downto 0) 1INIT_ZERO_VALUE;
+  signal dout_value_b1 : std_logic_vector(7 downto 0) 1INIT_ZERO_VALUE;
+  type mem_type is array(0 to n_mem_elements-1) of std_logic_vector(7 downto 0);
+  impure function InitMemFromFile (MemFileName : in string) return mem_type is
+    FILE memfile : text open READ_MODE is MemFileName;
+    variable MemFileLine : line;
+    variable mem : mem_type;
+    variable mem_row: std_logic_vector((BRAM_BITSIZE - 1) downto 0);
+    begin
+       for i in 0 to n_mem_elements-1 loop
+        readline(memfile, MemFileLine);
+        read(MemFileLine, mem_row);
+        mem(i) := mem_row((byte_offset+1)*8-1 downto byte_offset*8);
+      end loop;
+      return mem;
+  end function;
+
+  signal mem : mem_type := InitMemFromFile(MEMORY_INIT_file);
+begin
+  dout_value_a &lt;= dout_value_a1;
+  dout_value_b &lt;= dout_value_b1;
+process (clock)
+begin
+  if (clock&apos;event and clock=&apos;1&apos;) then
+    if we_a = &apos;1&apos; then
+-- synthesis translate_off
+      if (to_integer(unsigned(Addr_a)) &lt; n_mem_elements) then
+-- synthesis translate_on
+        mem(to_integer(unsigned(Addr_a))) &lt;= din_value_a;
+-- synthesis translate_off
+      end if;
+-- synthesis translate_on
+    end if;
+-- synthesis translate_off
+    if (to_integer(unsigned(Addr_a)) &gt;= n_mem_elements) then
+      dout_value_a1 &lt;= (others =&gt; &apos;X&apos;);
+    else
+-- synthesis translate_on
+      dout_value_a1 &lt;= mem(to_integer(unsigned(Addr_a)));
+-- synthesis translate_off
+    end if;
+-- synthesis translate_on
+    if we_b = &apos;1&apos; then
+-- synthesis translate_off
+      if (to_integer(unsigned(Addr_b)) &lt; n_mem_elements) then
+-- synthesis translate_on
+        mem(to_integer(unsigned(Addr_b))) &lt;= din_value_b;
+-- synthesis translate_off
+      end if;
+-- synthesis translate_on
+    end if;
+-- synthesis translate_off
+    if (to_integer(unsigned(Addr_b)) &gt;= n_mem_elements) then
+      dout_value_b1 &lt;= (others =&gt; &apos;X&apos;);
+    else
+-- synthesis translate_on
+      dout_value_b1 &lt;= mem(to_integer(unsigned(Addr_b)));
+-- synthesis translate_off
+    end if;
+-- synthesis translate_on
+  end if;
+end process;
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TRUE_DUAL_PORT_BYTE_ENABLING_RAM_NBE</name>
+      <circuit>
+        <component_o id="TRUE_DUAL_PORT_BYTE_ENABLING_RAM_NBE">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2016-2019 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <specialized>NanoXplore</specialized>
+          <structural_type_descriptor id_type="TRUE_DUAL_PORT_BYTE_ENABLING_RAM_NBE"/>
+          <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
+          <parameter name="BRAM_BITSIZE">32</parameter>
+          <parameter name="n_byte_on_databus">4</parameter>
+          <parameter name="n_mem_elements">4</parameter>
+          <parameter name="HIGH_LATENCY">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="bram_write0" dir="IN">
+            <structural_type_descriptor type="BOOL"/>
+          </port_o>
+          <port_o id="bram_write1" dir="IN">
+            <structural_type_descriptor type="BOOL"/>
+          </port_o>
+          <port_o id="memory_addr_a" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="memory_addr_b" dir="IN" >
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="din_value_aggregated" dir="IN" >
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="be" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="dout_a" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="dout_b" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="TRUE_DUAL_PORT_BYTE_ENABLING_RAM_NBE dout_a dout_b memory_addr_a memory_addr_b din_value_aggregated be MEMORY_INIT_file BRAM_BITSIZE n_byte_on_databus n_mem_elements HIGH_LATENCY" IP_COMPONENT="TRUE_DUAL_PORT" VERILOG_PROVIDED="
+wire [n_byte_on_databus-1:0] we_a;
+wire [n_byte_on_databus-1:0] we_b;
+
+generate
+genvar i1;
+  for (i1=0; i1&lt;n_byte_on_databus; i1=i1+1)
+  begin
+    TRUE_DUAL_PORT #(.BITSIZE_Addr_a(BITSIZE_memory_addr_a), .BITSIZE_Addr_b(BITSIZE_memory_addr_b), .MEMORY_INIT_file(MEMORY_INIT_file), .n_mem_elements(n_mem_elements), .byte_offset(i1), .BRAM_BITSIZE(BRAM_BITSIZE), .HIGH_LATENCY(HIGH_LATENCY)) TRUE_DUAL_PORT_instance (.clock(clock), .we_a(we_a[i1]), .we_b(we_b[i1]), .Addr_a(memory_addr_a), .Addr_b(memory_addr_b), .din_value_a(din_value_aggregated[(i1+1)*8-1:i1*8]), .din_value_b(din_value_aggregated[(n_byte_on_databus+i1+1)*8-1:(n_byte_on_databus+i1)*8]), .dout_value_a(dout_a[(i1+1)*8-1:i1*8]), .dout_value_b(dout_b[(i1+1)*8-1:i1*8]));
+  end
+endgenerate
+
+generate
+genvar i2_a;
+  for (i2_a=0; i2_a&lt;n_byte_on_databus; i2_a=i2_a+1)
+  begin  : write_enable_a
+    assign we_a[i2_a] = (bram_write0) &amp;&amp; be[i2_a];
+  end
+endgenerate
+
+generate
+genvar i2_b;
+  for (i2_b=0; i2_b&lt;n_byte_on_databus; i2_b=i2_b+1)
+  begin  : write_enable_b
+    assign we_b[i2_b] = (bram_write1) &amp;&amp; be[i2_b+n_byte_on_databus];
+  end
+endgenerate"
+VHDL_PROVIDED=
+"signal we_a : std_logic_vector(n_byte_on_databus-1 downto 0);
+signal we_b : std_logic_vector(n_byte_on_databus-1 downto 0);
+begin
+  N_TRUE_DUAL_PORT_GEN: 
+    for i1 in 0 to n_byte_on_databus-1 generate
+      TRUE_DUAL_PORT_instance : TRUE_DUAL_PORT generic map (BITSIZE_Addr_a=&gt;BITSIZE_memory_addr_a, BITSIZE_Addr_b=&gt;BITSIZE_memory_addr_b, MEMORY_INIT_file=&gt;MEMORY_INIT_file, n_mem_elements=&gt;n_mem_elements, byte_offset=&gt;i1, BRAM_BITSIZE=&gt;BRAM_BITSIZE, HIGH_LATENCY=&gt;HIGH_LATENCY) port map (clock=&gt;clock, we_a=&gt;(we_a(i1)), we_b=&gt;(we_b(i1)), Addr_a=&gt;(memory_addr_a), Addr_b=&gt;(memory_addr_b), din_value_a=&gt;(din_value_aggregated((i1+1)*8-1 downto i1*8)), din_value_b=&gt;(din_value_aggregated((n_byte_on_databus+i1+1)*8-1 downto (n_byte_on_databus+i1)*8)), dout_value_a=&gt;(dout_a((i1+1)*8-1 downto i1*8)), dout_value_b=&gt;(dout_b((i1+1)*8-1 downto i1*8)));
+    end generate N_TRUE_DUAL_PORT_GEN;
+
+  L_write_enable_a : process(bram_write0, be)
+  begin
+    for i2_a in 0 to n_byte_on_databus-1 loop
+      we_a(i2_a) &lt;= bram_write0 and be(i2_a);
+    end loop;
+  end process;
+
+  L_write_enable_b : process(bram_write1, be)
+  begin
+    for i2_b in 0 to n_byte_on_databus-1 loop
+      we_b(i2_b) &lt;= bram_write1 and be(i2_b+n_byte_on_databus);
+    end loop;
+  end process;
+"
+/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
       <name>BRAM_MEMORY_NOBYTE_ENABLE</name>
       <circuit>
         <component_o id="BRAM_MEMORY_NOBYTE_ENABLE">
