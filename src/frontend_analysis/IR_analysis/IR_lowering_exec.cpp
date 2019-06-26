@@ -1473,7 +1473,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            auto ssa_var = GetPointer<const ssa_name>(GET_NODE(ga->op0));
                            if(ssa_var->use_set->variables.empty())
                            {
-                              ssa_var->use_set->variables.push_back(ae->op);
+                              ssa_var->use_set->Add(ae->op);
                            }
                         }
                      }
@@ -2369,7 +2369,8 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      tree_nodeRef new_ga = CreateGimpleAssign(pt, ae, block.first, srcp_default);
                      GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = true;
                      tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
-
+                     auto ssa_var_decl = GetPointer<ssa_name>(GET_NODE(ssa_vd));
+                     ssa_var_decl->use_set->Add(ga->op1);
                      tree_nodeRef offset = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(pt));
                      tree_nodeRef mr = tree_man->create_binary_operation(type, ssa_vd, offset, srcp_default, mem_ref_K);
 
@@ -2862,7 +2863,8 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   tree_nodeRef new_ga = CreateGimpleAssign(pt, ae, block.first, srcp_default);
                   GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = true;
                   tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
-
+                  auto ssa_var_decl = GetPointer<ssa_name>(GET_NODE(ssa_vd));
+                  ssa_var_decl->use_set->Add(ga->op0);
                   tree_nodeRef offset = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(pt));
                   tree_nodeRef mr = tree_man->create_binary_operation(type, ssa_vd, offset, srcp_default, mem_ref_K);
 
