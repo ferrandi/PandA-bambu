@@ -1155,7 +1155,7 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
                      break;
 
                   case '2':
-                     indented_output_stream->Append(port_name + " <= 'X';\n");
+                     indented_output_stream->Append(port_name + " <= '1';\n");
                      break;
 
                   default:
