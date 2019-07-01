@@ -311,141 +311,147 @@ DesignFlowStep_Status PhiOpt::InternalExec()
       WriteBBGraphDot("BB_Removed_Chains_" + GetName() + "_chain.dot");
    }
 
-   /// Workaround to avoid invalidation of pointer
-#if HAVE_STDCXX_11
-   CustomSet<decltype(sl->list_of_bloc)::key_type> blocks_to_be_analyzed;
-#else
-   CustomSet<unsigned int> blocks_to_be_analyzed;
-#endif
-   for(auto block : sl->list_of_bloc)
-      blocks_to_be_analyzed.insert(block.first);
-
-   /// Remove empty basic block
-   for(auto bloc_to_be_analyzed : blocks_to_be_analyzed)
+   restart = true;
+   while(restart)
    {
-      auto block = *(sl->list_of_bloc.find(bloc_to_be_analyzed));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(block.first));
+      restart = false;
+      /// Workaround to avoid invalidation of pointer
+#if HAVE_STDCXX_11
+      CustomSet<decltype(sl->list_of_bloc)::key_type> blocks_to_be_analyzed;
+#else
+      CustomSet<unsigned int> blocks_to_be_analyzed;
+#endif
+      for(auto block : sl->list_of_bloc)
+         blocks_to_be_analyzed.insert(block.first);
 
-      /// Remove nop
-      if(block.second->CGetStmtList().size() == 1 and GET_NODE(block.second->CGetStmtList().front())->get_kind() == gimple_nop_K)
+      /// Remove empty basic block
+      for(auto bloc_to_be_analyzed : blocks_to_be_analyzed)
       {
-         block.second->RemoveStmt(block.second->CGetStmtList().front());
-         bb_modified = true;
-      }
+         auto block = *(sl->list_of_bloc.find(bloc_to_be_analyzed));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(block.first));
 
-      if(block.second->CGetStmtList().size() or block.second->CGetPhiList().size())
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Basic block is not empty");
-         continue;
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Basic block is empty");
-      if(block.first == bloc::ENTRY_BLOCK_ID)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Basic block is Entry");
-         continue;
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Basic block is not entry");
-      if(block.first == bloc::EXIT_BLOCK_ID)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Basic block is Exit");
-         continue;
-      }
-#if HAVE_PRAGMA_BUILT
-      if(parameters->getOption<int>(OPT_gcc_openmp_simd))
-      {
-         if(block.second->list_of_pred.size() == 1)
+         /// Remove nop
+         if(block.second->CGetStmtList().size() == 1 and GET_NODE(block.second->CGetStmtList().front())->get_kind() == gimple_nop_K)
          {
-            const auto pred_block_id = block.second->list_of_pred.front();
-            const auto pred_block = sl->list_of_bloc.find(pred_block_id)->second;
-            if(pred_block->loop_id != block.second->loop_id)
+            block.second->RemoveStmt(block.second->CGetStmtList().front());
+            bb_modified = true;
+         }
+
+         if(block.second->CGetStmtList().size() or block.second->CGetPhiList().size())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Basic block is not empty");
+            continue;
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Basic block is empty");
+         if(block.first == bloc::ENTRY_BLOCK_ID)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Basic block is Entry");
+            continue;
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Basic block is not entry");
+         if(block.first == bloc::EXIT_BLOCK_ID)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Basic block is Exit");
+            continue;
+         }
+#if HAVE_PRAGMA_BUILT
+         if(parameters->getOption<int>(OPT_gcc_openmp_simd))
+         {
+            if(block.second->list_of_pred.size() == 1)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Basic block is Landing pad");
-               continue;
+               const auto pred_block_id = block.second->list_of_pred.front();
+               const auto pred_block = sl->list_of_bloc.find(pred_block_id)->second;
+               if(pred_block->loop_id != block.second->loop_id)
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Basic block is Landing pad");
+                  continue;
+               }
             }
          }
-      }
 #endif
 #ifndef NDEBUG
-      if(not(AppM->ApplyNewTransformation()))
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Reached limit of cfg transformations");
-         continue;
-      }
-      AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
+         if(not(AppM->ApplyNewTransformation()))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Reached limit of cfg transformations");
+            continue;
+         }
+         AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
 #endif
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Basic block is not Exit");
-      if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-      {
-         WriteBBGraphDot("BB_Before_" + GetName() + "_Before_BB" + STR(block.first) + ".dot");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written BB_Before_" + GetName() + "_Before_BB" + STR(block.first) + ".dot");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Basic block is not Exit");
+         if(debug_level >= DEBUG_LEVEL_PEDANTIC)
+         {
+            WriteBBGraphDot("BB_Before_" + GetName() + "_Before_BB" + STR(block.first) + ".dot");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written BB_Before_" + GetName() + "_Before_BB" + STR(block.first) + ".dot");
+         }
+         const auto pattern_type = IdentifyPattern(block.first);
+         switch(pattern_type)
+         {
+            case PhiOpt_PatternType::GIMPLE_NOTHING:
+            {
+               ApplyGimpleNothing(block.first);
+               bb_modified = true;
+               break;
+            }
+            case PhiOpt_PatternType::DIFF_NOTHING:
+            {
+               ApplyDiffNothing(block.first);
+               bb_modified = true;
+               restart = true;
+               break;
+            }
+            case PhiOpt_PatternType::IF_MERGE:
+            {
+               ApplyIfMerge(block.first);
+               bb_modified = true;
+               break;
+            }
+            case PhiOpt_PatternType::IF_NOTHING:
+            {
+               ApplyIfNothing(block.first);
+               bb_modified = true;
+               break;
+            }
+            case PhiOpt_PatternType::IF_REMOVE:
+            {
+               ApplyIfRemove(block.first);
+               bb_modified = true;
+               break;
+            }
+            case PhiOpt_PatternType::MULTI_MERGE:
+            {
+               ApplyMultiMerge(block.first);
+               bb_modified = true;
+               break;
+            }
+            case PhiOpt_PatternType::MULTI_NOTHING:
+            {
+               ApplyMultiNothing(block.first);
+               bb_modified = true;
+               break;
+            }
+            case PhiOpt_PatternType::MULTI_REMOVE:
+            {
+               ApplyMultiRemove(block.first);
+               bb_modified = true;
+               break;
+            }
+            case PhiOpt_PatternType::UNCHANGED:
+            {
+               break;
+            }
+            case PhiOpt_PatternType::UNKNOWN:
+            {
+               THROW_UNREACHABLE("Found an unknown pattern in CFG");
+               break;
+            }
+            default:
+            {
+               THROW_UNREACHABLE("");
+               break;
+            }
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed BB" + STR(block.first));
       }
-      const auto pattern_type = IdentifyPattern(block.first);
-      switch(pattern_type)
-      {
-         case PhiOpt_PatternType::GIMPLE_NOTHING:
-         {
-            ApplyGimpleNothing(block.first);
-            bb_modified = true;
-            break;
-         }
-         case PhiOpt_PatternType::DIFF_NOTHING:
-         {
-            ApplyDiffNothing(block.first);
-            bb_modified = true;
-            break;
-         }
-         case PhiOpt_PatternType::IF_MERGE:
-         {
-            ApplyIfMerge(block.first);
-            bb_modified = true;
-            break;
-         }
-         case PhiOpt_PatternType::IF_NOTHING:
-         {
-            ApplyIfNothing(block.first);
-            bb_modified = true;
-            break;
-         }
-         case PhiOpt_PatternType::IF_REMOVE:
-         {
-            ApplyIfRemove(block.first);
-            bb_modified = true;
-            break;
-         }
-         case PhiOpt_PatternType::MULTI_MERGE:
-         {
-            ApplyMultiMerge(block.first);
-            bb_modified = true;
-            break;
-         }
-         case PhiOpt_PatternType::MULTI_NOTHING:
-         {
-            ApplyMultiNothing(block.first);
-            bb_modified = true;
-            break;
-         }
-         case PhiOpt_PatternType::MULTI_REMOVE:
-         {
-            ApplyMultiRemove(block.first);
-            bb_modified = true;
-            break;
-         }
-         case PhiOpt_PatternType::UNCHANGED:
-         {
-            break;
-         }
-         case PhiOpt_PatternType::UNKNOWN:
-         {
-            THROW_UNREACHABLE("Found an unknown pattern in CFG");
-            break;
-         }
-         default:
-         {
-            THROW_UNREACHABLE("");
-            break;
-         }
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed BB" + STR(block.first));
    }
 
    TreeNodeSet ce_to_be_removeds;
@@ -506,6 +512,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed chains of BB");
+
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing nop with virtual operands");
    for(auto block : sl->list_of_bloc)
    {
@@ -602,7 +609,6 @@ DesignFlowStep_Status PhiOpt::InternalExec()
          bb_modified = true;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(block.first));
    }
-
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed nop with virtual operands");
    bb_modified ? function_behavior->UpdateBBVersion() : 0;
    return bb_modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
