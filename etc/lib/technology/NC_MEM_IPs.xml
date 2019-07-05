@@ -8384,7 +8384,7 @@ begin
       else
         if(bram_write01 =&apos;1&apos;) then
           for index2 in 0 to n_byte_on_databus-1 loop
-            if(be(index2)=&apos;1&apos;) then
+            if(be1(index2)=&apos;1&apos;) then
 -- synthesis translate_off
                if (to_integer(unsigned(memory_addr_a1)) &lt; n_mem_elements) then
 -- synthesis translate_on
@@ -8447,7 +8447,7 @@ begin
       else
         if(bram_write11 =&apos;1&apos;) then
           for index2 in 0 to n_byte_on_databus-1 loop
-            if(be(index2+n_byte_on_databus)=&apos;1&apos;) then
+            if(be1(index2+n_byte_on_databus)=&apos;1&apos;) then
 -- synthesis translate_off
                if (to_integer(unsigned(memory_addr_b1)) &lt; n_mem_elements) then
 -- synthesis translate_on
