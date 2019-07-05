@@ -2,6 +2,7 @@ EXTRA_DIST = \
    bambu_altera.sh \
    bambu_lattice.sh \
    bambu_xilinx.sh \
+   bambu_nanoxplore.sh\
    constraints_STD.xml \
    module.c \
    README.txt \
@@ -37,7 +38,11 @@ EXTRA_DIST = \
    constrained_synth_altera_stratix4.sh \
    unconstrained_synth_altera_stratix4.sh \
    constrained_synth_altera_stratix5.sh \
-   unconstrained_synth_altera_stratix5.sh
+   unconstrained_synth_altera_stratix5.sh\
+   constrained_synth_nanoxplore_nx1h140tsp.sh\
+   constrained_synth_nanoxplore_nx1h35S.sh\
+   unconstrained_synth_nanoxplore_nx1h140tsp.sh\
+   unconstrained_synth_nanoxplore_nx1h35S.sh
 
 #do not touch the following line
 
@@ -73,4 +78,8 @@ TESTS = \
    constrained_synth_xilinx_vx690t_vvd.sh \
    unconstrained_synth_xilinx_vx690t_vvd.sh \
    constrained_synth_xilinx_artix7_vvd.sh \
-   unconstrained_synth_xilinx_artix7_vvd.sh 
+   unconstrained_synth_xilinx_artix7_vvd.sh \
+   constrained_synth_nanoxplore_nx1h140tsp.sh\
+   constrained_synth_nanoxplore_nx1h35S.sh\
+   unconstrained_synth_nanoxplore_nx1h140tsp.sh\
+   unconstrained_synth_nanoxplore_nx1h35S.sh
