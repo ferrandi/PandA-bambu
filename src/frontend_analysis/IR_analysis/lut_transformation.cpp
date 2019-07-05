@@ -629,6 +629,200 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 lut_transformation::~lut_transformation() = default;
 
+
+/*
+1) Ha senso?
+2) Come riconvertire e collegare input/output?
+*/
+DesignFlowStep_Status lut_transformation::_InternalExec() {
+   tree_nodeRef temp = TM->get_tree_node_const(function_id);
+   auto* fd = GetPointer<function_decl>(temp);
+   THROW_ASSERT(fd && fd->body, "Node is not a function or it has not a body");
+   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   THROW_ASSERT(sl, "Body is not a statement list");
+
+   bool modified = false;
+
+   for (std::pair<unsigned int, blocRef> block : sl->list_of_bloc) {
+      mockturtle::aig_network aig;
+      std::map<mockturtle::aig_network::signal, treeNodeRef> signalToNodeRef;
+      std::map<treeNodeRef, mockturtle::aig_network::signal> nodeRefToSignal;
+
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
+      const auto& statements = block.second->CGetStmtList();
+      /// end of statements list
+      auto statementsEnd = statements.end();
+      /// size of statements list
+      size_t statementsCount = statements.size();
+      /// start of statements list
+      auto statementsIterator = statements.begin();
+
+      while (statementsIterator != statementsEnd) {
+         #ifndef NDEBUG
+         if(not AppM->ApplyNewTransformation()) {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reached max cfg transformations");
+            statementsIterator++;
+            continue;
+         }
+         #endif
+
+         if (!GET_NODE(*statementsIterator)->get_kind() != gimple_assign_K) {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + GET_NODE(*statementsIterator)->ToString());
+            statementsIterator++;
+         }
+
+         auto *gimpleAssign = GetPointer<gimple_assign>(GET_NODE(*statementsIterator));
+         const std::string srcp_default = gimpleAssign->include_name + ":" + STR(gimpleAssign->line_number) + ":" + STR(gimpleAssign->column_number);
+         enum kind code1 = GET_NODE(gimpleAssign->op1)->get_kind();
+         
+         auto *binaryExpression = GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1));
+
+         THROW_ASSERT(binaryExpression->op0 && binaryExpression->op1, "expected two parameters");
+         int data_size0 = static_cast<int>(tree_helper::Size(GET_NODE(binaryExpression->op0)));
+         int data_size1 = static_cast<int>(tree_helper::Size(GET_NODE(binaryExpression->op1)));
+
+         /* 
+            && !tree_helper::is_constant(TM, binaryExpression->op0->index) 
+            && !tree_helper::is_constant(TM, binaryExpression->op1->index)
+         */
+         if (!(data_size0 == 1
+            && data_size1 == 1) {
+            continue;
+         } 
+
+         mockturtle::aig_network::signal res;
+         mockturtle::aig_network::signal op1;
+         mockturtle::aig_network::signal op2;
+         mockturtle::aig_network::signal (*nodeCreateFn)(mockturtle::aig_network::signal, mockturtle::aig_network::signal);
+
+         if (nodeRefToSignal.find(binaryExpression->op0) != nodeRefToSignal.end()) {
+            op1 = nodeRefToSignal[binaryExpression->op0];
+         }
+         else {
+            op1 = aig.create_pi();
+
+            nodeRefToSignal[binaryExpression->op0] = op1;
+            signalToNodeRef[op1] = binaryExpression->op0;
+         }
+
+         if (nodeRefToSignal.find(binaryExpression->op1) != nodeRefToSignal.end()) {
+            op2 = nodeRefToSignal[binaryExpression->op1];
+         }
+         else {
+            op2 = aig.create_pi();
+
+            nodeRefToSignal[binaryExpression->op1] = op2;
+            signalToNodeRef[op2] = binaryExpression->op1;
+         }
+
+         switch (code1) {
+            case bit_and_expr_K:
+            case truth_and_expr_K:
+               nodeCreateFn = &aig.create_and;
+               break;
+            case bit_ior_expr_K:
+            case truth_or_expr_K:
+               nodeCreateFn = &aig.create_or;
+               break;
+            case bit_xor_expr_K:
+            case truth_xor_expr_K:
+               nodeCreateFn = &aig.create_xor;
+               break;
+            case eq_expr_K:
+               nodeCreateFn = &[&](mockturtle::aig_network::signal op1, mockturtle::aig_network::signal op2) {
+                  return !aig.create_xor(op1, op2);
+               };
+               break;
+            case ge_expr_K:
+               nodeCreateFn = &[&](mockturtle::aig_network::signal op1, mockturtle::aig_network::signal op2) {
+                  return !aig.create_lt(op1, op2);
+               };
+               break;
+            case lut_expr_K:
+               break;
+            case gt_expr_K:
+               nodeCreateFn = &[&](mockturtle::aig_network::signal op1, mockturtle::aig_network::signal op2) {
+                  return !aig.create_le(op1, op2);
+               };
+               break;
+            case le_expr_K:
+               nodeCreateFn = &aig.create_le;
+               break;
+            case lrotate_expr_K:
+               break;
+            case lshift_expr_K:
+               break;
+            case lt_expr_K:
+               nodeCreateFn = &[&](mockturtle::aig_network::signal op1, mockturtle::aig_network::signal op2) {
+                  return !aig.create_lt(op1, op2);
+               };
+               break;
+            case ne_expr_K:
+               nodeCreateFn = &aig.create_xor;
+               break;
+            case rrotate_expr_K:
+               break;
+            case rshift_expr_K:
+               break;
+            case set_le_expr_K:
+               break;
+            case truth_andif_expr_K:
+               break;
+            case truth_orif_expr_K:
+               break;
+            case uneq_expr_K:
+               break;
+            case ltgt_expr_K:
+               break;
+            case unge_expr_K:
+               break;
+            case ungt_expr_K:
+               break;
+            case unle_expr_K:
+               break;
+            case unlt_expr_K:
+               break;
+            case vec_lshift_expr_K:
+               break;
+            case vec_rshift_expr_K:
+               break;
+         }
+
+         res = nodeCreateFn(op1, op2);
+         nodeRefToSignal[gimpleAssign->op0] = res;
+         signalToNodeRef[res] = gimpleAssign->op0;
+
+         if (block.second->live_out.find(gimpleAssign->op0->index) != block.second->live_out.end()) {
+            aig.create_po(res);
+         }
+
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + GET_NODE(*statementsIterator)->ToString());
+         statementsIterator++;
+      }
+
+      mockturtle::mapping_view<mockturtle::aig_network, true> mapped_aig{aig};
+
+      mockturtle::lut_mapping_params ps;
+      ps.cut_enumeration_ps.cut_size = max_lut_size; // parameter
+      mockturtle::lut_mapping<mockturtle::mapping_view<mockturtle::aig_network, true>, true>(mapped_aig, ps);
+      auto lut = *mockturtle::collapse_mapped_network<mockturtle::klut_network>(mapped_aig);
+
+      // dalla network a lut_expr_K
+      // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added to LUT list : " + STR(lut_ga));
+      // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Modified statement " + GET_NODE(lut_ga)->ToString());
+
+      modified = statementsCount != statements.size();
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examining BB" + STR(block.first));
+   }
+
+   if (modified) {
+      function_behavior->UpdateBBVersion();
+      return DesignFlowStep_Status::SUCCESS;
+   }
+
+   return DesignFlowStep_Status::UNCHANGED;
+}
+
 DesignFlowStep_Status lut_transformation::InternalExec()
 {
    bool modified = false;
@@ -662,7 +856,8 @@ DesignFlowStep_Status lut_transformation::InternalExec()
          }
 #endif
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(*it_los)->ToString());
-         if(GET_NODE(*it_los)->get_kind() == gimple_assign_K)
+         
+         if (GET_NODE(*it_los)->get_kind() == gimple_assign_K)
          {
             auto* ga = GetPointer<gimple_assign>(GET_NODE(*it_los));
             const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
@@ -670,26 +865,35 @@ DesignFlowStep_Status lut_transformation::InternalExec()
             enum kind code1 = GET_NODE(ga->op1)->get_kind();
             long long int lut_number = 0;
 
-            if(code1 == bit_and_expr_K || code1 == truth_and_expr_K)
+            if (code1 == bit_and_expr_K || code1 == truth_and_expr_K)
             {
                lut_number = 8;
+               // in1 = aig.create_pi();
+               // in2 = aig.create_pi();
+               // aig.create_and(in1, in2);
             }
-            else if(code1 == bit_ior_expr_K || code1 == truth_or_expr_K)
+            else if (code1 == bit_ior_expr_K || code1 == truth_or_expr_K)
             {
                lut_number = 14;
+               // in1 = aig.create_pi();
+               // in2 = aig.create_pi();
+               // aig.create_or(in1, in2);
             }
-            else if(code1 == bit_xor_expr_K || code1 == truth_xor_expr_K)
+            else if (code1 == bit_xor_expr_K || code1 == truth_xor_expr_K)
             {
-               lut_number = 6;
+               lut_number = 6; 
+               // in1 = aig.create_pi();
+               // in2 = aig.create_pi();
+               // aig.create_xor(in1, in2);
             }
 
-            if(lut_number != 0)
+            if (lut_number != 0)
             {
                auto* be = GetPointer<binary_expr>(GET_NODE(ga->op1));
                THROW_ASSERT(be->op0 && be->op1, "expected two parameters");
                int data_size0 = static_cast<int>(tree_helper::Size(GET_NODE(be->op0)));
                int data_size1 = static_cast<int>(tree_helper::Size(GET_NODE(be->op1)));
-               if(data_size0 == 1 and data_size1 == 1 and not tree_helper::is_constant(TM, be->op0->index) and not tree_helper::is_constant(TM, be->op1->index))
+               if (data_size0 == 1 and data_size1 == 1 and not tree_helper::is_constant(TM, be->op0->index) and not tree_helper::is_constant(TM, be->op1->index))
                {
                   const auto type = tree_man->CreateDefaultUnsignedLongLongInt();
 
