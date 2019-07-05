@@ -7472,7 +7472,18 @@ endgenerate"/>
 VERILOG_PROVIDED="
 reg [7:0] dout_value_a1 1INIT_ZERO_VALUE;
 reg [7:0] dout_value_b1 1INIT_ZERO_VALUE;
+reg [7:0] dout_a_registered 1INIT_ZERO_VALUE;
+reg [7:0] dout_b_registered 1INIT_ZERO_VALUE;
+reg [7:0] din_value_a1 1INIT_ZERO_VALUE;
+reg [7:0] din_value_b1 1INIT_ZERO_VALUE;
+reg we_a1 1INIT_ZERO_VALUE;
+reg we_b1 1INIT_ZERO_VALUE;
+reg [BITSIZE_Addr_a-1:0] Addr_a1 1INIT_ZERO_VALUE;
+reg [BITSIZE_Addr_b-1:0] Addr_b1 1INIT_ZERO_VALUE;
+
 reg [BRAM_BITSIZE-1:0] memory [0:n_mem_elements-1] /* synthesis syn_ramstyle = &quot;no_rw_check&quot; */;
+
+
 
 initial
 begin
@@ -7482,21 +7493,69 @@ assign dout_value_a = dout_value_a1;
 assign dout_value_b = dout_value_b1;
 always @(posedge clock)
 begin
-  if(we_a)
+  if(HIGH_LATENCY==0)
   begin
-    memory[Addr_a][(byte_offset+1)*8-1:byte_offset*8] &lt;= din_value_a;
+    if(we_a)
+    begin
+      memory[Addr_a][(byte_offset+1)*8-1:byte_offset*8] &lt;= din_value_a;
+    end
+    dout_value_a1 &lt;= memory[Addr_a][(byte_offset+1)*8-1:byte_offset*8];
+    if(we_b)
+    begin
+      memory[Addr_b][(byte_offset+1)*8-1:byte_offset*8] &lt;= din_value_b;
+    end
+    dout_value_b1 &lt;= memory[Addr_b][(byte_offset+1)*8-1:byte_offset*8];
   end
-  dout_value_a1 &lt;= memory[Addr_a][(byte_offset+1)*8-1:byte_offset*8];
-  if(we_b)
+  else if(HIGH_LATENCY==1)
   begin
-    memory[Addr_b][(byte_offset+1)*8-1:byte_offset*8] &lt;= din_value_b;
+    if(we_a)
+    begin
+      memory[Addr_a][(byte_offset+1)*8-1:byte_offset*8] &lt;= din_value_a;
+    end
+    dout_a_registered &lt;= memory[Addr_a][(byte_offset+1)*8-1:byte_offset*8];
+    dout_value_a1 &lt;= dout_a_registered;
+    if(we_b)
+    begin
+      memory[Addr_b][(byte_offset+1)*8-1:byte_offset*8] &lt;= din_value_b;
+    end
+    dout_b_registered &lt;= memory[Addr_b][(byte_offset+1)*8-1:byte_offset*8];
+    dout_value_b1 &lt;= dout_b_registered;
   end
-  dout_value_b1 &lt;= memory[Addr_b][(byte_offset+1)*8-1:byte_offset*8];
+  else
+  begin
+    if(we_a1)
+    begin
+      memory[Addr_a1][(byte_offset+1)*8-1:byte_offset*8] &lt;= din_value_a1;
+    end
+    dout_a_registered &lt;= memory[Addr_a1][(byte_offset+1)*8-1:byte_offset*8];
+    dout_value_a1 &lt;= dout_a_registered;
+    if(we_b1)
+    begin
+      memory[Addr_b1][(byte_offset+1)*8-1:byte_offset*8] &lt;= din_value_b1;
+    end
+    dout_b_registered &lt;= memory[Addr_b1][(byte_offset+1)*8-1:byte_offset*8];
+    dout_value_b1 &lt;= dout_b_registered;
+    Addr_a1 &lt;= Addr_a;
+    Addr_b1 &lt;= Addr_b;
+    we_a1 &lt;= we_a;
+    we_b1 &lt;= we_b;
+    din_value_a1 &lt;= din_value_a;
+    din_value_b1 &lt;= din_value_b;
+  end
 end
 "
 VHDL_PROVIDED="
   signal dout_value_a1 : std_logic_vector(7 downto 0) 1INIT_ZERO_VALUE;
   signal dout_value_b1 : std_logic_vector(7 downto 0) 1INIT_ZERO_VALUE;
+  signal dout_a_registered : std_logic_vector(7 downto 0) 1INIT_ZERO_VALUE;
+  signal dout_b_registered : std_logic_vector(7 downto 0) 1INIT_ZERO_VALUE;
+  signal din_value_a1 : std_logic_vector(7 downto 0) 1INIT_ZERO_VALUE;
+  signal din_value_b1 : std_logic_vector(7 downto 0) 1INIT_ZERO_VALUE;
+  signal we_a1 : std_logic 1INIT_ZERO_VALUEb;
+  signal we_b1 : std_logic 1INIT_ZERO_VALUEb;
+  signal Addr_a1 : std_logic_vector(BITSIZE_Addr_a-1 downto 0) 1INIT_ZERO_VALUE;
+  signal Addr_b1 : std_logic_vector(BITSIZE_Addr_b-1 downto 0) 1INIT_ZERO_VALUE;
+
   type mem_type is array(0 to n_mem_elements-1) of std_logic_vector(7 downto 0);
   impure function InitMemFromFile (MemFileName : in string) return mem_type is
     FILE memfile : text open READ_MODE is MemFileName;
@@ -7519,42 +7578,128 @@ begin
 process (clock)
 begin
   if (clock&apos;event and clock=&apos;1&apos;) then
-    if we_a = &apos;1&apos; then
+    if(HIGH_LATENCY = 0) then
+      if we_a = &apos;1&apos; then
 -- synthesis translate_off
-      if (to_integer(unsigned(Addr_a)) &lt; n_mem_elements) then
+        if (to_integer(unsigned(Addr_a)) &lt; n_mem_elements) then
 -- synthesis translate_on
-        mem(to_integer(unsigned(Addr_a))) &lt;= din_value_a;
+          mem(to_integer(unsigned(Addr_a))) &lt;= din_value_a;
+-- synthesis translate_off
+        end if;
+-- synthesis translate_on
+      end if;
+-- synthesis translate_off
+      if (to_integer(unsigned(Addr_a)) &gt;= n_mem_elements) then
+        dout_value_a1 &lt;= (others =&gt; &apos;X&apos;);
+      else
+-- synthesis translate_on
+        dout_value_a1 &lt;= mem(to_integer(unsigned(Addr_a)));
 -- synthesis translate_off
       end if;
 -- synthesis translate_on
-    end if;
+      if we_b = &apos;1&apos; then
 -- synthesis translate_off
-    if (to_integer(unsigned(Addr_a)) &gt;= n_mem_elements) then
-      dout_value_a1 &lt;= (others =&gt; &apos;X&apos;);
-    else
+        if (to_integer(unsigned(Addr_b)) &lt; n_mem_elements) then
 -- synthesis translate_on
-      dout_value_a1 &lt;= mem(to_integer(unsigned(Addr_a)));
+          mem(to_integer(unsigned(Addr_b))) &lt;= din_value_b;
 -- synthesis translate_off
-    end if;
+        end if;
 -- synthesis translate_on
-    if we_b = &apos;1&apos; then
+      end if;
 -- synthesis translate_off
-      if (to_integer(unsigned(Addr_b)) &lt; n_mem_elements) then
+      if (to_integer(unsigned(Addr_b)) &gt;= n_mem_elements) then
+        dout_value_b1 &lt;= (others =&gt; &apos;X&apos;);
+      else
 -- synthesis translate_on
-        mem(to_integer(unsigned(Addr_b))) &lt;= din_value_b;
+        dout_value_b1 &lt;= mem(to_integer(unsigned(Addr_b)));
 -- synthesis translate_off
       end if;
 -- synthesis translate_on
-    end if;
+    elsif(HIGH_LATENCY = 1) then
+      if we_a = &apos;1&apos; then
 -- synthesis translate_off
-    if (to_integer(unsigned(Addr_b)) &gt;= n_mem_elements) then
-      dout_value_b1 &lt;= (others =&gt; &apos;X&apos;);
+        if (to_integer(unsigned(Addr_a)) &lt; n_mem_elements) then
+-- synthesis translate_on
+          mem(to_integer(unsigned(Addr_a))) &lt;= din_value_a;
+-- synthesis translate_off
+        end if;
+-- synthesis translate_on
+      end if;
+-- synthesis translate_off
+      if (to_integer(unsigned(Addr_a)) &gt;= n_mem_elements) then
+        dout_a_registered &lt;= (others =&gt; &apos;X&apos;);
+      else
+-- synthesis translate_on
+        dout_a_registered &lt;= mem(to_integer(unsigned(Addr_a)));
+-- synthesis translate_off
+      end if;
+-- synthesis translate_on
+      dout_value_a1 &lt;= dout_a_registered;
+      if we_b = &apos;1&apos; then
+-- synthesis translate_off
+        if (to_integer(unsigned(Addr_b)) &lt; n_mem_elements) then
+-- synthesis translate_on
+          mem(to_integer(unsigned(Addr_b))) &lt;= din_value_b;
+-- synthesis translate_off
+        end if;
+-- synthesis translate_on
+      end if;
+-- synthesis translate_off
+      if (to_integer(unsigned(Addr_b)) &gt;= n_mem_elements) then
+        dout_b_registered &lt;= (others =&gt; &apos;X&apos;);
+      else
+-- synthesis translate_on
+        dout_b_registered &lt;= mem(to_integer(unsigned(Addr_b)));
+-- synthesis translate_off
+      end if;
+-- synthesis translate_on
+      dout_value_b1 &lt;= dout_b_registered;
     else
--- synthesis translate_on
-      dout_value_b1 &lt;= mem(to_integer(unsigned(Addr_b)));
+      if we_a1 = &apos;1&apos; then
 -- synthesis translate_off
-    end if;
+        if (to_integer(unsigned(Addr_a1)) &lt; n_mem_elements) then
 -- synthesis translate_on
+          mem(to_integer(unsigned(Addr_a1))) &lt;= din_value_a1;
+-- synthesis translate_off
+        end if;
+-- synthesis translate_on
+      end if;
+-- synthesis translate_off
+      if (to_integer(unsigned(Addr_a1)) &gt;= n_mem_elements) then
+        dout_a_registered &lt;= (others =&gt; &apos;X&apos;);
+      else
+-- synthesis translate_on
+        dout_a_registered &lt;= mem(to_integer(unsigned(Addr_a1)));
+-- synthesis translate_off
+      end if;
+-- synthesis translate_on
+      dout_value_a1 &lt;= dout_a_registered;
+      if we_b1 = &apos;1&apos; then
+-- synthesis translate_off
+        if (to_integer(unsigned(Addr_b1)) &lt; n_mem_elements) then
+-- synthesis translate_on
+          mem(to_integer(unsigned(Addr_b1))) &lt;= din_value_b1;
+-- synthesis translate_off
+        end if;
+-- synthesis translate_on
+      end if;
+-- synthesis translate_off
+      if (to_integer(unsigned(Addr_b1)) &gt;= n_mem_elements) then
+        dout_b_registered &lt;= (others =&gt; &apos;X&apos;);
+      else
+-- synthesis translate_on
+        dout_b_registered &lt;= mem(to_integer(unsigned(Addr_b1)));
+-- synthesis translate_off
+      end if;
+-- synthesis translate_on
+      dout_value_b1 &lt;= dout_b_registered;
+      Addr_a1 &lt;= Addr_a;
+      Addr_b1 &lt;= Addr_b;
+      we_a1 &lt;= we_a;
+      we_b1 &lt;= we_b;
+      din_value_a1 &lt;= din_value_a;
+      din_value_b1 &lt;= din_value_b;
+    end if;
   end if;
 end process;
 "/>
@@ -8587,7 +8732,6 @@ begin
     dout_a_registered &lt;= memory[memory_addr_a1];
     dout_a &lt;= dout_a_registered;
   end
-
 end
 
 generate
