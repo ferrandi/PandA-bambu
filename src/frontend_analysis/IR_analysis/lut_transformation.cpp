@@ -98,529 +98,54 @@
 #include "tree_manipulation.hpp"
 #include "tree_reindex.hpp"
 
-std::string lut_transformation::DecToBin(unsigned long long int number)
-{
-   if(number == 0)
-      return "0";
-   if(number == 1)
-      return "1";
-   if(number % 2 == 0)
-   {
-      return DecToBin(number / 2) + "0";
-   }
-   else
-   {
-      return DecToBin(number / 2) + "1";
-   }
-}
+typedef mockturtle::aig_network::signal (mockturtle::aig_network::*aig_network_fn)(const mockturtle::aig_network::signal &, const mockturtle::aig_network::signal &);
 
-unsigned long long int lut_transformation::BinToDec(const std::string& number)
-{
-   unsigned long long int i_bin = 0;
-   try
-   {
-      size_t* endptr = nullptr;
-      i_bin = std::stoull(number, endptr, 2);
-   }
-   catch(const std::invalid_argument& e)
-   {
-      std::string reasonWhy = e.what();
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Invalid Argument" + reasonWhy);
-   }
-   catch(const std::out_of_range& e)
-   {
-      std::string reasonWhy = e.what();
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Out Of Range" + reasonWhy);
-   }
-   return i_bin;
-}
-
-/**
- * Create a new concatenation
- * @param op0 first input
- * @param op1 second input
- * @param op0size size for shifting
- * @param bb_index index of bb where to append the concatenation
- */
-tree_nodeRef lut_transformation::CreateConcat(tree_nodeRef op0, tree_nodeRef op1, std::pair<const unsigned int, blocRef> bb, tree_nodeRef stm_to_append)
-{
-   const auto type = tree_man->CreateDefaultUnsignedLongLongInt();
-   unsigned int integer_cst1_id = TM->new_tree_node_id();
-   tree_nodeRef const1 = tree_man->CreateIntegerCst(type, 1, integer_cst1_id);
-
-   const std::string srcp_default("built-in:0:0");
-   tree_nodeRef lshift_op = tree_man->create_binary_operation(type, op0, const1, srcp_default, lshift_expr_K);
-   tree_nodeRef lshift_ga = CreateGimpleAssign(type, lshift_op, bb.first, srcp_default);
-   bb.second->PushBefore(lshift_ga, stm_to_append);
-
-   tree_nodeRef conc_op = tree_man->create_ternary_operation(type, GetPointer<const gimple_assign>(GET_CONST_NODE(lshift_ga))->op0, op1, const1, srcp_default, bit_ior_concat_expr_K);
-   tree_nodeRef conc_ga = CreateGimpleAssign(type, conc_op, bb.first, srcp_default);
-   bb.second->PushBefore(conc_ga, stm_to_append);
-   return conc_ga;
-}
-
-/**
- * Create a multiconcatenation from a set of operand
- * @param set_of_nodes set of nodes to concatenate
- * @param bb_index index of bb where to append the concatenation
- */
-tree_nodeRef lut_transformation::CreateMultiConcat(std::vector<tree_nodeRef> set_of_nodes, const std::pair<const unsigned int, blocRef>& bb, tree_nodeRef stm_to_append)
-{
-   // Create the first concat
-   auto it = set_of_nodes.begin();
-
-   const std::string srcp_default("built-in:0:0");
-   const auto type = tree_man->CreateDefaultUnsignedLongLongInt();
-   unsigned int integer_cst1_id = TM->new_tree_node_id();
-   tree_nodeRef const1 = tree_man->CreateIntegerCst(type, 1, integer_cst1_id);
-   tree_nodeRef mask_op = tree_man->create_binary_operation(type, *it, const1, srcp_default, bit_and_expr_K);
-   tree_nodeRef mask_ga = CreateGimpleAssign(type, mask_op, bb.first, srcp_default);
-   bb.second->PushBefore(mask_ga, stm_to_append);
-   tree_nodeRef maskedOp = GetPointer<const gimple_assign>(GET_CONST_NODE((mask_ga)))->op0;
-   tree_nodeRef concat = CreateConcat(maskedOp, *(it + 1), bb, stm_to_append);
-   it = it + 2;
-   while(it != set_of_nodes.end())
-   {
-      tree_nodeRef concat_ssa = (GetPointer<gimple_assign>(GET_NODE(concat)))->op0;
-      concat = CreateConcat(concat_ssa, *(it), bb, stm_to_append);
-      it = it + 1;
-   }
-   return concat;
-}
-
-/**
- * This function takes a binary number (as a string) a set of indexes and create a new int value
- * e.g binString = "0001" indexes = [0,3] return int(01) = 1
- * @param binString string of bit
- * @param indexesSet vector of indexes
- */
-unsigned long long int lut_transformation::GenerateIndexOfLutValue(const std::string& binString, const std::vector<std::size_t>& indexesSet)
-{
-   std::string result("");
-   for(unsigned long it : indexesSet)
-   {
-      result += (binString.substr(it, 1));
-   }
-   return BinToDec(result);
-}
-
-/**
- * This function takes a binary number (as a string) a set of indexes and create a new int value
- * e.g binString = "0001" indexes = [0,3] return int(01) = 1
- * @param binString string of bit
- * @param indexesSet vector of indexes
- */
-std::vector<tree_nodeRef> lut_transformation::CreateSetFromVector(std::vector<tree_nodeRef> firstSet, std::vector<tree_nodeRef> secondSet)
-{
-   std::vector<tree_nodeRef> result;
-   result.insert(result.begin(), firstSet.begin(), firstSet.end());
-   for(auto& it : secondSet)
-   {
-      bool found = false;
-      for(auto& it1 : firstSet)
-      {
-         if(it == it1)
-         {
-            found = true;
-            break;
-         }
-      }
-      if(!found)
-      {
-         result.push_back(it);
-      }
-   }
-   return result;
-}
-
-/**
- * Add zeroes to reach the string size
- * @param binString string of bit
- * @param sizeOfTheSet num of bit required
- */
-std::string lut_transformation::AddZeroes(const std::string& _bitString, double sizeOfTheSet)
-{
-   std::string bitString = _bitString;
-   while(bitString.size() < static_cast<std::size_t>(sizeOfTheSet))
-   {
-      bitString = "0" + bitString;
-   }
-   return bitString;
-}
-
-tree_nodeRef lut_transformation::CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string& srcp_default)
-{
+tree_nodeRef lut_transformation::CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string &srcp_default) {
    return tree_man->CreateGimpleAssign(type, tree_nodeRef(), tree_nodeRef(), op, bb_index, srcp_default);
 }
 
-/**
- * Recursive function to get the first level of inputs of a node
- * The function returns a set of lut or primary inputs.
- * If the function finds a concat/shif/mask it just goes on searching for lut or primary inputs
- * @param noderef node to expand
- */
-std::vector<tree_nodeRef> lut_transformation::GetInputs(const tree_nodeRef nodeReindex)
-{
-   std::vector<tree_nodeRef> allInputs;
-   tree_nodeRef noderef = GET_NODE(nodeReindex);
-   if(noderef->get_kind() == gimple_assign_K)
-   {
-      auto* gimpleNode = GetPointer<gimple_assign>(noderef);
-      tree_nodeRef node = GET_NODE(gimpleNode->op1);
-      enum kind kindOfNode = node->get_kind();
-      if(kindOfNode == lut_expr_K)
-      {
-         // if it is a lut i just add it as input
-         allInputs.push_back(gimpleNode->op0);
-      }
-      else if(kindOfNode == bit_ior_concat_expr_K)
-      {
-         // If it's a concat i have to call the function on the two operand
-         auto* concat = GetPointer<bit_ior_concat_expr>(node);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---op0=" + GET_NODE(concat->op0)->ToString());
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---op1=" + GET_NODE(concat->op1)->ToString());
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---op2=" + GET_NODE(concat->op2)->ToString());
-         std::vector<tree_nodeRef> inputsOp0;
-         if(GET_NODE(concat->op0)->get_kind() == integer_cst_K)
-         {
-            auto op0_ic = GetPointer<integer_cst>(GET_NODE(concat->op0));
-            auto op0_val = tree_helper::get_integer_cst_value(op0_ic);
-            auto op2_ic = GetPointer<integer_cst>(GET_NODE(concat->op2));
-            auto op2_val = tree_helper::get_integer_cst_value(op2_ic);
-            auto res_val = op0_val >> op2_val;
-            THROW_ASSERT(res_val <= 1, "unexpected condition");
-            unsigned int res_id = TM->new_tree_node_id();
-            inputsOp0.push_back(tree_man->CreateIntegerCst(op0_ic->type, res_val, res_id));
-         }
-         else
-            inputsOp0 = GetInputs(concat->op0);
-         std::vector<tree_nodeRef> inputsOp1 = GetInputs(concat->op1);
-         allInputs.insert(allInputs.end(), inputsOp0.begin(), inputsOp0.end());
-         allInputs.insert(allInputs.end(), inputsOp1.begin(), inputsOp1.end());
-      }
-      else if(kindOfNode == lshift_expr_K)
-      {
-         auto* lshift = GetPointer<lshift_expr>(node);
-         if(GET_NODE(lshift->op1)->get_kind() == integer_cst_K)
-         {
-            std::vector<tree_nodeRef> inputsOp0 = GetInputs(lshift->op0);
-            allInputs.insert(allInputs.end(), inputsOp0.begin(), inputsOp0.end());
-         }
-         else
-         {
-            allInputs.push_back(gimpleNode->op0);
-         }
-      }
-      else if(kindOfNode == bit_and_expr_K)
-      {
-         auto* mask = GetPointer<bit_and_expr>(node);
-         if(GET_NODE(mask->op1)->get_kind() == integer_cst_K)
-         {
-            std::vector<tree_nodeRef> inputsOp0 = GetInputs(mask->op0);
-            allInputs.insert(allInputs.end(), inputsOp0.begin(), inputsOp0.end());
-         }
-         else
-         {
-            allInputs.push_back(gimpleNode->op0);
-         }
-      }
-      else
-      {
-         allInputs.push_back(gimpleNode->op0);
-      }
-   }
-   else if(noderef->get_kind() == ssa_name_K)
-   {
-      tree_nodeRef temp_reindex = (GetPointer<const ssa_name>(noderef))->CGetDefStmt();
-      tree_nodeRef temp_def0 = GET_NODE(temp_reindex);
-      if(temp_def0->get_kind() == gimple_assign_K)
-      {
-         std::vector<tree_nodeRef> inputsOp0 = GetInputs(temp_reindex);
-         allInputs.insert(allInputs.end(), inputsOp0.begin(), inputsOp0.end());
-      }
-      else
-      {
-         allInputs.push_back(nodeReindex);
-      }
-   }
-   else
-   {
-      allInputs.push_back(nodeReindex);
-   }
-   return allInputs;
-}
-
-/**
- * The function returns  mergedSet.indexOf(values[i]) for every values in value
- * @param mergedSet  set of merged node
- * @param values nodes to look for
- */
-std::vector<std::size_t> lut_transformation::CreateLutIndexSet(std::vector<tree_nodeRef> mergedSet, std::vector<tree_nodeRef> values)
-{
-   std::vector<std::size_t> result;
-   for(auto& value : values)
-   {
-      result.push_back(static_cast<std::size_t>(std::distance(mergedSet.begin(), std::find(mergedSet.begin(), mergedSet.end(), value))));
-   }
-   return result;
-}
-
-/**
- * This function find the index of a node in a vector
- * @param mergedSet vector to search in
- * @param node node to search
- */
-std::vector<std::size_t> lut_transformation::FindIndex(std::vector<tree_nodeRef> mergedSet, tree_nodeRef node)
-{
-   std::vector<std::size_t> result;
-   for(auto it = mergedSet.begin(); it != mergedSet.end(); ++it)
-   {
-      std::size_t position = static_cast<std::size_t>(std::distance(mergedSet.begin(), it));
-      if(node == *it)
-      {
-         result.push_back(position);
-      }
-   }
-   return result;
-}
-
-/**
- * This function create the final string to use to find the final value in the current lut table
- * It basically concatenates the inputs following the right order
- * @param binaryString binary string where to find the inputs
- * @param unmergedSet original set not merged
- * @param mergedSet merged set
- * @param mergingValue value of the lut table we are mergin with the input combination of binaryString
- */
-std::string lut_transformation::CreateFinalString(const std::string& binaryString, const std::vector<tree_nodeRef>& unmergedSet, std::vector<tree_nodeRef>& mergedSet, const std::string& mergingValue)
-{
-   std::string finalString;
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing value of final LUT");
-   for(const auto& it : unmergedSet)
-   {
-      std::vector<std::size_t> indexList = FindIndex(mergedSet, it);
-      if(indexList.size() != 0)
-      {
-         finalString += binaryString.substr(indexList.at(0), 1);
-      }
-      else
-      {
-         finalString += mergingValue;
-      }
-   }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--" + finalString);
-   return finalString;
-}
-
-/**
- * This function can be used to find all the LUT in a list of statements
- * @param list_of_stmt list of statement where to search the lut
- */
-std::vector<tree_nodeRef> lut_transformation::GetLutList(const std::vector<tree_nodeRef> list_of_stmt)
-{
-   std::vector<tree_nodeRef> lutList;
-   auto it_los_end = list_of_stmt.end();
-   auto it_los = list_of_stmt.begin();
-   // iteration over statements
-   while(it_los != it_los_end)
-   {
-      if(GET_NODE(*it_los)->get_kind() == gimple_assign_K)
-      {
-         auto* ga = GetPointer<gimple_assign>(GET_NODE(*it_los));
-         if(ga->op1->get_kind() == lut_expr_K)
-         {
-            lutList.push_back(*it_los);
-         }
-      }
-      it_los++;
-   }
-   return lutList;
-}
-
-/**
- * Main function that takes a list of lut and call the algorithm to merge it
- * @param gimpleLutList list of gimple where the right part is a lut_expr
- * @param bb_index index of the bb to add the lut
- */
-void lut_transformation::MergeLut(const std::list<tree_nodeRef>& gimpleLutList, const std::pair<const unsigned int, blocRef>& bb)
-{
-   for(const auto& stmt : gimpleLutList)
-   {
-      auto* consideredLutGa = GetPointer<gimple_assign>(GET_NODE(stmt));
-      THROW_ASSERT(consideredLutGa, STR(stmt));
-      auto* consideredLut = GetPointer<lut_expr>(GET_NODE(consideredLutGa->op1));
-      THROW_ASSERT(consideredLut, STR(consideredLutGa->op1));
-      std::vector<tree_nodeRef> expansionSet = GetInputs(consideredLut->op0);
-      auto nodeToExpand = expansionSet.begin();
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Starting analysis of: " + STR(stmt));
-#ifndef NDEBUG
-      for(auto& i3 : expansionSet)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Initial LUT support : " + STR(i3));
-      }
-#endif
-
-      while(nodeToExpand != expansionSet.end())
-      {
-#ifndef NDEBUG
-         if(not AppM->ApplyNewTransformation())
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reached max cfg transformations");
-            break;
-         }
-#endif
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering node " + STR(*nodeToExpand));
-         std::vector<tree_nodeRef> inputsOfToMerge;
-         lut_expr* lutToExpand = nullptr;
-         // Get the lut to expand and its inputs
-         THROW_ASSERT(*nodeToExpand, "");
-         if((GET_NODE(*nodeToExpand))->get_kind() == ssa_name_K)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering input " + STR(*nodeToExpand));
-            tree_nodeRef temp_def0 = GET_NODE((GetPointer<const ssa_name>(GET_NODE(*nodeToExpand)))->CGetDefStmt());
-            if(temp_def0->get_kind() == gimple_assign_K)
-            {
-               auto* gaToExpand = GetPointer<gimple_assign>(temp_def0);
-               if(GET_NODE(gaToExpand->op1)->get_kind() == lut_expr_K)
-               {
-                  lutToExpand = GetPointer<lut_expr>(GET_NODE(gaToExpand->op1));
-                  inputsOfToMerge = GetInputs(lutToExpand->op0);
-               }
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Merging with : " + STR(temp_def0));
-            }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered input " + STR(*nodeToExpand));
-         }
-         else
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Skipping " + STR(*nodeToExpand));
-         }
-         // If there are no more input, we stop the merge
-         // And go on with the next expansion
-         if(inputsOfToMerge.size() == 0)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipping becasue no more inputs");
-            ++nodeToExpand;
-            continue;
-         }
-#ifndef NDEBUG
-         for(auto& i3 : inputsOfToMerge)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Merging LUT support : " + STR(i3));
-         }
-#endif
-         // Create a "merged set" using the input of the considered lut + the input of the mergin one
-         // And remove the merging itself
-         std::vector<tree_nodeRef> unmergedSet;
-         unmergedSet.insert(unmergedSet.begin(), expansionSet.begin(), expansionSet.end());
-         auto temp_expansionSet = expansionSet;
-         /// We remove nodeToExpand from expansionSet to check the number of actual inputs;
-         /// if the number is ok, then we actually remove, otherwise we keep
-         temp_expansionSet.erase(std::find(temp_expansionSet.begin(), temp_expansionSet.end(), *nodeToExpand));
-         THROW_ASSERT(expansionSet.size() != temp_expansionSet.size(), "");
-         std::vector<tree_nodeRef> mergedSet = CreateSetFromVector(temp_expansionSet, inputsOfToMerge);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Size of support set is " + STR(mergedSet.size()));
-         if(mergedSet.size() > max_lut_size)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipping becasue too many inputs");
-            ++nodeToExpand;
-            continue;
-         }
-         expansionSet = temp_expansionSet;
-         // Now create the index sets
-         std::vector<std::size_t> firstOpIndexes = CreateLutIndexSet(mergedSet, inputsOfToMerge);
-
-         // Get the lut values
-         auto* considered_lut_cost = GetPointer<integer_cst>(GET_NODE(consideredLut->op1));
-         THROW_ASSERT(considered_lut_cost, STR(consideredLut->op1));
-         auto lutNumber = static_cast<long long unsigned int>(tree_helper::get_integer_cst_value(considered_lut_cost));
-
-         std::string currentLutValueInBit = AddZeroes(DecToBin(lutNumber), pow(2, static_cast<double>(unmergedSet.size())));
-         std::reverse(currentLutValueInBit.begin(), currentLutValueInBit.end());
-
-         std::string firstOpValueInBit;
-         THROW_ASSERT(lutToExpand, "unexpected condition");
-         auto* expand_lut_cost = GetPointer<integer_cst>(GET_NODE(lutToExpand->op1));
-         THROW_ASSERT(expand_lut_cost, STR(lutToExpand->op1));
-         auto expandlutNumber = static_cast<long long unsigned int>(tree_helper::get_integer_cst_value(expand_lut_cost));
-         firstOpValueInBit = AddZeroes(DecToBin(expandlutNumber), pow(2, static_cast<double>(inputsOfToMerge.size())));
-         std::reverse(firstOpValueInBit.begin(), firstOpValueInBit.end());
-
-         // Build the new lut
-         std::string newLutValue("");
-         for(std::size_t i = 0; i < static_cast<std::size_t>(pow(2, static_cast<double>(mergedSet.size()))); i++)
-         {
-            std::string binaryNumber = AddZeroes(DecToBin(i), static_cast<double>(mergedSet.size()));
-            auto indexForFirst = GenerateIndexOfLutValue(binaryNumber, firstOpIndexes);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Index in first LUT is " + STR(indexForFirst));
-            std::string firstTempValue = firstOpValueInBit.substr(static_cast<size_t>(indexForFirst), 1);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Outcome of first LUT is " + firstOpValueInBit + "[" + STR(indexForFirst) + "] = " + STR(firstTempValue));
-            std::string finalString = CreateFinalString(binaryNumber, unmergedSet, mergedSet, firstTempValue);
-            auto indexForCurrent = BinToDec(finalString);
-            newLutValue += currentLutValueInBit.substr(static_cast<size_t>(indexForCurrent), 1);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Current LUT value " + newLutValue);
-         }
-         // create new int lut number
-         std::reverse(newLutValue.begin(), newLutValue.end());
-         auto newLutNumber = BinToDec(newLutValue);
-         // create new concat
-#ifndef NDEBUG
-         for(auto& i3 : mergedSet)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Merged LUT support : " + STR(i3));
-         }
-#endif
-         // create new lut and push it
-         tree_nodeRef multiConcat = CreateMultiConcat(mergedSet, bb, GET_NODE(stmt));
-         unsigned int lut_id = TM->new_tree_node_id();
-         const auto type = tree_man->CreateDefaultUnsignedLongLongInt();
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---LUT constant is " + STR(newLutNumber));
-         tree_nodeRef lut_constant = tree_man->CreateIntegerCst(type, static_cast<long long int>(newLutNumber), lut_id);
-         TM->ReplaceTreeNode(stmt, consideredLut->op1, lut_constant);
-         tree_nodeRef concat_ssa = (GetPointer<gimple_assign>(GET_NODE(multiConcat)))->op0;
-         GetPointer<ssa_name>(GET_NODE(concat_ssa))->bit_values = std::string(mergedSet.size(), 'U');
-         TM->ReplaceTreeNode(stmt, consideredLut->op0, concat_ssa);
-#ifndef NDEBUG
-         AppM->RegisterTransformation(GetName(), stmt);
-#endif
-
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--New stmt is " + STR(stmt));
-         expansionSet = mergedSet;
-         // restart expansion set from start
-         nodeToExpand = expansionSet.begin();
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ended analysis");
-   }
-}
-
 lut_transformation::lut_transformation(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, LUT_TRANSFORMATION, _design_flow_manager, Param), max_lut_size(NUM_CST_allocation_default_max_lut_size)
-{
-   debug_level = Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
-}
+     : FunctionFrontendFlowStep(_AppM, _function_id, LUT_TRANSFORMATION, _design_flow_manager, Param), max_lut_size(NUM_CST_allocation_default_max_lut_size) {
+    debug_level = Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
+      }
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> lut_transformation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
-{
+bool lut_transformation::CheckIfPO(const std::list<tree_nodeRef> localStatements, const std::vector<tree_nodeRef> usedIn) {
+
+    std::vector<unsigned int> usedInIndexes = std::transform(usedIn.begin(), usedIn.end(), [](const tree_nodeRef node) {
+        return node->index;
+    });
+
+    for (const auto node : localStatements) {
+        auto *gimpleAssign = GetPointer<gimple_assign>(node);
+
+        if (std::find(usedInIndexes.begin(), usedInIndexes.end(), gimpleAssign->op0->index) == usedInIndexes.end()) {
+            return true;
+         }
+      }
+
+    return false;
+      }
+
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> lut_transformation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const {
    std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
-   switch(relationship_type)
-   {
+    switch(relationship_type) {
       case(DEPENDENCE_RELATIONSHIP):
-      {
          if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, SAME_FUNCTION));
          break;
+        case(INVALIDATION_RELATIONSHIP):
+            if (GetStatus() == DesignFlowStep_Status::SUCCESS) {
+                relationships.insert(
+                    std::pair<FrontendFlowStepType, 
+                    FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION)
+                );
       }
-      case(INVALIDATION_RELATIONSHIP):
-      {
-         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
          break;
-      }
       case(PRECEDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
          break;
-      }
       default:
          THROW_UNREACHABLE("");
    }
@@ -629,12 +154,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 lut_transformation::~lut_transformation() = default;
 
-
-/*
-1) Ha senso?
-2) Come riconvertire e collegare input/output?
-*/
-DesignFlowStep_Status lut_transformation::_InternalExec() {
+DesignFlowStep_Status lut_transformation::InternalExec() {
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
    auto* fd = GetPointer<function_decl>(temp);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it has not a body");
@@ -693,7 +213,7 @@ DesignFlowStep_Status lut_transformation::_InternalExec() {
          mockturtle::aig_network::signal res;
          mockturtle::aig_network::signal op1;
          mockturtle::aig_network::signal op2;
-         mockturtle::aig_network::signal (*nodeCreateFn)(mockturtle::aig_network::signal, mockturtle::aig_network::signal);
+            aig_network_fn nodeCreateFn;
 
          if (nodeRefToSignal.find(binaryExpression->op0) != nodeRefToSignal.end()) {
             op1 = nodeRefToSignal[binaryExpression->op0];
@@ -718,81 +238,51 @@ DesignFlowStep_Status lut_transformation::_InternalExec() {
          switch (code1) {
             case bit_and_expr_K:
             case truth_and_expr_K:
-               nodeCreateFn = &aig.create_and;
+                    nodeCreateFn = &mockturtle::aig_network::create_and;
                break;
             case bit_ior_expr_K:
             case truth_or_expr_K:
-               nodeCreateFn = &aig.create_or;
+                    nodeCreateFn = &mockturtle::aig_network::create_or;
                break;
             case bit_xor_expr_K:
             case truth_xor_expr_K:
-               nodeCreateFn = &aig.create_xor;
+                    nodeCreateFn = &mockturtle::aig_network::create_xor;
                break;
             case eq_expr_K:
-               nodeCreateFn = &[&](mockturtle::aig_network::signal op1, mockturtle::aig_network::signal op2) {
-                  return !aig.create_xor(op1, op2);
-               };
+                    // nodeCreateFn = &[&](mockturtle::aig_network::signal op1, mockturtle::aig_network::signal op2) {
+                    //     return !aig.create_xor(op1, op2);
+                    // };
                break;
             case ge_expr_K:
-               nodeCreateFn = &[&](mockturtle::aig_network::signal op1, mockturtle::aig_network::signal op2) {
-                  return !aig.create_lt(op1, op2);
-               };
+                    // nodeCreateFn = &[&](mockturtle::aig_network::signal op1, mockturtle::aig_network::signal op2) {
+                    //     return !aig.create_lt(op1, op2);
+                    // };
                break;
             case lut_expr_K:
                break;
             case gt_expr_K:
-               nodeCreateFn = &[&](mockturtle::aig_network::signal op1, mockturtle::aig_network::signal op2) {
-                  return !aig.create_le(op1, op2);
-               };
+                    // nodeCreateFn = &[&](mockturtle::aig_network::signal op1, mockturtle::aig_network::signal op2) {
+                    //     return !aig.create_le(op1, op2);
+                    // };
                break;
             case le_expr_K:
-               nodeCreateFn = &aig.create_le;
-               break;
-            case lrotate_expr_K:
-               break;
-            case lshift_expr_K:
+                    nodeCreateFn = &mockturtle::aig_network::create_le;
                break;
             case lt_expr_K:
-               nodeCreateFn = &[&](mockturtle::aig_network::signal op1, mockturtle::aig_network::signal op2) {
-                  return !aig.create_lt(op1, op2);
-               };
+                    // nodeCreateFn = &[&](mockturtle::aig_network::signal op1, mockturtle::aig_network::signal op2) {
+                    //     return !aig.create_lt(op1, op2);
+                    // };
                break;
             case ne_expr_K:
-               nodeCreateFn = &aig.create_xor;
-               break;
-            case rrotate_expr_K:
-               break;
-            case rshift_expr_K:
-               break;
-            case set_le_expr_K:
-               break;
-            case truth_andif_expr_K:
-               break;
-            case truth_orif_expr_K:
-               break;
-            case uneq_expr_K:
-               break;
-            case ltgt_expr_K:
-               break;
-            case unge_expr_K:
-               break;
-            case ungt_expr_K:
-               break;
-            case unle_expr_K:
-               break;
-            case unlt_expr_K:
-               break;
-            case vec_lshift_expr_K:
-               break;
-            case vec_rshift_expr_K:
+                    nodeCreateFn = &mockturtle::aig_network::create_xor;
                break;
          }
 
-         res = nodeCreateFn(op1, op2);
+            res = (aig.*nodeCreateFn)(op1, op2);
          nodeRefToSignal[gimpleAssign->op0] = res;
          signalToNodeRef[res] = gimpleAssign->op0;
 
-         if (block.second->live_out.find(gimpleAssign->op0->index) != block.second->live_out.end()) {
+            if (this->CheckIfPO(statements, gimpleAssign->use_set->variables)) {
             aig.create_po(res);
          }
 
@@ -823,142 +313,141 @@ DesignFlowStep_Status lut_transformation::_InternalExec() {
    return DesignFlowStep_Status::UNCHANGED;
 }
 
-DesignFlowStep_Status lut_transformation::InternalExec()
-{
-   bool modified = false;
-   tree_nodeRef temp = TM->get_tree_node_const(function_id);
-   auto* fd = GetPointer<function_decl>(temp);
-   THROW_ASSERT(fd && fd->body, "Node is not a function or it has not a body");
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
-   THROW_ASSERT(sl, "Body is not a statement list");
-   /// iteration over basic blocks
-   for(auto block : sl->list_of_bloc)
-   {
-      std::list<tree_nodeRef> lutList;
+// DesignFlowStep_Status lut_transformation::InternalExec()
+// {
+//     bool modified = false;
+//     tree_nodeRef temp = TM->get_tree_node_const(function_id);
+//     auto* fd = GetPointer<function_decl>(temp);
+//     THROW_ASSERT(fd && fd->body, "Node is not a function or it has not a body");
+//     auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+//     THROW_ASSERT(sl, "Body is not a statement list");
+//     /// iteration over basic blocks
+//     for(auto block : sl->list_of_bloc)
+//     {
+//         std::list<tree_nodeRef> lutList;
 
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
-      const auto& list_of_stmt = block.second->CGetStmtList();
-      /// end of statements list
-      auto it_los_end = list_of_stmt.end();
-      /// size of statements list
-      size_t n_stmts = list_of_stmt.size();
-      /// start of statements list
-      auto it_los = list_of_stmt.begin();
-      /// iteration over statements
-      while(it_los != it_los_end)
-      {
-#ifndef NDEBUG
-         if(not AppM->ApplyNewTransformation())
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reached max cfg transformations");
-            it_los++;
-            continue;
-         }
-#endif
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(*it_los)->ToString());
+//         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
+//         const auto& list_of_stmt = block.second->CGetStmtList();
+//         /// end of statements list
+//         auto it_los_end = list_of_stmt.end();
+//         /// size of statements list
+//         size_t n_stmts = list_of_stmt.size();
+//         /// start of statements list
+//         auto it_los = list_of_stmt.begin();
+//         /// iteration over statements
+//         while(it_los != it_los_end)
+//         {
+// #ifndef NDEBUG
+//             if(not AppM->ApplyNewTransformation())
+//             {
+//                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reached max cfg transformations");
+//                 it_los++;
+//                 continue;
+//             }
+// #endif
+//             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(*it_los)->ToString());
          
-         if (GET_NODE(*it_los)->get_kind() == gimple_assign_K)
-         {
-            auto* ga = GetPointer<gimple_assign>(GET_NODE(*it_los));
-            const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
-            // second operand : the right part of the assignment
-            enum kind code1 = GET_NODE(ga->op1)->get_kind();
-            long long int lut_number = 0;
+//             if (GET_NODE(*it_los)->get_kind() == gimple_assign_K)
+//             {
+//                 auto* ga = GetPointer<gimple_assign>(GET_NODE(*it_los));
+//                 const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
+//                 // second operand : the right part of the assignment
+//                 enum kind code1 = GET_NODE(ga->op1)->get_kind();
+//                 long long int lut_number = 0;
 
-            if (code1 == bit_and_expr_K || code1 == truth_and_expr_K)
-            {
-               lut_number = 8;
-               // in1 = aig.create_pi();
-               // in2 = aig.create_pi();
-               // aig.create_and(in1, in2);
-            }
-            else if (code1 == bit_ior_expr_K || code1 == truth_or_expr_K)
-            {
-               lut_number = 14;
-               // in1 = aig.create_pi();
-               // in2 = aig.create_pi();
-               // aig.create_or(in1, in2);
-            }
-            else if (code1 == bit_xor_expr_K || code1 == truth_xor_expr_K)
-            {
-               lut_number = 6; 
-               // in1 = aig.create_pi();
-               // in2 = aig.create_pi();
-               // aig.create_xor(in1, in2);
-            }
+//                 if (code1 == bit_and_expr_K || code1 == truth_and_expr_K)
+//                 {
+//                     lut_number = 8;
+//                     // in1 = aig.create_pi();
+//                     // in2 = aig.create_pi();
+//                     // aig.create_and(in1, in2);
+//                 }
+//                 else if (code1 == bit_ior_expr_K || code1 == truth_or_expr_K)
+//                 {
+//                     lut_number = 14;
+//                     // in1 = aig.create_pi();
+//                     // in2 = aig.create_pi();
+//                     // aig.create_or(in1, in2);
+//                 }
+//                 else if (code1 == bit_xor_expr_K || code1 == truth_xor_expr_K)
+//                 {
+//                     lut_number = 6; 
+//                     // in1 = aig.create_pi();
+//                     // in2 = aig.create_pi();
+//                     // aig.create_xor(in1, in2);
+//                 }
 
-            if (lut_number != 0)
-            {
-               auto* be = GetPointer<binary_expr>(GET_NODE(ga->op1));
-               THROW_ASSERT(be->op0 && be->op1, "expected two parameters");
-               int data_size0 = static_cast<int>(tree_helper::Size(GET_NODE(be->op0)));
-               int data_size1 = static_cast<int>(tree_helper::Size(GET_NODE(be->op1)));
-               if (data_size0 == 1 and data_size1 == 1 and not tree_helper::is_constant(TM, be->op0->index) and not tree_helper::is_constant(TM, be->op1->index))
-               {
-                  const auto type = tree_man->CreateDefaultUnsignedLongLongInt();
+//                 if (lut_number != 0)
+//                 {
+//                     auto* be = GetPointer<binary_expr>(GET_NODE(ga->op1));
+//                     THROW_ASSERT(be->op0 && be->op1, "expected two parameters");
+//                     int data_size0 = static_cast<int>(tree_helper::Size(GET_NODE(be->op0)));
+//                     int data_size1 = static_cast<int>(tree_helper::Size(GET_NODE(be->op1)));
+//                     if (data_size0 == 1 and data_size1 == 1 and not tree_helper::is_constant(TM, be->op0->index) and not tree_helper::is_constant(TM, be->op1->index))
+//                     {
+//                         const auto type = tree_man->CreateDefaultUnsignedLongLongInt();
 
-                  tree_nodeRef convert_op = tree_man->create_unary_operation(type, be->op0, srcp_default, convert_expr_K);
-                  tree_nodeRef convert_ga = CreateGimpleAssign(type, convert_op, block.first, srcp_default);
-                  block.second->PushBefore(convert_ga, *it_los);
+//                         tree_nodeRef convert_op = tree_man->create_unary_operation(type, be->op0, srcp_default, convert_expr_K);
+//                         tree_nodeRef convert_ga = CreateGimpleAssign(type, convert_op, block.first, srcp_default);
+//                         block.second->PushBefore(convert_ga, *it_los);
 
-                  unsigned int integer_cst1_id = TM->new_tree_node_id();
-                  tree_nodeRef const1 = tree_man->CreateIntegerCst(type, 1, integer_cst1_id);
+//                         unsigned int integer_cst1_id = TM->new_tree_node_id();
+//                         tree_nodeRef const1 = tree_man->CreateIntegerCst(type, 1, integer_cst1_id);
 
-                  tree_nodeRef mask_op = tree_man->create_binary_operation(type, GetPointer<const gimple_assign>(GET_CONST_NODE(convert_ga))->op0, const1, srcp_default, bit_and_expr_K);
-                  tree_nodeRef mask_ga = CreateGimpleAssign(type, mask_op, block.first, srcp_default);
-                  block.second->PushBefore(mask_ga, *it_los);
+//                         tree_nodeRef mask_op = tree_man->create_binary_operation(type, GetPointer<const gimple_assign>(GET_CONST_NODE(convert_ga))->op0, const1, srcp_default, bit_and_expr_K);
+//                         tree_nodeRef mask_ga = CreateGimpleAssign(type, mask_op, block.first, srcp_default);
+//                         block.second->PushBefore(mask_ga, *it_los);
 
-                  tree_nodeRef lshift_op = tree_man->create_binary_operation(type, GetPointer<const gimple_assign>(GET_CONST_NODE((mask_ga)))->op0, const1, srcp_default, lshift_expr_K);
-                  tree_nodeRef lshift_ga = CreateGimpleAssign(type, lshift_op, block.first, srcp_default);
-                  block.second->PushBefore(lshift_ga, *it_los);
+//                         tree_nodeRef lshift_op = tree_man->create_binary_operation(type, GetPointer<const gimple_assign>(GET_CONST_NODE((mask_ga)))->op0, const1, srcp_default, lshift_expr_K);
+//                         tree_nodeRef lshift_ga = CreateGimpleAssign(type, lshift_op, block.first, srcp_default);
+//                         block.second->PushBefore(lshift_ga, *it_los);
 
-                  tree_nodeRef conc_op = tree_man->create_ternary_operation(type, GetPointer<const gimple_assign>(GET_CONST_NODE(lshift_ga))->op0, be->op1, const1, srcp_default, bit_ior_concat_expr_K);
-                  tree_nodeRef conc_ga = CreateGimpleAssign(type, conc_op, block.first, srcp_default);
-                  GetPointer<gimple_assign>(GET_NODE(conc_ga))->temporary_address = true;
-                  tree_nodeRef result_conc = GetPointer<gimple_assign>(GET_NODE(conc_ga))->op0;
-                  GetPointer<ssa_name>(GET_NODE(result_conc))->bit_values = "UU";
-                  // insert concatenation node
-                  block.second->PushBefore(conc_ga, *it_los);
-                  // create lut node
-                  // transform constant to tree_nodeRef
-                  unsigned int integer_cst2_id = TM->new_tree_node_id();
-                  tree_nodeRef and_op_cst = tree_man->CreateIntegerCst(type, lut_number, integer_cst2_id);
-                  const auto type1 = tree_man->CreateDefaultUnsignedLongLongInt();
-                  tree_nodeRef new_op1 = tree_man->create_binary_operation(be->type, result_conc, and_op_cst, srcp_default, lut_expr_K);
-                  tree_nodeRef lut_ga = CreateGimpleAssign(be->type, new_op1, block.first, srcp_default);
-                  GetPointer<gimple_assign>(GET_NODE(lut_ga))->op0 = ga->op0;
-                  // insert lut node
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing " + STR(*it_los) + " with " + STR(lut_ga));
-                  block.second->Replace(*it_los, lut_ga, true);
-#ifndef NDEBUG
-                  AppM->RegisterTransformation(GetName(), lut_ga);
-#endif
-                  lutList.push_back(lut_ga);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added to LUT list : " + STR(lut_ga));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Modified statement " + GET_NODE(lut_ga)->ToString());
-                  it_los = list_of_stmt.begin();
-                  it_los_end = list_of_stmt.end();
-                  continue;
-               }
-            }
-         }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + GET_NODE(*it_los)->ToString());
-         it_los++;
-      }
-      // Merge all the LUT in the block
-      MergeLut(lutList, block);
+//                         tree_nodeRef conc_op = tree_man->create_ternary_operation(type, GetPointer<const gimple_assign>(GET_CONST_NODE(lshift_ga))->op0, be->op1, const1, srcp_default, bit_ior_concat_expr_K);
+//                         tree_nodeRef conc_ga = CreateGimpleAssign(type, conc_op, block.first, srcp_default);
+//                         GetPointer<gimple_assign>(GET_NODE(conc_ga))->temporary_address = true;
+//                         tree_nodeRef result_conc = GetPointer<gimple_assign>(GET_NODE(conc_ga))->op0;
+//                         GetPointer<ssa_name>(GET_NODE(result_conc))->bit_values = "UU";
+//                         // insert concatenation node
+//                         block.second->PushBefore(conc_ga, *it_los);
+//                         // create lut node
+//                         // transform constant to tree_nodeRef
+//                         unsigned int integer_cst2_id = TM->new_tree_node_id();
+//                         tree_nodeRef and_op_cst = tree_man->CreateIntegerCst(type, lut_number, integer_cst2_id);
+//                         const auto type1 = tree_man->CreateDefaultUnsignedLongLongInt();
+//                         tree_nodeRef new_op1 = tree_man->create_binary_operation(be->type, result_conc, and_op_cst, srcp_default, lut_expr_K);
+//                         tree_nodeRef lut_ga = CreateGimpleAssign(be->type, new_op1, block.first, srcp_default);
+//                         GetPointer<gimple_assign>(GET_NODE(lut_ga))->op0 = ga->op0;
+//                         // insert lut node
+//                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing " + STR(*it_los) + " with " + STR(lut_ga));
+//                         block.second->Replace(*it_los, lut_ga, true);
+// #ifndef NDEBUG
+//                         AppM->RegisterTransformation(GetName(), lut_ga);
+// #endif
+//                         lutList.push_back(lut_ga);
+//                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added to LUT list : " + STR(lut_ga));
+//                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Modified statement " + GET_NODE(lut_ga)->ToString());
+//                         it_los = list_of_stmt.begin();
+//                         it_los_end = list_of_stmt.end();
+//                         continue;
+//                     }
+//                 }
+//             }
+//             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + GET_NODE(*it_los)->ToString());
+//             it_los++;
+//         }
+//         // Merge all the LUT in the block
+//         MergeLut(lutList, block);
 
-      if(n_stmts != list_of_stmt.size())
-         modified = true;
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examining BB" + STR(block.first));
-   }
-   if(modified)
-      function_behavior->UpdateBBVersion();
-   return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
-}
+//         if(n_stmts != list_of_stmt.size())
+//             modified = true;
+//         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examining BB" + STR(block.first));
+//     }
+//     if(modified)
+//         function_behavior->UpdateBBVersion();
+//     return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
+// }
 
-void lut_transformation::Initialize()
-{
+void lut_transformation::Initialize() {
    TM = AppM->get_tree_manager();
    tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
    THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "");
@@ -967,31 +456,27 @@ void lut_transformation::Initialize()
    max_lut_size = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
 }
 
-void lut_transformation::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
-{
-   switch(relationship_type)
-   {
+void lut_transformation::ComputeRelationships(DesignFlowStepSet &relationship, const DesignFlowStep::RelationshipType relationship_type) {
+    switch(relationship_type) {
       case(PRECEDENCE_RELATIONSHIP):
-      {
          break;
-      }
-      case DEPENDENCE_RELATIONSHIP:
-      {
+        case DEPENDENCE_RELATIONSHIP: {
          const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
          const auto* technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
          const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
-         const DesignFlowStepRef technology_design_flow_step =
-             technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+            const DesignFlowStepRef technology_design_flow_step = technology_flow_step ? 
+                design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : 
+                technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          relationship.insert(technology_design_flow_step);
+
          break;
       }
       case INVALIDATION_RELATIONSHIP:
-      {
          break;
-      }
       default:
          THROW_UNREACHABLE("");
    }
+
    FunctionFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }
