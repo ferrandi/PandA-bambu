@@ -6080,7 +6080,11 @@ ADDRESS_DECODING_LOGIC_instance : ADDRESS_DECODING_LOGIC generic map (BITSIZE_me
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
             <connected_objects/>
           </port_vector_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_N1_SP in1 in2 in3 sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file_a MEMORY_INIT_file_b n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_sel_LOAD proxy_sel_STORE proxy_out1 HIGH_LATENCY" IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SP" VERILOG_PROVIDED="ARRAY_1D_STD_BRAM_NN_SP #(.BITSIZE_in1(BITSIZE_in1), .PORTSIZE_in1(PORTSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .PORTSIZE_in2(PORTSIZE_in2), .BITSIZE_in3(BITSIZE_in3), .PORTSIZE_in3(PORTSIZE_in3), .BITSIZE_sel_LOAD(BITSIZE_sel_LOAD), .PORTSIZE_sel_LOAD(PORTSIZE_sel_LOAD), .BITSIZE_sel_STORE(BITSIZE_sel_STORE), .PORTSIZE_sel_STORE(PORTSIZE_sel_STORE), .BITSIZE_S_oe_ram(BITSIZE_S_oe_ram), .PORTSIZE_S_oe_ram(1), .BITSIZE_S_we_ram(BITSIZE_S_we_ram), .PORTSIZE_S_we_ram(1), .BITSIZE_out1(BITSIZE_out1), .PORTSIZE_out1(PORTSIZE_out1), .BITSIZE_S_addr_ram(BITSIZE_S_addr_ram), .PORTSIZE_S_addr_ram(1), .BITSIZE_S_Wdata_ram(BITSIZE_S_Wdata_ram), .PORTSIZE_S_Wdata_ram(1), .BITSIZE_Sin_Rdata_ram(BITSIZE_Sin_Rdata_ram), .PORTSIZE_Sin_Rdata_ram(1), .BITSIZE_Sout_Rdata_ram(BITSIZE_Sout_Rdata_ram), .PORTSIZE_Sout_Rdata_ram(1), .BITSIZE_S_data_ram_size(BITSIZE_S_data_ram_size), .PORTSIZE_S_data_ram_size(1), .BITSIZE_Sin_DataRdy(BITSIZE_Sin_DataRdy), .PORTSIZE_Sin_DataRdy(1), .BITSIZE_Sout_DataRdy(BITSIZE_Sout_DataRdy), .PORTSIZE_Sout_DataRdy(1), .MEMORY_INIT_file_a(MEMORY_INIT_file_a), .MEMORY_INIT_file_b(MEMORY_INIT_file_b), .n_elements(n_elements), .data_size(data_size), .address_space_begin(address_space_begin), .address_space_rangesize(address_space_rangesize), .BUS_PIPELINED(BUS_PIPELINED), .BRAM_BITSIZE(BRAM_BITSIZE), .PRIVATE_MEMORY(PRIVATE_MEMORY), .USE_SPARSE_MEMORY(USE_SPARSE_MEMORY), .HIGH_LATENCY(HIGH_LATENCY), .BITSIZE_proxy_in1(BITSIZE_proxy_in1), .PORTSIZE_proxy_in1(PORTSIZE_proxy_in1), .BITSIZE_proxy_in2(BITSIZE_proxy_in2), .PORTSIZE_proxy_in2(PORTSIZE_proxy_in2), .BITSIZE_proxy_in3(BITSIZE_proxy_in3), .PORTSIZE_proxy_in3(PORTSIZE_proxy_in3), .BITSIZE_proxy_sel_LOAD(BITSIZE_proxy_sel_LOAD), .PORTSIZE_proxy_sel_LOAD(PORTSIZE_proxy_sel_LOAD), .BITSIZE_proxy_sel_STORE(BITSIZE_proxy_sel_STORE), .PORTSIZE_proxy_sel_STORE(PORTSIZE_proxy_sel_STORE), .BITSIZE_proxy_out1(BITSIZE_proxy_out1), .PORTSIZE_proxy_out1(PORTSIZE_proxy_out1)) ARRAY_1D_STD_BRAM_NN_instance (.out1(out1), .Sout_Rdata_ram(Sout_Rdata_ram), .Sout_DataRdy(Sout_DataRdy), .proxy_out1(proxy_out1), .clock(clock), .reset(reset), .in1(in1), .in2(in2), .in3(in3), .sel_LOAD(sel_LOAD), .sel_STORE(sel_STORE), .S_oe_ram(S_oe_ram), .S_we_ram(S_we_ram), .S_addr_ram(S_addr_ram), .S_Wdata_ram(S_Wdata_ram), .Sin_Rdata_ram(Sin_Rdata_ram), .S_data_ram_size(S_data_ram_size ), .Sin_DataRdy(Sin_DataRdy), .proxy_in1(proxy_in1), .proxy_in2(proxy_in2), .proxy_in3(proxy_in3), .proxy_sel_LOAD(proxy_sel_LOAD), .proxy_sel_STORE(proxy_sel_STORE));"/>
+          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_N1_SP in1 in2 in3 sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file_a MEMORY_INIT_file_b n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_sel_LOAD proxy_sel_STORE proxy_out1 HIGH_LATENCY" IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SP" VERILOG_PROVIDED="ARRAY_1D_STD_BRAM_NN_SP #(.BITSIZE_in1(BITSIZE_in1), .PORTSIZE_in1(PORTSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .PORTSIZE_in2(PORTSIZE_in2), .BITSIZE_in3(BITSIZE_in3), .PORTSIZE_in3(PORTSIZE_in3), .BITSIZE_sel_LOAD(BITSIZE_sel_LOAD), .PORTSIZE_sel_LOAD(PORTSIZE_sel_LOAD), .BITSIZE_sel_STORE(BITSIZE_sel_STORE), .PORTSIZE_sel_STORE(PORTSIZE_sel_STORE), .BITSIZE_S_oe_ram(BITSIZE_S_oe_ram), .PORTSIZE_S_oe_ram(1), .BITSIZE_S_we_ram(BITSIZE_S_we_ram), .PORTSIZE_S_we_ram(1), .BITSIZE_out1(BITSIZE_out1), .PORTSIZE_out1(PORTSIZE_out1), .BITSIZE_S_addr_ram(BITSIZE_S_addr_ram), .PORTSIZE_S_addr_ram(1), .BITSIZE_S_Wdata_ram(BITSIZE_S_Wdata_ram), .PORTSIZE_S_Wdata_ram(1), .BITSIZE_Sin_Rdata_ram(BITSIZE_Sin_Rdata_ram), .PORTSIZE_Sin_Rdata_ram(1), .BITSIZE_Sout_Rdata_ram(BITSIZE_Sout_Rdata_ram), .PORTSIZE_Sout_Rdata_ram(1), .BITSIZE_S_data_ram_size(BITSIZE_S_data_ram_size), .PORTSIZE_S_data_ram_size(1), .BITSIZE_Sin_DataRdy(BITSIZE_Sin_DataRdy), .PORTSIZE_Sin_DataRdy(1), .BITSIZE_Sout_DataRdy(BITSIZE_Sout_DataRdy), .PORTSIZE_Sout_DataRdy(1), .MEMORY_INIT_file_a(MEMORY_INIT_file_a), .MEMORY_INIT_file_b(MEMORY_INIT_file_b), .n_elements(n_elements), .data_size(data_size), .address_space_begin(address_space_begin), .address_space_rangesize(address_space_rangesize), .BUS_PIPELINED(BUS_PIPELINED), .BRAM_BITSIZE(BRAM_BITSIZE), .PRIVATE_MEMORY(PRIVATE_MEMORY), .USE_SPARSE_MEMORY(USE_SPARSE_MEMORY), .HIGH_LATENCY(HIGH_LATENCY), .BITSIZE_proxy_in1(BITSIZE_proxy_in1), .PORTSIZE_proxy_in1(PORTSIZE_proxy_in1), .BITSIZE_proxy_in2(BITSIZE_proxy_in2), .PORTSIZE_proxy_in2(PORTSIZE_proxy_in2), .BITSIZE_proxy_in3(BITSIZE_proxy_in3), .PORTSIZE_proxy_in3(PORTSIZE_proxy_in3), .BITSIZE_proxy_sel_LOAD(BITSIZE_proxy_sel_LOAD), .PORTSIZE_proxy_sel_LOAD(PORTSIZE_proxy_sel_LOAD), .BITSIZE_proxy_sel_STORE(BITSIZE_proxy_sel_STORE), .PORTSIZE_proxy_sel_STORE(PORTSIZE_proxy_sel_STORE), .BITSIZE_proxy_out1(BITSIZE_proxy_out1), .PORTSIZE_proxy_out1(PORTSIZE_proxy_out1)) ARRAY_1D_STD_BRAM_NN_instance (.out1(out1), .Sout_Rdata_ram(Sout_Rdata_ram), .Sout_DataRdy(Sout_DataRdy), .proxy_out1(proxy_out1), .clock(clock), .reset(reset), .in1(in1), .in2(in2), .in3(in3), .sel_LOAD(sel_LOAD), .sel_STORE(sel_STORE), .S_oe_ram(S_oe_ram), .S_we_ram(S_we_ram), .S_addr_ram(S_addr_ram), .S_Wdata_ram(S_Wdata_ram), .Sin_Rdata_ram(Sin_Rdata_ram), .S_data_ram_size(S_data_ram_size ), .Sin_DataRdy(Sin_DataRdy), .proxy_in1(proxy_in1), .proxy_in2(proxy_in2), .proxy_in3(proxy_in3), .proxy_sel_LOAD(proxy_sel_LOAD), .proxy_sel_STORE(proxy_sel_STORE));"
+VHDL_PROVIDED=
+"begin
+ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SP generic map (BITSIZE_in1=&gt;BITSIZE_in1, PORTSIZE_in1=&gt;PORTSIZE_in1, BITSIZE_in2=&gt;BITSIZE_in2, PORTSIZE_in2=&gt;PORTSIZE_in2, BITSIZE_in3=&gt;BITSIZE_in3, PORTSIZE_in3=&gt;PORTSIZE_in3, BITSIZE_sel_LOAD=&gt;BITSIZE_sel_LOAD, PORTSIZE_sel_LOAD=&gt;PORTSIZE_sel_LOAD, BITSIZE_sel_STORE=&gt;BITSIZE_sel_STORE, PORTSIZE_sel_STORE=&gt;PORTSIZE_sel_STORE, BITSIZE_S_oe_ram=&gt;BITSIZE_S_oe_ram, PORTSIZE_S_oe_ram=&gt;1, BITSIZE_S_we_ram=&gt;BITSIZE_S_we_ram, PORTSIZE_S_we_ram=&gt;1, BITSIZE_out1=&gt;BITSIZE_out1, PORTSIZE_out1=&gt;PORTSIZE_out1, BITSIZE_S_addr_ram=&gt;BITSIZE_S_addr_ram, PORTSIZE_S_addr_ram=&gt;1, BITSIZE_S_Wdata_ram=&gt;BITSIZE_S_Wdata_ram, PORTSIZE_S_Wdata_ram=&gt;1, BITSIZE_Sin_Rdata_ram=&gt;BITSIZE_Sin_Rdata_ram, PORTSIZE_Sin_Rdata_ram=&gt;1, BITSIZE_Sout_Rdata_ram=&gt;BITSIZE_Sout_Rdata_ram, PORTSIZE_Sout_Rdata_ram=&gt;1, BITSIZE_S_data_ram_size=&gt;BITSIZE_S_data_ram_size, PORTSIZE_S_data_ram_size=&gt;1, BITSIZE_Sin_DataRdy=&gt;BITSIZE_Sin_DataRdy, PORTSIZE_Sin_DataRdy=&gt;1, BITSIZE_Sout_DataRdy=&gt;BITSIZE_Sout_DataRdy, PORTSIZE_Sout_DataRdy=&gt;1, MEMORY_INIT_file_a=&gt;MEMORY_INIT_file_a, MEMORY_INIT_file_b=&gt;MEMORY_INIT_file_b, n_elements=&gt;n_elements, data_size=&gt;data_size, address_space_begin=&gt;address_space_begin, address_space_rangesize=&gt;address_space_rangesize, BUS_PIPELINED=&gt;BUS_PIPELINED, BRAM_BITSIZE=&gt;BRAM_BITSIZE, PRIVATE_MEMORY=&gt;PRIVATE_MEMORY, USE_SPARSE_MEMORY=&gt;USE_SPARSE_MEMORY, BITSIZE_proxy_in1=&gt;BITSIZE_proxy_in1, PORTSIZE_proxy_in1=&gt;PORTSIZE_proxy_in1, BITSIZE_proxy_in2=&gt;BITSIZE_proxy_in2, PORTSIZE_proxy_in2=&gt;PORTSIZE_proxy_in2, BITSIZE_proxy_in3=&gt;BITSIZE_proxy_in3, PORTSIZE_proxy_in3=&gt;PORTSIZE_proxy_in3, BITSIZE_proxy_sel_LOAD=&gt;BITSIZE_proxy_sel_LOAD, PORTSIZE_proxy_sel_LOAD=&gt;PORTSIZE_proxy_sel_LOAD, BITSIZE_proxy_sel_STORE=&gt;BITSIZE_proxy_sel_STORE, PORTSIZE_proxy_sel_STORE=&gt;PORTSIZE_proxy_sel_STORE, BITSIZE_proxy_out1=&gt;BITSIZE_proxy_out1, PORTSIZE_proxy_out1=&gt;PORTSIZE_proxy_out1, HIGH_LATENCY=&gt;HIGH_LATENCY) port map (out1=&gt;out1, Sout_Rdata_ram=&gt;Sout_Rdata_ram, Sout_DataRdy(0)=&gt;Sout_DataRdy, proxy_out1=&gt;proxy_out1, clock=&gt;clock, reset=&gt;reset, in1=&gt;in1, in2=&gt;in2, in3=&gt;in3, sel_LOAD=&gt;sel_LOAD, sel_STORE=&gt;sel_STORE, S_oe_ram(0)=&gt;S_oe_ram, S_we_ram(0)=&gt;S_we_ram, S_addr_ram=&gt;S_addr_ram, S_Wdata_ram=&gt;S_Wdata_ram, Sin_Rdata_ram=&gt;Sin_Rdata_ram, S_data_ram_size=&gt;S_data_ram_size, Sin_DataRdy(0)=&gt;Sin_DataRdy, proxy_in1=&gt;proxy_in1, proxy_in2=&gt;proxy_in2, proxy_in3=&gt;proxy_in3, proxy_sel_LOAD=&gt;proxy_sel_LOAD, proxy_sel_STORE=&gt;proxy_sel_STORE);"
+/>
         </component_o>
       </circuit>
     </cell>
@@ -7468,7 +7472,18 @@ endgenerate"/>
 VERILOG_PROVIDED="
 reg [7:0] dout_value_a1 1INIT_ZERO_VALUE;
 reg [7:0] dout_value_b1 1INIT_ZERO_VALUE;
+reg [7:0] dout_a_registered 1INIT_ZERO_VALUE;
+reg [7:0] dout_b_registered 1INIT_ZERO_VALUE;
+reg [7:0] din_value_a1 1INIT_ZERO_VALUE;
+reg [7:0] din_value_b1 1INIT_ZERO_VALUE;
+reg we_a1 1INIT_ZERO_VALUE;
+reg we_b1 1INIT_ZERO_VALUE;
+reg [BITSIZE_Addr_a-1:0] Addr_a1 1INIT_ZERO_VALUE;
+reg [BITSIZE_Addr_b-1:0] Addr_b1 1INIT_ZERO_VALUE;
+
 reg [BRAM_BITSIZE-1:0] memory [0:n_mem_elements-1] /* synthesis syn_ramstyle = &quot;no_rw_check&quot; */;
+
+
 
 initial
 begin
@@ -7478,21 +7493,69 @@ assign dout_value_a = dout_value_a1;
 assign dout_value_b = dout_value_b1;
 always @(posedge clock)
 begin
-  if(we_a)
+  if(HIGH_LATENCY==0)
   begin
-    memory[Addr_a][(byte_offset+1)*8-1:byte_offset*8] &lt;= din_value_a;
+    if(we_a)
+    begin
+      memory[Addr_a][(byte_offset+1)*8-1:byte_offset*8] &lt;= din_value_a;
+    end
+    dout_value_a1 &lt;= memory[Addr_a][(byte_offset+1)*8-1:byte_offset*8];
+    if(we_b)
+    begin
+      memory[Addr_b][(byte_offset+1)*8-1:byte_offset*8] &lt;= din_value_b;
+    end
+    dout_value_b1 &lt;= memory[Addr_b][(byte_offset+1)*8-1:byte_offset*8];
   end
-  dout_value_a1 &lt;= memory[Addr_a][(byte_offset+1)*8-1:byte_offset*8];
-  if(we_b)
+  else if(HIGH_LATENCY==1)
   begin
-    memory[Addr_b][(byte_offset+1)*8-1:byte_offset*8] &lt;= din_value_b;
+    if(we_a)
+    begin
+      memory[Addr_a][(byte_offset+1)*8-1:byte_offset*8] &lt;= din_value_a;
+    end
+    dout_a_registered &lt;= memory[Addr_a][(byte_offset+1)*8-1:byte_offset*8];
+    dout_value_a1 &lt;= dout_a_registered;
+    if(we_b)
+    begin
+      memory[Addr_b][(byte_offset+1)*8-1:byte_offset*8] &lt;= din_value_b;
+    end
+    dout_b_registered &lt;= memory[Addr_b][(byte_offset+1)*8-1:byte_offset*8];
+    dout_value_b1 &lt;= dout_b_registered;
   end
-  dout_value_b1 &lt;= memory[Addr_b][(byte_offset+1)*8-1:byte_offset*8];
+  else
+  begin
+    if(we_a1)
+    begin
+      memory[Addr_a1][(byte_offset+1)*8-1:byte_offset*8] &lt;= din_value_a1;
+    end
+    dout_a_registered &lt;= memory[Addr_a1][(byte_offset+1)*8-1:byte_offset*8];
+    dout_value_a1 &lt;= dout_a_registered;
+    if(we_b1)
+    begin
+      memory[Addr_b1][(byte_offset+1)*8-1:byte_offset*8] &lt;= din_value_b1;
+    end
+    dout_b_registered &lt;= memory[Addr_b1][(byte_offset+1)*8-1:byte_offset*8];
+    dout_value_b1 &lt;= dout_b_registered;
+    Addr_a1 &lt;= Addr_a;
+    Addr_b1 &lt;= Addr_b;
+    we_a1 &lt;= we_a;
+    we_b1 &lt;= we_b;
+    din_value_a1 &lt;= din_value_a;
+    din_value_b1 &lt;= din_value_b;
+  end
 end
 "
 VHDL_PROVIDED="
   signal dout_value_a1 : std_logic_vector(7 downto 0) 1INIT_ZERO_VALUE;
   signal dout_value_b1 : std_logic_vector(7 downto 0) 1INIT_ZERO_VALUE;
+  signal dout_a_registered : std_logic_vector(7 downto 0) 1INIT_ZERO_VALUE;
+  signal dout_b_registered : std_logic_vector(7 downto 0) 1INIT_ZERO_VALUE;
+  signal din_value_a1 : std_logic_vector(7 downto 0) 1INIT_ZERO_VALUE;
+  signal din_value_b1 : std_logic_vector(7 downto 0) 1INIT_ZERO_VALUE;
+  signal we_a1 : std_logic 1INIT_ZERO_VALUEb;
+  signal we_b1 : std_logic 1INIT_ZERO_VALUEb;
+  signal Addr_a1 : std_logic_vector(BITSIZE_Addr_a-1 downto 0) 1INIT_ZERO_VALUE;
+  signal Addr_b1 : std_logic_vector(BITSIZE_Addr_b-1 downto 0) 1INIT_ZERO_VALUE;
+
   type mem_type is array(0 to n_mem_elements-1) of std_logic_vector(7 downto 0);
   impure function InitMemFromFile (MemFileName : in string) return mem_type is
     FILE memfile : text open READ_MODE is MemFileName;
@@ -7515,42 +7578,128 @@ begin
 process (clock)
 begin
   if (clock&apos;event and clock=&apos;1&apos;) then
-    if we_a = &apos;1&apos; then
+    if(HIGH_LATENCY = 0) then
+      if we_a = &apos;1&apos; then
 -- synthesis translate_off
-      if (to_integer(unsigned(Addr_a)) &lt; n_mem_elements) then
+        if (to_integer(unsigned(Addr_a)) &lt; n_mem_elements) then
 -- synthesis translate_on
-        mem(to_integer(unsigned(Addr_a))) &lt;= din_value_a;
+          mem(to_integer(unsigned(Addr_a))) &lt;= din_value_a;
+-- synthesis translate_off
+        end if;
+-- synthesis translate_on
+      end if;
+-- synthesis translate_off
+      if (to_integer(unsigned(Addr_a)) &gt;= n_mem_elements) then
+        dout_value_a1 &lt;= (others =&gt; &apos;X&apos;);
+      else
+-- synthesis translate_on
+        dout_value_a1 &lt;= mem(to_integer(unsigned(Addr_a)));
 -- synthesis translate_off
       end if;
 -- synthesis translate_on
-    end if;
+      if we_b = &apos;1&apos; then
 -- synthesis translate_off
-    if (to_integer(unsigned(Addr_a)) &gt;= n_mem_elements) then
-      dout_value_a1 &lt;= (others =&gt; &apos;X&apos;);
-    else
+        if (to_integer(unsigned(Addr_b)) &lt; n_mem_elements) then
 -- synthesis translate_on
-      dout_value_a1 &lt;= mem(to_integer(unsigned(Addr_a)));
+          mem(to_integer(unsigned(Addr_b))) &lt;= din_value_b;
 -- synthesis translate_off
-    end if;
+        end if;
 -- synthesis translate_on
-    if we_b = &apos;1&apos; then
+      end if;
 -- synthesis translate_off
-      if (to_integer(unsigned(Addr_b)) &lt; n_mem_elements) then
+      if (to_integer(unsigned(Addr_b)) &gt;= n_mem_elements) then
+        dout_value_b1 &lt;= (others =&gt; &apos;X&apos;);
+      else
 -- synthesis translate_on
-        mem(to_integer(unsigned(Addr_b))) &lt;= din_value_b;
+        dout_value_b1 &lt;= mem(to_integer(unsigned(Addr_b)));
 -- synthesis translate_off
       end if;
 -- synthesis translate_on
-    end if;
+    elsif(HIGH_LATENCY = 1) then
+      if we_a = &apos;1&apos; then
 -- synthesis translate_off
-    if (to_integer(unsigned(Addr_b)) &gt;= n_mem_elements) then
-      dout_value_b1 &lt;= (others =&gt; &apos;X&apos;);
+        if (to_integer(unsigned(Addr_a)) &lt; n_mem_elements) then
+-- synthesis translate_on
+          mem(to_integer(unsigned(Addr_a))) &lt;= din_value_a;
+-- synthesis translate_off
+        end if;
+-- synthesis translate_on
+      end if;
+-- synthesis translate_off
+      if (to_integer(unsigned(Addr_a)) &gt;= n_mem_elements) then
+        dout_a_registered &lt;= (others =&gt; &apos;X&apos;);
+      else
+-- synthesis translate_on
+        dout_a_registered &lt;= mem(to_integer(unsigned(Addr_a)));
+-- synthesis translate_off
+      end if;
+-- synthesis translate_on
+      dout_value_a1 &lt;= dout_a_registered;
+      if we_b = &apos;1&apos; then
+-- synthesis translate_off
+        if (to_integer(unsigned(Addr_b)) &lt; n_mem_elements) then
+-- synthesis translate_on
+          mem(to_integer(unsigned(Addr_b))) &lt;= din_value_b;
+-- synthesis translate_off
+        end if;
+-- synthesis translate_on
+      end if;
+-- synthesis translate_off
+      if (to_integer(unsigned(Addr_b)) &gt;= n_mem_elements) then
+        dout_b_registered &lt;= (others =&gt; &apos;X&apos;);
+      else
+-- synthesis translate_on
+        dout_b_registered &lt;= mem(to_integer(unsigned(Addr_b)));
+-- synthesis translate_off
+      end if;
+-- synthesis translate_on
+      dout_value_b1 &lt;= dout_b_registered;
     else
--- synthesis translate_on
-      dout_value_b1 &lt;= mem(to_integer(unsigned(Addr_b)));
+      if we_a1 = &apos;1&apos; then
 -- synthesis translate_off
-    end if;
+        if (to_integer(unsigned(Addr_a1)) &lt; n_mem_elements) then
 -- synthesis translate_on
+          mem(to_integer(unsigned(Addr_a1))) &lt;= din_value_a1;
+-- synthesis translate_off
+        end if;
+-- synthesis translate_on
+      end if;
+-- synthesis translate_off
+      if (to_integer(unsigned(Addr_a1)) &gt;= n_mem_elements) then
+        dout_a_registered &lt;= (others =&gt; &apos;X&apos;);
+      else
+-- synthesis translate_on
+        dout_a_registered &lt;= mem(to_integer(unsigned(Addr_a1)));
+-- synthesis translate_off
+      end if;
+-- synthesis translate_on
+      dout_value_a1 &lt;= dout_a_registered;
+      if we_b1 = &apos;1&apos; then
+-- synthesis translate_off
+        if (to_integer(unsigned(Addr_b1)) &lt; n_mem_elements) then
+-- synthesis translate_on
+          mem(to_integer(unsigned(Addr_b1))) &lt;= din_value_b1;
+-- synthesis translate_off
+        end if;
+-- synthesis translate_on
+      end if;
+-- synthesis translate_off
+      if (to_integer(unsigned(Addr_b1)) &gt;= n_mem_elements) then
+        dout_b_registered &lt;= (others =&gt; &apos;X&apos;);
+      else
+-- synthesis translate_on
+        dout_b_registered &lt;= mem(to_integer(unsigned(Addr_b1)));
+-- synthesis translate_off
+      end if;
+-- synthesis translate_on
+      dout_value_b1 &lt;= dout_b_registered;
+      Addr_a1 &lt;= Addr_a;
+      Addr_b1 &lt;= Addr_b;
+      we_a1 &lt;= we_a;
+      we_b1 &lt;= we_b;
+      din_value_a1 &lt;= din_value_a;
+      din_value_b1 &lt;= din_value_b;
+    end if;
   end if;
 end process;
 "/>
@@ -8384,7 +8533,7 @@ begin
       else
         if(bram_write01 =&apos;1&apos;) then
           for index2 in 0 to n_byte_on_databus-1 loop
-            if(be(index2)=&apos;1&apos;) then
+            if(be1(index2)=&apos;1&apos;) then
 -- synthesis translate_off
                if (to_integer(unsigned(memory_addr_a1)) &lt; n_mem_elements) then
 -- synthesis translate_on
@@ -8447,7 +8596,7 @@ begin
       else
         if(bram_write11 =&apos;1&apos;) then
           for index2 in 0 to n_byte_on_databus-1 loop
-            if(be(index2+n_byte_on_databus)=&apos;1&apos;) then
+            if(be1(index2+n_byte_on_databus)=&apos;1&apos;) then
 -- synthesis translate_off
                if (to_integer(unsigned(memory_addr_b1)) &lt; n_mem_elements) then
 -- synthesis translate_on
@@ -8583,7 +8732,6 @@ begin
     dout_a_registered &lt;= memory[memory_addr_a1];
     dout_a &lt;= dout_a_registered;
   end
-
 end
 
 generate
