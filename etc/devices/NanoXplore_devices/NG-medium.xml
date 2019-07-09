@@ -55,7 +55,10 @@
       <cmd name="TotalDSPs=&quot;&quot;"/>
       <cmd name="TotPower=&quot;0&quot;"/>
       <cmd name="design_slack=&quot;0&quot;"/>
-      <cmd name="fr = open(dir + '/logs/resources.log', &quot;r&quot;) "/>
+      <cmd name="if path.exists(dir + '/logs/resources.log'):"/>
+      <cmd name="    fr = open(dir + '/logs/resources.log', &quot;r&quot;) "/>
+      <cmd name="elif path.exists(dir + '/logs/general.log'):"/>
+      <cmd name="    fr = open(dir + '/logs/general.log', &quot;r&quot;) "/>
       <cmd name="resources_lines = fr.readlines()"/>
       <cmd name="for i in range(len(resources_lines)):"/>
       <cmd name="    if &quot;The following table details the use of FEs.&quot; in resources_lines[i]:"/>

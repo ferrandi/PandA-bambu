@@ -454,7 +454,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
       }
    }
 
-   TreeNodeSet ce_to_be_removeds;
+   TreeNodeSet ces_to_be_removed;
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing redundant cond_expr");
    for(const auto& block : sl->list_of_bloc)
@@ -467,13 +467,14 @@ DesignFlowStep_Status PhiOpt::InternalExec()
             const auto* ce = GetPointer<const cond_expr>(GET_NODE(ga->op1));
             if(ce and ce->op1->index == ce->op2->index)
             {
-               ce_to_be_removeds.insert(statement);
+               ces_to_be_removed.insert(statement);
             }
          }
       }
    }
-
-   for(const auto& ce_to_be_removed : ce_to_be_removeds)
+   if(!ces_to_be_removed.empty())
+      bb_modified = true;
+   for(const auto& ce_to_be_removed : ces_to_be_removed)
    {
       RemoveCondExpr(ce_to_be_removed);
    }
