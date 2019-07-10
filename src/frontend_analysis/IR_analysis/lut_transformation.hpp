@@ -80,7 +80,7 @@ private:
     /// The maximum number of inputs of a lut
     size_t max_lut_size;
 
-    bool CheckIfPO(const std::list<tree_nodeRef> localStatements, const std::vector<tree_nodeRef> usedIn);
+    bool CheckIfPO(const unsigned int currentBBIndex, const std::set<tree_nodeRef> usedIn);
 
     /**
      * Create gimple assignment

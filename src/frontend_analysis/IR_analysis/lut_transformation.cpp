@@ -100,8 +100,6 @@
 
 #include <mockturtle/mockturtle.hpp>
 
-
-
 class aig_network_ext : public mockturtle::aig_network {
 public:
     signal create_ge(signal const &a, signal const &b) {
@@ -281,13 +279,13 @@ DesignFlowStep_Status lut_transformation::InternalExec() {
                     nodeCreateFn = &aig_network_ext::create_gt;
                     break;
                 case le_expr_K:
-                    nodeCreateFn = &mockturtle::aig_network::create_le;
+                    nodeCreateFn = &aig_network_ext::create_le;
                     break;
                 case lt_expr_K:
                     nodeCreateFn = &aig_network_ext::create_lt;
                     break;
                 case ne_expr_K:
-                    nodeCreateFn = &mockturtle::aig_network::create_ne;
+                    nodeCreateFn = &aig_network_ext::create_ne;
                     break;
             }
 
