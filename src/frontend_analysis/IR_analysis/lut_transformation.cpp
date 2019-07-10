@@ -98,6 +98,10 @@
 #include "tree_manipulation.hpp"
 #include "tree_reindex.hpp"
 
+#include <mockturtle/mockturtle.hpp>
+
+
+
 class aig_network_ext : public mockturtle::aig_network {
 public:
     signal create_ge(signal const &a, signal const &b) {
@@ -182,8 +186,8 @@ DesignFlowStep_Status lut_transformation::InternalExec() {
 
     for (std::pair<unsigned int, blocRef> block : sl->list_of_bloc) {
         aig_network_ext aig;
-        std::map<mockturtle::aig_network::signal, treeNodeRef> signalToNodeRef;
-        std::map<treeNodeRef, mockturtle::aig_network::signal> nodeRefToSignal;
+        std::map<mockturtle::aig_network::signal, tree_nodeRef> signalToNodeRef;
+        std::map<tree_nodeRef, mockturtle::aig_network::signal> nodeRefToSignal;
 
         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
         const auto &statements = block.second->CGetStmtList();

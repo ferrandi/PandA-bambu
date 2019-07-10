@@ -141,6 +141,13 @@ if BUILD_BAMBU
      virtual_phi_nodes_split.cpp \
      constant_flop_wrapper.cpp
    lib_IR_analysis_la_CPPFLAGS += \
+      -I$(top_srcdir)/ext/mockturtle/include/\
+      -I$(top_srcdir)/ext/mockturtle/lib/kitty/\
+      -I$(top_srcdir)/ext/mockturtle/lib/fmt/\
+      -I$(top_srcdir)/ext/mockturtle/lib/sparsepp\
+      -I$(top_srcdir)/ext/mockturtle/lib/ez\
+      -I$(top_srcdir)/ext/mockturtle/lib/lorina\
+      -I$(top_srcdir)/ext/mockturtle/lib/rang\
       -I$(top_srcdir)/src/circuit \
       -I$(top_srcdir)/src/design_flows/backend/ToHDL \
       -I$(top_srcdir)/src/design_flows/technology \
@@ -187,6 +194,14 @@ endif
 
 
 update_tree_weight.cpp : tree_weights_constant.data tree_weights_symbolic.data
+
+lib_IR_analysis_la-lut_transformation.lo: lut_transformation.cpp
+	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_IR_analysis_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) -std=c++17 -MT lib_IR_analysis_la-lut_transformation.lo -MD -MP -MF $(DEPDIR)/lib_IR_analysis_la-lut_transformation.Tpo -c -o lib_IR_analysis_la-lut_transformation.lo `test -f 'lut_transformation.cpp' || echo '$(srcdir)/'`lut_transformation.cpp
+	$(AM_V_at)$(am__mv) $(DEPDIR)/lib_IR_analysis_la-lut_transformation.Tpo $(DEPDIR)/lib_IR_analysis_la-lut_transformation.Plo
+#	$(AM_V_CXX)source='lut_transformation.cpp' object='lib_IR_analysis_la-lut_transformation.lo' libtool=yes \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(AM_V_CXX_no)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_IR_analysis_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o lib_IR_analysis_la-lut_transformation.lo `test -f 'lut_transformation.cpp' || echo '$(srcdir)/'`lut_transformation.cpp
+
 
 #The tab in this rule can't be replaced by blanks
 tree_weights_constant.data: $(top_srcdir)/etc/weight-models/tree_weights_constant.xml
