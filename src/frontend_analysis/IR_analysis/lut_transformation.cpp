@@ -130,7 +130,7 @@ lut_transformation::lut_transformation(const ParameterConstRef Param, const appl
     debug_level = Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-bool lut_transformation::CheckIfPO(const unsigned int currentBBIndex, const std::set<tree_nodeRef> usedIn) {
+bool lut_transformation::CheckIfPO(const unsigned int currentBBIndex, const std::vector<boost::shared_ptr<tree_node> > usedIn) {
     std::vector<unsigned int> usedInBBIndexes = std::transform(usedIn.begin(), usedIn.end(), [](const tree_nodeRef node) {
         auto *gimpleNode = GetPointer<gimple_node>(node);
         return gimpleNode->bb_index;
