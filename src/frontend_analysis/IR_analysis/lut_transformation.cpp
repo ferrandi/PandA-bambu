@@ -117,6 +117,10 @@ public:
     signal create_ne(signal const &a, signal const &b) {
         return this->create_xor(a, b);
     }
+
+    signal create_and(signal const &a, signal const &b) {
+        return mockturtle::aig_network::create_and(a, b);
+    }
 };
 
 typedef mockturtle::aig_network::signal (aig_network_ext::*aig_network_fn)(const mockturtle::aig_network::signal &, const mockturtle::aig_network::signal &);
