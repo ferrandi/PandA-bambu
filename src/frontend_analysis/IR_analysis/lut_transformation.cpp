@@ -308,6 +308,8 @@ DesignFlowStep_Status lut_transformation::InternalExec() {
         mockturtle::lut_mapping<mockturtle::mapping_view<mockturtle::aig_network, true>, true>(mapped_aig, ps);
         auto lut = *mockturtle::collapse_mapped_network<mockturtle::klut_network>(mapped_aig);
 
+
+        mockturtle::write_bench(lut, std::cout);
         // dalla network a lut_expr_K
         // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added to LUT list : " + STR(lut_ga));
         // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Modified statement " + GET_NODE(lut_ga)->ToString());
