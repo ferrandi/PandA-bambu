@@ -227,7 +227,7 @@ DesignFlowStep_Status lut_transformation::InternalExec() {
                 && !tree_helper::is_constant(TM, binaryExpression->op1->index)
             */
             if (!(data_size0 == 1
-                && data_size1 == 1) {
+                && data_size1 == 1)) {
                 continue;
             } 
 
