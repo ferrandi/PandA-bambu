@@ -197,13 +197,13 @@ DesignFlowStep_Status lut_transformation::InternalExec() {
         auto statementsIterator = statements.begin();
 
         while (statementsIterator != statementsEnd) {
-            #ifndef NDEBUG
-            if(not AppM->ApplyNewTransformation()) {
+#ifndef NDEBUG
+            if(!AppM->ApplyNewTransformation()) {
                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reached max cfg transformations");
                 statementsIterator++;
                 continue;
             }
-            #endif
+#endif
 
             if (!GET_NODE(*statementsIterator)->get_kind() != gimple_assign_K) {
                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + GET_NODE(*statementsIterator)->ToString());
