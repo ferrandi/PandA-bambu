@@ -131,13 +131,9 @@ lut_transformation::lut_transformation(const ParameterConstRef Param, const appl
 }
 
 bool lut_transformation::CheckIfPO(const unsigned int currentBBIndex, const std::vector<boost::shared_ptr<tree_node> > usedIn) {
-    std::vector<unsigned int> usedInBBIndexes = std::transform(usedIn.begin(), usedIn.end(), [](const boost::shared_ptr<tree_node> node) {
+    for (auto node : usedIn) {
         auto *gimpleNode = GetPointer<gimple_node>(node);
-        return gimpleNode->bb_index;
-    });
-
-    for (unsigned int index : usedInBBIndexes) {
-        if (index != currentBBIndex) {
+        if (gimpleNode->bb_index != currentBBIndex) {
             return true;
         }
     }
