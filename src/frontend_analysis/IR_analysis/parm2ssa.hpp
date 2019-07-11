@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,20 +31,23 @@
  *
  */
 /**
- * @file hls_div_cg_ext.hpp
- * @brief Step that extends the call graph with the division and modulus function calls where appropriate.
+ * @file parm2ssa.hpp
+ * @brief Pre-analysis step computing the relation between parm_decl and the associated ssa_name.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * $Revision$
+ * $Date$
+ * Last modified by $Author$
  *
  */
-#ifndef HLS_DIV_CG_EXT_HPP
-#define HLS_DIV_CG_EXT_HPP
+#ifndef PARM2SSA_HPP
+#define PARM2SSA_HPP
 
 /// Superclass include
-#include "function_frontend_flow_step.hpp"
+#include "application_frontend_flow_step.hpp"
 
 /// STL include
-#include <set>
+#include <unordered_map>
 #include <unordered_set>
 
 /// Utility include
@@ -54,33 +57,23 @@
  * @name forward declarations
  */
 //@{
-REF_FORWARD_DECL(hls_div_cg_ext);
 REF_FORWARD_DECL(tree_manager);
-REF_FORWARD_DECL(tree_manipulation);
 REF_FORWARD_DECL(tree_node);
 //@}
 
 /**
- * Add to the call graph the function calls associated with the integer division and modulus operations.
+ * Pre-analysis step. computing the relation between parm_decl and the associated ssa_name.
  */
-class hls_div_cg_ext : public FunctionFrontendFlowStep
+class parm2ssa : public ApplicationFrontendFlowStep
 {
  protected:
-   const tree_managerRef TreeM;
-
-   const tree_manipulationRef tree_man;
-
-   /// True if already executed
-   bool already_executed;
-
-   bool changed_call_graph;
-
-   bool fix_nop;
+   /// Already visited address expression (used to avoid infinite recursion)
+   std::unordered_set<unsigned int> already_visited_ae;
 
    /**
-    * Recursive examinate tree node
+    * Recursive tree node analysis
     */
-   void recursive_examinate(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement);
+   void recursive_analysis(tree_nodeRef& tn, const std::string& srcp);
 
    /**
     * Return the set of analyses in relationship with this design step
@@ -91,32 +84,21 @@ class hls_div_cg_ext : public FunctionFrontendFlowStep
  public:
    /**
     * Constructor.
-    * @param Param is the set of the parameters
     * @param AppM is the application manager
-    * @param fun_id is the function index
     * @param design_flow_manager is the design flow manager
+    * @param parameters is the set of input parameters
     */
-   hls_div_cg_ext(const ParameterConstRef Param, const application_managerRef AppM, unsigned int fun_id, const DesignFlowManagerConstRef design_flow_manager);
+   parm2ssa(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     * Destructor
     */
-   ~hls_div_cg_ext() override;
+   ~parm2ssa() override;
 
    /**
     * Fixes the var_decl duplication.
+    * @return the exit status of this step
     */
-   DesignFlowStep_Status InternalExec() override;
-
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
-   void Initialize() override;
-
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
+   DesignFlowStep_Status Exec() override;
 };
 #endif

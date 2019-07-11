@@ -68,23 +68,16 @@ REF_FORWARD_DECL(tree_node);
 class string_cst_fix : public ApplicationFrontendFlowStep
 {
  protected:
-   /// Already visited address expression (used to avoid infite recursion)
+   /// Already visited address expression (used to avoid infinite recursion)
    std::unordered_set<unsigned int> already_visited_ae;
 
    /// relation between constant string and read-only variable initialized with the string_cst.
    std::unordered_map<unsigned int, tree_nodeRef> string_cst_map;
 
    /**
-    * Return the normalized identifier; in this class it is the identifier itself. Subclasses can specialize it
-    * @param identifier is the identifier to be normalized
-    * @return the normalized identifier
+    * Recursive tree node analysis
     */
-   virtual const std::string Normalize(const std::string& identifier) const;
-
-   /**
-    * Recursive examinate tree node
-    */
-   void recursive_examinate(tree_nodeRef& tn, const std::string& srcp);
+   void recursive_analysis(tree_nodeRef& tn, const std::string& srcp);
 
    /**
     * Return the set of analyses in relationship with this design step

@@ -2784,6 +2784,9 @@ struct function_decl : public decl_node, public attr
    /// True if parameters are not alias after its invocation
    bool reverse_restrict_flag;
 
+   /// True if function write in memory somehow
+   bool writing_memory;
+
 #if HAVE_FROM_PRAGMA_BUILT
    /// If different from zero, the parallel degree of the contained openmp loop
    size_t omp_for_wrapper;
@@ -3724,6 +3727,7 @@ struct gimple_phi : public gimple_node
  public:
    friend class tree_manager;
    friend class string_cst_fix;
+   friend class parm2ssa;
 
    /// The type of the def edge
    typedef std::pair<tree_nodeRef, unsigned int> DefEdge;

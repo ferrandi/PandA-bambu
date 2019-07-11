@@ -150,6 +150,19 @@ DesignFlowStep_Status BitValueIPA::Exec()
    std::set<unsigned int> reached_body_fun_ids = CGMan->GetReachedBodyFunctions();
    std::set<unsigned int> root_fun_ids = CGMan->GetRootFunctions();
 
+   /// In case of indirect calls (e.g., pointer to function) no Bit Value IPA can be done.
+   std::unordered_set<vertex> vertex_subset;
+   for(auto cvertex : reached_body_fun_ids)
+      vertex_subset.insert(CGMan->GetVertex(cvertex));
+   const CallGraphConstRef subgraph = CGMan->CGetCallSubGraph(vertex_subset);
+   EdgeIterator e_it, e_it_end;
+   for(boost::tie(e_it, e_it_end) = boost::edges(*subgraph); e_it != e_it_end; ++e_it)
+   {
+      const auto* info = Cget_edge_info<FunctionEdgeInfo, const CallGraph>(*e_it, *subgraph);
+      if(info->indirect_call_points.size())
+         return DesignFlowStep_Status::UNCHANGED;
+   }
+
    // ---- initialization phase ----
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Initialize data structures");
    for(unsigned int fu_id : reached_body_fun_ids)
@@ -274,8 +287,8 @@ DesignFlowStep_Status BitValueIPA::Exec()
          bool fu_signed = signed_var.find(fu_id) != signed_var.cend();
 
          /*
-          * for root functions, don't perform bacward propagation from assigned
-          * ssa to returned value, becaue this could lead to unsafe
+          * for root functions, don't perform backward propagation from assigned
+          * ssa to returned value, because this could lead to unsafe
           * optimizations if some external piece of code that was not
           * synthesized with bambu calls the top function from the bus
           */
@@ -606,7 +619,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
 
             /*
              * for root functions, don't perform forward propagation from actual
-             * parameters to formal parameters, becaue this could lead to unsafe
+             * parameters to formal parameters, because this could lead to unsafe
              * optimizations if some external piece of code that was not
              * synthesized with bambu calls the top function from the bus
              */
@@ -828,8 +841,6 @@ DesignFlowStep_Status BitValueIPA::Exec()
          THROW_UNREACHABLE("unexpected condition: variable of kind " + tn->get_kind_text());
       }
 
-      THROW_ASSERT(old_bitvalue->empty() or old_bitvalue->size() >= new_bitvalue.size(), "old bitvalue: \"" + *old_bitvalue + "\" size = " + STR(old_bitvalue->size()) + " new best bitvalue: \"" + new_bitvalue + "\" size = " + STR(new_bitvalue.size()));
-
       bool restart = false;
       if(old_bitvalue->empty())
       {
@@ -878,7 +889,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
       last_bitvalue_ver[i] = FB->GetBitValueVersion();
       last_bb_ver[i] = FB->GetBBVersion();
    }
-   return DesignFlowStep_Status::SUCCESS;
+   return fun_id_to_restart.empty() ? DesignFlowStep_Status::UNCHANGED : DesignFlowStep_Status::SUCCESS;
 }
 
 void BitValueIPA::Initialize()

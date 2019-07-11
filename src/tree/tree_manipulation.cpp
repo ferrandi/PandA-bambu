@@ -2481,8 +2481,8 @@ tree_nodeRef tree_manipulation::CreateCallExpr(const tree_nodeConstRef& called_f
 {
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ae_IR_schema, ce_IR_schema;
    ae_IR_schema[TOK(TOK_OP)] = STR(called_function->index);
-   const auto function_type = tree_helper::CGetType(GET_CONST_NODE(called_function));
-   ae_IR_schema[TOK(TOK_TYPE)] = STR(create_pointer_type(function_type, ALGN_POINTER)->index);
+   const auto ft = tree_helper::CGetType(GET_CONST_NODE(called_function));
+   ae_IR_schema[TOK(TOK_TYPE)] = STR(create_pointer_type(ft, ALGN_POINTER)->index);
    ae_IR_schema[TOK(TOK_SRCP)] = srcp;
    const unsigned int ae_id = TreeM->new_tree_node_id();
    TreeM->create_tree_node(ae_id, addr_expr_K, ae_IR_schema);
@@ -2498,7 +2498,7 @@ tree_nodeRef tree_manipulation::CreateCallExpr(const tree_nodeConstRef& called_f
    }
    ce_IR_schema[TOK(TOK_ARG)] = args_string;
    ce_IR_schema[TOK(TOK_FN)] = STR(ae_id);
-   ce_IR_schema[TOK(TOK_TYPE)] = STR(function_type->index);
+   ce_IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(GetPointer<const function_type>(ft)->retn));
    ce_IR_schema[TOK(TOK_SRCP)] = srcp;
    const unsigned int ce_id = TreeM->new_tree_node_id();
    TreeM->create_tree_node(ce_id, call_expr_K, ce_IR_schema);

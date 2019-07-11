@@ -106,10 +106,13 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(block.first));
       for(const auto& stmt : block.second->CGetStmtList())
       {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + stmt->ToString());
          auto ga = GetPointer<gimple_assign>(GET_NODE(stmt));
          if(not ga)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped" + STR(stmt));
             continue;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + STR(stmt));
+         }
          auto be = GetPointer<binary_expr>(GET_NODE(ga->op1));
          auto sn = GetPointer<ssa_name>(GET_NODE(ga->op0));
          if(not be)

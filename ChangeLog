@@ -2,7 +2,7 @@
 Seventh public release of PandA framework.
 
 New features introduced:
-- Added support to BRAVE FPGAs (https://www.esa.int/Our_Activities/Space_Engineering_Technology/Shaping_the_Future/High_Density_European_Rad-Hard_SRAM-Based_FPGA-_First_Validated_Prototypes_BRAVE)
+- Added support to BRAVE FPGAs (https://www.esa.int/Our_Activities/Space_Engineering_Technology/Shaping_the_Future/High_Density_European_Rad-Hard_SRAM-Based_FPGA-_First_Validated_Prototypes_BRAVE). Both NG-Medium and NG-Large are supported.
 - Added support for Hardware Discrepancy Analysis.  Reference paper: Pietro Fezzardi, Marco Lattuada, Fabrizio Ferrandi, Using Efficient Path Profiling to Optimize Memory Consumption of On-Chip Debugging for High-Level Synthesis. ACM Trans. Embedded Comput. Syst. 16(5): 149:1-149:19 (2017).
 - Added an initial support to C++/fortran high-level synthesis. Now, Ubuntu distributions require the installation of g++-multilib package.
 - Added support to CLANG/LLVM compiler version 4, 5, 6 and 7. On multiple files LTO is exploited.
@@ -44,6 +44,7 @@ New features introduced:
 - Renamed top component and removed the suffix _minimal_interface. Now, the top component has the same name of the top function.
 - Improved and fixed the synthesis of empty functions.
 - Added option --VHDL-library=libraryname to specify the library in which the synthesized function has to be compiled.
+- Extented the VHDL support to other bambu library components.
 
 This release includes also a set of fixes:
     on COND_EXPR_RESTRUCTURING step

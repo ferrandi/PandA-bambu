@@ -429,7 +429,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                      else
                      {
                         HLSMgr->Rmem->set_sds_var(var, false);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(var_size.find(var)->second));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(var_size.find(var)->second) + " alignment=" + STR(alignment) +  " value_bitsize1=" + STR(value_bitsize));
                      }
                   }
                   else
@@ -458,7 +458,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                      else
                      {
                         HLSMgr->Rmem->set_sds_var(var, false);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(var_size.find(var)->second));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(var_size.find(var)->second) + " alignment=" + STR(alignment) +  " value_bitsize2=" + STR(var_size.find(var)->second));
                      }
                   }
                }

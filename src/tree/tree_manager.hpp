@@ -96,7 +96,7 @@ class tree_manager
     */
    std::map<unsigned int, tree_nodeRef> function_decl_nodes;
 
-   /// list of examining statementes during collapse_into recursion
+   /// list of examining statements during collapse_into recursion
    std::deque<tree_nodeRef> stack;
 
    /// set of already examined addr_expr used to avoid circular recursion

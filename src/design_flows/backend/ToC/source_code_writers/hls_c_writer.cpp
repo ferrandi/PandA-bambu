@@ -37,9 +37,6 @@
  * @author Marco Minutoli <mminutoli@gmail.com>
  * @author Pietro Fezzardi <pietro.fezzardi@polimi.it>
  * @author Marco Lattuada <marco.lattuada@polimi.it>
- * $Revision: $
- * $Date: $
- * Last modified by $Author: $
  *
  */
 
@@ -101,6 +98,7 @@ HLSCWriter::~HLSCWriter() = default;
 
 void HLSCWriter::WriteHeader()
 {
+   bool is_discrepancy = (Param->isOption(OPT_discrepancy) and Param->getOption<bool>(OPT_discrepancy)) or (Param->isOption(OPT_discrepancy_hw) and Param->getOption<bool>(OPT_discrepancy_hw));
    indented_output_stream->Append("#define _FILE_OFFSET_BITS 64\n\n");
    indented_output_stream->Append("#define __Inf (1.0/0.0)\n");
    indented_output_stream->Append("#define __Nan (0.0/0.0)\n\n");
@@ -110,6 +108,8 @@ void HLSCWriter::WriteHeader()
    indented_output_stream->Append("typedef bool _Bool;\n\n");
    indented_output_stream->Append("#else\n");
    indented_output_stream->Append("#include <stdio.h>\n\n");
+   if(not is_discrepancy)
+      indented_output_stream->Append("#include <stdlib.h>\n\n");
    indented_output_stream->Append("extern void exit(int status);\n");
    indented_output_stream->Append("#endif\n\n");
 
@@ -568,8 +568,7 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef behav
    // avoid collision with the main
    if(function_name == "main")
    {
-      bool is_discrepancy = false;
-      is_discrepancy = (Param->isOption(OPT_discrepancy) and Param->getOption<bool>(OPT_discrepancy)) or (Param->isOption(OPT_discrepancy_hw) and Param->getOption<bool>(OPT_discrepancy_hw));
+      bool is_discrepancy = (Param->isOption(OPT_discrepancy) and Param->getOption<bool>(OPT_discrepancy)) or (Param->isOption(OPT_discrepancy_hw) and Param->getOption<bool>(OPT_discrepancy_hw));
       if(not is_discrepancy)
       {
          function_name = "system";
@@ -633,9 +632,17 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef behav
       indented_output_stream->Append("\"" + Param->getOption<std::string>(OPT_output_directory) + "/simulation/main_exec\"");
    }
    indented_output_stream->Append(");\n");
-   if(function_name == "system" and return_type_index and not Param->getOption<bool>(OPT_no_return_zero))
+   if(function_name == "system" and return_type_index)
    {
-      indented_output_stream->Append("if(" RETURN_PORT_NAME " != 0) exit(1);\n");
+      if(not Param->getOption<bool>(OPT_no_return_zero))
+      {
+         indented_output_stream->Append("if(" RETURN_PORT_NAME " != 0) exit(1);\n");
+      }
+      else
+      {
+         indented_output_stream->Append("if(!WIFEXITED(" RETURN_PORT_NAME ")) exit(1);\n");
+         indented_output_stream->Append(RETURN_PORT_NAME " = WEXITSTATUS(" RETURN_PORT_NAME ");\n");
+      }
    }
 }
 

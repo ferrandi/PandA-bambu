@@ -669,6 +669,10 @@ void raw_writer::operator()(const function_decl* obj, unsigned int& mask)
    {
       WRITE_TOKEN(os, TOK_REVERSE_RESTRICT);
    }
+   if(obj->writing_memory)
+   {
+      WRITE_TOKEN(os, TOK_WRITING_MEMORY);
+   }
 #if HAVE_FROM_PRAGMA_BUILT
    if(obj->omp_atomic)
    {

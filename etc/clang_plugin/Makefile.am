@@ -31,12 +31,16 @@ check:all
 
 CLANG_LIBS=-lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat
 CLANG4_LIBS=-Wl,--start-group $(CLANG_LIBS) -Wl,--end-group
+CLANG4_LIBSD=$(CLANG_LIBS)
 
 CLANG5_LIBS=-Wl,--start-group $(CLANG_LIBS) -Wl,--end-group
+CLANG5_LIBSD=$(CLANG_LIBS)
 
 CLANG6_LIBS=-Wl,--start-group $(CLANG_LIBS) -lclangCrossTU -Wl,--end-group
+CLANG6_LIBSD=$(CLANG_LIBS) -lclangCrossTU
 
 CLANG7_LIBS=-Wl,--start-group $(CLANG_LIBS) -lclangCrossTU -lclangToolingInclusions -Wl,--end-group
+CLANG7_LIBSD=$(CLANG_LIBS) -lclangCrossTU -lclangToolingInclusions
 
 ###### clang 4.0
 if BUILD_I386_CLANG4_EMPTY_PLUGIN
@@ -90,10 +94,10 @@ $(I386_CLANG4_SSA_PLUGIN) : clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o cl
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti';;\
 	esac;\
-	obj_list='clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o';\
+	obj_list='clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG4_PLUGIN_COMPILER) opt_clang4_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleSSA_opt.so;\
-	  $(I386_CLANG4_PLUGIN_COMPILER) clang4_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleSSA.so ; 
+	  $(I386_CLANG4_PLUGIN_COMPILER) clang4_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleSSA.so ; \
 	fi;
 endif
 if BUILD_PTAA
@@ -123,7 +127,7 @@ $(I386_CLANG4_SSA_PLUGINCPP) : clang4_plugin_dumpGimpleSSACpp.o clang4_dumpGimpl
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti';;\
 	esac;\
-	obj_list='clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o';\
+	obj_list='clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG4_PLUGIN_COMPILER) opt_clang4_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleSSACpp_opt.so;\
 	  $(I386_CLANG4_PLUGIN_COMPILER) clang4_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleSSACpp.so;\
@@ -157,7 +161,7 @@ $(I386_CLANG4_EMPTY_PLUGIN) : clang4_plugin_dumpGimpleEmpty.o clang4_dumpGimple.
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti';;\
 	esac;\
-	obj_list='clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o';\
+	obj_list='clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG4_PLUGIN_COMPILER) opt_clang4_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleEmpty_opt.so; \
 	  $(I386_CLANG4_PLUGIN_COMPILER) clang4_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleEmpty.so; \
@@ -348,7 +352,13 @@ clang4_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/c
 	fi;
 
 bambuS2S-4: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
-	$(I386_CLANG4_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG4_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG4_LIBS)  -o $@
+	case $(host_os) in \
+	  darwin*) \
+	    $(I386_CLANG4_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG4_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG4_LIBSD)  -o $@;;\
+	  *) \
+	    $(I386_CLANG4_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG4_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG4_LIBS)  -o $@;;\
+	esac;
+
 
 ###### 
 
@@ -404,10 +414,10 @@ $(I386_CLANG5_SSA_PLUGIN) : clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple.o cl
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti';;\
 	esac;\
-	obj_list='clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o';\
+	obj_list='clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) opt_clang5_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleSSA_opt.so;\
-	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleSSA.so ; 
+	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleSSA.so ; \
 	fi;
 endif
 if BUILD_PTAA
@@ -437,7 +447,7 @@ $(I386_CLANG5_SSA_PLUGINCPP) : clang5_plugin_dumpGimpleSSACpp.o clang5_dumpGimpl
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti';;\
 	esac;\
-	obj_list='clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o';\
+	obj_list='clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) opt_clang5_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleSSACpp_opt.so;\
 	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleSSACpp.so;\
@@ -471,7 +481,7 @@ $(I386_CLANG5_EMPTY_PLUGIN) : clang5_plugin_dumpGimpleEmpty.o clang5_dumpGimple.
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti';;\
 	esac;\
-	obj_list='clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o';\
+	obj_list='clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) opt_clang5_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleEmpty_opt.so; \
 	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleEmpty.so; \
@@ -650,7 +660,12 @@ clang5_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/c
 	fi;
 
 bambuS2S-5: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
-	$(I386_CLANG5_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG5_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG5_LIBS)  -o $@
+	case $(host_os) in \
+	  darwin*) \
+	    $(I386_CLANG5_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG5_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG5_LIBSD)  -o $@;;\
+	  *) \
+	    $(I386_CLANG5_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG5_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG5_LIBS)  -o $@;;\
+	esac;
 
 ###### 
 
@@ -707,10 +722,10 @@ $(I386_CLANG6_SSA_PLUGIN) : clang6_plugin_dumpGimpleSSA.o clang6_dumpGimple.o cl
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti';;\
 	esac;\
-	obj_list='clang6_dumpGimple.o clang6_HardekopfLin_AA.o clang6_RangeAnalysis.o clang6_eSSA.o';\
+	obj_list='clang6_dumpGimple.o clang6_RangeAnalysis.o clang6_eSSA.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG6_PLUGIN_COMPILER) opt_clang6_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang6_plugin_dumpGimpleSSA_opt.so;\
-	  $(I386_CLANG6_PLUGIN_COMPILER) clang6_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang6_plugin_dumpGimpleSSA.so ; 
+	  $(I386_CLANG6_PLUGIN_COMPILER) clang6_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang6_plugin_dumpGimpleSSA.so ; \
 	fi;
 endif
 if BUILD_PTAA
@@ -740,7 +755,7 @@ $(I386_CLANG6_SSA_PLUGINCPP) : clang6_plugin_dumpGimpleSSACpp.o clang6_dumpGimpl
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti';;\
 	esac;\
-	obj_list='clang6_dumpGimple.o clang6_HardekopfLin_AA.o clang6_RangeAnalysis.o clang6_eSSA.o';\
+	obj_list='clang6_dumpGimple.o clang6_RangeAnalysis.o clang6_eSSA.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG6_PLUGIN_COMPILER) opt_clang6_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang6_plugin_dumpGimpleSSACpp_opt.so;\
 	  $(I386_CLANG6_PLUGIN_COMPILER) clang6_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang6_plugin_dumpGimpleSSACpp.so;\
@@ -774,7 +789,7 @@ $(I386_CLANG6_EMPTY_PLUGIN) : clang6_plugin_dumpGimpleEmpty.o clang6_dumpGimple.
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti';;\
 	esac;\
-	obj_list='clang6_dumpGimple.o clang6_HardekopfLin_AA.o clang6_RangeAnalysis.o clang6_eSSA.o';\
+	obj_list='clang6_dumpGimple.o clang6_RangeAnalysis.o clang6_eSSA.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG6_PLUGIN_COMPILER) opt_clang6_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang6_plugin_dumpGimpleEmpty_opt.so; \
 	  $(I386_CLANG6_PLUGIN_COMPILER) clang6_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang6_plugin_dumpGimpleEmpty.so; \
@@ -953,7 +968,12 @@ clang6_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/c
 	fi;
 
 bambuS2S-6: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
-	$(I386_CLANG6_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG6_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG6_LIBS)  -o $@
+	case $(host_os) in \
+	  darwin*) \
+	    $(I386_CLANG6_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG6_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG6_LIBSD)  -o $@;;\
+	  *) \
+	    $(I386_CLANG6_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG6_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG6_LIBS)  -o $@;;\
+	esac;
 
 ###### 
 
@@ -1009,10 +1029,10 @@ $(I386_CLANG7_SSA_PLUGIN) : clang7_plugin_dumpGimpleSSA.o clang7_dumpGimple.o cl
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti';;\
 	esac;\
-	obj_list='clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o';\
+	obj_list='clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG7_PLUGIN_COMPILER) opt_clang7_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang7_plugin_dumpGimpleSSA_opt.so;\
-	  $(I386_CLANG7_PLUGIN_COMPILER) clang7_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang7_plugin_dumpGimpleSSA.so ; 
+	  $(I386_CLANG7_PLUGIN_COMPILER) clang7_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang7_plugin_dumpGimpleSSA.so ; \
 	fi;
 endif
 if BUILD_PTAA
@@ -1042,7 +1062,7 @@ $(I386_CLANG7_SSA_PLUGINCPP) : clang7_plugin_dumpGimpleSSACpp.o clang7_dumpGimpl
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti';;\
 	esac;\
-	obj_list='clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o';\
+	obj_list='clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG7_PLUGIN_COMPILER) opt_clang7_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang7_plugin_dumpGimpleSSACpp_opt.so;\
 	  $(I386_CLANG7_PLUGIN_COMPILER) clang7_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang7_plugin_dumpGimpleSSACpp.so;\
@@ -1076,7 +1096,7 @@ $(I386_CLANG7_EMPTY_PLUGIN) : clang7_plugin_dumpGimpleEmpty.o clang7_dumpGimple.
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti';;\
 	esac;\
-	obj_list='clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o';\
+	obj_list='clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG7_PLUGIN_COMPILER) opt_clang7_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang7_plugin_dumpGimpleEmpty_opt.so; \
 	  $(I386_CLANG7_PLUGIN_COMPILER) clang7_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang7_plugin_dumpGimpleEmpty.so; \
@@ -1255,7 +1275,12 @@ clang7_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/c
 	fi;
 
 bambuS2S-7: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
-	$(I386_CLANG7_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG7_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG7_LIBS)  -o $@
+	case $(host_os) in \
+	  darwin*) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG7_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG7_LIBSD)  -o $@;;\
+	  *) \
+	    $(I386_CLANG7_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG7_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG7_LIBS)  -o $@;;\
+	esac;
 
 ###### 
 
