@@ -199,15 +199,15 @@ bool lut_transformation::CheckIfPO(gimple_assign *gimpleAssign) {
         // the current operation is a primary output if it is used in
         // operation not belonging to the current basic block or if the operation
         // in which it is used does not belong to the K-operations set
-        if (childGimpleAssign->bb_index != currentBBIndex || node->get_kind() != gimple_assign_K) {
+        if (childGimpleNode->bb_index != currentBBIndex || node->get_kind() != gimple_assign_K) {
             return true;
         }
         else {
-            auto *childGimpleAssign = GetPointer<gimple_node>(node);
+            auto *childGimpleAssign = GetPointer<gimple_assign>(node);
             enum kind code = GET_NODE(childGimpleAssign->op1)->get_kind();
 
             // it is a `PO` if code is not contained into `lutExpressibleOperations`
-            return lutExpressibleOperations.find(code) == lutExpressibleOperations.end();
+            return std::find(lutExpressibleOperations.begin(), lutExpressibleOperations.end(), code) == lutExpressibleOperations.end();
     }
     }
 
