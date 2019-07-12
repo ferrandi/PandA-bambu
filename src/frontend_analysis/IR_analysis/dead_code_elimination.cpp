@@ -442,26 +442,6 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                            if(GET_NODE(defStmt)->get_kind() == gimple_assign_K)
                            {
                               auto derefGA = GetPointer<gimple_assign>(GET_NODE(defStmt));
-                              if(GET_NODE(derefGA->op1)->get_kind() == pointer_plus_expr_K)
-                              {
-                                 auto ppe = GetPointer<pointer_plus_expr>(GET_NODE(derefGA->op1));
-                                 if(GET_NODE(ppe->op0)->get_kind() == ssa_name_K)
-                                 {
-                                    auto ppe0Var = GetPointer<ssa_name>(GET_NODE(ppe->op0));
-                                    if(ppe0Var->CGetDefStmts().size() == 1)
-                                    {
-                                       auto defStmt0 = *ppe0Var->CGetDefStmts().begin();
-                                       if(GET_NODE(defStmt0)->get_kind() == gimple_assign_K)
-                                       {
-                                          auto deref0GA = GetPointer<gimple_assign>(GET_NODE(defStmt0));
-                                          if(GET_NODE(deref0GA->op1)->get_kind() == addr_expr_K)
-                                          {
-                                             derefGA = deref0GA;
-                                          }
-                                       }
-                                    }
-                                 }
-                              }
                               if(GET_NODE(derefGA->op1)->get_kind() == addr_expr_K)
                               {
                                  auto addressedVar = GetPointer<addr_expr>(GET_NODE(derefGA->op1))->op;
