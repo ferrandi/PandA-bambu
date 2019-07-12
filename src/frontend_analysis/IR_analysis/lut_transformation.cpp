@@ -179,7 +179,7 @@ public:
  * Pointer that points to the function, of `aig_network_ext`, that represents a binary operation between two `mockturtle::aig_network::signal` 
  * and returns a `mockturtle::aig_network::signal`.
  */
-typedef mockturtle::aig_network::signal (lut_transformation::aig_network_ext::*aig_network_fn)(const mockturtle::aig_network::signal &, const mockturtle::aig_network::signal &);
+// typedef mockturtle::aig_network::signal (lut_transformation::aig_network_ext::*aig_network_fn)(const mockturtle::aig_network::signal &, const mockturtle::aig_network::signal &);
 
 #pragma endregion
 
@@ -220,7 +220,7 @@ bool lut_transformation::CheckIfPO(gimple_assign *gimpleAssign) {
     return false;
 }
 
-aig_network_fn lut_transformation::GetNodeCreationFunction(enum kind code) {
+lut_transformation::aig_network_fn lut_transformation::GetNodeCreationFunction(enum kind code) {
     switch (code) {
         case bit_and_expr_K:
         case truth_and_expr_K:
@@ -296,7 +296,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             mockturtle::aig_network::signal res;
             mockturtle::aig_network::signal op1;
             mockturtle::aig_network::signal op2;
-            aig_network_fn nodeCreateFn;
+        lut_transformation::aig_network_fn nodeCreateFn;
 
         // if the first operand has already been processed then the previous signal is used
             if (nodeRefToSignal.find(binaryExpression->op0) != nodeRefToSignal.end()) {
