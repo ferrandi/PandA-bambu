@@ -513,7 +513,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                                      found_load = true;
                                                                      break;
                                                                   }
-                                                                  if(!found_load && gn_curr->vdef && vdefvover_map.find(ssaDefIndex) != vdefvover_map.end() && vdefvover_map.find(ssaDefIndex)->second.find(GET_INDEX_NODE(gn_curr->vdef)) != vdefvover_map.find(ssaDefIndex)->second.end())
+                                                                  if(!found_load && gn_curr->vdef && (ga_used->vuses.find(gn_curr->vdef) != ga_used->vuses.end() || (vdefvover_map.find(ssaDefIndex) != vdefvover_map.end() && vdefvover_map.find(ssaDefIndex)->second.find(GET_INDEX_NODE(gn_curr->vdef)) != vdefvover_map.find(ssaDefIndex)->second.end())))
                                                                      break;
                                                                   if(curr_stmt == stmt_list.rbegin())
                                                                      break;
