@@ -80,7 +80,31 @@ private:
     /// The maximum number of inputs of a lut
     size_t max_lut_size;
 
-    bool CheckIfPO(const unsigned int currentBBIndex, const std::vector<boost::shared_ptr<tree_node> > usedIn);
+    /**
+     * `aig_network_ext` class provides operations derived from the one already existing in `mockturtle::aig_network`.
+     */
+    class aig_network_ext : public mockturtle::aig_network;
+
+    /// The list of all operation that can be converted to a lut.
+    const std::vector<enum kind> lutExpressibleOperations = {bit_and_expr_K, truth_and_expr_K, bit_ior_expr_K, truth_or_expr_K, bit_xor_expr_K, truth_xor_expr_K, eq_expr_K, ge_expr_K, lut_expr_K, gt_expr_K, le_expr_K, lt_expr_K, ne_expr_K};
+
+    /**
+     * Pointer that points to the function, of `aig_network_ext`, that represents a binary operation between two `mockturtle::aig_network::signal` 
+     * and returns a `mockturtle::aig_network::signal`.
+     */
+    typedef mockturtle::aig_network::signal (lut_transformation::aig_network_ext::*aig_network_fn)(const mockturtle::aig_network::signal &, const mockturtle::aig_network::signal &);
+
+    /**
+     * Checks if the provided `gimple_assign` is a primary output of lut network.
+     * 
+     * @param gimpleAssign the `gimple_assign` to check
+     * @return whether the provided `gimple_assign` is a primary output
+     */
+    bool CheckIfPO(const gimple_assign *gimpleAssign);
+
+    bool ProcessBasicBlock(std::pair<unsigned int, blocRef> block);
+
+    aig_network_fn GetNodeCreationFunction(const enum kind code);
 
     /**
      * Create gimple assignment

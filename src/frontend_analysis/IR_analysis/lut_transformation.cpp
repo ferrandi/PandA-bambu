@@ -100,92 +100,156 @@
 
 #include <mockturtle/mockturtle.hpp>
 
-class aig_network_ext : public mockturtle::aig_network {
+#pragma region Macros declaration
+
+#define IS_GIMPLE_ASSIGN(it) GET_NODE(*it)->get_kind() == gimple_assign_K
+#define CHECK_BIN_EXPR_SIZE(binaryExpression) (static_cast<int>(tree_helper::Size(GET_NODE(binaryExpression->op0))) == 1 && static_cast<int>(tree_helper::Size(GET_NODE(binaryExpression->op1))) == 1)
+
+#pragma endregion
+
+#pragma region Types declaration
+/**
+ * `aig_network_ext` class provides operations derived from the one already existing in `mockturtle::aig_network`.
+ */
+class lut_transformation::aig_network_ext : public mockturtle::aig_network {
 public:
+    /**
+     * Creates a 'greater' or equal operation.
+     * 
+     * @param a a `mockturtle::signal` representing the first operator of the `ge` operation
+     * @param b a `mockturtle::signal` representing the second operator of the `ge` operation
+     * 
+     * @return a `mockturtle::signal` representing the operation `ge` between `a` and `b`
+     */
     signal create_ge(signal const &a, signal const &b) {
         return !this->create_lt(a, b);
     }
 
+    /**
+     * Creates a 'greater' operation.
+     * 
+     * @param a a `mockturtle::signal` representing the first operator of the `gt` operation
+     * @param b a `mockturtle::signal` representing the second operator of the `gt` operation
+     * 
+     * @return a `mockturtle::signal` representing the operation `gt` between `a` and `b`
+     */
     signal create_gt(signal const &a, signal const &b) {
         return !this->create_le(a, b);
     }
 
+    /**
+     * Creates a 'equal' operation.
+     * 
+     * @param a a `mockturtle::signal` representing the first operator of the `gt` operation
+     * @param b a `mockturtle::signal` representing the second operator of the `gt` operation
+     * 
+     * @return a `mockturtle::signal` representing the operation `eq` between `a` and `b`
+     */
     signal create_eq(signal const &a, signal const &b) {
         return !this->create_xor(a, b);
     }
 
+    /**
+     * Creates a 'not equal' operation.
+     * 
+     * @param a a `mockturtle::signal` representing the first operator of the `ne` operation
+     * @param b a `mockturtle::signal` representing the second operator of the `ne` operation
+     * 
+     * @return a `mockturtle::signal` representing the operation `ne` between `a` and `b`
+     */
     signal create_ne(signal const &a, signal const &b) {
         return this->create_xor(a, b);
     }
 
+    /**
+     * Creates a 'and' operation.
+     * Although the `create_and` operation already exists inside `mockturtle::aig_network` has different
+     * inputs than all others operations (input signals are not constant).
+     * 
+     * @param a a `mockturtle::signal` representing the first operator of the `and` operation
+     * @param b a `mockturtle::signal` representing the second operator of the `and` operation
+     * 
+     * @return a `mockturtle::signal` representing the operation `and` between `a` and `b`
+     */
     signal create_and(signal const &a, signal const &b) {
         return mockturtle::aig_network::create_and(a, b);
     }
 };
 
-typedef mockturtle::aig_network::signal (aig_network_ext::*aig_network_fn)(const mockturtle::aig_network::signal &, const mockturtle::aig_network::signal &);
+#pragma endregion
 
 tree_nodeRef lut_transformation::CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string &srcp_default) {
    return tree_man->CreateGimpleAssign(type, tree_nodeRef(), tree_nodeRef(), op, bb_index, srcp_default);
 }
 
-lut_transformation::lut_transformation(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-     : FunctionFrontendFlowStep(_AppM, _function_id, LUT_TRANSFORMATION, _design_flow_manager, Param), max_lut_size(NUM_CST_allocation_default_max_lut_size) {
-    debug_level = Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
-}
+/**
+ * Checks if the provided `gimple_assign` is a primary output of lut network.
+ * 
+ * @param gimpleAssign the `gimple_assign` to check
+ * @return whether the provided `gimple_assign` is a primary output
+ */
+bool lut_transformation::CheckIfPO(const gimple_assign *gimpleAssign) {
+    /// the index of the basic block holding the provided `gimpleAssign`
+    const unsigned int currentBBIndex = gimpleAssign->bb_index;
+    // the variables that uses the result of the provided `gimpleAssign`
+    const std::vector<boost::shared_ptr<tree_node> > usedIn = gimpleAssign->use_set->variables;
 
-bool lut_transformation::CheckIfPO(const unsigned int currentBBIndex, const std::vector<boost::shared_ptr<tree_node> > usedIn) {
     for (auto node : usedIn) {
-        auto *gimpleNode = GetPointer<gimple_node>(node);
-        if (gimpleNode->bb_index != currentBBIndex) {
+        auto *childGimpleNode = GetPointer<gimple_node>(node);
+
+        // the current operation is a primary output if it is used in
+        // operation not belonging to the current basic block or if the operation
+        // in which it is used does not belong to the K-operations set
+        if (childGimpleAssign->bb_index != currentBBIndex || node->get_kind() != gimple_assign_K) {
             return true;
         }
+        else {
+            auto *childGimpleAssign = GetPointer<gimple_node>(node);
+            enum kind code = GET_NODE(childGimpleAssign->op1)->get_kind();
+
+            // it is a `PO` if code is not contained into `lutExpressibleOperations`
+            return lutExpressibleOperations.find(code) == lutExpressibleOperations.end();
+    }
     }
 
     return false;
 }
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> lut_transformation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const {
-    std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
-    switch(relationship_type) {
-        case(DEPENDENCE_RELATIONSHIP):
-         if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, SAME_FUNCTION));
-            break;
-        case(INVALIDATION_RELATIONSHIP):
-            if (GetStatus() == DesignFlowStep_Status::SUCCESS) {
-                relationships.insert(
-                    std::pair<FrontendFlowStepType, 
-                    FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION)
-                );
-            }
-            break;
-        case(PRECEDENCE_RELATIONSHIP):
-      {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
-            break;
+aig_network_fn lut_transformation::GetNodeCreationFunction(const enum kind code) {
+    switch (code) {
+        case bit_and_expr_K:
+        case truth_and_expr_K:
+            return &aig_network_ext::create_and;
+        case bit_ior_expr_K:
+        case truth_or_expr_K:
+            return &aig_network_ext::create_or;
+        case bit_xor_expr_K:
+        case truth_xor_expr_K:
+            return &aig_network_ext::create_xor;
+        case eq_expr_K:
+            return &aig_network_ext::create_eq;
+        case ge_expr_K:
+            return &aig_network_ext::create_ge;
+        case lut_expr_K:
+            break; // TODO: capire come sono descritte e come inserirle dentro a mockturtle
+        case gt_expr_K:
+            return &aig_network_ext::create_gt;
+        case le_expr_K:
+            return &aig_network_ext::create_le;
+        case lt_expr_K:
+            return &aig_network_ext::create_lt;
+        case ne_expr_K:
+            return &aig_network_ext::create_ne;
         default:
-            THROW_UNREACHABLE("");
+            return nullptr;
     }
-    return relationships;
 }
 
-lut_transformation::~lut_transformation() = default;
-
-DesignFlowStep_Status lut_transformation::InternalExec() {
-    tree_nodeRef temp = TM->get_tree_node_const(function_id);
-    auto* fd = GetPointer<function_decl>(temp);
-    THROW_ASSERT(fd && fd->body, "Node is not a function or it has not a body");
-    auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
-    THROW_ASSERT(sl, "Body is not a statement list");
-
-    bool modified = false;
-
-    for (std::pair<unsigned int, blocRef> block : sl->list_of_bloc) {
+bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> block) {
         aig_network_ext aig;
+    std::map<tree_nodeRef, mockturtle::aig_network::signal> nodeRefToSignal;
         std::map<mockturtle::aig_network::signal, tree_nodeRef> signalToNodeRef;
-        std::map<tree_nodeRef, mockturtle::aig_network::signal> nodeRefToSignal;
+    std::map<mockturtle::aig_network::signal, std::pair<tree_nodeRef, std::list<tree_nodeRef>::iterator> > signalToOutputNode;
 
         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
         const auto &statements = block.second->CGetStmtList();
@@ -205,7 +269,7 @@ DesignFlowStep_Status lut_transformation::InternalExec() {
             }
 #endif
 
-            if (!GET_NODE(*statementsIterator)->get_kind() != gimple_assign_K) {
+        if (!IS_GIMPLE_ASSIGN(statementIterator)) {
                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + GET_NODE(*statementsIterator)->ToString());
                 statementsIterator++;
             }
@@ -217,15 +281,10 @@ DesignFlowStep_Status lut_transformation::InternalExec() {
             auto *binaryExpression = GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1));
 
             THROW_ASSERT(binaryExpression->op0 && binaryExpression->op1, "expected two parameters");
-            int data_size0 = static_cast<int>(tree_helper::Size(GET_NODE(binaryExpression->op0)));
-            int data_size1 = static_cast<int>(tree_helper::Size(GET_NODE(binaryExpression->op1)));
 
-            /* 
-                && !tree_helper::is_constant(TM, binaryExpression->op0->index) 
-                && !tree_helper::is_constant(TM, binaryExpression->op1->index)
-            */
-            if (!(data_size0 == 1
-                && data_size1 == 1)) {
+        // the operands must be booleans
+        if (!CHECK_BIN_EXPR_SIZE(binaryExpression)) {
+            statementsIterator++;
                 continue;
             } 
 
@@ -234,66 +293,41 @@ DesignFlowStep_Status lut_transformation::InternalExec() {
             mockturtle::aig_network::signal op2;
             aig_network_fn nodeCreateFn;
 
+        // if the first operand has already been processed then the previous signal is used
             if (nodeRefToSignal.find(binaryExpression->op0) != nodeRefToSignal.end()) {
                 op1 = nodeRefToSignal[binaryExpression->op0];
             }
-            else {
+        else { // otherwise the operand is a primary input
                 op1 = aig.create_pi();
 
                 nodeRefToSignal[binaryExpression->op0] = op1;
                 signalToNodeRef[op1] = binaryExpression->op0;
             }
 
+        // if the second operand has already been processed then the previous signal is used
             if (nodeRefToSignal.find(binaryExpression->op1) != nodeRefToSignal.end()) {
                 op2 = nodeRefToSignal[binaryExpression->op1];
             }
-            else {
+        else { // otherwise the operand is a primary input
                 op2 = aig.create_pi();
 
                 nodeRefToSignal[binaryExpression->op1] = op2;
                 signalToNodeRef[op2] = binaryExpression->op1;
             }
 
-            switch (code1) {
-                case bit_and_expr_K:
-                case truth_and_expr_K:
-                    nodeCreateFn = &aig_network_ext::create_and;
-                    break;
-                case bit_ior_expr_K:
-                case truth_or_expr_K:
-                    nodeCreateFn = &aig_network_ext::create_or;
-                    break;
-                case bit_xor_expr_K:
-                case truth_xor_expr_K:
-                    nodeCreateFn = &aig_network_ext::create_xor;
-                    break;
-                case eq_expr_K:
-                    nodeCreateFn = &aig_network_ext::create_eq;
-                    break;
-                case ge_expr_K:
-                    nodeCreateFn = &aig_network_ext::create_ge;
-                    break;
-                case lut_expr_K:
-                    break; // TODO: capire come sono descritte e come inserirle dentro a mockturtle
-                case gt_expr_K:
-                    nodeCreateFn = &aig_network_ext::create_gt;
-                    break;
-                case le_expr_K:
-                    nodeCreateFn = &aig_network_ext::create_le;
-                    break;
-                case lt_expr_K:
-                    nodeCreateFn = &aig_network_ext::create_lt;
-                    break;
-                case ne_expr_K:
-                    nodeCreateFn = &aig_network_ext::create_ne;
-                    break;
+        nodeCreateFn = this->GetNodeCreationFunction(code1);
+
+        if (nodeCreateFn == nullptr) {
+            statementsIterator++;
+            continue;
             }
 
             res = (aig.*nodeCreateFn)(op1, op2);
             nodeRefToSignal[gimpleAssign->op0] = res;
             signalToNodeRef[res] = gimpleAssign->op0;
+        signalToOutputNode[res] = std::make_pair(gimpleAssign->op0, statementsIterator);
 
-            if (this->CheckIfPO(block.first, gimpleAssign->use_set->variables)) {
+        if (this->CheckIfPO(gimpleAssign)) {
                 aig.create_po(res);
             }
 
@@ -308,22 +342,19 @@ DesignFlowStep_Status lut_transformation::InternalExec() {
         mockturtle::lut_mapping<mockturtle::mapping_view<mockturtle::aig_network, true>, true>(mapped_aig, ps);
         auto lut = *mockturtle::collapse_mapped_network<mockturtle::klut_network>(mapped_aig);
 
+    mockturtle::write_bench(lut, std::cout);
 
-        mockturtle::write_bench(lut, std::cout);
+    lut.foreach_node([&](auto const &node) {
+        
+    });
+
         // dalla network a lut_expr_K
         // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added to LUT list : " + STR(lut_ga));
         // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Modified statement " + GET_NODE(lut_ga)->ToString());
 
-        modified = statementsCount != statements.size();
         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examining BB" + STR(block.first));
-    }
 
-    if (modified) {
-        function_behavior->UpdateBBVersion();
-        return DesignFlowStep_Status::SUCCESS;
-    }
-
-    return DesignFlowStep_Status::UNCHANGED;
+    return statementsCount != statements.size();
 }
 
 // DesignFlowStep_Status lut_transformation::InternalExec()
@@ -460,6 +491,9 @@ DesignFlowStep_Status lut_transformation::InternalExec() {
 //     return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 // }
 
+#pragma region Life cycle
+lut_transformation::~lut_transformation() = default;
+
 void lut_transformation::Initialize() {
     TM = AppM->get_tree_manager();
     tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
@@ -493,3 +527,56 @@ void lut_transformation::ComputeRelationships(DesignFlowStepSet &relationship, c
 
     FunctionFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }
+
+lut_transformation::lut_transformation(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+     : FunctionFrontendFlowStep(_AppM, _function_id, LUT_TRANSFORMATION, _design_flow_manager, Param), max_lut_size(NUM_CST_allocation_default_max_lut_size) {
+    debug_level = Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
+}
+
+DesignFlowStep_Status lut_transformation::InternalExec() {
+    tree_nodeRef temp = TM->get_tree_node_const(function_id);
+    auto* fd = GetPointer<function_decl>(temp);
+    THROW_ASSERT(fd && fd->body, "Node is not a function or it has not a body");
+    auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+    THROW_ASSERT(sl, "Body is not a statement list");
+
+    bool modified = false;
+
+    for (std::pair<unsigned int, blocRef> block : sl->list_of_bloc) {
+        modified |= this->processBasicBlock(block);
+    }
+
+    if (modified) {
+        function_behavior->UpdateBBVersion();
+        return DesignFlowStep_Status::SUCCESS;
+    }
+
+    return DesignFlowStep_Status::UNCHANGED;
+}
+
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> lut_transformation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const {
+    std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+    switch(relationship_type) {
+        case(DEPENDENCE_RELATIONSHIP):
+            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, SAME_FUNCTION));
+            break;
+        case(INVALIDATION_RELATIONSHIP):
+            if (GetStatus() == DesignFlowStep_Status::SUCCESS) {
+                relationships.insert(
+                    std::pair<FrontendFlowStepType, 
+                    FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION)
+                );
+            }
+            break;
+        case(PRECEDENCE_RELATIONSHIP):
+            relationships.insert(
+                std::pair<FrontendFlowStepType, 
+                FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION)
+            );
+            break;
+        default:
+            THROW_UNREACHABLE("");
+    }
+    return relationships;
+}
+#pragma endregion
