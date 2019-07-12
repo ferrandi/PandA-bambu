@@ -183,7 +183,7 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
       }
    }
 
-   if((parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)) or (parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw)))
+   if(((parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)) or (parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw))) and (!parameters->isOption(OPT_discrepancy_permissive_ptrs) || !parameters->getOption<bool>(OPT_discrepancy_permissive_ptrs)))
    {
       if(false
 #if HAVE_I386_GCC48_COMPILER

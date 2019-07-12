@@ -2962,64 +2962,14 @@ namespace llvm
          {
             const auto Loc = llvm::MemoryLocation::get(inst);
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), &Loc, "vuse");
-            /// add anti-dependencies
-            auto defMA = MSSA.getWalker()->getClobberingMemoryAccess(inst);
-            const void* VirtDef =
-                MSSA.isLiveOnEntryDef(defMA) ? nullptr : (defMA->getValueID() == llvm::Value::MemoryPhiVal ? gimple_phi_virtual_result(getVirtualGimplePhi(dyn_cast<llvm::MemoryPhi>(defMA), MSSA)) : dyn_cast<llvm::MemoryUseOrDef>(defMA)->getMemoryInst());
-            if(CurrentListofMAEntryDef.find(currentFunction) != CurrentListofMAEntryDef.end() && CurrentListofMAEntryDef.find(currentFunction)->second.find(VirtDef) != CurrentListofMAEntryDef.find(currentFunction)->second.end())
-            {
-               for(auto defInst : CurrentListofMAEntryDef.find(currentFunction)->second.find(VirtDef)->second)
-               {
-                  auto& AA = modulePass->getAnalysis<llvm::AAResultsWrapperPass>(*currentFunction).getAAResults();
-                  llvm::ImmutableCallSite UseCS(static_cast<const llvm::Instruction*>(inst));
-                  bool addVuse = false;
-                  if(UseCS)
-                  {
-                     const llvm::ModRefInfo I = AA.getModRefInfo(const_cast<llvm::Instruction*>(defInst), UseCS);
-#if __clang_major__ > 5
-                     addVuse = llvm::isModOrRefSet(I);
-#else
-                     addVuse = I != llvm::MRI_NoModRef;
-#endif
-                  }
-                  else
-                  {
-                     const auto Loc = llvm::MemoryLocation::get(inst);
-                     if(auto* DefLoad = dyn_cast<llvm::LoadInst>(defInst))
-                     {
-                        if(auto* UseLoad = dyn_cast<llvm::LoadInst>(inst))
-                           addVuse = !areLoadsReorderable(UseLoad, DefLoad);
-                     }
-                     else
-                     {
-                        auto I = AA.getModRefInfo(defInst, Loc);
-#if __clang_major__ > 5
-                        addVuse = llvm::isModSet(I);
-#else
-                        addVuse = I & llvm::MRI_Mod;
-#endif
-                     }
-                  }
-                  if(addVuse)
-                  {
-                     auto maDef = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA().getMemoryAccess(defInst);
-                     assert(maDef);
-                     const void* vuse = getSSA(maDef, defInst, currentFunction, false);
-                     serialize_child("vuse", vuse);
-                  }
-               }
-            }
          }
       }
       else if(ma->getValueID() == llvm::Value::MemoryDefVal)
       {
          const void* vdef = getSSA(ma, g, currentFunction, false);
          serialize_child("vdef", vdef);
-         serialize_child("vover", vdef);
          std::set<llvm::MemoryAccess*> visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
-         visited.insert(startingMA);
-         visited.insert(MSSA.getLiveOnEntryDef());
          if(llvm::ImmutableCallSite(inst) || isa<llvm::FenceInst>(inst))
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), nullptr, "vover");
          else
