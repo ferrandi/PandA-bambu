@@ -60,6 +60,7 @@
 
 #include <mockturtle/mockturtle.hpp>
 #include "tree_common.hpp"
+#include "tree_node.hpp"
 
 
 //@{
@@ -104,11 +105,11 @@ private:
      * @param gimpleAssign the `gimple_assign` to check
      * @return whether the provided `gimple_assign` is a primary output
      */
-    bool CheckIfPO(const gimple_assign *gimpleAssign);
+    bool CheckIfPO(gimple_assign *gimpleAssign);
 
     bool ProcessBasicBlock(std::pair<unsigned int, blocRef> block);
 
-    aig_network_fn GetNodeCreationFunction(const enum kind code);
+    aig_network_fn GetNodeCreationFunction(enum kind code);
 
     /**
      * Create gimple assignment

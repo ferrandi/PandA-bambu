@@ -187,7 +187,7 @@ tree_nodeRef lut_transformation::CreateGimpleAssign(const tree_nodeRef type, con
  * @param gimpleAssign the `gimple_assign` to check
  * @return whether the provided `gimple_assign` is a primary output
  */
-bool lut_transformation::CheckIfPO(const gimple_assign *gimpleAssign) {
+bool lut_transformation::CheckIfPO(gimple_assign *gimpleAssign) {
     /// the index of the basic block holding the provided `gimpleAssign`
     const unsigned int currentBBIndex = gimpleAssign->bb_index;
     // the variables that uses the result of the provided `gimpleAssign`
@@ -214,7 +214,7 @@ bool lut_transformation::CheckIfPO(const gimple_assign *gimpleAssign) {
     return false;
 }
 
-aig_network_fn lut_transformation::GetNodeCreationFunction(const enum kind code) {
+aig_network_fn lut_transformation::GetNodeCreationFunction(enum kind code) {
     switch (code) {
         case bit_and_expr_K:
         case truth_and_expr_K:
@@ -268,7 +268,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             }
 #endif
 
-        if (!IS_GIMPLE_ASSIGN(statementIterator)) {
+        if (!IS_GIMPLE_ASSIGN(statementsIterator)) {
                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + GET_NODE(*statementsIterator)->ToString());
                 statementsIterator++;
             }
@@ -408,7 +408,7 @@ DesignFlowStep_Status lut_transformation::InternalExec() {
     bool modified = false;
 
     for (std::pair<unsigned int, blocRef> block : sl->list_of_bloc) {
-        modified |= this->processBasicBlock(block);
+        modified |= this->ProcessBasicBlock(block);
     }
 
     if (modified) {
