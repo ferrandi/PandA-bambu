@@ -98,8 +98,6 @@
 #include "tree_manipulation.hpp"
 #include "tree_reindex.hpp"
 
-#include <mockturtle/mockturtle.hpp>
-
 #pragma region Macros declaration
 
 #define IS_GIMPLE_ASSIGN(it) GET_NODE(*it)->get_kind() == gimple_assign_K
@@ -108,6 +106,7 @@
 #pragma endregion
 
 #pragma region Types declaration
+
 /**
  * `aig_network_ext` class provides operations derived from the one already existing in `mockturtle::aig_network`.
  */
@@ -356,140 +355,6 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
     return statementsCount != statements.size();
 }
-
-// DesignFlowStep_Status lut_transformation::InternalExec()
-// {
-//     bool modified = false;
-//     tree_nodeRef temp = TM->get_tree_node_const(function_id);
-//     auto* fd = GetPointer<function_decl>(temp);
-//     THROW_ASSERT(fd && fd->body, "Node is not a function or it has not a body");
-//     auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
-//     THROW_ASSERT(sl, "Body is not a statement list");
-//     /// iteration over basic blocks
-//     for(auto block : sl->list_of_bloc)
-//     {
-//         std::list<tree_nodeRef> lutList;
-
-//         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
-//         const auto& list_of_stmt = block.second->CGetStmtList();
-//         /// end of statements list
-//         auto it_los_end = list_of_stmt.end();
-//         /// size of statements list
-//         size_t n_stmts = list_of_stmt.size();
-//         /// start of statements list
-//         auto it_los = list_of_stmt.begin();
-//         /// iteration over statements
-//         while(it_los != it_los_end)
-//         {
-// #ifndef NDEBUG
-//             if(not AppM->ApplyNewTransformation())
-//             {
-//                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reached max cfg transformations");
-//                 it_los++;
-//                 continue;
-//             }
-// #endif
-//             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(*it_los)->ToString());
-            
-//             if (GET_NODE(*it_los)->get_kind() == gimple_assign_K)
-//             {
-//                 auto* ga = GetPointer<gimple_assign>(GET_NODE(*it_los));
-//                 const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
-//                 // second operand : the right part of the assignment
-//                 enum kind code1 = GET_NODE(ga->op1)->get_kind();
-//                 long long int lut_number = 0;
-
-//                 if (code1 == bit_and_expr_K || code1 == truth_and_expr_K)
-//                 {
-//                     lut_number = 8;
-//                     // in1 = aig.create_pi();
-//                     // in2 = aig.create_pi();
-//                     // aig.create_and(in1, in2);
-//                 }
-//                 else if (code1 == bit_ior_expr_K || code1 == truth_or_expr_K)
-//                 {
-//                     lut_number = 14;
-//                     // in1 = aig.create_pi();
-//                     // in2 = aig.create_pi();
-//                     // aig.create_or(in1, in2);
-//                 }
-//                 else if (code1 == bit_xor_expr_K || code1 == truth_xor_expr_K)
-//                 {
-//                     lut_number = 6; 
-//                     // in1 = aig.create_pi();
-//                     // in2 = aig.create_pi();
-//                     // aig.create_xor(in1, in2);
-//                 }
-
-//                 if (lut_number != 0)
-//                 {
-//                     auto* be = GetPointer<binary_expr>(GET_NODE(ga->op1));
-//                     THROW_ASSERT(be->op0 && be->op1, "expected two parameters");
-//                     int data_size0 = static_cast<int>(tree_helper::Size(GET_NODE(be->op0)));
-//                     int data_size1 = static_cast<int>(tree_helper::Size(GET_NODE(be->op1)));
-//                     if (data_size0 == 1 and data_size1 == 1 and not tree_helper::is_constant(TM, be->op0->index) and not tree_helper::is_constant(TM, be->op1->index))
-//                     {
-//                         const auto type = tree_man->CreateDefaultUnsignedLongLongInt();
-
-//                         tree_nodeRef convert_op = tree_man->create_unary_operation(type, be->op0, srcp_default, convert_expr_K);
-//                         tree_nodeRef convert_ga = CreateGimpleAssign(type, convert_op, block.first, srcp_default);
-//                         block.second->PushBefore(convert_ga, *it_los);
-
-//                         unsigned int integer_cst1_id = TM->new_tree_node_id();
-//                         tree_nodeRef const1 = tree_man->CreateIntegerCst(type, 1, integer_cst1_id);
-
-//                         tree_nodeRef mask_op = tree_man->create_binary_operation(type, GetPointer<const gimple_assign>(GET_CONST_NODE(convert_ga))->op0, const1, srcp_default, bit_and_expr_K);
-//                         tree_nodeRef mask_ga = CreateGimpleAssign(type, mask_op, block.first, srcp_default);
-//                         block.second->PushBefore(mask_ga, *it_los);
-
-//                         tree_nodeRef lshift_op = tree_man->create_binary_operation(type, GetPointer<const gimple_assign>(GET_CONST_NODE((mask_ga)))->op0, const1, srcp_default, lshift_expr_K);
-//                         tree_nodeRef lshift_ga = CreateGimpleAssign(type, lshift_op, block.first, srcp_default);
-//                         block.second->PushBefore(lshift_ga, *it_los);
-
-//                         tree_nodeRef conc_op = tree_man->create_ternary_operation(type, GetPointer<const gimple_assign>(GET_CONST_NODE(lshift_ga))->op0, be->op1, const1, srcp_default, bit_ior_concat_expr_K);
-//                         tree_nodeRef conc_ga = CreateGimpleAssign(type, conc_op, block.first, srcp_default);
-//                         GetPointer<gimple_assign>(GET_NODE(conc_ga))->temporary_address = true;
-//                         tree_nodeRef result_conc = GetPointer<gimple_assign>(GET_NODE(conc_ga))->op0;
-//                         GetPointer<ssa_name>(GET_NODE(result_conc))->bit_values = "UU";
-//                         // insert concatenation node
-//                         block.second->PushBefore(conc_ga, *it_los);
-//                         // create lut node
-//                         // transform constant to tree_nodeRef
-//                         unsigned int integer_cst2_id = TM->new_tree_node_id();
-//                         tree_nodeRef and_op_cst = tree_man->CreateIntegerCst(type, lut_number, integer_cst2_id);
-//                         const auto type1 = tree_man->CreateDefaultUnsignedLongLongInt();
-//                         tree_nodeRef new_op1 = tree_man->create_binary_operation(be->type, result_conc, and_op_cst, srcp_default, lut_expr_K);
-//                         tree_nodeRef lut_ga = CreateGimpleAssign(be->type, new_op1, block.first, srcp_default);
-//                         GetPointer<gimple_assign>(GET_NODE(lut_ga))->op0 = ga->op0;
-//                         // insert lut node
-//                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing " + STR(*it_los) + " with " + STR(lut_ga));
-//                         block.second->Replace(*it_los, lut_ga, true);
-// #ifndef NDEBUG
-//                         AppM->RegisterTransformation(GetName(), lut_ga);
-// #endif
-//                         lutList.push_back(lut_ga);
-//                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added to LUT list : " + STR(lut_ga));
-//                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Modified statement " + GET_NODE(lut_ga)->ToString());
-//                         it_los = list_of_stmt.begin();
-//                         it_los_end = list_of_stmt.end();
-//                         continue;
-//                     }
-//                 }
-//             }
-//             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + GET_NODE(*it_los)->ToString());
-//             it_los++;
-//         }
-//         // Merge all the LUT in the block
-//         MergeLut(lutList, block);
-
-//         if(n_stmts != list_of_stmt.size())
-//             modified = true;
-//         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examining BB" + STR(block.first));
-//     }
-//     if(modified)
-//         function_behavior->UpdateBBVersion();
-//     return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
-// }
 
 #pragma region Life cycle
 lut_transformation::~lut_transformation() = default;
