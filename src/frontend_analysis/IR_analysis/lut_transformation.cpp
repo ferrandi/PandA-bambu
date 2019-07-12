@@ -175,6 +175,12 @@ public:
     }
 };
 
+/**
+ * Pointer that points to the function, of `aig_network_ext`, that represents a binary operation between two `mockturtle::aig_network::signal` 
+ * and returns a `mockturtle::aig_network::signal`.
+ */
+typedef mockturtle::aig_network::signal (lut_transformation::aig_network_ext::*aig_network_fn)(const mockturtle::aig_network::signal &, const mockturtle::aig_network::signal &);
+
 #pragma endregion
 
 tree_nodeRef lut_transformation::CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string &srcp_default) {
@@ -324,7 +330,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             res = (aig.*nodeCreateFn)(op1, op2);
             nodeRefToSignal[gimpleAssign->op0] = res;
             signalToNodeRef[res] = gimpleAssign->op0;
-        signalToOutputNode[res] = std::make_pair(gimpleAssign->op0, statementsIterator);
+        signalToOutputNode[res] = std::make_pair<tree_nodeRef, std::list<tree_nodeRef>::iterator>(gimpleAssign->op0, statementsIterator);
 
         if (this->CheckIfPO(gimpleAssign)) {
                 aig.create_po(res);
