@@ -2967,7 +2967,6 @@ namespace llvm
          serialize_child("vdef", vdef);
          std::set<llvm::MemoryAccess*> visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
-         visited.insert(MSSA.getLiveOnEntryDef());
          if(llvm::ImmutableCallSite(inst) || isa<llvm::FenceInst>(inst))
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), nullptr, "vover");
          else
