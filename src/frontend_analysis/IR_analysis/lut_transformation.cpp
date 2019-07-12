@@ -175,12 +175,6 @@ public:
     }
 };
 
-/**
- * Pointer that points to the function, of `aig_network_ext`, that represents a binary operation between two `mockturtle::aig_network::signal` 
- * and returns a `mockturtle::aig_network::signal`.
- */
-// typedef mockturtle::aig_network::signal (lut_transformation::aig_network_ext::*aig_network_fn)(const mockturtle::aig_network::signal &, const mockturtle::aig_network::signal &);
-
 #pragma endregion
 
 tree_nodeRef lut_transformation::CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string &srcp_default) {
@@ -236,7 +230,7 @@ lut_transformation::aig_network_fn lut_transformation::GetNodeCreationFunction(e
         case ge_expr_K:
             return &aig_network_ext::create_ge;
         case lut_expr_K:
-            break; // TODO: capire come sono descritte e come inserirle dentro a mockturtle
+            return nullptr; // TODO: capire come sono descritte e come inserirle dentro a mockturtle
         case gt_expr_K:
             return &aig_network_ext::create_gt;
         case le_expr_K:
@@ -254,7 +248,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
         aig_network_ext aig;
     std::map<tree_nodeRef, mockturtle::aig_network::signal> nodeRefToSignal;
         std::map<mockturtle::aig_network::signal, tree_nodeRef> signalToNodeRef;
-    std::map<mockturtle::aig_network::signal, std::pair<tree_nodeRef, std::list<tree_nodeRef>::iterator> > signalToOutputNode;
+    std::map<mockturtle::aig_network::signal, std::pair<boost::shared_ptr<tree_node>, std::list<boost::shared_ptr<tree_node>>::iterator> > signalToOutputNode;
 
         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
         const auto &statements = block.second->CGetStmtList();
@@ -330,7 +324,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             res = (aig.*nodeCreateFn)(op1, op2);
             nodeRefToSignal[gimpleAssign->op0] = res;
             signalToNodeRef[res] = gimpleAssign->op0;
-        signalToOutputNode[res] = std::make_pair<tree_nodeRef, std::list<tree_nodeRef>::iterator>(gimpleAssign->op0, statementsIterator);
+        signalToOutputNode[res] = std::make_pair<tree_nodeRef, std::list<tree_nodeRef>::iterator>(GET_NODE(gimpleAssign->op0), statementsIterator);
 
         if (this->CheckIfPO(gimpleAssign)) {
                 aig.create_po(res);
