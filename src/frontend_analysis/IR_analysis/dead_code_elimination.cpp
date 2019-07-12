@@ -427,7 +427,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                      else
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---LHS ssa used: " + STR(ssa->CGetNumberUses()) + "-" + STR(ssa->CGetDefStmts().size()));
                   }
-                  else if(BVP_executed && op0->get_kind() == mem_ref_K)
+                  else if(BVP_executed && op0->get_kind() == mem_ref_K && !ga->artificial)
                   {
                      auto* mr = GetPointer<mem_ref>(op0);
                      THROW_ASSERT(GET_NODE(mr->op1)->get_kind() == integer_cst_K, "unexpected condition");
