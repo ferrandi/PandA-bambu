@@ -73,4 +73,5 @@ config.h.in~
 
 /build*
 .vscode
+obj/
 *swp

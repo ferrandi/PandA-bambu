@@ -111,6 +111,8 @@ private:
 
     aig_network_fn GetNodeCreationFunction(enum kind code);
 
+    tree_nodeRef lut_transformation::CreateLutExpression(const mockturtle::klut_network &lut, const mockturtle::klut_network::node &node, const std::string &srcp_default);
+
     /**
      * Create gimple assignment
      * @param type is the type the assignment

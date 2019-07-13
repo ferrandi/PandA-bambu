@@ -192,7 +192,7 @@ bool lut_transformation::CheckIfPO(gimple_assign *gimpleAssign) {
     const unsigned int currentBBIndex = gimpleAssign->bb_index;
     // the variables that uses the result of the provided `gimpleAssign`
     const std::vector<boost::shared_ptr<tree_node> > usedIn = gimpleAssign->use_set->variables;
-
+    
     for (auto node : usedIn) {
         auto *childGimpleNode = GetPointer<gimple_node>(node);
 
@@ -208,7 +208,7 @@ bool lut_transformation::CheckIfPO(gimple_assign *gimpleAssign) {
 
             // it is a `PO` if code is not contained into `lutExpressibleOperations`
             return std::find(lutExpressibleOperations.begin(), lutExpressibleOperations.end(), code) == lutExpressibleOperations.end();
-    }
+        }
     }
 
     return false;
@@ -244,116 +244,119 @@ lut_transformation::aig_network_fn lut_transformation::GetNodeCreationFunction(e
     }
 }
 
+tree_nodeRef lut_transformation::CreateLutExpression(const mockturtle::klut_network &lut, const mockturtle::klut_network::node &node, const std::string &srcp_default) {
+    
+}
+
 bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> block) {
-        aig_network_ext aig;
+    aig_network_ext aig;
     std::map<tree_nodeRef, mockturtle::aig_network::signal> nodeRefToSignal;
-        std::map<mockturtle::aig_network::signal, tree_nodeRef> signalToNodeRef;
-    std::map<mockturtle::aig_network::signal, std::pair<boost::shared_ptr<tree_node>, std::list<boost::shared_ptr<tree_node>>::iterator> > signalToOutputNode;
+    std::map<mockturtle::aig_network::signal, tree_nodeRef> signalToNodeRef;
+    std::map<mockturtle::aig_network::signal, std::pair<tree_nodeRef, std::list<tree_nodeRef>::iterator> > signalToOutputNode;
 
-        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
-        const auto &statements = block.second->CGetStmtList();
-        /// end of statements list
-        auto statementsEnd = statements.end();
-        /// size of statements list
-        size_t statementsCount = statements.size();
-        /// start of statements list
-        auto statementsIterator = statements.begin();
+    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
+    const auto &statements = block.second->CGetStmtList();
+    /// end of statements list
+    auto statementsEnd = statements.end();
+    /// size of statements list
+    size_t statementsCount = statements.size();
+    /// start of statements list
+    auto statementsIterator = statements.begin();
+    /// whether the bb has been modified
+    bool modified = false;
 
-        while (statementsIterator != statementsEnd) {
+    while (statementsIterator != statementsEnd) {
 #ifndef NDEBUG
-            if(!AppM->ApplyNewTransformation()) {
-                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reached max cfg transformations");
-                statementsIterator++;
-                continue;
-            }
+        if(!AppM->ApplyNewTransformation()) {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reached max cfg transformations");
+            statementsIterator++;
+            continue;
+        }
 #endif
 
         if (!IS_GIMPLE_ASSIGN(statementsIterator)) {
-                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + GET_NODE(*statementsIterator)->ToString());
-                statementsIterator++;
-            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + GET_NODE(*statementsIterator)->ToString());
+            statementsIterator++;
+            continue;
+        }
 
-            auto *gimpleAssign = GetPointer<gimple_assign>(GET_NODE(*statementsIterator));
-            const std::string srcp_default = gimpleAssign->include_name + ":" + STR(gimpleAssign->line_number) + ":" + STR(gimpleAssign->column_number);
-            enum kind code1 = GET_NODE(gimpleAssign->op1)->get_kind();
-            
-            auto *binaryExpression = GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1));
+        auto *gimpleAssign = GetPointer<gimple_assign>(GET_NODE(*statementsIterator));
+        const std::string srcp_default = gimpleAssign->include_name + ":" + STR(gimpleAssign->line_number) + ":" + STR(gimpleAssign->column_number);
+        enum kind code1 = GET_NODE(gimpleAssign->op1)->get_kind();
+        
+        auto *binaryExpression = GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1));
 
-            THROW_ASSERT(binaryExpression->op0 && binaryExpression->op1, "expected two parameters");
+        THROW_ASSERT(binaryExpression->op0 && binaryExpression->op1, "expected two parameters");
 
         // the operands must be booleans
         if (!CHECK_BIN_EXPR_SIZE(binaryExpression)) {
             statementsIterator++;
-                continue;
-            } 
+            continue;
+        }
 
-            mockturtle::aig_network::signal res;
-            mockturtle::aig_network::signal op1;
-            mockturtle::aig_network::signal op2;
-        lut_transformation::aig_network_fn nodeCreateFn;
-
-        // if the first operand has already been processed then the previous signal is used
-            if (nodeRefToSignal.find(binaryExpression->op0) != nodeRefToSignal.end()) {
-                op1 = nodeRefToSignal[binaryExpression->op0];
-            }
-        else { // otherwise the operand is a primary input
-                op1 = aig.create_pi();
-
-                nodeRefToSignal[binaryExpression->op0] = op1;
-                signalToNodeRef[op1] = binaryExpression->op0;
-            }
-
-        // if the second operand has already been processed then the previous signal is used
-            if (nodeRefToSignal.find(binaryExpression->op1) != nodeRefToSignal.end()) {
-                op2 = nodeRefToSignal[binaryExpression->op1];
-            }
-        else { // otherwise the operand is a primary input
-                op2 = aig.create_pi();
-
-                nodeRefToSignal[binaryExpression->op1] = op2;
-                signalToNodeRef[op2] = binaryExpression->op1;
-            }
-
-        nodeCreateFn = this->GetNodeCreationFunction(code1);
+        lut_transformation::aig_network_fn nodeCreateFn = this->GetNodeCreationFunction(code1);
 
         if (nodeCreateFn == nullptr) {
             statementsIterator++;
             continue;
-            }
-
-            res = (aig.*nodeCreateFn)(op1, op2);
-            nodeRefToSignal[gimpleAssign->op0] = res;
-            signalToNodeRef[res] = gimpleAssign->op0;
-        signalToOutputNode[res] = std::make_pair<boost::shared_ptr<tree_node>, std::list<boost::shared_ptr<tree_node>>::iterator>(**gimpleAssign->op0, statementsIterator);
-
-        if (this->CheckIfPO(gimpleAssign)) {
-                aig.create_po(res);
-            }
-
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + GET_NODE(*statementsIterator)->ToString());
-            statementsIterator++;
         }
 
-        mockturtle::mapping_view<mockturtle::aig_network, true> mapped_aig{aig};
+        mockturtle::aig_network::signal res;
+        mockturtle::aig_network::signal op1;
+        mockturtle::aig_network::signal op2;
 
-        mockturtle::lut_mapping_params ps;
-        ps.cut_enumeration_ps.cut_size = max_lut_size; // parameter
-        mockturtle::lut_mapping<mockturtle::mapping_view<mockturtle::aig_network, true>, true>(mapped_aig, ps);
-        auto lut = *mockturtle::collapse_mapped_network<mockturtle::klut_network>(mapped_aig);
+        // if the first operand has already been processed then the previous signal is used
+        if (nodeRefToSignal.find(binaryExpression->op0) != nodeRefToSignal.end()) {
+            op1 = nodeRefToSignal[binaryExpression->op0];
+        }
+        else { // otherwise the operand is a primary input
+            op1 = aig.create_pi();
+
+            nodeRefToSignal[binaryExpression->op0] = op1;
+            signalToNodeRef[op1] = binaryExpression->op0;
+        }
+
+        // if the second operand has already been processed then the previous signal is used
+        if (nodeRefToSignal.find(binaryExpression->op1) != nodeRefToSignal.end()) {
+            op2 = nodeRefToSignal[binaryExpression->op1];
+        }
+        else { // otherwise the operand is a primary input
+            op2 = aig.create_pi();
+
+            nodeRefToSignal[binaryExpression->op1] = op2;
+            signalToNodeRef[op2] = binaryExpression->op1;
+        }
+
+        res = (aig.*nodeCreateFn)(op1, op2);
+        nodeRefToSignal[gimpleAssign->op0] = res;
+        signalToNodeRef[res] = gimpleAssign->op0;
+        // signalToOutputNode[res] = std::make_pair<tree_nodeRef, std::list<tree_nodeRef>::iterator>(gimpleAssign->op0, statementsIterator);
+
+        if (this->CheckIfPO(gimpleAssign)) {
+            aig.create_po(res);
+        }
+
+        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + GET_NODE(*statementsIterator)->ToString());
+        statementsIterator++;
+        modified = true;
+    }
+
+    mockturtle::mapping_view<mockturtle::aig_network, true> mapped_aig{aig};
+
+    mockturtle::lut_mapping_params ps;
+    ps.cut_enumeration_ps.cut_size = max_lut_size; // parameter
+    mockturtle::lut_mapping<mockturtle::mapping_view<mockturtle::aig_network, true>, true>(mapped_aig, ps);
+    mockturtle::klut_network lut = *mockturtle::collapse_mapped_network<mockturtle::klut_network>(mapped_aig);
 
     mockturtle::write_bench(lut, std::cout);
 
-    lut.foreach_node([&](auto const &node) {
-        
-    });
+    // dalla network a lut_expr_K
+    // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added to LUT list : " + STR(lut_ga));
+    // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Modified statement " + GET_NODE(lut_ga)->ToString());
 
-        // dalla network a lut_expr_K
-        // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added to LUT list : " + STR(lut_ga));
-        // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Modified statement " + GET_NODE(lut_ga)->ToString());
+    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examining BB" + STR(block.first));
 
-        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examining BB" + STR(block.first));
-
-    return statementsCount != statements.size();
+    return modified;
 }
 
 #pragma region Life cycle
