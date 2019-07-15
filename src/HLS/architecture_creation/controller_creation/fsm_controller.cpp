@@ -262,47 +262,49 @@ void fsm_controller::create_state_machine(std::string& parse)
             present_state[v][unbounded_port] = 1;
          }
       }
-
-      const std::set<unsigned int>& live_out = HLS->Rliv->get_live_out(v);
-      auto out_end = live_out.end();
-
-      unsigned int registers = HLS->Rreg->get_used_regs();
-      std::vector<bool> XRegs(registers, true);
-
-      for(auto out = live_out.begin(); out != out_end; ++out)
+      if(parameters->IsParameter("Xvalue") and parameters->GetParameter<bool>("Xvalue"))
       {
-         if(HLS->storage_value_information->is_a_storage_value(v, *out)){
-            unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(v, *out);
-            unsigned int accessed_reg = HLS->Rreg->get_register(storage_value_index);
-            XRegs[accessed_reg] = false;
-         }
-      }
+         const std::set<unsigned int>& live_out = HLS->Rliv->get_live_out(v);
+         auto out_end = live_out.end();
 
-      std::set<std::pair<unsigned int, unsigned int>> active_fu;
-      for(const auto& op : operations)
-      {
-         unsigned int fu_type = HLS->Rfu->get_assign(op);
-         unsigned int fu_index = HLS->Rfu->get_index(op);
-         active_fu.insert(std::make_pair(fu_type, fu_index));
-      }
+         unsigned int registers = HLS->Rreg->get_used_regs();
+         std::vector<bool> XRegs(registers, true);
 
-      if(selectors.find(conn_binding::IN) != selectors.end())
-      {
-         for(const auto& s : selectors.at(conn_binding::IN))
+         for(auto out = live_out.begin(); out != out_end; ++out)
          {
-            if(s.second->get_type() == generic_obj::COMMAND_PORT)
+            if(HLS->storage_value_information->is_a_storage_value(v, *out)){
+               unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(v, *out);
+               unsigned int accessed_reg = HLS->Rreg->get_register(storage_value_index);
+               XRegs[accessed_reg] = false;
+            }
+         }
+
+         std::set<std::pair<unsigned int, unsigned int>> active_fu;
+         for(const auto& op : operations)
+         {
+            unsigned int fu_type = HLS->Rfu->get_assign(op);
+            unsigned int fu_index = HLS->Rfu->get_index(op);
+            active_fu.insert(std::make_pair(fu_type, fu_index));
+         }
+
+         if(selectors.find(conn_binding::IN) != selectors.end())
+         {
+            for(const auto& s : selectors.at(conn_binding::IN))
             {
-               auto current_port = GetPointer<commandport_obj>(s.second);
-               // compute X values for wr_enable signals
-               if(current_port->get_command_type() == commandport_obj::command_type::WRENABLE)
+               if(s.second->get_type() == generic_obj::COMMAND_PORT)
                {
-                  auto reg_obj = GetPointer<register_obj>(current_port->get_elem());
-                  if(XRegs[reg_obj->get_register_index()])
+                  auto current_port = GetPointer<commandport_obj>(s.second);
+                  // compute X values for wr_enable signals
+                  if(current_port->get_command_type() == commandport_obj::command_type::WRENABLE)
                   {
-                     present_state[v][out_ports[s.second]] = 2;
-                     PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Set X value for wr_en on register reg_");
-                     PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, reg_obj->get_register_index());
-                     PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "\n");
+                     auto reg_obj = GetPointer<register_obj>(current_port->get_elem());
+                     if(XRegs[reg_obj->get_register_index()])
+                     {
+                        present_state[v][out_ports[s.second]] = 2;
+                        PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Set X value for wr_en on register reg_");
+                        PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, reg_obj->get_register_index());
+                        PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "\n");
+                     }
                   }
                }
             }
