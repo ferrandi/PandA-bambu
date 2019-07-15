@@ -128,6 +128,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             {
                if(restart_phi_opt)
                   relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
+               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
                break;
             }
             case DesignFlowStep_Status::SKIPPED:

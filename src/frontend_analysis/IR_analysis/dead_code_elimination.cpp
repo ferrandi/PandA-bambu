@@ -307,16 +307,6 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
    std::map<unsigned int, blocRef>::iterator block_it, block_it_end;
    block_it_end = blocks.end();
    const bool is_single_write_memory = GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->IsSingleWriteMemory();
-   bool BVP_executed = false;
-   const auto BVP = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BUILD_VIRTUAL_PHI, function_id));
-   if(BVP)
-   {
-      const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-      const DesignFlowStepRef design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(BVP)->design_flow_step;
-      if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() != 0)
-
-         BVP_executed = true;
-   }
 
    bool modified = false;
    bool restart_analysis;
@@ -326,20 +316,17 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
       bool do_reachability=false;
       std::unordered_map<unsigned,std::set<unsigned>> vdefvover_map;
       //std::unordered_set<unsigned> vdefvover_map;
-      if(BVP_executed)
+      for(block_it = blocks.begin(); block_it != block_it_end; ++block_it)
       {
-         for(block_it = blocks.begin(); block_it != block_it_end; ++block_it)
+         const auto& stmt_list = block_it->second->CGetStmtList();
+         for(auto stmt = stmt_list.begin(); stmt != stmt_list.end(); stmt++)
          {
-            const auto& stmt_list = block_it->second->CGetStmtList();
-            for(auto stmt = stmt_list.begin(); stmt != stmt_list.end(); stmt++)
+            auto gn = GetPointer<gimple_node>(GET_NODE(*stmt));
+            THROW_ASSERT(gn->vovers.empty() || gn->vdef, "unexpected condition");
+            for(auto vo: gn->vovers)
             {
-               auto gn = GetPointer<gimple_node>(GET_NODE(*stmt));
-               THROW_ASSERT(gn->vovers.empty() || gn->vdef, "unexpected condition");
-               for(auto vo: gn->vovers)
-               {
-                  vdefvover_map[GET_INDEX_NODE(vo)].insert(GET_INDEX_NODE(gn->vdef));
-                  //vdefvover_map.insert(GET_INDEX_NODE(vo));
-               }
+               vdefvover_map[GET_INDEX_NODE(vo)].insert(GET_INDEX_NODE(gn->vdef));
+               //vdefvover_map.insert(GET_INDEX_NODE(vo));
             }
          }
       }
@@ -427,7 +414,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                      else
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---LHS ssa used: " + STR(ssa->CGetNumberUses()) + "-" + STR(ssa->CGetDefStmts().size()));
                   }
-                  else if(BVP_executed && op0->get_kind() == mem_ref_K && !ga->artificial)
+                  else if(op0->get_kind() == mem_ref_K && !ga->artificial)
                   {
                      auto* mr = GetPointer<mem_ref>(op0);
                      THROW_ASSERT(GET_NODE(mr->op1)->get_kind() == integer_cst_K, "unexpected condition");
