@@ -2664,7 +2664,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         ga->op1 = op_vd;
                         restart_analysis = true;
                      }
-                     else if(written_type_index !=  op1_type_index && GET_NODE(ga->op1)->get_kind() != ssa_name_K && GET_NODE(ga->op1)->get_kind() != mem_ref_K && GET_NODE(ga->op1)->get_kind() != constructor_K)
+                     else if(written_type_index != op1_type_index && GetPointer<vector_cst>(GET_NODE(ga->op1)))
                      {
                         tree_nodeRef vc_expr = tree_man->create_unary_operation(pt_type0->ptd, ga->op1, srcp_default, view_convert_expr_K);
                         tree_nodeRef vc_ga = CreateGimpleAssign(pt_type0->ptd, vc_expr, block.first, srcp_default);
