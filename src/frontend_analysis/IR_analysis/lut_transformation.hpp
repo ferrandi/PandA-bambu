@@ -102,6 +102,10 @@ private:
     bool ProcessBasicBlock(std::pair<unsigned int, blocRef> block);
 
 
+    tree_nodeRef CreateLutExpression(const mockturtle::klut_network &lut, const mockturtle::klut_network::node &node, const std::string &srcp_default);
+
+    mockturtle::klut_network ConvertToLutNetwork(const lut_transformation::aig_network_ext &aig);
+
     /**
      * Create gimple assignment
      * @param type is the type the assignment
@@ -110,7 +114,7 @@ private:
      * @param srcp_default is the srcp to be assigned
      */
     tree_nodeRef CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string &srcp_default);
-
+    
 #endif
 
     /**
