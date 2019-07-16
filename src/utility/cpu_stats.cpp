@@ -53,6 +53,7 @@
 #endif
 #include <unistd.h>
 #pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 
 std::string PrintVirtualDataMemoryUsage()
 {
