@@ -39,10 +39,36 @@
  * @author Angelo Gallarello
  * @author Stefano Longari
  * @author Marco Lattuada <marco.lattuada@polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
 
 #include "lut_transformation.hpp"
+
+#if HAVE_STDCXX_17
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wshadow"
+#pragma GCC diagnostic ignored "-Wswitch-enum"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wcast-qual"
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
+#pragma GCC diagnostic ignored "-Wpedantic"
+#pragma GCC diagnostic ignored "-Wparentheses"
+#pragma GCC diagnostic ignored "-Wswitch-default"
+#pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
+#pragma GCC diagnostic ignored "-Wsign-promo"
+
+#define FMT_HEADER_ONLY 1
+
+#include <mockturtle/mockturtle.hpp>
+#endif
 
 /// Autoheader include
 #include "config_HAVE_BAMBU_BUILT.hpp"
@@ -98,9 +124,11 @@
 #include "tree_manipulation.hpp"
 #include "tree_reindex.hpp"
 
+#if HAVE_STDCXX_17
+
 #pragma region Macros declaration
 
-#define IS_GIMPLE_ASSIGN(it) GET_NODE(*it)->get_kind() == gimple_assign_K
+#define IS_GIMPLE_ASSIGN(it) (GET_NODE(*it)->get_kind() == gimple_assign_K)
 #define CHECK_BIN_EXPR_SIZE(binaryExpression) (static_cast<int>(tree_helper::Size(GET_NODE(binaryExpression->op0))) == 1 && static_cast<int>(tree_helper::Size(GET_NODE(binaryExpression->op1))) == 1)
 
 #pragma endregion
@@ -110,7 +138,7 @@
 /**
  * `aig_network_ext` class provides operations derived from the one already existing in `mockturtle::aig_network`.
  */
-class lut_transformation::aig_network_ext : public mockturtle::aig_network {
+class aig_network_ext : public mockturtle::aig_network {
 public:
     /**
      * Creates a 'greater' or equal operation.
@@ -175,6 +203,13 @@ public:
     }
 };
 
+/**
+     * Pointer that points to the function, of `aig_network_ext`, that represents a binary operation between two `mockturtle::aig_network::signal`
+     * and returns a `mockturtle::aig_network::signal`.
+     */
+typedef mockturtle::aig_network::signal (aig_network_ext::*aig_network_fn)(const mockturtle::aig_network::signal &, const mockturtle::aig_network::signal &);
+
+
 #pragma endregion
 
 tree_nodeRef lut_transformation::CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string &srcp_default) {
@@ -214,7 +249,8 @@ bool lut_transformation::CheckIfPO(gimple_assign *gimpleAssign) {
     return false;
 }
 
-lut_transformation::aig_network_fn lut_transformation::GetNodeCreationFunction(enum kind code) {
+static
+aig_network_fn GetNodeCreationFunction(enum kind code) {
     switch (code) {
         case bit_and_expr_K:
         case truth_and_expr_K:
@@ -244,8 +280,8 @@ lut_transformation::aig_network_fn lut_transformation::GetNodeCreationFunction(e
     }
 }
 
-tree_nodeRef lut_transformation::CreateLutExpression(const mockturtle::klut_network &lut, const mockturtle::klut_network::node &node, const std::string &srcp_default) {
-    
+tree_nodeRef CreateLutExpression(const mockturtle::klut_network &lut, const mockturtle::klut_network::node &node, const std::string &srcp_default) {
+   return  tree_nodeRef();
 }
 
 bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> block) {
@@ -259,7 +295,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
     /// end of statements list
     auto statementsEnd = statements.end();
     /// size of statements list
-    size_t statementsCount = statements.size();
+    //size_t statementsCount = statements.size(); ///NOTE: variable not used!!
     /// start of statements list
     auto statementsIterator = statements.begin();
     /// whether the bb has been modified
@@ -294,7 +330,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             continue;
         }
 
-        lut_transformation::aig_network_fn nodeCreateFn = this->GetNodeCreationFunction(code1);
+        aig_network_fn nodeCreateFn = GetNodeCreationFunction(code1);
 
         if (nodeCreateFn == nullptr) {
             statementsIterator++;
@@ -360,6 +396,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 }
 
 #pragma region Life cycle
+
+#endif
+
 lut_transformation::~lut_transformation() = default;
 
 void lut_transformation::Initialize() {
@@ -401,7 +440,9 @@ lut_transformation::lut_transformation(const ParameterConstRef Param, const appl
     debug_level = Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-DesignFlowStep_Status lut_transformation::InternalExec() {
+DesignFlowStep_Status lut_transformation::InternalExec()
+{
+#if HAVE_STDCXX_17
     tree_nodeRef temp = TM->get_tree_node_const(function_id);
     auto* fd = GetPointer<function_decl>(temp);
     THROW_ASSERT(fd && fd->body, "Node is not a function or it has not a body");
@@ -418,7 +459,7 @@ DesignFlowStep_Status lut_transformation::InternalExec() {
         function_behavior->UpdateBBVersion();
         return DesignFlowStep_Status::SUCCESS;
     }
-
+#endif
     return DesignFlowStep_Status::UNCHANGED;
 }
 
@@ -447,4 +488,10 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
     }
     return relationships;
 }
+
+#if HAVE_STDCXX_17
 #pragma endregion
+
+#pragma GCC diagnostic pop
+
+#endif

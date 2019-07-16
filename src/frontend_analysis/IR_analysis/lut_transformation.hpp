@@ -44,6 +44,8 @@
 #ifndef LUT_TRANSFORMATION_HPP
 #define LUT_TRANSFORMATION_HPP
 
+#include "config_HAVE_STDCXX_17.hpp"
+
 /// Super class include
 #include "function_frontend_flow_step.hpp"
 
@@ -58,7 +60,6 @@
 /// Utility include
 #include "refcount.hpp"
 
-#include <mockturtle/mockturtle.hpp>
 #include "tree_common.hpp"
 #include "tree_node.hpp"
 
@@ -85,19 +86,10 @@ private:
     /// The maximum number of inputs of a lut
     size_t max_lut_size;
 
-    /**
-     * `aig_network_ext` class provides operations derived from the one already existing in `mockturtle::aig_network`.
-     */
-    class aig_network_ext;
+#if HAVE_STDCXX_17
 
     /// The list of all operation that can be converted to a lut.
     const std::vector<enum kind> lutExpressibleOperations = {bit_and_expr_K, truth_and_expr_K, bit_ior_expr_K, truth_or_expr_K, bit_xor_expr_K, truth_xor_expr_K, eq_expr_K, ge_expr_K, lut_expr_K, gt_expr_K, le_expr_K, lt_expr_K, ne_expr_K};
-
-    /**
-     * Pointer that points to the function, of `aig_network_ext`, that represents a binary operation between two `mockturtle::aig_network::signal` 
-     * and returns a `mockturtle::aig_network::signal`.
-     */
-    typedef mockturtle::aig_network::signal (lut_transformation::aig_network_ext::*aig_network_fn)(const mockturtle::aig_network::signal &, const mockturtle::aig_network::signal &);
 
     /**
      * Checks if the provided `gimple_assign` is a primary output of lut network.
@@ -109,9 +101,6 @@ private:
 
     bool ProcessBasicBlock(std::pair<unsigned int, blocRef> block);
 
-    aig_network_fn GetNodeCreationFunction(enum kind code);
-
-    tree_nodeRef lut_transformation::CreateLutExpression(const mockturtle::klut_network &lut, const mockturtle::klut_network::node &node, const std::string &srcp_default);
 
     /**
      * Create gimple assignment
@@ -121,7 +110,9 @@ private:
      * @param srcp_default is the srcp to be assigned
      */
     tree_nodeRef CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string &srcp_default);
-    
+
+#endif
+
     /**
      * Return the set of analyses in relationship with this design step
      * @param relationship_type is the type of relationship to be considered

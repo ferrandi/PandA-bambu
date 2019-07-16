@@ -45,6 +45,7 @@ New features introduced:
 - Improved and fixed the synthesis of empty functions.
 - Added option --VHDL-library=libraryname to specify the library in which the synthesized function has to be compiled.
 - Extented the VHDL support to other bambu library components.
+- If it is supported, the compiler used to compile the PandA framework uses the c++17 standard (-std=c++17), otherwise, it uses c++11 standard.
 
 This release includes also a set of fixes:
     on COND_EXPR_RESTRUCTURING step

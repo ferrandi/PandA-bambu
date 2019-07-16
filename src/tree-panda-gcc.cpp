@@ -89,7 +89,7 @@ static char* alloc_long_option(char* argv[], int& i, int& dec)
 
 static char** alloc_argv(int& argc, char* argv[])
 {
-   auto** argv_copied = new char*[argc + 1];
+   auto** argv_copied = new char*[static_cast<unsigned>(argc) + 1u];
    int dec = 0;
    for(int i = 0; i < argc; ++i)
    {
