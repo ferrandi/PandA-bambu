@@ -70,6 +70,8 @@
 #include <mockturtle/mockturtle.hpp>
 #endif
 
+#include <type_traits>
+
 /// Autoheader include
 #include "config_HAVE_BAMBU_BUILT.hpp"
 
@@ -203,12 +205,18 @@ public:
     }
 };
 
+struct klut_network_node {
+    uint64_t index;
+    uint64_t lut_constant;
+    std::vector<uint64_t> fan_in;
+    bool is_po;
+};
+
 /**
      * Pointer that points to the function, of `aig_network_ext`, that represents a binary operation between two `mockturtle::aig_network::signal`
      * and returns a `mockturtle::aig_network::signal`.
      */
 typedef mockturtle::aig_network::signal (aig_network_ext::*aig_network_fn)(const mockturtle::aig_network::signal &, const mockturtle::aig_network::signal &);
-
 
 #pragma endregion
 
@@ -228,8 +236,6 @@ bool lut_transformation::CheckIfPO(gimple_assign *gimpleAssign) {
     // the variables that uses the result of the provided `gimpleAssign`
     const std::vector<tree_nodeRef> usedIn = gimpleAssign->use_set->variables;
     
-    bool isPO = false;
-    
     for (auto node : usedIn) {
         auto *childGimpleNode = GetPointer<gimple_node>(node);
 
@@ -244,11 +250,13 @@ bool lut_transformation::CheckIfPO(gimple_assign *gimpleAssign) {
             enum kind code = GET_NODE(childGimpleAssign->op1)->get_kind();
 
             // it is a `PO` if code is not contained into `lutExpressibleOperations`
-            isPO |= std::find(lutExpressibleOperations.begin(), lutExpressibleOperations.end(), code) == lutExpressibleOperations.end();
+            if (std::find(lutExpressibleOperations.begin(), lutExpressibleOperations.end(), code) == lutExpressibleOperations.end()) {
+                return true;
+            }
         }
     }
 
-    return isPO;
+    return false;
 }
 
 static
@@ -282,12 +290,70 @@ aig_network_fn GetNodeCreationFunction(enum kind code) {
     }
 }
 
-tree_nodeRef lut_transformation::CreateLutExpression(const mockturtle::klut_network &lut, const mockturtle::klut_network::node &node, const std::string &srcp_default) {
-    return nullptr; // TODO: implement
+template <
+    typename T,
+    typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
+>
+static
+T ConvertHexToInt64(std::string hex) {
+    uint64_t x;
+    std::stringstream ss;
+    ss << std::hex << hex;
+    ss >> x;
+
+    return static_cast<T>(x);
+}
+
+static
+std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_network &klut) {
+    std::vector<klut_network_node> luts;
+    klut.foreach_node([&](const auto &node) {
+        if (klut.is_pi(node)) {
+            return; // continue
+        }
+        
+        auto func = klut.node_function(node);
+        
+        std::vector<uint64_t> fanIns;
+        klut.foreach_fanin(node, [&](auto const &fanin_node, auto index) {
+            fanIns.push_back(fanin_node);
+        });
+
+        klut_network_node lut_node = (klut_network_node) {
+            node,
+            ConvertHexToInt64<uint64_t>(kitty::to_hex(func)),
+            fanIns,
+            false
+        };
+
+        luts.push_back(lut_node);
+    });
+    klut.foreach_po([&](const auto &node) {
+        auto func = klut.node_function(node);
+
+        std::vector<uint64_t> fanIns;
+        klut.foreach_fanin(node, [&](auto const &fanin_node, auto index) {
+            fanIns.push_back(fanin_node);
+        });
+        
+        klut_network_node lut_node = (klut_network_node) {
+            node,
+            ConvertHexToInt64<uint64_t>(kitty::to_hex(func)),
+            fanIns,
+            true
+        };
+
+        luts.push_back(lut_node);
+    });
+
+    return luts;
+}
+
 }
 
 mockturtle::klut_network lut_transformation::ConvertToLutNetwork(const lut_transformation::aig_network_ext &aig) {
-    mockturtle::mapping_view<mockturtle::aig_network, true> mapped_aig{aig};
+    auto cleanedUp = cleanup_dangling(aig);
+    mockturtle::mapping_view<mockturtle::aig_network, true> mapped_aig{cleanedUp};
 
     mockturtle::lut_mapping_params ps;
     ps.cut_enumeration_ps.cut_size = this->max_lut_size;
@@ -303,21 +369,35 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
     std::vector<tree_nodeRef> pis;
     std::vector<tree_nodeRef> pos;
+    std::vector<tree_nodeRef> unsupportedNodes;
 
-    std::vector<std::vector<tree_nodeRef> *> convertedNodes;
-    bool shouldContinueChunk = true;
+    /**
+     * Creates a const expression with 0 (gnd) as value, used for constant LUT inputs (index 0 in mockturtle)
+     */ 
+    pis.push_back(this->tree_man->CreateIntegerCst(
+        this->tree_man->CreateDefaultUnsignedLongLongInt(),
+        0ll,
+        this->TM->new_tree_node_id()
+    ));
+
+    /**
+     * Creates a const expression with 1 (vdd) as value, used for constant LUT inputs (index 1 in mockturtle)
+     */
+    pis.push_back(this->tree_man->CreateIntegerCst(
+        this->tree_man->CreateDefaultUnsignedLongLongInt(),
+        1ll,
+        this->TM->new_tree_node_id()
+    ));
 
     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
     const auto &statements = block.second->CGetStmtList();
-    /// size of statements list
-    //size_t statementsCount = statements.size(); ///NOTE: variable not used!!
-    /// start of statements list
-    auto statementsIterator = statements.begin();
+
     /// whether the bb has been modified
     bool modified = false;
 
-    while (statementsIterator != statements.end()) {
-       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + (*statementsIterator)->ToString());
+    // TODO: convert to function
+    for (auto currentStatement = statements.begin(); currentStatement != statements.end(); ++currentStatement) {
+        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + (*currentStatement)->ToString());
 
 #ifndef NDEBUG
         if(!AppM->ApplyNewTransformation()) {
@@ -327,7 +407,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
         }
 #endif
 
-        if (!IS_GIMPLE_ASSIGN(statementsIterator)) {
+        if (!IS_GIMPLE_ASSIGN(currentStatement)) {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not a gimple assign");
             statementsIterator++;
             continue;
@@ -336,11 +416,10 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
         auto *gimpleAssign = GetPointer<gimple_assign>(GET_NODE(*currentStatement));
         const std::string srcp_default = gimpleAssign->include_name + ":" + STR(gimpleAssign->line_number) + ":" + STR(gimpleAssign->column_number);
         enum kind code1 = GET_NODE(gimpleAssign->op1)->get_kind();
-        
+
         auto *binaryExpression = GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1));
         if(!binaryExpression) {
            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not a binary expression");
-           statementsIterator++;
            continue;
         }
 
@@ -377,7 +456,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                  op1 = aig.get_constant(true);
            }
            else
-            op1 = aig.create_pi();
+              op1 = aig.create_pi();
             pis.push_back(binaryExpression->op0);
 
             nodeRefToSignal[binaryExpression->op0] = op1;
@@ -398,7 +477,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                  op2 = aig.get_constant(true);
            }
            else
-            op2 = aig.create_pi();
+              op2 = aig.create_pi();
             pis.push_back(binaryExpression->op1);
 
             nodeRefToSignal[binaryExpression->op1] = op2;
@@ -409,18 +488,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
         nodeRefToSignal[gimpleAssign->op0] = res;
         signalToNodeRef[res] = gimpleAssign->op0;
 
-        if (!shouldContinueChunk) {
-            convertedNodes.push_back(new std::vector<tree_nodeRef>());
-            shouldContinueChunk = true;
-        }
-
-        convertedNodes[convertedNodes.size() - 1]->push_back(GET_NODE(*currentStatement));
-
         if (this->CheckIfPO(gimpleAssign)) {
             aig.create_po(res);
             pos.push_back(GET_NODE(*currentStatement));
-
-            shouldContinueChunk = false;
         }
 
         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement ");
@@ -431,17 +501,12 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
     std::cerr << "out\n";
     mockturtle::write_bench(aig, std::cout);
     mockturtle::mapping_view<mockturtle::aig_network, true> mapped_aig{aig};
+    std::vector<klut_network_node> luts = ParseKLutNetwork(klut);
+    std::vector<tree_nodeRef> nodes;
 
-    mockturtle::lut_mapping_params ps;
-    ps.cut_enumeration_ps.cut_size = max_lut_size; // parameter
-    std::cerr << "out1\n";
-    mockturtle::lut_mapping<mockturtle::mapping_view<mockturtle::aig_network, true>, true>(mapped_aig, ps);
-    std::cerr << "out2\n";
-    mockturtle::klut_network lut = *mockturtle::collapse_mapped_network<mockturtle::klut_network>(mapped_aig);
-    std::cerr << "out3\n";
-
-    mockturtle::write_bench(lut, std::cout);
-    std::cerr << "out4\n";
+    // TODO: create nodes and connect pis and pos
+    for (auto lut = luts.begin(); lut != luts.end(); ++lut) {
+    }
 
     // dalla network a lut_expr_K
     // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added to LUT list : " + STR(lut_ga));
