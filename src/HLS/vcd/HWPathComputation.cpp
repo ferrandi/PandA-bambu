@@ -140,7 +140,7 @@ void HWCallPathCalculator::start_vertex(const UnfoldedVertexDescriptor& v, const
    // simulation top scope, depends on simulator and interface
    if(parameters->isOption(OPT_simulator))
    {
-      if(parameters->getOption<std::string>(OPT_simulator) == "MODELSIM" || parameters->getOption<std::string>(OPT_simulator) == "ICARUS")
+      if(parameters->getOption<std::string>(OPT_simulator) == "MODELSIM" || parameters->getOption<std::string>(OPT_simulator) == "ICARUS" || parameters->getOption<std::string>(OPT_simulator) == "XSIM")
       {
          simulator_scope = top_interface_name + "_tb_top" + STR(HIERARCHY_SEPARATOR) + "DUT" + STR(HIERARCHY_SEPARATOR);
       }
@@ -151,7 +151,7 @@ void HWCallPathCalculator::start_vertex(const UnfoldedVertexDescriptor& v, const
    }
    else
    {
-      THROW_ERROR("signal selection for discrepancy analysis is supported only for simulators: ICARUS, VERILATOR and MODELSIM");
+      THROW_ERROR("signal selection for discrepancy analysis is supported only for simulators: ICARUS, XSIM, VERILATOR and MODELSIM");
    }
    top_fun_scope = simulator_scope + interface_scope + top_name;
    HLSMgr->RDiscr->unfolded_v_to_scope[v] = top_fun_scope;
