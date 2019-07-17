@@ -263,16 +263,13 @@ void fsm_controller::create_state_machine(std::string& parse)
          }
       }
 
-      const std::set<unsigned int>& live_out = HLS->Rliv->get_live_out(v);
-      auto out_end = live_out.end();
-
       unsigned int registers = HLS->Rreg->get_used_regs();
       std::vector<bool> XRegs(registers, true);
 
-      for(auto out = live_out.begin(); out != out_end; ++out)
+      for(auto in0 : HLS->Rliv->get_live_in(v))
       {
-         if(HLS->storage_value_information->is_a_storage_value(v, *out)){
-            unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(v, *out);
+         if(HLS->storage_value_information->is_a_storage_value(v, in0)){
+            unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(v, in0);
             unsigned int accessed_reg = HLS->Rreg->get_register(storage_value_index);
             XRegs[accessed_reg] = false;
          }

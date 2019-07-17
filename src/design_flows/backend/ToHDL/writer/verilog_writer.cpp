@@ -1180,7 +1180,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                         break;
 
                      case '2':
-                        indented_output_stream->Append(port_name + " = 1'b1" + ";\n");
+                        indented_output_stream->Append(port_name + " = 1'b1" + "; // X value\n");
                         break;
 
                      default:
