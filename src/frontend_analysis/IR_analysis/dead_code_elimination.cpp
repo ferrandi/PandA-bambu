@@ -89,6 +89,8 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, CALLED_FUNCTIONS));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(MEM_CG_EXT, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(PARM_DECL_TAKEN_ADDRESS, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
@@ -446,7 +448,6 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   }
                   else
                   {
-                     THROW_ASSERT(!one_is_const, "only one can be true");
                      all_false = false;
                   }
                }
