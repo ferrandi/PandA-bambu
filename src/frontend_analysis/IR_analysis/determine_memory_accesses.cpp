@@ -551,6 +551,26 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
             analyze_node(GET_INDEX_NODE(qe->op3), left_p, dynamic_address, no_dynamic_address);
          break;
       }
+      case lut_expr_K:
+      {
+         auto* le = GetPointer<lut_expr>(tn);
+         analyze_node(GET_INDEX_NODE(le->op0), left_p, dynamic_address, no_dynamic_address);
+         analyze_node(GET_INDEX_NODE(le->op1), left_p, dynamic_address, no_dynamic_address);
+         analyze_node(GET_INDEX_NODE(le->op2), left_p, dynamic_address, no_dynamic_address);
+         if(le->op3)
+            analyze_node(GET_INDEX_NODE(le->op3), left_p, dynamic_address, no_dynamic_address);
+         if(le->op4)
+            analyze_node(GET_INDEX_NODE(le->op4), left_p, dynamic_address, no_dynamic_address);
+         if(le->op5)
+            analyze_node(GET_INDEX_NODE(le->op5), left_p, dynamic_address, no_dynamic_address);
+         if(le->op6)
+            analyze_node(GET_INDEX_NODE(le->op6), left_p, dynamic_address, no_dynamic_address);
+         if(le->op7)
+            analyze_node(GET_INDEX_NODE(le->op7), left_p, dynamic_address, no_dynamic_address);
+         if(le->op8)
+            analyze_node(GET_INDEX_NODE(le->op8), left_p, dynamic_address, no_dynamic_address);
+         break;
+      }
       case gimple_return_K:
       {
          auto* re = GetPointer<gimple_return>(tn);
@@ -757,6 +777,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                      case array_range_ref_K:
                      case target_expr_K:
                      case error_mark_K:
+                     case lut_expr_K:
                      case CASE_BINARY_EXPRESSION:
                      case CASE_CPP_NODES:
                      case CASE_DECL_NODES:
@@ -967,6 +988,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                      case array_range_ref_K:
                      case target_expr_K:
                      case error_mark_K:
+                     case lut_expr_K:
                      case CASE_BINARY_EXPRESSION:
                      case CASE_CPP_NODES:
                      case CASE_DECL_NODES:

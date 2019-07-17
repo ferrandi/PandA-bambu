@@ -121,6 +121,7 @@ tree_nodeRef tree_manipulation::create_unary_operation(const tree_nodeRef& type,
       case tree_list_K:
       case tree_vec_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -180,6 +181,7 @@ tree_nodeRef tree_manipulation::create_unary_operation(const tree_nodeRef& type,
       case tree_list_K:
       case tree_vec_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -240,6 +242,7 @@ tree_nodeRef tree_manipulation::create_binary_operation(const tree_nodeRef& type
       case tree_list_K:
       case tree_vec_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
       case CASE_DECL_NODES:
@@ -299,6 +302,7 @@ tree_nodeRef tree_manipulation::create_binary_operation(const tree_nodeRef& type
       case tree_list_K:
       case tree_vec_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -361,6 +365,7 @@ tree_nodeRef tree_manipulation::create_ternary_operation(const tree_nodeRef& typ
       case tree_list_K:
       case tree_vec_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -420,6 +425,7 @@ tree_nodeRef tree_manipulation::create_ternary_operation(const tree_nodeRef& typ
       case tree_list_K:
       case tree_vec_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -484,6 +490,7 @@ tree_nodeRef tree_manipulation::create_quaternary_operation(const tree_nodeRef& 
       case tree_list_K:
       case tree_vec_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -542,6 +549,7 @@ tree_nodeRef tree_manipulation::create_quaternary_operation(const tree_nodeRef& 
       case tree_list_K:
       case tree_vec_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:

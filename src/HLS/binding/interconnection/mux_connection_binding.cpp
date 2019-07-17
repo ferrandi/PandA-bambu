@@ -2061,6 +2061,7 @@ void mux_connection_binding::create_connections()
                case gimple_switch_K:
                case gimple_while_K:
                case error_mark_K:
+               case lut_expr_K:
                case CASE_BINARY_EXPRESSION:
                case CASE_CPP_NODES:
                case CASE_CST_NODES:
@@ -2155,6 +2156,7 @@ void mux_connection_binding::create_connections()
                case gimple_switch_K:
                case gimple_while_K:
                case error_mark_K:
+               case lut_expr_K:
                case CASE_BINARY_EXPRESSION:
                case CASE_CPP_NODES:
                case CASE_CST_NODES:

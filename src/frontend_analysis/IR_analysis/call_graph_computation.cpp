@@ -360,6 +360,26 @@ void call_graph_computation::call_graph_computation_recursive(const tree_manager
             call_graph_computation_recursive(TM, qe->op3, node_stmt, call_type);
          break;
       }
+      case lut_expr_K:
+      {
+         auto* le = GetPointer<lut_expr>(curr_tn);
+         call_graph_computation_recursive(TM, le->op0, node_stmt, call_type);
+         call_graph_computation_recursive(TM, le->op1, node_stmt, call_type);
+         call_graph_computation_recursive(TM, le->op2, node_stmt, call_type);
+         if(le->op3)
+            call_graph_computation_recursive(TM, le->op3, node_stmt, call_type);
+         if(le->op4)
+            call_graph_computation_recursive(TM, le->op4, node_stmt, call_type);
+         if(le->op5)
+            call_graph_computation_recursive(TM, le->op5, node_stmt, call_type);
+         if(le->op6)
+            call_graph_computation_recursive(TM, le->op6, node_stmt, call_type);
+         if(le->op7)
+            call_graph_computation_recursive(TM, le->op7, node_stmt, call_type);
+         if(le->op8)
+            call_graph_computation_recursive(TM, le->op8, node_stmt, call_type);
+         break;
+      }
       case constructor_K:
       {
          auto* c = GetPointer<constructor>(curr_tn);

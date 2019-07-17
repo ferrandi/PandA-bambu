@@ -229,7 +229,7 @@ bool lut_transformation::CheckIfPO(gimple_assign *gimpleAssign) {
     const std::vector<tree_nodeRef> usedIn = gimpleAssign->use_set->variables;
     
     bool isPO = false;
-
+    
     for (auto node : usedIn) {
         auto *childGimpleNode = GetPointer<gimple_node>(node);
 
@@ -309,20 +309,27 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
     const auto &statements = block.second->CGetStmtList();
-
+    /// size of statements list
+    //size_t statementsCount = statements.size(); ///NOTE: variable not used!!
+    /// start of statements list
+    auto statementsIterator = statements.begin();
     /// whether the bb has been modified
     bool modified = false;
 
-    for (auto currentStatement = statements.begin(); currentStatement != statements.end(); ++currentStatement) {
+    while (statementsIterator != statements.end()) {
+       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + (*statementsIterator)->ToString());
+
 #ifndef NDEBUG
         if(!AppM->ApplyNewTransformation()) {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reached max cfg transformations");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Reached max cfg transformations");
+            statementsIterator++;
             continue;
         }
 #endif
 
-        if (!IS_GIMPLE_ASSIGN(currentStatement)) {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + GET_NODE(*currentStatement)->ToString());
+        if (!IS_GIMPLE_ASSIGN(statementsIterator)) {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not a gimple assign");
+            statementsIterator++;
             continue;
         }
 
@@ -331,17 +338,24 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
         enum kind code1 = GET_NODE(gimpleAssign->op1)->get_kind();
         
         auto *binaryExpression = GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1));
+        if(!binaryExpression) {
+           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not a binary expression");
+           statementsIterator++;
+           continue;
+        }
 
-        THROW_ASSERT(binaryExpression->op0 && binaryExpression->op1, "expected two parameters");
-
-        // the operands must be booleans
+        // the operands must be Boolean
         if (!CHECK_BIN_EXPR_SIZE(binaryExpression)) {
+           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not Boolean operands");
+            statementsIterator++;
             continue;
         }
 
         aig_network_fn nodeCreateFn = GetNodeCreationFunction(code1);
 
         if (nodeCreateFn == nullptr) {
+           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not supported expression");
+            statementsIterator++;
             continue;
         }
 
@@ -354,6 +368,15 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             op1 = nodeRefToSignal[binaryExpression->op0];
         }
         else { // otherwise the operand is a primary input
+           if(GET_NODE(binaryExpression->op0)->get_kind() == integer_cst_K)
+           {
+              auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op0));
+              if(int_const->value == 0)
+                 op1 = aig.get_constant(false);
+              else
+                 op1 = aig.get_constant(true);
+           }
+           else
             op1 = aig.create_pi();
             pis.push_back(binaryExpression->op0);
 
@@ -366,6 +389,15 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             op2 = nodeRefToSignal[binaryExpression->op1];
         }
         else { // otherwise the operand is a primary input
+           if(GET_NODE(binaryExpression->op1)->get_kind() == integer_cst_K)
+           {
+              auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op1));
+              if(int_const->value == 0)
+                 op2 = aig.get_constant(false);
+              else
+                 op2 = aig.get_constant(true);
+           }
+           else
             op2 = aig.create_pi();
             pis.push_back(binaryExpression->op1);
 
@@ -391,56 +423,25 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             shouldContinueChunk = false;
         }
 
-        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + GET_NODE(*currentStatement)->ToString());
+        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement ");
+        statementsIterator++;
         modified = true;
     }
 
-    mockturtle::klut_network klut = this->ConvertToLutNetwork(aig);
-    /*
-    INPUT(n2)
-    INPUT(n3)
-    INPUT(n4)
-    INPUT(n5)
-    INPUT(n6)
-    INPUT(n7)
-    INPUT(n8)
-    INPUT(n9)
-    OUTPUT(po0)
-    n0 = gnd
-    n1 = vdd
-    n10 = LUT 0x1 (n2, n4)
-    n11 = LUT 0x8 (n5, n10)
-    n12 = LUT 0x1 (n6, n11)
-    n13 = LUT 0x2 (n7, n12)
-    n14 = LUT 0x2 (n8, n13)
-    n15 = LUT 0x6 (n9, n14)
-    po0 = LUT 0x2 (n15)
-    */
+    std::cerr << "out\n";
+    mockturtle::write_bench(aig, std::cout);
+    mockturtle::mapping_view<mockturtle::aig_network, true> mapped_aig{aig};
 
-    std::vector<mockturtle::klut_network::node> outNodes;
-    klut.foreach_po([&](const auto &node)) {
-        outNodes.push_back(node);
-    });
+    mockturtle::lut_mapping_params ps;
+    ps.cut_enumeration_ps.cut_size = max_lut_size; // parameter
+    std::cerr << "out1\n";
+    mockturtle::lut_mapping<mockturtle::mapping_view<mockturtle::aig_network, true>, true>(mapped_aig, ps);
+    std::cerr << "out2\n";
+    mockturtle::klut_network lut = *mockturtle::collapse_mapped_network<mockturtle::klut_network>(mapped_aig);
+    std::cerr << "out3\n";
 
-    std::vector<tree_nodeRef> nodes;
-    klut.foreach_node([&](const auto &node) {
-        if (klut.is_pi(node)) {
-            return; // continue
-        }
-
-        auto func = klut.node_function(node);
-        bool isPO = outNodes.find(node) != outNodes.end();
-        
-        std::vector<tree_nodeRef> fanIns;
-        klut.foreach_fanin(node, [&](auto const &fanin_node, auto index) {
-            if (index < pis.size()) {
-                fanIns.push_back(pis[index - 2]); // -2 because mockturtle's signal indexes starts from 2, 0 and 1 are reserved to gnd and vdd
-            }
-            else {
-                fanIns.push_back(nodes[index - pis.size() - 2]); // -2 because mockturtle's signal indexes starts from 2, 0 and 1 are reserved to gnd and vdd
-            }
-        });
-    });
+    mockturtle::write_bench(lut, std::cout);
+    std::cerr << "out4\n";
 
     // dalla network a lut_expr_K
     // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added to LUT list : " + STR(lut_ga));

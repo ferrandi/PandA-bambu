@@ -510,6 +510,26 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
             RecursivelyAnalyze(op_vertex, GET_CONST_NODE(qe->op3), FunctionBehavior_VariableAccessType::USE);
          break;
       }
+      case lut_expr_K:
+      {
+         auto* le = GetPointer<const lut_expr>(tree_node);
+         RecursivelyAnalyze(op_vertex, GET_CONST_NODE(le->op0), FunctionBehavior_VariableAccessType::USE);
+         RecursivelyAnalyze(op_vertex, GET_CONST_NODE(le->op1), FunctionBehavior_VariableAccessType::USE);
+         RecursivelyAnalyze(op_vertex, GET_CONST_NODE(le->op2), FunctionBehavior_VariableAccessType::USE);
+         if(le->op3)
+            RecursivelyAnalyze(op_vertex, GET_CONST_NODE(le->op3), FunctionBehavior_VariableAccessType::USE);
+         if(le->op4)
+            RecursivelyAnalyze(op_vertex, GET_CONST_NODE(le->op4), FunctionBehavior_VariableAccessType::USE);
+         if(le->op5)
+            RecursivelyAnalyze(op_vertex, GET_CONST_NODE(le->op5), FunctionBehavior_VariableAccessType::USE);
+         if(le->op6)
+            RecursivelyAnalyze(op_vertex, GET_CONST_NODE(le->op6), FunctionBehavior_VariableAccessType::USE);
+         if(le->op7)
+            RecursivelyAnalyze(op_vertex, GET_CONST_NODE(le->op7), FunctionBehavior_VariableAccessType::USE);
+         if(le->op8)
+            RecursivelyAnalyze(op_vertex, GET_CONST_NODE(le->op8), FunctionBehavior_VariableAccessType::USE);
+         break;
+      }
       case target_mem_ref_K:
       {
          const auto* tm = GetPointer<const target_mem_ref>(tree_node);

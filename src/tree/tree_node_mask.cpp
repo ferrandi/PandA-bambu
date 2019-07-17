@@ -413,6 +413,12 @@ void tree_node_mask::operator()(const target_expr*, unsigned int& mask)
    SET_VISIT_INDEX(mask, target_expr::expr_node);
 }
 
+void tree_node_mask::operator()(const lut_expr*, unsigned int& mask)
+{
+   mask = NO_VISIT;
+   SET_VISIT_INDEX(mask, lut_expr::expr_node);
+}
+
 void tree_node_mask::operator()(const template_decl*, unsigned int& mask)
 {
    mask = NO_VISIT;

@@ -532,6 +532,15 @@ void tree_node_finder::operator()(const target_expr* obj, unsigned int& mask)
    find_res = find_res && CHECK_TREE_NODE_OPT(TOK_DECL, obj->decl) && CHECK_TREE_NODE_OPT(TOK_INIT, obj->init) && CHECK_TREE_NODE_OPT(TOK_CLNP, obj->clnp);
 }
 
+void tree_node_finder::operator()(const lut_expr* obj, unsigned int& mask)
+{
+   tree_node_mask::operator()(obj, mask);
+   find_res = find_res && CHECK_TREE_NODE_OPT(TOK_OP0, obj->op0) && CHECK_TREE_NODE_OPT(TOK_OP1, obj->op1) && CHECK_TREE_NODE_OPT(TOK_OP2, obj->op2)
+       && CHECK_TREE_NODE_OPT(TOK_OP3, obj->op3) && CHECK_TREE_NODE_OPT(TOK_OP4, obj->op4) && CHECK_TREE_NODE_OPT(TOK_OP5, obj->op5)
+       && CHECK_TREE_NODE_OPT(TOK_OP6, obj->op6) && CHECK_TREE_NODE_OPT(TOK_OP7, obj->op7) && CHECK_TREE_NODE_OPT(TOK_OP8, obj->op8)
+       ;
+}
+
 void tree_node_finder::operator()(const template_decl* obj, unsigned int& mask)
 {
    tree_node_mask::operator()(obj, mask);

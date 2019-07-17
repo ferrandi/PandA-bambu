@@ -400,6 +400,26 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
             recursive_examinate(qe->op3);
          break;
       }
+      case lut_expr_K:
+      {
+         auto* le = GetPointer<lut_expr>(curr_tn);
+         recursive_examinate(le->op0);
+         recursive_examinate(le->op1);
+         recursive_examinate(le->op2);
+         if(le->op3)
+            recursive_examinate(le->op3);
+         if(le->op4)
+            recursive_examinate(le->op4);
+         if(le->op5)
+            recursive_examinate(le->op5);
+         if(le->op6)
+            recursive_examinate(le->op6);
+         if(le->op7)
+            recursive_examinate(le->op7);
+         if(le->op8)
+            recursive_examinate(le->op8);
+         break;
+      }
       case constructor_K:
       {
          const constructor* co = GetPointer<constructor>(curr_tn);
@@ -647,6 +667,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
             case tree_list_K:
             case tree_vec_K:
             case error_mark_K:
+            case lut_expr_K:
             case CASE_CPP_NODES:
             case CASE_BINARY_EXPRESSION:
             case CASE_CST_NODES:

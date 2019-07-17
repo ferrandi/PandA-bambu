@@ -2543,6 +2543,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                      case target_mem_ref461_K:
                      case tree_list_K:
                      case tree_vec_K:
+                     case lut_expr_K:
                      case CASE_BINARY_EXPRESSION:
                      case CASE_CPP_NODES:
                      case CASE_FAKE_NODES:
@@ -2667,6 +2668,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             case void_cst_K:
             case vtable_ref_K:
             case with_cleanup_expr_K:
+            case lut_expr_K:
             case CASE_CPP_NODES:
             case CASE_FAKE_NODES:
             case CASE_GIMPLE_NODES:
@@ -2766,6 +2768,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       case vec_unpack_lo_expr_K:
       case vec_unpack_float_hi_expr_K:
       case vec_unpack_float_lo_expr_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:

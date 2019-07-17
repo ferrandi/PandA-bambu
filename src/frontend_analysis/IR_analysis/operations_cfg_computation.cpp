@@ -427,6 +427,7 @@ std::string operations_cfg_computation::get_first_node(const tree_nodeRef& tn, c
       case CASE_TERNARY_EXPRESSION:
       case CASE_TYPE_NODES:
       case CASE_UNARY_EXPRESSION:
+      case lut_expr_K:
       default:
          THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, std::string("Node not supported (") + boost::lexical_cast<std::string>(ind) + std::string("): ") + curr_tn->get_kind_text());
    }
@@ -840,6 +841,28 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
             build_operation_recursive(TM, ogc, qe->op2, f_name, bb_index);
          if(qe->op3)
             build_operation_recursive(TM, ogc, qe->op3, f_name, bb_index);
+         ogc->AddOperation(TM, actual_name, curr_tn->get_kind_text(), bb_index, 0);
+         ogc->add_type(actual_name, TYPE_GENERIC);
+         break;
+      }
+      case lut_expr_K:
+      {
+         auto* le = GetPointer<lut_expr>(curr_tn);
+         build_operation_recursive(TM, ogc, le->op0, f_name, bb_index);
+         build_operation_recursive(TM, ogc, le->op1, f_name, bb_index);
+         build_operation_recursive(TM, ogc, le->op2, f_name, bb_index);
+         if(le->op3)
+            build_operation_recursive(TM, ogc, le->op3, f_name, bb_index);
+         if(le->op4)
+            build_operation_recursive(TM, ogc, le->op4, f_name, bb_index);
+         if(le->op5)
+            build_operation_recursive(TM, ogc, le->op5, f_name, bb_index);
+         if(le->op6)
+            build_operation_recursive(TM, ogc, le->op6, f_name, bb_index);
+         if(le->op7)
+            build_operation_recursive(TM, ogc, le->op7, f_name, bb_index);
+         if(le->op8)
+            build_operation_recursive(TM, ogc, le->op8, f_name, bb_index);
          ogc->AddOperation(TM, actual_name, curr_tn->get_kind_text(), bb_index, 0);
          ogc->add_type(actual_name, TYPE_GENERIC);
          break;

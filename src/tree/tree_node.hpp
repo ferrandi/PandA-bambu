@@ -106,7 +106,7 @@ REF_FORWARD_DECL(WeightInformation);
 #define OBJ_SPECIALIZED_SEQ                                                                                                                                                                                                                                 \
    (tree_node)(WeightedNode)(attr)(srcp)(decl_node)(expr_node)(gimple_node)(unary_expr)(binary_expr)(ternary_expr)(quaternary_expr)(type_node)(memory_tag)(cst_node)(error_mark)(array_type)(gimple_asm)(baselink)(gimple_bind)(binfo)(block)(call_expr)(   \
        aggr_init_expr)(gimple_call)(case_label_expr)(cast_expr)(complex_cst)(complex_type)(gimple_cond)(const_decl)(constructor)(enumeral_type)(expr_stmt)(field_decl)(function_decl)(function_type)(gimple_assign)(gimple_goto)(handler)(identifier_node)( \
-       integer_cst)(integer_type)(gimple_label)(method_type)(namespace_decl)(overload)(parm_decl)(gimple_phi)(pointer_type)(real_cst)(real_type)(record_type)(reference_type)(result_decl)(gimple_return)(return_stmt)(type_pack_expansion)(                \
+       integer_cst)(integer_type)(gimple_label)(lut_expr)(method_type)(namespace_decl)(overload)(parm_decl)(gimple_phi)(pointer_type)(real_cst)(real_type)(record_type)(reference_type)(result_decl)(gimple_return)(return_stmt)(type_pack_expansion)(                \
        expr_pack_expansion)(scope_ref)(ssa_name)(statement_list)(string_cst)(gimple_switch)(template_decl)(template_parm_index)(tree_list)(tree_vec)(try_block)(type_decl)(union_type)(var_decl)(vector_cst)(vector_type)(type_argument_pack)(              \
        nontype_argument_pack)(target_expr)(target_mem_ref)(target_mem_ref461)(bloc)(null_node)(gimple_pragma)(issue_pragma)(blackbox_pragma)(profiling_pragma)(statistical_profiling)(map_pragma)(call_hw_pragma)(call_point_hw_pragma)(omp_pragma)(        \
        omp_critical_pragma)(omp_declare_simd_pragma)(omp_for_pragma)(omp_parallel_pragma)(omp_sections_pragma)(omp_parallel_sections_pragma)(omp_section_pragma)(omp_simd_pragma)(omp_target_pragma)(omp_task_pragma)(gimple_while)(gimple_for)(            \
@@ -475,7 +475,6 @@ class TreeNodeMap : public std::map<tree_nodeRef, value, TreeNodeSorter>
    case lrotate_expr_K:            \
    case lshift_expr_K:             \
    case lt_expr_K:                 \
-   case lut_expr_K:                \
    case max_expr_K:                \
    case mem_ref_K:                 \
    case min_expr_K:                \
@@ -6018,6 +6017,67 @@ CREATE_TREE_NODE_CLASS(widen_mult_expr, binary_expr);
  * This struct specifies the lut_expr node.
  *
  */
-CREATE_TREE_NODE_CLASS(lut_expr, binary_expr);
+struct lut_expr : public expr_node
+{
+   /// constructor
+   explicit lut_expr(unsigned int i) : expr_node(i)
+   {
+   }
+
+   /// true table constant
+   tree_nodeRef op0;
+
+   /// first operand
+   tree_nodeRef op1;
+
+   /// second operand
+   tree_nodeRef op2;
+
+   /// third operand
+   tree_nodeRef op3;
+
+   /// fourth operand
+   tree_nodeRef op4;
+
+   /// fifth operand
+   tree_nodeRef op5;
+
+   /// sixth operand
+   tree_nodeRef op6;
+
+   /// seventh operand
+   tree_nodeRef op7;
+
+   /// eighth operand
+   tree_nodeRef op8;
+
+   /// Redefinition of get_kind_text.
+   GET_KIND_TEXT(lut_expr)
+
+   /// Redefinition of get_kind.
+   GET_KIND(lut_expr)
+
+   /**
+    * virtual function used to traverse the tree_node data structure.
+    * @param v is a reference to the tree_node visitor class
+    */
+   void visit(tree_node_visitor* const v) const override;
+
+   /// visitor enum
+   enum
+   {
+      GETID(expr_node) = 0,
+      GETID(op0),
+      GETID(op1),
+      GETID(op2),
+      GETID(op3),
+      GETID(op4),
+      GETID(op5),
+      GETID(op6),
+      GETID(op7),
+      GETID(op8)
+   };
+};
+
 
 #endif

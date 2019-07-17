@@ -181,6 +181,7 @@ std::string BehavioralHelper::print_vertex(const OpGraphConstRef g, const vertex
          case tree_list_K:
          case tree_vec_K:
          case error_mark_K:
+         case lut_expr_K:
          case CASE_BINARY_EXPRESSION:
          case CASE_CPP_NODES:
          case CASE_CST_NODES:
@@ -953,6 +954,7 @@ std::string BehavioralHelper::print_constant(unsigned int var, const var_pp_func
       case vec_unpack_float_hi_expr_K:
       case vec_unpack_float_lo_expr_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:
@@ -2706,13 +2708,14 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                case target_mem_ref461_K:
                case tree_list_K:
                case tree_vec_K:
-               case CASE_BINARY_EXPRESSION:
-               case CASE_CPP_NODES:
                case complex_cst_K:
                case integer_cst_K:
                case real_cst_K:
                case string_cst_K:
                case error_mark_K:
+               case lut_expr_K:
+               case CASE_BINARY_EXPRESSION:
+               case CASE_CPP_NODES:
                case CASE_DECL_NODES:
                case CASE_FAKE_NODES:
                case CASE_GIMPLE_NODES:
@@ -2829,6 +2832,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             case vec_unpack_float_hi_expr_K:
             case vec_unpack_float_lo_expr_K:
             case error_mark_K:
+            case lut_expr_K:
             case CASE_BINARY_EXPRESSION:
             case CASE_CPP_NODES:
             case CASE_CST_NODES:
@@ -2927,6 +2931,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                case view_convert_expr_K:
                case error_mark_K:
                case paren_expr_K:
+               case lut_expr_K:
                case CASE_BINARY_EXPRESSION:
                case CASE_CPP_NODES:
                case CASE_CST_NODES:
@@ -2955,7 +2960,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          tree_nodeRef op0 = GET_NODE(ce->fn);
          bool is_va_start_end = false;
 
-         // sizeof workaroung
+         // sizeof workaround
          bool is_sizeof = false;
 
          switch(op0->get_kind())
@@ -3027,6 +3032,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             case target_expr_K:
             case error_mark_K:
             case paren_expr_K:
+            case lut_expr_K:
             case CASE_BINARY_EXPRESSION:
             case CASE_CPP_NODES:
             case CASE_CST_NODES:
@@ -3206,6 +3212,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             case target_expr_K:
             case error_mark_K:
             case paren_expr_K:
+            case lut_expr_K:
             case CASE_BINARY_EXPRESSION:
             case CASE_CPP_NODES:
             case CASE_CST_NODES:
@@ -4426,6 +4433,7 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
       case tree_list_K:
       case tree_vec_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -4643,6 +4651,7 @@ bool BehavioralHelper::is_a_constant(unsigned int obj) const
       case vec_unpack_float_lo_expr_K:
       case target_expr_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:
@@ -4842,6 +4851,7 @@ unsigned int BehavioralHelper::get_intermediate_var(unsigned int obj) const
             case vec_unpack_float_lo_expr_K:
             case target_expr_K:
             case error_mark_K:
+            case lut_expr_K:
             case CASE_BINARY_EXPRESSION:
             case CASE_CPP_NODES:
             case CASE_CST_NODES:
@@ -5095,6 +5105,7 @@ unsigned int BehavioralHelper::get_attributes(unsigned int var) const
       case type_decl_K:
       case template_decl_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -5198,6 +5209,7 @@ unsigned int BehavioralHelper::GetInit(unsigned int var, std::unordered_set<unsi
       case using_decl_K:
       case type_decl_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -5352,6 +5364,7 @@ std::string BehavioralHelper::print_forward_declaration(unsigned int type) const
       case vector_type_K:
       case void_type_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -5612,7 +5625,7 @@ bool BehavioralHelper::CanBeSpeculated(const unsigned int node_index) const
          return true;
       }
       case gimple_asm_K:
-      /// Call functions cannot be specuclated because of possible effects not caught by virtuals in particular corner case (gcc-4.6 -O0 gcc_regression_simple/20070424-1.c)
+      /// Call functions cannot be speculated because of possible effects not caught by virtuals in particular corner case (gcc-4.6 -O0 gcc_regression_simple/20070424-1.c)
       case gimple_call_K:
       case gimple_cond_K:
       case gimple_goto_K:
@@ -5645,6 +5658,7 @@ bool BehavioralHelper::CanBeSpeculated(const unsigned int node_index) const
       case tree_list_K:
       case tree_vec_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
