@@ -75,6 +75,7 @@
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "math_function.hpp"
 
 dead_code_elimination::dead_code_elimination(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, DEAD_CODE_ELIMINATION, _design_flow_manager, _parameters)
@@ -418,6 +419,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   {
                      auto* mr = GetPointer<mem_ref>(op0);
                      THROW_ASSERT(GET_NODE(mr->op1)->get_kind() == integer_cst_K, "unexpected condition");
+                     auto written_bw = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(ga->op1));
+                     if(written_bw == 1)
+                        written_bw = 8;
                      if(GetPointer<integer_cst>(GET_NODE(mr->op1))->value == 0)
                      {
                         THROW_ASSERT(GET_NODE(mr->op0)->get_kind() == ssa_name_K, "unexpected condition");
@@ -483,7 +487,11 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                       const auto mr_used = GetPointer<mem_ref>(GET_NODE(ga_used->op1));
                                                       if(GetPointer<integer_cst>(GET_NODE(mr->op1))->value == GetPointer<integer_cst>(GET_NODE(mr_used->op1))->value)
                                                       {
-                                                         if(GET_INDEX_NODE(mr->op0) == GET_INDEX_NODE(mr_used->op0))
+                                                         auto read_bw = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(ga_used->op0));
+                                                         if(read_bw == 1)
+                                                            read_bw = 8;
+std::cerr << "read_bw: " << read_bw << " written_bw: " << written_bw << "\n";
+                                                         if(GET_INDEX_NODE(mr->op0) == GET_INDEX_NODE(mr_used->op0) && written_bw == read_bw)
                                                          {
                                                             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---found a candidate " + GET_NODE(use.first)->ToString());
                                                             /// check if this load is killed by a following vover
