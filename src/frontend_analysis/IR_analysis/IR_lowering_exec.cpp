@@ -2647,11 +2647,6 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      }
                      unsigned int op1_type_index;
                      tree_nodeRef op1_type = tree_helper::get_type_node(GET_NODE(ga->op1), op1_type_index);
-                     unsigned int mr_op0_type_index;
-                     tree_nodeRef mr_op0_type = tree_helper::get_type_node(GET_NODE(MR->op0), mr_op0_type_index);
-                     auto pt_type0 = GetPointer<pointer_type>(mr_op0_type);
-                     THROW_ASSERT(pt_type0, "unexpected condition"+mr_op0_type->get_kind_text());
-                     auto written_type_index = GET_INDEX_NODE(pt_type0->ptd);
                      auto view_convert_pattern = op1_type->get_kind() == record_type_K && GET_NODE(ga->op1)->get_kind() == view_convert_expr_K;
                      if(!view_convert_pattern && GET_NODE(ga->op1)->get_kind() != ssa_name_K && !GetPointer<cst_node>(GET_NODE(ga->op1)) && GET_NODE(ga->op1)->get_kind() != mem_ref_K && GET_NODE(ga->op1)->get_kind() != constructor_K)
                      {
@@ -2662,16 +2657,6 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         block.second->PushBefore(op_ga, *it_los);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(op_ga)->ToString());
                         ga->op1 = op_vd;
-                        restart_analysis = true;
-                     }
-                     else if(written_type_index != op1_type_index && GetPointer<vector_cst>(GET_NODE(ga->op1)))
-                     {
-                        tree_nodeRef vc_expr = tree_man->create_unary_operation(pt_type0->ptd, ga->op1, srcp_default, view_convert_expr_K);
-                        tree_nodeRef vc_ga = CreateGimpleAssign(pt_type0->ptd, vc_expr, block.first, srcp_default);
-                        block.second->PushBefore(vc_ga, *it_los);
-                        tree_nodeRef vc_ga_var = GetPointer<gimple_assign>(GET_NODE(vc_ga))->op0;
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---VC: adding statement " + GET_NODE(vc_ga)->ToString());
-                        ga->op1 = vc_ga_var;
                         restart_analysis = true;
                      }
                   };
