@@ -2013,7 +2013,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          if(le->op2)
             concat_shift_string = concat_shift_string + "((" + print_node(GET_INDEX_NODE(le->op2), v, vppf) + ")<<1) | ";
          concat_shift_string = concat_shift_string + "(" + print_node(GET_INDEX_NODE(le->op1), v, vppf) + ")";
-         res = res + "(" + print_node(le->op0->index, v, vppf) + ">>(" + print_node(GET_INDEX_NODE(le->op0), v, vppf) + "))&1";
+         res = res + "(" + print_node(le->op0->index, v, vppf) + ">>(" + concat_shift_string + "))&1";
          break;
       }
       case negate_expr_K:
