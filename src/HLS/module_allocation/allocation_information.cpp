@@ -1960,8 +1960,6 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
       if(ga and GET_NODE(ga->op1)->get_kind() == lut_expr_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operation is a lut_expr");
-         const auto lut = GetPointer<const lut_expr>(GET_NODE(ga->op1));
-         const auto fu_prec = tree_helper::Size(lut->op0);
          const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("lut_expr_FU", LIBRARY_STD_FU);
          THROW_ASSERT(new_stmt_temp, "Functional unit not found: lut_expr_FU");
          const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
