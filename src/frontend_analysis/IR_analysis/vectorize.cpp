@@ -576,7 +576,8 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
          auto* le = GetPointer<const lut_expr>(tree_node);
          ClassifyTreeNode(loop_id, le->op0);
          ClassifyTreeNode(loop_id, le->op1);
-         ClassifyTreeNode(loop_id, le->op2);
+         if(le->op2)
+            ClassifyTreeNode(loop_id, le->op2);
          if(le->op3)
             ClassifyTreeNode(loop_id, le->op3);
          if(le->op4)
@@ -1985,7 +1986,8 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
                tree_node_schema[TOK(TOK_TYPE)] = STR(le->type->index);
                tree_node_schema[TOK(TOK_OP1)] = STR(Transform(le->op1->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
-               tree_node_schema[TOK(TOK_OP2)] = STR(Transform(le->op2->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
+               if(le->op2)
+                  tree_node_schema[TOK(TOK_OP2)] = STR(Transform(le->op2->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
                if(le->op3)
                   tree_node_schema[TOK(TOK_OP3)] = STR(Transform(le->op3->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
                if(le->op4)

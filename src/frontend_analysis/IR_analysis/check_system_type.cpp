@@ -405,7 +405,8 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
          auto* le = GetPointer<lut_expr>(curr_tn);
          recursive_examinate(le->op0);
          recursive_examinate(le->op1);
-         recursive_examinate(le->op2);
+         if(le->op2)
+            recursive_examinate(le->op2);
          if(le->op3)
             recursive_examinate(le->op3);
          if(le->op4)

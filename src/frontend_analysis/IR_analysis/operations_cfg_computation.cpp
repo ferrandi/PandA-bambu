@@ -850,7 +850,8 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
          auto* le = GetPointer<lut_expr>(curr_tn);
          build_operation_recursive(TM, ogc, le->op0, f_name, bb_index);
          build_operation_recursive(TM, ogc, le->op1, f_name, bb_index);
-         build_operation_recursive(TM, ogc, le->op2, f_name, bb_index);
+         if(le->op2)
+            build_operation_recursive(TM, ogc, le->op2, f_name, bb_index);
          if(le->op3)
             build_operation_recursive(TM, ogc, le->op3, f_name, bb_index);
          if(le->op4)

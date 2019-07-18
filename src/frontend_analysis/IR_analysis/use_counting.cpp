@@ -337,7 +337,8 @@ void use_counting::analyze_node(tree_nodeRef& tn, std::set<tree_nodeRef>& ssa_us
          auto* le = GetPointer<lut_expr>(curr_tn);
          analyze_node(le->op0, ssa_uses);
          analyze_node(le->op1, ssa_uses);
-         analyze_node(le->op2, ssa_uses);
+         if(le->op2)
+            analyze_node(le->op2, ssa_uses);
          if(le->op3)
             analyze_node(le->op3, ssa_uses);
          if(le->op4)

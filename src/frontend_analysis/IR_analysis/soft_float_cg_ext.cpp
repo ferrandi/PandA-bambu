@@ -653,7 +653,8 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
          auto* le = GetPointer<lut_expr>(curr_tn);
          RecursiveExaminate(current_statement, le->op0);
          RecursiveExaminate(current_statement, le->op1);
-         RecursiveExaminate(current_statement, le->op2);
+         if(le->op2)
+            RecursiveExaminate(current_statement, le->op2);
          if(le->op3)
             RecursiveExaminate(current_statement, le->op3);
          if(le->op4)

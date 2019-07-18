@@ -2280,33 +2280,40 @@ bool pred;
                    {NS(lut_expr,op0)}
                    op
                    {NS(lut_expr,op1)}
-                   op
-                   {NS(lut_expr,op2)}
                    wlut_expr_opt
                ;
    wlut_expr_opt : /* Empty */
-                   | wlut_expr_next3
-                   | wlut_expr_next3
+                   | wlut_expr_next2
+                   | wlut_expr_next2
+                     wlut_expr_next3
+                   | wlut_expr_next2
+                     wlut_expr_next3
                      wlut_expr_next4
-                   | wlut_expr_next3
+                   | wlut_expr_next2
+                     wlut_expr_next3
                      wlut_expr_next4
                      wlut_expr_next5
-                   | wlut_expr_next3
+                   | wlut_expr_next2
+                     wlut_expr_next3
                      wlut_expr_next4
                      wlut_expr_next5
                      wlut_expr_next6
-                   | wlut_expr_next3
+                   | wlut_expr_next2
+                     wlut_expr_next3
                      wlut_expr_next4
                      wlut_expr_next5
                      wlut_expr_next6
                      wlut_expr_next7
-                   | wlut_expr_next3
+                   | wlut_expr_next2
+                     wlut_expr_next3
                      wlut_expr_next4
                      wlut_expr_next5
                      wlut_expr_next6
                      wlut_expr_next7
                      wlut_expr_next8
                ;
+      wlut_expr_next2 : op{NS(lut_expr, op2)}
+                     ;
       wlut_expr_next3 : op{NS(lut_expr, op3)}
                         ;
       wlut_expr_next4 : op{NS(lut_expr, op4)}

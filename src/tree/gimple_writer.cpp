@@ -1238,7 +1238,8 @@ void GimpleWriter::operator()(const lut_expr* obj, unsigned int& mask)
    os << "lut_expr (";
    obj->op0->visit(this);
    obj->op1->visit(this);
-   obj->op2->visit(this);
+   if(obj->op2)
+      obj->op2->visit(this);
    if(obj->op3)
       obj->op3->visit(this);
    if(obj->op4)

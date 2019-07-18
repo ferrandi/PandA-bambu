@@ -365,7 +365,8 @@ void call_graph_computation::call_graph_computation_recursive(const tree_manager
          auto* le = GetPointer<lut_expr>(curr_tn);
          call_graph_computation_recursive(TM, le->op0, node_stmt, call_type);
          call_graph_computation_recursive(TM, le->op1, node_stmt, call_type);
-         call_graph_computation_recursive(TM, le->op2, node_stmt, call_type);
+         if(le->op2)
+            call_graph_computation_recursive(TM, le->op2, node_stmt, call_type);
          if(le->op3)
             call_graph_computation_recursive(TM, le->op3, node_stmt, call_type);
          if(le->op4)

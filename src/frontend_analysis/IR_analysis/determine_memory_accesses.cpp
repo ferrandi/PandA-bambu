@@ -556,7 +556,8 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
          auto* le = GetPointer<lut_expr>(tn);
          analyze_node(GET_INDEX_NODE(le->op0), left_p, dynamic_address, no_dynamic_address);
          analyze_node(GET_INDEX_NODE(le->op1), left_p, dynamic_address, no_dynamic_address);
-         analyze_node(GET_INDEX_NODE(le->op2), left_p, dynamic_address, no_dynamic_address);
+         if(le->op2)
+            analyze_node(GET_INDEX_NODE(le->op2), left_p, dynamic_address, no_dynamic_address);
          if(le->op3)
             analyze_node(GET_INDEX_NODE(le->op3), left_p, dynamic_address, no_dynamic_address);
          if(le->op4)

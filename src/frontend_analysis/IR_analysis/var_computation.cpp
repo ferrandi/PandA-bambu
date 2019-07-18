@@ -515,7 +515,8 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
          auto* le = GetPointer<const lut_expr>(tree_node);
          RecursivelyAnalyze(op_vertex, GET_CONST_NODE(le->op0), FunctionBehavior_VariableAccessType::USE);
          RecursivelyAnalyze(op_vertex, GET_CONST_NODE(le->op1), FunctionBehavior_VariableAccessType::USE);
-         RecursivelyAnalyze(op_vertex, GET_CONST_NODE(le->op2), FunctionBehavior_VariableAccessType::USE);
+         if(le->op2)
+            RecursivelyAnalyze(op_vertex, GET_CONST_NODE(le->op2), FunctionBehavior_VariableAccessType::USE);
          if(le->op3)
             RecursivelyAnalyze(op_vertex, GET_CONST_NODE(le->op3), FunctionBehavior_VariableAccessType::USE);
          if(le->op4)

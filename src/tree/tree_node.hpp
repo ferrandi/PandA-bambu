@@ -1132,10 +1132,10 @@ struct gimple_node : public srcp, public WeightedNode
    /// list of pragmas associated to the function
    std::vector<tree_nodeRef> pragmas;
 
-   /// The use set of this call
+   /// The point-to set used by this gimple node
    PointToSolutionRef use_set;
 
-   /// The clobbered set of this call
+   /// The clobbered set of this gimple node
    PointToSolutionRef clobbered_set;
 
    /// The function to which this gimple_node belongs

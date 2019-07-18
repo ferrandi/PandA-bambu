@@ -99,6 +99,9 @@ private:
      */
     bool CheckIfPO(gimple_assign *gimpleAssign);
 
+    bool CheckIfPI(tree_nodeRef in, unsigned int BB_index);
+
+
     bool ProcessBasicBlock(std::pair<unsigned int, blocRef> block);
 
 

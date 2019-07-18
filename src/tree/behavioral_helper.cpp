@@ -1997,7 +1997,23 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       case lut_expr_K:
       {
          auto* le = GetPointer<lut_expr>(node);
-         res = res + "(" + print_node(le->op1->index, v, vppf) + ">>" + print_node(GET_INDEX_NODE(le->op0), v, vppf) + ")&1";
+         std::string concat_shift_string;
+         if(le->op8)
+            THROW_ERROR("not supported");
+         if(le->op7)
+            THROW_ERROR("not supported");
+         if(le->op6)
+            concat_shift_string = concat_shift_string + "((" + print_node(GET_INDEX_NODE(le->op6), v, vppf) + ")<<5) | ";
+         if(le->op5)
+            concat_shift_string = concat_shift_string + "((" + print_node(GET_INDEX_NODE(le->op5), v, vppf) + ")<<4) | ";
+         if(le->op4)
+            concat_shift_string = concat_shift_string + "((" + print_node(GET_INDEX_NODE(le->op4), v, vppf) + ")<<3) | ";
+         if(le->op3)
+            concat_shift_string = concat_shift_string + "((" + print_node(GET_INDEX_NODE(le->op3), v, vppf) + ")<<2) | ";
+         if(le->op2)
+            concat_shift_string = concat_shift_string + "((" + print_node(GET_INDEX_NODE(le->op2), v, vppf) + ")<<1) | ";
+         concat_shift_string = concat_shift_string + "(" + print_node(GET_INDEX_NODE(le->op1), v, vppf) + ")";
+         res = res + "(" + print_node(le->op0->index, v, vppf) + ">>(" + print_node(GET_INDEX_NODE(le->op0), v, vppf) + "))&1";
          break;
       }
       case negate_expr_K:

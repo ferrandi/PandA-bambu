@@ -1195,7 +1195,8 @@ void tree_helper::get_used_variables(bool first_level_only, const tree_nodeRef t
          auto* le = GetPointer<lut_expr>(t);
          get_used_variables(first_level_only, le->op0, list_of_variable);
          get_used_variables(first_level_only, le->op1, list_of_variable);
-         get_used_variables(first_level_only, le->op2, list_of_variable);
+         if(le->op2)
+            get_used_variables(first_level_only, le->op2, list_of_variable);
          if(le->op3)
             get_used_variables(first_level_only, le->op3, list_of_variable);
          if(le->op4)
@@ -7778,7 +7779,8 @@ void tree_helper::compute_ssa_uses_rec_ptr(const tree_nodeRef& curr_tn, std::set
          auto* le = GetPointer<lut_expr>(curr_tn);
          compute_ssa_uses_rec_ptr(le->op0, ssa_uses);
          compute_ssa_uses_rec_ptr(le->op1, ssa_uses);
-         compute_ssa_uses_rec_ptr(le->op2, ssa_uses);
+         if(le->op2)
+            compute_ssa_uses_rec_ptr(le->op2, ssa_uses);
          if(le->op3)
          {
             compute_ssa_uses_rec_ptr(le->op3, ssa_uses);
@@ -8112,7 +8114,8 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef tn, TreeNodeMap<size_t>& ssa
          auto* le = GetPointer<lut_expr>(curr_tn);
          ComputeSsaUses(le->op0, ssa_uses);
          ComputeSsaUses(le->op1, ssa_uses);
-         ComputeSsaUses(le->op2, ssa_uses);
+         if(le->op2)
+            ComputeSsaUses(le->op2, ssa_uses);
          if(le->op3)
          {
             ComputeSsaUses(le->op3, ssa_uses);
@@ -8470,7 +8473,8 @@ void tree_helper::get_required_values(const tree_managerConstRef& TM, std::vecto
          auto* le = GetPointer<lut_expr>(tn);
          get_required_values(TM, required, GET_NODE(le->op0), GET_INDEX_NODE(le->op0));
          get_required_values(TM, required, GET_NODE(le->op1), GET_INDEX_NODE(le->op1));
-         get_required_values(TM, required, GET_NODE(le->op2), GET_INDEX_NODE(le->op2));
+         if(le->op2)
+            get_required_values(TM, required, GET_NODE(le->op2), GET_INDEX_NODE(le->op2));
          if(le->op3)
             get_required_values(TM, required, GET_NODE(le->op3), GET_INDEX_NODE(le->op3));
          if(le->op4)

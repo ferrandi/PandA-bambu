@@ -272,7 +272,8 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp)
          auto* le = GetPointer<lut_expr>(curr_tn);
          recursive_analysis(le->op0, srcp);
          recursive_analysis(le->op1, srcp);
-         recursive_analysis(le->op2, srcp);
+         if(le->op2)
+            recursive_analysis(le->op2, srcp);
          if(le->op3)
             recursive_analysis(le->op3, srcp);
          if(le->op4)

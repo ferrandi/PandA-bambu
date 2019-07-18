@@ -434,7 +434,8 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
          auto* le = GetPointer<lut_expr>(curr_tn);
          recursive_examinate(le->op0, current_statement);
          recursive_examinate(le->op1, current_statement);
-         recursive_examinate(le->op2, current_statement);
+         if(le->op2)
+            recursive_examinate(le->op2, current_statement);
          if(le->op3)
             recursive_examinate(le->op3, current_statement);
          if(le->op4)
