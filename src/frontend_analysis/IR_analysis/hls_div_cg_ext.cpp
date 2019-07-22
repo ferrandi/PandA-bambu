@@ -197,7 +197,7 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
                            const tree_nodeConstRef actual_type_node = tree_helper::CGetType(GET_NODE(*arg_it));
                            if(formal_type_id != actual_type_node->index)
                            {
-                              const auto ga_nop = tree_man->CreateNopExpr(*arg_it, formal_type_node, tree_nodeRef(), tree_nodeRef());
+                              const auto ga_nop = tree_man->CreateNopExpr(*arg_it, TreeM->CGetTreeReindex(formal_type_node->index), tree_nodeRef(), tree_nodeRef());
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ga_nop)->ToString());
                               it->second->PushBefore(ga_nop, *it_los);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---old call statement " + GET_NODE(*it_los)->ToString());

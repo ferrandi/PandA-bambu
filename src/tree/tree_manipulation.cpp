@@ -2201,7 +2201,7 @@ tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef& condition, 
 
 tree_nodeRef tree_manipulation::CreateNopExpr(const tree_nodeConstRef& operand, const tree_nodeConstRef& type, const tree_nodeConstRef& min, const tree_nodeConstRef& max) const
 {
-   THROW_ASSERT(type and type->get_kind() == tree_reindex_K, "Node is not a tree reindex");
+   THROW_ASSERT(type and type->get_kind() == tree_reindex_K, "type is not a tree reindex");
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ne_schema, ga_schema;
    ne_schema[TOK(TOK_TYPE)] = STR(type->index);
