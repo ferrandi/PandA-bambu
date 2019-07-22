@@ -140,68 +140,58 @@
 /**
  * `aig_network_ext` class provides operations derived from the one already existing in `mockturtle::aig_network`.
  */
-class aig_network_ext : public mockturtle::aig_network {
+class klut_network_ext : public mockturtle::klut_network {
 public:
     /**
      * Creates a 'greater' or equal operation.
      * 
-     * @param a a `mockturtle::signal` representing the first operator of the `ge` operation
-     * @param b a `mockturtle::signal` representing the second operator of the `ge` operation
+     * @param a a `mockturtle::klut_network::signal` representing the first operator of the `ge` operation
+     * @param b a `mockturtle::klut_network::signal` representing the second operator of the `ge` operation
      * 
-     * @return a `mockturtle::signal` representing the operation `ge` between `a` and `b`
+     * @return a `mockturtle::klut_network::signal` representing the operation `ge` between `a` and `b`
      */
-    signal create_ge(signal const &a, signal const &b) {
+    signal create_ge(signal const a, signal const b) {
         return !this->create_lt(a, b);
     }
 
     /**
      * Creates a 'greater' operation.
      * 
-     * @param a a `mockturtle::signal` representing the first operator of the `gt` operation
-     * @param b a `mockturtle::signal` representing the second operator of the `gt` operation
+     * @param a a `mockturtle::klut_network::signal` representing the first operator of the `gt` operation
+     * @param b a `mockturtle::klut_network::signal` representing the second operator of the `gt` operation
      * 
-     * @return a `mockturtle::signal` representing the operation `gt` between `a` and `b`
+     * @return a `mockturtle::klut_network::signal` representing the operation `gt` between `a` and `b`
      */
-    signal create_gt(signal const &a, signal const &b) {
+    signal create_gt(signal const a, signal const b) {
         return !this->create_le(a, b);
     }
 
     /**
      * Creates a 'equal' operation.
      * 
-     * @param a a `mockturtle::signal` representing the first operator of the `gt` operation
-     * @param b a `mockturtle::signal` representing the second operator of the `gt` operation
+     * @param a a `mockturtle::klut_network::signal` representing the first operator of the `gt` operation
+     * @param b a `mockturtle::klut_network::signal` representing the second operator of the `gt` operation
      * 
-     * @return a `mockturtle::signal` representing the operation `eq` between `a` and `b`
+     * @return a `mockturtle::klut_network::signal` representing the operation `eq` between `a` and `b`
      */
-    signal create_eq(signal const &a, signal const &b) {
+    signal create_eq(signal const a, signal const b) {
         return !this->create_xor(a, b);
     }
 
     /**
      * Creates a 'not equal' operation.
      * 
-     * @param a a `mockturtle::signal` representing the first operator of the `ne` operation
-     * @param b a `mockturtle::signal` representing the second operator of the `ne` operation
+     * @param a a `mockturtle::klut_network::signal` representing the first operator of the `ne` operation
+     * @param b a `mockturtle::klut_network::signal` representing the second operator of the `ne` operation
      * 
-     * @return a `mockturtle::signal` representing the operation `ne` between `a` and `b`
+     * @return a `mockturtle::klut_network::signal` representing the operation `ne` between `a` and `b`
      */
-    signal create_ne(signal const &a, signal const &b) {
+    signal create_ne(signal const a, signal const b) {
         return this->create_xor(a, b);
     }
 
-    /**
-     * Creates a 'and' operation.
-     * Although the `create_and` operation already exists inside `mockturtle::aig_network` has different
-     * inputs than all others operations (input signals are not constant).
-     * 
-     * @param a a `mockturtle::signal` representing the first operator of the `and` operation
-     * @param b a `mockturtle::signal` representing the second operator of the `and` operation
-     * 
-     * @return a `mockturtle::signal` representing the operation `and` between `a` and `b`
-     */
-    signal create_and(signal const &a, signal const &b) {
-        return mockturtle::aig_network::create_and(a, b);
+    signal create_lut(std::vector<signal> s, uint32_t f) {
+        return this->_create_node(s, f);
     }
 };
 
@@ -214,10 +204,10 @@ struct klut_network_node {
 };
 
 /**
-     * Pointer that points to the function, of `aig_network_ext`, that represents a binary operation between two `mockturtle::aig_network::signal`
-     * and returns a `mockturtle::aig_network::signal`.
+ * Pointer that points to the function, of `aig_network_ext`, that represents a binary operation between two `mockturtle::klut_network::signal`
+ * and returns a `mockturtle::klut_network::signal`.
      */
-typedef mockturtle::aig_network::signal (aig_network_ext::*aig_network_fn)(const mockturtle::aig_network::signal &, const mockturtle::aig_network::signal &);
+typedef mockturtle::klut_network::signal (klut_network_ext::*klut_network_fn)(const mockturtle::klut_network::signal, const mockturtle::klut_network::signal);
 
 #pragma endregion
 
@@ -286,31 +276,31 @@ bool lut_transformation::CheckIfPO(gimple_assign *gimpleAssign) {
 }
 
 static
-aig_network_fn GetNodeCreationFunction(enum kind code) {
+klut_network_fn GetNodeCreationFunction(enum kind code) {
     switch (code) {
         case bit_and_expr_K:
         case truth_and_expr_K:
-            return &aig_network_ext::create_and;
+            return &klut_network_ext::create_and;
         case bit_ior_expr_K:
         case truth_or_expr_K:
-            return &aig_network_ext::create_or;
+            return &klut_network_ext::create_or;
         case bit_xor_expr_K:
         case truth_xor_expr_K:
-            return &aig_network_ext::create_xor;
+            return &klut_network_ext::create_xor;
         case eq_expr_K:
-            return &aig_network_ext::create_eq;
+            return &klut_network_ext::create_eq;
         case ge_expr_K:
-            return &aig_network_ext::create_ge;
+            return &klut_network_ext::create_ge;
         case lut_expr_K:
             return nullptr; // TODO: capire come sono descritte e come inserirle dentro a mockturtle
         case gt_expr_K:
-            return &aig_network_ext::create_gt;
+            return &klut_network_ext::create_gt;
         case le_expr_K:
-            return &aig_network_ext::create_le;
+            return &klut_network_ext::create_le;
         case lt_expr_K:
-            return &aig_network_ext::create_lt;
+            return &klut_network_ext::create_lt;
         case ne_expr_K:
-            return &aig_network_ext::create_ne;
+            return &klut_network_ext::create_ne;
         default:
             return nullptr;
     }
@@ -334,26 +324,26 @@ static
 std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_network &klut) {
     std::vector<klut_network_node> luts;
     std::map<mockturtle::klut_network::node, unsigned> po_set;
-        
+
     mockturtle::topo_view ntk_topo{klut};
-        
+
     auto p_index=0u;
     ntk_topo.foreach_po([&](const auto &node) {
        po_set[node]=p_index;
        ++p_index;
-        });
+    });
 
     ntk_topo.foreach_node([&](const auto &node) {
         if (ntk_topo.is_pi(node) || ntk_topo.is_constant(node)) {
             return; // continue
         }        
         auto func = ntk_topo.node_function(node);
-
+        
         std::vector<uint64_t> fanIns;
         ntk_topo.foreach_fanin(node, [&](auto const &fanin_node, auto index) {
             fanIns.push_back(fanin_node);
         });
-        
+
         klut_network_node lut_node = (klut_network_node) {
             node,
             ConvertHexToInt64<uint64_t>(kitty::to_hex(func)),
@@ -371,24 +361,26 @@ std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_network &
 
 }
 
-mockturtle::klut_network lut_transformation::ConvertToLutNetwork(const lut_transformation::aig_network_ext &aig) {
-    auto cleanedUp = cleanup_dangling(aig);
-    mockturtle::mapping_view<mockturtle::aig_network, true> mapped_aig{cleanedUp};
+static
+mockturtle::klut_network SimplifyLutNetwork(const klut_network_ext &klut_e, unsigned max_lut_size) {
+    auto cleanedUp = cleanup_dangling(klut_e);
+    mockturtle::mapping_view<mockturtle::klut_network, true> mapped_klut{cleanedUp};
 
     mockturtle::lut_mapping_params ps;
     ps.cut_enumeration_ps.cut_size = this->max_lut_size;
-    mockturtle::lut_mapping<mockturtle::mapping_view<mockturtle::aig_network, true>, true>(mapped_aig, ps);
-    return *mockturtle::collapse_mapped_network<mockturtle::klut_network>(mapped_aig);
+    mockturtle::lut_mapping<mockturtle::mapping_view<mockturtle::klut_network, true>, true>(mapped_klut, ps);
+    return *mockturtle::collapse_mapped_network<mockturtle::klut_network>(mapped_klut);
 }
 
 bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> block) {
-    aig_network_ext aig;
+    klut_network_ext klut_e;
     auto BB_index = block.first;
 
-    std::map<tree_nodeRef, mockturtle::aig_network::signal> nodeRefToSignal;
+    std::map<tree_nodeRef, mockturtle::klut_network::signal> nodeRefToSignal;
 
     std::vector<tree_nodeRef> pis;
     std::vector<tree_nodeRef> pos;
+
     auto DefaultUnsignedLongLongInt = this->tree_man->CreateDefaultUnsignedLongLongInt();
 
     /**
@@ -436,6 +428,43 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
         auto *gimpleAssign = GetPointer<gimple_assign>(GET_NODE(*currentStatement));
         enum kind code1 = GET_NODE(gimpleAssign->op1)->get_kind();
 
+        if (code1 == lut_expr_K) {
+            auto *le = GetPointer<lut_expr>(GET_NODE(gimpleAssign->op1));
+
+            std::vector<mockturtle::klut_network::signal> ops;
+            for (auto op : {le->op1, le->op2, le->op3, le->op4, le->op5, le->op6, le->op7, le->op8}) {
+                if (!op) {
+                    break;
+                }
+
+                // if the first operand has already been processed then the previous signal is used
+                if (nodeRefToSignal.find(op) != nodeRefToSignal.end()) {
+                    ops.push_back(nodeRefToSignal[op]);
+                }
+                else { // otherwise the operand is a primary input
+                    mockturtle::klut_network::signal kop;
+
+                    if (GET_NODE(op)->get_kind() == integer_cst_K) {
+                        auto *int_const = GetPointer<integer_cst>(GET_NODE(op));
+                        kop = klut_e.get_constant(int_const->value != 0);
+                    }
+                    else if (CheckIfPI(op, BB_index)) {
+                        kop = klut_e.create_pi();
+                        pis.push_back(op);
+                    }
+
+                    nodeRefToSignal[op] = kop;
+                    ops.push_back(kop);
+                }
+            }
+
+            klut_e.create_lut(ops, GetPointer<integer_cst>(GET_NODE(le->op0))->value);
+
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"<--LUT found");
+
+            continue;
+        }
+
         auto *binaryExpression = GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1));
         if (!binaryExpression) {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not a binary expression");
@@ -449,7 +478,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             continue;
         }
 
-        aig_network_fn nodeCreateFn = GetNodeCreationFunction(code1);
+        klut_network_fn nodeCreateFn = GetNodeCreationFunction(code1);
 
         if (nodeCreateFn == nullptr) {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not supported expression");
@@ -457,9 +486,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             continue;
         }
 
-        mockturtle::aig_network::signal res;
-        mockturtle::aig_network::signal op1;
-        mockturtle::aig_network::signal op2;
+        mockturtle::klut_network::signal res;
+        mockturtle::klut_network::signal op1;
+        mockturtle::klut_network::signal op2;
 
         // if the first operand has already been processed then the previous signal is used
         if (nodeRefToSignal.find(binaryExpression->op0) != nodeRefToSignal.end()) {
@@ -470,14 +499,14 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
            {
               auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op0));
               if(int_const->value == 0)
-                 op1 = aig.get_constant(false);
+                 op1 = klut_e.get_constant(false);
               else
-                 op1 = aig.get_constant(true);
+                 op1 = klut_e.get_constant(true);
            }
            else if(CheckIfPI(binaryExpression->op0, BB_index))
            {
-              op1 = aig.create_pi();
-            pis.push_back(binaryExpression->op0);
+              op1 = klut_e.create_pi();
+              pis.push_back(binaryExpression->op0);
            }
 
             nodeRefToSignal[binaryExpression->op0] = op1;
@@ -492,25 +521,25 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
            {
               auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op1));
               if(int_const->value == 0)
-                 op2 = aig.get_constant(false);
+                 op2 = klut_e.get_constant(false);
               else
-                 op2 = aig.get_constant(true);
+                 op2 = klut_e.get_constant(true);
            }
            else if(CheckIfPI(binaryExpression->op1, BB_index))
            {
-              op2 = aig.create_pi();
-            pis.push_back(binaryExpression->op1);
+              op2 = klut_e.create_pi();
+              pis.push_back(binaryExpression->op1);
            }
 
             nodeRefToSignal[binaryExpression->op1] = op2;
         }
 
-        res = (aig.*nodeCreateFn)(op1, op2);
+        res = (klut_e.*nodeCreateFn)(op1, op2);
         nodeRefToSignal[gimpleAssign->op0] = res;
 
         if (this->CheckIfPO(gimpleAssign)) {
            std::cerr<<"is PO\n";
-            aig.create_po(res);
+            klut_e.create_po(res);
             pos.push_back(*currentStatement);
         }
 
@@ -518,11 +547,12 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
         statementsIterator++;
         modified = true;
     }
-    if(modified)
-    {
-       mockturtle::klut_network klut = ConvertToLutNetwork(aig, this->max_lut_size);
+
+    if (modified) {
+       mockturtle::klut_network klut = SimplifyLutNetwork(klut_e, this->max_lut_size);
        mockturtle::write_bench(klut, std::cout);
-    std::vector<klut_network_node> luts = ParseKLutNetwork(klut);
+
+       std::vector<klut_network_node> luts = ParseKLutNetwork(klut);
 
        std::cerr << "PI size" << pis.size() << "\n";
        std::map<mockturtle::klut_network::node, tree_nodeRef> internal_nets;
@@ -542,7 +572,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
              {
                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding statement " + GET_NODE(stmt)->ToString());
                 block.second->PushBefore(stmt, pos.at(lut.po_index));
-    }
+             }
              prev_stmts_to_add.clear();
           }
           unsigned int integer_cst2_id = TM->new_tree_node_id();
