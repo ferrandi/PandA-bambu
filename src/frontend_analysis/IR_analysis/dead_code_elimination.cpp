@@ -376,6 +376,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                {
                   /// op0 is the left side of the assignment, op1 is the right side
                   const tree_nodeRef op0 = GET_NODE(ga->op0);
+                  const auto op1_type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op1));
                   if(op0->get_kind() == ssa_name_K)
                   {
                      auto* ssa = GetPointer<ssa_name>(op0);
@@ -415,7 +416,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                      else
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---LHS ssa used: " + STR(ssa->CGetNumberUses()) + "-" + STR(ssa->CGetDefStmts().size()));
                   }
-                  else if(op0->get_kind() == mem_ref_K && !ga->artificial && GET_NODE(ga->op1)->get_kind() != vector_cst_K)
+                  else if(op0->get_kind() == mem_ref_K && !ga->artificial && !tree_helper::is_a_vector(TM,op1_type_index))
                   {
                      auto* mr = GetPointer<mem_ref>(op0);
                      THROW_ASSERT(GET_NODE(mr->op1)->get_kind() == integer_cst_K, "unexpected condition");
