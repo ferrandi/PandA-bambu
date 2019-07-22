@@ -197,7 +197,7 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
                            const tree_nodeConstRef actual_type_node = tree_helper::CGetType(GET_NODE(*arg_it));
                            if(formal_type_id != actual_type_node->index)
                            {
-                              const auto ga_nop = tree_man->CreateNopExpr(*arg_it, formal_type_node);
+                              const auto ga_nop = tree_man->CreateNopExpr(*arg_it, formal_type_node, tree_nodeRef(), tree_nodeRef());
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ga_nop)->ToString());
                               it->second->PushBefore(ga_nop, *it_los);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---old call statement " + GET_NODE(*it_los)->ToString());
@@ -221,7 +221,7 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
                      }
                      unsigned int type_index = tree_helper::get_type_index(TreeM, GET_INDEX_NODE(ue->op));
                      tree_nodeRef op_type = TreeM->GetTreeReindex(type_index);
-                     tree_nodeRef op_ga = tree_man->CreateGimpleAssign(op_type, ue->op, it->first, srcp_default);
+                     tree_nodeRef op_ga = tree_man->CreateGimpleAssign(op_type, tree_nodeRef(), tree_nodeRef(), ue->op, it->first, srcp_default);
                      tree_nodeRef op_vd = GetPointer<gimple_assign>(GET_NODE(op_ga))->op0;
                      it->second->PushBefore(op_ga, *it_los);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(op_ga)->ToString());

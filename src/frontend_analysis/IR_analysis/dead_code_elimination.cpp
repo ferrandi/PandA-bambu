@@ -490,7 +490,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                          auto read_bw = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(ga_used->op0));
                                                          if(read_bw == 1)
                                                             read_bw = 8;
-std::cerr << "read_bw: " << read_bw << " written_bw: " << written_bw << "\n";
+                                                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---read_bw: " + STR(read_bw) + " written_bw: " + STR(written_bw));
                                                          if(GET_INDEX_NODE(mr->op0) == GET_INDEX_NODE(mr_used->op0) && written_bw == read_bw)
                                                          {
                                                             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---found a candidate " + GET_NODE(use.first)->ToString());

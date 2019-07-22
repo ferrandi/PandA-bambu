@@ -145,11 +145,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-static tree_nodeRef create_ga(const tree_manipulationRef IRman, tree_nodeRef, tree_nodeRef& type, tree_nodeRef& op, unsigned int bb_index, const std::string& srcp_default)
-{
-   tree_nodeRef ssa_vd = IRman->create_ssa_name(tree_nodeRef(), type);
-   return IRman->create_gimple_modify_stmt(ssa_vd, op, srcp_default, bb_index);
-}
 
 void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
 {
@@ -405,7 +400,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         tree_nodeRef op0_type = TM->CGetTreeReindex(op0_type_id);
                         tree_nodeRef op0_const_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(trailing_zero_op0), op0_type_id);
                         tree_nodeRef op0_expr = IRman->create_binary_operation(op0_type, me->op0, op0_const_node, srcp_default, rshift_expr_K);
-                        tree_nodeRef op0_ga = create_ga(IRman, Scpe, op0_type, op0_expr, B_id, srcp_default);
+                        tree_nodeRef op0_ga = IRman->CreateGimpleAssign(op0_type, tree_nodeRef(), tree_nodeRef(), op0_expr, B_id, srcp_default);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op0_ga));
                         B->PushBefore(op0_ga, stmt);
                         tree_nodeRef op0_ga_var = GetPointer<gimple_assign>(GET_NODE(op0_ga))->op0;
@@ -423,7 +418,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         tree_nodeRef op1_type = TM->CGetTreeReindex(op1_type_id);
                         tree_nodeRef op1_const_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(trailing_zero_op1), op1_type_id);
                         tree_nodeRef op1_expr = IRman->create_binary_operation(op1_type, me->op1, op1_const_node, srcp_default, rshift_expr_K);
-                        tree_nodeRef op1_ga = create_ga(IRman, Scpe, op1_type, op1_expr, B_id, srcp_default);
+                        tree_nodeRef op1_ga = IRman->CreateGimpleAssign(op1_type, tree_nodeRef(), tree_nodeRef(), op1_expr, B_id, srcp_default);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op1_ga));
                         B->PushBefore(op1_ga, stmt);
                         tree_nodeRef op1_ga_var = GetPointer<gimple_assign>(GET_NODE(op1_ga))->op0;
@@ -436,13 +431,13 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         }
                      }
 
-                     tree_nodeRef ssa_vd = IRman->create_ssa_name(tree_nodeRef(), ga_op_type);
+                     tree_nodeRef ssa_vd = IRman->create_ssa_name(tree_nodeRef(), ga_op_type, tree_nodeRef(), tree_nodeRef());
                      auto* sn = GetPointer<ssa_name>(GET_NODE(ssa_vd));
                      /// set the bit_values to the ssa var
                      sn->bit_values = ssa->bit_values.substr(0, ssa->bit_values.size() - trailing_zero_op0 - trailing_zero_op1);
                      tree_nodeRef op_const_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(trailing_zero_op0 + trailing_zero_op1), type_index);
                      tree_nodeRef op_expr = IRman->create_binary_operation(ga_op_type, ssa_vd, op_const_node, srcp_default, lshift_expr_K);
-                     tree_nodeRef curr_ga = create_ga(IRman, Scpe, ga_op_type, op_expr, B_id, srcp_default);
+                     tree_nodeRef curr_ga = IRman->CreateGimpleAssign(ga_op_type, ssa->min, ssa->max, op_expr, B_id, srcp_default);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(curr_ga));
                      TM->ReplaceTreeNode(curr_ga, GetPointer<gimple_assign>(GET_NODE(curr_ga))->op0, ga->op0);
                      TM->ReplaceTreeNode(stmt, ga->op0, ssa_vd);
@@ -455,7 +450,27 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                   auto* me = GetPointer<binary_expr>(GET_NODE(ga->op1));
                   if(me->op0->index == me->op1->index)
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped plus expr with same operands " + GET_NODE(stmt)->ToString());
+                     if(GET_NODE(ga->op1)->get_kind() == minus_expr_K)
+                     {
+                        TM->ReplaceTreeNode(stmt, ga->op1, TM->CreateUniqueIntegerCst(0, type_index));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Statement transformed in " + GET_NODE(stmt)->ToString());
+                        modified = true;
+#ifndef NDEBUG
+                        AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                     }
+                     else
+                     {
+                        tree_nodeRef op_const_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(1), type_index);
+                        const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
+                        tree_nodeRef op_expr = IRman->create_binary_operation(ga_op_type, me->op0, op_const_node, srcp_default, lshift_expr_K);
+                        TM->ReplaceTreeNode(stmt, ga->op1, op_expr);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Statement transformed in " + GET_NODE(stmt)->ToString());
+                        modified = true;
+#ifndef NDEBUG
+                        AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                     }
                      continue;
                   }
                   tree_nodeRef op0 = GET_NODE(me->op0);
@@ -619,7 +634,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         else
                         {
                            tree_nodeRef op0_expr = IRman->create_binary_operation(op0_type, me->op0, shift_constant_node, srcp_default, rshift_expr_K);
-                           tree_nodeRef op0_ga = create_ga(IRman, Scpe, op0_type, op0_expr, B_id, srcp_default);
+                           tree_nodeRef op0_ga = IRman->CreateGimpleAssign(op0_type, tree_nodeRef(), tree_nodeRef(), op0_expr, B_id, srcp_default);
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op0_ga));
                            B->PushBefore(op0_ga, stmt);
                            tree_nodeRef op0_ga_var = GetPointer<gimple_assign>(GET_NODE(op0_ga))->op0;
@@ -678,7 +693,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         else
                         {
                            tree_nodeRef op1_expr = IRman->create_binary_operation(op1_type, me->op1, shift_constant_node, srcp_default, rshift_expr_K);
-                           tree_nodeRef op1_ga = create_ga(IRman, Scpe, op1_type, op1_expr, B_id, srcp_default);
+                           tree_nodeRef op1_ga = IRman->CreateGimpleAssign(op1_type, tree_nodeRef(), tree_nodeRef(), op1_expr, B_id, srcp_default);
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op1_ga));
                            B->PushBefore(op1_ga, stmt);
                            tree_nodeRef op1_ga_var = GetPointer<gimple_assign>(GET_NODE(op1_ga))->op0;
@@ -705,17 +720,17 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                      tree_nodeRef curr_ga;
                      if(is_op0_null)
                      {
-                        curr_ga = create_ga(IRman, Scpe, op1_type, me->op1, B_id, srcp_default);
+                        curr_ga = IRman->CreateGimpleAssign(op1_type, tree_nodeRef(), tree_nodeRef(), me->op1, B_id, srcp_default);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(curr_ga));
                      }
                      else if(is_op1_null)
                      {
-                        curr_ga = create_ga(IRman, Scpe, op0_type, me->op0, B_id, srcp_default);
+                        curr_ga = IRman->CreateGimpleAssign(op1_type, tree_nodeRef(), tree_nodeRef(), me->op0, B_id, srcp_default);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(curr_ga));
                      }
                      else
                      {
-                        curr_ga = create_ga(IRman, Scpe, ga_op_type, ga->op1, B_id, srcp_default);
+                        curr_ga = IRman->CreateGimpleAssign(op1_type, tree_nodeRef(), tree_nodeRef(), ga->op1, B_id, srcp_default);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(curr_ga));
                      }
                      B->PushBefore(curr_ga, stmt);
@@ -738,7 +753,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Var_uid: " + AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->PrintVariable(GET_INDEX_NODE(curr_ga_var)) + " bitstring: " + STR(op_ssa->bit_values));
 
                      tree_nodeRef op_expr = IRman->create_binary_operation(ga_op_type, curr_ga_var, shift_constant_node, srcp_default, lshift_expr_K);
-                     tree_nodeRef lshift_ga = create_ga(IRman, Scpe, ga_op_type, op_expr, B_id, srcp_default);
+                     tree_nodeRef lshift_ga = IRman->CreateGimpleAssign(ga_op_type, tree_nodeRef(), tree_nodeRef(), op_expr, B_id, srcp_default);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(lshift_ga));
                      B->PushBefore(lshift_ga, stmt);
                      tree_nodeRef lshift_ga_var = GetPointer<gimple_assign>(GET_NODE(lshift_ga))->op0;
@@ -786,7 +801,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         {
                            tree_nodeRef bit_mask_constant_node = TM->CreateUniqueIntegerCst(static_cast<long long int>((1ULL << shift_const) - 1), b_type_id);
                            tree_nodeRef band_expr = IRman->create_binary_operation(b_type, b_node, bit_mask_constant_node, srcp_default, bit_and_expr_K);
-                           tree_nodeRef band_ga = create_ga(IRman, Scpe, b_type, band_expr, B_id, srcp_default);
+                           tree_nodeRef band_ga = IRman->CreateGimpleAssign(b_type, tree_nodeRef(), tree_nodeRef(), band_expr, B_id, srcp_default);
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(band_ga));
                            B->PushBefore(band_ga, stmt);
                            tree_nodeRef band_ga_var = GetPointer<gimple_assign>(GET_NODE(band_ga))->op0;
@@ -822,6 +837,17 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         TM->ReplaceTreeNode(stmt, ga->op1, lshift_ga_var);
                      }
                      /// set uses of stmt
+                  }
+                  else if(GET_NODE(ga->op1)->get_kind() == minus_expr_K && GetPointer<integer_cst>(op0) && GetPointer<integer_cst>(op0)->value == 0)
+                  {
+                     const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
+                     tree_nodeRef res_expr = IRman->create_unary_operation(ga_op_type, me->op1, srcp_default, negate_expr_K);
+                     TM->ReplaceTreeNode(stmt, ga->op1, res_expr);
+                     modified = true;
+#ifndef NDEBUG
+                     AppM->RegisterTransformation(GetName(), stmt);
+#endif
+
                   }
                }
                else if(GET_NODE(ga->op1)->get_kind() == eq_expr_K || GET_NODE(ga->op1)->get_kind() == ne_expr_K)
@@ -887,6 +913,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         {
                            const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
                            ga->op1 = IRman->create_unary_operation(ga_op_type, me->op0, srcp_default, nop_expr_K);
+                           modified = true;
                         }
 
 #ifndef NDEBUG
@@ -898,14 +925,14 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
                         tree_nodeRef one_const_node = TM->CreateUniqueIntegerCst(1, op0_type_index);
                         tree_nodeRef bitwise_masked = IRman->create_binary_operation(op0_op_type, me->op0, one_const_node, srcp_default, bit_and_expr_K);
-                        tree_nodeRef op0_ga = create_ga(IRman, Scpe, op0_op_type, bitwise_masked, B_id, srcp_default);
+                        tree_nodeRef op0_ga = IRman->CreateGimpleAssign(op0_op_type, TM->CreateUniqueIntegerCst(0,op0_type_index), TM->CreateUniqueIntegerCst(1,op0_type_index), bitwise_masked, B_id, srcp_default);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op0_ga));
                         B->PushBefore(op0_ga, stmt);
                         tree_nodeRef op0_ga_var = GetPointer<gimple_assign>(GET_NODE(op0_ga))->op0;
 
                         const tree_nodeConstRef type_node = tree_helper::CGetType(GET_NODE(ga->op0));
                         const auto type_id = type_node->index;
-                        tree_nodeRef ga_nop = IRman->CreateNopExpr(op0_ga_var, TM->CGetTreeReindex(type_id));
+                        tree_nodeRef ga_nop = IRman->CreateNopExpr(op0_ga_var, TM->CGetTreeReindex(type_id), tree_nodeRef(), tree_nodeRef());
                         B->PushBefore(ga_nop, stmt);
                         modified = true;
 #ifndef NDEBUG
@@ -973,7 +1000,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                            {
                               tree_nodeRef op0_const_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(trailing_eq), type_index0);
                               tree_nodeRef op0_expr = IRman->create_binary_operation(op0_op_type, me->op0, op0_const_node, srcp_default, rshift_expr_K);
-                              tree_nodeRef op0_ga = create_ga(IRman, Scpe, op0_op_type, op0_expr, B_id, srcp_default);
+                              tree_nodeRef op0_ga = IRman->CreateGimpleAssign(op0_op_type, tree_nodeRef(), tree_nodeRef(), op0_expr, B_id, srcp_default);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op0_ga));
                               B->PushBefore(op0_ga, stmt);
                               tree_nodeRef op0_ga_var = GetPointer<gimple_assign>(GET_NODE(op0_ga))->op0;
@@ -994,7 +1021,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                            {
                               tree_nodeRef op1_const_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(trailing_eq), type_index1);
                               tree_nodeRef op1_expr = IRman->create_binary_operation(op1_op_type, me->op1, op1_const_node, srcp_default, rshift_expr_K);
-                              tree_nodeRef op1_ga = create_ga(IRman, Scpe, op1_op_type, op1_expr, B_id, srcp_default);
+                              tree_nodeRef op1_ga = IRman->CreateGimpleAssign(op1_op_type, tree_nodeRef(), tree_nodeRef(), op1_expr, B_id, srcp_default);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op1_ga));
                               B->PushBefore(op1_ga, stmt);
                               tree_nodeRef op1_ga_var = GetPointer<gimple_assign>(GET_NODE(op1_ga))->op0;
@@ -1119,7 +1146,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                            {
                               tree_nodeRef op0_const_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(trailing_eq), type_index0);
                               tree_nodeRef op0_expr = IRman->create_binary_operation(op0_op_type, me->op1, op0_const_node, srcp_default, rshift_expr_K);
-                              tree_nodeRef op0_ga = create_ga(IRman, Scpe, op0_op_type, op0_expr, B_id, srcp_default);
+                              tree_nodeRef op0_ga = IRman->CreateGimpleAssign(op0_op_type, tree_nodeRef(), tree_nodeRef(), op0_expr, B_id, srcp_default);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op0_ga));
                               B->PushBefore(op0_ga, stmt);
                               tree_nodeRef op0_ga_var = GetPointer<gimple_assign>(GET_NODE(op0_ga))->op0;
@@ -1140,7 +1167,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                            {
                               tree_nodeRef op1_const_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(trailing_eq), type_index1);
                               tree_nodeRef op1_expr = IRman->create_binary_operation(op1_op_type, me->op2, op1_const_node, srcp_default, rshift_expr_K);
-                              tree_nodeRef op1_ga = create_ga(IRman, Scpe, op1_op_type, op1_expr, B_id, srcp_default);
+                              tree_nodeRef op1_ga = IRman->CreateGimpleAssign(op1_op_type, tree_nodeRef(), tree_nodeRef(), op1_expr, B_id, srcp_default);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op1_ga));
                               B->PushBefore(op1_ga, stmt);
                               tree_nodeRef op1_ga_var = GetPointer<gimple_assign>(GET_NODE(op1_ga))->op0;
@@ -1157,14 +1184,14 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                               else
                                  TM->ReplaceTreeNode(stmt, me->op2, TM->CreateUniqueIntegerCst(static_cast<long long int>(static_cast<unsigned long long int>(int_const->value) >> trailing_eq), type_index1));
                            }
-                           tree_nodeRef ssa_vd = IRman->create_ssa_name(tree_nodeRef(), ga_op_type);
+                           tree_nodeRef ssa_vd = IRman->create_ssa_name(tree_nodeRef(), ga_op_type, tree_nodeRef(), tree_nodeRef());
                            auto* sn = GetPointer<ssa_name>(GET_NODE(ssa_vd));
                            /// set the bit_values to the ssa var
                            if(ssa->bit_values.size())
                               sn->bit_values = ssa->bit_values.substr(0, ssa->bit_values.size() - trailing_eq);
                            tree_nodeRef op_const_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(trailing_eq), type_index);
                            tree_nodeRef op_expr = IRman->create_binary_operation(ga_op_type, ssa_vd, op_const_node, srcp_default, lshift_expr_K);
-                           tree_nodeRef curr_ga = create_ga(IRman, Scpe, ga_op_type, op_expr, B_id, srcp_default);
+                           tree_nodeRef curr_ga = IRman->CreateGimpleAssign(ga_op_type, ssa->min, ssa->max, op_expr, B_id, srcp_default);
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(curr_ga));
                            TM->ReplaceTreeNode(curr_ga, GetPointer<gimple_assign>(GET_NODE(curr_ga))->op0, ga->op0);
                            TM->ReplaceTreeNode(stmt, ga->op0, ssa_vd);
@@ -1177,7 +1204,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         else if(precision == 1 && s0 == "1" && s1 == "0")
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Cond expr with true and false");
-                           tree_nodeRef ga_nop = IRman->CreateNopExpr(me->op0, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type);
+                           tree_nodeRef ga_nop = IRman->CreateNopExpr(me->op0, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type, ssa->min, ssa->max);
                            B->PushBefore(ga_nop, stmt);
                            modified = true;
 #ifndef NDEBUG
@@ -1209,7 +1236,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                            const auto new_ssa = IRman->CreateNotExpr(me->op0, blocRef());
                            const auto new_stmt = GetPointer<const ssa_name>(GET_CONST_NODE(new_ssa))->CGetDefStmt();
                            B->PushBefore(new_stmt, stmt);
-                           tree_nodeRef ga_nop = IRman->CreateNopExpr(new_ssa, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type);
+                           tree_nodeRef ga_nop = IRman->CreateNopExpr(new_ssa, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type, ssa->min, ssa->max);
                            B->PushBefore(ga_nop, stmt);
                            tree_nodeRef nop_ga_var = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
                            const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
@@ -1238,7 +1265,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         auto ull_value1 = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
                         if(ull_value0 == 1 && ull_value1 == 0)
                         {
-                           tree_nodeRef ga_nop = IRman->CreateNopExpr(me->op0, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type);
+                           tree_nodeRef ga_nop = IRman->CreateNopExpr(me->op0, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type,TM->CreateUniqueIntegerCst(0, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type->index),TM->CreateUniqueIntegerCst(1, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type->index));
                            B->PushBefore(ga_nop, stmt);
                            modified = true;
 #ifndef NDEBUG
