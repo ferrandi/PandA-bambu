@@ -145,6 +145,25 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
+static
+void constrainSSA(ssa_name * op_ssa, tree_managerRef TM)
+{
+   auto nbit = op_ssa->bit_values.size();
+   auto op0_type_id = GET_INDEX_NODE(op_ssa->type);
+   auto nbitType = tree_helper::size(TM, op0_type_id);
+   if(nbit != nbitType)
+   {
+      bool isSigned = tree_helper::is_int(TM, op0_type_id);
+      if(isSigned)
+         op_ssa->min =  TM->CreateUniqueIntegerCst(-(1ll<<(nbit-1)), op0_type_id);
+      else
+         op_ssa->min =  TM->CreateUniqueIntegerCst(0, op0_type_id);
+      if(isSigned)
+         op_ssa->max =  TM->CreateUniqueIntegerCst((1ll<<(nbit-1))-1, op0_type_id);
+      else
+         op_ssa->max =  TM->CreateUniqueIntegerCst((1ll<<nbit)-1, op0_type_id);
+   }
+}
 
 void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
 {
@@ -431,6 +450,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         {
                            auto* op0_ssa = GetPointer<ssa_name>(GET_NODE(op0_ga_var));
                            op0_ssa->bit_values = GetPointer<ssa_name>(op0)->bit_values.substr(0, GetPointer<ssa_name>(op0)->bit_values.size() - trailing_zero_op0);
+                           constrainSSA(op0_ssa, TM);
                         }
                      }
                      if(trailing_zero_op1 != 0 and op0->index != op1->index)
@@ -449,6 +469,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         {
                            auto* op1_ssa = GetPointer<ssa_name>(GET_NODE(op1_ga_var));
                            op1_ssa->bit_values = GetPointer<ssa_name>(op1)->bit_values.substr(0, GetPointer<ssa_name>(op1)->bit_values.size() - trailing_zero_op1);
+                           constrainSSA(op1_ssa, TM);
                         }
                      }
 
@@ -456,6 +477,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                      auto* sn = GetPointer<ssa_name>(GET_NODE(ssa_vd));
                      /// set the bit_values to the ssa var
                      sn->bit_values = ssa->bit_values.substr(0, ssa->bit_values.size() - trailing_zero_op0 - trailing_zero_op1);
+                     constrainSSA(sn, TM);
                      tree_nodeRef op_const_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(trailing_zero_op0 + trailing_zero_op1), type_index);
                      tree_nodeRef op_expr = IRman->create_binary_operation(ga_op_type, ssa_vd, op_const_node, srcp_default, lshift_expr_K);
                      tree_nodeRef curr_ga = IRman->CreateGimpleAssign(ga_op_type, ssa->min, ssa->max, op_expr, B_id, srcp_default);
@@ -675,6 +697,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                            /// set the bit_values to the ssa var
                            auto* op0_ssa = GetPointer<ssa_name>(GET_NODE(op0_ga_var));
                            op0_ssa->bit_values = resulting_bit_values;
+                           constrainSSA(op0_ssa, TM);
                            PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Var_uid: " + AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->PrintVariable(GET_INDEX_NODE(op0_ga_var)) + " bitstring: " + STR(op0_ssa->bit_values));
                         }
                      }
@@ -734,6 +757,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                            /// set the bit_values to the ssa var
                            auto* op1_ssa = GetPointer<ssa_name>(GET_NODE(op1_ga_var));
                            op1_ssa->bit_values = resulting_bit_values;
+                           constrainSSA(op1_ssa, TM);
                            PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Var_uid: " + AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->PrintVariable(GET_INDEX_NODE(op1_ga_var)) + " bitstring: " + STR(op1_ssa->bit_values));
                         }
                      }
@@ -771,6 +795,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                      /// set the bit_values to the ssa var
                      auto* op_ssa = GetPointer<ssa_name>(GET_NODE(curr_ga_var));
                      op_ssa->bit_values = ssa->bit_values.substr(0, ssa->bit_values.size() - shift_const);
+                     constrainSSA(op_ssa, TM);
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Var_uid: " + AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->PrintVariable(GET_INDEX_NODE(curr_ga_var)) + " bitstring: " + STR(op_ssa->bit_values));
 
                      tree_nodeRef op_expr = IRman->create_binary_operation(ga_op_type, curr_ga_var, shift_constant_node, srcp_default, lshift_expr_K);
@@ -781,6 +806,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                      /// set the bit_values to the ssa var
                      auto* lshift_ssa = GetPointer<ssa_name>(GET_NODE(lshift_ga_var));
                      lshift_ssa->bit_values = ssa->bit_values.substr(0, ssa->bit_values.size() - shift_const);
+                     constrainSSA(lshift_ssa, TM);
                      while(lshift_ssa->bit_values.size() < ssa->bit_values.size())
                         lshift_ssa->bit_values.push_back('0');
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Var_uid: " + AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->PrintVariable(GET_INDEX_NODE(lshift_ga_var)) + " bitstring: " + STR(lshift_ssa->bit_values));
@@ -846,6 +872,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                                  break;
                            }
                            band_ssa->bit_values = "0" + band_ssa->bit_values;
+                           constrainSSA(band_ssa, TM);
                            PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Var_uid: " + AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->PrintVariable(GET_INDEX_NODE(band_ga_var)) + " bitstring: " + STR(band_ssa->bit_values));
 
                            tree_nodeRef res_expr = IRman->create_ternary_operation(ga_op_type, lshift_ga_var, band_ga_var, shift_constant_node, srcp_default, bit_ior_concat_expr_K);
@@ -1029,6 +1056,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                               /// set the bit_values to the ssa var
                               auto* op0_ssa = GetPointer<ssa_name>(GET_NODE(op0_ga_var));
                               op0_ssa->bit_values = GetPointer<ssa_name>(op0)->bit_values.substr(0, GetPointer<ssa_name>(op0)->bit_values.size() - trailing_eq);
+                              constrainSSA(op0_ssa, TM);
                            }
                            else
                            {
@@ -1050,6 +1078,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                               /// set the bit_values to the ssa var
                               auto* op1_ssa = GetPointer<ssa_name>(GET_NODE(op1_ga_var));
                               op1_ssa->bit_values = GetPointer<ssa_name>(op1)->bit_values.substr(0, GetPointer<ssa_name>(op1)->bit_values.size() - trailing_eq);
+                              constrainSSA(op1_ssa, TM);
                            }
                            else
                            {
@@ -1175,6 +1204,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                               /// set the bit_values to the ssa var
                               auto* op0_ssa = GetPointer<ssa_name>(GET_NODE(op0_ga_var));
                               op0_ssa->bit_values = GetPointer<ssa_name>(op0)->bit_values.substr(0, GetPointer<ssa_name>(op0)->bit_values.size() - trailing_eq);
+                              constrainSSA(op0_ssa, TM);
                            }
                            else
                            {
@@ -1196,6 +1226,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                               /// set the bit_values to the ssa var
                               auto* op1_ssa = GetPointer<ssa_name>(GET_NODE(op1_ga_var));
                               op1_ssa->bit_values = GetPointer<ssa_name>(op1)->bit_values.substr(0, GetPointer<ssa_name>(op1)->bit_values.size() - trailing_eq);
+                              constrainSSA(op1_ssa, TM);
                            }
                            else
                            {
@@ -1209,7 +1240,10 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                            auto* sn = GetPointer<ssa_name>(GET_NODE(ssa_vd));
                            /// set the bit_values to the ssa var
                            if(ssa->bit_values.size())
+                           {
                               sn->bit_values = ssa->bit_values.substr(0, ssa->bit_values.size() - trailing_eq);
+                              constrainSSA(sn, TM);
+                           }
                            tree_nodeRef op_const_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(trailing_eq), type_index);
                            tree_nodeRef op_expr = IRman->create_binary_operation(ga_op_type, ssa_vd, op_const_node, srcp_default, lshift_expr_K);
                            tree_nodeRef curr_ga = IRman->CreateGimpleAssign(ga_op_type, ssa->min, ssa->max, op_expr, B_id, srcp_default);

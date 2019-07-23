@@ -275,16 +275,7 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
       }
       if(op_kind == ssa_name_K)
       {
-         auto* ssa_var = GetPointer<ssa_name>(right_part);
-         const auto def_stmt = GET_NODE(ssa_var->CGetDefStmt());
-         const auto def_gimple = GetPointer<gimple_node>(def_stmt);
-         if(def_gimple->bb_index == ga->bb_index && GetPointer<gimple_assign>(def_stmt))
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--return the associated def assignment");
-            return def_stmt;
-         }
-         else
-            ins.push_back(right_part_index);
+         ins.push_back(right_part_index);
       }
       else if(GetPointer<cst_node>(right_part))
       {
