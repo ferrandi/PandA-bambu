@@ -140,7 +140,7 @@
 /**
  * `aig_network_ext` class provides operations derived from the one already existing in `mockturtle::aig_network`.
  */
-class klut_network_ext : public mockturtle::klut_network {
+class aig_network_ext : public mockturtle::aig_network {
 public:
     /**
      * Creates a 'greater' or equal operation.
@@ -203,15 +203,28 @@ struct klut_network_node {
     uint64_t po_index;
 };
 
-/**
+    /**
  * Pointer that points to the function, of `aig_network_ext`, that represents a binary operation between two `mockturtle::klut_network::signal`
  * and returns a `mockturtle::klut_network::signal`.
      */
 typedef mockturtle::klut_network::signal (klut_network_ext::*klut_network_fn)(const mockturtle::klut_network::signal, const mockturtle::klut_network::signal);
 
+struct klut_network_node {
+    uint64_t index;
+    uint64_t lut_constant;
+    std::vector<uint64_t> fan_in;
+    bool is_po;
+    uint64_t po_index;
+};
+
+/**
+ * Pointer that points to the function, of `aig_network_ext`, that represents a binary operation between two `mockturtle::aig_network::signal`
+ * and returns a `mockturtle::aig_network::signal`.
+ */
+typedef mockturtle::aig_network::signal (aig_network_ext::*aig_network_fn)(const mockturtle::aig_network::signal &, const mockturtle::aig_network::signal &);
+
 #pragma endregion
 
-tree_nodeRef lut_transformation::CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string &srcp_default) {
    return tree_man->CreateGimpleAssign(type, tree_nodeRef(), tree_nodeRef(), op, bb_index, srcp_default);
 }
 
@@ -235,6 +248,53 @@ bool lut_transformation::CheckIfPI(tree_nodeRef in, unsigned int BB_index)
 }
 
 /**
+ * Checks if the provided basic block can be further processed. There are two cases in which this condition is true:
+ *  - the basic block contains an instruction convertible to a `lut_expr_K`
+ *  - the basic block contains a `lut_expr_K` that has constant inputs
+ * 
+ * @param block the block to check
+ * @return whether the provided basic block can be further processed
+ */
+bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> block) {
+    auto &statements = block.second->CGetStmtList();
+
+    for (auto currentStatement = statements.begin(); currentStatement != statements.end(); ++currentStatement) {
+        // only gimple assignments are considered
+        if (!IS_GIMPLE_ASSIGN(currentStatement)) {
+            continue;
+        }
+
+        auto *gimpleAssign = GetPointer<gimple_assign>(GET_NODE(*currentStatement));
+        enum kind code = GET_NODE(gimpleAssign->op1)->get_kind();
+
+        if (code == lut_expr_K) { // check if it has constant inputs
+            auto *lut = GetPointer<lut_expr>(gimpleAssign->op1);
+            
+            // cycle for each inputs (op0 is the constant)
+            for (auto node : {lut->op1, lut->op2, lut->op3, lut->op4, lut->op5, lut->op6, lut->op7, lut->op8}) {
+                // if the node is null then there are no more inputs
+                if (!node) {
+                    break; // TODO: check if the assumption is always true, otherwise change `break` into `continue`
+                }
+
+                // if the node can be converted into an `integer_cst` then the lut as constant inputs
+                if (GetPointer<integer_cst>(GET_NODE(node))) {
+                    return true;
+                }
+            }
+        } else { // check if it has lut-expressible operations
+            // checks if the operation code can be converted into a lut
+            // and if it is a binary expression with the correct size of operators
+            return std::find(lutExpressibleOperations.begin(), lutExpressibleOperations.end(), code) != lutExpressibleOperations.end() &&
+                GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)) &&
+                CHECK_BIN_EXPR_SIZE(GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)));
+        }
+    }
+
+    return false;
+}
+
+/**
  * Checks if the provided `gimple_assign` is a primary output of lut network.
  * 
  * @param gimpleAssign the `gimple_assign` to check
@@ -248,7 +308,7 @@ bool lut_transformation::CheckIfPO(gimple_assign *gimpleAssign) {
     auto ssa0 = GetPointer<ssa_name>(op0);
     THROW_ASSERT(ssa0, "unexpected condition");
     const auto usedIn = ssa0->CGetUseStmts();
-
+    
     for (auto node : usedIn) {
        auto *childGimpleNode = GetPointer<gimple_node>(GET_NODE(node.first));
        THROW_ASSERT(childGimpleNode, "unexpected condition");
@@ -276,7 +336,7 @@ bool lut_transformation::CheckIfPO(gimple_assign *gimpleAssign) {
 }
 
 static
-klut_network_fn GetNodeCreationFunction(enum kind code) {
+aig_network_fn GetNodeCreationFunction(enum kind code) {
     switch (code) {
         case bit_and_expr_K:
         case truth_and_expr_K:
@@ -355,28 +415,25 @@ std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_network &
         luts.push_back(lut_node);
     });
 
-
     return luts;
 }
 
-}
-
 static
-mockturtle::klut_network SimplifyLutNetwork(const klut_network_ext &klut_e, unsigned max_lut_size) {
-    auto cleanedUp = cleanup_dangling(klut_e);
-    mockturtle::mapping_view<mockturtle::klut_network, true> mapped_klut{cleanedUp};
-
+mockturtle::klut_network ConvertToLutNetwork(const aig_network_ext &aig, unsigned max_lut_size) {
+    auto cleanedUp = cleanup_dangling(aig);
+    mockturtle::mapping_view<mockturtle::aig_network, true> mapped_aig{cleanedUp};
+    
     mockturtle::lut_mapping_params ps;
-    ps.cut_enumeration_ps.cut_size = this->max_lut_size;
-    mockturtle::lut_mapping<mockturtle::mapping_view<mockturtle::klut_network, true>, true>(mapped_klut, ps);
-    return *mockturtle::collapse_mapped_network<mockturtle::klut_network>(mapped_klut);
+    ps.cut_enumeration_ps.cut_size = max_lut_size;
+    mockturtle::lut_mapping<mockturtle::mapping_view<mockturtle::aig_network, true>, true>(mapped_aig, ps);
+    return *mockturtle::collapse_mapped_network<mockturtle::klut_network>(mapped_aig);
 }
 
 bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> block) {
     klut_network_ext klut_e;
     auto BB_index = block.first;
 
-    std::map<tree_nodeRef, mockturtle::klut_network::signal> nodeRefToSignal;
+    std::map<tree_nodeRef, mockturtle::aig_network::signal> nodeRefToSignal;
 
     std::vector<tree_nodeRef> pis;
     std::vector<tree_nodeRef> pos;
@@ -414,20 +471,18 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 #ifndef NDEBUG
         if(!AppM->ApplyNewTransformation()) {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Reached max cfg transformations");
-            statementsIterator++;
             continue;
         }
 #endif
 
         if (!IS_GIMPLE_ASSIGN(currentStatement)) {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not a gimple assign");
-            statementsIterator++;
             continue;
         }
 
         auto *gimpleAssign = GetPointer<gimple_assign>(GET_NODE(*currentStatement));
         enum kind code1 = GET_NODE(gimpleAssign->op1)->get_kind();
-
+        
         if (code1 == lut_expr_K) {
             auto *le = GetPointer<lut_expr>(GET_NODE(gimpleAssign->op1));
 
@@ -474,15 +529,13 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
         // the operands must be Boolean
         if (!CHECK_BIN_EXPR_SIZE(binaryExpression)) {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not Boolean operands");
-            statementsIterator++;
             continue;
         }
 
-        klut_network_fn nodeCreateFn = GetNodeCreationFunction(code1);
+        aig_network_fn nodeCreateFn = GetNodeCreationFunction(code1);
 
         if (nodeCreateFn == nullptr) {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not supported expression");
-            statementsIterator++;
             continue;
         }
 
@@ -499,9 +552,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
            {
               auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op0));
               if(int_const->value == 0)
-                 op1 = klut_e.get_constant(false);
+                 op1 = aig.get_constant(false);
               else
-                 op1 = klut_e.get_constant(true);
+                 op1 = aig.get_constant(true);
            }
            else if(CheckIfPI(binaryExpression->op0, BB_index))
            {
@@ -521,9 +574,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
            {
               auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op1));
               if(int_const->value == 0)
-                 op2 = klut_e.get_constant(false);
+                 op2 = aig.get_constant(false);
               else
-                 op2 = klut_e.get_constant(true);
+                 op2 = aig.get_constant(true);
            }
            else if(CheckIfPI(binaryExpression->op1, BB_index))
            {
@@ -544,9 +597,13 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
         }
 
         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement ");
-        statementsIterator++;
         modified = true;
     }
+    if(modified)
+    {
+       mockturtle::klut_network klut = ConvertToLutNetwork(aig, this->max_lut_size);
+       mockturtle::write_bench(klut, std::cout);
+       std::vector<klut_network_node> luts = ParseKLutNetwork(klut);
 
     if (modified) {
        mockturtle::klut_network klut = SimplifyLutNetwork(klut_e, this->max_lut_size);
@@ -702,7 +759,9 @@ DesignFlowStep_Status lut_transformation::InternalExec()
     bool modified = false;
 
     for (std::pair<unsigned int, blocRef> block : sl->list_of_bloc) {
+        if (this->CheckIfProcessable(block)) {
         modified |= this->ProcessBasicBlock(block);
+    }
     }
 
     if (modified) {

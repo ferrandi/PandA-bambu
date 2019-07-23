@@ -104,10 +104,7 @@ private:
 
     bool ProcessBasicBlock(std::pair<unsigned int, blocRef> block);
 
-
-    tree_nodeRef CreateLutExpression(const mockturtle::klut_network &lut, const mockturtle::klut_network::node &node, const std::string &srcp_default);
-
-    mockturtle::klut_network ConvertToLutNetwork(const lut_transformation::aig_network_ext &aig);
+    bool CheckIfProcessable(std::pair<unsigned int, blocRef> block);
 
     /**
      * Create gimple assignment
