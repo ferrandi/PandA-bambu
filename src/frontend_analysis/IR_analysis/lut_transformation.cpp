@@ -132,6 +132,7 @@
 
 #define IS_GIMPLE_ASSIGN(it) (GET_NODE(*it)->get_kind() == gimple_assign_K)
 #define CHECK_BIN_EXPR_SIZE(binaryExpression) (static_cast<int>(tree_helper::Size(GET_NODE(binaryExpression->op0))) == 1 && static_cast<int>(tree_helper::Size(GET_NODE(binaryExpression->op1))) == 1)
+#define VECT_CONTAINS(v, x) (std::find(v.begin(), v.end(), x) != v.end())
 
 #pragma endregion
 
@@ -190,51 +191,52 @@ public:
         return this->create_xor(a, b);
     }
 
+    /**
+     * Creates a 'lut' operation from an `std::vector` of `mockturtle::klut_network::signal` with the associated constant.
+     * 
+     * @param s an `std::vector` of `mockturtle::klut_network::signal` containing the inputs of the lut
+     * @param f the constant associated to the lut
+     * 
+     * @return a `mockturtle::klut_network::signal` representing a lut between `s` with constant `f`
+     */
     signal create_lut(std::vector<signal> s, uint32_t f) {
         return this->_create_node(s, f);
     }
 };
 
+/**
+ * Helper structure that better represents a `mockturtle::klut_network`'s node.
+ */
 struct klut_network_node {
+    /// the index of the node
     uint64_t index;
-    uint64_t lut_constant;
-    std::vector<uint64_t> fan_in;
-    bool is_po;
-    uint64_t po_index;
-};
 
-    /**
- * Pointer that points to the function, of `aig_network_ext`, that represents a binary operation between two `mockturtle::klut_network::signal`
- * and returns a `mockturtle::klut_network::signal`.
-    }
-};
-
-struct klut_network_node {
-    uint64_t index;
+    /// the lut constant
     uint64_t lut_constant;
+
+    /// a `std::vector` containing the indexes of all inputs of the current node
     std::vector<uint64_t> fan_in;
+
+    /// whether the current node is a primary output
     bool is_po;
+
+    /// in case the current node is a primary output, holds the index of the primary output
     uint64_t po_index;
 };
 
 /**
-<<<<<<< HEAD
- * Pointer that points to the function, of `aig_network_ext`, that represents a binary operation between two `mockturtle::aig_network::signal`
- * and returns a `mockturtle::aig_network::signal`.
- */
-typedef mockturtle::aig_network::signal (aig_network_ext::*aig_network_fn)(const mockturtle::aig_network::signal &, const mockturtle::aig_network::signal &);
-=======
- * Pointer that points to the function, of `aig_network_ext`, that represents a binary operation between two `mockturtle::klut_network::signal`
+ * Pointer that points to a function of `klut_network_ext`, that represents a binary operation between two `mockturtle::klut_network::signal`s
  * and returns a `mockturtle::klut_network::signal`.
  */
 typedef mockturtle::klut_network::signal (klut_network_ext::*klut_network_fn)(const mockturtle::klut_network::signal, const mockturtle::klut_network::signal);
->>>>>>> 657154f7... add support for lut_expr_K
 
 #pragma endregion
 
-   return tree_man->CreateGimpleAssign(type, tree_nodeRef(), tree_nodeRef(), op, bb_index, srcp_default);
-}
-
+/**
+ * Checks whether the provided node is a primary input of lut network.
+ * 
+ * @param in a `tree_nodeRef` 
+ */
 bool lut_transformation::CheckIfPI(tree_nodeRef in, unsigned int BB_index)
 {
    auto ssa = GetPointer<ssa_name>(GET_NODE(in));
@@ -248,7 +250,7 @@ bool lut_transformation::CheckIfPI(tree_nodeRef in, unsigned int BB_index)
       return true;
    enum kind code = GET_NODE(gaDef->op1)->get_kind();
 
-   if (std::find(lutExpressibleOperations.begin(), lutExpressibleOperations.end(), code) == lutExpressibleOperations.end() || (GetPointer<binary_expr>(GET_NODE(gaDef->op1)) && !CHECK_BIN_EXPR_SIZE(GetPointer<binary_expr>(GET_NODE(gaDef->op1))))) {
+   if (!VECT_CONTAINS(lutExpressibleOperations, code) || (GetPointer<binary_expr>(GET_NODE(gaDef->op1)) && !CHECK_BIN_EXPR_SIZE(GetPointer<binary_expr>(GET_NODE(gaDef->op1))))) {
       return true;
    }
    return false;
@@ -292,7 +294,7 @@ bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> blo
         } else { // check if it has lut-expressible operations
             // checks if the operation code can be converted into a lut
             // and if it is a binary expression with the correct size of operators
-            return std::find(lutExpressibleOperations.begin(), lutExpressibleOperations.end(), code) != lutExpressibleOperations.end() &&
+            return VECT_CONTAINS(lutExpressibleOperations, code) &&
                 GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)) &&
                 CHECK_BIN_EXPR_SIZE(GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)));
         }
@@ -333,7 +335,7 @@ bool lut_transformation::CheckIfPO(gimple_assign *gimpleAssign) {
             enum kind code = GET_NODE(childGimpleAssign->op1)->get_kind();
 
             // it is a `PO` if code is not contained into `lutExpressibleOperations`
-            if (std::find(lutExpressibleOperations.begin(), lutExpressibleOperations.end(), code) == lutExpressibleOperations.end() || (GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)) && !CHECK_BIN_EXPR_SIZE(GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1))))) {
+            if (!VECT_CONTAINS(lutExpressibleOperations, code) || (GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)) && !CHECK_BIN_EXPR_SIZE(GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1))))) {
                 return true;
             }
         }
@@ -358,8 +360,6 @@ klut_network_fn GetNodeCreationFunction(enum kind code) {
             return &klut_network_ext::create_eq;
         case ge_expr_K:
             return &klut_network_ext::create_ge;
-        case lut_expr_K:
-            return nullptr; // TODO: capire come sono descritte e come inserirle dentro a mockturtle
         case gt_expr_K:
             return &klut_network_ext::create_gt;
         case le_expr_K:
@@ -432,6 +432,12 @@ mockturtle::klut_network SimplifyLutNetwork(const klut_network_ext &klut_e, unsi
 
     mockturtle::lut_mapping_params ps;
     ps.cut_enumeration_ps.cut_size = max_lut_size;
+
+#ifndef NDEBUG
+    ps.verbose = true;
+    ps.cut_enumeration_ps.very_verbose = true;
+#endif
+
     mockturtle::lut_mapping<mockturtle::mapping_view<mockturtle::klut_network, true>, true>(mapped_klut, ps);
     return *mockturtle::collapse_mapped_network<mockturtle::klut_network>(mapped_klut);
 }
@@ -598,7 +604,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
         nodeRefToSignal[gimpleAssign->op0] = res;
 
         if (this->CheckIfPO(gimpleAssign)) {
-           std::cerr<<"is PO\n";
+            std::cerr<<"is PO\n";
             klut_e.create_po(res);
             pos.push_back(*currentStatement);
         }
