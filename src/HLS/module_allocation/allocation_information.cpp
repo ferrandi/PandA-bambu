@@ -1213,8 +1213,6 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       THROW_UNREACHABLE("not supported type: " + STR(type_index) + " - " + TreeM->get_tree_node_const(type_index)->ToString());
    }
 
-   if(current_op != "lut_expr")
-   {
       const auto max_size_in_true = std::max(max_size_in, *std::max_element(info->input_prec.begin(), info->input_prec.end()));
       for(const auto n_elements : info->base128_input_nelem)
       {
@@ -1228,20 +1226,6 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          info->is_single_bool_test_cond_expr = true;
       // if(tree_helper::is_simple_pointer_plus_test(TreeM, g->CGetOpNodeInfo(node)->GetNodeId())) info->is_simple_pointer_plus_expr = true;
       max_size_in = resize_to_1_8_16_32_64_128_256_512(max_size_in_true);
-   }
-   else
-   {
-      min_n_elements = *(info->base128_input_nelem.begin());
-      max_size_in = *(info->input_prec.begin());
-#if HAVE_PRAGMA_BUILT
-      if(max_size_in > HLS_T->get_target_device()->get_parameter<unsigned int>("max_lut_size"))
-      {
-         /// Vectorization breaks bit value so that size of lut input is too conservative
-         THROW_ASSERT(parameters->getOption<int>(OPT_gcc_openmp_simd), "Lut input wrong size");
-         max_size_in = HLS_T->get_target_device()->get_parameter<unsigned int>("max_lut_size");
-      }
-#endif
-   }
    /// DSPs based components have to be managed in a different way
    if(current_op == "widen_mult_expr" || current_op == "mult_expr")
    {
