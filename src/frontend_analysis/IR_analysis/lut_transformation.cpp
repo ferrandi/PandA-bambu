@@ -294,9 +294,9 @@ bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> blo
         } else { // check if it has lut-expressible operations
             // checks if the operation code can be converted into a lut
             // and if it is a binary expression with the correct size of operators
-            return VECT_CONTAINS(lutExpressibleOperations, code) &&
-                GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)) &&
-                CHECK_BIN_EXPR_SIZE(GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)));
+            if (VECT_CONTAINS(lutExpressibleOperations, code) && GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)) && CHECK_BIN_EXPR_SIZE(GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)))) {
+                return true;
+            }
         }
     }
 
