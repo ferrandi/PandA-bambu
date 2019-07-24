@@ -162,6 +162,9 @@ void constrainSSA(ssa_name * op_ssa, tree_managerRef TM)
          op_ssa->max =  TM->CreateUniqueIntegerCst((1ll<<(nbit-1))-1, op0_type_id);
       else
          op_ssa->max =  TM->CreateUniqueIntegerCst((1ll<<nbit)-1, op0_type_id);
+      //std::cerr<<"var " << op_ssa->ToString()<<" ";
+      //std::cerr << "min " <<op_ssa->min->ToString() << " max " <<op_ssa->max->ToString()<<"\n";
+      //std::cerr << "nbit "<< nbit << " nbitType " << nbitType <<"\n";
    }
 }
 
@@ -806,9 +809,9 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                      /// set the bit_values to the ssa var
                      auto* lshift_ssa = GetPointer<ssa_name>(GET_NODE(lshift_ga_var));
                      lshift_ssa->bit_values = ssa->bit_values.substr(0, ssa->bit_values.size() - shift_const);
-                     constrainSSA(lshift_ssa, TM);
                      while(lshift_ssa->bit_values.size() < ssa->bit_values.size())
                         lshift_ssa->bit_values.push_back('0');
+                     constrainSSA(lshift_ssa, TM);
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Var_uid: " + AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->PrintVariable(GET_INDEX_NODE(lshift_ga_var)) + " bitstring: " + STR(lshift_ssa->bit_values));
 
                      bool do_final_or = false;
