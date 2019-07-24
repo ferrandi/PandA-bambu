@@ -132,6 +132,7 @@
 
 #define IS_GIMPLE_ASSIGN(it) (GET_NODE(*it)->get_kind() == gimple_assign_K)
 #define CHECK_BIN_EXPR_SIZE(binaryExpression) (static_cast<int>(tree_helper::Size(GET_NODE(binaryExpression->op0))) == 1 && static_cast<int>(tree_helper::Size(GET_NODE(binaryExpression->op1))) == 1)
+#define CHECK_COND_EXPR_SIZE(ce) (static_cast<int>(tree_helper::Size(GET_NODE(ce->op1))) == 1 && static_cast<int>(tree_helper::Size(GET_NODE(ce->op2))) == 1)
 #define VECT_CONTAINS(v, x) (std::find(v.begin(), v.end(), x) != v.end())
 
 #pragma endregion
@@ -250,7 +251,7 @@ bool lut_transformation::CheckIfPI(tree_nodeRef in, unsigned int BB_index)
       return true;
    enum kind code = GET_NODE(gaDef->op1)->get_kind();
 
-   if (!VECT_CONTAINS(lutExpressibleOperations, code) || (GetPointer<binary_expr>(GET_NODE(gaDef->op1)) && !CHECK_BIN_EXPR_SIZE(GetPointer<binary_expr>(GET_NODE(gaDef->op1))))) {
+   if (!VECT_CONTAINS(lutExpressibleOperations, code) || (GetPointer<cond_expr>(GET_NODE(gaDef->op1)) && !CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(GET_NODE(gaDef->op1)))) || (GetPointer<binary_expr>(GET_NODE(gaDef->op1)) && !CHECK_BIN_EXPR_SIZE(GetPointer<binary_expr>(GET_NODE(gaDef->op1))))) {
       return true;
    }
    return false;
@@ -291,6 +292,9 @@ bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> blo
                     return true;
                 }
             }
+        } else if(code == cond_expr_K) {
+            if(CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(GET_NODE(gimpleAssign->op1))))
+                return true;
         } else { // check if it has lut-expressible operations
             // checks if the operation code can be converted into a lut
             // and if it is a binary expression with the correct size of operators
@@ -335,7 +339,7 @@ bool lut_transformation::CheckIfPO(gimple_assign *gimpleAssign) {
             enum kind code = GET_NODE(childGimpleAssign->op1)->get_kind();
 
             // it is a `PO` if code is not contained into `lutExpressibleOperations`
-            if (!VECT_CONTAINS(lutExpressibleOperations, code) || (GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)) && !CHECK_BIN_EXPR_SIZE(GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1))))) {
+            if (!VECT_CONTAINS(lutExpressibleOperations, code) || (GetPointer<cond_expr>(GET_NODE(gimpleAssign->op1)) && !CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(GET_NODE(gimpleAssign->op1)))) || (GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)) && !CHECK_BIN_EXPR_SIZE(GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1))))) {
                 return true;
             }
         }
@@ -528,9 +532,62 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                 }
             }
 
-            klut_e.create_lut(ops, GetPointer<integer_cst>(GET_NODE(le->op0))->value);
+            auto res = klut_e.create_lut(ops, GetPointer<integer_cst>(GET_NODE(le->op0))->value);
+            nodeRefToSignal[GET_INDEX_NODE(gimpleAssign->op0)] = res;
+
+            if (this->CheckIfPO(gimpleAssign)) {
+                std::cerr<<"is PO\n";
+                klut_e.create_po(res);
+                pos.push_back(*currentStatement);
+            }
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"<--LUT found");
+
+            modified = true;
+            continue;
+        }
+        if (code1 == cond_expr_K) {
+            auto *ce = GetPointer<cond_expr>(GET_NODE(gimpleAssign->op1));
+            auto is_size_one = CHECK_COND_EXPR_SIZE(ce);
+            if(!is_size_one)
+                continue;
+
+            std::vector<mockturtle::klut_network::signal> ops;
+            for (auto op : {ce->op0, ce->op1, ce->op2}) {
+
+                // if the first operand has already been processed then the previous signal is used
+                if (nodeRefToSignal.find(GET_INDEX_NODE(op)) != nodeRefToSignal.end()) {
+                    ops.push_back(nodeRefToSignal[GET_INDEX_NODE(op)]);
+                }
+                else { // otherwise the operand is a primary input
+                    mockturtle::klut_network::signal kop;
+
+                    if (GET_NODE(op)->get_kind() == integer_cst_K) {
+                        auto *int_const = GetPointer<integer_cst>(GET_NODE(op));
+                        kop = klut_e.get_constant(int_const->value != 0);
+                    }
+                    else if (CheckIfPI(op, BB_index)) {
+                        kop = klut_e.create_pi();
+                        pis.push_back(op);
+                    }
+                    else
+                        THROW_ERROR("unexpected condition");
+
+                    nodeRefToSignal[GET_INDEX_NODE(op)] = kop;
+                    ops.push_back(kop);
+                }
+            }
+
+            auto res = klut_e.create_ite(ops.at(0), ops.at(1), ops.at(2));
+            nodeRefToSignal[GET_INDEX_NODE(gimpleAssign->op0)] = res;
+
+            if (this->CheckIfPO(gimpleAssign)) {
+                std::cerr<<"is PO\n";
+                klut_e.create_po(res);
+                pos.push_back(*currentStatement);
+            }
+
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"<--cond_expr found");
 
             modified = true;
             continue;
@@ -655,7 +712,6 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
           auto p_index = 1u;
           for(auto in : lut.fan_in)
           {
-             std::cerr << " in " << in;
              tree_nodeRef operand;
              if(klut.is_pi(in))
                 operand = pis.at(in);
@@ -709,6 +765,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
              tree_nodeRef new_op1 = tree_man->create_lut_expr(boolType, lut_constant_node, op1, op2, op3, op4, op5, op6, op7, op8, srcp_default);
              tree_nodeRef ssa_vd = tree_man->create_ssa_name(tree_nodeRef(), boolType);
              prev_stmts_to_add.push_back(tree_man->create_gimple_modify_stmt(ssa_vd, new_op1, srcp_default, BB_index));
+             internal_nets[lut.index] = ssa_vd;
           }
        }
        THROW_ASSERT(prev_stmts_to_add.empty(), "unexpected condition");

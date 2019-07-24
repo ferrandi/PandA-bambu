@@ -89,7 +89,7 @@ private:
 #if HAVE_STDCXX_17
 
     /// The list of all operation that can be converted to a lut.
-    const std::vector<enum kind> lutExpressibleOperations = {bit_and_expr_K, truth_and_expr_K, bit_ior_expr_K, truth_or_expr_K, bit_xor_expr_K, truth_xor_expr_K, eq_expr_K, ge_expr_K, lut_expr_K, gt_expr_K, le_expr_K, lt_expr_K, ne_expr_K};
+    const std::vector<enum kind> lutExpressibleOperations = {bit_and_expr_K, truth_and_expr_K, bit_ior_expr_K, truth_or_expr_K, bit_xor_expr_K, truth_xor_expr_K, eq_expr_K, ge_expr_K, lut_expr_K, cond_expr_K, gt_expr_K, le_expr_K, lt_expr_K, ne_expr_K};
 
     /**
      * Checks if the provided `gimple_assign` is a primary output of lut network.
