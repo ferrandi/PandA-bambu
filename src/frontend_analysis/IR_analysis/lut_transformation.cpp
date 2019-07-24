@@ -574,6 +574,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
               op1 = klut_e.create_pi();
               pis.push_back(binaryExpression->op0);
            }
+           else
+              THROW_ERROR("unexpected condition");
 
             nodeRefToSignal[binaryExpression->op0] = op1;
         }
@@ -596,6 +598,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
               op2 = klut_e.create_pi();
               pis.push_back(binaryExpression->op1);
            }
+           else
+              THROW_ERROR("unexpected condition");
 
             nodeRefToSignal[binaryExpression->op1] = op2;
         }
