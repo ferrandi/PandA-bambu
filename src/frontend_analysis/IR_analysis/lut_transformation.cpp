@@ -277,7 +277,7 @@ bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> blo
         enum kind code = GET_NODE(gimpleAssign->op1)->get_kind();
 
         if (code == lut_expr_K) { // check if it has constant inputs
-            auto *lut = GetPointer<lut_expr>(gimpleAssign->op1);
+            auto *lut = GetPointer<lut_expr>(GET_NODE(gimpleAssign->op1));
             
             // cycle for each inputs (op0 is the constant)
             for (auto node : {lut->op1, lut->op2, lut->op3, lut->op4, lut->op5, lut->op6, lut->op7, lut->op8}) {
@@ -774,7 +774,6 @@ DesignFlowStep_Status lut_transformation::InternalExec()
     THROW_ASSERT(sl, "Body is not a statement list");
 
     bool modified = false;
-
     for (std::pair<unsigned int, blocRef> block : sl->list_of_bloc) {
         if (this->CheckIfProcessable(block)) {
             modified |= this->ProcessBasicBlock(block);
