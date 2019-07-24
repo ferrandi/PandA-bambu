@@ -532,6 +532,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"<--LUT found");
 
+            modified = true;
             continue;
         }
 
