@@ -520,6 +520,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                         kop = klut_e.create_pi();
                         pis.push_back(op);
                     }
+                    else
+                        THROW_ERROR("unexpected condition");
 
                     nodeRefToSignal[op] = kop;
                     ops.push_back(kop);
