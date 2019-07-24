@@ -446,7 +446,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
     klut_network_ext klut_e;
     auto BB_index = block.first;
 
-    std::map<tree_nodeRef, mockturtle::klut_network::signal> nodeRefToSignal;
+    std::map<unsigned int, mockturtle::klut_network::signal> nodeRefToSignal;
 
     std::vector<tree_nodeRef> pis;
     std::vector<tree_nodeRef> pos;
@@ -506,8 +506,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                 }
 
                 // if the first operand has already been processed then the previous signal is used
-                if (nodeRefToSignal.find(op) != nodeRefToSignal.end()) {
-                    ops.push_back(nodeRefToSignal[op]);
+                if (nodeRefToSignal.find(GET_INDEX_NODE(op)) != nodeRefToSignal.end()) {
+                    ops.push_back(nodeRefToSignal[GET_INDEX_NODE(op)]);
                 }
                 else { // otherwise the operand is a primary input
                     mockturtle::klut_network::signal kop;
@@ -523,7 +523,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                     else
                         THROW_ERROR("unexpected condition");
 
-                    nodeRefToSignal[op] = kop;
+                    nodeRefToSignal[GET_INDEX_NODE(op)] = kop;
                     ops.push_back(kop);
                 }
             }
@@ -560,8 +560,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
         mockturtle::klut_network::signal op2;
 
         // if the first operand has already been processed then the previous signal is used
-        if (nodeRefToSignal.find(binaryExpression->op0) != nodeRefToSignal.end()) {
-            op1 = nodeRefToSignal[binaryExpression->op0];
+        if (nodeRefToSignal.find(GET_INDEX_NODE(binaryExpression->op0)) != nodeRefToSignal.end()) {
+            op1 = nodeRefToSignal[GET_INDEX_NODE(binaryExpression->op0)];
         }
         else { // otherwise the operand is a primary input
            if(GET_NODE(binaryExpression->op0)->get_kind() == integer_cst_K)
@@ -580,12 +580,12 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
            else
               THROW_ERROR("unexpected condition");
 
-            nodeRefToSignal[binaryExpression->op0] = op1;
+            nodeRefToSignal[GET_INDEX_NODE(binaryExpression->op0)] = op1;
         }
 
         // if the second operand has already been processed then the previous signal is used
-        if (nodeRefToSignal.find(binaryExpression->op1) != nodeRefToSignal.end()) {
-            op2 = nodeRefToSignal[binaryExpression->op1];
+        if (nodeRefToSignal.find(GET_INDEX_NODE(binaryExpression->op1)) != nodeRefToSignal.end()) {
+            op2 = nodeRefToSignal[GET_INDEX_NODE(binaryExpression->op1)];
         }
         else { // otherwise the operand is a primary input
            if(GET_NODE(binaryExpression->op1)->get_kind() == integer_cst_K)
@@ -604,11 +604,11 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
            else
               THROW_ERROR("unexpected condition");
 
-            nodeRefToSignal[binaryExpression->op1] = op2;
+            nodeRefToSignal[GET_INDEX_NODE(binaryExpression->op1)] = op2;
         }
 
         res = (klut_e.*nodeCreateFn)(op1, op2);
-        nodeRefToSignal[gimpleAssign->op0] = res;
+        nodeRefToSignal[GET_INDEX_NODE(gimpleAssign->op0)] = res;
 
         if (this->CheckIfPO(gimpleAssign)) {
             std::cerr<<"is PO\n";
