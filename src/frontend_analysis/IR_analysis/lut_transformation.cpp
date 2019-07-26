@@ -324,6 +324,7 @@ bool lut_transformation::CheckIfPO(gimple_assign *gimpleAssign) {
 
     for (auto node : usedIn) {
        auto *childGimpleNode = GetPointer<gimple_node>(GET_NODE(node.first));
+       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing " + childGimpleNode->ToString());
        THROW_ASSERT(childGimpleNode, "unexpected condition");
 
         // the current operation is a primary output if it is used in
@@ -668,7 +669,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
         nodeRefToSignal[GET_INDEX_NODE(gimpleAssign->op0)] = res;
 
         if (this->CheckIfPO(gimpleAssign)) {
-            std::cerr<<"is PO\n";
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is PO");
             klut_e.create_po(res);
             pos.push_back(*currentStatement);
         }
