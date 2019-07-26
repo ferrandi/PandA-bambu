@@ -1180,7 +1180,19 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                         break;
 
                      case '2':
-                        indented_output_stream->Append(port_name + " = 1'b1" + "; // X value\n");
+                        indented_output_stream->Append(port_name + " = 1'bX" + "; // X value\n");
+                        break;
+
+                     case '3':
+                        indented_output_stream->Append(port_name + " = 1'b1" + "; // reg mux X value being XReg\n");
+                        break;
+
+                     case '4':
+                        indented_output_stream->Append(port_name + " = 1'b1" + "; // reg mux X value being ROReg\n");
+                        break;
+
+                     case '5':
+                        indented_output_stream->Append(port_name + " = 1'b1" + "; // fu mux X value\n");
                         break;
 
                      default:
@@ -1305,9 +1317,9 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                continue;
             if(mod->get_out_port(ind)->get_id() == NEXT_STATE_PORT_NAME)
                continue;
+            port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(ind)->get_id());
             if(transition_outputs[ind] != '-')
             {
-               port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(ind)->get_id());
                if(single_proc || output_index == ind)
                   indented_output_stream->Append(port_name + " = 1'b" + transition_outputs[ind] + ";\n");
             }
@@ -1324,9 +1336,19 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
       if(reset_state == present_state && (single_proc || output_index == mod->get_out_port_size()))
       {
          indented_output_stream->Append("\nelse");
+         indented_output_stream->Append("\nbegin");
          indented_output_stream->Append(soc);
+         for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
+         {
+            if(boost::starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") || boost::starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
+            {
+                port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
+                indented_output_stream->Append(port_name + " = 1'b1; // Required only in S_0 as X value\n");
+            }
+         }
          indented_output_stream->Append("_next_state = " + present_state + ";");
          indented_output_stream->Append(scc);
+         indented_output_stream->Append("end");
       }
       indented_output_stream->Append(scc);
 
