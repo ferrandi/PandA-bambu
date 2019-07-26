@@ -153,7 +153,7 @@ public:
      * @return a `mockturtle::klut_network::signal` representing the operation `ge` between `a` and `b`
      */
     signal create_ge(signal const a, signal const b) {
-        return !this->create_lt(a, b);
+        return this->create_not(this->create_lt(a, b));
     }
 
     /**
@@ -165,7 +165,7 @@ public:
      * @return a `mockturtle::klut_network::signal` representing the operation `gt` between `a` and `b`
      */
     signal create_gt(signal const a, signal const b) {
-        return !this->create_le(a, b);
+        return this->create_not(this->create_le(a, b));
     }
 
     /**
@@ -177,7 +177,7 @@ public:
      * @return a `mockturtle::klut_network::signal` representing the operation `eq` between `a` and `b`
      */
     signal create_eq(signal const a, signal const b) {
-        return !this->create_xor(a, b);
+        return this->create_not(this->create_xor(a, b));
     }
 
     /**
@@ -223,6 +223,9 @@ struct klut_network_node {
 
     /// in case the current node is a primary output, holds the index of the primary output
     uint64_t po_index;
+
+    /// true in case the node is a constant value
+    bool is_constant;
 };
 
 /**
@@ -269,6 +272,7 @@ bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> blo
     auto &statements = block.second->CGetStmtList();
 
     for (auto currentStatement = statements.begin(); currentStatement != statements.end(); ++currentStatement) {
+        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing CheckIfProcessable" + (*currentStatement)->ToString());
         // only gimple assignments are considered
         if (!IS_GIMPLE_ASSIGN(currentStatement)) {
             continue;
@@ -292,9 +296,16 @@ bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> blo
                     return true;
                 }
             }
-        } else if(code == cond_expr_K) {
-            if(CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(GET_NODE(gimpleAssign->op1))))
+        } else if(code == truth_not_expr_K) {
+            if(CHECK_NOT_EXPR_SIZE(GetPointer<truth_not_expr>(GET_NODE(gimpleAssign->op1)))) {
+                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---CheckIfProcessable: not expr with Boolean operand returns true");
                 return true;
+            }
+        } else if(code == cond_expr_K) {
+            if(CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(GET_NODE(gimpleAssign->op1)))) {
+                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---CheckIfProcessable: cond expr with Boolean operand returns true");
+                return true;
+            }
         } else { // check if it has lut-expressible operations
             // checks if the operation code can be converted into a lut
             // and if it is a binary expression with the correct size of operators
@@ -303,6 +314,7 @@ bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> blo
             }
         }
     }
+    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---CheckIfProcessable: false");
 
     return false;
 }
@@ -324,7 +336,7 @@ bool lut_transformation::CheckIfPO(gimple_assign *gimpleAssign) {
 
     for (auto node : usedIn) {
        auto *childGimpleNode = GetPointer<gimple_node>(GET_NODE(node.first));
-       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing " + childGimpleNode->ToString());
+       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing use " + childGimpleNode->ToString());
        THROW_ASSERT(childGimpleNode, "unexpected condition");
 
         // the current operation is a primary output if it is used in
@@ -337,10 +349,10 @@ bool lut_transformation::CheckIfPO(gimple_assign *gimpleAssign) {
            auto *childGimpleAssign = GetPointer<gimple_assign>(GET_NODE(node.first));
            if(!childGimpleAssign)
               return true;
-            enum kind code = GET_NODE(childGimpleAssign->op1)->get_kind();
+           enum kind code = GET_NODE(childGimpleAssign->op1)->get_kind();
 
             // it is a `PO` if code is not contained into `lutExpressibleOperations`
-            if (!VECT_CONTAINS(lutExpressibleOperations, code) || (GetPointer<cond_expr>(GET_NODE(gimpleAssign->op1)) && !CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(GET_NODE(gimpleAssign->op1)))) || (GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)) && !CHECK_BIN_EXPR_SIZE(GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1))))) {
+            if (!VECT_CONTAINS(lutExpressibleOperations, code) || (GetPointer<truth_not_expr>(GET_NODE(childGimpleAssign->op1)) && !CHECK_NOT_EXPR_SIZE(GetPointer<truth_not_expr>(GET_NODE(childGimpleAssign->op1)))) || (GetPointer<cond_expr>(GET_NODE(childGimpleAssign->op1)) && !CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(GET_NODE(childGimpleAssign->op1)))) || (GetPointer<binary_expr>(GET_NODE(childGimpleAssign->op1)) && !CHECK_BIN_EXPR_SIZE(GetPointer<binary_expr>(GET_NODE(childGimpleAssign->op1))))) {
                 return true;
             }
         }
@@ -421,7 +433,26 @@ std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_network &
             ConvertHexToInt64<uint64_t>(kitty::to_hex(func)),
             fanIns,
             po_set.find(node) != po_set.end(),
-            po_set.find(node) != po_set.end() ? po_set.find(node)->second : 0
+            po_set.find(node) != po_set.end() ? po_set.find(node)->second : 0,
+            false
+        };
+
+        luts.push_back(lut_node);
+    });
+
+    ntk_topo.foreach_po([&](const auto &s) {
+        if (!ntk_topo.is_constant(ntk_topo.get_node(s))) {
+            return; // continue
+        }
+
+        std::vector<uint64_t> fanIns;
+        klut_network_node lut_node = (klut_network_node) {
+            s,
+            static_cast<uint64_t>(ntk_topo.constant_value( ntk_topo.get_node( s ) ) ^ ntk_topo.is_complemented( s )),
+            fanIns,
+            po_set.find(s) != po_set.end(),
+            po_set.find(s) != po_set.end() ? po_set.find(s)->second : 0,
+            true
         };
 
         luts.push_back(lut_node);
@@ -694,8 +725,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
           std::cerr << "index: " << lut.index <<"\n";
           std::cerr << " func: " << lut.lut_constant << "\n";
           for(auto in : lut.fan_in)
-             std::cerr << " in " << in;
-          std::cerr << "\n";
+             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---   in " + STR(in));
+          
           if(lut.is_po)
           {
              std::cerr << "Is PO\n";
@@ -750,7 +781,14 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
              auto ga_op0 = GET_NODE(gimpleAssign->op0);
              auto *ssa_ga_op0 = GetPointer<ssa_name>(ga_op0);
              THROW_ASSERT(ssa_ga_op0, "unexpected condition");
-             tree_nodeRef new_op1 = tree_man->create_lut_expr(ssa_ga_op0->type, lut_constant_node, op1, op2, op3, op4, op5, op6, op7, op8, srcp_default);
+             tree_nodeRef new_op1;
+             if(lut.is_constant)
+             {
+                unsigned int integer_cst3_id = TM->new_tree_node_id();
+                new_op1 = tree_man->CreateIntegerCst(ssa_ga_op0->type, lut.lut_constant, integer_cst3_id);
+             }
+             else
+                new_op1 = tree_man->create_lut_expr(ssa_ga_op0->type, lut_constant_node, op1, op2, op3, op4, op5, op6, op7, op8, srcp_default);
 
              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing " + STR(gimpleAssign->op1) + " with " + STR(new_op1));
              TM->ReplaceTreeNode(pos.at(lut.po_index), gimpleAssign->op1, new_op1);
