@@ -202,7 +202,7 @@ public:
      */
     signal create_lut(std::vector<signal> s, uint32_t f) {
         return this->_create_node(s, f);
-    }
+        }
 };
 
 /**
@@ -546,7 +546,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                     ops.push_back(nodeRefToSignal[GET_INDEX_NODE(op)]);
                 }
                 else { // otherwise the operand is a primary input
-                    mockturtle::klut_network::signal kop;
+                    mockturtle::klut_network::signal kop=0;
 
                     if (GET_NODE(op)->get_kind() == integer_cst_K) {
                         auto *int_const = GetPointer<integer_cst>(GET_NODE(op));
@@ -578,6 +578,60 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             modified = true;
             continue;
         }
+        if (code1 == truth_not_expr_K) {
+            auto *ne = GetPointer<truth_not_expr>(GET_NODE(gimpleAssign->op1));
+            auto is_size_one = CHECK_NOT_EXPR_SIZE(ne);
+            if(!is_size_one) {
+                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not a Boolean not expr");
+                continue;
+            }
+            std::vector<mockturtle::klut_network::signal> ops;
+            for (auto op : {ne->op}) {
+
+                // if the first operand has already been processed then the previous signal is used
+                if (nodeRefToSignal.find(GET_INDEX_NODE(op)) != nodeRefToSignal.end()) {
+                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI "+ GET_NODE(op)->ToString());
+                    ops.push_back(nodeRefToSignal[GET_INDEX_NODE(op)]);
+                }
+                else { // otherwise the operand is a primary input
+                    mockturtle::klut_network::signal kop=0;
+
+                    if (GET_NODE(op)->get_kind() == integer_cst_K) {
+                        auto *int_const = GetPointer<integer_cst>(GET_NODE(op));
+                        kop = klut_e.get_constant(int_const->value != 0);
+                    }
+                    else if (CheckIfPI(op, BB_index)) {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + GET_NODE(op)->ToString());
+                        kop = klut_e.create_pi();
+                        pis.push_back(op);
+                    }
+                    else
+                        THROW_ERROR("unexpected condition");
+
+                    nodeRefToSignal[GET_INDEX_NODE(op)] = kop;
+                    ops.push_back(kop);
+                }
+            }
+
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---translating in klut");
+            auto res = klut_e.create_not(ops.at(0));
+            nodeRefToSignal[GET_INDEX_NODE(gimpleAssign->op0)] = res;
+
+            if (this->CheckIfPO(gimpleAssign)) {
+                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is PO");
+                klut_e.create_po(res);
+                pos.push_back(*currentStatement);
+            }
+
+            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            //mockturtle::write_bench(klut_e, std::cout);
+            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"<--cond_expr found");
+
+            modified = true;
+            continue;
+        }
+
         if (code1 == cond_expr_K) {
             auto *ce = GetPointer<cond_expr>(GET_NODE(gimpleAssign->op1));
             auto is_size_one = CHECK_COND_EXPR_SIZE(ce);
@@ -592,7 +646,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                     ops.push_back(nodeRefToSignal[GET_INDEX_NODE(op)]);
                 }
                 else { // otherwise the operand is a primary input
-                    mockturtle::klut_network::signal kop;
+                    mockturtle::klut_network::signal kop=0;
 
                     if (GET_NODE(op)->get_kind() == integer_cst_K) {
                         auto *int_const = GetPointer<integer_cst>(GET_NODE(op));
@@ -645,8 +699,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
         }
 
         mockturtle::klut_network::signal res;
-        mockturtle::klut_network::signal op1;
-        mockturtle::klut_network::signal op2;
+        mockturtle::klut_network::signal op1=0;
+        mockturtle::klut_network::signal op2=0;
 
         // if the first operand has already been processed then the previous signal is used
         if (nodeRefToSignal.find(GET_INDEX_NODE(binaryExpression->op0)) != nodeRefToSignal.end()) {
@@ -722,11 +776,12 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
        std::vector<tree_nodeRef> prev_stmts_to_add;
        for (auto lut : luts)
        {
-          std::cerr << "index: " << lut.index <<"\n";
-          std::cerr << " func: " << lut.lut_constant << "\n";
+          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---index: " + STR(lut.index));
+          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- func: " + STR(lut.lut_constant));
+#ifndef NDEBUG
           for(auto in : lut.fan_in)
              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---   in " + STR(in));
-          
+#endif          
           if(lut.is_po)
           {
              std::cerr << "Is PO\n";
