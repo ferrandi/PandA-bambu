@@ -177,6 +177,20 @@ public:
      * @return a `mockturtle::klut_network::signal` representing the operation `eq` between `a` and `b`
      */
     signal create_eq(signal const a, signal const b) {
+        if(this->is_constant(a))
+        {
+           if(a == this->get_constant(true))
+              return b;
+           else
+              return this->create_not(b);
+        }
+        if(this->is_constant(b))
+        {
+           if(b == this->get_constant(true))
+              return a;
+           else
+              return this->create_not(a);
+        }
         return this->create_not(this->create_xor(a, b));
     }
 
@@ -573,6 +587,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                 pos.push_back(*currentStatement);
             }
 
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            mockturtle::write_bench(klut_e, std::cout);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"<--LUT found");
 
             modified = true;
@@ -623,9 +640,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                 pos.push_back(*currentStatement);
             }
 
-            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-            //mockturtle::write_bench(klut_e, std::cout);
-            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            mockturtle::write_bench(klut_e, std::cout);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"<--cond_expr found");
 
             modified = true;
@@ -673,6 +690,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                 pos.push_back(*currentStatement);
             }
 
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            mockturtle::write_bench(klut_e, std::cout);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"<--cond_expr found");
 
             modified = true;
@@ -714,7 +734,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                  op1 = klut_e.get_constant(false);
               else
                  op1 = klut_e.get_constant(true);
-           }
+              }
            else if(CheckIfPI(binaryExpression->op0, BB_index))
            {
               op1 = klut_e.create_pi();
@@ -738,7 +758,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                  op2 = klut_e.get_constant(false);
               else
                  op2 = klut_e.get_constant(true);
-           }
+              }
            else if(CheckIfPI(binaryExpression->op1, BB_index))
            {
               op2 = klut_e.create_pi();
@@ -759,6 +779,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             pos.push_back(*currentStatement);
         }
 
+        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+        mockturtle::write_bench(klut_e, std::cout);
+        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement ");
         modified = true;
     }
@@ -767,7 +790,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
     if (modified) {
        mockturtle::klut_network klut = SimplifyLutNetwork(klut_e, this->max_lut_size);
-       mockturtle::write_bench(klut, std::cout);
+          mockturtle::write_bench(klut, std::cout);
 
        std::vector<klut_network_node> luts = ParseKLutNetwork(klut);
 
