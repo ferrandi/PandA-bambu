@@ -2955,7 +2955,6 @@ namespace llvm
          /// Serialize gimple pairs because of use after def chain
          std::set<llvm::MemoryAccess*> visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
-         visited.insert(startingMA);
          if(llvm::ImmutableCallSite(inst) || isa<llvm::FenceInst>(inst))
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), nullptr, "vuse");
          else
@@ -2996,25 +2995,25 @@ namespace llvm
          {
             defMA = immDefAcc;
          }
-         if(defMA->getValueID() == llvm::Value::MemoryPhiVal)
-            MA = defMA;
       }
+      else
+         defMA = MA;
       if(visited.find(defMA) != visited.end())
          return;
       visited.insert(defMA);
 
-      if(MA->getValueID() == llvm::Value::MemoryUseVal || MA->getValueID() == llvm::Value::MemoryDefVal)
+      if(defMA->getValueID() == llvm::Value::MemoryDefVal)
       {
          bool isDefault = false;
          const void* def_stmt = getVirtualDefStatement(defMA, isDefault, MSSA, currentFunction);
          serialize_child(tag, getSSA(MA, def_stmt, currentFunction, isDefault));
-         if(!MSSA.isLiveOnEntryDef(defMA) && !llvm::ImmutableCallSite(dyn_cast<llvm::MemoryUseOrDef>(defMA)->getMemoryInst()) && !isa<llvm::FenceInst>(dyn_cast<llvm::MemoryUseOrDef>(defMA)->getMemoryInst()))
+         if(!MSSA.isLiveOnEntryDef(defMA))
             serialize_gimple_aliased_reaching_defs(defMA, MSSA, visited, currentFunction, OrigLoc, tag);
       }
       else
       {
-         assert(MA->getValueID() == llvm::Value::MemoryPhiVal);
-         auto mp = dyn_cast<llvm::MemoryPhi>(MA);
+         assert(defMA->getValueID() == llvm::Value::MemoryPhiVal);
+         auto mp = dyn_cast<llvm::MemoryPhi>(defMA);
          for(auto index = 0u; index < mp->getNumIncomingValues(); ++index)
          {
             auto val = mp->getIncomingValue(index);
@@ -3029,32 +3028,29 @@ namespace llvm
                   visited.insert(val);
                }
             }
-            else
+            else if(val->getValueID() == llvm::Value::MemoryDefVal)
             {
-               if(val->getValueID() == llvm::Value::MemoryDefVal)
+               if(OrigLoc)
                {
-                  if(OrigLoc)
+                  val = MSSA.getWalker()->getClobberingMemoryAccess(val, *OrigLoc);
+               }
+               if(visited.find(val) == visited.end())
+               {
+                  if(val->getValueID() == llvm::Value::MemoryPhiVal)
+                     serialize_gimple_aliased_reaching_defs(val, MSSA, visited, currentFunction, OrigLoc, tag);
+                  else
                   {
-                     val = MSSA.getWalker()->getClobberingMemoryAccess(val, *OrigLoc);
-                  }
-                  if(visited.find(val) == visited.end())
-                  {
-                     if(val->getValueID() == llvm::Value::MemoryPhiVal)
+                     bool isDefault = false;
+                     const void* def_stmt = getVirtualDefStatement(val, isDefault, MSSA, currentFunction);
+                     serialize_child(tag, getSSA(val, def_stmt, currentFunction, isDefault));
+                     visited.insert(val);
+                     if(!MSSA.isLiveOnEntryDef(val))
                         serialize_gimple_aliased_reaching_defs(val, MSSA, visited, currentFunction, OrigLoc, tag);
-                     else
-                     {
-                        bool isDefault = false;
-                        const void* def_stmt = getVirtualDefStatement(val, isDefault, MSSA, currentFunction);
-                        serialize_child(tag, getSSA(val, def_stmt, currentFunction, isDefault));
-                        visited.insert(val);
-                        if(!MSSA.isLiveOnEntryDef(val))
-                           serialize_gimple_aliased_reaching_defs(val, MSSA, visited, currentFunction, OrigLoc, tag);
-                     }
                   }
                }
-               else
-                  serialize_gimple_aliased_reaching_defs(val, MSSA, visited, currentFunction, OrigLoc, tag);
             }
+            else
+               serialize_gimple_aliased_reaching_defs(val, MSSA, visited, currentFunction, OrigLoc, tag);
          }
       }
    }

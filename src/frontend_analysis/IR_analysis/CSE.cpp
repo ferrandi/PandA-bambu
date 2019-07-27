@@ -128,6 +128,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             {
                if(restart_phi_opt)
                   relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
+               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
                break;
             }
             case DesignFlowStep_Status::SKIPPED:
@@ -232,7 +233,7 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
       enum kind op_kind = right_part->get_kind();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Right part type: " + right_part->get_kind_text());
 
-      /// check for LOADs, STOREs, MEMSET, MEMCPY, etc etc
+      /// check for LOADs, STOREs, MEMSET, MEMCPY, etc. etc.
       bool skip_check = check_loads(ga, right_part_index, right_part);
       std::vector<unsigned int> ins;
       if(skip_check)
@@ -453,6 +454,7 @@ DesignFlowStep_Status CSE::InternalExec()
                ref_ssa->use_set = dead_ssa->use_set;
             if(tree_helper::CGetType(GET_CONST_NODE(ref_ga->op0))->get_kind() == integer_type_K)
             {
+               bool is_signed = tree_helper::is_int(TM, tree_helper::CGetType(GET_CONST_NODE(ref_ga->op0))->index);
                const auto dead_min = dead_ssa->min;
                const auto ref_min = ref_ssa->min;
                if(ref_min)
@@ -461,7 +463,8 @@ DesignFlowStep_Status CSE::InternalExec()
                   {
                      const auto dead_min_ic = GetPointer<const integer_cst>(GET_CONST_NODE(dead_min));
                      const auto ref_min_ic = GetPointer<const integer_cst>(GET_CONST_NODE(ref_min));
-                     if(tree_helper::get_integer_cst_value(dead_min_ic) < tree_helper::get_integer_cst_value(ref_min_ic))
+                     if((is_signed && tree_helper::get_integer_cst_value(dead_min_ic) < tree_helper::get_integer_cst_value(ref_min_ic)) ||
+                        (!is_signed && static_cast<unsigned long long>(tree_helper::get_integer_cst_value(dead_min_ic)) < static_cast<unsigned long long>(tree_helper::get_integer_cst_value(ref_min_ic))))
                      {
                         ref_ssa->min = dead_ssa->min;
                      }
@@ -479,7 +482,8 @@ DesignFlowStep_Status CSE::InternalExec()
                   {
                      const auto dead_max_ic = GetPointer<const integer_cst>(GET_CONST_NODE(dead_max));
                      const auto ref_max_ic = GetPointer<const integer_cst>(GET_CONST_NODE(ref_max));
-                     if(tree_helper::get_integer_cst_value(dead_max_ic) > tree_helper::get_integer_cst_value(ref_max_ic))
+                     if((is_signed && tree_helper::get_integer_cst_value(dead_max_ic) > tree_helper::get_integer_cst_value(ref_max_ic)) ||
+                        (!is_signed && static_cast<unsigned long long>(tree_helper::get_integer_cst_value(dead_max_ic)) > static_cast<unsigned long long>(tree_helper::get_integer_cst_value(ref_max_ic))))
                      {
                         ref_ssa->max = dead_ssa->max;
                      }
