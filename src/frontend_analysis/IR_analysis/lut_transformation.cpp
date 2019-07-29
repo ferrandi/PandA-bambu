@@ -31,14 +31,8 @@
  *
  */
 /**
- * @file lut_transformation.hpp
- * @brief recognize lut expressions.
- * @author Di Simone Jacopo
- * @author Cappello Paolo
- * @author Inajjar Ilyas
- * @author Angelo Gallarello
- * @author Stefano Longari
- * @author Marco Lattuada <marco.lattuada@polimi.it>
+ * @file lut_transformation.cpp
+ * @brief identify and optmize lut expressions.
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
@@ -216,7 +210,7 @@ public:
      */
     signal create_lut(std::vector<signal> s, uint32_t f) {
         return this->_create_node(s, f);
-        }
+    }
 };
 
 /**
@@ -564,7 +558,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
                     if (GET_NODE(op)->get_kind() == integer_cst_K) {
                         auto *int_const = GetPointer<integer_cst>(GET_NODE(op));
-                        kop = klut_e.get_constant(int_const->value != 0);
+                        kop = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
                     }
                     else if (CheckIfPI(op, BB_index)) {
                         kop = klut_e.create_pi();
@@ -587,9 +581,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                 pos.push_back(*currentStatement);
             }
 
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-            mockturtle::write_bench(klut_e, std::cout);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            //mockturtle::write_bench(klut_e, std::cout);
+            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"<--LUT found");
 
             modified = true;
@@ -615,7 +609,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
                     if (GET_NODE(op)->get_kind() == integer_cst_K) {
                         auto *int_const = GetPointer<integer_cst>(GET_NODE(op));
-                        kop = klut_e.get_constant(int_const->value != 0);
+                        kop = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
                     }
                     else if (CheckIfPI(op, BB_index)) {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + GET_NODE(op)->ToString());
@@ -640,9 +634,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                 pos.push_back(*currentStatement);
             }
 
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-            mockturtle::write_bench(klut_e, std::cout);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            //mockturtle::write_bench(klut_e, std::cout);
+            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"<--cond_expr found");
 
             modified = true;
@@ -667,7 +661,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
                     if (GET_NODE(op)->get_kind() == integer_cst_K) {
                         auto *int_const = GetPointer<integer_cst>(GET_NODE(op));
-                        kop = klut_e.get_constant(int_const->value != 0);
+                        kop = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
                     }
                     else if (CheckIfPI(op, BB_index)) {
                         kop = klut_e.create_pi();
@@ -690,9 +684,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                 pos.push_back(*currentStatement);
             }
 
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-            mockturtle::write_bench(klut_e, std::cout);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            //mockturtle::write_bench(klut_e, std::cout);
+            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"<--cond_expr found");
 
             modified = true;
@@ -730,11 +724,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
            if(GET_NODE(binaryExpression->op0)->get_kind() == integer_cst_K)
            {
               auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op0));
-              if(int_const->value == 0)
-                 op1 = klut_e.get_constant(false);
-              else
-                 op1 = klut_e.get_constant(true);
-              }
+              op1 = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
+              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, int_const->value == 0 ? "---used gnd": "---used vdd");
+           }
            else if(CheckIfPI(binaryExpression->op0, BB_index))
            {
               op1 = klut_e.create_pi();
@@ -754,11 +746,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
            if(GET_NODE(binaryExpression->op1)->get_kind() == integer_cst_K)
            {
               auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op1));
-              if(int_const->value == 0)
-                 op2 = klut_e.get_constant(false);
-              else
-                 op2 = klut_e.get_constant(true);
-              }
+              op2 = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
+              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, int_const->value == 0 ? "---used gnd": "---used vdd");
+           }
            else if(CheckIfPI(binaryExpression->op1, BB_index))
            {
               op2 = klut_e.create_pi();
@@ -779,9 +769,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             pos.push_back(*currentStatement);
         }
 
-        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-        mockturtle::write_bench(klut_e, std::cout);
-        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+        //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+        //mockturtle::write_bench(klut_e, std::cout);
+        //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement ");
         modified = true;
     }
