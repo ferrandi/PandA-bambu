@@ -312,42 +312,55 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                }
                else if(GetPointer<ssa_name>(GET_NODE(ga->op1)))
                {
-                  auto bw_op1 = tree_helper::Size(GET_NODE(ga->op1));
-                  auto bw_op0 = tree_helper::Size(GET_NODE(ga->op0));
-                  auto max_bw = 0u;
-                  const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
-                  for(const auto& use : StmtUses)
+                  if(!ssa->bit_values.empty() && ssa->bit_values.at(0) == '0' && ssa->bit_values.size()<=64)
                   {
-                     if(GET_NODE(use.first)->get_kind() == gimple_assign_K && GET_NODE(GetPointer<gimple_assign>(GET_NODE(use.first))->op1)->get_kind() == ssa_name_K)
-                        max_bw = std::max(max_bw, tree_helper::Size(GET_NODE(GetPointer<gimple_assign>(GET_NODE(use.first))->op1)));
-                     else
-                        max_bw = bw_op1;
+                     const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
+                     tree_nodeRef bit_mask_constant_node = TM->CreateUniqueIntegerCst((1LL << (ssa->bit_values.size()-1))-1, ssa->type->index);
+                     tree_nodeRef band_expr = IRman->create_binary_operation(ssa->type, ga->op1, bit_mask_constant_node, srcp_default, bit_and_expr_K);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace ssa usage before: " + stmt->ToString());
+                     TM->ReplaceTreeNode(stmt, ga->op1, band_expr);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace ssa usage after: " + stmt->ToString());
+                     modified = true;
                   }
-                  if(max_bw < bw_op1)
+                  else
                   {
-                     auto ssa1 = GetPointer<ssa_name>(GET_NODE(ga->op1));
-                     ssa1->min = ssa->min;
-                     ssa1->max = ssa->max;
-                     bw_op1 = tree_helper::Size(GET_NODE(ga->op1));
-                  }
-
-                  if(bw_op1 <= bw_op0)
-                  {
+                     auto bw_op1 = tree_helper::Size(GET_NODE(ga->op1));
+                     auto bw_op0 = tree_helper::Size(GET_NODE(ga->op0));
+                     auto max_bw = 0u;
+                     const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
                      for(const auto& use : StmtUses)
                      {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace ssa usage before: " + use.first->ToString());
-                        TM->ReplaceTreeNode(use.first, ga->op0, ga->op1);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace ssa usage after: " + use.first->ToString());
-                        modified = true;
+                        if(GET_NODE(use.first)->get_kind() == gimple_assign_K && GET_NODE(GetPointer<gimple_assign>(GET_NODE(use.first))->op1)->get_kind() == ssa_name_K)
+                           max_bw = std::max(max_bw, tree_helper::Size(GET_NODE(GetPointer<gimple_assign>(GET_NODE(use.first))->op1)));
+                        else
+                           max_bw = bw_op1;
                      }
-                     if(ssa->CGetUseStmts().empty())
+                     if(max_bw < bw_op1)
                      {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
-                        restart_dead_code = true;
+                        auto ssa1 = GetPointer<ssa_name>(GET_NODE(ga->op1));
+                        ssa1->min = ssa->min;
+                        ssa1->max = ssa->max;
+                        bw_op1 = tree_helper::Size(GET_NODE(ga->op1));
                      }
+
+                     if(bw_op1 <= bw_op0)
+                     {
+                        for(const auto& use : StmtUses)
+                        {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace ssa usage before: " + use.first->ToString());
+                           TM->ReplaceTreeNode(use.first, ga->op0, ga->op1);
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace ssa usage after: " + use.first->ToString());
+                           modified = true;
+                        }
+                        if(ssa->CGetUseStmts().empty())
+                        {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
+                           restart_dead_code = true;
+                        }
 #ifndef NDEBUG
-                     AppM->RegisterTransformation(GetName(), stmt);
+                        AppM->RegisterTransformation(GetName(), stmt);
 #endif
+                     }
                   }
                }
                else if(GET_NODE(ga->op1)->get_kind() == mult_expr_K || GET_NODE(ga->op1)->get_kind() == widen_mult_expr_K)
