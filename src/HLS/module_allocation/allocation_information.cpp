@@ -1115,7 +1115,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
                const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
                const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
                max_size_in = std::max(max_size_in, element_size);
-               if(min_n_elements == 0 or 128 / element_size < min_n_elements)
+               if(min_n_elements == 0 or ((128 / element_size) < min_n_elements))
                   min_n_elements = 128 / element_size;
             }
             else
@@ -1217,7 +1217,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       const auto max_size_in_true = std::max(max_size_in, *std::max_element(info->input_prec.begin(), info->input_prec.end()));
       for(const auto n_elements : info->base128_input_nelem)
       {
-         if(n_elements and (min_n_elements == 0 or n_elements < min_n_elements))
+         if(n_elements and (min_n_elements == 0 or (n_elements < min_n_elements)))
          {
             min_n_elements = n_elements;
          }
