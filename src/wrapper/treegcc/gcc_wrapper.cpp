@@ -703,7 +703,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
       }
       if(compiler.is_clang)
       {
-         const auto recipe = clang_recipes(optimization_level, Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler), compiler.expandMemOps_plugin_obj, compiler.expandMemOps_plugin_name, compiler.CSROA_plugin_obj, compiler.CSROA_plugin_name);
+         const auto recipe = clang_recipes(optimization_level, Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler), compiler.expandMemOps_plugin_obj, compiler.expandMemOps_plugin_name, compiler.CSROA_plugin_obj, compiler.CSROA_plugin_name, fname);
          command = compiler.llvm_opt.string() + recipe + temporary_file_o_bc;
          temporary_file_o_bc = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string()).string();
          command += " -o " + temporary_file_o_bc;
@@ -2733,7 +2733,7 @@ size_t GccWrapper::ConvertVersion(const std::string& version)
 }
 
 std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimization_level, const GccWrapper_CompilerTarget compiler, const std::string& expandMemOps_plugin_obj, const std::string& expandMemOps_plugin_name,
-                                      const std::string& CSROA_plugin_obj, const std::string& CSROA_plugin_name)
+                                      const std::string& CSROA_plugin_obj, const std::string& CSROA_plugin_name, const std::string& fname)
 {
    std::string recipe = "";
 #ifndef _WIN32
@@ -2751,7 +2751,8 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimizat
    {
       if(optimization_level == GccWrapper_OptimizationSet::O2 || optimization_level == GccWrapper_OptimizationSet::O3)
       {
-         recipe += " -tti "
+         std::string complex_recipe;
+         complex_recipe += " -tti "
                    "-targetlibinfo "
                    "-tbaa "
                    "-scoped-noalias "
@@ -2767,7 +2768,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimizat
                    "-domtree "
                    "-basicaa "
                    "-aa ";
-         recipe += " -" + expandMemOps_plugin_name + " -" + CSROA_plugin_name +
+         complex_recipe += " -" + expandMemOps_plugin_name + " -" + CSROA_plugin_name+"FV" +
                    " -dse -loop-unroll "
                    /// "-instcombine "
                    "-simplifycfg "
@@ -2789,7 +2790,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimizat
                    "-domtree "
                    "-basicaa "
                    "-aa ";
-         recipe += " -" + expandMemOps_plugin_name +
+         complex_recipe += " -" + expandMemOps_plugin_name  + " -" + CSROA_plugin_name+"D" +
                    " -dse -loop-unroll "
                    /// "-instcombine "
                    "-libcalls-shrinkwrap "
@@ -2811,7 +2812,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimizat
                    "-domtree "
                    "-basicaa "
                    "-aa ";
-         recipe += " -" + expandMemOps_plugin_name +
+         complex_recipe += " -" + expandMemOps_plugin_name +
                    " -dse -loop-unroll "
                    /// "-instcombine "
                    "-loops "
@@ -2840,7 +2841,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimizat
                    "-bdce "
                    "-basicaa "
                    "-aa ";
-         recipe += " -" + expandMemOps_plugin_name +
+         complex_recipe += " -" + expandMemOps_plugin_name +
                    " -dse -loop-unroll "
                    /// "-instcombine "
                    "-lazy-value-info "
@@ -2864,7 +2865,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimizat
                    "-domtree "
                    "-basicaa "
                    "-aa ";
-         recipe += " -" + expandMemOps_plugin_name +
+         complex_recipe += " -" + expandMemOps_plugin_name +
                    " -loop-unroll "
                    /// "-instcombine "
                    "-barrier "
@@ -2908,14 +2909,14 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimizat
                    "-loop-load-elim "
                    "-basicaa "
                    "-aa ";
-         recipe += " -" + expandMemOps_plugin_name +
+         complex_recipe += " -" + expandMemOps_plugin_name +
                    " -dse -loop-unroll "
                    /// "-instcombine "
                    "-simplifycfg "
                    "-domtree "
                    "-basicaa "
                    "-aa ";
-         recipe += " -" + expandMemOps_plugin_name +
+         complex_recipe += " -" + expandMemOps_plugin_name +
                    " -dse -loop-unroll "
                    /// "-instcombine "
                    "-loops "
@@ -2924,7 +2925,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimizat
                    "-lcssa "
                    "-scalar-evolution "
                    "-loop-unroll ";
-         recipe += " -" + expandMemOps_plugin_name +
+         complex_recipe += " -" + expandMemOps_plugin_name  + " -" + CSROA_plugin_name+"WI" +
                    " -dse -loop-unroll "
                    /// "-instcombine "
                    "-loop-simplify "
@@ -2950,7 +2951,8 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimizat
                    "-block-freq "
                    "-loop-sink "
                    "-instsimplify ";
-         recipe += recipe;
+         //complex_recipe += complex_recipe;
+         recipe += " -panda-KN=" + fname + complex_recipe;
       }
       else if(optimization_level == GccWrapper_OptimizationSet::O0)
       {
@@ -2971,9 +2973,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimizat
                    "-basicaa "
                    "-aa ";
          recipe += " -" + expandMemOps_plugin_name +
-                   " -loop-unroll -simplifycfg "
-                   " -" +
-                   CSROA_plugin_name;
+                   " -loop-unroll -simplifycfg ";
       }
       else
       {

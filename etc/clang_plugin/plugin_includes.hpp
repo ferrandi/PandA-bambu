@@ -115,6 +115,7 @@ namespace llvm
 {
    class DumpGimpleRaw
    {
+      bool earlyAnalysis;
       /* Serialize column control */
       const int SOL_COLUMN = 25;       /* Start of line column.  */
       const int EOL_COLUMN = 55;       /* End of line column.  */
@@ -725,7 +726,7 @@ namespace llvm
       void computeMAEntryDefs(const llvm::Function* F, std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>>& CurrentListofMAEntryDef, llvm::ModulePass* modulePass);
 
     public:
-      DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool onlyGlobals, std::map<std::string, std::vector<std::string>>* fun2params);
+      DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool onlyGlobals, std::map<std::string, std::vector<std::string>>* fun2params, bool early);
 
       bool runOnModule(llvm::Module& M, llvm::ModulePass* modulePass, const std::string& TopFunctionName);
    };

@@ -71,7 +71,7 @@ all: $(I386_CLANG4_ASTANALYZER_PLUGIN)
 endif
 
 if BUILD_PTAA
-$(I386_CLANG4_SSA_PLUGIN) : opt_clang4_plugin_dumpGimpleSSA.o clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o
+$(I386_CLANG4_SSA_PLUGIN) : clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG4_LIBS) -lversion `$(I386_LLVM_CONFIG4_EXE) --ldflags --libs --system-libs` -lbdd';\
@@ -87,7 +87,7 @@ $(I386_CLANG4_SSA_PLUGIN) : opt_clang4_plugin_dumpGimpleSSA.o clang4_plugin_dump
 	  $(I386_CLANG4_PLUGIN_COMPILER) clang4_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleSSA.so ; \
 	fi;
 else
-$(I386_CLANG4_SSA_PLUGIN) : opt_clang4_plugin_dumpGimpleSSA.o clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o
+$(I386_CLANG4_SSA_PLUGIN) : clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG4_LIBS) -lversion `$(I386_LLVM_CONFIG4_EXE) --ldflags --libs --system-libs`'; \
@@ -104,7 +104,7 @@ $(I386_CLANG4_SSA_PLUGIN) : opt_clang4_plugin_dumpGimpleSSA.o clang4_plugin_dump
 	fi;
 endif
 if BUILD_PTAA
-$(I386_CLANG4_SSA_PLUGINCPP) : opt_clang4_plugin_dumpGimpleSSACpp.o clang4_plugin_dumpGimpleSSACpp.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o
+$(I386_CLANG4_SSA_PLUGINCPP) : clang4_plugin_dumpGimpleSSACpp.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG4_LIBS) -lversion `$(I386_LLVM_CONFIG4_EXE) --ldflags --libs --system-libs` -lbdd'; \
@@ -120,7 +120,7 @@ $(I386_CLANG4_SSA_PLUGINCPP) : opt_clang4_plugin_dumpGimpleSSACpp.o clang4_plugi
 	  $(I386_CLANG4_PLUGIN_COMPILER) clang4_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleSSACpp.so;\
 	fi;
 else
-$(I386_CLANG4_SSA_PLUGINCPP) : opt_clang4_plugin_dumpGimpleSSACpp.o clang4_plugin_dumpGimpleSSACpp.o clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o
+$(I386_CLANG4_SSA_PLUGINCPP) : clang4_plugin_dumpGimpleSSACpp.o clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG4_LIBS) -lversion `$(I386_LLVM_CONFIG4_EXE) --ldflags --libs --system-libs`'; \
@@ -138,7 +138,7 @@ $(I386_CLANG4_SSA_PLUGINCPP) : opt_clang4_plugin_dumpGimpleSSACpp.o clang4_plugi
 endif
 
 if BUILD_PTAA
-$(I386_CLANG4_EMPTY_PLUGIN) : opt_clang4_plugin_dumpGimpleEmpty.o clang4_plugin_dumpGimpleEmpty.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o
+$(I386_CLANG4_EMPTY_PLUGIN) : clang4_plugin_dumpGimpleEmpty.o clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG4_LIBS) -lversion `$(I386_LLVM_CONFIG4_EXE) --ldflags --libs --system-libs` -lbdd'; \
@@ -154,7 +154,7 @@ $(I386_CLANG4_EMPTY_PLUGIN) : opt_clang4_plugin_dumpGimpleEmpty.o clang4_plugin_
 	  $(I386_CLANG4_PLUGIN_COMPILER) clang4_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang4_plugin_dumpGimpleEmpty.so; \
 	fi;
 else
-$(I386_CLANG4_EMPTY_PLUGIN) : opt_clang4_plugin_dumpGimpleEmpty.o clang4_plugin_dumpGimpleEmpty.o clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o
+$(I386_CLANG4_EMPTY_PLUGIN) : clang4_plugin_dumpGimpleEmpty.o clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG4_LIBS) -lversion `$(I386_LLVM_CONFIG4_EXE) --ldflags --libs --system-libs`'; \
@@ -171,7 +171,7 @@ $(I386_CLANG4_EMPTY_PLUGIN) : opt_clang4_plugin_dumpGimpleEmpty.o clang4_plugin_
 	fi;
 endif
 
-$(I386_CLANG4_EXPANDMEMOPS_PLUGIN) : opt_clang4_plugin_expandMemOps.o clang4_plugin_expandMemOps.o 
+$(I386_CLANG4_EXPANDMEMOPS_PLUGIN) : clang4_plugin_expandMemOps.o 
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG4_LIBS) -lversion `$(I386_LLVM_CONFIG4_EXE) --ldflags --libs --system-libs`'; \
@@ -186,7 +186,7 @@ $(I386_CLANG4_EXPANDMEMOPS_PLUGIN) : opt_clang4_plugin_expandMemOps.o clang4_plu
 	  $(I386_CLANG4_PLUGIN_COMPILER) clang4_plugin_expandMemOps.o $$compile_options -o clang4_plugin_expandMemOps.so; \
 	fi;
 
-$(I386_CLANG4_CSROA_PLUGIN) : opt_clang4_plugin_CSROA.o clang4_plugin_CSROA.o clang4_CSROA.o
+$(I386_CLANG4_CSROA_PLUGIN) : clang4_plugin_CSROA.o clang4_CSROA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG4_LIBS) -lversion `$(I386_LLVM_CONFIG4_EXE) --ldflags --libs --system-libs`'; \
@@ -202,7 +202,7 @@ $(I386_CLANG4_CSROA_PLUGIN) : opt_clang4_plugin_CSROA.o clang4_plugin_CSROA.o cl
 	fi;
 
 
-$(I386_CLANG4_TOPFNAME_PLUGIN) : opt_clang4_plugin_topfname.o clang4_plugin_topfname.o 
+$(I386_CLANG4_TOPFNAME_PLUGIN) : clang4_plugin_topfname.o 
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG4_LIBS) -lversion `$(I386_LLVM_CONFIG4_EXE) --ldflags --libs --system-libs`'; \
@@ -1141,7 +1141,7 @@ all: $(I386_CLANG7_ASTANALYZER_PLUGIN)
 endif
 
 if BUILD_PTAA
-$(I386_CLANG7_SSA_PLUGIN) : opt_clang7_plugin_dumpGimpleSSA.o clang7_plugin_dumpGimpleSSA.o clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o
+$(I386_CLANG7_SSA_PLUGIN) : clang7_plugin_dumpGimpleSSA.o clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG7_LIBS) -lversion `$(I386_LLVM_CONFIG7_EXE) --ldflags --libs --system-libs` -lbdd';\
@@ -1157,7 +1157,7 @@ $(I386_CLANG7_SSA_PLUGIN) : opt_clang7_plugin_dumpGimpleSSA.o clang7_plugin_dump
 	  $(I386_CLANG7_PLUGIN_COMPILER) clang7_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang7_plugin_dumpGimpleSSA.so ; \
 	fi;
 else
-$(I386_CLANG7_SSA_PLUGIN) : opt_clang7_plugin_dumpGimpleSSA.o clang7_plugin_dumpGimpleSSA.o clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o
+$(I386_CLANG7_SSA_PLUGIN) : clang7_plugin_dumpGimpleSSA.o clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG7_LIBS) -lversion `$(I386_LLVM_CONFIG7_EXE) --ldflags --libs --system-libs`'; \
@@ -1174,7 +1174,7 @@ $(I386_CLANG7_SSA_PLUGIN) : opt_clang7_plugin_dumpGimpleSSA.o clang7_plugin_dump
 	fi;
 endif
 if BUILD_PTAA
-$(I386_CLANG7_SSA_PLUGINCPP) : opt_clang7_plugin_dumpGimpleSSACpp.o clang7_plugin_dumpGimpleSSACpp.o clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o
+$(I386_CLANG7_SSA_PLUGINCPP) : clang7_plugin_dumpGimpleSSACpp.o clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG7_LIBS) -lversion `$(I386_LLVM_CONFIG7_EXE) --ldflags --libs --system-libs` -lbdd'; \
@@ -1190,7 +1190,7 @@ $(I386_CLANG7_SSA_PLUGINCPP) : opt_clang7_plugin_dumpGimpleSSACpp.o clang7_plugi
 	  $(I386_CLANG7_PLUGIN_COMPILER) clang7_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang7_plugin_dumpGimpleSSACpp.so;\
 	fi;
 else
-$(I386_CLANG7_SSA_PLUGINCPP) : opt_clang7_plugin_dumpGimpleSSACpp.o clang7_plugin_dumpGimpleSSACpp.o clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o
+$(I386_CLANG7_SSA_PLUGINCPP) : clang7_plugin_dumpGimpleSSACpp.o clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG7_LIBS) -lversion `$(I386_LLVM_CONFIG7_EXE) --ldflags --libs --system-libs`'; \
@@ -1208,7 +1208,7 @@ $(I386_CLANG7_SSA_PLUGINCPP) : opt_clang7_plugin_dumpGimpleSSACpp.o clang7_plugi
 endif
 
 if BUILD_PTAA
-$(I386_CLANG7_EMPTY_PLUGIN) : opt_clang7_plugin_dumpGimpleEmpty.o clang7_plugin_dumpGimpleEmpty.o clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o
+$(I386_CLANG7_EMPTY_PLUGIN) : clang7_plugin_dumpGimpleEmpty.o clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG7_LIBS) -lversion `$(I386_LLVM_CONFIG7_EXE) --ldflags --libs --system-libs` -lbdd'; \
@@ -1224,7 +1224,7 @@ $(I386_CLANG7_EMPTY_PLUGIN) : opt_clang7_plugin_dumpGimpleEmpty.o clang7_plugin_
 	  $(I386_CLANG7_PLUGIN_COMPILER) clang7_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang7_plugin_dumpGimpleEmpty.so; \
 	fi;
 else
-$(I386_CLANG7_EMPTY_PLUGIN) : opt_clang7_plugin_dumpGimpleEmpty.o clang7_plugin_dumpGimpleEmpty.o clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o
+$(I386_CLANG7_EMPTY_PLUGIN) : clang7_plugin_dumpGimpleEmpty.o clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG7_LIBS) -lversion `$(I386_LLVM_CONFIG7_EXE) --ldflags --libs --system-libs`'; \
@@ -1241,7 +1241,7 @@ $(I386_CLANG7_EMPTY_PLUGIN) : opt_clang7_plugin_dumpGimpleEmpty.o clang7_plugin_
 	fi;
 endif
 
-$(I386_CLANG7_EXPANDMEMOPS_PLUGIN) : opt_clang7_plugin_expandMemOps.o clang7_plugin_expandMemOps.o 
+$(I386_CLANG7_EXPANDMEMOPS_PLUGIN) : clang7_plugin_expandMemOps.o 
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG7_LIBS) -lversion `$(I386_LLVM_CONFIG7_EXE) --ldflags --libs --system-libs`'; \
@@ -1256,7 +1256,7 @@ $(I386_CLANG7_EXPANDMEMOPS_PLUGIN) : opt_clang7_plugin_expandMemOps.o clang7_plu
 	  $(I386_CLANG7_PLUGIN_COMPILER) clang7_plugin_expandMemOps.o $$compile_options -o clang7_plugin_expandMemOps.so; \
 	fi;
 
-$(I386_CLANG7_CSROA_PLUGIN) : opt_clang7_plugin_CSROA.o clang7_plugin_CSROA.o clang7_CSROA.o
+$(I386_CLANG7_CSROA_PLUGIN) : clang7_plugin_CSROA.o clang7_CSROA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG7_LIBS) -lversion `$(I386_LLVM_CONFIG7_EXE) --ldflags --libs --system-libs`'; \

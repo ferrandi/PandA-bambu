@@ -248,8 +248,9 @@ namespace llvm
       return declname;
    }
 
-   DumpGimpleRaw::DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool _onlyGlobals, std::map<std::string, std::vector<std::string>>* _fun2params)
-       : outdir_name(_outdir_name),
+   DumpGimpleRaw::DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool _onlyGlobals, std::map<std::string, std::vector<std::string>>* _fun2params, bool early)
+       : earlyAnalysis(early),
+         outdir_name(_outdir_name),
          InFile(_InFile),
          filename(create_file_name_string(_outdir_name, _InFile)),
 #if __clang_major__ >= 7
@@ -6285,14 +6286,14 @@ namespace llvm
       modulePass = _modulePass;
       moduleContext = &M.getContext();
       TopFunctionName = _TopFunctionName;
-      buildMetaDataMap(M);
-      auto res = lowerMemIntrinsics(M);
+      if(!earlyAnalysis) buildMetaDataMap(M);
+      auto res = !earlyAnalysis && lowerMemIntrinsics(M);
 
-      res = res | RebuildConstants(M);
-      res = res | lowerIntrinsics(M);
+      res = res | (!earlyAnalysis && RebuildConstants(M));
+      res = res | (!earlyAnalysis && lowerIntrinsics(M));
       compute_eSSA(M);
 #if HAVE_LIBBDD
-      if(!onlyGlobals)
+      if(!earlyAnalysis && !onlyGlobals)
       {
          std::string starting_function = TopFunctionName;
          if(starting_function == "")
@@ -6324,7 +6325,7 @@ namespace llvm
       assert(!llvm::verifyModule(M, &llvm::errs()));
 #endif
 
-      if(!onlyGlobals)
+      if(!earlyAnalysis && !onlyGlobals)
       {
          for(const auto& fun : M.getFunctionList())
          {
@@ -6335,14 +6336,17 @@ namespace llvm
          }
       }
 
-      for(const auto& globalVar : M.getGlobalList())
+      if(!earlyAnalysis)
       {
+         for(const auto& globalVar : M.getGlobalList())
+         {
 #if PRINT_DBG_MSG
-         llvm::errs() << "Found global name: " << globalVar.getName() << "|" << ValueTyNames[globalVar.getValueID()] << "\n";
+            llvm::errs() << "Found global name: " << globalVar.getName() << "|" << ValueTyNames[globalVar.getValueID()] << "\n";
 #endif
-         SerializeGimpleGlobalTreeNode(assignCodeAuto(&globalVar));
+            SerializeGimpleGlobalTreeNode(assignCodeAuto(&globalVar));
+         }
       }
-      if(!onlyGlobals)
+      if(!earlyAnalysis && !onlyGlobals)
       {
          for(const auto& fun : M.getFunctionList())
          {
