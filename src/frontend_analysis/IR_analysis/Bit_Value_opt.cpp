@@ -321,6 +321,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                      TM->ReplaceTreeNode(stmt, ga->op1, band_expr);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace ssa usage after: " + stmt->ToString());
                      modified = true;
+                     ga->keep = true;///this prevent an infinite loop with CSE
                   }
                   else
                   {
