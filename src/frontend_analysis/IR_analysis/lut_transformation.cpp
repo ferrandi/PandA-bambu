@@ -250,9 +250,7 @@ std::string lut_transformation::AddZeroes(const std::string& _bitString, double 
 
 tree_nodeRef lut_transformation::CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string& srcp_default)
 {
-   tree_nodeRef ssa_vd = tree_man->create_ssa_name(tree_nodeRef(), type);
-   auto ret_value = tree_man->create_gimple_modify_stmt(ssa_vd, op, srcp_default, bb_index);
-   return ret_value;
+   return tree_man->CreateGimpleAssign(type, tree_nodeRef(), tree_nodeRef(), op, bb_index, srcp_default);
 }
 
 /**

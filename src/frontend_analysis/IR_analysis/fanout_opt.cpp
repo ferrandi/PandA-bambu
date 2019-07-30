@@ -192,7 +192,7 @@ DesignFlowStep_Status fanout_opt::InternalExec()
                   }
                   for(auto dest_statement : list_of_dest_statements)
                   {
-                     tree_nodeRef temp_assign = tree_man->CreateGimpleAssign(assigned_ssa_type_node, ga->op0, block.first, srcp_default);
+                     tree_nodeRef temp_assign = tree_man->CreateGimpleAssign(assigned_ssa_type_node, ssa_defined->min, ssa_defined->max, ga->op0, block.first, srcp_default);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---create a temporary assignment " + temp_assign->ToString());
                      block.second->PushAfter(temp_assign, stmt);
                      tree_nodeRef temp_ssa_var = GetPointer<gimple_assign>(GET_NODE(temp_assign))->op0;
@@ -240,6 +240,9 @@ DesignFlowStep_Status fanout_opt::InternalExec()
                   tree_nodeRef new_res_var;
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---starting from phi " + phi->ToString());
                   auto new_phi = tree_man->create_phi_node(new_res_var, list_of_def_edge, gp->scpe, block.first);
+                  auto new_res_var_ssa = GetPointer<ssa_name>(GET_NODE(new_res_var));
+                  new_res_var_ssa->min = ssa_defined->min;
+                  new_res_var_ssa->max = ssa_defined->max;
                   GetPointer<gimple_phi>(GET_NODE(new_phi))->SetSSAUsesComputed();
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---created a new phi " + new_phi->ToString());
                   block.second->AddPhi(new_phi);

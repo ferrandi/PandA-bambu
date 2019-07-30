@@ -473,13 +473,14 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
             {
                if(GET_NODE(ga->op0)->get_kind() == ssa_name_K)
                {
-                  const auto new_ssa = tree_man->create_ssa_name(tree_nodeRef(), GetPointer<ssa_name>(GET_NODE(ga->op0))->type);
+                  auto ssa0 = GetPointer<ssa_name>(GET_NODE(ga->op0));
+                  const auto new_ssa = tree_man->create_ssa_name(tree_nodeRef(), GetPointer<ssa_name>(GET_NODE(ga->op0))->type, ssa0->min, ssa0->max);
                   remaps[copy.second][ga->op0->index] = new_ssa->index;
                   reaching_defs[copy.second] = new_ssa;
                }
                if(ga->vdef)
                {
-                  const auto new_ssa = tree_man->create_ssa_name(tree_nodeRef(), GetPointer<ssa_name>(GET_NODE(ga->vdef))->type);
+                  const auto new_ssa = tree_man->create_ssa_name(tree_nodeRef(), GetPointer<ssa_name>(GET_NODE(ga->vdef))->type, tree_nodeRef(), tree_nodeRef());
                   GetPointer<ssa_name>(GET_NODE(new_ssa))->virtual_flag = true;
                   remaps[copy.second][ga->vdef->index] = new_ssa->index;
                   reaching_defs[copy.second] = new_ssa;
