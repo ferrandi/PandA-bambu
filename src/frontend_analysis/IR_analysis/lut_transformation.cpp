@@ -559,6 +559,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                     if (GET_NODE(op)->get_kind() == integer_cst_K) {
                         auto *int_const = GetPointer<integer_cst>(GET_NODE(op));
                         kop = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, int_const->value == 0 ? "---used gnd": "---used vdd");
                     }
                     else if (CheckIfPI(op, BB_index)) {
                         kop = klut_e.create_pi();
@@ -610,6 +611,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                     if (GET_NODE(op)->get_kind() == integer_cst_K) {
                         auto *int_const = GetPointer<integer_cst>(GET_NODE(op));
                         kop = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, int_const->value == 0 ? "---used gnd": "---used vdd");
                     }
                     else if (CheckIfPI(op, BB_index)) {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + GET_NODE(op)->ToString());
@@ -637,7 +639,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
             //mockturtle::write_bench(klut_e, std::cout);
             //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"<--cond_expr found");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"<--truth_not_expr found");
 
             modified = true;
             continue;
@@ -662,6 +664,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                     if (GET_NODE(op)->get_kind() == integer_cst_K) {
                         auto *int_const = GetPointer<integer_cst>(GET_NODE(op));
                         kop = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, int_const->value == 0 ? "---used gnd": "---used vdd");
                     }
                     else if (CheckIfPI(op, BB_index)) {
                         kop = klut_e.create_pi();
