@@ -164,7 +164,6 @@ DesignFlowStep_Status fanout_opt::InternalExec()
 #ifndef NDEBUG
          if(not AppM->ApplyNewTransformation())
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered BB" + STR(block.first));
             break;
          }
 #endif
