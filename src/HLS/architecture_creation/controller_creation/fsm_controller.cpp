@@ -184,8 +184,13 @@ void fsm_controller::create_state_machine(std::string& parse)
    THROW_ASSERT(std::find(working_list.begin(), working_list.end(), first_state) != working_list.end(), "unexpected case");
    working_list.erase(std::find(working_list.begin(), working_list.end(), first_state));
    working_list.push_front(first_state); /// ensure that first_state is the really first one...
+
+   std::map<vertex, std::vector<bool>> state_Xregs;
+   std::map<vertex, std::map<unsigned int, long long int>> old_selector_value;
    for(const auto& v : working_list)
    {
+      state_Xregs[v] = std::vector<bool>(HLS->Rreg->get_used_regs(), true);
+      old_selector_value[v].clear();
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + astg->CGetStateInfo(v)->name);
       present_state[v] = std::vector<long long int>(out_num, 0);
       if(selectors.find(conn_binding::IN) != selectors.end())
@@ -264,16 +269,15 @@ void fsm_controller::create_state_machine(std::string& parse)
       }
 
       unsigned int registers = HLS->Rreg->get_used_regs();
-      std::vector<bool> XRegs(registers, true);
       std::vector<bool> RORegs(registers, false);
 
       for(auto in0 : HLS->Rliv->get_live_in(v))
       {
-         if(HLS->storage_value_information->is_a_storage_value(v, in0)){
+         if(HLS->storage_value_information->is_a_storage_value(v, in0))
+         {
             unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(v, in0);
             unsigned int accessed_reg = HLS->Rreg->get_register(storage_value_index);
-            // possibly need to escape first state
-            XRegs[accessed_reg] = false;
+            state_Xregs[v][accessed_reg] = false;
             if(HLS->Rliv->get_live_out(v).find(in0)!=HLS->Rliv->get_live_out(v).end())
             {
                 // Read only registers should be all and only those having the same storage value live in and live out
@@ -301,8 +305,9 @@ void fsm_controller::create_state_machine(std::string& parse)
                if(current_port->get_command_type() == commandport_obj::command_type::WRENABLE)
                {
                   auto reg_obj = GetPointer<register_obj>(current_port->get_elem());
-                  if(XRegs[reg_obj->get_register_index()])
+                  if(state_Xregs[v][reg_obj->get_register_index()] && v != first_state)
                   {
+                     old_selector_value[v][out_ports[s.second]] = present_state[v][out_ports[s.second]];
                      present_state[v][out_ports[s.second]] = 2;
                      PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Set X value for wr_en on register reg_");
                      PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, reg_obj->get_register_index());
@@ -320,33 +325,31 @@ void fsm_controller::create_state_machine(std::string& parse)
                      if(mux_slave->get_type() == generic_obj::resource_type::REGISTER)
                      {
                         unsigned int reg_index = GetPointer<register_obj>(mux_slave)->get_register_index();
-                        if(XRegs[reg_index])
+                        if(state_Xregs[v][reg_index] && v != first_state)
                         {
-                           // for mux targeting registers
-                           if(HLS->STG->get_entry_state() == v)
-                              continue;
                            PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Set X value for mux of register reg_");
                            PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, reg_index);
                            PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "\n");
+                           old_selector_value[v][out_ports[s.second]] = present_state[v][out_ports[s.second]];
                            present_state[v][out_ports[s.second]] = 3;
                         }
-                        if(RORegs[reg_index])
-                        {
-                           PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Set X value for mux of register reg_");
-                           PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, reg_index);
-                           PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "\n");
-                           present_state[v][out_ports[s.second]] = 4;
-                        }
+//                        if(RORegs[reg_index])
+//                        {
+//                           PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Set X value for mux of register reg_");
+//                           PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, reg_index);
+//                           PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "\n");
+//                           present_state[v][out_ports[s.second]] = 4;
+//                        }
                      }
-                     if(mux_slave->get_type() == generic_obj::resource_type::FUNCTIONAL_UNIT)
-                     {
-                        // for mux targeting FUs
-                        auto target_fu = GetPointer<funit_obj>(mux_slave);
-                        unsigned int fu_type = target_fu->get_type();
-                        unsigned int fu_index = target_fu->get_index();
-                        if(active_fu.find(std::make_pair(fu_type, fu_index)) == active_fu.end())
-                           present_state[v][out_ports[s.second]] = 5;
-                     }
+//                    if(mux_slave->get_type() == generic_obj::resource_type::FUNCTIONAL_UNIT)
+//                    {
+//                       // for mux targeting FUs
+//                       auto target_fu = GetPointer<funit_obj>(mux_slave);
+//                       unsigned int fu_type = target_fu->get_type();
+//                       unsigned int fu_index = target_fu->get_index();
+//                       if(active_fu.find(std::make_pair(fu_type, fu_index)) == active_fu.end())
+//                          present_state[v][out_ports[s.second]] = 5;
+//                    }
                   }
                }
                // end of mux X values
@@ -517,18 +520,56 @@ void fsm_controller::create_state_machine(std::string& parse)
             if(present_state[v][k] == 1 && unbounded_ports.find(k) == unbounded_ports.end())
                transition_outputs[k] = 0;
          }
+
          if(selectors.find(conn_binding::IN) != selectors.end())
          {
             for(const auto& s : selectors.at(conn_binding::IN))
             {
                const auto& activations = GetPointer<commandport_obj>(s.second)->get_activations();
-               for(const auto& a : activations)
+               // if there's no X value for the selector, leave the behavior unchanged
+               if(present_state[v][out_ports[s.second]] < 2 || GetPointer<commandport_obj>(s.second)->get_command_type() == commandport_obj::command_type::WRENABLE)
                {
-                  THROW_ASSERT(v != NULL_VERTEX && std::get<0>(a) != NULL_VERTEX, "error on source vertex");
-                  if(std::get<0>(a) == v && (std::get<1>(a) == tgt || std::get<1>(a) == NULL_VERTEX))
+                  for(const auto& a : activations)
                   {
-                     THROW_ASSERT(present_state[v][out_ports[s.second]] != 0, "unexpected condition");
-                     transition_outputs[out_ports[s.second]] = 1;
+                     THROW_ASSERT(v != NULL_VERTEX && std::get<0>(a) != NULL_VERTEX, "error on source vertex");
+                     if(std::get<0>(a) == v && (std::get<1>(a) == tgt || std::get<1>(a) == NULL_VERTEX))
+                     {
+                        THROW_ASSERT(present_state[v][out_ports[s.second]] != 0, "unexpected condition");
+                        transition_outputs[out_ports[s.second]] = 1;
+                     }
+                  }
+               }
+               else if(old_selector_value[v].find(out_ports[s.second]) != old_selector_value[v].end())
+               {
+                  for(const auto& a : activations)
+                  {
+                     THROW_ASSERT(v != NULL_VERTEX && std::get<0>(a) != NULL_VERTEX, "error on source vertex");
+                     if(std::get<0>(a) == v && (std::get<1>(a) == tgt || std::get<1>(a) == NULL_VERTEX))
+                     {
+                        THROW_ASSERT(present_state[v][out_ports[s.second]] != 0, "unexpected condition");
+                        transition_outputs[out_ports[s.second]] = 1;
+                     }
+		     // reset the situation as it was before X values computation
+                     else
+                     {
+		        auto current_port = GetPointer<commandport_obj>(s.second);
+                        if(current_port->get_command_type() == commandport_obj::command_type::SELECTOR)
+                        {
+                           auto selector_slave = current_port->get_elem();
+                           if(GetPointer<mux_obj>(selector_slave)) // redundadant control
+                           {
+                              auto mux_slave = GetPointer<mux_obj>(selector_slave)->get_final_target();
+                              if(mux_slave->get_type() == generic_obj::resource_type::REGISTER)
+                              {
+                                 unsigned int reg_index = GetPointer<register_obj>(mux_slave)->get_register_index();
+                                 if(state_Xregs[v][reg_index] && v != first_state)
+                                 {
+                                    transition_outputs[out_ports[s.second]] = old_selector_value[v][out_ports[s.second]];
+                                 }
+                              }
+                           }
+                        }
+                     }
                   }
                }
             }
@@ -553,6 +594,7 @@ void fsm_controller::create_state_machine(std::string& parse)
       parse += "\n";
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed state " + stg->CGetStateInfo(v)->name);
    }
+
    // std::cerr << "Finite_state_machine representation: " << std::endl;
    // std::cerr << parse << std::endl << std::endl;
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Created state machine");
