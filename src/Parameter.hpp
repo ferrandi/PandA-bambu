@@ -233,7 +233,7 @@ class OptionMap : public std::map<std::string, std::string>
 #define LAST_GCC_OPT INPUT_OPT_WRITE_GCC_XML
 
 /// define the GCC short option string
-#define GCC_SHORT_OPTIONS_STRING "cf:g:I:D:U:O::l:L:W:Em:g::"
+#define GCC_SHORT_OPTIONS_STRING "cf:I:D:U:O::l:L:W:Em:g::"
 
 #if !RELEASE
 #define GCC_LONG_OPTIONS_RAW_XML {"use-raw", no_argument, nullptr, INPUT_OPT_USE_RAW}, {"read-GCC-XML", required_argument, nullptr, INPUT_OPT_READ_GCC_XML}, {"write-GCC-XML", required_argument, nullptr, INPUT_OPT_WRITE_GCC_XML},
