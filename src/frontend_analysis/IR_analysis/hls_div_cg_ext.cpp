@@ -107,11 +107,13 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(PRECEDENCE_RELATIONSHIP):
       {
+         relationships.insert(std::make_pair(MEM_CG_EXT, WHOLE_APPLICATION));
          break;
       }
       case DEPENDENCE_RELATIONSHIP:
       {
-         relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
+         if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
+            relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          break;
