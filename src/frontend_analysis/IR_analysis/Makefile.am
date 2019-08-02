@@ -148,6 +148,8 @@ if BUILD_BAMBU
       -I$(top_srcdir)/ext/mockturtle/lib/ez\
       -I$(top_srcdir)/ext/mockturtle/lib/lorina\
       -I$(top_srcdir)/ext/mockturtle/lib/rang\
+      -I$(top_srcdir)/ext/mockturtle/lib/percy\
+      -I$(top_srcdir)/ext/mockturtle/lib/abcsat\
       -I$(top_srcdir)/src/circuit \
       -I$(top_srcdir)/src/design_flows/backend/ToHDL \
       -I$(top_srcdir)/src/design_flows/technology \

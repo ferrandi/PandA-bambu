@@ -59,9 +59,19 @@
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
 #pragma GCC diagnostic ignored "-Wsign-promo"
 
+#define LIN64
+#define ABC_NAMESPACE pabc
+#define ABC_NO_USE_READLINE
 #define FMT_HEADER_ONLY 1
+#ifndef __APPLE__
+#define __APPLE__ 0
+#endif
+#ifndef __MACH__
+#define __MACH__ 0
+#endif
 
 #include <mockturtle/mockturtle.hpp>
+#include <mockturtle/algorithms/satlut_mapping.hpp>
 #endif
 
 #include <type_traits>
@@ -123,6 +133,8 @@
 #if HAVE_STDCXX_17
 
 #pragma region Macros declaration
+
+#define USE_SAT 1
 
 #define IS_GIMPLE_ASSIGN(it) (GET_NODE(*it)->get_kind() == gimple_assign_K)
 #define CHECK_BIN_EXPR_SIZE(binaryExpression) (static_cast<int>(tree_helper::Size(GET_NODE(binaryExpression->op0))) == 1 && static_cast<int>(tree_helper::Size(GET_NODE(binaryExpression->op1))) == 1)
@@ -210,7 +222,7 @@ public:
      */
     signal create_lut(std::vector<signal> s, uint32_t f) {
         return this->_create_node(s, f);
-    }
+        }
 };
 
 /**
@@ -474,15 +486,22 @@ mockturtle::klut_network SimplifyLutNetwork(const klut_network_ext &klut_e, unsi
     auto cleanedUp = cleanup_dangling(klut_e);
     mockturtle::mapping_view<mockturtle::klut_network, true> mapped_klut{cleanedUp};
 
-    mockturtle::lut_mapping_params ps;
-    ps.cut_enumeration_ps.cut_size = max_lut_size;
+#if USE_SAT
+    mockturtle::satlut_mapping_params mp;
+    mp.cut_enumeration_ps.cut_size = max_lut_size;
+
+    mockturtle::satlut_mapping<mockturtle::mapping_view<mockturtle::klut_network, true>, true>(mapped_klut, mp);
+#else
+    mockturtle::lut_mapping_params mp;
+    mp.cut_enumeration_ps.cut_size = max_lut_size;
 
 #ifndef NDEBUG
-    ps.verbose = true;
-    ps.cut_enumeration_ps.very_verbose = true;
+    //mp.verbose = true;
+    //mp.cut_enumeration_ps.very_verbose = true;
 #endif
 
-    mockturtle::lut_mapping<mockturtle::mapping_view<mockturtle::klut_network, true>, true>(mapped_klut, ps);
+    mockturtle::lut_mapping<mockturtle::mapping_view<mockturtle::klut_network, true>, true>(mapped_klut, mp);
+#endif
     return *mockturtle::collapse_mapped_network<mockturtle::klut_network>(mapped_klut);
 }
 
