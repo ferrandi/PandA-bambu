@@ -141,15 +141,6 @@ if BUILD_BAMBU
      virtual_phi_nodes_split.cpp \
      constant_flop_wrapper.cpp
    lib_IR_analysis_la_CPPFLAGS += \
-      -I$(top_srcdir)/ext/mockturtle/include/\
-      -I$(top_srcdir)/ext/mockturtle/lib/kitty/\
-      -I$(top_srcdir)/ext/mockturtle/lib/fmt/\
-      -I$(top_srcdir)/ext/mockturtle/lib/sparsepp\
-      -I$(top_srcdir)/ext/mockturtle/lib/ez\
-      -I$(top_srcdir)/ext/mockturtle/lib/lorina\
-      -I$(top_srcdir)/ext/mockturtle/lib/rang\
-      -I$(top_srcdir)/ext/mockturtle/lib/percy\
-      -I$(top_srcdir)/ext/mockturtle/lib/abcsat\
       -I$(top_srcdir)/src/circuit \
       -I$(top_srcdir)/src/design_flows/backend/ToHDL \
       -I$(top_srcdir)/src/design_flows/technology \
@@ -159,8 +150,6 @@ if BUILD_BAMBU
       -I$(top_srcdir)/src/intermediate_representations/hls \
       -I$(top_srcdir)/src/technology \
       -I$(top_srcdir)/src/technology/physical_library/models
-   lib_IR_analysis_la_LIBADD = \
-      $(top_builddir)/ext/lib_mockturtle.la
 
 if BUILD_LIB_ILP
    noinst_HEADERS += \
@@ -194,7 +183,6 @@ endif
 
 
 update_tree_weight.cpp : tree_weights_constant.data tree_weights_symbolic.data
-
 
 #The tab in this rule can't be replaced by blanks
 tree_weights_constant.data: $(top_srcdir)/etc/weight-models/tree_weights_constant.xml
