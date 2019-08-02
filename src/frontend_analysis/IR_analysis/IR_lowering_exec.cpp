@@ -636,12 +636,12 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
                            tree_nodeRef mul_ga_var = GetPointer<gimple_assign>(GET_NODE(mul_ga))->op0;
                            tree_nodeRef sub_expr = tree_man->create_binary_operation(type_expr, op0, mul_ga_var, srcp_default, minus_expr_K);
                            ga->op1 = sub_expr;
-#ifndef NDEBUG
-#endif
                         }
                         else
                            ga->op1 = quotient_expr;
+#ifndef NDEBUG
                         AppM->RegisterTransformation(step_name, *it_los);
+#endif
                         restart_analysis = true;
                      }
                   }
