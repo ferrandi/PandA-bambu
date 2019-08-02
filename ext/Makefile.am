@@ -292,3 +292,17 @@ if USE_GRLIB
 install-exec-hook:
 	cp -r $(top_srcdir)/ext/GRLIB  $(libdir)
 endif
+
+
+noinst_LTLIBRARIES = lib_mockturtle.la
+METASOURCES = AUTO
+
+lib_mockturtle_la_SOURCES = mockturtle/lib/abcsat/AbcGlucose.cpp mockturtle/lib/abcsat/Glucose.cpp mockturtle/lib/abcsat/satSolver.cpp mockturtle/lib/abcsat/satStore.cpp  mockturtle/lib/abcsat/SimpSolver.cpp
+lib_mockturtle_la_CPPFLAGS = \
+      -I$(top_srcdir)/ext/mockturtle/lib/abcsat/\
+      -DLIN64 -DABC_NAMESPACE=pabc -DABC_NO_USE_READLINE
+CXXFLAGS = -Wno-error=undef -Wno-unknown-pragmas -Wno-sign-conversion -Wno-conversion -Wno-shadow -Wno-switch-enum -Wno-unused-parameter -Wno-old-style-cast -Wno-cast-qual -Wno-zero-as-null-pointer-constant -Wno-non-virtual-dtor -Wno-pedantic -Wno-parentheses -Wno-switch-default -Wno-ctor-dtor-privacy -Wno-overloaded-virtual -Wno-sign-promo 
+
+#define FMT_HEADER_ONLY 1
+
+
