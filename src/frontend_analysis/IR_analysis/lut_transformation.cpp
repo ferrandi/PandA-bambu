@@ -222,7 +222,7 @@ public:
      */
     signal create_lut(std::vector<signal> s, uint32_t f) {
         return this->_create_node(s, f);
-        }
+    }
 };
 
 /**
@@ -431,10 +431,9 @@ std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_network &
 
     mockturtle::topo_view ntk_topo{klut};
 
-    auto p_index=0u;
-    ntk_topo.foreach_po([&](const auto &node) {
-       po_set[node]=p_index;
-       ++p_index;
+    ntk_topo.foreach_po([&](auto const& s, auto i) {
+std::cerr << "s" << s << " i " << i << std::endl;
+       po_set[s]=i;
     });
 
     ntk_topo.foreach_node([&](const auto &node) {
@@ -460,7 +459,7 @@ std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_network &
         luts.push_back(lut_node);
     });
 
-    ntk_topo.foreach_po([&](const auto &s) {
+    ntk_topo.foreach_po([&](auto const& s, auto i) {
         if (!ntk_topo.is_constant(ntk_topo.get_node(s))) {
             return; // continue
         }
@@ -470,8 +469,8 @@ std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_network &
             s,
             static_cast<uint64_t>(ntk_topo.constant_value( ntk_topo.get_node( s ) ) ^ ntk_topo.is_complemented( s )),
             fanIns,
-            po_set.find(s) != po_set.end(),
-            po_set.find(s) != po_set.end() ? po_set.find(s)->second : 0,
+            true,
+            i,
             true
         };
 
@@ -601,9 +600,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                 pos.push_back(*currentStatement);
             }
 
-            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-            //mockturtle::write_bench(klut_e, std::cout);
-            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            mockturtle::write_bench(klut_e, std::cout);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"<--LUT found");
 
             modified = true;
@@ -655,9 +654,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                 pos.push_back(*currentStatement);
             }
 
-            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-            //mockturtle::write_bench(klut_e, std::cout);
-            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            mockturtle::write_bench(klut_e, std::cout);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"<--truth_not_expr found");
 
             modified = true;
@@ -706,9 +705,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                 pos.push_back(*currentStatement);
             }
 
-            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-            //mockturtle::write_bench(klut_e, std::cout);
-            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            mockturtle::write_bench(klut_e, std::cout);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"<--cond_expr found");
 
             modified = true;
@@ -791,9 +790,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             pos.push_back(*currentStatement);
         }
 
-        //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-        //mockturtle::write_bench(klut_e, std::cout);
-        //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+        mockturtle::write_bench(klut_e, std::cout);
+        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement ");
         modified = true;
     }
@@ -812,6 +811,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
        for (auto lut : luts)
        {
           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---index: " + STR(lut.index));
+          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- po_index: " + STR(lut.po_index));
           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- func: " + STR(lut.lut_constant));
 #ifndef NDEBUG
           for(auto in : lut.fan_in)
@@ -819,12 +819,13 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 #endif          
           if(lut.is_po)
           {
-             std::cerr << "Is PO\n";
+             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Is PO");
+             auto po_stmpt = pos.at(lut.po_index);
              /// add previous statements defining non-primary outputs just before the current statement
              for(auto stmt: prev_stmts_to_add)
              {
                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding statement " + GET_NODE(stmt)->ToString());
-                block.second->PushBefore(stmt, pos.at(lut.po_index));
+                block.second->PushBefore(stmt, po_stmpt);
              }
              prev_stmts_to_add.clear();
           }
@@ -865,12 +866,16 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
           }
           if(lut.is_po)
           {
-             auto *gimpleAssign = GetPointer<gimple_assign>(GET_NODE(pos.at(lut.po_index)));
+             auto po_stmpt = pos.at(lut.po_index);
+             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Before statement " + GET_NODE(po_stmpt)->ToString());
+             auto *gimpleAssign = GetPointer<gimple_assign>(GET_NODE(po_stmpt));
              THROW_ASSERT(gimpleAssign, "unexpected condition");
              const std::string srcp_default = gimpleAssign->include_name + ":" + STR(gimpleAssign->line_number) + ":" + STR(gimpleAssign->column_number);
              auto ga_op0 = GET_NODE(gimpleAssign->op0);
              auto *ssa_ga_op0 = GetPointer<ssa_name>(ga_op0);
              THROW_ASSERT(ssa_ga_op0, "unexpected condition");
+             if(!lut.is_constant)
+                internal_nets[lut.index] = gimpleAssign->op0;
              tree_nodeRef new_op1;
              if(lut.is_constant)
              {
@@ -881,11 +886,11 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                 new_op1 = tree_man->create_lut_expr(ssa_ga_op0->type, lut_constant_node, op1, op2, op3, op4, op5, op6, op7, op8, srcp_default);
 
              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing " + STR(gimpleAssign->op1) + " with " + STR(new_op1));
-             TM->ReplaceTreeNode(pos.at(lut.po_index), gimpleAssign->op1, new_op1);
+             TM->ReplaceTreeNode(po_stmpt, gimpleAssign->op1, new_op1);
 #ifndef NDEBUG
-             AppM->RegisterTransformation(GetName(), pos.at(lut.po_index));
+             AppM->RegisterTransformation(GetName(), po_stmpt);
 #endif
-             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Modified statement " + GET_NODE(pos.at(lut.po_index))->ToString());
+             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Modified statement " + GET_NODE(po_stmpt)->ToString());
           }
           else
           {
