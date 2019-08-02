@@ -446,7 +446,12 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships, const Desi
 #endif
             {
                std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> frontend_relationships;
-               frontend_relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(BAMBU_FRONTEND_FLOW, FrontendFlowStep::WHOLE_APPLICATION));
+               frontend_relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(BASIC_BLOCKS_CFG_COMPUTATION, FrontendFlowStep::ALL_FUNCTIONS));
+               frontend_relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(DEAD_CODE_ELIMINATION, FrontendFlowStep::ALL_FUNCTIONS));
+               frontend_relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(LOOP_COMPUTATION, FrontendFlowStep::ALL_FUNCTIONS));
+               frontend_relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(NI_SSA_LIVENESS, FrontendFlowStep::ALL_FUNCTIONS));
+               frontend_relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(OPERATIONS_CFG_COMPUTATION, FrontendFlowStep::ALL_FUNCTIONS));
+               frontend_relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(VAR_ANALYSIS, FrontendFlowStep::ALL_FUNCTIONS));
                FrontendFlowStep::CreateSteps(design_flow_manager.lock(), frontend_relationships, AppM, relationships);
                break;
             }
