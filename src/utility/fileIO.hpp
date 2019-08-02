@@ -225,7 +225,7 @@ inline std::string GetDirectory(const boost::filesystem::path file)
 }
 
 /**
- * Return the extenstion of the file
+ * Return the extension of the file
  * @param file is the starting file
  * @return the extension of the file
  */
