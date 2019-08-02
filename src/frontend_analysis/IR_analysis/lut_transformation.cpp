@@ -134,7 +134,7 @@
 
 #pragma region Macros declaration
 
-#define USE_SAT 1
+#define USE_SAT 0
 
 #define IS_GIMPLE_ASSIGN(it) (GET_NODE(*it)->get_kind() == gimple_assign_K)
 #define CHECK_BIN_EXPR_SIZE(binaryExpression) (static_cast<int>(tree_helper::Size(GET_NODE(binaryExpression->op0))) == 1 && static_cast<int>(tree_helper::Size(GET_NODE(binaryExpression->op1))) == 1)
@@ -446,24 +446,41 @@ std::cerr << "s" << s << " i " << i << std::endl;
         ntk_topo.foreach_fanin(node, [&](auto const &fanin_node, auto index) {
             fanIns.push_back(fanin_node);
         });
-
+        auto LUT_func = ConvertHexToInt64<uint64_t>(kitty::to_hex(func));
+        auto is_zero = LUT_func == 0;
+        if(!is_zero) {
         klut_network_node lut_node = (klut_network_node) {
             node,
-            ConvertHexToInt64<uint64_t>(kitty::to_hex(func)),
+              LUT_func,
             fanIns,
-            po_set.find(node) != po_set.end(),
+              is_zero || po_set.find(node) != po_set.end(),
             po_set.find(node) != po_set.end() ? po_set.find(node)->second : 0,
-            false
+              is_zero
         };
-
         luts.push_back(lut_node);
+        }
     });
 
     ntk_topo.foreach_po([&](auto const& s, auto i) {
-        if (!ntk_topo.is_constant(ntk_topo.get_node(s))) {
-            return; // continue
-        }
+        if (ntk_topo.is_constant(ntk_topo.get_node(s))) {
 
+          std::vector<uint64_t> fanIns;
+          klut_network_node lut_node = (klut_network_node) {
+            s,
+            static_cast<uint64_t>(ntk_topo.constant_value( ntk_topo.get_node( s ) ) ^ ntk_topo.is_complemented( s )),
+            fanIns,
+            true,
+            i,
+            true
+          };
+          luts.push_back(lut_node);
+        }
+        else
+        {
+          auto func = ntk_topo.node_function(s);
+          auto LUT_func = ConvertHexToInt64<uint64_t>(kitty::to_hex(func));
+          auto is_zero = LUT_func == 0;
+          if(is_zero) {
         std::vector<uint64_t> fanIns;
         klut_network_node lut_node = (klut_network_node) {
             s,
@@ -473,23 +490,34 @@ std::cerr << "s" << s << " i " << i << std::endl;
             i,
             true
         };
-
         luts.push_back(lut_node);
+          }
+        }
     });
 
     return luts;
 }
 
+template<class kne>
 static
-mockturtle::klut_network SimplifyLutNetwork(const klut_network_ext &klut_e, unsigned max_lut_size) {
+mockturtle::klut_network SimplifyLutNetwork(const kne &klut_e, unsigned max_lut_size) {
     auto cleanedUp = cleanup_dangling(klut_e);
     mockturtle::mapping_view<mockturtle::klut_network, true> mapped_klut{cleanedUp};
 
 #if USE_SAT
     mockturtle::satlut_mapping_params mp;
     mp.cut_enumeration_ps.cut_size = max_lut_size;
+    //mp.verbose = true;
+    //mp.very_verbose = true;
 
     mockturtle::satlut_mapping<mockturtle::mapping_view<mockturtle::klut_network, true>, true>(mapped_klut, mp);
+    //std::cerr << "sat\n";
+    //mockturtle::write_bench(mapped_klut, std::cout);
+    mockturtle::lut_mapping_params lmp;
+    mp.cut_enumeration_ps.cut_size = max_lut_size;
+    mockturtle::lut_mapping<mockturtle::mapping_view<mockturtle::klut_network, true>, true>(mapped_klut, lmp);
+    //std::cerr << "lut\n";
+    //mockturtle::write_bench(mapped_klut, std::cout);
 #else
     mockturtle::lut_mapping_params mp;
     mp.cut_enumeration_ps.cut_size = max_lut_size;
@@ -600,9 +628,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                 pos.push_back(*currentStatement);
             }
 
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-            mockturtle::write_bench(klut_e, std::cout);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            //mockturtle::write_bench(klut_e, std::cout);
+            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"<--LUT found");
 
             modified = true;
@@ -654,9 +682,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                 pos.push_back(*currentStatement);
             }
 
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-            mockturtle::write_bench(klut_e, std::cout);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            //mockturtle::write_bench(klut_e, std::cout);
+            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"<--truth_not_expr found");
 
             modified = true;
@@ -705,9 +733,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                 pos.push_back(*currentStatement);
             }
 
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-            mockturtle::write_bench(klut_e, std::cout);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+            //mockturtle::write_bench(klut_e, std::cout);
+            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"<--cond_expr found");
 
             modified = true;
@@ -790,9 +818,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             pos.push_back(*currentStatement);
         }
 
-        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-        mockturtle::write_bench(klut_e, std::cout);
-        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+        //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+        //mockturtle::write_bench(klut_e, std::cout);
+        //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement ");
         modified = true;
     }
@@ -801,6 +829,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
     if (modified) {
        mockturtle::klut_network klut = SimplifyLutNetwork(klut_e, this->max_lut_size);
+       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---PI size " + STR(pis.size()));
+#ifndef NDEBUG
+       if (DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
           mockturtle::write_bench(klut, std::cout);
 
        std::vector<klut_network_node> luts = ParseKLutNetwork(klut);
