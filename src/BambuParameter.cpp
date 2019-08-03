@@ -3254,6 +3254,9 @@ void BambuParameter::CheckParameters()
    {
       setOption(OPT_evaluation_mode, Evaluation_Mode::DRY_RUN);
    }
+   /// When simd is enabled bit value analysis and optimization are disabled
+   if(getOption<int>(OPT_gcc_openmp_simd))
+      setOption(OPT_bitvalue_ipa, false);
 }
 
 void BambuParameter::SetDefaults()

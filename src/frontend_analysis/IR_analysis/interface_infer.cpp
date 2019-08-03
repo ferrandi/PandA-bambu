@@ -437,7 +437,7 @@ void interface_infer::create_Read_function(tree_nodeRef refStmt, const std::stri
    else
       args.push_back(argSSANode);
    auto call_expr_node = tree_man->CreateCallExpr(function_decl_node, args, srcp);
-   auto new_assignment = tree_man->CreateGimpleAssign(readType, call_expr_node, destBB, srcp);
+   auto new_assignment = tree_man->CreateGimpleAssign(readType, tree_nodeRef(), tree_nodeRef(), call_expr_node, destBB, srcp); /// TO BE IMPROVED
    tree_nodeRef temp_ssa_var = GetPointer<gimple_assign>(GET_NODE(new_assignment))->op0;
    for(auto defSSA : usedStmt_defs)
    {

@@ -1385,10 +1385,12 @@ tree_nodeRef tree_manipulation::create_integer_type_with_prec(unsigned int prec,
 /// SSA_NAME
 
 /// Create a ssa_name node
-tree_nodeRef tree_manipulation::create_ssa_name(const tree_nodeConstRef& var, const tree_nodeConstRef& type, bool volatile_flag, bool virtual_flag) const
+tree_nodeRef tree_manipulation::create_ssa_name(const tree_nodeConstRef& var, const tree_nodeConstRef& type, const tree_nodeConstRef& min, const tree_nodeConstRef& max, bool volatile_flag, bool virtual_flag) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating ssa starting from var " + (var ? var->ToString() : "") + " and type " + (type ? type->ToString() : ""));
    THROW_ASSERT(!var || var->get_kind() == tree_reindex_K, "Var node is not a tree reindex");
+   THROW_ASSERT(!min || min->get_kind() == tree_reindex_K, "min node is not a tree reindex");
+   THROW_ASSERT(!max || max->get_kind() == tree_reindex_K, "max node is not a tree reindex");
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    unsigned int vers = this->TreeM->get_next_vers();
@@ -1403,6 +1405,10 @@ tree_nodeRef tree_manipulation::create_ssa_name(const tree_nodeConstRef& var, co
       THROW_ASSERT(GET_CONST_NODE(var)->get_kind() == var_decl_K or GET_CONST_NODE(var)->get_kind() == parm_decl_K, GET_CONST_NODE(var)->get_kind_text());
       IR_schema[TOK(TOK_VAR)] = STR(var->index);
    }
+   if(min)
+      IR_schema[TOK(TOK_MIN)] = STR(min->index);
+   if(max)
+      IR_schema[TOK(TOK_MAX)] = STR(max->index);
    IR_schema[TOK(TOK_VERS)] = STR(vers);
    IR_schema[TOK(TOK_VOLATILE)] = STR(volatile_flag);
    IR_schema[TOK(TOK_VIRTUAL)] = STR(virtual_flag);
@@ -1451,10 +1457,12 @@ tree_nodeRef tree_manipulation::create_gimple_modify_stmt(const tree_nodeRef& op
    return node_ref;
 }
 
-tree_nodeRef tree_manipulation::CreateGimpleAssign(const tree_nodeRef& type, const tree_nodeRef& op, unsigned int bb_index, const std::string& srcp) const
+tree_nodeRef tree_manipulation::CreateGimpleAssign(const tree_nodeRef& type, const tree_nodeConstRef& min, const tree_nodeConstRef& max, const tree_nodeRef& op, unsigned int bb_index, const std::string& srcp) const
 {
-   tree_nodeRef ssa_vd = create_ssa_name(tree_nodeRef(), type);
-   return create_gimple_modify_stmt(ssa_vd, op, srcp, bb_index);
+   tree_nodeRef ssa_vd = create_ssa_name(tree_nodeRef(), type, min, max);
+   auto ga = create_gimple_modify_stmt(ssa_vd, op, srcp, bb_index);
+   GetPointer<ssa_name>(TreeM->get_tree_node_const(ssa_vd->index))->SetDefStmt(TreeM->GetTreeReindex(ga->index));
+   return ga;
 }
 
 /// GIMPLE_CALL
@@ -1566,13 +1574,13 @@ tree_nodeRef tree_manipulation::create_phi_node(tree_nodeRef& ssa_res, const std
    }
    if(sn_ref)
    {
-      ssa_res = create_ssa_name(sn_ref->var, sn_ref->type, false, sn_ref->virtual_flag);
+      ssa_res = create_ssa_name(sn_ref->var, sn_ref->type, sn_ref->min, sn_ref->max, false, sn_ref->virtual_flag);
    }
    else
    {
       unsigned ssa_res_type_index;
       const tree_nodeRef ssa_res_type_node = tree_helper::get_type_node(GET_NODE(list_of_def_edge.begin()->first), ssa_res_type_index);
-      ssa_res = create_ssa_name(tree_nodeRef(), ssa_res_type_node, false, false);
+      ssa_res = create_ssa_name(tree_nodeRef(), ssa_res_type_node, tree_nodeRef(), tree_nodeRef(), false, false);
    }
 
    unsigned int phi_node_nid = this->TreeM->new_tree_node_id();
@@ -2066,38 +2074,20 @@ tree_nodeRef tree_manipulation::CreateOrExpr(const tree_nodeConstRef& first_cond
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ssa_schema, truth_or_expr_schema, gimple_assign_schema;
    /// Create the or expr
    const auto truth_or_expr_id = TreeM->new_tree_node_id();
-   const auto type_index = create_boolean_type()->index;
+   const auto bt = create_boolean_type();
+   const auto type_index = bt->index;
    truth_or_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
    truth_or_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
    truth_or_expr_schema[TOK(TOK_OP0)] = STR(first_condition->index);
    truth_or_expr_schema[TOK(TOK_OP1)] = STR(second_condition->index);
    TreeM->create_tree_node(truth_or_expr_id, truth_or_expr_K, truth_or_expr_schema);
 
-   /// Create the ssa
-   auto ssa_vers = TreeM->get_next_vers();
-   auto ssa_node_nid = TreeM->new_tree_node_id();
-   ssa_schema[TOK(TOK_TYPE)] = STR(type_index);
-   ssa_schema[TOK(TOK_VERS)] = STR(ssa_vers);
-   ssa_schema[TOK(TOK_VOLATILE)] = STR(false);
-   ssa_schema[TOK(TOK_VIRTUAL)] = STR(false);
-   TreeM->create_tree_node(ssa_node_nid, ssa_name_K, ssa_schema);
-
-   /// Create the assign
-   const auto gimple_assign_id = TreeM->new_tree_node_id();
-   gimple_assign_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
-   gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
-   gimple_assign_schema[TOK(TOK_OP0)] = STR(ssa_node_nid);
-   gimple_assign_schema[TOK(TOK_OP1)] = STR(truth_or_expr_id);
-   TreeM->create_tree_node(gimple_assign_id, gimple_assign_K, gimple_assign_schema);
+   auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0,type_index), TreeM->CreateUniqueIntegerCst(1,type_index), TreeM->GetTreeReindex(truth_or_expr_id), 0, "<built-in>:0:0");
    if(block)
    {
-      block->PushBack(TreeM->GetTreeReindex(gimple_assign_id));
+      block->PushBack(ga);
    }
-   else
-   {
-      GetPointer<ssa_name>(TreeM->get_tree_node_const(ssa_node_nid))->SetDefStmt(TreeM->GetTreeReindex(gimple_assign_id));
-   }
-   return TreeM->GetTreeReindex(ssa_node_nid);
+   return GetPointer<gimple_assign>(GET_NODE(ga))->op0;
 }
 
 tree_nodeRef tree_manipulation::CreateAndExpr(const tree_nodeConstRef& first_condition, const tree_nodeConstRef& second_condition, const blocRef& block) const
@@ -2120,38 +2110,20 @@ tree_nodeRef tree_manipulation::CreateAndExpr(const tree_nodeConstRef& first_con
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ssa_schema, truth_and_expr_schema, gimple_assign_schema;
    /// Create the and expr
    const auto truth_and_expr_id = TreeM->new_tree_node_id();
-   const auto type_index = create_boolean_type()->index;
+   const auto bt = create_boolean_type();
+   const auto type_index = bt->index;
    truth_and_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
    truth_and_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
    truth_and_expr_schema[TOK(TOK_OP0)] = STR(first_condition->index);
    truth_and_expr_schema[TOK(TOK_OP1)] = STR(second_condition->index);
    TreeM->create_tree_node(truth_and_expr_id, truth_and_expr_K, truth_and_expr_schema);
 
-   /// Create the ssa
-   auto ssa_vers = TreeM->get_next_vers();
-   auto ssa_node_nid = TreeM->new_tree_node_id();
-   ssa_schema[TOK(TOK_TYPE)] = STR(type_index);
-   ssa_schema[TOK(TOK_VERS)] = STR(ssa_vers);
-   ssa_schema[TOK(TOK_VOLATILE)] = STR(false);
-   ssa_schema[TOK(TOK_VIRTUAL)] = STR(false);
-   TreeM->create_tree_node(ssa_node_nid, ssa_name_K, ssa_schema);
-
-   /// Create the assign
-   const auto gimple_assign_id = TreeM->new_tree_node_id();
-   gimple_assign_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
-   gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
-   gimple_assign_schema[TOK(TOK_OP0)] = STR(ssa_node_nid);
-   gimple_assign_schema[TOK(TOK_OP1)] = STR(truth_and_expr_id);
-   TreeM->create_tree_node(gimple_assign_id, gimple_assign_K, gimple_assign_schema);
+   auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0,type_index), TreeM->CreateUniqueIntegerCst(1,type_index), TreeM->GetTreeReindex(truth_and_expr_id), 0, "<built-in>:0:0");
    if(block)
    {
-      block->PushBack(TreeM->GetTreeReindex(gimple_assign_id));
+      block->PushBack(ga);
    }
-   else
-   {
-      GetPointer<ssa_name>(TreeM->get_tree_node_const(ssa_node_nid))->SetDefStmt(TreeM->GetTreeReindex(gimple_assign_id));
-   }
-   return TreeM->GetTreeReindex(ssa_node_nid);
+   return GetPointer<gimple_assign>(GET_NODE(ga))->op0;
 }
 
 tree_nodeRef tree_manipulation::CreateNotExpr(const tree_nodeConstRef& condition, const blocRef& block) const
@@ -2174,37 +2146,19 @@ tree_nodeRef tree_manipulation::CreateNotExpr(const tree_nodeConstRef& condition
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ssa_schema, truth_not_expr_schema, gimple_assign_schema;
    /// Create the not expr
    const auto truth_not_expr_id = TreeM->new_tree_node_id();
-   const auto type_index = create_boolean_type()->index;
+   const auto bt = create_boolean_type();
+   const auto type_index = bt->index;
    truth_not_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
    truth_not_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
    truth_not_expr_schema[TOK(TOK_OP)] = STR(condition->index);
    TreeM->create_tree_node(truth_not_expr_id, truth_not_expr_K, truth_not_expr_schema);
 
-   /// Create the ssa
-   auto ssa_vers = TreeM->get_next_vers();
-   auto ssa_node_nid = TreeM->new_tree_node_id();
-   ssa_schema[TOK(TOK_TYPE)] = STR(type_index);
-   ssa_schema[TOK(TOK_VERS)] = STR(ssa_vers);
-   ssa_schema[TOK(TOK_VOLATILE)] = STR(false);
-   ssa_schema[TOK(TOK_VIRTUAL)] = STR(false);
-   TreeM->create_tree_node(ssa_node_nid, ssa_name_K, ssa_schema);
-
-   /// Create the assign
-   const auto gimple_assign_id = TreeM->new_tree_node_id();
-   gimple_assign_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
-   gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
-   gimple_assign_schema[TOK(TOK_OP0)] = STR(ssa_node_nid);
-   gimple_assign_schema[TOK(TOK_OP1)] = STR(truth_not_expr_id);
-   TreeM->create_tree_node(gimple_assign_id, gimple_assign_K, gimple_assign_schema);
+   auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0,type_index), TreeM->CreateUniqueIntegerCst(1,type_index), TreeM->GetTreeReindex(truth_not_expr_id), 0, "<built-in>:0:0");
    if(block)
    {
-      block->PushBack(TreeM->GetTreeReindex(gimple_assign_id));
+      block->PushBack(ga);
    }
-   else
-   {
-      GetPointer<ssa_name>(TreeM->get_tree_node_const(ssa_node_nid))->SetDefStmt(TreeM->GetTreeReindex(gimple_assign_id));
-   }
-   return TreeM->GetTreeReindex(ssa_node_nid);
+   return GetPointer<gimple_assign>(GET_NODE(ga))->op0;
 }
 
 tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef& condition, const blocRef& block) const
@@ -2231,50 +2185,24 @@ tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef& condition, 
             }
          }
       }
-      const auto type_index = create_boolean_type()->index;
-      /// create the ssa_var representing the condition for bb1
-      unsigned int ssa1_vers = TreeM->get_next_vers();
-      unsigned int ret = TreeM->new_tree_node_id();
-      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
-      IR_schema[TOK(TOK_TYPE)] = STR(type_index);
-      IR_schema[TOK(TOK_VERS)] = STR(ssa1_vers);
-      IR_schema[TOK(TOK_VOLATILE)] = STR(false);
-      IR_schema[TOK(TOK_VIRTUAL)] = STR(false);
-      TreeM->create_tree_node(ret, ssa_name_K, IR_schema);
-      IR_schema.clear();
-      tree_nodeRef ssa1_cond_node = TreeM->GetTreeReindex(ret);
+      const auto bt = create_boolean_type();
+      const auto type_index = bt->index;
 
-      /// create the assignment between condition for bb1 and the new ssa var
-      unsigned int cond1_index = GET_INDEX_NODE(gc->op0);
-      unsigned int cond1_gimple_stmt_id = TreeM->new_tree_node_id();
-      IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
-      IR_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(ret);
-      IR_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(cond1_index);
-      TreeM->create_tree_node(cond1_gimple_stmt_id, gimple_assign_K, IR_schema);
-      IR_schema.clear();
-      tree_nodeRef cond1_created_stmt = TreeM->GetTreeReindex(cond1_gimple_stmt_id);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created statement " + cond1_created_stmt->ToString());
-      /// and then add to the bb1 statement list
+      auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0,type_index), TreeM->CreateUniqueIntegerCst(1,type_index), TreeM->GetTreeReindex(GET_INDEX_NODE(gc->op0)), 0, "<built-in>:0:0");
       if(block)
       {
-         block->PushBack(cond1_created_stmt);
+         block->PushBack(ga);
       }
-      else
-      {
-         GetPointer<ssa_name>(TreeM->get_tree_node_const(ret))->SetDefStmt(TreeM->GetTreeReindex(cond1_gimple_stmt_id));
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Condition created is " + TreeM->GetTreeReindex(ret)->ToString());
-      return TreeM->GetTreeReindex(ret);
+      auto ret = GetPointer<gimple_assign>(GET_NODE(ga))->op0;
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Condition created is " + ret->ToString());
+      return ret;
    }
 }
 
-tree_nodeRef tree_manipulation::CreateNopExpr(const tree_nodeConstRef& operand, const tree_nodeConstRef& type) const
+tree_nodeRef tree_manipulation::CreateNopExpr(const tree_nodeConstRef& operand, const tree_nodeConstRef& type, const tree_nodeConstRef& min, const tree_nodeConstRef& max) const
 {
-   /// This check has to be used for release when type cannot be created
-   if(not type)
-   {
-      return tree_nodeRef();
-   }
+   THROW_ASSERT(type and type->get_kind() == tree_reindex_K, "type is not a tree reindex");
+
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ne_schema, ga_schema;
    ne_schema[TOK(TOK_TYPE)] = STR(type->index);
    ne_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
@@ -2292,17 +2220,13 @@ tree_nodeRef tree_manipulation::CreateNopExpr(const tree_nodeConstRef& operand, 
       return tree_nodeRef();
    }
 
-   const auto new_ssa = create_ssa_name(tree_nodeRef(), type, false, false);
+   auto ga = CreateGimpleAssign(TreeM->GetTreeReindex(type->index), min, max, TreeM->GetTreeReindex(ne_id), 0, "<built-in>:0:0");
    if(ssa_operand)
    {
-      GetPointer<ssa_name>(GET_NODE(new_ssa))->use_set = ssa_operand->use_set;
+      GetPointer<ssa_name>(GET_NODE(GetPointer<gimple_assign>(GET_NODE(ga))->op0))->use_set = ssa_operand->use_set;
    }
-   ga_schema[TOK(TOK_OP1)] = STR(ne_id);
-   ga_schema[TOK(TOK_OP0)] = STR(new_ssa->index);
-   ga_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
-   const auto ga_id = TreeM->new_tree_node_id();
-   TreeM->create_tree_node(ga_id, gimple_assign_K, ga_schema);
-   return TreeM->GetTreeReindex(ga_id);
+
+   return ga;
 }
 
 tree_nodeRef tree_manipulation::CreateUnsigned(const tree_nodeConstRef& signed_type) const
@@ -2446,35 +2370,21 @@ tree_nodeRef tree_manipulation::CreateEqExpr(const tree_nodeConstRef& first_oper
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ssa_schema, eq_expr_schema, gimple_assign_schema;
    /// Create the eq expr
+   const auto bt = create_boolean_type();
+   const auto type_index = bt->index;
    const auto eq_expr_id = TreeM->new_tree_node_id();
-   const auto type_index = create_boolean_type()->index;
    eq_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
    eq_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
    eq_expr_schema[TOK(TOK_OP0)] = STR(first_operand->index);
    eq_expr_schema[TOK(TOK_OP1)] = STR(second_operand->index);
    TreeM->create_tree_node(eq_expr_id, eq_expr_K, eq_expr_schema);
 
-   /// Create the ssa
-   auto ssa_vers = TreeM->get_next_vers();
-   auto ssa_node_nid = TreeM->new_tree_node_id();
-   ssa_schema[TOK(TOK_TYPE)] = STR(type_index);
-   ssa_schema[TOK(TOK_VERS)] = STR(ssa_vers);
-   ssa_schema[TOK(TOK_VOLATILE)] = STR(false);
-   ssa_schema[TOK(TOK_VIRTUAL)] = STR(false);
-   TreeM->create_tree_node(ssa_node_nid, ssa_name_K, ssa_schema);
-
-   /// Create the assign
-   const auto gimple_assign_id = TreeM->new_tree_node_id();
-   gimple_assign_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
-   gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
-   gimple_assign_schema[TOK(TOK_OP0)] = STR(ssa_node_nid);
-   gimple_assign_schema[TOK(TOK_OP1)] = STR(eq_expr_id);
-   TreeM->create_tree_node(gimple_assign_id, gimple_assign_K, gimple_assign_schema);
+   auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0,type_index), TreeM->CreateUniqueIntegerCst(1,type_index), TreeM->GetTreeReindex(eq_expr_id), 0, "<built-in>:0:0");
    if(block)
    {
-      block->PushBack(TreeM->GetTreeReindex(gimple_assign_id));
+      block->PushBack(ga);
    }
-   return TreeM->GetTreeReindex(ssa_node_nid);
+   return GetPointer<gimple_assign>(GET_NODE(ga))->op0;
 }
 
 tree_nodeRef tree_manipulation::CreateCallExpr(const tree_nodeConstRef& called_function, const std::vector<tree_nodeRef>& args, const std::string& srcp) const
@@ -2528,7 +2438,7 @@ tree_nodeRef tree_manipulation::CreateGimpleAssignAddrExpr(const tree_nodeConstR
 {
    auto addr_tn = CreateAddrExpr(tn, srcp);
    const auto ptr_type = GetPointer<addr_expr>(GET_NODE(addr_tn))->type;
-   auto assign_node = CreateGimpleAssign(ptr_type, addr_tn, bb_index, srcp);
+   auto assign_node = CreateGimpleAssign(ptr_type, tree_nodeRef(), tree_nodeRef(), addr_tn, bb_index, srcp);
    auto ga = GetPointer<gimple_assign>(GET_NODE(assign_node));
    auto ssa = GetPointer<ssa_name>(GET_NODE(ga->op0));
    ssa->use_set = PointToSolutionRef(new PointToSolution());

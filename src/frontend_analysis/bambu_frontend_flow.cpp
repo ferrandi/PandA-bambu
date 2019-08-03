@@ -63,6 +63,9 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_manager.hpp"        // for tree_managerConstRef
 
+/// STL include
+#include <set>
+
 BambuFrontendFlow::BambuFrontendFlow(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) : ApplicationFrontendFlowStep(_AppM, BAMBU_FRONTEND_FLOW, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -132,8 +135,11 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SPLIT_RETURN, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, WHOLE_APPLICATION));
+         if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
+         {
+            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE, WHOLE_APPLICATION));
+            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, WHOLE_APPLICATION));
+         }
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTIPLE_ENTRY_IF_REDUCTION, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_PATTERNS, WHOLE_APPLICATION));
@@ -214,19 +220,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 DesignFlowStep_Status BambuFrontendFlow::Exec()
 {
 #ifndef NDEBUG
-   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
-   {
-      const tree_managerConstRef tree_manager = AppM->get_tree_manager();
-      const std::string file_name = parameters->getOption<std::string>(OPT_output_temporary_directory) + "after_frontend_flow";
-      const std::string raw_file_name = file_name + ".raw";
-      std::ofstream raw_file(raw_file_name.c_str());
-      tree_manager->print(raw_file);
-      raw_file.close();
-      const std::string gimple_file_name = file_name + ".gimple";
-      std::ofstream gimple_file(gimple_file_name.c_str());
-      tree_manager->PrintGimple(gimple_file, false);
-      gimple_file.close();
-   }
    if(parameters->getOption<bool>(OPT_print_dot) or debug_level >= DEBUG_LEVEL_PEDANTIC)
    {
       AppM->CGetCallGraphManager()->CGetCallGraph()->WriteDot("call_graph_final.dot");

@@ -91,15 +91,6 @@ class IR_lowering : public FunctionFrontendFlowStep
    tree_manipulationRef tree_man;
 
    /**
-    * Create gimple assignment
-    * @param type is the type the assignment
-    * @param op is the right part
-    * @param bb_index is the index of the basic block index
-    * @param srcp_default is the srcp to be assigned
-    */
-   tree_nodeRef CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string& srcp_default);
-
-   /**
     * A subroutine of expand_mult, used for constant multiplications.
     * Multiply OP0 by VAL in mode MODE, storing the result in TARGET if
     * convenient.  Use the shift/add sequence described by ALG and apply

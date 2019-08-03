@@ -420,7 +420,8 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   {
                      auto* mr = GetPointer<mem_ref>(op0);
                      THROW_ASSERT(GET_NODE(mr->op1)->get_kind() == integer_cst_K, "unexpected condition");
-                     auto written_bw = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(ga->op1));
+                     auto type_w_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op1));
+                     auto written_bw = resize_to_1_8_16_32_64_128_256_512(tree_helper::size(TM, type_w_index));
                      if(written_bw == 1)
                         written_bw = 8;
                      if(GetPointer<integer_cst>(GET_NODE(mr->op1))->value == 0)
@@ -488,9 +489,11 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                       const auto mr_used = GetPointer<mem_ref>(GET_NODE(ga_used->op1));
                                                       if(GetPointer<integer_cst>(GET_NODE(mr->op1))->value == GetPointer<integer_cst>(GET_NODE(mr_used->op1))->value)
                                                       {
-                                                         auto read_bw = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(ga_used->op0));
+                                                         auto type_r_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ga_used->op0));
+                                                         auto read_bw = resize_to_1_8_16_32_64_128_256_512(tree_helper::size(TM, type_r_index));
                                                          if(read_bw == 1)
                                                             read_bw = 8;
+                                                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---read_bw: " + STR(read_bw) + " written_bw: " + STR(written_bw));
                                                          if(GET_INDEX_NODE(mr->op0) == GET_INDEX_NODE(mr_used->op0) && written_bw == read_bw)
                                                          {
                                                             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---found a candidate " + GET_NODE(use.first)->ToString());

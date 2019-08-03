@@ -91,6 +91,14 @@
 #include <limits>
 #include <string>
 
+/// STL includes
+#include <list>
+#include <map>
+#include <set>
+#include <utility>
+#include <unordered_map>
+#include <unordered_set>
+
 /// Tree include
 #include "ext_tree_node.hpp"
 #include "tree_basic_block.hpp"
@@ -151,7 +159,10 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             case DesignFlowStep_Status::SUCCESS:
             {
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE, SAME_FUNCTION));
+               if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
+               {
+                  relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE, SAME_FUNCTION));
+               }
                relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
                relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SIMPLE_CODE_MOTION, SAME_FUNCTION));
                break;
@@ -473,13 +484,14 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
             {
                if(GET_NODE(ga->op0)->get_kind() == ssa_name_K)
                {
-                  const auto new_ssa = tree_man->create_ssa_name(tree_nodeRef(), GetPointer<ssa_name>(GET_NODE(ga->op0))->type);
+                  auto ssa0 = GetPointer<ssa_name>(GET_NODE(ga->op0));
+                  const auto new_ssa = tree_man->create_ssa_name(tree_nodeRef(), GetPointer<ssa_name>(GET_NODE(ga->op0))->type, ssa0->min, ssa0->max);
                   remaps[copy.second][ga->op0->index] = new_ssa->index;
                   reaching_defs[copy.second] = new_ssa;
                }
                if(ga->vdef)
                {
-                  const auto new_ssa = tree_man->create_ssa_name(tree_nodeRef(), GetPointer<ssa_name>(GET_NODE(ga->vdef))->type);
+                  const auto new_ssa = tree_man->create_ssa_name(tree_nodeRef(), GetPointer<ssa_name>(GET_NODE(ga->vdef))->type, tree_nodeRef(), tree_nodeRef());
                   GetPointer<ssa_name>(GET_NODE(new_ssa))->virtual_flag = true;
                   remaps[copy.second][ga->vdef->index] = new_ssa->index;
                   reaching_defs[copy.second] = new_ssa;

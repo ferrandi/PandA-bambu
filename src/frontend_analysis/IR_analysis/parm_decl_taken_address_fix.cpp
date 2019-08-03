@@ -169,7 +169,7 @@ DesignFlowStep_Status parm_decl_taken_address_fix::InternalExec()
 
          const tree_nodeRef p_type = pd->type;
          auto mr = IRman->create_binary_operation(p_type, ssa_addr, offset, srcp_default, mem_ref_K);
-         tree_nodeRef ssa_par = IRman->create_ssa_name(par, p_type);
+         tree_nodeRef ssa_par = IRman->create_ssa_name(par, p_type, tree_nodeRef(), tree_nodeRef());
          tree_nodeRef ga = IRman->create_gimple_modify_stmt(mr, ssa_par, srcp_default, bb_index);
          first_block->PushAfter(ga, new_ga_expr);
          GetPointer<gimple_node>(GET_NODE(ga))->artificial = true;
