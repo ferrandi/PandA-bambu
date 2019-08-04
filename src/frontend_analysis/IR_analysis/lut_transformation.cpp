@@ -59,9 +59,14 @@
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
 #pragma GCC diagnostic ignored "-Wsign-promo"
 
+#pragma region needed by mockturtle/algorithms/satlut_mapping.hpp
 #define LIN64
 #define ABC_NAMESPACE pabc
 #define ABC_NO_USE_READLINE
+#pragma endregion
+
+#define MAX_LUT_INT_SIZE 5
+
 #define FMT_HEADER_ONLY 1
 #ifndef __APPLE__
 #define __APPLE__ 0
@@ -137,8 +142,11 @@
 #define USE_SAT 0
 
 #define IS_GIMPLE_ASSIGN(it) (GET_NODE(*it)->get_kind() == gimple_assign_K)
-#define CHECK_BIN_EXPR_SIZE(binaryExpression) (static_cast<int>(tree_helper::Size(GET_NODE(binaryExpression->op0))) == 1 && static_cast<int>(tree_helper::Size(GET_NODE(binaryExpression->op1))) == 1)
-#define CHECK_COND_EXPR_SIZE(ce) (static_cast<int>(tree_helper::Size(GET_NODE(ce->op1))) == 1 && static_cast<int>(tree_helper::Size(GET_NODE(ce->op2))) == 1)
+#define CHECK_BIN_EXPR_BOOL_SIZE(be) (tree_helper::Size(GET_NODE((be)->op0)) == 1 && tree_helper::Size(GET_NODE((be)->op1)) == 1)
+#define CHECK_BIN_EXPR_INT_SIZE(be, max) (tree_helper::Size(GET_NODE((be)->op0)) <= max && tree_helper::Size(GET_NODE((be)->op1)) <= max)
+#define CHECK_COND_EXPR_SIZE(ce) (tree_helper::Size(GET_NODE((ce)->op1)) == 1 && tree_helper::Size(GET_NODE((ce)->op2)) == 1)
+#define CHECK_NOT_EXPR_SIZE(ne) (tree_helper::Size(GET_NODE((ne)->op)) == 1)
+
 #define VECT_CONTAINS(v, x) (std::find(v.begin(), v.end(), x) != v.end())
 
 #pragma endregion
@@ -149,7 +157,22 @@
  * `aig_network_ext` class provides operations derived from the one already existing in `mockturtle::aig_network`.
  */
 class klut_network_ext : public mockturtle::klut_network {
+private:
+    void fix_inputs_size(std::vector<signal> *a, std::vector<signal> *b, bool fill_up_value) {
+        if (a->size() > b->size()) {
+            for (int i  = 0; i < a->size() - b->size(); ++i) {
+                b->push_back(get_constant(fill_up_value));
+            }
+        } else if (a->size() < b->size()) {
+            for (int i  = 0; i < b->size() - a->size(); ++i) {
+                a->push_back(get_constant(fill_up_value));
+            }
+        }
+    }
+
 public:
+
+#pragma region single-bit operations
     /**
      * Creates a 'greater' or equal operation.
      * 
@@ -211,6 +234,34 @@ public:
     signal create_ne(signal const a, signal const b) {
         return this->create_xor(a, b);
     }
+#pragma endregion
+
+    std::vector<signal> create_pi_v(uint64_t size, std::vector<std::string> const &names = {}) {
+        std::vector<signal> pis(size);
+
+        for (int i = 0; i < size; i++) {
+            pis[i] = create_pi(i >= names.size() ? std::string() : names[i]);
+        }
+
+        return pis;
+    }
+
+    void create_po_v(std::vector<signal> pos, std::vector<std::string> const &names = {}) {
+        for (int i = 0; i < pos.size(); ++i) {
+            create_po(pos[i], i >= names.size() ? std::string() : names[i]);
+        }
+    }
+
+    std::vector<signal> get_constant_v(std::vector<bool> bits) {
+        std::vector<signal> outputs;
+        outputs.reserve(bits.size());
+
+        std::transform(bits.begin(), bits.end(), outputs.begin(), [&](const bool b) {
+            return b == false ? get_constant(false) : create_not(get_constant(false));
+        });
+
+        return outputs;
+    }
 
     /**
      * Creates a 'lut' operation from an `std::vector` of `mockturtle::klut_network::signal` with the associated constant.
@@ -222,7 +273,63 @@ public:
      */
     signal create_lut(std::vector<signal> s, uint32_t f) {
         return this->_create_node(s, f);
+        }
+
+#pragma region multi-bit operations
+
+    std::vector<signal> create_buf_v(std::vector<signal> const &a) {
+        return a;
     }
+
+    std::vector<signal> create_not_v(std::vector<signal> const &a) {
+        std::vector<signal> outputs;
+        std::transform(a.begin(), a.end(), std::back_inserter(outputs), [&](auto const &s) {
+            return this->create_not(s);
+        });
+
+        return outputs;
+    }
+
+    std::vector<signal> create_and_v(std::vector<signal> const a, std::vector<signal> const b) {
+        std::vector<signal> a_c(a), b_c(b);
+        this->fix_inputs_size(&a_c, &b_c, false);
+
+        std::vector<signal> outputs;
+        outputs.reserve(a.size());
+        std::transform(a.begin(), a.end(), b.begin(), std::back_inserter(outputs), [&](auto const &s1, auto const &s2) {
+            return this->create_and(s1, s2);
+        });
+
+        return outputs;
+    }
+
+    std::vector<signal> create_or_v(std::vector<signal> const a, std::vector<signal> const b) {
+        std::vector<signal> a_c(a), b_c(b);
+        this->fix_inputs_size(&a_c, &b_c, false);
+
+        std::vector<signal> outputs;
+        outputs.reserve(a.size());
+        std::transform(a.begin(), a.end(), b.begin(), std::back_inserter(outputs), [&](auto const &s1, auto const &s2) {
+            return this->create_or(s1, s2);
+        });
+
+        return outputs;
+    }
+
+    std::vector<signal> create_xor_v(std::vector<signal> const a, std::vector<signal> const b) {
+        std::vector<signal> a_c(a), b_c(b);
+        this->fix_inputs_size(&a_c, &b_c, false);
+
+        std::vector<signal> outputs;
+        outputs.reserve(a.size());
+        std::transform(a.begin(), a.end(), b.begin(), std::back_inserter(outputs), [&](auto const &s1, auto const &s2) {
+            return this->create_xor(s1, s2);
+        });
+
+        return outputs;
+    }
+
+#pragma endregion
 };
 
 /**
@@ -254,6 +361,12 @@ struct klut_network_node {
  */
 typedef mockturtle::klut_network::signal (klut_network_ext::*klut_network_fn)(const mockturtle::klut_network::signal, const mockturtle::klut_network::signal);
 
+/**
+ * Pointer that points to a function of `klut_network_ext`, that represents a binary operation between two `std::vector<mockturtle::klut_network::signal>`s
+ * and returns a `std::vector<mockturtle::klut_network::signal>`.
+ */
+typedef std::vector<mockturtle::klut_network::signal> (klut_network_ext::*klut_network_fn_v)(const std::vector<mockturtle::klut_network::signal>, const std::vector<mockturtle::klut_network::signal>);
+
 #pragma endregion
 
 /**
@@ -274,7 +387,8 @@ bool lut_transformation::CheckIfPI(tree_nodeRef in, unsigned int BB_index)
       return true;
    enum kind code = GET_NODE(gaDef->op1)->get_kind();
 
-   if (!VECT_CONTAINS(lutExpressibleOperations, code) || (GetPointer<cond_expr>(GET_NODE(gaDef->op1)) && !CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(GET_NODE(gaDef->op1)))) || (GetPointer<binary_expr>(GET_NODE(gaDef->op1)) && !CHECK_BIN_EXPR_SIZE(GetPointer<binary_expr>(GET_NODE(gaDef->op1))))) {
+   // TODO: add CHECK_BIN_EXPR_INT_SIZE
+   if (!VECT_CONTAINS(lutExpressibleOperations, code) || (GetPointer<truth_not_expr>(GET_NODE(gaDef->op1)) &&!CHECK_NOT_EXPR_SIZE(GetPointer<truth_not_expr>(GET_NODE(gaDef->op1)))) || (GetPointer<cond_expr>(GET_NODE(gaDef->op1)) && !CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(GET_NODE(gaDef->op1)))) || (GetPointer<binary_expr>(GET_NODE(gaDef->op1)) && !CHECK_BIN_EXPR_BOOL_SIZE(GetPointer<binary_expr>(GET_NODE(gaDef->op1))))) {
       return true;
    }
    return false;
@@ -329,7 +443,8 @@ bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> blo
         } else { // check if it has lut-expressible operations
             // checks if the operation code can be converted into a lut
             // and if it is a binary expression with the correct size of operators
-            if (VECT_CONTAINS(lutExpressibleOperations, code) && GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)) && CHECK_BIN_EXPR_SIZE(GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)))) {
+            if (VECT_CONTAINS(lutExpressibleOperations, code) && GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)) && CHECK_BIN_EXPR_BOOL_SIZE(GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)))) {
+                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---CheckIfProcessable: binary expr with Boolean operand returns true");
                 return true;
             }
         }
@@ -372,7 +487,8 @@ bool lut_transformation::CheckIfPO(gimple_assign *gimpleAssign) {
            enum kind code = GET_NODE(childGimpleAssign->op1)->get_kind();
 
             // it is a `PO` if code is not contained into `lutExpressibleOperations`
-            if (!VECT_CONTAINS(lutExpressibleOperations, code) || (GetPointer<truth_not_expr>(GET_NODE(childGimpleAssign->op1)) && !CHECK_NOT_EXPR_SIZE(GetPointer<truth_not_expr>(GET_NODE(childGimpleAssign->op1)))) || (GetPointer<cond_expr>(GET_NODE(childGimpleAssign->op1)) && !CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(GET_NODE(childGimpleAssign->op1)))) || (GetPointer<binary_expr>(GET_NODE(childGimpleAssign->op1)) && !CHECK_BIN_EXPR_SIZE(GetPointer<binary_expr>(GET_NODE(childGimpleAssign->op1))))) {
+            // TODO: add CHECK_BIN_EXPR_INT_SIZE
+            if (!VECT_CONTAINS(lutExpressibleOperations, code) || (GetPointer<truth_not_expr>(GET_NODE(childGimpleAssign->op1)) && !CHECK_NOT_EXPR_SIZE(GetPointer<truth_not_expr>(GET_NODE(childGimpleAssign->op1)))) || (GetPointer<cond_expr>(GET_NODE(childGimpleAssign->op1)) && !CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(GET_NODE(childGimpleAssign->op1)))) || (GetPointer<binary_expr>(GET_NODE(childGimpleAssign->op1)) && !CHECK_BIN_EXPR_BOOL_SIZE(GetPointer<binary_expr>(GET_NODE(childGimpleAssign->op1))))) {
                 return true;
             }
         }
@@ -382,7 +498,7 @@ bool lut_transformation::CheckIfPO(gimple_assign *gimpleAssign) {
 }
 
 static
-klut_network_fn GetNodeCreationFunction(enum kind code) {
+klut_network_fn GetBooleanNodeCreationFunction(enum kind code) {
     switch (code) {
         case bit_and_expr_K:
         case truth_and_expr_K:
@@ -410,12 +526,59 @@ klut_network_fn GetNodeCreationFunction(enum kind code) {
     }
 }
 
+static 
+std::vector<bool> IntegerToBitArray(long long int n, size_t size) {
+    std::vector<bool> bits;
+    bits.reserve(size);
+
+    for (auto i = 0; i < size; ++i) {
+        bits.push_back((n & (1 << i)) ? true : false);
+    }
+
+    return bits;
+}
+
+static
+klut_network_fn_v GetIntegerNodeCreationFunction(enum kind code) {
+    switch (code) {
+        case bit_and_expr_K:
+            return &klut_network_ext::create_and_v;
+        case bit_ior_expr_K:
+            return &klut_network_ext::create_or_v;
+        case bit_xor_expr_K:
+            return &klut_network_ext::create_xor_v;
+        case eq_expr_K:
+        case ge_expr_K:
+        case gt_expr_K:
+        case le_expr_K:
+        case lt_expr_K:
+        case ne_expr_K:
+        default:
+            return nullptr;
+    }
+}
+
+static
+std::string ConvertBitsToString(const std::vector<bool> &bits, std::string true_string = "vdd", std::string false_string = "gnd", std::string sep = ", ") {
+    std::string s;
+
+    for (int i = 0; i < bits.size(); ++i) {
+        s += bits[i] ? true_string : false_string;
+
+        if (i != 0 && i != bits.size() - 1) {
+            s += sep;
+        }
+    }
+
+    return s;
+}
+
 template <
     typename T,
     typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type
 >
 static
-T ConvertHexToInt64(const std::string &hex0) {
+T ConvertHexToNumber(const std::string &hex0) {
     uint64_t x;
     std::stringstream ss;
     ss << std::hex << hex0;
@@ -446,18 +609,18 @@ std::cerr << "s" << s << " i " << i << std::endl;
         ntk_topo.foreach_fanin(node, [&](auto const &fanin_node, auto index) {
             fanIns.push_back(fanin_node);
         });
-        auto LUT_func = ConvertHexToInt64<uint64_t>(kitty::to_hex(func));
+        auto LUT_func = ConvertHexToNumber<uint64_t>(kitty::to_hex(func));
         auto is_zero = LUT_func == 0;
         if(!is_zero) {
-        klut_network_node lut_node = (klut_network_node) {
-            node,
+          klut_network_node lut_node = (klut_network_node) {
+              node,
               LUT_func,
-            fanIns,
+              fanIns,
               is_zero || po_set.find(node) != po_set.end(),
-            po_set.find(node) != po_set.end() ? po_set.find(node)->second : 0,
+              po_set.find(node) != po_set.end() ? po_set.find(node)->second : 0,
               is_zero
-        };
-        luts.push_back(lut_node);
+          };
+          luts.push_back(lut_node);
         }
     });
 
@@ -478,19 +641,19 @@ std::cerr << "s" << s << " i " << i << std::endl;
         else
         {
           auto func = ntk_topo.node_function(s);
-          auto LUT_func = ConvertHexToInt64<uint64_t>(kitty::to_hex(func));
+          auto LUT_func = ConvertHexToNumber<uint64_t>(kitty::to_hex(func));
           auto is_zero = LUT_func == 0;
           if(is_zero) {
-        std::vector<uint64_t> fanIns;
-        klut_network_node lut_node = (klut_network_node) {
-            s,
-            static_cast<uint64_t>(ntk_topo.constant_value( ntk_topo.get_node( s ) ) ^ ntk_topo.is_complemented( s )),
-            fanIns,
-            true,
-            i,
-            true
-        };
-        luts.push_back(lut_node);
+            std::vector<uint64_t> fanIns;
+            klut_network_node lut_node = (klut_network_node) {
+              s,
+              static_cast<uint64_t>(ntk_topo.constant_value( ntk_topo.get_node( s ) ) ^ ntk_topo.is_complemented( s )),
+              fanIns,
+              true,
+              i,
+              true
+            };
+            luts.push_back(lut_node);
           }
         }
     });
@@ -537,6 +700,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
     auto BB_index = block.first;
 
     std::map<unsigned int, mockturtle::klut_network::signal> nodeRefToSignal;
+    std::map<unsigned int, std::vector<mockturtle::klut_network::signal>> nodeRefToSignalBus;
 
     std::vector<tree_nodeRef> pis;
     std::vector<tree_nodeRef> pos;
@@ -567,7 +731,6 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
     /// whether the BB has been modified
     bool modified = false;
 
-    // TODO: convert to function
     for (auto currentStatement = statements.begin(); currentStatement != statements.end(); ++currentStatement) {
         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + (*currentStatement)->ToString());
 
@@ -636,6 +799,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             modified = true;
             continue;
         }
+
         if (code1 == truth_not_expr_K) {
             auto *ne = GetPointer<truth_not_expr>(GET_NODE(gimpleAssign->op1));
             auto is_size_one = CHECK_NOT_EXPR_SIZE(ne);
@@ -748,13 +912,15 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             continue;
         }
 
-        // the operands must be Boolean
-        if (!CHECK_BIN_EXPR_SIZE(binaryExpression)) {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not Boolean operands");
+        if (!CHECK_BIN_EXPR_INT_SIZE(binaryExpression, MAX_LUT_INT_SIZE)) {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Operands' size are too large");
             continue;
         }
 
-        klut_network_fn nodeCreateFn = GetNodeCreationFunction(code1);
+        if (CHECK_BIN_EXPR_BOOL_SIZE(binaryExpression)) {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Boolean operands");
+
+            klut_network_fn nodeCreateFn = GetBooleanNodeCreationFunction(code1);
 
         if (nodeCreateFn == nullptr) {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not supported expression");
@@ -783,7 +949,6 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
            }
            else
               THROW_ERROR("unexpected condition");
-
             nodeRefToSignal[GET_INDEX_NODE(binaryExpression->op0)] = op1;
         }
 
@@ -805,7 +970,6 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
            }
            else
               THROW_ERROR("unexpected condition");
-
             nodeRefToSignal[GET_INDEX_NODE(binaryExpression->op1)] = op2;
         }
 
@@ -823,9 +987,101 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
         //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement ");
         modified = true;
+            continue;
     }
-       mockturtle::write_bench(klut, std::cout);
-       std::vector<klut_network_node> luts = ParseKLutNetwork(klut);
+
+        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Integers operands");
+
+        klut_network_fn_v nodeCreateFn = GetIntegerNodeCreationFunction(code1);
+
+        if (nodeCreateFn == nullptr) {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not supported expression");
+            continue;
+        }
+
+        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---translating in klut");
+
+        std::vector<mockturtle::klut_network::signal> res;
+        std::vector<mockturtle::klut_network::signal> op1 = {};
+        std::vector<mockturtle::klut_network::signal> op2 = {};
+
+        // if the first operand has already been processed then the previous signal is used
+        if (nodeRefToSignalBus.find(GET_INDEX_NODE(binaryExpression->op0)) != nodeRefToSignalBus.end()) {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI "+ GET_NODE(binaryExpression->op0)->ToString());
+            op1 = nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op0)];
+        } else { // otherwise the operand is a primary input
+            if (GET_NODE(binaryExpression->op0)->get_kind() == integer_cst_K) {
+                auto *int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op0));
+                auto bits = IntegerToBitArray(int_const->value, tree_helper::Size(GET_NODE(binaryExpression->op0)));
+
+                op1 = klut_e.get_constant_v(bits);
+                INDENT_DBG_MEX(
+                    DEBUG_LEVEL_VERY_PEDANTIC,
+                    debug_level,
+                    "---used {" + ConvertBitsToString(bits) + "}"
+                );
+            } else if (CheckIfPI(binaryExpression->op0, BB_index)) {
+                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PIs " + GET_NODE(binaryExpression->op0)->ToString());
+                op1 = klut_e.create_pi_v(tree_helper::Size(GET_NODE(binaryExpression->op0)));
+                
+                std::for_each(op1.begin(), op1.end(), [&binaryExpression, &pis](auto op) {
+                    pis.push_back(binaryExpression->op0);
+                });
+
+                nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op0)] = op1;
+            } else {
+                THROW_ERROR("unexpected condition");
+            }
+        }
+
+        // if the second operand has already been processed then the previous signal is used
+        if (nodeRefToSignalBus.find(GET_INDEX_NODE(binaryExpression->op1)) != nodeRefToSignalBus.end()) {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI "+ GET_NODE(binaryExpression->op1)->ToString());
+            op2 = nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op1)];
+        } else { // otherwise the operand is a primary input
+            if (GET_NODE(binaryExpression->op1)->get_kind() == integer_cst_K) {
+                auto *int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op1));
+                auto bits = IntegerToBitArray(int_const->value, tree_helper::Size(GET_NODE(binaryExpression->op1)));
+
+                op2 = klut_e.get_constant_v(bits);
+                INDENT_DBG_MEX(
+                    DEBUG_LEVEL_VERY_PEDANTIC, 
+                    debug_level, 
+                    "---used {" + ConvertBitsToString(bits) + "}"
+                );
+            } else if (CheckIfPI(binaryExpression->op1, BB_index)) {
+                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PIs " + GET_NODE(binaryExpression->op1)->ToString());
+                op2 = klut_e.create_pi_v(tree_helper::Size(GET_NODE(binaryExpression->op1)));
+                
+                std::for_each(op2.begin(), op2.end(), [&binaryExpression, &pis](auto op) {
+                    pis.push_back(binaryExpression->op1);
+                });
+
+                nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op1)] = op2;
+            } else {
+                THROW_ERROR("unexpected condition");
+            }
+        }
+
+        res = (klut_e.*nodeCreateFn)(op1, op2);
+        nodeRefToSignalBus[GET_INDEX_NODE(gimpleAssign->op0)] = res;
+
+        if (this->CheckIfPO(gimpleAssign)) {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is PO");
+            klut_e.create_po_v(res);
+
+            std::for_each(res.begin(), res.end(), [&currentStatement, &pos](auto op) {
+                pos.push_back(*currentStatement);
+            });
+        }
+
+        //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+        //mockturtle::write_bench(klut_e, std::cout);
+        //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement ");
+        modified = true;
+        continue;
+    }
 
     if (modified) {
        mockturtle::klut_network klut = SimplifyLutNetwork(klut_e, this->max_lut_size);
@@ -872,7 +1128,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
              else if(internal_nets.find(in) != internal_nets.end())
                 operand = internal_nets.find(in)->second;
              else
-                THROW_ERROR("unexpected condition");
+                THROW_ERROR("unexpected condition" + STR(p_index));
+
              if(p_index == 1)
                 op1 = operand;
              else if(p_index == 2)
@@ -895,6 +1152,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
              }
                 ++p_index;
           }
+
           if(lut.is_po)
           {
              auto po_stmpt = pos.at(lut.po_index);

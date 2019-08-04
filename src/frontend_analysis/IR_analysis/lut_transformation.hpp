@@ -106,15 +106,6 @@ private:
 
     bool CheckIfProcessable(std::pair<unsigned int, blocRef> block);
 
-    /**
-     * Create gimple assignment
-     * @param type is the type the assignment
-     * @param op is the right part
-     * @param bb_index is the index of the basic block index
-     * @param srcp_default is the srcp to be assigned
-     */
-    tree_nodeRef CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string &srcp_default);
-    
 #endif
 
     /**
