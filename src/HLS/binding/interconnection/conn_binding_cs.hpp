@@ -29,13 +29,13 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file conn_binding_cs.cpp
  * @brief Connect the new component instantiated by the flow context_switch
  *
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
-*/
+ */
 
 #ifndef CONN_BINDING_CS_H
 #define CONN_BINDING_CS_H
@@ -44,7 +44,7 @@
 
 class conn_binding_cs : public conn_binding
 {
-public:
+ public:
    /**
     * @Constructor
     */
@@ -62,8 +62,8 @@ public:
     * @param SM
     */
    void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM);
-protected:
 
+ protected:
    /**
     * @brief connect_suspension_component
     * @param HLSMgr

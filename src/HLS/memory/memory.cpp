@@ -50,11 +50,10 @@
 #include "application_manager.hpp"
 #include "call_graph_manager.hpp"
 
+#include "Parameter.hpp"
 #include "funit_obj.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "funit_obj.hpp"
-#include "Parameter.hpp"
 
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
@@ -69,28 +68,28 @@
 
 /// we start to allocate from internal_base_address_alignment byte to align address to internal_base_address_alignment bits
 /// we can use address 0 in some cases but it is not safe in general.
-memory::memory(const tree_managerRef _TreeM, unsigned int _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, unsigned int &_address_bitsize) :
-   TreeM(_TreeM),
-   maximum_private_memory_size(0),
-   total_amount_of_private_memory(0),
-   total_amount_of_parameter_memory(0),
-   off_base_address(_off_base_address),
-   next_off_base_address(_off_base_address),
-   bus_data_bitsize(0),
-   bus_addr_bitsize(_address_bitsize),
-   bus_size_bitsize(0),
-   aligned_bitsize(0),
-   bram_bitsize(0),
-   maxbram_bitsize(0),
-   intern_shared_data(false),
-   use_unknown_addresses(false),
-   pointer_conversion(false),
-   unaligned_accesses(false),
-   all_pointers_resolved(false),
-   implicit_memcpy(false),
-   parameter_alignment(16),
-   null_pointer_check(_null_pointer_check),
-   packed_vars(false)
+memory::memory(const tree_managerRef _TreeM, unsigned int _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, unsigned int& _address_bitsize)
+    : TreeM(_TreeM),
+      maximum_private_memory_size(0),
+      total_amount_of_private_memory(0),
+      total_amount_of_parameter_memory(0),
+      off_base_address(_off_base_address),
+      next_off_base_address(_off_base_address),
+      bus_data_bitsize(0),
+      bus_addr_bitsize(_address_bitsize),
+      bus_size_bitsize(0),
+      aligned_bitsize(0),
+      bram_bitsize(0),
+      maxbram_bitsize(0),
+      intern_shared_data(false),
+      use_unknown_addresses(false),
+      pointer_conversion(false),
+      unaligned_accesses(false),
+      all_pointers_resolved(false),
+      implicit_memcpy(false),
+      parameter_alignment(16),
+      null_pointer_check(_null_pointer_check),
+      packed_vars(false)
 {
    unsigned int max_bus_size = 2 * max_bram;
    external_base_address_alignment = internal_base_address_alignment = max_bus_size / 8;
@@ -107,12 +106,13 @@ memory::memory(const tree_managerRef _TreeM, unsigned int _off_base_address, uns
 
 memory::~memory() = default;
 
-memoryRef memory::create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM, unsigned int _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, unsigned int &_address_bitsize)
+memoryRef memory::create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM, unsigned int _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address,
+                                unsigned int& _address_bitsize)
 {
    if(_parameters->isOption(OPT_context_switch))
-       return memoryRef(new memory_cs(_TreeM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p, initial_internal_address, _address_bitsize));
+      return memoryRef(new memory_cs(_TreeM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p, initial_internal_address, _address_bitsize));
    else
-       return memoryRef(new memory(_TreeM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p, initial_internal_address, _address_bitsize));
+      return memoryRef(new memory(_TreeM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p, initial_internal_address, _address_bitsize));
 }
 
 std::map<unsigned int, memory_symbolRef> memory::get_ext_memory_variables() const
@@ -553,7 +553,7 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
 {
    std::map<std::string, std::string> res_parameters;
 
-   if (src->ExistsParameter(MEMORY_PARAMETER))
+   if(src->ExistsParameter(MEMORY_PARAMETER))
    {
       std::vector<std::string> current_src_parameters = convert_string_to_vector<std::string>(src->GetParameter(MEMORY_PARAMETER), ";");
       for(unsigned int l = 0; l < current_src_parameters.size(); l++)
@@ -570,7 +570,7 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
       for(unsigned int i = 0; i < srcModule->get_internal_objects_size(); ++i)
       {
          structural_objectRef subModule = srcModule->get_internal_object(i);
-         if (subModule->ExistsParameter(MEMORY_PARAMETER))
+         if(subModule->ExistsParameter(MEMORY_PARAMETER))
          {
             std::vector<std::string> current_src_parameters = convert_string_to_vector<std::string>(subModule->GetParameter(MEMORY_PARAMETER), ";");
             for(unsigned int l = 0; l < current_src_parameters.size(); l++)
@@ -582,7 +582,7 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
       }
    }
 
-   if (not tgt->get_circ()->ExistsParameter(MEMORY_PARAMETER))
+   if(not tgt->get_circ()->ExistsParameter(MEMORY_PARAMETER))
    {
       tgt->get_circ()->AddParameter(MEMORY_PARAMETER, "");
    }
@@ -590,7 +590,7 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
    for(unsigned int l = 0; l < current_tgt_parameters.size(); l++)
    {
       std::vector<std::string> current_parameter = convert_string_to_vector<std::string>(current_tgt_parameters[l], "=");
-      if (res_parameters.find(current_parameter[0]) != res_parameters.end() && res_parameters[current_parameter[0]] != current_parameter[1])
+      if(res_parameters.find(current_parameter[0]) != res_parameters.end() && res_parameters[current_parameter[0]] != current_parameter[1])
          THROW_ERROR("The parameter \"" + current_parameter[0] + "\" has been set with (at least) two different values");
       res_parameters[current_parameter[0]] = current_parameter[1];
    }
@@ -610,7 +610,7 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
 
 void memory::add_memory_parameter(const structural_managerRef SM, const std::string& name, const std::string& value)
 {
-   if (not SM->get_circ()->ExistsParameter(MEMORY_PARAMETER))
+   if(not SM->get_circ()->ExistsParameter(MEMORY_PARAMETER))
    {
       SM->get_circ()->AddParameter(MEMORY_PARAMETER, "");
    }

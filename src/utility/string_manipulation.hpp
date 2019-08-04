@@ -40,15 +40,15 @@
 #ifndef STRING_MANIPULATION_HPP
 #define STRING_MANIPULATION_HPP
 
-///boost includes
+/// boost includes
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/lexical_cast.hpp>
 
-///STD include
+/// STD include
 #include <cxxabi.h>
 
-///STL include
+/// STL include
 #include <vector>
 
 /**
@@ -258,5 +258,5 @@ inline std::string convert_fp_to_string(std::string num, unsigned int precision)
  * @param real_type is true if the type of the number is real
  * @param unsigned_type is true if the type of the number is unsigned
  */
-std::string ConvertInBinary(const std::string & C_value, const unsigned int precision, const bool real_type, const bool unsigned_type);
+std::string ConvertInBinary(const std::string& C_value, const unsigned int precision, const bool real_type, const bool unsigned_type);
 #endif

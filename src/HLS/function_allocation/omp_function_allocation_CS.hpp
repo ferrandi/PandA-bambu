@@ -29,43 +29,43 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file omp_function_allocation.hpp
  * @brief extension of Class to allocate function in HLS based on context switch
  *
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
  *
-*/
+ */
 
 #ifndef OMP_FUNCTION_ALLOCATION_CS_HPP
 #define OMP_FUNCTION_ALLOCATION_CS_HPP
 
-///Superclass include
+/// Superclass include
 #include "fun_dominator_allocation.hpp"
 
 class OmpFunctionAllocationCS : public fun_dominator_allocation
 {
-   public:
-      /**
-       * Constructor
-       */
-      OmpFunctionAllocationCS(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+ public:
+   /**
+    * Constructor
+    */
+   OmpFunctionAllocationCS(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Destructor
-       */
-     virtual ~OmpFunctionAllocationCS();
+   /**
+    * Destructor
+    */
+   virtual ~OmpFunctionAllocationCS();
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status Exec();
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status Exec();
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      void Initialize();
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize();
 };
 #endif

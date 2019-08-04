@@ -29,28 +29,28 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file mem_dominator_allocation_CS.hpp
  * @brief add tag information
  *
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
-*/
+ */
 
 #ifndef MEMORY_CS_H
 #define MEMORY_CS_H
 #include "memory.hpp"
 
 class memory_cs : public memory
-{  
-    /// bus data bitsize
-    unsigned int bus_tag_bitsize;
+{
+   /// bus data bitsize
+   unsigned int bus_tag_bitsize;
 
-public:
+ public:
    /**
     * Constructor
     */
-   memory_cs(const tree_managerRef TreeM, unsigned int off_base_address, unsigned int max_bram, bool null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, unsigned int &_address_bitsize);
+   memory_cs(const tree_managerRef TreeM, unsigned int off_base_address, unsigned int max_bram, bool null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, unsigned int& _address_bitsize);
 
    /**
     * Destructor
@@ -60,12 +60,18 @@ public:
    /**
     * set the bus tag bitsize
     */
-   void set_bus_tag_bitsize(unsigned int bitsize) {bus_tag_bitsize=bitsize;}
+   void set_bus_tag_bitsize(unsigned int bitsize)
+   {
+      bus_tag_bitsize = bitsize;
+   }
 
    /**
     * return the bitsize of the tag bus
     */
-   unsigned int get_bus_tag_bitsize() const {return bus_tag_bitsize;}
+   unsigned int get_bus_tag_bitsize() const
+   {
+      return bus_tag_bitsize;
+   }
 };
 
 #endif // MEMORY_CS_H

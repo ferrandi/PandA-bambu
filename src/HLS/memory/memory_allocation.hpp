@@ -71,8 +71,8 @@ enum class MemoryAllocation_ChannelsType
    MEM_ACC_11 = 0, /// for each memory at maximum one direct access and one indirect access
    MEM_ACC_N1,     /// for each memory at maximum n parallel direct accesses and one indirect access
    MEM_ACC_NN,     /// for each memory at maximum n parallel direct accesses and n parallel indirect accesses
-   MEM_ACC_P1N,     /// only external memory access Datapath see only 1 memory port, while the bus manage parallel accesses
-   MEM_ACC_CS       /// memory architecture for non blocking request
+   MEM_ACC_P1N,    /// only external memory access Datapath see only 1 memory port, while the bus manage parallel accesses
+   MEM_ACC_CS      /// memory architecture for non blocking request
 };
 
 /**

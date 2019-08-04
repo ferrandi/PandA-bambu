@@ -29,37 +29,36 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file parallel_memory_conn_binding.hpp
  * @brief Data structure used to store the interconnection binding of datapath elements when parallel memory controller is adopted
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef PARALLEL_MEMORY_CONN_BINDING_HPP
 #define PARALLEL_MEMORY_CONN_BINDING_HPP
 
-///Superclass include
+/// Superclass include
 #include "conn_binding.hpp"
 
 class ParallelMemoryConnBinding : public conn_binding
 {
-   public:
-      /**
-       * Constructor.
-       */
-      ParallelMemoryConnBinding(const BehavioralHelperConstRef BH, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor.
+    */
+   ParallelMemoryConnBinding(const BehavioralHelperConstRef BH, const ParameterConstRef parameters);
 
-      /**
-       * Destructor.
-       */
-      virtual ~ParallelMemoryConnBinding();
+   /**
+    * Destructor.
+    */
+   virtual ~ParallelMemoryConnBinding();
 
-      /**
-       * Add the interconnection to the structural representation of the datapath
-       */
-      void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM);
-
+   /**
+    * Add the interconnection to the structural representation of the datapath
+    */
+   void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM);
 };
 #endif

@@ -29,13 +29,13 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file mem_dominator_allocation_CS.hpp
  * @brief Class to allocate memories in HLS based on dominators, add tag for context switch
  *
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
-*/
+ */
 
 #ifndef MEMORY_DOMINATOR_ALLOCATION_CS_HPP
 #define MEMORY_DOMINATOR_ALLOCATION_CS_HPP
@@ -44,23 +44,24 @@
 
 class mem_dominator_allocation_cs : public mem_dominator_allocation
 {
-public:
-    /**
-     * Constructor
-     * @param design_flow_manager is the design flow manager
-     */
-    mem_dominator_allocation_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization, const HLSFlowStep_Type hls_flow_step_type);
+ public:
+   /**
+    * Constructor
+    * @param design_flow_manager is the design flow manager
+    */
+   mem_dominator_allocation_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization,
+                               const HLSFlowStep_Type hls_flow_step_type);
 
-    /**
-     * Destructor
-     */
-    virtual ~mem_dominator_allocation_cs();
+   /**
+    * Destructor
+    */
+   virtual ~mem_dominator_allocation_cs();
 
-    /**
-     * Execute the step
-     * @return the exit status of this step
-     */
-    virtual DesignFlowStep_Status Exec();
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   virtual DesignFlowStep_Status Exec();
 };
 
 #endif // MEM_DOMINATOR_ALLOCATION_CS_H

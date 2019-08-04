@@ -63,10 +63,9 @@
 #include "state_transition_graph_manager.hpp"
 
 #include "area_model.hpp"
+#include "omp_functions.hpp"
 #include "structural_manager.hpp"
 #include "time_model.hpp"
-#include "area_model.hpp"
-#include "omp_functions.hpp"
 
 /// HLS/module_allocation include
 #include "allocation_information.hpp"
@@ -111,40 +110,41 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
             }
             else
             {
-               ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_function_allocation_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));     //add dependence to omp_function
+               ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_function_allocation_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION)); // add dependence to omp_function
                if(HLSMgr->Rfuns)
                {
-                  bool found=false;
+                  bool found = false;
                   if(parameters->isOption(OPT_context_switch))
                   {
                      auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
-                     THROW_ASSERT(omp_functions,"OMP_functions must not be null");
+                     THROW_ASSERT(omp_functions, "OMP_functions must not be null");
                      if(omp_functions->omp_for_wrappers.find(funId) != omp_functions->omp_for_wrappers.end())
                      {
                         const HLSFlowStep_Type top_entity_type = HLSFlowStep_Type::TOP_ENTITY_CS_PARALLEL_CREATION;
                         ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-                        found=true;
+                        found = true;
                      }
                      else
                      {
-                        if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end()) found=true;
-                        if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end()) found=true;
-                        if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end()) found=true;
-                        if(found)  //use new top_entity
+                        if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
+                           found = true;
+                        if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end())
+                           found = true;
+                        if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end())
+                           found = true;
+                        if(found) // use new top_entity
                         {
                            const HLSFlowStep_Type top_entity_type = HLSFlowStep_Type::TOP_ENTITY_CS_CREATION;
                            ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
                         }
                      }
                   }
-                  if(!found)  //use standard
+                  if(!found) // use standard
                   {
                      const auto cg_man = HLSMgr->CGetCallGraphManager();
-                     const HLSFlowStep_Type top_entity_type =
-                        HLSMgr->hasToBeInterfaced(funId) and
-                        (cg_man->ExistsAddressedFunction() or parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION) ?
-                        HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION :
-                        HLSFlowStep_Type::TOP_ENTITY_CREATION;
+                     const HLSFlowStep_Type top_entity_type = HLSMgr->hasToBeInterfaced(funId) and (cg_man->ExistsAddressedFunction() or parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION) ?
+                                                                  HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION :
+                                                                  HLSFlowStep_Type::TOP_ENTITY_CREATION;
                      ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
                   }
                }
@@ -202,7 +202,7 @@ DesignFlowStep_Status add_library::InternalExec()
    operation* op = GetPointer<operation>(fu->get_operation(function_name));
    op->time_m = time_model::create_model(device->get_type(), parameters);
    op->primary_inputs_registered = HLS->registered_inputs;
-   ///First computing if operation is bounded, then computing call_delay; call_delay depends on the value of bounded
+   /// First computing if operation is bounded, then computing call_delay; call_delay depends on the value of bounded
    if(HLS->STG and HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->is_a_dag)
    {
       std::string function_name = BH->get_function_name();
@@ -250,8 +250,8 @@ DesignFlowStep_Status add_library::InternalExec()
       op->bounded = false;
    }
    double call_delay;
-   if(HLS->allocation_information==NULL)  //in a flow as parallel HLS->allocation is null
-      call_delay=clock_period_value;
+   if(HLS->allocation_information == NULL) // in a flow as parallel HLS->allocation is null
+      call_delay = clock_period_value;
    else
       call_delay = HLS->allocation_information->estimate_call_delay();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Estimated call delay " + STR(call_delay));
@@ -260,8 +260,8 @@ DesignFlowStep_Status add_library::InternalExec()
       double exec_time;
       unsigned int min_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles;
       unsigned int max_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->max_cycles;
-      if(min_cycles>1)
-         exec_time = clk*(min_cycles-1)+call_delay;
+      if(min_cycles > 1)
+         exec_time = clk * (min_cycles - 1) + call_delay;
       else
          exec_time = call_delay;
       op->time_m->set_execution_time(exec_time, min_cycles);

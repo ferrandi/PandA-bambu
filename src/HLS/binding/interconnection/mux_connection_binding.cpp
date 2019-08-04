@@ -65,12 +65,11 @@
 /// high-level syntesis sub-tasks results
 #include "conn_binding.hpp"
 #include "fu_binding.hpp"
-#include "reg_binding.hpp"
-#include "conn_binding.hpp"
-#include "parallel_memory_conn_binding.hpp"
 #include "liveness.hpp"
 #include "memory.hpp"
 #include "memory_symbol.hpp"
+#include "parallel_memory_conn_binding.hpp"
+#include "reg_binding.hpp"
 
 /// Allocation datastructure
 #include "allocation.hpp"

@@ -223,8 +223,7 @@ static void buildCircuit(structural_managerRef SM, structural_objectRef wrappedO
    std::ofstream baseAddressFile(baseAddressFileName);
 
    std::string topFunctionBaseAddress = STR(WB_BASE_ADDRESS) + "_" + topFunctionName;
-   wrappedObj->SetParameter(topFunctionBaseAddress,
-                             topModuleBaseAddress + " + " + topFunctionBaseAddress);
+   wrappedObj->SetParameter(topFunctionBaseAddress, topModuleBaseAddress + " + " + topFunctionBaseAddress);
 
    baseAddressFile << std::bitset<8 * sizeof(unsigned int)>(HLSMgr->Rmem->get_first_address(HLS->functionId)) << '\n' << std::bitset<8 * sizeof(unsigned int)>(HLSMgr->Rmem->get_last_address(HLS->functionId, HLSMgr)) << '\n';
 
@@ -241,8 +240,7 @@ static void buildCircuit(structural_managerRef SM, structural_objectRef wrappedO
       structural_objectRef additionalTop = SM->add_module_from_technology_library(functionName, moduleName, WORK_LIBRARY, interfaceObj, HLS->HLS_T->get_technology_manager());
 
       std::string acceleratorBaseAddress = STR(WB_BASE_ADDRESS) + "_" + functionName;
-      additionalTop->SetParameter(acceleratorBaseAddress,
-                                   topModuleBaseAddress + " + " + acceleratorBaseAddress);
+      additionalTop->SetParameter(acceleratorBaseAddress, topModuleBaseAddress + " + " + acceleratorBaseAddress);
 
       // Clock and reset connection
       SM->add_connection(interfaceObj->find_member(CLOCK_PORT_NAME, port_o_K, interfaceObj), additionalTop->find_member(CLOCK_PORT_NAME, port_o_K, additionalTop));

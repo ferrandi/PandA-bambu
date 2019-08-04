@@ -283,7 +283,7 @@ inline void CopyFile(boost::filesystem::path file_source, boost::filesystem::pat
  * @param first_part is the first part to be combined
  * @param second_part is the second part to be combined
  */
-inline std::string BuildPath(const std::string & first_part, const std::string second_part)
+inline std::string BuildPath(const std::string& first_part, const std::string second_part)
 {
    return (boost::filesystem::path(first_part) / boost::filesystem::path(second_part)).string();
 }

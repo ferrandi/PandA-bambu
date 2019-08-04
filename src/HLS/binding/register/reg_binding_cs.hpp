@@ -29,14 +29,14 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file reg_binding.hpp
  * @brief add register file and add selector to their input
  *
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
  *
-*/
+ */
 
 #ifndef REG_BINDING_CS_H
 #define REG_BINDING_CS_H
@@ -45,33 +45,31 @@
 
 class reg_binding_cs : public reg_binding
 {
-public:
-    /**
+ public:
+   /**
     * Constructor.
     */
-    reg_binding_cs(const hlsRef& HLS, const HLS_managerRef HLSMgr_);
+   reg_binding_cs(const hlsRef& HLS, const HLS_managerRef HLSMgr_);
 
-    /**
-     * Destructor.
-     */
-    virtual ~reg_binding_cs();
+   /**
+    * Destructor.
+    */
+   virtual ~reg_binding_cs();
 
+ protected:
+   /**
+    * @brief CalculateRegisterName
+    * @param i
+    * @return
+    */
+   std::string CalculateRegisterName(unsigned int i);
 
-protected:
-
-    /**
-     * @brief CalculateRegisterName
-     * @param i
-     * @return
-     */
-    std::string CalculateRegisterName(unsigned int i);
-
-    /**
-     * @brief specialise_reg add dimension selector
-     * @param reg
-     * @param r
-     */
-    void specialise_reg(structural_objectRef &reg, unsigned int r);
+   /**
+    * @brief specialise_reg add dimension selector
+    * @param reg
+    * @param r
+    */
+   void specialise_reg(structural_objectRef& reg, unsigned int r);
 };
 
 #endif // REG_BINDING_CS_H

@@ -625,7 +625,7 @@ void structural_manager::add_NP_functionality(structural_objectRef cir, NP_funct
 void structural_manager::SetParameter(const std::string& name, const std::string& value)
 {
    THROW_ASSERT((get_circ()->get_kind() == component_o_K), "Only components can have a Non SystemC functionality");
-   module * com = GetPointer<module>(get_circ());
+   module* com = GetPointer<module>(get_circ());
    com->SetParameter(name, value);
 }
 

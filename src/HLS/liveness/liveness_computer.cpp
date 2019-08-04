@@ -41,7 +41,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "liveness_computer.hpp"
 
 #include "memory.hpp"

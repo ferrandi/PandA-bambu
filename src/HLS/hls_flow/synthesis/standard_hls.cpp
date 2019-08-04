@@ -57,8 +57,8 @@
 #include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
 #include "module_interface.hpp"
-#include "technology_manager.hpp"
 #include "omp_functions.hpp"
+#include "technology_manager.hpp"
 
 #include "hls.hpp"
 #include "hls_constraints.hpp"
@@ -93,55 +93,58 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
          if(parameters->isOption("explore-fu-reg") && parameters->getOption<bool>("explore-fu-reg"))
             synthesis_flow = HLSFlowStep_Type::FU_REG_BINDING_DESIGN_FLOW;
 #endif
-            ret.insert(std::make_tuple(synthesis_flow, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_datapath_architecture), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            if(HLSMgr->get_HLS(funId))
-               ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->controller_type, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            HLSFlowStep_Type top_entity_type;
+         ret.insert(std::make_tuple(synthesis_flow, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_datapath_architecture), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         if(HLSMgr->get_HLS(funId))
+            ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->controller_type, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         HLSFlowStep_Type top_entity_type;
 
-            bool found=false;
-            if(parameters->isOption(OPT_context_switch))
+         bool found = false;
+         if(parameters->isOption(OPT_context_switch))
+         {
+            auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+            THROW_ASSERT(omp_functions, "OMP_functions must not be null");
+            if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
+               found = true;
+            if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end())
+               found = true;
+            if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end())
+               found = true;
+            if(found) // use new top_entity
             {
-               auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
-               THROW_ASSERT(omp_functions,"OMP_functions must not be null");
-               if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end()) found=true;
-               if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end()) found=true;
-               if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end()) found=true;
-               if(found)  //use new top_entity
-               {
-                  top_entity_type = HLSFlowStep_Type::TOP_ENTITY_CS_CREATION;
-                  ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-               }
+               top_entity_type = HLSFlowStep_Type::TOP_ENTITY_CS_CREATION;
+               ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
             }
-            if(!found)  //use standard
-            {
-               top_entity_type = HLSMgr->hasToBeInterfaced(funId) and
-               (HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction() or parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION) ?
-               HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION : HLSFlowStep_Type::TOP_ENTITY_CREATION;
-            }
-            ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            ret.insert(std::make_tuple(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(false)), HLSFlowStep_Relationship::SAME_FUNCTION));
-            if (HLSMgr->hasToBeInterfaced(funId))
-            {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)), HLSFlowStep_Relationship::SAME_FUNCTION));
-               ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_interface_type), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            }
-            break;
+         }
+         if(!found) // use standard
+         {
+            top_entity_type = HLSMgr->hasToBeInterfaced(funId) and (HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction() or parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION) ?
+                                  HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION :
+                                  HLSFlowStep_Type::TOP_ENTITY_CREATION;
+         }
+         ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(false)), HLSFlowStep_Relationship::SAME_FUNCTION));
+         if(HLSMgr->hasToBeInterfaced(funId))
+         {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::ADD_LIBRARY, HLSFlowStepSpecializationConstRef(new AddLibrarySpecialization(true)), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_interface_type), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          }
          break;
       }
-      case INVALIDATION_RELATIONSHIP:
-      {
-         break;
-      }
-      case PRECEDENCE_RELATIONSHIP:
-      {
-         break;
-      }
-      default:
-         THROW_UNREACHABLE("");
+      break;
    }
-   return ret;
+   case INVALIDATION_RELATIONSHIP:
+   {
+      break;
+   }
+   case PRECEDENCE_RELATIONSHIP:
+   {
+      break;
+   }
+   default:
+      THROW_UNREACHABLE("");
+}
+return ret;
 }
 
 DesignFlowStep_Status standard_hls::InternalExec()

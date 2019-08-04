@@ -69,24 +69,24 @@ class fsm_controller : public ControllerCreatorBaseStep
     */
    DesignFlowStep_Status InternalExec() override;
 
-   public:
+ public:
+   /**
+    * Constructor.
+    * @param design_flow_manager is the design flow manager
+    */
+   fsm_controller(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::FSM_CONTROLLER_CREATOR);
 
-      /**
-       * Constructor.
-       * @param design_flow_manager is the design flow manager
-       */
-      fsm_controller(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type=HLSFlowStep_Type::FSM_CONTROLLER_CREATOR);
+   /**
+    * Destructor.
+    */
+   ~fsm_controller();
 
-      /**
-       * Destructor.
-       */
-      ~fsm_controller();
-   protected:
-      /**
-       * Set the correct NP functionality
-       * @param state_representation is the state representation of the FSM
-       */
-      virtual void add_correct_transition_memory(std::string state_representation);
+ protected:
+   /**
+    * Set the correct NP functionality
+    * @param state_representation is the state representation of the FSM
+    */
+   virtual void add_correct_transition_memory(std::string state_representation);
 
    /**
     * Destructor.

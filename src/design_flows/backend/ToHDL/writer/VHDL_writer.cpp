@@ -860,14 +860,14 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
                            if(mod->get_owner()->ExistsParameter(parameter))
                            {
 #if HAVE_ASSERTS
-                           const auto actual_parameter_type = GetPointer<const module>(mod->get_owner())->get_parameter_type(TM, parameter);
+                              const auto actual_parameter_type = GetPointer<const module>(mod->get_owner())->get_parameter_type(TM, parameter);
 #endif
                               THROW_ASSERT(actual_parameter_type == parameter_type, "");
                            }
-                           else if (mod->get_owner()->ExistsParameter(MEMORY_PARAMETER))
+                           else if(mod->get_owner()->ExistsParameter(MEMORY_PARAMETER))
                            {
 #if HAVE_ASSERTS
-                           bool found = false;
+                              bool found = false;
 #endif
                               std::string memory_str = mod->get_owner()->GetParameter(MEMORY_PARAMETER);
                               std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
@@ -1007,7 +1007,7 @@ void VHDL_writer::write_state_declaration(const structural_objectRef&, const std
    }
 }
 
-void VHDL_writer::write_present_state_update(const structural_objectRef &, const std::string &reset_state, const std::string &reset_port, const std::string &clock_port, const std::string &reset_type)
+void VHDL_writer::write_present_state_update(const structural_objectRef&, const std::string& reset_state, const std::string& reset_port, const std::string& clock_port, const std::string& reset_type)
 {
    write_comment("concurrent process#1: state registers\n");
    if(reset_type == "no" || reset_type == "sync")
@@ -1342,8 +1342,8 @@ void VHDL_writer::write_module_parametrization_decl(const structural_objectRef& 
    THROW_ASSERT(cir->get_kind() == component_o_K || cir->get_kind() == channel_o_K, "Expected a component or a channel got something of different");
    auto* mod = GetPointer<module>(cir);
    bool first_it = true;
-   ///writing memory-related parameters
-   if (mod->ExistsParameter(MEMORY_PARAMETER))
+   /// writing memory-related parameters
+   if(mod->ExistsParameter(MEMORY_PARAMETER))
    {
       indented_output_stream->Append("generic(\n");
       std::string memory_str = mod->GetDefaultParameter(MEMORY_PARAMETER);

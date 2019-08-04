@@ -64,9 +64,8 @@
 #include "multi_unbounded_obj.hpp"
 #include "multiplier_conn_obj.hpp"
 #include "mux_obj.hpp"
-#include "register_obj.hpp"
-#include "fu_binding.hpp"
 #include "omp_functions.hpp"
+#include "register_obj.hpp"
 
 #include "hls.hpp"
 
@@ -97,8 +96,8 @@
 #include <list>
 #include <set>
 #include <tuple>
-#include <vector>
 #include <utility>
+#include <vector>
 
 /// technology/physical_library include
 #include "string_manipulation.hpp" // for GET_CLASS
@@ -113,10 +112,13 @@ conn_bindingRef conn_binding::create_conn_binding(const HLS_managerRef _HLSMgr, 
    if(_parameters->isOption(OPT_context_switch))
    {
       auto omp_functions = GetPointer<OmpFunctions>(_HLSMgr->Rfuns);
-      bool found=false;
-      if(omp_functions->kernel_functions.find(_HLS->functionId) != omp_functions->kernel_functions.end()) found=true;
-      if(omp_functions->parallelized_functions.find(_HLS->functionId) != omp_functions->parallelized_functions.end()) found=true;
-      if(omp_functions->atomic_functions.find(_HLS->functionId) != omp_functions->atomic_functions.end()) found=true;
+      bool found = false;
+      if(omp_functions->kernel_functions.find(_HLS->functionId) != omp_functions->kernel_functions.end())
+         found = true;
+      if(omp_functions->parallelized_functions.find(_HLS->functionId) != omp_functions->parallelized_functions.end())
+         found = true;
+      if(omp_functions->atomic_functions.find(_HLS->functionId) != omp_functions->atomic_functions.end())
+         found = true;
       if(found)
          return conn_bindingRef(new conn_binding_cs(_BH, _parameters));
       else
@@ -124,7 +126,6 @@ conn_bindingRef conn_binding::create_conn_binding(const HLS_managerRef _HLSMgr, 
    }
    else
       return conn_bindingRef(new conn_binding(_BH, _parameters));
-
 }
 
 conn_binding::~conn_binding()
@@ -328,7 +329,8 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
    for(unsigned int i = 0; i < GetPointer<module>(circuit)->get_internal_objects_size(); i++)
    {
       structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
-      if (!GetPointer<module>(curr_gate) || GetPointer<module>(curr_gate)->get_id()=="scheduler_kernel") continue;
+      if(!GetPointer<module>(curr_gate) || GetPointer<module>(curr_gate)->get_id() == "scheduler_kernel")
+         continue;
       for(unsigned int j = 0; j < GetPointer<module>(curr_gate)->get_in_port_size(); j++)
       {
          structural_objectRef port_i = GetPointer<module>(curr_gate)->get_in_port(j);
@@ -626,8 +628,8 @@ void conn_binding::add_datapath_connection(const technology_managerRef TM, const
    // std::cerr << "adding connection between " << src->get_path() << " and " << tgt->get_path() << " conn type " << conn_type << std::endl;
    if(bits_src == bits_tgt)
    {
-      THROW_ASSERT(src->get_owner(), "expected an owner for src: "+src->get_path());
-      THROW_ASSERT(tgt->get_owner(), "expected an owner for tgt: "+tgt->get_path());
+      THROW_ASSERT(src->get_owner(), "expected an owner for src: " + src->get_path());
+      THROW_ASSERT(tgt->get_owner(), "expected an owner for tgt: " + tgt->get_path());
       if(src->get_owner() == tgt->get_owner() && src->get_kind() == port_o_K && tgt->get_kind() == port_o_K)
       {
          std::string name = "io_signal_" + src->get_id() + "_" + tgt->get_id();
@@ -848,7 +850,7 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
          /// so we use the non-pipelined version by setting PIPE_PARAMETER to 0
          if(component->get_type() == generic_obj::MULTIPLIER_CONN_OBJ)
          {
-               sparse_module->SetParameter(PIPE_PARAMETER, "0");
+            sparse_module->SetParameter(PIPE_PARAMETER, "0");
          }
          ++shift_index;
       }

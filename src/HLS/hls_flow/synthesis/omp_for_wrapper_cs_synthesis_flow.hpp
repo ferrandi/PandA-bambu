@@ -29,14 +29,14 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file omp_for_wrapper_cs_synthesis.hpp
  * @brief Create the new flow for the parallel component
  *
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
  *
-*/
+ */
 #ifndef OMPFORWRAPPERCSSYNTHESISFLOW_H
 #define OMPFORWRAPPERCSSYNTHESISFLOW_H
 
@@ -44,29 +44,29 @@
 
 class OmpForWrapperCSSynthesisFlow : public HLSFunctionStep
 {
-   protected:
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+ protected:
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
 
-   public:
-      /**
-       * Constructor.
-       * @param design_flow_manager is the design flow manager
-       */
-      OmpForWrapperCSSynthesisFlow(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+ public:
+   /**
+    * Constructor.
+    * @param design_flow_manager is the design flow manager
+    */
+   OmpForWrapperCSSynthesisFlow(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Destructor
-       */
-      virtual ~OmpForWrapperCSSynthesisFlow();
+   /**
+    * Destructor
+    */
+   virtual ~OmpForWrapperCSSynthesisFlow();
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status InternalExec();
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   virtual DesignFlowStep_Status InternalExec();
 };
 #endif // OMPFORWRAPPERCSSYNTHESISFLOW_H

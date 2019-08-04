@@ -61,13 +61,13 @@
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 
-///constants include
+/// constants include
 #include "testbench_generation_constants.hpp"
 
-///design_flows include
+/// design_flows include
 #include "design_flow_manager.hpp"
 
-///design_flows/backend/ToHDL includes
+/// design_flows/backend/ToHDL includes
 #include "HDL_manager.hpp"
 #include "language_writer.hpp"
 
@@ -105,12 +105,12 @@
 #include "fileIO.hpp"
 #include "math_function.hpp"
 
-TestbenchGenerationBaseStep::TestbenchGenerationBaseStep(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
-   HLS_step(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_type),
-   writer(language_writer::create_writer(HDLWriter_Language::VERILOG, _HLSMgr->get_HLS_target()->get_technology_manager(), _parameters)),
-   mod(nullptr),
-   target_period(0.0),
-   output_directory(parameters->getOption<std::string>(OPT_output_directory) + "/simulation/")
+TestbenchGenerationBaseStep::TestbenchGenerationBaseStep(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+    : HLS_step(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_type),
+      writer(language_writer::create_writer(HDLWriter_Language::VERILOG, _HLSMgr->get_HLS_target()->get_technology_manager(), _parameters)),
+      mod(nullptr),
+      target_period(0.0),
+      output_directory(parameters->getOption<std::string>(OPT_output_directory) + "/simulation/")
 {
    if(!boost::filesystem::exists(output_directory))
       boost::filesystem::create_directories(output_directory);
@@ -143,7 +143,7 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 
             ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
 #if HAVE_VCD_BUILT
-            if (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
+            if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
             {
                ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_SIGNAL_SELECTION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
             }
@@ -344,8 +344,7 @@ std::string TestbenchGenerationBaseStep::create_HDL_testbench(bool xilinx_isim) 
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
 
    std::string simulation_values_path = output_directory + STR(STR_CST_testbench_generation_basename) + ".txt";
-   bool generate_vcd_output = (parameters->isOption(OPT_generate_vcd) and parameters->getOption<bool>(OPT_generate_vcd)) or
-      (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy));
+   bool generate_vcd_output = (parameters->isOption(OPT_generate_vcd) and parameters->getOption<bool>(OPT_generate_vcd)) or (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy));
 
    std::string file_name = output_directory + hdl_testbench_basename + writer->get_extension();
 
@@ -636,380 +635,6 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
          }
       }
 
-            writer->write("_i_ = 0;\n");
-            writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\" || _ch_ == \"o\")\n");
-            writer->write(STR(STD_OPENING_CHAR));
-            writer->write("begin\n");
-            {
-               writer->write("if (_ch_ == \"o\")\n");
-               writer->write(STR(STD_OPENING_CHAR));
-               writer->write("begin\n");
-               {
-                  writer->write("compare_outputs = 1;\n");
-                  writer->write("_r_ = $fscanf(file,\"%b\\n\", " + output_name + "); ");
-                  writer->write_comment("expected format: bbb...b (example: 00101110)\n");
-
-                  writer->write("if (_r_ != 1)\n");
-                  writer->write(STR(STD_OPENING_CHAR));
-                  writer->write("begin\n");
-                  {
-                     writer->write_comment("error\n");
-                     writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-                     writer->write("$fclose(res_file);\n");
-                     writer->write("$fclose(file);\n");
-                     writer->write("$finish;\n");
-                  }
-                  writer->write(STR(STD_CLOSING_CHAR));
-                  writer->write("end\n");
-                  writer->write("else\n");
-                  writer->write(STR(STD_OPENING_CHAR));
-                  writer->write("begin\n");
-                  {
-                     if(output_level > OUTPUT_LEVEL_MINIMUM)
-                        writer->write("$display(\"Value found for output " + unmangled_name + ": %b\", " + output_name + ");\n");
-                  }
-                  writer->write(STR(STD_CLOSING_CHAR));
-                  writer->write("end\n");
-
-                  size_t escaped_pos = port_name.find('\\');
-                  std::string nonescaped_name = port_name;
-                  if(escaped_pos != std::string::npos)
-                     nonescaped_name.erase(std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
-                  if(is_real)
-                  {
-                     if(output_level > OUTPUT_LEVEL_MINIMUM)
-                     {
-                        writer->write("$display(\" res = %b " + nonescaped_name +
-                                      " = %d "
-                                      " _bambu_testbench_mem_[" +
-                                      nonescaped_name + " + %d - base_addr] = %20.20f  expected = %20.20f \", ");
-                        writer->write("{");
-                        for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-                        {
-                           if(bitsize_index)
-                              writer->write(", ");
-                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
-                        }
-                        writer->write("} == " + output_name + ", ");
-                        writer->write(port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + ", " + (bitsize == 32 ? "bits32_to_real64" : "$bitstoreal") + "({");
-                        for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-                        {
-                           if(bitsize_index)
-                              writer->write(", ");
-                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
-                        }
-                        writer->write(std::string("}), ") + (bitsize == 32 ? "bits32_to_real64" : "$bitstoreal") + "(" + output_name + "));\n");
-                     }
-                     if(bitsize == 32 || bitsize == 64)
-                     {
-                        if(output_level > OUTPUT_LEVEL_MINIMUM)
-                        {
-                           writer->write("$display(\" FP error %f \\n\", compute_ulp" + (bitsize == 32 ? STR(32) : STR(64)) + "({");
-                           for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-                           {
-                              if(bitsize_index)
-                                 writer->write(", ");
-                              writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
-                           }
-                           writer->write("}, " + output_name);
-                           writer->write("));\n");
-                        }
-                        writer->write("if (compute_ulp" + (bitsize == 32 ? STR(32) : STR(64)) + "({");
-                        for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-                        {
-                           if(bitsize_index)
-                              writer->write(", ");
-                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
-                        }
-                        writer->write("}, " + output_name);
-                        writer->write(") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
-                     }
-                     else
-                        THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(bitsize));
-                  }
-                  else
-                  {
-                     if(output_level > OUTPUT_LEVEL_MINIMUM)
-                     {
-                        writer->write("$display(\" res = %b " + nonescaped_name +
-                                      " = %d "
-                                      " _bambu_testbench_mem_[" +
-                                      nonescaped_name + " + %d - base_addr] = %d  expected = %d \\n\", ");
-                        writer->write("{");
-                        for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-                        {
-                           if(bitsize_index)
-                              writer->write(", ");
-                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
-                        }
-                        writer->write("} == " + output_name + ", ");
-                        writer->write(port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + ", {");
-                        for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-                        {
-                           if(bitsize_index)
-                              writer->write(", ");
-                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
-                        }
-                        writer->write("}, " + output_name + ");\n");
-                     }
-                     writer->write("if ({");
-                     for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-                     {
-                        if(bitsize_index)
-                           writer->write(", ");
-                        writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
-                     }
-                     writer->write("} !== " + output_name);
-                     writer->write(")\n");
-                  }
-                  writer->write(STR(STD_OPENING_CHAR));
-                  writer->write("begin\n");
-                  writer->write("success = 0;\n");
-                  writer->write(STR(STD_CLOSING_CHAR));
-                  writer->write("end\n");
-
-                  writer->write("_i_ = _i_ + 1;\n");
-                  writer->write("_ch_ = $fgetc(file);\n");
-               }
-               writer->write(STR(STD_CLOSING_CHAR));
-               writer->write("end\n");
-
-               writer->write("else\n");
-               writer->write(STR(STD_OPENING_CHAR));
-               writer->write("begin\n");
-               {
-                  writer->write_comment("skip comments and empty lines\n");
-                  writer->write("_r_ = $fgets(line, file);\n");
-                  writer->write("_ch_ = $fgetc(file);\n");
-               }
-               writer->write(STR(STD_CLOSING_CHAR));
-               writer->write("end\n");
-            }
-            writer->write(STR(STD_CLOSING_CHAR));
-            writer->write("end\n");
-
-      writer->write_comment("error\n");
-      writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-      writer->write("$fclose(res_file);\n");
-      writer->write("$fclose(file);\n");
-      writer->write("$finish;\n");
-
-      }
-      writer->write(STR(STD_CLOSING_CHAR));
-      writer->write("end\n");
-      writer->write("else\n");
-      writer->write(STR(STD_OPENING_CHAR));
-      writer->write("begin\n");
-
-      if (output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
-      {
-         writer->write("$display(\"Value found for output " + output_name + ": %b\", " + output_name + ");\n");
-      }
-      writer->write(STR(STD_CLOSING_CHAR));
-      writer->write("end\n");
-
-      size_t escaped_pos = port_name.find('\\');
-      std::string nonescaped_name = port_name;
-      if(escaped_pos != std::string::npos)
-         nonescaped_name.erase (std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
-      if (output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
-      {
-         writer->write("$display(\" res = %b " + nonescaped_name + " = %d " " _bambu_testbench_mem_[" + nonescaped_name + " + %d - base_addr] = %d expected = %d \\n\", ");
-         writer->write("_bambu_testbench_mem_[" + port_name + " + _i_ - base_addr] == " + output_name + ", ");
-         writer->write( port_name + ", ");
-         writer->write("_i_, ");
-         writer->write("_bambu_testbench_mem_[" + port_name + " + _i_ - base_addr], ");
-         writer->write(output_name + ");\n");
-      }
-      writer->write("if (_bambu_testbench_mem_[" + port_name + " + _i_ - base_addr] !== " + output_name + ")\n");
-      writer->write(STR(STD_OPENING_CHAR));
-      writer->write("begin\n");
-      writer->write("success = 0;\n");
-      writer->write(STR(STD_CLOSING_CHAR));
-      writer->write("end\n");
-
-            writer->write("\n");
-            writer->write_comment("OPTIONAL - Read a value for " + variableName + " --------------------------------------------------------------\n");
-
-            writer->write("_i_ = 0;\n");
-            writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\" || _ch_ == \"o\")\n");
-            writer->write(STR(STD_OPENING_CHAR));
-            writer->write("begin\n");
-            {
-               writer->write("if (_ch_ == \"o\")\n");
-               writer->write(STR(STD_OPENING_CHAR));
-               writer->write("begin\n");
-               {
-                  writer->write("compare_outputs = 1;\n");
-                  writer->write("_r_ = $fscanf(file,\"%b\\n\", " + output_name + "); ");
-                  writer->write_comment("expected format: bbb...b (example: 00101110)\n");
-
-                  writer->write("if (_r_ != 1)\n");
-                  writer->write(STR(STD_OPENING_CHAR));
-                  writer->write("begin\n");
-                  {
-                     writer->write_comment("error\n");
-                     writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-                     writer->write("$fclose(res_file);\n");
-                     writer->write("$fclose(file);\n");
-                     writer->write("$finish;\n");
-                  }
-                  writer->write(STR(STD_CLOSING_CHAR));
-                  writer->write("end\n");
-                  writer->write("else\n");
-                  writer->write(STR(STD_OPENING_CHAR));
-                  writer->write("begin\n");
-                  {
-                     if(output_level > OUTPUT_LEVEL_MINIMUM)
-                        writer->write("$display(\"Value found for output " + variableName + ": %b\", " + output_name + ");\n");
-                  }
-                  writer->write(STR(STD_CLOSING_CHAR));
-                  writer->write("end\n");
-
-                  size_t escaped_pos = port_name.find('\\');
-                  std::string nonescaped_name = port_name;
-                  if(escaped_pos != std::string::npos)
-                     nonescaped_name.erase(std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
-                  if(is_real)
-                  {
-                     if(output_level > OUTPUT_LEVEL_MINIMUM)
-                     {
-                        writer->write("$display(\" res = %b " + nonescaped_name +
-                                      " = %d "
-                                      " _bambu_testbench_mem_[" +
-                                      nonescaped_name + " + %d - base_addr] = %20.20f  expected = %20.20f \", ");
-                        writer->write("{");
-                        for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-                        {
-                           if(bitsize_index)
-                              writer->write(", ");
-                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
-                        }
-                        writer->write("} == " + output_name + ", ");
-                        writer->write(port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + ", " + (bitsize == 32 ? "bits32_to_real64" : "$bitstoreal") + "({");
-                        for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-                        {
-                           if(bitsize_index)
-                              writer->write(", ");
-                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
-                        }
-                        writer->write(std::string("}), ") + (bitsize == 32 ? "bits32_to_real64" : "$bitstoreal") + "(" + output_name + "));\n");
-                     }
-                     if(bitsize == 32 || bitsize == 64)
-                     {
-                        if(output_level > OUTPUT_LEVEL_MINIMUM)
-                        {
-                           writer->write("$display(\" FP error %f \\n\", compute_ulp" + (bitsize == 32 ? STR(32) : STR(64)) + "({");
-                           for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-                           {
-                              if(bitsize_index)
-                                 writer->write(", ");
-                              writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
-                           }
-                           writer->write("}, " + output_name);
-                           writer->write("));\n");
-                        }
-                        writer->write("if (compute_ulp" + (bitsize == 32 ? STR(32) : STR(64)) + "({");
-                        for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-                        {
-                           if(bitsize_index)
-                              writer->write(", ");
-                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
-                        }
-                        writer->write("}, " + output_name);
-                        writer->write(") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
-                     }
-                     else
-                        THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(bitsize));
-                  }
-                  else
-                  {
-                     long long int bytesize = bitsize / 8;
-                     if(output_level > OUTPUT_LEVEL_MINIMUM)
-                     {
-                        writer->write("$display(\" res = %b " + nonescaped_name +
-                                      " = %d "
-                                      " _bambu_testbench_mem_[" +
-                                      nonescaped_name + " + %d - base_addr] = %d  expected = %d \\n\", ");
-                        writer->write("{");
-                        for(unsigned int index = 0; index < bytesize; ++index)
-                        {
-                           if(index)
-                              writer->write(", ");
-                           writer->write("_bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_*" + boost::lexical_cast<std::string>(bytesize) + " + " + boost::lexical_cast<std::string>(bytesize - index - 1) + "]");
-                        }
-                        writer->write("} == " + output_name + ", ");
-                        writer->write(port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + ", {");
-                        for(unsigned int index = 0; index < bytesize; ++index)
-                        {
-                           if(index)
-                              writer->write(", ");
-                           writer->write("_bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_*" + boost::lexical_cast<std::string>(bytesize) + " + " + boost::lexical_cast<std::string>(bytesize - index - 1) + "]");
-                        }
-                        writer->write("}, " + output_name + ");\n");
-                     }
-                     writer->write("if ({");
-                     for(unsigned int index = 0; index < bytesize; ++index)
-                     {
-                        if(index)
-                           writer->write(", ");
-                        writer->write("_bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_*" + boost::lexical_cast<std::string>(bytesize) + " + " + boost::lexical_cast<std::string>(bytesize - index - 1) + "]");
-                     }
-                     writer->write("} !== " + output_name);
-                     writer->write(")\n");
-                  }
-                  writer->write(STR(STD_OPENING_CHAR));
-                  writer->write("begin\n");
-                  writer->write("success = 0;\n");
-                  writer->write(STR(STD_CLOSING_CHAR));
-                  writer->write("end\n");
-
-                  writer->write("_i_ = _i_ + 1;\n");
-                  writer->write("_ch_ = $fgetc(file);\n");
-               }
-               writer->write(STR(STD_CLOSING_CHAR));
-               writer->write("end\n");
-
-               writer->write("else\n");
-               writer->write(STR(STD_OPENING_CHAR));
-               writer->write("begin\n");
-               {
-                  writer->write_comment("skip comments and empty lines\n");
-                  writer->write("_r_ = $fgets(line, file);\n");
-                  writer->write("_ch_ = $fgetc(file);\n");
-               }
-               writer->write(STR(STD_CLOSING_CHAR));
-               writer->write("end\n");
-            }
-            writer->write(STR(STD_CLOSING_CHAR));
-            writer->write("end\n");
-
-            writer->write("if (_ch_ == \"e\")\n");
-            writer->write(STR(STD_OPENING_CHAR));
-            writer->write("begin\n");
-            writer->write("_r_ = $fgets(line, file);\n");
-            writer->write("_ch_ = $fgetc(file);\n");
-            writer->write(STR(STD_CLOSING_CHAR));
-            writer->write("end\n");
-            writer->write("else\n");
-            writer->write("begin\n");
-            writer->write(STR(STD_OPENING_CHAR));
-            writer->write_comment("error\n");
-            writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-            writer->write("$fclose(res_file);\n");
-            writer->write("$fclose(file);\n");
-            writer->write("$finish;\n");
-            writer->write(STR(STD_CLOSING_CHAR));
-            writer->write("end\n");
-         }
-      }
-   }
-
-   if(mod->find_member(RETURN_PORT_NAME, port_o_K, cir))
-   {
-      std::string output_name = "ex_" + std::string(RETURN_PORT_NAME);
-      structural_objectRef return_port = mod->find_member(RETURN_PORT_NAME, port_o_K, cir);
-
       writer->write("_i_ = 0;\n");
       writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\" || _ch_ == \"o\")\n");
       writer->write(STR(STD_OPENING_CHAR));
@@ -1023,39 +648,412 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             writer->write("_r_ = $fscanf(file,\"%b\\n\", " + output_name + "); ");
             writer->write_comment("expected format: bbb...b (example: 00101110)\n");
 
-      writer->write("if (_ch_ == \"o\")\n");
-      writer->write(STR(STD_OPENING_CHAR));
-      writer->write("begin\n");
-      {
+            writer->write("if (_r_ != 1)\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write("begin\n");
+            {
+               writer->write_comment("error\n");
+               writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
+               writer->write("$fclose(res_file);\n");
+               writer->write("$fclose(file);\n");
+               writer->write("$finish;\n");
+            }
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
+            writer->write("else\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write("begin\n");
+            {
+               if(output_level > OUTPUT_LEVEL_MINIMUM)
+                  writer->write("$display(\"Value found for output " + unmangled_name + ": %b\", " + output_name + ");\n");
+            }
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
 
-      writer->write("compare_outputs = 1;\n");
-      writer->write("_r_ = $fscanf(file,\"%b\\n\", " + output_name + "); ");
-      writer->write_comment("expected format: bbb...b (example: 00101110)\n");
+            size_t escaped_pos = port_name.find('\\');
+            std::string nonescaped_name = port_name;
+            if(escaped_pos != std::string::npos)
+               nonescaped_name.erase(std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
+            if(is_real)
+            {
+               if(output_level > OUTPUT_LEVEL_MINIMUM)
+               {
+                  writer->write("$display(\" res = %b " + nonescaped_name +
+                                " = %d "
+                                " _bambu_testbench_mem_[" +
+                                nonescaped_name + " + %d - base_addr] = %20.20f  expected = %20.20f \", ");
+                  writer->write("{");
+                  for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                  {
+                     if(bitsize_index)
+                        writer->write(", ");
+                     writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+                  }
+                  writer->write("} == " + output_name + ", ");
+                  writer->write(port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + ", " + (bitsize == 32 ? "bits32_to_real64" : "$bitstoreal") + "({");
+                  for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                  {
+                     if(bitsize_index)
+                        writer->write(", ");
+                     writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+                  }
+                  writer->write(std::string("}), ") + (bitsize == 32 ? "bits32_to_real64" : "$bitstoreal") + "(" + output_name + "));\n");
+               }
+               if(bitsize == 32 || bitsize == 64)
+               {
+                  if(output_level > OUTPUT_LEVEL_MINIMUM)
+                  {
+                     writer->write("$display(\" FP error %f \\n\", compute_ulp" + (bitsize == 32 ? STR(32) : STR(64)) + "({");
+                     for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                     {
+                        if(bitsize_index)
+                           writer->write(", ");
+                        writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+                     }
+                     writer->write("}, " + output_name);
+                     writer->write("));\n");
+                  }
+                  writer->write("if (compute_ulp" + (bitsize == 32 ? STR(32) : STR(64)) + "({");
+                  for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                  {
+                     if(bitsize_index)
+                        writer->write(", ");
+                     writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+                  }
+                  writer->write("}, " + output_name);
+                  writer->write(") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
+               }
+               else
+                  THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(bitsize));
+            }
+            else
+            {
+               if(output_level > OUTPUT_LEVEL_MINIMUM)
+               {
+                  writer->write("$display(\" res = %b " + nonescaped_name +
+                                " = %d "
+                                " _bambu_testbench_mem_[" +
+                                nonescaped_name + " + %d - base_addr] = %d  expected = %d \\n\", ");
+                  writer->write("{");
+                  for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                  {
+                     if(bitsize_index)
+                        writer->write(", ");
+                     writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+                  }
+                  writer->write("} == " + output_name + ", ");
+                  writer->write(port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + ", {");
+                  for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                  {
+                     if(bitsize_index)
+                        writer->write(", ");
+                     writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+                  }
+                  writer->write("}, " + output_name + ");\n");
+               }
+               writer->write("if ({");
+               for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+               {
+                  if(bitsize_index)
+                     writer->write(", ");
+                  writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+               }
+               writer->write("} !== " + output_name);
+               writer->write(")\n");
+            }
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write("begin\n");
+            writer->write("success = 0;\n");
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
 
-      writer->write("if (_r_ != 1)\n");
-      writer->write(STR(STD_OPENING_CHAR));
-      writer->write("begin\n");
-      {
+            writer->write("_i_ = _i_ + 1;\n");
+            writer->write("_ch_ = $fgetc(file);\n");
+         }
+         writer->write(STR(STD_CLOSING_CHAR));
+         writer->write("end\n");
+
+         writer->write("else\n");
+         writer->write(STR(STD_OPENING_CHAR));
+         writer->write("begin\n");
+         {
+            writer->write_comment("skip comments and empty lines\n");
+            writer->write("_r_ = $fgets(line, file);\n");
+            writer->write("_ch_ = $fgetc(file);\n");
+         }
+         writer->write(STR(STD_CLOSING_CHAR));
+         writer->write("end\n");
+      }
+      writer->write(STR(STD_CLOSING_CHAR));
+      writer->write("end\n");
 
       writer->write_comment("error\n");
       writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
       writer->write("$fclose(res_file);\n");
       writer->write("$fclose(file);\n");
       writer->write("$finish;\n");
+   }
+   writer->write(STR(STD_CLOSING_CHAR));
+   writer->write("end\n");
+   writer->write("else\n");
+   writer->write(STR(STD_OPENING_CHAR));
+   writer->write("begin\n");
 
+   if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+   {
+      writer->write("$display(\"Value found for output " + output_name + ": %b\", " + output_name + ");\n");
+   }
+   writer->write(STR(STD_CLOSING_CHAR));
+   writer->write("end\n");
+
+   size_t escaped_pos = port_name.find('\\');
+   std::string nonescaped_name = port_name;
+   if(escaped_pos != std::string::npos)
+      nonescaped_name.erase(std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
+   if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+   {
+      writer->write("$display(\" res = %b " + nonescaped_name +
+                    " = %d "
+                    " _bambu_testbench_mem_[" +
+                    nonescaped_name + " + %d - base_addr] = %d expected = %d \\n\", ");
+      writer->write("_bambu_testbench_mem_[" + port_name + " + _i_ - base_addr] == " + output_name + ", ");
+      writer->write(port_name + ", ");
+      writer->write("_i_, ");
+      writer->write("_bambu_testbench_mem_[" + port_name + " + _i_ - base_addr], ");
+      writer->write(output_name + ");\n");
+   }
+   writer->write("if (_bambu_testbench_mem_[" + port_name + " + _i_ - base_addr] !== " + output_name + ")\n");
+   writer->write(STR(STD_OPENING_CHAR));
+   writer->write("begin\n");
+   writer->write("success = 0;\n");
+   writer->write(STR(STD_CLOSING_CHAR));
+   writer->write("end\n");
+
+   writer->write("\n");
+   writer->write_comment("OPTIONAL - Read a value for " + variableName + " --------------------------------------------------------------\n");
+
+   writer->write("_i_ = 0;\n");
+   writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\" || _ch_ == \"o\")\n");
+   writer->write(STR(STD_OPENING_CHAR));
+   writer->write("begin\n");
+   {
+      writer->write("if (_ch_ == \"o\")\n");
+      writer->write(STR(STD_OPENING_CHAR));
+      writer->write("begin\n");
+      {
+         writer->write("compare_outputs = 1;\n");
+         writer->write("_r_ = $fscanf(file,\"%b\\n\", " + output_name + "); ");
+         writer->write_comment("expected format: bbb...b (example: 00101110)\n");
+
+         writer->write("if (_r_ != 1)\n");
+         writer->write(STR(STD_OPENING_CHAR));
+         writer->write("begin\n");
+         {
+            writer->write_comment("error\n");
+            writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
+            writer->write("$fclose(res_file);\n");
+            writer->write("$fclose(file);\n");
+            writer->write("$finish;\n");
+         }
+         writer->write(STR(STD_CLOSING_CHAR));
+         writer->write("end\n");
+         writer->write("else\n");
+         writer->write(STR(STD_OPENING_CHAR));
+         writer->write("begin\n");
+         {
+            if(output_level > OUTPUT_LEVEL_MINIMUM)
+               writer->write("$display(\"Value found for output " + variableName + ": %b\", " + output_name + ");\n");
+         }
+         writer->write(STR(STD_CLOSING_CHAR));
+         writer->write("end\n");
+
+         size_t escaped_pos = port_name.find('\\');
+         std::string nonescaped_name = port_name;
+         if(escaped_pos != std::string::npos)
+            nonescaped_name.erase(std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
+         if(is_real)
+         {
+            if(output_level > OUTPUT_LEVEL_MINIMUM)
+            {
+               writer->write("$display(\" res = %b " + nonescaped_name +
+                             " = %d "
+                             " _bambu_testbench_mem_[" +
+                             nonescaped_name + " + %d - base_addr] = %20.20f  expected = %20.20f \", ");
+               writer->write("{");
+               for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+               {
+                  if(bitsize_index)
+                     writer->write(", ");
+                  writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+               }
+               writer->write("} == " + output_name + ", ");
+               writer->write(port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + ", " + (bitsize == 32 ? "bits32_to_real64" : "$bitstoreal") + "({");
+               for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+               {
+                  if(bitsize_index)
+                     writer->write(", ");
+                  writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+               }
+               writer->write(std::string("}), ") + (bitsize == 32 ? "bits32_to_real64" : "$bitstoreal") + "(" + output_name + "));\n");
+            }
+            if(bitsize == 32 || bitsize == 64)
+            {
+               if(output_level > OUTPUT_LEVEL_MINIMUM)
+               {
+                  writer->write("$display(\" FP error %f \\n\", compute_ulp" + (bitsize == 32 ? STR(32) : STR(64)) + "({");
+                  for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                  {
+                     if(bitsize_index)
+                        writer->write(", ");
+                     writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+                  }
+                  writer->write("}, " + output_name);
+                  writer->write("));\n");
+               }
+               writer->write("if (compute_ulp" + (bitsize == 32 ? STR(32) : STR(64)) + "({");
+               for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+               {
+                  if(bitsize_index)
+                     writer->write(", ");
+                  writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
+               }
+               writer->write("}, " + output_name);
+               writer->write(") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
+            }
+            else
+               THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(bitsize));
+         }
+         else
+         {
+            long long int bytesize = bitsize / 8;
+            if(output_level > OUTPUT_LEVEL_MINIMUM)
+            {
+               writer->write("$display(\" res = %b " + nonescaped_name +
+                             " = %d "
+                             " _bambu_testbench_mem_[" +
+                             nonescaped_name + " + %d - base_addr] = %d  expected = %d \\n\", ");
+               writer->write("{");
+               for(unsigned int index = 0; index < bytesize; ++index)
+               {
+                  if(index)
+                     writer->write(", ");
+                  writer->write("_bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_*" + boost::lexical_cast<std::string>(bytesize) + " + " + boost::lexical_cast<std::string>(bytesize - index - 1) + "]");
+               }
+               writer->write("} == " + output_name + ", ");
+               writer->write(port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + ", {");
+               for(unsigned int index = 0; index < bytesize; ++index)
+               {
+                  if(index)
+                     writer->write(", ");
+                  writer->write("_bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_*" + boost::lexical_cast<std::string>(bytesize) + " + " + boost::lexical_cast<std::string>(bytesize - index - 1) + "]");
+               }
+               writer->write("}, " + output_name + ");\n");
+            }
+            writer->write("if ({");
+            for(unsigned int index = 0; index < bytesize; ++index)
+            {
+               if(index)
+                  writer->write(", ");
+               writer->write("_bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_*" + boost::lexical_cast<std::string>(bytesize) + " + " + boost::lexical_cast<std::string>(bytesize - index - 1) + "]");
+            }
+            writer->write("} !== " + output_name);
+            writer->write(")\n");
+         }
+         writer->write(STR(STD_OPENING_CHAR));
+         writer->write("begin\n");
+         writer->write("success = 0;\n");
+         writer->write(STR(STD_CLOSING_CHAR));
+         writer->write("end\n");
+
+         writer->write("_i_ = _i_ + 1;\n");
+         writer->write("_ch_ = $fgetc(file);\n");
       }
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n");
+
       writer->write("else\n");
       writer->write(STR(STD_OPENING_CHAR));
       writer->write("begin\n");
-
-      if (output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
       {
-         writer->write("$display(\"Value found for output " + output_name + ": %b\", " + output_name + ");\n");
+         writer->write_comment("skip comments and empty lines\n");
+         writer->write("_r_ = $fgets(line, file);\n");
+         writer->write("_ch_ = $fgetc(file);\n");
       }
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n");
+   }
+   writer->write(STR(STD_CLOSING_CHAR));
+   writer->write("end\n");
+
+   writer->write("if (_ch_ == \"e\")\n");
+   writer->write(STR(STD_OPENING_CHAR));
+   writer->write("begin\n");
+   writer->write("_r_ = $fgets(line, file);\n");
+   writer->write("_ch_ = $fgetc(file);\n");
+   writer->write(STR(STD_CLOSING_CHAR));
+   writer->write("end\n");
+   writer->write("else\n");
+   writer->write("begin\n");
+   writer->write(STR(STD_OPENING_CHAR));
+   writer->write_comment("error\n");
+   writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
+   writer->write("$fclose(res_file);\n");
+   writer->write("$fclose(file);\n");
+   writer->write("$finish;\n");
+   writer->write(STR(STD_CLOSING_CHAR));
+   writer->write("end\n");
+}
+}
+}
+
+if(mod->find_member(RETURN_PORT_NAME, port_o_K, cir))
+{
+   std::string output_name = "ex_" + std::string(RETURN_PORT_NAME);
+   structural_objectRef return_port = mod->find_member(RETURN_PORT_NAME, port_o_K, cir);
+
+   writer->write("_i_ = 0;\n");
+   writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\" || _ch_ == \"o\")\n");
+   writer->write(STR(STD_OPENING_CHAR));
+   writer->write("begin\n");
+   {
+      writer->write("if (_ch_ == \"o\")\n");
+      writer->write(STR(STD_OPENING_CHAR));
+      writer->write("begin\n");
+      {
+         writer->write("compare_outputs = 1;\n");
+         writer->write("_r_ = $fscanf(file,\"%b\\n\", " + output_name + "); ");
+         writer->write_comment("expected format: bbb...b (example: 00101110)\n");
+
+         writer->write("if (_ch_ == \"o\")\n");
+         writer->write(STR(STD_OPENING_CHAR));
+         writer->write("begin\n");
+         {
+            writer->write("compare_outputs = 1;\n");
+            writer->write("_r_ = $fscanf(file,\"%b\\n\", " + output_name + "); ");
+            writer->write_comment("expected format: bbb...b (example: 00101110)\n");
+
+            writer->write("if (_r_ != 1)\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write("begin\n");
+            {
+               writer->write_comment("error\n");
+               writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
+               writer->write("$fclose(res_file);\n");
+               writer->write("$fclose(file);\n");
+               writer->write("$finish;\n");
+            }
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
+            writer->write("else\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write("begin\n");
+
+            if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+            {
+               writer->write("$display(\"Value found for output " + output_name + ": %b\", " + output_name + ");\n");
+            }
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
 
             writer->write("_i_ = _i_ + 1;\n");
             writer->write("_ch_ = $fgetc(file);\n");
@@ -1282,8 +1280,8 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
       testbench_memsize = 1;
    writer->write("parameter MEMSIZE = " + STR(testbench_memsize));
 
-   ///writing memory-related parameters
-   if (mod->ExistsParameter(MEMORY_PARAMETER))
+   /// writing memory-related parameters
+   if(mod->ExistsParameter(MEMORY_PARAMETER))
    {
       std::string memory_str = mod->GetParameter(MEMORY_PARAMETER);
       std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
@@ -1790,12 +1788,11 @@ void TestbenchGenerationBaseStep::read_input_value_from_file(const std::string& 
       writer->write(STR(STD_OPENING_CHAR));
       writer->write("begin\n");
       {
-
          size_t escaped_pos = input_name.find('\\');
          std::string nonescaped_name = input_name;
          if(escaped_pos != std::string::npos)
-            nonescaped_name.erase (std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
-         if (output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+            nonescaped_name.erase(std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
+         if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
          {
             writer->write("$display(\"Value found for input " + nonescaped_name + ": %b\", " + input_name + ");\n");
          }

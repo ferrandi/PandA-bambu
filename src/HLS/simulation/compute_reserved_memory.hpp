@@ -29,21 +29,21 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file compute_reserved_memory.hpp
  * @brief Specification of the functor used to compute size of objects starting from C initialization string
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef COMPUTE_RESERVED_MEMORY_HPP
 #define COMPUTE_RESERVED_MEMORY_HPP
 
-///Superclass include
+/// Superclass include
 #include "c_initialization_parser_functor.hpp"
 
-///utility include
+/// utility include
 #include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(tree_manager);
@@ -54,57 +54,56 @@ CONSTREF_FORWARD_DECL(tree_node);
  */
 class ComputeReservedMemory : public CInitializationParserFunctor
 {
-   private:
-      ///The tree manager
-      const tree_managerConstRef TM;
+ private:
+   /// The tree manager
+   const tree_managerConstRef TM;
 
-      ///The tree node to be stored in memory
-      const tree_nodeConstRef tn;
+   /// The tree node to be stored in memory
+   const tree_nodeConstRef tn;
 
-      ///The number of elements in the top level
-      unsigned int elements_number;
+   /// The number of elements in the top level
+   unsigned int elements_number;
 
-      ///The current level of {}
-      unsigned int depth_level;
+   /// The current level of {}
+   unsigned int depth_level;
 
-   public:
-      /**
-       * Constructor
-       * @param TM is the tree manager
-       * @param tn is the variable/parameter to be stored in memory
-       */
-      ComputeReservedMemory(const tree_managerConstRef TM ,const tree_nodeConstRef tn);
+ public:
+   /**
+    * Constructor
+    * @param TM is the tree manager
+    * @param tn is the variable/parameter to be stored in memory
+    */
+   ComputeReservedMemory(const tree_managerConstRef TM, const tree_nodeConstRef tn);
 
-      /**
-       * Return the computed value
-       */
-      unsigned int GetReservedBytes() const;
+   /**
+    * Return the computed value
+    */
+   unsigned int GetReservedBytes() const;
 
-      /**
-       * Check that all the necessary information was present in the initialization string
-       */
-      void CheckEnd();
+   /**
+    * Check that all the necessary information was present in the initialization string
+    */
+   void CheckEnd();
 
-      /**
-       * Start the initialization of a new aggregated data structure
-       */
-      void GoDown();
+   /**
+    * Start the initialization of a new aggregated data structure
+    */
+   void GoDown();
 
-      /**
-       * Consume an element of an aggregated data structure
-       */
-      void GoNext();
+   /**
+    * Consume an element of an aggregated data structure
+    */
+   void GoNext();
 
-      /**
-       * Ends the initialization of the current aggregated  data structure
-       */
-      void GoUp();
+   /**
+    * Ends the initialization of the current aggregated  data structure
+    */
+   void GoUp();
 
-      /**
-       * Process an element
-       * @param content is the string assocated with the string
-       */
-      void Process(const std::string & content);
+   /**
+    * Process an element
+    * @param content is the string assocated with the string
+    */
+   void Process(const std::string& content);
 };
 #endif
-

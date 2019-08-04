@@ -29,14 +29,14 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file datapath_parallel.hpp
  * @brief Instantiate the kernel and connect port
  *
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
  *
-*/
+ */
 
 #ifndef DATAPATH_PARALLEL_CS_H
 #define DATAPATH_PARALLEL_CS_H
@@ -48,7 +48,7 @@ REF_FORWARD_DECL(structural_manager);
 
 class datapath_parallel_cs : public classic_datapath
 {
-protected:
+ protected:
    /**
     * @brief instantiate memory_parallel
     * @param HLS
@@ -63,7 +63,7 @@ protected:
     * @param memory_modules
     * @param circuit
     */
-   void manage_extern_global_port_parallel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit);
+   void manage_extern_global_port_parallel(const structural_managerRef SM, const std::set<structural_objectRef>& memory_modules, const structural_objectRef circuit);
 
    /**
     * @brief connect datapath with each kernel
@@ -88,7 +88,7 @@ protected:
     * @param relationship_type
     * @return
     */
-   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
 
    /**
     * @brief for each port resize it depending on the type of bus port
@@ -102,7 +102,8 @@ protected:
     * @param mem_par_mod
     */
    void resize_ctrl_parallel_ports(structural_objectRef mem_par_mod);
-public:
+
+ public:
    /**
     * Constructor.
     * @param design_flow_manager is the design flow manager

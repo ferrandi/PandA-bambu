@@ -148,7 +148,7 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
       }
       /// finalize
       HLS->Rreg = reg_binding::create_reg_binding(HLS, HLSMgr);
-      const std::list<vertex> & support = HLS->Rliv->get_support();
+      const std::list<vertex>& support = HLS->Rliv->get_support();
 
       const std::list<vertex>::const_iterator vEnd = support.end();
       for(auto vIt = support.begin(); vIt != vEnd; ++vIt)

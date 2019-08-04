@@ -46,9 +46,9 @@
 #include "hls_manager.hpp"
 
 #include "fu_binding.hpp"
-#include "parallel_memory_fu_binding.hpp"
 #include "graph.hpp"
 #include "op_graph.hpp"
+#include "parallel_memory_fu_binding.hpp"
 
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
@@ -86,11 +86,11 @@ void easy_module_binding::Initialize()
    HLSFunctionStep::Initialize();
    if(not HLS->Rfu)
    {
-   if(parameters->getOption<int>(OPT_memory_banks_number) > 1 && !parameters->isOption(OPT_context_switch))
-   {
-      HLS->Rfu = fu_bindingRef(new ParallelMemoryFuBinding(HLSMgr, funId, parameters));
-   }
-   else
+      if(parameters->getOption<int>(OPT_memory_banks_number) > 1 && !parameters->isOption(OPT_context_switch))
+      {
+         HLS->Rfu = fu_bindingRef(new ParallelMemoryFuBinding(HLSMgr, funId, parameters));
+      }
+      else
       {
          HLS->Rfu = fu_bindingRef(fu_binding::create_fu_binding(HLSMgr, funId, parameters));
       }

@@ -45,7 +45,7 @@
 #ifndef SCHEDULE_HPP
 #define SCHEDULE_HPP
 
-///graph include
+/// graph include
 #include "graph.hpp"
 
 /// STD include

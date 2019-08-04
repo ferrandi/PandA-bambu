@@ -29,39 +29,38 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file classic_datapath.hpp
  * @brief Base class for usual add new port in datapath of context_switch.
  *
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
  *
-*/
+ */
 #ifndef DATAPATH_CS_H
 #define DATAPATH_CS_H
 
 #include "classic_datapath.hpp"
 REF_FORWARD_DECL(structural_object);
 
-class datapath_cs: public classic_datapath
+class datapath_cs : public classic_datapath
 {
  protected:
-    /**
-     * Adds the input/output ports of the module
-     */
-    void add_ports();
+   /**
+    * Adds the input/output ports of the module
+    */
+   void add_ports();
 
  public:
-    /**
-     * Constructor.
-     * @param design_flow_manager is the design flow manager
-     */
-    datapath_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
+   /**
+    * Constructor.
+    * @param design_flow_manager is the design flow manager
+    */
+   datapath_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
 
-    /**
-     * Destructor.
-     */
-    virtual ~datapath_cs();
+   /**
+    * Destructor.
+    */
+   virtual ~datapath_cs();
 };
 #endif
-

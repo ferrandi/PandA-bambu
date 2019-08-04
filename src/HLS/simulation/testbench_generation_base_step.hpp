@@ -91,8 +91,8 @@ class TestbenchGenerationBaseStep : public HLS_step
 
    const std::string c_testbench_basename;
 
-      ///testbench basename
-      std::string testbench_basename;
+   /// testbench basename
+   std::string testbench_basename;
 
    /**
     * Write the hdl testbench.
@@ -204,29 +204,28 @@ class TestbenchGenerationBaseStep : public HLS_step
     */
    TestbenchGenerationBaseStep(const ParameterConstRef Param, const HLS_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type, std::string c_testbench_basename = "values");
 
-      /**
-       * Constructor.
-       *
-       * Declared protected to prevent direct instantiation. Use
-       * Create() factory methods instead.
-       */
-      TestbenchGenerationBaseStep(const ParameterConstRef Param, const HLS_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
+   /**
+    * Constructor.
+    *
+    * Declared protected to prevent direct instantiation. Use
+    * Create() factory methods instead.
+    */
+   TestbenchGenerationBaseStep(const ParameterConstRef Param, const HLS_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
 
    static std::string print_var_init(const tree_managerConstRef TreeM, unsigned int var, const memoryRef mem);
 
-      static
-      std::string print_var_init(const tree_managerConstRef TreeM, unsigned int var, const memoryRef mem);
+   static std::string print_var_init(const tree_managerConstRef TreeM, unsigned int var, const memoryRef mem);
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status Exec();
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   virtual DesignFlowStep_Status Exec();
 
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      virtual bool HasToBeExecuted() const;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   virtual bool HasToBeExecuted() const;
 };
 #endif

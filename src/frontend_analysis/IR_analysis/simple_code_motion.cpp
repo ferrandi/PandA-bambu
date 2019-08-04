@@ -1059,7 +1059,7 @@ bool simple_code_motion::HasToBeExecuted() const
    if(parameters->getOption<bool>(OPT_parse_pragma))
    {
 #if HAVE_EXPERIMENTAL
-      ///If unroll loop has not yet been executed skip simple code motion
+      /// If unroll loop has not yet been executed skip simple code motion
       const auto unroll_loops = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UNROLL_LOOPS, function_id));
       if(unroll_loops)
       {

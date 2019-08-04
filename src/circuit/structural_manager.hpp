@@ -332,28 +332,28 @@ class structural_manager
     */
    void add_NP_functionality(structural_objectRef owner, NP_functionality::NP_functionaly_type dt, std::string functionality_description);
 
-      /**
-       * Specify a parameter for the top module
-       * @param name is the parameter name
-       * @param value is the parameter value
-       */
-      void SetParameter(const std::string& name, const std::string& value);
+   /**
+    * Specify a parameter for the top module
+    * @param name is the parameter name
+    * @param value is the parameter value
+    */
+   void SetParameter(const std::string& name, const std::string& value);
 
-      /**
-       * Add an object to the sensitivity list of process/service
-       * @param obj is the object.
-       * @param pr is the process.
-      */
-      void add_sensitivity(structural_objectRef obj, structural_objectRef pr);
-      /**
-       * Create a connection between a source structural object and a destination structural object.
-       * A source port can be connected to another port, a signal and to a channel. Two primary ports cannot be connected, in this case a signal is needed.
-       * A source signal can be connected to another port.
-       * The other combinations are not allowed.
-       * @param src is the source.
-       * @param dest is the destination.
-      */
-      void add_connection(structural_objectRef src, structural_objectRef dest);
+   /**
+    * Add an object to the sensitivity list of process/service
+    * @param obj is the object.
+    * @param pr is the process.
+    */
+   void add_sensitivity(structural_objectRef obj, structural_objectRef pr);
+   /**
+    * Create a connection between a source structural object and a destination structural object.
+    * A source port can be connected to another port, a signal and to a channel. Two primary ports cannot be connected, in this case a signal is needed.
+    * A source signal can be connected to another port.
+    * The other combinations are not allowed.
+    * @param src is the source.
+    * @param dest is the destination.
+    */
+   void add_connection(structural_objectRef src, structural_objectRef dest);
 
    /**
     * Function that prints the circuit data structure.

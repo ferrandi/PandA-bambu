@@ -30,13 +30,13 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file fu_binding_cs.hpp
  * @brief Derived class to add module scheduler, mem_ctrl_parallel and bind correctly the channels
  *
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
-*/
+ */
 #ifndef FU_BINDING_CS_H
 #define FU_BINDING_CS_H
 
@@ -44,8 +44,7 @@
 
 class fu_binding_cs : public fu_binding
 {
-   public:
-
+ public:
    fu_binding_cs(const HLS_managerConstRef HLS_mgr, const unsigned int function_id, const ParameterConstRef parameters);
 
    /**
@@ -67,7 +66,7 @@ class fu_binding_cs : public fu_binding
     * @param HLS
     * @param _unique_id
     */
-   void manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id);
+   void manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const std::set<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id);
 
    /**
     * @brief manage_extern_global_port based on function attach the input of memory modules
@@ -81,7 +80,7 @@ class fu_binding_cs : public fu_binding
     */
    void manage_extern_global_port(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM, structural_objectRef port_in, unsigned int dir, structural_objectRef circuit, unsigned int num);
 
-protected:
+ protected:
    /**
     * @brief instantiate_component_kernel
     * @param HLSMgr
@@ -107,7 +106,7 @@ protected:
     * @param HLS
     * @param _unique_id
     */
-   void connect_scheduler_Datapath(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id);
+   void connect_scheduler_Datapath(const structural_managerRef SM, const std::set<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id);
 
    /**
     * @brief for each port decide its vector size
@@ -131,7 +130,7 @@ protected:
     * @param HLS
     * @param _unique_id
     */
-   void manage_memory_port_kernel(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int &_unique_id);
+   void manage_memory_port_kernel(const structural_managerRef SM, const std::set<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id);
 
    /**
     * @brief manage_memory_port_hierarchical connect correctly memory port when in hierarchical function
@@ -141,7 +140,7 @@ protected:
     * @param HLS
     * @param _unique_id
     */
-   void manage_memory_port_hierarchical(const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int &_unique_id);
+   void manage_memory_port_hierarchical(const structural_managerRef SM, const std::set<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id);
 
    /**
     * @brief connect_selector in function not kernel connect selector with all the module that have the right port

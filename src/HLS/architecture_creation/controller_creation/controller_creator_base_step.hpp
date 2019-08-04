@@ -92,16 +92,16 @@ class ControllerCreatorBaseStep : public HLSFunctionStep
     */
    void Initialize() override;
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      void Initialize();
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize();
 
-      /**
-       * This member function adds the standard ports (clock, reset, done and command ones) to a circuit.
-       * \param circuit it is the datastructure of the component where to add these ports
-       */
-      virtual void add_common_ports(structural_objectRef circuit);
+   /**
+    * This member function adds the standard ports (clock, reset, done and command ones) to a circuit.
+    * \param circuit it is the datastructure of the component where to add these ports
+    */
+   virtual void add_common_ports(structural_objectRef circuit);
 
    /// This contains all the ports that go from the controller to the datapath, used to enable the registers
    /// and to control muxes in the datapath. The first element in the map

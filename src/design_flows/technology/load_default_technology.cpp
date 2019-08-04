@@ -77,40 +77,40 @@ DesignFlowStep_Status LoadDefaultTechnology::Exec()
       /// Load default resources
       const char* builtin_resources_data[] = {
 #include "C_COMPLEX_IPs.data"
-         ,
+          ,
 #include "C_FP_IPs.data"
-         ,
+          ,
 #include "C_HLS_IPs.data"
-         ,
+          ,
 #include "C_IO_IPs.data"
-         ,
-      #include "CS_COMPONENT.data"
-         ,
-      #include "C_PROFILING_IPs.data"
-         ,
+          ,
+#include "CS_COMPONENT.data"
+          ,
+#include "C_PROFILING_IPs.data"
+          ,
 #include "C_PC_IPs.data"
 #endif
-         ,
-#include "C_PROFILING_IPs.data"
-         ,
-#include "C_STD_IPs.data"
-         ,
-      #include "NC_MEM_IPs.data"
-         ,
-      #include "NC_PC_IPs.data"
           ,
-      #include "NC_SF_IPs.data"
-         ,
+#include "C_PROFILING_IPs.data"
+          ,
+#include "C_STD_IPs.data"
+          ,
 #include "NC_MEM_IPs.data"
-         ,
+          ,
 #include "NC_PC_IPs.data"
-         ,
+          ,
 #include "NC_SF_IPs.data"
-         ,
+          ,
+#include "NC_MEM_IPs.data"
+          ,
+#include "NC_PC_IPs.data"
+          ,
+#include "NC_SF_IPs.data"
+          ,
 #include "NC_STD_IPs.data"
-         ,
+          ,
 #include "NC_VEC_IPs.data"
-         ,
+          ,
 #include "NC_wishbone_IPs.data"
       };
 

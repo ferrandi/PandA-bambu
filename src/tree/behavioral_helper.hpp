@@ -678,27 +678,27 @@ class BehavioralHelper
    bool IsDefaultSsaName(const unsigned int ssa_name_index) const;
 
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-      /**
-       * Return the degree of parallelism for openmp for wrapper function, 0 otherwise
-       */
-      size_t GetOmpForDegree() const;
+   /**
+    * Return the degree of parallelism for openmp for wrapper function, 0 otherwise
+    */
+   size_t GetOmpForDegree() const;
 
-      /**
-       * Return true if is the function is atomic
-       */
-      bool IsOmpFunctionAtomic() const;
+   /**
+    * Return true if is the function is atomic
+    */
+   bool IsOmpFunctionAtomic() const;
 
-      /**
-       * Return true if the function is the body of an openmp for
-       */
-      bool IsOmpBodyLoop() const;
+   /**
+    * Return true if the function is the body of an openmp for
+    */
+   bool IsOmpBodyLoop() const;
 #endif
 
 #if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-      /**
-       * Return true if the function is an omp atomic instruction
-       */
-      bool IsOmpAtomic() const;
+   /**
+    * Return true if the function is an omp atomic instruction
+    */
+   bool IsOmpAtomic() const;
 #endif
 
    /**

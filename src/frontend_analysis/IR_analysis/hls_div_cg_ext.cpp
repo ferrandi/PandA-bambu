@@ -72,13 +72,13 @@
 
 /// Tree include
 #include "ext_tree_node.hpp"
+#include "token_interface.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include "token_interface.hpp"
 
 /// Utility include
 #include "dbgPrintHelper.hpp"

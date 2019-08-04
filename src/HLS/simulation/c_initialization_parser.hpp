@@ -29,17 +29,17 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file c_initialization_parser.hpp
  * @brief Interface to parse the initialization of c variable.
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef C_INITIALIZATION_PARSER_HPP
 #define C_INITIALIZATION_PARSER_HPP
-///Utility include
+/// Utility include
 #include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(BehavioralHelper);
@@ -52,36 +52,34 @@ CONSTREF_FORWARD_DECL(tree_node);
 
 class CInitializationParser
 {
-   private:
-      ///The set of input parameters
-      const ParameterConstRef parameters;
+ private:
+   /// The set of input parameters
+   const ParameterConstRef parameters;
 
-      ///The debug level
-      int debug_level;
+   /// The debug level
+   int debug_level;
 
-      /**
-       * Wrapper to yyparse
-       * @param c_initialization_parser_functor is the functor used during the parsing
-       * @param lexer is the lexer used to process the initiation string
-       */
-      void YYParse(const CInitializationParserFunctorRef c_initialization_parser_functor, const CInitializationFlexLexerRef lexer) const;
+   /**
+    * Wrapper to yyparse
+    * @param c_initialization_parser_functor is the functor used during the parsing
+    * @param lexer is the lexer used to process the initiation string
+    */
+   void YYParse(const CInitializationParserFunctorRef c_initialization_parser_functor, const CInitializationFlexLexerRef lexer) const;
 
-   public:
-      /**
-       * Constructor
-       * @param parameters is the set of input parameters
-       */
-      CInitializationParser(const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor
+    * @param parameters is the set of input parameters
+    */
+   CInitializationParser(const ParameterConstRef parameters);
 
-      /**
-       * Parse a string to generate the corresponding memory initialization
-       * @param c_initialization_parser_functor is the functor used during parsing
-       * @param initialization_string is the C initialization string of a variable
-       */
-      void Parse(const CInitializationParserFunctorRef c_initialization_parser_functor, const std::string & initialization_string) const;
-
+   /**
+    * Parse a string to generate the corresponding memory initialization
+    * @param c_initialization_parser_functor is the functor used during parsing
+    * @param initialization_string is the C initialization string of a variable
+    */
+   void Parse(const CInitializationParserFunctorRef c_initialization_parser_functor, const std::string& initialization_string) const;
 };
 typedef refcount<const CInitializationParser> CInitializationParserConstRef;
 typedef refcount<CInitializationParser> CInitializationParserRef;
 #endif
-

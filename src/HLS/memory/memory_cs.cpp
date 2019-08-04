@@ -29,21 +29,20 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file mem_dominator_allocation_CS.hpp
  * @brief add tag information
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
-*/
+ */
 #include "memory_cs.hpp"
 
-memory_cs::memory_cs(const tree_managerRef _TreeM, unsigned int _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, unsigned int &_address_bitsize) :
-    memory(_TreeM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p, initial_internal_address, _address_bitsize)
+memory_cs::memory_cs(const tree_managerRef _TreeM, unsigned int _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, unsigned int& _address_bitsize)
+    : memory(_TreeM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p, initial_internal_address, _address_bitsize)
 {
-    bus_tag_bitsize=0;
+   bus_tag_bitsize = 0;
 }
 
 memory_cs::~memory_cs()
 {
-
 }

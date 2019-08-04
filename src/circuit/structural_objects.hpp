@@ -52,18 +52,17 @@
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
 #include "config_HAVE_TUCANO_BUILT.hpp"
 
-///utility include
+/// utility include
 #include "custom_map.hpp"
 
-#include <string>
-#include <ostream>
 #include <map>
+#include <ostream>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "simple_indent.hpp"
 #include "utility.hpp"
-
 
 #include "NP_functionality.hpp"
 #include "exceptions.hpp"
@@ -351,11 +350,11 @@ class structural_object
    /// True if the structural object is a black box (e.g., a library component).
    bool black_box;
 
-      /// Map between parameter string and related values of an instance
-      CustomMap<std::string, std::string> parameters;
+   /// Map between parameter string and related values of an instance
+   CustomMap<std::string, std::string> parameters;
 
-      /// Map between parameter string and its default value
-      CustomMap<std::string, std::string> default_parameters;
+   /// Map between parameter string and its default value
+   CustomMap<std::string, std::string> default_parameters;
 
  protected:
    /// debug level for the object
@@ -451,161 +450,161 @@ class structural_object
    std::string get_equation(const structural_objectRef out_obj, const technology_managerConstRef TM, std::set<structural_objectRef>& analyzed, const std::set<structural_objectRef>& input_ports, const std::set<structural_objectRef>& output_ports) const;
 #endif
 
-      /**
-          * Return the identifier associated with the structural_object.
-         */
-      const std::string get_id() const;
+   /**
+    * Return the identifier associated with the structural_object.
+    */
+   const std::string get_id() const;
 
-      /**
-          * Set the type of the structural_object.
-          * @param s is a type descriptor of a structural_object.
-         */
-      void set_type(const structural_type_descriptorRef& s);
+   /**
+    * Set the type of the structural_object.
+    * @param s is a type descriptor of a structural_object.
+    */
+   void set_type(const structural_type_descriptorRef& s);
 
-      /**
-          * Return the type descriptor of the structural_object
-         */
-      const structural_type_descriptorRef& get_typeRef() const;
+   /**
+    * Return the type descriptor of the structural_object
+    */
+   const structural_type_descriptorRef& get_typeRef() const;
 
-      /**
-          * Just resize the size of the bits of the object
-         */
-      void type_resize(unsigned int new_bit_size);
+   /**
+    * Just resize the size of the bits of the object
+    */
+   void type_resize(unsigned int new_bit_size);
 
-      /**
-          * resizing of vector objects
-         */
-      void type_resize(unsigned int new_bit_size, unsigned int new_vec_size);
-      /**
-          * Set the black box property associated with the structural_object.
-          * @param bb is true when the object is a black box, false otherwise.
-          * The black box property has mean only in case of components and channels.
-         */
-      void set_black_box(bool bb);
+   /**
+    * resizing of vector objects
+    */
+   void type_resize(unsigned int new_bit_size, unsigned int new_vec_size);
+   /**
+    * Set the black box property associated with the structural_object.
+    * @param bb is true when the object is a black box, false otherwise.
+    * The black box property has mean only in case of components and channels.
+    */
+   void set_black_box(bool bb);
 
-      /**
-          * Return the black box property.
-         */
-      bool get_black_box() const;
+   /**
+    * Return the black box property.
+    */
+   bool get_black_box() const;
 
-      /**
-       * Set a parameter value
-       * @param name is parameter name
-       * @param value is parameter value
-       */
-      void SetParameter(const std::string& name, const std::string& value);
+   /**
+    * Set a parameter value
+    * @param name is parameter name
+    * @param value is parameter value
+    */
+   void SetParameter(const std::string& name, const std::string& value);
 
-      /**
-          * Check if a parameter has been specified
-          * @param name is parameter name
-         */
-      bool ExistsParameter(std::string name) const;
+   /**
+    * Check if a parameter has been specified
+    * @param name is parameter name
+    */
+   bool ExistsParameter(std::string name) const;
 
-      /**
-       * Get the value associated to parameter if it has been associated; if it has not specified returns the default
-       * @param name is parameter name
-       * @return parameter value
-       */
-      std::string GetParameter(std::string name) const;
+   /**
+    * Get the value associated to parameter if it has been associated; if it has not specified returns the default
+    * @param name is parameter name
+    * @return parameter value
+    */
+   std::string GetParameter(std::string name) const;
 
-      /**
-       * Get the value associated to parameter if it has been associate; It throws an exception if it has not
-       * been associated
-       * @param name is parameter name
-       * @return parameter value
-       */
-      std::string GetDefaultParameter(std::string name) const;
+   /**
+    * Get the value associated to parameter if it has been associate; It throws an exception if it has not
+    * been associated
+    * @param name is parameter name
+    * @return parameter value
+    */
+   std::string GetDefaultParameter(std::string name) const;
 
-      /**
-       * return the whole set of parameters
-       * @return the whole set of parameters
-       */
-      CustomMap<std::string, std::string> GetParameters();
+   /**
+    * return the whole set of parameters
+    * @return the whole set of parameters
+    */
+   CustomMap<std::string, std::string> GetParameters();
 
-      /**
-       * Add a parameter
-       * @param name is the name of the parameter
-       * @param default_value is the default of the value
-       */
-      virtual void AddParameter(const std::string name, const std::string default_value);
+   /**
+    * Add a parameter
+    * @param name is the name of the parameter
+    * @param default_value is the default of the value
+    */
+   virtual void AddParameter(const std::string name, const std::string default_value);
 
-      /**
-       * Return a unique identifier of the structural object.
-       * It is composed by the identifier of the current structural object
-       * and by its owners separated by the HIERARCHY_SEPARATOR. Structural objects are viewed as elements of a standard filesystem.
-       */
-      const std::string get_path() const;
+   /**
+    * Return a unique identifier of the structural object.
+    * It is composed by the identifier of the current structural object
+    * and by its owners separated by the HIERARCHY_SEPARATOR. Structural objects are viewed as elements of a standard filesystem.
+    */
+   const std::string get_path() const;
 
-      /**
-       * Perform a copy of the structural object.
-       * @param dest destination object.
-       */
-      virtual void copy(structural_objectRef dest) const;
+   /**
+    * Perform a copy of the structural object.
+    * @param dest destination object.
+    */
+   virtual void copy(structural_objectRef dest) const;
 
-      /**
-       * Return the object named id of a given type which belongs to or it is associated with the object.
-       * @param id is the identifier of the object we are looking for.
-       * @param type is the type of the object we are looking for.
-       * @param owner is the owner of the object named id.
-       */
-      virtual structural_objectRef find_member(const std::string &id, so_kind type, const structural_objectRef owner) const = 0;
+   /**
+    * Return the object named id of a given type which belongs to or it is associated with the object.
+    * @param id is the identifier of the object we are looking for.
+    * @param type is the type of the object we are looking for.
+    * @param owner is the owner of the object named id.
+    */
+   virtual structural_objectRef find_member(const std::string& id, so_kind type, const structural_objectRef owner) const = 0;
 
-      /**
-       * Find key in this object.
-       * @param key is the object searched.
-       */
-      virtual structural_objectRef find_isomorphic(const structural_objectRef key) const = 0;
+   /**
+    * Find key in this object.
+    * @param key is the object searched.
+    */
+   virtual structural_objectRef find_isomorphic(const structural_objectRef key) const = 0;
 
-      /**
-       * Load a structural_object starting from an xml file.
-       * @param node is a node of the xml tree.
-       * @param owner is the refcount version of this.
-       * @param CM is the circuit manager.
-       */
-       virtual void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM);
+   /**
+    * Load a structural_object starting from an xml file.
+    * @param node is a node of the xml tree.
+    * @param owner is the refcount version of this.
+    * @param CM is the circuit manager.
+    */
+   virtual void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const& CM);
 
-       /**
-       * Add a structural_object to an xml tree.
-       * @param rootnode is the root node at which the xml representation of the structural object is attached.
-       */
-       virtual void xwrite(xml_element* rootnode);
+   /**
+    * Add a structural_object to an xml tree.
+    * @param rootnode is the root node at which the xml representation of the structural object is attached.
+    */
+   virtual void xwrite(xml_element* rootnode);
 
 #if HAVE_TECHNOLOGY_BUILT
-      /**
-       * Add the list of attributes for the object
-       * @param rootnode is the root node at which the xml representation of the attributes is attached
-       */
-      virtual void xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef());
+   /**
+    * Add the list of attributes for the object
+    * @param rootnode is the root node at which the xml representation of the attributes is attached
+    */
+   virtual void xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef());
 #endif
 
-      /**
-       * Print the structural_object (for debug purpose)
-       * @param os is an output stream
-       */
-      virtual void print(std::ostream& os) const;
+   /**
+    * Print the structural_object (for debug purpose)
+    * @param os is an output stream
+    */
+   virtual void print(std::ostream& os) const;
 
-      /**
-       * Friend definition of the << operator.
-       */
-      friend std::ostream& operator<<(std::ostream& os, const structural_objectRef o)
-      {
-         if (o)
-            o->print(os);
-         return os;
-      }
+   /**
+    * Friend definition of the << operator.
+    */
+   friend std::ostream& operator<<(std::ostream& os, const structural_objectRef o)
+   {
+      if(o)
+         o->print(os);
+      return os;
+   }
 
-      /**
-       * Virtual function used to get the string name
-       * of a structural_object instance.
-       * @return a string identifying the object type.
-       */
-      virtual std::string get_kind_text() const = 0;
-      /**
-       * Virtual function used to find the real type
-       * of a structural_object instance.
-       * @return a so_kind enum identifying the object type.
-       */
-      virtual enum so_kind get_kind() const = 0;
+   /**
+    * Virtual function used to get the string name
+    * of a structural_object instance.
+    * @return a string identifying the object type.
+    */
+   virtual std::string get_kind_text() const = 0;
+   /**
+    * Virtual function used to find the real type
+    * of a structural_object instance.
+    * @return a so_kind enum identifying the object type.
+    */
+   virtual enum so_kind get_kind() const = 0;
 
 #if HAVE_TECHNOLOGY_BUILT
    void add_attribute(const std::string& name, const attributeRef& attribute);
@@ -639,303 +638,320 @@ typedef refcount<structural_object> structural_objectRef;
  */
 struct port_o : public structural_object
 {
-   public:
-      /// Enumerative type describing the direction of a port.
-      enum port_direction {IN = 0, OUT, IO, GEN, UNKNOWN, TLM_IN, TLM_OUT, TLM_INOUT};
+ public:
+   /// Enumerative type describing the direction of a port.
+   enum port_direction
+   {
+      IN = 0,
+      OUT,
+      IO,
+      GEN,
+      UNKNOWN,
+      TLM_IN,
+      TLM_OUT,
+      TLM_INOUT
+   };
 
-      /// Enumerative type describing the endianess of a port; NONE means that it has not been specified yet.
-      enum port_endianess {LITTLE = 0, BIG, NONE};
+   /// Enumerative type describing the endianess of a port; NONE means that it has not been specified yet.
+   enum port_endianess
+   {
+      LITTLE = 0,
+      BIG,
+      NONE
+   };
 
-      static const unsigned int PARAMETRIC_PORT = static_cast<unsigned int>(-1);
+   static const unsigned int PARAMETRIC_PORT = static_cast<unsigned int>(-1);
 
-      /**
-          * Convert a string into the corresponding port_direction enumerative type
-          * @param val is the string version of the enum.
-          */
-      static port_direction to_port_direction(const std::string &val);
+   /**
+    * Convert a string into the corresponding port_direction enumerative type
+    * @param val is the string version of the enum.
+    */
+   static port_direction to_port_direction(const std::string& val);
 
-      /**
-          * Constructor.
-          * @param o is the owner of the port
-          * @param dir defines the direction of the port.
-          */
-      port_o(int debug_level, const structural_objectRef o, port_direction dir, so_kind _port_type);
+   /**
+    * Constructor.
+    * @param o is the owner of the port
+    * @param dir defines the direction of the port.
+    */
+   port_o(int debug_level, const structural_objectRef o, port_direction dir, so_kind _port_type);
 
-      /// Destructor.
-      ~port_o() {}
+   /// Destructor.
+   ~port_o()
+   {
+   }
 
-      /// custom size parameter
-      std::string size_parameter;
+   /// custom size parameter
+   std::string size_parameter;
 
-      /**
-          * Bind this port with a signal/port
-          * @param s is the connection
-          */
-      void add_connection(structural_objectRef s);
+   /**
+    * Bind this port with a signal/port
+    * @param s is the connection
+    */
+   void add_connection(structural_objectRef s);
 
-      /**
-          * remove a connection (signal/port) from this
-          * @param s is the connection to be removed
-          */
-      void remove_connection(structural_objectRef s);
+   /**
+    * remove a connection (signal/port) from this
+    * @param s is the connection to be removed
+    */
+   void remove_connection(structural_objectRef s);
 
-      bool is_connected(structural_objectRef s) const;
+   bool is_connected(structural_objectRef s) const;
 
-      void substitute_connection(structural_objectRef old_conn, structural_objectRef new_conn);
+   void substitute_connection(structural_objectRef old_conn, structural_objectRef new_conn);
 
-      /**
-       * Return connection bounded to this port
-       * @param n is the index of the connection
-      */
-      const structural_objectRef get_connection(unsigned int n) const;
+   /**
+    * Return connection bounded to this port
+    * @param n is the index of the connection
+    */
+   const structural_objectRef get_connection(unsigned int n) const;
 
-      /**
-       * Return the number of connections bounded to this port
-      */
-      unsigned int get_connections_size() const;
+   /**
+    * Return the number of connections bounded to this port
+    */
+   unsigned int get_connections_size() const;
 
-      /**
-       * Return the direction of the port.
-      */
-      port_direction get_port_direction() const;
+   /**
+    * Return the direction of the port.
+    */
+   port_direction get_port_direction() const;
 
-      /**
-       * Set the direction of the port.
-      */
-      void set_port_direction(port_direction dir);
+   /**
+    * Set the direction of the port.
+    */
+   void set_port_direction(port_direction dir);
 
-      /**
-       * Return the endianess of the port.
-      */
-      port_endianess get_port_endianess() const;
+   /**
+    * Return the endianess of the port.
+    */
+   port_endianess get_port_endianess() const;
 
-      /**
-       * Set the endianess of the port.
-      */
-      void set_port_endianess(port_endianess end);
+   /**
+    * Set the endianess of the port.
+    */
+   void set_port_endianess(port_endianess end);
 
-      /**
-       * Return the connected signal, if any. Null pointer otherwise.
-      */
-      structural_objectRef get_connected_signal() const;
+   /**
+    * Return the connected signal, if any. Null pointer otherwise.
+    */
+   structural_objectRef get_connected_signal() const;
 
-      /**
-       * Set port size
-       * @param dim is the new dimension of the port
-      */
-      void set_port_size(unsigned int dim);
+   /**
+    * Set port size
+    * @param dim is the new dimension of the port
+    */
+   void set_port_size(unsigned int dim);
 
-      /**
-       * Get port size
-       * @return the dimension of the port
-      */
-      unsigned int get_port_size() const;
+   /**
+    * Get port size
+    * @return the dimension of the port
+    */
+   unsigned int get_port_size() const;
 
-      /**
-       * set the is var_args attribute.
-       * @param c when true the port has a variable numbers of inputs
-      */
-      void set_is_var_args(bool c);
-      /**
-       * return true if the port is a var_args
-      */
-      bool get_is_var_args() const;
+   /**
+    * set the is var_args attribute.
+    * @param c when true the port has a variable numbers of inputs
+    */
+   void set_is_var_args(bool c);
+   /**
+    * return true if the port is a var_args
+    */
+   bool get_is_var_args() const;
 
-      /**
-       * set the is clock attribute.
-       * @param c when true the port is a clock port and has to be attached to a clock object
-      */
-      void set_is_clock(bool c);
-      /**
-       * return true if the port is a clock
-      */
-      bool get_is_clock() const;
+   /**
+    * set the is clock attribute.
+    * @param c when true the port is a clock port and has to be attached to a clock object
+    */
+   void set_is_clock(bool c);
+   /**
+    * return true if the port is a clock
+    */
+   bool get_is_clock() const;
 
-      /**
-       * set the is_extern attribute.
-       * @param c when true the port is a extern port and has to be attached to an extern object
-      */
-      void set_is_extern(bool c);
-      /**
-       * return true if the port is extern
-      */
-      bool get_is_extern() const;
+   /**
+    * set the is_extern attribute.
+    * @param c when true the port is a extern port and has to be attached to an extern object
+    */
+   void set_is_extern(bool c);
+   /**
+    * return true if the port is extern
+    */
+   bool get_is_extern() const;
 
-      /**
-       * Sets the bus bundle identifier.
-       */
-      void set_bus_bundle(const std::string& name);
+   /**
+    * Sets the bus bundle identifier.
+    */
+   void set_bus_bundle(const std::string& name);
 
-      /**
-       * Returns the bus bundle identifier, if any
-       */
-      std::string get_bus_bundle() const;
+   /**
+    * Returns the bus bundle identifier, if any
+    */
+   std::string get_bus_bundle() const;
 
-      /**
-       * set the is_global attribute.
-       * @param c when true the port is a global port and has to be attached to a global object
-      */
-      void set_is_global(bool c);
-      /**
-       * return true if the port is global
-      */
-      bool get_is_global() const;
+   /**
+    * set the is_global attribute.
+    * @param c when true the port is a global port and has to be attached to a global object
+    */
+   void set_is_global(bool c);
+   /**
+    * return true if the port is global
+    */
+   bool get_is_global() const;
 
-      /**
-       * set the is_memory attribute.
-       * @param c when true the port is a port used to interact with the onchip or offchip memory
-      */
-      void set_is_memory(bool c);
-      /**
-       * return true if the port is a memory port
-      */
-      bool get_is_memory() const;
+   /**
+    * set the is_memory attribute.
+    * @param c when true the port is a port used to interact with the onchip or offchip memory
+    */
+   void set_is_memory(bool c);
+   /**
+    * return true if the port is a memory port
+    */
+   bool get_is_memory() const;
 
-      /**
-       * set the is_slave attribute.
-       * @param c when true the port is a port used to interact with the onchip or offchip memory as slave
-      */
-      void set_is_slave(bool c);
-      /**
-       * return true if the port works as slave memory port
-      */
-      bool get_is_slave() const;
+   /**
+    * set the is_slave attribute.
+    * @param c when true the port is a port used to interact with the onchip or offchip memory as slave
+    */
+   void set_is_slave(bool c);
+   /**
+    * return true if the port works as slave memory port
+    */
+   bool get_is_slave() const;
 
-      /**
-       * set the is_master attribute.
-       * @param c when true the port is a port used to interact with the onchip or offchip memory as master
-      */
-      void set_is_master(bool c);
-      /**
-       * return true if the port works as master memory port
-      */
-      bool get_is_master() const;
+   /**
+    * set the is_master attribute.
+    * @param c when true the port is a port used to interact with the onchip or offchip memory as master
+    */
+   void set_is_master(bool c);
+   /**
+    * return true if the port works as master memory port
+    */
+   bool get_is_master() const;
 
-      /**
-       * set the is_data attribute.
-       * @param c when true the port is a port used as a data bus
-      */
-      void set_is_data_bus(bool c);
+   /**
+    * set the is_data attribute.
+    * @param c when true the port is a port used as a data bus
+    */
+   void set_is_data_bus(bool c);
 
-      /**
-       * return true if the port works as a data bus
-      */
-      bool get_is_data_bus() const;
+   /**
+    * return true if the port works as a data bus
+    */
+   bool get_is_data_bus() const;
 
-      /**
-       * set the is_addr_bus attribute.
-       * @param c when true the port is a port used as an address bus
-      */
-      void set_is_addr_bus(bool c);
+   /**
+    * set the is_addr_bus attribute.
+    * @param c when true the port is a port used as an address bus
+    */
+   void set_is_addr_bus(bool c);
 
-      /**
-       * return true if the port works as an address bus
-      */
-      bool get_is_addr_bus() const;
+   /**
+    * return true if the port works as an address bus
+    */
+   bool get_is_addr_bus() const;
 
-      /**
-       * set the is_size_bus attribute.
-       * @param c when true the port is a port used as a size bus
-      */
-      void set_is_size_bus(bool c);
+   /**
+    * set the is_size_bus attribute.
+    * @param c when true the port is a port used as a size bus
+    */
+   void set_is_size_bus(bool c);
 
-      /**
-       * return true if the port works as a size bus
-      */
-      bool get_is_size_bus() const;
+   /**
+    * return true if the port works as a size bus
+    */
+   bool get_is_size_bus() const;
 
-      /**
-       * set the is_tag_bus attribute.
-       * @param c when true the port is a port used as an tag bus
-      */
-      void set_is_tag_bus(bool c);
+   /**
+    * set the is_tag_bus attribute.
+    * @param c when true the port is a port used as an tag bus
+    */
+   void set_is_tag_bus(bool c);
 
-      /**
-       * return true if the port works as an tag bus
-      */
-      bool get_is_tag_bus() const;
+   /**
+    * return true if the port works as an tag bus
+    */
+   bool get_is_tag_bus() const;
 
-      /**
-       * set the is_doubled attribute.
-       * @param c when true the port has a doubled size w.r.t the precision
-      */
-      void set_is_doubled(bool c);
+   /**
+    * set the is_doubled attribute.
+    * @param c when true the port has a doubled size w.r.t the precision
+    */
+   void set_is_doubled(bool c);
 
-      /**
-       * return true if the port has a doubled size w.r.t the precision
-      */
-      bool get_is_doubled() const;
+   /**
+    * return true if the port has a doubled size w.r.t the precision
+    */
+   bool get_is_doubled() const;
 
-      /**
-       * set the is_halved attribute.
-       * @param c when true the port has a halved size w.r.t the precision
-       */
-      void set_is_halved(bool c);
+   /**
+    * set the is_halved attribute.
+    * @param c when true the port has a halved size w.r.t the precision
+    */
+   void set_is_halved(bool c);
 
-      /**
-       * return true if the port has a halved size w.r.t the precision
-       */
-      bool get_is_halved() const;
+   /**
+    * return true if the port has a halved size w.r.t the precision
+    */
+   bool get_is_halved() const;
 
-      /**
-       * Find the object bounded to the port. The object searched has the same owner of the port.
-       * @return the object bounded to the port.
-      */
-      structural_objectRef find_bounded_object(const structural_objectConstRef f_owner = structural_objectConstRef()) const;
+   /**
+    * Find the object bounded to the port. The object searched has the same owner of the port.
+    * @return the object bounded to the port.
+    */
+   structural_objectRef find_bounded_object(const structural_objectConstRef f_owner = structural_objectConstRef()) const;
 
-      /**
-       * set the port as critical with respect to the timing path
-       */
-      void set_critical();
+   /**
+    * set the port as critical with respect to the timing path
+    */
+   void set_critical();
 
-      /**
-       * return if the component is critical or not
-       */
-      bool get_critical() const;
+   /**
+    * return if the component is critical or not
+    */
+   bool get_critical() const;
 
-      /**
-       * Sets the port as reverse
-       */
-      void set_reverse();
+   /**
+    * Sets the port as reverse
+    */
+   void set_reverse();
 
-      /**
-       * Returns if the port as to be printed in a reverse mode
-       */
-      bool get_reverse() const;
+   /**
+    * Returns if the port as to be printed in a reverse mode
+    */
+   bool get_reverse() const;
 
-      /**
-       * Perform a copy of the port.
-       * @param dest destination object.
-      */
-      void copy(structural_objectRef dest) const;
+   /**
+    * Perform a copy of the port.
+    * @param dest destination object.
+    */
+   void copy(structural_objectRef dest) const;
 
-      /**
-       * Return the object named id of a given type which belongs to or it is associated with the object.
-       * @param id is the identifier of the object we are looking for.
-       * @param type is the type of the object we are looking for.
-       * @param owner is the owner of the object named id.
-      */
-      structural_objectRef find_member(const std::string&id, so_kind type, const structural_objectRef owner) const;
+   /**
+    * Return the object named id of a given type which belongs to or it is associated with the object.
+    * @param id is the identifier of the object we are looking for.
+    * @param type is the type of the object we are looking for.
+    * @param owner is the owner of the object named id.
+    */
+   structural_objectRef find_member(const std::string& id, so_kind type, const structural_objectRef owner) const;
 
-      /**
-       * Find key in this object.
-       * @param key is the object searched.
-      */
-      structural_objectRef find_isomorphic(const structural_objectRef key) const;
+   /**
+    * Find key in this object.
+    * @param key is the object searched.
+    */
+   structural_objectRef find_isomorphic(const structural_objectRef key) const;
 
-      /**
-       * Load a structural_object starting from an xml file.
-       * @param node is a node of the xml tree.
-       * @param owner is the refcount version of this.
-       * @param CM is the circuit manager.
-      */
-      void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const & CM);
+   /**
+    * Load a structural_object starting from an xml file.
+    * @param node is a node of the xml tree.
+    * @param owner is the refcount version of this.
+    * @param CM is the circuit manager.
+    */
+   void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const& CM);
 
-      /**
-       * Add a structural_object to an xml tree.
-       * @param rootnode is the root node at which the xml representation of the structural object is attached.
-      */
-      void xwrite(xml_element* rootnode);
+   /**
+    * Add a structural_object to an xml tree.
+    * @param rootnode is the root node at which the xml representation of the structural object is attached.
+    */
+   void xwrite(xml_element* rootnode);
 
 #if HAVE_TECHNOLOGY_BUILT
    /**
@@ -945,168 +961,174 @@ struct port_o : public structural_object
    void xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn = technology_nodeRef()) override;
 #endif
 
-      /**
-       * Specify the number of ports of a generic port_vector object and add its corresponding ports.
-       * It can be done only on port_vectors not yet specialized.
-       * The type of the port is equal to the type descriptor of the port_vector.
-       * @param n_ports is the number of the ports.
-       * @param owner is the reference version of "this".
-      */
-      void add_n_ports(unsigned int n_ports, structural_objectRef owner);
+   /**
+    * Specify the number of ports of a generic port_vector object and add its corresponding ports.
+    * It can be done only on port_vectors not yet specialized.
+    * The type of the port is equal to the type descriptor of the port_vector.
+    * @param n_ports is the number of the ports.
+    * @param owner is the reference version of "this".
+    */
+   void add_n_ports(unsigned int n_ports, structural_objectRef owner);
 
-      /**
-       * Return the ith port of the vector. It checks that a port exists at position n.
-       * @param n is the index of the port
-      */
-      const structural_objectRef get_port(unsigned int n) const;
+   /**
+    * Return the ith port of the vector. It checks that a port exists at position n.
+    * @param n is the index of the port
+    */
+   const structural_objectRef get_port(unsigned int n) const;
 
-      /**
-       * Return the number of ports. When the port_vector has not yet specialized 0 is returned.
-      */
-      unsigned int get_ports_size() const;
+   /**
+    * Return the number of ports. When the port_vector has not yet specialized 0 is returned.
+    */
+   unsigned int get_ports_size() const;
 
-      /**
-       * return the index of the least significant port
-       */
-      unsigned int get_lsb() const {return lsb;}
+   /**
+    * return the index of the least significant port
+    */
+   unsigned int get_lsb() const
+   {
+      return lsb;
+   }
 
-      /**
-       * auxiliary function used to resize the bus ports with respect to their associated bus size
-       * @param bus_size_bitsize bitsize of sizes
-       * @param bus_addr_bitsize bitsize of addresses
-       * @param bus_data_bitsize bitsize of data
-       * @param bus_tag_bitsize bitsize of tag
-       * @param port is the port to be resized
-       */
-      static
-      void resize_busport(unsigned int bus_size_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_data_bitsize, unsigned int bus_tag_bitsize, structural_objectRef port);
+   /**
+    * auxiliary function used to resize the bus ports with respect to their associated bus size
+    * @param bus_size_bitsize bitsize of sizes
+    * @param bus_addr_bitsize bitsize of addresses
+    * @param bus_data_bitsize bitsize of data
+    * @param bus_tag_bitsize bitsize of tag
+    * @param port is the port to be resized
+    */
+   static void resize_busport(unsigned int bus_size_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_data_bitsize, unsigned int bus_tag_bitsize, structural_objectRef port);
 
-      /**
-       * auxiliary function used to resize the standard ports
-       * @param bitsize_variable is the bitsize
-       * @param n_elements is the number of elements
-       * @param debug_level is the debug level
-       * @param port is the port to be resized
-       */
-      static
-      void resize_std_port(unsigned int bitsize_variable, unsigned int n_elements, int debug_level, structural_objectRef port);
+   /**
+    * auxiliary function used to resize the standard ports
+    * @param bitsize_variable is the bitsize
+    * @param n_elements is the number of elements
+    * @param debug_level is the debug level
+    * @param port is the port to be resized
+    */
+   static void resize_std_port(unsigned int bitsize_variable, unsigned int n_elements, int debug_level, structural_objectRef port);
 
-      /**
-          * copy the port properties from port_i to cir_port
-          * @param port_i is the source port
-       * @param cir_port is the created port
-       */
-      static
-      void fix_port_properties(structural_objectRef port_i, structural_objectRef cir_port);
+   /**
+    * copy the port properties from port_i to cir_port
+    * @param port_i is the source port
+    * @param cir_port is the created port
+    */
+   static void fix_port_properties(structural_objectRef port_i, structural_objectRef cir_port);
 
+   /**
+    * Print the port (for debug purpose)
+    * @param os is an output stream
+    */
+   void print(std::ostream& os) const;
 
-      /**
-       * Print the port (for debug purpose)
-       * @param os is an output stream
-      */
-      void print(std::ostream& os) const;
+   /**
+    * return the name of the class as a string.
+    */
+   std::string get_kind_text() const
+   {
+      if(port_type == port_vector_o_K)
+         return "port_vector_o";
+      else
+         return "port_o";
+   }
+   /**
+    * return the type of the class
+    */
+   enum so_kind get_kind() const
+   {
+      return port_type;
+   }
 
-      /**
-       * return the name of the class as a string.
-      */
-      std::string get_kind_text() const {if(port_type == port_vector_o_K) return "port_vector_o"; else return "port_o";}
-      /**
-       * return the type of the class
-      */
-      enum so_kind get_kind() const {return port_type;}
+ private:
+   /// The list of connections associated with the port.
+   std::vector<Wrefcount<structural_object>> connected_objects;
 
-   private:
-      /// The list of connections associated with the port.
-      std::vector<Wrefcount<structural_object> > connected_objects;
+   /// direction of a port
+   port_direction dir;
 
-      /// direction of a port
-      port_direction dir;
+   /// endianess of a port
+   port_endianess end;
 
-      /// endianess of a port
-      port_endianess end;
+   /// when true the port must be specialized at runtime depending on the number of input
+   bool is_var_args;
 
-      /// when true the port must be specialized at runtime depending on the number of input
-      bool is_var_args;
+   /// when true the port is a clock port and has to be attached to a clock object
+   bool is_clock;
 
-      /// when true the port is a clock port and has to be attached to a clock object
-      bool is_clock;
+   /// when true the port is an extern port
+   bool is_extern;
 
-      /// when true the port is an extern port
-      bool is_extern;
+   /// when true the port is a global port
+   bool is_global;
 
-      /// when true the port is a global port
-      bool is_global;
+   /// when true the port is dumped as [0:msb-1] instead of [msb-1:0]
+   bool is_reverse;
 
-      /// when true the port is dumped as [0:msb-1] instead of [msb-1:0]
-      bool is_reverse;
+   /// when true the port is a memory port
+   bool is_memory;
 
-      /// when true the port is a memory port
-      bool is_memory;
+   /// when true the port is a slave port
+   bool is_slave;
 
-      /// when true the port is a slave port
-      bool is_slave;
+   /// when true the port is a master port
+   bool is_master;
 
-      /// when true the port is a master port
-      bool is_master;
+   /// when true the port is a data bus
+   bool is_data_bus;
 
-      /// when true the port is a data bus
-      bool is_data_bus;
+   /// when true the port is an address bus
+   bool is_addr_bus;
 
-      /// when true the port is an address bus
-      bool is_addr_bus;
+   /// when true the port is a size bus
+   bool is_size_bus;
 
-      /// when true the port is a size bus
-      bool is_size_bus;
+   /// when true the port is a tag bus
+   bool is_tag_bus;
 
-      /// when true the port is a tag bus
-      bool is_tag_bus;
+   /// when true the port has a doubled size
+   bool is_doubled;
 
-      /// when true the port has a doubled size
-      bool is_doubled;
+   /// when true the port has a halfed size
+   bool is_halved;
 
-      /// when true the port has a halfed size
-      bool is_halved;
+   /// when true the port is involved into the critical path of the netlist
+   bool is_critical;
 
-      /// when true the port is involved into the critical path of the netlist
-      bool is_critical;
+   /// bus bundle
+   std::string bus_bundle;
 
-      /// bus bundle
-      std::string bus_bundle;
+   /// least significant bit
+   unsigned int lsb;
 
-      /// least significant bit
-      unsigned int lsb;
+   /// The list of ports associated with the port.
+   std::vector<structural_objectRef> ports;
 
+   /// store the names of the enumerative port_direction.
+   static const char* port_directionNames[];
 
-      /// The list of ports associated with the port.
-      std::vector<structural_objectRef > ports;
+   /// port type
+   so_kind port_type;
 
-
-      /// store the names of the enumerative port_direction.
-      static const char* port_directionNames[];
-
-      /// port type
-      so_kind port_type;
-
-      /**
-       * @name default values associated with the members of the port_o class.
-      */
-      //@{
-      static const bool is_clock_DEFAULT = false;
-      static const bool is_extern_DEFAULT = false;
-      static const bool is_global_DEFAULT = false;
-      static const bool is_memory_DEFAULT = false;
-      static const bool is_slave_DEFAULT = false;
-      static const bool is_master_DEFAULT = false;
-      static const bool is_data_bus_DEFAULT = false;
-      static const bool is_addr_bus_DEFAULT = false;
-      static const bool is_tag_bus_DEFAULT = false;
-      static const bool is_size_bus_DEFAULT = false;
-      static const bool is_doubled_DEFAULT = false;
-      static const bool is_halved_DEFAULT = false;
-      static const bool is_critical_DEFAULT = false;
-      static const bool is_reverse_DEFAULT = false;
-      static const bool is_var_args_DEFAULT = false;
-      //@}
+   /**
+    * @name default values associated with the members of the port_o class.
+    */
+   //@{
+   static const bool is_clock_DEFAULT = false;
+   static const bool is_extern_DEFAULT = false;
+   static const bool is_global_DEFAULT = false;
+   static const bool is_memory_DEFAULT = false;
+   static const bool is_slave_DEFAULT = false;
+   static const bool is_master_DEFAULT = false;
+   static const bool is_data_bus_DEFAULT = false;
+   static const bool is_addr_bus_DEFAULT = false;
+   static const bool is_tag_bus_DEFAULT = false;
+   static const bool is_size_bus_DEFAULT = false;
+   static const bool is_doubled_DEFAULT = false;
+   static const bool is_halved_DEFAULT = false;
+   static const bool is_critical_DEFAULT = false;
+   static const bool is_reverse_DEFAULT = false;
+   static const bool is_var_args_DEFAULT = false;
+   //@}
 };
 
 /**
@@ -2172,12 +2194,12 @@ class module : public structural_object
    structural_objectRef get_generic_object(const technology_managerConstRef TM) const;
 #endif
 
-      /**
-       * Add a parameter
-       * @param name is the name of the parameter
-       * @param default_value is the default of the value
-       */
-      virtual void AddParameter(const std::string name, const std::string default_value);
+   /**
+    * Add a parameter
+    * @param name is the name of the parameter
+    * @param default_value is the default of the value
+    */
+   virtual void AddParameter(const std::string name, const std::string default_value);
 };
 
 /**

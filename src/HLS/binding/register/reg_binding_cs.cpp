@@ -29,25 +29,24 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file reg_binding.cpp
  * @brief add register file and add selector to their input
  *
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
-*/
+ */
 #include "reg_binding_cs.hpp"
-#include "omp_functions.hpp"
+#include "Parameter.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
-#include "structural_objects.hpp"
 #include "hls_target.hpp"
+#include "omp_functions.hpp"
 #include "structural_manager.hpp"
+#include "structural_objects.hpp"
 #include "technology_manager.hpp"
-#include "Parameter.hpp"
 
-reg_binding_cs::reg_binding_cs(const hlsRef& HLS_, const HLS_managerRef HLSMgr_) :
-    reg_binding(HLS_, HLSMgr_)
+reg_binding_cs::reg_binding_cs(const hlsRef& HLS_, const HLS_managerRef HLSMgr_) : reg_binding(HLS_, HLSMgr_)
 {
 }
 
@@ -55,24 +54,25 @@ reg_binding_cs::~reg_binding_cs()
 {
 }
 
-std::string reg_binding_cs::CalculateRegisterName(unsigned int )
+std::string reg_binding_cs::CalculateRegisterName(unsigned int)
 {
    return "register_file";
 }
 
-void reg_binding_cs::specialise_reg(structural_objectRef & reg, unsigned int r)
+void reg_binding_cs::specialise_reg(structural_objectRef& reg, unsigned int r)
 {
    reg_binding::specialise_reg(reg, r);
-   unsigned int mem_dimension=HLS->Param->getOption<unsigned int>(OPT_context_switch);
-   unsigned int dimension=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
-   if(!dimension) dimension=1;
+   unsigned int mem_dimension = HLS->Param->getOption<unsigned int>(OPT_context_switch);
+   unsigned int dimension = static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
+   if(!dimension)
+      dimension = 1;
    structural_objectRef selector_port = reg->find_member(SELECTOR_REGISTER_FILE, port_o_K, reg);
-   if(selector_port!=NULL)
+   if(selector_port != NULL)
    {
       selector_port->type_resize(dimension); // selector
    }
    GetPointer<module>(reg)->SetParameter("BITSIZE_MEM", STR(mem_dimension));
-   for(unsigned int j = 0; j < GetPointer<module>(reg)->get_in_port_size(); j++) //connect input scheduler with datapath input
+   for(unsigned int j = 0; j < GetPointer<module>(reg)->get_in_port_size(); j++) // connect input scheduler with datapath input
    {
       structural_objectRef port_i = GetPointer<module>(reg)->get_in_port(j);
       std::string port_name = GetPointer<port_o>(port_i)->get_id();

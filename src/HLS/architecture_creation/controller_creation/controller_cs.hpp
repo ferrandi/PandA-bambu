@@ -29,13 +29,13 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file controller_cs.hpp
  * @brief Base class for all the controller creation algorithms.
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
  *
-*/
+ */
 #ifndef CONTROLLER_CS_H
 #define CONTROLLER_CS_H
 
@@ -44,24 +44,22 @@
 class controller_cs : public fsm_controller
 {
  public:
-    /**
-     * Constructor
-     */
-    controller_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
+   /**
+    * Constructor
+    */
+   controller_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
 
-    /**
-     * Destructor.
-     */
-    virtual ~controller_cs();
+   /**
+    * Destructor.
+    */
+   virtual ~controller_cs();
 
  protected:
+   void add_common_ports(structural_objectRef circuit);
 
-    void add_common_ports(structural_objectRef circuit);
+   void add_selector_register_file_port(structural_objectRef circuit);
 
-    void add_selector_register_file_port(structural_objectRef circuit);
-
-    void add_correct_transition_memory(std::string state_representation);
-
+   void add_correct_transition_memory(std::string state_representation);
 };
 
 #endif // CONTROLLER_CS_H

@@ -29,33 +29,29 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file compute_reserved_memory.cpp
  * @brief Specification of the functor used to compute size of objects starting from C initialization string
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "compute_reserved_memory.hpp"
 
-///tree include
+/// tree include
 #include "tree_helper.hpp"
 
-ComputeReservedMemory::ComputeReservedMemory(const tree_managerConstRef _TM, const tree_nodeConstRef _tn) :
-   TM(_TM),
-   tn(_tn),
-   elements_number(1),
-   depth_level(0)
-{}
-
+ComputeReservedMemory::ComputeReservedMemory(const tree_managerConstRef _TM, const tree_nodeConstRef _tn) : TM(_TM), tn(_tn), elements_number(1), depth_level(0)
+{
+}
 
 unsigned int ComputeReservedMemory::GetReservedBytes() const
 {
    const auto ptd_type = tree_helper::get_pointed_type(TM, tree_helper::get_type_index(TM, tn->index));
-   return elements_number * tree_helper::size(TM, ptd_type)/8;
+   return elements_number * tree_helper::size(TM, ptd_type) / 8;
 }
 
 void ComputeReservedMemory::CheckEnd()
@@ -70,7 +66,7 @@ void ComputeReservedMemory::GoDown()
 
 void ComputeReservedMemory::GoNext()
 {
-   ///For compatibility with old initialization (without parentheses)
+   /// For compatibility with old initialization (without parentheses)
    if(depth_level == 0)
       elements_number++;
    if(depth_level == 1)
@@ -83,5 +79,6 @@ void ComputeReservedMemory::GoUp()
    depth_level--;
 }
 
-void ComputeReservedMemory::Process(const std::string &)
-{}
+void ComputeReservedMemory::Process(const std::string&)
+{
+}

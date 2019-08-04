@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file testbench_generation_constants.hpp
  * @brief constants used in testbench generation
@@ -40,7 +40,7 @@
 #ifndef TESTBENCH_GENERATION_CONSTANTS_HPP
 #define TESTBENCH_GENERATION_CONSTANTS_HPP
 
-///The basename of the testbench files
+/// The basename of the testbench files
 #define STR_CST_testbench_generation_basename "values"
 
 #endif

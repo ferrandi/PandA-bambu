@@ -52,12 +52,11 @@
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
 #include "memory.hpp"
+#include "memory_allocation.hpp"
 #include "memory_cs.hpp"
 #include "memory_symbol.hpp"
-#include "memory_allocation.hpp"
-#include "memory_symbol.hpp"
-#include "reg_binding.hpp"
 #include "omp_functions.hpp"
+#include "reg_binding.hpp"
 
 #include "functions.hpp"
 
@@ -128,11 +127,15 @@ fu_bindingRef fu_binding::create_fu_binding(const HLS_managerConstRef _HLSMgr, c
    if(_parameters->isOption(OPT_context_switch))
    {
       auto omp_functions = GetPointer<OmpFunctions>(_HLSMgr->Rfuns);
-      bool found=false;
-      if(omp_functions->kernel_functions.find(_function_id) != omp_functions->kernel_functions.end()) found=true;
-      if(omp_functions->hierarchical_functions.find(_function_id) != omp_functions->hierarchical_functions.end()) found=true;
-      if(omp_functions->parallelized_functions.find(_function_id) != omp_functions->parallelized_functions.end()) found=true;
-      if(omp_functions->atomic_functions.find(_function_id) != omp_functions->atomic_functions.end()) found=true;
+      bool found = false;
+      if(omp_functions->kernel_functions.find(_function_id) != omp_functions->kernel_functions.end())
+         found = true;
+      if(omp_functions->hierarchical_functions.find(_function_id) != omp_functions->hierarchical_functions.end())
+         found = true;
+      if(omp_functions->parallelized_functions.find(_function_id) != omp_functions->parallelized_functions.end())
+         found = true;
+      if(omp_functions->atomic_functions.find(_function_id) != omp_functions->atomic_functions.end())
+         found = true;
       if(found)
          return fu_bindingRef(new fu_binding_cs(_HLSMgr, _function_id, _parameters));
       else
@@ -390,7 +393,7 @@ void fu_binding::manage_killing_memory_proxies(std::map<unsigned int, structural
 
          structural_objectRef port_proxy_in1 = proxied_unit->find_member("proxy_in1_" + STR(var), port_o_K, proxied_unit);
          to_be_merged[port_in1].insert(port_proxy_in1);
-         structural_objectRef port_proxy_in2 = proxied_unit->find_member("proxy_in2_"+STR(var), port_o_K, proxied_unit);
+         structural_objectRef port_proxy_in2 = proxied_unit->find_member("proxy_in2_" + STR(var), port_o_K, proxied_unit);
          to_be_merged[port_in2].insert(port_proxy_in2);
          structural_objectRef port_proxy_in3 = proxied_unit->find_member("proxy_in3_" + STR(var), port_o_K, proxied_unit);
          to_be_merged[port_in3].insert(port_proxy_in3);
@@ -550,9 +553,9 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
          unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
          unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
-         unsigned int bus_tag_bitsize=0;
+         unsigned int bus_tag_bitsize = 0;
          if(HLS->Param->isOption(OPT_context_switch))
-            bus_tag_bitsize= GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
+            bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
          structural_objectRef curr_gate;
          bool is_multiport;
          size_t max_n_ports = HLS->Param->isOption(OPT_channels_number) ? HLS->Param->getOption<unsigned int>(OPT_channels_number) : 0;
@@ -580,7 +583,9 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          structural_objectRef size = GetPointer<module>(curr_gate)->find_member("size", port_o_K, curr_gate);
          size->type_resize(STD_GET_SIZE(in_par->get_typeRef()));
          structural_objectRef size_const_obj = SM->add_module_from_technology_library("size_par_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name(), CONSTANT_STD, LIBRARY_STD, circuit, HLS->HLS_T->get_technology_manager());
-         const std::string parameter_value =  (static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)) == HDLWriter_Language::VHDL) ? std::string("\"") + NumberToBinaryString(STD_GET_SIZE(in_par->get_typeRef()), STD_GET_SIZE(in_par->get_typeRef())) + std::string("\"") : STR(STD_GET_SIZE(in_par->get_typeRef()));
+         const std::string parameter_value = (static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)) == HDLWriter_Language::VHDL) ?
+                                                 std::string("\"") + NumberToBinaryString(STD_GET_SIZE(in_par->get_typeRef()), STD_GET_SIZE(in_par->get_typeRef())) + std::string("\"") :
+                                                 STR(STD_GET_SIZE(in_par->get_typeRef()));
          size_const_obj->SetParameter("value", parameter_value);
          std::string size_name = "out_const_size_par_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name();
          structural_objectRef size_sign = SM->add_sign(size_name, circuit, size->get_typeRef());
@@ -637,7 +642,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          {
             structural_objectRef port = GetPointer<module>(curr_gate)->get_in_port(i);
             if(is_multiport && port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
-                  GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(max_n_ports), port);
+               GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(max_n_ports), port);
             if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
                port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
          }
@@ -645,9 +650,9 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          {
             structural_objectRef port = GetPointer<module>(curr_gate)->get_out_port(i);
             if(is_multiport && port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
-                  GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(max_n_ports), port);
+               GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(max_n_ports), port);
             if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
-               port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize,bus_tag_bitsize, port);
+               port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
          }
          manage_module_ports(HLSMgr, HLS, SM, curr_gate, 0);
          memory_modules.insert(curr_gate);
@@ -958,14 +963,10 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             std::string parameterName = HLSMgr->CGetFunctionBehavior(Itr)->CGetBehavioralHelper()->PrintVariable(additional_parameter);
 
             structural_objectRef parameterPort = FU->find_member(parameterName, port_o_K, FU);
-            structural_objectRef constZeroParam =
-                  SM->add_module_from_technology_library(
-                      "zeroParam_" + FUName + "_" + parameterName,
-                      CONSTANT_STD, LIBRARY_STD, circuit,
-                      HLS->HLS_T->get_technology_manager());
-            structural_objectRef constZeroOutPort =
-                  constZeroParam->find_member("out1", port_o_K, constZeroParam);
-            const std::string parameter_value =  (static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)) == HDLWriter_Language::VHDL) ? std::string("\"") + NumberToBinaryString(0, STD_GET_SIZE(parameterPort->get_typeRef())) + std::string("\"") : "0";
+            structural_objectRef constZeroParam = SM->add_module_from_technology_library("zeroParam_" + FUName + "_" + parameterName, CONSTANT_STD, LIBRARY_STD, circuit, HLS->HLS_T->get_technology_manager());
+            structural_objectRef constZeroOutPort = constZeroParam->find_member("out1", port_o_K, constZeroParam);
+            const std::string parameter_value =
+                (static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)) == HDLWriter_Language::VHDL) ? std::string("\"") + NumberToBinaryString(0, STD_GET_SIZE(parameterPort->get_typeRef())) + std::string("\"") : "0";
             constZeroParam->SetParameter("value", parameter_value);
 
             constZeroOutPort->type_resize(STD_GET_SIZE(parameterPort->get_typeRef()));
@@ -1056,8 +1057,8 @@ void fu_binding::check_parametrization(structural_objectRef curr_gate)
       std::vector<std::string> param;
       np->get_library_parameters(param);
       std::vector<std::string>::const_iterator it_end = param.end();
-      for (std::vector<std::string>::const_iterator it = param.begin(); it != it_end; ++it)
-         THROW_ASSERT(curr_gate->find_member(*it, port_o_K, curr_gate) || curr_gate->find_member(*it, port_vector_o_K, curr_gate) ||  curr_gate->ExistsParameter(*it), "parameter not yet specialized: " + *it + " for module " + GET_TYPE_NAME(curr_gate));
+      for(std::vector<std::string>::const_iterator it = param.begin(); it != it_end; ++it)
+         THROW_ASSERT(curr_gate->find_member(*it, port_o_K, curr_gate) || curr_gate->find_member(*it, port_vector_o_K, curr_gate) || curr_gate->ExistsParameter(*it), "parameter not yet specialized: " + *it + " for module " + GET_TYPE_NAME(curr_gate));
    }
 }
 
@@ -1274,7 +1275,7 @@ void fu_binding::join_merge_split(const structural_managerRef SM, const hlsRef H
    }
 }
 
-void fu_binding::manage_memory_ports_parallel_chained(const HLS_managerRef , const structural_managerRef SM, const std::set<structural_objectRef> &memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int & _unique_id)
+void fu_binding::manage_memory_ports_parallel_chained(const HLS_managerRef, const structural_managerRef SM, const std::set<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id)
 {
    std::map<structural_objectRef, std::set<structural_objectRef>> primary_outs;
    structural_objectRef cir_port;
@@ -1326,7 +1327,7 @@ void fu_binding::manage_memory_ports_parallel_chained(const HLS_managerRef , con
    join_merge_split(SM, HLS, primary_outs, circuit, _unique_id);
 }
 
-void fu_binding::manage_extern_global_port(const HLS_managerRef , const hlsRef , const structural_managerRef SM, structural_objectRef port_in, unsigned int _dir, structural_objectRef circuit, unsigned int num)
+void fu_binding::manage_extern_global_port(const HLS_managerRef, const hlsRef, const structural_managerRef SM, structural_objectRef port_in, unsigned int _dir, structural_objectRef circuit, unsigned int num)
 {
    auto dir = static_cast<port_o::port_direction>(_dir);
    if(GetPointer<port_o>(port_in)->get_is_extern())
@@ -1401,16 +1402,16 @@ void fu_binding::manage_extern_global_port(const HLS_managerRef , const hlsRef ,
    }
 }
 
-tree_nodeRef getFunctionType(tree_nodeRef  exp);
+tree_nodeRef getFunctionType(tree_nodeRef exp);
 void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int fu, const std::set<vertex>& mapped_operations, unsigned int ar)
 {
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
    unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
    unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
    unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
-   unsigned int bus_tag_bitsize =0;
+   unsigned int bus_tag_bitsize = 0;
    if(HLS->Param->isOption(OPT_context_switch))
-      bus_tag_bitsize= GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
+      bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
    module* fu_module = GetPointer<module>(fu_obj);
    const technology_nodeRef fu_tech_obj = allocation_information->get_fu(fu);
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Specializing " + fu_obj->get_path() + " of type " + GET_TYPE_NAME(fu_obj));
@@ -1499,11 +1500,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
          THROW_ERROR("incorrect operation mapping on memory module");
 
       fu_module->SetParameter("BRAM_BITSIZE", STR(bram_bitsize));
-      bool Has_extern_allocated_data = ((HLSMgr->Rmem->get_memory_address()-HLSMgr->base_address)>0 and
-                                        parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM)
-                                       or
-                                       (HLSMgr->Rmem->has_unknown_addresses() and
-                                        HLS->Param->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM and
+      bool Has_extern_allocated_data = ((HLSMgr->Rmem->get_memory_address() - HLSMgr->base_address) > 0 and parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM) or
+                                       (HLSMgr->Rmem->has_unknown_addresses() and HLS->Param->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM and
                                         HLS->Param->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
       if(Has_extern_allocated_data)
          fu_module->SetParameter("BUS_PIPELINED", "0");
@@ -1649,15 +1647,14 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                   }
                   if(*it == "OFFSET_PARAMETER" && op_name == "bit_ior_concat_expr")
                   {
-                      unsigned int index = data->CGetOpNodeInfo(*op)->GetNodeId();
-                      const tree_nodeRef ga_node = TreeM->GetTreeNode(index);
-                      const gimple_assign * ga = GetPointer<gimple_assign>(ga_node);
-                      const bit_ior_concat_expr * ce = GetPointer<bit_ior_concat_expr>(GET_NODE(ga->op1));
-                      const tree_nodeRef offset_node = GET_NODE(ce->op2);
-                      const integer_cst *int_const= GetPointer<integer_cst>(offset_node);
-                      unsigned long long int offset_value = static_cast<unsigned long long int>(int_const->value);
-                      fu_module->SetParameter("OFFSET_PARAMETER", STR(offset_value));
-
+                     unsigned int index = data->CGetOpNodeInfo(*op)->GetNodeId();
+                     const tree_nodeRef ga_node = TreeM->GetTreeNode(index);
+                     const gimple_assign* ga = GetPointer<gimple_assign>(ga_node);
+                     const bit_ior_concat_expr* ce = GetPointer<bit_ior_concat_expr>(GET_NODE(ga->op1));
+                     const tree_nodeRef offset_node = GET_NODE(ce->op2);
+                     const integer_cst* int_const = GetPointer<integer_cst>(offset_node);
+                     unsigned long long int offset_value = static_cast<unsigned long long int>(int_const->value);
+                     fu_module->SetParameter("OFFSET_PARAMETER", STR(offset_value));
                   }
                   if(*it == "unlock_address" && op_name == BUILTIN_WAIT_CALL)
                   {
@@ -1778,7 +1775,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       if(port->get_id() == DONE_PORT_NAME)
          offset++;
       if(is_multiport && port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
-            GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(max_n_ports), port);
+         GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(max_n_ports), port);
       if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
          port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
    }
@@ -1813,7 +1810,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Specialized " + fu_obj->get_path());
 }
 
-void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int ar, std::string & base_address, unsigned int rangesize, bool is_doubled, bool is_memory_splitted, bool is_sparse_memory, bool is_sds)
+void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int ar, std::string& base_address, unsigned int rangesize, bool is_doubled, bool is_memory_splitted, bool is_sparse_memory,
+                                        bool is_sds)
 {
    auto* fu_module = GetPointer<module>(fu_obj);
    /// base address specialization
@@ -1838,17 +1836,17 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
    THROW_ASSERT(vec_size, "at least one element is expected");
    if(is_memory_splitted)
    {
-      fu_module->SetParameter("MEMORY_INIT_file_a", "\"\""+init_filename+"\"\"");
-      fu_module->SetParameter("MEMORY_INIT_file_b", "\"\"0_"+init_filename+"\"\"");
+      fu_module->SetParameter("MEMORY_INIT_file_a", "\"\"" + init_filename + "\"\"");
+      fu_module->SetParameter("MEMORY_INIT_file_b", "\"\"0_" + init_filename + "\"\"");
    }
    else
-      fu_module->SetParameter("MEMORY_INIT_file", "\"\""+init_filename+"\"\"");
+      fu_module->SetParameter("MEMORY_INIT_file", "\"\"" + init_filename + "\"\"");
 
    /// specialize the number of elements in the array
    bool unaligned_access_p = parameters->isOption(OPT_unaligned_access) && parameters->getOption<bool>(OPT_unaligned_access);
    if(!unaligned_access_p && HLSMgr->Rmem->get_bram_bitsize() == 8 && HLSMgr->Rmem->get_bus_data_bitsize() == 8 && !HLSMgr->Rmem->is_private_memory(ar))
    {
-      fu_module->SetParameter("n_elements", STR((vec_size*elts_size)/8));
+      fu_module->SetParameter("n_elements", STR((vec_size * elts_size) / 8));
       fu_module->SetParameter("data_size", "8");
    }
    else
@@ -1864,7 +1862,6 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
       fu_module->SetParameter("READ_ONLY_MEMORY", "1");
    else
       fu_module->SetParameter("READ_ONLY_MEMORY", "0");
-
 }
 #define CHANGE_SDS_MEMORY_LAYOUT 0
 
@@ -1918,7 +1915,7 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
       if(!unaligned_access_p && mem->get_bram_bitsize() == 8 && mem->get_bus_data_bitsize() == 8 && !mem->is_private_memory(ar))
       {
          fu_module->SetParameter("BRAM_BITSIZE", "8");
-         vec_size = (vec_size*elts_size)/8;
+         vec_size = (vec_size * elts_size) / 8;
          bram_bitsize = 8;
          elts_size = 8;
          is_sds = false;

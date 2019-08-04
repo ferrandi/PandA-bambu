@@ -203,108 +203,108 @@
 
 /// Design Space Exploration
 #define OPT_ACCEPT_NONZERO_RETURN 256
-#define INPUT_OPT_C_NO_PARSE                    1+OPT_ACCEPT_NONZERO_RETURN
-#define INPUT_OPT_C_PYTHON_NO_PARSE             1+INPUT_OPT_C_NO_PARSE
-#define OPT_ACO_FLOW                            1+INPUT_OPT_C_PYTHON_NO_PARSE
-#define OPT_ACO_GENERATIONS                     1+OPT_ACO_FLOW
-#define OPT_ADDITIONAL_TOP                      1+OPT_ACO_GENERATIONS
-#define OPT_ALIGNED_ACCESS_PARAMETER            1+OPT_ADDITIONAL_TOP
-#define OPT_AREA_WEIGHT                         1+OPT_ALIGNED_ACCESS_PARAMETER
-#define OPT_BACKEND_SCRIPT_EXTENSIONS_PARAMETER 1+OPT_AREA_WEIGHT
-#define OPT_BACKEND_SDC_EXTENSIONS_PARAMETER    1+OPT_BACKEND_SCRIPT_EXTENSIONS_PARAMETER
-#define OPT_BITVALUE_IPA                        1+OPT_BACKEND_SDC_EXTENSIONS_PARAMETER
-#define OPT_BRAM_HIGH_LATENCY                   1+OPT_BITVALUE_IPA
-#define OPT_CHANNELS_NUMBER                     1+OPT_BRAM_HIGH_LATENCY
-#define OPT_CHANNELS_TYPE                       1+OPT_CHANNELS_NUMBER
-#define OPT_CLOCK_PERIOD_RESOURCE_FRACTION      1+OPT_CHANNELS_TYPE
-#define OPT_CONTEXT_SWITCH                      1+OPT_CLOCK_PERIOD_RESOURCE_FRACTION
-#define OPT_DEVICE_NAME                         1+OPT_CONTEXT_SWITCH
-#define OPT_DISABLE_BOUNDED_FUNCTION            1+OPT_DEVICE_NAME
-#define OPT_DISABLE_FUNCTION_PROXY              1+OPT_DISABLE_BOUNDED_FUNCTION
-#define OPT_DISABLE_IOB                         1+OPT_DISABLE_FUNCTION_PROXY
-#define OPT_DISTRAM_THRESHOLD                   1+OPT_DISABLE_IOB
-#define OPT_DO_NOT_CHAIN_MEMORIES               1+OPT_DISTRAM_THRESHOLD
-#define OPT_DO_NOT_EXPOSE_GLOBALS               1+OPT_DO_NOT_CHAIN_MEMORIES
-#define OPT_ROM_DUPLICATION                     1+OPT_DO_NOT_EXPOSE_GLOBALS
-#define OPT_DO_NOT_USE_ASYNCHRONOUS_MEMORIES    1+OPT_ROM_DUPLICATION
-#define OPT_DSE                                 1+OPT_DO_NOT_USE_ASYNCHRONOUS_MEMORIES
-#define OPT_DSP_ALLOCATION_COEFFICIENT          1+OPT_DSE
-#define OPT_DSP_MARGIN_COMBINATIONAL            1+OPT_DSP_ALLOCATION_COEFFICIENT
-#define OPT_DSP_MARGIN_PIPELINED                1+OPT_DSP_MARGIN_COMBINATIONAL
-#define OPT_DUMP_CONSTRAINTS                    1+OPT_DSP_MARGIN_PIPELINED
-#define OPT_DYNAMIC_GENERATORS_DIR              1+OPT_DUMP_CONSTRAINTS
-#define OPT_DISCREPANCY                         1+OPT_DYNAMIC_GENERATORS_DIR
-#define OPT_DISCREPANCY_FORCE                   1+OPT_DISCREPANCY
-#define OPT_DISCREPANCY_NO_LOAD_POINTERS        1+OPT_DISCREPANCY_FORCE
-#define OPT_DISCREPANCY_ONLY                    1+OPT_DISCREPANCY_NO_LOAD_POINTERS
-#define OPT_DISCREPANCY_PERMISSIVE_PTRS         1+OPT_DISCREPANCY_ONLY
-#define INPUT_OPT_DRY_RUN_EVALUATION            1+OPT_DISCREPANCY_PERMISSIVE_PTRS
-#define OPT_ENABLE_IOB                          1+INPUT_OPT_DRY_RUN_EVALUATION
-#define OPT_EVALUATION                          1+OPT_ENABLE_IOB
-#define OPT_EVALUATION_MODE                     1+OPT_EVALUATION
-#define OPT_EXPERIMENTAL_SETUP                  1+OPT_EVALUATION_MODE
-#define INPUT_OPT_FIND_MAX_CFG_TRANSFORMATIONS  1+OPT_EXPERIMENTAL_SETUP
-#define OPT_FIXED_SCHED                         1+INPUT_OPT_FIND_MAX_CFG_TRANSFORMATIONS
-#define OPT_FLOPOCO                             1+OPT_FIXED_SCHED
-#define OPT_GENERATE_VCD                        1+OPT_FLOPOCO
-#define OPT_GENERATION                          1+OPT_GENERATE_VCD
-#define OPT_HLS_DIV                             1+OPT_GENERATION
-#define OPT_HOST_PROFILING                      1+OPT_HLS_DIV
-#define OPT_ILP                                 1+OPT_HOST_PROFILING
-#define OPT_ILP_NEWFORM                         1+OPT_ILP
-#define OPT_ILP_SOLVER                          1+OPT_ILP_NEWFORM
-#define INPUT_OPT_FILE_INPUT_DATA               1+OPT_ILP_SOLVER
-#define OPT_INSERT_MEMORY_PROFILE               1+INPUT_OPT_FILE_INPUT_DATA
-#define OPT_INSERT_VERIFICATION_OPERATION       1+OPT_INSERT_MEMORY_PROFILE
-#define OPT_LIBM_STD_ROUNDING                   1+OPT_INSERT_VERIFICATION_OPERATION
-#define OPT_LIST_BASED                          1+OPT_LIBM_STD_ROUNDING
-#define OPT_LOGICAL_OPTIMIZATION                1+OPT_LIST_BASED
-#define OPT_MAX_EVALUATIONS                     1+OPT_LOGICAL_OPTIMIZATION
-#define OPT_MAX_INHERITANCE                     1+OPT_MAX_EVALUATIONS
-#define OPT_MAX_SIM_CYCLES                      1+OPT_MAX_INHERITANCE
-#define OPT_MAX_ULP                             1+OPT_MAX_SIM_CYCLES
-#define OPT_MEMORY_MAPPED_TOP                   1+OPT_MAX_ULP
-#define OPT_MEM_DELAY_READ                      1+OPT_MEMORY_MAPPED_TOP
-#define OPT_MEM_DELAY_WRITE                     1+OPT_MEM_DELAY_READ
-#define OPT_MEMORY_BANKS_NUMBER                 1+OPT_MEM_DELAY_WRITE
-#define OPT_MIN_INHERITANCE                     1+OPT_MEMORY_BANKS_NUMBER
-#define OPT_MOSA_FLOW                           1+OPT_MIN_INHERITANCE
-#define OPT_NO_MIXED_DESIGN                     1+OPT_MOSA_FLOW
-#define OPT_NUM_THREADS                         1+OPT_NO_MIXED_DESIGN
-#define OPT_PARALLEL_CONTROLLER                 1+OPT_NUM_THREADS
-#define OPT_PERIOD_CLOCK                        1+OPT_PARALLEL_CONTROLLER
-#define OPT_POWER_OPTIMIZATION                  1+OPT_PERIOD_CLOCK
-#define OPT_PRAGMA_PARSE                        1+OPT_POWER_OPTIMIZATION
-#define OPT_PRETTY_PRINT                        1+OPT_PRAGMA_PARSE
-#define OPT_POST_RESCHEDULING                   1+OPT_PRETTY_PRINT
-#define OPT_REGISTER_ALLOCATION                 1+OPT_POST_RESCHEDULING
-#define OPT_REGISTERED_INPUTS                   1+OPT_REGISTER_ALLOCATION
-#define OPT_FSM_ENCODING                        1+OPT_REGISTERED_INPUTS
-#define OPT_RESET                               1+OPT_FSM_ENCODING
-#define OPT_LEVEL_RESET                         1+OPT_RESET
-#define OPT_DISABLE_REG_INIT_VALUE              1+OPT_LEVEL_RESET
-#define OPT_SCHEDULING_MUX_MARGINS              1+OPT_DISABLE_REG_INIT_VALUE
-#define OPT_SDC_SCHEDULING                      1+OPT_SCHEDULING_MUX_MARGINS
-#define OPT_SERIALIZE_MEMORY_ACCESSES           1+OPT_SDC_SCHEDULING
-#define OPT_SILP                                1+OPT_SERIALIZE_MEMORY_ACCESSES
-#define OPT_SIMULATE                            1+OPT_SILP
-#define OPT_SKIP_PIPE_PARAMETER                 1+OPT_SIMULATE
-#define OPT_SOFT_FLOAT                          1+OPT_SKIP_PIPE_PARAMETER
-#define OPT_SOFTFLOAT_SUBNORMAL                 1+OPT_SOFT_FLOAT
-#define OPT_SOFT_FP                             1+OPT_SOFTFLOAT_SUBNORMAL
-#define OPT_STG                                 1+OPT_SOFT_FP
-#define INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS 1+OPT_STG
-#define INPUT_OPT_TEST_SINGLE_NON_DETERMINISTIC_FLOW    1+INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS
-#define OPT_TESTBENCH                           1+INPUT_OPT_TEST_SINGLE_NON_DETERMINISTIC_FLOW
-#define OPT_TESTBENCH_EXTRA_GCC_FLAGS           1+OPT_TESTBENCH
-#define OPT_TIME_WEIGHT                         1+OPT_TESTBENCH_EXTRA_GCC_FLAGS
-#define OPT_TIMING_MODEL                        1+OPT_TIME_WEIGHT
-#define OPT_TIMING_VIOLATION                    1+OPT_TIMING_MODEL
-#define OPT_TOP_FNAME                           1+OPT_TIMING_VIOLATION
-#define OPT_TOP_RTLDESIGN_NAME                  1+OPT_TOP_FNAME
-#define OPT_UNALIGNED_ACCESS_PARAMETER          1+OPT_TOP_RTLDESIGN_NAME
-#define OPT_VISUALIZER                          1+OPT_UNALIGNED_ACCESS_PARAMETER
-#define OPT_XML_CONFIG                          1+OPT_VISUALIZER
+#define INPUT_OPT_C_NO_PARSE 1 + OPT_ACCEPT_NONZERO_RETURN
+#define INPUT_OPT_C_PYTHON_NO_PARSE 1 + INPUT_OPT_C_NO_PARSE
+#define OPT_ACO_FLOW 1 + INPUT_OPT_C_PYTHON_NO_PARSE
+#define OPT_ACO_GENERATIONS 1 + OPT_ACO_FLOW
+#define OPT_ADDITIONAL_TOP 1 + OPT_ACO_GENERATIONS
+#define OPT_ALIGNED_ACCESS_PARAMETER 1 + OPT_ADDITIONAL_TOP
+#define OPT_AREA_WEIGHT 1 + OPT_ALIGNED_ACCESS_PARAMETER
+#define OPT_BACKEND_SCRIPT_EXTENSIONS_PARAMETER 1 + OPT_AREA_WEIGHT
+#define OPT_BACKEND_SDC_EXTENSIONS_PARAMETER 1 + OPT_BACKEND_SCRIPT_EXTENSIONS_PARAMETER
+#define OPT_BITVALUE_IPA 1 + OPT_BACKEND_SDC_EXTENSIONS_PARAMETER
+#define OPT_BRAM_HIGH_LATENCY 1 + OPT_BITVALUE_IPA
+#define OPT_CHANNELS_NUMBER 1 + OPT_BRAM_HIGH_LATENCY
+#define OPT_CHANNELS_TYPE 1 + OPT_CHANNELS_NUMBER
+#define OPT_CLOCK_PERIOD_RESOURCE_FRACTION 1 + OPT_CHANNELS_TYPE
+#define OPT_CONTEXT_SWITCH 1 + OPT_CLOCK_PERIOD_RESOURCE_FRACTION
+#define OPT_DEVICE_NAME 1 + OPT_CONTEXT_SWITCH
+#define OPT_DISABLE_BOUNDED_FUNCTION 1 + OPT_DEVICE_NAME
+#define OPT_DISABLE_FUNCTION_PROXY 1 + OPT_DISABLE_BOUNDED_FUNCTION
+#define OPT_DISABLE_IOB 1 + OPT_DISABLE_FUNCTION_PROXY
+#define OPT_DISTRAM_THRESHOLD 1 + OPT_DISABLE_IOB
+#define OPT_DO_NOT_CHAIN_MEMORIES 1 + OPT_DISTRAM_THRESHOLD
+#define OPT_DO_NOT_EXPOSE_GLOBALS 1 + OPT_DO_NOT_CHAIN_MEMORIES
+#define OPT_ROM_DUPLICATION 1 + OPT_DO_NOT_EXPOSE_GLOBALS
+#define OPT_DO_NOT_USE_ASYNCHRONOUS_MEMORIES 1 + OPT_ROM_DUPLICATION
+#define OPT_DSE 1 + OPT_DO_NOT_USE_ASYNCHRONOUS_MEMORIES
+#define OPT_DSP_ALLOCATION_COEFFICIENT 1 + OPT_DSE
+#define OPT_DSP_MARGIN_COMBINATIONAL 1 + OPT_DSP_ALLOCATION_COEFFICIENT
+#define OPT_DSP_MARGIN_PIPELINED 1 + OPT_DSP_MARGIN_COMBINATIONAL
+#define OPT_DUMP_CONSTRAINTS 1 + OPT_DSP_MARGIN_PIPELINED
+#define OPT_DYNAMIC_GENERATORS_DIR 1 + OPT_DUMP_CONSTRAINTS
+#define OPT_DISCREPANCY 1 + OPT_DYNAMIC_GENERATORS_DIR
+#define OPT_DISCREPANCY_FORCE 1 + OPT_DISCREPANCY
+#define OPT_DISCREPANCY_NO_LOAD_POINTERS 1 + OPT_DISCREPANCY_FORCE
+#define OPT_DISCREPANCY_ONLY 1 + OPT_DISCREPANCY_NO_LOAD_POINTERS
+#define OPT_DISCREPANCY_PERMISSIVE_PTRS 1 + OPT_DISCREPANCY_ONLY
+#define INPUT_OPT_DRY_RUN_EVALUATION 1 + OPT_DISCREPANCY_PERMISSIVE_PTRS
+#define OPT_ENABLE_IOB 1 + INPUT_OPT_DRY_RUN_EVALUATION
+#define OPT_EVALUATION 1 + OPT_ENABLE_IOB
+#define OPT_EVALUATION_MODE 1 + OPT_EVALUATION
+#define OPT_EXPERIMENTAL_SETUP 1 + OPT_EVALUATION_MODE
+#define INPUT_OPT_FIND_MAX_CFG_TRANSFORMATIONS 1 + OPT_EXPERIMENTAL_SETUP
+#define OPT_FIXED_SCHED 1 + INPUT_OPT_FIND_MAX_CFG_TRANSFORMATIONS
+#define OPT_FLOPOCO 1 + OPT_FIXED_SCHED
+#define OPT_GENERATE_VCD 1 + OPT_FLOPOCO
+#define OPT_GENERATION 1 + OPT_GENERATE_VCD
+#define OPT_HLS_DIV 1 + OPT_GENERATION
+#define OPT_HOST_PROFILING 1 + OPT_HLS_DIV
+#define OPT_ILP 1 + OPT_HOST_PROFILING
+#define OPT_ILP_NEWFORM 1 + OPT_ILP
+#define OPT_ILP_SOLVER 1 + OPT_ILP_NEWFORM
+#define INPUT_OPT_FILE_INPUT_DATA 1 + OPT_ILP_SOLVER
+#define OPT_INSERT_MEMORY_PROFILE 1 + INPUT_OPT_FILE_INPUT_DATA
+#define OPT_INSERT_VERIFICATION_OPERATION 1 + OPT_INSERT_MEMORY_PROFILE
+#define OPT_LIBM_STD_ROUNDING 1 + OPT_INSERT_VERIFICATION_OPERATION
+#define OPT_LIST_BASED 1 + OPT_LIBM_STD_ROUNDING
+#define OPT_LOGICAL_OPTIMIZATION 1 + OPT_LIST_BASED
+#define OPT_MAX_EVALUATIONS 1 + OPT_LOGICAL_OPTIMIZATION
+#define OPT_MAX_INHERITANCE 1 + OPT_MAX_EVALUATIONS
+#define OPT_MAX_SIM_CYCLES 1 + OPT_MAX_INHERITANCE
+#define OPT_MAX_ULP 1 + OPT_MAX_SIM_CYCLES
+#define OPT_MEMORY_MAPPED_TOP 1 + OPT_MAX_ULP
+#define OPT_MEM_DELAY_READ 1 + OPT_MEMORY_MAPPED_TOP
+#define OPT_MEM_DELAY_WRITE 1 + OPT_MEM_DELAY_READ
+#define OPT_MEMORY_BANKS_NUMBER 1 + OPT_MEM_DELAY_WRITE
+#define OPT_MIN_INHERITANCE 1 + OPT_MEMORY_BANKS_NUMBER
+#define OPT_MOSA_FLOW 1 + OPT_MIN_INHERITANCE
+#define OPT_NO_MIXED_DESIGN 1 + OPT_MOSA_FLOW
+#define OPT_NUM_THREADS 1 + OPT_NO_MIXED_DESIGN
+#define OPT_PARALLEL_CONTROLLER 1 + OPT_NUM_THREADS
+#define OPT_PERIOD_CLOCK 1 + OPT_PARALLEL_CONTROLLER
+#define OPT_POWER_OPTIMIZATION 1 + OPT_PERIOD_CLOCK
+#define OPT_PRAGMA_PARSE 1 + OPT_POWER_OPTIMIZATION
+#define OPT_PRETTY_PRINT 1 + OPT_PRAGMA_PARSE
+#define OPT_POST_RESCHEDULING 1 + OPT_PRETTY_PRINT
+#define OPT_REGISTER_ALLOCATION 1 + OPT_POST_RESCHEDULING
+#define OPT_REGISTERED_INPUTS 1 + OPT_REGISTER_ALLOCATION
+#define OPT_FSM_ENCODING 1 + OPT_REGISTERED_INPUTS
+#define OPT_RESET 1 + OPT_FSM_ENCODING
+#define OPT_LEVEL_RESET 1 + OPT_RESET
+#define OPT_DISABLE_REG_INIT_VALUE 1 + OPT_LEVEL_RESET
+#define OPT_SCHEDULING_MUX_MARGINS 1 + OPT_DISABLE_REG_INIT_VALUE
+#define OPT_SDC_SCHEDULING 1 + OPT_SCHEDULING_MUX_MARGINS
+#define OPT_SERIALIZE_MEMORY_ACCESSES 1 + OPT_SDC_SCHEDULING
+#define OPT_SILP 1 + OPT_SERIALIZE_MEMORY_ACCESSES
+#define OPT_SIMULATE 1 + OPT_SILP
+#define OPT_SKIP_PIPE_PARAMETER 1 + OPT_SIMULATE
+#define OPT_SOFT_FLOAT 1 + OPT_SKIP_PIPE_PARAMETER
+#define OPT_SOFTFLOAT_SUBNORMAL 1 + OPT_SOFT_FLOAT
+#define OPT_SOFT_FP 1 + OPT_SOFTFLOAT_SUBNORMAL
+#define OPT_STG 1 + OPT_SOFT_FP
+#define INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS 1 + OPT_STG
+#define INPUT_OPT_TEST_SINGLE_NON_DETERMINISTIC_FLOW 1 + INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS
+#define OPT_TESTBENCH 1 + INPUT_OPT_TEST_SINGLE_NON_DETERMINISTIC_FLOW
+#define OPT_TESTBENCH_EXTRA_GCC_FLAGS 1 + OPT_TESTBENCH
+#define OPT_TIME_WEIGHT 1 + OPT_TESTBENCH_EXTRA_GCC_FLAGS
+#define OPT_TIMING_MODEL 1 + OPT_TIME_WEIGHT
+#define OPT_TIMING_VIOLATION 1 + OPT_TIMING_MODEL
+#define OPT_TOP_FNAME 1 + OPT_TIMING_VIOLATION
+#define OPT_TOP_RTLDESIGN_NAME 1 + OPT_TOP_FNAME
+#define OPT_UNALIGNED_ACCESS_PARAMETER 1 + OPT_TOP_RTLDESIGN_NAME
+#define OPT_VISUALIZER 1 + OPT_UNALIGNED_ACCESS_PARAMETER
+#define OPT_XML_CONFIG 1 + OPT_VISUALIZER
 
 /// constant correspond to the "parametric list based option"
 #define PAR_LIST_BASED_OPT "parametric-list-based"
@@ -527,94 +527,93 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << std::endl;
 
    // Memory allocation options
-   os
-   << "  Memory allocation:\n\n"
-   << "    --memory-allocation=<type>\n"
-   << "        Set the algorithm used for memory allocation. Possible values for the\n"
-   << "        type argument are the following:\n"
-   << "            DOMINATOR          - all local variables, static variables and\n"
-   << "                                 strings are allocated on BRAMs (default)\n"
-   << "            XML_SPECIFICATION  - import the memory allocation from an XML\n"
-   << "                                 specification\n\n"
-   << "    --xml-memory-allocation=<xml_file_name>\n"
-   << "        Specify the file where the XML configuration has been defined.\n\n"
-   << "    --memory-allocation-policy=<type>\n"
-   << "        Set the policy for memory allocation. Possible values for the <type>\n"
-   << "        argument are the following:\n"
-   << "            ALL_BRAM           - all objects that need to be stored in memory\n"
-   << "                                 are allocated on BRAMs (default)\n"
-   << "            LSS                - all local variables, static variables and\n"
-   << "                                 strings are allocated on BRAMs\n"
-   << "            GSS                - all global variables, static variables and\n"
-   << "                                 strings are allocated on BRAMs\n"
-   << "            NO_BRAM            - all objects that need to be stored in memory\n"
-   << "                                 are allocated on an external memory\n"
-   << "            EXT_PIPELINED_BRAM - all objects that need to be stored in memory\n"
-   << "                                 are allocated on an external pipelined memory\n\n"
-   << "   --base-address=address\n"
-   << "        Define the starting address for objects allocated externally to the top\n"
-   << "        module.\n\n"
-   << "   --initial-internal-address=address\n"
-   << "        Define the starting address for the objects allocated internally to the\n"
-   << "        top module.\n\n"
-   << "   --channels-type=<type>\n"
-   << "        Set the type of memory connections.\n"
-   << "        Possible values for <type> are:\n"
-   << "            MEM_ACC_11 - the accesses to the memory have a single direct\n"
-   << "                         connection or a single indirect connection (default)\n"
-   << "            MEM_ACC_N1 - the accesses to the memory have n parallel direct\n"
-   << "                         connections or a single indirect connection\n"
-   << "            MEM_ACC_NN - the accesses to the memory have n parallel direct\n"
-   << "                         connections or n parallel indirect connections\n\n"
-   << "   --channels-number=<n>\n"
-   << "        Define the number of parallel direct or indirect accesses.\n\n"
-   << "   --memory-ctrl-type=type\n"
-   << "        Define which type of memory controller is used. Possible values for the\n"
-   << "        <type> argument are the following:\n"
-   << "            D00 - no extra delay (default)\n"
-   << "            D10 - 1 clock cycle extra-delay for LOAD, 0 for STORE\n"
-   << "            D11 - 1 clock cycle extra-delay for LOAD, 1 for STORE\n"
-   << "            D21 - 2 clock cycle extra-delay for LOAD, 1 for STORE\n\n"
-   << "    --memory-banks-number=<n>\n"
-   << "        Define the number of memory banks.\n\n"
-   << "    --sparse-memory[=on/off]\n"
-   << "        Control how the memory allocation happens.\n"
-   << "            on - allocate the data in addresses which reduce the decoding logic (default)\n"
-   << "           off - allocate the data in a contiguous addresses.\n\n"
-   << "    --do-not-use-asynchronous-memories\n"
-   << "        Do not add asynchronous memories to the possible set of memories used\n"
-   << "        by bambu during the memory allocation step.\n\n"
-   << "    --distram-threshold=value\n"
-   << "        Define the threshold in bitsize used to infer DISTRIBUTED/ASYNCHRONOUS RAMs (default 256).\n\n"
-   << "    --serialize-memory-accesses\n"
-   << "        Serialize the memory accesses using the GCC virtual use-def chains\n"
-   << "        without taking into account any alias analysis information.\n\n"
-   << "    --unaligned-access\n"
-   << "        Use only memories supporting unaligned accesses.\n\n"
-   << "    --aligned-access\n"
-   << "        Assume that all accesses are aligned and so only memories supporting aligned\n\n"
-   << "        accesses are used.\n\n"
-   << "    --do-not-chain-memories\n"
-   << "        When enabled LOADs and STOREs will not be chained with other\n"
-   << "        operations.\n\n"
-   << "    --rom-duplication\n"
-   << "        Assume that read-only memories can be duplicated in case timing requires.\n\n"
-   << "    --bram-high-latency=[3,4]\n"
-   << "        Assume a 'high latency bram'-'faster clock frequency' block RAM memory\n"
-   << "        based architectures:\n"
-   << "        3 => LOAD(II=1,L=3) STORE(1).\n"
-   << "        4 => LOAD(II=1,L=4) STORE(II=1,L=2).\n\n"
-   << "    --mem-delay-read=value\n"
-   << "        Define the external memory latency when LOAD are performed (default 2).\n\n"
-   << "    --mem-delay-write=value\n"
-   << "        Define the external memory latency when LOAD are performed (default 1).\n\n"
-   << "    --do-not-expose-globals\n"
-   << "        All global variables are considered local to the compilation units.\n\n"
-   << "    --data-bus-bitsize=<bitsize>\n"
-   << "        Set the bitsize of the external data bus.\n\n"
-   << "    --addr-bus-bitsize=<bitsize>\n"
-   << "        Set the bitsize of the external address bus.\n\n"
-   << std::endl;
+   os << "  Memory allocation:\n\n"
+      << "    --memory-allocation=<type>\n"
+      << "        Set the algorithm used for memory allocation. Possible values for the\n"
+      << "        type argument are the following:\n"
+      << "            DOMINATOR          - all local variables, static variables and\n"
+      << "                                 strings are allocated on BRAMs (default)\n"
+      << "            XML_SPECIFICATION  - import the memory allocation from an XML\n"
+      << "                                 specification\n\n"
+      << "    --xml-memory-allocation=<xml_file_name>\n"
+      << "        Specify the file where the XML configuration has been defined.\n\n"
+      << "    --memory-allocation-policy=<type>\n"
+      << "        Set the policy for memory allocation. Possible values for the <type>\n"
+      << "        argument are the following:\n"
+      << "            ALL_BRAM           - all objects that need to be stored in memory\n"
+      << "                                 are allocated on BRAMs (default)\n"
+      << "            LSS                - all local variables, static variables and\n"
+      << "                                 strings are allocated on BRAMs\n"
+      << "            GSS                - all global variables, static variables and\n"
+      << "                                 strings are allocated on BRAMs\n"
+      << "            NO_BRAM            - all objects that need to be stored in memory\n"
+      << "                                 are allocated on an external memory\n"
+      << "            EXT_PIPELINED_BRAM - all objects that need to be stored in memory\n"
+      << "                                 are allocated on an external pipelined memory\n\n"
+      << "   --base-address=address\n"
+      << "        Define the starting address for objects allocated externally to the top\n"
+      << "        module.\n\n"
+      << "   --initial-internal-address=address\n"
+      << "        Define the starting address for the objects allocated internally to the\n"
+      << "        top module.\n\n"
+      << "   --channels-type=<type>\n"
+      << "        Set the type of memory connections.\n"
+      << "        Possible values for <type> are:\n"
+      << "            MEM_ACC_11 - the accesses to the memory have a single direct\n"
+      << "                         connection or a single indirect connection (default)\n"
+      << "            MEM_ACC_N1 - the accesses to the memory have n parallel direct\n"
+      << "                         connections or a single indirect connection\n"
+      << "            MEM_ACC_NN - the accesses to the memory have n parallel direct\n"
+      << "                         connections or n parallel indirect connections\n\n"
+      << "   --channels-number=<n>\n"
+      << "        Define the number of parallel direct or indirect accesses.\n\n"
+      << "   --memory-ctrl-type=type\n"
+      << "        Define which type of memory controller is used. Possible values for the\n"
+      << "        <type> argument are the following:\n"
+      << "            D00 - no extra delay (default)\n"
+      << "            D10 - 1 clock cycle extra-delay for LOAD, 0 for STORE\n"
+      << "            D11 - 1 clock cycle extra-delay for LOAD, 1 for STORE\n"
+      << "            D21 - 2 clock cycle extra-delay for LOAD, 1 for STORE\n\n"
+      << "    --memory-banks-number=<n>\n"
+      << "        Define the number of memory banks.\n\n"
+      << "    --sparse-memory[=on/off]\n"
+      << "        Control how the memory allocation happens.\n"
+      << "            on - allocate the data in addresses which reduce the decoding logic (default)\n"
+      << "           off - allocate the data in a contiguous addresses.\n\n"
+      << "    --do-not-use-asynchronous-memories\n"
+      << "        Do not add asynchronous memories to the possible set of memories used\n"
+      << "        by bambu during the memory allocation step.\n\n"
+      << "    --distram-threshold=value\n"
+      << "        Define the threshold in bitsize used to infer DISTRIBUTED/ASYNCHRONOUS RAMs (default 256).\n\n"
+      << "    --serialize-memory-accesses\n"
+      << "        Serialize the memory accesses using the GCC virtual use-def chains\n"
+      << "        without taking into account any alias analysis information.\n\n"
+      << "    --unaligned-access\n"
+      << "        Use only memories supporting unaligned accesses.\n\n"
+      << "    --aligned-access\n"
+      << "        Assume that all accesses are aligned and so only memories supporting aligned\n\n"
+      << "        accesses are used.\n\n"
+      << "    --do-not-chain-memories\n"
+      << "        When enabled LOADs and STOREs will not be chained with other\n"
+      << "        operations.\n\n"
+      << "    --rom-duplication\n"
+      << "        Assume that read-only memories can be duplicated in case timing requires.\n\n"
+      << "    --bram-high-latency=[3,4]\n"
+      << "        Assume a 'high latency bram'-'faster clock frequency' block RAM memory\n"
+      << "        based architectures:\n"
+      << "        3 => LOAD(II=1,L=3) STORE(1).\n"
+      << "        4 => LOAD(II=1,L=4) STORE(II=1,L=2).\n\n"
+      << "    --mem-delay-read=value\n"
+      << "        Define the external memory latency when LOAD are performed (default 2).\n\n"
+      << "    --mem-delay-write=value\n"
+      << "        Define the external memory latency when LOAD are performed (default 1).\n\n"
+      << "    --do-not-expose-globals\n"
+      << "        All global variables are considered local to the compilation units.\n\n"
+      << "    --data-bus-bitsize=<bitsize>\n"
+      << "        Set the bitsize of the external data bus.\n\n"
+      << "    --addr-bus-bitsize=<bitsize>\n"
+      << "        Set the bitsize of the external address bus.\n\n"
+      << std::endl;
 
    // Interconnection options
 #if HAVE_EXPERIMENTAL
@@ -910,14 +909,12 @@ void BambuParameter::PrintHelp(std::ostream& os) const
 #if HAVE_EXPERIMENTAL || HAVE_ILP_BUILT
    os << "  Other options:\n\n";
 #endif
-   os
-   << "    --pragma-parse\n"
-   << "        Perform source code parsing to extract information about pragmas.\n"
-   << "        (default=no).\n\n";
+   os << "    --pragma-parse\n"
+      << "        Perform source code parsing to extract information about pragmas.\n"
+      << "        (default=no).\n\n";
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-   os
-   << "    --num-threads\n"
-   << "        Set the number of threads in parallel sections (default=4).\n\n";
+   os << "    --num-threads\n"
+      << "        Set the number of threads in parallel sections (default=4).\n\n";
 #endif
 #if HAVE_EXPERIMENTAL
    os << "    --xml-config <file>\n"
@@ -1185,13 +1182,13 @@ int BambuParameter::Exec()
 #if HAVE_EXPERIMENTAL
       {"no-mixed-design", no_argument, nullptr, OPT_NO_MIXED_DESIGN},
 #endif
-         {"dynamic-generators-dir",     required_argument, nullptr, OPT_DYNAMIC_GENERATORS_DIR},
-         {"pretty-print",               required_argument, nullptr, OPT_PRETTY_PRINT},
-         {"pragma-parse",               no_argument,       nullptr, OPT_PRAGMA_PARSE},
-         {"generate-interface",         required_argument, nullptr,  0 },
-         {"additional-top",             required_argument, nullptr,  OPT_ADDITIONAL_TOP },
-         {"data-bus-bitsize",           required_argument, nullptr,  0 },
-         {"addr-bus-bitsize",           required_argument, nullptr,  0 },
+      {"dynamic-generators-dir", required_argument, nullptr, OPT_DYNAMIC_GENERATORS_DIR},
+      {"pretty-print", required_argument, nullptr, OPT_PRETTY_PRINT},
+      {"pragma-parse", no_argument, nullptr, OPT_PRAGMA_PARSE},
+      {"generate-interface", required_argument, nullptr, 0},
+      {"additional-top", required_argument, nullptr, OPT_ADDITIONAL_TOP},
+      {"data-bus-bitsize", required_argument, nullptr, 0},
+      {"addr-bus-bitsize", required_argument, nullptr, 0},
 #if HAVE_EXPERIMENTAL
       {"resp-model", required_argument, nullptr, 0},
 #endif
@@ -1203,29 +1200,29 @@ int BambuParameter::Exec()
 #if HAVE_MENTOR_VISUALIZER_EXE
       {"mentor-visualizer", no_argument, nullptr, OPT_VISUALIZER},
 #endif
-         {"simulator",                  required_argument, nullptr,  0 },
-         {"disable-function-proxy",     no_argument,       nullptr, OPT_DISABLE_FUNCTION_PROXY },
-         {"disable-bounded-function",   no_argument, nullptr, OPT_DISABLE_BOUNDED_FUNCTION },
-         {"memory-mapped-top",          no_argument,       nullptr, OPT_MEMORY_MAPPED_TOP },
-         {"mem-delay-read",             required_argument, nullptr, OPT_MEM_DELAY_READ },
-         {"mem-delay-write",            required_argument, nullptr, OPT_MEM_DELAY_WRITE },
-         {"host-profiling",             no_argument,       nullptr, OPT_HOST_PROFILING},
-         {"bitvalue-ipa",               no_argument, nullptr, OPT_BITVALUE_IPA},
-         {"discrepancy",                no_argument, nullptr, OPT_DISCREPANCY},
-         {"discrepancy-force-uninitialized", no_argument, nullptr, OPT_DISCREPANCY_FORCE},
-         {"discrepancy-no-load-pointers",    no_argument, nullptr, OPT_DISCREPANCY_NO_LOAD_POINTERS},
-         {"discrepancy-only",           required_argument, nullptr, OPT_DISCREPANCY_ONLY},
-         {"discrepancy-permissive-ptrs",     no_argument, nullptr, OPT_DISCREPANCY_PERMISSIVE_PTRS},
+      {"simulator", required_argument, nullptr, 0},
+      {"disable-function-proxy", no_argument, nullptr, OPT_DISABLE_FUNCTION_PROXY},
+      {"disable-bounded-function", no_argument, nullptr, OPT_DISABLE_BOUNDED_FUNCTION},
+      {"memory-mapped-top", no_argument, nullptr, OPT_MEMORY_MAPPED_TOP},
+      {"mem-delay-read", required_argument, nullptr, OPT_MEM_DELAY_READ},
+      {"mem-delay-write", required_argument, nullptr, OPT_MEM_DELAY_WRITE},
+      {"host-profiling", no_argument, nullptr, OPT_HOST_PROFILING},
+      {"bitvalue-ipa", no_argument, nullptr, OPT_BITVALUE_IPA},
+      {"discrepancy", no_argument, nullptr, OPT_DISCREPANCY},
+      {"discrepancy-force-uninitialized", no_argument, nullptr, OPT_DISCREPANCY_FORCE},
+      {"discrepancy-no-load-pointers", no_argument, nullptr, OPT_DISCREPANCY_NO_LOAD_POINTERS},
+      {"discrepancy-only", required_argument, nullptr, OPT_DISCREPANCY_ONLY},
+      {"discrepancy-permissive-ptrs", no_argument, nullptr, OPT_DISCREPANCY_PERMISSIVE_PTRS},
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-         {"num-threads",                required_argument, nullptr, OPT_NUM_THREADS},
-         {"context_switch",                optional_argument, nullptr, OPT_CONTEXT_SWITCH},
+      {"num-threads", required_argument, nullptr, OPT_NUM_THREADS},
+      {"context_switch", optional_argument, nullptr, OPT_CONTEXT_SWITCH},
 #endif
-         {"memory-banks-number",        required_argument, nullptr, OPT_MEMORY_BANKS_NUMBER},
-         { "C-no-parse",                required_argument, nullptr, INPUT_OPT_C_NO_PARSE},
-         { "C-python-no-parse",         required_argument, nullptr, INPUT_OPT_C_PYTHON_NO_PARSE},
-         {"accept-nonzero-return",      no_argument, nullptr, OPT_ACCEPT_NONZERO_RETURN},
-         {"find-max-cfg-transformations", no_argument, nullptr, INPUT_OPT_FIND_MAX_CFG_TRANSFORMATIONS},
-#if ! HAVE_UNORDERED
+      {"memory-banks-number", required_argument, nullptr, OPT_MEMORY_BANKS_NUMBER},
+      {"C-no-parse", required_argument, nullptr, INPUT_OPT_C_NO_PARSE},
+      {"C-python-no-parse", required_argument, nullptr, INPUT_OPT_C_PYTHON_NO_PARSE},
+      {"accept-nonzero-return", no_argument, nullptr, OPT_ACCEPT_NONZERO_RETURN},
+      {"find-max-cfg-transformations", no_argument, nullptr, INPUT_OPT_FIND_MAX_CFG_TRANSFORMATIONS},
+#if !HAVE_UNORDERED
 #ifndef NDEBUG
       {"test-multiple-non-deterministic-flows", required_argument, nullptr, INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS},
       {"test-single-non-deterministic-flow", required_argument, nullptr, INPUT_OPT_TEST_SINGLE_NON_DETERMINISTIC_FLOW},
@@ -2218,13 +2215,13 @@ int BambuParameter::Exec()
          {
             if(optarg)
             {
-                setOption(OPT_context_switch, std::string(optarg));
-                break;
+               setOption(OPT_context_switch, std::string(optarg));
+               break;
             }
             else
             {
-                setOption(OPT_context_switch, "4");
-                break;
+               setOption(OPT_context_switch, "4");
+               break;
             }
          }
 #endif
@@ -2746,9 +2743,8 @@ void BambuParameter::CheckParameters()
       setOption(OPT_assert_debug, true);
    }
 
-
-   ///controller options
-   if (getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR || getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR)
+   /// controller options
+   if(getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR || getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR)
       setOption(OPT_stg, true);
 
    /// chaining options
@@ -3059,16 +3055,16 @@ void BambuParameter::CheckParameters()
       setOption(OPT_disable_function_proxy, true);
       if(isOption(OPT_context_switch))
       {
-         if(getOption<unsigned int>(OPT_channels_number)>=getOption<unsigned int>(OPT_memory_banks_number))
+         if(getOption<unsigned int>(OPT_channels_number) >= getOption<unsigned int>(OPT_memory_banks_number))
             THROW_ERROR("This configuration doesn't support a number of channel equal or greater than the number of memory_bank");
          if(getOption<std::string>(OPT_registered_inputs) != "auto")
             THROW_ERROR("Registered inputs option cannot be set for context switch architecture");
-         unsigned int v=getOption<unsigned int>(OPT_channels_number); // we want to see if v is a power of 2
-         bool f;         // the result goes here
+         unsigned int v = getOption<unsigned int>(OPT_channels_number); // we want to see if v is a power of 2
+         bool f;                                                        // the result goes here
          f = v && !(v & (v - 1));
          if(!f)
             THROW_ERROR("Number of channel must be a power of 2");
-         v=getOption<unsigned int>(OPT_memory_banks_number); // we want to see if v is a power of 2
+         v = getOption<unsigned int>(OPT_memory_banks_number); // we want to see if v is a power of 2
          f = v && !(v & (v - 1));
          if(!f)
             THROW_ERROR("Number of bank must be a power of 2");

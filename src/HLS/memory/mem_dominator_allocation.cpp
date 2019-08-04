@@ -75,8 +75,9 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-mem_dominator_allocation::mem_dominator_allocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization, const HLSFlowStep_Type _hls_flow_step_type) :
-   memory_allocation(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_type, _hls_flow_step_specialization)
+mem_dominator_allocation::mem_dominator_allocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization,
+                                                   const HLSFlowStep_Type _hls_flow_step_type)
+    : memory_allocation(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_type, _hls_flow_step_specialization)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -151,7 +152,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
       if(gcc_parameters.find("no-delete-null-pointer-checks") != gcc_parameters.end())
          null_pointer_check = false;
    }
-   ///information about memory allocation to be shared across the functions
+   /// information about memory allocation to be shared across the functions
    HLSMgr->Rmem = memoryRef(memory::create_memory(parameters, TreeM, base_address, max_bram, null_pointer_check, initial_internal_address_p, initial_internal_address, HLSMgr->get_address_bitsize()));
    setup_memory_allocation();
 
@@ -428,7 +429,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                      else
                      {
                         HLSMgr->Rmem->set_sds_var(var, false);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(var_size.find(var)->second) + " alignment=" + STR(alignment) +  " value_bitsize1=" + STR(value_bitsize));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(var_size.find(var)->second) + " alignment=" + STR(alignment) + " value_bitsize1=" + STR(value_bitsize));
                      }
                   }
                   else
@@ -457,7 +459,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                      else
                      {
                         HLSMgr->Rmem->set_sds_var(var, false);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(var_size.find(var)->second) + " alignment=" + STR(alignment) +  " value_bitsize2=" + STR(var_size.find(var)->second));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(var_size.find(var)->second) + " alignment=" + STR(alignment) + " value_bitsize2=" + STR(var_size.find(var)->second));
                      }
                   }
                }

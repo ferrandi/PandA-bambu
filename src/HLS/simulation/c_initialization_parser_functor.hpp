@@ -29,14 +29,14 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file c_initialization_parser_functor.hpp
  * @brief Specification of the abstract functor used during parsing of C initialization string
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef C_INITIALIZATION_PARSER_FUNCTOR_HPP
 #define C_INITIALIZATION_PARSER_FUNCTOR_HPP
 
@@ -47,37 +47,37 @@
  */
 class CInitializationParserFunctor
 {
-   public:
-      /**
-       * Destructor
-       */
-      virtual ~CInitializationParserFunctor();
+ public:
+   /**
+    * Destructor
+    */
+   virtual ~CInitializationParserFunctor();
 
-      /**
-       * Check that all the necessary information was present in the initialization string
-       */
-      virtual void CheckEnd() = 0;
+   /**
+    * Check that all the necessary information was present in the initialization string
+    */
+   virtual void CheckEnd() = 0;
 
-      /**
-       * Start the initialization of a new aggregated data structure
-       */
-      virtual void GoDown() = 0;
+   /**
+    * Start the initialization of a new aggregated data structure
+    */
+   virtual void GoDown() = 0;
 
-      /**
-       * Consume an element of an aggregated data structure
-       */
-      virtual void GoNext() = 0;
+   /**
+    * Consume an element of an aggregated data structure
+    */
+   virtual void GoNext() = 0;
 
-      /**
-       * Ends the initialization of the current aggregated  data structure
-       */
-      virtual void GoUp() = 0;
+   /**
+    * Ends the initialization of the current aggregated  data structure
+    */
+   virtual void GoUp() = 0;
 
-      /**
-       * Process an element
-       * @param content is the string assocated with the string
-       */
-      virtual void Process(const std::string & content) = 0;
+   /**
+    * Process an element
+    * @param content is the string assocated with the string
+    */
+   virtual void Process(const std::string& content) = 0;
 };
 typedef refcount<CInitializationParserFunctor> CInitializationParserFunctorRef;
 #endif

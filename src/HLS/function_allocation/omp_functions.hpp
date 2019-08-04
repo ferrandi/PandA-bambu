@@ -29,26 +29,26 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file omp_functions.hpp
  * @brief Datastructure to describe functions allocation in high-level synthesis
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
 #ifndef OMP_FUNCTIONS_HPP
 #define OMP_FUNCTIONS_HPP
 
-///Superclass include
+/// Superclass include
 #include "functions.hpp"
 
-///STD includes
+/// STD includes
 #include <ostream>
 #include <string>
 
-///utility include
+/// utility include
 #include "custom_set.hpp"
 #include "refcount.hpp"
 
@@ -56,51 +56,49 @@ CONSTREF_FORWARD_DECL(HLS_manager);
 
 class OmpFunctions : public functions
 {
-   protected:
-      ///The HLS manager
-      const HLS_managerConstRef HLSMgr;
+ protected:
+   /// The HLS manager
+   const HLS_managerConstRef HLSMgr;
 
-   public:
-      ///The function where locks have to be instantiated
-      unsigned int locks_allocation;
+ public:
+   /// The function where locks have to be instantiated
+   unsigned int locks_allocation;
 
-      ///The set of openmp for wrappers
-      CustomSet<unsigned int> omp_for_wrappers;
+   /// The set of openmp for wrappers
+   CustomSet<unsigned int> omp_for_wrappers;
 
-      ///The set of functions which have to be parallelized
-      CustomSet<unsigned int> kernel_functions;
+   /// The set of functions which have to be parallelized
+   CustomSet<unsigned int> kernel_functions;
 
-      ///The set of functions which have to be parallelized
-      CustomSet<unsigned int> atomic_functions;
+   /// The set of functions which have to be parallelized
+   CustomSet<unsigned int> atomic_functions;
 
-      ///The set of functions which have to be parallelized
-      CustomSet<unsigned int> parallelized_functions;
+   /// The set of functions which have to be parallelized
+   CustomSet<unsigned int> parallelized_functions;
 
-      ///The set of functions which have to be parallelized
-      CustomSet<unsigned int> hierarchical_functions;
+   /// The set of functions which have to be parallelized
+   CustomSet<unsigned int> hierarchical_functions;
 
-      ///The set of functions which lock/unlock mutexes
-      CustomSet<unsigned int> locking_functions;
+   /// The set of functions which lock/unlock mutexes
+   CustomSet<unsigned int> locking_functions;
 
-      ///The set of functions propagating accesses to locks in mutual exclusions
-      CustomSet<unsigned int> locks_merge_communication;
+   /// The set of functions propagating accesses to locks in mutual exclusions
+   CustomSet<unsigned int> locks_merge_communication;
 
-      ///The set of functions propagating accesses to locks in parallel
-      CustomSet<unsigned int> locks_parallel_comunication;
+   /// The set of functions propagating accesses to locks in parallel
+   CustomSet<unsigned int> locks_parallel_comunication;
 
-      /**
-       * Constructor
-       * @param HLSMgr is the HLS manager
-       */
-      OmpFunctions(const HLS_managerConstRef HLSMgr);
+   /**
+    * Constructor
+    * @param HLSMgr is the HLS manager
+    */
+   OmpFunctions(const HLS_managerConstRef HLSMgr);
 
-      /**
-       * Friend definition of the << operator.
-       * @param os is the output stream
-       * @param omp_function is the OmpFunction to be printed
-       */
-      friend std::ostream & operator<<(std::ostream& os, const OmpFunctions * omp_function);
-
-
+   /**
+    * Friend definition of the << operator.
+    * @param os is the output stream
+    * @param omp_function is the OmpFunction to be printed
+    */
+   friend std::ostream& operator<<(std::ostream& os, const OmpFunctions* omp_function);
 };
 #endif

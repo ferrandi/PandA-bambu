@@ -29,37 +29,36 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file c_initialization_parser.cpp
  * @brief Interface to parse the initialization of c variable.
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "c_initialization_parser.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///HLS/simulation include
+/// HLS/simulation include
 #include "c_initialization_parser_node.hpp"
 #define YYSTYPE CInitializationParserNode
 #include "c_initialization_flex_lexer.hpp"
 
-///utility include
+/// utility include
 #include "fileIO.hpp"
 #include "utility.hpp"
 
-CInitializationParser::CInitializationParser(const ParameterConstRef _parameters) :
-   parameters(_parameters)
+CInitializationParser::CInitializationParser(const ParameterConstRef _parameters) : parameters(_parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-void CInitializationParser::Parse(const CInitializationParserFunctorRef c_initialization_parser_functor, const std::string & initialization_string) const
+void CInitializationParser::Parse(const CInitializationParserFunctorRef c_initialization_parser_functor, const std::string& initialization_string) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing initialization string " + initialization_string);
    const auto parsed_stream = fileIO_istream_open_from_string(initialization_string);

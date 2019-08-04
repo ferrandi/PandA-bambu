@@ -109,11 +109,11 @@
 #include "call_graph_manager.hpp"
 #include "loop.hpp"
 #include "loops.hpp"
+#include "omp_functions.hpp"
 #include "op_graph.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "omp_functions.hpp"
 
 #include <boost/foreach.hpp>
 #include <boost/graph/depth_first_search.hpp>

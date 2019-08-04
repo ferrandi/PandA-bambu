@@ -29,43 +29,43 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file omp_function_allocation.hpp
  * @brief Class to allocate function in HLS based on dominators and openmp information
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
 #ifndef OMP_FUNCTION_ALLOCATION_HPP
 #define OMP_FUNCTION_ALLOCATION_HPP
 
-///Superclass include
+/// Superclass include
 #include "fun_dominator_allocation.hpp"
 
 class OmpFunctionAllocation : public fun_dominator_allocation
 {
-   public:
-      /**
-       * Constructor
-       */
-      OmpFunctionAllocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+ public:
+   /**
+    * Constructor
+    */
+   OmpFunctionAllocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Destructor
-       */
-      ~OmpFunctionAllocation();
+   /**
+    * Destructor
+    */
+   ~OmpFunctionAllocation();
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status Exec();
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status Exec();
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      void Initialize();
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize();
 };
 #endif

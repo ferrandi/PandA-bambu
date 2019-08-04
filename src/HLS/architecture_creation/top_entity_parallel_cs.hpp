@@ -29,14 +29,14 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file classic_datapath.hpp
  * @brief Base class for top entity for context_switch.
  *
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
  *
-*/
+ */
 #ifndef TOP_ENTITY_PARALLEL_CS_H
 #define TOP_ENTITY_PARALLEL_CS_H
 #include "top_entity.hpp"
@@ -45,25 +45,26 @@ REF_FORWARD_DECL(structural_object);
 
 class top_entity_parallel_cs : public top_entity
 {
-   protected:
-    /**
-     * @brief connect_port_parallel connect datapath and controller
-     * @param circuit
-     */
-    void connect_port_parallel(const structural_objectRef circuit);
+ protected:
+   /**
+    * @brief connect_port_parallel connect datapath and controller
+    * @param circuit
+    */
+   void connect_port_parallel(const structural_objectRef circuit);
 
-    /**
-     * Return the set of analyses in relationship with this design step
-     * @param relationship_type is the type of relationship to be considered
-     */
-    virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
 
-    /**
-     * @brief resize_controller_parallel
-     * @param controller_circuit
-     */
-    void resize_controller_parallel(structural_objectRef controller_circuit);
-public:
+   /**
+    * @brief resize_controller_parallel
+    * @param controller_circuit
+    */
+   void resize_controller_parallel(structural_objectRef controller_circuit);
+
+ public:
    top_entity_parallel_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type);
 
    /**
@@ -71,13 +72,11 @@ public:
     */
    virtual ~top_entity_parallel_cs();
 
-
    /**
     * Add selector and suspension
     * @return the exit status of this step
     */
    virtual DesignFlowStep_Status InternalExec();
-
 };
 
 #endif // TOP_ENTITY_PARALLEL_CS_H

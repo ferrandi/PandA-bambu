@@ -279,7 +279,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       {
          if(with_master && !Has_unknown_addresses)
          {
-            THROW_ASSERT(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) != (MemoryAllocation_ChannelsType::MEM_ACC_P1N) , "unexpected condition");
+            THROW_ASSERT(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) != (MemoryAllocation_ChannelsType::MEM_ACC_P1N), "unexpected condition");
             /// allocate the unique shared memory
             structural_objectRef shared_memory;
             bool is_memory_splitted;
@@ -315,11 +315,11 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                shared_memory_module->SetParameter("USE_SPARSE_MEMORY", "0");
             if(is_memory_splitted)
             {
-               shared_memory_module->SetParameter("MEMORY_INIT_file_a", "\"\""+init_filename+"\"\"");
-               shared_memory_module->SetParameter("MEMORY_INIT_file_b", "\"\"0_"+init_filename+"\"\"");
+               shared_memory_module->SetParameter("MEMORY_INIT_file_a", "\"\"" + init_filename + "\"\"");
+               shared_memory_module->SetParameter("MEMORY_INIT_file_b", "\"\"0_" + init_filename + "\"\"");
             }
             else
-               shared_memory_module->SetParameter("MEMORY_INIT_file", "\"\""+init_filename+"\"\"");
+               shared_memory_module->SetParameter("MEMORY_INIT_file", "\"\"" + init_filename + "\"\"");
             shared_memory_module->SetParameter("n_elements", STR(vec_size));
             shared_memory_module->SetParameter("data_size", STR(bus_data_bitsize));
             shared_memory_module->SetParameter("BRAM_BITSIZE", STR(bram_bitsize));
@@ -917,7 +917,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             {
                auto TM = HLSMgr->get_HLS_target()->get_technology_manager();
                std::string library_name = TM->get_library(VIEW_CONVERT_STD_INT);
-               auto c_obj = SM_minimal_interface->add_module_from_technology_library(port_name+"_"+VIEW_CONVERT_STD_INT, VIEW_CONVERT_STD_INT, library_name, interfaceObj, TM);
+               auto c_obj = SM_minimal_interface->add_module_from_technology_library(port_name + "_" + VIEW_CONVERT_STD_INT, VIEW_CONVERT_STD_INT, library_name, interfaceObj, TM);
                auto bit_size_port = port_out->get_typeRef()->size;
                structural_objectRef in1 = GetPointer<module>(c_obj)->get_in_port(0);
                in1->type_resize(bit_size_port);
@@ -935,7 +935,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             {
                auto TM = HLSMgr->get_HLS_target()->get_technology_manager();
                std::string library_name = TM->get_library(VIEW_CONVERT_STD_UINT);
-               auto c_obj = SM_minimal_interface->add_module_from_technology_library(port_name+"_"+VIEW_CONVERT_STD_UINT, VIEW_CONVERT_STD_UINT, library_name, interfaceObj, TM);
+               auto c_obj = SM_minimal_interface->add_module_from_technology_library(port_name + "_" + VIEW_CONVERT_STD_UINT, VIEW_CONVERT_STD_UINT, library_name, interfaceObj, TM);
                auto bit_size_port = port_out->get_typeRef()->size;
                structural_objectRef in1 = GetPointer<module>(c_obj)->get_in_port(0);
                in1->type_resize(bit_size_port);

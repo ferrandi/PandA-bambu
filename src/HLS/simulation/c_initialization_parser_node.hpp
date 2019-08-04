@@ -29,29 +29,26 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file c_initialization_parser_node.hpp
  * @brief Specification of the data structure associated with a node during c initialization parsing
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef C_INITIALIZATION_PARSER_NODE_HPP
 #define C_INITIALIZATION_PARSER_NODE_HPP
 
-///STD include
+/// STD include
 #include <string>
 
 /**
  * Data associated with a node of the aadl parser
-*/
+ */
 struct CInitializationParserNode
 {
-   ///A string associated with this node
+   /// A string associated with this node
    std::string content;
-
 };
 #endif
-
-

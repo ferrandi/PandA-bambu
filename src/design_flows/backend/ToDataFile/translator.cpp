@@ -624,7 +624,7 @@ void Translator::write_to_csv(const std::map<std::string, std::set<std::string>>
 }
 #endif
 
-void Translator::write_to_csv(const std::map<std::string, CustomMap<std::string, std::string> > & results, const std::string& file_name) const
+void Translator::write_to_csv(const std::map<std::string, CustomMap<std::string, std::string>>& results, const std::string& file_name) const
 {
    std::ofstream out(file_name.c_str());
    THROW_ASSERT(out, "Error in opening output file " + file_name);

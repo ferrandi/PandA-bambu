@@ -66,150 +66,157 @@ class register_obj;
  */
 class reg_binding : public variable2obj<generic_objRef>
 {
-   public:
+ public:
+   typedef enum
+   {
+      STG = 0,
+      CDFG
+   } type_t;
 
-      typedef enum
-      {
-         STG = 0,
-         CDFG
-      } type_t;
+ protected:
+   /// level of the verbosity during the debugging
+   int debug;
 
-   protected:
+   /// number of used register
+   unsigned int used_regs;
 
-      /// level of the verbosity during the debugging
-      int debug;
+   /// map between register index and object
+   std::map<unsigned int, generic_objRef> unique_table;
 
-      /// number of used register
-      unsigned int used_regs;
+   /// bind the storage value with the register instance
+   std::map<unsigned int, unsigned int> reverse_map;
 
-      /// map between register index and object
-      std::map<unsigned int, generic_objRef> unique_table;
+   /// relation between registers and their bitsize
+   std::map<unsigned int, unsigned int> bitsize_map;
 
-      /// bind the storage value with the register instance
-      std::map<unsigned int, unsigned int> reverse_map;
+   /// HLS datastructure
+   hlsRef HLS;
 
-      /// relation between registers and their bitsize
-      std::map<unsigned int, unsigned int> bitsize_map;
+   /// information about all the HLS synthesis
+   const HLS_managerRef HLSMgr;
 
-      ///HLS datastructure
-      hlsRef HLS;
+   /// map between the register and the associated storage value
+   std::map<unsigned int, std::set<unsigned int>> reg2storage_values;
 
-      ///information about all the HLS synthesis
-      const HLS_managerRef HLSMgr;
+   /// store the set of register without enable
+   std::set<unsigned int> is_without_enable;
 
-      ///map between the register and the associated storage value
-      std::map<unsigned int, std::set<unsigned int> > reg2storage_values;
+   /// when true all registers do not require write enable: pipelining comes for free
+   bool all_regs_without_enable;
 
-      /// store the set of register without enable
-      std::set<unsigned int> is_without_enable;
+   /**
+    * compute the is with out enable relation
+    */
+   void compute_is_without_enable();
 
-      /// when true all registers do not require write enable: pipelining comes for free
-      bool all_regs_without_enable;
+   /**
+    * Specialise a register according to the type of the variables crossing it.
+    * @param reg is the register
+    * @param reg is the id of the register
+    */
+   virtual void specialise_reg(structural_objectRef& reg, unsigned int r);
 
-      /**
-       * compute the is with out enable relation
-       */
-      void compute_is_without_enable();
+ public:
+   /**
+    * Constructor.
+    */
+   reg_binding(const hlsRef& HLS, const HLS_managerRef HLSMgr_);
 
-      /**
-       * Specialise a register according to the type of the variables crossing it.
-       * @param reg is the register
-       * @param reg is the id of the register
-       */
-      virtual void specialise_reg(structural_objectRef & reg, unsigned int r);
+   /**
+    * Destructor.
+    */
+   virtual ~reg_binding();
 
-    public:
+   static reg_bindingRef create_reg_binding(const hlsRef& HLS, const HLS_managerRef HLSMgr_);
 
-      /**
-      * Constructor.
-      */
-      reg_binding(const hlsRef& HLS, const HLS_managerRef HLSMgr_);
+   /**
+    *
+    */
+   void bind(unsigned int sv, unsigned int index);
 
-      /**
-       * Destructor.
-       */
-      virtual ~reg_binding();
+   /**
+    * return the name of register to be used
+    */
+   virtual std::string CalculateRegisterName(unsigned int i);
 
-      static reg_bindingRef create_reg_binding(const hlsRef& HLS, const HLS_managerRef HLSMgr_);
+   /**
+    * returns number of used register
+    * @return the number of used register
+    */
+   unsigned int get_used_regs() const
+   {
+      return used_regs;
+   }
 
-      /**
-       *
-       */
-      void bind(unsigned int sv, unsigned int index);
+   /**
+    * sets number of used register
+    * @param regs is new number of used register
+    */
+   void set_used_regs(unsigned int regs)
+   {
+      used_regs = regs;
+   }
 
-       /**
-        * return the name of register to be used
-        */
-      virtual std::string CalculateRegisterName(unsigned int i);
+   /**
+    * return the register index where the storage value is stored
+    * @param sv is the storage value
+    * @return the index of the register assigned to the storage value.
+    */
+   unsigned int get_register(unsigned int sv) const
+   {
+      return reverse_map.find(sv)->second;
+   }
 
-      /**
-       * returns number of used register
-       * @return the number of used register
-       */
-      unsigned int get_used_regs() const { return used_regs; }
+   /// return true when all registers are without write enable: pipelining comes for free
+   bool is_all_regs_without_enable()
+   {
+      return all_regs_without_enable;
+   }
 
-      /**
-       * sets number of used register
-       * @param regs is new number of used register
-       */
-      void set_used_regs(unsigned int regs) { used_regs = regs; }
+   /**
+    * Function that print the register binding associated with a storage value.
+    */
+   void print_el(const_iterator& it) const;
 
-      /**
-       * return the register index where the storage value is stored
-       * @param sv is the storage value
-       * @return the index of the register assigned to the storage value.
-       */
-      unsigned int get_register(unsigned int sv) const { return reverse_map.find(sv)->second; }
+   /**
+    * Returns reference to register object associated to a given index
+    * @param r is the register index
+    * @return the associated reference
+    */
+   generic_objRef get(const unsigned int& r) const
+   {
+      return unique_table.find(r) != unique_table.end() ? unique_table.find(r)->second : generic_objRef();
+   }
 
-      /// return true when all registers are without write enable: pipelining comes for free
-      bool is_all_regs_without_enable() {return all_regs_without_enable;}
+   /**
+    * redefinition of the [] operator
+    */
+   const register_obj& operator[](unsigned int v);
 
-      /**
-       * Function that print the register binding associated with a storage value.
-       */
-      void print_el(const_iterator &it) const;
+   /**
+    * Add the resulting registers to the structural description of the datapath
+    */
+   virtual void add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port);
 
-      /**
-       * Returns reference to register object associated to a given index
-       * @param r is the register index
-       * @return the associated reference
-       */
-      generic_objRef get(const unsigned int& r) const
-      {
-         return unique_table.find(r) != unique_table.end() ? unique_table.find(r)->second : generic_objRef();
-      }
+   /**
+    * return bitsize
+    */
+   unsigned int get_bitsize(unsigned int r) const;
 
-      /**
-       * redefinition of the [] operator
-       */
-      const register_obj& operator[](unsigned int v);
+ private:
+   /**
+    * Returns the set of variable associated with the register
+    * @param r is the register
+    * @return the set of associated variables
+    */
+   std::set<unsigned int> get_vars(const unsigned int& r) const;
 
-      /**
-       * Add the resulting registers to the structural description of the datapath
-       */
-      virtual void add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port);
-
-      /**
-       * return bitsize
-       */
-      unsigned int get_bitsize(unsigned int r) const;
-
-   private:
-      /**
-       * Returns the set of variable associated with the register
-       * @param r is the register
-       * @return the set of associated variables
-       */
-      std::set<unsigned int> get_vars(const unsigned int & r) const;
-
-      /**
-       * return and set the bitsize associated with given register
-       * @param r is the register
-       * @return the bitsize of register r
-       */
-      unsigned int compute_bitsize(unsigned int r);
-
-
+   /**
+    * return and set the bitsize associated with given register
+    * @param r is the register
+    * @return the bitsize of register r
+    */
+   unsigned int compute_bitsize(unsigned int r);
 };
 
 /**

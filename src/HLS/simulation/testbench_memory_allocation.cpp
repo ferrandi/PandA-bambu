@@ -36,7 +36,7 @@
 ///. include
 #include "Parameter.hpp"
 
-///behavior include
+/// behavior include
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
@@ -48,11 +48,11 @@
 /// HLS/memory include
 #include "memory.hpp"
 
-///HLS/simulation include
+/// HLS/simulation include
+#include "SimulationInformation.hpp"
 #include "c_initialization_parser.hpp"
 #include "c_initialization_parser_functor.hpp"
 #include "compute_reserved_memory.hpp"
-#include "SimulationInformation.hpp"
 #include "testbench_generation_base_step.hpp"
 
 /// tree include
@@ -63,22 +63,11 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-///utility include
+/// utility include
 #include "utility.hpp"
 
-TestbenchMemoryAllocation::TestbenchMemoryAllocation
-(
-   const ParameterConstRef _parameters,
-   const HLS_managerRef _HLSMgr,
-   const DesignFlowManagerConstRef _design_flow_manager
-) :
-   HLS_step
-   (
-      _parameters,
-      _HLSMgr,
-      _design_flow_manager,
-      HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION
-   )
+TestbenchMemoryAllocation::TestbenchMemoryAllocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
+    : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -99,8 +88,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
    const auto function_id = *(top_function_ids.begin());
    const BehavioralHelperConstRef behavioral_helper = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
 
-   const std::map<unsigned int, memory_symbolRef>& mem_vars =
-      HLSMgr->Rmem->get_ext_memory_variables();
+   const std::map<unsigned int, memory_symbolRef>& mem_vars = HLSMgr->Rmem->get_ext_memory_variables();
    CInitializationParserRef c_initialization_parser = CInitializationParserRef(new CInitializationParser(parameters));
    // get the mapping between variables in external memory and their external
    // base address
@@ -132,8 +120,8 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
       {
          std::string param = behavioral_helper->PrintVariable(*l);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering " + param);
-         if (param[0] == '"')
-            param = "@"+STR(*l);
+         if(param[0] == '"')
+            param = "@" + STR(*l);
          bool is_memory = false;
          std::string test_v = "0";
          if(mem_vars.find(*l) != mem_vars.end() && std::find(func_parameters.begin(), func_parameters.end(), *l) == func_parameters.end())
@@ -146,10 +134,10 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
             test_v = curr_test_vector.find(param)->second;
          }
 
-         if (v_idx > 0 && is_memory)
+         if(v_idx > 0 && is_memory)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped " + param);
-            continue;//memory has been already initialized
+            continue; // memory has been already initialized
          }
 
          unsigned int reserved_bytes = tree_helper::size(TM, *l) / 8;
@@ -192,10 +180,8 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
                HLSMgr->Rmem->reserve_space(reserved_bytes);
 
                INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                     "---Parameter " + param + " (" + STR((*l)) + ") (testvector "+ STR(v_idx)+") allocated at " +
-                     STR(HLSMgr->RSim->param_address.at(v_idx).find(*l)->second) +
-                     " : reserved_mem_size = " +
-                     STR(HLSMgr->RSim->param_mem_size.at(v_idx).find(*l)->second));
+                              "---Parameter " + param + " (" + STR((*l)) + ") (testvector " + STR(v_idx) + ") allocated at " + STR(HLSMgr->RSim->param_address.at(v_idx).find(*l)->second) +
+                                  " : reserved_mem_size = " + STR(HLSMgr->RSim->param_mem_size.at(v_idx).find(*l)->second));
             }
          }
          else if(!is_memory)

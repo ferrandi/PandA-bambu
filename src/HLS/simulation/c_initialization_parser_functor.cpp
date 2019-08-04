@@ -29,16 +29,16 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file c_initialization_parser_functor.cpp
  * @brief Specification of the abstract functor used during parsing of C initialization string
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "c_initialization_parser_functor.hpp"
 
 CInitializationParserFunctor::~CInitializationParserFunctor()

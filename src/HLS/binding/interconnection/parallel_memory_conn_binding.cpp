@@ -29,41 +29,42 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file parallel_memory_conn_binding.hpp
  * @brief Data structure used to store the interconnection binding of datapath elements when parallel memory controller is adopted
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "parallel_memory_conn_binding.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///circuit includes
+/// circuit includes
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 
-///HLS includes
+/// HLS includes
 #include "hls.hpp"
 #include "hls_manager.hpp"
 
-///HLS/binding/module
+/// HLS/binding/module
 #include "parallel_memory_fu_binding.hpp"
 
-///HLS/functions
+/// HLS/functions
 #include "omp_functions.hpp"
 
-ParallelMemoryConnBinding::ParallelMemoryConnBinding(const BehavioralHelperConstRef _behavioral_helper, const ParameterConstRef _parameters):
-   conn_binding(_behavioral_helper, _parameters)
-{}
+ParallelMemoryConnBinding::ParallelMemoryConnBinding(const BehavioralHelperConstRef _behavioral_helper, const ParameterConstRef _parameters) : conn_binding(_behavioral_helper, _parameters)
+{
+}
 
 ParallelMemoryConnBinding::~ParallelMemoryConnBinding()
-{}
+{
+}
 
 void ParallelMemoryConnBinding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM)
 {
@@ -79,7 +80,7 @@ void ParallelMemoryConnBinding::add_to_SM(const HLS_managerRef HLSMgr, const hls
       THROW_ASSERT(component_done, "");
       const auto component_done_signal = GetPointer<port_o>(component_done)->find_bounded_object(component.first->get_owner());
       THROW_ASSERT(component_done_signal, component_done->get_path());
-      for(unsigned int memory_bank_index = 0; memory_bank_index <memory_banks_number; memory_bank_index++)
+      for(unsigned int memory_bank_index = 0; memory_bank_index < memory_banks_number; memory_bank_index++)
       {
          SM->add_connection(component_done_signal, GetPointer<port_o>(done)->get_port(memory_bank_index));
       }
@@ -99,7 +100,7 @@ void ParallelMemoryConnBinding::add_to_SM(const HLS_managerRef HLSMgr, const hls
       const auto start_ama = component.second->find_member("start_port", port_o_K, component.second);
       THROW_ASSERT(start_ama, "");
       GetPointer<port_o>(start_ama)->add_n_ports(memory_banks_number, start_ama);
-      for(unsigned int memory_bank_index = 0; memory_bank_index <memory_banks_number; memory_bank_index++)
+      for(unsigned int memory_bank_index = 0; memory_bank_index < memory_banks_number; memory_bank_index++)
       {
          SM->add_connection(GetPointer<port_o>(start_ama)->get_port(memory_bank_index), start_signal);
       }

@@ -29,51 +29,51 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file omp_allocation.cpp
  * @brief This package is used by all HLS packages to manage resource constraints and characteristics.
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
-///Header include
+ */
+/// Header include
 #include "omp_allocation.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior includes
+/// behavior includes
 #include "function_behavior.hpp"
 #include "op_graph.hpp"
 
-///circuit include
+/// circuit include
 #include "structural_manager.hpp"
 
-///HLS includes
+/// HLS includes
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
 
-///technology include
+/// technology include
 #include "technology_manager.hpp"
 
-///technology/physical_library include
+/// technology/physical_library include
 #include "technology_node.hpp"
 
-///technology/physical_library/models includes
+/// technology/physical_library/models includes
 #include "area_model.hpp"
 #include "time_model.hpp"
 
-///tree includes
+/// tree includes
 #include "behavioral_helper.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 
-///utility include
+/// utility include
 #include "utility.hpp"
 
-OmpAllocation::OmpAllocation(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
-   allocation(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::OMP_ALLOCATION)
+OmpAllocation::OmpAllocation(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
+    : allocation(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::OMP_ALLOCATION)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -86,7 +86,7 @@ void OmpAllocation::IntegrateTechnologyLibraries()
 {
    allocation::IntegrateTechnologyLibraries();
    const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(funId);
-   const OpGraphConstRef op_graph  = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
+   const OpGraphConstRef op_graph = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
    VertexIterator operation, operation_end;
    for(boost::tie(operation, operation_end) = boost::vertices(*op_graph); operation != operation_end; operation++)
    {
@@ -111,7 +111,7 @@ void OmpAllocation::AddPandaPthreadMutex()
    structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor(fu_name));
    CM->set_top_info(fu_name, module_type);
    const auto top = CM->get_circ();
-   ///add description and license
+   /// add description and license
    GetPointer<module>(top)->set_description("Implementation of panda_pthread_mutex");
    GetPointer<module>(top)->set_copyright("Copyright (C) 2012-2017 Politecnico di Milano");
    GetPointer<module>(top)->set_authors("Marco Lattuada marco.lattuada@polimi.it");
@@ -121,7 +121,7 @@ void OmpAllocation::AddPandaPthreadMutex()
    TM->add_resource(OPENMP_LIBRARY, fu_name, CM);
    TM->add_operation(OPENMP_LIBRARY, fu_name, op_name);
    const auto tn = TM->get_fu(fu_name, OPENMP_LIBRARY);
-   auto *fu = GetPointer<functional_unit>(tn);
+   auto* fu = GetPointer<functional_unit>(tn);
    auto op = GetPointer<operation>(fu->get_operation(op_name));
    op->time_m = time_model::create_model(TargetDevice_Type::FPGA, parameters);
    fu->area_m = area_model::create_model(TargetDevice_Type::FPGA, parameters);
@@ -133,13 +133,13 @@ void OmpAllocation::AddPandaPthreadMutex()
    THROW_ASSERT(function_parameters.size() == 2, STR(function_parameters.size()));
    for(const auto function_parameter : function_parameters)
    {
-      CM->add_port(parameter_index == 0 ? "mutex" : "locking" , port_o::IN, top, structural_type_descriptorRef(new structural_type_descriptor(function_parameter, behavioral_helper)));
+      CM->add_port(parameter_index == 0 ? "mutex" : "locking", port_o::IN, top, structural_type_descriptorRef(new structural_type_descriptor(function_parameter, behavioral_helper)));
       parameter_index++;
    }
    parameter_index = 0;
    for(const auto function_parameter : function_parameters)
    {
-      CM->add_port(parameter_index == 0 ? "out_mutex" : "out_locking" , port_o::OUT, top, structural_type_descriptorRef(new structural_type_descriptor(function_parameter, behavioral_helper)));
+      CM->add_port(parameter_index == 0 ? "out_mutex" : "out_locking", port_o::OUT, top, structural_type_descriptorRef(new structural_type_descriptor(function_parameter, behavioral_helper)));
       parameter_index++;
    }
    CM->add_port(DONE_PORT_NAME, port_o::OUT, top, boolean_type);

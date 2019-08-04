@@ -2194,7 +2194,7 @@ unsigned int tree_helper::get_type_index(const tree_managerConstRef& TM, const u
 const std::vector<tree_nodeConstRef> tree_helper::CGetFieldTypes(const tree_nodeConstRef type)
 {
    std::vector<tree_nodeConstRef> ret;
-   if (type->get_kind() == record_type_K)
+   if(type->get_kind() == record_type_K)
    {
       const auto* rt = GetPointer<const record_type>(type);
       for(const auto& list_of_fld : rt->list_of_flds)

@@ -29,18 +29,18 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file omp_allocation.hpp
  * @brief This package is used by all HLS packages to manage resource constraints and characteristics.
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef OMP_ALLOCATION_HPP
 #define OMP_ALLOCATION_HPP
 
-///Superclass include
+/// Superclass include
 #include "allocation.hpp"
 
 /**
@@ -49,28 +49,27 @@
  */
 class OmpAllocation : public allocation
 {
-   protected:
-      /**
-       * Integrate technology libraries with special functional units
-       */
-      virtual void IntegrateTechnologyLibraries();
+ protected:
+   /**
+    * Integrate technology libraries with special functional units
+    */
+   virtual void IntegrateTechnologyLibraries();
 
-      /**
-       * Add the module implementing panda_pthread_mutex
-       */
-      void AddPandaPthreadMutex();
+   /**
+    * Add the module implementing panda_pthread_mutex
+    */
+   void AddPandaPthreadMutex();
 
-   public:
+ public:
+   /**
+    * Constructor.
+    * @param design_flow_manager is the design flow manager
+    */
+   OmpAllocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Constructor.
-       * @param design_flow_manager is the design flow manager
-       */
-      OmpAllocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
-
-      /**
-       * Destructor.
-       */
-      ~OmpAllocation();
+   /**
+    * Destructor.
+    */
+   ~OmpAllocation();
 };
 #endif

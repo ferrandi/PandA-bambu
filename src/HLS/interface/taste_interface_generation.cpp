@@ -377,11 +377,11 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
       unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
       unsigned int bus_data_bytesize = HLSMgr->Rmem->get_bus_data_bitsize() / 8;
 
-      unsigned int bus_tag_bitsize=0;
+      unsigned int bus_tag_bitsize = 0;
       if(HLS->Param->isOption(OPT_context_switch))
-         bus_tag_bitsize= GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
+         bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
 
-      const unsigned int n_elements = aadl_information->internal_memory_sizes[function_name]/bus_data_bytesize + ((aadl_information->internal_memory_sizes[function_name]%bus_data_bytesize) ? 1 : 0);
+      const unsigned int n_elements = aadl_information->internal_memory_sizes[function_name] / bus_data_bytesize + ((aadl_information->internal_memory_sizes[function_name] % bus_data_bytesize) ? 1 : 0);
 
       memory->SetParameter("n_elements", STR(n_elements));
 
@@ -391,7 +391,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
       std::ofstream init_file_b(init_filename_b.c_str());
 
       memory->SetParameter("MEMORY_INIT_file_a", "\"\"" + init_filename_a + "\"\"");
-      memory->SetParameter("MEMORY_INIT_file_b", "\"\"" + init_filename_b +"\"\"");
+      memory->SetParameter("MEMORY_INIT_file_b", "\"\"" + init_filename_b + "\"\"");
 
       for(unsigned int row_index = 0; row_index < n_elements; row_index++)
       {

@@ -29,50 +29,51 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file omp_function_allocation.cpp
  * @brief Class to allocate function in HLS based on dominators and openmp information
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "omp_function_allocation.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior includes
+/// behavior includes
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
 
-///boost include
+/// boost include
 #include <boost/range/adaptor/reversed.hpp>
 
-///HLS include
+/// HLS include
 #include "hls_manager.hpp"
 
-///HLS/function_allocation include
+/// HLS/function_allocation include
 #include "omp_functions.hpp"
 
-///tree includes
+/// tree includes
 #include "behavioral_helper.hpp"
 #include "tree_manager.hpp"
 
-///utility include
+/// utility include
 #include "utility.hpp"
 
-OmpFunctionAllocation::OmpFunctionAllocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) :
-   fun_dominator_allocation(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION)
+OmpFunctionAllocation::OmpFunctionAllocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
+    : fun_dominator_allocation(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 OmpFunctionAllocation::~OmpFunctionAllocation()
-{}
+{
+}
 
 DesignFlowStep_Status OmpFunctionAllocation::Exec()
 {
@@ -117,7 +118,7 @@ DesignFlowStep_Status OmpFunctionAllocation::Exec()
    for(const auto function : boost::adaptors::reverse(sorted_functions))
    {
       const auto function_id = call_graph_manager->get_function(function);
-      if (reached_body_functions.find(function_id) == reached_body_functions.end())
+      if(reached_body_functions.find(function_id) == reached_body_functions.end())
          continue;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing function " + HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
       if(current_locks_allocation_candidates.find(function_id) != current_locks_allocation_candidates.end())
@@ -126,17 +127,17 @@ DesignFlowStep_Status OmpFunctionAllocation::Exec()
 #ifndef NDEBUG
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Other locks allocation candidates are:");
          for(const auto current_locks_allocation_candidate : current_locks_allocation_candidates)
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---"  + HLSMgr->CGetFunctionBehavior(current_locks_allocation_candidate)->CGetBehavioralHelper()->get_function_name());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + HLSMgr->CGetFunctionBehavior(current_locks_allocation_candidate)->CGetBehavioralHelper()->get_function_name());
 #endif
          if(current_locks_allocation_candidates.size() == 0)
          {
-            ///This function is parallelized, so we have to move a step up
+            /// This function is parallelized, so we have to move a step up
             if(omp_functions->parallelized_functions.find(function_id) != omp_functions->parallelized_functions.end())
             {
                for(boost::tie(ie, ie_end) = boost::in_edges(function, *call_graph); ie != ie_end; ie++)
                {
                   const auto source_id = call_graph_manager->get_function(boost::source(*ie, *call_graph));
-                  if (reached_body_functions.find(source_id) == reached_body_functions.end())
+                  if(reached_body_functions.find(source_id) == reached_body_functions.end())
                      current_locks_allocation_candidates.insert(source_id);
                }
                if(omp_functions->omp_for_wrappers.find(function_id) != omp_functions->omp_for_wrappers.end())
@@ -158,7 +159,7 @@ DesignFlowStep_Status OmpFunctionAllocation::Exec()
             for(boost::tie(ie, ie_end) = boost::in_edges(function, *call_graph); ie != ie_end; ie++)
             {
                const auto source_id = call_graph_manager->get_function(boost::source(*ie, *call_graph));
-               if (reached_body_functions.find(source_id) == reached_body_functions.end())
+               if(reached_body_functions.find(source_id) == reached_body_functions.end())
                   current_locks_allocation_candidates.insert(source_id);
             }
             if(omp_functions->omp_for_wrappers.find(function_id) != omp_functions->omp_for_wrappers.end())

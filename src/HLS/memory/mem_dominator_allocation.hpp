@@ -44,36 +44,37 @@
 #ifndef MEMORY_DOMINATOR_ALLOCATION_HPP
 #define MEMORY_DOMINATOR_ALLOCATION_HPP
 
-#include "memory_allocation.hpp"
 #include "hls_step.hpp"
+#include "memory_allocation.hpp"
 
 class mem_dominator_allocation : public memory_allocation
 {
  protected:
    std::vector<unsigned int> getFunctionAllocationOrder(std::set<unsigned int> top_functions);
 
-   public:
-      /**
-       * Constructor
-       * @param design_flow_manager is the design flow manager
-       */
-      mem_dominator_allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization, const HLSFlowStep_Type hls_flow_step_type=HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION);
+ public:
+   /**
+    * Constructor
+    * @param design_flow_manager is the design flow manager
+    */
+   mem_dominator_allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization,
+                            const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION);
 
-      /**
-       * Destructor
-       */
-      virtual ~mem_dominator_allocation();
+   /**
+    * Destructor
+    */
+   virtual ~mem_dominator_allocation();
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status Exec();
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status Exec();
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      void Initialize();
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize();
 };
 
 #endif

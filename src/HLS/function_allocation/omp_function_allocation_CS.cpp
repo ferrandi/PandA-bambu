@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file omp_function_allocation.cpp
  * @brief extension of Class to allocate function in HLS based on context switch
@@ -37,43 +37,44 @@
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
  *
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "omp_function_allocation_CS.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior includes
+/// behavior includes
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
 
-///boost include
+/// boost include
 #include <boost/range/adaptor/reversed.hpp>
 
-///HLS include
+/// HLS include
 #include "hls_manager.hpp"
 
-///HLS/function_allocation include
+/// HLS/function_allocation include
 #include "omp_functions.hpp"
 
-///tree includes
+/// tree includes
 #include "behavioral_helper.hpp"
 #include "tree_manager.hpp"
 
-///utility include
+/// utility include
 #include "utility.hpp"
 
-OmpFunctionAllocationCS::OmpFunctionAllocationCS(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) :
-   fun_dominator_allocation(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS)
+OmpFunctionAllocationCS::OmpFunctionAllocationCS(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
+    : fun_dominator_allocation(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS)
 {
-  debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
+   debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 OmpFunctionAllocationCS::~OmpFunctionAllocationCS()
-{}
+{
+}
 
 DesignFlowStep_Status OmpFunctionAllocationCS::Exec()
 {
@@ -85,67 +86,67 @@ DesignFlowStep_Status OmpFunctionAllocationCS::Exec()
    std::list<vertex> sorted_functions;
    call_graph->TopologicalSort(sorted_functions);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Computing functions to be parallelized");
-   int cycleInd=0;
+   int cycleInd = 0;
    for(const auto function : sorted_functions)
    {
-      bool function_classification_found=false;
+      bool function_classification_found = false;
       const auto function_id = call_graph_manager->get_function(function);
-      std::cout<<cycleInd<<" "<<HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name()<<std::endl;
-      if(HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->GetOmpForDegree())  //look for OMP function, add it to struct
+      std::cout << cycleInd << " " << HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name() << std::endl;
+      if(HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->GetOmpForDegree()) // look for OMP function, add it to struct
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found omp for wrapper " + HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
          omp_functions->omp_for_wrappers.insert(function_id);
-         function_classification_found=true;
+         function_classification_found = true;
          ++cycleInd;
          continue;
       }
       InEdgeIterator ie, ie_end;
-      for(boost::tie(ie, ie_end) = boost::in_edges(function, *call_graph); ie != ie_end && !function_classification_found; ie++)  
-      {            //if current function is called by parallel then is kernel
+      for(boost::tie(ie, ie_end) = boost::in_edges(function, *call_graph); ie != ie_end && !function_classification_found; ie++)
+      { // if current function is called by parallel then is kernel
          const auto source = boost::source(*ie, *call_graph);
          const auto source_id = call_graph_manager->get_function(source);
          if(omp_functions->omp_for_wrappers.find(source_id) != omp_functions->omp_for_wrappers.end())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found kernel function: " + HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
             omp_functions->kernel_functions.insert(function_id);
-            function_classification_found=true;
+            function_classification_found = true;
             break;
          }
       }
       for(boost::tie(ie, ie_end) = boost::in_edges(function, *call_graph); ie != ie_end && !function_classification_found; ie++)
-      {		//if current function is called by kernel or a parallel function then is a function inside the kernel
+      { // if current function is called by kernel or a parallel function then is a function inside the kernel
          const auto source = boost::source(*ie, *call_graph);
          const auto source_id = call_graph_manager->get_function(source);
          if(omp_functions->kernel_functions.find(source_id) != omp_functions->kernel_functions.end() or omp_functions->parallelized_functions.find(source_id) != omp_functions->parallelized_functions.end())
          {
-            if(HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->IsOmpFunctionAtomic())	//atomic function
+            if(HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->IsOmpFunctionAtomic()) // atomic function
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found atomic function: " + HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
                omp_functions->atomic_functions.insert(function_id);
             }
-            else	//is a normal function under the kernel
+            else // is a normal function under the kernel
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found function to be parallelized: " + HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
                omp_functions->parallelized_functions.insert(function_id);
             }
-            function_classification_found=true;
+            function_classification_found = true;
             break;
          }
       }
-      cycleInd=cycleInd+1;
+      cycleInd = cycleInd + 1;
    }
-   //invert list
-   cycleInd=0;
+   // invert list
+   cycleInd = 0;
    for(const auto function : boost::adaptors::reverse(sorted_functions))
    {
       const auto function_id = call_graph_manager->get_function(function);
-      std::cout<<cycleInd<<" "<<HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name()<<std::endl;
+      std::cout << cycleInd << " " << HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name() << std::endl;
       OutEdgeIterator ie, ie_end;
       for(boost::tie(ie, ie_end) = boost::out_edges(function, *call_graph); ie != ie_end; ie++)
-      {            //if current function is called by parallel then is kernel
+      { // if current function is called by parallel then is kernel
          const auto target = boost::target(*ie, *call_graph);
          const auto target_id = call_graph_manager->get_function(target);
-         if(omp_functions->omp_for_wrappers.find(target_id) != omp_functions->omp_for_wrappers.end() or omp_functions->hierarchical_functions.find(target_id) != omp_functions->hierarchical_functions.end() )
+         if(omp_functions->omp_for_wrappers.find(target_id) != omp_functions->omp_for_wrappers.end() or omp_functions->hierarchical_functions.find(target_id) != omp_functions->hierarchical_functions.end())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found hierarchical function: " + HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
             omp_functions->hierarchical_functions.insert(function_id);

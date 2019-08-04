@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file testbench_values_c_generation.hpp
  * @brief Class to compute testbench values exploiting C
@@ -46,10 +46,10 @@
 #ifndef TESTBENCH_VALUES_C_GENERATION_HPP
 #define TESTBENCH_VALUES_C_GENERATION_HPP
 
-///Superclass include
+/// Superclass include
 #include "hls_step.hpp"
 
-///utility include
+/// utility include
 #include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(Parameter);
@@ -57,59 +57,58 @@ REF_FORWARD_DECL(HLS_manager);
 CONSTREF_FORWARD_DECL(DesignFlowManager);
 
 /**
- * TestbenchValuesCGeneration is the step which generates values.txt exploiting values.c 
+ * TestbenchValuesCGeneration is the step which generates values.txt exploiting values.c
  */
 class TestbenchValuesCGeneration : public HLS_step
 {
-   protected:
-      ///output directory
-      const std::string output_directory;
+ protected:
+   /// output directory
+   const std::string output_directory;
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      virtual void Initialize();
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   virtual void Initialize();
 
-      /**
-       * Compute the relationship of this step
-       * @param relationship_type is the type of relationship to be considered
-       * @return the steps in relationship with this
-       */
-      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   /**
+    * Compute the relationship of this step
+    * @param relationship_type is the type of relationship to be considered
+    * @return the steps in relationship with this
+    */
+   virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
 
-   public:
-      /**
-       * Constructor.
-       * @param parameters is the set of the input parameters
-       * @param hls_manager is the HLS manager
-       * @param design_flow_manager is the design flow manager
-       *
-       */
-      TestbenchValuesCGeneration(const ParameterConstRef parameters, const HLS_managerRef hls_manager, const DesignFlowManagerConstRef design_flow_manager);
+ public:
+   /**
+    * Constructor.
+    * @param parameters is the set of the input parameters
+    * @param hls_manager is the HLS manager
+    * @param design_flow_manager is the design flow manager
+    *
+    */
+   TestbenchValuesCGeneration(const ParameterConstRef parameters, const HLS_managerRef hls_manager, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Destructor.
-       */
-      virtual ~TestbenchValuesCGeneration();
+   /**
+    * Destructor.
+    */
+   virtual ~TestbenchValuesCGeneration();
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status Exec();
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status Exec();
 
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      bool HasToBeExecuted() const;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const;
 
-      /**
-       * Compute the relationships of this step with other steps
-       * @param dependencies is where relationships will be stored
-       * @param relationship_type is the type of relationship to be computed
-       */
-      void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type);
+   /**
+    * Compute the relationships of this step with other steps
+    * @param dependencies is where relationships will be stored
+    * @param relationship_type is the type of relationship to be computed
+    */
+   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type);
 };
 #endif
-

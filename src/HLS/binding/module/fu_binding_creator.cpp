@@ -46,7 +46,6 @@
 #include "fu_binding.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
-#include "fu_binding.hpp"
 #include "parallel_memory_fu_binding.hpp"
 
 /// implemented algorithms

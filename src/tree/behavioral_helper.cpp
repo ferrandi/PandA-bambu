@@ -5424,7 +5424,6 @@ bool BehavioralHelper::IsOmpFunctionAtomic() const
    return fd->omp_atomic;
 }
 
-
 bool BehavioralHelper::IsOmpBodyLoop() const
 {
    const auto fd = GetPointer<const function_decl>(TM->get_tree_node_const(function_index));

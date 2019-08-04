@@ -29,25 +29,26 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file mem_dominator_allocation_CS.hpp
  * @brief Class to allocate memories in HLS based on dominators, add tag for context switch
  *
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
-*/
-#include "omp_functions.hpp"
-#include "memory_cs.hpp"
+ */
 #include "mem_dominator_allocation_cs.hpp"
-#include "cmath"
 #include "Parameter.hpp"
-#include "hls_manager.hpp"
-#include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
 #include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
+#include "cmath"
+#include "function_behavior.hpp"
+#include "hls_manager.hpp"
+#include "memory_cs.hpp"
+#include "omp_functions.hpp"
 
-mem_dominator_allocation_cs::mem_dominator_allocation_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization, const HLSFlowStep_Type _hls_flow_step_type) :
-   mem_dominator_allocation (_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_specialization, _hls_flow_step_type)
+mem_dominator_allocation_cs::mem_dominator_allocation_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization,
+                                                         const HLSFlowStep_Type _hls_flow_step_type)
+    : mem_dominator_allocation(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_specialization, _hls_flow_step_type)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -58,13 +59,15 @@ mem_dominator_allocation_cs::~mem_dominator_allocation_cs()
 
 DesignFlowStep_Status mem_dominator_allocation_cs::Exec()
 {
-    mem_dominator_allocation::Exec();    //exec of hierarchical class
-    unsigned int tag_index=0;
-    unsigned int context_switch=static_cast<unsigned int>(log2(parameters->getOption<int>(OPT_context_switch)));
-    if(!context_switch) context_switch=1;
-    unsigned int num_threads=static_cast<unsigned int>(log2(parameters->getOption<int>(OPT_num_threads)));
-    if(!num_threads) num_threads=1;
-    tag_index=context_switch+num_threads+2; //tag_index is log2(switch)+log2(thread)+2
-    GetPointer<memory_cs>(HLSMgr->Rmem)->set_bus_tag_bitsize(tag_index);
-    return DesignFlowStep_Status::SUCCESS;
+   mem_dominator_allocation::Exec(); // exec of hierarchical class
+   unsigned int tag_index = 0;
+   unsigned int context_switch = static_cast<unsigned int>(log2(parameters->getOption<int>(OPT_context_switch)));
+   if(!context_switch)
+      context_switch = 1;
+   unsigned int num_threads = static_cast<unsigned int>(log2(parameters->getOption<int>(OPT_num_threads)));
+   if(!num_threads)
+      num_threads = 1;
+   tag_index = context_switch + num_threads + 2; // tag_index is log2(switch)+log2(thread)+2
+   GetPointer<memory_cs>(HLSMgr->Rmem)->set_bus_tag_bitsize(tag_index);
+   return DesignFlowStep_Status::SUCCESS;
 }

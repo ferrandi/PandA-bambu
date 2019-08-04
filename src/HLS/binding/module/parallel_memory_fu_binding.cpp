@@ -29,45 +29,44 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file parallel_memory_fu_binding.cpp
  * @brief Data structure used to store the functional-unit binding of the vertices.
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
-///Header class
+ */
+/// Header class
 #include "parallel_memory_fu_binding.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///circuit include
+/// circuit include
 #include "structural_manager.hpp"
 
-///HLS includes
+/// HLS includes
 #include "hls.hpp"
 #include "hls_target.hpp"
 
-///HLS/functions include
+/// HLS/functions include
 #include "omp_functions.hpp"
 
-///HLS/module_allocation include
+/// HLS/module_allocation include
 #include "allocation_information.hpp"
 
-///HLS/virtual_components
+/// HLS/virtual_components
 #include "generic_obj.hpp"
 
-///technology includes
+/// technology includes
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 
-///tree include
+/// tree include
 #include "tree_manager.hpp"
 
-ParallelMemoryFuBinding::ParallelMemoryFuBinding(const HLS_managerConstRef _HLS_mgr, const unsigned int _function_id, const ParameterConstRef _parameters) :
-   fu_binding(_HLS_mgr, _function_id, _parameters)
+ParallelMemoryFuBinding::ParallelMemoryFuBinding(const HLS_managerConstRef _HLS_mgr, const unsigned int _function_id, const ParameterConstRef _parameters) : fu_binding(_HLS_mgr, _function_id, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -75,8 +74,8 @@ ParallelMemoryFuBinding::ParallelMemoryFuBinding(const HLS_managerConstRef _HLS_
 void ParallelMemoryFuBinding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port)
 {
    fu_binding::add_to_SM(HLSMgr, HLS, clock_port, reset_port);
-   const auto & parallelized_functions = GetPointer<const OmpFunctions>(HLSMgr->Rfuns)->parallelized_functions;
-   const auto & omp_for_wrappers = GetPointer<const OmpFunctions>(HLSMgr->Rfuns)->omp_for_wrappers; 
+   const auto& parallelized_functions = GetPointer<const OmpFunctions>(HLSMgr->Rfuns)->parallelized_functions;
+   const auto& omp_for_wrappers = GetPointer<const OmpFunctions>(HLSMgr->Rfuns)->omp_for_wrappers;
    const auto TM = HLS->HLS_T->get_technology_manager();
    const auto memory_banks_number = parameters->getOption<unsigned int>(OPT_memory_banks_number);
    const structural_managerRef SM = HLS->datapath;
@@ -84,8 +83,7 @@ void ParallelMemoryFuBinding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRe
    if(parallelized_functions.find(HLS->functionId) != parallelized_functions.end())
    {
       std::list<structural_objectRef> memory_enableds;
-      bool load_store_operation = [&] () -> bool
-      {
+      bool load_store_operation = [&]() -> bool {
          for(const auto fu_index : get_allocation_list())
          {
             std::string channels_type = GetPointer<const functional_unit>(allocation_information->get_fu(fu_index))->channels_type;
@@ -96,7 +94,7 @@ void ParallelMemoryFuBinding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRe
          }
          return false;
       }();
-      ///Collecting memory enabled signals which have to be put in and
+      /// Collecting memory enabled signals which have to be put in and
       for(unsigned int internal_object_id = 0; internal_object_id < GetPointer<const module>(circuit)->get_internal_objects_size(); internal_object_id++)
       {
          const auto internal_object = GetPointer<const module>(circuit)->get_internal_object(internal_object_id);
@@ -118,7 +116,7 @@ void ParallelMemoryFuBinding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRe
          GetPointer<port_o>(amaf_access_allowed)->add_n_ports(memory_banks_number, amaf_access_allowed);
          HLS->Rfu->manage_extern_global_port(HLSMgr, HLS, SM, amaf_access_allowed, port_o::IN, circuit, 0);
 
-         //start_port and done_port are connected in ParallelMemoryConnBinding::add_to_SM
+         // start_port and done_port are connected in ParallelMemoryConnBinding::add_to_SM
 
          const auto memory_enabled = allow_mem_access->find_member("memory_enabled", port_o_K, allow_mem_access);
          GetPointer<port_o>(memory_enabled)->add_n_ports(memory_banks_number, memory_enabled);
@@ -134,7 +132,7 @@ void ParallelMemoryFuBinding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRe
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added ALLOW_MEM_ACCESS_FU for memory operations");
       }
-      ///Considering atomic operations
+      /// Considering atomic operations
       CustomSet<structural_objectRef> atomics;
       VertexIterator operation, operation_end;
       for(boost::tie(operation, operation_end) = boost::vertices(*op_graph); operation != operation_end; operation++)
@@ -161,18 +159,18 @@ void ParallelMemoryFuBinding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRe
          HLS->Rfu->manage_extern_global_port(HLSMgr, HLS, SM, amaf_access_allowed, port_o::IN, circuit, 0);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Connected access allowed");
 
-         //Done is connected in ParallelMemoryConnBinding::add_to_SM
+         // Done is connected in ParallelMemoryConnBinding::add_to_SM
 
          const auto memory_enabled = allow_mem_access->find_member("memory_enabled", port_o_K, allow_mem_access);
          GetPointer<port_o>(memory_enabled)->add_n_ports(memory_banks_number, memory_enabled);
          memory_enableds.push_back(memory_enabled);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Resized memory enabled");
 
-         //Op is connected in ParallelMemoryConnBinding::add_to_SM
+         // Op is connected in ParallelMemoryConnBinding::add_to_SM
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added ALLOW_MEM_ACCESS_FU for " + atomic->get_path());
       }
-      ///Check if there is at least a memory enabled to be connected
+      /// Check if there is at least a memory enabled to be connected
       if(memory_enableds.size())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->" + STR(memory_enableds.size()) + " memory enableds to be put in and");
@@ -223,7 +221,7 @@ void ParallelMemoryFuBinding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRe
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding PT_FU");
       std::list<structural_objectRef> slaves;
       std::list<structural_objectRef> memory_enableds;
-      ///Collecting ports of internal objects
+      /// Collecting ports of internal objects
       for(unsigned int internal_object_id = 0; internal_object_id < GetPointer<const module>(circuit)->get_internal_objects_size(); internal_object_id++)
       {
          const auto internal_object = GetPointer<const module>(circuit)->get_internal_object(internal_object_id);
@@ -269,20 +267,20 @@ void ParallelMemoryFuBinding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRe
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering memory bank " + STR(memory_bank_index));
          const auto pt_rr_fu = SM->add_module_from_technology_library("pt_rr_fu_" + STR(memory_bank_index), "PT_FU_MEM", LIBRARY_PC, circuit, TM);
-         //const auto clock = pt_rr_fu->find_member(CLOCK_PORT_NAME, port_o_K, pt_rr_fu);
-         //SM->add_connection(clock_port, clock);
-         //const auto reset = pt_rr_fu->find_member(RESET_PORT_NAME, port_o_K, pt_rr_fu);
-         //SM->add_connection(reset_port, reset);
+         // const auto clock = pt_rr_fu->find_member(CLOCK_PORT_NAME, port_o_K, pt_rr_fu);
+         // SM->add_connection(clock_port, clock);
+         // const auto reset = pt_rr_fu->find_member(RESET_PORT_NAME, port_o_K, pt_rr_fu);
+         // SM->add_connection(reset_port, reset);
          const auto rops_so = pt_rr_fu->find_member("rops", port_o_K, pt_rr_fu);
-         THROW_ASSERT(rops_so,"");
+         THROW_ASSERT(rops_so, "");
          const auto rops = GetPointer<port_o>(rops_so);
          rops->add_n_ports(static_cast<unsigned int>(slaves.size()), rops_so);
          const auto ops_so = pt_rr_fu->find_member("ops", port_o_K, pt_rr_fu);
-         THROW_ASSERT(ops_so,"");
+         THROW_ASSERT(ops_so, "");
          const auto ops = GetPointer<port_o>(ops_so);
          ops->add_n_ports(static_cast<unsigned int>(slaves.size()), ops_so);
          const auto enable_so = pt_rr_fu->find_member("ENABLE", port_o_K, pt_rr_fu);
-         THROW_ASSERT(enable_so,"");
+         THROW_ASSERT(enable_so, "");
 
          unsigned int internal_object_id = 0;
          for(const auto slave : slaves)
@@ -304,7 +302,6 @@ void ParallelMemoryFuBinding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRe
             SM->add_connection(access_allowed_sign, op);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Connected access allowed");
 
-
             internal_object_id++;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered component " + slave->get_path());
          }
@@ -325,7 +322,7 @@ void ParallelMemoryFuBinding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRe
          if(internal_object->get_typeRef()->id_type == "MEMORY_CTRL_P1N")
          {
             const auto access_allowed = internal_object->find_member("access_allowed", port_o_K, internal_object);
-            for(unsigned int memory_bank_index = 0; memory_bank_index <memory_banks_number; memory_bank_index++)
+            for(unsigned int memory_bank_index = 0; memory_bank_index < memory_banks_number; memory_bank_index++)
             {
                const auto constant = SM->add_constant("access_allowed_enabled_" + STR(memory_bank_index), circuit, access_allowed->get_typeRef(), "1");
                SM->add_connection(constant, GetPointer<port_o>(access_allowed)->get_port(memory_bank_index));
@@ -336,7 +333,7 @@ void ParallelMemoryFuBinding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRe
             const auto access_allowed = internal_object->find_member("access_allowed", port_o_K, internal_object);
             if(access_allowed)
             {
-               for(unsigned int memory_bank_index = 0; memory_bank_index <memory_banks_number; memory_bank_index++)
+               for(unsigned int memory_bank_index = 0; memory_bank_index < memory_banks_number; memory_bank_index++)
                {
                   const auto constant = SM->add_constant("access_allowed_enabled_" + internal_object->get_id() + "_" + STR(memory_bank_index), circuit, access_allowed->get_typeRef(), "1");
                   SM->add_connection(constant, GetPointer<port_o>(access_allowed)->get_port(memory_bank_index));
@@ -357,7 +354,7 @@ bool ParallelMemoryFuBinding::manage_module_ports(const HLS_managerRef HLSMgr, c
       GetPointer<port_o>(memory_enabled)->set_is_global(false);
       GetPointer<port_o>(memory_enabled)->set_is_extern(false);
    }
-   const auto & parallelized_functions = GetPointer<const OmpFunctions>(HLSMgr->Rfuns)->parallelized_functions;
+   const auto& parallelized_functions = GetPointer<const OmpFunctions>(HLSMgr->Rfuns)->parallelized_functions;
    if(TM->function_index(curr_gate->get_typeRef()->id_type))
    {
       const auto fd = GetPointer<const function_decl>(TM->get_tree_node_const(TM->function_index(curr_gate->get_typeRef()->id_type)));
@@ -393,4 +390,3 @@ bool ParallelMemoryFuBinding::manage_module_ports(const HLS_managerRef HLSMgr, c
    }
    return fu_binding::manage_module_ports(HLSMgr, HLS, SM, curr_gate, num);
 }
-

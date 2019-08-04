@@ -183,26 +183,26 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
             {
                std::string param = behavioral_helper->PrintVariable(function_parameter);
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Parameter: " + param + (behavioral_helper->is_a_pointer(function_parameter) ? " (memory access)" : " (input value)"));
-               if ((Enode)->get_attribute(param))
+               if((Enode)->get_attribute(param))
                {
                   test_vector[param] = boost::lexical_cast<std::string>((Enode)->get_attribute(param)->get_value());
                }
-               else if ((Enode)->get_attribute(param + ":init_file"))
+               else if((Enode)->get_attribute(param + ":init_file"))
                {
                   const auto test_directory = GetDirectory(input_xml_filename);
                   const auto input_file_name = BuildPath(test_directory, Enode->get_attribute(param + ":init_file")->get_value());
                   const auto input_file = fileIO_istream_open(input_file_name);
                   test_vector[param] = std::string(std::istreambuf_iterator<char>(*input_file), std::istreambuf_iterator<char>());
                }
-               else if (!behavioral_helper->is_a_pointer(function_parameter))
+               else if(!behavioral_helper->is_a_pointer(function_parameter))
                {
                   THROW_ERROR("Missing input value for parameter: " + param);
                }
             }
             if(behavioral_helper->GetFunctionReturnType(function_id) and ((Enode)->get_attribute("return")))
             {
-               ///If discrepancy is enabled, then xml output is ignored
-               if (not (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)))
+               /// If discrepancy is enabled, then xml output is ignored
+               if(not(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)))
                {
                   HLSMgr->RSim->results_available = true;
                   test_vector["return"] = ((Enode)->get_attribute("return")->get_value());
@@ -278,7 +278,7 @@ DesignFlowStep_Status TestVectorParser::Exec()
 #ifndef NDEBUG
    size_t n_vectors =
 #endif
-   ParseTestVectors(HLSMgr->RSim->test_vectors);
+       ParseTestVectors(HLSMgr->RSim->test_vectors);
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Number of input test vectors: " + STR(n_vectors));
    return DesignFlowStep_Status::SUCCESS;
 }

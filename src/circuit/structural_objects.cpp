@@ -774,7 +774,7 @@ structural_type_descriptor::s_type module::get_parameter_type(const technology_m
 {
    const auto module_type = get_generic_object(TM);
    const auto default_value = module_type->GetDefaultParameter(name);
-   if(default_value.substr(0,2) == "\"\"" and default_value.substr(default_value.size() - 2, 2) == "\"\"")
+   if(default_value.substr(0, 2) == "\"\"" and default_value.substr(default_value.size() - 2, 2) == "\"\"")
    {
       return structural_type_descriptor::OTHER;
    }
@@ -854,9 +854,12 @@ void structural_object::xwrite(xml_element* Enode)
    WRITE_XVM(id, Enode);
    std::string path = get_path();
    WRITE_XVM(path, Enode);
-   if (treenode != treenode_DEFAULT) WRITE_XVM(treenode, Enode);
-   if (black_box != black_box_DEFAULT) WRITE_XVM(black_box, Enode);
-   if (type) type->xwrite(Enode);
+   if(treenode != treenode_DEFAULT)
+      WRITE_XVM(treenode, Enode);
+   if(black_box != black_box_DEFAULT)
+      WRITE_XVM(black_box, Enode);
+   if(type)
+      type->xwrite(Enode);
    if(!default_parameters.empty())
    {
       for(const auto default_parameter : default_parameters)
@@ -894,17 +897,27 @@ const std::string structural_object::get_path() const
 
 const char* port_o::port_directionNames[] = {"IN", "OUT", "IO", "GEN", "UNKNOWN"};
 
-port_o::port_o(int _debug_level, const structural_objectRef o, port_direction _dir, so_kind _port_type) :
-   structural_object(_debug_level, o),
-   dir(_dir),
-   end(NONE),
-   is_var_args(is_var_args_DEFAULT),
-   is_clock(is_clock_DEFAULT), is_extern(is_extern_DEFAULT), is_global(is_global_DEFAULT),
-   is_reverse(is_reverse_DEFAULT),
-   is_memory(is_memory_DEFAULT), is_slave(is_slave_DEFAULT), is_master(is_master_DEFAULT),
-   is_data_bus(is_data_bus_DEFAULT), is_addr_bus(is_addr_bus_DEFAULT), is_size_bus(is_size_bus_DEFAULT), is_tag_bus(is_tag_bus_DEFAULT), is_doubled(is_doubled_DEFAULT), is_halved(is_halved_DEFAULT), is_critical(is_critical_DEFAULT),
-   lsb(0),
-   port_type(_port_type)
+port_o::port_o(int _debug_level, const structural_objectRef o, port_direction _dir, so_kind _port_type)
+    : structural_object(_debug_level, o),
+      dir(_dir),
+      end(NONE),
+      is_var_args(is_var_args_DEFAULT),
+      is_clock(is_clock_DEFAULT),
+      is_extern(is_extern_DEFAULT),
+      is_global(is_global_DEFAULT),
+      is_reverse(is_reverse_DEFAULT),
+      is_memory(is_memory_DEFAULT),
+      is_slave(is_slave_DEFAULT),
+      is_master(is_master_DEFAULT),
+      is_data_bus(is_data_bus_DEFAULT),
+      is_addr_bus(is_addr_bus_DEFAULT),
+      is_size_bus(is_size_bus_DEFAULT),
+      is_tag_bus(is_tag_bus_DEFAULT),
+      is_doubled(is_doubled_DEFAULT),
+      is_halved(is_halved_DEFAULT),
+      is_critical(is_critical_DEFAULT),
+      lsb(0),
+      port_type(_port_type)
 {
 #if HAVE_TECHNOLOGY_BUILT
    std::string direction;
@@ -1198,9 +1211,8 @@ bool port_o::get_is_halved() const
 
 structural_objectRef port_o::find_bounded_object(const structural_objectConstRef f_owner) const
 {
-
    THROW_ASSERT(get_owner(), "The port has to have an owner " + get_id());
-   //THROW_ASSERT(get_owner()->get_owner(), "The owner of the port has to have an owner " + get_id());
+   // THROW_ASSERT(get_owner()->get_owner(), "The owner of the port has to have an owner " + get_id());
    THROW_ASSERT(get_owner()->get_kind() != port_vector_o_K || get_owner()->get_owner(), "The owner of the port_vector has to have an owner " + get_id());
    THROW_ASSERT(get_kind() == port_o_K || get_kind() == port_vector_o_K, "Expected a port got something of different");
    structural_objectRef res;
@@ -1211,17 +1223,17 @@ structural_objectRef port_o::find_bounded_object(const structural_objectConstRef
    else
       _owner = get_owner();
 
-   for (unsigned int i = 0; i < connected_objects.size(); i++)
+   for(unsigned int i = 0; i < connected_objects.size(); i++)
    {
       if(f_owner)
       {
          if(connected_object.lock()->get_kind() == port_o_K || connected_object.lock()->get_kind() == signal_o_K || connected_object.lock()->get_kind() == constant_o_K)
          {
-            if (connected_objects[i].lock()->get_owner()->get_kind() == port_vector_o_K and connected_objects[i].lock()->get_owner()->get_owner() != f_owner)
+            if(connected_objects[i].lock()->get_owner()->get_kind() == port_vector_o_K and connected_objects[i].lock()->get_owner()->get_owner() != f_owner)
             {
                continue;
             }
-            if ((connected_objects[i].lock()->get_owner()->get_kind() != port_vector_o_K  and connected_objects[i].lock()->get_owner() != f_owner))
+            if((connected_objects[i].lock()->get_owner()->get_kind() != port_vector_o_K and connected_objects[i].lock()->get_owner() != f_owner))
             {
                continue;
             }
@@ -1233,7 +1245,6 @@ structural_objectRef port_o::find_bounded_object(const structural_objectConstRef
          }
       }
       THROW_ASSERT(connected_object.lock(), "");
-
 
       if(connected_object.lock()->get_owner() == _owner->get_owner())
       {
@@ -1257,11 +1268,11 @@ structural_objectRef port_o::find_bounded_object(const structural_objectConstRef
 
    if(port_count > 1)
    {
-      for (unsigned int i = 0; i < connected_objects.size(); i++)
-      if (connected_objects[i].lock()->get_owner() == _owner->get_owner())
-      {
-         res = connected_objects[i].lock();
-      }
+      for(unsigned int i = 0; i < connected_objects.size(); i++)
+         if(connected_objects[i].lock()->get_owner() == _owner->get_owner())
+         {
+            res = connected_objects[i].lock();
+         }
    }
    THROW_ASSERT(port_count == 1, "Too many bindings to " + get_owner()->get_path() + HIERARCHY_SEPARATOR + get_id() + " of type " + get_owner()->get_typeRef()->id_type + " res " + res->get_path());
    return res;
@@ -1419,22 +1430,38 @@ void port_o::xload(const xml_element* Enode, structural_objectRef _owner, struct
       LOAD_XVFM(dir_string, Enode, dir);
       dir = to_port_direction(dir_string);
    }
-   if (CE_XVM(is_var_args, Enode)) LOAD_XVM(is_var_args, Enode);
-   if (CE_XVM(is_clock, Enode)) LOAD_XVM(is_clock, Enode);
-   if (CE_XVM(is_extern, Enode)) LOAD_XVM(is_extern, Enode);
-   if (CE_XVM(is_global, Enode)) LOAD_XVM(is_global, Enode);
-   if (CE_XVM(is_memory, Enode)) LOAD_XVM(is_memory, Enode);
-   if (CE_XVM(is_slave, Enode)) LOAD_XVM(is_slave, Enode);
-   if (CE_XVM(is_master, Enode)) LOAD_XVM(is_master, Enode);
-   if (CE_XVM(is_data_bus, Enode)) LOAD_XVM(is_data_bus, Enode);
-   if (CE_XVM(is_addr_bus, Enode)) LOAD_XVM(is_addr_bus, Enode);
-   if (CE_XVM(is_size_bus, Enode)) LOAD_XVM(is_size_bus, Enode);
-   if (CE_XVM(is_tag_bus, Enode)) LOAD_XVM(is_tag_bus, Enode);
-   if (CE_XVM(is_doubled, Enode)) LOAD_XVM(is_doubled, Enode);
-   if (CE_XVM(is_halved, Enode)) LOAD_XVM(is_halved, Enode);
-   if (CE_XVM(is_critical, Enode)) LOAD_XVM(is_critical, Enode);
-   if (CE_XVM(is_reverse, Enode)) LOAD_XVM(is_reverse, Enode);
-   if (CE_XVM(size_parameter, Enode)) LOAD_XVM(size_parameter, Enode);
+   if(CE_XVM(is_var_args, Enode))
+      LOAD_XVM(is_var_args, Enode);
+   if(CE_XVM(is_clock, Enode))
+      LOAD_XVM(is_clock, Enode);
+   if(CE_XVM(is_extern, Enode))
+      LOAD_XVM(is_extern, Enode);
+   if(CE_XVM(is_global, Enode))
+      LOAD_XVM(is_global, Enode);
+   if(CE_XVM(is_memory, Enode))
+      LOAD_XVM(is_memory, Enode);
+   if(CE_XVM(is_slave, Enode))
+      LOAD_XVM(is_slave, Enode);
+   if(CE_XVM(is_master, Enode))
+      LOAD_XVM(is_master, Enode);
+   if(CE_XVM(is_data_bus, Enode))
+      LOAD_XVM(is_data_bus, Enode);
+   if(CE_XVM(is_addr_bus, Enode))
+      LOAD_XVM(is_addr_bus, Enode);
+   if(CE_XVM(is_size_bus, Enode))
+      LOAD_XVM(is_size_bus, Enode);
+   if(CE_XVM(is_tag_bus, Enode))
+      LOAD_XVM(is_tag_bus, Enode);
+   if(CE_XVM(is_doubled, Enode))
+      LOAD_XVM(is_doubled, Enode);
+   if(CE_XVM(is_halved, Enode))
+      LOAD_XVM(is_halved, Enode);
+   if(CE_XVM(is_critical, Enode))
+      LOAD_XVM(is_critical, Enode);
+   if(CE_XVM(is_reverse, Enode))
+      LOAD_XVM(is_reverse, Enode);
+   if(CE_XVM(size_parameter, Enode))
+      LOAD_XVM(size_parameter, Enode);
 
    structural_objectRef obj;
    unsigned int minBit = UINT_MAX;
@@ -1511,22 +1538,37 @@ void port_o::xwrite(xml_element* rootnode)
    xml_element* Enode_CO = Enode->add_child_element("connected_objects");
    for(unsigned int i = 0; i < connected_objects.size(); i++)
       WRITE_XNVM2("CON" + boost::lexical_cast<std::string>(i), connected_objects[i].lock()->get_path(), Enode_CO);
-   if (is_clock != is_clock_DEFAULT) WRITE_XVM(is_clock, Enode);
-   if (is_extern != is_extern_DEFAULT) WRITE_XVM(is_extern, Enode);
-   if (is_global != is_global_DEFAULT) WRITE_XVM(is_global, Enode);
-   if (is_memory != is_memory_DEFAULT) WRITE_XVM(is_memory, Enode);
-   if (is_slave != is_slave_DEFAULT) WRITE_XVM(is_slave, Enode);
-   if (is_master != is_master_DEFAULT) WRITE_XVM(is_master, Enode);
-   if (is_data_bus != is_data_bus_DEFAULT) WRITE_XVM(is_data_bus, Enode);
-   if (is_addr_bus != is_addr_bus_DEFAULT) WRITE_XVM(is_addr_bus, Enode);
-   if (is_size_bus != is_size_bus_DEFAULT) WRITE_XVM(is_size_bus, Enode);
-   if (is_tag_bus != is_tag_bus_DEFAULT) WRITE_XVM(is_tag_bus, Enode);
-   if (is_doubled != is_doubled_DEFAULT) WRITE_XVM(is_doubled, Enode);
-   if (is_halved != is_halved_DEFAULT) WRITE_XVM(is_halved, Enode);
-   if (is_critical != is_critical_DEFAULT) WRITE_XVM(is_critical, Enode);
-   if (is_reverse != is_reverse_DEFAULT) WRITE_XVM(is_reverse, Enode);
-   if (is_var_args != is_var_args_DEFAULT) WRITE_XVM(is_var_args, Enode);
-   for (unsigned int i = 0; i < ports.size(); i++)
+   if(is_clock != is_clock_DEFAULT)
+      WRITE_XVM(is_clock, Enode);
+   if(is_extern != is_extern_DEFAULT)
+      WRITE_XVM(is_extern, Enode);
+   if(is_global != is_global_DEFAULT)
+      WRITE_XVM(is_global, Enode);
+   if(is_memory != is_memory_DEFAULT)
+      WRITE_XVM(is_memory, Enode);
+   if(is_slave != is_slave_DEFAULT)
+      WRITE_XVM(is_slave, Enode);
+   if(is_master != is_master_DEFAULT)
+      WRITE_XVM(is_master, Enode);
+   if(is_data_bus != is_data_bus_DEFAULT)
+      WRITE_XVM(is_data_bus, Enode);
+   if(is_addr_bus != is_addr_bus_DEFAULT)
+      WRITE_XVM(is_addr_bus, Enode);
+   if(is_size_bus != is_size_bus_DEFAULT)
+      WRITE_XVM(is_size_bus, Enode);
+   if(is_tag_bus != is_tag_bus_DEFAULT)
+      WRITE_XVM(is_tag_bus, Enode);
+   if(is_doubled != is_doubled_DEFAULT)
+      WRITE_XVM(is_doubled, Enode);
+   if(is_halved != is_halved_DEFAULT)
+      WRITE_XVM(is_halved, Enode);
+   if(is_critical != is_critical_DEFAULT)
+      WRITE_XVM(is_critical, Enode);
+   if(is_reverse != is_reverse_DEFAULT)
+      WRITE_XVM(is_reverse, Enode);
+   if(is_var_args != is_var_args_DEFAULT)
+      WRITE_XVM(is_var_args, Enode);
+   for(unsigned int i = 0; i < ports.size(); i++)
       ports[i]->xwrite(Enode);
 }
 
@@ -2080,21 +2122,22 @@ bool signal_o::is_connected(structural_objectRef s) const
 void signal_o::substitute_port(structural_objectRef old_conn, structural_objectRef new_conn)
 {
    std::vector<structural_objectRef>::iterator del = std::find(connected_objects.begin(), connected_objects.end(), new_conn);
-   if (del != connected_objects.end())
+   if(del != connected_objects.end())
    {
       auto del_old = std::find(connected_objects.begin(), connected_objects.end(), old_conn);
       if(del_old != connected_objects.end())
          connected_objects.erase(del_old);
    }
-   else for(unsigned int i = 0; i < connected_objects.size(); i++)
-   {
-      if (connected_objects[i] == old_conn)
-         connected_objects[i] = new_conn;
-      else
+   else
+      for(unsigned int i = 0; i < connected_objects.size(); i++)
       {
-         THROW_ASSERT(GetPointer<port_o>(connected_objects[i]), "Expected port");
+         if(connected_objects[i] == old_conn)
+            connected_objects[i] = new_conn;
+         else
+         {
+            THROW_ASSERT(GetPointer<port_o>(connected_objects[i]), "Expected port");
+         }
       }
-   }
 }
 
 unsigned int signal_o::get_connected_objects_size() const
@@ -2771,15 +2814,9 @@ unsigned int module::get_local_data_size() const
 void module::set_NP_functionality(NP_functionalityRef f)
 {
    NP_descriptions = f;
-   if (get_black_box() and (f->exist_NP_functionality(NP_functionality::FSM) or
-       f->exist_NP_functionality(NP_functionality::FSM_CS) or
-       f->exist_NP_functionality(NP_functionality::SC_PROVIDED) or
-       f->exist_NP_functionality(NP_functionality::VHDL_PROVIDED) or
-       f->exist_NP_functionality(NP_functionality::VERILOG_PROVIDED) or
-       f->exist_NP_functionality(NP_functionality::SYSTEM_VERILOG_PROVIDED) or
-       f->exist_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED) or
-       f->exist_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED) or
-       f->exist_NP_functionality(NP_functionality::FLOPOCO_PROVIDED)))
+   if(get_black_box() and (f->exist_NP_functionality(NP_functionality::FSM) or f->exist_NP_functionality(NP_functionality::FSM_CS) or f->exist_NP_functionality(NP_functionality::SC_PROVIDED) or f->exist_NP_functionality(NP_functionality::VHDL_PROVIDED) or
+                           f->exist_NP_functionality(NP_functionality::VERILOG_PROVIDED) or f->exist_NP_functionality(NP_functionality::SYSTEM_VERILOG_PROVIDED) or f->exist_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED) or
+                           f->exist_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED) or f->exist_NP_functionality(NP_functionality::FLOPOCO_PROVIDED)))
       set_black_box(false);
 }
 
@@ -2788,7 +2825,7 @@ const NP_functionalityRef& module::get_NP_functionality() const
    return NP_descriptions;
 }
 
-void module::get_NP_library_parameters(structural_objectRef _owner, std::vector<std::pair<std::string, structural_objectRef> > & computed_parameters) const
+void module::get_NP_library_parameters(structural_objectRef _owner, std::vector<std::pair<std::string, structural_objectRef>>& computed_parameters) const
 {
    std::vector<std::string> param;
    NP_descriptions->get_library_parameters(param);
@@ -2796,7 +2833,7 @@ void module::get_NP_library_parameters(structural_objectRef _owner, std::vector<
    for(std::vector<std::string>::const_iterator it = param.begin(); it != it_end; ++it)
    {
       structural_objectRef obj = find_member(*it, port_vector_o_K, _owner);
-      computed_parameters.push_back(std::make_pair(*it,obj));
+      computed_parameters.push_back(std::make_pair(*it, obj));
    }
 }
 
@@ -2912,7 +2949,7 @@ void module::copy(structural_objectRef dest) const
       GetPointer<module>(dest)->set_multi_unit_multiplicity(multi_unit_multiplicity);
    structural_objectRef obj;
 
-   ///copying of the ports of the module: be aware of respecting the initial order of the ports
+   /// copying of the ports of the module: be aware of respecting the initial order of the ports
 #ifndef NDEBUG
    if(last_position_port)
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - copying ports: " << last_position_port);
@@ -3031,7 +3068,8 @@ void module::copy(structural_objectRef dest) const
          {
             const structural_objectRef conn_obj = port->get_connection(c);
             std::string connected_path = conn_obj->get_path();
-            if (connected_path.find(scope + "/") == std::string::npos) continue;
+            if(connected_path.find(scope + "/") == std::string::npos)
+               continue;
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "   - internal connection with: " << connected_path);
             structural_objectRef dest_obj;
             if(conn_obj->get_kind() == signal_o_K || conn_obj->get_kind() == signal_vector_o_K)
@@ -3942,10 +3980,9 @@ void module::AddParameter(const std::string name, const std::string default_valu
    structural_object::AddParameter(name, default_value);
 }
 
-
-component_o::component_o(int _debug_level, const structural_objectRef o) :
-      module(_debug_level, o)
-{}
+component_o::component_o(int _debug_level, const structural_objectRef o) : module(_debug_level, o)
+{
+}
 
 structural_objectRef component_o::find_member(const std::string& _id, so_kind _type, const structural_objectRef _owner) const
 {
@@ -4283,7 +4320,6 @@ unsigned int port_o::get_port_size() const
    return get_typeRef()->size;
 }
 
-
 void port_o::resize_busport(unsigned int bus_size_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_data_bitsize, unsigned int bus_tag_bitsize, structural_objectRef port)
 {
    if(GetPointer<port_o>(port)->get_is_data_bus())
@@ -4292,7 +4328,7 @@ void port_o::resize_busport(unsigned int bus_size_bitsize, unsigned int bus_addr
       port->type_resize(bus_addr_bitsize);
    else if(GetPointer<port_o>(port)->get_is_size_bus())
       port->type_resize(bus_size_bitsize);
-   else if (GetPointer<port_o>(port)->get_is_tag_bus())
+   else if(GetPointer<port_o>(port)->get_is_tag_bus())
       port->type_resize(bus_tag_bitsize);
    if(port->get_kind() == port_vector_o_K)
    {
@@ -4305,7 +4341,7 @@ void port_o::resize_busport(unsigned int bus_size_bitsize, unsigned int bus_addr
             port_d->type_resize(bus_addr_bitsize);
          else if(GetPointer<port_o>(port)->get_is_size_bus())
             port_d->type_resize(bus_size_bitsize);
-         else if (GetPointer<port_o>(port)->get_is_tag_bus())
+         else if(GetPointer<port_o>(port)->get_is_tag_bus())
             port_d->type_resize(bus_tag_bitsize);
       }
    }
@@ -4381,12 +4417,12 @@ std::string structural_object::get_equation(const structural_objectRef out_obj, 
 
    std::string EQ = out_obj->get_id();
 
-   if (input_ports.find(out_obj) != input_ports.end())
+   if(input_ports.find(out_obj) != input_ports.end())
    {
       return EQ;
    }
 
-//    const structural_objectRef obj_owner = out_obj->get_owner();
+   //    const structural_objectRef obj_owner = out_obj->get_owner();
 
    switch(out_obj->get_kind())
    {
@@ -4419,7 +4455,7 @@ std::string structural_object::get_equation(const structural_objectRef out_obj, 
                if(boost::algorithm::starts_with(tokens[i], out_obj->get_id()))
                   EQ = tokens[i].substr(tokens[i].find("=") + 1, tokens[i].size());
             }
-            //EQ = NPF->get_NP_functionality(NP_functionality::EQUATION);
+            // EQ = NPF->get_NP_functionality(NP_functionality::EQUATION);
             for(unsigned int p = 0; p < GetPointer<module>(owner)->get_in_port_size(); p++)
             {
                const structural_objectRef inobj = GetPointer<module>(owner)->get_in_port(p);
@@ -4457,7 +4493,7 @@ std::string structural_object::get_equation(const structural_objectRef out_obj, 
             const structural_objectRef obj = GetPointer<signal_o>(out_obj)->get_port(p);
             if(obj and out_obj != obj /* and analyzed.find(obj) == analyzed.end()*/)
             {
-               if(output_ports.find(obj) !=  output_ports.end() and analyzed.find(obj) == analyzed.end())
+               if(output_ports.find(obj) != output_ports.end() and analyzed.find(obj) == analyzed.end())
                {
                   return obj->get_id();
                }

@@ -825,8 +825,8 @@ int main(int argc, char* argv[])
 #else
          case(Parameters_FileFormat::FF_XML_WGT_SYM):
 #endif
-#if ! HAVE_FROM_CSV_BUILT
-         case (Parameters_FileFormat::FF_CSV) :
+#if !HAVE_FROM_CSV_BUILT
+         case(Parameters_FileFormat::FF_CSV):
 #endif
 #if HAVE_FROM_AADL_ASN_BUILT
          case(Parameters_FileFormat::FF_AADL):

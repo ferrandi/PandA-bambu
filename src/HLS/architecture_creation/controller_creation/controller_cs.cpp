@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file controller_creator_base_step.hpp
  * @brief Base class for all the controller creation algorithms.
@@ -39,63 +39,69 @@
  *
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
  *
-*/
+ */
 
 #include "controller_cs.hpp"
-#include "math.h"
-#include "structural_objects.hpp"
-#include "hls.hpp"
-#include "structural_manager.hpp"
 #include "BambuParameter.hpp"
-#include "omp_functions.hpp"
+#include "hls.hpp"
 #include "hls_manager.hpp"
+#include "math.h"
+#include "omp_functions.hpp"
+#include "structural_manager.hpp"
+#include "structural_objects.hpp"
 
-controller_cs::controller_cs(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
-    fsm_controller(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
+controller_cs::controller_cs(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+    : fsm_controller(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
 }
 
 controller_cs::~controller_cs()
 {
-
 }
 
 void controller_cs::add_common_ports(structural_objectRef circuit)
 {
    fsm_controller::add_common_ports(circuit);
    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
-   bool found=false;
-   if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end()) found=true;
-   if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end()) found=true;
-   if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end()) found=true;
-   if(found)       //function with selector
+   bool found = false;
+   if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
+      found = true;
+   if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end())
+      found = true;
+   if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end())
+      found = true;
+   if(found) // function with selector
    {
-     PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding the selector port...");
-     this->add_selector_register_file_port(circuit);
+      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding the selector port...");
+      this->add_selector_register_file_port(circuit);
    }
 }
 
 void controller_cs::add_selector_register_file_port(structural_objectRef circuit)
 {
-    unsigned int num_slots=static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
-    if(!num_slots) num_slots=1;
-    structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
-    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Start adding Selector signal...");
-    /// add selector port
-    SM->add_port(STR(SELECTOR_REGISTER_FILE), port_o::IN, circuit, port_type);
-    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - Selector signal added!");
+   unsigned int num_slots = static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
+   if(!num_slots)
+      num_slots = 1;
+   structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Start adding Selector signal...");
+   /// add selector port
+   SM->add_port(STR(SELECTOR_REGISTER_FILE), port_o::IN, circuit, port_type);
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - Selector signal added!");
 }
 
 void controller_cs::add_correct_transition_memory(std::string state_representation)
 {
-    structural_objectRef circuit = this->SM->get_circ();
-    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
-    bool found=false;
-    if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end()) found=true;
-    if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end()) found=true;
-    if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end()) found=true;
-    if(found)       //function with selector
-       SM->add_NP_functionality(circuit, NP_functionality::FSM_CS, state_representation);
-    else
-       SM->add_NP_functionality(circuit, NP_functionality::FSM, state_representation);
+   structural_objectRef circuit = this->SM->get_circ();
+   auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+   bool found = false;
+   if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
+      found = true;
+   if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end())
+      found = true;
+   if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end())
+      found = true;
+   if(found) // function with selector
+      SM->add_NP_functionality(circuit, NP_functionality::FSM_CS, state_representation);
+   else
+      SM->add_NP_functionality(circuit, NP_functionality::FSM, state_representation);
 }

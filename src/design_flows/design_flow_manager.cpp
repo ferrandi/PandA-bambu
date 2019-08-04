@@ -453,8 +453,8 @@ void DesignFlowManager::Exec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       THROW_ASSERT(erased_elements == 1, "Number of erased elements is " + STR(erased_elements));
 
-      ///Now check if next is actually ready
-      ///First of all check if there are new dependence to add
+      /// Now check if next is actually ready
+      /// First of all check if there are new dependence to add
       DesignFlowStepSet pre_dependence_steps;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding dependencies of " + step->GetName());
       step->ComputeRelationships(pre_dependence_steps, DesignFlowStep::DEPENDENCE_RELATIONSHIP);

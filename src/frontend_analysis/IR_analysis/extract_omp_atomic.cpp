@@ -29,38 +29,38 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file extract_omp_atomic.cpp
  * @brief Analysis step extracting openmp atomic
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "extract_omp_atomic.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior includes
+/// behavior includes
 #include "application_manager.hpp"
 #include "basic_block.hpp"
 #include "function_behavior.hpp"
 
-///parser/treegcc include
+/// parser/treegcc include
 #include "token_interface.hpp"
 
-///tree includes
+/// tree includes
 #include "ext_tree_node.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-ExtractOmpAtomic::ExtractOmpAtomic(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   FunctionFrontendFlowStep(_AppM, _function_id, EXTRACT_OMP_ATOMIC, _design_flow_manager, _parameters)
+ExtractOmpAtomic::ExtractOmpAtomic(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, EXTRACT_OMP_ATOMIC, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -69,22 +69,22 @@ ExtractOmpAtomic::~ExtractOmpAtomic()
 {
 }
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > ExtractOmpAtomic::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> ExtractOmpAtomic::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    const auto TM = AppM->get_tree_manager();
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BASIC_BLOCKS_CFG_COMPUTATION, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -117,8 +117,8 @@ DesignFlowStep_Status ExtractOmpAtomic::InternalExec()
       tree_nodeRef gimple_to_be_removed;
       for(const auto stmt : block->CGetStmtList())
       {
-         const auto * pn = GetPointer<gimple_pragma>(GET_NODE(stmt));
-         if (pn and pn->scope and GetPointer<omp_pragma>(GET_NODE(pn->scope)))
+         const auto* pn = GetPointer<gimple_pragma>(GET_NODE(stmt));
+         if(pn and pn->scope and GetPointer<omp_pragma>(GET_NODE(pn->scope)))
          {
             const auto oa = GetPointer<omp_atomic_pragma>(GET_NODE(pn->directive));
             if(oa)
@@ -170,5 +170,3 @@ DesignFlowStep_Status ExtractOmpAtomic::InternalExec()
    }
    return changed ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
-
-

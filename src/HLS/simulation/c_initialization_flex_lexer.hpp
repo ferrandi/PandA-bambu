@@ -29,69 +29,68 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file c_initialization_flex_lexer.hpp
  * @brief header file for LEX based lexer for C initialization string.
  *
  * @author Lattuada Marco <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef C_INITIALIZATION_LEXER_HPP
 #define C_INITIALIZATION_LEXER_HPP
 
-#define LN_CONCAT(name)CInitialization##name
+#define LN_CONCAT(name) CInitialization##name
 
 #define LCLASS_SPECIALIZED
 
-///superclass include
+/// superclass include
 #include "Lexer_utilities.hpp"
 
-///STD include
+/// STD include
 #include <istream>
 
-///utility include
+/// utility include
 #include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(Parameter);
 
-class CInitializationFlexLexer :public yyFlexLexer
+class CInitializationFlexLexer : public yyFlexLexer
 {
-   protected:
-      ///The debug level
-      const int debug_level;
+ protected:
+   /// The debug level
+   const int debug_level;
 
-   public:
-      YYSTYPE *lvalp;
-      int yylex();
+ public:
+   YYSTYPE* lvalp;
+   int yylex();
 
-      /**
-       * Constructor
-       */
-      CInitializationFlexLexer(const ParameterConstRef parameters, std::istream* argin, std::ostream* argout);
+   /**
+    * Constructor
+    */
+   CInitializationFlexLexer(const ParameterConstRef parameters, std::istream* argin, std::ostream* argout);
 
-      /**
-       * Destructor
-       */
-      ~CInitializationFlexLexer();
+   /**
+    * Destructor
+    */
+   ~CInitializationFlexLexer();
 
-      void yyerror(const char * msg)
-      {
-         LexerError(msg);
-      }
+   void yyerror(const char* msg)
+   {
+      LexerError(msg);
+   }
 
-      void LexerError(const char * msg)
-      {
-         std::cout << msg << " at line number |" << lineno() << "|\t" ;
-         std::cout << "text is |" << YYText() << "|" << std::endl ;
-         throw "Parse Error";
-      }
+   void LexerError(const char* msg)
+   {
+      std::cout << msg << " at line number |" << lineno() << "|\t";
+      std::cout << "text is |" << YYText() << "|" << std::endl;
+      throw "Parse Error";
+   }
 
-      int yywrap()
-      {
-         return 1;
-      }
+   int yywrap()
+   {
+      return 1;
+   }
 };
 typedef refcount<CInitializationFlexLexer> CInitializationFlexLexerRef;
 #endif
-
