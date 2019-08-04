@@ -542,37 +542,36 @@ tree_nodeRef lut_transformation::CreateBitSelectionNode(const tree_nodeRef sourc
     const auto type = tree_man->CreateDefaultUnsignedLongLongInt();
     const std::string srcp_default("built-in:0:0");
 
+    unsigned int shift_by_id = TM->new_tree_node_id();
+    tree_nodeRef shift_by_constant = tree_man->CreateIntegerCst(type, index, shift_by_id);
+    tree_nodeRef rshift_op = tree_man->create_binary_operation(
+        type,
+        source,
+        shift_by_constant,
+        srcp_default,
+        rshift_expr_K
+    );
+    tree_nodeRef rshift_ga = tree_man->CreateGimpleAssign(type, rshift_op, bb.first, srcp_default);
+    bb.second->PushAfter(rshift_ga, source);
+
     unsigned int constant_one_id = TM->new_tree_node_id();
     tree_nodeRef constant_one = tree_man->CreateIntegerCst(type, 1, constant_one_id);
 
-    unsigned int shift_by_id = TM->new_tree_node_id();
-    tree_nodeRef shift_by_constant = tree_man->CreateIntegerCst(type, index, shift_by_id);
-    tree_nodeRef lshift_op = tree_man->create_binary_operation(
-        type,
-        constant_one,
-        shift_by_constant,
-        srcp_default,
-        lshift_expr_K
-    );
-    tree_nodeRef lshift_ga = tree_man->CreateGimpleAssign(type, lshift_op, bb.first, srcp_default);
-    bb.second->PushBefore(lshift_ga, source);
-
     tree_nodeRef bit_wise_and = tree_man->create_binary_operation(
         type,
-        source,
-        GetPointer<const gimple_assign>(GET_CONST_NODE(lshift_ga))->op0,
+        GetPointer<const gimple_assign>(GET_CONST_NODE(rshift_ga))->op0,
+        constant_one,
         srcp_default,
         bit_and_expr_K
     );
 
-    // TODO: select bit 0?
     tree_nodeRef bit_wise_and_ga = tree_man->CreateGimpleAssign(
-        tree_man->create_boolean_type(),
+        source,
         bit_wise_and,
         bb.first,
         srcp_default
     );
-    bb.second->PushBefore(bit_wise_and_ga, source);
+    bb.second->PushAfter(bit_wise_and_ga, rshift_ga);
 
     return bit_wise_and_ga;
 }
