@@ -160,11 +160,11 @@ class klut_network_ext : public mockturtle::klut_network {
 private:
     void fix_inputs_size(std::vector<signal> *a, std::vector<signal> *b, bool fill_up_value) {
         if (a->size() > b->size()) {
-            for (int i  = 0; i < a->size() - b->size(); ++i) {
+            for (size_t i  = 0; i < a->size() - b->size(); ++i) {
                 b->push_back(get_constant(fill_up_value));
             }
         } else if (a->size() < b->size()) {
-            for (int i  = 0; i < b->size() - a->size(); ++i) {
+            for (size_t i  = 0; i < b->size() - a->size(); ++i) {
                 a->push_back(get_constant(fill_up_value));
             }
         }
@@ -236,10 +236,10 @@ public:
     }
 #pragma endregion
 
-    std::vector<signal> create_pi_v(uint64_t size, std::vector<std::string> const &names = {}) {
+    std::vector<signal> create_pi_v(size_t size, std::vector<std::string> const &names = {}) {
         std::vector<signal> pis(size);
 
-        for (int i = 0; i < size; i++) {
+        for (size_t i = 0; i < size; ++i) {
             pis[i] = create_pi(i >= names.size() ? std::string() : names[i]);
         }
 
@@ -247,7 +247,7 @@ public:
     }
 
     void create_po_v(std::vector<signal> pos, std::vector<std::string> const &names = {}) {
-        for (int i = 0; i < pos.size(); ++i) {
+        for (size_t i = 0; i < pos.size(); ++i) {
             create_po(pos[i], i >= names.size() ? std::string() : names[i]);
         }
     }
@@ -531,7 +531,7 @@ std::vector<bool> IntegerToBitArray(long long int n, size_t size) {
     std::vector<bool> bits;
     bits.reserve(size);
 
-    for (auto i = 0; i < size; ++i) {
+    for (size_t i = 0; i < size; ++i) {
         bits.push_back((n & (1 << i)) ? true : false);
     }
 
@@ -557,7 +557,6 @@ tree_nodeRef lut_transformation::CreateBitSelectionNode(const tree_nodeRef sourc
     tree_nodeRef lshift_ga = tree_man->CreateGimpleAssign(type, lshift_op, bb.first, srcp_default);
     bb.second->PushBefore(lshift_ga, source);
 
-    unsigned int bit_wise_and_id = TM->new_tree_node_id();
     tree_nodeRef bit_wise_and = tree_man->create_binary_operation(
         type,
         source,
@@ -598,11 +597,12 @@ klut_network_fn_v GetIntegerNodeCreationFunction(enum kind code) {
     }
 }
 
+#ifndef NDEBUG
 static
 std::string ConvertBitsToString(const std::vector<bool> &bits, std::string true_string = "vdd", std::string false_string = "gnd", std::string sep = ", ") {
     std::string s;
 
-    for (int i = 0; i < bits.size(); ++i) {
+    for (size_t i = 0; i < bits.size(); ++i) {
         s += bits[i] ? true_string : false_string;
 
         if (i != 0 && i != bits.size() - 1) {
@@ -612,6 +612,7 @@ std::string ConvertBitsToString(const std::vector<bool> &bits, std::string true_
 
     return s;
 }
+#endif
 
 template <
     typename T,
@@ -1056,11 +1057,13 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                 auto bits = IntegerToBitArray(int_const->value, tree_helper::Size(GET_NODE(binaryExpression->op0)));
 
                 op1 = klut_e.get_constant_v(bits);
+#ifndef NDEBUG
                 INDENT_DBG_MEX(
                     DEBUG_LEVEL_VERY_PEDANTIC,
                     debug_level,
                     "---used {" + ConvertBitsToString(bits) + "}"
                 );
+#endif
             } else if (CheckIfPI(binaryExpression->op0, BB_index)) {
                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PIs " + GET_NODE(binaryExpression->op0)->ToString());
                 op1 = klut_e.create_pi_v(tree_helper::Size(GET_NODE(binaryExpression->op0)));
@@ -1085,12 +1088,14 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                 auto *int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op1));
                 auto bits = IntegerToBitArray(int_const->value, tree_helper::Size(GET_NODE(binaryExpression->op1)));
 
+#ifndef NDEBUG
                 op2 = klut_e.get_constant_v(bits);
                 INDENT_DBG_MEX(
                     DEBUG_LEVEL_VERY_PEDANTIC, 
                     debug_level, 
                     "---used {" + ConvertBitsToString(bits) + "}"
                 );
+#endif
             } else if (CheckIfPI(binaryExpression->op1, BB_index)) {
                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PIs " + GET_NODE(binaryExpression->op1)->ToString());
                 op2 = klut_e.create_pi_v(tree_helper::Size(GET_NODE(binaryExpression->op1)));
@@ -1166,7 +1171,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
           for(auto in : lut.fan_in)
           {
              tree_nodeRef operand;
-             if(klut.is_pi(in))
+             if (klut.is_pi(in)) {
                 operand = pis.at(in);
 
                 if (tree_helper::Size(GET_NODE(operand)) > 1) { // integer
@@ -1176,6 +1181,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                     tree_nodeRef bit_sel = CreateBitSelectionNode(operand, index, block);
                     operand = bit_sel;
                 }
+             }
              else if(internal_nets.find(in) != internal_nets.end())
                 operand = internal_nets.find(in)->second;
              else
