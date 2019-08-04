@@ -106,6 +106,8 @@ private:
 
     bool CheckIfProcessable(std::pair<unsigned int, blocRef> block);
 
+    tree_nodeRef CreateBitSelectionNode(const tree_nodeRef source, int index, std::pair<const unsigned int, blocRef> bb);
+
 #endif
 
     /**

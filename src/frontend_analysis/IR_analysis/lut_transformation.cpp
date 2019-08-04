@@ -538,6 +538,46 @@ std::vector<bool> IntegerToBitArray(long long int n, size_t size) {
     return bits;
 }
 
+tree_nodeRef lut_transformation::CreateBitSelectionNode(const tree_nodeRef source, int index, std::pair<const unsigned int, blocRef> bb) {
+    const auto type = tree_man->CreateDefaultUnsignedLongLongInt();
+    const std::string srcp_default("built-in:0:0");
+
+    unsigned int constant_one_id = TM->new_tree_node_id();
+    tree_nodeRef constant_one = tree_man->CreateIntegerCst(type, 1, constant_one_id);
+
+    unsigned int shift_by_id = TM->new_tree_node_id();
+    tree_nodeRef shift_by_constant = tree_man->CreateIntegerCst(type, index, shift_by_id);
+    tree_nodeRef lshift_op = tree_man->create_binary_operation(
+        type,
+        constant_one,
+        shift_by_constant,
+        srcp_default,
+        lshift_expr_K
+    );
+    tree_nodeRef lshift_ga = tree_man->CreateGimpleAssign(type, lshift_op, bb.first, srcp_default);
+    bb.second->PushBefore(lshift_ga, source);
+
+    unsigned int bit_wise_and_id = TM->new_tree_node_id();
+    tree_nodeRef bit_wise_and = tree_man->create_binary_operation(
+        type,
+        source,
+        GetPointer<const gimple_assign>(GET_CONST_NODE(lshift_ga))->op0,
+        srcp_default,
+        bit_and_expr_K
+    );
+
+    // TODO: select bit 0?
+    tree_nodeRef bit_wise_and_ga = tree_man->CreateGimpleAssign(
+        tree_man->create_boolean_type(),
+        bit_wise_and,
+        bb.first,
+        srcp_default
+    );
+    bb.second->PushBefore(bit_wise_and_ga, source);
+
+    return bit_wise_and_ga;
+}
+
 static
 klut_network_fn_v GetIntegerNodeCreationFunction(enum kind code) {
     switch (code) {
@@ -704,6 +744,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
     std::vector<tree_nodeRef> pis;
     std::vector<tree_nodeRef> pos;
+    std::map<tree_nodeRef, int> nodeToBusIndex;
 
     auto DefaultUnsignedLongLongInt = this->tree_man->CreateDefaultUnsignedLongLongInt();
 
@@ -1029,6 +1070,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                 });
 
                 nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op0)] = op1;
+                nodeToBusIndex[GET_NODE(binaryExpression->op0)] = 0;
             } else {
                 THROW_ERROR("unexpected condition");
             }
@@ -1058,6 +1100,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                 });
 
                 nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op1)] = op2;
+                nodeToBusIndex[GET_NODE(binaryExpression->op1)] = 0;
             } else {
                 THROW_ERROR("unexpected condition");
             }
@@ -1125,6 +1168,14 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
              tree_nodeRef operand;
              if(klut.is_pi(in))
                 operand = pis.at(in);
+
+                if (tree_helper::Size(GET_NODE(operand)) > 1) { // integer
+                    auto index = nodeToBusIndex[GET_NODE(operand)];
+                    nodeToBusIndex[GET_NODE(operand)] = index + 1;
+
+                    tree_nodeRef bit_sel = CreateBitSelectionNode(operand, index, block);
+                    operand = bit_sel;
+                }
              else if(internal_nets.find(in) != internal_nets.end())
                 operand = internal_nets.find(in)->second;
              else
