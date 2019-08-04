@@ -154,7 +154,7 @@
 #pragma region Types declaration
 
 /**
- * `aig_network_ext` class provides operations derived from the one already existing in `mockturtle::aig_network`.
+ * `aig_network_ext` class provides operations derived from the one already existing in `mockturtle::klut_network`.
  */
 class klut_network_ext : public mockturtle::klut_network {
 private:
@@ -509,7 +509,7 @@ bool lut_transformation::CheckIfPI(tree_nodeRef in, unsigned int BB_index)
       return true;
    enum kind code = GET_NODE(gaDef->op1)->get_kind();
 
-   // TODO: add CHECK_BIN_EXPR_INT_SIZE
+   // TODO: add CHECK_BIN_EXPR_INT_SIZE?
    if (!VECT_CONTAINS(lutExpressibleOperations, code) || (GetPointer<truth_not_expr>(GET_NODE(gaDef->op1)) &&!CHECK_NOT_EXPR_SIZE(GetPointer<truth_not_expr>(GET_NODE(gaDef->op1)))) || (GetPointer<cond_expr>(GET_NODE(gaDef->op1)) && !CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(GET_NODE(gaDef->op1)))) || (GetPointer<binary_expr>(GET_NODE(gaDef->op1)) && !CHECK_BIN_EXPR_BOOL_SIZE(GetPointer<binary_expr>(GET_NODE(gaDef->op1))))) {
       return true;
    }
@@ -544,7 +544,7 @@ bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> blo
             for (auto node : {lut->op1, lut->op2, lut->op3, lut->op4, lut->op5, lut->op6, lut->op7, lut->op8}) {
                 // if the node is null then there are no more inputs
                 if (!node) {
-                    break; // TODO: check if the assumption is always true, otherwise change `break` into `continue`
+                    break;
                 }
 
                 // if the node can be converted into an `integer_cst` then the lut as constant inputs
@@ -565,9 +565,33 @@ bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> blo
         } else { // check if it has lut-expressible operations
             // checks if the operation code can be converted into a lut
             // and if it is a binary expression with the correct size of operators
-            if (VECT_CONTAINS(lutExpressibleOperations, code) && GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)) && CHECK_BIN_EXPR_BOOL_SIZE(GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)))) {
-                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---CheckIfProcessable: binary expr with Boolean operand returns true");
-                return true;
+            if (VECT_CONTAINS(lutExpressibleOperations, code) && GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1))) {
+                if (CHECK_BIN_EXPR_INT_SIZE(GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)), MAX_LUT_INT_SIZE)) {
+                    const auto op0 = GET_NODE(gimpleAssign->op0);
+                    auto ssa0 = GetPointer<ssa_name>(op0);
+                    THROW_ASSERT(ssa0, "unexpected condition");
+                    const auto usedIn = ssa0->CGetUseStmts();
+
+                    for (auto node : usedIn) {
+                        auto *childGimpleNode = GetPointer<gimple_node>(GET_NODE(node.first));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing use " + childGimpleNode->ToString());
+                        THROW_ASSERT(childGimpleNode, "unexpected condition");
+
+                        if (childGimpleNode->bb_index != block.first) {
+                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---not in the same bb");
+
+                            continue;
+                        }
+
+                        if (VECT_CONTAINS(lutExpressibleOperations, childGimpleNode->get_kind()) && childGimpleNode->get_kind() != rshift_expr_K) {
+                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---compatible child operation found returning true");
+                            return true;
+                        }
+                    }
+                } else if (CHECK_BIN_EXPR_BOOL_SIZE(GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)))) {
+                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---CheckIfProcessable: binary expr with Boolean operand returns true");
+                    return true;
+                }
             }
         }
     }
