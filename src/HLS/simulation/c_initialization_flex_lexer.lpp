@@ -1,0 +1,99 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2018 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/**
+ * @file c_initialization.lpp
+ * @brief LEX based lexer for C variables initialization strings.
+ *
+ * @author Marco Lattuada <lattuada@elet.polimi.it>
+ *
+*/
+%option yylineno
+%option never-interactive
+/*%option noyywrap*/
+%{
+
+///Autoheader include
+#include "config_HAVE_BISON_2_7_OR_GREATER.hpp"
+
+///. include
+#include "Parameter.hpp"
+
+///utility includes
+#include "refcount.hpp"
+#include "utility.hpp"
+
+///NOTE: forward declarations of CInitializationParserFunctor and CInitializationFlexLexer are in this point since they will be used in c_initialization_parser.hpp
+REF_FORWARD_DECL(CInitializationParserFunctor);
+REF_FORWARD_DECL(CInitializationFlexLexer);
+
+#include "c_initialization_parser_node.hpp"
+#define YYSTYPE CInitializationParserNode
+
+#if HAVE_BISON_2_7_OR_GREATER
+#include "c_initialization_yparser.hpp"
+#else
+#include "c_initialization_yparser.h"
+#endif
+#include "c_initialization_flex_lexer.hpp"
+using namespace std;
+
+///Skipping warnings due to bison
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wswitch-default"
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+
+CInitializationFlexLexer::CInitializationFlexLexer(const ParameterConstRef parameters, std::istream* argin, std::ostream* argout) :
+   yyFlexLexer(argin, argout),
+   debug_level(parameters->get_class_debug_level(GET_CLASS(*this)))
+{
+}
+
+CInitializationFlexLexer::~CInitializationFlexLexer()
+{
+}
+%}
+number [\-]?([1-9]|0\.)[0-9\.e\-\+]*|0|\+Inf|\-Inf|\+NaN|\-NaN|\+qNaN|\-qNaN|\+QNaN|\-QNaN
+
+%%
+{number} {lvalp->content = YYText(); return TOK_CI_NUMBER;}
+\{       {return TOK_CI_OPEN_BRACKET;}
+\}       {return TOK_CI_CLOSE_BRACKET;}
+,        {return TOK_CI_COMMA;}
+
+[ \n\t\r\:]+   /* eat up whitespace */
+%%
+

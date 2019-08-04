@@ -248,7 +248,7 @@ void HDL_manager::write_components(const std::string& filename, const std::list<
       }
       else
       {
-         if(np and np->exist_NP_functionality(NP_functionality::FSM))
+         if (np and (np->exist_NP_functionality(NP_functionality::FSM) or np->exist_NP_functionality(NP_functionality::FSM_CS)))
          {
             component_language[language].push_back(component);
          }
@@ -370,7 +370,7 @@ bool HDL_manager::is_fsm(const structural_objectRef& cir) const
    const NP_functionalityRef& np = mod_inst->get_NP_functionality();
    if(np)
    {
-      return np->exist_NP_functionality(NP_functionality::FSM);
+      return (np->exist_NP_functionality(NP_functionality::FSM) or np->exist_NP_functionality(NP_functionality::FSM_CS));
    }
    return false;
 }
@@ -708,7 +708,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
                            const structural_objectRef object_bounded = GetPointer<port_o>(mod_inst->get_out_port(i))->find_bounded_object(cir);
                            if(!object_bounded)
                            {
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped " + mod_inst->get_out_port(i)->get_id());
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped " + mod_inst->get_out_port(i)->get_path());
                               continue;
                            }
                            writer->write_port_binding(mod_inst->get_out_port(i), object_bounded, first_port_analyzed);
@@ -729,9 +729,11 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
                   // writer->write_comment("IN binding\n");
                   for(unsigned int i = 0; i < mod_inst->get_in_port_size(); i++)
                   {
-                     if(mod_inst->get_in_port(i)->get_kind() == port_o_K)
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing port binding of " + mod_inst->get_in_port(i)->get_id());
+                     if (mod_inst->get_in_port(i)->get_kind() == port_o_K)
                      {
                         const structural_objectRef object_bounded = GetPointer<port_o>(mod_inst->get_in_port(i))->find_bounded_object(cir);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bounded object is " + (object_bounded ? object_bounded->get_path() : " nothing"));
                         writer->write_port_binding(mod_inst->get_in_port(i), object_bounded, first_port_analyzed);
                      }
                      else
@@ -739,6 +741,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
                         writer->write_vector_port_binding(mod_inst->get_in_port(i), first_port_analyzed);
                      }
                      first_port_analyzed = true;
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written port binding of " + mod_inst->get_in_port(i)->get_id());
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written input ports binding");
                }
@@ -856,8 +859,13 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
       else if(is_fsm(cir))
       {
          THROW_ASSERT(np, "Behavior not expected: " + HDL_manager::convert_to_identifier(writer.get(), GET_TYPE_NAME(cir)));
-         std::string fsm_desc = np->get_NP_functionality(NP_functionality::FSM);
-         THROW_ASSERT(fsm_desc != "", "Behavior not expected: " + HDL_manager::convert_to_identifier(writer.get(), GET_TYPE_NAME(cir)));
+         THROW_ASSERT(!(np->exist_NP_functionality(NP_functionality::FSM) and np->exist_NP_functionality(NP_functionality::FSM_CS)), "Cannot exist both fsm and fsm_cs for the same function");
+         std::string fsm_desc;
+         if(np->exist_NP_functionality(NP_functionality::FSM_CS))
+            fsm_desc= np->get_NP_functionality(NP_functionality::FSM_CS);
+         else
+            fsm_desc = np->get_NP_functionality(NP_functionality::FSM);
+         THROW_ASSERT(fsm_desc != "", "Behavior not expected: "+HDL_manager::convert_to_identifier(writer.get(), GET_TYPE_NAME(cir)));
          write_fsm(writer, cir, fsm_desc);
       }
       else if(np)
@@ -933,8 +941,8 @@ void HDL_manager::write_flopoco_module(const structural_objectRef& cir, std::lis
    // Create the module
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, this->debug_level, "Creating " + mod_type + ", named " + mod_name + " whose size is " + STR(mod_size_in) + "|" + STR(mod_size_out));
    std::string pipe_parameter;
-   if(mod_inst->is_parameter(PIPE_PARAMETER))
-      pipe_parameter = mod_inst->get_parameter(PIPE_PARAMETER);
+   if(mod_inst->ExistsParameter(PIPE_PARAMETER))
+      pipe_parameter = mod_inst->GetParameter(PIPE_PARAMETER);
    flopo_wrap->add_FU(mod_type, static_cast<unsigned int>(mod_size_in), static_cast<unsigned int>(mod_size_out), mod_name, pipe_parameter);
    std::string created_file;
    flopo_wrap->writeVHDL(mod_name, static_cast<unsigned int>(mod_size_in), static_cast<unsigned int>(mod_size_out), pipe_parameter, created_file);
@@ -965,8 +973,6 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
 
    std::string fsm_desc = fsm_desc_i;
    boost::algorithm::erase_all(fsm_desc, "\n");
-
-   // std::cout << fsm_desc_i << std::endl;
 
    std::vector<std::string> SplitVec;
    boost::algorithm::split(SplitVec, fsm_desc, boost::algorithm::is_any_of(";"));
@@ -1029,8 +1035,8 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
    writer->write_module_definition_begin(cir);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "write the present_state update");
-   /// write the present_state update
-   writer->write_present_state_update(reset_state, reset_port, clock_port, parameters->getOption<std::string>(OPT_sync_reset), cir->find_member(PRESENT_STATE_PORT_NAME, port_o_K, cir).get() != nullptr);
+   ///write the present_state update      
+   writer->write_present_state_update(cir, reset_state, reset_port, clock_port, parameters->getOption<std::string>(OPT_sync_reset));
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "write transition and output functions");
    /// write transition and output functions
@@ -1114,8 +1120,8 @@ std::string HDL_manager::get_mod_typename(const language_writer* lan, const stru
             mod_size_out = STD_GET_SIZE(mod->get_out_port(i)->get_typeRef());
       }
       res = res + "_" + STR(mod_size_out);
-      if(mod->is_parameter(PIPE_PARAMETER) && mod->get_parameter(PIPE_PARAMETER) != "")
-         res = res + "_" + mod->get_parameter(PIPE_PARAMETER);
+      if(mod->ExistsParameter(PIPE_PARAMETER) and mod->GetParameter(PIPE_PARAMETER) != "")
+         res = res + "_" + mod->GetParameter(PIPE_PARAMETER);
    }
    return convert_to_identifier(lan, res);
 }

@@ -60,17 +60,17 @@ class classic_datapath : public datapath_creator
     */
    void add_clock_reset(structural_objectRef& clock_sign, structural_objectRef& reset_sign);
 
-   /**
-    * Adds the input/output ports of the module
-    */
-   void add_ports();
+      /**
+       * Adds the input/output ports of the module
+       */
+      virtual void add_ports();
 
- public:
-   /**
-    * Constructor.
-    * @param design_flow_manager is the design flow manager
-    */
-   classic_datapath(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   public:
+      /**
+       * Constructor.
+       * @param design_flow_manager is the design flow manager
+       */
+      classic_datapath(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type=HLSFlowStep_Type::CLASSIC_DATAPATH_CREATOR);
 
    /**
     * Destructor.

@@ -95,133 +95,130 @@ class RTLCharacterization : public FunctionalUnitStep
    const bool dummy_synthesis;
 #endif
 
-   /**
-    * Characterize the given functional unit with respect to the target device
-    */
-   void characterize_fu(const technology_nodeRef functional_unit);
+      /**
+       * Characterize the given functional unit with respect to the target device
+       */
+      void characterize_fu(const technology_nodeRef functional_unit);
 
-   /**
-    * @brief resize the port w.r.t a given precision
-    * @param port
-    */
-   void resize_port(const structural_objectRef& port, unsigned int prec);
-   /**
-    * Performing the specialization of the given object
-    */
-   void specialize_fu(const module* mod, unsigned int prec, unsigned int bus_data_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_size_bitsize, size_t portsize_value);
+      /**
+       * @brief resize the port w.r.t a given precision
+       * @param port
+       */
+      void resize_port(const structural_objectRef& port, unsigned int prec);
+      /**
+       * Performing the specialization of the given object
+       */
+      void specialize_fu(const module* mod, unsigned int prec, unsigned int bus_data_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_size_bitsize, unsigned int bus_tag_bitsize, size_t portsize_value);
 
-   /**
-    * Generate the output file
-    */
-   void xwrite_device_file(const target_deviceRef device);
+      /**
+       * Generate the output file
+       */
+      void xwrite_device_file(const target_deviceRef device);
 
-   /**
-    * Add the characterization to the output file
-    */
-   void xwrite_characterization(const target_deviceRef device, xml_element* nodeRoot);
+      /**
+       * Add the characterization to the output file
+       */
+      void xwrite_characterization(const target_deviceRef device, xml_element* nodeRoot);
 
-   /// set of units completed with success
-   std::set<std::string> completed;
+      ///set of units completed with success
+      std::set<std::string> completed;
 
-   /**
-    * Fix the execution time by removing set/hold/pad timings
-    */
-   void fix_execution_time_std();
+      /**
+       * Fix the execution time by removing set/hold/pad timings
+       */
+      void fix_execution_time_std();
 
-   /**
-    * Fix execution/stage period value for proxies and bounded memory controllers
-    */
-   void fix_proxies_execution_time_std();
+      /**
+        * Fix execution/stage period value for proxies and bounded memory controllers
+        */
+      void fix_proxies_execution_time_std();
 
-   /**
-    * fix the estimation of mux timing
-    */
-   void fix_muxes();
+      /**
+       * fix the estimation of mux timing
+       */
+      void fix_muxes();
 
-   void add_input_register(structural_objectRef port_in, const std::string& register_library, const std::string& port_prefix, structural_objectRef reset_port, structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef e_port,
-                           structural_managerRef SM);
+      void add_input_register(structural_objectRef port_in, const std::string& register_library, const std::string& port_prefix, structural_objectRef reset_port, structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef e_port, structural_managerRef SM);
 
-   void add_output_register(structural_managerRef SM, structural_objectRef e_port, structural_objectRef circuit, structural_objectRef reset_port, structural_objectRef port_out, const std::string& port_prefix, structural_objectRef clock_port,
-                            const std::string& register_library);
+      void add_output_register(structural_managerRef SM, structural_objectRef e_port, structural_objectRef circuit, structural_objectRef reset_port, structural_objectRef port_out, const std::string &port_prefix, structural_objectRef clock_port, const std::string &register_library);
 
-   /**
-    * Extract the component name from list of cells
-    * @param input is the input string
-    */
-   const std::string ComputeComponent(const std::string& input) const;
+      /**
+       * Extract the component name from list of cells
+       * @param input is the input string
+       */
+      const std::string ComputeComponent(const std::string&input) const;
 
-   /**
-    * Extract the cell lists
-    * @param input is the input string
-    */
-   const CustomSet<std::string> ComputeCells(const std::string& input) const;
+      /**
+       * Extract the cell lists
+       * @param input is the input string
+       */
+      const CustomSet<std::string> ComputeCells(const std::string&input) const;
 
-   /**
-    * Analyze the single cell
-    * @param fu is the cell
-    * @param prec is the precision
-    * @param portsize_parameters is the size of parameters
-    * @param portsize_index
-    * @param pipe_parameters
-    * @param constPort is the index of the constant port
-    * @param is_commutative is true if all the operations are commutative
-    */
-   void AnalyzeCell(functional_unit* fu, const unsigned int prec, const std::vector<std::string>& portsize_parameters, const size_t portsize_index, const std::vector<std::string>& pipe_parameters, const size_t stage_index, const unsigned int constPort,
-                    const bool is_commutative) override;
+      /**
+       * Analyze the single cell
+       * @param fu is the cell
+       * @param prec is the precision
+       * @param portsize_parameters is the size of parameters
+       * @param portsize_index
+       * @param pipe_parameters
+       * @param constPort is the index of the constant port
+       * @param is_commutative is true if all the operations are commutative
+       */
+      virtual void AnalyzeCell(functional_unit * fu, const unsigned int prec, const std::vector<std::string> &portsize_parameters, const size_t portsize_index, const std::vector<std::string> &pipe_parameters, const size_t stage_index, const unsigned int constPort, const bool is_commutative);
 
- public:
-   /**
-    * Constructor
-    * @param target is the target
-    * @param component is the component to be characterized
-    * @param design_flow_manager is the design flow manager
-    * @param parameters is the set of input parameters
-    */
-   RTLCharacterization(const target_managerRef target, const std::string& component, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   public:
+      /**
+       * Constructor
+       * @param target is the target
+       * @param component is the component to be characterized
+       * @param design_flow_manager is the design flow manager
+       * @param parameters is the set of input parameters
+       */
+      RTLCharacterization(const target_managerRef target, const std::string&component, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-   /**
-    * Destructor
-    */
-   ~RTLCharacterization() override;
+      /**
+       * Destructor
+       */
+      ~RTLCharacterization();
 
-   /**
-    * Perform RTL characterization of the modules with respect to the target device
-    */
-   DesignFlowStep_Status Exec() override;
+      /**
+       * Perform RTL characterization of the modules with respect to the target device
+       */
+      DesignFlowStep_Status Exec();
 
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
+      /**
+       * Check if this step has actually to be executed
+       * @return true if the step has to be executed
+       */
+      virtual bool HasToBeExecuted() const;
 
-   /**
-    * Return a unified identifier of this design step
-    * @return the signature of the design step
-    */
-   const std::string GetSignature() const override;
+      /**
+       * Return a unified identifier of this design step
+       * @return the signature of the design step
+       */
+      virtual const std::string GetSignature() const;
 
-   /**
-    * Return the name of this design step
-    * @return the name of the pass (for debug purpose)
-    */
-   const std::string GetName() const override;
+      /**
+       * Return the name of this design step
+       * @return the name of the pass (for debug purpose)
+       */
+      virtual const std::string GetName() const;
 
-   /**
-    * Compute the relationships of a step with other steps
-    * @param dependencies is where relationships will be stored
-    * @param relationship_type is the type of relationship to be computed
-    */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+      /**
+       * Compute the relationships of a step with other steps
+       * @param dependencies is where relationships will be stored
+       * @param relationship_type is the type of relationship to be computed
+       */
+      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type);
 
-   /**
-    * Return the factory to create this type of steps
-    */
-   const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
+      /**
+       * Return the factory to create this type of steps
+       */
+      virtual const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const;
 
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
-   void Initialize() override;
+      /**
+       * Initialize the step (i.e., like a constructor, but executed just before exec
+       */
+      virtual void Initialize();
 };
 #endif

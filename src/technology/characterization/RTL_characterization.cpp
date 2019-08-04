@@ -504,17 +504,16 @@ void RTLCharacterization::resize_port(const structural_objectRef& port, unsigned
       port_o::resize_std_port(prec, 0, 0, port);
 }
 
-void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, unsigned int bus_data_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_size_bitsize, size_t portsize_value)
+void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, unsigned int bus_data_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_size_bitsize, unsigned int bus_tag_bitsize, size_t portsize_value)
 {
    for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
    {
       const structural_objectRef& port = mod->get_in_port(i);
       if(port->get_kind() == port_vector_o_K)
       {
-         if(GetPointer<port_o>(port)->get_ports_size() == 0)
-            GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(portsize_value), port);
-         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
-            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, port);
+         if(GetPointer<port_o>(port)->get_ports_size() == 0) GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(portsize_value), port);
+         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
+            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
          else
          {
             for(unsigned int p = 0; p < GetPointer<port_o>(port)->get_ports_size(); ++p)
@@ -523,8 +522,8 @@ void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, un
       }
       else
       {
-         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
-            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, port);
+         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
+            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
          else
             resize_port(port, prec);
       }
@@ -534,10 +533,9 @@ void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, un
       const structural_objectRef& port = mod->get_out_port(i);
       if(port->get_kind() == port_vector_o_K)
       {
-         if(GetPointer<port_o>(port)->get_ports_size() == 0)
-            GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(portsize_value), port);
-         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
-            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, port);
+         if(GetPointer<port_o>(port)->get_ports_size() == 0) GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(portsize_value), port);
+         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
+            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
          else
          {
             for(unsigned int p = 0; p < GetPointer<port_o>(port)->get_ports_size(); ++p)
@@ -546,8 +544,8 @@ void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, un
       }
       else
       {
-         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
-            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, port);
+         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
+            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
          else
             resize_port(port, prec);
       }
@@ -701,16 +699,17 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
       unsigned int BUS_DATA_BITSIZE = 2 * BRAM_BITSIZE;
       unsigned int BUS_ADDR_BITSIZE = 15;
       unsigned int BUS_SIZE_BITSIZE = 7;
+      unsigned int BUS_TAG_BITSIZE = 8;
       unsigned int NUMBER_OF_BYTES_ALLOCATED = 1024;
-      if(memory_type == MEMORY_TYPE_ASYNCHRONOUS)
-         NUMBER_OF_BYTES_ALLOCATED = NUMBER_OF_BYTES_ALLOCATED / 16;
-      specialize_fu(spec_module, prec, BUS_DATA_BITSIZE, BUS_ADDR_BITSIZE, BUS_SIZE_BITSIZE, n_portsize_parameters > 0 ? boost::lexical_cast<unsigned int>(portsize_parameters[portsize_index]) : PORT_VECTOR_N_PORTS);
+      if(memory_type ==  MEMORY_TYPE_ASYNCHRONOUS )
+         NUMBER_OF_BYTES_ALLOCATED = NUMBER_OF_BYTES_ALLOCATED/16;
+      specialize_fu(spec_module, prec, BUS_DATA_BITSIZE, BUS_ADDR_BITSIZE, BUS_SIZE_BITSIZE, BUS_TAG_BITSIZE, n_portsize_parameters>0 ? boost::lexical_cast<unsigned int>(portsize_parameters[portsize_index]) : PORT_VECTOR_N_PORTS);
 
       if(fu_base_name == "MC_FU") /// add further specializations for this module
       {
-         spec_module->set_parameter("EXECUTION_TIME", STR(2));
-         spec_module->set_parameter("BITSIZE", STR(8));
-         spec_module->set_parameter("INITIATION_TIME", STR(1));
+         spec_module->SetParameter("EXECUTION_TIME", STR(2));
+         spec_module->SetParameter("BITSIZE", STR(8));
+         spec_module->SetParameter("INITIATION_TIME", STR(1));
       }
       else if(memory_type != "")
       {
@@ -778,32 +777,32 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
             }
             init_file.close();
          }
-         spec_module->set_parameter("address_space_begin", boost::lexical_cast<std::string>(base_address));
-         spec_module->set_parameter("address_space_rangesize", boost::lexical_cast<std::string>((elts_size / 8) * vec_size));
-         spec_module->set_parameter("USE_SPARSE_MEMORY", boost::lexical_cast<std::string>(1));
+         spec_module->SetParameter("address_space_begin", STR(base_address));
+         spec_module->SetParameter("address_space_rangesize", STR((elts_size/8)*vec_size));
+         spec_module->SetParameter("USE_SPARSE_MEMORY", "1");
          if(memory_type == MEMORY_TYPE_SYNCHRONOUS_UNALIGNED &&
             (channels_type.find(CHANNELS_TYPE_MEM_ACC_NN) != std::string::npos || (channels_type.find(CHANNELS_TYPE_MEM_ACC_N1) != std::string::npos && channels_type.find(CHANNELS_TYPE_MEM_ACC_11) == std::string::npos)))
          {
-            spec_module->set_parameter("MEMORY_INIT_file_a", "\"\"a_" + init_filename + "\"\"");
-            spec_module->set_parameter("MEMORY_INIT_file_b", "\"\"b_" + init_filename + "\"\"");
+            spec_module->SetParameter("MEMORY_INIT_file_a", "\"\"a_"+init_filename+"\"\"");
+            spec_module->SetParameter("MEMORY_INIT_file_b", "\"\"b_"+init_filename+"\"\"");
          }
          else
-            spec_module->set_parameter("MEMORY_INIT_file", "\"\"" + init_filename + "\"\"");
-         spec_module->set_parameter("n_elements", boost::lexical_cast<std::string>(vec_size));
-         spec_module->set_parameter("data_size", boost::lexical_cast<std::string>(elts_size));
-         spec_module->set_parameter("BRAM_BITSIZE", boost::lexical_cast<std::string>(BRAM_BITSIZE));
-         spec_module->set_parameter("BUS_PIPELINED", boost::lexical_cast<std::string>(1));
-         spec_module->set_parameter("PRIVATE_MEMORY", boost::lexical_cast<std::string>(0));
+            spec_module->SetParameter("MEMORY_INIT_file", "\"\""+init_filename+"\"\"");
+         spec_module->SetParameter("n_elements", STR(vec_size));
+         spec_module->SetParameter("data_size", STR(elts_size));
+         spec_module->SetParameter("BRAM_BITSIZE", STR(BRAM_BITSIZE));
+         spec_module->SetParameter("BUS_PIPELINED", "1");
+         spec_module->SetParameter("PRIVATE_MEMORY", "0");
       }
       else if(fu_base_name == MEMLOAD_STD)
-         spec_module->set_parameter("base_address", boost::lexical_cast<std::string>(8));
+         spec_module->SetParameter("base_address", "8");
       else if(fu_base_name == MEMSTORE_STD)
-         spec_module->set_parameter("base_address", boost::lexical_cast<std::string>(8));
+         spec_module->SetParameter("base_address", "8");
       structural_objectRef e_port, one_port;
 
       if(n_pipe_parameters > 0)
       {
-         spec_module->set_parameter(PIPE_PARAMETER, pipe_parameters[stage_index]);
+         spec_module->SetParameter(PIPE_PARAMETER, pipe_parameters[stage_index]);
          PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " - PIPE_PARAMETER=" + pipe_parameters[stage_index]);
       }
       if(NPF)
@@ -816,21 +815,21 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
             {
                unsigned int precision_bitsize = prec;
                precision_bitsize = std::max(8u, precision_bitsize);
-               spec_module->set_parameter("PRECISION", boost::lexical_cast<std::string>(precision_bitsize));
+               spec_module->SetParameter("PRECISION", boost::lexical_cast<std::string>(precision_bitsize));
             }
             else if(*it == "ALIGNED_BITSIZE")
-               spec_module->set_parameter("ALIGNED_BITSIZE", boost::lexical_cast<std::string>(ALIGNED_BITSIZE));
+               spec_module->SetParameter("ALIGNED_BITSIZE", boost::lexical_cast<std::string>(ALIGNED_BITSIZE));
             else if(*it == "LSB_PARAMETER")
-               spec_module->set_parameter("LSB_PARAMETER", boost::lexical_cast<std::string>(0));
+               spec_module->SetParameter("LSB_PARAMETER", boost::lexical_cast<std::string>(0));
+
       }
       if(NPF)
       {
          std::vector<std::string> param;
          NPF->get_library_parameters(param);
          std::vector<std::string>::const_iterator it_end = param.end();
-         for(std::vector<std::string>::const_iterator it = param.begin(); it != it_end; ++it)
-            THROW_ASSERT(template_circuit->find_member(*it, port_o_K, template_circuit) || template_circuit->find_member(*it, port_vector_o_K, template_circuit) || spec_module->is_parameter(*it),
-                         "parameter not yet specialized: " + *it + " for module " + spec_module->get_typeRef()->get_name());
+         for (std::vector<std::string>::const_iterator it = param.begin(); it != it_end; ++it)
+            THROW_ASSERT(template_circuit->find_member(*it, port_o_K, template_circuit) || template_circuit->find_member(*it, port_vector_o_K, template_circuit) ||  spec_module->ExistsParameter(*it), "parameter not yet specialized: " + *it + " for module " + spec_module->get_typeRef()->get_name());
       }
 
       structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 1));

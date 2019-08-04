@@ -279,6 +279,16 @@ inline void CopyFile(boost::filesystem::path file_source, boost::filesystem::pat
 }
 
 /**
+ * Build a path by combining two relative paths
+ * @param first_part is the first part to be combined
+ * @param second_part is the second part to be combined
+ */
+inline std::string BuildPath(const std::string & first_part, const std::string second_part)
+{
+   return (boost::filesystem::path(first_part) / boost::filesystem::path(second_part)).string();
+}
+
+/**
  * System call forcing execution with bash
  * @param Param is the set of input parameters
  * @param system_command is the  to be executed

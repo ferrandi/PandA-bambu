@@ -45,10 +45,7 @@
 #ifndef SCHEDULE_HPP
 #define SCHEDULE_HPP
 
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
-/// graph include
+///graph include
 #include "graph.hpp"
 
 /// STD include

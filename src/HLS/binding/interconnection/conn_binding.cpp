@@ -43,10 +43,8 @@
  *
  */
 
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
 #include "conn_binding.hpp"
+#include "conn_binding_cs.hpp"
 
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
@@ -67,7 +65,8 @@
 #include "multiplier_conn_obj.hpp"
 #include "mux_obj.hpp"
 #include "register_obj.hpp"
-#include "state_transition_graph_manager.hpp"
+#include "fu_binding.hpp"
+#include "omp_functions.hpp"
 
 #include "hls.hpp"
 
@@ -109,8 +108,26 @@
 
 unsigned conn_binding::unique_id = 0;
 
-conn_binding::conn_binding(const BehavioralHelperConstRef _BH, const ParameterConstRef _parameters)
-    : parameters(_parameters), debug_level(_parameters->get_class_debug_level(GET_CLASS(*this))), output_level(_parameters->getOption<int>(OPT_output_level)), BH(_BH)
+conn_bindingRef conn_binding::create_conn_binding(const HLS_managerRef _HLSMgr, const hlsRef _HLS, const BehavioralHelperConstRef _BH, const ParameterConstRef _parameters)
+{
+   if(_parameters->isOption(OPT_context_switch))
+   {
+      auto omp_functions = GetPointer<OmpFunctions>(_HLSMgr->Rfuns);
+      bool found=false;
+      if(omp_functions->kernel_functions.find(_HLS->functionId) != omp_functions->kernel_functions.end()) found=true;
+      if(omp_functions->parallelized_functions.find(_HLS->functionId) != omp_functions->parallelized_functions.end()) found=true;
+      if(omp_functions->atomic_functions.find(_HLS->functionId) != omp_functions->atomic_functions.end()) found=true;
+      if(found)
+         return conn_bindingRef(new conn_binding_cs(_BH, _parameters));
+      else
+         return conn_bindingRef(new conn_binding(_BH, _parameters));
+   }
+   else
+      return conn_bindingRef(new conn_binding(_BH, _parameters));
+
+}
+
+conn_binding::~conn_binding()
 {
 }
 
@@ -311,8 +328,7 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
    for(unsigned int i = 0; i < GetPointer<module>(circuit)->get_internal_objects_size(); i++)
    {
       structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
-      if(!GetPointer<module>(curr_gate))
-         continue;
+      if (!GetPointer<module>(curr_gate) || GetPointer<module>(curr_gate)->get_id()=="scheduler_kernel") continue;
       for(unsigned int j = 0; j < GetPointer<module>(curr_gate)->get_in_port_size(); j++)
       {
          structural_objectRef port_i = GetPointer<module>(curr_gate)->get_in_port(j);
@@ -820,11 +836,11 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
       unsigned int shift_index = 0;
       if(component->get_type() == generic_obj::MULTIPLIER_CONN_OBJ && GetPointer<multiplier_conn_obj>(component)->is_multiplication_to_constant())
       {
-         sparse_module->set_parameter(VALUE_PARAMETER, STR(GetPointer<multiplier_conn_obj>(component)->get_constant_value()));
+         sparse_module->SetParameter(VALUE_PARAMETER, STR(GetPointer<multiplier_conn_obj>(component)->get_constant_value()));
       }
       if(component->get_type() == generic_obj::ADDER_CONN_OBJ && GetPointer<adder_conn_obj>(component)->is_align_adder())
       {
-         sparse_module->set_parameter(VALUE_PARAMETER, STR(GetPointer<adder_conn_obj>(component)->get_trimmed_bits()));
+         sparse_module->SetParameter(VALUE_PARAMETER, STR(GetPointer<adder_conn_obj>(component)->get_trimmed_bits()));
       }
       else if(GetPointer<port_o>(sparse_module->get_in_port(shift_index)) && GetPointer<port_o>(sparse_module->get_in_port(shift_index))->get_is_clock())
       {
@@ -832,7 +848,7 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
          /// so we use the non-pipelined version by setting PIPE_PARAMETER to 0
          if(component->get_type() == generic_obj::MULTIPLIER_CONN_OBJ)
          {
-            sparse_module->set_parameter(PIPE_PARAMETER, "0");
+               sparse_module->SetParameter(PIPE_PARAMETER, "0");
          }
          ++shift_index;
       }

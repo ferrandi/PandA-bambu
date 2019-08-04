@@ -115,55 +115,363 @@ enum class DiopsisInstrumentWriter_Type;
 #define PARAMETER_PARSED INT_MIN
 #define PARAMETER_NOTPARSED INT_MAX
 
-#define BAMBU_OPTIONS                                                                                                                                                                                                                                       \
-   (chaining)(chaining_algorithm)(constraints_file)(controller_architecture)(datapath_architecture)(distram_threshold)(DSP_allocation_coefficient)(DSP_margin_combinational)(DSP_margin_pipelined)(estimate_logic_and_connections)(evaluation)(             \
-       evaluation_mode)(evaluation_objectives)(experimental_setup)(export_core)(export_core_mode)(fsm_encoding)(fu_binding_algorithm)(generate_testbench)(generate_vcd)(hls_flow)(hls_div)(hls_fpdiv)(interface)(interface_type)(additional_top)(           \
-       data_bus_bitsize)(addr_bus_bitsize)(libm_std_rounding)(liveness_algorithm)(scheduling_mux_margins)(scheduling_priority)(scheduling_algorithm)(simulate)(simulator)(simulation_output)(speculative)(storage_value_insertion_algorithm)(stg)(          \
-       stg_algorithm)(register_allocation_algorithm)(register_grouping)(registered_inputs)(resp_model)(datapath_interconnection_algorithm)(insert_memory_profile)(timing_simulation)(top_file)(assert_debug)(memory_allocation_algorithm)(                  \
-       memory_allocation_policy)(xml_memory_allocation)(rom_duplication)(base_address)(sync_reset)(level_reset)(reg_init_value)(clock_period_resource_fraction)(channels_type)(channels_number)(memory_controller_type)(soft_float)(soft_fp)(               \
-       softfloat_subnormal)(max_sim_cycles)(sparse_memory)(max_ulp)(skip_pipe_parameter)(gcc_serialize_memory_accesses)(unaligned_access)(aligned_access)(backend_script_extensions)(backend_sdc_extensions)(VHDL_library)(bitvalue_ipa)(                   \
-       use_asynchronous_memories)(do_not_chain_memories)(bram_high_latency)(cdfc_module_binding_algorithm)(function_allocation_algorithm)(testbench_input_string)(testbench_input_xml)(weighted_clique_register_algorithm)(disable_function_proxy)(         \
-       memory_mapped_top)(do_not_expose_globals)(connect_iob)(profiling_output)(disable_bounded_function)(discrepancy)(discrepancy_force)(discrepancy_hw)(discrepancy_no_load_pointers)(discrepancy_only)(discrepancy_permissive_ptrs)(dry_run_evaluation)( \
-       find_max_cfg_transformations)(generate_taste_architecture)(initial_internal_address)(mem_delay_read)(mem_delay_write)(memory_banks_number)(mixed_design)(no_parse_c_python)(num_threads)(post_rescheduling)(technology_file)(                        \
-       testbench_extra_gcc_flags)(timing_violation_abort)(top_design_name)(visualizer)(serialize_output)
+#define BAMBU_OPTIONS \
+(chaining) \
+(chaining_algorithm) \
+(constraints_file) \
+(controller_architecture) \
+(context_switch) \
+(datapath_architecture) \
+(distram_threshold)\
+(DSP_allocation_coefficient)\
+(DSP_margin_combinational)\
+(DSP_margin_pipelined)\
+(estimate_logic_and_connections)\
+(evaluation) \
+(evaluation_mode) \
+(evaluation_objectives) \
+(experimental_setup)\
+(export_core) \
+(export_core_mode) \
+(fsm_encoding) \
+(fu_binding_algorithm) \
+(generate_testbench) \
+(generate_vcd) \
+(hls_flow) \
+(hls_div)\
+(interface) \
+(interface_type) \
+(additional_top) \
+(tag_bus_bitsize) \
+(data_bus_bitsize) \
+(addr_bus_bitsize) \
+(libm_std_rounding)\
+(liveness_algorithm) \
+(scheduling_mux_margins)\
+(scheduling_priority) \
+(scheduling_algorithm) \
+(simulate) \
+(simulator) \
+(simulation_output) \
+(speculative) \
+(storage_value_insertion_algorithm) \
+(stg) \
+(stg_algorithm) \
+(register_allocation_algorithm) \
+(register_grouping) \
+(registered_inputs)\
+(resp_model) \
+(datapath_interconnection_algorithm) \
+(insert_memory_profile) \
+(timing_simulation) \
+(top_file) \
+(assert_debug) \
+(memory_allocation_algorithm)\
+(memory_allocation_policy)\
+(xml_memory_allocation) \
+(rom_duplication)\
+(base_address)\
+(sync_reset)\
+(level_reset)\
+(reg_init_value)\
+(clock_period_resource_fraction)\
+(channels_type)\
+(channels_number)\
+(memory_controller_type)\
+(soft_float)\
+(soft_fp)\
+(softfloat_subnormal)\
+(max_sim_cycles)\
+(sparse_memory)\
+(max_ulp)\
+(skip_pipe_parameter)\
+(gcc_serialize_memory_accesses)\
+(unaligned_access)\
+(aligned_access)\
+(backend_script_extensions)\
+(backend_sdc_extensions)\
+(bitvalue_ipa)\
+(use_asynchronous_memories)\
+(do_not_chain_memories)\
+(bram_high_latency)\
+(cdfc_module_binding_algorithm) \
+(function_allocation_algorithm)\
+(testbench_input_string) \
+(testbench_input_xml) \
+(weighted_clique_register_algorithm) \
+(disable_function_proxy) \
+(memory_mapped_top)\
+(do_not_expose_globals)\
+(connect_iob) \
+(profiling_output)\
+(disable_bounded_function) \
+(discrepancy) \
+(discrepancy_force) \
+(discrepancy_no_load_pointers) \
+(discrepancy_only) \
+(discrepancy_permissive_ptrs) \
+(dry_run_evaluation) \
+(find_max_cfg_transformations) \
+(generate_taste_architecture) \
+(initial_internal_address)\
+(mem_delay_read)\
+(mem_delay_write)\
+(memory_banks_number)\
+(mixed_design) \
+(no_parse_c_python)\
+(num_threads) \
+(post_rescheduling) \
+(technology_file) \
+(testbench_extra_gcc_flags) \
+(timing_violation_abort) \
+(top_design_name)\
+(visualizer)
 
-#define FRAMEWORK_OPTIONS                                                                                                                                                                                                                                     \
-   (architecture)(benchmark_name)(cat_args)(cfg_max_transformations)(compatible_compilers)(compute_size_of)(configuration_name)(debug_level)(default_compiler)(dot_directory)(dump_profiling_data)(file_costs)(file_input_data)(host_compiler)(ilp_max_time)( \
-       ilp_solver)(input_file)(input_format)(model_costs)(no_clean)(no_parse_files)(no_return_zero)(output_file)(output_level)(output_temporary_directory)(output_directory)(panda_parameter)(parse_pragma)(pretty_print)(print_dot)(profiling_file)(         \
-       profiling_method)(program_name)(read_parameter_xml)(revision)(seed)(task_threshold)(test_multiple_non_deterministic_flows)(test_single_non_deterministic_flow)(top_functions_names)(use_rtl)(xml_input_configuration)(xml_output_configuration)(       \
-       write_parameter_xml)
+#define FRAMEWORK_OPTIONS \
+(architecture) \
+(benchmark_name) \
+(cat_args) \
+(cfg_max_transformations) \
+(compatible_compilers) \
+(compute_size_of) \
+(configuration_name) \
+(debug_level)\
+(default_compiler) \
+(dot_directory) \
+(dump_profiling_data) \
+(file_costs) \
+(file_input_data) \
+(host_compiler) \
+(ilp_max_time) \
+(ilp_solver) \
+(input_file) \
+(input_format) \
+(model_costs) \
+(no_clean) \
+(no_parse_files) \
+(no_return_zero) \
+(output_file) \
+(output_level) \
+(output_temporary_directory) \
+(output_directory) \
+(panda_parameter) \
+(parse_pragma) \
+(pretty_print) \
+(print_dot) \
+(profiling_file) \
+(profiling_method) \
+(program_name) \
+(read_parameter_xml) \
+(revision) \
+(seed) \
+(task_threshold) \
+(test_multiple_non_deterministic_flows) \
+(test_single_non_deterministic_flow) \
+(top_functions_names) \
+(use_rtl) \
+(xml_input_configuration) \
+(xml_output_configuration) \
+(write_parameter_xml)
 
-#define GCC_OPTIONS                                                                                                                                                                                                                                         \
-   (gcc_config)(gcc_costs)(gcc_defines)(gcc_extra_options)(gcc_include_sysdir)(gcc_includes)(gcc_libraries)(gcc_library_directories)(gcc_openmp_simd)(gcc_opt_level)(gcc_m32_mx32)(gcc_optimizations)(gcc_optimization_set)(gcc_parameters)(gcc_plugindir)( \
-       gcc_read_xml)(gcc_standard)(gcc_undefines)(gcc_warnings)(gcc_c)(gcc_E)(gcc_S)(gcc_write_xml)
+#define GCC_OPTIONS \
+(gcc_config) \
+(gcc_costs) \
+(gcc_defines) \
+(gcc_extra_options) \
+(gcc_include_sysdir) \
+(gcc_includes) \
+(gcc_libraries) \
+(gcc_library_directories) \
+(gcc_openmp_simd) \
+(gcc_opt_level) \
+(gcc_m32_mx32) \
+(gcc_optimizations) \
+(gcc_optimization_set) \
+(gcc_parameters) \
+(gcc_plugindir) \
+(gcc_read_xml) \
+(gcc_standard) \
+(gcc_undefines) \
+(gcc_warnings) \
+(gcc_c) \
+(gcc_E) \
+(gcc_S) \
+(gcc_write_xml)
 
-#define GECCO_OPTIONS (algorithms)(analyses)
+#define GECCO_OPTIONS \
+(algorithms) \
+(analyses)
 
-#define KOALA_OPTIONS                                                                                                                                                                                                                                         \
-   (aig_analysis)(aig_analysis_algorithm)(apply_reduction_to_standard_library)(characterization_with_DC)(circuit_debug_level)(complete_library_post_covering)(complete_library_pre_covering)(covering)(csv_file)(design_compiler_effort)(                     \
-       drive_strength_values)(equation)(evolutionary_reduction)(explore_cell_variants)(extract_features)(generated_library_name)(group_glue)(has_complete_characterization)(hdl_backend)(icarus_debug_level)(input_libraries)(library)(library_optimization)( \
-       library_optimization_algorithm)(lib_output_format)(max_area)(max_delay)(output_libraries)(output_name)(regularity_abstraction_level)(regularity_algorithm)(regularity_coloring_type)(regularity_covering)(regularity_extraction)(regularity_fast)(     \
-       regularity_forward)(regularity_hierarchical)(regularity_include_sequential)(regularity_max_inputs)(regularity_min_frequency)(regularity_min_size)(regularity_window_size)(reordering)(perform_resynthesis)(print_templates)(                           \
-       reimplement_standard_cells)(separate_templates)(set_constraint)(set_optimization_goal)(skew_values)(split_roots)(store_library_creator_db)(synthesis_tool_xml)(template_file)(xml_library_cells)(xml_library_statistics)
+#define KOALA_OPTIONS \
+(aig_analysis) \
+(aig_analysis_algorithm) \
+(apply_reduction_to_standard_library) \
+(characterization_with_DC) \
+(circuit_debug_level) \
+(complete_library_post_covering) \
+(complete_library_pre_covering) \
+(covering) \
+(csv_file) \
+(design_compiler_effort) \
+(drive_strength_values) \
+(equation) \
+(evolutionary_reduction) \
+(explore_cell_variants) \
+(extract_features) \
+(generated_library_name) \
+(group_glue) \
+(has_complete_characterization) \
+(hdl_backend) \
+(icarus_debug_level) \
+(input_libraries)\
+(library) \
+(library_optimization) \
+(library_optimization_algorithm) \
+(lib_output_format) \
+(max_area) \
+(max_delay) \
+(output_libraries) \
+(output_name) \
+(regularity_abstraction_level) \
+(regularity_algorithm) \
+(regularity_coloring_type) \
+(regularity_covering) \
+(regularity_extraction) \
+(regularity_fast) \
+(regularity_forward) \
+(regularity_hierarchical) \
+(regularity_include_sequential) \
+(regularity_max_inputs) \
+(regularity_min_frequency) \
+(regularity_min_size) \
+(regularity_window_size) \
+(reordering) \
+(perform_resynthesis) \
+(print_templates) \
+(reimplement_standard_cells) \
+(separate_templates) \
+(set_constraint) \
+(set_optimization_goal) \
+(skew_values) \
+(split_roots) \
+(store_library_creator_db) \
+(synthesis_tool_xml) \
+(template_file) \
+(xml_library_cells) \
+(xml_library_statistics)
 
-#define SYNTHESIS_OPTIONS                                                                                                                                                                                                                           \
-   (clock_period)(clock_name)(reset_name)(start_name)(done_name)(design_analysis_steps)(design_compiler_compile_log)(design_compiler_split_log)(design_parameters)(design_hierarchy)(device_string)(dump_genlib)(estimate_library)(export_ip_core)( \
-       import_ip_core)(input_liberty_library_file)(ip_xact_architecture_template)(ip_xact_parameters)(is_structural)(lib2xml)(min_metric)(parse_edif)(rtl)(synthesis_flow)(structural_HDL)(target_device)(target_library)(target_library_source)(   \
-       target_technology)(target_technology_file)(target_device_file)(target_device_script)(target_device_type)(top_component)(uniquify)(writer_language)
+#define SYNTHESIS_OPTIONS \
+(clock_period) \
+(design_analysis_steps) \
+(design_compiler_compile_log) \
+(design_compiler_split_log) \
+(design_parameters) \
+(design_hierarchy) \
+(device_string) \
+(dump_genlib) \
+(estimate_library) \
+(export_ip_core) \
+(import_ip_core) \
+(input_liberty_library_file) \
+(ip_xact_architecture_template) \
+(ip_xact_parameters) \
+(is_structural) \
+(lib2xml) \
+(min_metric) \
+(parse_edif) \
+(rtl) \
+(synthesis_flow) \
+(structural_HDL) \
+(target_device) \
+(target_library) \
+(target_library_source) \
+(target_technology) \
+(target_technology_file) \
+(target_device_file) \
+(target_device_script) \
+(target_device_type) \
+(top_component) \
+(uniquify) \
+(writer_language)
 
-#define SPIDER_OPTIONS                                                                                                                                                                                                                              \
-   (accuracy)(aggregated_features)(cross_validation)(experimental_setup_file)(interval_level)(latex_format_file)(max_bound)(maximum_error)(min_bound)(minimum_significance)(normalization_file)(normalization_sequences)(output_format)(precision)( \
-       processing_element_type)(skip_rows)(surviving_benchmarks)
+#define SPIDER_OPTIONS \
+(accuracy) \
+(aggregated_features) \
+(cross_validation) \
+(experimental_setup_file) \
+(interval_level) \
+(latex_format_file) \
+(max_bound) \
+(maximum_error) \
+(min_bound) \
+(minimum_significance) \
+(normalization_file) \
+(normalization_sequences) \
+(output_format) \
+(precision) \
+(processing_element_type) \
+(skip_rows) \
+(surviving_benchmarks)
 
-#define EUCALIPTUS_OPTIONS (component_name)
+#define EUCALIPTUS_OPTIONS \
+(component_name)
 
-#define TREE_PANDA_GCC_OPTIONS (archive_files)(obj_files)(compress_archive)
+#define TREE_PANDA_GCC_OPTIONS \
+(archive_files) \
+(obj_files)\
+(compress_archive)
 
-#define ZEBU_OPTIONS                                                                                                                                                                                                                                           \
-   (alternative_metrics)(analysis_level)(blackbox)(cache_analysis)(compare_model_max_iterations)(compare_measure_regions)(compare_models)(cpus_number)(cuda_optimization)(examined_model)(default_fork_cost)(diopsis_instrumentation)(driving_component_type)( \
-       driving_metric)(dump_schedule)(evaluate_pointed_size)(exec_argv)(frontend_statistics)(golden_model)(fork_join_backend)(hand_mapping)(ignore_mapping)(ignore_parallelism)(mapping)(measure_profile_overhead)(memory_profiling)(no_sequential)(           \
-       normalize_models)(partitioning)(partitioning_algorithm)(partitioning_functions)(path)(performance_estimation)(platform_base_dir)(prof_resolution)(profile_loop_max_iterations)(profile_minutes_timeout)(runs_number)(simit_fork_cost)(                  \
-       source_code_statistics)(resolution)(run)(sequence_length)(shorter_sequence)(symbolic_simulation)(trace_buffer_size)(tsim_instrumentation)(tollerance)(without_operating_system)(without_transformation)
+#define ZEBU_OPTIONS \
+(alternative_metrics) \
+(analysis_level) \
+(blackbox) \
+(cache_analysis) \
+(compare_model_max_iterations) \
+(compare_measure_regions) \
+(compare_models) \
+(cpus_number) \
+(cuda_optimization) \
+(examined_model) \
+(default_fork_cost) \
+(diopsis_instrumentation) \
+(driving_component_type) \
+(driving_metric) \
+(dump_schedule) \
+(evaluate_pointed_size) \
+(exec_argv) \
+(frontend_statistics) \
+(golden_model) \
+(fork_join_backend) \
+(hand_mapping) \
+(ignore_mapping) \
+(ignore_parallelism) \
+(mapping) \
+(measure_profile_overhead) \
+(memory_profiling) \
+(no_sequential) \
+(normalize_models) \
+(partitioning) \
+(partitioning_algorithm) \
+(partitioning_functions) \
+(path) \
+(performance_estimation) \
+(platform_base_dir) \
+(prof_resolution) \
+(profile_loop_max_iterations) \
+(profile_minutes_timeout) \
+(runs_number) \
+(simit_fork_cost) \
+(source_code_statistics) \
+(resolution) \
+(run) \
+(sequence_length) \
+(shorter_sequence) \
+(symbolic_simulation) \
+(trace_buffer_size) \
+(tsim_instrumentation) \
+(tollerance) \
+(without_operating_system) \
+(without_transformation)
 
 #define OPTIONS_ENUM(r, data, elem) BOOST_PP_CAT(OPT_, elem),
 
@@ -266,10 +574,10 @@ enum class Parameters_FileFormat
    FF_OBJECTIVECPP, /**< (Input/Output) Objective C++ source file */
    FF_FORTRAN,      /**< (Input/Output) Fortran source file */
 #endif
+   FF_CSV,                     /**< (Input) comma separated value */
 #if HAVE_EXPERIMENTAL
-   FF_CSV,     /**< (Input) comma separated value */
-   FF_CSV_RTL, /**< (Output) comma separated value rtl sequences */
-   FF_CSV_TRE, /**< (Output) comma seperated value tree sequences */
+   FF_CSV_RTL,                 /**< (Output) comma separated value rtl sequences */
+   FF_CSV_TRE,                 /**< (Output) comma seperated value tree sequences */
 #endif
 #if HAVE_FROM_LIBERTY
    FF_LIB, /**< (Input) Liberty file */

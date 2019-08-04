@@ -84,41 +84,42 @@ class xml_element;
  */
 class NP_functionality
 {
- public:
-   /// functionality type descriptors.
-   /// Currently, it is foreseen six type of descriptions:
-   /// - True Tables
-   /// - Library based descriptions
-   /// - Graph based descriptions like Non deterministic finite automata (NFA)
-   /// - Finite state machine description of Moore/Mealy machine
-   /// - SystemC provided descriptions (not parsed)
-   /// - VHDL provided descriptions
-   /// - Verilog provided descriptions
-   /// - System  Verilog provided descriptions
-   enum NP_functionaly_type
-   {
-      TABLE = 0,
-      EQUATION,
-      PORT_LIST,
-      LIBRARY,
-      GRAPH,
-      FSM,
-      SC_PROVIDED,
-      VHDL_PROVIDED,
-      VERILOG_PROVIDED,
-      SYSTEM_VERILOG_PROVIDED,
-      VERILOG_GENERATOR,
-      VHDL_GENERATOR,
-      FLOPOCO_PROVIDED,
-      BAMBU_PROVIDED,
-      BLIF_DESCRIPTION,
-      AIGER_DESCRIPTION,
-      IP_COMPONENT,
-      IP_LIBRARY,
-      VERILOG_FILE_PROVIDED,
-      VHDL_FILE_PROVIDED,
-      UNKNOWN
-   };
+  public:
+    /// functionality type descriptors.
+    /// Currently, it is foreseen six type of descriptions:
+    /// - True Tables
+    /// - Library based descriptions
+    /// - Graph based descriptions like Non deterministic finite automata (NFA)
+    /// - Finite state machine description of Moore/Mealy machine
+    /// - SystemC provided descriptions (not parsed)
+    /// - VHDL provided descriptions 
+    /// - Verilog provided descriptions
+    /// - System  Verilog provided descriptions
+    enum NP_functionaly_type
+    {
+       TABLE=0,
+       EQUATION,
+       PORT_LIST,
+       LIBRARY,
+       GRAPH,
+       FSM,
+       FSM_CS,
+       SC_PROVIDED,
+       VHDL_PROVIDED,
+       VERILOG_PROVIDED,
+       SYSTEM_VERILOG_PROVIDED,
+       VERILOG_GENERATOR,
+       VHDL_GENERATOR,
+       FLOPOCO_PROVIDED,
+       BAMBU_PROVIDED,
+       BLIF_DESCRIPTION,
+       AIGER_DESCRIPTION,
+       IP_COMPONENT,
+       IP_LIBRARY,
+       VERILOG_FILE_PROVIDED,
+       VHDL_FILE_PROVIDED,
+       UNKNOWN
+    };
 
  private:
    /// Store the description of the functionality.

@@ -1,0 +1,2598 @@
+<?xml version="1.0"?>
+<technology>
+  <library>
+    <name>CS_COMPONENT</name>
+    <cell>
+      <name>fifio</name>
+      <circuit>
+        <component_o id="fifio">
+          <parameter name="ADDR_WIDTH">3</parameter>
+          <parameter name="DEPTH">8</parameter>
+          <structural_type_descriptor id_type="fifio"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="data_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="rd_en" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="wr_en" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="full" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="empty" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="data_out" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="fifio data_in data_out ADDR_WIDTH DEPTH" VERILOG_PROVIDED="
+reg [ADDR_WIDTH-1:0] rd_addr;
+reg [ADDR_WIDTH-1:0] wr_addr;
+reg [BITSIZE_data_in-1:0] ram [DEPTH-1:0];
+reg [ADDR_WIDTH:0] status_cnt;
+
+// initialization of the fifio all data = 0
+integer i;
+initial begin
+ for (i=0; i&lt;DEPTH; i=i+1) begin
+   ram[i] = {BITSIZE_data_in{1'b0}};
+ end
+end
+
+assign full = (status_cnt > DEPTH-1);
+assign empty = (status_cnt == 0);
+assign data_out = ram[rd_addr];
+
+always @(posedge clock) begin
+ if (!reset) begin
+   status_cnt &lt;= 0;
+   rd_addr &lt;= 0;
+   wr_addr &lt;= 0;
+ end else begin
+   if (rd_en &amp;&amp; !wr_en) begin
+     rd_addr &lt;= rd_addr +1;
+     if (status_cnt != 0) begin
+       status_cnt &lt;= status_cnt -1;
+     end
+   end else if (wr_en &amp;&amp; !rd_en) begin
+     ram[wr_addr] &lt;= data_in;
+     wr_addr &lt;= wr_addr +1;
+     if (status_cnt != DEPTH) begin
+       status_cnt &lt;= status_cnt +1;
+     end
+   end else if (wr_en &amp;&amp; rd_en) begin
+     rd_addr &lt;= rd_addr +1;
+     wr_addr &lt;= wr_addr +1;
+     ram[wr_addr] &lt;= data_in;
+   end
+ end
+end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>fifio_free</name>
+      <circuit>
+        <component_o id="fifio_free">
+          <parameter name="ADDR_WIDTH">3</parameter>
+          <parameter name="DEPTH">8</parameter>
+          <structural_type_descriptor id_type="fifio_free"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="data_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="rd_en" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="wr_en" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="full" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="empty" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="data_out" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="fifio_free data_in data_out ADDR_WIDTH DEPTH" VERILOG_PROVIDED="
+reg [ADDR_WIDTH-1:0] rd_addr;
+reg [ADDR_WIDTH-1:0] wr_addr;
+reg [BITSIZE_data_in-1:0] ram [DEPTH-1:0];
+reg [ADDR_WIDTH:0] status_cnt;
+
+integer i;
+initial begin
+ for (i=1; i&lt;DEPTH; i=i+1) begin
+   ram[i] = i;
+ end
+end
+
+assign full = (status_cnt > DEPTH-1);
+assign empty = (status_cnt == 0);
+
+assign data_out = ram[rd_addr];
+
+always @(posedge clock) begin
+ if (!reset) begin
+   status_cnt &lt;= DEPTH-1; // fifio free is initiliazed full
+   rd_addr &lt;= 1;   //slot 0 is running so is not considered as free - slot 0 assigned by reset of selector
+   wr_addr &lt;= 0;
+ end else begin
+   if (rd_en &amp;&amp; !wr_en) begin
+     rd_addr &lt;= rd_addr +1;
+     if (status_cnt != 0) begin
+       status_cnt &lt;= status_cnt -1;
+     end
+   end else if (wr_en &amp;&amp; !rd_en) begin
+     ram[wr_addr] &lt;= data_in;
+     wr_addr &lt;= wr_addr +1;
+     if (status_cnt != DEPTH) begin
+       status_cnt &lt;= status_cnt +1;
+     end
+   end else if (wr_en &amp;&amp; rd_en) begin
+     rd_addr &lt;= rd_addr +1;
+     wr_addr &lt;= wr_addr +1;
+     ram[wr_addr] &lt;= data_in;
+   end
+ end
+end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>register_file</name>
+      <circuit>
+        <component_o id="register_file">
+          <parameter name="BITSIZE_MEM">1</parameter>
+          <structural_type_descriptor id_type="register_file"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="wenable" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="selector_register_file" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o> in1
+          <NP_functionality LIBRARY="register_file in1 selector_register_file out1 BITSIZE_MEM " VERILOG_PROVIDED="
+reg [BITSIZE_in1-1:0] ram [BITSIZE_MEM-1:0];
+always @(posedge clock)
+begin
+if (wenable)
+  ram[selector_register_file] &lt;= in1;
+end
+assign out1 = ram[selector_register_file];"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>register_SE_r</name>
+      <circuit>
+        <component_o id="register_SE_r">
+          <structural_type_descriptor id_type="register_SE_r"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="we" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="register_SE_r in1 out1" VERILOG_PROVIDED="
+reg [BITSIZE_out1-1:0] reg_out1;
+assign out1 = reg_out1;
+always @(posedge clock)
+  if(!reset) begin
+    reg_out1 &lt;={BITSIZE_out1{1'b0}};
+  end else begin
+    if (we) begin
+      reg_out1 &lt;= in1;
+    end
+  end
+initial begin
+  reg_out1 ={BITSIZE_out1{1'b0}};
+end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>simple_dual_port_ram_single_clock</name>
+      <circuit>
+        <component_o id="simple_dual_port_ram_single_clock">
+        <parameter name="BITSIZE_addr">1</parameter>
+          <structural_type_descriptor id_type="simple_dual_port_ram_single_clock"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="we" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="data" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="read_addr" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="write_addr" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="simple_dual_port_ram_single_clock data read_addr write_addr out" VERILOG_PROVIDED="
+reg [BITSIZE_data-1:0] q;
+reg [BITSIZE_data-1:0] ram[2**BITSIZE_read_addr-1:0];
+  always @ (posedge clock) begin
+    if (we)
+      ram[write_addr] &lt;= data;
+      q &lt;= ram[read_addr];
+  end
+assign out=q;"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>fifo</name>
+      <circuit>
+        <component_o id="fifo">
+          <structural_type_descriptor id_type="fifo"/>
+          <parameter name="ADDR_WIDTH">1</parameter>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="data_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="data_out" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="empty" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="full" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="rd_en" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="wr_en" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="rd_cs" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="wr_cs" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="fifo data_in data_out ADDR_WIDTH" IP_COMPONENT="simple_dual_port_ram_single_clock" VERILOG_PROVIDED="
+parameter RAM_DEPTH = (1 &lt;&lt; ADDR_WIDTH);
+
+reg [ADDR_WIDTH-1:0] wr_pointer;
+reg [ADDR_WIDTH-1:0] rd_pointer;
+reg [ADDR_WIDTH :0] status_cnt;
+reg [BITSIZE_data_in-1:0] data_out ;
+wire [BITSIZE_data_in-1:0] data_ram ;
+
+assign full = (status_cnt > (RAM_DEPTH-1));
+assign empty = (status_cnt == 0);
+
+always @ (posedge clock or posedge reset)
+begin : WRITE_POINTER
+  if (reset) begin
+    wr_pointer &lt;= 0;
+  end else if (wr_cs &amp;&amp; wr_en ) begin
+    wr_pointer &lt;= wr_pointer + 1;
+  end
+end
+
+always @ (posedge clock or posedge reset)
+begin : READ_POINTER
+  if (reset) begin
+    rd_pointer &lt;= 0;
+  end else if (rd_cs &amp;&amp; rd_en ) begin
+    rd_pointer &lt;= rd_pointer + 1;
+  end
+end
+
+always  @ (posedge clock or posedge reset)
+begin : READ_DATA
+  if (reset) begin
+    data_out &lt;= 0;
+  end else if (rd_cs &amp;&amp; rd_en ) begin
+    data_out &lt;= data_ram;
+  end
+end
+
+always @ (posedge clock or posedge reset)
+begin : STATUS_COUNTER
+  if (reset) begin
+    status_cnt &lt;= 0;
+  end else if ((rd_cs &amp;&amp; rd_en) &amp;&amp; !(wr_cs &amp;&amp; wr_en) 
+                &amp;&amp; (status_cnt != 0)) begin
+    status_cnt &lt;= status_cnt - 1;
+  end else if ((wr_cs &amp;&amp; wr_en) &amp;&amp; !(rd_cs &amp;&amp; rd_en) 
+               &amp;&amp; (status_cnt != RAM_DEPTH)) begin
+    status_cnt &lt;= status_cnt + 1;
+  end
+end
+   
+simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in), .BITSIZE_read_addr(ADDR_WIDTH), .BITSIZE_write_addr(ADDR_WIDTH), .BITSIZE_out(BITSIZE_data_out)) DP_RAM (.clock(clock), .write_addr(wr_pointer), .data(data_in), .we(wr_en), .read_addr (rd_pointer), .out(data_ram));"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>Counter</name>
+      <circuit>
+        <component_o id="Counter">  BITSIZE_value
+          <structural_type_descriptor id_type="Counter"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="value" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="driver_lines" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o> 
+          <NP_functionality LIBRARY="Counter value driver_lines" VERILOG_PROVIDED="
+reg [BITSIZE_value - 1 : 0] counter;
+reg [BITSIZE_value - 1 : 0] next_counter;
+reg [BITSIZE_value - 1 : 0] increment;
+
+always @(posedge clock or negedge reset) begin
+  if (!reset)
+    counter &lt;= {BITSIZE_value{1'b0}};
+  else
+    counter &lt;= next_counter;
+end
+
+assign value = counter;
+
+always @(*) begin
+  next_counter = counter + increment;
+end
+
+integer i;
+always @(*) begin
+  increment = {BITSIZE_value{1'b0}};
+  for (i = 0; i &lt; BITSIZE_driver_lines; i = i+1) begin
+     increment = increment + driver_lines[i];
+  end
+end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>CallDispatcher</name>
+      <circuit>
+        <component_o id="CallDispatcher">
+          <structural_type_descriptor id_type="CallDispatcher"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="fifo_data_out" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="fifo_empty" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="worker_status" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="fifo_rd_cs" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="fifo_rd_en" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="request" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="selected_worker" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="CallDispatcher fifo_data_out worker_status request selected_worker" VERILOG_PROVIDED="
+reg fifo_rd_cs;
+reg fifo_rd_en;
+reg [BITSIZE_worker_status - 1 : 0] selected_worker;
+wire [BITSIZE_worker_status - 1 : 0] notFull;
+reg [BITSIZE_request - 1 : 0] request;
+wire available_workers;
+reg call_state;
+reg next_call_state;
+reg available_data;
+assign notFull = ~worker_status;
+always @ (posedge clock or negedge reset) begin : CALL_STATE_REGISTER
+if (!reset) begin // Beginning of autoreset for uninitialized flops
+  call_state &lt;= 1'h0;  // End of automatics
+end
+else begin
+  call_state &lt;= next_call_state;
+end
+end
+
+always @(posedge clock or negedge reset) begin
+if (!reset)
+  available_data &lt;= 1'b0;
+else
+  available_data &lt;= !fifo_empty;
+end
+
+assign available_workers = ~(&amp; worker_status);
+
+always @ (*) begin
+  fifo_rd_cs = 1'b0;
+  fifo_rd_en = 1'b0;
+  next_call_state = 1'b0;
+  request = {BITSIZE_request{1'b0}};
+  selected_worker = {BITSIZE_worker_status{1'b0}};
+  if (call_state == 1'b0) begin
+    if (available_workers &amp; available_data) begin
+      fifo_rd_cs = 1'b1;
+      fifo_rd_en = 1'b1;
+      next_call_state = 1'b1;
+    end
+  end
+  else begin
+    selected_worker = notFull &amp; (-notFull); // find the first 0 bit
+    request = fifo_data_out;
+  end
+end // always @ (*)
+
+/* -----\/----- EXCLUDED -----\/-----
+wire available_data;
+assign available_data = ~fifo_empty;
+-----/\----- EXCLUDED -----/\----- */"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>scheduler</name>
+      <circuit>
+        <component_o id="scheduler">
+          <structural_type_descriptor id_type="scheduler"/>
+          <parameter name="NUM_TASKS">2</parameter>
+          <parameter name="KERN_NUM">0</parameter>
+          <parameter name="ADDR_ACC">2</parameter>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="IN_M_Rdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" />
+          </port_o>
+          <port_o id="IN_M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="IN_Min_tag" dir="IN" is_memory="1" is_global="1" is_extern="1" is_tag_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" />
+          </port_o>
+          <port_o id="IN_request_accepted" dir="IN" is_memory="1" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="Mout_oe_ram" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="Mout_we_ram" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_addr_ram" dir="IN" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" />
+          </port_o>
+          <port_o id="Mout_data_ram_size" dir="IN" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_Wdata_ram" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
+          </port_o>
+          <port_o id="Mout_tag_ram" dir="IN" is_memory="1" is_tag_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_scheduler" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port_task" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="suspension" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="task_pool_end" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="OUT_Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" />
+          </port_o>
+          <port_o id="OUT_Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" />
+          </port_o>
+          <port_o id="OUT_Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" />
+          </port_o>
+          <port_o id="OUT_Mout_tag_ram" dir="OUT" is_memory="1" is_master="1" is_tag_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" />
+          </port_o>
+          <port_o id="M_Rdata_ram" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" />
+          </port_o>
+          <port_o id="M_DataRdy" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="Min_tag" dir="OUT" is_memory="1" is_tag_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" />
+          </port_o>
+          <port_o id="request_accepted" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="done_request" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="selector_register_file" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" />
+          </port_o>
+          <NP_functionality LIBRARY="scheduler IN_M_Rdata_ram IN_M_DataRdy IN_Min_tag IN_request_accepted Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ram M_Rdata_ram M_DataRdy Min_tag request_accepted selector_register_file NUM_TASKS KERN_NUM ADDR_ACC"
+          IP_COMPONENT="fifio,fifio_free,mem_scheduler" VERILOG_PROVIDED="
+parameter SIZE_IN=BITSIZE_Mout_oe_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_addr_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_tag_ram;
+parameter ADDR_WIDTH=($clog2(NUM_TASKS)!=0)?$clog2(NUM_TASKS):1;
+parameter DEPTH=($clog2(NUM_TASKS)!=0)?NUM_TASKS:1;
+reg done_request;
+reg [BITSIZE_M_DataRdy-1:0] M_DataRdy;
+reg [BITSIZE_selector_register_file-1:0] selector_register_file;
+
+parameter [2:0] S_0 = 3'd0,
+              S_1 = 3'd1,
+              S_2 = 3'd2,
+              S_3 = 3'd3,
+              S_4 = 3'd4,
+              S_5 = 3'd5;
+
+reg [2:0] _present_state, _next_state;
+wire [BITSIZE_selector_register_file-1:0] next_selector_register_file;
+wire [BITSIZE_selector_register_file-1:0] fifo_data_out_free;
+wire fifo_rd_en_free;
+wire fifo_wr_en_free;
+wire fifo_full_free;
+wire fifo_empty_free;
+wire [BITSIZE_selector_register_file-1:0] fifo_data_out_ready;
+wire fifo_rd_en_ready;
+wire fifo_wr_en_ready;
+wire fifo_full_ready;
+wire fifo_empty_ready;
+wire [BITSIZE_selector_register_file-1:0] fifo_data_out_wait;
+wire fifo_full_wait;
+wire fifo_empty_wait;
+wire [SIZE_IN-1:0] data_out_mem_kern;
+wire [SIZE_IN-1:0] data_out_mem_par;
+wire [SIZE_IN-1:0] data_in_kern_mem;
+wire [SIZE_IN-1:0] data_in_par_mem;
+wire [SIZE_IN-1:0] temp;
+wire mux_fifo_sel;
+wire [BITSIZE_selector_register_file-1:0] old_selector;
+wire [BITSIZE_selector_register_file-1:0] new_selector;
+wire mux_switching_logic;
+wire [BITSIZE_M_DataRdy-1:0] M_DataRdy_next;
+wire done_request_next;
+wire [BITSIZE_selector_register_file-1:0] data_ready;
+wire selectorByMemory;
+
+fifio_free #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out(BITSIZE_selector_register_file), .ADDR_WIDTH(ADDR_WIDTH), .DEPTH(DEPTH)) fifo_free(
+.full        (fifo_full_free),
+.empty       (fifo_empty_free),
+.data_out    (fifo_data_out_free),
+.clock       (clock),
+.reset       (reset),
+.rd_en       (fifo_rd_en_free),
+.wr_en       (fifo_wr_en_free),
+.data_in     (selector_register_file)); // just the selector can write the data_in of fifo_free
+
+fifio #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out(BITSIZE_selector_register_file), .ADDR_WIDTH(ADDR_WIDTH), .DEPTH(DEPTH)) fifo_ready(
+.full        (fifo_full_ready),
+.empty       (fifo_empty_ready),
+.data_out    (fifo_data_out_ready),
+.clock       (clock),
+.reset       (reset),
+.rd_en       (fifo_rd_en_ready),
+.wr_en       (fifo_wr_en_ready),  // when data is copied insert data of task ready on ready
+.data_in     (IN_Min_tag[BITSIZE_selector_register_file-1:0]));    // data go into memory to say in which cell to write and here to say which task is now ready
+
+fifio #(.BITSIZE_data_in(BITSIZE_selector_register_file), .BITSIZE_data_out(BITSIZE_selector_register_file), .ADDR_WIDTH(ADDR_WIDTH), .DEPTH(2**ADDR_WIDTH)) fifo_wait(
+.full (fifo_full_wait),  	         //used by arbiter
+.empty (fifo_empty_wait),         //used by arbiter
+.data_out (fifo_data_out_wait),
+.clock (clock),
+.reset (reset),
+.rd_en (IN_request_accepted),
+.wr_en (suspension),
+.data_in (selector_register_file));
+
+//if fifo ready empty but data from memory ready then use data from memory
+assign selectorByMemory = fifo_empty_ready &amp;&amp; IN_M_DataRdy;
+//next selector can be old ones or new depending on state of fifo and signal arriving
+assign next_selector_register_file = (mux_switching_logic)? new_selector : old_selector;
+//if signal to end or switch and there is at least one task that is ready or free then swith moreover if you are in S_2, (no free or ready), or S_4 (no_ready and no more tastk) and arrive a response in ready then switch,
+assign mux_switching_logic= ((done_scheduler || suspension) &amp;&amp; ((!fifo_empty_ready || selectorByMemory) || (!fifo_empty_free &amp;&amp; !task_pool_end))) || ((_present_state==S_2 || _present_state==S_4) &amp;&amp; (selectorByMemory || !fifo_empty_ready)) || (_present_state==S_5 &amp;&amp; task_pool_end &amp;&amp; (IN_M_DataRdy || !fifo_empty_ready));
+//new selector can be a old task suspended or a new ones
+assign new_selector = (mux_fifo_sel)? data_ready : fifo_data_out_free;
+assign data_ready = (selectorByMemory) ? IN_Min_tag[BITSIZE_selector_register_file-1:0] : fifo_data_out_ready;
+//if at least one task in ready and is true that arrive one signal or you are in S_2 (wait for fifo_ready to be not-empty) then use ready
+assign mux_fifo_sel = ((done_scheduler || suspension) &amp;&amp; (!fifo_empty_ready || selectorByMemory)) || ((_present_state==S_2 || _present_state==S_4) &amp;&amp; (selectorByMemory || !fifo_empty_ready)) || (_present_state==S_5 &amp;&amp; task_pool_end &amp;&amp; (IN_M_DataRdy || !fifo_empty_ready));
+//if reset start task is 0 otherwise old selector
+assign old_selector = (!reset)? {BITSIZE_selector_register_file{1'b0}} : selector_register_file;
+
+assign fifo_rd_en_free = mux_switching_logic &amp;&amp; !mux_fifo_sel;
+assign fifo_wr_en_free = (done_scheduler &amp;&amp; (!fifo_empty_free || !fifo_empty_ready || selectorByMemory || task_pool_end)) || (_present_state==S_5 &amp;&amp; task_pool_end);
+assign fifo_rd_en_ready = mux_fifo_sel &amp;&amp; !selectorByMemory;
+assign fifo_wr_en_ready = IN_M_DataRdy &amp;&amp; !(mux_fifo_sel &amp;&amp; selectorByMemory);
+
+mem_scheduler #(.BITSIZE_addr_mem_kern(BITSIZE_selector_register_file), .BITSIZE_addr_kern_mem(BITSIZE_selector_register_file), .BITSIZE_addr_mem_par(BITSIZE_selector_register_file), .BITSIZE_addr_par_mem(BITSIZE_selector_register_file), .BITSIZE_data_in_kern_mem(SIZE_IN), .BITSIZE_data_in_par_mem(SIZE_IN), .BITSIZE_data_out_mem_kern(SIZE_IN), .BITSIZE_data_out_mem_par(SIZE_IN), .NUM_TASKS(NUM_TASKS)) mem_scheduler (
+.clock(clock),
+.reset(reset),
+.addr_mem_kern(selector_register_file),
+.addr_kern_mem(selector_register_file),
+.addr_mem_par(fifo_data_out_wait),
+.addr_par_mem(IN_Min_tag[BITSIZE_selector_register_file-1:0]),
+.we_kern_mem(suspension),
+.we_par_mem(IN_M_DataRdy),    //if ready 1 then write
+.data_in_kern_mem(data_in_kern_mem),
+.data_in_par_mem(data_in_par_mem), //remove addr_task-bits of tag
+.data_out_mem_kern(data_out_mem_kern),
+.data_out_mem_par(data_out_mem_par));
+
+assign data_in_kern_mem = {Mout_tag_ram,Mout_Wdata_ram,Mout_data_ram_size,Mout_addr_ram,Mout_we_ram,Mout_oe_ram};
+assign data_in_par_mem = {IN_Min_tag[BITSIZE_Mout_tag_ram-1:BITSIZE_selector_register_file+ADDR_ACC], {(BITSIZE_selector_register_file+ADDR_ACC){1'b0}}, IN_M_Rdata_ram,{(BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram){1'b0}}};
+assign OUT_Mout_oe_ram=(data_out_mem_par[BITSIZE_Mout_oe_ram-1] &amp;&amp; !fifo_empty_wait);
+assign OUT_Mout_we_ram=(data_out_mem_par[BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] &amp;&amp; !fifo_empty_wait);
+assign OUT_Mout_addr_ram=data_out_mem_par[BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
+assign OUT_Mout_data_ram_size=data_out_mem_par[BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
+assign OUT_Mout_Wdata_ram=data_out_mem_par[BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
+assign OUT_Mout_tag_ram={data_out_mem_par[BITSIZE_Mout_tag_ram + BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:ADDR_ACC + BITSIZE_selector_register_file+ BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram],KERN_NUM,fifo_data_out_wait};
+
+assign M_Rdata_ram=data_out_mem_kern[BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
+assign Min_tag=data_out_mem_kern[BITSIZE_Mout_tag_ram + BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram];
+assign request_accepted= Mout_oe_ram||Mout_we_ram; //memory always not full so if oe=1 or we=1 i save your request
+
+always @(posedge clock) begin
+ if (!reset) begin
+   _present_state &lt;= S_0;
+ end else begin
+   _present_state &lt;= _next_state;
+ end
+end
+
+always @(*) begin	//FSM of scheduler
+  _next_state = S_0;
+  case (_present_state)
+
+  S_0: begin   // initialization of fifo
+    if(!reset || task_pool_end) begin
+      _next_state = S_0;
+    end else begin
+     _next_state = S_5;
+    end
+  end
+
+  S_5: begin
+    if (task_pool_end) begin
+      if (IN_M_DataRdy) begin //if fifo ready empty and not ready
+        _next_state = S_3;
+      end else begin
+        _next_state = S_4;
+      end
+    end else begin
+      if(start_port_task) begin
+        _next_state = S_1;
+      end else begin
+        _next_state = S_5;
+      end
+    end
+  end
+
+  S_1: begin
+    if (task_pool_end) begin
+      if ((done_scheduler || suspension) &amp;&amp; (fifo_empty_ready &amp;&amp; !IN_M_DataRdy)) begin //if fifo ready empty and not ready
+         _next_state = S_4;
+      end else begin
+        _next_state = S_3;
+      end
+    end else begin
+      if (suspension &amp;&amp; (fifo_empty_ready &amp;&amp; !IN_M_DataRdy &amp;&amp; fifo_empty_free)) begin
+        _next_state = S_2;
+      end else begin
+        if ((suspension || done_scheduler) &amp;&amp; (fifo_empty_ready &amp;&amp; !IN_M_DataRdy)) begin
+          _next_state = S_5;
+        end else begin
+          _next_state = S_1;
+        end
+      end
+    end
+  end
+
+  S_2: begin
+    if (IN_M_DataRdy) begin
+      _next_state = S_1;
+    end else begin
+      _next_state = S_2;
+    end
+  end
+
+  S_3: begin //wait only for Ready
+    if ((done_scheduler || suspension) &amp;&amp; (fifo_empty_ready &amp;&amp; !IN_M_DataRdy)) begin
+      _next_state = S_4;
+    end else begin
+      _next_state = S_3;
+    end
+  end
+
+  S_4: begin //wait only for Ready
+    if (!fifo_empty_ready || IN_M_DataRdy) begin
+      _next_state = S_3;
+    end else if (fifo_full_free) begin
+      _next_state = S_0;
+    end else begin
+      _next_state = S_4;
+    end
+  end
+
+  default: begin
+    _next_state = S_0;
+  end
+  endcase
+end
+
+always @(posedge clock) begin
+  if (!reset) begin
+    M_DataRdy &lt;= 1'b0;
+  end else begin
+    M_DataRdy &lt;= M_DataRdy_next;
+  end
+end
+
+always @(posedge clock) begin
+  if (!reset) begin
+    done_request &lt;= 1'b0;
+  end else begin
+    done_request &lt;= done_request_next;
+  end
+end
+
+always @(posedge clock) begin
+  if (!reset) begin
+    selector_register_file &lt;= {BITSIZE_selector_register_file{1'b0}};
+  end else begin
+    selector_register_file &lt;= next_selector_register_file;
+  end
+end
+
+assign M_DataRdy_next=fifo_rd_en_ready || (mux_fifo_sel &amp;&amp; selectorByMemory);
+assign done_request_next= fifo_rd_en_free || (done_scheduler &amp; fifo_empty_free &amp; fifo_empty_ready &amp; !selectorByMemory);"/>
+         </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>mem_scheduler</name>
+      <circuit>
+        <component_o id="mem_scheduler">
+          <structural_type_descriptor id_type="mem_scheduler"/>
+          <parameter name="NUM_TASKS">2</parameter>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="we_kern_mem" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="we_par_mem" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="addr_mem_kern" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" />
+          </port_o>
+          <port_o id="addr_kern_mem" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" />
+          </port_o>
+          <port_o id="addr_mem_par" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" />
+          </port_o>
+          <port_o id="addr_par_mem" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" />
+          </port_o>
+          <port_o id="data_in_kern_mem" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" />
+          </port_o>
+          <port_o id="data_in_par_mem" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" />
+          </port_o>
+          <port_o id="data_out_mem_kern" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" />
+          </port_o>
+          <port_o id="data_out_mem_par" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" />
+          </port_o>
+          <NP_functionality LIBRARY="mem_scheduler addr_mem_kern addr_kern_mem addr_mem_par addr_par_mem data_in_kern_mem data_in_par_mem  data_out_mem_kern data_out_mem_par NUM_TASKS" VERILOG_PROVIDED="
+reg [BITSIZE_data_in_kern_mem-1:0] local_mem[NUM_TASKS-1:0];
+
+integer i;
+initial begin
+  for (i=0; i&lt;NUM_TASKS; i=i+1) begin
+    local_mem[i] = {BITSIZE_data_in_kern_mem{1'b0}};
+  end
+end
+
+always @(posedge clock) begin
+  if (we_kern_mem == 1'b1) begin
+    local_mem[addr_kern_mem] &lt;= data_in_kern_mem; // from the memory controller response
+  end
+  if (we_par_mem == 1'b1) begin
+    local_mem[addr_par_mem] &lt;= data_in_par_mem;
+  end
+end
+
+assign data_out_mem_kern = local_mem[addr_mem_kern];
+assign data_out_mem_par = local_mem[addr_mem_par];"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>mem_ctrl_kernel</name>
+      <operation operation_name="LOAD" bounded="0"/>
+      <operation operation_name="STORE" bounded="0"/>
+      <channels_type>MEM_ACC_CS</channels_type>
+      <memory_ctrl_type>D00</memory_ctrl_type>
+      <circuit>
+        <component_o id="mem_ctrl_kernel">
+          <structural_type_descriptor id_type="mem_ctrl_kernel"/>
+          <parameter name="TAG_MEM_REQ">0</parameter>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in4" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="sel_LOAD" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="sel_STORE" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="M_Rdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
+          </port_o>
+          <port_o id="Min_tag" dir="IN" is_memory="1" is_global="1" is_extern="1" is_tag_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
+          </port_o>
+          <port_o id="M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="request_accepted" dir="IN" is_memory="1" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" />
+          </port_o>
+          <port_o id="Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" />
+          </port_o>
+          <port_o id="Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" />
+          </port_o>
+          <port_o id="Mout_tag_ram" dir="OUT" is_memory="1" is_master="1" is_tag_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" />
+          </port_o>
+          <NP_functionality LIBRARY="mem_ctrl_kernel in1 in2 in3 in4 out1 M_Rdata_ram Min_tag M_DataRdy request_accepted Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram TAG_MEM_REQ" VERILOG_PROVIDED="
+assign done_port=((Min_tag==TAG_MEM_REQ) &amp;&amp; M_DataRdy);  //if the tag is equal and ready=1 then its the right data
+assign Mout_Wdata_ram = ((sel_LOAD || sel_STORE) &amp;&amp; start_port) ? in1 :{BITSIZE_Mout_Wdata_ram{1'b0}};
+assign out1 = M_Rdata_ram;
+assign Mout_addr_ram = ((sel_LOAD || sel_STORE) &amp;&amp; start_port) ? in2 :{BITSIZE_Mout_addr_ram{1'b0}};
+assign Mout_data_ram_size = ((sel_LOAD || sel_STORE) &amp;&amp; start_port) ? in3 :{BITSIZE_Mout_data_ram_size{1'b0}};
+assign Mout_oe_ram = sel_LOAD &amp;&amp; start_port;
+assign Mout_we_ram = sel_STORE &amp;&amp; start_port;
+assign Mout_tag_ram = ((sel_LOAD || sel_STORE) &amp;&amp; start_port) ? TAG_MEM_REQ :{BITSIZE_Mout_tag_ram{1'b0}};"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>memory_ctrl</name>
+      <circuit>
+        <component_o id="memory_ctrl">
+          <structural_type_descriptor id_type="memory_ctrl"/>
+          <parameter name="NUM_CHANNEL">2</parameter>
+          <parameter name="ADDR_TASKS">3</parameter>
+          <parameter name="ADDR_ACC">2</parameter>
+          <parameter name="NUM_BANK">4</parameter>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_vector_o id="IN_M_Rdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="IN_M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_oe_ram" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_we_ram" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_addr_ram" dir="IN" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_data_ram_size" dir="IN" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_Wdata_ram" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_tag_ram" dir="IN" is_memory="1" is_tag_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1"  is_master="1">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="OUT_Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="OUT_Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="OUT_Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_Rdata_ram" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_DataRdy" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Min_tag" dir="OUT" is_memory="1" is_tag_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="request_accepted" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="memory_ctrl IN_M_Rdata_ram IN_M_DataRdy Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram M_Rdata_ram M_DataRdy Min_tag request_accepted NUM_CHANNEL ADDR_TASKS ADDR_ACC NUM_BANK"
+          IP_COMPONENT="fifio,register_SE_r,PT_RR_FU,mux_pw_2,bus_merger" VERILOG_PROVIDED="
+//In order to be generated correctly num NUM_BANK>=NUM_CHANNEL and both of them must be a power of 2
+
+parameter FIFO_OUT =ADDR_TASKS+ADDR_ACC, FIFO_IN=ADDR_TASKS+ADDR_ACC;
+parameter MEMORY_REQUEST_TOTAL_SIZE = BITSIZE_Mout_tag_ram+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_addr_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram;
+parameter MEMORY_ANSWER_TOTAL_SIZE = BITSIZE_Mout_tag_ram+BITSIZE_M_Rdata_ram;
+parameter MEMORY_ANSWER_CHANNEL_MSB=ADDR_ACC+ADDR_TASKS+BITSIZE_M_Rdata_ram-1;  //MSB=Most significant bit of addr_acc
+parameter MEMORY_ANSWER_CHANNEL_LSB=ADDR_ACC+ADDR_TASKS+BITSIZE_M_Rdata_ram-$clog2(NUM_CHANNEL);  //MSB=Most significant bit of addr_acc
+parameter MSB_BANK_0=$clog2(NUM_BANK)+2+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram-1; //MSB=oe+we+2 bit (32 bit address)+log2(bank) -1
+parameter MSB_BANK_1=$clog2(NUM_BANK)-$clog2(NUM_CHANNEL)+2+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram; //MSB=oe+we+2 bit (32 bit address)+log2(bank)-log2(channel)
+parameter LSB_BANK_0=$clog2(NUM_BANK)-$clog2(NUM_CHANNEL)+2+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram-1; //MSB=oe+we+2 bit (32 bit address)+log2(bank)-log2(channel) -1
+parameter LSB_BANK_1=2+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram; //MSB=oe+we+2 bit (32 bit address)
+parameter MSB_BANK_TAG=BITSIZE_Mout_oe_ram + BITSIZE_Mout_we_ram + 2 + $clog2(NUM_BANK) - 1; //BITSIZE_Mout_oe_ram + BITSIZE_Mout_we_ram is the LSB of the address, +2 since we are accessing 32 bit words
+parameter LSB_BANK_TAG=BITSIZE_Mout_oe_ram + BITSIZE_Mout_we_ram + 2;  //BITSIZE_Mout_oe_ram + BITSIZE_Mout_we_ram is the LSB of the address, +2 since we are accessing 32 bit words
+parameter NUM_BANK_NUM_CHANNEL_RATIO=(NUM_BANK > NUM_CHANNEL) ? NUM_BANK/NUM_CHANNEL : 1;
+parameter ATOMIC_BIT_OFFSET = MEMORY_REQUEST_TOTAL_SIZE - 2;
+parameter WE_BIT_OFFSET = BITSIZE_Mout_oe_ram;
+
+// fifo to memory
+wire [NUM_BANK-1:0] to_memory_fifo_full;
+wire [NUM_BANK-1:0] to_memory_fifo_empty;
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK-1:0] to_memory_fifo_data_out;
+wire [NUM_BANK-1:0] to_memory_fifo_rd_en;
+wire [NUM_BANK-1:0] to_memory_fifo_wr_en;
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK-1:0] to_memory_fifo_data_in;
+
+// This is the output of the multiplexer beween top of the from_memory_fifo and atomic write register
+wire [MEMORY_REQUEST_TOTAL_SIZE * NUM_BANK - 1 :0] to_memory_next_request;
+
+
+// fifo out
+wire [NUM_BANK-1:0] from_memory_fifo_full;
+wire [NUM_BANK-1:0] from_memory_fifo_empty;
+wire [MEMORY_ANSWER_TOTAL_SIZE*NUM_BANK-1:0] from_memory_fifo_data_out;
+wire [NUM_BANK-1:0] from_memory_fifo_rd_en;
+wire [NUM_BANK-1:0] from_memory_fifo_wr_en;
+wire [MEMORY_ANSWER_TOTAL_SIZE*NUM_BANK-1:0] from_memory_fifo_data_in;
+
+//register status
+reg [3*NUM_BANK-1:0] next_status;
+wire [3*NUM_BANK-1:0] current_status;
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK-1:0] registered_to_memory_next_request;
+
+//to bank
+wire [BITSIZE_Mout_oe_ram*NUM_BANK-1:0] Mout_oe_ram_0;
+wire [BITSIZE_Mout_we_ram*NUM_BANK-1:0] Mout_we_ram_0;
+wire [BITSIZE_Mout_addr_ram*NUM_BANK-1:0] Mout_addr_ram_0;
+wire [BITSIZE_Mout_Wdata_ram*NUM_BANK-1:0] Mout_Wdata_ram_0;
+wire [BITSIZE_Mout_data_ram_size*NUM_BANK-1:0] Mout_data_ram_size_0;
+wire [BITSIZE_Mout_oe_ram*NUM_BANK-1:0] Mout_oe_ram_1;
+wire [BITSIZE_Mout_we_ram*NUM_BANK-1:0] Mout_we_ram_1;
+wire [BITSIZE_Mout_addr_ram*NUM_BANK-1:0] Mout_addr_ram_1;
+wire [BITSIZE_Mout_Wdata_ram*NUM_BANK-1:0] Mout_Wdata_ram_1;
+wire [BITSIZE_Mout_data_ram_size*NUM_BANK-1:0] Mout_data_ram_size_1;
+wire [NUM_BANK-1:0] valid_registered_to_memory_next_request_oe_we;
+wire [NUM_BANK-1:0] valid_registered_to_memory_next_request;
+wire [NUM_BANK-1:0] top_fifo_register_we;
+wire [NUM_BANK-1:0] copy_from_fifo_to_top_fifo_register;
+
+//rotation in
+wire [NUM_CHANNEL-1:0] from_channel_request;
+wire [NUM_BANK-1:0] rotate_inter_to_memory_fifos;
+wire [NUM_BANK-1:0] from_channel_to_banks;
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK-1:0] exit_arbiter_0_fifo;
+wire [NUM_BANK-1:0] rotate_single_to_memory_fifo;
+wire [NUM_BANK-1:0] request_accepted_by_fifo;
+
+//rotation out
+wire [NUM_BANK-1:0] selector_mux_from_memory_fifo_out;
+wire [NUM_CHANNEL-1:0] rotation_fifo_out;
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_CHANNEL-1:0] data_in;
+wire [NUM_BANK-1:0] source_from_memory_fifo_inter_rotation;
+wire [NUM_BANK-1:0] request_out;
+wire [MEMORY_ANSWER_TOTAL_SIZE*NUM_CHANNEL-1:0] channel_out;
+
+//atomic_write register
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK-1:0] next_atomic_write;
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK-1:0] bank_incoming_atomic_write;
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK-1:0] registered_atomic_write;
+//wire [NUM_BANK-1:0] bank_incoming_atomic_write_we;
+wire [MEMORY_REQUEST_TOTAL_SIZE * NUM_BANK * NUM_CHANNEL - 1:0] all_incoming_atomic_write;
+wire [NUM_BANK-1:0] reset_registered_atomic_write;
+wire [NUM_BANK-1:0] atomic_write_we;
+
+parameter S_0 = 3'b000,
+          S_1 = 3'b001,
+          S_2 = 3'b010,
+          S_3 = 3'b011,
+          S_4 = 3'b100,
+          S_5 = 3'b101;
+genvar i;
+generate
+  for(i=0; i&lt;NUM_BANK; i=i+1)
+  begin
+    // IN - I am putting data from parallel
+    fifio #(.BITSIZE_data_in(MEMORY_REQUEST_TOTAL_SIZE), .BITSIZE_data_out(MEMORY_REQUEST_TOTAL_SIZE), .ADDR_WIDTH(FIFO_IN), .DEPTH(2**FIFO_IN)) to_memory_fifo (.full (to_memory_fifo_full[i]), .empty (to_memory_fifo_empty[i]), .data_out (to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]), .clock (clock), .reset (reset), .rd_en (to_memory_fifo_rd_en[i]), .wr_en (to_memory_fifo_wr_en[i]), .data_in (to_memory_fifo_data_in[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]));
+      // apsl ERROR_write_atomic_in_fifo: assert never to_memory_fifo_data_in[MEMORY_REQUEST_TOTAL_SIZE * i + ATOMIC_BIT_OFFSET] &amp;&amp; to_memory_fifo_data_in[MEMORY_REQUEST_TOTAL_SIZE * i + 1] &amp;&amp; to_memory_fifo_wr_en[i];
+      // apsl ERROR_read_atomic_from_fifo: assert never to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE * i + ATOMIC_BIT_OFFSET] &amp;&amp; to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE * i + 1] &amp;&amp; to_memory_fifo_rd_en[i];
+
+    //OUT - I am putting data from memory
+    fifio #(.BITSIZE_data_in(MEMORY_ANSWER_TOTAL_SIZE), .BITSIZE_data_out(MEMORY_ANSWER_TOTAL_SIZE), .ADDR_WIDTH(FIFO_OUT), .DEPTH(2**FIFO_OUT)) from_memory_fifo_0 (.full (from_memory_fifo_full[i]), .empty (from_memory_fifo_empty[i]), .data_out (from_memory_fifo_data_out[MEMORY_ANSWER_TOTAL_SIZE*(i+1)-1:MEMORY_ANSWER_TOTAL_SIZE*i]), .clock (clock), .reset (reset), .rd_en (from_memory_fifo_rd_en[i]), .wr_en (from_memory_fifo_wr_en[i]), .data_in (from_memory_fifo_data_in[MEMORY_ANSWER_TOTAL_SIZE*(i+1)-1:MEMORY_ANSWER_TOTAL_SIZE*i]));
+
+    //register of data that is connected with memory (blocking)
+    register_SE_r #(.BITSIZE_in1(MEMORY_REQUEST_TOTAL_SIZE), .BITSIZE_out1(MEMORY_REQUEST_TOTAL_SIZE)) top_fifo_register(.clock(clock), .reset(reset), .in1(to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]), .we(top_fifo_register_we[i]), .out1(registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]));
+
+    //register status of each bank of memory
+    register_SE_r #(.BITSIZE_in1(3), .BITSIZE_out1(3)) register_status(.clock(clock), .reset(reset), .in1(next_status[3*(i+1)-1:3*i]), .we(1'b1), .out1(current_status[3*(i+1)-1:3*i]));
+
+    //register of atomic write
+    register_SE_r #(.BITSIZE_in1(MEMORY_REQUEST_TOTAL_SIZE), .BITSIZE_out1(MEMORY_REQUEST_TOTAL_SIZE)) register_write_atomic(.clock(clock), .reset(reset), .in1(bank_incoming_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]), .we(atomic_write_we[i]), .out1(registered_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]));
+
+    //Input of the register of the atomic write; it is the next atomic write until it is written into the top_fifo_register
+    assign bank_incoming_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i] =
+       reset_registered_atomic_write[i]
+       ?
+       {MEMORY_REQUEST_TOTAL_SIZE{1'b0}}
+       :
+       next_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]
+       ;
+    //We delete the content of the register if it contains an atomic write which is going to be written in the top_fifo_register or it has already be written in the top_fifo_register (i.e., there is atomic write in the top_fifo_register)
+    assign reset_registered_atomic_write[i] = (registered_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp;&amp; top_fifo_register_we[i]) || (registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp;&amp; registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i + 1]);
+
+    //We write atomic write register when there is atomic write on the internal channel or the current atomic write is moved to registered_to_memory_next_request
+    assign atomic_write_we[i] = next_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] || (to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp;&amp; top_fifo_register_we[i]);
+
+    ///Write of register of atomic write; it is written when there is a new atomic write or when the current one is dispatched to the memory
+    //assign bank_incoming_atomic_write_we[i] = (bank_incoming_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp; &amp; bank_incoming_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + WE_BIT_OFFSET]) || next_status == S_1;
+
+    // Multiplexer between top of the to memory fifo and write atomic register
+    assign to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i] = registered_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] ? registered_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i] : to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i];
+
+    //fifo that accept a request from parallel write, the second arbiter is 1
+    assign request_accepted_by_fifo[i]=(to_memory_fifo_wr_en[i] &amp;&amp; !rotate_inter_to_memory_fifos[i] &amp;&amp; !rotate_single_to_memory_fifo[i] &amp;&amp; from_channel_to_banks[i]);
+
+    // to_memory_fifo_data_in can be output of to_memory_fifo_data_out or data from arbiter_0 (HIGH LEVEL)
+    assign to_memory_fifo_data_in[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i] =
+       (rotate_inter_to_memory_fifos[i])
+       ?
+       to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*((NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK+1)-1:MEMORY_REQUEST_TOTAL_SIZE*((NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK)]
+       :
+       exit_arbiter_0_fifo[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i];
+
+    // exit_arbiter_0 can be output of to_memory_fifo_data_out itself or data from channel (LOW LEVEL)
+    assign exit_arbiter_0_fifo[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i] = 
+       (from_channel_to_banks[i])
+       ?
+       data_in[MEMORY_REQUEST_TOTAL_SIZE*(i/NUM_BANK_NUM_CHANNEL_RATIO+1)-1:MEMORY_REQUEST_TOTAL_SIZE*(i/NUM_BANK_NUM_CHANNEL_RATIO)] 
+       :
+       to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i];
+
+    //write on fifo if not full and or there is a real request from another fifo, a rotation or data from channel
+    assign to_memory_fifo_wr_en[i]=(rotate_inter_to_memory_fifos[i] || from_channel_to_banks[i] || rotate_single_to_memory_fifo[i]);
+
+    //MUX arbiter_0 reads from channel if there is an actual request, if the fifo is not full, if the request is for this fifo (or one connected by inter rotation mechanism) and it is not an atomic write
+    assign from_channel_to_banks[i] = (from_channel_request[i/NUM_BANK_NUM_CHANNEL_RATIO] &amp;&amp; !to_memory_fifo_full[i] &amp;&amp; data_in[MEMORY_REQUEST_TOTAL_SIZE*(i/NUM_BANK_NUM_CHANNEL_RATIO)+LSB_BANK_0:MEMORY_REQUEST_TOTAL_SIZE*(i/NUM_BANK_NUM_CHANNEL_RATIO)+LSB_BANK_1]==(i%NUM_BANK_NUM_CHANNEL_RATIO) &amp;&amp; ~(data_in[MEMORY_REQUEST_TOTAL_SIZE * (i/NUM_BANK_NUM_CHANNEL_RATIO) + ATOMIC_BIT_OFFSET] &amp;&amp; data_in[MEMORY_REQUEST_TOTAL_SIZE * (i/NUM_BANK_NUM_CHANNEL_RATIO) + 1]));
+
+    //if fifo_in opposite wants to copy data on correct fifo then do it only if destination not full
+    assign rotate_inter_to_memory_fifos[i]=(!to_memory_fifo_empty[(NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK] &amp;&amp; to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*((NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK)+MSB_BANK_0:MEMORY_REQUEST_TOTAL_SIZE*((NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK)+MSB_BANK_1]!=(((NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK)/NUM_BANK_NUM_CHANNEL_RATIO) &amp;&amp; !to_memory_fifo_full[i]);
+
+    ///Read if (the top has to be rotated to a different fifo) or (the fifo has to be rotated) or (the top has to be written in the register)
+    assign to_memory_fifo_rd_en[i]= rotate_inter_to_memory_fifos[(i+NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK] || (rotate_single_to_memory_fifo[i] &amp;&amp; !from_channel_to_banks[i] &amp;&amp; !rotate_inter_to_memory_fifos[i]) || copy_from_fifo_to_top_fifo_register[i];
+
+    //Rotate the single fifo if fifo is not empty and bank is locked and there is not inter fifos rotation and (top fifo operation is atomic (load) or a (non-atomic) store) and there is not operation coming from channel
+    assign rotate_single_to_memory_fifo[i] = 
+       !to_memory_fifo_empty[i] 
+       &amp;&amp;
+       (current_status[3*(i+1)-1:3*i] == S_3 || current_status[3*(i+1)-1:3*i] == S_4 || current_status[3*(i+1)-1:3*i] == S_5)
+       &amp;&amp;
+       !rotate_inter_to_memory_fifos[(i+NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK]
+       &amp;&amp;
+       (
+          (
+             to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-2]
+          )
+          ||
+          (
+             to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram-1]
+          )
+       )
+       &amp;&amp;
+       !from_channel_to_banks[i]
+       ;
+
+
+    //FSM for the state of the register
+    always @(*) begin
+      case(current_status[3*(i+1)-1:3*i])
+      S_0: begin //Bank is available
+          //Operation in the top of the fifo is for this bank
+          if (!to_memory_fifo_empty[i] &amp;&amp; to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*i+MSB_BANK_0:MEMORY_REQUEST_TOTAL_SIZE*i+MSB_BANK_1]==(i/NUM_BANK_NUM_CHANNEL_RATIO)) begin
+            //There is an atomic read on top of the fifo
+            if(to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp;&amp; to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i]) begin
+               next_status[3*(i+1)-1:3*i] = S_4;        //busy - we wait for atomic write 
+            end
+            else begin
+              next_status[3*(i+1)-1:3*i] = S_1;         //Bank starts memory operation - It becomes busy
+            end
+          end
+          else begin
+             next_status[3*(i+1)-1:3*i] = S_0;          //Bank remains available
+          end
+        end
+        S_1: begin ///Bank is busy
+          if(!IN_M_DataRdy[i]) begin
+             next_status[3*(i+1)-1:3*i] = S_1;          //Bank remains busy
+          end
+          else begin
+            if(!source_from_memory_fifo_inter_rotation[(NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK] &amp;&amp; !from_memory_fifo_full[i]) begin //Bank ends operation
+              next_status[3*(i+1)-1:3*i] = S_0;         //Bank ends operation and becomes available
+            end
+            else begin
+              next_status[3*(i+1)-1:3*i] = S_2;         //Bank ends operation, but result has to be transfered (or the fifo is full)
+            end
+          end
+        end
+        S_2: begin                                      //Bank already ended operation, but result has to be transfered
+          if(!source_from_memory_fifo_inter_rotation[(NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK] &amp;&amp; !from_memory_fifo_full[i]) begin
+            next_status[3*(i+1)-1:3*i] = S_0;           //Bank becomesd available
+          end
+          else begin
+            next_status[3*(i+1)-1:3*i] = S_2;           //Bank already ended operation, but result cannot yet be transfered
+          end
+        end
+        S_3: begin                                      //Bank is available but locked
+          if(registered_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET]) begin
+             next_status[3*(i+1)-1:3*i]=S_1;           //status is busy
+          end
+          else begin
+             if (copy_from_fifo_to_top_fifo_register[i]) begin
+                next_status[3*(i+1)-1:3*i] = S_4;           //status is busy rotate
+             end
+             else begin
+                next_status[3*(i+1)-1:3*i] = S_3;          //The operation on top of the fifo is not for this bank or it is atomic read (bank is locked)
+             end
+          end
+        end
+        S_4: begin                                      //Bank is busy and we wait for atomic write 
+          if(!IN_M_DataRdy[i]) begin
+            next_status[3*(i+1)-1:3*i] = S_4;           //Memory operation does not end
+          end
+          else begin
+            if(!source_from_memory_fifo_inter_rotation[(NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK] &amp;&amp; !from_memory_fifo_full[i]) begin  //if ready, no request to rotate and fifo not full then free
+               next_status[3*(i+1)-1:3*i] = S_3;        //Atomic write ends; bank is available but locked (i.e., only corresponding atomic read an all the non-atomic reads can go ahead)
+            end
+            else begin
+              next_status[3*(i+1)-1:3*i] = S_5;         //Atomic write ends; fifo from memory is not available
+            end
+          end
+        end
+        S_5: begin                                      //Bank already ended operation, but fifo is not available
+          if(!source_from_memory_fifo_inter_rotation[(NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK] &amp;&amp; !from_memory_fifo_full[i]) begin
+            next_status[3*(i+1)-1:3*i] = S_3;           //Bank already ended operation and fifo becomes available
+          end
+          else begin
+            next_status[3*(i+1)-1:3*i] = S_5;           //Bank already ended operation, but fifo from memory is not available
+          end
+        end
+        default: begin
+          next_status[3*(i+1)-1:3*i]=S_0;
+        end
+      endcase
+    end
+
+    //OUT PART
+
+    //valid output only if fifo not empty and state is 00 and data is correct, or status is 01 and not ready, or status is 11 data correct, no rotation and fifo not empty
+    assign valid_registered_to_memory_next_request_oe_we[i]=((current_status[3*(i+1)-1:3*i] == S_1 || current_status[3*(i+1)-1:3*i] == S_4) &amp;&amp; !IN_M_DataRdy[i]);
+    assign valid_registered_to_memory_next_request[i]= current_status[3*(i+1)-1:3*i] == S_1 || current_status[3*(i+1)-1:3*i] == S_4 || current_status[3*(i+1)-1:3*i]== S_2 || current_status[3*(i+1)-1:3*i] == S_5;
+
+    //Top fifo register is written if (data is copied from fifo) or (status is S_3 and (there is atomic write or (fifo is not empty and the request has not to be rotated)))Y
+    assign top_fifo_register_we[i] =
+       (
+          copy_from_fifo_to_top_fifo_register[i]
+          ||
+          (
+             current_status[3*(i+1)-1:3*i] == S_3
+             &amp;&amp;
+             registered_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET]
+          )
+       );
+
+    //Data is copied from fifo to top register if (status is S_0 or (S_3 and there is not an atomic write and the operation is not atomic)) and (fifo is not empty and next request is for this bank)
+    assign copy_from_fifo_to_top_fifo_register[i] =
+       (
+          current_status[3*(i+1)-1:3*i] == S_0
+          ||
+          (
+             current_status[3*(i+1)-1:3*i] == S_3
+             &amp;&amp;
+             !registered_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET]
+             &amp;&amp;
+             !to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET]
+          )
+       )
+       &amp;&amp;
+       !to_memory_fifo_empty[i]
+       &amp;&amp;
+       to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*i+MSB_BANK_0:MEMORY_REQUEST_TOTAL_SIZE*i+MSB_BANK_1]==(i/NUM_BANK_NUM_CHANNEL_RATIO)
+       ;
+
+//output send out by module
+    assign Mout_oe_ram_0[i]=(registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_oe_ram{valid_registered_to_memory_next_request_oe_we[i]}});
+    assign Mout_we_ram_0[i]= (registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_we_ram{valid_registered_to_memory_next_request_oe_we[i]}});
+    assign Mout_addr_ram_0[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i]= (registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_addr_ram{valid_registered_to_memory_next_request[i]}});
+    assign Mout_data_ram_size_0[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i]= (registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_data_ram_size{valid_registered_to_memory_next_request[i]}});
+    assign Mout_Wdata_ram_0[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i]= (registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_Wdata_ram{valid_registered_to_memory_next_request[i]}});
+
+//output send out by module
+    assign Mout_oe_ram_1[i]=(to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_oe_ram{top_fifo_register_we[i]}});
+    assign Mout_we_ram_1[i]=(to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_we_ram{top_fifo_register_we[i]}});
+    assign Mout_addr_ram_1[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i]=(to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_addr_ram{top_fifo_register_we[i]}});
+    assign Mout_data_ram_size_1[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i]=(to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_data_ram_size{top_fifo_register_we[i]}});
+    assign Mout_Wdata_ram_1[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i]=(to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_Wdata_ram{top_fifo_register_we[i]}});
+
+    //if there is a block on out_channel that has incorrect kernel translate it
+      assign source_from_memory_fifo_inter_rotation[i] = from_memory_fifo_data_out[MEMORY_ANSWER_TOTAL_SIZE*i + MEMORY_ANSWER_CHANNEL_MSB : MEMORY_ANSWER_TOTAL_SIZE*i + MEMORY_ANSWER_CHANNEL_LSB] != (i/NUM_BANK_NUM_CHANNEL_RATIO) &amp;&amp; !from_memory_fifo_empty[i] &amp;&amp; !from_memory_fifo_full[(i+NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK];
+
+    //if fifo out not full and or there is a request to rotate or the corresponding register has data ready then copy data
+    assign from_memory_fifo_wr_en[i]= (!from_memory_fifo_full[i] &amp;&amp; (source_from_memory_fifo_inter_rotation[(NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK] || current_status[3*(i+1)-1:3*i]== S_2 || current_status[3*(i+1)-1:3*i] == S_5 || IN_M_DataRdy[i]));
+
+    //if there is a request to rotate then that is data in of FIFO_OUT, otherwise is exit of register
+    assign from_memory_fifo_data_in[MEMORY_ANSWER_TOTAL_SIZE*(i+1)-1:MEMORY_ANSWER_TOTAL_SIZE*i] = (source_from_memory_fifo_inter_rotation[(NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK]) 
+       ? from_memory_fifo_data_out[MEMORY_ANSWER_TOTAL_SIZE*((NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK+1)-1:MEMORY_ANSWER_TOTAL_SIZE*((NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK)] 
+       : {registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*(i+1)-BITSIZE_Mout_tag_ram], IN_M_Rdata_ram[BITSIZE_M_Rdata_ram*(i+1)-1:BITSIZE_M_Rdata_ram*i]};
+
+    //if fifo is nonempty and data is in the correct channel (look at the most significant bit of the kernel) then request to go down
+    assign request_out[i]=(!from_memory_fifo_empty[i] &amp;&amp; from_memory_fifo_data_out[MEMORY_ANSWER_TOTAL_SIZE*i+MEMORY_ANSWER_CHANNEL_MSB:MEMORY_ANSWER_TOTAL_SIZE*i+MEMORY_ANSWER_CHANNEL_LSB]==(i/NUM_BANK_NUM_CHANNEL_RATIO));
+
+    // read if data selected has to go down or to be translated
+    assign from_memory_fifo_rd_en[i]=(source_from_memory_fifo_inter_rotation[i] || selector_mux_from_memory_fifo_out[i]);
+  end
+endgenerate
+
+genvar j;
+generate
+for(i=0; i&lt;NUM_CHANNEL; i=i+1)
+  begin
+    //arbiter to decide in case of multiple data ready which one go down
+    PT_RR_FU #(.BITSIZE_ops(1), .PORTSIZE_ops(NUM_BANK_NUM_CHANNEL_RATIO), .BITSIZE_rops(1), .PORTSIZE_rops(NUM_BANK_NUM_CHANNEL_RATIO)) RR_fifo_in(.ops(selector_mux_from_memory_fifo_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)-1:NUM_BANK_NUM_CHANNEL_RATIO*i]), .ENABLE(1'b1), .clock(clock), .reset(!reset), .rops(request_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)-1:NUM_BANK_NUM_CHANNEL_RATIO*i]));
+
+    //mux for exit, decide which data output of fifo to give on output
+    mux_pw_2 #(.BITSIZE_selector(NUM_BANK_NUM_CHANNEL_RATIO), .BITSIZE_data(MEMORY_ANSWER_TOTAL_SIZE*NUM_BANK_NUM_CHANNEL_RATIO), .BITSIZE_out(MEMORY_ANSWER_TOTAL_SIZE)) mux_out (.selector(selector_mux_from_memory_fifo_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)-1:NUM_BANK_NUM_CHANNEL_RATIO*i]), .data(from_memory_fifo_data_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)*MEMORY_ANSWER_TOTAL_SIZE-1:NUM_BANK_NUM_CHANNEL_RATIO*i*MEMORY_ANSWER_TOTAL_SIZE]), .out(channel_out[MEMORY_ANSWER_TOTAL_SIZE*(i+1)-1:MEMORY_ANSWER_TOTAL_SIZE*i]));
+
+    //create the packed used to put data toghether into fifo
+    assign data_in[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i] =
+      {
+         Mout_tag_ram[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i],
+         Mout_Wdata_ram[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i],
+         Mout_data_ram_size[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i],
+         Mout_addr_ram[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i],
+         Mout_we_ram[BITSIZE_Mout_we_ram*(i+1)-1:BITSIZE_Mout_we_ram*i],
+         Mout_oe_ram[BITSIZE_Mout_oe_ram*(i+1)-1:BITSIZE_Mout_oe_ram*i]
+      };
+
+    //check if there is a real request
+    assign from_channel_request[i]=Mout_oe_ram[i]||Mout_we_ram[i];
+
+    //bind the channel for the output
+    assign M_Rdata_ram[BITSIZE_M_Rdata_ram*(i+1)-1:BITSIZE_M_Rdata_ram*i]=channel_out[MEMORY_ANSWER_TOTAL_SIZE*i+BITSIZE_M_Rdata_ram-1:MEMORY_ANSWER_TOTAL_SIZE*i];
+    assign Min_tag[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i]=channel_out[MEMORY_ANSWER_TOTAL_SIZE*i+BITSIZE_M_Rdata_ram+BITSIZE_Mout_tag_ram-1:MEMORY_ANSWER_TOTAL_SIZE*i+BITSIZE_M_Rdata_ram];
+
+    //if or of selector has at least 1 means that there is a data ready coming down
+    assign M_DataRdy[i]=(|selector_mux_from_memory_fifo_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)-1:NUM_BANK_NUM_CHANNEL_RATIO*i]);
+
+    //rd_en send to lower level only if the fifo in this module read their data; atomic write are always accepted
+    assign request_accepted[i]=(|request_accepted_by_fifo[(i+1)*NUM_BANK_NUM_CHANNEL_RATIO-1:i*NUM_BANK_NUM_CHANNEL_RATIO]) || (data_in[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp; &amp; data_in[MEMORY_REQUEST_TOTAL_SIZE*i + WE_BIT_OFFSET]);
+
+    ///Generate all_incoming_atomic_write: for each channel, for each bank we check if the current memory request is an atomic write targeting that bank
+    for(j=0; j&lt;NUM_BANK; j=j+1)
+    begin
+       assign all_incoming_atomic_write[((MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK*i) + (MEMORY_REQUEST_TOTAL_SIZE*(j+1)))-1:(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK*i) + (MEMORY_REQUEST_TOTAL_SIZE*j)] =
+          data_in[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp;&amp; data_in[MEMORY_REQUEST_TOTAL_SIZE*i + WE_BIT_OFFSET] &amp;&amp; data_in[MEMORY_REQUEST_TOTAL_SIZE*i + MSB_BANK_TAG : MEMORY_REQUEST_TOTAL_SIZE*i + LSB_BANK_TAG] == j
+             ?
+                data_in[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]
+             :
+                {MEMORY_REQUEST_TOTAL_SIZE{1'b0}};
+    end
+  end
+endgenerate
+
+//output to bank is the merge of out fifo and register
+bus_merger #(.BITSIZE_in1(BITSIZE_Mout_oe_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_oe_ram*NUM_BANK)) bus_merger_Mout_oe_ram (.out1(OUT_Mout_oe_ram), .in1({Mout_oe_ram_0, Mout_oe_ram_1}));
+bus_merger #(.BITSIZE_in1(BITSIZE_Mout_we_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_we_ram*NUM_BANK)) bus_merger_Mout_we_ram (.out1(OUT_Mout_we_ram), .in1({Mout_we_ram_0, Mout_we_ram_1}));
+bus_merger #(.BITSIZE_in1(BITSIZE_Mout_addr_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_addr_ram*NUM_BANK)) bus_merger_Mout_addr_ram (.out1(OUT_Mout_addr_ram), .in1({Mout_addr_ram_0, Mout_addr_ram_1}));
+bus_merger #(.BITSIZE_in1(BITSIZE_Mout_data_ram_size*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_data_ram_size*NUM_BANK)) bus_merger_Mout_data_ram_size (.out1(OUT_Mout_data_ram_size), .in1({Mout_data_ram_size_0, Mout_data_ram_size_1}));
+bus_merger #(.BITSIZE_in1(BITSIZE_Mout_Wdata_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_Wdata_ram*NUM_BANK)) bus_merger_Mout_Wdata_ram (.out1(OUT_Mout_Wdata_ram), .in1({Mout_Wdata_ram_0, Mout_Wdata_ram_1}));
+
+//input to register of atomic_write is the merge of the atomic write coming from the single channels; only one atomic write for each bank can be active
+bus_merger #(.BITSIZE_in1(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK), .PORTSIZE_in1(NUM_CHANNEL), .BITSIZE_out1(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK)) bus_merger_next_atomic_write (.out1(next_atomic_write), .in1(all_incoming_atomic_write));
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>memory_ctrl_sigle_input</name>
+      <circuit>
+        <component_o id="memory_ctrl_sigle_input">
+          <structural_type_descriptor id_type="memory_ctrl_sigle_input"/>
+          <parameter name="NUM_CHANNEL">1</parameter>
+          <parameter name="ADDR_TASKS">3</parameter>
+          <parameter name="ADDR_ACC">2</parameter>
+          <parameter name="NUM_BANK">4</parameter>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_vector_o id="IN_M_Rdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="IN_M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_oe_ram" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_we_ram" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_addr_ram" dir="IN" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_data_ram_size" dir="IN" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_Wdata_ram" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_tag_ram" dir="IN" is_memory="1" is_tag_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1"  is_master="1">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="OUT_Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="OUT_Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="OUT_Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_Rdata_ram" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_DataRdy" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Min_tag" dir="OUT" is_memory="1" is_tag_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="request_accepted" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="memory_ctrl IN_M_Rdata_ram IN_M_DataRdy Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram M_Rdata_ram M_DataRdy Min_tag request_accepted NUM_CHANNEL ADDR_TASKS ADDR_ACC NUM_BANK"
+          IP_COMPONENT="fifio,register_SE_r,PT_RR_FU,mux_pw_2,bus_merger" VERILOG_PROVIDED="
+//In order to be generated correctly num NUM_BANK>=NUM_CHANNEL and both of them must be a power of 2
+
+parameter FIFO_OUT =ADDR_TASKS+ADDR_ACC, FIFO_IN=ADDR_TASKS+ADDR_ACC;
+parameter MEMORY_REQUEST_TOTAL_SIZE = BITSIZE_Mout_tag_ram+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_addr_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram;
+parameter MEMORY_ANSWER_TOTAL_SIZE = BITSIZE_Mout_tag_ram+BITSIZE_M_Rdata_ram;
+parameter MEMORY_ANSWER_CHANNEL_MSB=ADDR_ACC+ADDR_TASKS+BITSIZE_M_Rdata_ram-1;  //MSB=Most significant bit of addr_acc
+parameter MEMORY_ANSWER_CHANNEL_LSB=ADDR_ACC+ADDR_TASKS+BITSIZE_M_Rdata_ram-$clog2(NUM_CHANNEL);  //MSB=Most significant bit of addr_acc
+parameter LSB_BANK_0=$clog2(NUM_BANK)-$clog2(NUM_CHANNEL)+2+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram-1; //MSB=oe+we+2 bit (32 bit address)+log2(bank)-log2(channel) -1
+parameter LSB_BANK_1=2+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram; //MSB=oe+we+2 bit (32 bit address)
+parameter MSB_BANK_TAG=BITSIZE_Mout_oe_ram + BITSIZE_Mout_we_ram + 2 + $clog2(NUM_BANK) - 1; //BITSIZE_Mout_oe_ram + BITSIZE_Mout_we_ram is the LSB of the address, +2 since we are accessing 32 bit words
+parameter LSB_BANK_TAG=BITSIZE_Mout_oe_ram + BITSIZE_Mout_we_ram + 2;  //BITSIZE_Mout_oe_ram + BITSIZE_Mout_we_ram is the LSB of the address, +2 since we are accessing 32 bit words
+parameter NUM_BANK_NUM_CHANNEL_RATIO=(NUM_BANK > NUM_CHANNEL) ? NUM_BANK/NUM_CHANNEL : 1;
+parameter ATOMIC_BIT_OFFSET = MEMORY_REQUEST_TOTAL_SIZE - 2;
+parameter WE_BIT_OFFSET = BITSIZE_Mout_oe_ram;
+
+// fifo to memory
+wire [NUM_BANK-1:0] to_memory_fifo_full;
+wire [NUM_BANK-1:0] to_memory_fifo_empty;
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK-1:0] to_memory_fifo_data_out;
+wire [NUM_BANK-1:0] to_memory_fifo_rd_en;
+wire [NUM_BANK-1:0] to_memory_fifo_wr_en;
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK-1:0] to_memory_fifo_data_in;
+
+// This is the output of the multiplexer beween top of the from_memory_fifo and atomic write register
+wire [MEMORY_REQUEST_TOTAL_SIZE * NUM_BANK - 1 :0] to_memory_next_request;
+
+
+// fifo out
+wire [NUM_BANK-1:0] from_memory_fifo_full;
+wire [NUM_BANK-1:0] from_memory_fifo_empty;
+wire [MEMORY_ANSWER_TOTAL_SIZE*NUM_BANK-1:0] from_memory_fifo_data_out;
+wire [NUM_BANK-1:0] from_memory_fifo_rd_en;
+wire [NUM_BANK-1:0] from_memory_fifo_wr_en;
+wire [MEMORY_ANSWER_TOTAL_SIZE*NUM_BANK-1:0] from_memory_fifo_data_in;
+
+//register status
+reg [3*NUM_BANK-1:0] next_status;
+wire [3*NUM_BANK-1:0] current_status;
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK-1:0] registered_to_memory_next_request;
+
+//to bank
+wire [BITSIZE_Mout_oe_ram*NUM_BANK-1:0] Mout_oe_ram_0;
+wire [BITSIZE_Mout_we_ram*NUM_BANK-1:0] Mout_we_ram_0;
+wire [BITSIZE_Mout_addr_ram*NUM_BANK-1:0] Mout_addr_ram_0;
+wire [BITSIZE_Mout_Wdata_ram*NUM_BANK-1:0] Mout_Wdata_ram_0;
+wire [BITSIZE_Mout_data_ram_size*NUM_BANK-1:0] Mout_data_ram_size_0;
+wire [BITSIZE_Mout_oe_ram*NUM_BANK-1:0] Mout_oe_ram_1;
+wire [BITSIZE_Mout_we_ram*NUM_BANK-1:0] Mout_we_ram_1;
+wire [BITSIZE_Mout_addr_ram*NUM_BANK-1:0] Mout_addr_ram_1;
+wire [BITSIZE_Mout_Wdata_ram*NUM_BANK-1:0] Mout_Wdata_ram_1;
+wire [BITSIZE_Mout_data_ram_size*NUM_BANK-1:0] Mout_data_ram_size_1;
+wire [NUM_BANK-1:0] valid_registered_to_memory_next_request_oe_we;
+wire [NUM_BANK-1:0] valid_registered_to_memory_next_request;
+wire [NUM_BANK-1:0] top_fifo_register_we;
+wire [NUM_BANK-1:0] copy_from_fifo_to_top_fifo_register;
+
+//rotation in
+wire [NUM_CHANNEL-1:0] from_channel_request;
+wire [NUM_BANK-1:0] rotate_inter_to_memory_fifos;
+wire [NUM_BANK-1:0] from_channel_to_banks;
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK-1:0] exit_arbiter_0_fifo;
+wire [NUM_BANK-1:0] rotate_single_to_memory_fifo;
+wire [NUM_BANK-1:0] request_accepted_by_fifo;
+
+//rotation out
+wire [NUM_BANK-1:0] selector_mux_from_memory_fifo_out;
+wire [NUM_CHANNEL-1:0] rotation_fifo_out;
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_CHANNEL-1:0] data_in;
+wire [NUM_BANK-1:0] request_out;
+wire [MEMORY_ANSWER_TOTAL_SIZE*NUM_CHANNEL-1:0] channel_out;
+
+//atomic_write register
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK-1:0] next_atomic_write;
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK-1:0] bank_incoming_atomic_write;
+wire [MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK-1:0] registered_atomic_write;
+//wire [NUM_BANK-1:0] bank_incoming_atomic_write_we;
+wire [MEMORY_REQUEST_TOTAL_SIZE * NUM_BANK * NUM_CHANNEL - 1:0] all_incoming_atomic_write;
+wire [NUM_BANK-1:0] reset_registered_atomic_write;
+wire [NUM_BANK-1:0] atomic_write_we;
+
+parameter S_0 = 3'b000,
+          S_1 = 3'b001,
+          S_2 = 3'b010,
+          S_3 = 3'b011,
+          S_4 = 3'b100,
+          S_5 = 3'b101;
+genvar i;
+generate
+  for(i=0; i&lt;NUM_BANK; i=i+1)
+  begin
+    // IN - I am putting data from parallel
+    fifio #(.BITSIZE_data_in(MEMORY_REQUEST_TOTAL_SIZE), .BITSIZE_data_out(MEMORY_REQUEST_TOTAL_SIZE), .ADDR_WIDTH(FIFO_IN), .DEPTH(2**FIFO_IN)) to_memory_fifo (.full (to_memory_fifo_full[i]), .empty (to_memory_fifo_empty[i]), .data_out (to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]), .clock (clock), .reset (reset), .rd_en (to_memory_fifo_rd_en[i]), .wr_en (to_memory_fifo_wr_en[i]), .data_in (to_memory_fifo_data_in[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]));
+      // apsl ERROR_write_atomic_in_fifo: assert never to_memory_fifo_data_in[MEMORY_REQUEST_TOTAL_SIZE * i + ATOMIC_BIT_OFFSET] &amp;&amp; to_memory_fifo_data_in[MEMORY_REQUEST_TOTAL_SIZE * i + 1] &amp;&amp; to_memory_fifo_wr_en[i];
+      // apsl ERROR_read_atomic_from_fifo: assert never to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE * i + ATOMIC_BIT_OFFSET] &amp;&amp; to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE * i + 1] &amp;&amp; to_memory_fifo_rd_en[i];
+
+    //OUT - I am putting data from memory
+    fifio #(.BITSIZE_data_in(MEMORY_ANSWER_TOTAL_SIZE), .BITSIZE_data_out(MEMORY_ANSWER_TOTAL_SIZE), .ADDR_WIDTH(FIFO_OUT), .DEPTH(2**FIFO_OUT)) from_memory_fifo_0 (.full (from_memory_fifo_full[i]), .empty (from_memory_fifo_empty[i]), .data_out (from_memory_fifo_data_out[MEMORY_ANSWER_TOTAL_SIZE*(i+1)-1:MEMORY_ANSWER_TOTAL_SIZE*i]), .clock (clock), .reset (reset), .rd_en (from_memory_fifo_rd_en[i]), .wr_en (from_memory_fifo_wr_en[i]), .data_in (from_memory_fifo_data_in[MEMORY_ANSWER_TOTAL_SIZE*(i+1)-1:MEMORY_ANSWER_TOTAL_SIZE*i]));
+
+    //register of data that is connected with memory (blocking)
+    register_SE_r #(.BITSIZE_in1(MEMORY_REQUEST_TOTAL_SIZE), .BITSIZE_out1(MEMORY_REQUEST_TOTAL_SIZE)) top_fifo_register(.clock(clock), .reset(reset), .in1(to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]), .we(top_fifo_register_we[i]), .out1(registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]));
+
+    //register status of each bank of memory
+    register_SE_r #(.BITSIZE_in1(3), .BITSIZE_out1(3)) register_status(.clock(clock), .reset(reset), .in1(next_status[3*(i+1)-1:3*i]), .we(1'b1), .out1(current_status[3*(i+1)-1:3*i]));
+
+    //register of atomic write
+    register_SE_r #(.BITSIZE_in1(MEMORY_REQUEST_TOTAL_SIZE), .BITSIZE_out1(MEMORY_REQUEST_TOTAL_SIZE)) register_write_atomic(.clock(clock), .reset(reset), .in1(bank_incoming_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]), .we(atomic_write_we[i]), .out1(registered_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]));
+
+    //Input of the register of the atomic write; it is the next atomic write until it is written into the top_fifo_register
+    assign bank_incoming_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i] =
+       reset_registered_atomic_write[i]
+       ?
+       {MEMORY_REQUEST_TOTAL_SIZE{1'b0}}
+       :
+       next_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]
+       ;
+    //We delete the content of the register if it contains an atomic write which is going to be written in the top_fifo_register or it has already be written in the top_fifo_register (i.e., there is atomic write in the top_fifo_register)
+    assign reset_registered_atomic_write[i] = (registered_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp;&amp; top_fifo_register_we[i]) || (registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp;&amp; registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i + 1]);
+
+    //We write atomic write register when there is atomic write on the internal channel or the current atomic write is moved to registered_to_memory_next_request
+    assign atomic_write_we[i] = next_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] || (to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp;&amp; top_fifo_register_we[i]);
+
+    ///Write of register of atomic write; it is written when there is a new atomic write or when the current one is dispatched to the memory
+    //assign bank_incoming_atomic_write_we[i] = (bank_incoming_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp; &amp; bank_incoming_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + WE_BIT_OFFSET]) || next_status == S_1;
+
+    // Multiplexer between top of the to memory fifo and write atomic register
+    assign to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i] = registered_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] ? registered_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i] : to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i];
+
+    //fifo that accept a request from parallel write, the second arbiter is 1
+    assign request_accepted_by_fifo[i]=(to_memory_fifo_wr_en[i] &amp;&amp; !rotate_inter_to_memory_fifos[i] &amp;&amp; !rotate_single_to_memory_fifo[i] &amp;&amp; from_channel_to_banks[i]);
+
+    // to_memory_fifo_data_in can be output of to_memory_fifo_data_out or data from arbiter_0 (HIGH LEVEL)
+    assign to_memory_fifo_data_in[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i] =
+       (rotate_inter_to_memory_fifos[i])
+       ?
+       to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*((NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK+1)-1:MEMORY_REQUEST_TOTAL_SIZE*((NUM_BANK+i-NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK)]
+       :
+       exit_arbiter_0_fifo[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i];
+
+    // exit_arbiter_0 can be output of to_memory_fifo_data_out itself or data from channel (LOW LEVEL)
+    assign exit_arbiter_0_fifo[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i] = 
+       (from_channel_to_banks[i])
+       ?
+       data_in[MEMORY_REQUEST_TOTAL_SIZE*(i/NUM_BANK_NUM_CHANNEL_RATIO+1)-1:MEMORY_REQUEST_TOTAL_SIZE*(i/NUM_BANK_NUM_CHANNEL_RATIO)] 
+       :
+       to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i];
+
+    //write on fifo if not full and or there is a real request from another fifo, a rotation or data from channel
+    assign to_memory_fifo_wr_en[i]=(rotate_inter_to_memory_fifos[i] || from_channel_to_banks[i] || rotate_single_to_memory_fifo[i]);
+
+    //MUX arbiter_0 reads from channel if there is an actual request, if the fifo is not full, if the request is for this fifo (or one connected by inter rotation mechanism) and it is not an atomic write
+    assign from_channel_to_banks[i] = (from_channel_request[i/NUM_BANK_NUM_CHANNEL_RATIO] &amp;&amp; !to_memory_fifo_full[i] &amp;&amp; data_in[MEMORY_REQUEST_TOTAL_SIZE*(i/NUM_BANK_NUM_CHANNEL_RATIO)+LSB_BANK_0:MEMORY_REQUEST_TOTAL_SIZE*(i/NUM_BANK_NUM_CHANNEL_RATIO)+LSB_BANK_1]==(i%NUM_BANK_NUM_CHANNEL_RATIO) &amp;&amp; ~(data_in[MEMORY_REQUEST_TOTAL_SIZE * (i/NUM_BANK_NUM_CHANNEL_RATIO) + ATOMIC_BIT_OFFSET] &amp;&amp; data_in[MEMORY_REQUEST_TOTAL_SIZE * (i/NUM_BANK_NUM_CHANNEL_RATIO) + 1]));
+
+    //if fifo_in opposite wants to copy data on correct fifo then do it only if destination not full
+    assign rotate_inter_to_memory_fifos[i]=0;
+
+    ///Read if (the top has to be rotated to a different fifo) or (the fifo has to be rotated) or (the top has to be written in the register)
+    assign to_memory_fifo_rd_en[i]= rotate_inter_to_memory_fifos[(i+NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK] || (rotate_single_to_memory_fifo[i] &amp;&amp; !from_channel_to_banks[i] &amp;&amp; !rotate_inter_to_memory_fifos[i]) || copy_from_fifo_to_top_fifo_register[i];
+
+    //Rotate the single fifo if fifo is not empty and bank is locked and there is not inter fifos rotation and (top fifo operation is atomic (load) or a (non-atomic) store) and there is not operation coming from channel
+    assign rotate_single_to_memory_fifo[i] = 
+       !to_memory_fifo_empty[i] 
+       &amp;&amp;
+       (current_status[3*(i+1)-1:3*i] == S_3 || current_status[3*(i+1)-1:3*i] == S_4 || current_status[3*(i+1)-1:3*i] == S_5)
+       &amp;&amp;
+       !rotate_inter_to_memory_fifos[(i+NUM_BANK_NUM_CHANNEL_RATIO)%NUM_BANK]
+       &amp;&amp;
+       (
+          (
+             to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-2]
+          )
+          ||
+          (
+             to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram-1]
+          )
+       )
+       &amp;&amp;
+       !from_channel_to_banks[i]
+       ;
+
+
+    //FSM for the state of the register
+    always @(*) begin
+      case(current_status[3*(i+1)-1:3*i])
+      S_0: begin //Bank is available
+          //Operation in the top of the fifo is for this bank
+          if (!to_memory_fifo_empty[i]) begin
+            //There is an atomic read on top of the fifo
+            if(to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp;&amp; to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i]) begin
+               next_status[3*(i+1)-1:3*i] = S_4;        //busy - we wait for atomic write 
+            end
+            else begin
+              next_status[3*(i+1)-1:3*i] = S_1;         //Bank starts memory operation - It becomes busy
+            end
+          end
+          else begin
+             next_status[3*(i+1)-1:3*i] = S_0;          //Bank remains available
+          end
+        end
+        S_1: begin ///Bank is busy
+          if(!IN_M_DataRdy[i]) begin
+             next_status[3*(i+1)-1:3*i] = S_1;          //Bank remains busy
+          end
+          else begin
+            if(!from_memory_fifo_full[i]) begin //Bank ends operation
+              next_status[3*(i+1)-1:3*i] = S_0;         //Bank ends operation and becomes available
+            end
+            else begin
+              next_status[3*(i+1)-1:3*i] = S_2;         //Bank ends operation, but the fifo is full
+            end
+          end
+        end
+        S_2: begin                                      //Bank already ended operation, but result has to be transfered
+          if(!from_memory_fifo_full[i]) begin
+            next_status[3*(i+1)-1:3*i] = S_0;           //Bank becomesd available
+          end
+          else begin
+            next_status[3*(i+1)-1:3*i] = S_2;           //Bank already ended operation, but result cannot yet be transfered
+          end
+        end
+        S_3: begin                                      //Bank is available but locked
+          if(registered_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET]) begin
+             next_status[3*(i+1)-1:3*i]=S_1;           //status is busy
+          end
+          else begin
+             if (copy_from_fifo_to_top_fifo_register[i]) begin
+                next_status[3*(i+1)-1:3*i] = S_4;           //status is busy rotate
+             end
+             else begin
+                next_status[3*(i+1)-1:3*i] = S_3;          //The operation on top of the fifo is not for this bank or it is atomic read (bank is locked)
+             end
+          end
+        end
+        S_4: begin                                      //Bank is busy and we wait for atomic write 
+          if(!IN_M_DataRdy[i]) begin
+            next_status[3*(i+1)-1:3*i] = S_4;           //Memory operation does not end
+          end
+          else begin
+            if(!from_memory_fifo_full[i]) begin  //if ready and fifo not full then free
+               next_status[3*(i+1)-1:3*i] = S_3;        //Atomic write ends; bank is available but locked (i.e., only corresponding atomic read an all the non-atomic reads can go ahead)
+            end
+            else begin
+              next_status[3*(i+1)-1:3*i] = S_5;         //Atomic write ends; fifo from memory is not available
+            end
+          end
+        end
+        S_5: begin                                      //Bank already ended operation, but fifo is not available
+          if(!from_memory_fifo_full[i]) begin
+            next_status[3*(i+1)-1:3*i] = S_3;           //Bank already ended operation and fifo becomes available
+          end
+          else begin
+            next_status[3*(i+1)-1:3*i] = S_5;           //Bank already ended operation, but fifo from memory is not available
+          end
+        end
+        default: begin
+          next_status[3*(i+1)-1:3*i]=S_0;
+        end
+      endcase
+    end
+
+    //OUT PART
+
+    //valid output only if fifo not empty and state is 00 and data is correct, or status is 01 and not ready, or status is 11 data correct, no rotation and fifo not empty
+    assign valid_registered_to_memory_next_request_oe_we[i]=((current_status[3*(i+1)-1:3*i] == S_1 || current_status[3*(i+1)-1:3*i] == S_4) &amp;&amp; !IN_M_DataRdy[i]);
+    assign valid_registered_to_memory_next_request[i]= current_status[3*(i+1)-1:3*i] == S_1 || current_status[3*(i+1)-1:3*i] == S_4 || current_status[3*(i+1)-1:3*i]== S_2 || current_status[3*(i+1)-1:3*i] == S_5;
+
+    //Top fifo register is written if (data is copied from fifo) or (status is S_3 and (there is atomic write or (fifo is not empty and the request has not to be rotated)))Y
+    assign top_fifo_register_we[i] =
+       (
+          copy_from_fifo_to_top_fifo_register[i]
+          ||
+          (
+             current_status[3*(i+1)-1:3*i] == S_3
+             &amp;&amp;
+             registered_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET]
+          )
+       );
+
+    //Data is copied from fifo to top register if (status is S_0 or (S_3 and there is not an atomic write and the operation is not atomic)) and (fifo is not empty)
+    assign copy_from_fifo_to_top_fifo_register[i] =
+       (
+          current_status[3*(i+1)-1:3*i] == S_0
+          ||
+          (
+             current_status[3*(i+1)-1:3*i] == S_3
+             &amp;&amp;
+             !registered_atomic_write[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET]
+             &amp;&amp;
+             !to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET]
+          )
+       )
+       &amp;&amp;
+       !to_memory_fifo_empty[i]
+       ;
+
+//output send out by module
+    assign Mout_oe_ram_0[i]=(registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_oe_ram{valid_registered_to_memory_next_request_oe_we[i]}});
+    assign Mout_we_ram_0[i]= (registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_we_ram{valid_registered_to_memory_next_request_oe_we[i]}});
+    assign Mout_addr_ram_0[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i]= (registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_addr_ram{valid_registered_to_memory_next_request[i]}});
+    assign Mout_data_ram_size_0[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i]= (registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_data_ram_size{valid_registered_to_memory_next_request[i]}});
+    assign Mout_Wdata_ram_0[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i]= (registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_Wdata_ram{valid_registered_to_memory_next_request[i]}});
+
+//output send out by module
+    assign Mout_oe_ram_1[i]=(to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_oe_ram{top_fifo_register_we[i]}});
+    assign Mout_we_ram_1[i]=(to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] &amp; {BITSIZE_Mout_we_ram{top_fifo_register_we[i]}});
+    assign Mout_addr_ram_1[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i]=(to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_addr_ram{top_fifo_register_we[i]}});
+    assign Mout_data_ram_size_1[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i]=(to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_data_ram_size{top_fifo_register_we[i]}});
+    assign Mout_Wdata_ram_1[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i]=(to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:MEMORY_REQUEST_TOTAL_SIZE*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] &amp; {BITSIZE_Mout_Wdata_ram{top_fifo_register_we[i]}});
+
+    //if fifo out not full and or there is a request to rotate or the corresponding register has data ready then copy data
+    assign from_memory_fifo_wr_en[i]= (!from_memory_fifo_full[i] &amp;&amp; (current_status[3*(i+1)-1:3*i]== S_2 || current_status[3*(i+1)-1:3*i] == S_5 || IN_M_DataRdy[i]));
+
+    assign from_memory_fifo_data_in[MEMORY_ANSWER_TOTAL_SIZE*(i+1)-1:MEMORY_ANSWER_TOTAL_SIZE*i] = {registered_to_memory_next_request[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*(i+1)-BITSIZE_Mout_tag_ram], IN_M_Rdata_ram[BITSIZE_M_Rdata_ram*(i+1)-1:BITSIZE_M_Rdata_ram*i]};
+
+    //if fifo is nonempty and data is in the correct channel (look at the most significant bit of the kernel) then request to go down
+    assign request_out[i]=!from_memory_fifo_empty[i];
+
+    // read if data selected has to go down or to be translated
+    assign from_memory_fifo_rd_en[i]=(selector_mux_from_memory_fifo_out[i]);
+  end
+endgenerate
+
+genvar j;
+generate
+for(i=0; i&lt;NUM_CHANNEL; i=i+1)
+  begin
+    //arbiter to decide in case of multiple data ready which one go down
+    PT_RR_FU #(.BITSIZE_ops(1), .PORTSIZE_ops(NUM_BANK_NUM_CHANNEL_RATIO), .BITSIZE_rops(1), .PORTSIZE_rops(NUM_BANK_NUM_CHANNEL_RATIO)) RR_fifo_in(.ops(selector_mux_from_memory_fifo_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)-1:NUM_BANK_NUM_CHANNEL_RATIO*i]), .ENABLE(1'b1), .clock(clock), .reset(!reset), .rops(request_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)-1:NUM_BANK_NUM_CHANNEL_RATIO*i]));
+
+    //mux for exit, decide which data output of fifo to give on output
+    mux_pw_2 #(.BITSIZE_selector(NUM_BANK_NUM_CHANNEL_RATIO), .BITSIZE_data(MEMORY_ANSWER_TOTAL_SIZE*NUM_BANK_NUM_CHANNEL_RATIO), .BITSIZE_out(MEMORY_ANSWER_TOTAL_SIZE)) mux_out (.selector(selector_mux_from_memory_fifo_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)-1:NUM_BANK_NUM_CHANNEL_RATIO*i]), .data(from_memory_fifo_data_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)*MEMORY_ANSWER_TOTAL_SIZE-1:NUM_BANK_NUM_CHANNEL_RATIO*i*MEMORY_ANSWER_TOTAL_SIZE]), .out(channel_out[MEMORY_ANSWER_TOTAL_SIZE*(i+1)-1:MEMORY_ANSWER_TOTAL_SIZE*i]));
+
+    //create the packed used to put data toghether into fifo
+    assign data_in[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i] =
+      {
+         Mout_tag_ram[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i],
+         Mout_Wdata_ram[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i],
+         Mout_data_ram_size[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i],
+         Mout_addr_ram[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i],
+         Mout_we_ram[BITSIZE_Mout_we_ram*(i+1)-1:BITSIZE_Mout_we_ram*i],
+         Mout_oe_ram[BITSIZE_Mout_oe_ram*(i+1)-1:BITSIZE_Mout_oe_ram*i]
+      };
+
+    //check if there is a real request
+    assign from_channel_request[i]=Mout_oe_ram[i]||Mout_we_ram[i];
+
+    //bind the channel for the output
+    assign M_Rdata_ram[BITSIZE_M_Rdata_ram*(i+1)-1:BITSIZE_M_Rdata_ram*i]=channel_out[MEMORY_ANSWER_TOTAL_SIZE*i+BITSIZE_M_Rdata_ram-1:MEMORY_ANSWER_TOTAL_SIZE*i];
+    assign Min_tag[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i]=channel_out[MEMORY_ANSWER_TOTAL_SIZE*i+BITSIZE_M_Rdata_ram+BITSIZE_Mout_tag_ram-1:MEMORY_ANSWER_TOTAL_SIZE*i+BITSIZE_M_Rdata_ram];
+
+    //if or of selector has at least 1 means that there is a data ready coming down
+    assign M_DataRdy[i]=(|selector_mux_from_memory_fifo_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)-1:NUM_BANK_NUM_CHANNEL_RATIO*i]);
+
+    //rd_en send to lower level only if the fifo in this module read their data; atomic write are always accepted
+    assign request_accepted[i]=(|request_accepted_by_fifo[(i+1)*NUM_BANK_NUM_CHANNEL_RATIO-1:i*NUM_BANK_NUM_CHANNEL_RATIO]) || (data_in[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp; &amp; data_in[MEMORY_REQUEST_TOTAL_SIZE*i + WE_BIT_OFFSET]);
+
+    ///Generate all_incoming_atomic_write: for each channel, for each bank we check if the current memory request is an atomic write targeting that bank
+    for(j=0; j&lt;NUM_BANK; j=j+1)
+    begin
+       assign all_incoming_atomic_write[((MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK*i) + (MEMORY_REQUEST_TOTAL_SIZE*(j+1)))-1:(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK*i) + (MEMORY_REQUEST_TOTAL_SIZE*j)] =
+          data_in[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp;&amp; data_in[MEMORY_REQUEST_TOTAL_SIZE*i + WE_BIT_OFFSET] &amp;&amp; data_in[MEMORY_REQUEST_TOTAL_SIZE*i + MSB_BANK_TAG : MEMORY_REQUEST_TOTAL_SIZE*i + LSB_BANK_TAG] == j
+             ?
+                data_in[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]
+             :
+                {MEMORY_REQUEST_TOTAL_SIZE{1'b0}};
+    end
+  end
+endgenerate
+
+//output to bank is the merge of out fifo and register
+bus_merger #(.BITSIZE_in1(BITSIZE_Mout_oe_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_oe_ram*NUM_BANK)) bus_merger_Mout_oe_ram (.out1(OUT_Mout_oe_ram), .in1({Mout_oe_ram_0, Mout_oe_ram_1}));
+bus_merger #(.BITSIZE_in1(BITSIZE_Mout_we_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_we_ram*NUM_BANK)) bus_merger_Mout_we_ram (.out1(OUT_Mout_we_ram), .in1({Mout_we_ram_0, Mout_we_ram_1}));
+bus_merger #(.BITSIZE_in1(BITSIZE_Mout_addr_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_addr_ram*NUM_BANK)) bus_merger_Mout_addr_ram (.out1(OUT_Mout_addr_ram), .in1({Mout_addr_ram_0, Mout_addr_ram_1}));
+bus_merger #(.BITSIZE_in1(BITSIZE_Mout_data_ram_size*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_data_ram_size*NUM_BANK)) bus_merger_Mout_data_ram_size (.out1(OUT_Mout_data_ram_size), .in1({Mout_data_ram_size_0, Mout_data_ram_size_1}));
+bus_merger #(.BITSIZE_in1(BITSIZE_Mout_Wdata_ram*NUM_BANK), .PORTSIZE_in1(2), .BITSIZE_out1(BITSIZE_Mout_Wdata_ram*NUM_BANK)) bus_merger_Mout_Wdata_ram (.out1(OUT_Mout_Wdata_ram), .in1({Mout_Wdata_ram_0, Mout_Wdata_ram_1}));
+
+//input to register of atomic_write is the merge of the atomic write coming from the single channels; only one atomic write for each bank can be active
+bus_merger #(.BITSIZE_in1(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK), .PORTSIZE_in1(NUM_CHANNEL), .BITSIZE_out1(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK)) bus_merger_next_atomic_write (.out1(next_atomic_write), .in1(all_incoming_atomic_write));
+"/>
+
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>memory_ctrl_parallel</name>
+      <circuit>
+        <component_o id="memory_ctrl_parallel">
+          <structural_type_descriptor id_type="memory_ctrl_parallel"/>
+          <parameter name="NUM_CHANNEL">2</parameter>
+          <parameter name="NUM_ACC">4</parameter>
+          <parameter name="ADDR_TASKS">3</parameter>
+          <parameter name="ADDR_ACC">2</parameter>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_vector_o id="IN_M_Rdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="IN_M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="IN_Min_tag" dir="IN" is_memory="1" is_global="1" is_extern="1" is_tag_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="IN_request_accepted" dir="IN" is_memory="1" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_oe_ram" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_we_ram" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_addr_ram" dir="IN" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_data_ram_size" dir="IN" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_Wdata_ram" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Mout_tag_ram" dir="IN" is_memory="1" is_tag_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1"  is_master="1">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="OUT_Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="OUT_Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="OUT_Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="OUT_Mout_tag_ram" dir="OUT" is_memory="1" is_master="1" is_tag_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_Rdata_ram" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="Min_tag" dir="OUT" is_memory="1" is_tag_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="M_DataRdy" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="request_accepted" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="memory_ctrl_parallel IN_M_Rdata_ram IN_M_DataRdy IN_Min_tag IN_request_accepted Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ram M_Rdata_ram Min_tag M_DataRdy request_accepted NUM_CHANNEL NUM_ACC ADDR_TASKS ADDR_ACC"
+          IP_COMPONENT="PT_RR_FU,mux_pw_2" VERILOG_PROVIDED="
+//In order to be generated correctly NUM_CHANNEL&lt;=NUM_ACC and both of them must be a power of 2
+parameter SIZE_TOT_IN = BITSIZE_Mout_tag_ram+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_addr_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram;
+parameter MEMORY_ANSWER_TOTAL_SIZE = BITSIZE_Mout_tag_ram+BITSIZE_M_Rdata_ram;
+
+parameter RATIO=(NUM_ACC > NUM_CHANNEL) ? NUM_ACC/NUM_CHANNEL : 1;
+wire [NUM_ACC-1:0] selector_mux_fifo_in;
+wire [SIZE_TOT_IN*NUM_ACC-1:0] data_in_mem_par;
+wire [NUM_ACC-1:0] fifo_wait_notempty;
+wire [SIZE_TOT_IN*NUM_CHANNEL-1:0] data_in;
+
+//out of fifo_IN_0 is 0 if fifo is empty
+genvar i;
+generate
+for(i=0; i&lt;NUM_CHANNEL; i=i+1)  //or a x ingressi
+begin
+  assign OUT_Mout_oe_ram[(i+1)*BITSIZE_Mout_oe_ram-1:i*BITSIZE_Mout_oe_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_oe_ram-1] : {BITSIZE_Mout_oe_ram{1'b0}};
+  assign OUT_Mout_we_ram[(i+1)*BITSIZE_Mout_we_ram-1:i*BITSIZE_Mout_we_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] : {BITSIZE_Mout_we_ram{1'b0}};
+  assign OUT_Mout_addr_ram[(i+1)*BITSIZE_Mout_addr_ram-1:i*BITSIZE_Mout_addr_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] : {BITSIZE_Mout_addr_ram{1'b0}};
+  assign OUT_Mout_data_ram_size[(i+1)*BITSIZE_Mout_data_ram_size-1:i*BITSIZE_Mout_data_ram_size]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] : {BITSIZE_Mout_data_ram_size{1'b0}};
+  assign OUT_Mout_Wdata_ram[(i+1)*BITSIZE_Mout_Wdata_ram-1:i*BITSIZE_Mout_Wdata_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] : {BITSIZE_Mout_Wdata_ram{1'b0}};
+  assign OUT_Mout_tag_ram[(i+1)*BITSIZE_Mout_tag_ram-1:i*BITSIZE_Mout_tag_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? {1'b1,data_in[SIZE_TOT_IN*i+BITSIZE_Mout_tag_ram + BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-2:SIZE_TOT_IN*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram]} : {BITSIZE_Mout_tag_ram{1'b0}};   //every data out has 1 as first bit of tag
+
+  //arbiter for decide which data go to memory
+  PT_RR_FU #(.BITSIZE_ops(1), .PORTSIZE_ops(RATIO), .BITSIZE_rops(1), .PORTSIZE_rops(RATIO)) RR_fifo_in_0(.ops(selector_mux_fifo_in[RATIO*(i+1)-1:RATIO*i]), .ENABLE(1'b1), .clock(clock), .reset(!reset), .rops(fifo_wait_notempty[RATIO*(i+1)-1:RATIO*i]));
+
+  //BIND in of IN_fifo_in       //MUX with n in
+  mux_pw_2 #(.BITSIZE_selector(RATIO), .BITSIZE_data(SIZE_TOT_IN*RATIO), .BITSIZE_out(SIZE_TOT_IN)) mux_in (.selector(selector_mux_fifo_in[RATIO*(i+1)-1:RATIO*i]), .data(data_in_mem_par[SIZE_TOT_IN*((i+1)*RATIO)-1:SIZE_TOT_IN*(i*RATIO)]), .out(data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]));
+end
+endgenerate
+
+generate
+for(i=0; i&lt;NUM_ACC; i=i+1)
+  begin
+    //check if there is a real request
+    assign fifo_wait_notempty[i]=Mout_oe_ram[i]||Mout_we_ram[i];
+
+    //reconstruct block from input
+    assign data_in_mem_par[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]={Mout_tag_ram[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i], Mout_Wdata_ram[BITSIZE_Mout_Wdata_ram*(i+1)-1:BITSIZE_Mout_Wdata_ram*i], Mout_data_ram_size[BITSIZE_Mout_data_ram_size*(i+1)-1:BITSIZE_Mout_data_ram_size*i], Mout_addr_ram[BITSIZE_Mout_addr_ram*(i+1)-1:BITSIZE_Mout_addr_ram*i], Mout_we_ram[BITSIZE_Mout_we_ram*(i+1)-1:BITSIZE_Mout_we_ram*i], Mout_oe_ram[BITSIZE_Mout_oe_ram*(i+1)-1:BITSIZE_Mout_oe_ram*i]};
+
+    //BIND out of OUT_fifo_out
+    assign M_Rdata_ram[BITSIZE_M_Rdata_ram*(i+1)-1:BITSIZE_M_Rdata_ram*i]= IN_M_Rdata_ram[BITSIZE_M_Rdata_ram*((i/RATIO)+1)-1:BITSIZE_M_Rdata_ram*(i/RATIO)];
+
+    //assign tag out
+    assign Min_tag[BITSIZE_Mout_tag_ram*(i+1)-1:BITSIZE_Mout_tag_ram*i]={1'b0,IN_Min_tag[BITSIZE_Mout_tag_ram*((i/RATIO)+1)-2:BITSIZE_Mout_tag_ram*(i/RATIO)]};
+
+    //ack that is the rd_en on the scheduler, if fifo not empty push down data    //POSSIBLE TO DO REST
+    assign M_DataRdy[i]=(IN_M_DataRdy[i/RATIO] &amp;&amp; IN_Min_tag[BITSIZE_Mout_tag_ram*(i/RATIO)+ADDR_TASKS+ADDR_ACC-1:BITSIZE_Mout_tag_ram*(i/RATIO)+ADDR_TASKS]==i &amp;&amp; IN_Min_tag[BITSIZE_Mout_tag_ram*(i/RATIO+1)-1]);
+
+    //ack on the appropriate kernel if its request is accepted
+    assign request_accepted[i] =(IN_request_accepted[(i/RATIO)] &amp;&amp; fifo_wait_notempty[i] &amp;&amp; selector_mux_fifo_in[i]==1'b1);
+  end
+endgenerate"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+    <name>mux_pw_2</name>
+    <circuit>
+      <component_o id="mux_pw_2">
+        <structural_type_descriptor id_type="mux_pw_2"/>
+        <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+        <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>
+        <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+        <license>PANDA_LGPLv3</license>
+        <port_o id="data" dir="IN" is_clock="1">
+          <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+        </port_o>
+        <port_o id="selector" dir="IN">
+          <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+        </port_o>
+        <port_o id="out" dir="OUT">
+          <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+        </port_o>
+        <NP_functionality LIBRARY="mux_pw_2 data selector out" VERILOG_PROVIDED="
+//BITSIZE_selector must be a power of 2
+parameter DATA_SIZE=BITSIZE_out;
+
+generate
+  if(BITSIZE_selector==1) begin
+    assign out=data;
+  end
+  if(BITSIZE_selector==2) begin
+    assign out=(selector[1:0]==2'b01)?data[DATA_SIZE-1:0]:data[DATA_SIZE*2-1:DATA_SIZE];
+  end
+  if(BITSIZE_selector==4) begin
+    wire [DATA_SIZE-1:0] mux1;
+    wire [DATA_SIZE-1:0] mux2;
+    wire sel1;
+    //level 0
+    assign mux1=(selector[1:0]==2'b01)?data[DATA_SIZE-1:0]:data[DATA_SIZE*2-1:DATA_SIZE];
+    assign mux2=(selector[3:2]==2'b01)?data[DATA_SIZE*3-1:DATA_SIZE*2]:data[DATA_SIZE*4-1:DATA_SIZE*3];
+    assign sel1=|selector[1:0];
+    //level 1
+    assign out=(sel1)?mux1:mux2;
+  end
+  if(BITSIZE_selector==8) begin
+    wire [DATA_SIZE-1:0] mux1;
+    wire [DATA_SIZE-1:0] mux2;
+    wire [DATA_SIZE-1:0] mux3;
+    wire [DATA_SIZE-1:0] mux4;
+    wire sel1;
+    wire sel2;
+    wire [DATA_SIZE-1:0] mux11;
+    wire [DATA_SIZE-1:0] mux12;
+    wire sel11;
+    //level 0
+    assign mux1=(selector[1:0]==2'b01)?data[DATA_SIZE-1:0]:data[DATA_SIZE*2-1:DATA_SIZE];
+    assign mux2=(selector[3:2]==2'b01)?data[DATA_SIZE*3-1:DATA_SIZE*2]:data[DATA_SIZE*4-1:DATA_SIZE*3];
+    assign mux3=(selector[5:4]==2'b01)?data[DATA_SIZE*5-1:DATA_SIZE*4]:data[DATA_SIZE*6-1:DATA_SIZE*5];
+    assign mux4=(selector[7:6]==2'b01)?data[DATA_SIZE*7-1:DATA_SIZE*6]:data[DATA_SIZE*8-1:DATA_SIZE*7];
+    assign sel1=|selector[1:0];
+    assign sel2=|selector[5:4];
+    //level 1
+    assign mux11=(sel1)?mux1:mux2;
+    assign mux12=(sel2)?mux3:mux4;
+    assign sel11=|selector[3:0];
+    //level 2
+    assign out=(sel11)?mux11:mux12;
+  end
+  if(BITSIZE_selector==16) begin
+    wire [DATA_SIZE-1:0] mux1;
+    wire [DATA_SIZE-1:0] mux2;
+    wire [DATA_SIZE-1:0] mux3;
+    wire [DATA_SIZE-1:0] mux4;
+    wire [DATA_SIZE-1:0] mux5;
+    wire [DATA_SIZE-1:0] mux6;
+    wire [DATA_SIZE-1:0] mux7;
+    wire [DATA_SIZE-1:0] mux8;
+    wire sel1;
+    wire sel2;
+    wire sel3;
+    wire sel4;
+    wire [DATA_SIZE-1:0] mux11;
+    wire [DATA_SIZE-1:0] mux12;
+    wire [DATA_SIZE-1:0] mux13;
+    wire [DATA_SIZE-1:0] mux14;
+    wire sel11;
+    wire sel12;
+    wire [DATA_SIZE-1:0] mux21;
+    wire [DATA_SIZE-1:0] mux22;
+    wire sel21;
+    //level 0
+    assign mux1=(selector[1:0]==2'b01)?data[DATA_SIZE-1:0]:data[DATA_SIZE*2-1:DATA_SIZE];
+    assign mux2=(selector[3:2]==2'b01)?data[DATA_SIZE*3-1:DATA_SIZE*2]:data[DATA_SIZE*4-1:DATA_SIZE*3];
+    assign mux3=(selector[5:4]==2'b01)?data[DATA_SIZE*5-1:DATA_SIZE*4]:data[DATA_SIZE*6-1:DATA_SIZE*5];
+    assign mux4=(selector[7:6]==2'b01)?data[DATA_SIZE*7-1:DATA_SIZE*6]:data[DATA_SIZE*8-1:DATA_SIZE*7];
+    assign mux5=(selector[9:8]==2'b01)?data[DATA_SIZE*9-1:DATA_SIZE*8]:data[DATA_SIZE*10-1:DATA_SIZE*9];
+    assign mux6=(selector[11:10]==2'b01)?data[DATA_SIZE*11-1:DATA_SIZE*10]:data[DATA_SIZE*12-1:DATA_SIZE*11];
+    assign mux7=(selector[13:12]==2'b01)?data[DATA_SIZE*13-1:DATA_SIZE*12]:data[DATA_SIZE*14-1:DATA_SIZE*13];
+    assign mux8=(selector[15:14]==2'b01)?data[DATA_SIZE*15-1:DATA_SIZE*14]:data[DATA_SIZE*16-1:DATA_SIZE*15];
+    assign sel1=|selector[1:0];
+    assign sel2=|selector[5:4];
+    assign sel3=|selector[9:8];
+    assign sel4=|selector[13:12];
+    //level 1
+    assign mux11=(sel1)?mux1:mux2;
+    assign mux12=(sel2)?mux3:mux4;
+    assign mux13=(sel3)?mux5:mux6;
+    assign mux14=(sel4)?mux7:mux8;
+    assign sel11=|selector[3:0];
+    assign sel12=|selector[11:8];
+    //level 2
+    assign mux21=(sel11)?mux11:mux12;
+    assign mux22=(sel12)?mux13:mux14;
+    assign sel21=|selector[7:0];
+    //level 3
+    assign out=(sel21)?mux21:mux22;
+  end
+  if(BITSIZE_selector==32) begin
+    wire [DATA_SIZE-1:0] mux1;
+    wire [DATA_SIZE-1:0] mux2;
+    wire [DATA_SIZE-1:0] mux3;
+    wire [DATA_SIZE-1:0] mux4;
+    wire [DATA_SIZE-1:0] mux5;
+    wire [DATA_SIZE-1:0] mux6;
+    wire [DATA_SIZE-1:0] mux7;
+    wire [DATA_SIZE-1:0] mux8;
+    wire [DATA_SIZE-1:0] mux9;
+    wire [DATA_SIZE-1:0] mux10;
+    wire [DATA_SIZE-1:0] mux11;
+    wire [DATA_SIZE-1:0] mux12;
+    wire [DATA_SIZE-1:0] mux13;
+    wire [DATA_SIZE-1:0] mux14;
+    wire [DATA_SIZE-1:0] mux15;
+    wire [DATA_SIZE-1:0] mux16;
+    wire sel1;
+    wire sel2;
+    wire sel3;
+    wire sel4;
+    wire sel5;
+    wire sel6;
+    wire sel7;
+    wire sel8;
+    wire [DATA_SIZE-1:0] mux21;
+    wire [DATA_SIZE-1:0] mux22;
+    wire [DATA_SIZE-1:0] mux23;
+    wire [DATA_SIZE-1:0] mux24;
+    wire [DATA_SIZE-1:0] mux25;
+    wire [DATA_SIZE-1:0] mux26;
+    wire [DATA_SIZE-1:0] mux27;
+    wire [DATA_SIZE-1:0] mux28;
+    wire sel21;
+    wire sel22;
+    wire sel23;
+    wire sel24;
+    wire [DATA_SIZE-1:0] mux31;
+    wire [DATA_SIZE-1:0] mux32;
+    wire [DATA_SIZE-1:0] mux33;
+    wire [DATA_SIZE-1:0] mux34;
+    wire sel31;
+    wire sel32;
+    wire [DATA_SIZE-1:0] mux41;
+    wire [DATA_SIZE-1:0] mux42;
+    wire sel41;
+    //level 0
+    assign mux1=(selector[1:0]==2'b01)?data[DATA_SIZE-1:0]:data[DATA_SIZE*2-1:DATA_SIZE];
+    assign mux2=(selector[3:2]==2'b01)?data[DATA_SIZE*3-1:DATA_SIZE*2]:data[DATA_SIZE*4-1:DATA_SIZE*3];
+    assign mux3=(selector[5:4]==2'b01)?data[DATA_SIZE*5-1:DATA_SIZE*4]:data[DATA_SIZE*6-1:DATA_SIZE*5];
+    assign mux4=(selector[7:6]==2'b01)?data[DATA_SIZE*7-1:DATA_SIZE*6]:data[DATA_SIZE*8-1:DATA_SIZE*7];
+    assign mux5=(selector[9:8]==2'b01)?data[DATA_SIZE*9-1:DATA_SIZE*8]:data[DATA_SIZE*10-1:DATA_SIZE*9];
+    assign mux6=(selector[11:10]==2'b01)?data[DATA_SIZE*11-1:DATA_SIZE*10]:data[DATA_SIZE*12-1:DATA_SIZE*11];
+    assign mux7=(selector[13:12]==2'b01)?data[DATA_SIZE*13-1:DATA_SIZE*12]:data[DATA_SIZE*14-1:DATA_SIZE*13];
+    assign mux8=(selector[15:14]==2'b01)?data[DATA_SIZE*15-1:DATA_SIZE*14]:data[DATA_SIZE*16-1:DATA_SIZE*15];
+    assign mux9=(selector[17:16]==2'b01)?data[DATA_SIZE*17-1:DATA_SIZE*16]:data[DATA_SIZE*18-1:DATA_SIZE*17];
+    assign mux10=(selector[19:18]==2'b01)?data[DATA_SIZE*19-1:DATA_SIZE*18]:data[DATA_SIZE*20-1:DATA_SIZE*19];
+    assign mux11=(selector[21:20]==2'b01)?data[DATA_SIZE*21-1:DATA_SIZE*20]:data[DATA_SIZE*22-1:DATA_SIZE*21];
+    assign mux12=(selector[23:22]==2'b01)?data[DATA_SIZE*23-1:DATA_SIZE*22]:data[DATA_SIZE*24-1:DATA_SIZE*23];
+    assign mux13=(selector[25:24]==2'b01)?data[DATA_SIZE*25-1:DATA_SIZE*24]:data[DATA_SIZE*26-1:DATA_SIZE*25];
+    assign mux14=(selector[27:26]==2'b01)?data[DATA_SIZE*27-1:DATA_SIZE*26]:data[DATA_SIZE*28-1:DATA_SIZE*27];
+    assign mux15=(selector[29:28]==2'b01)?data[DATA_SIZE*29-1:DATA_SIZE*28]:data[DATA_SIZE*30-1:DATA_SIZE*29];
+    assign mux16=(selector[31:30]==2'b01)?data[DATA_SIZE*31-1:DATA_SIZE*30]:data[DATA_SIZE*32-1:DATA_SIZE*31];
+    assign sel1=|selector[1:0];
+    assign sel2=|selector[5:4];
+    assign sel3=|selector[9:8];
+    assign sel4=|selector[13:12];
+    assign sel5=|selector[17:16];
+    assign sel6=|selector[21:20];
+    assign sel7=|selector[25:24];
+    assign sel8=|selector[29:28];
+    //level 1
+    assign mux21=(sel1)?mux1:mux2;
+    assign mux22=(sel2)?mux3:mux4;
+    assign mux23=(sel3)?mux5:mux6;
+    assign mux24=(sel4)?mux7:mux8;
+    assign mux25=(sel5)?mux9:mux10;
+    assign mux26=(sel6)?mux11:mux12;
+    assign mux27=(sel7)?mux13:mux14;
+    assign mux28=(sel8)?mux15:mux16;
+    assign sel21=|selector[3:0];
+    assign sel22=|selector[11:8];
+    assign sel23=|selector[19:16];
+    assign sel24=|selector[27:24];
+    //level 2
+    assign mux31=(sel21)?mux21:mux22;
+    assign mux32=(sel22)?mux23:mux24;
+    assign mux33=(sel23)?mux25:mux26;
+    assign mux34=(sel24)?mux27:mux28;
+    assign sel31=|selector[7:0];
+    assign sel32=|selector[23:16];
+    //level 3
+    assign mux41=(sel31)?mux31:mux32;
+    assign mux42=(sel32)?mux33:mux34;
+    assign sel41=|selector[15:0];
+    //level 4
+    assign out=(sel41)?mux41:mux42;
+  end
+endgenerate"/>
+      </component_o>
+    </circuit>
+  </cell>
+  <cell>
+  <name>controller_parallel</name>
+  <circuit>
+    <component_o id="controller_parallel">
+      <structural_type_descriptor id_type="controller_parallel"/>
+      <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+      <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>
+      <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+      <license>PANDA_LGPLv3</license>
+      <port_o id="clock" dir="IN" is_clock="1">
+        <structural_type_descriptor type="BOOL" size="1"/>
+      </port_o>
+      <port_o id="reset" dir="IN">
+        <structural_type_descriptor type="BOOL" size="1"/>
+      </port_o>
+      <port_o id="start_port" dir="IN">
+        <structural_type_descriptor type="BOOL" size="1"/>
+      </port_o>
+      <port_vector_o id="done_port_accelerator" dir="IN" is_clock="1">
+        <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+      </port_vector_o>
+      <port_vector_o id="done_request_accelerator" dir="IN">
+        <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+      </port_vector_o>
+      <port_o id="LoopIteration" dir="IN">
+        <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+      </port_o>
+      <port_o id="done_port" dir="OUT">
+        <structural_type_descriptor type="BOOL" size="1"/>
+      </port_o>
+      <port_o id="task_pool_end" dir="OUT">
+        <structural_type_descriptor type="BOOL" size="1"/>
+      </port_o>
+      <port_vector_o id="start_port_accelerator" dir="OUT">
+        <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+      </port_vector_o>
+      <port_o id="request" dir="OUT">
+        <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+      </port_o>
+      <NP_functionality LIBRARY="controller_parallel done_port_accelerator done_request_accelerator start_port_accelerator request LoopIteration"
+      IP_COMPONENT="ui_ne_expr_FU,read_cond_FU,register_SE,fifo,CallDispatcher,Counter,MUX_GATE,UUdata_converter_FU,constant_value,ASSIGN_UNSIGNED_FU,ui_plus_expr_FU" VERILOG_PROVIDED="
+parameter [2:0] S_0 = 3'd0,
+  S_1 = 3'd1,
+  S_4 = 3'd4,
+  S_5 = 3'd5,
+  S_6 = 3'd6,
+  S_2 = 3'd2,
+  S_3 = 3'd3;
+reg [2:0] _present_state, _next_state;
+reg done_port;
+reg wrenable_reg_1;
+reg wrenable_reg_0;
+reg selector_MUX_2_reg_0_0_0_0;
+reg selector_IN_UNBOUNDED_parallel_18797_18995;
+reg [PORTSIZE_start_port_accelerator-1:0]            worker_status;          // To CallDispatcher_i0 of CallDispatcher.v
+
+wire [31:0] out_MUX_2_reg_0_0_0_0;
+wire out_const_0;
+wire out_const_1;
+wire [31:0]   out_conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32;
+wire out_read_cond_FU_5_i0_fu_parallel_18797_19050;
+wire [31:0] out_reg_0_reg_0;
+wire [31:0] out_reg_1_reg_1;
+wire [0:0] out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0;
+wire out_ui_ne_expr_FU_32_32_32_7_i0_fu_parallel_18797_19732;
+wire [31:0] out_ui_plus_expr_FU_32_0_32_8_i0_fu_parallel_18797_18996;
+wire [31:0]          fifo_data_out;          // From fifo_i0 of fifo.v
+wire fifo_empty;             // From fifo_i0 of fifo.v
+wire fifo_full;              // keep name fifo_full
+wire completed;              // added
+wire OUT_CONDITION_parallel_18797_19050; //added
+wire fifo_rd_cs;             // From CallDispatcher_i0 of CallDispatcher.v
+wire fifo_rd_en;             // From CallDispatcher_i0 of CallDispatcher.v
+wire [31:0] DoneCounter_value;      // From DoneCounter of Counter.v
+wire [31:0] StartCounter_value;     // From StartCounter of Counter.v
+wire [31:0] number_req_tasks;
+wire [31:0]          request;    // From CallDispatcher_i0 of CallDispatcher.v
+wire OUT_UNBOUNDED_parallel_18797_18995;
+wire [PORTSIZE_start_port_accelerator-1:0] selected_worker;        // From CallDispatcher_i0 of CallDispatcher.v
+reg reset_counter;
+reg next_reset_counter;
+
+always @(posedge clock)
+  if (!reset) _present_state &lt;= S_0;
+  else _present_state &lt;= _next_state;
+
+always @(*)
+begin
+  _next_state = S_0;
+  done_port = 1'b0;
+  wrenable_reg_1 = 1'b0;
+  wrenable_reg_0 = 1'b0;
+  selector_MUX_2_reg_0_0_0_0 = 1'b0;
+  selector_IN_UNBOUNDED_parallel_18797_18995 = 1'b0;
+  case (_present_state)
+    S_0 :
+      if(start_port != 1'b1 )
+      begin
+        _next_state = S_0;
+      end
+      else
+      begin
+        _next_state = S_1;
+      end
+    S_1 :
+      begin
+        wrenable_reg_0 = 1'b1;
+        _next_state = S_4;
+      end
+    S_4 :
+      begin
+        wrenable_reg_1 = 1'b1;
+        if ((out_read_cond_FU_5_i0_fu_parallel_18797_19050 == 1'b1) &amp; (fifo_full == 1'b0))
+          begin
+            _next_state = S_2;
+          end
+        else if (fifo_full == 1'b1)
+          begin
+            _next_state = S_3;
+            wrenable_reg_1 = 1'b0;
+          end
+        else
+          begin
+            _next_state = S_6;
+          end
+      end
+    S_5 :
+      begin
+        _next_state = S_0;
+      end
+    S_6 :
+      begin
+        _next_state = S_6;
+        if (completed) begin
+            _next_state = S_5;
+            done_port = 1'b1;
+            wrenable_reg_1 = 1'b0;
+        end
+      end
+    S_2 :
+      begin
+        wrenable_reg_0 = 1'b1;
+        selector_MUX_2_reg_0_0_0_0 = 1'b1;
+        selector_IN_UNBOUNDED_parallel_18797_18995 = 1'b1;
+//          if (OUT_UNBOUNDED_parallel_18797_18995 == 1'b0)
+        if (fifo_full == 1'b1)
+          begin
+            _next_state = S_3;
+            wrenable_reg_0 = 1'b0;
+            selector_MUX_2_reg_0_0_0_0 = 1'b0;
+          end
+        else
+          begin
+            _next_state = S_4;
+          end
+      end
+    S_3 :
+      begin
+        wrenable_reg_0 = 1'b1;
+        selector_MUX_2_reg_0_0_0_0 = 1'b1;
+//          if (OUT_UNBOUNDED_parallel_18797_18995 == 1'b0)
+        if (fifo_full == 1'b1)
+          begin
+            _next_state = S_3;
+            wrenable_reg_0 = 1'b0;
+            selector_MUX_2_reg_0_0_0_0 = 1'b0;
+          end
+        else
+          begin
+            _next_state = S_4;
+          end
+      end
+    default :
+      begin
+        done_port = 1'b0;
+        wrenable_reg_1 = 1'b0;
+        wrenable_reg_0 = 1'b0;
+        selector_MUX_2_reg_0_0_0_0 = 1'b0;
+        selector_IN_UNBOUNDED_parallel_18797_18995 = 1'b0;
+      end
+  endcase
+end
+
+ui_ne_expr_FU #(.BITSIZE_in1(32), .BITSIZE_in2(32), .BITSIZE_out1(1)) fu_parallel_18797_19732(
+.out1(out_ui_ne_expr_FU_32_32_32_7_i0_fu_parallel_18797_19732),
+.in1(out_reg_0_reg_0),
+.in2(LoopIteration));
+
+read_cond_FU #(.BITSIZE_in1(1)) fu_parallel_18797_19050(
+.out1(out_read_cond_FU_5_i0_fu_parallel_18797_19050),
+.in1(out_ui_ne_expr_FU_32_32_32_7_i0_fu_parallel_18797_19732));
+
+register_SE #(.BITSIZE_in1(32), .BITSIZE_out1(32)) reg_0 (
+.out1(out_reg_0_reg_0),
+.clock(clock),
+.reset(reset),
+.in1(out_MUX_2_reg_0_0_0_0),
+.wenable(wrenable_reg_0));
+
+fifo #(.BITSIZE_data_in(32), .BITSIZE_data_out(32), .ADDR_WIDTH(10)) fifo_i0
+ (/*AUTOINST*/
+  // Outputs
+  .full                             (fifo_full),             // Templated
+  .empty                            (fifo_empty),            // Templated
+  .data_out                         (fifo_data_out),   // Templated
+  // Inputs
+  .clock                              (clock),                 // Templated
+  .reset                              (!reset),                // Templated
+  .wr_cs                            (selector_IN_UNBOUNDED_parallel_18797_18995),            // Templated
+  .rd_cs                            (fifo_rd_cs),            // Templated
+  .rd_en                            (fifo_rd_en),            // Templated
+  .wr_en                            (selector_IN_UNBOUNDED_parallel_18797_18995),            // Templated
+  .data_in                          (out_reg_0_reg_0));               // Templated
+
+CallDispatcher #(.BITSIZE_fifo_data_out(32), .BITSIZE_worker_status(PORTSIZE_start_port_accelerator), .BITSIZE_request(32), .BITSIZE_selected_worker(PORTSIZE_start_port_accelerator)) CallDispatcher_i0
+ (/*AUTOINST*/
+  // Outputs
+  .fifo_rd_cs                       (fifo_rd_cs),
+  .fifo_rd_en                       (fifo_rd_en),
+  .request                          (request),
+  .selected_worker                  (selected_worker),
+  // Inputs
+  .clock                            (clock),
+  .reset                            (reset),
+  .fifo_data_out                    (fifo_data_out),
+  .fifo_empty                       (fifo_empty),
+  .worker_status                    (worker_status));
+
+Counter #(.BITSIZE_value(32), .BITSIZE_driver_lines(1)) StartCounter (
+/*AUTOINST*/
+// Outputs
+.value             (StartCounter_value), // Templated
+// Inputs
+.clock              (clock),                 // Templated
+.reset              (reset_counter),         // Templated
+.driver_lines   (selector_IN_UNBOUNDED_parallel_18797_18995));            // Templated
+
+Counter #(.BITSIZE_value(32), .BITSIZE_driver_lines(PORTSIZE_start_port_accelerator)) DoneCounter(
+/*AUTOINST*/
+// Outputs
+.value                         (DoneCounter_value), // Templated
+// Inputs
+.clock                         (clock),                 // Templated
+.reset                         (reset_counter),         // Templated
+.driver_lines                  (done_port_accelerator)); // Templated
+
+// done request counter
+Counter #(.BITSIZE_value(32), .BITSIZE_driver_lines(PORTSIZE_start_port_accelerator)) DoneReqCounter(
+/*AUTOINST*/
+// Outputs
+.value (number_req_tasks), // Templated
+// Inputs
+.clock (clock),                 // Templated
+.reset (reset_counter),         // Templated
+.driver_lines (selected_worker)); // Templated
+
+MUX_GATE #(.BITSIZE_in1(32), .BITSIZE_in2(32), .BITSIZE_out1(32)) MUX_2_reg_0_0_0_0 (.out1(out_MUX_2_reg_0_0_0_0), .sel(selector_MUX_2_reg_0_0_0_0), .in1(out_reg_1_reg_1), .in2(out_conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32));
+
+always @(posedge clock or negedge reset)
+  if (!reset)
+    reset_counter &lt;= 1'b0;
+  else
+    reset_counter &lt;= next_reset_counter;
+
+always @(*) next_reset_counter = ~completed;
+
+assign completed = fifo_empty &amp; (StartCounter_value == DoneCounter_value) &amp; (| StartCounter_value) &amp; (| DoneCounter_value);
+
+assign task_pool_end = (number_req_tasks == StartCounter_value) &amp; (| StartCounter_value) &amp; (| number_req_tasks);
+
+register_SE #(.BITSIZE_in1(32), .BITSIZE_out1(32)) reg_1 (
+.out1(out_reg_1_reg_1),
+.clock(clock), .reset(reset),
+.in1(out_ui_plus_expr_FU_32_0_32_8_i0_fu_parallel_18797_18996),
+.wenable(wrenable_reg_1));
+
+UUdata_converter_FU #(.BITSIZE_in1(1), .BITSIZE_out1(32)) conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32 (.out1(out_conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32), .in1(out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0));
+
+ASSIGN_UNSIGNED_FU #(.BITSIZE_in1(1), .BITSIZE_out1(1)) ASSIGN_UNSIGNED_FU_u_assign_0 (.out1(out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0), .in1(out_const_0));
+
+//assign OUT_UNBOUNDED_parallel_18797_18995 = selector_IN_UNBOUNDED_parallel_18797_18995 &amp; !fifo_full;
+
+constant_value #(.BITSIZE_out1(1), .value(1'b0)) const_0 (.out1(out_const_0));
+constant_value #(.BITSIZE_out1(1), .value(1'b1)) const_1 (.out1(out_const_1));
+
+
+// Worker status register
+reg [PORTSIZE_start_port_accelerator-1:0] next_worker_status;
+ always @(posedge clock or negedge reset) begin
+    if (!reset)
+      worker_status &lt;= {PORTSIZE_start_port_accelerator{1'b0}};
+    else
+      worker_status &lt;= next_worker_status;
+ end
+always @(*) begin
+end
+
+genvar i;
+generate
+  for(i=0; i&lt;PORTSIZE_start_port_accelerator; i=i+1)  //or a x ingressi
+  begin
+    always @(*) begin
+      next_worker_status[i] = worker_status[i];
+      if (selected_worker[i])
+        next_worker_status[i] =1'b1;
+      if (done_request_accelerator[i])
+        next_worker_status[i] =1'b0;
+    end
+  end
+endgenerate
+
+ui_plus_expr_FU #(.BITSIZE_in1(32), .BITSIZE_in2(1), .BITSIZE_out1(32)) fu_parallel_18797_18996(
+.out1(out_ui_plus_expr_FU_32_0_32_8_i0_fu_parallel_18797_18996),
+.in1(out_reg_0_reg_0), .in2(out_const_1));
+
+assign start_port_accelerator = selected_worker;  //bind start_port"/>
+        </component_o>
+      </circuit>
+    </cell>
+  </library>
+</technology>
+

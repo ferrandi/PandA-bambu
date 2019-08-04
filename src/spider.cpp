@@ -326,8 +326,8 @@ int main(int argc, char* argv[])
                case(Parameters_FileFormat::FF_CPP):
                case(Parameters_FileFormat::FF_FORTRAN):
 #endif
-#if HAVE_FROM_CSV_BUILT
                case(Parameters_FileFormat::FF_CSV):
+#if HAVE_FROM_CSV_BUILT
                case(Parameters_FileFormat::FF_CSV_RTL):
                case(Parameters_FileFormat::FF_CSV_TRE):
 #endif
@@ -487,6 +487,12 @@ int main(int argc, char* argv[])
                   tr->write_to_latex(results, input_format, parameters->getOption<std::string>(OPT_output_file));
                   break;
                }
+               case(Parameters_FileFormat::FF_CSV):
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Input: XML - Output: CSV");
+                  tr->write_to_csv(results, parameters->getOption<std::string>(OPT_output_file));
+                  break;
+               }
 #if HAVE_FROM_AADL_ASN_BUILT
                case(Parameters_FileFormat::FF_AADL):
                case(Parameters_FileFormat::FF_ASN):
@@ -499,7 +505,6 @@ int main(int argc, char* argv[])
                case(Parameters_FileFormat::FF_FORTRAN):
 #endif
 #if HAVE_FROM_CSV_BUILT
-               case(Parameters_FileFormat::FF_CSV):
                case(Parameters_FileFormat::FF_CSV_RTL):
                case(Parameters_FileFormat::FF_CSV_TRE):
 #endif
@@ -819,6 +824,9 @@ int main(int argc, char* argv[])
          }
 #else
          case(Parameters_FileFormat::FF_XML_WGT_SYM):
+#endif
+#if ! HAVE_FROM_CSV_BUILT
+         case (Parameters_FileFormat::FF_CSV) :
 #endif
 #if HAVE_FROM_AADL_ASN_BUILT
          case(Parameters_FileFormat::FF_AADL):

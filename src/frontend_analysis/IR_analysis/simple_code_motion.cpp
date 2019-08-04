@@ -1055,10 +1055,11 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
 
 bool simple_code_motion::HasToBeExecuted() const
 {
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
    if(parameters->getOption<bool>(OPT_parse_pragma))
    {
-      /// If unroll loop has not yet been executed skip simple code motion
+#if HAVE_EXPERIMENTAL
+      ///If unroll loop has not yet been executed skip simple code motion
       const auto unroll_loops = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UNROLL_LOOPS, function_id));
       if(unroll_loops)
       {
@@ -1070,6 +1071,7 @@ bool simple_code_motion::HasToBeExecuted() const
          }
       }
       else
+#endif
       {
          return false;
       }

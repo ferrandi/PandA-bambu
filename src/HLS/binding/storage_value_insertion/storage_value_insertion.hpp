@@ -46,8 +46,6 @@
 #ifndef STORAGE_VALUE_INSERTION_HPP
 #define STORAGE_VALUE_INSERTION_HPP
 
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
 #include "hls_function_step.hpp"
 REF_FORWARD_DECL(storage_value_insertion);
 

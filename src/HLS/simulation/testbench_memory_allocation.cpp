@@ -33,7 +33,10 @@
 
 #include "testbench_memory_allocation.hpp"
 
-/// behavior include
+///. include
+#include "Parameter.hpp"
+
+///behavior include
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
@@ -45,7 +48,10 @@
 /// HLS/memory include
 #include "memory.hpp"
 
-/// HLS/simulation include
+///HLS/simulation include
+#include "c_initialization_parser.hpp"
+#include "c_initialization_parser_functor.hpp"
+#include "compute_reserved_memory.hpp"
 #include "SimulationInformation.hpp"
 #include "testbench_generation_base_step.hpp"
 
@@ -57,9 +63,24 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-TestbenchMemoryAllocation::TestbenchMemoryAllocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
-    : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION)
+///utility include
+#include "utility.hpp"
+
+TestbenchMemoryAllocation::TestbenchMemoryAllocation
+(
+   const ParameterConstRef _parameters,
+   const HLS_managerRef _HLSMgr,
+   const DesignFlowManagerConstRef _design_flow_manager
+) :
+   HLS_step
+   (
+      _parameters,
+      _HLSMgr,
+      _design_flow_manager,
+      HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION
+   )
 {
+   debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 TestbenchMemoryAllocation::~TestbenchMemoryAllocation() = default;
@@ -78,7 +99,9 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
    const auto function_id = *(top_function_ids.begin());
    const BehavioralHelperConstRef behavioral_helper = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
 
-   const std::map<unsigned int, memory_symbolRef>& mem_vars = HLSMgr->Rmem->get_ext_memory_variables();
+   const std::map<unsigned int, memory_symbolRef>& mem_vars =
+      HLSMgr->Rmem->get_ext_memory_variables();
+   CInitializationParserRef c_initialization_parser = CInitializationParserRef(new CInitializationParser(parameters));
    // get the mapping between variables in external memory and their external
    // base address
    std::map<unsigned int, unsigned int> address;
@@ -102,14 +125,15 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
    unsigned int v_idx = 0;
    for(const auto& curr_test_vector : HLSMgr->RSim->test_vectors)
    {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering test vector " + STR(v_idx));
       HLSMgr->RSim->param_address[v_idx] = std::map<unsigned int, unsigned int>();
       // loop on the variables in memory
       for(std::list<unsigned int>::const_iterator l = mem.begin(); l != mem.end(); ++l)
       {
          std::string param = behavioral_helper->PrintVariable(*l);
-         if(param[0] == '"')
-            param = "@" + STR(*l);
-
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering " + param);
+         if (param[0] == '"')
+            param = "@"+STR(*l);
          bool is_memory = false;
          std::string test_v = "0";
          if(mem_vars.find(*l) != mem_vars.end() && std::find(func_parameters.begin(), func_parameters.end(), *l) == func_parameters.end())
@@ -122,8 +146,11 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
             test_v = curr_test_vector.find(param)->second;
          }
 
-         if(v_idx > 0 && is_memory)
-            continue; // memory has been already initialized
+         if (v_idx > 0 && is_memory)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped " + param);
+            continue;//memory has been already initialized
+         }
 
          unsigned int reserved_bytes = tree_helper::size(TM, *l) / 8;
          if(reserved_bytes == 0)
@@ -154,9 +181,9 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
             if(base_type_byte_size == 0)
                base_type_byte_size = 1;
 
-            std::vector<std::string> splitted;
-            boost::algorithm::split(splitted, test_v, boost::algorithm::is_any_of(","));
-            reserved_bytes = (static_cast<unsigned int>(splitted.size())) * base_type_byte_size;
+            const CInitializationParserFunctorRef c_initialization_parser_functor = CInitializationParserFunctorRef(new ComputeReservedMemory(TM, TM->CGetTreeNode(*l)));
+            c_initialization_parser->Parse(c_initialization_parser_functor, test_v);
+            reserved_bytes = GetPointer<ComputeReservedMemory>(c_initialization_parser_functor)->GetReservedBytes();
 
             if(HLSMgr->RSim->param_address[v_idx].find(*l) == HLSMgr->RSim->param_address[v_idx].end())
             {
@@ -165,8 +192,10 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
                HLSMgr->Rmem->reserve_space(reserved_bytes);
 
                INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                              "---Parameter " + param + " (testvector " + STR(v_idx) + ") allocated at " + STR(HLSMgr->RSim->param_address.at(v_idx).find(*l)->second) +
-                                  " : reserved_mem_size = " + STR(HLSMgr->RSim->param_mem_size.at(v_idx).find(*l)->second));
+                     "---Parameter " + param + " (" + STR((*l)) + ") (testvector "+ STR(v_idx)+") allocated at " +
+                     STR(HLSMgr->RSim->param_address.at(v_idx).find(*l)->second) +
+                     " : reserved_mem_size = " +
+                     STR(HLSMgr->RSim->param_mem_size.at(v_idx).find(*l)->second));
             }
          }
          else if(!is_memory)
@@ -206,7 +235,9 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
 
          THROW_ASSERT(next_object_offset >= reserved_bytes, "more allocated memory than expected");
          HLSMgr->RSim->param_next_off[v_idx][*l] = next_object_offset;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered " + param);
       }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered test vector " + STR(v_idx));
       v_idx++;
    }
    return;

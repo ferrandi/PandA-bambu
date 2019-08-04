@@ -1520,7 +1520,7 @@ const std::unordered_set<unsigned int> tree_helper::RecursiveGetTypesToBeDeclare
             else
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Record type without named unqualified");
-               const std::list<tree_nodeConstRef> field_types = CGetFieldTypes(TM->CGetTreeNode(index));
+               const auto field_types = CGetFieldTypes(TM->CGetTreeNode(index));
                for(const auto& field_type : field_types)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering field type (" + STR(field_type->index) + ") " + STR(field_type));
@@ -1590,7 +1590,7 @@ const std::unordered_set<unsigned int> tree_helper::RecursiveGetTypesToBeDeclare
             else
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Union type without named unqualified");
-               const std::list<tree_nodeConstRef> field_types = CGetFieldTypes(TM->CGetTreeNode(index));
+               const auto field_types = CGetFieldTypes(TM->CGetTreeNode(index));
                for(const auto& field_type : field_types)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering field type (" + STR(field_type->index) + ") " + STR(field_type));
@@ -2191,10 +2191,10 @@ unsigned int tree_helper::get_type_index(const tree_managerConstRef& TM, const u
    return get_type_index(TM, index, vec_size, is_a_pointer, is_a_function);
 }
 
-const std::list<tree_nodeConstRef> tree_helper::CGetFieldTypes(const tree_nodeConstRef& type)
+const std::vector<tree_nodeConstRef> tree_helper::CGetFieldTypes(const tree_nodeConstRef type)
 {
-   std::list<tree_nodeConstRef> ret;
-   if(type->get_kind() == record_type_K)
+   std::vector<tree_nodeConstRef> ret;
+   if (type->get_kind() == record_type_K)
    {
       const auto* rt = GetPointer<const record_type>(type);
       for(const auto& list_of_fld : rt->list_of_flds)

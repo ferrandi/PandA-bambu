@@ -57,21 +57,37 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
-      {
-         const HLSFlowStep_Type interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);
+         {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER,
+                                    HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
+            const HLSFlowStep_Type interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);
 #ifndef NDEBUG
          bool interface = interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION or interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION or interface_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION
 #if HAVE_TASTE
                           or interface_type == HLSFlowStep_Type::TASTE_INTERFACE_GENERATION
 #endif
-             ;
-         THROW_ASSERT(interface, "Unexpected interface type");
+               interface_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION or interface_type == HLSFlowStep_Type::INTERFACE_CS_GENERATION;
+            THROW_ASSERT(interface, "Unexpected interface type");
 #endif
-         ret.insert(std::make_tuple(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION or interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION ? HLSFlowStep_Type::MINIMAL_TESTBENCH_GENERATION :
-                                                                                                                                                                            HLSFlowStep_Type::WB4_TESTBENCH_GENERATION,
-                                    HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
-         break;
-      }
+            if(parameters->isOption(OPT_context_switch))
+            {
+               THROW_ASSERT(interface_type == HLSFlowStep_Type::INTERFACE_CS_GENERATION,"");
+               ret.insert(std::make_tuple(HLSFlowStep_Type::MINIMAL_TESTBENCH_GENERATION,
+                                        HLSFlowStepSpecializationConstRef(),
+                                        HLSFlowStep_Relationship::TOP_FUNCTION));
+
+            }
+            else
+            {
+               ret.insert(std::make_tuple(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION ?
+                        HLSFlowStep_Type::MINIMAL_TESTBENCH_GENERATION :
+                        HLSFlowStep_Type::WB4_TESTBENCH_GENERATION,
+                     HLSFlowStepSpecializationConstRef(),
+                     HLSFlowStep_Relationship::TOP_FUNCTION));
+            }
+            break;
+         }
       case INVALIDATION_RELATIONSHIP:
       {
          break;

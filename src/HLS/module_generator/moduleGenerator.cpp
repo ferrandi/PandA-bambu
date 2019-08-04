@@ -67,6 +67,7 @@
 
 /// HLS/memory include
 #include "memory.hpp"
+#include "memory_cs.hpp"
 
 /// STD includes
 #include <boost/filesystem/fstream.hpp>
@@ -215,46 +216,14 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
       cpp_code_body += "   _p[" + STR(portNum) + "].alignment = 0;\n";
       portNum++;
    }
-
-   cpp_code_body += "   parameter _ports_in[" + STR(mod->get_in_port_size()) + "];\n";
-   cpp_code_body += "   int _np_in = " + STR(mod->get_in_port_size()) + ";\n";
-   cpp_code_body += "   parameter _ports_out[" + STR(mod->get_out_port_size()) + "];\n";
-   cpp_code_body += "   int _np_out = " + STR(mod->get_out_port_size()) + ";\n";
-   if(mod->get_in_out_port_size())
-      cpp_code_body += "   parameter _ports_inout[" + STR(mod->get_in_out_port_size()) + "];\n";
-
-   for(unsigned int i = 0; i < mod->get_in_port_size(); ++i)
-   {
-      structural_objectRef port_in = mod->get_in_port(i);
-      cpp_code_body += "   _ports_in[" + STR(i) + "].name = \"" + port_in->get_id() + "\";\n";
-      cpp_code_body += "   _ports_in[" + STR(i) + "].type = \"" + port_in->get_typeRef()->get_name() + "\";\n";
-      unsigned int dataSize = port_in->get_typeRef()->vector_size != 0 ? port_in->get_typeRef()->vector_size : port_in->get_typeRef()->size;
-      cpp_code_body += "   _ports_in[" + STR(i) + "].type_size = " + STR(dataSize) + ";\n";
-      cpp_code_body += "   _ports_in[" + STR(i) + "].alignment = " + STR(GetPointer<port_o>(port_in)->get_port_alignment()) + ";\n";
-   }
-   for(unsigned int i = 0; i < mod->get_out_port_size(); ++i)
-   {
-      structural_objectRef port_out = mod->get_out_port(i);
-      cpp_code_body += "   _ports_out[" + STR(i) + "].name = \"" + port_out->get_id() + "\";\n";
-      cpp_code_body += "   _ports_out[" + STR(i) + "].type = \"" + port_out->get_typeRef()->get_name() + "\";\n";
-      unsigned int dataSize = port_out->get_typeRef()->vector_size != 0 ? port_out->get_typeRef()->vector_size : port_out->get_typeRef()->size;
-      cpp_code_body += "   _ports_out[" + STR(i) + "].type_size = " + STR(dataSize) + ";\n";
-      cpp_code_body += "   _ports_out[" + STR(i) + "].alignment = " + STR(GetPointer<port_o>(port_out)->get_port_alignment()) + ";\n";
-   }
-   for(unsigned int i = 0; i < mod->get_in_out_port_size(); ++i)
-   {
-      structural_objectRef port_inout = mod->get_out_port(i);
-      cpp_code_body += "   _ports_inout[" + STR(i) + "].name = \"" + port_inout->get_id() + "\";\n";
-      cpp_code_body += "   _ports_inout[" + STR(i) + "].type = \"" + port_inout->get_typeRef()->get_name() + "\";\n";
-      unsigned int dataSize = port_inout->get_typeRef()->vector_size != 0 ? port_inout->get_typeRef()->vector_size : port_inout->get_typeRef()->size;
-      cpp_code_body += "   _ports_inout[" + STR(i) + "].type_size = " + STR(dataSize) + ";\n";
-      cpp_code_body += "   _ports_inout[" + STR(i) + "].alignment = " + STR(GetPointer<port_o>(port_inout)->get_port_alignment()) + ";\n";
-   }
-
    cpp_code_body += "std::string data_bus_bitsize = \"" + STR(HLSMgr->Rmem->get_bus_data_bitsize()) + "\";\n";
    cpp_code_body += "std::string addr_bus_bitsize = \"" + STR(HLSMgr->get_address_bitsize()) + "\";\n";
    cpp_code_body += "std::string size_bus_bitsize = \"" + STR(HLSMgr->Rmem->get_bus_size_bitsize()) + "\";\n";
    cpp_code_body += "std::string _specializing_string = \"" + specializing_string + "\";\n";
+   if(parameters->isOption(OPT_context_switch))
+   {
+      cpp_code_body += "std::string tag_bus_bitsize = \"" + STR(GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize()) + "\";\n";
+   }
    if(parameters->isOption(OPT_channels_number) && parameters->getOption<unsigned int>(OPT_channels_number) > 1)
       cpp_code_body += "unsigned int _number_of_channels = " + STR(parameters->getOption<unsigned int>(OPT_channels_number)) + ";\n";
 
@@ -277,7 +246,6 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
    File.close();
 
    int err;
-
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Compiling temp c++ file...");
    err = PandaSystem(parameters, "g++ " + temp_generator_filename + " -o" + temp_generator_exec + " -I" + BOOST_INCLUDE_DIR);
    if(IsError(err))
@@ -308,7 +276,6 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
    }
    else
       THROW_ERROR("dynamic_generators @ Unable to open file " + temp_generated_filename);
-
    if(!parameters->isOption(OPT_no_clean) || !parameters->getOption<bool>(OPT_no_clean))
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Deleting all temp files...");
@@ -404,10 +371,11 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
       GetPointer<module>(top)->set_copyright(fu_module->get_copyright());
       GetPointer<module>(top)->set_authors(fu_module->get_authors());
       GetPointer<module>(top)->set_license(fu_module->get_license());
-      std::map<std::string, std::string> p = fu_module->get_parameters();
-      GetPointer<module>(top)->set_parameters(p);
-      auto multiplicitiy = fu_module->get_multi_unit_multiplicity();
-      GetPointer<module>(top)->set_multi_unit_multiplicity(multiplicitiy);
+      for(const auto module_parameter : fu_module->GetParameters())
+      {
+         GetPointer<module>(top)->AddParameter(module_parameter.first, fu_module->GetDefaultParameter(module_parameter.first));
+         GetPointer<module>(top)->SetParameter(module_parameter.first, module_parameter.second);
+      }
 
       // std::cout<<"Module created, adding ports"<<std::endl;
 

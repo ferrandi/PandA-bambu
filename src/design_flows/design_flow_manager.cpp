@@ -453,13 +453,13 @@ void DesignFlowManager::Exec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       THROW_ASSERT(erased_elements == 1, "Number of erased elements is " + STR(erased_elements));
 
-      /// Now check if next is actually ready
-      /// First of all check if there are new dependence to add
-      DesignFlowStepSet pre_dependence_steps, pre_precedence_steps;
+      ///Now check if next is actually ready
+      ///First of all check if there are new dependence to add
+      DesignFlowStepSet pre_dependence_steps;
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding dependencies of " + step->GetName());
       step->ComputeRelationships(pre_dependence_steps, DesignFlowStep::DEPENDENCE_RELATIONSHIP);
       RecursivelyAddSteps(pre_dependence_steps, design_flow_step_info->status == DesignFlowStep_Status::UNNECESSARY);
-      step->ComputeRelationships(pre_precedence_steps, DesignFlowStep::PRECEDENCE_RELATIONSHIP);
-      RecursivelyAddSteps(pre_precedence_steps, true);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added dependencies of " + step->GetName());
       bool current_ready = true;
       DesignFlowStepSet::const_iterator pre_dependence_step, pre_dependence_step_end = pre_dependence_steps.end();
       for(pre_dependence_step = pre_dependence_steps.begin(); pre_dependence_step != pre_dependence_step_end; ++pre_dependence_step)

@@ -37,25 +37,49 @@ lib_simulation_la_CPPFLAGS = \
    -I$(BOOST_DIR) $(all_includes)
 
 METASOURCES = AUTO
+AM_YFLAGS = -d -l --report=state,lookahead,itemset
+AM_LFLAGS = -L -B -+  -olex.yy.c
+
 
 noinst_HEADERS = \
-   CTestbenchExecution.hpp \
+   c_initialization_flex_lexer.hpp \
+   c_initialization_parser.hpp \
+   c_initialization_parser_functor.hpp \
+   c_initialization_parser_node.hpp \
+   compute_reserved_memory.hpp \
+   memory_initialization_writer.hpp \
    minimal_interface_testbench.hpp \
    SimulationInformation.hpp \
+   test_vector_parser.hpp \
    testbench_generation.hpp \
    testbench_generation_base_step.hpp \
    testbench_memory_allocation.hpp \
-   test_vector_parser.hpp \
+   testbench_values_c_generation.hpp \
+   testbench_values_xml_generation.hpp \
    wishbone_interface_testbench.hpp
 
 lib_simulation_la_SOURCES = \
-   CTestbenchExecution.cpp \
+   c_initialization_flex_lexer.lpp \
+   c_initialization_parser.cpp \
+   c_initialization_parser_functor.cpp \
+   c_initialization_yparser.ypp \
+   compute_reserved_memory.cpp \
+   memory_initialization_writer.cpp \
    minimal_interface_testbench.cpp \
+   test_vector_parser.cpp \
    testbench_generation.cpp \
    testbench_generation_base_step.cpp \
    testbench_memory_allocation.cpp \
-   test_vector_parser.cpp \
+   testbench_values_c_generation.cpp \
+   testbench_values_xml_generation.cpp \
    wishbone_interface_testbench.cpp
+
+if BISON_2_7_OR_GREATER
+BUILT_SOURCES = c_initialization_yparser.hpp c_initialization_flex_lexer.cpp c_initialization_yparser.cpp
+else
+BUILT_SOURCES = c_initialization_yparser.h c_initialization_flex_lexer.cpp c_initialization_yparser.cpp
+endif
+CLEANFILES = $(BUILT_SOURCES) *.output
 
 #DOCUMENTATION STUFF
 

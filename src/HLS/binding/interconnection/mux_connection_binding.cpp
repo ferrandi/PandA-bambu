@@ -66,10 +66,8 @@
 #include "conn_binding.hpp"
 #include "fu_binding.hpp"
 #include "reg_binding.hpp"
-#include "schedule.hpp"
-#if HAVE_EXPERIMENTAL
+#include "conn_binding.hpp"
 #include "parallel_memory_conn_binding.hpp"
-#endif
 #include "liveness.hpp"
 #include "memory.hpp"
 #include "memory_symbol.hpp"
@@ -1617,16 +1615,14 @@ void mux_connection_binding::create_connections()
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
    const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::FDFG);
-   unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
-#if HAVE_EXPERIMENTAL
-   if(parameters->getOption<int>(OPT_memory_banks_number) > 1)
+   unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
+   if(parameters->getOption<int>(OPT_memory_banks_number) > 1 && !parameters->isOption(OPT_context_switch))
    {
       HLS->Rconn = conn_bindingRef(new ParallelMemoryConnBinding(behavioral_helper, parameters));
    }
    else
-#endif
    {
-      HLS->Rconn = conn_bindingRef(new conn_binding(behavioral_helper, parameters));
+      HLS->Rconn = conn_bindingRef(conn_binding::create_conn_binding(HLSMgr, HLS, behavioral_helper, parameters));
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Starting execution of interconnection binding");

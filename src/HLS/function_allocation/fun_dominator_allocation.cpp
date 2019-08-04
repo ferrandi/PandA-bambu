@@ -41,7 +41,8 @@
  *
  */
 
-/// Autoheader include
+///Autoheader include
+#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 
@@ -118,11 +119,9 @@ void fun_dominator_allocation::ComputeRelationships(DesignFlowStepSet& relations
    switch(relationship_type)
    {
       case(PRECEDENCE_RELATIONSHIP):
-      {
-#if HAVE_PRAGMA_BUILT && HAVE_EXPERIMENTAL
-         if(parameters->isOption(OPT_parse_pragma) and parameters->getOption<bool>(OPT_parse_pragma) and relationship_type == PRECEDENCE_RELATIONSHIP)
          {
-            for(const auto input_function : HLSMgr->get_functions_with_body())
+#if HAVE_EXPERIMENTAL && HAVE_PRAGMA_BUILT
+            if(parameters->isOption(OPT_parse_pragma) and parameters->getOption<bool>(OPT_parse_pragma) and relationship_type == PRECEDENCE_RELATIONSHIP)
             {
                const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
                const ActorGraphFlowStepFactory* actor_graph_flow_step_factory = GetPointer<const ActorGraphFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("ActorGraph"));

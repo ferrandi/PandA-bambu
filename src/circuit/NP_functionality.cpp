@@ -69,27 +69,31 @@ NP_functionality::NP_functionaly_type NP_functionality::to_NP_functionaly_type(c
    return NP_functionaly_type(i);
 }
 
-const char* NP_functionality::NP_functionaly_typeNames[] = {"TABLE",
-                                                            "EQUATION",
-                                                            "PORT_LIST",
-                                                            "LIBRARY",
-                                                            "GRAPH",
-                                                            "FSM",
-                                                            "SC_PROVIDED",
-                                                            "VHDL_PROVIDED",
-                                                            "VERILOG_PROVIDED",
-                                                            "SYSTEM_VERILOG_PROVIDED",
-                                                            "VERILOG_GENERATOR",
-                                                            "VHDL_GENERATOR",
-                                                            "FLOPOCO_PROVIDED",
-                                                            "BAMBU_PROVIDED",
-                                                            "BLIF_DESCRIPTION",
-                                                            "AIGER_DESCRIPTION",
-                                                            "IP_COMPONENT",
-                                                            "IP_LIBRARY",
-                                                            "VERILOG_FILE_PROVIDED",
-                                                            "VHDL_FILE_PROVIDED",
-                                                            "UNKNOWN"};
+const char* NP_functionality::NP_functionaly_typeNames[] =
+{
+   "TABLE",
+   "EQUATION",
+   "PORT_LIST",
+   "LIBRARY",
+   "GRAPH",
+   "FSM",
+   "FSM_CS",
+   "SC_PROVIDED",
+   "VHDL_PROVIDED",
+   "VERILOG_PROVIDED",
+   "SYSTEM_VERILOG_PROVIDED",
+   "VERILOG_GENERATOR",
+   "VHDL_GENERATOR",
+   "FLOPOCO_PROVIDED",
+   "BAMBU_PROVIDED",
+   "BLIF_DESCRIPTION",
+   "AIGER_DESCRIPTION",
+   "IP_COMPONENT",
+   "IP_LIBRARY",
+   "VERILOG_FILE_PROVIDED",
+   "VHDL_FILE_PROVIDED",
+   "UNKNOWN"
+};
 
 void NP_functionality::add_NP_functionality(NP_functionaly_type type, const std::string& functionality_description)
 {

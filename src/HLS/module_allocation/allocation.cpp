@@ -72,19 +72,17 @@
 #include "structural_manager.hpp"
 #include "structural_objects.hpp" // for PROXY_PREFIX, module, CLOCK_...
 #include "target_device.hpp"
-#include "technology_manager.hpp" // for PROXY_LIBRARY, WORK_LIBRARY
-#include "technology_node.hpp"    // for functional_unit, operation
-#include "time_model.hpp"         // for ParameterConstRef
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#include "tree_node.hpp" // for GET_NODE, GET_INDEX_NODE
-#include "tree_reindex.hpp"
-#include "typed_node_info.hpp" // for GET_NAME, ENTRY, EXIT, GET_TYPE
-#include "utility.hpp"         // for INFINITE_UINT, ASSERT_PARAMETER
-#include <cstddef>             // for size_t
-#include <limits>              // for numeric_limits
 
-static bool is_other_port(const structural_objectRef& port)
+///behavior include
+#include "call_graph_manager.hpp"
+
+///design_flows/backend/ToHDL include
+#include "language_writer.hpp"
+
+///HLS/functions_allocation include
+#include "omp_functions.hpp"
+
+static bool is_memory_port (const structural_objectRef & port)
 {
    const auto p = GetPointer<port_o>(port);
    return p->get_is_memory() or p->get_is_global() or p->get_is_extern() or p->get_port_interface() != port_o::port_interface::PI_DEFAULT;
@@ -421,9 +419,9 @@ void allocation::add_proxy_function_wrapper(const std::string& library_name, tec
    GetPointer<module>(wrapper_top)->set_copyright(fu_module->get_copyright());
    GetPointer<module>(wrapper_top)->set_authors(fu_module->get_authors());
    GetPointer<module>(wrapper_top)->set_license(fu_module->get_license());
-   if(fu_module->is_parameter(MEMORY_PARAMETER))
+   if (fu_module->ExistsParameter(MEMORY_PARAMETER))
    {
-      GetPointer<module>(wrapper_top)->set_parameter(MEMORY_PARAMETER, fu_module->get_parameter(MEMORY_PARAMETER));
+      GetPointer<module>(wrapper_top)->SetParameter(MEMORY_PARAMETER, fu_module->GetParameter(MEMORY_PARAMETER));
    }
    // handle input ports
    auto inPortSize = static_cast<unsigned int>(fu_module->get_in_port_size());
@@ -978,11 +976,11 @@ bool allocation::check_for_memory_compliancy(bool Has_extern_allocated_data, tec
       {
          case(MemoryAllocation_ChannelsType::MEM_ACC_11):
          case(MemoryAllocation_ChannelsType::MEM_ACC_N1):
-         {
-            if(channels_type.find(CHANNELS_TYPE_MEM_ACC_NN) != std::string::npos or channels_type.find(CHANNELS_TYPE_MEM_ACC_P1N) != std::string::npos)
-               return true;
-            break;
-         }
+            {
+               if(channels_type.find(CHANNELS_TYPE_MEM_ACC_NN) != std::string::npos or channels_type.find(CHANNELS_TYPE_MEM_ACC_P1N) !=std::string::npos)
+                  return true;
+               break;
+            }
          case(MemoryAllocation_ChannelsType::MEM_ACC_NN):
          {
             if(channels_type.find(CHANNELS_TYPE_MEM_ACC_NN) == std::string::npos)
@@ -995,8 +993,14 @@ bool allocation::check_for_memory_compliancy(bool Has_extern_allocated_data, tec
             {
                return true;
             }
-            break;
-         }
+         case(MemoryAllocation_ChannelsType::MEM_ACC_CS):
+            {
+               if(channels_type.find(CHANNELS_TYPE_MEM_ACC_CS) == std::string::npos)
+               {
+                  return true;
+               }
+               break;
+            }
          default:
             THROW_UNREACHABLE("");
       }
@@ -1794,7 +1798,21 @@ DesignFlowStep_Status allocation::InternalExec()
                         auto n_ports = parameters->getOption<unsigned int>(OPT_memory_banks_number);
                         set_number_channels(specializedId, n_ports);
                      }
-                     else if(channels_type == CHANNELS_TYPE_MEM_ACC_NN && memory_ctrl_type != "")
+                     else if(channels_type == CHANNELS_TYPE_MEM_ACC_CS and memory_ctrl_type != "")
+                     {
+                        auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+                        if(omp_functions->hierarchical_functions.find(funId) != omp_functions->hierarchical_functions.end())
+                        {
+                           set_number_channels(specializedId, parameters->getOption<unsigned int>(OPT_channels_number));
+                           std::cout<<"Num channels for function "<<HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name()<<" is: "<<parameters->getOption<unsigned int>(OPT_channels_number)<<std::endl;
+                        }
+                        else
+                        {
+                           set_number_channels(specializedId, 1);
+                           std::cout<<"Num channels for function "<<HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name()<<" is: 1"<<std::endl;
+                        }
+                     }
+                     else if( channels_type == CHANNELS_TYPE_MEM_ACC_NN && memory_ctrl_type != "")
                      {
                         auto n_ports = parameters->getOption<unsigned int>(OPT_channels_number);
                         set_number_channels(specializedId, n_ports);
@@ -2139,7 +2157,7 @@ void allocation::IntegrateTechnologyLibraries()
 
       bool is_async_var = false;
 
-      THROW_ASSERT(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) != MemoryAllocation_ChannelsType::MEM_ACC_P1N, "unexpected condition");
+      THROW_ASSERT(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) != (MemoryAllocation_ChannelsType::MEM_ACC_P1N), "unexpected condition");
       bool unaligned_access_p = parameters->isOption(OPT_unaligned_access) && parameters->getOption<bool>(OPT_unaligned_access);
       if(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_11)
       {

@@ -46,9 +46,8 @@
 #include "fu_binding.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
-#if HAVE_EXPERIMENTAL
+#include "fu_binding.hpp"
 #include "parallel_memory_fu_binding.hpp"
-#endif
 
 /// implemented algorithms
 #include "cdfc_module_binding.hpp"
@@ -75,15 +74,13 @@ void fu_binding_creator::Initialize()
    HLSFunctionStep::Initialize();
    if(not HLS->Rfu)
    {
-#if HAVE_EXPERIMENTAL
-      if(parameters->getOption<int>(OPT_memory_banks_number) > 1)
+      if(parameters->getOption<int>(OPT_memory_banks_number) > 1 && !parameters->isOption(OPT_context_switch))
       {
          HLS->Rfu = fu_bindingRef(new ParallelMemoryFuBinding(HLSMgr, funId, parameters));
       }
       else
-#endif
       {
-         HLS->Rfu = fu_bindingRef(new fu_binding(HLSMgr, funId, parameters));
+         HLS->Rfu = fu_bindingRef(fu_binding::create_fu_binding(HLSMgr, funId, parameters));
       }
    }
 }

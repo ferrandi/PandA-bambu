@@ -1,0 +1,162 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2018 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/**
+ * @file c_initialization_yparser.ypp
+ * @brief BISON based parser for C initialization string
+ *
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
+ *
+*/
+
+%{
+
+/**
+* Includes
+*/
+///Autoheader include
+#include "config_HAVE_BISON_2_7_OR_GREATER.hpp"
+
+///HLS/simulation includes
+#include "c_initialization_parser_node.hpp"
+#define YYSTYPE CInitializationParserNode
+#include "c_initialization_flex_lexer.hpp"
+#include "c_initialization_parser.hpp"
+#include "c_initialization_parser_functor.hpp"
+
+///utility include
+#include "refcount.hpp"
+
+#define YYLTYPE_IS_TRIVIAL 0
+
+///NOTE: forward declarations of CInitializationParserFunctor and CInitializationLexer are in this point since they will be used in c_initialization_yparser.h
+REF_FORWARD_DECL(CInitializationLexer);
+
+///Included after vector for the definition of YYSTYPE
+///Parser include
+#if HAVE_BISON_2_7_OR_GREATER
+#include "c_initialization_yparser.hpp"
+#else
+#include "c_initialization_yparser.h"
+#endif
+
+///Skipping warnings due to bison
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wwrite-strings"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+
+/**
+* Class declarations
+*/
+
+/**
+* Local Data Structures
+*/
+
+
+/**
+* Global Data Structures
+*/
+
+/**
+* Function Prototypes
+*/
+extern int yylex(YYSTYPE *lvalp, const CInitializationFlexLexerRef lexer);
+extern void yyerror(const CInitializationParserFunctorRef c_initialization_parser_functor, const CInitializationFlexLexerRef lexer, const char *msg);
+#ifndef __clang_analyzer__
+
+%}
+/**
+* BISON DECLARATIONS
+*/
+
+%token TOK_CI_COMMA TOK_CI_NUMBER TOK_CI_OPEN_BRACKET TOK_CI_CLOSE_BRACKET
+
+%parse-param {const CInitializationParserFunctorRef c_initialization_parser_functor}
+%parse-param {const CInitializationFlexLexerRef lexer}
+%lex-param {const CInitializationFlexLexerRef lexer}
+
+%expect 0
+
+%pure-parser
+%start c_initialization
+
+%%
+
+c_initialization : element {c_initialization_parser_functor->CheckEnd();}
+                 ;
+
+list : TOK_CI_OPEN_BRACKET {c_initialization_parser_functor->GoDown();} elements_list {c_initialization_parser_functor->GoUp();} TOK_CI_CLOSE_BRACKET
+     ;
+
+elements_list : element
+              | elements_list TOK_CI_COMMA {c_initialization_parser_functor->GoNext();} element
+              ;
+
+element : value
+        | list
+        ;
+
+value : TOK_CI_NUMBER {c_initialization_parser_functor->Process($1.content);}
+
+/* End of Grammar */
+
+%%
+#endif
+/**
+* EPILOGUE
+*/
+
+void CInitializationParser::YYParse(const CInitializationParserFunctorRef c_initialization_parser_functor, const CInitializationFlexLexerRef lexer) const
+{
+#if YYDEBUG
+   yydebug = 1;
+#endif
+   yyparse(c_initialization_parser_functor, lexer);
+}
+
+void yyerror(const CInitializationParserFunctorRef c_initialization_parser_functor, const CInitializationFlexLexerRef lexer, const char *msg)
+{
+   lexer->yyerror(msg);
+}
+
+int yylex(YYSTYPE *lvalp, const CInitializationFlexLexerRef lexer)
+{
+   lexer->lvalp=lvalp;
+   return lexer->yylex();
+}
+
+

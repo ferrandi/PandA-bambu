@@ -52,6 +52,7 @@
 
 /// tree include
 #include "behavioral_helper.hpp"
+#include "design_flow_manager.hpp"
 
 HLSSynthesisFlow::HLSSynthesisFlow(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
     : HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::HLS_SYNTHESIS_FLOW)
@@ -67,22 +68,44 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
-      {
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
-         const auto function_behavior = HLSMgr->GetFunctionBehavior(funId);
-         const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
-         if(behavioral_helper->IsOmpBodyLoop())
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-         }
-         else if(behavioral_helper->GetOmpForDegree())
-         {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_FOR_WRAPPER_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-         }
-         else
+#if HAVE_FROM_PRAGMA_BUILT
+            const auto function_behavior = HLSMgr->GetFunctionBehavior(funId);
+            const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
+            if(parameters->isOption(OPT_context_switch))
+            {
+               ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+               if(design_flow_manager.lock()->GetStatus(HLS_step::ComputeSignature(HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS, HLSFlowStepSpecializationConstRef())) == DesignFlowStep_Status::SUCCESS)
+               {
+                  if(behavioral_helper->IsOmpBodyLoop())
+                  {
+                     ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+                  }
+                  else if(behavioral_helper->GetOmpForDegree())
+                  {
+                     if(parameters->isOption(OPT_context_switch))
+                     {
+                        ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_FOR_WRAPPER_CS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+                     }
+#if HAVE_EXPERIMENTAL
+                     else
+                     {
+                        ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_FOR_WRAPPER_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+                     }
 #endif
-         {
-            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_hls_flow), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+                  }
+                  else
+                  {
+                     ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_hls_flow), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+                  }
+               }
+            }
+            else
+   #endif
+            {
+               ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_hls_flow), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            }
+            break;
          }
          break;
       }

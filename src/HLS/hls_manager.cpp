@@ -90,7 +90,9 @@ HLS_manager::HLS_manager(const ParameterConstRef _Param, const HLS_targetRef _HL
 #endif
 {
 #if HAVE_TASTE
-   Rfuns = functionsRef(new functions());
+   if(Param->isOption(OPT_context_switch));
+   else
+      Rfuns = functionsRef(new functions());
 #endif
 }
 

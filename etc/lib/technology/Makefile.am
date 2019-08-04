@@ -14,6 +14,7 @@ EXTRA_DIST = \
   C_VEC_IPs.xml \
   NC_HLS_IPs.xml \
   NC_MEM_IPs.xml \
+  NC_PC_IPs.xml \
   NC_SF_IPs.xml \
   NC_STD_IPs.xml \
   NC_VEC_IPs.xml \

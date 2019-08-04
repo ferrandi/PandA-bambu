@@ -1211,10 +1211,10 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::string& file_name, con
       return Parameters_FileFormat::FF_FORTRAN;
    }
 #endif
-#if HAVE_FROM_CSV_BUILT
    if(extension == "csv")
    {
       std::string base_name = GetLeafFileName(file_name);
+#if HAVE_FROM_CSV_BUILT
       if(base_name.find('.') != std::string::npos)
       {
          std::string local_extension = GetExtension(base_name);
@@ -1229,10 +1229,10 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::string& file_name, con
             return Parameters_FileFormat::FF_CSV_TRE;
          }
       }
+#endif
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--generic CSV");
       return Parameters_FileFormat::FF_CSV;
    }
-#endif
 #if HAVE_FROM_LIBERTY
    if(extension == "lib")
    {

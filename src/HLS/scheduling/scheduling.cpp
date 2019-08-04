@@ -51,10 +51,9 @@
 #include "Parameter.hpp"
 
 #include "fu_binding.hpp"
-#include "schedule.hpp"
-#if HAVE_EXPERIMENTAL
 #include "parallel_memory_fu_binding.hpp"
-#endif
+#include "refcount.hpp"
+#include "hls_constraints.hpp"
 #include "allocation.hpp"
 #include "hls_constraints.hpp"
 #include "refcount.hpp"
@@ -99,15 +98,13 @@ void Scheduling::Initialize()
       const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
       HLS->Rsch = ScheduleRef(new Schedule(HLSMgr, funId, FB->CGetOpGraph(FunctionBehavior::FLSAODG), parameters));
    }
-#if HAVE_EXPERIMENTAL
-   if(parameters->getOption<int>(OPT_memory_banks_number) > 1)
+   if(parameters->getOption<int>(OPT_memory_banks_number) > 1 && !parameters->isOption(OPT_context_switch))
    {
       HLS->Rfu = fu_bindingRef(new ParallelMemoryFuBinding(HLSMgr, funId, parameters));
    }
    else
-#endif
    {
-      HLS->Rfu = fu_bindingRef(new fu_binding(HLSMgr, funId, parameters));
+      HLS->Rfu = fu_bindingRef(fu_binding::create_fu_binding(HLSMgr, funId, parameters));
    }
 }
 
@@ -117,13 +114,13 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
-      {
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-         if(parameters->getOption<bool>(OPT_parse_pragma))
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-         }
-         else
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+            if(parameters->getOption<bool>(OPT_parse_pragma))
+            {
+               ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            }
+            else
 #endif
          {
             ret.insert(std::make_tuple(HLSFlowStep_Type::ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
