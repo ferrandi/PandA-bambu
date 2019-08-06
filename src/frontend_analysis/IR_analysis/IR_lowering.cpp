@@ -1012,9 +1012,6 @@ tree_nodeRef IR_lowering::expand_sdiv_pow2(tree_nodeRef op0, unsigned long long 
    tree_nodeRef bt = tree_man->create_boolean_type();
    tree_nodeRef cond_op0 = tree_man->create_binary_operation(bt, op0, const0, srcp_default, lt_expr_K);
    tree_nodeRef cond_op0_ga = tree_man->CreateGimpleAssign(bt, TM->CreateUniqueIntegerCst(0,bt->index), TM->CreateUniqueIntegerCst(1,bt->index), cond_op0, block->number, srcp_default);
-#ifndef NDEBUG
-   AppM->RegisterTransformation(GetName(), cond_op0_ga);
-#endif
    block->PushBefore(cond_op0_ga, stmt);
    tree_nodeRef cond_op0_ga_var = GetPointer<gimple_assign>(GET_NODE(cond_op0_ga))->op0;
    tree_nodeRef t_ga;
@@ -1025,9 +1022,6 @@ tree_nodeRef IR_lowering::expand_sdiv_pow2(tree_nodeRef op0, unsigned long long 
       tree_nodeRef const1 = TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(type));
       tree_nodeRef cond_op = tree_man->create_ternary_operation(type, cond_op0_ga_var, const1, const0, srcp_default, cond_expr_K);
       t_ga = tree_man->CreateGimpleAssign(type, tree_nodeRef(), tree_nodeRef(), cond_op, block->number, srcp_default);
-#ifndef NDEBUG
-      AppM->RegisterTransformation(GetName(), t_ga);
-#endif
       block->PushBefore(t_ga, stmt);
       tree_nodeRef cond_ga_var = GetPointer<gimple_assign>(GET_NODE(t_ga))->op0;
 
@@ -1041,9 +1035,6 @@ tree_nodeRef IR_lowering::expand_sdiv_pow2(tree_nodeRef op0, unsigned long long 
 
       tree_nodeRef t_expr = tree_man->create_binary_operation(type, op0, d_m1, srcp_default, plus_expr_K);
       t_ga = tree_man->CreateGimpleAssign(type, tree_nodeRef(), tree_nodeRef(), t_expr, block->number, srcp_default);
-#ifndef NDEBUG
-      AppM->RegisterTransformation(GetName(), t_ga);
-#endif
       block->PushBefore(t_ga, stmt);
       tree_nodeRef t_ga_var = GetPointer<gimple_assign>(GET_NODE(t_ga))->op0;
 
@@ -1052,9 +1043,6 @@ tree_nodeRef IR_lowering::expand_sdiv_pow2(tree_nodeRef op0, unsigned long long 
       t2_ga = tree_man->CreateGimpleAssign(type, tree_nodeRef(), tree_nodeRef(), cond_op, block->number, srcp_default);
    }
 
-#ifndef NDEBUG
-   AppM->RegisterTransformation(GetName(), t2_ga);
-#endif
    block->PushBefore(t2_ga, stmt);
 
    tree_nodeRef t2_ga_var = GetPointer<gimple_assign>(GET_NODE(t2_ga))->op0;

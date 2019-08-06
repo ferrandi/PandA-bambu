@@ -91,6 +91,14 @@
 #include <limits>
 #include <string>
 
+/// STL includes
+#include <list>
+#include <map>
+#include <set>
+#include <utility>
+#include <unordered_map>
+#include <unordered_set>
+
 /// Tree include
 #include "ext_tree_node.hpp"
 #include "tree_basic_block.hpp"
@@ -151,7 +159,10 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             case DesignFlowStep_Status::SUCCESS:
             {
-               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE, SAME_FUNCTION));
+               if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
+               {
+                  relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE, SAME_FUNCTION));
+               }
                relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
                relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SIMPLE_CODE_MOTION, SAME_FUNCTION));
                break;
