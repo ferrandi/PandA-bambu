@@ -299,7 +299,8 @@
 #define OPT_SOFTFLOAT_SUBNORMAL (1 + OPT_SOFT_FLOAT)
 #define OPT_SOFT_FP (1 + OPT_SOFTFLOAT_SUBNORMAL)
 #define OPT_STG (1 + OPT_SOFT_FP)
-#define INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS (1 + OPT_STG)
+#define OPT_SPECULATIVE (1 + OPT_STG)
+#define INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS (1 + OPT_SPECULATIVE)
 #define INPUT_OPT_TEST_SINGLE_NON_DETERMINISTIC_FLOW (1 + INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS)
 #define OPT_TESTBENCH (1 + INPUT_OPT_TEST_SINGLE_NON_DETERMINISTIC_FLOW)
 #define OPT_TESTBENCH_EXTRA_GCC_FLAGS (1 + OPT_TESTBENCH)
@@ -1048,7 +1049,7 @@ int BambuParameter::Exec()
    // Bambu short option. An option character in this string can be followed by a colon (`:') to indicate that it
    // takes a required argument. If an option character is followed by two colons (`::'), its argument is optional;
    // this is a GNU extension.
-   const char* const short_options = COMMON_SHORT_OPTIONS_STRING "t:u:H:SC::b:w:" GCC_SHORT_OPTIONS_STRING;
+   const char* const short_options = COMMON_SHORT_OPTIONS_STRING "o:t:u:H:SC::b:w:" GCC_SHORT_OPTIONS_STRING;
 
    const struct option long_options[] = {
       COMMON_LONG_OPTIONS,
@@ -1106,7 +1107,7 @@ int BambuParameter::Exec()
       {"ilp-newform", no_argument, nullptr, OPT_ILP_NEWFORM},
       {"silp", no_argument, nullptr, OPT_SILP},
 #endif
-      {"speculative", no_argument, nullptr, 'S'},
+      {"speculative", no_argument, nullptr, OPT_SPECULATIVE},
       {"no-chaining", no_argument, nullptr, 0},
       /// Finite state machine options
       {"stg", required_argument, nullptr, OPT_STG},
@@ -1287,6 +1288,14 @@ int BambuParameter::Exec()
          case OPT_TOP_RTLDESIGN_NAME:
          {
             setOption(OPT_top_design_name, optarg);
+            break;
+         }
+         case 'o':
+            setOption(OPT_output_file, optarg);
+            break;
+         case 'S':
+         {
+            setOption(OPT_serialize_output, true);
             break;
          }
          case 't':
@@ -1534,7 +1543,7 @@ int BambuParameter::Exec()
             break;
          }
 #endif
-         case 'S': // enable scheduling with speculative computation
+         case OPT_SPECULATIVE: // enable scheduling with speculative computation
          {
             setOption(OPT_speculative, true);
             break;
@@ -3245,6 +3254,9 @@ void BambuParameter::CheckParameters()
    {
       setOption(OPT_evaluation_mode, Evaluation_Mode::DRY_RUN);
    }
+   /// When simd is enabled bit value analysis and optimization are disabled
+   if(getOption<int>(OPT_gcc_openmp_simd))
+      setOption(OPT_bitvalue_ipa, false);
 }
 
 void BambuParameter::SetDefaults()
