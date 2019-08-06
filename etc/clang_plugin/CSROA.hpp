@@ -84,7 +84,7 @@ class CustomScalarReplacementOfAggregatesPass : public llvm::ModulePass
    static bool SROA_wrapperInliningStep(llvm::Function* kernel_function, llvm::Module& module, llvm::ModulePass* modulePass);
 
  private:
-   bool check_assumptions(llvm::Function* kernel_function);
+   bool check_assumptions(llvm::Function* kernel_function, std::set<llvm::Value*>& avoid_expansion);
 
    bool expansion_allowed(llvm::Value* aggregate, std::map<llvm::Argument*, std::vector<unsigned long long>>& arg_size_map, const llvm::DataLayout* DL);
 
@@ -92,11 +92,11 @@ class CustomScalarReplacementOfAggregatesPass : public llvm::ModulePass
 
    static void compute_op_dims_and_perform_function_versioning(llvm::Function* kernel_function, std::vector<llvm::Function*>& inner_functions, bool perform_function_versioning, std::map<llvm::Argument*, std::vector<unsigned long long>>& arg_size_map);
 
-   static void inline_wrappers(llvm::Function* kernel_function, std::vector<llvm::Function*>& inner_functions, ModulePass *modulePass);
+   static void inline_wrappers(llvm::Function* kernel_function, std::vector<llvm::Function*>& inner_functions, ModulePass* modulePass);
 
    void expand_ptrs(llvm::Function* kernel_function, std::vector<llvm::Function*>& inner_functions, inst_set_ty& inst_to_remove, std::map<llvm::Argument*, std::vector<llvm::Argument*>>& exp_args_map,
                     std::map<llvm::AllocaInst*, std::vector<llvm::AllocaInst*>>& exp_allocas_map, std::map<llvm::GlobalVariable*, std::vector<llvm::GlobalVariable*>>& exp_globals_map,
-                    std::map<llvm::Argument*, std::vector<unsigned long long>>& arg_size_map, const llvm::DataLayout* DL);
+                    std::map<llvm::Argument*, std::vector<unsigned long long>>& arg_size_map, const llvm::DataLayout* DL, std::set<llvm::Value*>& avoid_expansion);
 
    void process_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb, inst_set_ty& inst_to_remove, std::map<llvm::Argument*, std::vector<llvm::Argument*>>& exp_args_map, std::map<llvm::AllocaInst*, std::vector<llvm::AllocaInst*>>& exp_allocas_map,
                         std::map<llvm::GlobalVariable*, std::vector<llvm::GlobalVariable*>>& exp_globals_map, std::map<llvm::Argument*, std::vector<unsigned long long>>& arg_size_map, const llvm::DataLayout* DL);
@@ -121,10 +121,9 @@ class CustomScalarReplacementOfAggregatesPass : public llvm::ModulePass
                        const llvm::DataLayout* DL);
 
    static void cleanup(std::map<llvm::Function*, llvm::Function*>& exp_fun_map, std::vector<llvm::Function*>& inner_functions, inst_set_ty& inst_to_remove, std::map<llvm::Argument*, std::vector<llvm::Argument*>>& exp_args_map,
-                       std::map<llvm::GlobalVariable*, std::vector<llvm::GlobalVariable*>>& exp_globals_map);
+                       std::map<llvm::GlobalVariable*, std::vector<llvm::GlobalVariable*>>& exp_globals_map, std::set<llvm::Value*>& avoid_expansion);
 
-   static
-   std::vector<unsigned long long> get_op_arg_dims(llvm::Use* op_arg, std::map<llvm::Argument*, std::vector<unsigned long long>>& arg_size_map);
+   static std::vector<unsigned long long> get_op_arg_dims(llvm::Use* op_arg, std::map<llvm::Argument*, std::vector<unsigned long long>>& arg_size_map);
 };
 
 CustomScalarReplacementOfAggregatesPass* createSROAFunctionVersioningPass(std::string kernel_name);

@@ -44,6 +44,9 @@
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include <llvm/IR/Verifier.h>
 #include <llvm/Transforms/Scalar.h>
+#if __clang_major__ >= 7
+#include "llvm/Transforms/Utils.h"
+#endif
 
 #include "CSROA.hpp"
 
@@ -122,7 +125,7 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
    PM.add(llvm::createVerifierPass());
 }
 
-static void loadPassLate(const llvm::PassManagerBuilder& PMB, llvm::legacy::PassManagerBase& PM)
+static void loadPassLate(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_wrapperInlining >);
    PM.add(llvm::createDeadStoreEliminationPass());

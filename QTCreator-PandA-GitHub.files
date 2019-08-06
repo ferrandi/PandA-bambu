@@ -261,6 +261,7 @@ build/config_headers/config_I386_CLANG4_EMPTY_PLUGIN.hpp
 build/config_headers/config_I386_CLANG4_EXE.hpp
 build/config_headers/config_I386_CLANG4_EXPANDMEMOPS_PLUGIN.hpp
 build/config_headers/config_I386_CLANG4_CSROA_PLUGIN.hpp
+build/config_headers/config_I386_CLANG4_GEPICANON_PLUGIN.hpp
 build/config_headers/config_I386_CLANG4_PLUGIN_COMPILER.hpp
 build/config_headers/config_I386_CLANG4_SSA_PLUGIN.hpp
 build/config_headers/config_I386_CLANG4_SSA_PLUGINCPP.hpp
@@ -270,15 +271,18 @@ build/config_headers/config_I386_CLANG5_ASTANALYZER_PLUGIN.hpp
 build/config_headers/config_I386_CLANG5_CSROA_PLUGIN.hpp
 build/config_headers/config_I386_CLANG5_EXPANDMEMOPS_PLUGIN.hpp
 build/config_headers/config_I386_CLANG5_CSROA_PLUGIN.hpp
+build/config_headers/config_I386_CLANG5_GEPICANON_PLUGIN.hpp
 build/config_headers/config_I386_CLANG6_ASTANALYZER_PLUGIN.hpp
 build/config_headers/config_I386_CLANG6_CSROA_PLUGIN.hpp
 build/config_headers/config_I386_CLANG6_EXPANDMEMOPS_PLUGIN.hpp
 build/config_headers/config_I386_CLANG6_CSROA_PLUGIN.hpp
+build/config_headers/config_I386_CLANG6_GEPICANON_PLUGIN.hpp
 build/config_headers/config_I386_CLANG7_ASTANALYZER_PLUGIN.hpp
 build/config_headers/config_I386_CLANG7_CSROA_PLUGIN.hpp
 build/config_headers/config_I386_CLANG7_EXE.hpp
 build/config_headers/config_I386_CLANG7_EXPANDMEMOPS_PLUGIN.hpp
 build/config_headers/config_I386_CLANG7_CSROA_PLUGIN.hpp
+build/config_headers/config_I386_CLANG7_GEPICANON_PLUGIN.hpp
 build/config_headers/config_I386_CLANG7_PLUGIN_COMPILER.hpp
 build/config_headers/config_I386_CLANG7_SSA_PLUGINCPP.hpp
 build/config_headers/config_I386_CLANGPP4_EXE.hpp
@@ -473,6 +477,8 @@ build/src/parser/treegcc/treeParser.hpp
 build/src/revision_hash.hpp
 etc/clang_plugin/CSROA.cpp
 etc/clang_plugin/CSROA.hpp
+etc/clang_plugin/GepiCanonicalizationPass.cpp
+etc/clang_plugin/GepiCanonicalizationPass.hpp
 etc/clang_plugin/HardekopfLin_AA.cpp
 etc/clang_plugin/HardekopfLin_AA.hpp
 etc/clang_plugin/bambuS2S.cpp
@@ -486,6 +492,7 @@ etc/clang_plugin/llvm/my_OrderedInstructions.cpp
 etc/clang_plugin/llvm/my_OrderedInstructions.hpp
 etc/clang_plugin/plugin_ASTAnalyzer.cpp
 etc/clang_plugin/plugin_CSROA.cpp
+etc/clang_plugin/plugin_GepiCanon.cpp
 etc/clang_plugin/plugin_dumpGimpleEmpty.cpp
 etc/clang_plugin/plugin_dumpGimpleSSA.cpp
 etc/clang_plugin/plugin_expandMemOps.cpp

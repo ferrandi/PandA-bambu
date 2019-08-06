@@ -1,5 +1,5 @@
 #This is etc/clang_plugin/Makefile.am
-EXTRA_DIST = $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(top_srcdir)/etc/clang_plugin/gcc/cp-tree.def $(top_srcdir)/etc/clang_plugin/gcc/sync-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/gtm-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/sanitizer.def $(top_srcdir)/etc/clang_plugin/gcc/hsa-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/c-common.def $(top_srcdir)/etc/clang_plugin/gcc/gimple.def $(top_srcdir)/etc/clang_plugin/gcc/builtins.def $(top_srcdir)/etc/clang_plugin/gcc/brig-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/cilkplus.def $(top_srcdir)/etc/clang_plugin/gcc/omp-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/tree.def $(top_srcdir)/etc/clang_plugin/gcc/cilk-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/chkp-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/COPYING3 $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $(top_srcdir)/etc/clang_plugin/llvm/LICENSE.TXT $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.cpp $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.hpp $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp $(top_srcdir)/etc/clang_plugin/CSROA.hpp $(top_srcdir)/etc/clang_plugin/CSROA.cpp $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp
+EXTRA_DIST = $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(top_srcdir)/etc/clang_plugin/gcc/cp-tree.def $(top_srcdir)/etc/clang_plugin/gcc/sync-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/gtm-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/sanitizer.def $(top_srcdir)/etc/clang_plugin/gcc/hsa-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/c-common.def $(top_srcdir)/etc/clang_plugin/gcc/gimple.def $(top_srcdir)/etc/clang_plugin/gcc/builtins.def $(top_srcdir)/etc/clang_plugin/gcc/brig-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/cilkplus.def $(top_srcdir)/etc/clang_plugin/gcc/omp-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/tree.def $(top_srcdir)/etc/clang_plugin/gcc/cilk-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/chkp-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/COPYING3 $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.hpp $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $(top_srcdir)/etc/clang_plugin/llvm/LICENSE.TXT $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.cpp $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.hpp $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp $(top_srcdir)/etc/clang_plugin/CSROA.hpp $(top_srcdir)/etc/clang_plugin/CSROA.cpp $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp
 
 LD_LIBRARY_PATH=
 PANDA_PLUGIN_VERSION=0.11
@@ -56,6 +56,10 @@ endif
 
 if BUILD_I386_CLANG4_EXPANDMEMOPS_PLUGIN
 all: $(I386_CLANG4_EXPANDMEMOPS_PLUGIN)
+endif
+
+if BUILD_I386_CLANG4_GEPICANON_PLUGIN
+all: $(I386_CLANG4_GEPICANON_PLUGIN)
 endif
 
 if BUILD_I386_CLANG4_CSROA_PLUGIN
@@ -186,6 +190,21 @@ $(I386_CLANG4_EXPANDMEMOPS_PLUGIN) : clang4_plugin_expandMemOps.o
 	  $(I386_CLANG4_PLUGIN_COMPILER) clang4_plugin_expandMemOps.o $$compile_options -o clang4_plugin_expandMemOps.so; \
 	fi;
 
+$(I386_CLANG4_GEPICANON_PLUGIN) : clang4_plugin_GepiCanon.o clang4_GepiCanon.o
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options='$(CLANG4_LIBS) -lversion `$(I386_LLVM_CONFIG4_EXE) --ldflags --libs --system-libs`'; \
+	    compile_options='';; \
+	  darwin*) \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	  *) \
+	    compile_options='-fPIC -shared -fno-rtti';;\
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG4_PLUGIN_COMPILER) opt_clang4_plugin_GepiCanon.o clang4_GepiCanon.o $$compile_options -o clang4_plugin_GepiCanon_opt.so; \
+	  $(I386_CLANG4_PLUGIN_COMPILER) clang4_plugin_GepiCanon.o clang4_GepiCanon.o $$compile_options -o clang4_plugin_GepiCanon.so; \
+	fi;
+
 $(I386_CLANG4_CSROA_PLUGIN) : clang4_plugin_CSROA.o clang4_CSROA.o
 	case $(host_os) in \
 	  mingw*) \
@@ -281,6 +300,19 @@ clang4_plugin_expandMemOps.o : $(top_srcdir)/etc/clang_plugin/plugin_expandMemOp
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG4_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp -o opt_clang4_plugin_expandMemOps.o; \
 	  $(I386_CLANG4_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp -o clang4_plugin_expandMemOps.o; \
+	fi;
+
+clang4_plugin_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG4_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp -o opt_clang4_plugin_GepiCanon.o; \
+	  $(I386_CLANG4_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp -o clang4_plugin_GepiCanon.o; \
 	fi;
 
 clang4_plugin_CSROA.o : $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
@@ -383,6 +415,18 @@ clang4_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/c
 	    $(I386_CLANG4_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp -o clang4_eSSA.o; \
 	fi;
 
+clang4_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.hpp
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM4_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM4_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	    $(I386_CLANG4_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp -o clang4_GepiCanon.o; \
+	fi;
+
 clang4_CSROA.o : $(top_srcdir)/etc/clang_plugin/CSROA.cpp $(top_srcdir)/etc/clang_plugin/CSROA.hpp
 	case $(host_os) in \
 	  mingw*) \
@@ -421,6 +465,10 @@ endif
 
 if BUILD_I386_CLANG5_EXPANDMEMOPS_PLUGIN
 all: $(I386_CLANG5_EXPANDMEMOPS_PLUGIN)
+endif
+
+if BUILD_I386_CLANG5_GEPICANON_PLUGIN
+all: $(I386_CLANG5_GEPICANON_PLUGIN)
 endif
 
 if BUILD_I386_CLANG5_CSROA_PLUGIN
@@ -552,6 +600,21 @@ $(I386_CLANG5_EXPANDMEMOPS_PLUGIN) : clang5_plugin_expandMemOps.o
 	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_expandMemOps.o $$compile_options -o clang5_plugin_expandMemOps.so; \
 	fi;
 
+$(I386_CLANG5_GEPICANON_PLUGIN) : clang5_plugin_GepiCanon.o clang5_GepiCanon.o
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options='$(CLANG5_LIBS) -lversion `$(I386_LLVM_CONFIG5_EXE) --ldflags --libs --system-libs`'; \
+	    compile_options='';; \
+	  darwin*) \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	  *) \
+	    compile_options='-fPIC -shared -fno-rtti';;\
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG5_PLUGIN_COMPILER) opt_clang5_plugin_GepiCanon.o clang5_GepiCanon.o $$compile_options -o clang5_plugin_GepiCanon_opt.so; \
+	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_GepiCanon.o clang5_GepiCanon.o $$compile_options -o clang5_plugin_GepiCanon.so; \
+	fi;
+
 $(I386_CLANG5_CSROA_PLUGIN) : clang5_plugin_CSROA.o clang5_CSROA.o
 	case $(host_os) in \
 	  mingw*) \
@@ -648,6 +711,19 @@ clang5_plugin_expandMemOps.o : $(top_srcdir)/etc/clang_plugin/plugin_expandMemOp
 	  $(I386_CLANG5_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp -o clang5_plugin_expandMemOps.o; \
 	fi;
 
+clang5_plugin_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG5_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp -o opt_clang5_plugin_GepiCanon.o; \
+	  $(I386_CLANG5_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp -o clang5_plugin_GepiCanon.o; \
+	fi;
+
 clang5_plugin_CSROA.o : $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
@@ -736,6 +812,18 @@ clang5_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/c
 	    $(I386_CLANG5_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp -o clang5_eSSA.o; \
 	fi;
 
+clang5_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.hpp
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	    $(I386_CLANG5_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp -o clang5_GepiCanon.o; \
+	fi;
+
 clang5_CSROA.o : $(top_srcdir)/etc/clang_plugin/CSROA.cpp $(top_srcdir)/etc/clang_plugin/CSROA.hpp
 	case $(host_os) in \
 	  mingw*) \
@@ -775,6 +863,10 @@ endif
 
 if BUILD_I386_CLANG6_EXPANDMEMOPS_PLUGIN
 all: $(I386_CLANG6_EXPANDMEMOPS_PLUGIN)
+endif
+
+if BUILD_I386_CLANG6_GEPICANON_PLUGIN
+all: $(I386_CLANG6_GEPICANON_PLUGIN)
 endif
 
 if BUILD_I386_CLANG6_CSROA_PLUGIN
@@ -905,6 +997,21 @@ $(I386_CLANG6_EXPANDMEMOPS_PLUGIN) : clang6_plugin_expandMemOps.o
 	  $(I386_CLANG6_PLUGIN_COMPILER) clang6_plugin_expandMemOps.o $$compile_options -o clang6_plugin_expandMemOps.so; \
 	fi;
 
+$(I386_CLANG6_GEPICANON_PLUGIN) : clang6_plugin_GepiCanon.o clang6_GepiCanon.o
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options='$(CLANG6_LIBS) -lversion `$(I386_LLVM_CONFIG6_EXE) --ldflags --libs --system-libs`'; \
+	    compile_options='';; \
+	  darwin*) \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	  *) \
+	    compile_options='-fPIC -shared -fno-rtti';;\
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG6_PLUGIN_COMPILER) opt_clang6_plugin_GepiCanon.o clang6_GepiCanon.o $$compile_options -o clang6_plugin_GepiCanon_opt.so; \
+	  $(I386_CLANG6_PLUGIN_COMPILER) clang6_plugin_GepiCanon.o clang6_GepiCanon.o $$compile_options -o clang6_plugin_GepiCanon.so; \
+	fi;
+
 $(I386_CLANG6_CSROA_PLUGIN) : clang6_plugin_CSROA.o clang6_CSROA.o
 	case $(host_os) in \
 	  mingw*) \
@@ -1001,6 +1108,19 @@ clang6_plugin_expandMemOps.o : $(top_srcdir)/etc/clang_plugin/plugin_expandMemOp
 	  $(I386_CLANG6_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp -o clang6_plugin_expandMemOps.o; \
 	fi;
 
+clang6_plugin_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG6_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp -o opt_clang6_plugin_GepiCanon.o; \
+	  $(I386_CLANG6_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp -o clang6_plugin_GepiCanon.o; \
+	fi;
+
 clang6_plugin_CSROA.o : $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
@@ -1089,6 +1209,18 @@ clang6_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/c
 	    $(I386_CLANG6_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp -o clang6_eSSA.o; \
 	fi;
 
+clang6_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.hpp
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	    $(I386_CLANG6_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp -o clang6_GepiCanon.o; \
+	fi;
+
 clang6_CSROA.o : $(top_srcdir)/etc/clang_plugin/CSROA.cpp $(top_srcdir)/etc/clang_plugin/CSROA.hpp
 	case $(host_os) in \
 	  mingw*) \
@@ -1126,6 +1258,10 @@ endif
 
 if BUILD_I386_CLANG7_EXPANDMEMOPS_PLUGIN
 all: $(I386_CLANG7_EXPANDMEMOPS_PLUGIN)
+endif
+
+if BUILD_I386_CLANG7_GEPICANON_PLUGIN
+all: $(I386_CLANG7_GEPICANON_PLUGIN)
 endif
 
 if BUILD_I386_CLANG7_CSROA_PLUGIN
@@ -1256,6 +1392,21 @@ $(I386_CLANG7_EXPANDMEMOPS_PLUGIN) : clang7_plugin_expandMemOps.o
 	  $(I386_CLANG7_PLUGIN_COMPILER) clang7_plugin_expandMemOps.o $$compile_options -o clang7_plugin_expandMemOps.so; \
 	fi;
 
+$(I386_CLANG7_GEPICANON_PLUGIN) : clang7_plugin_GepiCanon.o clang7_GepiCanon.o
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options='$(CLANG7_LIBS) -lversion `$(I386_LLVM_CONFIG7_EXE) --ldflags --libs --system-libs`'; \
+	    compile_options='';; \
+	  darwin*) \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	  *) \
+	    compile_options='-fPIC -shared -fno-rtti';;\
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG7_PLUGIN_COMPILER) opt_clang7_plugin_GepiCanon.o clang7_GepiCanon.o $$compile_options -o clang7_plugin_GepiCanon_opt.so; \
+	  $(I386_CLANG7_PLUGIN_COMPILER) clang7_plugin_GepiCanon.o clang7_GepiCanon.o $$compile_options -o clang7_plugin_GepiCanon.so; \
+	fi;
+
 $(I386_CLANG7_CSROA_PLUGIN) : clang7_plugin_CSROA.o clang7_CSROA.o
 	case $(host_os) in \
 	  mingw*) \
@@ -1352,6 +1503,19 @@ clang7_plugin_expandMemOps.o : $(top_srcdir)/etc/clang_plugin/plugin_expandMemOp
 	  $(I386_CLANG7_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp -o clang7_plugin_expandMemOps.o; \
 	fi;
 
+clang7_plugin_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM7_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM7_HEADER_DIR) $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG7_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp -o opt_clang7_plugin_GepiCanon.o; \
+	  $(I386_CLANG7_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp -o clang7_plugin_GepiCanon.o; \
+	fi;
+
 clang7_plugin_CSROA.o : $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
@@ -1439,6 +1603,19 @@ clang7_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/c
 	if test -n "$$compile_options"; then \
 	    $(I386_CLANG7_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp -o clang7_eSSA.o; \
 	fi;
+
+clang7_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.hpp
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM7_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM7_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	    $(I386_CLANG7_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp -o clang7_GepiCanon.o; \
+	fi;
+
 
 clang7_CSROA.o : $(top_srcdir)/etc/clang_plugin/CSROA.cpp $(top_srcdir)/etc/clang_plugin/CSROA.hpp
 	case $(host_os) in \

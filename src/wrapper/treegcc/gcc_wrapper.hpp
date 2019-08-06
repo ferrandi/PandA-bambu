@@ -208,6 +208,10 @@ class GccWrapper
       std::string expandMemOps_plugin_obj;
       std::string expandMemOps_plugin_name;
 
+      /// The plugin canocalizing GEPIs
+      std::string GepiCanon_plugin_obj;
+      std::string GepiCanon_plugin_name;
+
       /// The plugin performing Custom Scalar Replacement of Aggregates
       std::string CSROA_plugin_obj;
       std::string CSROA_plugin_name;
@@ -340,7 +344,7 @@ class GccWrapper
     */
    static size_t ConvertVersion(const std::string& version);
 
-   std::string clang_recipes(const GccWrapper_OptimizationSet optimization_level, const GccWrapper_CompilerTarget compiler_target, const std::string& expandMemOps_plugin_obj, const std::string& expandMemOps_plugin_name, const std::string& CSROA_plugin_obj,
+   std::string clang_recipes(const GccWrapper_OptimizationSet optimization_level, const GccWrapper_CompilerTarget compiler_target, const std::string& expandMemOps_plugin_obj, const std::string& expandMemOps_plugin_name, const std::string &GepiCanon_plugin_obj, const std::string &GepiCanon_plugin_name, const std::string& CSROA_plugin_obj,
                              const std::string& CSROA_plugin_name, const std::string &fname);
 
  public:

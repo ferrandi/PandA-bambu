@@ -746,7 +746,11 @@ namespace RangeAnalysis
             llvm_unreachable("unexpected condition");
          }
       }
-      assert(u.sge(l));
+      if(!u.sge(l))
+      {
+         l = Min;
+         u = Max;
+      }
    }
 
    unsigned Range_base::neededBits(const llvm::APInt& a, const llvm::APInt& b, bool sign)
