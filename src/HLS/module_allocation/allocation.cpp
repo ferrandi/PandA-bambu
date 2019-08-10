@@ -154,8 +154,11 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_BIT_VALUE, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-         ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_BIT_VALUE, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::CALLED_FUNCTIONS));
+         if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
+         {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_BIT_VALUE, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_BIT_VALUE, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::CALLED_FUNCTIONS));
+         }
          ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::CALLED_FUNCTIONS));
          ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          break;
@@ -1235,6 +1238,18 @@ DesignFlowStep_Status allocation::InternalExec()
                current_fu = get_fu(ASSIGN_SIGNED_STD);
             else if(tree_helper::is_real(TreeM, left_type_index))
                current_fu = get_fu(ASSIGN_REAL_STD);
+            else if(tree_helper::is_a_vector(TreeM, left_type_index))
+            {
+               const unsigned int element_type = tree_helper::GetElements(TreeM, left_type_index);
+               if(tree_helper::is_int(TreeM, element_type))
+                  current_fu = get_fu(ASSIGN_VEC_SIGNED_STD);
+               else if(tree_helper::is_unsigned(TreeM, element_type))
+                  current_fu = get_fu(ASSIGN_VEC_UNSIGNED_STD);
+               else
+               {
+                  THROW_ERROR("unexpected type");
+               }
+            }
             else
                current_fu = get_fu(ASSIGN_UNSIGNED_STD);
          }

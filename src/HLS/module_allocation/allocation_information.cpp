@@ -1115,7 +1115,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
                const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
                const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
                max_size_in = std::max(max_size_in, element_size);
-               if(min_n_elements == 0 or 128 / element_size < min_n_elements)
+               if(min_n_elements == 0 or ((128 / element_size) < min_n_elements))
                   min_n_elements = 128 / element_size;
             }
             else
@@ -1152,7 +1152,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
                info->base128_input_nelem.push_back(128 / element_size);
                info->input_prec.push_back(element_size);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Type is " + STR(type_index) + " " + STR(TreeM->CGetTreeNode(type_index)) + " - Number of input elements (base128): " + STR(128 / element_size) + " - Number of real input elements: " + STR(vector_size / element_size) +
+                              "---Type is " + STR(type_index) + " " + TreeM->CGetTreeNode(type_index)->ToString() + " - Number of input elements (base128): " + STR(128 / element_size) + " - Number of real input elements: " + STR(vector_size / element_size) +
                                   " - Input precision: " + STR(element_size));
             }
             else
@@ -1217,7 +1217,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       const auto max_size_in_true = std::max(max_size_in, *std::max_element(info->input_prec.begin(), info->input_prec.end()));
       for(const auto n_elements : info->base128_input_nelem)
       {
-         if(n_elements and (min_n_elements == 0 or n_elements < min_n_elements))
+         if(n_elements and (min_n_elements == 0 or (n_elements < min_n_elements)))
          {
             min_n_elements = n_elements;
          }
@@ -1252,7 +1252,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
          unsigned int output_size = resize_to_1_8_16_32_64_128_256_512(tree_helper::size(TreeM, nodeOutput_id));
          info->real_output_nelem = output_size / element_size;
-         info->base128_output_nelem = output_size / element_size;
+         info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;
       }
       else
@@ -1341,7 +1341,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
             {
                const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
                const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
-               info->base128_output_nelem = info->output_prec / element_size;
+               info->base128_output_nelem = 128 / element_size;
                info->real_output_nelem = info->output_prec / element_size;
                info->output_prec = element_size;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -1373,17 +1373,28 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       unsigned int nodeOutput_id = hls_manager->get_produced_value(function_index, node);
       THROW_ASSERT(nodeOutput_id, "unexpected condition");
       type_index = tree_helper::get_type_index(TreeM, nodeOutput_id);
-      info->output_prec = resize_to_1_8_16_32_64_128_256_512(tree_helper::size(TreeM, nodeOutput_id));
+      auto out_prec = tree_helper::size(TreeM, nodeOutput_id);
       if(tree_helper::is_a_vector(TreeM, type_index))
       {
          const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
          const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
-         info->real_output_nelem = info->output_prec / element_size;
-         info->base128_output_nelem = info->output_prec / element_size;
+         unsigned int output_size = resize_to_1_8_16_32_64_128_256_512(out_prec);
+         info->real_output_nelem = output_size / element_size;
+         info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;
       }
       else
       {
+         if(current_op == "plus_expr" || current_op == "minus_expr" || current_op == "pointer_plus_expr" || current_op == "ternary_plus_expr" || current_op == "ternary_pm_expr" || current_op == "ternary_mp_expr" || current_op == "ternary_mm_expr" ||
+            current_op == "negate_expr")
+         {
+            if(out_prec == 9 || out_prec ==17 || out_prec == 33)
+            {
+               --out_prec;
+               max_size_in = out_prec;
+            }
+         }
+         info->output_prec = resize_to_1_8_16_32_64_128_256_512(out_prec);
          info->real_output_nelem = 0;
          info->base128_output_nelem = 0;
       }
@@ -1414,7 +1425,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
          const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
          info->real_output_nelem = info->output_prec / element_size;
-         info->base128_output_nelem = info->output_prec / element_size;
+         info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Type is " + STR(type_index) + " " + STR(TreeM->CGetTreeNode(type_index)) + " - Number of output elements (base128): " + STR(info->base128_output_nelem) + " - Number of real output elements: " + STR(info->real_output_nelem) +

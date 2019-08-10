@@ -441,9 +441,14 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships, const Desi
          switch(c_backend_type)
          {
             case CB_SEQUENTIAL:
+               {
+               std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> frontend_relationships;
+               frontend_relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(BAMBU_FRONTEND_FLOW, FrontendFlowStep::WHOLE_APPLICATION));
+               FrontendFlowStep::CreateSteps(design_flow_manager.lock(), frontend_relationships, AppM, relationships);
+               break;
+            }
 #if HAVE_HOST_PROFILING_BUILT
             case(CB_BBP):
-#endif
             {
                std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> frontend_relationships;
                frontend_relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(BASIC_BLOCKS_CFG_COMPUTATION, FrontendFlowStep::ALL_FUNCTIONS));
@@ -455,6 +460,7 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships, const Desi
                FrontendFlowStep::CreateSteps(design_flow_manager.lock(), frontend_relationships, AppM, relationships);
                break;
             }
+#endif
 #if HAVE_HLS_BUILT
             case(CB_DISCREPANCY_ANALYSIS):
             case(CB_HLS):

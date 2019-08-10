@@ -65,7 +65,6 @@
 #include "funit_obj.hpp"
 #include "multi_unbounded_obj.hpp"
 #include "multiplier_conn_obj.hpp"
-#include "mux_conn.hpp"
 #include "mux_obj.hpp"
 #include "register_obj.hpp"
 #include "state_transition_graph_manager.hpp"
@@ -80,7 +79,6 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-#include "Parameter.hpp"
 #include "behavioral_helper.hpp"
 
 #include <boost/lexical_cast.hpp>
@@ -94,6 +92,14 @@
 
 /// HLS/virtual_components include
 #include "generic_obj.hpp"
+
+/// STL include
+#include <algorithm>
+#include <list>
+#include <set>
+#include <tuple>
+#include <vector>
+#include <utility>
 
 /// technology/physical_library include
 #include "string_manipulation.hpp" // for GET_CLASS
@@ -372,7 +378,7 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
 void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef SM)
 {
    structural_objectRef circuit = SM->get_circ();
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Datapath interconnection using mux architecture");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Datapath interconnection using mux architecture");
 
    // std::set<std::pair<std::string, std::string> > already_considered;
    for(std::map<std::tuple<generic_objRef, generic_objRef, unsigned int, unsigned int>, connection_objRef>::const_iterator i = conn_implementation.begin(); i != conn_implementation.end(); ++i)

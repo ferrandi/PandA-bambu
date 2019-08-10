@@ -1559,12 +1559,11 @@ void VHDL_writer::write_header()
    indented_output_stream->Append("\n");
    indented_output_stream->Append("package body panda_pkg is\n");
    indented_output_stream->Append("   function resize_signed(input : signed; size : integer) return signed is\n");
-   indented_output_stream->Append("     variable ret : signed(size-1 downto 0);\n");
    indented_output_stream->Append("   begin\n");
    indented_output_stream->Append("     if (size > input'length) then\n");
    indented_output_stream->Append("       return resize(input, size);\n");
    indented_output_stream->Append("     else\n");
-   indented_output_stream->Append("       return input(size-1 downto 0);\n");
+   indented_output_stream->Append("       return input(size-1+input'right downto input'right);\n");
    indented_output_stream->Append("     end if;\n");
    indented_output_stream->Append("   end function;\n");
    indented_output_stream->Append("end package body;\n");

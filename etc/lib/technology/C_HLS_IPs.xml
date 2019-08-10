@@ -103,6 +103,56 @@
       </circuit>
     </cell>
     <cell>
+      <name>ASSIGN_VEC_SIGNED_FU</name>
+      <operation operation_name="ASSIGN" supported_types="VECTOR_INT:*"/>
+      <circuit>
+        <component_o id="ASSIGN_VEC_SIGNED_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2019 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ASSIGN_VEC_SIGNED_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ASSIGN_VEC_SIGNED_FU in1 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1];\n  end\nendgenerate" VHDL_PROVIDED="begin\nprocess(in1)
+begin
+   for index in 0 to NUM_ELEM_out1-1 loop
+       out1((index+1)*BITSIZE_out1-1 downto index*BITSIZE_out1) &lt;= std_logic_vector(resize_signed(signed(in1((index+1)*BITSIZE_in1-1 downto index*BITSIZE_in1)), BITSIZE_out1));
+   end loop;
+end process;"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>ASSIGN_VEC_UNSIGNED_FU</name>
+      <operation operation_name="ASSIGN" supported_types="VECTOR_UINT:*"/>
+      <circuit>
+        <component_o id="ASSIGN_VEC_UNSIGNED_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2019 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ASSIGN_VEC_UNSIGNED_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ASSIGN_VEC_UNSIGNED_FU in1 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1];\n  end\nendgenerate" VHDL_PROVIDED="begin\nprocess(in1)
+begin
+   for index in 0 to NUM_ELEM_out1-1 loop
+       out1((index+1)*BITSIZE_out1-1 downto index*BITSIZE_out1) &lt;= std_logic_vector(resize(unsigned(in1((index+1)*BITSIZE_in1-1 downto index*BITSIZE_in1), BITSIZE_out1)));
+   end loop;
+end process;"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
       <name>assert_expr_FU</name>
       <operation operation_name="assert_expr" supported_types="INT:*" />
       <circuit>
