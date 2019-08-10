@@ -186,11 +186,11 @@ void fsm_controller::create_state_machine(std::string& parse)
    working_list.push_front(first_state); /// ensure that first_state is the really first one...
 
    std::map<vertex, std::vector<bool>> state_Xregs;
-   std::map<vertex, std::map<unsigned int, long long int>> old_selector_value;
+   std::map<unsigned int, unsigned int> wren_list;
+   std::map<unsigned int, unsigned int> register_selectors;
    for(const auto& v : working_list)
    {
       state_Xregs[v] = std::vector<bool>(HLS->Rreg->get_used_regs(), true);
-      old_selector_value[v].clear();
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + astg->CGetStateInfo(v)->name);
       present_state[v] = std::vector<long long int>(out_num, 0);
       if(selectors.find(conn_binding::IN) != selectors.end())
@@ -268,9 +268,6 @@ void fsm_controller::create_state_machine(std::string& parse)
          }
       }
 
-      unsigned int registers = HLS->Rreg->get_used_regs();
-      std::vector<bool> RORegs(registers, false);
-
       for(auto in0 : HLS->Rliv->get_live_in(v))
       {
          if(HLS->storage_value_information->is_a_storage_value(v, in0))
@@ -278,11 +275,6 @@ void fsm_controller::create_state_machine(std::string& parse)
             unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(v, in0);
             unsigned int accessed_reg = HLS->Rreg->get_register(storage_value_index);
             state_Xregs[v][accessed_reg] = false;
-            if(HLS->Rliv->get_live_out(v).find(in0)!=HLS->Rliv->get_live_out(v).end())
-            {
-                // Read only registers should be all and only those having the same storage value live in and live out
-                RORegs[accessed_reg] = true;
-            }
          }
       }
 
@@ -305,57 +297,31 @@ void fsm_controller::create_state_machine(std::string& parse)
                if(current_port->get_command_type() == commandport_obj::command_type::WRENABLE)
                {
                   auto reg_obj = GetPointer<register_obj>(current_port->get_elem());
+                  wren_list.insert(std::make_pair(reg_obj->get_register_index(), out_ports[s.second]));
                   if(state_Xregs[v][reg_obj->get_register_index()] && v != first_state)
                   {
-                     old_selector_value[v][out_ports[s.second]] = present_state[v][out_ports[s.second]];
                      present_state[v][out_ports[s.second]] = 2;
                      PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Set X value for wr_en on register reg_");
                      PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, reg_obj->get_register_index());
                      PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "\n");
                   }
                }
-
-               // compute X values for multiplexers
-               if(current_port->get_command_type() == commandport_obj::command_type::SELECTOR)
+               else if(current_port->get_command_type() == commandport_obj::command_type::SELECTOR)
                {
                   auto selector_slave = current_port->get_elem();
-                  if(GetPointer<mux_obj>(selector_slave)) // redundadant control
+                  if(GetPointer<mux_obj>(selector_slave))
                   {
                      auto mux_slave = GetPointer<mux_obj>(selector_slave)->get_final_target();
                      if(mux_slave->get_type() == generic_obj::resource_type::REGISTER)
                      {
                         unsigned int reg_index = GetPointer<register_obj>(mux_slave)->get_register_index();
-                        if(state_Xregs[v][reg_index] && v != first_state)
-                        {
-                           PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Set X value for mux of register reg_");
-                           PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, reg_index);
-                           PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "\n");
-                           old_selector_value[v][out_ports[s.second]] = present_state[v][out_ports[s.second]];
-                           present_state[v][out_ports[s.second]] = 3;
-                        }
-//                        if(RORegs[reg_index])
-//                        {
-//                           PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Set X value for mux of register reg_");
-//                           PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, reg_index);
-//                           PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "\n");
-//                           present_state[v][out_ports[s.second]] = 4;
-//                        }
+                        register_selectors[out_ports[s.second]] = reg_index;
                      }
-//                    if(mux_slave->get_type() == generic_obj::resource_type::FUNCTIONAL_UNIT)
-//                    {
-//                       // for mux targeting FUs
-//                       auto target_fu = GetPointer<funit_obj>(mux_slave);
-//                       unsigned int fu_type = target_fu->get_type();
-//                       unsigned int fu_index = target_fu->get_index();
-//                       if(active_fu.find(std::make_pair(fu_type, fu_index)) == active_fu.end())
-//                          present_state[v][out_ports[s.second]] = 5;
-//                    }
                   }
                }
-               // end of mux X values
             }
          }
-      }
+     }
 
 #ifndef NDEBUG
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->default output after considering unbounded:");
@@ -526,54 +492,24 @@ void fsm_controller::create_state_machine(std::string& parse)
             for(const auto& s : selectors.at(conn_binding::IN))
             {
                const auto& activations = GetPointer<commandport_obj>(s.second)->get_activations();
-               // if there's no X value for the selector, leave the behavior unchanged
-               if(present_state[v][out_ports[s.second]] < 2 || GetPointer<commandport_obj>(s.second)->get_command_type() == commandport_obj::command_type::WRENABLE)
+               for(const auto& a : activations)
                {
-                  for(const auto& a : activations)
+                  THROW_ASSERT(v != NULL_VERTEX && std::get<0>(a) != NULL_VERTEX, "error on source vertex");
+                  if(std::get<0>(a) == v && (std::get<1>(a) == tgt || std::get<1>(a) == NULL_VERTEX))
                   {
-                     THROW_ASSERT(v != NULL_VERTEX && std::get<0>(a) != NULL_VERTEX, "error on source vertex");
-                     if(std::get<0>(a) == v && (std::get<1>(a) == tgt || std::get<1>(a) == NULL_VERTEX))
-                     {
-                        THROW_ASSERT(present_state[v][out_ports[s.second]] != 0, "unexpected condition");
-                        transition_outputs[out_ports[s.second]] = 1;
-                     }
-                  }
-               }
-               else if(old_selector_value[v].find(out_ports[s.second]) != old_selector_value[v].end())
-               {
-                  for(const auto& a : activations)
-                  {
-                     THROW_ASSERT(v != NULL_VERTEX && std::get<0>(a) != NULL_VERTEX, "error on source vertex");
-                     if(std::get<0>(a) == v && (std::get<1>(a) == tgt || std::get<1>(a) == NULL_VERTEX))
-                     {
-                        THROW_ASSERT(present_state[v][out_ports[s.second]] != 0, "unexpected condition");
-                        transition_outputs[out_ports[s.second]] = 1;
-                     }
-		     // reset the situation as it was before X values computation
-                     else
-                     {
-		        auto current_port = GetPointer<commandport_obj>(s.second);
-                        if(current_port->get_command_type() == commandport_obj::command_type::SELECTOR)
-                        {
-                           auto selector_slave = current_port->get_elem();
-                           if(GetPointer<mux_obj>(selector_slave)) // redundadant control
-                           {
-                              auto mux_slave = GetPointer<mux_obj>(selector_slave)->get_final_target();
-                              if(mux_slave->get_type() == generic_obj::resource_type::REGISTER)
-                              {
-                                 unsigned int reg_index = GetPointer<register_obj>(mux_slave)->get_register_index();
-                                 if(state_Xregs[v][reg_index] && v != first_state)
-                                 {
-                                    transition_outputs[out_ports[s.second]] = old_selector_value[v][out_ports[s.second]];
-                                 }
-                              }
-                           }
-                        }
-                     }
+                     THROW_ASSERT(present_state[v][out_ports[s.second]] != 0, "unexpected condition");
+                     transition_outputs[out_ports[s.second]] = 1;
                   }
                }
             }
+
+            for(auto const &sel : register_selectors)
+            {
+               if(wren_list.find(sel.second) != wren_list.end() && ((transition_outputs[wren_list[sel.second]] == 0) || (transition_outputs[wren_list[sel.second]] == default_COND && present_state[v][wren_list[sel.second]] != 1)))
+                  transition_outputs[sel.first] = 2;
+            }
          }
+
          for(unsigned int k = 0; k < out_num; k++)
          {
             if(present_state[v][k] == transition_outputs[k])

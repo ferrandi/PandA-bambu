@@ -1180,19 +1180,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                         break;
 
                      case '2':
-                        indented_output_stream->Append(port_name + " = 1'bX" + "; // X value\n");
-                        break;
-
-                     case '3':
-                        indented_output_stream->Append(port_name + " = 1'b1" + "; // reg mux X value being XReg\n");
-                        break;
-
-                     case '4':
-                        indented_output_stream->Append(port_name + " = 1'b1" + "; // reg mux X value being ROReg\n");
-                        break;
-
-                     case '5':
-                        indented_output_stream->Append(port_name + " = 1'b1" + "; // fu mux X value\n");
+                        indented_output_stream->Append(port_name + " = 1'bX;\n");
                         break;
 
                      default:
@@ -1321,7 +1309,12 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
             if(transition_outputs[ind] != '-')
             {
                if(single_proc || output_index == ind)
-                  indented_output_stream->Append(port_name + " = 1'b" + transition_outputs[ind] + ";\n");
+               {
+                  if(transition_outputs[ind] == '2')
+                     indented_output_stream->Append(port_name + " = 1'bX;\n");
+                  else
+                     indented_output_stream->Append(port_name + " = 1'b" + transition_outputs[ind] + ";\n");
+               }
             }
          }
          if(!unique_transition)
@@ -1343,7 +1336,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
             if(boost::starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") || boost::starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
             {
                 port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
-                indented_output_stream->Append(port_name + " = 1'b1; // Required only in S_0 as X value\n");
+                indented_output_stream->Append(port_name + " = 1'bX;\n");
             }
          }
          indented_output_stream->Append("_next_state = " + present_state + ";");
