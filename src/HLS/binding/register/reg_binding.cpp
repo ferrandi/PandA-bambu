@@ -199,7 +199,7 @@ void reg_binding::bind(unsigned int sv, unsigned int index)
 {
    reverse_map[sv] = index;
    if(unique_table.find(index) == unique_table.end())
-      unique_table[index] = generic_objRef(new register_obj(std::string("reg_") + STR(index)));
+      unique_table[index] = generic_objRef(new register_obj(index));
    auto i = this->find(sv);
    if(i == this->end())
       this->insert(std::make_pair(sv, unique_table[index]));
