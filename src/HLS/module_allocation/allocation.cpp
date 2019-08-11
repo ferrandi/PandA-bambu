@@ -971,14 +971,20 @@ bool allocation::check_for_memory_compliancy(bool Has_extern_allocated_data, tec
 
    /// LOAD/STORE operations allocated on memories have been already allocated
    if(memory_type != "")
+   {
       return true;
+   }
 
    /// LOAD/STORE operations on proxys have been already managed
    if(channels_type != "" && (memory_ctrl_type == MEMORY_CTRL_TYPE_PROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_PROXYN || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN))
+   {
       return true;
+   }
 #if !HAVE_EXPERIMENTAL
    if(GetPointer<functional_unit>(current_fu)->functional_unit_name == "MEMORY_CTRL_P1N")
+   {
       return true;
+   }
 #endif
 
    const auto channel_type_to_be_used = parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type);
@@ -2112,7 +2118,6 @@ bool allocation::is_ram_not_timing_compliant(const HLS_constraintsRef HLS_C, uns
    unsigned int n_channels = n_ref > parameters->isOption(OPT_channels_number) ? parameters->getOption<unsigned int>(OPT_channels_number) : 1;
    double mux_delay = allocation_information->estimate_muxNto1_delay(32, n_ref / n_channels);
    double setup = allocation_information->get_setup_hold_time(); // for the PHIs
-   // std::cerr << "memory " << var << " controller_delay=" << controller_delay << " ex_time=" << ex_time << " mux_delay=" << mux_delay << " setup=" << setup << std::endl;
    return n_ref / n_channels > 1 && (controller_delay + ex_time + mux_delay + setup) > clock_period;
 }
 
@@ -2430,4 +2435,12 @@ bool allocation::HasToBeExecuted() const
       }
       return not std::equal(cur_bb_ver.begin(), cur_bb_ver.end(), last_bb_ver.begin());
    }
+}
+
+void allocation::PrintInitialIR() const
+{
+   const std::string file_name = parameters->getOption<std::string>(OPT_output_temporary_directory) + "before_" + GetName() + ".tm";
+   std::ofstream raw_file(file_name.c_str());
+   TM->print(raw_file);
+   raw_file.close();
 }
