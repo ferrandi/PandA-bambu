@@ -670,7 +670,7 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
 {
    TargetDevice_Type dv_type = device->get_type();
 #ifndef NDEBUG
-   auto debug_level = Param->getOption<int>(OPT_circuit_debug_level);
+   auto debug_level = Param->get_class_debug_level(GET_CLASS(*this));
 #endif
 #if HAVE_TECHNOLOGY_BUILT && HAVE_CMOS_BUILT
    int output_pin_counter = 0;
@@ -1070,7 +1070,7 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
       {
          CM = structural_managerRef(new structural_manager);
          structural_type_descriptorRef build_type = structural_type_descriptorRef(new structural_type_descriptor("BUILD"));
-         CM->set_top_info("BUILD",build_type);
+         CM->set_top_info("BUILD", build_type);
          //top must be a component_o
          const xml_node::node_list listC = EnodeC->get_children();
          for (xml_node::node_list::const_iterator iterC = listC.begin(); iterC != listC.end(); ++iterC)
@@ -1145,10 +1145,8 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
                tm->fall_fanout_delay = fall_fanout_delay;
 
                pin_timing_models[input][output] = model;
-
             }
          }
-
       }
 #endif
    }
