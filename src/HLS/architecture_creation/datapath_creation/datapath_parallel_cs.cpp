@@ -55,8 +55,11 @@
 
 /// STD include
 #include <cmath>
+#include <string>
 
 /// STL includes
+#include <list>
+#include <set>
 #include <tuple>
 #include <unordered_set>
 
@@ -203,14 +206,14 @@ void datapath_parallel_cs::connect_module_kernel(structural_objectRef kernel_mod
    {
       structural_objectRef parameter_kernel = kernel_mod->find_member(BH->PrintVariable(function_parameter), port_o_K, kernel_mod);
       structural_objectRef parameter_datapath = circuit->find_member(prefix + BH->PrintVariable(function_parameter), port_o_K, circuit);
-      if(parameter_datapath == NULL)
+      if(parameter_datapath == nullptr)
       {
          structural_type_descriptorRef request_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));
          SM->add_port(prefix + BH->PrintVariable(function_parameter), port_o::IN, circuit, request_type);
          parameter_datapath = circuit->find_member(prefix + BH->PrintVariable(function_parameter), port_o_K, circuit);
       }
       std::cout << "Parameter: " << BH->PrintVariable(function_parameter) << std::endl;
-      if(parameter_kernel != NULL)
+      if(parameter_kernel != nullptr)
          SM->add_connection(parameter_datapath, parameter_kernel);
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected parameter port");
@@ -245,7 +248,7 @@ void datapath_parallel_cs::connect_i_module_kernel(structural_objectRef kernel_m
    {
       structural_objectRef port_i = GetPointer<module>(kernel_mod)->get_in_port(j);
       structural_objectRef connectedPort = GetPointer<port_o>(port_i)->find_bounded_object();
-      if(connectedPort == NULL)
+      if(connectedPort == nullptr)
       {
          std::cout << "Found i var" << std::endl;
          SM->add_connection(request_datapath, port_i);
@@ -348,11 +351,11 @@ void datapath_parallel_cs::manage_extern_global_port_parallel(const structural_m
    structural_objectRef memory_parallel = circuit->find_member("memory_parallel", component_o_K, circuit);
    unsigned int num_kernel = 0;
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connecting memory_port of memory_parallel");
-   for(std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); i++) // from ctrl_parallel to module
+   for(const auto memory_module : memory_modules)
    {
-      for(unsigned int j = 0; j < GetPointer<module>(*i)->get_in_port_size(); j++) // from ctrl_parallel to module
+      for(unsigned int j = 0; j < GetPointer<module>(memory_module)->get_in_port_size(); j++) // from ctrl_parallel to module
       {
-         structural_objectRef port_i = GetPointer<module>(*i)->get_in_port(j);
+         structural_objectRef port_i = GetPointer<module>(memory_module)->get_in_port(j);
          if(GetPointer<port_o>(port_i)->get_is_memory() && GetPointer<port_o>(port_i)->get_is_global() && GetPointer<port_o>(port_i)->get_is_extern())
          {
             std::string port_name = GetPointer<port_o>(port_i)->get_id();
@@ -363,9 +366,9 @@ void datapath_parallel_cs::manage_extern_global_port_parallel(const structural_m
             SM->add_connection(mem_paral_Sign, port_i);
          }
       }
-      for(unsigned int j = 0; j < GetPointer<module>(*i)->get_out_port_size(); j++) // from module to ctrl_parallel
+      for(unsigned int j = 0; j < GetPointer<module>(memory_module)->get_out_port_size(); j++) // from module to ctrl_parallel
       {
-         structural_objectRef port_i = GetPointer<module>(*i)->get_out_port(j);
+         structural_objectRef port_i = GetPointer<module>(memory_module)->get_out_port(j);
          if(GetPointer<port_o>(port_i)->get_is_memory() && !GetPointer<port_o>(port_i)->get_is_global() && !GetPointer<port_o>(port_i)->get_is_extern())
          {
             std::string port_name = GetPointer<port_o>(port_i)->get_id();
