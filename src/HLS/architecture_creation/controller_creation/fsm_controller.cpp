@@ -36,9 +36,6 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
@@ -80,6 +77,12 @@
 #include "technology_manager.hpp"
 #include "time_model.hpp"
 
+/// HLS/binding/storage_value_insertion
+#include "storage_value_information.hpp"
+
+/// HLS/liveness include
+#include "liveness.hpp"
+
 /// HLS/module_allocation
 #include "allocation_information.hpp"
 
@@ -88,6 +91,7 @@
 #include <list>
 #include <map>
 #include <set>
+#include <utility>
 #include <vector>
 
 /// technology/physical_library include
