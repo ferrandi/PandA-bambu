@@ -36,9 +36,6 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "standard_hls.hpp"
@@ -48,7 +45,6 @@
 
 #include "Parameter.hpp"
 #include "TopEntityMemoryMapped.hpp"
-#include "add_library.hpp"
 #include "application_manager.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
@@ -70,6 +66,10 @@
 
 /// HLS/module_allocation includes
 #include "add_library.hpp"
+
+/// STL include
+#include <tuple>
+#include <unordered_set>
 
 standard_hls::standard_hls(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
     : HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::STANDARD_HLS_FLOW)
@@ -131,20 +131,18 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
          }
          break;
       }
-      break;
+      case INVALIDATION_RELATIONSHIP:
+      {
+         break;
+      }
+      case PRECEDENCE_RELATIONSHIP:
+      {
+         break;
+      }
+      default:
+         THROW_UNREACHABLE("");
    }
-   case INVALIDATION_RELATIONSHIP:
-   {
-      break;
-   }
-   case PRECEDENCE_RELATIONSHIP:
-   {
-      break;
-   }
-   default:
-      THROW_UNREACHABLE("");
-}
-return ret;
+   return ret;
 }
 
 DesignFlowStep_Status standard_hls::InternalExec()

@@ -59,12 +59,23 @@
 /// HLS/virtual_components
 #include "generic_obj.hpp"
 
+/// STD include
+#include <string>
+
+/// STL include
+#include <list>
+
 /// technology includes
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 
-/// tree include
+/// tree includes
 #include "tree_manager.hpp"
+#include "tree_node.hpp"
+
+/// utility include
+#include "dbgPrintHelper.hpp"
+#include "utility.hpp"
 
 ParallelMemoryFuBinding::ParallelMemoryFuBinding(const HLS_managerConstRef _HLS_mgr, const unsigned int _function_id, const ParameterConstRef _parameters) : fu_binding(_HLS_mgr, _function_id, _parameters)
 {

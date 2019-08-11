@@ -50,7 +50,10 @@
 /// tree include
 #include "behavioral_helper.hpp"
 
-OmpFunctions::OmpFunctions(const HLS_managerConstRef _HLSMgr) : HLSMgr(_HLSMgr)
+/// utility include
+#include "dbgPrintHelper.hpp"
+
+OmpFunctions::OmpFunctions(const HLS_managerConstRef _HLSMgr) : HLSMgr(_HLSMgr), locks_allocation(0)
 {
 }
 

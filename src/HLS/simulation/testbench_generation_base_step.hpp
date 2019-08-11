@@ -67,8 +67,13 @@ REF_FORWARD_DECL(memory);
 REF_FORWARD_DECL(language_writer);
 //@}
 
-#include <map>
+/// STD include
 #include <string>
+
+/// STL include
+#include <map>
+#include <tuple>
+#include <unordered_set>
 #include <vector>
 
 /**
@@ -92,7 +97,12 @@ class TestbenchGenerationBaseStep : public HLS_step
    const std::string c_testbench_basename;
 
    /// testbench basename
-   std::string testbench_basename;
+   std::string hdl_testbench_basename;
+
+   /**
+    * Creates the HDL testbench file associated with the given component
+    */
+   std::string create_HDL_testbench(bool xilinx_isim) const;
 
    /**
     * Write the hdl testbench.
@@ -204,15 +214,11 @@ class TestbenchGenerationBaseStep : public HLS_step
     */
    TestbenchGenerationBaseStep(const ParameterConstRef Param, const HLS_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type, std::string c_testbench_basename = "values");
 
+ public:
    /**
-    * Constructor.
-    *
-    * Declared protected to prevent direct instantiation. Use
-    * Create() factory methods instead.
+    * Destructor.
     */
-   TestbenchGenerationBaseStep(const ParameterConstRef Param, const HLS_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
-
-   static std::string print_var_init(const tree_managerConstRef TreeM, unsigned int var, const memoryRef mem);
+   ~TestbenchGenerationBaseStep() override;
 
    static std::string print_var_init(const tree_managerConstRef TreeM, unsigned int var, const memoryRef mem);
 
@@ -220,12 +226,12 @@ class TestbenchGenerationBaseStep : public HLS_step
     * Execute the step
     * @return the exit status of this step
     */
-   virtual DesignFlowStep_Status Exec();
+   DesignFlowStep_Status Exec() override;
 
    /**
     * Check if this step has actually to be executed
     * @return true if the step has to be executed
     */
-   virtual bool HasToBeExecuted() const;
+   bool HasToBeExecuted() const override;
 };
 #endif

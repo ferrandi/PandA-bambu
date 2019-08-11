@@ -41,7 +41,6 @@
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
-#include "math.h"
 #include "memory.hpp"
 #include "memory_cs.hpp"
 #include "omp_functions.hpp"
@@ -49,6 +48,17 @@
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
+
+/// STD include
+#include <cmath>
+#include <string>
+
+/// STL include
+#include <map>
+#include <set>
+
+/// utility include
+#include "dbgPrintHelper.hpp"
 
 fu_binding_cs::fu_binding_cs(const HLS_managerConstRef _HLSMgr, const unsigned int _function_id, const ParameterConstRef _parameters) : fu_binding(_HLSMgr, _function_id, _parameters)
 {
@@ -147,7 +157,7 @@ void fu_binding_cs::resize_scheduler_ports(const HLS_managerRef HLSMgr, structur
 void fu_binding_cs::resize_dimension_bus_port(const HLS_managerRef HLSMgr, structural_objectRef port)
 {
    unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
-   unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
+   unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
    unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
    unsigned int bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
 
@@ -170,7 +180,7 @@ void fu_binding_cs::connect_selector(const hlsRef HLS)
    {
       structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
       const structural_objectRef port_selector_module = curr_gate->find_member(STR(SELECTOR_REGISTER_FILE), port_o_K, curr_gate);
-      if(port_selector_module != NULL)
+      if(port_selector_module != nullptr)
          SM->add_connection(port_selector_datapath, port_selector_module);
    }
 }
@@ -200,7 +210,7 @@ void fu_binding_cs::connect_selector_kernel(const hlsRef HLS)
       if(curr_gate->get_id() != "scheduler_kernel")
       {
          const structural_objectRef port_selector_module = curr_gate->find_member(STR(SELECTOR_REGISTER_FILE), port_o_K, curr_gate);
-         if(port_selector_module != NULL)
+         if(port_selector_module != nullptr)
             SM->add_connection(selector_regFile_sign, port_selector_module);
       }
    }
@@ -276,18 +286,18 @@ void fu_binding_cs::manage_memory_port_kernel(const structural_managerRef SM, co
       }
    }
 
-   for(std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); i++) // connect scheduler with memory_modules
+   for(const auto memory_module : memory_modules) // connect scheduler with memory_modules
    {
-      for(unsigned int j = 0; j < GetPointer<module>(*i)->get_in_port_size(); j++)
+      for(unsigned int j = 0; j < GetPointer<const module>(memory_module)->get_in_port_size(); j++)
       {
          structural_objectRef scheMemorySign;
-         structural_objectRef port_i = GetPointer<module>(*i)->get_in_port(j);
+         structural_objectRef port_i = GetPointer<module>(memory_module)->get_in_port(j);
          if(GetPointer<port_o>(port_i)->get_is_memory() && GetPointer<port_o>(port_i)->get_is_global() && GetPointer<port_o>(port_i)->get_is_extern())
          {
             std::string port_name = GetPointer<port_o>(port_i)->get_id();
             sche_port = scheduler->find_member(port_name, port_i->get_kind(), scheduler);
             scheMemorySign = GetPointer<port_o>(sche_port)->get_connected_signal();
-            if(scheMemorySign == NULL)
+            if(scheMemorySign == nullptr)
             {
                scheMemorySign = SM->add_sign(port_name + "_signal", circuit, port_i->get_typeRef());
                SM->add_connection(sche_port, scheMemorySign); // connect port scheduler with signal only one time
@@ -297,9 +307,9 @@ void fu_binding_cs::manage_memory_port_kernel(const structural_managerRef SM, co
          }
       }
 
-      for(unsigned int j = 0; j < GetPointer<module>(*i)->get_out_port_size(); j++) // connect memory_modules out with scheduler by jms
+      for(unsigned int j = 0; j < GetPointer<const module>(memory_module)->get_out_port_size(); j++) // connect memory_modules out with scheduler by jms
       {
-         structural_objectRef port_i = GetPointer<module>(*i)->get_out_port(j);
+         structural_objectRef port_i = GetPointer<const module>(memory_module)->get_out_port(j);
          if(GetPointer<port_o>(port_i)->get_is_memory() && !GetPointer<port_o>(port_i)->get_is_global() && !GetPointer<port_o>(port_i)->get_is_extern())
          {
             std::string port_name = GetPointer<port_o>(port_i)->get_id();
@@ -338,11 +348,11 @@ void fu_binding_cs::manage_memory_port_hierarchical(const structural_managerRef 
    std::map<structural_objectRef, std::set<structural_objectRef>> primary_outs;
    structural_objectRef cir_port;
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Start merging, splitting for hierarchical");
-   for(std::set<structural_objectRef>::iterator i = memory_modules.begin(); i != memory_modules.end(); i++)
+   for(const auto memory_module : memory_modules)
    {
-      for(unsigned int j = 0; j < GetPointer<module>(*i)->get_in_port_size(); j++)
+      for(unsigned int j = 0; j < GetPointer<const module>(memory_module)->get_in_port_size(); j++)
       {
-         structural_objectRef port_i = GetPointer<module>(*i)->get_in_port(j);
+         structural_objectRef port_i = GetPointer<const module>(memory_module)->get_in_port(j);
          if(GetPointer<port_o>(port_i)->get_is_memory() && GetPointer<port_o>(port_i)->get_is_global() && GetPointer<port_o>(port_i)->get_is_extern())
          {
             std::string port_name = GetPointer<port_o>(port_i)->get_id();
@@ -369,9 +379,9 @@ void fu_binding_cs::manage_memory_port_hierarchical(const structural_managerRef 
          }
       }
 
-      for(unsigned int j = 0; j < GetPointer<module>(*i)->get_out_port_size(); j++)
+      for(unsigned int j = 0; j < GetPointer<const module>(memory_module)->get_out_port_size(); j++)
       {
-         structural_objectRef port_i = GetPointer<module>(*i)->get_out_port(j);
+         structural_objectRef port_i = GetPointer<const module>(memory_module)->get_out_port(j);
          if(GetPointer<port_o>(port_i)->get_is_memory() && !GetPointer<port_o>(port_i)->get_is_global() && !GetPointer<port_o>(port_i)->get_is_extern())
          {
             std::string port_name = GetPointer<port_o>(port_i)->get_id();

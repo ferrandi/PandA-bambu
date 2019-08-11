@@ -88,6 +88,9 @@
 #include "allocation.hpp"
 #include "allocation_information.hpp"
 
+/// HLS/stg include
+#include "state_transition_graph_manager.hpp"
+
 /// HLS/virtual_components include
 #include "generic_obj.hpp"
 
@@ -106,6 +109,11 @@
 #define CONN_COLUMN_SIZE 40
 
 unsigned conn_binding::unique_id = 0;
+
+conn_binding::conn_binding(const BehavioralHelperConstRef _BH, const ParameterConstRef _parameters)
+    : parameters(_parameters), debug_level(_parameters->get_class_debug_level(GET_CLASS(*this))), output_level(_parameters->getOption<int>(OPT_output_level)), BH(_BH)
+{
+}
 
 conn_bindingRef conn_binding::create_conn_binding(const HLS_managerRef _HLSMgr, const hlsRef _HLS, const BehavioralHelperConstRef _BH, const ParameterConstRef _parameters)
 {
@@ -126,10 +134,6 @@ conn_bindingRef conn_binding::create_conn_binding(const HLS_managerRef _HLSMgr, 
    }
    else
       return conn_bindingRef(new conn_binding(_BH, _parameters));
-}
-
-conn_binding::~conn_binding()
-{
 }
 
 conn_binding::~conn_binding() = default;

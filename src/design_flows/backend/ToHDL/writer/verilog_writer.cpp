@@ -71,6 +71,12 @@
 ///. include
 #include "Parameter.hpp"
 
+/// STD include
+#include <limits>
+
+/// STL include
+#include <utility>
+
 /// technology include
 #include "technology_node.hpp"
 
@@ -1089,7 +1095,7 @@ void verilog_writer::write_state_declaration(const structural_objectRef& cir, co
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Completed state declaration");
 }
 
-void verilog_writer::write_present_state_update(const structural_objectRef& cir, const std::string& reset_state, const std::string& reset_port, const std::string& clock_port, const std::string& reset_type)
+void verilog_writer::write_present_state_update(const structural_objectRef cir, const std::string& reset_state, const std::string& reset_port, const std::string& clock_port, const std::string& reset_type, bool connect_present_next_state_signals)
 {
    if(reset_type == "no" || reset_type == "sync")
       indented_output_stream->Append("always @(posedge " + clock_port + ")\n");

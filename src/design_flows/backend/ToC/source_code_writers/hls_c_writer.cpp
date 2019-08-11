@@ -71,6 +71,15 @@
 #include "SimulationInformation.hpp"
 #include "testbench_generation_base_step.hpp"
 
+/// STD include
+#include <string>
+
+/// STL include
+#include <list>
+#include <map>
+#include <set>
+#include <vector>
+
 /// technology/physical_library include
 #include "technology_node.hpp"
 
@@ -373,6 +382,8 @@ void HLSCWriter::WriteParamDecl(const BehavioralHelperConstRef behavioral_helper
 
 void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef behavioral_helper, const std::map<std::string, std::string>& curr_test_vector, const unsigned int v_idx)
 {
+   bool flag_cpp = TM->is_CPP() && !Param->isOption(OPT_pretty_print) && (!Param->isOption(OPT_discrepancy) || !Param->getOption<bool>(OPT_discrepancy) || !Param->isOption(OPT_discrepancy_hw) || !Param->getOption<bool>(OPT_discrepancy_hw));
+
    for(const auto& p : behavioral_helper->get_parameters())
    {
       unsigned int type_id = behavioral_helper->get_type(p);
@@ -380,14 +391,132 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef behavio
       std::string param = behavioral_helper->PrintVariable(p);
       if(behavioral_helper->is_a_pointer(p))
       {
+         bool reference_type_p = false;
+         unsigned int base_type = tree_helper::get_type_index(TM, p);
+         tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
+         if(pt_node->get_kind() == pointer_type_K)
+         {
+            reference_type_p = false;
+            base_type = GET_INDEX_NODE(GetPointer<pointer_type>(pt_node)->ptd);
+         }
+         else if(pt_node->get_kind() == reference_type_K)
+         {
+            reference_type_p = true;
+            base_type = GET_INDEX_NODE(GetPointer<reference_type>(pt_node)->refd);
+         }
+         else
+            THROW_ERROR("A pointer type is expected");
+         bool interfaceBaseAlloc = false;
+         if(flag_cpp)
+         {
+            auto fnode = TM->get_tree_node_const(behavioral_helper->get_function_index());
+            auto fd = GetPointer<function_decl>(fnode);
+            std::string fname;
+            tree_helper::get_mangled_fname(fd, fname);
+            auto& DesignInterfaceTypename = hls_c_backend_information->HLSMgr->design_interface_typename;
+            if(DesignInterfaceTypename.find(fname) != DesignInterfaceTypename.end())
+            {
+               const auto& DesignInterfaceArgsTypename = DesignInterfaceTypename.find(fname)->second;
+               auto argTypename = DesignInterfaceArgsTypename.find(param)->second;
+               if((*argTypename.rbegin()) != '*')
+                  reference_type_p = true;
+               if((*argTypename.rbegin()) == '*')
+               {
+                  interfaceBaseAlloc = true;
+                  std::string arraySize;
+                  if(hls_c_backend_information->HLSMgr->design_interface_arraysize.find(fname) != hls_c_backend_information->HLSMgr->design_interface_arraysize.end() &&
+                     hls_c_backend_information->HLSMgr->design_interface_arraysize.find(fname)->second.find(param) != hls_c_backend_information->HLSMgr->design_interface_arraysize.find(fname)->second.end())
+                  {
+                     arraySize = hls_c_backend_information->HLSMgr->design_interface_arraysize.find(fname)->second.find(param)->second;
+                  }
+                  indented_output_stream->Append(param + " = (" + argTypename + ")malloc(" + (arraySize == "" ? std::string("") : (arraySize + "*")) + "sizeof(" + argTypename.substr(0, argTypename.size() - 1) + "));\n");
+               }
+            }
+         }
          std::string test_v = "0";
          if(curr_test_vector.find(param) != curr_test_vector.end())
             test_v = curr_test_vector.find(param)->second;
 
-         var_pp_functorRef var_functor = var_pp_functorRef(new std_var_pp_functor(behavioral_helper));
-         indented_output_stream->Append(tree_helper::print_type(TM, tree_helper::get_pointed_type(TM, tree_helper::get_type_index(TM, p)), false, false, false, p, var_functor) + "_temp[] = " + test_v + ";\n");
+         std::vector<std::string> splitted;
+         boost::algorithm::split(splitted, test_v, boost::algorithm::is_any_of(","));
 
-         indented_output_stream->Append(behavioral_helper->PrintVariable(p) + " = " + behavioral_helper->PrintVariable(p) + "_temp;\n");
+         unsigned int base_type_bytesize = tree_helper::size(TM, base_type) / 8;
+         if(base_type_bytesize == 0) // must be at least a byte
+            base_type_bytesize = 1;
+
+         if(!interfaceBaseAlloc && (splitted.size() != 1 || !reference_type_p || !flag_cpp))
+         {
+            var_pp_functorRef var_functor = var_pp_functorRef(new std_var_pp_functor(behavioral_helper));
+            indented_output_stream->Append((*var_functor)(p));
+
+            indented_output_stream->Append(" = (" + type + ")malloc(" + STR(base_type_bytesize * splitted.size()) + ");\n");
+         }
+
+         // check for regularity
+         bool all_equal = splitted.size() > 1;
+         for(unsigned int i = 1; i < splitted.size(); i++)
+            if(splitted[i] != splitted[0])
+               all_equal = false;
+
+         for(unsigned int i = 0; i < splitted.size(); i++)
+         {
+            if(!reference_type_p && !interfaceBaseAlloc && (behavioral_helper->is_a_struct(base_type) || behavioral_helper->is_an_union(base_type)))
+            {
+               std::vector<std::string> splitted_fields;
+               std::string field_value = splitted[i];
+               boost::algorithm::split(splitted_fields, field_value, boost::algorithm::is_any_of("|"));
+               const auto fields = tree_helper::CGetFieldTypes(TM->CGetTreeNode(base_type));
+               size_t n_values = splitted_fields.size();
+               unsigned int index = 0;
+               for(auto it = fields.begin(); it != fields.end(); ++it, ++index)
+               {
+                  if(index < n_values)
+                  {
+                     indented_output_stream->Append(param + "[" + STR(i) + "]." + behavioral_helper->PrintVariable(tree_helper::get_field_idx(TM, base_type, index)) + " = " + splitted_fields[index] + ";\n");
+                  }
+                  else
+                  {
+                     indented_output_stream->Append(param + "[" + STR(i) + "]." + behavioral_helper->PrintVariable(tree_helper::get_field_idx(TM, base_type, index)) + " = 0;\n");
+                  }
+               }
+            }
+            else if(!reference_type_p && !interfaceBaseAlloc && (behavioral_helper->is_an_array(base_type)))
+            {
+               unsigned int num_elements = tree_helper::get_array_num_elements(TM, base_type);
+               if(splitted.size() == 1)
+               {
+                  for(unsigned int l = 0; l < num_elements; l++)
+                  {
+                     indented_output_stream->Append("(*" + param + ")" + "[" + STR(l) + "] = " + splitted[i] + ";\n");
+                  }
+               }
+               else
+               {
+                  unsigned int elmts_type = behavioral_helper->GetElements(base_type);
+                  while(behavioral_helper->is_an_array(elmts_type))
+                  {
+                     elmts_type = behavioral_helper->GetElements(elmts_type);
+                  }
+                  indented_output_stream->Append("(*(((" + behavioral_helper->print_type(elmts_type) + "*)" + param + ") + " + STR(i) + ")) = " + splitted[i] + ";\n");
+               }
+            }
+            else
+            {
+               if(all_equal)
+               {
+                  indented_output_stream->Append("for (__testbench_index2 = 0; __testbench_index2 < " + STR(splitted.size()) + "; ++__testbench_index2)\n");
+                  indented_output_stream->Append(param + "[__testbench_index2] = " + splitted[0] + ";\n");
+                  break;
+               }
+               else
+               {
+                  if(flag_cpp && splitted.size() == 1 && reference_type_p)
+                     indented_output_stream->Append(param + " = " + splitted[i] + ";\n");
+                  else
+                     indented_output_stream->Append(param + "[" + STR(i) + "] = " + splitted[i] + ";\n");
+               }
+            }
+         }
 
          std::string memory_addr;
          THROW_ASSERT(hls_c_backend_information->HLSMgr->RSim->param_address.find(v_idx)->second.find(p) != hls_c_backend_information->HLSMgr->RSim->param_address.find(v_idx)->second.end(), "parameter does not have an address");

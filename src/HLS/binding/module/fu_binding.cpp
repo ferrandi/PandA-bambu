@@ -93,6 +93,17 @@
 /// HLS/module_allocation
 #include "allocation_information.hpp"
 
+/// STD include
+#include <limits>
+#include <string>
+
+/// STL includes
+#include <algorithm>
+#include <set>
+#include <vector>
+#include <utility>
+
+/// utility include
 #include "string_manipulation.hpp" // for GET_CLASS
 
 const unsigned int fu_binding::UNKNOWN = std::numeric_limits<unsigned int>::max();
@@ -121,6 +132,8 @@ fu_binding::fu_binding(const fu_binding& original)
       has_resource_sharing_p(original.has_resource_sharing_p)
 {
 }
+
+fu_binding::~fu_binding() = default;
 
 fu_bindingRef fu_binding::create_fu_binding(const HLS_managerConstRef _HLSMgr, const unsigned int _function_id, const ParameterConstRef _parameters)
 {
@@ -1408,7 +1421,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
    unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
    unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
-   unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
+   unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
    unsigned int bus_tag_bitsize = 0;
    if(HLS->Param->isOption(OPT_context_switch))
       bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
@@ -1438,9 +1451,11 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
             bus_data_bitsize = std::max(bus_data_bitsize, elmt_bitsize);
          required_variables[1] = bus_addr_bitsize;
          if(HLSMgr->Rmem->is_private_memory(ar))
+         {
             for(; elmt_bitsize >= (1u << bus_size_bitsize); ++bus_size_bitsize)
             {
             }
+         }
          required_variables[2] = bus_size_bitsize;
          produced_variables = elmt_bitsize;
       }
@@ -1600,8 +1615,6 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                std::vector<std::string>::const_iterator it_end = param.end();
                for(std::vector<std::string>::const_iterator it = param.begin(); it != it_end; ++it)
                {
-                  if(*it == "ALIGNED_BITSIZE")
-                     fu_module->SetParameter("ALIGNED_BITSIZE", STR(HLSMgr->Rmem->get_aligned_bitsize()));
                   if(*it == "LSB_PARAMETER" && op_name == "pointer_plus_expr")
                   {
                      unsigned int curr_LSB = 0;
@@ -1647,7 +1660,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                   }
                   if(*it == "OFFSET_PARAMETER" && op_name == "bit_ior_concat_expr")
                   {
-                     unsigned int index = data->CGetOpNodeInfo(*op)->GetNodeId();
+                     unsigned int index = data->CGetOpNodeInfo(mapped_operation)->GetNodeId();
                      const tree_nodeRef ga_node = TreeM->GetTreeNode(index);
                      const gimple_assign* ga = GetPointer<gimple_assign>(ga_node);
                      const bit_ior_concat_expr* ce = GetPointer<bit_ior_concat_expr>(GET_NODE(ga->op1));

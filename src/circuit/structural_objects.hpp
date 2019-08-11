@@ -52,14 +52,18 @@
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
 #include "config_HAVE_TUCANO_BUILT.hpp"
 
+/// STL include
+#include <algorithm>
+#include <map>
+#include <set>
+#include <utility>
+#include <vector>
+
 /// utility include
 #include "custom_map.hpp"
 
-#include <map>
 #include <ostream>
-#include <set>
 #include <string>
-#include <vector>
 
 #include "simple_indent.hpp"
 #include "utility.hpp"
@@ -106,6 +110,13 @@ class simple_indent;
 #define RESET_PORT_NAME "reset"
 #define DONE_PORT_NAME "done_port"
 #define RETURN_PORT_NAME "return_port"
+#define START_PORT_NAME_CFC "start_port_CFC"
+#define DONE_PORT_NAME_CFC "done_port_CFC"
+#define PRESENT_STATE_PORT_NAME "present_state"
+#define NEXT_STATE_PORT_NAME "next_state"
+#define NOTIFIER_PORT_MISMATCH "out_mismatch"
+#define NOTIFIER_PORT_MISMATCH_ID "out_mismatch_id"
+#define NOTIFIER_PORT_MISMATCH_OFFSET "out_mismatch_trace_offset"
 #define SELECTOR_REGISTER_FILE "selector_register_file"
 #define SUSPENSION "suspension"
 #define REQUEST_ACCEPTED "request_accepted"
@@ -526,7 +537,7 @@ class structural_object
     * @param name is the name of the parameter
     * @param default_value is the default of the value
     */
-   virtual void AddParameter(const std::string name, const std::string default_value);
+   void AddParameter(const std::string & name, const std::string & default_value);
 
    /**
     * Return a unique identifier of the structural object.
@@ -660,6 +671,27 @@ struct port_o : public structural_object
       NONE
    };
 
+   /// Enumerative type describing if the port is associated with a specific interface type.
+   enum port_interface
+   {
+      PI_DEFAULT = 0,
+      PI_RNONE,
+      PI_WNONE,
+      PI_RACK,
+      PI_WACK,
+      PI_RVALID,
+      PI_WVALID,
+      PI_EMPTY_N,
+      PI_READ,
+      PI_FULL_N,
+      PI_WRITE,
+      PI_ADDRESS,
+      PI_CHIPENABLE,
+      PI_WRITEENABLE,
+      PI_DIN,
+      PI_DOUT
+   };
+
    static const unsigned int PARAMETRIC_PORT = static_cast<unsigned int>(-1);
 
    /**
@@ -669,6 +701,12 @@ struct port_o : public structural_object
    static port_direction to_port_direction(const std::string& val);
 
    /**
+    * Convert a string into the corresponding port_interface enumerative type
+    * @param val is the string version of the enum.
+    */
+   static port_interface to_port_interface(const std::string& val);
+
+   /**
     * Constructor.
     * @param o is the owner of the port
     * @param dir defines the direction of the port.
@@ -676,9 +714,7 @@ struct port_o : public structural_object
    port_o(int debug_level, const structural_objectRef o, port_direction dir, so_kind _port_type);
 
    /// Destructor.
-   ~port_o()
-   {
-   }
+   ~port_o() override = default;
 
    /// custom size parameter
    std::string size_parameter;
@@ -729,6 +765,26 @@ struct port_o : public structural_object
     * Set the endianess of the port.
     */
    void set_port_endianess(port_endianess end);
+
+   /**
+    * Return the port interface type of the port.
+    */
+   port_interface get_port_interface() const;
+
+   /**
+    * Set the port interface type of the port.
+    */
+   void set_port_interface(port_interface pi);
+
+   /**
+    * Return the port interface alignment.
+    */
+   unsigned get_port_alignment() const;
+
+   /**
+    * Set the port interface alignment.
+    */
+   void set_port_alignment(unsigned algn);
 
    /**
     * Return the connected signal, if any. Null pointer otherwise.
@@ -923,7 +979,7 @@ struct port_o : public structural_object
     * Perform a copy of the port.
     * @param dest destination object.
     */
-   void copy(structural_objectRef dest) const;
+   void copy(structural_objectRef dest) const override;
 
    /**
     * Return the object named id of a given type which belongs to or it is associated with the object.
@@ -931,13 +987,13 @@ struct port_o : public structural_object
     * @param type is the type of the object we are looking for.
     * @param owner is the owner of the object named id.
     */
-   structural_objectRef find_member(const std::string& id, so_kind type, const structural_objectRef owner) const;
+   structural_objectRef find_member(const std::string& id, so_kind type, const structural_objectRef owner) const override;
 
    /**
     * Find key in this object.
     * @param key is the object searched.
     */
-   structural_objectRef find_isomorphic(const structural_objectRef key) const;
+   structural_objectRef find_isomorphic(const structural_objectRef key) const override;
 
    /**
     * Load a structural_object starting from an xml file.
@@ -945,13 +1001,13 @@ struct port_o : public structural_object
     * @param owner is the refcount version of this.
     * @param CM is the circuit manager.
     */
-   void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const& CM);
+   void xload(const xml_element* Enode, structural_objectRef owner, structural_managerRef const& CM) override;
 
    /**
     * Add a structural_object to an xml tree.
     * @param rootnode is the root node at which the xml representation of the structural object is attached.
     */
-   void xwrite(xml_element* rootnode);
+   void xwrite(xml_element* rootnode) override;
 
 #if HAVE_TECHNOLOGY_BUILT
    /**
@@ -1019,12 +1075,12 @@ struct port_o : public structural_object
     * Print the port (for debug purpose)
     * @param os is an output stream
     */
-   void print(std::ostream& os) const;
+   void print(std::ostream& os) const override;
 
    /**
     * return the name of the class as a string.
     */
-   std::string get_kind_text() const
+   std::string get_kind_text() const override
    {
       if(port_type == port_vector_o_K)
          return "port_vector_o";
@@ -1034,7 +1090,7 @@ struct port_o : public structural_object
    /**
     * return the type of the class
     */
-   enum so_kind get_kind() const
+   enum so_kind get_kind() const override
    {
       return port_type;
    }
@@ -1048,6 +1104,11 @@ struct port_o : public structural_object
 
    /// endianess of a port
    port_endianess end;
+
+   /// port interface type of a port
+   port_interface pi;
+
+   unsigned aligment;
 
    /// when true the port must be specialized at runtime depending on the number of input
    bool is_var_args;
@@ -1106,6 +1167,9 @@ struct port_o : public structural_object
    /// store the names of the enumerative port_direction.
    static const char* port_directionNames[];
 
+   /// store the names of the enumerative port_interface.
+   static const char* port_interfaceNames[];
+
    /// port type
    so_kind port_type;
 
@@ -1128,6 +1192,7 @@ struct port_o : public structural_object
    static const bool is_critical_DEFAULT = false;
    static const bool is_reverse_DEFAULT = false;
    static const bool is_var_args_DEFAULT = false;
+   static const unsigned port_interface_alignment_DEFAULT = 0;
    //@}
 };
 
@@ -2199,7 +2264,7 @@ class module : public structural_object
     * @param name is the name of the parameter
     * @param default_value is the default of the value
     */
-   virtual void AddParameter(const std::string name, const std::string default_value);
+   virtual void AddParameter(const std::string & name, const std::string & default_value);
 };
 
 /**

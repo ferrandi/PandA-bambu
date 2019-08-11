@@ -265,6 +265,13 @@
 /// polixml
 #include "xml_element.hpp"
 
+/// STD include
+#include <string>
+
+/// STL includes
+#include <unordered_set>
+#include <utility>
+
 /// tree include
 #include "tree_manager.hpp"
 
@@ -872,6 +879,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
             ret.insert(CreateHLSFlowStep(hls_flow_step.first, 0, hls_flow_step.second));
             break;
          }
+         case HLSFlowStep_Type::CALL_GRAPH_UNFOLDING:
          case HLSFlowStep_Type::CLASSICAL_HLS_SYNTHESIS_FLOW:
          case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION:
          case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS:
@@ -916,6 +924,8 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
          case HLSFlowStep_Type::CLOCK_SLACK_ESTIMATION:
 #endif
          case HLSFlowStep_Type::COLORING_REGISTER_BINDING:
+         case HLSFlowStep_Type::CONTROL_FLOW_CHECKER:
+         case HLSFlowStep_Type::C_TESTBENCH_EXECUTION:
          case HLSFlowStep_Type::DATAPATH_CS_CREATOR:
          case HLSFlowStep_Type::DATAPATH_CS_PARALLEL_CREATOR:
 #if HAVE_BEAGLE

@@ -49,6 +49,13 @@
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 
+/// STD include
+#include <string>
+
+/// utility include
+#include "dbgPrintHelper.hpp"
+#include "utility.hpp"
+
 conn_binding_cs::conn_binding_cs(const BehavioralHelperConstRef _BH, const ParameterConstRef _parameters) : conn_binding(_BH, _parameters)
 {
 }
@@ -132,7 +139,7 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
    for(i = 0; i < n_elements; i++)
    {
       structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
-      if(curr_gate->find_member(STR(SUSPENSION), port_o_K, curr_gate) != NULL && curr_gate->get_id() != "scheduler_kernel")
+      if(curr_gate->find_member(STR(SUSPENSION), port_o_K, curr_gate) != nullptr and curr_gate->get_id() != "scheduler_kernel")
          ++num_suspension;
    }
    if(GetPointer<port_o>(port_in_or_glo)->get_ports_size() != 0)
@@ -148,7 +155,7 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
       {
          structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
          structural_objectRef port_suspension_module = curr_gate->find_member(STR(SUSPENSION), port_o_K, curr_gate);
-         if(port_suspension_module != NULL && curr_gate->get_id() != "scheduler_kernel")
+         if(port_suspension_module != nullptr and curr_gate->get_id() != "scheduler_kernel")
          {
             structural_objectRef suspension_sign = SM->add_sign(STR(SUSPENSION) + "_signal_" + STR(i), circuit, bool_type);
             SM->add_connection(port_suspension_module, suspension_sign);

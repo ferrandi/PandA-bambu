@@ -66,6 +66,9 @@
 #include "design_flow_step.hpp" // for DesignFlowStep
 #include "refcount.hpp"         // for REF_FORWARD_DECL
 
+/// STD include
+#include <functional>
+
 /// Forward declaration
 CONSTREF_FORWARD_DECL(application_manager);
 REF_FORWARD_DECL(application_manager);

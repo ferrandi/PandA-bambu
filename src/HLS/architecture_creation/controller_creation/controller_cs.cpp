@@ -50,6 +50,9 @@
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 
+/// utility include
+#include "dbgPrintHelper.hpp"
+
 controller_cs::controller_cs(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
     : fsm_controller(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {

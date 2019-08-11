@@ -77,7 +77,6 @@
 #include "area_model.hpp"
 #include "clb_model.hpp"
 #include "structural_manager.hpp"
-#include "structural_objects.hpp"
 #include "target_device.hpp"
 #include "target_manager.hpp"
 #include "time_model.hpp"

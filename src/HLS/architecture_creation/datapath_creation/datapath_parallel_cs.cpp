@@ -47,12 +47,22 @@
 #include "hls_target.hpp"
 #include "loop.hpp"
 #include "loops.hpp"
-#include "math.h"
 #include "memory.hpp"
 #include "memory_cs.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
+
+/// STD include
+#include <cmath>
+
+/// STL includes
+#include <tuple>
+#include <unordered_set>
+
+/// utility includes
+#include "dbgPrintHelper.hpp"
+#include "utility.hpp"
 
 datapath_parallel_cs::datapath_parallel_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
     : classic_datapath(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
@@ -315,7 +325,7 @@ void datapath_parallel_cs::resize_ctrl_parallel_ports(structural_objectRef mem_p
 void datapath_parallel_cs::resize_dimension_bus_port(unsigned int vector_size, structural_objectRef port)
 {
    unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
-   unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
+   unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
    unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
    unsigned int bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
 

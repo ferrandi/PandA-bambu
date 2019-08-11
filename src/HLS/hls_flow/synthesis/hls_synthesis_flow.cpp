@@ -50,6 +50,10 @@
 /// HLS include
 #include "hls_manager.hpp"
 
+/// STL include
+#include <tuple>
+#include <unordered_set>
+
 /// tree include
 #include "behavioral_helper.hpp"
 #include "design_flow_manager.hpp"
@@ -107,20 +111,18 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
          }
          break;
       }
-      break;
+      case INVALIDATION_RELATIONSHIP:
+      {
+         break;
+      }
+      case PRECEDENCE_RELATIONSHIP:
+      {
+         break;
+      }
+      default:
+         THROW_UNREACHABLE("");
    }
-   case INVALIDATION_RELATIONSHIP:
-   {
-      break;
-   }
-   case PRECEDENCE_RELATIONSHIP:
-   {
-      break;
-   }
-   default:
-      THROW_UNREACHABLE("");
-}
-return ret;
+   return ret;
 }
 
 DesignFlowStep_Status HLSSynthesisFlow::InternalExec()

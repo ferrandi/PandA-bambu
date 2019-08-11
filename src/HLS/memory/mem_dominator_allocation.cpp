@@ -64,6 +64,18 @@
 #include "math_function.hpp"
 #include "module_interface.hpp"
 
+/// STD includes
+#include <limits>
+#include <string>
+
+/// STL includes
+#include <algorithm>
+#include <list>
+#include <map>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+
 /// technology include
 #include "technology_node.hpp"
 
@@ -153,6 +165,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
          null_pointer_check = false;
    }
    /// information about memory allocation to be shared across the functions
+   memoryRef prevRmem = HLSMgr->Rmem;
    HLSMgr->Rmem = memoryRef(memory::create_memory(parameters, TreeM, base_address, max_bram, null_pointer_check, initial_internal_address_p, initial_internal_address, HLSMgr->get_address_bitsize()));
    setup_memory_allocation();
 
@@ -269,10 +282,9 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             if(GET_TYPE(g, *v) & TYPE_STORE)
             {
                expr_index = GET_INDEX_NODE(me->op0);
-               unsigned int var = 0;
                if(!tree_helper::is_fully_resolved(TreeM, expr_index, res_set))
                {
-                  var = tree_helper::get_base_index(TreeM, expr_index);
+                  const auto var = tree_helper::get_base_index(TreeM, expr_index);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---var:" + STR(var));
                   if(var != 0 && function_behavior->is_variable_mem(var))
                   {

@@ -52,12 +52,20 @@
 /// parser/treegcc include
 #include "token_interface.hpp"
 
+/// STL include
+#include <unordered_set>
+#include <utility>
+
 /// tree includes
 #include "ext_tree_node.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+
+/// utility include
+#include "dbgPrintHelper.hpp"
+#include "utility.hpp"
 
 ExtractOmpAtomic::ExtractOmpAtomic(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
     : FunctionFrontendFlowStep(_AppM, _function_id, EXTRACT_OMP_ATOMIC, _design_flow_manager, _parameters)

@@ -51,6 +51,12 @@
 /// polixml include
 #include "xml_document.hpp"
 
+/// STD include
+#include <string>
+
+/// STL include
+#include <unordered_set>
+
 /// technology include
 #include "technology_manager.hpp"
 
@@ -88,18 +94,7 @@ DesignFlowStep_Status LoadDefaultTechnology::Exec()
           ,
 #include "C_PROFILING_IPs.data"
           ,
-#include "C_PC_IPs.data"
-#endif
-          ,
-#include "C_PROFILING_IPs.data"
-          ,
 #include "C_STD_IPs.data"
-          ,
-#include "NC_MEM_IPs.data"
-          ,
-#include "NC_PC_IPs.data"
-          ,
-#include "NC_SF_IPs.data"
           ,
 #include "NC_MEM_IPs.data"
           ,

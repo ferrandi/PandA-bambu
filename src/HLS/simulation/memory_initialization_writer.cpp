@@ -47,6 +47,12 @@
 /// HLS/simulation include
 #include "testbench_generation.hpp"
 
+/// STD include
+#include <string>
+
+/// STL include
+#include <utility>
+
 /// tree includes
 #include "behavioral_helper.hpp"
 #include "tree_helper.hpp"
@@ -54,6 +60,7 @@
 #include "tree_node.hpp"
 
 /// utility include
+#include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "utility.hpp"
 

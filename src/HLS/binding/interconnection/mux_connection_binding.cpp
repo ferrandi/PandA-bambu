@@ -1614,7 +1614,7 @@ void mux_connection_binding::create_connections()
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
    const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::FDFG);
-   unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
+   unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
    if(parameters->getOption<int>(OPT_memory_banks_number) > 1 && !parameters->isOption(OPT_context_switch))
    {
       HLS->Rconn = conn_bindingRef(new ParallelMemoryConnBinding(behavioral_helper, parameters));
@@ -2583,7 +2583,7 @@ void mux_connection_binding::create_connections()
       const std::set<unsigned int>& live_in = HLS->Rliv->get_live_in(*vIt);
       for(std::set<unsigned int>::const_iterator k = live_in.begin(); k != live_in.end(); ++k)
       {
-         if(!HLS->Rliv->has_state_in(*vIt,*k)) continue;
+         if(!HLS->Rliv->has_state_in(*vIt, *k)) continue;
          const std::set<vertex>& states_in = HLS->Rliv->get_state_in(*vIt,*k);
          const std::set<vertex>::const_iterator si_it_end = states_in.end();
          for(std::set<vertex>::const_iterator si_it=states_in.begin(); si_it != si_it_end; si_it++)

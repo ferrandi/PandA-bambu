@@ -59,11 +59,15 @@
 /// HLS/function_allocation include
 #include "omp_functions.hpp"
 
+/// STL include
+#include <list>
+
 /// tree includes
 #include "behavioral_helper.hpp"
 #include "tree_manager.hpp"
 
 /// utility include
+#include "dbgPrintHelper.hpp"
 #include "utility.hpp"
 
 OmpFunctionAllocationCS::OmpFunctionAllocationCS(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
@@ -96,7 +100,6 @@ DesignFlowStep_Status OmpFunctionAllocationCS::Exec()
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found omp for wrapper " + HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
          omp_functions->omp_for_wrappers.insert(function_id);
-         function_classification_found = true;
          ++cycleInd;
          continue;
       }
@@ -129,7 +132,6 @@ DesignFlowStep_Status OmpFunctionAllocationCS::Exec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found function to be parallelized: " + HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
                omp_functions->parallelized_functions.insert(function_id);
             }
-            function_classification_found = true;
             break;
          }
       }

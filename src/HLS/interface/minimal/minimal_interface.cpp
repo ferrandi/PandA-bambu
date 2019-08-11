@@ -39,9 +39,6 @@
  *
  * @author Marco Minutoli <mminutoli@gmail.com>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "minimal_interface.hpp"

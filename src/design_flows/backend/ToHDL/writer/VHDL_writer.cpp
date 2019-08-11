@@ -67,6 +67,9 @@
 /// HLS/stg include
 #include "state_transition_graph_manager.hpp"
 
+/// STL include
+#include <utility>
+
 /// technology/physical_library include
 #include "technology_node.hpp"
 
@@ -855,23 +858,26 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
                   {
                      if(GetPointer<const module>(mod->get_owner()))
                      {
-                        if(mod->get_owner()->is_parameter(parameter))
+                        if(mod->get_owner()->ExistsParameter(parameter))
                         {
-                           if(mod->get_owner()->ExistsParameter(parameter))
-                           {
 #if HAVE_ASSERTS
-                              const auto actual_parameter_type = GetPointer<const module>(mod->get_owner())->get_parameter_type(TM, parameter);
+                           const auto actual_parameter_type = GetPointer<const module>(mod->get_owner())->get_parameter_type(TM, parameter);
 #endif
-                              THROW_ASSERT(actual_parameter_type == parameter_type, "");
-                           }
-                           else if(mod->get_owner()->ExistsParameter(MEMORY_PARAMETER))
-                           {
+                           THROW_ASSERT(actual_parameter_type == parameter_type, "");
+                        }
+                        else if(mod->get_owner()->ExistsParameter(MEMORY_PARAMETER))
+                        {
 #if HAVE_ASSERTS
-                              bool found = false;
+                           bool found = false;
 #endif
-                              std::string memory_str = mod->get_owner()->GetParameter(MEMORY_PARAMETER);
-                              std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
-                              for(unsigned int i = 0; i < mem_tag.size(); i++)
+                           std::string memory_str = mod->get_owner()->GetParameter(MEMORY_PARAMETER);
+                           std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
+                           for(const auto& i : mem_tag)
+                           {
+                              std::vector<std::string> mem_add = convert_string_to_vector<std::string>(i, "=");
+                              THROW_ASSERT(mem_add.size() == 2, "malformed address");
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checking owner memory parameter " + mem_add[0]);
+                              if(mem_add[0] == parameter)
                               {
                                  /// If we reach this point actual parameter of current module is formal parameter of owner module of type memory
                                  /// Since memory parameters are integer and parameter of current module is std_logic_vector conversion has to be added
@@ -1007,7 +1013,7 @@ void VHDL_writer::write_state_declaration(const structural_objectRef&, const std
    }
 }
 
-void VHDL_writer::write_present_state_update(const structural_objectRef&, const std::string& reset_state, const std::string& reset_port, const std::string& clock_port, const std::string& reset_type)
+void VHDL_writer::write_present_state_update(const structural_objectRef, const std::string& reset_state, const std::string& reset_port, const std::string& clock_port, const std::string& reset_type, bool)
 {
    write_comment("concurrent process#1: state registers\n");
    if(reset_type == "no" || reset_type == "sync")

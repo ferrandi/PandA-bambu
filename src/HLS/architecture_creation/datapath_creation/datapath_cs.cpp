@@ -42,10 +42,16 @@
 #include "Parameter.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
-#include "math.h"
 #include "omp_functions.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
+
+/// STD include
+#include <cmath>
+
+/// utility include
+#include "dbgPrintHelper.hpp"
+#include "utility.hpp"
 
 datapath_cs::datapath_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
     : classic_datapath(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)

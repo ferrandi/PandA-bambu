@@ -46,13 +46,19 @@
 #include "hls_target.hpp"
 #include "loop.hpp"
 #include "loops.hpp"
-#include "math.h"
 #include "memory.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 #include "tree_node.hpp"
+
+/// STD include
+#include <cmath>
+
+/// utility includes
+#include "dbgPrintHelper.hpp"
+#include "utility.hpp"
 
 top_entity_parallel_cs::top_entity_parallel_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
     : top_entity(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)

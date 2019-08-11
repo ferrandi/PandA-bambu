@@ -59,7 +59,10 @@
 #include "memory_cs.hpp"
 #include "memory_symbol.hpp"
 
-/// technology/ include
+/// STL include
+#include <map>
+
+/// technology include
 #include "technology_manager.hpp"
 
 /// technology/physical_library include
@@ -95,7 +98,7 @@ void TopEntityMemoryMapped::Initialize()
 
 void TopEntityMemoryMapped::resizing_IO(module* fu_module, unsigned int max_n_ports) const
 {
-   unsigned int bus_addr_bitsize = HLSMgr->Rmem->get_bus_addr_bitsize();
+   unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
    unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
    unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
    unsigned int bus_tag_bitsize = 0;
@@ -122,21 +125,6 @@ void TopEntityMemoryMapped::resizing_IO(module* fu_module, unsigned int max_n_po
          port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Resized output ports");
-
-   if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
-      port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, port);
-}
-INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Resized input ports");
-INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Resizing output ports");
-for(unsigned int i = 0; i < fu_module->get_out_port_size(); i++)
-{
-   structural_objectRef port = fu_module->get_out_port(i);
-   if(port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
-      GetPointer<port_o>(port)->add_n_ports(max_n_ports, port);
-   if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus())
-      port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, port);
-}
-INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Resized output ports");
 }
 
 static void propagateInterface(structural_managerRef SM, structural_objectRef wrappedObj, std::list<std::string>& ParametersName);
@@ -265,7 +253,7 @@ void TopEntityMemoryMapped::insertMemoryMappedRegister(structural_managerRef SM_
       if(multi_channel_bus)
          resizing_IO(GetPointer<module>(memoryMappedRegister), HLS->Param->getOption<unsigned int>(OPT_channels_number));
       GetPointer<module>(memoryMappedRegister)->SetParameter("ALLOCATED_ADDRESS", HLSMgr->Rmem->get_symbol(function_parameter.first, HLS->functionId)->get_symbol_name());
-      setBusSizes(memoryMappedRegister, HLSMgr->Rmem);
+      setBusSizes(memoryMappedRegister, HLSMgr);
 
       connectClockAndReset(SM_mm, interfaceObj, memoryMappedRegister);
 
@@ -315,7 +303,7 @@ void TopEntityMemoryMapped::insertMemoryMappedRegister(structural_managerRef SM_
    if(multi_channel_bus)
       resizing_IO(GetPointer<module>(returnRegister), HLS->Param->getOption<unsigned int>(OPT_channels_number));
    GetPointer<module>(returnRegister)->SetParameter("ALLOCATED_ADDRESS", HLSMgr->Rmem->get_symbol(returnType, HLS->functionId)->get_symbol_name());
-   setBusSizes(returnRegister, HLSMgr->Rmem);
+   setBusSizes(returnRegister, HLSMgr);
    connectClockAndReset(SM_mm, interfaceObj, returnRegister);
 
    AddedComponents.insert(returnRegister);
@@ -399,7 +387,7 @@ void TopEntityMemoryMapped::insertStatusRegister(structural_managerRef SM_mm, st
       if(multi_channel_bus)
          resizing_IO(GetPointer<module>(statusRegister), HLS->Param->getOption<unsigned int>(OPT_channels_number));
       GetPointer<module>(statusRegister)->SetParameter("ALLOCATED_ADDRESS", HLSMgr->Rmem->get_symbol(HLS->functionId, HLS->functionId)->get_symbol_name());
-      setBusSizes(statusRegister, HLSMgr->Rmem);
+      setBusSizes(statusRegister, HLSMgr);
       connectClockAndReset(SM_mm, interfaceObj, statusRegister);
 
       HLS->Rfu->manage_module_ports(HLSMgr, HLS, SM_mm, statusRegister, 0);
@@ -435,7 +423,7 @@ void TopEntityMemoryMapped::insertStatusRegister(structural_managerRef SM_mm, st
       if(multi_channel_bus)
          resizing_IO(GetPointer<module>(statusRegister), HLS->Param->getOption<unsigned int>(OPT_channels_number));
       GetPointer<module>(statusRegister)->SetParameter("ALLOCATED_ADDRESS", HLSMgr->Rmem->get_symbol(HLS->functionId, HLS->functionId)->get_symbol_name());
-      setBusSizes(statusRegister, HLSMgr->Rmem);
+      setBusSizes(statusRegister, HLSMgr);
       connectClockAndReset(SM_mm, interfaceObj, statusRegister);
 
       HLS->Rfu->manage_module_ports(HLSMgr, HLS, SM_mm, statusRegister, 0);

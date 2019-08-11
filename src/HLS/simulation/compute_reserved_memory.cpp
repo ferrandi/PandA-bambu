@@ -41,8 +41,15 @@
 /// Header include
 #include "compute_reserved_memory.hpp"
 
-/// tree include
+/// STD include
+#include <string>
+
+/// tree includes
 #include "tree_helper.hpp"
+#include "tree_node.hpp"
+
+/// utility include
+#include "exceptions.hpp"
 
 ComputeReservedMemory::ComputeReservedMemory(const tree_managerConstRef _TM, const tree_nodeConstRef _tn) : TM(_TM), tn(_tn), elements_number(1), depth_level(0)
 {

@@ -730,7 +730,7 @@ std::string structural_object::GetParameter(std::string name) const
    return default_parameters.at(name);
 }
 
-void structural_object::AddParameter(const std::string name, const std::string default_value)
+void structural_object::AddParameter(const std::string & name, const std::string & default_value)
 {
    THROW_ASSERT(default_parameters.find(name) == default_parameters.end() or default_parameters.at(name) == default_value, "Parameter " + name + " already added. Old default: " + default_parameters.at(name) + " New default: " + default_value);
    default_parameters[name] = default_value;
@@ -897,10 +897,14 @@ const std::string structural_object::get_path() const
 
 const char* port_o::port_directionNames[] = {"IN", "OUT", "IO", "GEN", "UNKNOWN"};
 
+const char* port_o::port_interfaceNames[] = {"PI_DEFAULT", "PI_RNONE", "PI_WNONE"};
+
 port_o::port_o(int _debug_level, const structural_objectRef o, port_direction _dir, so_kind _port_type)
     : structural_object(_debug_level, o),
       dir(_dir),
       end(NONE),
+      pi(port_interface::PI_DEFAULT),
+      aligment(port_interface_alignment_DEFAULT),
       is_var_args(is_var_args_DEFAULT),
       is_clock(is_clock_DEFAULT),
       is_extern(is_extern_DEFAULT),
@@ -1011,11 +1015,13 @@ void port_o::substitute_connection(structural_objectRef old_conn, structural_obj
          connected_objects.erase(*deli);
    }
    else
+   {
       for(auto& connected_object : connected_objects)
       {
          if(connected_object.lock() == old_conn)
             connected_object = new_conn;
       }
+   }
 }
 
 const structural_objectRef port_o::get_connection(unsigned int n) const
@@ -1223,17 +1229,17 @@ structural_objectRef port_o::find_bounded_object(const structural_objectConstRef
    else
       _owner = get_owner();
 
-   for(unsigned int i = 0; i < connected_objects.size(); i++)
+   for(const auto& connected_object : connected_objects)
    {
       if(f_owner)
       {
          if(connected_object.lock()->get_kind() == port_o_K || connected_object.lock()->get_kind() == signal_o_K || connected_object.lock()->get_kind() == constant_o_K)
          {
-            if(connected_objects[i].lock()->get_owner()->get_kind() == port_vector_o_K and connected_objects[i].lock()->get_owner()->get_owner() != f_owner)
+            if(connected_object.lock()->get_owner()->get_kind() == port_vector_o_K and connected_object.lock()->get_owner()->get_owner() != f_owner)
             {
                continue;
             }
-            if((connected_objects[i].lock()->get_owner()->get_kind() != port_vector_o_K and connected_objects[i].lock()->get_owner() != f_owner))
+            if((connected_object.lock()->get_owner()->get_kind() != port_vector_o_K and connected_object.lock()->get_owner() != f_owner))
             {
                continue;
             }
@@ -1430,6 +1436,14 @@ void port_o::xload(const xml_element* Enode, structural_objectRef _owner, struct
       LOAD_XVFM(dir_string, Enode, dir);
       dir = to_port_direction(dir_string);
    }
+   if(CE_XVM(pi, Enode))
+   {
+      std::string pi_string;
+      LOAD_XVFM(pi_string, Enode, pi);
+      pi = to_port_interface(pi_string);
+   }
+   if(CE_XVM(aligment, Enode))
+      LOAD_XVM(aligment, Enode);
    if(CE_XVM(is_var_args, Enode))
       LOAD_XVM(is_var_args, Enode);
    if(CE_XVM(is_clock, Enode))
@@ -1568,8 +1582,8 @@ void port_o::xwrite(xml_element* rootnode)
       WRITE_XVM(is_reverse, Enode);
    if(is_var_args != is_var_args_DEFAULT)
       WRITE_XVM(is_var_args, Enode);
-   for(unsigned int i = 0; i < ports.size(); i++)
-      ports[i]->xwrite(Enode);
+   for(auto& port : ports)
+      port->xwrite(Enode);
 }
 
 #if HAVE_TECHNOLOGY_BUILT
@@ -2129,6 +2143,7 @@ void signal_o::substitute_port(structural_objectRef old_conn, structural_objectR
          connected_objects.erase(del_old);
    }
    else
+   {
       for(unsigned int i = 0; i < connected_objects.size(); i++)
       {
          if(connected_objects[i] == old_conn)
@@ -2138,6 +2153,7 @@ void signal_o::substitute_port(structural_objectRef old_conn, structural_objectR
             THROW_ASSERT(GetPointer<port_o>(connected_objects[i]), "Expected port");
          }
       }
+   }
 }
 
 unsigned int signal_o::get_connected_objects_size() const
@@ -3966,7 +3982,7 @@ void module::change_port_direction(structural_objectRef port, port_o::port_direc
    GetPointer<port_o>(port)->set_port_direction(pdir);
 }
 
-void module::AddParameter(const std::string name, const std::string default_value)
+void module::AddParameter(const std::string & name, const std::string & default_value)
 {
    if(name != MEMORY_PARAMETER)
    {
@@ -4569,16 +4585,19 @@ std::string structural_object::get_equation(const structural_objectRef out_obj, 
                   boost::replace_all(EQ, GetPointer<module>(strobj)->get_in_port(p)->get_id(), In);
                }
             }
-            else for(unsigned int p = 0; p < GetPointer<port_o>(out_obj)->get_connections_size(); p++)
+            else
             {
-               const structural_objectRef obj = GetPointer<port_o>(out_obj)->get_connection(p);
-               if (obj and analyzed.find(obj) == analyzed.end())
+               for(unsigned int p = 0; p < GetPointer<port_o>(out_obj)->get_connections_size(); p++)
                {
-                  analyzed.insert(obj);
-                  EQ = obj->get_equation(obj, TM, analyzed, input_ports);
+                  const structural_objectRef obj = GetPointer<port_o>(out_obj)->get_connection(p);
+                  if (obj and analyzed.find(obj) == analyzed.end())
+                  {
+                     analyzed.insert(obj);
+                     EQ = obj->get_equation(obj, TM, analyzed, input_ports);
+                  }
+                  else
+                     EQ = out_obj->get_id();
                }
-               else
-                  EQ = out_obj->get_id();
             }
             break;
          }

@@ -249,9 +249,9 @@ class tree_helper
     * @param index is the index of the pointer object
     */
    static
-       /// FIXME: to be remove after substitution with GetPointedType/CGetPointedType
-       unsigned int
-       get_pointed_type(const tree_managerConstRef TM, const unsigned int index);
+   /// FIXME: to be remove after substitution with GetPointedType/CGetPointedType
+   unsigned int
+   get_pointed_type(const tree_managerConstRef TM, const unsigned int index);
 
    /**
     * Return the pointed type of a pointer object
@@ -327,7 +327,7 @@ class tree_helper
     * @param TM is the tree manager
     * @param index is the treenode index
     */
-   static bool IsInLibbambu(const tree_managerConstRef& TM, const unsigned int index);
+   static bool IsInLibbambu(const tree_managerConstRef TM, const unsigned int index);
 #endif
 
    /**
@@ -770,7 +770,7 @@ class tree_helper
     * Return the name of the function in a string
     * @param node is the function_decl
     */
-   static std::string print_function_name(const tree_managerConstRef& TM, const function_decl* fd);
+   static std::string print_function_name(const tree_managerConstRef TM, const function_decl* fd);
 
    /**
     * Print a type and its variable in case var is not zero.

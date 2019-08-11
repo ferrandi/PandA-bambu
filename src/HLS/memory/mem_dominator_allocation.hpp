@@ -35,17 +35,18 @@
  * @brief Class to allocate memories in HLS based on dominators
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
 #ifndef MEMORY_DOMINATOR_ALLOCATION_HPP
 #define MEMORY_DOMINATOR_ALLOCATION_HPP
 
-#include "hls_step.hpp"
+/// Superclass include
 #include "memory_allocation.hpp"
+
+/// STL includes
+#include <set>
+#include <vector>
 
 class mem_dominator_allocation : public memory_allocation
 {
@@ -63,18 +64,18 @@ class mem_dominator_allocation : public memory_allocation
    /**
     * Destructor
     */
-   virtual ~mem_dominator_allocation();
+   virtual ~mem_dominator_allocation() override;
 
    /**
     * Execute the step
     * @return the exit status of this step
     */
-   DesignFlowStep_Status Exec();
+   DesignFlowStep_Status InternalExec();
 
    /**
     * Initialize the step (i.e., like a constructor, but executed just before exec
     */
-   void Initialize();
+   void Initialize() override;
 };
 
 #endif

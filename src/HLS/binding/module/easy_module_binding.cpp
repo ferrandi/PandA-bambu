@@ -58,11 +58,19 @@
 #include "dbgPrintHelper.hpp"
 
 #include <iosfwd>
-#include <map>
 #include <string>
+
+/// HLS include
+#include "hls.hpp"
 
 /// HLS/allocation_information include
 #include "allocation_information.hpp"
+
+/// STL include
+#include <map>
+#include <set>
+#include <tuple>
+#include <unordered_set>
 
 /// tree include
 #include "behavioral_helper.hpp"

@@ -48,6 +48,9 @@
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
 
+/// boost include
+#include <boost/filesystem.hpp>
+
 /// constants include
 #include "testbench_generation_constants.hpp"
 
@@ -65,10 +68,25 @@
 #include "testbench_generation.hpp"
 #include "testbench_generation_base_step.hpp"
 
+/// STD include
+#include <string>
+
+///STL includes
+#include <list>
+#include <map>
+#include <tuple>
+#include <unordered_set>
+#include <vector>
+
 /// tree includes
 #include "behavioral_helper.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
+#include "tree_node.hpp"
+
+/// utility includes
+#include "dbgPrintHelper.hpp"
+#include "utility.hpp"
 
 void TestbenchValuesXMLGeneration::Initialize()
 {

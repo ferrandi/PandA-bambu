@@ -46,6 +46,7 @@ noinst_HEADERS = \
    c_initialization_parser.hpp \
    c_initialization_parser_functor.hpp \
    c_initialization_parser_node.hpp \
+   CTestbenchExecution.hpp \
    compute_reserved_memory.hpp \
    memory_initialization_writer.hpp \
    minimal_interface_testbench.hpp \
@@ -63,6 +64,7 @@ lib_simulation_la_SOURCES = \
    c_initialization_parser.cpp \
    c_initialization_parser_functor.cpp \
    c_initialization_yparser.ypp \
+   CTestbenchExecution.cpp \
    compute_reserved_memory.cpp \
    memory_initialization_writer.cpp \
    minimal_interface_testbench.cpp \

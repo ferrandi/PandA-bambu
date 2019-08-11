@@ -37,11 +37,13 @@ lib_controller_creation_la_CPPFLAGS = \
 
 noinst_HEADERS = \
    controller_creator_base_step.hpp \
+   control_flow_checker.hpp \
    controller_cs.hpp \
    fsm_controller.hpp
 
 lib_controller_creation_la_SOURCES = \
    controller_creator_base_step.cpp \
+   control_flow_checker.cpp \
    controller_cs.cpp \
    fsm_controller.cpp
 

@@ -105,8 +105,3 @@ NC_VEC_IPs.data: $(top_srcdir)/etc/lib/technology/NC_VEC_IPs.xml
 
 NC_wishbone_IPs.data: $(top_srcdir)/etc/lib/technology/NC_wishbone_IPs.xml
 	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/NC_wishbone_IPs.xml NC_wishbone_IPs.data
-
-NC_PC_IPs.data: $(top_srcdir)/etc/lib/technology/NC_PC_IPs.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/NC_PC_IPs.xml NC_PC_IPs.data
-
-
