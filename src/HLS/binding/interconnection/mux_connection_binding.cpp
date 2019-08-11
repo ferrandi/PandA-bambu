@@ -2718,7 +2718,7 @@ unsigned int mux_connection_binding::input_logic(const conn_binding::ConnectionS
          }
 
          std::string mux_name = "MUX_" + STR(iteration) + "_" + tgt_string + "_" + STR(level) + "_" + STR(level_map[level]++);
-         generic_objRef mux = generic_objRef(new mux_obj(first, second, level, mux_name));
+         generic_objRef mux = generic_objRef(new mux_obj(first, second, level, mux_name, tgt));
          HLS->Rconn->add_component(MUX_GATE_STD);
          ++used_mux;
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GetPointer<mux_obj>(mux)->get_string());

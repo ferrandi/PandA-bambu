@@ -1284,7 +1284,12 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
             {
                std::string port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i2)->get_id());
                if(single_proc || output_index == i2)
-                  indented_output_stream->Append(port_name + " <= '" + transition_outputs[i2] + "';\n");
+               {
+                  if(transition_outputs[i2] == '2')
+                     indented_output_stream->Append(port_name + " <= 'X';\n");
+                  else
+                     indented_output_stream->Append(port_name + " <= '" + transition_outputs[i2] + "';\n");
+               }
             }
          }
          indented_output_stream->Deindent();

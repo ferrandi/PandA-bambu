@@ -383,19 +383,19 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
 #endif
    else if(cm == GccWrapper_CompilerMode::CM_STD)
    {
-      std::string fname;
-      bool addTopFName = false;
+         std::string fname;
+         bool addTopFName = false;
       if(isWholeProgram)
-      {
-         fname = "main";
+         {
+            fname = "main";
          addTopFName = compiler.is_clang;
-      }
-      else if(Param->isOption(OPT_top_functions_names))
-      {
-         const auto top_functions_names = Param->getOption<const std::list<std::string>>(OPT_top_functions_names);
-         addTopFName = top_functions_names.size() == 1;
-         fname = top_functions_names.front();
-      }
+         }
+         else if(Param->isOption(OPT_top_functions_names))
+         {
+            const auto top_functions_names = Param->getOption<const std::list<std::string>>(OPT_top_functions_names);
+            addTopFName = top_functions_names.size() == 1;
+            fname = top_functions_names.front();
+         }
       if(addTopFName && (isWholeProgram || Param->getOption<bool>(OPT_do_not_expose_globals)))
       {
          if(compiler.is_clang)
@@ -576,7 +576,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
 #if HAVE_I386_CLANG7_COMPILER
    enable_LTO = enable_LTO || (GccWrapper_CompilerTarget::CT_I386_CLANG7 == Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler));
 #endif
-       for(auto& source_file : source_files)
+   for(auto& source_file : source_files)
    {
       if(already_processed_files.find(source_file.first) != already_processed_files.end())
       {
@@ -2750,9 +2750,41 @@ size_t GccWrapper::ConvertVersion(const std::string& version)
    return ret_value;
 }
 
-std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimization_level, const GccWrapper_CompilerTarget compiler, const std::string& expandMemOps_plugin_obj, const std::string& expandMemOps_plugin_name,
-                                      const std::string& GepiCanon_plugin_obj, const std::string& GepiCanon_plugin_name,
-                                      const std::string& CSROA_plugin_obj, const std::string& CSROA_plugin_name, const std::string& fname)
+std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
+                                          optimization_level
+#endif
+                                      , const GccWrapper_CompilerTarget
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
+                                          compiler
+#endif
+                                      , const std::string&
+#ifndef _WIN32
+                                          expandMemOps_plugin_obj
+#endif
+                                      , const std::string&
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
+                                          expandMemOps_plugin_name
+#endif
+                                      ,
+                                      const std::string&
+#ifndef _WIN32
+                                          GepiCanon_plugin_obj
+#endif
+                                      , const std::string&
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
+                                          GepiCanon_plugin_name
+#endif
+                                      ,
+                                      const std::string&
+#ifndef _WIN32
+                                          CSROA_plugin_obj
+#endif
+                                      , const std::string&
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
+                                          CSROA_plugin_name
+#endif
+                                      , const std::string& fname)
 {
    std::string recipe = "";
 #ifndef _WIN32
@@ -2783,8 +2815,8 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimizat
                            "-" + GepiCanon_plugin_name + " "
                            "-scalar-evolution "
                            "-" + CSROA_plugin_name+"FV "
-                           "-targetlibinfo "
-                           "-tbaa "
+                   "-targetlibinfo "
+                   "-tbaa "
                    "-scoped-noalias "
                    "-assumption-cache-tracker "
                    "-profile-summary-info "

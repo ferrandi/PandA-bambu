@@ -184,8 +184,13 @@ void fsm_controller::create_state_machine(std::string& parse)
    THROW_ASSERT(std::find(working_list.begin(), working_list.end(), first_state) != working_list.end(), "unexpected case");
    working_list.erase(std::find(working_list.begin(), working_list.end(), first_state));
    working_list.push_front(first_state); /// ensure that first_state is the really first one...
+
+   std::map<vertex, std::vector<bool>> state_Xregs;
+   std::map<unsigned int, unsigned int> wren_list;
+   std::map<unsigned int, unsigned int> register_selectors;
    for(const auto& v : working_list)
    {
+      state_Xregs[v] = std::vector<bool>(HLS->Rreg->get_used_regs(), true);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + astg->CGetStateInfo(v)->name);
       present_state[v] = std::vector<long long int>(out_num, 0);
       if(selectors.find(conn_binding::IN) != selectors.end())
@@ -262,54 +267,61 @@ void fsm_controller::create_state_machine(std::string& parse)
             present_state[v][unbounded_port] = 1;
          }
       }
-      if(parameters->IsParameter("Xvalue") and parameters->GetParameter<bool>("Xvalue"))
+
+      for(auto in0 : HLS->Rliv->get_live_in(v))
       {
-         const std::set<unsigned int>& live_out = HLS->Rliv->get_live_out(v);
-         auto out_end = live_out.end();
-
-         unsigned int registers = HLS->Rreg->get_used_regs();
-         std::vector<bool> XRegs(registers, true);
-
-         for(auto out = live_out.begin(); out != out_end; ++out)
+         if(HLS->storage_value_information->is_a_storage_value(v, in0))
          {
-            if(HLS->storage_value_information->is_a_storage_value(v, *out)){
-               unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(v, *out);
-               unsigned int accessed_reg = HLS->Rreg->get_register(storage_value_index);
-               XRegs[accessed_reg] = false;
-            }
+            unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(v, in0);
+            unsigned int accessed_reg = HLS->Rreg->get_register(storage_value_index);
+            state_Xregs[v][accessed_reg] = false;
          }
+      }
 
-         std::set<std::pair<unsigned int, unsigned int>> active_fu;
-         for(const auto& op : operations)
-         {
-            unsigned int fu_type = HLS->Rfu->get_assign(op);
-            unsigned int fu_index = HLS->Rfu->get_index(op);
-            active_fu.insert(std::make_pair(fu_type, fu_index));
-         }
+      std::set<std::pair<unsigned int, unsigned int>> active_fu;
+      for(const auto& op : operations)
+      {
+         unsigned int fu_type = HLS->Rfu->get_assign(op);
+         unsigned int fu_index = HLS->Rfu->get_index(op);
+         active_fu.insert(std::make_pair(fu_type, fu_index));
+      }
 
-         if(selectors.find(conn_binding::IN) != selectors.end())
+      if(selectors.find(conn_binding::IN) != selectors.end())
+      {
+         for(const auto& s : selectors.at(conn_binding::IN))
          {
-            for(const auto& s : selectors.at(conn_binding::IN))
+            if(s.second->get_type() == generic_obj::COMMAND_PORT)
             {
-               if(s.second->get_type() == generic_obj::COMMAND_PORT)
+               auto current_port = GetPointer<commandport_obj>(s.second);
+               // compute X values for wr_enable signals
+               if(current_port->get_command_type() == commandport_obj::command_type::WRENABLE)
                {
-                  auto current_port = GetPointer<commandport_obj>(s.second);
-                  // compute X values for wr_enable signals
-                  if(current_port->get_command_type() == commandport_obj::command_type::WRENABLE)
+                  auto reg_obj = GetPointer<register_obj>(current_port->get_elem());
+                  wren_list.insert(std::make_pair(reg_obj->get_register_index(), out_ports[s.second]));
+                  if(state_Xregs[v][reg_obj->get_register_index()] && v != first_state)
                   {
-                     auto reg_obj = GetPointer<register_obj>(current_port->get_elem());
-                     if(XRegs[reg_obj->get_register_index()])
+                     present_state[v][out_ports[s.second]] = 2;
+                     PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Set X value for wr_en on register reg_");
+                     PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, reg_obj->get_register_index());
+                     PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "\n");
+                  }
+               }
+               else if(current_port->get_command_type() == commandport_obj::command_type::SELECTOR)
+               {
+                  auto selector_slave = current_port->get_elem();
+                  if(GetPointer<mux_obj>(selector_slave))
+                  {
+                     auto mux_slave = GetPointer<mux_obj>(selector_slave)->get_final_target();
+                     if(mux_slave->get_type() == generic_obj::resource_type::REGISTER)
                      {
-                        present_state[v][out_ports[s.second]] = 2;
-                        PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Set X value for wr_en on register reg_");
-                        PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, reg_obj->get_register_index());
-                        PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "\n");
+                        unsigned int reg_index = GetPointer<register_obj>(mux_slave)->get_register_index();
+                        register_selectors[out_ports[s.second]] = reg_index;
                      }
                   }
                }
             }
          }
-      }
+     }
 
 #ifndef NDEBUG
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->default output after considering unbounded:");
@@ -474,6 +486,7 @@ void fsm_controller::create_state_machine(std::string& parse)
             if(present_state[v][k] == 1 && unbounded_ports.find(k) == unbounded_ports.end())
                transition_outputs[k] = 0;
          }
+
          if(selectors.find(conn_binding::IN) != selectors.end())
          {
             for(const auto& s : selectors.at(conn_binding::IN))
@@ -489,7 +502,14 @@ void fsm_controller::create_state_machine(std::string& parse)
                   }
                }
             }
+
+            for(auto const &sel : register_selectors)
+            {
+               if(wren_list.find(sel.second) != wren_list.end() && ((transition_outputs[wren_list[sel.second]] == 0) || (transition_outputs[wren_list[sel.second]] == default_COND && present_state[v][wren_list[sel.second]] != 1)))
+                  transition_outputs[sel.first] = 2;
+            }
          }
+
          for(unsigned int k = 0; k < out_num; k++)
          {
             if(present_state[v][k] == transition_outputs[k])
@@ -510,6 +530,7 @@ void fsm_controller::create_state_machine(std::string& parse)
       parse += "\n";
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed state " + stg->CGetStateInfo(v)->name);
    }
+
    // std::cerr << "Finite_state_machine representation: " << std::endl;
    // std::cerr << parse << std::endl << std::endl;
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Created state machine");
