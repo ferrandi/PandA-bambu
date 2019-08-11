@@ -26,7 +26,6 @@
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -155,7 +154,6 @@ begin
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -284,7 +282,6 @@ begin
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -413,7 +410,6 @@ begin
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -542,7 +538,6 @@ begin
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -671,7 +666,6 @@ begin
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -799,7 +793,6 @@ begin
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -929,7 +922,6 @@ ARRAY_1D_STD_BRAM_instance : ARRAY_1D_STD_BRAM_SDS_BUS_BASE generic map(BITSIZE_
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -1059,7 +1051,6 @@ ARRAY_1D_STD_BRAM_instance : ARRAY_1D_STD_BRAM_SDS_BUS_BASE generic map(BITSIZE_
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -1190,7 +1181,6 @@ ARRAY_1D_STD_BRAM_instance : ARRAY_1D_STD_BRAM_SDS_BUS_BASE generic map(BITSIZE_
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -1318,7 +1308,6 @@ ARRAY_1D_STD_BRAM_N1_instance : ARRAY_1D_STD_BRAM_N1_SP generic map (BITSIZE_in1
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -1446,7 +1435,6 @@ ARRAY_1D_STD_BRAM_N1_instance : ARRAY_1D_STD_BRAM_N1_SP generic map (BITSIZE_in1
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -1574,7 +1562,6 @@ ARRAY_1D_STD_BRAM_N1_instance : ARRAY_1D_STD_BRAM_N1_SP generic map (BITSIZE_in1
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -1698,7 +1685,6 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS generic map (BITSIZE_in
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -1822,7 +1808,6 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_3 generic map (BITSIZE_
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -1945,7 +1930,6 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_4 generic map (BITSIZE_
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -2068,7 +2052,6 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BUS generic map (BITSIZ
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -2191,7 +2174,6 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BUS_3 generic map (BITS
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -2315,7 +2297,6 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BUS_4 generic map (BITS
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -2444,7 +2425,6 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SP generic map (BITSIZE_in1
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -2573,7 +2553,6 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SP generic map (BITSIZE_in1
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -2702,7 +2681,6 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SP generic map (BITSIZE_in1
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -2831,7 +2809,6 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BASE generic map (BITSI
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -2959,7 +2936,6 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BASE generic map (BITSI
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -3086,7 +3062,6 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BASE generic map (BITSI
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -3212,7 +3187,6 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BUS_BASE generic map (B
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
@@ -3338,7 +3312,6 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BUS_BASE generic map (B
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
-          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
