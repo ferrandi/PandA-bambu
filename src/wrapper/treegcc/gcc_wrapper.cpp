@@ -451,13 +451,6 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
 
    /// manage optimization level
    auto local_parameters_line = parameters_line;
-   if(cm == GccWrapper_CompilerMode::CM_LTO)
-   {
-      boost::replace_all(local_parameters_line, "-O4", "");
-      boost::replace_all(local_parameters_line, "-O3", "");
-      boost::replace_all(local_parameters_line, "-O2", "");
-      boost::replace_all(local_parameters_line, "-O1", "");
-   }
    if(!(Param->getOption<bool>(OPT_compute_size_of)))
       command += " -D\"" + std::string(STR_CST_panda_sizeof) + "(arg)=" + STR_CST_string_sizeof + "(#arg)\"";
    command += " " + local_parameters_line;
