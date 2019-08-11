@@ -1142,11 +1142,29 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
 
       for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
       {
+         if(mod->get_out_port(i)->get_id() == PRESENT_STATE_PORT_NAME)
+            continue;
+         if(mod->get_out_port(i)->get_id() == NEXT_STATE_PORT_NAME)
+            continue;
+
          std::string port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
-         if(default_output[i] != current_output[i] and current_output[i] != '-')
+         if(default_output[i] != current_output[i])
          {
             if(single_proc || output_index == i)
-               indented_output_stream->Append(port_name + " <= '" + current_output[i] + "';\n");
+               switch (current_output[i])
+               {
+                  case '1':
+                     indented_output_stream->Append(port_name + " <= '" + current_output[i] + "';\n");
+                     break;
+
+                  case '2':
+                     indented_output_stream->Append(port_name + " <= 'X';\n");
+                     break;
+
+                  default:
+                     THROW_ERROR("Unsupported value in current output");
+                     break;
+               }
          }
       }
 
@@ -1269,7 +1287,12 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
             {
                std::string port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i2)->get_id());
                if(single_proc || output_index == i2)
-                  indented_output_stream->Append(port_name + " <= '" + transition_outputs[i2] + "';\n");
+               {
+                  if(transition_outputs[i2] == '2')
+                     indented_output_stream->Append(port_name + " <= 'X';\n");
+                  else
+                     indented_output_stream->Append(port_name + " <= '" + transition_outputs[i2] + "';\n");
+               }
             }
          }
          indented_output_stream->Deindent();
