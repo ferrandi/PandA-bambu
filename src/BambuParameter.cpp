@@ -3753,9 +3753,7 @@ void BambuParameter::SetDefaults()
 #if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
    setOption(OPT_num_threads, 4);
 #endif
-#if HAVE_EXPERIMENTAL
    setOption(OPT_memory_banks_number, 1);
-#endif
    setOption(OPT_find_max_cfg_transformations, false);
 
    panda_parameters["CSE_size"] = "2";

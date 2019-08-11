@@ -170,10 +170,10 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 
 DesignFlowStep_Status add_library::InternalExec()
 {
+   const auto* const add_library_specialization = GetPointer<const AddLibrarySpecialization>(hls_flow_step_specialization);
+   const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
-   std::string function_name = BH->get_function_name();
-   const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(HLS->top, "Top has not been set");
    std::string module_name = HLS->top->get_circ()->get_typeRef()->id_type;
    const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
@@ -191,14 +191,12 @@ DesignFlowStep_Status add_library::InternalExec()
                                        "";
    if(module_parameters.find(" ") != std::string::npos)
       module_parameters = module_parameters.substr(module_parameters.find(" "));
-   fu->CM->add_NP_functionality(HLS->top->get_circ(), NP_functionality::LIBRARY, function_name + module_parameters);
-   operation* op = GetPointer<operation>(fu->get_operation(function_name));
-   op->time_m = time_model::create_model(device->get_type(), parameters);
-   op->primary_inputs_registered = HLS->registered_inputs;
-   /// First computing if operation is bounded, then computing call_delay; call_delay depends on the value of bounded
-   if(HLS->STG and HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->is_a_dag)
+   fu->CM->add_NP_functionality(HLS->top->get_circ(), NP_functionality::LIBRARY, module_name + module_parameters);
+   if(!add_library_specialization->interfaced)
    {
+      std::string function_name = BH->get_function_name();
       TM->add_operation(WORK_LIBRARY, module_name, function_name);
+      auto* op = GetPointer<operation>(fu->get_operation(function_name));
       op->time_m = time_model::create_model(device->get_type(), parameters);
       op->primary_inputs_registered = HLS->registered_inputs;
       /// First computing if operation is bounded, then computing call_delay; call_delay depends on the value of bounded

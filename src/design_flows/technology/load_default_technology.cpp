@@ -90,12 +90,22 @@ DesignFlowStep_Status LoadDefaultTechnology::Exec()
           ,
 #include "C_IO_IPs.data"
           ,
+#include "C_MEM_IPs.data"
+#if HAVE_EXPERIMENTAL
+         ,
+#include "C_PC_IPs.data"
+#endif
+          ,
 #include "CS_COMPONENT.data"
           ,
 #include "C_PROFILING_IPs.data"
           ,
 #include "C_STD_IPs.data"
           ,
+#include "C_VEC_IPs.data"
+         ,
+#include "NC_HLS_IPs.data"
+         ,
 #include "NC_MEM_IPs.data"
           ,
 #include "NC_PC_IPs.data"
