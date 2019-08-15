@@ -12,6 +12,7 @@ EXTRA_DIST = \
   C_PROFILING_IPs.xml \
   C_STD_IPs.xml \
   C_VEC_IPs.xml \
+  CS_COMPONENT.xml \
   NC_HLS_IPs.xml \
   NC_MEM_IPs.xml \
   NC_PC_IPs.xml \
