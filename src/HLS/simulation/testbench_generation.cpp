@@ -79,8 +79,7 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
          }
          else
          {
-            ret.insert(std::make_tuple(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION ? HLSFlowStep_Type::MINIMAL_TESTBENCH_GENERATION : HLSFlowStep_Type::WB4_TESTBENCH_GENERATION, HLSFlowStepSpecializationConstRef(),
-                                       HLSFlowStep_Relationship::TOP_FUNCTION));
+            ret.insert(std::make_tuple(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION or interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION ? HLSFlowStep_Type::MINIMAL_TESTBENCH_GENERATION : HLSFlowStep_Type::WB4_TESTBENCH_GENERATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
          }
          break;
       }
