@@ -374,8 +374,10 @@ void MemoryInitializationWriter::GoNext()
       const auto record_fields = tree_helper::CGetFieldTypes(upper_type);
 
       /// Check if there is at least another field
+#ifndef NDEBUG
       const auto read_fields = status[status.size() - 2].second;
       THROW_ASSERT(read_fields < record_fields.size(), "");
+#endif
       status.pop_back();
       status.back().second++;
       const auto new_type = tree_helper::CGetFieldTypes(upper_type)[status[status.size() - 1].second];

@@ -36,9 +36,6 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
@@ -79,11 +76,19 @@
 #include "dbgPrintHelper.hpp"
 
 #include <boost/lexical_cast.hpp>
+
+/// STD includes
 #include <iosfwd>
+#include <string>
+
+/// STL includes
+#include <list>
+#include <map>
 
 /// technology/physical_library include
 #include "technology_node.hpp"
 
+/// utility includes
 #include "copyrights_strings.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
@@ -206,7 +211,7 @@ void classic_datapath::add_ports()
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Parameter: " + BH->PrintVariable(function_parameter) + " IN");
       generic_objRef port_obj;
-      if(HLS->Rconn != NULL)
+      if(HLS->Rconn != nullptr)
       {
          conn_binding::direction_type direction = conn_binding::IN;
          port_obj = HLS->Rconn->get_port(function_parameter, direction);
@@ -224,35 +229,35 @@ void classic_datapath::add_ports()
       std::string prefix = "in_port_";
       port_o::port_direction port_direction = port_o::IN;
       structural_objectRef p_obj = SM->add_port(prefix + BH->PrintVariable(function_parameter), port_direction, circuit, port_type);
-      if(HLS->Rconn != NULL)
+      if(HLS->Rconn != nullptr)
       {
          port_obj->set_structural_obj(p_obj);
          port_obj->set_out_sign(p_obj);
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added function parameters");
-   if(HLS->Rconn != NULL)
+   if(HLS->Rconn != nullptr)
    {
       std::map<conn_binding::const_param, generic_objRef> const_objs = HLS->Rconn->get_constant_objs();
       unsigned int num = 0;
-      for(std::map<conn_binding::const_param, generic_objRef>::iterator c = const_objs.begin(); c != const_objs.end(); c++)
+      for(const auto const_obj_pair : const_objs)
       {
-         generic_objRef constant_obj = c->second;
+         generic_objRef constant_obj = const_obj_pair.second;
          structural_objectRef const_obj = SM->add_module_from_technology_library("const_" + STR(num), CONSTANT_STD, LIBRARY_STD, circuit, HLS->HLS_T->get_technology_manager());
 
-         std::string value = std::get<0>(c->first);
-         std::string param = std::get<1>(c->first);
+         std::string value = std::get<0>(const_obj_pair.first);
+         std::string param = std::get<1>(const_obj_pair.first);
          std::string trimmed_value;
          unsigned int precision;
          if(param.size() == 0)
          {
-            trimmed_value = "\"" + std::get<0>(c->first) + "\"";
+            trimmed_value = "\"" + std::get<0>(const_obj_pair.first) + "\"";
             precision = static_cast<unsigned int>(value.size());
          }
          else
          {
             trimmed_value = param;
-            memory::add_memory_parameter(SM, param, std::get<0>(c->first));
+            memory::add_memory_parameter(SM, param, std::get<0>(const_obj_pair.first));
             precision = GetPointer<dataport_obj>(constant_obj)->get_bitsize();
          }
          const_obj->SetParameter("value", trimmed_value);
@@ -275,13 +280,13 @@ void classic_datapath::add_ports()
       PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Return type: " + BH->print_type(return_type_index));
 
       generic_objRef port_obj;
-      if(HLS->Rconn != NULL)
+      if(HLS->Rconn != nullptr)
       {
          port_obj = HLS->Rconn->get_port(return_type_index, conn_binding::OUT);
       }
       structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor(return_type_index, BH));
       structural_objectRef p_obj = SM->add_port(RETURN_PORT_NAME, port_o::OUT, circuit, port_type);
-      if(HLS->Rconn != NULL)
+      if(HLS->Rconn != nullptr)
       {
          port_obj->set_structural_obj(p_obj);
       }
