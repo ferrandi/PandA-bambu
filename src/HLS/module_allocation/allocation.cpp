@@ -433,6 +433,7 @@ void allocation::add_proxy_function_wrapper(const std::string& library_name, tec
    GetPointer<module>(wrapper_top)->set_license(fu_module->get_license());
    if(fu_module->ExistsParameter(MEMORY_PARAMETER))
    {
+      GetPointer<module>(wrapper_top)->AddParameter(MEMORY_PARAMETER, fu_module->GetDefaultParameter(MEMORY_PARAMETER));
       GetPointer<module>(wrapper_top)->SetParameter(MEMORY_PARAMETER, fu_module->GetParameter(MEMORY_PARAMETER));
    }
    // handle input ports
