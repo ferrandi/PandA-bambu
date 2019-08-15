@@ -55,6 +55,15 @@
 #include "compute_reserved_memory.hpp"
 #include "testbench_generation_base_step.hpp"
 
+/// STD include
+#include <string>
+
+/// STL includes
+#include <list>
+#include <map>
+#include <tuple>
+#include <unordered_set>
+
 /// tree include
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
 #include "string_manipulation.hpp" // for STR
@@ -148,6 +157,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          {
             unsigned int base_type = tree_helper::get_type_index(TM, *l);
             tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
+#if 0
             unsigned int ptd_base_type = 0;
             if(pt_node->get_kind() == pointer_type_K)
                ptd_base_type = GET_INDEX_NODE(GetPointer<pointer_type>(pt_node)->ptd);
@@ -168,7 +178,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
 
             if(base_type_byte_size == 0)
                base_type_byte_size = 1;
-
+#endif
             const CInitializationParserFunctorRef c_initialization_parser_functor = CInitializationParserFunctorRef(new ComputeReservedMemory(TM, TM->CGetTreeNode(*l)));
             c_initialization_parser->Parse(c_initialization_parser_functor, test_v);
             reserved_bytes = GetPointer<ComputeReservedMemory>(c_initialization_parser_functor)->GetReservedBytes();
