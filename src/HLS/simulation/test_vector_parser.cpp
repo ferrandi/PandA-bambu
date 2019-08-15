@@ -42,35 +42,13 @@
 
 #include "test_vector_parser.hpp"
 
-#include "gcc_wrapper.hpp"
-
-/// utility/ include
-#include "dbgPrintHelper.hpp"
-
-/// utility/exceptions/ include
-#include "exceptions.hpp"
-
-/// parser/polixml include
-#include "xml_dom_parser.hpp"
-
-/// polixml include
-#include "xml_document.hpp"
-
-/// utility include
-#include "fileIO.hpp"
-
-/// behavior/ include
-#include "call_graph.hpp"
-#include "call_graph_manager.hpp"
-
-/// tree/ include
-#include "behavioral_helper.hpp"
-#include "function_behavior.hpp"
-
 /// behavior include
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
+
+/// boost include
+#include <boost/algorithm/string.hpp>
 
 /// design_flows include
 #include "design_flow_graph.hpp"
@@ -84,11 +62,31 @@
 #include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
 
-// include from HLS/simulation
+/// include from HLS/simulation
 #include "SimulationInformation.hpp"
 
+/// parser/polixml include
+#include "xml_dom_parser.hpp"
+
+/// polixml include
+#include "xml_document.hpp"
+
+/// STL include
+#include <tuple>
+#include <utility>
+#include <unordered_set>
+
+/// tree/ include
+#include "behavioral_helper.hpp"
+
+/// utility includes
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
+#include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
-#include <boost/algorithm/string.hpp>
+
+/// wrapper/treegcc include
+#include "gcc_wrapper.hpp"
 
 TestVectorParser::TestVectorParser(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TEST_VECTOR_PARSER)
 {
@@ -111,6 +109,7 @@ void TestVectorParser::ParseUserString(std::vector<std::map<std::string, std::st
       else if(*it == '=' && last_comma != it_end)
          *last_comma = '$';
    }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Preprocessed string " + local_string);
    test_vectors.push_back(std::map<std::string, std::string>());
    std::vector<std::string> testbench_parameters;
    boost::algorithm::split(testbench_parameters, local_string, boost::algorithm::is_any_of("$"));
