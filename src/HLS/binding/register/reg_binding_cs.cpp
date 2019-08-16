@@ -46,6 +46,9 @@
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
 
+/// STD include
+#include <string>
+
 reg_binding_cs::reg_binding_cs(const hlsRef& HLS_, const HLS_managerRef HLSMgr_) : reg_binding(HLS_, HLSMgr_)
 {
 }
@@ -67,7 +70,7 @@ void reg_binding_cs::specialise_reg(structural_objectRef& reg, unsigned int r)
    if(!dimension)
       dimension = 1;
    structural_objectRef selector_port = reg->find_member(SELECTOR_REGISTER_FILE, port_o_K, reg);
-   if(selector_port != NULL)
+   if(selector_port != nullptr)
    {
       selector_port->type_resize(dimension); // selector
    }

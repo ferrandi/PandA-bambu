@@ -64,6 +64,11 @@
 /// HLS/binding/storage_value_information
 #include "storage_value_information.hpp"
 
+/// STL includes
+#include <list>
+#include <set>
+#include <utility>
+
 /// technology/physical_library include
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "technology_node.hpp"
@@ -262,7 +267,7 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
       structural_objectRef port_ck = reg_mod->find_member(CLOCK_PORT_NAME, port_o_K, reg_mod);
       SM->add_connection(clock_port, port_ck);
       structural_objectRef port_rst = reg_mod->find_member(RESET_PORT_NAME, port_o_K, reg_mod);
-      if(port_rst != NULL)
+      if(port_rst != nullptr)
          SM->add_connection(reset_port, port_rst);
       regis->set_structural_obj(reg_mod);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Register " + boost::lexical_cast<std::string>(i) + " successfully allocated");
