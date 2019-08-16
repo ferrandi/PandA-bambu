@@ -318,15 +318,18 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
    add_command_ports(HLSMgr, HLS, SM);
 
    /// add sparse logic
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding sparse logic to the datapath");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding sparse logic to the datapath");
    add_sparse_logic_dp(HLS, SM, HLSMgr);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
 
 #ifndef NDEBUG
    const HLSFlowStep_Type connection_type = HLS->Param->getOption<HLSFlowStep_Type>(OPT_datapath_interconnection_algorithm);
    /// up to now, circuit is general about interconnections. Now, proper interconnection architecture will be executed
    THROW_ASSERT(connection_type == HLSFlowStep_Type::MUX_INTERCONNECTION_BINDING, "Unexpected interconnection binding");
 #endif
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Datapath interconnection using mux architecture");
    mux_connection(HLS, SM);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
 
    const structural_objectRef circuit = SM->get_circ();
    std::map<unsigned int, structural_objectRef> null_values;
@@ -400,7 +403,6 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
 void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef SM)
 {
    structural_objectRef circuit = SM->get_circ();
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Datapath interconnection using mux architecture");
 
    // std::set<std::pair<std::string, std::string> > already_considered;
    for(std::map<std::tuple<generic_objRef, generic_objRef, unsigned int, unsigned int>, connection_objRef>::const_iterator i = conn_implementation.begin(); i != conn_implementation.end(); ++i)
@@ -411,7 +413,7 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
       THROW_ASSERT(src, "a NULL src may come from uninitialized variables. Target: " + tgt->get_string());
       unsigned int operand = std::get<2>(i->first);
       unsigned int port_index = std::get<3>(i->first);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Creating CONNECTION between " + src->get_string() + " and " + tgt->get_string() + "(" + STR(operand) + ":" + STR(port_index) + ")");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating CONNECTION between " + src->get_string() + " and " + tgt->get_string() + "(" + STR(operand) + ":" + STR(port_index) + ")");
 
       structural_objectRef src_module = src->get_structural_obj();
       structural_objectRef tgt_module = tgt->get_structural_obj();
@@ -480,7 +482,7 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
       {
          case connection_obj::DIRECT_CONN:
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating DIRECTED CONNECTION");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Creating DIRECTED CONNECTION");
             THROW_ASSERT(sign, "");
             THROW_ASSERT(port_tgt, tgt_module->get_path());
             unsigned int bits_src = GET_TYPE_SIZE(sign);
@@ -510,11 +512,8 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
          default:
             THROW_ERROR("Connection type not allowed: " + STR(i->second->get_type()));
       }
-
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- ");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<-- ");
    }
-
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Datapath interconnections completed!");
 }
 
 void conn_binding::specialise_mux(const generic_objRef mux, unsigned int bits_tgt) const
@@ -626,9 +625,9 @@ void conn_binding::mux_allocation(const hlsRef HLS, const structural_managerRef 
 
 void conn_binding::add_datapath_connection(const technology_managerRef TM, const structural_managerRef SM, const structural_objectRef src, const structural_objectRef tgt, unsigned int conn_type)
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding datapath connections");
    unsigned int bits_src = GET_TYPE_SIZE(src);
    unsigned int bits_tgt = GET_TYPE_SIZE(tgt);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding datapath connections " + src->get_path() + "(" + STR(bits_src) + " bits)-->" + tgt->get_path() + "(" + STR(bits_tgt) + " bits)");
    // std::cerr << "adding connection between " << src->get_path() << " and " << tgt->get_path() << " conn type " << conn_type << std::endl;
    if(bits_src == bits_tgt)
    {
@@ -644,10 +643,9 @@ void conn_binding::add_datapath_connection(const technology_managerRef TM, const
       }
       else
          SM->add_connection(src, tgt);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added datapath connections");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added datapath connections (same bitsize)");
       return;
    }
-
    structural_objectRef circuit = SM->get_circ();
    bool is_src_int = src->get_typeRef()->type == structural_type_descriptor::INT || (conn_type == structural_type_descriptor::INT && src->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL);
    bool is_tgt_int = tgt->get_typeRef()->type == structural_type_descriptor::INT || (conn_type == structural_type_descriptor::INT && tgt->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL);
@@ -665,6 +663,7 @@ void conn_binding::add_datapath_connection(const technology_managerRef TM, const
       {
          std::string library_name = TM->get_library(UUDATA_CONVERTER_STD);
          c_obj = SM->add_module_from_technology_library(name, UUDATA_CONVERTER_STD, library_name, circuit, TM);
+         std::cerr << "A000" << std::endl;
       }
       else if(!is_src_int && !is_src_real && is_tgt_int)
       {
@@ -685,6 +684,7 @@ void conn_binding::add_datapath_connection(const technology_managerRef TM, const
       {
          std::string library_name = TM->get_library(UUDATA_CONVERTER_STD);
          c_obj = SM->add_module_from_technology_library(name, UUDATA_CONVERTER_STD, library_name, circuit, TM);
+         std::cerr << "A001" << std::endl;
 #if 0
          std::string library_name = TM->get_library(FFDATA_CONVERTER_STD);
          c_obj = SM->add_module_from_technology_library(name, FFDATA_CONVERTER_STD, library_name, circuit, TM);
