@@ -393,7 +393,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef behavio
       if(behavioral_helper->is_a_pointer(p))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Pointer");
-         std::string test_v = "0";
+         std::string test_v = "{0}";
          if(curr_test_vector.find(param) != curr_test_vector.end())
             test_v = curr_test_vector.find(param)->second;
 
@@ -1031,6 +1031,7 @@ void HLSCWriter::WriteMainTestbench()
    auto& test_vectors = hls_c_backend_information->HLSMgr->RSim->test_vectors;
    for(unsigned int v_idx = 0; v_idx < test_vectors.size(); v_idx++)
    {
+      indented_output_stream->Append("{\n");
       const auto& curr_test_vector = test_vectors[v_idx];
       // write parameter initialization
       indented_output_stream->Append("// parameter initialization\n");
@@ -1042,6 +1043,7 @@ void HLSCWriter::WriteMainTestbench()
       // write the expected results
       indented_output_stream->Append("// print expected results\n");
       WriteExpectedResults(behavioral_helper, curr_test_vector);
+      indented_output_stream->Append("}\n");
    }
    // print exit statements
    indented_output_stream->Append("__standard_exit = 1;\n");
