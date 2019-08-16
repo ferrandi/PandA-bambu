@@ -996,7 +996,7 @@ bool allocation::check_for_memory_compliancy(bool Has_extern_allocated_data, tec
          case(MemoryAllocation_ChannelsType::MEM_ACC_11):
          case(MemoryAllocation_ChannelsType::MEM_ACC_N1):
          {
-            if(channels_type.find(CHANNELS_TYPE_MEM_ACC_NN) != std::string::npos or channels_type.find(CHANNELS_TYPE_MEM_ACC_P1N) != std::string::npos)
+            if(channels_type.find(CHANNELS_TYPE_MEM_ACC_NN) != std::string::npos or channels_type.find(CHANNELS_TYPE_MEM_ACC_P1N) != std::string::npos or channels_type.find(CHANNELS_TYPE_MEM_ACC_CS) != std::string::npos)
                return true;
             break;
          }

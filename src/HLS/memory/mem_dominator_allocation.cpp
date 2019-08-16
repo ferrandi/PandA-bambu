@@ -166,7 +166,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    }
    /// information about memory allocation to be shared across the functions
    memoryRef prevRmem = HLSMgr->Rmem;
-   HLSMgr->Rmem = memoryRef(memory::create_memory(parameters, TreeM, base_address, max_bram, null_pointer_check, initial_internal_address_p, initial_internal_address, HLSMgr->get_address_bitsize()));
+   HLSMgr->Rmem = memoryRef(memory::create_memory(parameters, TreeM, base_address, max_bram, null_pointer_check, initial_internal_address_p, initial_internal_address, HLSMgr->Rget_address_bitsize()));
    setup_memory_allocation();
 
    const CallGraphManagerConstRef CG = HLSMgr->CGetCallGraphManager();

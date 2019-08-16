@@ -113,7 +113,7 @@ memory::memory(const tree_managerRef _TreeM, unsigned int _off_base_address, uns
 
 memory::~memory() = default;
 
-memoryRef memory::create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM, unsigned int _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, const unsigned int _address_bitsize)
+memoryRef memory::create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM, unsigned int _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, const unsigned int & _address_bitsize)
 {
    if(_parameters->isOption(OPT_context_switch))
       return memoryRef(new memory_cs(_TreeM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p, initial_internal_address, _address_bitsize));
@@ -151,7 +151,9 @@ void memory::add_internal_variable(unsigned int funID_scope, unsigned int var)
 {
    memory_symbolRef m_sym;
    if(in_vars.find(var) != in_vars.end())
+   {
       m_sym = in_vars[var];
+   }
    else if(is_private_memory(var))
    {
       if(null_pointer_check)
@@ -160,7 +162,9 @@ void memory::add_internal_variable(unsigned int funID_scope, unsigned int var)
          m_sym = memory_symbolRef(new memory_symbol(var, internal_base_address_start, funID_scope));
       }
       else
+      {
          m_sym = memory_symbolRef(new memory_symbol(var, 0, funID_scope));
+      }
    }
    else
    {
@@ -411,11 +415,17 @@ unsigned int memory::get_base_address(unsigned int var, unsigned int funId) cons
 {
    THROW_ASSERT(has_base_address(var), "Variable not yet allocated: @" + STR(var));
    if(has_callSite_base_address(var))
+   {
       return get_callSite_base_address(var);
+   }
    if(has_internal_base_address(var))
+   {
       return get_internal_base_address(var);
+   }
    if(funId && has_parameter_base_address(var, funId))
+   {
       return get_parameter_base_address(var, funId);
+   }
    return get_external_base_address(var);
 }
 

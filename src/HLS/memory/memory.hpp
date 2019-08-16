@@ -215,7 +215,7 @@ class memory
     */
    virtual ~memory();
 
-   static memoryRef create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM, unsigned int _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, const unsigned int _address_bitsize);
+   static memoryRef create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM, unsigned int _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, const unsigned int & _address_bitsize);
 
    /**
     * Return variables allocated out of the top module
