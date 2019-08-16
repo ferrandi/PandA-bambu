@@ -64,13 +64,13 @@ class mem_dominator_allocation : public memory_allocation
    /**
     * Destructor
     */
-   virtual ~mem_dominator_allocation() override;
+   ~mem_dominator_allocation() override;
 
    /**
     * Execute the step
     * @return the exit status of this step
     */
-   DesignFlowStep_Status InternalExec();
+   DesignFlowStep_Status InternalExec() override;
 
    /**
     * Initialize the step (i.e., like a constructor, but executed just before exec
