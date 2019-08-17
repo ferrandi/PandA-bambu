@@ -663,7 +663,6 @@ void conn_binding::add_datapath_connection(const technology_managerRef TM, const
       {
          std::string library_name = TM->get_library(UUDATA_CONVERTER_STD);
          c_obj = SM->add_module_from_technology_library(name, UUDATA_CONVERTER_STD, library_name, circuit, TM);
-         std::cerr << "A000" << std::endl;
       }
       else if(!is_src_int && !is_src_real && is_tgt_int)
       {
