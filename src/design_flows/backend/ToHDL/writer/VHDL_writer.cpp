@@ -1372,10 +1372,10 @@ void VHDL_writer::write_module_parametrization_decl(const structural_objectRef& 
    auto* mod = GetPointer<module>(cir);
    bool first_it = true;
    /// writing memory-related parameters
-   if(mod->ExistsParameter(MEMORY_PARAMETER))
+   if(mod->ExistsParameter(MEMORY_PARAMETER) and mod->GetParameter(MEMORY_PARAMETER) != "")
    {
       indented_output_stream->Append("generic(\n");
-      std::string memory_str = mod->GetDefaultParameter(MEMORY_PARAMETER);
+      std::string memory_str = mod->GetParameter(MEMORY_PARAMETER);
       std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
       for(const auto& i : mem_tag)
       {
