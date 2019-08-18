@@ -398,7 +398,13 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef behavio
             test_v = curr_test_vector.find(param)->second;
 
          var_pp_functorRef var_functor = var_pp_functorRef(new std_var_pp_functor(behavioral_helper));
-         std::string temp_initialization = tree_helper::print_type(TM, tree_helper::get_pointed_type(TM, tree_helper::get_type_index(TM, p)), false, false, false, p, var_functor) + "_temp[] = " + test_v + ";\n";
+         std::string temp_variable = tree_helper::print_type(TM, tree_helper::get_pointed_type(TM, tree_helper::get_type_index(TM, p)), false, false, false, p, var_functor);
+         const auto first_square = temp_variable.find("[");
+         if(first_square == std::string::npos)
+            temp_variable = temp_variable + "_temp[]";
+         else
+            temp_variable.insert(first_square, "_temp[]");
+         std::string temp_initialization = temp_variable + " = " + test_v + ";\n";
 
          unsigned int base_type = tree_helper::get_type_index(TM, p);
          tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
