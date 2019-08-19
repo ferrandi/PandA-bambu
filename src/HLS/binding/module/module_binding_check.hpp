@@ -46,7 +46,17 @@
 #include "liveness.hpp"
 
 #include <boost/property_map/property_map.hpp>
+
+/// STD include
+#include <limits>
+
+/// STL includes
+#include <algorithm>
+#include <map>
+#include <set>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 class fu_binding;
 class module_register_binding_spec
@@ -197,33 +207,34 @@ struct module_binding_check : public check_clique<vertex_type>
       std::set<unsigned int> tree_index_set;
       std::unordered_map<std::pair<unsigned int, unsigned int>, unsigned int> tree_var_resource_relation;
       for(auto input_var : input_variables)
+      {
          for(auto vars : input_var.second)
+         {
             for(auto tree_var : vars)
             {
-               if(tree_index_set.find(tree_var) == tree_index_set.end())
+               tree_index_set.insert(tree_var);
+               tree_index_dsets.binding.make_set(tree_var);
+               if(HLS->Rliv->has_op_where_defined(tree_var))
                {
-                  tree_index_set.insert(tree_var);
-                  tree_index_dsets.binding.make_set(tree_var);
-                  if(HLS->Rliv->has_op_where_defined(tree_var))
+                  vertex def_op = HLS->Rliv->get_op_where_defined(tree_var);
+                  if(HLS->Rfu->is_assigned(def_op))
                   {
-                     vertex def_op = HLS->Rliv->get_op_where_defined(tree_var);
-                     if(HLS->Rfu->is_assigned(def_op))
+                     unsigned int fu_name = HLS->Rfu->get_assign(def_op);
+                     unsigned int fu_index = HLS->Rfu->get_index(def_op);
+                     if(fu_index != INFINITE_UINT)
                      {
-                        unsigned int fu_name = HLS->Rfu->get_assign(def_op);
-                        unsigned int fu_index = HLS->Rfu->get_index(def_op);
-                        if(fu_index != INFINITE_UINT)
+                        if(tree_var_resource_relation.find(std::make_pair(fu_name, fu_index)) != tree_var_resource_relation.end())
                         {
-                           if(tree_var_resource_relation.find(std::make_pair(fu_name, fu_index)) != tree_var_resource_relation.end())
-                           {
-                              tree_index_dsets.binding.union_set(tree_var, tree_var_resource_relation.find(std::make_pair(fu_name, fu_index))->second);
-                           }
-                           else
-                              tree_var_resource_relation[std::make_pair(fu_name, fu_index)] = tree_var;
+                           tree_index_dsets.binding.union_set(tree_var, tree_var_resource_relation.find(std::make_pair(fu_name, fu_index))->second);
                         }
+                        else
+                           tree_var_resource_relation[std::make_pair(fu_name, fu_index)] = tree_var;
                      }
                   }
                }
             }
+         }
+      }
    }
 
    double cost(size_t clique_count) override
@@ -371,7 +382,7 @@ struct module_binding_check_no_filter : public module_binding_check<vertex_type>
    }
 
  protected:
-   double getOpSlack(vertex&) const
+   double getOpSlack(vertex&) const override
    {
       return std::numeric_limits<unsigned int>::max();
    }

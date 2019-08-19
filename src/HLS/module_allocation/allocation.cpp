@@ -35,9 +35,6 @@
  * @brief Wrapper for technology used by the high-level synthesis flow.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
@@ -1173,8 +1170,8 @@ DesignFlowStep_Status allocation::InternalExec()
       skip_flopoco_resources = true;
       skip_softfloat_resources = false;
    }
-   std::unordered_map<std::string, unsigned int>& tech_vec = HLS_C->tech_constraints;
-   const std::unordered_map<std::string, std::pair<std::string, std::pair<std::string, unsigned int>>>& binding_constraints = HLS_C->binding_constraints;
+   auto tech_vec = HLS_C->tech_constraints;
+   auto binding_constraints = HLS_C->binding_constraints;
    std::unordered_map<std::string, std::map<unsigned int, unsigned int>> fu_name_to_id;
    std::set<vertex> vertex_analysed;
    OpVertexSet support_ops(function_behavior->CGetOpGraph(FunctionBehavior::CFG));
@@ -1600,11 +1597,7 @@ DesignFlowStep_Status allocation::InternalExec()
             continue;
          }
 
-         std::unordered_map<std::string, unsigned int>::const_iterator tech_constrain_it;
-         if(GetPointer<functional_unit>(current_fu)->fu_template_name != "")
-            tech_constrain_it = tech_vec.find(ENCODE_FU_LIB(GetPointer<functional_unit>(current_fu)->fu_template_name, lib_name));
-         else
-            tech_constrain_it = tech_vec.find(ENCODE_FU_LIB(current_fu->get_name(), lib_name));
+         const auto tech_constrain_it = GetPointer<functional_unit>(current_fu)->fu_template_name != "" ? tech_vec.find(ENCODE_FU_LIB(GetPointer<functional_unit>(current_fu)->fu_template_name, lib_name)) : tech_vec.find(ENCODE_FU_LIB(current_fu->get_name(), lib_name));
 
          if(tech_constrain_it != tech_vec.end() && tech_constrain_it->second == 0)
          {
