@@ -74,6 +74,14 @@
 /// intermediate_representation/aadl_asn include
 #include "aadl_information.hpp"
 
+/// STD include
+#include <string>
+
+/// STL includes
+#include <tuple>
+#include <unordered_set>
+#include <utility>
+
 /// technology include
 #include "technology_manager.hpp"
 
@@ -578,6 +586,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
 
    taste_interface_circuit->AddParameter("paddr", "0");
    taste_interface_circuit->AddParameter("pindex", "0");
+   SM_taste_interface->add_NP_functionality(SM_taste_interface->get_circ(), NP_functionality::LIBRARY, function_name + "_taste_interface paddr pindex");
 
    SM_taste_interface->INIT(true);
 
