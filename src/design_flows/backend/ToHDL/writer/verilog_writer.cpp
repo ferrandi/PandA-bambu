@@ -1125,32 +1125,32 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
       /// check if we can skip this state
       bool skip_state = !single_proc && output_index != mod->get_out_port_size() && default_output[output_index] == current_output[output_index];
       bool skip_state_transition = !single_proc && output_index != mod->get_out_port_size();
-      bool do_first_assign = single_proc;
-
-      for(auto current_transition : state_transitions)
+      if(!single_proc && output_index != mod->get_out_port_size())
       {
-         tokenizer transition_tokens(current_transition, sep);
-         tokenizer::const_iterator itt = transition_tokens.begin();
+         for(auto current_transition : state_transitions)
+         {
+            tokenizer transition_tokens(current_transition, sep);
+            tokenizer::const_iterator itt = transition_tokens.begin();
 
-         // std::string current_input;
-         tokenizer::const_iterator current_input_it;
-         std::string input_string = *itt;
-         if(mod->get_in_port_size() - 3) // clock and reset are always present
-         {
-            boost::char_separator<char> comma_sep(",", nullptr);
-            tokenizer current_input_tokens(input_string, comma_sep);
-            current_input_it = current_input_tokens.begin();
+            // std::string current_input;
+            tokenizer::const_iterator current_input_it;
+            std::string input_string = *itt;
+            if(mod->get_in_port_size() - 3) // clock and reset are always present
+            {
+               boost::char_separator<char> comma_sep(",", nullptr);
+               tokenizer current_input_tokens(input_string, comma_sep);
+               current_input_it = current_input_tokens.begin();
+               ++itt;
+            }
             ++itt;
-         }
-         ++itt;
-         std::string transition_outputs = *itt;
-         ++itt;
-         THROW_ASSERT(itt == transition_tokens.end(), "Bad transition format");
-         if(transition_outputs[output_index] != '-')
-         {
-            skip_state = false;
-            skip_state_transition = false;
-            do_first_assign = false;
+            std::string transition_outputs = *itt;
+            ++itt;
+            THROW_ASSERT(itt == transition_tokens.end(), "Bad transition format");
+            if(transition_outputs[output_index] != '-')
+            {
+               skip_state = false;
+               skip_state_transition = false;
+            }
          }
       }
       if(skip_state)
@@ -1168,7 +1168,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
       indented_output_stream->Append(soc);
 
       bool unique_transition = (state_transitions.size() == 1);
-      if(current_output != default_output && (do_first_assign || !unique_transition || skip_state_transition))
+      if(current_output != default_output && (single_proc || !unique_transition || skip_state_transition))
       {
          for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
          {
