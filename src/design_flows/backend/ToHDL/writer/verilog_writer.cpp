@@ -219,7 +219,7 @@ std::string verilog_writer::type_converter_size(const structural_objectRef& cir)
          else
          {
             return "";
-         }
+      }
          break;
       }
       case structural_type_descriptor::USER:
@@ -1071,10 +1071,10 @@ void verilog_writer::write_state_declaration(const structural_objectRef& cir, co
    }
    else
    {
-      if(one_hot)
-         indented_output_stream->Append("reg [" + boost::lexical_cast<std::string>(max_value) + ":0] _present_state, _next_state;\n");
-      else
-         indented_output_stream->Append("reg [" + boost::lexical_cast<std::string>(bitsnumber - 1) + ":0] _present_state, _next_state;\n");
+   if(one_hot)
+      indented_output_stream->Append("reg [" + boost::lexical_cast<std::string>(max_value) + ":0] _present_state, _next_state;\n");
+   else
+      indented_output_stream->Append("reg [" + boost::lexical_cast<std::string>(bitsnumber - 1) + ":0] _present_state, _next_state;\n");
    }
    THROW_ASSERT(mod, "Expected a component object");
    THROW_ASSERT(mod->get_out_port_size(), "Expected a FSM with at least one output");
@@ -1109,7 +1109,7 @@ void verilog_writer::write_present_state_update(const structural_objectRef cir, 
    const NP_functionalityRef& np = mod->get_NP_functionality();
    if(np->exist_NP_functionality(NP_functionality::FSM_CS)) // fsm of context_switch
    {
-      if(!parameters->getOption<bool>(OPT_level_reset))
+   if(!parameters->getOption<bool>(OPT_level_reset))
          indented_output_stream->Append("if (" + reset_port + " == 1'b0) _present_state[" + STR(SELECTOR_REGISTER_FILE) + "] <= " + reset_state + ";\n");
       else
          indented_output_stream->Append("if (" + reset_port + " == 1'b1) _present_state[" + STR(SELECTOR_REGISTER_FILE) + "] <= " + reset_state + ";\n");
@@ -1118,10 +1118,10 @@ void verilog_writer::write_present_state_update(const structural_objectRef cir, 
    else
    {
       if(!parameters->getOption<bool>(OPT_level_reset))
-         indented_output_stream->Append("if (" + reset_port + " == 1'b0) _present_state <= " + reset_state + ";\n");
-      else
-         indented_output_stream->Append("if (" + reset_port + " == 1'b1) _present_state <= " + reset_state + ";\n");
-      indented_output_stream->Append("else _present_state <= _next_state;\n");
+      indented_output_stream->Append("if (" + reset_port + " == 1'b0) _present_state <= " + reset_state + ";\n");
+   else
+      indented_output_stream->Append("if (" + reset_port + " == 1'b1) _present_state <= " + reset_state + ";\n");
+   indented_output_stream->Append("else _present_state <= _next_state;\n");
    }
    indented_output_stream->Deindent();
    if(connect_present_next_state_signals)
@@ -1151,14 +1151,14 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
       numInputIgnored = 4; // added selector
    else
       numInputIgnored = 3;
-      /// state transitions description
+   /// state transitions description
 #ifdef VERILOG_2001_SUPPORTED
    indented_output_stream->Append("\nalways @(*)\nbegin");
 #else
    if(np->exist_NP_functionality(NP_functionality::FSM_CS)) // fsm of context_switch
       indented_output_stream->Append("\nalways @(_present_state[" + STR(SELECTOR_REGISTER_FILE) + "]");
    else
-      indented_output_stream->Append("\nalways @(_present_state");
+   indented_output_stream->Append("\nalways @(_present_state");
    if(mod->get_in_port_size())
    {
       for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
@@ -1190,7 +1190,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
    if(np->exist_NP_functionality(NP_functionality::FSM_CS)) // fsm of context_switch
       indented_output_stream->Append("case (_present_state[" + STR(SELECTOR_REGISTER_FILE) + "])");
    else
-      indented_output_stream->Append("case (_present_state)");
+   indented_output_stream->Append("case (_present_state)");
    indented_output_stream->Append(soc);
 
    for(auto first_it = first; first_it != end; ++first_it)
@@ -1215,10 +1215,12 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
       ++it;
       std::string current_output = *it;
 
-      if(!single_proc && output_index != mod->get_out_port_size() && (default_output[output_index] == current_output[output_index]))
+      bool skip_state_transition = false;
+      if(!single_proc && output_index != mod->get_out_port_size())
       {
          /// check if we can skip this state
-         bool skip_state = true;
+         bool skip_state = default_output[output_index] == current_output[output_index];
+         skip_state_transition = true;
          for(auto current_transition : state_transitions)
          {
             tokenizer transition_tokens(current_transition, sep);
@@ -1238,7 +1240,10 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
             ++itt;
             THROW_ASSERT(itt == transition_tokens.end(), "Bad transition format");
             if(transition_outputs[output_index] != '-')
+            {
                skip_state = false;
+               skip_state_transition = false;
+            }
          }
          if(skip_state)
             continue;
@@ -1250,9 +1255,12 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
       {
          indented_output_stream->Append("if(" + start_port + " == 1'b1)\n");
       }
+
       indented_output_stream->Append("begin");
       indented_output_stream->Append(soc);
-      if(current_output != default_output)
+
+      bool unique_transition = (state_transitions.size() == 1);
+      if(current_output != default_output && (!unique_transition || skip_state_transition))
       {
          for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
          {
@@ -1283,8 +1291,8 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
          }
       }
 
-      bool unique_transition = (state_transitions.size() == 1);
-
+      if(!skip_state_transition)
+      {
       for(unsigned int i = 0; i < state_transitions.size(); i++)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing transition " + state_transitions[i]);
@@ -1357,13 +1365,8 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                            res_or_conditions += port_name;
                            if((*in_or_conditions_tokens_it)[0] == '&')
                            {
-                              unsigned n_bits = vec_size == 0 ? port_size : vec_size;
-                              res_or_conditions += std::string(" == ") + STR(n_bits) + "'b";
                               auto pos = boost::lexical_cast<unsigned int>((*in_or_conditions_tokens_it).substr(1));
-                              std::string one_hot_tag;
-                              for(unsigned ih = 0; ih < n_bits; ++ih)
-                                 one_hot_tag = (ih == pos ? std::string("1") : std::string("0")) + one_hot_tag;
-                              res_or_conditions += one_hot_tag;
+                                 res_or_conditions += std::string("[") + STR(pos) + "] == 1'b1";
                            }
                            else
                            {
@@ -1414,21 +1417,29 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
             indented_output_stream->Append(scc);
          }
       }
+      }
+
       indented_output_stream->Append(scc1);
       indented_output_stream->Append("end");
-      if(reset_state == present_state && (single_proc || output_index == mod->get_out_port_size()))
+
+      if(reset_state == present_state)
       {
          indented_output_stream->Append("\nelse");
          indented_output_stream->Append("\nbegin");
          indented_output_stream->Append(soc);
+
          for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
          {
             if(boost::starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") || boost::starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
             {
                 port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
-                indented_output_stream->Append(port_name + " = 1'bX;\n");
+               if(single_proc || output_index == i)
+                  indented_output_stream->Append(port_name + " = 1'bX;");
+               if(single_proc)
+                  indented_output_stream->Append("\n");
             }
          }
+         if(single_proc || output_index == mod->get_out_port_size())
          indented_output_stream->Append("_next_state = " + present_state + ";");
          indented_output_stream->Append(scc);
          indented_output_stream->Append("end");
@@ -1438,12 +1449,10 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
 
    indented_output_stream->Append(soc1);
    indented_output_stream->Append("default :\n");
+   indented_output_stream->Append("begin");
    if(single_proc)
    {
-      indented_output_stream->Append("begin");
       indented_output_stream->Append(soc);
-   }
-   if(single_proc || output_index == mod->get_out_port_size())
       indented_output_stream->Append("_next_state = " + reset_state + ";\n");
    for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
    {
@@ -1452,17 +1461,16 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
       if(mod->get_out_port(i)->get_id() == NEXT_STATE_PORT_NAME)
          continue;
       port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
-      if(!single_proc && output_index == i)
-         indented_output_stream->Append(port_name + " = 1'b0;\n");
-      else if(single_proc)
          indented_output_stream->Append(port_name + " = 1'bX;\n");
    }
    indented_output_stream->Append(scc1);
-   if(single_proc)
+   }
+   else
    {
+      indented_output_stream->Append("\n");
+   }
       indented_output_stream->Append("end");
       indented_output_stream->Append(scc);
-   }
    indented_output_stream->Append(scc1);
    indented_output_stream->Append("endcase\n");
    indented_output_stream->Append(scc1);
