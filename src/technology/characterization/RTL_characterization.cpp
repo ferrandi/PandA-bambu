@@ -61,6 +61,13 @@
 /// HLS/module_allocation include
 #include "allocation_information.hpp"
 
+/// STD include
+#include <string>
+
+/// STL includes
+#include <algorithm>
+#include <list>
+
 /// technology include
 #include "parse_technology.hpp"
 
@@ -808,29 +815,26 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
       }
       if(NPF)
       {
-         std::vector<std::string> param;
-         NPF->get_library_parameters(param);
-         std::vector<std::string>::const_iterator it_end = param.end();
-         for(std::vector<std::string>::const_iterator it = param.begin(); it != it_end; ++it)
-            if(*it == "PRECISION")
+         std::vector<std::string> params;
+         NPF->get_library_parameters(params);
+         for(const auto param : params)
+         {
+            if(param == "PRECISION")
             {
                unsigned int precision_bitsize = prec;
                precision_bitsize = std::max(8u, precision_bitsize);
                spec_module->SetParameter("PRECISION", boost::lexical_cast<std::string>(precision_bitsize));
             }
-            else if(*it == "ALIGNED_BITSIZE")
+            else if(param == "ALIGNED_BITSIZE")
+            {
                spec_module->SetParameter("ALIGNED_BITSIZE", boost::lexical_cast<std::string>(ALIGNED_BITSIZE));
-            else if(*it == "LSB_PARAMETER")
+            }
+            else if(param == "LSB_PARAMETER")
+            {
                spec_module->SetParameter("LSB_PARAMETER", boost::lexical_cast<std::string>(0));
-      }
-      if(NPF)
-      {
-         std::vector<std::string> param;
-         NPF->get_library_parameters(param);
-         std::vector<std::string>::const_iterator it_end = param.end();
-         for(std::vector<std::string>::const_iterator it = param.begin(); it != it_end; ++it)
-            THROW_ASSERT(template_circuit->find_member(*it, port_o_K, template_circuit) || template_circuit->find_member(*it, port_vector_o_K, template_circuit) || spec_module->ExistsParameter(*it),
-                         "parameter not yet specialized: " + *it + " for module " + spec_module->get_typeRef()->get_name());
+            }
+            THROW_ASSERT(template_circuit->find_member(param, port_o_K, template_circuit) || template_circuit->find_member(param, port_vector_o_K, template_circuit) || spec_module->ExistsParameter(param), "parameter not yet specialized: " + param + " for module " + spec_module->get_typeRef()->get_name());
+         }
       }
 
       structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 1));
@@ -949,8 +953,8 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
       // get the wrapped circuit.
       HDL_managerRef HDL = HDL_managerRef(new HDL_manager(HLS_managerRef(), device, parameters));
       std::list<std::string> hdl_files, aux_files;
-      std::unordered_set<structural_objectRef> circuits;
-      circuits.insert(circuit);
+      std::list<structural_objectRef> circuits;
+      circuits.push_back(circuit);
       HDL->hdl_gen(fu_name, circuits, false, hdl_files, aux_files);
       int PipelineDepth = -1;
 #if HAVE_FLOPOCO

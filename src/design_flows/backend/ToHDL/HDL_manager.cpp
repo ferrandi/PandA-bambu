@@ -322,7 +322,7 @@ void HDL_manager::write_components(const std::string& filename, const std::list<
 #endif
 }
 
-void HDL_manager::hdl_gen(const std::string& filename, const std::unordered_set<structural_objectRef>& cirs, bool equation, std::list<std::string>& hdl_files, std::list<std::string>& aux_files)
+void HDL_manager::hdl_gen(const std::string& filename, const std::list<structural_objectRef>& cirs, bool equation, std::list<std::string>& hdl_files, std::list<std::string>& aux_files)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  compute the list of components for which a structural description exists");
    /// compute the list of components for which a structural description exist.

@@ -1151,6 +1151,7 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
          if(default_output[i] != current_output[i])
          {
             if(single_proc || output_index == i)
+            {
                switch (current_output[i])
                {
                   case '1':
@@ -1165,6 +1166,7 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
                      THROW_ERROR("Unsupported value in current output");
                      break;
                }
+            }
          }
       }
 
