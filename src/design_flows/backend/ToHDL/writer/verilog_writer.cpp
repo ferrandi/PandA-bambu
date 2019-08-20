@@ -1273,8 +1273,9 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                               res_or_conditions += port_name;
                               if((*in_or_conditions_tokens_it)[0] == '&')
                               {
+                                 unsigned n_bits = vec_size == 0 ? port_size : vec_size;
                                  auto pos = boost::lexical_cast<unsigned int>((*in_or_conditions_tokens_it).substr(1));
-                                 res_or_conditions += std::string("[") + STR(pos) + "] == 1'b1";
+                                 res_or_conditions += (n_bits>1 ? std::string("[") + STR(pos) + "]":"") + " == 1'b1";
                               }
                               else
                               {
