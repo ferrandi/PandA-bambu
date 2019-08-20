@@ -58,6 +58,7 @@
 #pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
 #pragma GCC diagnostic ignored "-Wsign-promo"
+#pragma GCC diagnostic ignored "-Wdeprecated-copy"
 
 #pragma region needed by mockturtle/algorithms/satlut_mapping.hpp
 #define LIN64
