@@ -43,6 +43,9 @@
 /// Superclass include
 #include "c_initialization_parser_functor.hpp"
 
+/// STD include
+#include <string>
+
 /// utility include
 #include "refcount.hpp"
 
@@ -83,27 +86,27 @@ class ComputeReservedMemory : public CInitializationParserFunctor
    /**
     * Check that all the necessary information was present in the initialization string
     */
-   void CheckEnd();
+   void CheckEnd() override;
 
    /**
     * Start the initialization of a new aggregated data structure
     */
-   void GoDown();
+   void GoDown() override;
 
    /**
     * Consume an element of an aggregated data structure
     */
-   void GoNext();
+   void GoNext() override;
 
    /**
     * Ends the initialization of the current aggregated  data structure
     */
-   void GoUp();
+   void GoUp() override;
 
    /**
     * Process an element
     * @param content is the string assocated with the string
     */
-   void Process(const std::string& content);
+   void Process(const std::string& content) override;
 };
 #endif

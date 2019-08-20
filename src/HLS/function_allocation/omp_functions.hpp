@@ -92,7 +92,7 @@ class OmpFunctions : public functions
     * Constructor
     * @param HLSMgr is the HLS manager
     */
-   OmpFunctions(const HLS_managerConstRef HLSMgr);
+   explicit OmpFunctions(const HLS_managerConstRef HLSMgr);
 
    /**
     * Friend definition of the << operator.

@@ -40,6 +40,10 @@
 #ifndef C_INITIALIZATION_PARSER_FUNCTOR_HPP
 #define C_INITIALIZATION_PARSER_FUNCTOR_HPP
 
+/// STD include
+#include <string>
+
+/// utility include
 #include "refcount.hpp"
 
 /**
