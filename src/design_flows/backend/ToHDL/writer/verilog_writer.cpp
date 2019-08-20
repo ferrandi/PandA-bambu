@@ -1220,30 +1220,30 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
       bool skip_state_transition = !single_proc && output_index != mod->get_out_port_size();
       if(!single_proc && output_index != mod->get_out_port_size())
       {
-      for(auto current_transition : state_transitions)
-      {
-         tokenizer transition_tokens(current_transition, sep);
-         tokenizer::const_iterator itt = transition_tokens.begin();
+         for(auto current_transition : state_transitions)
+         {
+            tokenizer transition_tokens(current_transition, sep);
+            tokenizer::const_iterator itt = transition_tokens.begin();
 
-         tokenizer::const_iterator current_input_it;
-         std::string input_string = *itt;
+            tokenizer::const_iterator current_input_it;
+            std::string input_string = *itt;
             if(mod->get_in_port_size() - numInputIgnored) // clock and reset are always present
-         {
-            boost::char_separator<char> comma_sep(",", nullptr);
-            tokenizer current_input_tokens(input_string, comma_sep);
-            current_input_it = current_input_tokens.begin();
+            {
+               boost::char_separator<char> comma_sep(",", nullptr);
+               tokenizer current_input_tokens(input_string, comma_sep);
+               current_input_it = current_input_tokens.begin();
+               ++itt;
+            }
             ++itt;
+            std::string transition_outputs = *itt;
+            ++itt;
+            THROW_ASSERT(itt == transition_tokens.end(), "Bad transition format");
+            if(transition_outputs[output_index] != '-')
+            {
+               skip_state = false;
+               skip_state_transition = false;
+            }
          }
-         ++itt;
-         std::string transition_outputs = *itt;
-         ++itt;
-         THROW_ASSERT(itt == transition_tokens.end(), "Bad transition format");
-         if(transition_outputs[output_index] != '-')
-         {
-            skip_state = false;
-            skip_state_transition = false;
-         }
-      }
       }
       if(skip_state)
          continue;
@@ -1364,8 +1364,9 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                            res_or_conditions += port_name;
                            if((*in_or_conditions_tokens_it)[0] == '&')
                            {
+                                 unsigned n_bits = vec_size == 0 ? port_size : vec_size;
                               auto pos = boost::lexical_cast<unsigned int>((*in_or_conditions_tokens_it).substr(1));
-                                 res_or_conditions += std::string("[") + STR(pos) + "] == 1'b1";
+                                 res_or_conditions += (n_bits>1 ? std::string("[") + STR(pos) + "]":"") + " == 1'b1";
                            }
                            else
                            {
