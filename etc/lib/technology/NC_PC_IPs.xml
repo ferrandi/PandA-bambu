@@ -3,13 +3,13 @@
   <library>
     <name>STD_PC</name>
     <cell>
-      <name>SIMPLEJOIN_FU</name>
-      <operation operation_name="SIMPLEJOIN_FU"/>
+      <name>FC_FU</name>
+      <operation operation_name="FC_FU"/>
       <circuit>
-        <component_o id="SIMPLEJOIN_FU">
-          <structural_type_descriptor id_type="SIMPLEJOIN_FU"/>
+        <component_o id="FC_FU">
+          <structural_type_descriptor id_type="FC_FU"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2012-2019 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2012-2017 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -20,6 +20,292 @@
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
             <connected_objects/>
           </port_o>
+          <port_o id="aop" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="done" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="eop" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="sop" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="op" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="FC_FU" VERILOG_PROVIDED="
+reg state 1INIT_ZERO_VALUE;
+wire op_wire;
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+  begin
+    state &lt;= 1&apos;b0;
+  end
+  else
+  begin
+    state &lt;= (~op_wire &amp; aop &amp; ~done)| (op_wire &amp; ~done); 
+  end
+end
+assign op = aop | state;
+assign op_wire = state;
+assign eop = !state;
+assign sop = done &amp; (state | aop);
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>SWITCH_CASE_FU</name>
+      <operation operation_name="SWITCH_CASE_FU"/>
+      <circuit>
+        <component_o id="SWITCH_CASE_FU">
+          <structural_type_descriptor id_type="SWITCH_CASE_FU"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2012-2017 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <port_o id="sop" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="case_var" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="case_value" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="t" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="f" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="SWITCH_CASE_FU case_var case_value" VERILOG_PROVIDED="
+wire temp = (case_var == case_value);    //True
+assign t = sop &amp; temp;    //True:right case
+assign f = sop &amp; (~temp); //False: wrong case"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>COND_FU</name>
+      <operation operation_name="COND_FU"/>
+      <circuit>
+        <component_o id="COND_FU">
+          <structural_type_descriptor id_type="COND_FU"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2012-2017 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <port_o id="sop" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="cond" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="t" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="f" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="COND_FU" VERILOG_PROVIDED="
+assign t = sop &amp; cond;    //True
+assign f = sop &amp; (~cond); //False"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>PT_FU</name>
+      <operation operation_name="PT_FU"/>
+      <circuit>
+        <component_o id="PT_FU">
+          <structural_type_descriptor id_type="PT_FU"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2012-2017 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <port_o id="ENABLE" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_vector_o id="rops" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+          </port_vector_o>
+          <port_vector_o id="ops" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="PT_FU ops rops" VERILOG_PROVIDED="
+function [PORTSIZE_rops-1:0] Priorities;
+input [PORTSIZE_rops-1:0] rops_param;
+input ENABLE_param;
+reg negated_signals;
+integer i;
+begin
+   negated_signals = 1&apos;b1;
+   Priorities[0] = rops_param[0] &amp; ENABLE_param;
+   for(i = 1; i &lt; PORTSIZE_rops; i = i + 1)
+   begin
+      negated_signals = (!rops_param[i-1]) &amp; negated_signals;
+      Priorities[i] = negated_signals &amp; rops_param[i] &amp; ENABLE_param;
+   end
+end
+endfunction
+assign ops = Priorities(rops, ENABLE);
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>PT_FU_MEM</name>
+      <operation operation_name="PT_FU_MEM"/>
+      <circuit>
+        <component_o id="PT_FU_MEM">
+          <structural_type_descriptor id_type="PT_FU_MEM"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2012-2017 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <port_o id="ENABLE" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_vector_o id="rops" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+          </port_vector_o>
+          <port_vector_o id="ops" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="PT_FU_MEM ops rops" VERILOG_PROVIDED="
+function [PORTSIZE_rops-1:0] Priorities;
+input [PORTSIZE_rops-1:0] rops_param;
+input ENABLE_param;
+reg negated_signals;
+integer i;
+begin
+  negated_signals = 1&apos;b1;
+   Priorities[0] = rops_param[0] &amp; ENABLE_param;
+   for(i = 1; i &lt; PORTSIZE_rops; i = i + 1)
+   begin      negated_signals = (!rops_param[i-1]) &amp; negated_signals;      Priorities[i] = negated_signals &amp; rops_param[i] &amp; ENABLE_param;
+   end
+end
+endfunction
+assign ops = Priorities(rops, ENABLE);
+"/>
+
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>PT_RR_FU</name>
+      <operation operation_name="PT_RR_FU"/>
+      <circuit>
+        <component_o id="PT_RR_FU">
+          <structural_type_descriptor id_type="PT_RR_FU"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2012-2017 Politecnico di Milano</copyright>
+          <authors>Vito Giovanni Castellana</authors>
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="ENABLE" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_vector_o id="rops" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+          </port_vector_o>
+          <port_vector_o id="ops" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="PT_RR_FU ops rops" IP_COMPONENT="PT_FU_MEM" VERILOG_PROVIDED="
+`ifndef _SIM_HAVE_CLOG2
+  function integer log2;
+     input integer value;
+     integer temp_value;
+    begin
+      temp_value = value-1;
+      for (log2=0; temp_value&gt;0; log2=log2+1)
+        temp_value = temp_value&gt;&gt;1;
+    end
+  endfunction
+`endif
+`ifdef _SIM_HAVE_CLOG2
+  parameter counter_bitsize =  PORTSIZE_rops == 1 ? 1 : $clog2(PORTSIZE_rops);
+`else
+  parameter counter_bitsize = PORTSIZE_rops == 1 ? 1 :log2(PORTSIZE_rops);
+`endif
+reg [counter_bitsize-1:0]    counter 1INIT_ZERO_VALUE;
+reg [counter_bitsize-1:0]   next_counter;
+always @ (posedge clock 1RESET_EDGE)
+  if (1RESET_VALUE)
+    counter &lt;= {counter_bitsize{1&apos;b0}};
+  else
+    counter &lt;= next_counter;
+always @ (*)
+  begin
+    if (counter+1 &lt; PORTSIZE_ops)
+      next_counter = counter + 1;
+    else
+      next_counter = {counter_bitsize{1&apos;b0}};
+end
+wire [PORTSIZE_rops - 1:0] rotated_rops;
+assign rotated_rops =  (rops &gt;&gt; counter) | (rops &lt;&lt; (PORTSIZE_rops - counter));
+wire [PORTSIZE_ops - 1:0] rotated_ops;
+assign ops = (rotated_ops &lt;&lt; counter) | (rotated_ops &gt;&gt; (PORTSIZE_ops - counter));
+PT_FU_MEM #(.BITSIZE_ops(BITSIZE_ops), .PORTSIZE_ops(PORTSIZE_ops), .BITSIZE_rops(BITSIZE_rops), .PORTSIZE_rops(PORTSIZE_rops)) pt (.ops(rotated_ops), .ENABLE(ENABLE), .rops(rotated_rops));"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>JOIN_FU</name>
+      <operation operation_name="JOIN_FU"/>
+      <circuit>
+        <component_o id="JOIN_FU">
+          <structural_type_descriptor id_type="JOIN_FU"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2012-2017 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="local_reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="loop_exit_reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
           <port_vector_o id="ops" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
           </port_vector_o>
@@ -27,7 +313,7 @@
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
             <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="SIMPLEJOIN_FU ops" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="JOIN_FU ops" VERILOG_PROVIDED="
 // synthesis attribute use_sync_reset of current is no;
 reg  [PORTSIZE_ops-1:0] current 1INIT_ZERO_VALUE;
 wire [PORTSIZE_ops-1:0] or_temp;
@@ -45,13 +331,14 @@ end
 endfunction
 function [PORTSIZE_ops-1:0] NEXT_CURR ;
 input sop_temp1;
+input local_reset1;
 input [PORTSIZE_ops-1 : 0] ops1;
 input [PORTSIZE_ops-1 : 0] current1;
 integer i;
 begin
    for(i = 0; i &lt; PORTSIZE_ops; i = i + 1)
    begin
-      NEXT_CURR[i] = ~sop_temp1 &amp; ((current1[i]) | ops1[i]);
+      NEXT_CURR[i] = ~sop_temp1 &amp; ((current1[i] &amp; ~local_reset1) | ops1[i]);
    end
 end
 endfunction
@@ -66,9 +353,400 @@ if(1RESET_VALUE)
   end
 else
   begin
-    current &lt;= NEXT_CURR(sop_temp,ops,current);
+    current &lt;= (({PORTSIZE_ops{~loop_exit_reset}})) &amp; NEXT_CURR(sop_temp,local_reset,ops,current);
   end
 end
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>MC_FU</name>
+      <operation operation_name="MC_FU"/>
+      <circuit>
+        <component_o id="MC_FU">
+          <structural_type_descriptor id_type="MC_FU"/>
+          <parameter name="EXECUTION_TIME">2</parameter>
+          <parameter name="BITSIZE">8</parameter>
+          <parameter name="INITIATION_TIME">1</parameter>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2012-2017 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="aop" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="eop" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="sop" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="op" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="MC_FU EXECUTION_TIME BITSIZE INITIATION_TIME" VERILOG_PROVIDED="
+reg  [BITSIZE-1:0] state 1INIT_ZERO_VALUE;
+initial state =  {BITSIZE{1&apos;b0}};
+assign op = aop | (state != {BITSIZE{1&apos;b0}} &amp;&amp; state &lt;= INITIATION_TIME);
+assign eop = state == {BITSIZE{1&apos;b0}} | state &gt; INITIATION_TIME;
+assign sop = state == EXECUTION_TIME;
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+  begin
+    state &lt;= {BITSIZE{1&apos;b0}};
+  end
+  else
+  begin
+    if(state=={BITSIZE{1&apos;b0}})
+    begin
+      if(aop)
+      begin
+        state &lt;= 1;
+      end
+      else state &lt;= {BITSIZE{1&apos;b0}};
+    end
+    else if(state == EXECUTION_TIME)
+    begin
+      state&lt;={BITSIZE{1&apos;b0}};
+    end
+    else state &lt;= state + 1;
+  end
+end
+
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>CE_BYPASS</name>
+      <operation operation_name="CE_BYPASS"/>
+      <circuit>
+        <component_o id="CE_BYPASS">
+          <structural_type_descriptor id_type="CE_BYPASS"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2012-2017 Politecnico di Milano</copyright>
+          <authors>Vito Giovanni Castellana &lt;vcastellana@elet.polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="sop" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="aop" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="rop" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="CE_BYPASS" VERILOG_PROVIDED="
+// synthesis attribute use_sync_reset of rop_reg is no;
+reg rop_reg 1INIT_ZERO_VALUE;
+wire rop_wire;
+wire rop;
+initial begin
+  rop_reg = 1&apos;b0;
+end
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+    rop_reg &lt;= 1&apos;b0;
+  else
+    rop_reg &lt;= (sop &amp; ~aop) | (rop_wire &amp; ~aop);
+end
+assign rop_wire=rop_reg;
+assign rop = sop | rop_reg;"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>CE_VIRTUAL_FU</name>
+      <operation operation_name="CE_VIRTUAL_FU"/>
+      <circuit>
+        <component_o id="CE_VIRTUAL_FU">
+          <structural_type_descriptor id_type="CE_VIRTUAL_FU"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2012-2017 Politecnico di Milano</copyright>
+          <authors>Vito Giovanni Castellana &lt;vcastellana@elet.polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <port_o id="sop" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="aop" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="CE_VIRTUAL_FU" VERILOG_PROVIDED="assign aop = sop;"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>CE_FU</name>
+      <operation operation_name="CE_FU"/>
+      <circuit>
+        <component_o id="CE_FU" >
+          <structural_type_descriptor id_type="CE_FU"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2012-2017 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="sop" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="aop" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="rop" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="CE_FU" VERILOG_PROVIDED="
+// synthesis attribute use_sync_reset of rop_out is no;
+reg rop_out 1INIT_ZERO_VALUE;
+wire rop;
+always @(posedge clock 1RESET_EDGE)
+  if(1RESET_VALUE)
+    rop_out &lt;= 1&apos;b0;
+  else
+    rop_out &lt;=  sop | (~aop &amp; rop);
+assign rop=rop_out;
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>MUX</name>
+      <operation operation_name="MUX"/>
+      <circuit>
+        <component_o id="MUX">
+          <structural_type_descriptor id_type="MUX"/>
+          <parameter name="NUM_ch">2</parameter>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2015-2017 Politecnico di Milano</copyright>
+          <authors>Vito Giovanni Castellana</authors>
+          <license>PANDA_LGPLv3</license>
+          <port_o id="selector" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_vector_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_vector_o>
+          <port_o id="out1" dir="OUT">
+             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="MUX selector in1 out1 NUM_ch" VERILOG_PROVIDED="
+  wire[BITSIZE_in1-1:0] inputarray [0:NUM_ch-1];
+  genvar i;
+  generate
+  for (i=0; i &lt; NUM_ch; i=i+1)
+    begin : MUX_pack_block
+      assign inputarray[i] = in1[i*BITSIZE_in1 + BITSIZE_in1-1:i*BITSIZE_in1];
+   end
+  endgenerate
+  assign out1 = inputarray[selector];
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>ALLOW_MEM_ACCESS_FU</name>
+      <operation operation_name=""/>LLOW_MEM_ACCESS_FU
+      <circuit>
+        <component_o id="ALLOW_MEM_ACCESS_FU">
+          <structural_type_descriptor id_type="ALLOW_MEM_ACCESS_FU"/>
+          <parameter name="NUM_ch">2</parameter>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2015-2017 Politecnico di Milano</copyright>
+          <authors>Vito Giovanni Castellana</authors>
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
+          <port_vector_o id="access_allowed" dir="IN" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_vector_o>
+          <port_vector_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_vector_o>
+          <port_vector_o id="done" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_vector_o>
+          <port_vector_o id="memory_enabled" dir="OUT" is_global="1" is_extern="1">
+             <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_vector_o>
+          <port_vector_o id="op" dir="OUT">
+             <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="ALLOW_MEM_ACCESS_FU access_allowed start_port done memory_enabled op" VERILOG_PROVIDED="
+reg [PORTSIZE_access_allowed-1:0] state 1INIT_ZERO_VALUE;
+reg [PORTSIZE_start_port-1:0] start_port_reg 1INIT_ZERO_VALUE;
+wire [PORTSIZE_op-1:0]op_wire;
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+    begin
+       start_port_reg &lt;= {(PORTSIZE_start_port){1&apos;b0}};
+    end
+  else if(done == {(PORTSIZE_done){1&apos;b1}})
+   begin
+       start_port_reg &lt;= {(PORTSIZE_start_port){1&apos;b0}};
+    end
+  else if(start_port != {(PORTSIZE_start_port){1&apos;b0}})
+   begin
+       start_port_reg &lt;= start_port;
+   end
+end
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+   begin
+      state &lt;= {(PORTSIZE_op){1&apos;b0}};
+   end
+  else
+    begin
+      state &lt;= (~op_wire &amp; access_allowed &amp; (start_port | start_port_reg) &amp; ~done)| (op_wire &amp; ~done);
+  end
+end
+assign op = (access_allowed &amp; (start_port | start_port_reg)) | state;
+assign op_wire = state;
+assign memory_enabled = ~state;"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <template>
+      <name>EXPAND</name>
+      <operation operation_name="EXPAND"/>
+      <circuit>
+        <component_o id="EXPAND">
+          <structural_type_descriptor id_type="EXPAND"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2015-2017 Politecnico di Milano</copyright>
+          <authors>Vito Giovanni Castellana</authors>
+          <license>PANDA_LGPLv3</license>
+          <port_o id="selector" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_vector_o id="out1" dir="OUT">
+             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="EXPAND selector in1 out1" VERILOG_PROVIDED="
+  genvar i;
+  generate
+  for (i=0; i &lt; PORTSIZE_out1; i=i+1)
+  begin : expand_block
+    assign out1[i*BITSIZE_in1 + BITSIZE_in1 -1:i*BITSIZE_in1] = in1 &amp; {(BITSIZE_in1){(i==selector)}};
+  end
+  endgenerate
+"/>
+        </component_o>
+      </circuit>
+    </template>
+    <cell>
+      <name>MEMORY_ENABLED_AND</name>
+      <operation operation_name="MEMORY_ENABLED_AND"/>
+      <circuit>
+        <component_o id="MEMORY_ENABLED_AND">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2015-2017 Politecnico di Milano</copyright>
+          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="MEMORY_ENABLED_AND"/>
+          <port_vector_o id="in1" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_vector_o>
+          <port_vector_o id="in2" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_vector_o>
+          <port_vector_o id="memory_enabled" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="MEMORY_ENABLED in1 in2 memory_enabled" VERILOG_PROVIDED="assign memory_enabled = in1 &amp; in2;" VHDL_PROVIDED="begin
+memory_enabled &lt;= std_logic_vector(resize(unsigned(in1), PORTSIZE_memory_enabled*BITSIZE_memory_enabled)) and std_logic_vector(resize(unsigned(in2), PORTSIZE_memory_enabled*BITSIZE_memory_enabled));"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>MC_INDEX</name>
+      <operation operation_name="MC_INDEX"/>
+      <circuit>
+        <component_o id="MC_INDEX">
+          <structural_type_descriptor id_type="MC_INDEX"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2015-2017 Politecnico di Milano</copyright>
+          <authors>Vito Giovanni Castellana</authors>
+          <license>PANDA_LGPLv3</license>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="MC_INDEX in1 out1" VERILOG_PROVIDED="
+  genvar i;
+  generate
+  for(i=0; i &lt; BITSIZE_out1; i=i+1)
+  begin : MC_selection_block
+   assign out1[i] =  in1[i+2];
+  end
+  endgenerate
 "/>
         </component_o>
       </circuit>

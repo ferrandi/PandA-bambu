@@ -260,7 +260,7 @@ class Translator
     * @param results is the data to be written
     * @param file_name is the name of the file
     */
-   void write_to_csv(const std::unordered_map<std::string, std::list<std::pair<std::string, std::string>>>& results, const std::string& file_name) const;
+   void write_to_csv(const std::map<std::string, CustomMap<std::string, std::string>>& results, const std::string& file_name) const;
 
    /**
     * Write profiling analysis to pa

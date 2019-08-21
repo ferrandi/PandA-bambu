@@ -36,9 +36,6 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
@@ -179,6 +176,11 @@
 /// STD include
 #include <cstring>
 #include <iosfwd>
+#include <string>
+
+/// STL includes
+#include <list>
+#include <vector>
 
 /// Technology include
 #include "language_writer.hpp"
@@ -212,8 +214,8 @@
 #define OPT_AREA_WEIGHT (1 + OPT_ALIGNED_ACCESS_PARAMETER)
 #define OPT_BACKEND_SCRIPT_EXTENSIONS_PARAMETER (1 + OPT_AREA_WEIGHT)
 #define OPT_BACKEND_SDC_EXTENSIONS_PARAMETER (1 + OPT_BACKEND_SCRIPT_EXTENSIONS_PARAMETER)
-#define OPT_VHDL_LIBRARY_PARAMETER (1 + OPT_BACKEND_SDC_EXTENSIONS_PARAMETER)
-#define OPT_DISABLE_BITVALUE_IPA (1 + OPT_VHDL_LIBRARY_PARAMETER)
+#define OPT_INPUT_CONTEXT_SWITCH (1 + OPT_BACKEND_SDC_EXTENSIONS_PARAMETER)
+#define OPT_DISABLE_BITVALUE_IPA (1 + OPT_INPUT_CONTEXT_SWITCH)
 #define OPT_BRAM_HIGH_LATENCY (1 + OPT_DISABLE_BITVALUE_IPA)
 #define OPT_CHANNELS_NUMBER (1 + OPT_BRAM_HIGH_LATENCY)
 #define OPT_CHANNELS_TYPE (1 + OPT_CHANNELS_NUMBER)
@@ -310,7 +312,8 @@
 #define OPT_TOP_FNAME (1 + OPT_TIMING_VIOLATION)
 #define OPT_TOP_RTLDESIGN_NAME (1 + OPT_TOP_FNAME)
 #define OPT_UNALIGNED_ACCESS_PARAMETER (1 + OPT_TOP_RTLDESIGN_NAME)
-#define OPT_VISUALIZER (1 + OPT_UNALIGNED_ACCESS_PARAMETER)
+#define OPT_VHDL_LIBRARY_PARAMETER (1 + OPT_UNALIGNED_ACCESS_PARAMETER)
+#define OPT_VISUALIZER (1 + OPT_VHDL_LIBRARY_PARAMETER)
 #define OPT_XML_CONFIG (1 + OPT_VISUALIZER)
 
 /// constant correspond to the "parametric list based option"
@@ -557,8 +560,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                                 are allocated on an external memory\n"
       << "            EXT_PIPELINED_BRAM - all objects that need to be stored in memory\n"
       << "                                 are allocated on an external pipelined memory\n\n"
-      << "            INTERN_UNALIGNED   - all objects with an unaligned access are\n"
-      << "                                 clustered on a single STD_BRAM\n\n"
       << "   --base-address=address\n"
       << "        Define the starting address for objects allocated externally to the top\n"
       << "        module.\n\n"
@@ -583,10 +584,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "            D10 - 1 clock cycle extra-delay for LOAD, 0 for STORE\n"
       << "            D11 - 1 clock cycle extra-delay for LOAD, 1 for STORE\n"
       << "            D21 - 2 clock cycle extra-delay for LOAD, 1 for STORE\n\n"
-#if HAVE_EXPERIMENTAL
       << "    --memory-banks-number=<n>\n"
       << "        Define the number of memory banks.\n\n"
-#endif
       << "    --sparse-memory[=on/off]\n"
       << "        Control how the memory allocation happens.\n"
       << "            on - allocate the data in addresses which reduce the decoding logic (default)\n"
@@ -920,12 +919,10 @@ void BambuParameter::PrintHelp(std::ostream& os) const
 #if HAVE_EXPERIMENTAL || HAVE_ILP_BUILT
    os << "  Other options:\n\n";
 #endif
-#if HAVE_EXPERIMENTAL
    os << "    --pragma-parse\n"
       << "        Perform source code parsing to extract information about pragmas.\n"
       << "        (default=no).\n\n";
-#endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
    os << "    --num-threads\n"
       << "        Set the number of threads in parallel sections (default=4).\n\n";
 #endif
@@ -1197,9 +1194,7 @@ int BambuParameter::Exec()
 #endif
       {"dynamic-generators-dir", required_argument, nullptr, OPT_DYNAMIC_GENERATORS_DIR},
       {"pretty-print", required_argument, nullptr, OPT_PRETTY_PRINT},
-#if HAVE_EXPERIMENTAL
       {"pragma-parse", no_argument, nullptr, OPT_PRAGMA_PARSE},
-#endif
       {"generate-interface", required_argument, nullptr, 0},
       {"additional-top", required_argument, nullptr, OPT_ADDITIONAL_TOP},
       {"data-bus-bitsize", required_argument, nullptr, 0},
@@ -1222,19 +1217,17 @@ int BambuParameter::Exec()
       {"mem-delay-read", required_argument, nullptr, OPT_MEM_DELAY_READ},
       {"mem-delay-write", required_argument, nullptr, OPT_MEM_DELAY_WRITE},
       {"host-profiling", no_argument, nullptr, OPT_HOST_PROFILING},
-      {"disable-bitvalue-ipa", no_argument, nullptr, OPT_DISABLE_BITVALUE_IPA},
+      {"bitvalue-ipa", no_argument, nullptr, OPT_DISABLE_BITVALUE_IPA},
       {"discrepancy", no_argument, nullptr, OPT_DISCREPANCY},
       {"discrepancy-force-uninitialized", no_argument, nullptr, OPT_DISCREPANCY_FORCE},
-      {"discrepancy-hw", no_argument, nullptr, OPT_DISCREPANCY_HW},
       {"discrepancy-no-load-pointers", no_argument, nullptr, OPT_DISCREPANCY_NO_LOAD_POINTERS},
       {"discrepancy-only", required_argument, nullptr, OPT_DISCREPANCY_ONLY},
       {"discrepancy-permissive-ptrs", no_argument, nullptr, OPT_DISCREPANCY_PERMISSIVE_PTRS},
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       {"num-threads", required_argument, nullptr, OPT_NUM_THREADS},
+      {"context_switch", optional_argument, nullptr, OPT_INPUT_CONTEXT_SWITCH},
 #endif
-#if HAVE_EXPERIMENTAL
       {"memory-banks-number", required_argument, nullptr, OPT_MEMORY_BANKS_NUMBER},
-#endif
       {"C-no-parse", required_argument, nullptr, INPUT_OPT_C_NO_PARSE},
       {"C-python-no-parse", required_argument, nullptr, INPUT_OPT_C_PYTHON_NO_PARSE},
       {"accept-nonzero-return", no_argument, nullptr, OPT_ACCEPT_NONZERO_RETURN},
@@ -1501,20 +1494,28 @@ int BambuParameter::Exec()
          {
 #if HAVE_GLPK
             if(optarg[0] == 'G')
+            {
                setOption(OPT_ilp_solver, meilp_solver::GLPK);
+            }
             else
 #endif
 #if HAVE_COIN_OR
-                if(optarg[0] == 'C')
+            if(optarg[0] == 'C')
+            {
                setOption(OPT_ilp_solver, meilp_solver::COIN_OR);
+            }
             else
 #endif
 #if HAVE_LP_SOLVE
-                if(optarg[0] == 'L')
+            if(optarg[0] == 'L')
+            {
                setOption(OPT_ilp_solver, meilp_solver::LP_SOLVE);
+            }
             else
 #endif
+            {
                THROW_ERROR("BadParameters: not recognized ilp solver");
+            }
             break;
          }
          case OPT_ILP:
@@ -2091,13 +2092,11 @@ int BambuParameter::Exec()
             setOption(OPT_pretty_print, optarg);
             break;
          }
-#if HAVE_EXPERIMENTAL
          case OPT_PRAGMA_PARSE:
          {
             setOption(OPT_parse_pragma, true);
             break;
          }
-#endif
          case OPT_TESTBENCH:
          {
             setOption(OPT_generate_testbench, true);
@@ -2224,20 +2223,31 @@ int BambuParameter::Exec()
             setOption(OPT_discrepancy_permissive_ptrs, true);
             break;
          }
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
          case OPT_NUM_THREADS:
          {
             setOption(OPT_num_threads, std::string(optarg));
             break;
          }
+         case OPT_INPUT_CONTEXT_SWITCH:
+         {
+            if(optarg)
+            {
+               setOption(OPT_context_switch, std::string(optarg));
+               break;
+            }
+            else
+            {
+               setOption(OPT_context_switch, "4");
+               break;
+            }
+         }
 #endif
-#if HAVE_EXPERIMENTAL
          case OPT_MEMORY_BANKS_NUMBER:
          {
             setOption(OPT_memory_banks_number, std::string(optarg));
             break;
          }
-#endif
          case OPT_ACCEPT_NONZERO_RETURN:
          {
             setOption(OPT_no_return_zero, true);
@@ -2752,7 +2762,7 @@ void BambuParameter::CheckParameters()
    }
 
    /// controller options
-   if(getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR)
+   if(getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR || getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR)
       setOption(OPT_stg, true);
 
    /// chaining options
@@ -3057,11 +3067,41 @@ void BambuParameter::CheckParameters()
    if(isOption(OPT_hls_div) && getOption<std::string>(OPT_hls_div) != "none")
       add_bambu_library("hls-div" + getOption<std::string>(OPT_hls_div));
    add_bambu_library("hls-cdiv");
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
    if(getOption<bool>(OPT_parse_pragma))
    {
       setOption(OPT_disable_function_proxy, true);
-      setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION);
+      if(isOption(OPT_context_switch))
+      {
+         if(getOption<unsigned int>(OPT_channels_number) >= getOption<unsigned int>(OPT_memory_banks_number))
+            THROW_ERROR("This configuration doesn't support a number of channel equal or greater than the number of memory_bank");
+         if(getOption<std::string>(OPT_registered_inputs) != "auto")
+            THROW_ERROR("Registered inputs option cannot be set for context switch architecture");
+         unsigned int v = getOption<unsigned int>(OPT_channels_number); // we want to see if v is a power of 2
+         bool f;                                                        // the result goes here
+         f = v && !(v & (v - 1));
+         if(!f)
+            THROW_ERROR("Number of channel must be a power of 2");
+         v = getOption<unsigned int>(OPT_memory_banks_number); // we want to see if v is a power of 2
+         f = v && !(v & (v - 1));
+         if(!f)
+            THROW_ERROR("Number of bank must be a power of 2");
+         PRINT_MSG("Passed parameter OPT_context_switch, this means that the following step are already defined and cannot be changed (if passed by command line are ignored). Controller,Datapath, Channel Type, Interface generator and memory dominator\n");
+         setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS);
+         setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS);
+         setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_CS);
+         setOption(OPT_datapath_architecture, HLSFlowStep_Type::DATAPATH_CS_CREATOR);
+         setOption(OPT_controller_architecture, HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR);
+         setOption(OPT_interface_type, HLSFlowStep_Type::INTERFACE_CS_GENERATION);
+      }
+      else
+      {
+#if HAVE_EXPERIMENTAL
+         setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION);
+#else
+         THROW_UNREACHABLE("");
+#endif
+      }
       add_bambu_library("pthread");
    }
 #endif
@@ -3096,7 +3136,7 @@ void BambuParameter::CheckParameters()
    }
    if(isOption(OPT_memory_banks_number) && getOption<int>(OPT_memory_banks_number) > 1)
    {
-      setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_P1N);
+      setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_CS);
    }
    if(not isOption(OPT_channels_type))
    {
@@ -3709,9 +3749,7 @@ void BambuParameter::SetDefaults()
 #if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
    setOption(OPT_num_threads, 4);
 #endif
-#if HAVE_EXPERIMENTAL
    setOption(OPT_memory_banks_number, 1);
-#endif
    setOption(OPT_find_max_cfg_transformations, false);
 
    panda_parameters["CSE_size"] = "2";

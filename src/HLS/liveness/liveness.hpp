@@ -39,23 +39,28 @@
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Francesca Malcotti <francy_malco@virgilio.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
 #ifndef LIVENESS_HPP
 #define LIVENESS_HPP
 
-#include <map>
-#include <unordered_map>
-
 /// Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
+/// graph include
 #include "graph.hpp"
 
+/// STD include
+#include <string>
+
+/// STL includes
+#include <list>
+#include <map>
+#include <set>
+#include <unordered_map>
+
+/// utility include
 #include "refcount.hpp"
 
 /**

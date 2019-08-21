@@ -21,6 +21,7 @@ lib_hls_synthesis_la_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS/binding/module \
    -I$(top_srcdir)/src/HLS/binding/interconnection \
    -I$(top_srcdir)/src/HLS/chaining \
+   -I$(top_srcdir)/src/HLS/function_allocation \
    -I$(top_srcdir)/src/HLS/hls_flow \
    -I$(top_srcdir)/src/HLS/interface \
    -I$(top_srcdir)/src/HLS/liveness \
@@ -42,6 +43,11 @@ METASOURCES = AUTO
 
 noinst_HEADERS = standard_hls.hpp virtual_hls.hpp hls_synthesis_flow.hpp
 lib_hls_synthesis_la_SOURCES = standard_hls.cpp virtual_hls.cpp hls_synthesis_flow.cpp
+
+if BUILD_LIB_FROM_PRAGMA
+   noinst_HEADERS += omp_for_wrapper_cs_synthesis_flow.hpp omp_body_loop_synthesis_flow.hpp
+   lib_hls_synthesis_la_SOURCES += omp_for_wrapper_cs_synthesis_flow.cpp omp_body_loop_synthesis_flow.cpp
+endif
 
 #do not touch the following line
 

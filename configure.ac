@@ -3049,14 +3049,15 @@ if test "x$panda_WERROR" = xyes; then
    AX_CHECK_COMPILE_FLAG("-Wmissing-include-dirs", CXXFLAGS+=" -Wmissing-include-dirs ",,"-Werror") #it is not doing any real test
    AX_CHECK_COMPILE_FLAG("-Wlogical-op", CXXFLAGS+=" -Wlogical-op ",,"-Werror")
    AX_CHECK_COMPILE_FLAG("-Wunused-local-typedefs", CXXFLAGS+=" -Wunused-local-typedefs ",,"-Werror")
-   AX_CXXFLAGS_GCC_OPTION(-Wzero-as-null-pointer-constant,, CXXFLAGS+=" -Wzero-as-null-pointer-constant ",)
+   #Disabled as error because of BOOST_FOREACH
+   AX_CXXFLAGS_GCC_OPTION(-Wzero-as-null-pointer-constant,, CXXFLAGS+=" -Wzero-as-null-pointer-constant -Wno-error=zero-as-null-pointer-constant",)
 
    AC_COMPILE_WPEDANTIC
    if test "x$panda_WPEDANTIC" = xyes; then
       CXXFLAGS+=" -Wpedantic "
    fi
-   AX_CHECK_COMPILE_FLAG("-Wno-mismatched-tags", CXXFLAGS+=" -Wno-mismatched-tags ",,"-Werror")
-   AX_CHECK_COMPILE_FLAG("-Wno-overlength-strings", CXXFLAGS+=" -Wno-overlength-strings ",,"-Werror")
+   AX_CHECK_COMPILE_FLAG("-Wmismatched-tags", CXXFLAGS+=" -Wno-mismatched-tags ",,"-Werror")
+   AX_CHECK_COMPILE_FLAG("-Woverlength-strings", CXXFLAGS+=" -Wno-overlength-strings ",,"-Werror")
 else
    CXXFLAGS+=" -w "
 fi

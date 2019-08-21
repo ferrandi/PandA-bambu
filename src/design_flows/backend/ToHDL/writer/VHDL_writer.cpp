@@ -67,6 +67,9 @@
 /// HLS/stg include
 #include "state_transition_graph_manager.hpp"
 
+/// STL include
+#include <utility>
+
 /// technology/physical_library include
 #include "technology_node.hpp"
 
@@ -827,7 +830,7 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
          }
          else
          {
-            const auto parameter = mod->get_parameter(name);
+            const auto parameter = mod->GetParameter(name);
             const auto parameter_type = mod->get_parameter_type(TM, name);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter " + name + " has value " + parameter);
             switch(parameter_type)
@@ -855,19 +858,19 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
                   {
                      if(GetPointer<const module>(mod->get_owner()))
                      {
-                        if(mod->get_owner()->is_parameter(parameter))
+                        if(mod->get_owner()->ExistsParameter(parameter))
                         {
 #if HAVE_ASSERTS
                            const auto actual_parameter_type = GetPointer<const module>(mod->get_owner())->get_parameter_type(TM, parameter);
 #endif
                            THROW_ASSERT(actual_parameter_type == parameter_type, "");
                         }
-                        else if(mod->get_owner()->is_parameter(MEMORY_PARAMETER))
+                        else if(mod->get_owner()->ExistsParameter(MEMORY_PARAMETER))
                         {
 #if HAVE_ASSERTS
                            bool found = false;
 #endif
-                           std::string memory_str = mod->get_owner()->get_parameter(MEMORY_PARAMETER);
+                           std::string memory_str = mod->get_owner()->GetParameter(MEMORY_PARAMETER);
                            std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
                            for(const auto& i : mem_tag)
                            {
@@ -1010,7 +1013,7 @@ void VHDL_writer::write_state_declaration(const structural_objectRef&, const std
    }
 }
 
-void VHDL_writer::write_present_state_update(const std::string& reset_state, const std::string& reset_port, const std::string& clock_port, const std::string& reset_type, bool)
+void VHDL_writer::write_present_state_update(const structural_objectRef, const std::string& reset_state, const std::string& reset_port, const std::string& clock_port, const std::string& reset_type, bool)
 {
    write_comment("concurrent process#1: state registers\n");
    if(reset_type == "no" || reset_type == "sync")
@@ -1148,6 +1151,7 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
          if(default_output[i] != current_output[i])
          {
             if(single_proc || output_index == i)
+            {
                switch (current_output[i])
                {
                   case '1':
@@ -1162,6 +1166,7 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
                      THROW_ERROR("Unsupported value in current output");
                      break;
                }
+            }
          }
       }
 
@@ -1369,10 +1374,10 @@ void VHDL_writer::write_module_parametrization_decl(const structural_objectRef& 
    auto* mod = GetPointer<module>(cir);
    bool first_it = true;
    /// writing memory-related parameters
-   if(mod->is_parameter(MEMORY_PARAMETER))
+   if(mod->ExistsParameter(MEMORY_PARAMETER) and mod->GetParameter(MEMORY_PARAMETER) != "")
    {
       indented_output_stream->Append("generic(\n");
-      std::string memory_str = mod->get_parameter(MEMORY_PARAMETER);
+      std::string memory_str = mod->GetParameter(MEMORY_PARAMETER);
       std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
       for(const auto& i : mem_tag)
       {
@@ -1434,7 +1439,7 @@ void VHDL_writer::write_module_parametrization_decl(const structural_objectRef& 
          }
          else
          {
-            const auto parameter = mod->get_parameter(name);
+            const auto parameter = mod->GetDefaultParameter(name);
             const auto parameter_type = mod->get_parameter_type(TM, name);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter " + name + " has default value " + parameter);
             switch(parameter_type)

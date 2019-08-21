@@ -592,7 +592,7 @@ class tree_manipulation
     * @param max is the maximum value of the assigned ssa_var
     * @return the gimple assignment containing the nop expr as right part
     */
-   tree_nodeRef CreateNopExpr(const tree_nodeConstRef& operand, const tree_nodeConstRef& type, const tree_nodeConstRef &min, const tree_nodeConstRef &max) const;
+   tree_nodeRef CreateNopExpr(const tree_nodeConstRef& operand, const tree_nodeConstRef& type, const tree_nodeConstRef& min, const tree_nodeConstRef& max) const;
 
    /**
     * Create an unsigned integer type starting from signed type

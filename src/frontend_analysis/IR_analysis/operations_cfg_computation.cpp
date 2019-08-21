@@ -96,12 +96,10 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
          if(parameters->getOption<bool>(OPT_parse_pragma))
          {
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_OMP_ATOMIC, SAME_FUNCTION));
          }
-#endif
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
 #if HAVE_BAMBU_BUILT
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LUT_TRANSFORMATION, SAME_FUNCTION));
@@ -652,7 +650,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---set as TYPE_EXTERNAL operation");
             if(fun_name == "exit" || fun_name == "abort" || fun_name == "__builtin_exit" || fun_name == "__builtin_abort")
                ogc->add_type(actual_name, TYPE_LAST_OP);
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
             if(fd->omp_atomic)
                ogc->add_type(actual_name, TYPE_ATOMIC);
 #endif
@@ -704,7 +702,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
                ogc->add_type(actual_name, TYPE_EXTERNAL);
                if(fun_name == "exit" || fun_name == "abort" || fun_name == "__builtin_exit" || fun_name == "__builtin_abort")
                   ogc->add_type(actual_name, TYPE_LAST_OP);
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
                if(fd->omp_atomic)
                   ogc->add_type(actual_name, TYPE_ATOMIC);
 #endif

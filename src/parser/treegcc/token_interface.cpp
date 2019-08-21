@@ -38,9 +38,6 @@
  *
  * @author Fabrizio Ferrandi <ferrandi.elet.polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * @version $Revision$
- * @date $Date$
- * Last modified by $Author$
  *
  */
 /// Header include

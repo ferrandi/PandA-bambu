@@ -25,6 +25,7 @@
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -153,6 +154,7 @@ begin
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -281,6 +283,7 @@ begin
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -792,6 +795,7 @@ begin
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -921,6 +925,7 @@ ARRAY_1D_STD_BRAM_instance : ARRAY_1D_STD_BRAM_SDS_BUS_BASE generic map(BITSIZE_
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -1050,6 +1055,7 @@ ARRAY_1D_STD_BRAM_instance : ARRAY_1D_STD_BRAM_SDS_BUS_BASE generic map(BITSIZE_
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -1180,6 +1186,7 @@ ARRAY_1D_STD_BRAM_instance : ARRAY_1D_STD_BRAM_SDS_BUS_BASE generic map(BITSIZE_
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -1307,6 +1314,7 @@ ARRAY_1D_STD_BRAM_N1_instance : ARRAY_1D_STD_BRAM_N1_SP generic map (BITSIZE_in1
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -1434,6 +1442,7 @@ ARRAY_1D_STD_BRAM_N1_instance : ARRAY_1D_STD_BRAM_N1_SP generic map (BITSIZE_in1
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -1929,6 +1938,7 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_4 generic map (BITSIZE_
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -2051,6 +2061,7 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BUS generic map (BITSIZ
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -2173,6 +2184,7 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BUS_3 generic map (BITS
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -2296,6 +2308,7 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BUS_4 generic map (BITS
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -2424,6 +2437,7 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SP generic map (BITSIZE_in1
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -2552,6 +2566,7 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SP generic map (BITSIZE_in1
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -3061,6 +3076,7 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BASE generic map (BITSI
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -3186,6 +3202,7 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BUS_BASE generic map (B
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -3311,6 +3328,7 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BUS_BASE generic map (B
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>

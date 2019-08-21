@@ -44,13 +44,22 @@
 ///. include
 #include "Parameter.hpp"
 
-/// technology include
+/// STD include
+#include <string>
+
+/// STL include
+#include <unordered_set>
+
+/// technology includes
 #include "parse_technology.hpp"
+#include "technology_manager.hpp"
 
 /// technology/target_device include
+#include "target_device.hpp"
+
+/// utility includes
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
 #include "string_manipulation.hpp" // for GET_CLASS
-#include "target_device.hpp"
 
 LoadTechnology::LoadTechnology(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
     : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_TECHNOLOGY, _parameters)
@@ -101,4 +110,12 @@ const std::unordered_set<TechnologyFlowStep_Type> LoadTechnology::ComputeTechnol
 DesignFlowStep_Status LoadTechnology::Exec()
 {
    return DesignFlowStep_Status::EMPTY;
+}
+
+void LoadTechnology::PrintFinalIR() const
+{
+   const std::string file_name = parameters->getOption<std::string>(OPT_output_temporary_directory) + "after_" + GetName() + ".tm";
+   std::ofstream raw_file(file_name.c_str());
+   TM->print(raw_file);
+   raw_file.close();
 }

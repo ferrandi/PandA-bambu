@@ -74,9 +74,7 @@
 
 /// HLS/binding/module include
 #include "fu_binding.hpp"
-#if HAVE_EXPERIMENTAL
 #include "parallel_memory_fu_binding.hpp"
-#endif
 
 /// HLS/binding/module include
 #include "module_binding_check.hpp"
@@ -112,10 +110,20 @@
 /// HLS/stg include
 #include "state_transition_graph_manager.hpp"
 
-/// STD include
+/// STD includes
 #include <cmath>
 #include <iosfwd>
+#include <limits>
 #include <string>
+
+/// STL includes
+#include <algorithm>
+#include <deque>
+#include <list>
+#include <map>
+#include <set>
+#include <utility>
+#include <vector>
 
 /// technology include
 #include "technology_manager.hpp"
@@ -258,11 +266,11 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation& co
       for(unsigned int port_index = 0; port_index < n_ports; ++port_index)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering port " + STR(port_index));
-         std::set<std::pair<conn_code, std::pair<unsigned int, vertex>>>& con_rel_per_vertex_per_port_index = con_rel[current_v][port_index];
          unsigned int tree_var = std::get<0>(vars_read[port_index]);
          if(tree_var != 0)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(TreeM->CGetTreeNode(tree_var)));
+            std::set<std::pair<conn_code, std::pair<unsigned int, vertex>>>& con_rel_per_vertex_per_port_index = con_rel[current_v][port_index];
             const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(current_v);
             const std::set<vertex>::const_iterator rs_it_end = running_states.end();
             for(auto rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
@@ -476,9 +484,10 @@ void estimate_muxes(const connection_relation& con_rel, unsigned int mux_prec, d
          total_muxes += current_muxs - 1;
       }
       if(do_estimation)
+      {
          tot_mux_area += HLS->allocation_information->estimate_muxNto1_area(mux_prec, current_muxs);
-      if(do_estimation)
          tot_mux_delay = std::max(tot_mux_delay, HLS->allocation_information->estimate_muxNto1_delay(mux_prec, current_muxs));
+      }
    }
    if(IS_DEBUGGING)
    {
@@ -1202,7 +1211,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          }
       }
 #if 0
-      for(tie(ei,ei_end) = boost::edges(*fsdg); ei != ei_end; ++ei)
+      for(tie(ei, ei_end) = boost::edges(*fsdg); ei != ei_end; ++ei)
       {
          vertex src = boost::source(*ei, *fsdg);
          if(!can_be_clustered(src, fsdg, fu, slack_time, 0)) continue;
@@ -1211,7 +1220,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          if(!can_be_clustered(tgt, fsdg, fu, slack_time, 0)) continue;
          if(all_candidate_vertices.find(tgt) == all_candidate_vertices.end()) continue;
          if(!HLS->chaining_information->may_be_chained_ops(src, tgt))
-            hc.add_edge(boost::get(boost::vertex_index, *fsdg, src), boost::get(boost::vertex_index, *fsdg, tgt), 2*get_src_vertex(src,tgt, HLSMgr,HLS->functionId)+(HLS->chaining_information->may_be_chained_ops(src, tgt)?1:0));
+            hc.add_edge(boost::get(boost::vertex_index, *fsdg, src), boost::get(boost::vertex_index, *fsdg, tgt), 2*get_src_vertex(src, tgt, HLSMgr, HLS->functionId)+(HLS->chaining_information->may_be_chained_ops(src, tgt)?1:0));
       }
 #endif
 
@@ -1517,15 +1526,13 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       const std::unordered_map<vertex, double> starting_time_initial = starting_time;
 
       fu_bindingRef fu_best;
-#if HAVE_EXPERIMENTAL
-      if(parameters->getOption<int>(OPT_memory_banks_number) > 1)
+      if(parameters->getOption<int>(OPT_memory_banks_number) > 1 && !parameters->isOption(OPT_context_switch))
       {
          fu_best = fu_bindingRef(new ParallelMemoryFuBinding(HLSMgr, funId, parameters));
       }
       else
-#endif
       {
-         fu_best = fu_bindingRef(new fu_binding(HLSMgr, funId, parameters));
+         fu_best = fu_bindingRef(fu_binding::create_fu_binding(HLSMgr, funId, parameters));
       }
       double total_area_best = 0;
       size_t total_modules_allocated_best = 0;
@@ -1550,11 +1557,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             starting_time = starting_time_initial;
             total_area_muxes_prev = total_area_muxes;
             total_area_muxes = total_area_muxes_initial;
-         }
 
-         /// register binding is performed to improve mux estimation
-         if(iteration > 0)
-         {
             DesignFlowStepRef regb;
             // if(iteration%2)
             regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))

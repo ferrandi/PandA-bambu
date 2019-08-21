@@ -15,6 +15,7 @@ lib_controller_creation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS/module_allocation \
    -I$(top_srcdir)/src/HLS/virtual_components \
    -I$(top_srcdir)/src/HLS/binding \
+   -I$(top_srcdir)/src/HLS/function_allocation \
    -I$(top_srcdir)/src/HLS/binding/interconnection \
    -I$(top_srcdir)/src/HLS/binding/module \
    -I$(top_srcdir)/src/HLS/binding/register \
@@ -37,11 +38,15 @@ lib_controller_creation_la_CPPFLAGS = \
 
 
 noinst_HEADERS = \
-   controller_creator_base_step.hpp control_flow_checker.hpp \
+   controller_creator_base_step.hpp \
+   control_flow_checker.hpp \
+   controller_cs.hpp \
    fsm_controller.hpp
 
 lib_controller_creation_la_SOURCES = \
-   controller_creator_base_step.cpp control_flow_checker.cpp \
+   controller_creator_base_step.cpp \
+   control_flow_checker.cpp \
+   controller_cs.cpp \
    fsm_controller.cpp
 
 #DOCUMENTATION STUFF

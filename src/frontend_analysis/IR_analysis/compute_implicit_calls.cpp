@@ -376,7 +376,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       /// the comparison
       const auto boolean_type = tree_man->create_boolean_type();
       const auto comparison = tree_man->create_binary_operation(boolean_type, vd_ind, vd_limit, srcp_default, ne_expr_K);
-      tree_nodeRef comp_ga = tree_man->CreateGimpleAssign(boolean_type, TM->CreateUniqueIntegerCst(0,type_index), TM->CreateUniqueIntegerCst(1,type_index), comparison, BBN1_block_index, srcp_default);
+      tree_nodeRef comp_ga = tree_man->CreateGimpleAssign(boolean_type, TM->CreateUniqueIntegerCst(0, type_index), TM->CreateUniqueIntegerCst(1, type_index), comparison, BBN1_block_index, srcp_default);
       BBN1_block->PushBack(comp_ga);
       tree_nodeRef comp_res = GetPointer<gimple_assign>(GET_NODE(comp_ga))->op0;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---comparison assign " + STR(comp_ga));

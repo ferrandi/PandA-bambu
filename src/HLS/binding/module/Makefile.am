@@ -22,6 +22,7 @@ lib_modulebinding_la_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS/binding/register/algorithms \
    -I$(top_srcdir)/src/HLS/binding/storage_value_insertion \
    -I$(top_srcdir)/src/HLS/chaining \
+   -I$(top_srcdir)/src/HLS/function_allocation \
    -I$(top_srcdir)/src/HLS/liveness \
    -I$(top_srcdir)/src/HLS/memory \
    -I$(top_srcdir)/src/HLS/scheduling \
@@ -40,9 +41,9 @@ lib_modulebinding_la_CPPFLAGS = \
 
 METASOURCES = AUTO
 
-noinst_HEADERS = fu_binding.hpp fu_binding_creator.hpp easy_module_binding.hpp unique_binding.hpp cdfc_module_binding.hpp module_binding_check.hpp
+noinst_HEADERS = fu_binding.hpp fu_binding_creator.hpp easy_module_binding.hpp unique_binding.hpp cdfc_module_binding.hpp module_binding_check.hpp fu_binding_cs.hpp parallel_memory_fu_binding.hpp
 
-lib_modulebinding_la_SOURCES = fu_binding.cpp fu_binding_creator.cpp easy_module_binding.cpp unique_binding.cpp cdfc_module_binding.cpp
+lib_modulebinding_la_SOURCES = fu_binding.cpp fu_binding_creator.cpp easy_module_binding.cpp unique_binding.cpp cdfc_module_binding.cpp fu_binding_cs.cpp parallel_memory_fu_binding.cpp
 
 
 #DOCUMENTATION STUFF
