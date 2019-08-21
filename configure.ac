@@ -3067,6 +3067,7 @@ if test "x$panda_WERROR" = xyes; then
    fi
    AX_CHECK_COMPILE_FLAG("-Wmismatched-tags", CXXFLAGS+=" -Wno-mismatched-tags ",,"-Werror")
    AX_CHECK_COMPILE_FLAG("-Woverlength-strings", CXXFLAGS+=" -Wno-overlength-strings ",,"-Werror")
+   AX_CHECK_COMPILE_FLAG("-Wdeprecated-copy", CXXFLAGS+=" -Wno-deprecated-copy ",,"-Werror")
 else
    CXXFLAGS+=" -w "
 fi
