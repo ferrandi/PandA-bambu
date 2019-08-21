@@ -58,7 +58,6 @@
 #pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
 #pragma GCC diagnostic ignored "-Wsign-promo"
-#pragma GCC diagnostic ignored "-Wunused-but-set-parameter"
 
 #define USE_SAT 0
 
