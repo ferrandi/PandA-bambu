@@ -1640,7 +1640,11 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             {
                vertex src = c2s[boost::get(boost::vertex_index, *CG_subgraph, boost::source(*cg_ei, *CG_subgraph))];
                vertex tgt = c2s[boost::get(boost::vertex_index, *CG_subgraph, boost::target(*cg_ei, *CG_subgraph))];
+#if HAVE_UNORDERED
                if(src > tgt)
+#else
+               if(GET_NAME(dfg, src) > GET_NAME(dfg, tgt))
+#endif
                   continue; /// only one edge is needed to build the undirected compatibility graph
                _w = weight_computation(cond1, cond2, src, tgt, local_mux_time, dfg, fu, slack_time, starting_time,
 #ifdef HC_APPROACH
@@ -1730,7 +1734,11 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                   {
                      vertex src = c2s[boost::get(boost::vertex_index, *CG_subgraph0, boost::source(*cg_ei, *CG_subgraph0))];
                      vertex tgt = c2s[boost::get(boost::vertex_index, *CG_subgraph0, boost::target(*cg_ei, *CG_subgraph0))];
+#if HAVE_UNORDERED
                      if(src > tgt)
+#else
+                     if(GET_NAME(dfg, src) > GET_NAME(dfg, tgt))
+#endif
                         continue; /// only one edge is needed to build the undirected compatibility graph
                      _w = weight_computation(cond1, cond2, src, tgt, local_mux_time, dfg, fu, slack_time, starting_time,
 #ifdef HC_APPROACH
