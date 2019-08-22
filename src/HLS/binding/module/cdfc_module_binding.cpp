@@ -1799,9 +1799,17 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             unsigned int delta_nclique = 0;
             for(unsigned int i = 0; i < module_clique->num_vertices(); ++i)
             {
-               const std::set<vertex>& clique = module_clique->get_clique(i);
-               if(clique.empty())
+               const auto clique_temp = module_clique->get_clique(i);
+               if(clique_temp.empty())
                   continue;
+
+#if HAVE_UNORDERED
+               const auto clique = clique_temp;
+#else
+               OpVertexSet clique(sdg);
+               clique.insert(clique_temp.begin(), clique_temp.end());
+#endif
+
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing clique");
                fu_unit = fu->get_assign(*(clique.begin()));
                THROW_ASSERT(fu_unit == partition.first, "unexpected case");
