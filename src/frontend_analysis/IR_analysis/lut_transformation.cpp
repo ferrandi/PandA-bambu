@@ -76,6 +76,10 @@
 #ifndef __MACH__
 #define __MACH__ 0
 #endif
+
+#include <type_traits>
+
+
 #if USE_SAT
 #include <mockturtle/mockturtle.hpp>
 #include <mockturtle/algorithms/satlut_mapping.hpp>
@@ -94,7 +98,6 @@
 #endif
 #endif
 
-#include <type_traits>
 
 /// Autoheader include
 #include "config_HAVE_BAMBU_BUILT.hpp"
@@ -156,7 +159,31 @@
 
 
 #define IS_GIMPLE_ASSIGN(it) (GET_NODE(*it)->get_kind() == gimple_assign_K)
-#define CHECK_BIN_EXPR_BOOL_SIZE(be) (tree_helper::Size(GET_NODE((be)->op0)) == 1 && tree_helper::Size(GET_NODE((be)->op1)) == 1)
+bool lut_transformation::CHECK_BIN_EXPR_BOOL_SIZE(binary_expr*be)
+{
+   if(be->get_kind() == bit_and_expr_K)
+   {
+      if(GET_NODE(be->op0)->get_kind() == ssa_name_K && !tree_helper::is_bool(TM,GET_INDEX_NODE(be->op0)))
+      {
+         auto ssa = GetPointer<const ssa_name>(GET_NODE(be->op0));
+         if(!ssa->min || !ssa->max)
+            return false;
+         if(GetPointer<integer_cst>(GET_NODE(ssa->min))->value != 0 || GetPointer<integer_cst>(GET_NODE(ssa->max))->value != 1)
+            return false;
+      }
+      if(GET_NODE(be->op1)->get_kind() == ssa_name_K && !tree_helper::is_bool(TM,GET_INDEX_NODE(be->op1)))
+      {
+         auto ssa = GetPointer<const ssa_name>(GET_NODE(be->op1));
+         if(!ssa->min || !ssa->max)
+            return false;
+         if(GetPointer<integer_cst>(GET_NODE(ssa->min))->value != 0 || GetPointer<integer_cst>(GET_NODE(ssa->max))->value != 1)
+            return false;
+      }
+      return (tree_helper::Size(GET_NODE((be)->op0)) == 1 && tree_helper::Size(GET_NODE((be)->op1)) == 1);
+   }
+   else
+      return (tree_helper::Size(GET_NODE((be)->op0)) == 1 && tree_helper::Size(GET_NODE((be)->op1)) == 1);
+}
 #define CHECK_BIN_EXPR_INT_SIZE(be, max) (tree_helper::Size(GET_NODE((be)->op0)) <= max && tree_helper::Size(GET_NODE((be)->op1)) <= max)
 #define CHECK_COND_EXPR_SIZE(ce) (tree_helper::Size(GET_NODE((ce)->op1)) == 1 && tree_helper::Size(GET_NODE((ce)->op2)) == 1)
 #define CHECK_NOT_EXPR_SIZE(ne) (tree_helper::Size(GET_NODE((ne)->op)) == 1)
@@ -698,42 +725,53 @@ std::vector<bool> IntegerToBitArray(long long int n, size_t size) {
    return bits;
 }
 
-tree_nodeRef lut_transformation::CreateBitSelectionNode(const tree_nodeRef source, int index, std::pair<const unsigned int, blocRef> bb) {
-   const auto type = tree_man->CreateDefaultUnsignedLongLongInt();
+tree_nodeRef lut_transformation::CreateBitSelectionNodeOrCast(const tree_nodeRef source, int index, unsigned int BB_index, std::vector<tree_nodeRef> &prev_stmts_to_add)
+{
+   const unsigned int op_type_id = tree_helper::get_type_index(TM, GET_INDEX_NODE(source));
+   tree_nodeRef op_type = TM->CGetTreeReindex(op_type_id);
+   const auto indexType = tree_man->CreateDefaultUnsignedLongLongInt();
    const std::string srcp_default("built-in:0:0");
+   auto boolType = tree_man->create_boolean_type();
+   tree_nodeRef resVar0;
+   if(index)
+   {
+      tree_nodeRef shift_by_constant = TM->CreateUniqueIntegerCst(index,GET_INDEX_NODE(indexType));
+      tree_nodeRef rshift_op = tree_man->create_binary_operation(op_type,source,shift_by_constant,srcp_default,rshift_expr_K);
+      tree_nodeRef rshift_ga = tree_man->CreateGimpleAssign(op_type, tree_nodeRef(), tree_nodeRef(), rshift_op, BB_index, srcp_default);
+      prev_stmts_to_add.push_back(rshift_ga);
+      resVar0 = GetPointer<const gimple_assign>(GET_CONST_NODE(rshift_ga))->op0;
+   }
+   else
+      resVar0 = source;
+   auto addBitWiseAnd = [&]() -> bool {
+      if(GET_NODE(resVar0)->get_kind() == ssa_name_K)
+      {
+         auto ssa = GetPointer<const ssa_name>(GET_CONST_NODE(resVar0));
+         if(!ssa->min || !ssa->max)
+            return true;
+         if(GetPointer<integer_cst>(GET_NODE(ssa->min))->value == 0 && GetPointer<integer_cst>(GET_NODE(ssa->max))->value == 1)
+            return false;
+         else
+            return true;
+      }
+      else
+         return true;
+   }();
 
-   unsigned int shift_by_id = TM->new_tree_node_id();
-   tree_nodeRef shift_by_constant = tree_man->CreateIntegerCst(type, index, shift_by_id);
-   tree_nodeRef rshift_op = tree_man->create_binary_operation(
-       type,
-       source,
-       shift_by_constant,
-       srcp_default,
-       rshift_expr_K
-       );
-    tree_nodeRef rshift_ga = tree_man->CreateGimpleAssign(type, rshift_op, bb.first, srcp_default);
-   bb.second->PushAfter(rshift_ga, source);
-
-   unsigned int constant_one_id = TM->new_tree_node_id();
-   tree_nodeRef constant_one = tree_man->CreateIntegerCst(type, 1, constant_one_id);
-
-   tree_nodeRef bit_wise_and = tree_man->create_binary_operation(
-       type,
-       GetPointer<const gimple_assign>(GET_CONST_NODE(rshift_ga))->op0,
-       constant_one,
-       srcp_default,
-       bit_and_expr_K
-       );
-
-   tree_nodeRef bit_wise_and_ga = tree_man->CreateGimpleAssign(
-        source,
-       bit_wise_and,
-       bb.first,
-       srcp_default
-       );
-   bb.second->PushAfter(bit_wise_and_ga, rshift_ga);
-
-   return bit_wise_and_ga;
+   tree_nodeRef resVar1;
+   if(addBitWiseAnd)
+   {
+      tree_nodeRef constant_one = TM->CreateUniqueIntegerCst(1,GET_INDEX_NODE(indexType));
+      tree_nodeRef bit_wise_and = tree_man->create_binary_operation(op_type,resVar0, constant_one, srcp_default, bit_and_expr_K);
+      tree_nodeRef bit_wise_and_ga = tree_man->CreateGimpleAssign(op_type, TM->CreateUniqueIntegerCst(0,op_type_id), TM->CreateUniqueIntegerCst(1,op_type_id), bit_wise_and, BB_index,srcp_default);
+      prev_stmts_to_add.push_back(bit_wise_and_ga);
+      resVar1 = GetPointer<const gimple_assign>(GET_CONST_NODE(bit_wise_and_ga))->op0;
+   }
+   else
+      resVar1 = resVar0;
+   tree_nodeRef ga_nop = tree_man->CreateNopExpr(resVar1, boolType, TM->CreateUniqueIntegerCst(0,GET_INDEX_NODE(boolType)), TM->CreateUniqueIntegerCst(1,GET_INDEX_NODE(boolType)));
+   prev_stmts_to_add.push_back(ga_nop);
+   return GetPointer<const gimple_assign>(GET_CONST_NODE(ga_nop))->op0;
 }
 
 static
@@ -822,16 +860,16 @@ static
          {
             for(auto po_i: po_set.find(node)->second)
             {
-         klut_network_node lut_node = (klut_network_node) {
-             node,
-             LUT_func,
-             fanIns,
+               klut_network_node lut_node = (klut_network_node) {
+                   node,
+                   LUT_func,
+                   fanIns,
                    true,
                    po_i,
                    false
-         };
-         luts.push_back(lut_node);
-      }
+               };
+               luts.push_back(lut_node);
+            }
          }
          else
          {
@@ -892,7 +930,7 @@ static
                 false
             };
             luts.push_back(lut_node);
-      }
+         }
       }
    });
 
@@ -953,20 +991,13 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
    /**
      * Creates a const expression with 0 (gnd) as value, used for constant LUT inputs (index 0 in mockturtle)
      */ 
-    pis.push_back(this->tree_man->CreateIntegerCst(
-       DefaultUnsignedLongLongInt,
-       0ll,
-       this->TM->new_tree_node_id()
-       ));
+   pis.push_back(TM->CreateUniqueIntegerCst(0,GET_INDEX_NODE(DefaultUnsignedLongLongInt)));
 
    /**
      * Creates a const expression with 1 (vdd) as value, used for constant LUT inputs (index 1 in mockturtle)
  */
-   pis.push_back(this->tree_man->CreateIntegerCst(
-       DefaultUnsignedLongLongInt,
-       1ll,
-       this->TM->new_tree_node_id()
-       ));
+   pis.push_back(TM->CreateUniqueIntegerCst(1,GET_INDEX_NODE(DefaultUnsignedLongLongInt)));
+
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(BB_index));
    const auto &statements = block.second->CGetStmtList();
@@ -1232,8 +1263,11 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          modified = true;
          continue;
       }
-
-        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Integers operands");
+      if (!CHECK_BIN_EXPR_INT_SIZE(binaryExpression, MAX_LUT_INT_SIZE)) {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Integer operands' size is too large");
+         continue;
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Integer operands");
 
       klut_network_fn_v nodeCreateFn = GetIntegerNodeCreationFunction(code1);
 
@@ -1370,8 +1404,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             }
             prev_stmts_to_add.clear();
          }
-         unsigned int integer_cst2_id = TM->new_tree_node_id();
-         tree_nodeRef lut_constant_node = tree_man->CreateIntegerCst(DefaultUnsignedLongLongInt, lut.lut_constant, integer_cst2_id);
+         tree_nodeRef lut_constant_node = TM->CreateUniqueIntegerCst(lut.lut_constant,GET_INDEX_NODE(DefaultUnsignedLongLongInt));
          tree_nodeRef op1, op2, op3, op4, op5, op6, op7, op8;
          auto p_index = 1u;
          for(auto in : lut.fan_in)
@@ -1380,12 +1413,14 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             if (klut.is_pi(in)) {
                operand = pis.at(in);
 
-               if (tree_helper::Size(GET_NODE(operand)) > 1) { // integer
+               if (tree_helper::Size(GET_NODE(operand)) == 1 && !tree_helper::is_bool(TM,GET_INDEX_NODE(operand)))
+               {
+                  operand = CreateBitSelectionNodeOrCast(operand, 0, BB_index, prev_stmts_to_add);
+               }
+               else if (tree_helper::Size(GET_NODE(operand)) > 1) { // integer
                   auto index = nodeToBusIndex[GET_NODE(operand)];
                   nodeToBusIndex[GET_NODE(operand)] = index + 1;
-
-                  tree_nodeRef bit_sel = CreateBitSelectionNode(operand, index, block);
-                  operand = bit_sel;
+                  operand = CreateBitSelectionNodeOrCast(operand, index, BB_index, prev_stmts_to_add);
                }
             }
             else if(internal_nets.find(in) != internal_nets.end())
@@ -1419,6 +1454,13 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          if(lut.is_po)
          {
             auto po_stmpt = pos.at(lut.po_index);
+            /// add selection bit stmts
+            for(auto stmt: prev_stmts_to_add)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding statement " + GET_NODE(stmt)->ToString());
+               block.second->PushBefore(stmt, po_stmpt);
+            }
+            prev_stmts_to_add.clear();
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Before statement " + GET_NODE(po_stmpt)->ToString());
             auto *gimpleAssign = GetPointer<gimple_assign>(GET_NODE(po_stmpt));
             THROW_ASSERT(gimpleAssign, "unexpected condition");

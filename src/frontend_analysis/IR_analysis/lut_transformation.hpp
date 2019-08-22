@@ -91,6 +91,7 @@ private:
     /// The list of all operation that can be converted to a lut.
     const std::vector<enum kind> lutExpressibleOperations = {bit_and_expr_K, truth_and_expr_K, bit_ior_expr_K, truth_or_expr_K, bit_xor_expr_K, truth_xor_expr_K, eq_expr_K, ge_expr_K, lut_expr_K, cond_expr_K, gt_expr_K, le_expr_K, lt_expr_K, ne_expr_K};
 
+    bool CHECK_BIN_EXPR_BOOL_SIZE(binary_expr*be);
     /**
      * Checks if the provided `gimple_assign` is a primary output of lut network.
      * 
@@ -106,7 +107,7 @@ private:
 
     bool CheckIfProcessable(std::pair<unsigned int, blocRef> block);
 
-    tree_nodeRef CreateBitSelectionNode(const tree_nodeRef source, int index, std::pair<const unsigned int, blocRef> bb);
+    tree_nodeRef CreateBitSelectionNodeOrCast(const tree_nodeRef source, int index, unsigned int BB_index, std::vector<tree_nodeRef> &prev_stmts_to_add);
 
 #endif
 
