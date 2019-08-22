@@ -753,7 +753,7 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
                THROW_ASSERT(check_type(src, dest), "Ports and signals have to be compatible: " + src->get_path() + " (" + src->get_typeRef()->get_name() + ") -> " + dest->get_path() + " (" + dest->get_typeRef()->get_name() + ")");
                if(src->find_member(dest->get_id(), port_o_K, dest->get_owner()))
                {
-                  THROW_WARNING("Signal " + src->get_id() + " already bound to " + dest->get_id());
+                  THROW_WARNING("Signal " + src->get_path() + " already bound to " + dest->get_path());
                   return;
                }
                if(dest->find_member(src->get_id(), signal_o_K, src->get_owner()))
@@ -874,6 +874,7 @@ void structural_manager::WriteDot(const std::string& file_name, circuit_graph_ty
    std::ofstream f((output_directory + file_name).c_str());
 
    if(g == nullptr)
+   {
       switch(gt)
       {
          case DATA_G:
@@ -885,6 +886,7 @@ void structural_manager::WriteDot(const std::string& file_name, circuit_graph_ty
          default:
             THROW_ERROR(std::string("Not supported graph type"));
       }
+   }
    boost::write_graphviz(f, *g, cg_label_writer(g), cg_edge_writer(g));
 }
 
@@ -1233,7 +1235,6 @@ static void add_directed_edge_single(graphs_collection* bg, const std::map<struc
 
    else
    {
-
       if (owner2 && owner1 == owner2->get_owner())// pp1 is a top port
       {
          THROW_ASSERT(module_vertex_rel.find(owner2) != module_vertex_rel.end(), "module not found");
@@ -1267,7 +1268,6 @@ static void add_directed_edge_single(graphs_collection* bg, const std::map<struc
          THROW_ASSERT(module_vertex_rel.find(owner2) != module_vertex_rel.end(), "module not found");
          v2 = module_vertex_rel.find(owner2)->second;
       }
-
    }
    //std::cerr << "     connection " << pp1->get_path() << " -> " << pp2->get_path() << std::endl;
    //in case both ports are IO or GEN two opposite edges are added
@@ -1285,16 +1285,16 @@ static void add_directed_edge_single(graphs_collection* bg, const std::map<struc
       if (pp1 != GetPointer<port_o>(p1)) //check possible swap
       {
          if (pp1->get_is_clock() || pp2->get_is_clock())
-            circuit_add_edge(v1, v2, CLOCK_SELECTOR, *bg, p2,p1, is_critical);
+            circuit_add_edge(v1, v2, CLOCK_SELECTOR, *bg, p2, p1, is_critical);
          else
-            circuit_add_edge(v1, v2, DATA_SELECTOR, *bg, p2,p1, is_critical);
+            circuit_add_edge(v1, v2, DATA_SELECTOR, *bg, p2, p1, is_critical);
       }
       else
       {
          if (pp1->get_is_clock() || pp2->get_is_clock())
-            circuit_add_edge(v1, v2, CLOCK_SELECTOR, *bg, p1,p2, is_critical);
+            circuit_add_edge(v1, v2, CLOCK_SELECTOR, *bg, p1, p2, is_critical);
          else
-            circuit_add_edge(v1, v2, DATA_SELECTOR, *bg, p1,p2, is_critical);
+            circuit_add_edge(v1, v2, DATA_SELECTOR, *bg, p1, p2, is_critical);
       }
    }
 #endif
