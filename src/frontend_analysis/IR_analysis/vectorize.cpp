@@ -574,20 +574,20 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
       case lut_expr_K:
       {
          auto* le = GetPointer<const lut_expr>(tree_node);
-         ClassifyTreeNode(loop_id, le->op0);
-         ClassifyTreeNode(loop_id, le->op1);
+         ClassifyTreeNode(loop_id, GET_NODE(le->op0));
+         ClassifyTreeNode(loop_id, GET_NODE(le->op1));
          if(le->op2)
-            ClassifyTreeNode(loop_id, le->op2);
+            ClassifyTreeNode(loop_id, GET_NODE(le->op2));
          if(le->op3)
-            ClassifyTreeNode(loop_id, le->op3);
+            ClassifyTreeNode(loop_id, GET_NODE(le->op3));
          if(le->op4)
-            ClassifyTreeNode(loop_id, le->op4);
+            ClassifyTreeNode(loop_id, GET_NODE(le->op4));
          if(le->op5)
-            ClassifyTreeNode(loop_id, le->op5);
+            ClassifyTreeNode(loop_id, GET_NODE(le->op5));
          if(le->op6)
-            ClassifyTreeNode(loop_id, le->op6);
+            ClassifyTreeNode(loop_id, GET_NODE(le->op6));
          if(le->op7)
-            ClassifyTreeNode(loop_id, le->op7);
+            ClassifyTreeNode(loop_id, GET_NODE(le->op7));
          if(le->op8)
             ClassifyTreeNode(loop_id, le->op8);
          transformations[tree_node->index] = SCALAR;
