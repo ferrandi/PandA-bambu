@@ -92,6 +92,7 @@ private:
     const std::vector<enum kind> lutExpressibleOperations = {bit_and_expr_K, truth_and_expr_K, bit_ior_expr_K, truth_or_expr_K, bit_xor_expr_K, truth_xor_expr_K, eq_expr_K, ge_expr_K, lut_expr_K, cond_expr_K, gt_expr_K, le_expr_K, lt_expr_K, ne_expr_K};
 
     bool CHECK_BIN_EXPR_BOOL_SIZE(binary_expr*be);
+    bool CHECK_BIN_EXPR_INT_SIZE(binary_expr*be, unsigned int max);
     /**
      * Checks if the provided `gimple_assign` is a primary output of lut network.
      * 

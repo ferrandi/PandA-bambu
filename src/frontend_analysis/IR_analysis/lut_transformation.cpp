@@ -161,6 +161,14 @@
 #define IS_GIMPLE_ASSIGN(it) (GET_NODE(*it)->get_kind() == gimple_assign_K)
 bool lut_transformation::CHECK_BIN_EXPR_BOOL_SIZE(binary_expr*be)
 {
+   auto b0 = tree_helper::CGetType(GET_CONST_NODE(be->op0));
+   auto type_id0 = b0->index;
+   if(tree_helper::is_real(TM, type_id0) || tree_helper::is_a_complex(TM, type_id0) || tree_helper::is_a_vector(TM, type_id0) || tree_helper::is_a_struct(TM, type_id0))
+      return false;
+   auto b1 = tree_helper::CGetType(GET_CONST_NODE(be->op1));
+   auto type_id1 = b1->index;
+   if(tree_helper::is_real(TM, type_id1) || tree_helper::is_a_complex(TM, type_id1) || tree_helper::is_a_vector(TM, type_id1) || tree_helper::is_a_struct(TM, type_id1))
+      return false;
    if(be->get_kind() == bit_and_expr_K)
    {
       if(GET_NODE(be->op0)->get_kind() == ssa_name_K && !tree_helper::is_bool(TM,GET_INDEX_NODE(be->op0)))
@@ -174,6 +182,9 @@ bool lut_transformation::CHECK_BIN_EXPR_BOOL_SIZE(binary_expr*be)
       if(GET_NODE(be->op1)->get_kind() == ssa_name_K && !tree_helper::is_bool(TM,GET_INDEX_NODE(be->op1)))
       {
          auto ssa = GetPointer<const ssa_name>(GET_NODE(be->op1));
+         auto type_id = GET_INDEX_NODE(ssa->type);
+         if(tree_helper::is_real(TM, type_id) || tree_helper::is_a_complex(TM, type_id) || tree_helper::is_a_vector(TM, type_id) || tree_helper::is_a_struct(TM, type_id))
+            return false;
          if(!ssa->min || !ssa->max)
             return false;
          if(GetPointer<integer_cst>(GET_NODE(ssa->min))->value != 0 || GetPointer<integer_cst>(GET_NODE(ssa->max))->value != 1)
@@ -184,7 +195,18 @@ bool lut_transformation::CHECK_BIN_EXPR_BOOL_SIZE(binary_expr*be)
    else
       return (tree_helper::Size(GET_NODE((be)->op0)) == 1 && tree_helper::Size(GET_NODE((be)->op1)) == 1);
 }
-#define CHECK_BIN_EXPR_INT_SIZE(be, max) (tree_helper::Size(GET_NODE((be)->op0)) <= max && tree_helper::Size(GET_NODE((be)->op1)) <= max)
+bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr*be, unsigned int max)
+{
+   auto b0 = tree_helper::CGetType(GET_CONST_NODE(be->op0));
+   auto type_id0 = b0->index;
+   if(tree_helper::is_real(TM, type_id0) || tree_helper::is_a_complex(TM, type_id0) || tree_helper::is_a_vector(TM, type_id0) || tree_helper::is_a_struct(TM, type_id0))
+      return false;
+   auto b1 = tree_helper::CGetType(GET_CONST_NODE(be->op1));
+   auto type_id1 = b1->index;
+   if(tree_helper::is_real(TM, type_id1) || tree_helper::is_a_complex(TM, type_id1) || tree_helper::is_a_vector(TM, type_id1) || tree_helper::is_a_struct(TM, type_id1))
+      return false;
+   return (tree_helper::Size(GET_NODE((be)->op0)) <= max && tree_helper::Size(GET_NODE((be)->op1)) <= max);
+}
 #define CHECK_COND_EXPR_SIZE(ce) (tree_helper::Size(GET_NODE((ce)->op1)) == 1 && tree_helper::Size(GET_NODE((ce)->op2)) == 1)
 #define CHECK_NOT_EXPR_SIZE(ne) (tree_helper::Size(GET_NODE((ne)->op)) == 1)
 
@@ -606,8 +628,10 @@ bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> blo
       } else { // check if it has lut-expressible operations
          // checks if the operation code can be converted into a lut
          // and if it is a binary expression with the correct size of operators
-         if (VECT_CONTAINS(lutExpressibleOperations, code) && GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1))) {
-            if (CHECK_BIN_EXPR_INT_SIZE(GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)), MAX_LUT_INT_SIZE)) {
+         if (VECT_CONTAINS(lutExpressibleOperations, code) && GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)))
+         {
+            if (CHECK_BIN_EXPR_INT_SIZE(GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)), MAX_LUT_INT_SIZE))
+            {
                const auto op0 = GET_NODE(gimpleAssign->op0);
                auto ssa0 = GetPointer<ssa_name>(op0);
                THROW_ASSERT(ssa0, "unexpected condition");
