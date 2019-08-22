@@ -761,7 +761,7 @@ tree_nodeRef lut_transformation::CreateBitSelectionNodeOrCast(const tree_nodeRef
    tree_nodeRef resVar1;
    if(addBitWiseAnd)
    {
-      tree_nodeRef constant_one = TM->CreateUniqueIntegerCst(1,GET_INDEX_NODE(indexType));
+      tree_nodeRef constant_one = TM->CreateUniqueIntegerCst(1,GET_INDEX_NODE(op_type));
       tree_nodeRef bit_wise_and = tree_man->create_binary_operation(op_type,resVar0, constant_one, srcp_default, bit_and_expr_K);
       tree_nodeRef bit_wise_and_ga = tree_man->CreateGimpleAssign(op_type, TM->CreateUniqueIntegerCst(0,op_type_id), TM->CreateUniqueIntegerCst(1,op_type_id), bit_wise_and, BB_index,srcp_default);
       prev_stmts_to_add.push_back(bit_wise_and_ga);
