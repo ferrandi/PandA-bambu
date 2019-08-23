@@ -1187,7 +1187,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                         break;
 
                      case '2':
-                        indented_output_stream->Append(port_name + " = 1'bX;\n");
+                        indented_output_stream->Append(port_name + " = 1'b1;\n");
                         break;
 
                      default:
@@ -1313,7 +1313,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                   if(single_proc || output_index == ind)
                   {
                      if(transition_outputs[ind] == '2')
-                        indented_output_stream->Append(port_name + " = 1'bX;\n");
+                        indented_output_stream->Append(port_name + " = 1'b1;\n");
                      else
                         indented_output_stream->Append(port_name + " = 1'b" + transition_outputs[ind] + ";\n");
                   }
@@ -1343,7 +1343,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
             {
                port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
                if(single_proc || output_index == i)
-                  indented_output_stream->Append(port_name + " = 1'bX;");
+                  indented_output_stream->Append(port_name + " = 1'b1;");
                if(single_proc)
                   indented_output_stream->Append("\n");
             }
@@ -1372,7 +1372,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
          if(mod->get_out_port(i)->get_id() == NEXT_STATE_PORT_NAME)
             continue;
          port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
-         indented_output_stream->Append(port_name + " = 1'bX;\n");
+         indented_output_stream->Append(port_name + " = 1'b1;\n");
       }
       indented_output_stream->Append(scc1);
    }
