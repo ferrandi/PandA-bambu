@@ -1509,5 +1509,3 @@ TreeNodeConstSet::TreeNodeConstSet() : std::set<tree_nodeConstRef, TreeNodeConst
 {
 }
 #endif
-
-

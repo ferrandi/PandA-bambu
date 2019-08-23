@@ -496,12 +496,12 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    auto* ce2 = GetPointer<gimple_cond>(GET_NODE(second_stmt));
 
    unsigned int cond2_index = GET_INDEX_NODE(ce2->op0);
-   //const auto type_node2 = tree_helper::CGetType(GET_NODE(ce2->op0));
-   //THROW_ASSERT(type_node->get_kind() == boolean_type_K and type_node2->get_kind() == boolean_type_K, "something of unexpected is happened:"
+   // const auto type_node2 = tree_helper::CGetType(GET_NODE(ce2->op0));
+   // THROW_ASSERT(type_node->get_kind() == boolean_type_K and type_node2->get_kind() == boolean_type_K, "something of unexpected is happened:"
    //                                                                                                   " type_node: " +
    //                                                                                                   STR(type_node) + " is " + type_node->get_kind_text() + " type_node2: " + STR(type_node2) + " is " + type_node2->get_kind_text());
-   //unsigned int type_index2;
-   //tree_helper::get_type_node(GET_NODE(ce2->op0), type_index2);
+   // unsigned int type_index2;
+   // tree_helper::get_type_node(GET_NODE(ce2->op0), type_index2);
    // the following condition cannot be guaranteed
    // THROW_ASSERT(type_index == type_index2, "Different types " + STR(TM->CGetTreeNode(type_index)) + " vs " + STR(TM->CGetTreeNode(type_index2)) + " in " + ce1->ToString() + " and " + ce2->ToString());
    /// create the ssa_var representing the condition for bb2

@@ -1597,7 +1597,8 @@ DesignFlowStep_Status allocation::InternalExec()
             continue;
          }
 
-         const auto tech_constrain_it = GetPointer<functional_unit>(current_fu)->fu_template_name != "" ? tech_vec.find(ENCODE_FU_LIB(GetPointer<functional_unit>(current_fu)->fu_template_name, lib_name)) : tech_vec.find(ENCODE_FU_LIB(current_fu->get_name(), lib_name));
+         const auto tech_constrain_it =
+             GetPointer<functional_unit>(current_fu)->fu_template_name != "" ? tech_vec.find(ENCODE_FU_LIB(GetPointer<functional_unit>(current_fu)->fu_template_name, lib_name)) : tech_vec.find(ENCODE_FU_LIB(current_fu->get_name(), lib_name));
 
          if(tech_constrain_it != tech_vec.end() && tech_constrain_it->second == 0)
          {

@@ -63,11 +63,11 @@
        reduc_max_expr)(reduc_min_expr)(reduc_plus_expr)(vec_unpack_hi_expr)(vec_unpack_lo_expr)(vec_unpack_float_hi_expr)(vec_unpack_float_lo_expr)(paren_expr)
 
 #define BINARY_EXPRESSION_TREE_NODES                                                                                                                                                                                                                           \
-   (assert_expr)(bit_and_expr)(bit_ior_expr)(bit_xor_expr)(catch_expr)(ceil_div_expr)(ceil_mod_expr)(complex_expr)(compound_expr)(eh_filter_expr)(eq_expr)(exact_div_expr)(fdesc_expr)(floor_div_expr)(floor_mod_expr)(ge_expr)(gt_expr)(            \
-       goto_subroutine)(in_expr)(init_expr)(le_expr)(lrotate_expr)(lshift_expr)(lt_expr)(max_expr)(mem_ref)(min_expr)(minus_expr)(modify_expr)(mult_expr)(mult_highpart_expr)(ne_expr)(ordered_expr)(plus_expr)(pointer_plus_expr)(postdecrement_expr)(        \
-       postincrement_expr)(predecrement_expr)(preincrement_expr)(range_expr)(rdiv_expr)(round_div_expr)(round_mod_expr)(rrotate_expr)(rshift_expr)(set_le_expr)(trunc_div_expr)(trunc_mod_expr)(truth_and_expr)(truth_andif_expr)(truth_or_expr)(              \
-       truth_orif_expr)(truth_xor_expr)(try_catch_expr)(try_finally)(uneq_expr)(ltgt_expr)(unge_expr)(ungt_expr)(unle_expr)(unlt_expr)(unordered_expr)(widen_sum_expr)(widen_mult_expr)(with_size_expr)(vec_lshift_expr)(vec_rshift_expr)(widen_mult_hi_expr)( \
-       widen_mult_lo_expr)(vec_pack_trunc_expr)(vec_pack_sat_expr)(vec_pack_fix_trunc_expr)(vec_extracteven_expr)(vec_extractodd_expr)(vec_interleavehigh_expr)(vec_interleavelow_expr)
+   (assert_expr)(bit_and_expr)(bit_ior_expr)(bit_xor_expr)(catch_expr)(ceil_div_expr)(ceil_mod_expr)(complex_expr)(compound_expr)(eh_filter_expr)(eq_expr)(exact_div_expr)(fdesc_expr)(floor_div_expr)(floor_mod_expr)(ge_expr)(gt_expr)(goto_subroutine)(     \
+       in_expr)(init_expr)(le_expr)(lrotate_expr)(lshift_expr)(lt_expr)(max_expr)(mem_ref)(min_expr)(minus_expr)(modify_expr)(mult_expr)(mult_highpart_expr)(ne_expr)(ordered_expr)(plus_expr)(pointer_plus_expr)(postdecrement_expr)(postincrement_expr)(     \
+       predecrement_expr)(preincrement_expr)(range_expr)(rdiv_expr)(round_div_expr)(round_mod_expr)(rrotate_expr)(rshift_expr)(set_le_expr)(trunc_div_expr)(trunc_mod_expr)(truth_and_expr)(truth_andif_expr)(truth_or_expr)(truth_orif_expr)(truth_xor_expr)( \
+       try_catch_expr)(try_finally)(uneq_expr)(ltgt_expr)(unge_expr)(ungt_expr)(unle_expr)(unlt_expr)(unordered_expr)(widen_sum_expr)(widen_mult_expr)(with_size_expr)(vec_lshift_expr)(vec_rshift_expr)(widen_mult_hi_expr)(widen_mult_lo_expr)(              \
+       vec_pack_trunc_expr)(vec_pack_sat_expr)(vec_pack_fix_trunc_expr)(vec_extracteven_expr)(vec_extractodd_expr)(vec_interleavehigh_expr)(vec_interleavelow_expr)
 
 #define TERNARY_EXPRESSION_TREE_NODES \
    (bit_field_ref)(bit_ior_concat_expr)(component_ref)(cond_expr)(vec_cond_expr)(vec_perm_expr)(dot_prod_expr)(obj_type_ref)(save_expr)(ternary_plus_expr)(ternary_pm_expr)(ternary_mp_expr)(ternary_mm_expr)(vtable_ref)(with_cleanup_expr)

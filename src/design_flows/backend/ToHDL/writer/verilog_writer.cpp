@@ -1071,7 +1071,7 @@ void verilog_writer::write_state_declaration(const structural_objectRef& cir, co
    }
    else
    {
-   if(one_hot)
+      if(one_hot)
       indented_output_stream->Append("reg [" + boost::lexical_cast<std::string>(max_value) + ":0] _present_state, _next_state;\n");
    else
       indented_output_stream->Append("reg [" + boost::lexical_cast<std::string>(bitsnumber - 1) + ":0] _present_state, _next_state;\n");
@@ -1109,7 +1109,7 @@ void verilog_writer::write_present_state_update(const structural_objectRef cir, 
    const NP_functionalityRef& np = mod->get_NP_functionality();
    if(np->exist_NP_functionality(NP_functionality::FSM_CS)) // fsm of context_switch
    {
-   if(!parameters->getOption<bool>(OPT_level_reset))
+      if(!parameters->getOption<bool>(OPT_level_reset))
          indented_output_stream->Append("if (" + reset_port + " == 1'b0) _present_state[" + STR(SELECTOR_REGISTER_FILE) + "] <= " + reset_state + ";\n");
       else
          indented_output_stream->Append("if (" + reset_port + " == 1'b1) _present_state[" + STR(SELECTOR_REGISTER_FILE) + "] <= " + reset_state + ";\n");
@@ -1117,7 +1117,7 @@ void verilog_writer::write_present_state_update(const structural_objectRef cir, 
    }
    else
    {
-      if(!parameters->getOption<bool>(OPT_level_reset))
+   if(!parameters->getOption<bool>(OPT_level_reset))
       indented_output_stream->Append("if (" + reset_port + " == 1'b0) _present_state <= " + reset_state + ";\n");
    else
       indented_output_stream->Append("if (" + reset_port + " == 1'b1) _present_state <= " + reset_state + ";\n");
@@ -1245,8 +1245,8 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
             }
          }
       }
-      if(skip_state)
-         continue;
+         if(skip_state)
+            continue;
 
       indented_output_stream->Append(soc1);
       indented_output_stream->Append(present_state + " :\n");
@@ -1275,7 +1275,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                   switch (current_output[i])
                   {
                      case '1':
-                  indented_output_stream->Append(port_name + " = 1'b" + current_output[i] + ";\n");
+                        indented_output_stream->Append(port_name + " = 1'b" + current_output[i] + ";\n");
                         break;
 
                      case '2':
@@ -1364,7 +1364,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                            res_or_conditions += port_name;
                            if((*in_or_conditions_tokens_it)[0] == '&')
                            {
-                                 unsigned n_bits = vec_size == 0 ? port_size : vec_size;
+                              unsigned n_bits = vec_size == 0 ? port_size : vec_size;
                               auto pos = boost::lexical_cast<unsigned int>((*in_or_conditions_tokens_it).substr(1));
                                  res_or_conditions += (n_bits>1 ? std::string("[") + STR(pos) + "]":"") + " == 1'b1";
                            }
@@ -1406,9 +1406,9 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                   if(transition_outputs[ind] == '2')
                      indented_output_stream->Append(port_name + " = 1'bX;\n");
                   else
-                  indented_output_stream->Append(port_name + " = 1'b" + transition_outputs[ind] + ";\n");
+                     indented_output_stream->Append(port_name + " = 1'b" + transition_outputs[ind] + ";\n");
+               }
             }
-         }
          }
          if(!unique_transition)
          {

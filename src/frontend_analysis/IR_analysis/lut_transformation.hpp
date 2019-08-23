@@ -63,7 +63,6 @@
 #include "tree_common.hpp"
 #include "tree_node.hpp"
 
-
 //@{
 REF_FORWARD_DECL(bloc);
 // class integer_cst;
@@ -75,7 +74,8 @@ REF_FORWARD_DECL(tree_manipulation);
 REF_FORWARD_DECL(tree_node);
 //@}
 
-class lut_transformation : public FunctionFrontendFlowStep {
+class lut_transformation : public FunctionFrontendFlowStep
+{
 private:
     /// The tree manager
     tree_managerRef TM;
@@ -89,7 +89,8 @@ private:
 #if HAVE_STDCXX_17
 
     /// The list of all operation that can be converted to a lut.
-    const std::vector<enum kind> lutExpressibleOperations = {bit_and_expr_K, truth_and_expr_K, bit_ior_expr_K, truth_or_expr_K, bit_xor_expr_K, truth_xor_expr_K, eq_expr_K, ge_expr_K, lut_expr_K, cond_expr_K, gt_expr_K, le_expr_K, lt_expr_K, ne_expr_K};
+   const std::vector<enum kind> lutExpressibleOperations = {bit_and_expr_K, truth_and_expr_K, bit_ior_expr_K, truth_or_expr_K, bit_xor_expr_K, truth_xor_expr_K, truth_not_expr_K, eq_expr_K,
+                                                            ge_expr_K,      lut_expr_K,       cond_expr_K,    gt_expr_K,       le_expr_K,      lt_expr_K,        ne_expr_K};
 
     bool CHECK_BIN_EXPR_BOOL_SIZE(binary_expr*be);
     bool CHECK_BIN_EXPR_INT_SIZE(binary_expr*be, unsigned int max);

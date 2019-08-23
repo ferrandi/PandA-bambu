@@ -7775,7 +7775,6 @@ void tree_helper::compute_ssa_uses_rec_ptr(const tree_nodeRef& curr_tn, std::set
       }
       case lut_expr_K:
       {
-
          auto* le = GetPointer<lut_expr>(curr_tn);
          compute_ssa_uses_rec_ptr(le->op0, ssa_uses);
          compute_ssa_uses_rec_ptr(le->op1, ssa_uses);

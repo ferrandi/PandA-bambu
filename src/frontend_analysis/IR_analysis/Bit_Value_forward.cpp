@@ -1582,7 +1582,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
    else if(op_kind == lut_expr_K)
    {
       res = create_u_bitstring(1);
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation lut_expr: " + STR(output_uid) + " = LUT VALUE >> ins" );
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation lut_expr: " + STR(output_uid) + " = LUT VALUE >> ins");
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "res: " + bitstring_to_string(res));
       return res;
    }

@@ -833,7 +833,8 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
             {
                spec_module->SetParameter("LSB_PARAMETER", boost::lexical_cast<std::string>(0));
             }
-            THROW_ASSERT(template_circuit->find_member(param, port_o_K, template_circuit) || template_circuit->find_member(param, port_vector_o_K, template_circuit) || spec_module->ExistsParameter(param), "parameter not yet specialized: " + param + " for module " + spec_module->get_typeRef()->get_name());
+            THROW_ASSERT(template_circuit->find_member(param, port_o_K, template_circuit) || template_circuit->find_member(param, port_vector_o_K, template_circuit) || spec_module->ExistsParameter(param),
+                         "parameter not yet specialized: " + param + " for module " + spec_module->get_typeRef()->get_name());
          }
       }
 

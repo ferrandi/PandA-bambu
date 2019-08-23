@@ -1083,7 +1083,6 @@ void raw_writer::operator()(const lut_expr* obj, unsigned int& mask)
    write_when_not_null(STOK(TOK_OP8), obj->op8);
 }
 
-
 void raw_writer::operator()(const template_decl* obj, unsigned int& mask)
 {
    mask = NO_VISIT;

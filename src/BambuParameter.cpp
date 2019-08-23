@@ -1500,14 +1500,14 @@ int BambuParameter::Exec()
             else
 #endif
 #if HAVE_COIN_OR
-            if(optarg[0] == 'C')
+                if(optarg[0] == 'C')
             {
                setOption(OPT_ilp_solver, meilp_solver::COIN_OR);
             }
             else
 #endif
 #if HAVE_LP_SOLVE
-            if(optarg[0] == 'L')
+                if(optarg[0] == 'L')
             {
                setOption(OPT_ilp_solver, meilp_solver::LP_SOLVE);
             }

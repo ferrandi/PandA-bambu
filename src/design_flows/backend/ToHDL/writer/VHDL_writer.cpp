@@ -1069,8 +1069,8 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
 
    /// get the default output of the reset state
 
-   write_comment("concurrent process#"+STR(output_index)+": combinational logic\n");
-   indented_output_stream->Append("comb_logic"+STR(output_index)+": process(present_state");
+   write_comment("concurrent process#" + STR(output_index) + ": combinational logic\n");
+   indented_output_stream->Append("comb_logic" + STR(output_index) + ": process(present_state");
    for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
    {
       std::string port_name = HDL_manager::convert_to_identifier(this, mod->get_in_port(i)->get_id());
@@ -1197,7 +1197,7 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
             if(default_output[i] != current_output[i])
             {
                if(single_proc || output_index == i)
-                  switch (current_output[i])
+                  switch(current_output[i])
                   {
                      case '1':
                         indented_output_stream->Append(port_name + " <= '" + current_output[i] + "';\n");
@@ -1211,7 +1211,7 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
                         THROW_ERROR("Unsupported value in current output");
                         break;
                   }
-               }            
+               }
             }
          }
       }

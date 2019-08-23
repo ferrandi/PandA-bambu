@@ -2735,21 +2735,24 @@ size_t GccWrapper::ConvertVersion(const std::string& version)
    return ret_value;
 }
 
-std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet 
+std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
-optimization_level
+                                          optimization_level
 #endif
-, const GccWrapper_CompilerTarget 
+                                      ,
+                                      const GccWrapper_CompilerTarget
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
-compiler
+                                          compiler
 #endif
-, const std::string& 
+                                      ,
+                                      const std::string&
 #ifndef _WIN32
-expandMemOps_plugin_obj
+                                          expandMemOps_plugin_obj
 #endif
-, const std::string& 
+                                      ,
+                                      const std::string&
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
-expandMemOps_plugin_name
+                                          expandMemOps_plugin_name
 #endif
 )
 {

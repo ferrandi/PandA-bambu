@@ -581,8 +581,8 @@ tree_nodeRef tree_manipulation::create_quaternary_operation(const tree_nodeRef& 
    return node_ref;
 }
 
-
-tree_nodeRef tree_manipulation::create_lut_expr(const tree_nodeRef& type, const tree_nodeRef& op0, const tree_nodeRef& op1, const tree_nodeRef& op2, const tree_nodeRef& op3, const tree_nodeRef& op4, const tree_nodeRef& op5, const tree_nodeRef& op6, const tree_nodeRef& op7, const tree_nodeRef& op8, const std::string& srcp) const
+tree_nodeRef tree_manipulation::create_lut_expr(const tree_nodeRef& type, const tree_nodeRef& op0, const tree_nodeRef& op1, const tree_nodeRef& op2, const tree_nodeRef& op3, const tree_nodeRef& op4, const tree_nodeRef& op5, const tree_nodeRef& op6,
+                                                const tree_nodeRef& op7, const tree_nodeRef& op8, const std::string& srcp) const
 {
    THROW_ASSERT(type->get_kind() == tree_reindex_K, "Type node is not a tree reindex");
    THROW_ASSERT(op0->get_kind() == tree_reindex_K, "Operand 0 node is not a tree reindex");

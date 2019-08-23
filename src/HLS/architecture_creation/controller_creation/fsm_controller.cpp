@@ -48,14 +48,14 @@
 
 #include "BambuParameter.hpp"
 
-#include "register_obj.hpp"
 #include "commandport_obj.hpp"
-#include "funit_obj.hpp"
 #include "conn_binding.hpp"
-#include "reg_binding.hpp"
-#include "fu_binding.hpp"
-#include "mux_obj.hpp"
 #include "connection_obj.hpp"
+#include "fu_binding.hpp"
+#include "funit_obj.hpp"
+#include "mux_obj.hpp"
+#include "reg_binding.hpp"
+#include "register_obj.hpp"
 #include "schedule.hpp"
 
 #include "state_transition_graph.hpp"
@@ -326,7 +326,7 @@ void fsm_controller::create_state_machine(std::string& parse)
                }
             }
          }
-     }
+      }
 
 #ifndef NDEBUG
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->default output after considering unbounded:");
@@ -506,7 +506,7 @@ void fsm_controller::create_state_machine(std::string& parse)
                }
             }
 
-            for(auto const &sel : register_selectors)
+            for(auto const& sel : register_selectors)
             {
                if(wren_list.find(sel.second) != wren_list.end() && ((transition_outputs[wren_list[sel.second]] == 0) || (transition_outputs[wren_list[sel.second]] == default_COND && present_state[v][wren_list[sel.second]] != 1)))
                   transition_outputs[sel.first] = 2;

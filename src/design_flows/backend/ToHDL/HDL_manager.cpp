@@ -1047,7 +1047,7 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
    if(parameters->IsParameter("multi-proc-fsm") and parameters->GetParameter<int>("multi-proc-fsm") == 1)
    {
       auto* mod = GetPointer<module>(cir);
-      const auto n_outs =  mod->get_out_port_size();
+      const auto n_outs = mod->get_out_port_size();
       for(unsigned int output_index = 0; output_index <= n_outs; output_index++)
       {
          if(output_index != n_outs && mod->get_out_port(output_index)->get_id() == PRESENT_STATE_PORT_NAME)
