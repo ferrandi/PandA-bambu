@@ -15,6 +15,7 @@ lib_interface_la_CPPFLAGS = \
     -I$(top_srcdir)/src/HLS/binding/interconnection \
     -I$(top_srcdir)/src/HLS/binding/module \
     -I$(top_srcdir)/src/HLS/binding/register \
+    -I$(top_srcdir)/src/HLS/function_allocation \
     -I$(top_srcdir)/src/HLS/interface \
     -I$(top_srcdir)/src/HLS/interface/WB4 \
     -I$(top_srcdir)/src/HLS/interface/minimal \
@@ -41,12 +42,14 @@ lib_interface_la_CPPFLAGS = \
 noinst_HEADERS = module_interface.hpp \
                  minimal/minimal_interface.hpp \
                  WB4/WB4_interface.hpp \
-                 WB4/WB4Intercon_interface.hpp
+                 WB4/WB4Intercon_interface.hpp \
+                 cs_interface.hpp
 
 lib_interface_la_SOURCES = module_interface.cpp \
                            minimal/minimal_interface.cpp \
                            WB4/WB4_interface.cpp \
-                           WB4/WB4Intercon_interface.cpp
+                           WB4/WB4Intercon_interface.cpp \
+                           cs_interface.cpp
 
 if BUILD_TASTE
 noinst_HEADERS += \

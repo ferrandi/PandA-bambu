@@ -37,13 +37,17 @@ noinst_HEADERS = \
    memory_allocation.hpp \
    memory_symbol.hpp memory.hpp \
    mem_dominator_allocation.hpp \
-   mem_xml_allocation.hpp
+   mem_xml_allocation.hpp \
+   mem_dominator_allocation_cs.hpp \
+   memory_cs.hpp
 
 lib_HLS_memory_la_SOURCES = \
    memory_allocation.cpp \
    memory_symbol.cpp memory.cpp \
    mem_dominator_allocation.cpp \
-   mem_xml_allocation.cpp
+   mem_xml_allocation.cpp \
+   mem_dominator_allocation_cs.cpp \
+   memory_cs.cpp
 
 
 #do not touch the following line

@@ -58,11 +58,6 @@ class HLSCWriter : public CWriter
    const HLSCBackendInformationConstRef hls_c_backend_information;
 
    /**
-    * Print the binary representation of a number
-    */
-   std::string convert_in_binary(const BehavioralHelperConstRef behavioral_helper, unsigned int base_type, const std::string& C_value, unsigned int precision);
-
-   /**
     * Check if a binary string is a sequence of zeros with
     * length multiple of 8
     */
@@ -152,18 +147,18 @@ class HLSCWriter : public CWriter
    /**
     * Writes the global declarations
     */
-   void WriteGlobalDeclarations() override;
+   virtual void WriteGlobalDeclarations();
 
    /**
     * Write function implementation
     * @param function_id is the index of the function to be written
     */
-   void WriteFunctionImplementation(unsigned int function_index) override;
+   virtual void WriteFunctionImplementation(unsigned int function_index);
 
    /**
     * Writes implementation of __builtin_wait_call
     */
-   void WriteBuiltinWaitCall() override;
+   virtual void WriteBuiltinWaitCall();
 
  public:
    /**
@@ -181,17 +176,17 @@ class HLSCWriter : public CWriter
    /**
     * Destructor
     */
-   ~HLSCWriter() override;
+   virtual ~HLSCWriter();
 
    /**
     * Writes the final C file
     * @param file_name is the name of the file to be generated
     */
-   void WriteFile(const std::string& file_name) override;
+   virtual void WriteFile(const std::string& file_name);
 
    /**
     * Writes the header of the file
     */
-   void WriteHeader() override;
+   virtual void WriteHeader();
 };
 #endif

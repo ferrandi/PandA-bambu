@@ -67,12 +67,19 @@
 
 /// HLS/memory include
 #include "memory.hpp"
+#include "memory_cs.hpp"
 
 /// STD includes
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 #include <iosfwd>
+#include <string>
+
+/// STL include
+#include <tuple>
+#include <vector>
+#include <utility>
 
 /// technology include
 #include "technology_manager.hpp"
@@ -255,6 +262,10 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
    cpp_code_body += "std::string addr_bus_bitsize = \"" + STR(HLSMgr->get_address_bitsize()) + "\";\n";
    cpp_code_body += "std::string size_bus_bitsize = \"" + STR(HLSMgr->Rmem->get_bus_size_bitsize()) + "\";\n";
    cpp_code_body += "std::string _specializing_string = \"" + specializing_string + "\";\n";
+   if(parameters->isOption(OPT_context_switch))
+   {
+      cpp_code_body += "std::string tag_bus_bitsize = \"" + STR(GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize()) + "\";\n";
+   }
    if(parameters->isOption(OPT_channels_number) && parameters->getOption<unsigned int>(OPT_channels_number) > 1)
       cpp_code_body += "unsigned int _number_of_channels = " + STR(parameters->getOption<unsigned int>(OPT_channels_number)) + ";\n";
 
@@ -404,8 +415,11 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
       GetPointer<module>(top)->set_copyright(fu_module->get_copyright());
       GetPointer<module>(top)->set_authors(fu_module->get_authors());
       GetPointer<module>(top)->set_license(fu_module->get_license());
-      std::map<std::string, std::string> p = fu_module->get_parameters();
-      GetPointer<module>(top)->set_parameters(p);
+      for(const auto module_parameter : fu_module->GetParameters())
+      {
+         GetPointer<module>(top)->AddParameter(module_parameter.first, fu_module->GetDefaultParameter(module_parameter.first));
+         GetPointer<module>(top)->SetParameter(module_parameter.first, module_parameter.second);
+      }
       auto multiplicitiy = fu_module->get_multi_unit_multiplicity();
       GetPointer<module>(top)->set_multi_unit_multiplicity(multiplicitiy);
 

@@ -49,6 +49,9 @@ class SimulationInformation
 
    /// store the list of parameter name of the function under test
    std::vector<std::string> simulationArgSignature;
+
+   /// results available
+   bool results_available = false;
 };
 
 typedef refcount<SimulationInformation> SimulationInformationRef;

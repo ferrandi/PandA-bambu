@@ -726,10 +726,11 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index) const
    {
       const auto right = GET_NODE(ga->op1);
       /// currently all the operations introduced after the allocation has been performed are bounded
-      THROW_ASSERT(GetPointer<cst_node>(right) or right->get_kind() == vec_cond_expr_K or right->get_kind() == nop_expr_K or right->get_kind() == lut_expr_K or right->get_kind() == lshift_expr_K or right->get_kind() == rshift_expr_K or right->get_kind() == bit_xor_expr_K or
-                       right->get_kind() == bit_not_expr_K or right->get_kind() == bit_ior_concat_expr_K or right->get_kind() == bit_ior_expr_K or right->get_kind() == bit_and_expr_K or right->get_kind() == convert_expr_K or
-                       right->get_kind() == truth_and_expr_K or right->get_kind() == truth_or_expr_K or right->get_kind() == truth_not_expr_K or right->get_kind() == cond_expr_K or right->get_kind() == ternary_plus_expr_K or
-                       right->get_kind() == ternary_mp_expr_K or right->get_kind() == ternary_pm_expr_K or right->get_kind() == ternary_mm_expr_K or right->get_kind() == ssa_name_K or right->get_kind() == widen_mult_expr_K or right->get_kind() == mult_expr_K,
+      THROW_ASSERT(GetPointer<cst_node>(right) or right->get_kind() == vec_cond_expr_K or right->get_kind() == nop_expr_K or right->get_kind() == lut_expr_K or right->get_kind() == lshift_expr_K or right->get_kind() == rshift_expr_K or
+                       right->get_kind() == bit_xor_expr_K or right->get_kind() == bit_not_expr_K or right->get_kind() == bit_ior_concat_expr_K or right->get_kind() == bit_ior_expr_K or right->get_kind() == bit_and_expr_K or
+                       right->get_kind() == convert_expr_K or right->get_kind() == truth_and_expr_K or right->get_kind() == truth_or_expr_K or right->get_kind() == truth_not_expr_K or right->get_kind() == cond_expr_K or
+                       right->get_kind() == ternary_plus_expr_K or right->get_kind() == ternary_mp_expr_K or right->get_kind() == ternary_pm_expr_K or right->get_kind() == ternary_mm_expr_K or right->get_kind() == ssa_name_K or
+                       right->get_kind() == widen_mult_expr_K or right->get_kind() == mult_expr_K,
                    "Unexpected right part: " + right->get_kind_text());
       return true;
    }
@@ -1152,8 +1153,8 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
                info->base128_input_nelem.push_back(128 / element_size);
                info->input_prec.push_back(element_size);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Type is " + STR(type_index) + " " + TreeM->CGetTreeNode(type_index)->ToString() + " - Number of input elements (base128): " + STR(128 / element_size) + " - Number of real input elements: " + STR(vector_size / element_size) +
-                                  " - Input precision: " + STR(element_size));
+                              "---Type is " + STR(type_index) + " " + TreeM->CGetTreeNode(type_index)->ToString() + " - Number of input elements (base128): " + STR(128 / element_size) +
+                                  " - Number of real input elements: " + STR(vector_size / element_size) + " - Input precision: " + STR(element_size));
             }
             else
             {
@@ -1388,7 +1389,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          if(current_op == "plus_expr" || current_op == "minus_expr" || current_op == "pointer_plus_expr" || current_op == "ternary_plus_expr" || current_op == "ternary_pm_expr" || current_op == "ternary_mp_expr" || current_op == "ternary_mm_expr" ||
             current_op == "negate_expr")
          {
-            if(out_prec == 9 || out_prec ==17 || out_prec == 33)
+            if(out_prec == 9 || out_prec == 17 || out_prec == 33)
             {
                --out_prec;
                max_size_in = out_prec;
@@ -1638,8 +1639,8 @@ unsigned int AllocationInformation::GetCycleLatency(const unsigned int operation
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latency of not allocated fu is 1: possibly inaccurate");
             const auto data_bitsize = tree_helper::Size(ga->op0);
             const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("widen_mult_expr_FU_" + STR(fu_prec/2) + "_" + STR(fu_prec/2) + "_" + STR(fu_prec)+"_0", LIBRARY_STD_FU);
-            THROW_ASSERT(new_stmt_temp, "Functional unit not found: widen_mult_expr_FU_" + STR(fu_prec/2) + "_" + STR(fu_prec/2) + "_" + STR(fu_prec)+"_0");
+            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("widen_mult_expr_FU_" + STR(fu_prec / 2) + "_" + STR(fu_prec / 2) + "_" + STR(fu_prec) + "_0", LIBRARY_STD_FU);
+            THROW_ASSERT(new_stmt_temp, "Functional unit not found: widen_mult_expr_FU_" + STR(fu_prec / 2) + "_" + STR(fu_prec / 2) + "_" + STR(fu_prec) + "_0");
             const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
             const auto new_stmt_op_temp = new_stmt_fu->get_operation("widen_mult_expr");
             const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
@@ -1650,8 +1651,8 @@ unsigned int AllocationInformation::GetCycleLatency(const unsigned int operation
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latency of not allocated fu is 1: possibly inaccurate");
             const auto data_bitsize = tree_helper::Size(ga->op0);
             const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec)+"_0", LIBRARY_STD_FU);
-            THROW_ASSERT(new_stmt_temp, "Functional unit not found: mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec)+"_0");
+            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_0", LIBRARY_STD_FU);
+            THROW_ASSERT(new_stmt_temp, "Functional unit not found: mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_0");
             const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
             const auto new_stmt_op_temp = new_stmt_fu->get_operation("mult_expr");
             const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
@@ -1908,8 +1909,8 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
       {
          const auto data_bitsize = tree_helper::Size(ga->op0);
          const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("widen_mult_expr_FU_" + STR(fu_prec/2) + "_" + STR(fu_prec/2) + "_" + STR(fu_prec)+"_0", LIBRARY_STD_FU);
-         THROW_ASSERT(new_stmt_temp, "Functional unit not found: widen_mult_expr_FU_" + STR(fu_prec/2) + "_" + STR(fu_prec/2) + "_" + STR(fu_prec)+"_0");
+         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("widen_mult_expr_FU_" + STR(fu_prec / 2) + "_" + STR(fu_prec / 2) + "_" + STR(fu_prec) + "_0", LIBRARY_STD_FU);
+         THROW_ASSERT(new_stmt_temp, "Functional unit not found: widen_mult_expr_FU_" + STR(fu_prec / 2) + "_" + STR(fu_prec / 2) + "_" + STR(fu_prec) + "_0");
          const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
          const auto new_stmt_op_temp = new_stmt_fu->get_operation("widen_mult_expr");
          const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
@@ -1934,8 +1935,8 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
       {
          const auto data_bitsize = tree_helper::Size(ga->op0);
          const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec)+"_0", LIBRARY_STD_FU);
-         THROW_ASSERT(new_stmt_temp, "Functional unit not found: mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec)+"_0");
+         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_0", LIBRARY_STD_FU);
+         THROW_ASSERT(new_stmt_temp, "Functional unit not found: mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_0");
          const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
          const auto new_stmt_op_temp = new_stmt_fu->get_operation("mult_expr");
          const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);

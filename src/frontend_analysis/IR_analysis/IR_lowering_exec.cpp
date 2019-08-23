@@ -626,7 +626,8 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
 #endif
                      {
                         tree_nodeRef quotient_expr = tree_man->create_binary_operation(type_expr, op0, op1, srcp_default, eq_expr_K);
-                        if(rem_flag)                     {
+                        if(rem_flag)
+                        {
                            tree_nodeRef quotient_ga = tree_man->CreateGimpleAssign(type_expr, tree_nodeRef(), tree_nodeRef(), quotient_expr, block.first, srcp_default);
                            block.second->PushBefore(quotient_ga, *it_los);
                            tree_nodeRef quotient_ga_var = GetPointer<gimple_assign>(GET_NODE(quotient_ga))->op0;
@@ -682,7 +683,7 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
 #ifndef NDEBUG
                          AppM->ApplyNewTransformation() and
 #endif
-                           data_bitsize <= 64)
+                         data_bitsize <= 64)
                      {
                         unsigned long long int ml;
                         int post_shift;
@@ -762,7 +763,7 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
                         else
                            ga->op1 = quotient_expr;
 #ifndef NDEBUG
-                        AppM->RegisterTransformation(step_name, *it_los); 
+                        AppM->RegisterTransformation(step_name, *it_los);
 #endif
                         restart_analysis = true;
                      }
@@ -2863,7 +2864,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                {
                   auto* vd = GetPointer<var_decl>(GET_NODE(ga->op0));
                   tree_nodeRef type = vd->type;
-                  //std::cerr << "algn" << GetPointer<type_node>(GET_NODE(type))->algn << "\n";
+                  // std::cerr << "algn" << GetPointer<type_node>(GET_NODE(type))->algn << "\n";
                   tree_nodeRef pt = tree_man->create_pointer_type(type, GetPointer<type_node>(GET_NODE(type))->algn);
                   tree_nodeRef ae = tree_man->create_unary_operation(pt, ga->op0, srcp_default, addr_expr_K);
                   tree_nodeRef new_ga = tree_man->CreateGimpleAssign(pt, tree_nodeRef(), tree_nodeRef(), ae, block.first, srcp_default);

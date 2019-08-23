@@ -43,10 +43,8 @@
  *
  */
 
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
 #include "conn_binding.hpp"
+#include "conn_binding_cs.hpp"
 
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
@@ -66,8 +64,8 @@
 #include "multi_unbounded_obj.hpp"
 #include "multiplier_conn_obj.hpp"
 #include "mux_obj.hpp"
+#include "omp_functions.hpp"
 #include "register_obj.hpp"
-#include "state_transition_graph_manager.hpp"
 
 #include "hls.hpp"
 
@@ -90,6 +88,9 @@
 #include "allocation.hpp"
 #include "allocation_information.hpp"
 
+/// HLS/stg include
+#include "state_transition_graph_manager.hpp"
+
 /// HLS/virtual_components include
 #include "generic_obj.hpp"
 
@@ -98,8 +99,8 @@
 #include <list>
 #include <set>
 #include <tuple>
-#include <vector>
 #include <utility>
+#include <vector>
 
 /// technology/physical_library include
 #include "string_manipulation.hpp" // for GET_CLASS
@@ -112,6 +113,27 @@ unsigned conn_binding::unique_id = 0;
 conn_binding::conn_binding(const BehavioralHelperConstRef _BH, const ParameterConstRef _parameters)
     : parameters(_parameters), debug_level(_parameters->get_class_debug_level(GET_CLASS(*this))), output_level(_parameters->getOption<int>(OPT_output_level)), BH(_BH)
 {
+}
+
+conn_bindingRef conn_binding::create_conn_binding(const HLS_managerRef _HLSMgr, const hlsRef _HLS, const BehavioralHelperConstRef _BH, const ParameterConstRef _parameters)
+{
+   if(_parameters->isOption(OPT_context_switch))
+   {
+      auto omp_functions = GetPointer<OmpFunctions>(_HLSMgr->Rfuns);
+      bool found = false;
+      if(omp_functions->kernel_functions.find(_HLS->functionId) != omp_functions->kernel_functions.end())
+         found = true;
+      if(omp_functions->parallelized_functions.find(_HLS->functionId) != omp_functions->parallelized_functions.end())
+         found = true;
+      if(omp_functions->atomic_functions.find(_HLS->functionId) != omp_functions->atomic_functions.end())
+         found = true;
+      if(found)
+         return conn_bindingRef(new conn_binding_cs(_BH, _parameters));
+      else
+         return conn_bindingRef(new conn_binding(_BH, _parameters));
+   }
+   else
+      return conn_bindingRef(new conn_binding(_BH, _parameters));
 }
 
 conn_binding::~conn_binding() = default;
@@ -296,22 +318,25 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
    add_command_ports(HLSMgr, HLS, SM);
 
    /// add sparse logic
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding sparse logic to the datapath");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding sparse logic to the datapath");
    add_sparse_logic_dp(HLS, SM, HLSMgr);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
 
 #ifndef NDEBUG
    const HLSFlowStep_Type connection_type = HLS->Param->getOption<HLSFlowStep_Type>(OPT_datapath_interconnection_algorithm);
    /// up to now, circuit is general about interconnections. Now, proper interconnection architecture will be executed
    THROW_ASSERT(connection_type == HLSFlowStep_Type::MUX_INTERCONNECTION_BINDING, "Unexpected interconnection binding");
 #endif
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Datapath interconnection using mux architecture");
    mux_connection(HLS, SM);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
 
    const structural_objectRef circuit = SM->get_circ();
    std::map<unsigned int, structural_objectRef> null_values;
    for(unsigned int i = 0; i < GetPointer<module>(circuit)->get_internal_objects_size(); i++)
    {
       structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
-      if(!GetPointer<module>(curr_gate))
+      if(!GetPointer<module>(curr_gate) || GetPointer<module>(curr_gate)->get_id() == "scheduler_kernel")
          continue;
       for(unsigned int j = 0; j < GetPointer<module>(curr_gate)->get_in_port_size(); j++)
       {
@@ -378,7 +403,6 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
 void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef SM)
 {
    structural_objectRef circuit = SM->get_circ();
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Datapath interconnection using mux architecture");
 
    // std::set<std::pair<std::string, std::string> > already_considered;
    for(std::map<std::tuple<generic_objRef, generic_objRef, unsigned int, unsigned int>, connection_objRef>::const_iterator i = conn_implementation.begin(); i != conn_implementation.end(); ++i)
@@ -389,7 +413,7 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
       THROW_ASSERT(src, "a NULL src may come from uninitialized variables. Target: " + tgt->get_string());
       unsigned int operand = std::get<2>(i->first);
       unsigned int port_index = std::get<3>(i->first);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Creating CONNECTION between " + src->get_string() + " and " + tgt->get_string() + "(" + STR(operand) + ":" + STR(port_index) + ")");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating CONNECTION between " + src->get_string() + " and " + tgt->get_string() + "(" + STR(operand) + ":" + STR(port_index) + ")");
 
       structural_objectRef src_module = src->get_structural_obj();
       structural_objectRef tgt_module = tgt->get_structural_obj();
@@ -458,7 +482,7 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
       {
          case connection_obj::DIRECT_CONN:
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating DIRECTED CONNECTION");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Creating DIRECTED CONNECTION");
             THROW_ASSERT(sign, "");
             THROW_ASSERT(port_tgt, tgt_module->get_path());
             unsigned int bits_src = GET_TYPE_SIZE(sign);
@@ -488,11 +512,8 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
          default:
             THROW_ERROR("Connection type not allowed: " + STR(i->second->get_type()));
       }
-
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- ");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<-- ");
    }
-
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Datapath interconnections completed!");
 }
 
 void conn_binding::specialise_mux(const generic_objRef mux, unsigned int bits_tgt) const
@@ -604,14 +625,14 @@ void conn_binding::mux_allocation(const hlsRef HLS, const structural_managerRef 
 
 void conn_binding::add_datapath_connection(const technology_managerRef TM, const structural_managerRef SM, const structural_objectRef src, const structural_objectRef tgt, unsigned int conn_type)
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding datapath connections");
    unsigned int bits_src = GET_TYPE_SIZE(src);
    unsigned int bits_tgt = GET_TYPE_SIZE(tgt);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding datapath connections " + src->get_path() + "(" + STR(bits_src) + " bits)-->" + tgt->get_path() + "(" + STR(bits_tgt) + " bits)");
    // std::cerr << "adding connection between " << src->get_path() << " and " << tgt->get_path() << " conn type " << conn_type << std::endl;
    if(bits_src == bits_tgt)
    {
-      THROW_ASSERT(src->get_owner(), "expected an owner for src: "+src->get_path());
-      THROW_ASSERT(tgt->get_owner(), "expected an owner for tgt: "+tgt->get_path());
+      THROW_ASSERT(src->get_owner(), "expected an owner for src: " + src->get_path());
+      THROW_ASSERT(tgt->get_owner(), "expected an owner for tgt: " + tgt->get_path());
       if(src->get_owner() == tgt->get_owner() && src->get_kind() == port_o_K && tgt->get_kind() == port_o_K)
       {
          std::string name = "io_signal_" + src->get_id() + "_" + tgt->get_id();
@@ -622,10 +643,9 @@ void conn_binding::add_datapath_connection(const technology_managerRef TM, const
       }
       else
          SM->add_connection(src, tgt);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added datapath connections");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added datapath connections (same bitsize)");
       return;
    }
-
    structural_objectRef circuit = SM->get_circ();
    bool is_src_int = src->get_typeRef()->type == structural_type_descriptor::INT || (conn_type == structural_type_descriptor::INT && src->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL);
    bool is_tgt_int = tgt->get_typeRef()->type == structural_type_descriptor::INT || (conn_type == structural_type_descriptor::INT && tgt->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL);
@@ -663,6 +683,7 @@ void conn_binding::add_datapath_connection(const technology_managerRef TM, const
       {
          std::string library_name = TM->get_library(UUDATA_CONVERTER_STD);
          c_obj = SM->add_module_from_technology_library(name, UUDATA_CONVERTER_STD, library_name, circuit, TM);
+         std::cerr << "A001" << std::endl;
 #if 0
          std::string library_name = TM->get_library(FFDATA_CONVERTER_STD);
          c_obj = SM->add_module_from_technology_library(name, FFDATA_CONVERTER_STD, library_name, circuit, TM);
@@ -820,11 +841,11 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
       unsigned int shift_index = 0;
       if(component->get_type() == generic_obj::MULTIPLIER_CONN_OBJ && GetPointer<multiplier_conn_obj>(component)->is_multiplication_to_constant())
       {
-         sparse_module->set_parameter(VALUE_PARAMETER, STR(GetPointer<multiplier_conn_obj>(component)->get_constant_value()));
+         sparse_module->SetParameter(VALUE_PARAMETER, STR(GetPointer<multiplier_conn_obj>(component)->get_constant_value()));
       }
       if(component->get_type() == generic_obj::ADDER_CONN_OBJ && GetPointer<adder_conn_obj>(component)->is_align_adder())
       {
-         sparse_module->set_parameter(VALUE_PARAMETER, STR(GetPointer<adder_conn_obj>(component)->get_trimmed_bits()));
+         sparse_module->SetParameter(VALUE_PARAMETER, STR(GetPointer<adder_conn_obj>(component)->get_trimmed_bits()));
       }
       else if(GetPointer<port_o>(sparse_module->get_in_port(shift_index)) && GetPointer<port_o>(sparse_module->get_in_port(shift_index))->get_is_clock())
       {
@@ -832,7 +853,7 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
          /// so we use the non-pipelined version by setting PIPE_PARAMETER to 0
          if(component->get_type() == generic_obj::MULTIPLIER_CONN_OBJ)
          {
-            sparse_module->set_parameter(PIPE_PARAMETER, "0");
+            sparse_module->SetParameter(PIPE_PARAMETER, "0");
          }
          ++shift_index;
       }

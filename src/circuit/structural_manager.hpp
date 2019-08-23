@@ -337,7 +337,8 @@ class structural_manager
     * @param name is the parameter name
     * @param value is the parameter value
     */
-   void set_parameter(const std::string& name, const std::string& value);
+   void SetParameter(const std::string& name, const std::string& value);
+
    /**
     * Add an object to the sensitivity list of process/service
     * @param obj is the object.

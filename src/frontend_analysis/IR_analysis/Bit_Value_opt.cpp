@@ -145,8 +145,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-static
-void constrainSSA(ssa_name * op_ssa, tree_managerRef TM)
+static void constrainSSA(ssa_name* op_ssa, tree_managerRef TM)
 {
    auto nbit = op_ssa->bit_values.size();
    auto op0_type_id = GET_INDEX_NODE(op_ssa->type);
@@ -155,16 +154,16 @@ void constrainSSA(ssa_name * op_ssa, tree_managerRef TM)
    {
       bool isSigned = tree_helper::is_int(TM, op0_type_id);
       if(isSigned)
-         op_ssa->min =  TM->CreateUniqueIntegerCst(-(1ll<<(nbit-1)), op0_type_id);
+         op_ssa->min = TM->CreateUniqueIntegerCst(-(1ll << (nbit - 1)), op0_type_id);
       else
-         op_ssa->min =  TM->CreateUniqueIntegerCst(0, op0_type_id);
+         op_ssa->min = TM->CreateUniqueIntegerCst(0, op0_type_id);
       if(isSigned)
-         op_ssa->max =  TM->CreateUniqueIntegerCst((1ll<<(nbit-1))-1, op0_type_id);
+         op_ssa->max = TM->CreateUniqueIntegerCst((1ll << (nbit - 1)) - 1, op0_type_id);
       else
-         op_ssa->max =  TM->CreateUniqueIntegerCst((1ll<<nbit)-1, op0_type_id);
-      //std::cerr<<"var " << op_ssa->ToString()<<" ";
-      //std::cerr << "min " <<op_ssa->min->ToString() << " max " <<op_ssa->max->ToString()<<"\n";
-      //std::cerr << "nbit "<< nbit << " nbitType " << nbitType <<"\n";
+         op_ssa->max = TM->CreateUniqueIntegerCst((1ll << nbit) - 1, op0_type_id);
+      // std::cerr<<"var " << op_ssa->ToString()<<" ";
+      // std::cerr << "min " <<op_ssa->min->ToString() << " max " <<op_ssa->max->ToString()<<"\n";
+      // std::cerr << "nbit "<< nbit << " nbitType " << nbitType <<"\n";
    }
 }
 
@@ -456,16 +455,16 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                }
                else if(GetPointer<ssa_name>(GET_NODE(ga->op1)))
                {
-                  if(!ssa->bit_values.empty() && ssa->bit_values.at(0) == '0' && ssa->bit_values.size()<=64)
+                  if(!ssa->bit_values.empty() && ssa->bit_values.at(0) == '0' && ssa->bit_values.size() <= 64)
                   {
                      const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
-                     tree_nodeRef bit_mask_constant_node = TM->CreateUniqueIntegerCst((1LL << (ssa->bit_values.size()-1))-1, ssa->type->index);
+                     tree_nodeRef bit_mask_constant_node = TM->CreateUniqueIntegerCst((1LL << (ssa->bit_values.size() - 1)) - 1, ssa->type->index);
                      tree_nodeRef band_expr = IRman->create_binary_operation(ssa->type, ga->op1, bit_mask_constant_node, srcp_default, bit_and_expr_K);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace ssa usage before: " + stmt->ToString());
                      TM->ReplaceTreeNode(stmt, ga->op1, band_expr);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace ssa usage after: " + stmt->ToString());
                      modified = true;
-                     ga->keep = true;///this prevent an infinite loop with CSE
+                     ga->keep = true; /// this prevent an infinite loop with CSE
                   }
                   else
                   {
@@ -1080,7 +1079,6 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
 #ifndef NDEBUG
                      AppM->RegisterTransformation(GetName(), stmt);
 #endif
-
                   }
                }
                else if(GET_NODE(ga->op1)->get_kind() == eq_expr_K || GET_NODE(ga->op1)->get_kind() == ne_expr_K)
@@ -1158,7 +1156,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
                         tree_nodeRef one_const_node = TM->CreateUniqueIntegerCst(1, op0_type_index);
                         tree_nodeRef bitwise_masked = IRman->create_binary_operation(op0_op_type, me->op0, one_const_node, srcp_default, bit_and_expr_K);
-                        tree_nodeRef op0_ga = IRman->CreateGimpleAssign(op0_op_type, TM->CreateUniqueIntegerCst(0,op0_type_index), TM->CreateUniqueIntegerCst(1,op0_type_index), bitwise_masked, B_id, srcp_default);
+                        tree_nodeRef op0_ga = IRman->CreateGimpleAssign(op0_op_type, TM->CreateUniqueIntegerCst(0, op0_type_index), TM->CreateUniqueIntegerCst(1, op0_type_index), bitwise_masked, B_id, srcp_default);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op0_ga));
                         B->PushBefore(op0_ga, stmt);
                         tree_nodeRef op0_ga_var = GetPointer<gimple_assign>(GET_NODE(op0_ga))->op0;
@@ -1505,7 +1503,8 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         auto ull_value1 = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
                         if(ull_value0 == 1 && ull_value1 == 0)
                         {
-                           tree_nodeRef ga_nop = IRman->CreateNopExpr(me->op0, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type,TM->CreateUniqueIntegerCst(0, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type->index),TM->CreateUniqueIntegerCst(1, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type->index));
+                           tree_nodeRef ga_nop = IRman->CreateNopExpr(me->op0, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type, TM->CreateUniqueIntegerCst(0, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type->index),
+                                                                      TM->CreateUniqueIntegerCst(1, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type->index));
                            B->PushBefore(ga_nop, stmt);
                            modified = true;
 #ifndef NDEBUG

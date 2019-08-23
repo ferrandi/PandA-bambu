@@ -68,6 +68,7 @@
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "ext_tree_node.hpp"
 #include "function_behavior.hpp"
+#include "math_function.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "token_interface.hpp"
 #include "tree_basic_block.hpp"
@@ -75,7 +76,6 @@
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include "math_function.hpp"
 
 dead_code_elimination::dead_code_elimination(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, DEAD_CODE_ELIMINATION, _design_flow_manager, _parameters)
@@ -123,7 +123,7 @@ bool dead_code_elimination::HasToBeExecuted() const
    std::map<unsigned int, unsigned int> cur_bb_ver;
    const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
    std::set<unsigned int> calledSet = AppM->CGetCallGraphManager()->get_called_by(function_id);
-   calledSet.insert(function_id);/// add the function itself
+   calledSet.insert(function_id); /// add the function itself
    for(const auto i : calledSet)
    {
       const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(i);
@@ -132,9 +132,6 @@ bool dead_code_elimination::HasToBeExecuted() const
    }
    return cur_bb_ver != last_bb_ver || cur_bitvalue_ver != last_bitvalue_ver;
 }
-
-
-
 
 void dead_code_elimination::kill_uses(const tree_managerRef TM, tree_nodeRef op0) const
 {
@@ -154,7 +151,7 @@ void dead_code_elimination::kill_uses(const tree_managerRef TM, tree_nodeRef op0
          const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
          val = tree_man->CreateRealCst(TM->GetTreeReindex(type_index), 0.l, data_value_id);
       }
-      else if(tree_helper::is_a_complex(TM, op_ssa_index) || tree_helper::is_a_vector(TM,op_ssa_index))
+      else if(tree_helper::is_a_complex(TM, op_ssa_index) || tree_helper::is_a_vector(TM, op_ssa_index))
       {
          const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
          auto utype = tree_man->create_default_unsigned_integer_type();
@@ -195,7 +192,6 @@ unsigned dead_code_elimination::move2emptyBB(const tree_managerRef TM, statement
 {
    auto succ_block = sl->list_of_bloc.at(cand_bb_dest);
 
-
    /// Create empty basic block
    const auto new_basic_block_index = (sl->list_of_bloc.rbegin())->first + 1;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created BB" + STR(new_basic_block_index) + " as new successor of BB" + STR(pred));
@@ -214,8 +210,8 @@ unsigned dead_code_elimination::move2emptyBB(const tree_managerRef TM, statement
    bb_pred->list_of_succ.push_back(new_basic_block_index);
 
    succ_block->list_of_pred.erase(std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), pred));
-   ///Fix PHIs
-   for(auto phi: succ_block->CGetPhiList())
+   /// Fix PHIs
+   for(auto phi : succ_block->CGetPhiList())
    {
       auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
       gimple_phi::DefEdgeList new_list_of_def_edge;
@@ -229,7 +225,7 @@ unsigned dead_code_elimination::move2emptyBB(const tree_managerRef TM, statement
       }
       gp->SetDefEdgeList(TM, new_list_of_def_edge);
    }
-   for(auto phi: bb_dest_block->CGetPhiList())
+   for(auto phi : bb_dest_block->CGetPhiList())
    {
       auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
       gimple_phi::DefEdgeList new_list_of_def_edge;
@@ -292,7 +288,6 @@ void dead_code_elimination::add_gimple_nop(gimple_node* gc, const tree_managerRe
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added statement " + GET_NODE(gimple_nop_node_ref)->ToString());
 }
 
-
 /// single sweep analysis, block by block, from the bottom to up. Each ssa which is used zero times is eliminated and the uses of the variables used in the assignment are recomputed
 /// multi-way and two way IFs simplified when conditions are constants
 /// gimple_call without side effects are removed
@@ -314,9 +309,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
    do
    {
       restart_analysis = false;
-      bool do_reachability=false;
-      std::unordered_map<unsigned,std::set<unsigned>> vdefvover_map;
-      //std::unordered_set<unsigned> vdefvover_map;
+      bool do_reachability = false;
+      std::unordered_map<unsigned, std::set<unsigned>> vdefvover_map;
+      // std::unordered_set<unsigned> vdefvover_map;
       for(block_it = blocks.begin(); block_it != block_it_end; ++block_it)
       {
          const auto& stmt_list = block_it->second->CGetStmtList();
@@ -324,10 +319,10 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          {
             auto gn = GetPointer<gimple_node>(GET_NODE(*stmt));
             THROW_ASSERT(gn->vovers.empty() || gn->vdef, "unexpected condition");
-            for(auto vo: gn->vovers)
+            for(auto vo : gn->vovers)
             {
                vdefvover_map[GET_INDEX_NODE(vo)].insert(GET_INDEX_NODE(gn->vdef));
-               //vdefvover_map.insert(GET_INDEX_NODE(vo));
+               // vdefvover_map.insert(GET_INDEX_NODE(vo));
             }
          }
       }
@@ -348,28 +343,28 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             {
                auto ga = GetPointer<gimple_assign>(GET_NODE(*stmt));
                /// in case of virtual uses it is better not perform the elimination
-               if(ga->predicate && GET_NODE(ga->predicate)->get_kind() == integer_cst_K &&  GetPointer<integer_cst>(GET_NODE(ga->predicate))->value == 0)
+               if(ga->predicate && GET_NODE(ga->predicate)->get_kind() == integer_cst_K && GetPointer<integer_cst>(GET_NODE(ga->predicate))->value == 0)
                {
-                     if(ga->vdef && !is_single_write_memory)
-                     {
-                        kill_vdef(TM,ga->vdef);
-                        ga->vdef = tree_nodeRef();
-                     }
-                     else if(ga->memdef && is_single_write_memory)
-                     {
-                        kill_vdef(TM,ga->memdef);
-                        ga->memdef = tree_nodeRef();
-                     }
-                     else if(GET_NODE(ga->op0)->get_kind() == ssa_name_K)
-                     {
-                        kill_uses(TM,ga->op0);
-                     }
-                     else
-                        THROW_ERROR("unexpected condition");
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Dead code found");
-                     stmts_to_be_removed.push_back(*stmt);
+                  if(ga->vdef && !is_single_write_memory)
+                  {
+                     kill_vdef(TM, ga->vdef);
+                     ga->vdef = tree_nodeRef();
+                  }
+                  else if(ga->memdef && is_single_write_memory)
+                  {
+                     kill_vdef(TM, ga->memdef);
+                     ga->memdef = tree_nodeRef();
+                  }
+                  else if(GET_NODE(ga->op0)->get_kind() == ssa_name_K)
+                  {
+                     kill_uses(TM, ga->op0);
+                  }
+                  else
+                     THROW_ERROR("unexpected condition");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Dead code found");
+                  stmts_to_be_removed.push_back(*stmt);
 #ifndef NDEBUG
-                     AppM->RegisterTransformation(GetName(), *stmt);
+                  AppM->RegisterTransformation(GetName(), *stmt);
 #endif
                }
                else
@@ -399,13 +394,13 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                            }
                            else
                            {
-                              is_a_writing_memory_call = true;/// conservative analysis
+                              is_a_writing_memory_call = true; /// conservative analysis
                            }
                         }
                         if(!is_a_writing_memory_call)
                         {
                            if(ga->vdef)
-                              add_gimple_nop(ga,TM,*stmt,(block_it)->second);
+                              add_gimple_nop(ga, TM, *stmt, (block_it)->second);
                            stmts_to_be_removed.push_back(*stmt);
 #ifndef NDEBUG
                            AppM->RegisterTransformation(GetName(), *stmt);
@@ -416,7 +411,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                      else
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---LHS ssa used: " + STR(ssa->CGetNumberUses()) + "-" + STR(ssa->CGetDefStmts().size()));
                   }
-                  else if(op0->get_kind() == mem_ref_K && !ga->artificial && !tree_helper::is_a_vector(TM,op1_type_index))
+                  else if(op0->get_kind() == mem_ref_K && !ga->artificial && !tree_helper::is_a_vector(TM, op1_type_index))
                   {
                      auto* mr = GetPointer<mem_ref>(op0);
                      THROW_ASSERT(GET_NODE(mr->op1)->get_kind() == integer_cst_K, "unexpected condition");
@@ -428,7 +423,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                      {
                         THROW_ASSERT(GET_NODE(mr->op0)->get_kind() == ssa_name_K, "unexpected condition");
                         auto derefVar = GetPointer<ssa_name>(GET_NODE(mr->op0));
-                        auto &defStmts = derefVar->CGetDefStmts();
+                        auto& defStmts = derefVar->CGetDefStmts();
                         if(defStmts.size() == 1)
                         {
                            auto defStmt = *defStmts.begin();
@@ -468,7 +463,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                           {
                                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Dead Store found");
                                              if(ga->vdef)
-                                                add_gimple_nop(ga,TM,*stmt,(block_it)->second);
+                                                add_gimple_nop(ga, TM, *stmt, (block_it)->second);
                                              stmts_to_be_removed.push_back(*stmt);
 #ifndef NDEBUG
                                              AppM->RegisterTransformation(GetName(), *stmt);
@@ -511,7 +506,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                                      found_load = true;
                                                                      break;
                                                                   }
-                                                                  if(!found_load && gn_curr->vdef && (ga_used->vuses.find(gn_curr->vdef) != ga_used->vuses.end() || (vdefvover_map.find(ssaDefIndex) != vdefvover_map.end() && vdefvover_map.find(ssaDefIndex)->second.find(GET_INDEX_NODE(gn_curr->vdef)) != vdefvover_map.find(ssaDefIndex)->second.end())))
+                                                                  if(!found_load && gn_curr->vdef &&
+                                                                     (ga_used->vuses.find(gn_curr->vdef) != ga_used->vuses.end() ||
+                                                                      (vdefvover_map.find(ssaDefIndex) != vdefvover_map.end() && vdefvover_map.find(ssaDefIndex)->second.find(GET_INDEX_NODE(gn_curr->vdef)) != vdefvover_map.find(ssaDefIndex)->second.end())))
                                                                      break;
                                                                   if(curr_stmt == stmt_list.rbegin())
                                                                      break;
@@ -522,7 +519,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                             if(found_load)
                                                             {
                                                                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---found a Dead Load " + GET_NODE(*curr_stmt)->ToString());
-                                                               auto  ssa_used_op0 = GetPointer<ssa_name>(GET_NODE(ga_used->op0));
+                                                               auto ssa_used_op0 = GetPointer<ssa_name>(GET_NODE(ga_used->op0));
                                                                const TreeNodeMap<size_t> StmtUsesOp0 = ssa_used_op0->CGetUseStmts();
                                                                for(const auto& useop0 : StmtUsesOp0)
                                                                {
@@ -535,7 +532,6 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
 #ifndef NDEBUG
                                                                AppM->RegisterTransformation(GetName(), *curr_stmt);
 #endif
-
                                                             }
                                                          }
                                                       }
@@ -590,15 +586,14 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                      bb->true_edge = move2emptyBB(TM, sl, block_it->first, bb, bb->true_edge, bb->false_edge);
                   }
                }
-
             }
             else if(GET_NODE(*stmt)->get_kind() == gimple_multi_way_if_K)
             {
                auto gm = GetPointer<gimple_multi_way_if>(GET_NODE(*stmt));
                bool one_is_const = false;
                bool all_false = true;
-               unsigned int bb_dest=0;
-               for(auto cond: gm->list_of_cond)
+               unsigned int bb_dest = 0;
+               for(auto cond : gm->list_of_cond)
                {
                   if(!cond.first)
                   {
@@ -628,7 +623,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---gimple_multi_way_if with constant conditions");
                   modified = true;
                   auto bb = block_it->second;
-                  for(auto& cond: gm->list_of_cond)
+                  for(auto& cond : gm->list_of_cond)
                   {
                      if(cond.second != bb_dest)
                      {
@@ -662,7 +657,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                      is_a_writing_memory_call = true;
                   if(tree_helper::is_a_nop_function_decl(fdCalled) or !is_a_writing_memory_call)
                   {
-                     add_gimple_nop(gc,TM,*stmt,(block_it)->second);
+                     add_gimple_nop(gc, TM, *stmt, (block_it)->second);
 
                      stmts_to_be_removed.push_back(*stmt);
 #ifndef NDEBUG
@@ -781,7 +776,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             auto curr = to_be_processed.front();
             to_be_processed.pop();
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Analyzing BB" + STR(curr));
-            for(auto bb: blocks.at(curr)->list_of_succ)
+            for(auto bb : blocks.at(curr)->list_of_succ)
             {
                if(BB_reached.find(bb) == BB_reached.end())
                {
@@ -791,7 +786,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             }
          }
          std::set<unsigned> bb_to_remove;
-         for(auto bb_pair: blocks)
+         for(auto bb_pair : blocks)
          {
             if(BB_reached.find(bb_pair.first) == BB_reached.end())
             {
@@ -802,7 +797,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          if(not bb_to_remove.empty())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing " + STR(bb_to_remove.size()) + " unreachable BBs");
-            for(auto bb: bb_to_remove)
+            for(auto bb : bb_to_remove)
             {
                do_reachability = true;
                const auto& phi_list = blocks.at(bb)->CGetPhiList();
@@ -844,15 +839,15 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   auto gn = GetPointer<gimple_node>(node_stmt);
                   if(gn->vdef && !is_single_write_memory)
                   {
-                     kill_vdef(TM,gn->vdef);
+                     kill_vdef(TM, gn->vdef);
                      gn->vdef = tree_nodeRef();
                   }
-                  else if (gn->memdef && is_single_write_memory)
+                  else if(gn->memdef && is_single_write_memory)
                   {
-                     kill_vdef(TM,gn->memdef);
+                     kill_vdef(TM, gn->memdef);
                      gn->memdef = tree_nodeRef();
                   }
-                  else if (node_stmt->get_kind() == gimple_assign_K)
+                  else if(node_stmt->get_kind() == gimple_assign_K)
                   {
                      auto ga = GetPointer<gimple_assign>(node_stmt);
                      if(GET_NODE(ga->op0)->get_kind() == ssa_name_K)
@@ -901,15 +896,15 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed dead statements");
                }
-               for(auto sblock: blocks.at(bb)->list_of_succ)
+               for(auto sblock : blocks.at(bb)->list_of_succ)
                {
                   if(sblock == bloc::EXIT_BLOCK_ID)
                      continue;
-                  THROW_ASSERT(blocks.find(sblock) != blocks.end(), "Already removed BB"+STR(sblock));
+                  THROW_ASSERT(blocks.find(sblock) != blocks.end(), "Already removed BB" + STR(sblock));
                   auto succ_block = blocks.at(sblock);
                   succ_block->list_of_pred.erase(std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb));
-                  ///Fix PHIs
-                  for(auto phi: succ_block->CGetPhiList())
+                  /// Fix PHIs
+                  for(auto phi : succ_block->CGetPhiList())
                   {
                      auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
                      gimple_phi::DefEdgeList new_list_of_def_edge;
@@ -926,15 +921,14 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                }
                blocks.at(bb)->list_of_succ.clear();
             }
-            for(auto bb: bb_to_remove)
+            for(auto bb : bb_to_remove)
             {
                blocks.erase(bb);
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed unreachable BBs");
          }
       }
-   }
-   while(restart_analysis);
+   } while(restart_analysis);
 
    /// update function memory write flag
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Update memory write flag");
@@ -947,7 +941,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + (*stmt)->ToString());
          auto* gn = GetPointer<gimple_node>(GET_NODE(*stmt));
-         if(gn->vdef  && !is_single_write_memory)
+         if(gn->vdef && !is_single_write_memory)
             fd->writing_memory = true;
          else if(gn->memdef && is_single_write_memory)
             fd->writing_memory = true;
@@ -967,7 +961,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                }
                else
                {
-                  fd->writing_memory = true;/// conservative analysis
+                  fd->writing_memory = true; /// conservative analysis
                }
             }
          }
@@ -994,10 +988,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             }
             else
                fd->writing_memory = true;
-
          }
          else if(GetPointer<gimple_asm>(GET_NODE(*stmt)))
-            fd->writing_memory = true;///more conservative than really needed
+            fd->writing_memory = true; /// more conservative than really needed
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement");
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed BB" + boost::lexical_cast<std::string>(block_it->second->number));

@@ -35,9 +35,6 @@
  * @brief Wrapper for technology used by the high-level synthesis flow.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
@@ -83,6 +80,16 @@
 #include "utility.hpp"         // for INFINITE_UINT, ASSERT_PARAMETER
 #include <cstddef>             // for size_t
 #include <limits>              // for numeric_limits
+
+/// STL includes
+#include <algorithm>
+#include <map>
+#include <set>
+#include <tuple>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 static bool is_other_port(const structural_objectRef& port)
 {
@@ -421,9 +428,10 @@ void allocation::add_proxy_function_wrapper(const std::string& library_name, tec
    GetPointer<module>(wrapper_top)->set_copyright(fu_module->get_copyright());
    GetPointer<module>(wrapper_top)->set_authors(fu_module->get_authors());
    GetPointer<module>(wrapper_top)->set_license(fu_module->get_license());
-   if(fu_module->is_parameter(MEMORY_PARAMETER))
+   if(fu_module->ExistsParameter(MEMORY_PARAMETER))
    {
-      GetPointer<module>(wrapper_top)->set_parameter(MEMORY_PARAMETER, fu_module->get_parameter(MEMORY_PARAMETER));
+      GetPointer<module>(wrapper_top)->AddParameter(MEMORY_PARAMETER, fu_module->GetDefaultParameter(MEMORY_PARAMETER));
+      GetPointer<module>(wrapper_top)->SetParameter(MEMORY_PARAMETER, fu_module->GetParameter(MEMORY_PARAMETER));
    }
    // handle input ports
    auto inPortSize = static_cast<unsigned int>(fu_module->get_in_port_size());
@@ -961,14 +969,20 @@ bool allocation::check_for_memory_compliancy(bool Has_extern_allocated_data, tec
 
    /// LOAD/STORE operations allocated on memories have been already allocated
    if(memory_type != "")
+   {
       return true;
+   }
 
    /// LOAD/STORE operations on proxys have been already managed
    if(channels_type != "" && (memory_ctrl_type == MEMORY_CTRL_TYPE_PROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_PROXYN || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN))
+   {
       return true;
+   }
 #if !HAVE_EXPERIMENTAL
    if(GetPointer<functional_unit>(current_fu)->functional_unit_name == "MEMORY_CTRL_P1N")
+   {
       return true;
+   }
 #endif
 
    const auto channel_type_to_be_used = parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type);
@@ -979,7 +993,7 @@ bool allocation::check_for_memory_compliancy(bool Has_extern_allocated_data, tec
          case(MemoryAllocation_ChannelsType::MEM_ACC_11):
          case(MemoryAllocation_ChannelsType::MEM_ACC_N1):
          {
-            if(channels_type.find(CHANNELS_TYPE_MEM_ACC_NN) != std::string::npos or channels_type.find(CHANNELS_TYPE_MEM_ACC_P1N) != std::string::npos)
+            if(channels_type.find(CHANNELS_TYPE_MEM_ACC_NN) != std::string::npos or channels_type.find(CHANNELS_TYPE_MEM_ACC_P1N) != std::string::npos or channels_type.find(CHANNELS_TYPE_MEM_ACC_CS) != std::string::npos)
                return true;
             break;
          }
@@ -992,6 +1006,14 @@ bool allocation::check_for_memory_compliancy(bool Has_extern_allocated_data, tec
          case(MemoryAllocation_ChannelsType::MEM_ACC_P1N):
          {
             if(channels_type.find(CHANNELS_TYPE_MEM_ACC_P1N) == std::string::npos)
+            {
+               return true;
+            }
+            break;
+         }
+         case(MemoryAllocation_ChannelsType::MEM_ACC_CS):
+         {
+            if(channels_type.find(CHANNELS_TYPE_MEM_ACC_CS) == std::string::npos)
             {
                return true;
             }
@@ -1148,8 +1170,8 @@ DesignFlowStep_Status allocation::InternalExec()
       skip_flopoco_resources = true;
       skip_softfloat_resources = false;
    }
-   std::unordered_map<std::string, unsigned int>& tech_vec = HLS_C->tech_constraints;
-   const std::unordered_map<std::string, std::pair<std::string, std::pair<std::string, unsigned int>>>& binding_constraints = HLS_C->binding_constraints;
+   auto tech_vec = HLS_C->tech_constraints;
+   auto binding_constraints = HLS_C->binding_constraints;
    std::unordered_map<std::string, std::map<unsigned int, unsigned int>> fu_name_to_id;
    std::set<vertex> vertex_analysed;
    OpVertexSet support_ops(function_behavior->CGetOpGraph(FunctionBehavior::CFG));
@@ -1575,11 +1597,7 @@ DesignFlowStep_Status allocation::InternalExec()
             continue;
          }
 
-         std::unordered_map<std::string, unsigned int>::const_iterator tech_constrain_it;
-         if(GetPointer<functional_unit>(current_fu)->fu_template_name != "")
-            tech_constrain_it = tech_vec.find(ENCODE_FU_LIB(GetPointer<functional_unit>(current_fu)->fu_template_name, lib_name));
-         else
-            tech_constrain_it = tech_vec.find(ENCODE_FU_LIB(current_fu->get_name(), lib_name));
+         const auto tech_constrain_it = GetPointer<functional_unit>(current_fu)->fu_template_name != "" ? tech_vec.find(ENCODE_FU_LIB(GetPointer<functional_unit>(current_fu)->fu_template_name, lib_name)) : tech_vec.find(ENCODE_FU_LIB(current_fu->get_name(), lib_name));
 
          if(tech_constrain_it != tech_vec.end() && tech_constrain_it->second == 0)
          {
@@ -2094,7 +2112,6 @@ bool allocation::is_ram_not_timing_compliant(const HLS_constraintsRef HLS_C, uns
    unsigned int n_channels = n_ref > parameters->isOption(OPT_channels_number) ? parameters->getOption<unsigned int>(OPT_channels_number) : 1;
    double mux_delay = allocation_information->estimate_muxNto1_delay(32, n_ref / n_channels);
    double setup = allocation_information->get_setup_hold_time(); // for the PHIs
-   // std::cerr << "memory " << var << " controller_delay=" << controller_delay << " ex_time=" << ex_time << " mux_delay=" << mux_delay << " setup=" << setup << std::endl;
    return n_ref / n_channels > 1 && (controller_delay + ex_time + mux_delay + setup) > clock_period;
 }
 
@@ -2412,4 +2429,12 @@ bool allocation::HasToBeExecuted() const
       }
       return not std::equal(cur_bb_ver.begin(), cur_bb_ver.end(), last_bb_ver.begin());
    }
+}
+
+void allocation::PrintInitialIR() const
+{
+   const std::string file_name = parameters->getOption<std::string>(OPT_output_temporary_directory) + "before_" + GetName() + ".tm";
+   std::ofstream raw_file(file_name.c_str());
+   TM->print(raw_file);
+   raw_file.close();
 }

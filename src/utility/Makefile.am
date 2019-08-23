@@ -39,6 +39,7 @@ lib_utility_la_SOURCES = \
    math_function.cpp \
    simple_indent.cpp \
    Statistics.cpp \
+   string_manipulation.cpp \
    utility.cpp
 
 lib_utility_la_LIBADD= $(BOOST_DATE_TIME_LIB)

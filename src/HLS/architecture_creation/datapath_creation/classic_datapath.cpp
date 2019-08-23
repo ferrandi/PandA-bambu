@@ -36,9 +36,6 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
@@ -79,16 +76,24 @@
 #include "dbgPrintHelper.hpp"
 
 #include <boost/lexical_cast.hpp>
+
+/// STD includes
 #include <iosfwd>
+#include <string>
+
+/// STL includes
+#include <list>
+#include <map>
 
 /// technology/physical_library include
 #include "technology_node.hpp"
 
+/// utility includes
 #include "copyrights_strings.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-classic_datapath::classic_datapath(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
-    : datapath_creator(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::CLASSIC_DATAPATH_CREATOR)
+classic_datapath::classic_datapath(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+    : datapath_creator(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -127,29 +132,34 @@ DesignFlowStep_Status classic_datapath::InternalExec()
    GetPointer<module>(datapath_cir)->set_license(GENERATED_LICENSE);
 
    /// add clock and reset to circuit. It increments in_port number and update in_port_map
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding clock and reset ports");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding clock and reset ports");
    structural_objectRef clock, reset;
    add_clock_reset(clock, reset);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
 
    /// add all input ports
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding ports for primary inputs and outputs");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding ports for primary inputs and outputs");
    add_ports();
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
 
    /// add registers, connecting them to clock and reset ports
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding registers");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding registers");
    HLS->Rreg->add_to_SM(clock, reset);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
 
    /// allocate functional units
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding functional units");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding functional units");
    HLS->Rfu->add_to_SM(HLSMgr, HLS, clock, reset);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding multi-unbounded controllers");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding multi-unbounded controllers");
    HLS->STG->add_to_SM(clock, reset);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
 
    /// allocate interconnections
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding interconnections");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding interconnections");
    HLS->Rconn->add_to_SM(HLSMgr, HLS, HLS->datapath);
-
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
    unsigned int n_elements = GetPointer<module>(datapath_cir)->get_internal_objects_size();
    if(n_elements == 0)
    {
@@ -205,9 +215,8 @@ void classic_datapath::add_ports()
    for(auto const function_parameter : function_parameters)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Parameter: " + BH->PrintVariable(function_parameter) + " IN");
-
       conn_binding::direction_type direction = conn_binding::IN;
-      generic_objRef port_obj = HLS->Rconn->get_port(function_parameter, direction);
+      const auto port_obj = HLS->Rconn->get_port(function_parameter, direction);
       structural_type_descriptorRef port_type;
       if(HLSMgr->Rmem->has_base_address(function_parameter) && !HLSMgr->Rmem->has_parameter_base_address(function_parameter, HLS->functionId) && !HLSMgr->Rmem->is_parm_decl_stored(function_parameter))
       {
@@ -247,7 +256,7 @@ void classic_datapath::add_ports()
          memory::add_memory_parameter(SM, param, std::get<0>(c.first));
          precision = GetPointer<dataport_obj>(constant_obj)->get_bitsize();
       }
-      const_obj->set_parameter("value", trimmed_value);
+      const_obj->SetParameter("value", trimmed_value);
       constant_obj->set_structural_obj(const_obj);
       std::string name = "out_const_" + std::to_string(num);
       structural_type_descriptorRef sign_type = structural_type_descriptorRef(new structural_type_descriptor("bool", precision));

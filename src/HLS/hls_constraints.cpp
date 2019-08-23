@@ -60,6 +60,9 @@
 #include <boost/filesystem.hpp>
 #include <iosfwd>
 #include <string>
+
+/// STL includes
+#include <vector>
 #include <utility>
 
 const double HLS_constraints::clock_period_resource_fraction_DEFAULT = 1.0;

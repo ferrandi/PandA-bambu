@@ -71,7 +71,6 @@ class gimple_node;
 class dead_code_elimination : public FunctionFrontendFlowStep
 {
  private:
-
    std::map<unsigned int, unsigned int> last_bitvalue_ver;
 
    std::map<unsigned int, unsigned int> last_bb_ver;
@@ -87,7 +86,7 @@ class dead_code_elimination : public FunctionFrontendFlowStep
    unsigned move2emptyBB(const tree_managerRef TM, statement_list* sl, unsigned pred, blocRef bb_pred, unsigned cand_bb_dest, unsigned bb_dest) const;
    void add_gimple_nop(gimple_node* gc, const tree_managerRef TM, tree_nodeRef cur_stmt, blocRef bb);
 
-   public:
+ public:
    /**
     * Constructor
     * @param Param is the set of the parameters
@@ -113,7 +112,6 @@ class dead_code_elimination : public FunctionFrontendFlowStep
     * @return true if the step has to be executed
     */
    bool HasToBeExecuted() const override;
-
 };
 
 #endif

@@ -2080,7 +2080,7 @@ tree_nodeRef tree_manipulation::CreateOrExpr(const tree_nodeConstRef& first_cond
    truth_or_expr_schema[TOK(TOK_OP1)] = STR(second_condition->index);
    TreeM->create_tree_node(truth_or_expr_id, truth_or_expr_K, truth_or_expr_schema);
 
-   auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0,type_index), TreeM->CreateUniqueIntegerCst(1,type_index), TreeM->GetTreeReindex(truth_or_expr_id), 0, "<built-in>:0:0");
+   auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, type_index), TreeM->CreateUniqueIntegerCst(1, type_index), TreeM->GetTreeReindex(truth_or_expr_id), 0, "<built-in>:0:0");
    if(block)
    {
       block->PushBack(ga);
@@ -2116,7 +2116,7 @@ tree_nodeRef tree_manipulation::CreateAndExpr(const tree_nodeConstRef& first_con
    truth_and_expr_schema[TOK(TOK_OP1)] = STR(second_condition->index);
    TreeM->create_tree_node(truth_and_expr_id, truth_and_expr_K, truth_and_expr_schema);
 
-   auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0,type_index), TreeM->CreateUniqueIntegerCst(1,type_index), TreeM->GetTreeReindex(truth_and_expr_id), 0, "<built-in>:0:0");
+   auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, type_index), TreeM->CreateUniqueIntegerCst(1, type_index), TreeM->GetTreeReindex(truth_and_expr_id), 0, "<built-in>:0:0");
    if(block)
    {
       block->PushBack(ga);
@@ -2151,7 +2151,7 @@ tree_nodeRef tree_manipulation::CreateNotExpr(const tree_nodeConstRef& condition
    truth_not_expr_schema[TOK(TOK_OP)] = STR(condition->index);
    TreeM->create_tree_node(truth_not_expr_id, truth_not_expr_K, truth_not_expr_schema);
 
-   auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0,type_index), TreeM->CreateUniqueIntegerCst(1,type_index), TreeM->GetTreeReindex(truth_not_expr_id), 0, "<built-in>:0:0");
+   auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, type_index), TreeM->CreateUniqueIntegerCst(1, type_index), TreeM->GetTreeReindex(truth_not_expr_id), 0, "<built-in>:0:0");
    if(block)
    {
       block->PushBack(ga);
@@ -2186,7 +2186,7 @@ tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef& condition, 
       const auto bt = create_boolean_type();
       const auto type_index = bt->index;
 
-      auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0,type_index), TreeM->CreateUniqueIntegerCst(1,type_index), TreeM->GetTreeReindex(GET_INDEX_NODE(gc->op0)), 0, "<built-in>:0:0");
+      auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, type_index), TreeM->CreateUniqueIntegerCst(1, type_index), TreeM->GetTreeReindex(GET_INDEX_NODE(gc->op0)), 0, "<built-in>:0:0");
       if(block)
       {
          block->PushBack(ga);
@@ -2377,7 +2377,7 @@ tree_nodeRef tree_manipulation::CreateEqExpr(const tree_nodeConstRef& first_oper
    eq_expr_schema[TOK(TOK_OP1)] = STR(second_operand->index);
    TreeM->create_tree_node(eq_expr_id, eq_expr_K, eq_expr_schema);
 
-   auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0,type_index), TreeM->CreateUniqueIntegerCst(1,type_index), TreeM->GetTreeReindex(eq_expr_id), 0, "<built-in>:0:0");
+   auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, type_index), TreeM->CreateUniqueIntegerCst(1, type_index), TreeM->GetTreeReindex(eq_expr_id), 0, "<built-in>:0:0");
    if(block)
    {
       block->PushBack(ga);
