@@ -1211,6 +1211,7 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
                         THROW_ERROR("Unsupported value in current output");
                         break;
                   }
+               }            
             }
          }
       }
