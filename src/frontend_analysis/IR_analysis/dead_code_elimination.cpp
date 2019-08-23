@@ -590,6 +590,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             else if(GET_NODE(*stmt)->get_kind() == gimple_multi_way_if_K)
             {
                auto gm = GetPointer<gimple_multi_way_if>(GET_NODE(*stmt));
+
                bool one_is_const = false;
                bool all_false = true;
                unsigned int bb_dest = 0;
@@ -622,13 +623,61 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---gimple_multi_way_if with constant conditions");
                   modified = true;
+                  auto bbIndex=block_it->first;
                   auto bb = block_it->second;
                   for(auto& cond : gm->list_of_cond)
                   {
                      if(cond.second != bb_dest)
                      {
                         do_reachability = true;
-                        cond.second = move2emptyBB(TM, sl, block_it->first, bb, cond.second, bb_dest);
+                        cond.second = move2emptyBB(TM, sl, bbIndex, bb, cond.second, bb_dest);
+                     }
+                  }
+               }
+               else
+               {
+                  /// remove same conditions
+                  std::map<unsigned int, unsigned int> condIndex2BBdest;
+                  auto bbIndex=block_it->first;
+                  auto bb = block_it->second;
+                  auto do0ConstantCondRemoval = false;
+                  for(auto& cond : gm->list_of_cond)
+                  {
+                     if(cond.first)
+                     {
+                        if(GET_NODE(cond.first)->get_kind() == integer_cst_K)
+                        {
+                           if(!blocks[cond.second]->CGetStmtList().empty())
+                              do0ConstantCondRemoval = true;
+                        }
+                        else if(condIndex2BBdest.find(GET_INDEX_NODE(cond.first)) == condIndex2BBdest.end())
+                        {
+                           condIndex2BBdest[GET_INDEX_NODE(cond.first)] = cond.second;
+                        }
+                        else if(!blocks[cond.second]->CGetStmtList().empty())
+                        {
+                           do_reachability = true;
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---gimple_multi_way_if duplicated condition from " + STR(bbIndex) + " to " + STR(cond.second));
+                           cond.second = move2emptyBB(TM, sl, bbIndex, bb, cond.second, condIndex2BBdest.find(GET_INDEX_NODE(cond.first))->second);
+                        }
+                     }
+                  }
+                  if(do0ConstantCondRemoval)
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---gimple_multi_way_if do zero condition removal");
+                     auto bb0_dest = condIndex2BBdest.begin()->second;
+                     for(auto& cond : gm->list_of_cond)
+                     {
+                        if(cond.first)
+                        {
+                           if(GET_NODE(cond.first)->get_kind() == integer_cst_K)
+                           {
+                              THROW_ASSERT(GetPointer<integer_cst>(GET_NODE(cond.first))->value == 0, "unexpected condition");
+                              do_reachability = true;
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---gimple_multi_way_if duplicated condition from " + STR(bbIndex) + " to " + STR(cond.second));
+                              cond.second = move2emptyBB(TM, sl, bbIndex, bb, cond.second, bb0_dest);
+                           }
+                        }
                      }
                   }
                }
