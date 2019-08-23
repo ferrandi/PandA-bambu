@@ -61,7 +61,7 @@
 
 #define USE_SAT 0
 
-#pragma region needed by mockturtle/algorithms/satlut_mapping.hpp
+#pragma region needed by mockturtle / algorithms / satlut_mapping.hpp
 #define LIN64
 #define ABC_NAMESPACE pabc
 #define ABC_NO_USE_READLINE
@@ -156,7 +156,7 @@
 #pragma region Macros declaration
 
 #define IS_GIMPLE_ASSIGN(it) (GET_NODE(*it)->get_kind() == gimple_assign_K)
-bool lut_transformation::CHECK_BIN_EXPR_BOOL_SIZE(binary_expr*be)
+bool lut_transformation::CHECK_BIN_EXPR_BOOL_SIZE(binary_expr* be)
 {
    auto b0 = tree_helper::CGetType(GET_CONST_NODE(be->op0));
    auto type_id0 = b0->index;
@@ -168,7 +168,7 @@ bool lut_transformation::CHECK_BIN_EXPR_BOOL_SIZE(binary_expr*be)
       return false;
    if(be->get_kind() == bit_and_expr_K)
    {
-      if(GET_NODE(be->op0)->get_kind() == ssa_name_K && !tree_helper::is_bool(TM,GET_INDEX_NODE(be->op0)))
+      if(GET_NODE(be->op0)->get_kind() == ssa_name_K && !tree_helper::is_bool(TM, GET_INDEX_NODE(be->op0)))
       {
          auto ssa = GetPointer<const ssa_name>(GET_NODE(be->op0));
          if(!ssa->min || !ssa->max)
@@ -176,7 +176,7 @@ bool lut_transformation::CHECK_BIN_EXPR_BOOL_SIZE(binary_expr*be)
          if(GetPointer<integer_cst>(GET_NODE(ssa->min))->value != 0 || GetPointer<integer_cst>(GET_NODE(ssa->max))->value != 1)
             return false;
       }
-      if(GET_NODE(be->op1)->get_kind() == ssa_name_K && !tree_helper::is_bool(TM,GET_INDEX_NODE(be->op1)))
+      if(GET_NODE(be->op1)->get_kind() == ssa_name_K && !tree_helper::is_bool(TM, GET_INDEX_NODE(be->op1)))
       {
          auto ssa = GetPointer<const ssa_name>(GET_NODE(be->op1));
          auto type_id = GET_INDEX_NODE(ssa->type);
@@ -192,7 +192,7 @@ bool lut_transformation::CHECK_BIN_EXPR_BOOL_SIZE(binary_expr*be)
    else
       return (tree_helper::Size(GET_NODE((be)->op0)) == 1 && tree_helper::Size(GET_NODE((be)->op1)) == 1);
 }
-bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr*be, unsigned int max)
+bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int max)
 {
    auto b0 = tree_helper::CGetType(GET_CONST_NODE(be->op0));
    auto type_id0 = b0->index;
@@ -270,41 +270,41 @@ class klut_network_ext : public mockturtle::klut_network
    }
 
  public:
-#pragma region single-bit operations
+#pragma region single - bit operations
    /**
-     * Creates a 'greater' or equal operation.
-     * 
-     * @param a a `mockturtle::klut_network::signal` representing the first operator of the `ge` operation
-     * @param b a `mockturtle::klut_network::signal` representing the second operator of the `ge` operation
-     * 
-     * @return a `mockturtle::klut_network::signal` representing the operation `ge` between `a` and `b`
- */
+    * Creates a 'greater' or equal operation.
+    *
+    * @param a a `mockturtle::klut_network::signal` representing the first operator of the `ge` operation
+    * @param b a `mockturtle::klut_network::signal` representing the second operator of the `ge` operation
+    *
+    * @return a `mockturtle::klut_network::signal` representing the operation `ge` between `a` and `b`
+    */
    signal create_ge(signal const a, signal const b)
    {
       return this->create_not(this->create_lt(a, b));
    }
 
    /**
-     * Creates a 'greater' operation.
-     * 
-     * @param a a `mockturtle::klut_network::signal` representing the first operator of the `gt` operation
-     * @param b a `mockturtle::klut_network::signal` representing the second operator of the `gt` operation
-     * 
-     * @return a `mockturtle::klut_network::signal` representing the operation `gt` between `a` and `b`
- */
+    * Creates a 'greater' operation.
+    *
+    * @param a a `mockturtle::klut_network::signal` representing the first operator of the `gt` operation
+    * @param b a `mockturtle::klut_network::signal` representing the second operator of the `gt` operation
+    *
+    * @return a `mockturtle::klut_network::signal` representing the operation `gt` between `a` and `b`
+    */
    signal create_gt(signal const a, signal const b)
    {
       return this->create_not(this->create_le(a, b));
    }
 
    /**
-     * Creates a 'equal' operation.
-     * 
-     * @param a a `mockturtle::klut_network::signal` representing the first operator of the `gt` operation
-     * @param b a `mockturtle::klut_network::signal` representing the second operator of the `gt` operation
-     * 
-     * @return a `mockturtle::klut_network::signal` representing the operation `eq` between `a` and `b`
- */
+    * Creates a 'equal' operation.
+    *
+    * @param a a `mockturtle::klut_network::signal` representing the first operator of the `gt` operation
+    * @param b a `mockturtle::klut_network::signal` representing the second operator of the `gt` operation
+    *
+    * @return a `mockturtle::klut_network::signal` representing the operation `eq` between `a` and `b`
+    */
    signal create_eq(signal const a, signal const b)
    {
       if(this->is_constant(a))
@@ -325,13 +325,13 @@ class klut_network_ext : public mockturtle::klut_network
    }
 
    /**
-     * Creates a 'not equal' operation.
-     * 
-     * @param a a `mockturtle::klut_network::signal` representing the first operator of the `ne` operation
-     * @param b a `mockturtle::klut_network::signal` representing the second operator of the `ne` operation
-     * 
-     * @return a `mockturtle::klut_network::signal` representing the operation `ne` between `a` and `b`
- */
+    * Creates a 'not equal' operation.
+    *
+    * @param a a `mockturtle::klut_network::signal` representing the first operator of the `ne` operation
+    * @param b a `mockturtle::klut_network::signal` representing the second operator of the `ne` operation
+    *
+    * @return a `mockturtle::klut_network::signal` representing the operation `ne` between `a` and `b`
+    */
    signal create_ne(signal const a, signal const b)
    {
       if(this->is_constant(a))
@@ -385,13 +385,13 @@ class klut_network_ext : public mockturtle::klut_network
    }
 
    /**
-     * Creates a 'lut' operation from an `std::vector` of `mockturtle::klut_network::signal` with the associated constant.
-     * 
-     * @param s an `std::vector` of `mockturtle::klut_network::signal` containing the inputs of the lut
-     * @param f the constant associated to the lut
-     * 
-     * @return a `mockturtle::klut_network::signal` representing a lut between `s` with constant `f`
- */
+    * Creates a 'lut' operation from an `std::vector` of `mockturtle::klut_network::signal` with the associated constant.
+    *
+    * @param s an `std::vector` of `mockturtle::klut_network::signal` containing the inputs of the lut
+    * @param f the constant associated to the lut
+    *
+    * @return a `mockturtle::klut_network::signal` representing a lut between `s` with constant `f`
+    */
    signal create_lut(std::vector<signal> s, uint64_t f)
    {
       kitty::dynamic_truth_table tt(static_cast<int>(s.size()));
@@ -407,7 +407,7 @@ class klut_network_ext : public mockturtle::klut_network
 
 #pragma endregion
 
-#pragma region multi-bit operations
+#pragma region multi - bit operations
 
    std::vector<signal> create_buf_v(std::vector<signal> const& a)
    {
@@ -585,8 +585,8 @@ typedef std::vector<mockturtle::klut_network::signal> (klut_network_ext::*klut_n
 
 /**
  * Checks whether the provided node is a primary input of lut network.
- * 
- * @param in a `tree_nodeRef` 
+ *
+ * @param in a `tree_nodeRef`
  */
 bool lut_transformation::CheckIfPI(tree_nodeRef in, unsigned int BB_index)
 {
@@ -614,13 +614,13 @@ bool lut_transformation::CheckIfPI(tree_nodeRef in, unsigned int BB_index)
  * Checks if the provided basic block can be further processed. There are two cases in which this condition is true:
  *  - the basic block contains an instruction convertible to a `lut_expr_K`
  *  - the basic block contains a `lut_expr_K` that has constant inputs
- * 
+ *
  * @param block the block to check
  * @return whether the provided basic block can be further processed
  */
 bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> block)
 {
-   auto &statements = block.second->CGetStmtList();
+   auto& statements = block.second->CGetStmtList();
 
    for(auto currentStatement = statements.begin(); currentStatement != statements.end(); ++currentStatement)
    {
@@ -631,12 +631,12 @@ bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> blo
          continue;
       }
 
-      auto *gimpleAssign = GetPointer<gimple_assign>(GET_NODE(*currentStatement));
+      auto* gimpleAssign = GetPointer<gimple_assign>(GET_NODE(*currentStatement));
       enum kind code = GET_NODE(gimpleAssign->op1)->get_kind();
 
       if(code == lut_expr_K)
       { // check if it has constant inputs
-         auto *lut = GetPointer<lut_expr>(GET_NODE(gimpleAssign->op1));
+         auto* lut = GetPointer<lut_expr>(GET_NODE(gimpleAssign->op1));
 
          // cycle for each inputs (op0 is the constant)
          for(auto node : {lut->op1, lut->op2, lut->op3, lut->op4, lut->op5, lut->op6, lut->op7, lut->op8})
@@ -675,9 +675,9 @@ bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> blo
       { // check if it has lut-expressible operations
          // checks if the operation code can be converted into a lut
          // and if it is a binary expression with the correct size of operators
-         if (VECT_CONTAINS(lutExpressibleOperations, code) && GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)))
+         if(VECT_CONTAINS(lutExpressibleOperations, code) && GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)))
          {
-            if (CHECK_BIN_EXPR_INT_SIZE(GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)), MAX_LUT_INT_SIZE))
+            if(CHECK_BIN_EXPR_INT_SIZE(GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)), MAX_LUT_INT_SIZE))
             {
                const auto op0 = GET_NODE(gimpleAssign->op0);
                auto ssa0 = GetPointer<ssa_name>(op0);
@@ -686,7 +686,7 @@ bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> blo
 
                for(auto node : usedIn)
                {
-                  auto *childGimpleNode = GetPointer<gimple_node>(GET_NODE(node.first));
+                  auto* childGimpleNode = GetPointer<gimple_node>(GET_NODE(node.first));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing use " + childGimpleNode->ToString());
                   THROW_ASSERT(childGimpleNode, "unexpected condition");
 
@@ -719,7 +719,7 @@ bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> blo
 
 /**
  * Checks if the provided `gimple_assign` is a primary output of lut network.
- * 
+ *
  * @param gimpleAssign the `gimple_assign` to check
  * @return whether the provided `gimple_assign` is a primary output
  */
@@ -735,7 +735,7 @@ bool lut_transformation::CheckIfPO(gimple_assign* gimpleAssign)
 
    for(auto node : usedIn)
    {
-      auto *childGimpleNode = GetPointer<gimple_node>(GET_NODE(node.first));
+      auto* childGimpleNode = GetPointer<gimple_node>(GET_NODE(node.first));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing use " + childGimpleNode->ToString());
       THROW_ASSERT(childGimpleNode, "unexpected condition");
 
@@ -748,7 +748,7 @@ bool lut_transformation::CheckIfPO(gimple_assign* gimpleAssign)
       }
       else
       {
-         auto *childGimpleAssign = GetPointer<gimple_assign>(GET_NODE(node.first));
+         auto* childGimpleAssign = GetPointer<gimple_assign>(GET_NODE(node.first));
          if(!childGimpleAssign)
             return true;
          enum kind code = GET_NODE(childGimpleAssign->op1)->get_kind();
@@ -810,7 +810,7 @@ static std::vector<bool> IntegerToBitArray(long long int n, size_t size)
    return bits;
 }
 
-tree_nodeRef lut_transformation::CreateBitSelectionNodeOrCast(const tree_nodeRef source, int index, unsigned int BB_index, std::vector<tree_nodeRef> &prev_stmts_to_add)
+tree_nodeRef lut_transformation::CreateBitSelectionNodeOrCast(const tree_nodeRef source, int index, unsigned int BB_index, std::vector<tree_nodeRef>& prev_stmts_to_add)
 {
    const unsigned int op_type_id = tree_helper::get_type_index(TM, GET_INDEX_NODE(source));
    tree_nodeRef op_type = TM->CGetTreeReindex(op_type_id);
@@ -820,8 +820,8 @@ tree_nodeRef lut_transformation::CreateBitSelectionNodeOrCast(const tree_nodeRef
    tree_nodeRef resVar0;
    if(index)
    {
-      tree_nodeRef shift_by_constant = TM->CreateUniqueIntegerCst(index,GET_INDEX_NODE(indexType));
-      tree_nodeRef rshift_op = tree_man->create_binary_operation(op_type,source,shift_by_constant,srcp_default,rshift_expr_K);
+      tree_nodeRef shift_by_constant = TM->CreateUniqueIntegerCst(index, GET_INDEX_NODE(indexType));
+      tree_nodeRef rshift_op = tree_man->create_binary_operation(op_type, source, shift_by_constant, srcp_default, rshift_expr_K);
       tree_nodeRef rshift_ga = tree_man->CreateGimpleAssign(op_type, tree_nodeRef(), tree_nodeRef(), rshift_op, BB_index, srcp_default);
       prev_stmts_to_add.push_back(rshift_ga);
       resVar0 = GetPointer<const gimple_assign>(GET_CONST_NODE(rshift_ga))->op0;
@@ -846,15 +846,15 @@ tree_nodeRef lut_transformation::CreateBitSelectionNodeOrCast(const tree_nodeRef
    tree_nodeRef resVar1;
    if(addBitWiseAnd)
    {
-      tree_nodeRef constant_one = TM->CreateUniqueIntegerCst(1,GET_INDEX_NODE(op_type));
-      tree_nodeRef bit_wise_and = tree_man->create_binary_operation(op_type,resVar0, constant_one, srcp_default, bit_and_expr_K);
-      tree_nodeRef bit_wise_and_ga = tree_man->CreateGimpleAssign(op_type, TM->CreateUniqueIntegerCst(0,op_type_id), TM->CreateUniqueIntegerCst(1,op_type_id), bit_wise_and, BB_index,srcp_default);
+      tree_nodeRef constant_one = TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(op_type));
+      tree_nodeRef bit_wise_and = tree_man->create_binary_operation(op_type, resVar0, constant_one, srcp_default, bit_and_expr_K);
+      tree_nodeRef bit_wise_and_ga = tree_man->CreateGimpleAssign(op_type, TM->CreateUniqueIntegerCst(0, op_type_id), TM->CreateUniqueIntegerCst(1, op_type_id), bit_wise_and, BB_index, srcp_default);
       prev_stmts_to_add.push_back(bit_wise_and_ga);
       resVar1 = GetPointer<const gimple_assign>(GET_CONST_NODE(bit_wise_and_ga))->op0;
    }
    else
       resVar1 = resVar0;
-   tree_nodeRef ga_nop = tree_man->CreateNopExpr(resVar1, boolType, TM->CreateUniqueIntegerCst(0,GET_INDEX_NODE(boolType)), TM->CreateUniqueIntegerCst(1,GET_INDEX_NODE(boolType)));
+   tree_nodeRef ga_nop = tree_man->CreateNopExpr(resVar1, boolType, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(boolType)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(boolType)));
    prev_stmts_to_add.push_back(ga_nop);
    return GetPointer<const gimple_assign>(GET_CONST_NODE(ga_nop))->op0;
 }
@@ -924,11 +924,11 @@ static std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_ne
    mockturtle::topo_view ntk_topo{klut};
 
    ntk_topo.foreach_po([&](auto const& s, auto i) {
-      //std::cerr << "s" << s << " i " << i << std::endl;
+      // std::cerr << "s" << s << " i " << i << std::endl;
       po_set[s].insert(i);
    });
 
-   ntk_topo.foreach_node([&](const auto &node) {
+   ntk_topo.foreach_node([&](const auto& node) {
       if(ntk_topo.is_pi(node) || ntk_topo.is_constant(node))
       {
          return; // continue
@@ -943,7 +943,7 @@ static std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_ne
       {
          if(po_set.find(node) != po_set.end())
          {
-            for(auto po_i: po_set.find(node)->second)
+            for(auto po_i : po_set.find(node)->second)
             {
                klut_network_node lut_node = (klut_network_node){node, LUT_func, fanIns, true, po_i, false};
                luts.push_back(lut_node);
@@ -988,12 +988,12 @@ static std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_ne
    return luts;
 }
 
-template<class kne>
+template <class kne>
 static mockturtle::klut_network SimplifyLutNetwork(const kne& klut_e, unsigned max_lut_size)
 {
    mockturtle::shannon_resynthesis<mockturtle::aig_network> fallback;
-   mockturtle::dsd_resynthesis<mockturtle::aig_network, decltype( fallback )> aig_resyn( fallback );
-   auto aig = mockturtle::node_resynthesis<mockturtle::aig_network>( klut_e, aig_resyn );
+   mockturtle::dsd_resynthesis<mockturtle::aig_network, decltype(fallback)> aig_resyn(fallback);
+   auto aig = mockturtle::node_resynthesis<mockturtle::aig_network>(klut_e, aig_resyn);
 
    auto cleanedUp = cleanup_dangling(aig);
    mockturtle::mapping_view<mockturtle::aig_network, true> mapped_klut{cleanedUp};
@@ -1001,17 +1001,17 @@ static mockturtle::klut_network SimplifyLutNetwork(const kne& klut_e, unsigned m
 #if USE_SAT
    mockturtle::satlut_mapping_params mp;
    mp.cut_enumeration_ps.cut_size = max_lut_size;
-   //mp.verbose = true;
-   //mp.very_verbose = true;
+   // mp.verbose = true;
+   // mp.very_verbose = true;
 
-   mockturtle::satlut_mapping<decltype( mapped_klut ), true>(mapped_klut, mp);
-   //std::cerr << "sat\n";
-   //mockturtle::write_bench(mapped_klut, std::cout);
+   mockturtle::satlut_mapping<decltype(mapped_klut), true>(mapped_klut, mp);
+   // std::cerr << "sat\n";
+   // mockturtle::write_bench(mapped_klut, std::cout);
    mockturtle::lut_mapping_params lmp;
    mp.cut_enumeration_ps.cut_size = max_lut_size;
-   mockturtle::lut_mapping<decltype( mapped_klut ), true>(mapped_klut, lmp);
-   //std::cerr << "lut\n";
-   //mockturtle::write_bench(mapped_klut, std::cout);
+   mockturtle::lut_mapping<decltype(mapped_klut), true>(mapped_klut, lmp);
+   // std::cerr << "lut\n";
+   // mockturtle::write_bench(mapped_klut, std::cout);
 #else
    mockturtle::lut_mapping_params mp;
    mp.cut_enumeration_ps.cut_size = max_lut_size;
@@ -1021,7 +1021,7 @@ static mockturtle::klut_network SimplifyLutNetwork(const kne& klut_e, unsigned m
     //mp.cut_enumeration_ps.very_verbose = true;
 #endif
 
-   mockturtle::lut_mapping<decltype( mapped_klut ), true>(mapped_klut, mp);
+   mockturtle::lut_mapping<decltype(mapped_klut), true>(mapped_klut, mp);
 #endif
     return *mockturtle::collapse_mapped_network<mockturtle::klut_network>(mapped_klut);
 }
@@ -1041,17 +1041,17 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
    auto DefaultUnsignedLongLongInt = this->tree_man->CreateDefaultUnsignedLongLongInt();
 
    /**
-     * Creates a const expression with 0 (gnd) as value, used for constant LUT inputs (index 0 in mockturtle)
-     */
-   pis.push_back(TM->CreateUniqueIntegerCst(0,GET_INDEX_NODE(DefaultUnsignedLongLongInt)));
+    * Creates a const expression with 0 (gnd) as value, used for constant LUT inputs (index 0 in mockturtle)
+    */
+   pis.push_back(TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(DefaultUnsignedLongLongInt)));
 
    /**
-     * Creates a const expression with 1 (vdd) as value, used for constant LUT inputs (index 1 in mockturtle)
- */
-   pis.push_back(TM->CreateUniqueIntegerCst(1,GET_INDEX_NODE(DefaultUnsignedLongLongInt)));
+    * Creates a const expression with 1 (vdd) as value, used for constant LUT inputs (index 1 in mockturtle)
+    */
+   pis.push_back(TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(DefaultUnsignedLongLongInt)));
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(BB_index));
-   const auto &statements = block.second->CGetStmtList();
+   const auto& statements = block.second->CGetStmtList();
 
    /// whether the BB has been modified
    bool modified = false;
@@ -1074,12 +1074,12 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          continue;
       }
 
-      auto *gimpleAssign = GetPointer<gimple_assign>(GET_NODE(*currentStatement));
+      auto* gimpleAssign = GetPointer<gimple_assign>(GET_NODE(*currentStatement));
       enum kind code1 = GET_NODE(gimpleAssign->op1)->get_kind();
 
       if(code1 == lut_expr_K)
       {
-         auto *le = GetPointer<lut_expr>(GET_NODE(gimpleAssign->op1));
+         auto* le = GetPointer<lut_expr>(GET_NODE(gimpleAssign->op1));
 
          std::vector<mockturtle::klut_network::signal> ops;
          for(auto op : {le->op1, le->op2, le->op3, le->op4, le->op5, le->op6, le->op7, le->op8})
@@ -1097,13 +1097,13 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             }
             else
             { // otherwise the operand is a primary input
-               mockturtle::klut_network::signal kop=0;
+               mockturtle::klut_network::signal kop = 0;
 
                if(GET_NODE(op)->get_kind() == integer_cst_K)
                {
-                  auto *int_const = GetPointer<integer_cst>(GET_NODE(op));
+                  auto* int_const = GetPointer<integer_cst>(GET_NODE(op));
                   kop = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, int_const->value == 0 ? "---used gnd": "---used vdd");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, int_const->value == 0 ? "---used gnd" : "---used vdd");
                }
                else if(CheckIfPI(op, BB_index))
                {
@@ -1129,10 +1129,10 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             pos.push_back(*currentStatement);
          }
 
-         //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-         //mockturtle::write_bench(klut_e, std::cout);
-         //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"<--LUT found");
+         // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+         // mockturtle::write_bench(klut_e, std::cout);
+         // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--LUT found");
 
          modified = true;
          continue;
@@ -1140,7 +1140,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
       if(code1 == truth_not_expr_K)
       {
-         auto *ne = GetPointer<truth_not_expr>(GET_NODE(gimpleAssign->op1));
+         auto* ne = GetPointer<truth_not_expr>(GET_NODE(gimpleAssign->op1));
          auto is_size_one = CHECK_NOT_EXPR_SIZE(ne);
          if(!is_size_one)
          {
@@ -1153,18 +1153,18 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             // if the first operand has already been processed then the previous signal is used
             if(nodeRefToSignal.find(GET_INDEX_NODE(op)) != nodeRefToSignal.end())
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI "+ GET_NODE(op)->ToString());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + GET_NODE(op)->ToString());
                ops.push_back(nodeRefToSignal[GET_INDEX_NODE(op)]);
             }
             else
             { // otherwise the operand is a primary input
-               mockturtle::klut_network::signal kop=0;
+               mockturtle::klut_network::signal kop = 0;
 
                if(GET_NODE(op)->get_kind() == integer_cst_K)
                {
-                  auto *int_const = GetPointer<integer_cst>(GET_NODE(op));
+                  auto* int_const = GetPointer<integer_cst>(GET_NODE(op));
                   kop = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, int_const->value == 0 ? "---used gnd": "---used vdd");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, int_const->value == 0 ? "---used gnd" : "---used vdd");
                }
                else if(CheckIfPI(op, BB_index))
                {
@@ -1191,10 +1191,10 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             pos.push_back(*currentStatement);
          }
 
-         //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-         //mockturtle::write_bench(klut_e, std::cout);
-         //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"<--truth_not_expr found");
+         // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+         // mockturtle::write_bench(klut_e, std::cout);
+         // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--truth_not_expr found");
 
          modified = true;
          continue;
@@ -1202,7 +1202,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
       if(code1 == cond_expr_K)
       {
-         auto *ce = GetPointer<cond_expr>(GET_NODE(gimpleAssign->op1));
+         auto* ce = GetPointer<cond_expr>(GET_NODE(gimpleAssign->op1));
          auto is_size_one = CHECK_COND_EXPR_SIZE(ce);
          if(!is_size_one)
          {
@@ -1220,13 +1220,13 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             }
             else
             { // otherwise the operand is a primary input
-               mockturtle::klut_network::signal kop=0;
+               mockturtle::klut_network::signal kop = 0;
 
                if(GET_NODE(op)->get_kind() == integer_cst_K)
                {
-                  auto *int_const = GetPointer<integer_cst>(GET_NODE(op));
+                  auto* int_const = GetPointer<integer_cst>(GET_NODE(op));
                   kop = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, int_const->value == 0 ? "---used gnd": "---used vdd");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, int_const->value == 0 ? "---used gnd" : "---used vdd");
                }
                else if(CheckIfPI(op, BB_index))
                {
@@ -1252,16 +1252,16 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             pos.push_back(*currentStatement);
          }
 
-         //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-         //mockturtle::write_bench(klut_e, std::cout);
-         //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"<--cond_expr found");
+         // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+         // mockturtle::write_bench(klut_e, std::cout);
+         // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--cond_expr found");
 
          modified = true;
          continue;
       }
 
-      auto *binaryExpression = GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1));
+      auto* binaryExpression = GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1));
       if(!binaryExpression)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not a binary expression");
@@ -1281,8 +1281,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          }
 
          mockturtle::klut_network::signal res;
-         mockturtle::klut_network::signal op1=0;
-         mockturtle::klut_network::signal op2=0;
+         mockturtle::klut_network::signal op1 = 0;
+         mockturtle::klut_network::signal op2 = 0;
 
          // if the first operand has already been processed then the previous signal is used
          if(nodeRefToSignal.find(GET_INDEX_NODE(binaryExpression->op0)) != nodeRefToSignal.end())
@@ -1296,7 +1296,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             {
                auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op0));
                op1 = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, int_const->value == 0 ? "---used gnd": "---used vdd");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, int_const->value == 0 ? "---used gnd" : "---used vdd");
             }
             else if(CheckIfPI(binaryExpression->op0, BB_index))
             {
@@ -1320,7 +1320,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             {
                auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op1));
                op2 = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, int_const->value == 0 ? "---used gnd": "---used vdd");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, int_const->value == 0 ? "---used gnd" : "---used vdd");
             }
             else if(CheckIfPI(binaryExpression->op1, BB_index))
             {
@@ -1342,9 +1342,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             pos.push_back(*currentStatement);
          }
 
-         //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-         //mockturtle::write_bench(klut_e, std::cout);
-         //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+         // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+         // mockturtle::write_bench(klut_e, std::cout);
+         // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement ");
          modified = true;
          continue;
@@ -1373,14 +1373,14 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
       // if the first operand has already been processed then the previous signal is used
       if(nodeRefToSignalBus.find(GET_INDEX_NODE(binaryExpression->op0)) != nodeRefToSignalBus.end())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI "+ GET_NODE(binaryExpression->op0)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + GET_NODE(binaryExpression->op0)->ToString());
          op1 = nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op0)];
       }
       else
       { // otherwise the operand is a primary input
          if(GET_NODE(binaryExpression->op0)->get_kind() == integer_cst_K)
          {
-            auto *int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op0));
+            auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op0));
             auto bits = IntegerToBitArray(int_const->value, tree_helper::Size(GET_NODE(binaryExpression->op0)));
 
             op1 = klut_e.get_constant_v(bits);
@@ -1405,14 +1405,14 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
       // if the second operand has already been processed then the previous signal is used
       if(nodeRefToSignalBus.find(GET_INDEX_NODE(binaryExpression->op1)) != nodeRefToSignalBus.end())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI "+ GET_NODE(binaryExpression->op1)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + GET_NODE(binaryExpression->op1)->ToString());
          op2 = nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op1)];
       }
       else
       { // otherwise the operand is a primary input
          if(GET_NODE(binaryExpression->op1)->get_kind() == integer_cst_K)
          {
-            auto *int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op1));
+            auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op1));
             auto bits = IntegerToBitArray(int_const->value, tree_helper::Size(GET_NODE(binaryExpression->op1)));
 
 #ifndef NDEBUG
@@ -1447,9 +1447,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          std::for_each(res.begin(), res.end(), [&currentStatement, &pos](auto op) { pos.push_back(*currentStatement); });
       }
 
-      //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-      //mockturtle::write_bench(klut_e, std::cout);
-      //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+      // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+      // mockturtle::write_bench(klut_e, std::cout);
+      // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement ");
       modified = true;
       continue;
@@ -1462,7 +1462,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
       mockturtle::klut_network klut = SimplifyLutNetwork(klut_e, this->max_lut_size);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---PI size " + STR(pis.size()));
 #ifndef NDEBUG
-      if (DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
+      if(DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
          mockturtle::write_bench(klut, std::cout);
 
       std::vector<klut_network_node> luts = ParseKLutNetwork(klut);
@@ -1470,7 +1470,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
        std::cerr << "PI size" << pis.size() << "\n";
       std::map<mockturtle::klut_network::node, tree_nodeRef> internal_nets;
       std::vector<tree_nodeRef> prev_stmts_to_add;
-      for (auto lut : luts)
+      for(auto lut : luts)
       {
 #ifndef NDEBUG
          if(!AppM->ApplyNewTransformation())
@@ -1492,14 +1492,14 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Is PO");
             auto po_stmpt = pos.at(lut.po_index);
             /// add previous statements defining non-primary outputs just before the current statement
-            for(auto stmt: prev_stmts_to_add)
+            for(auto stmt : prev_stmts_to_add)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding statement " + GET_NODE(stmt)->ToString());
                block.second->PushBefore(stmt, po_stmpt);
             }
             prev_stmts_to_add.clear();
          }
-         tree_nodeRef lut_constant_node = TM->CreateUniqueIntegerCst(lut.lut_constant,GET_INDEX_NODE(DefaultUnsignedLongLongInt));
+         tree_nodeRef lut_constant_node = TM->CreateUniqueIntegerCst(lut.lut_constant, GET_INDEX_NODE(DefaultUnsignedLongLongInt));
          tree_nodeRef op1, op2, op3, op4, op5, op6, op7, op8;
          auto p_index = 1u;
          for(auto in : lut.fan_in)
@@ -1509,7 +1509,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             {
                operand = pis.at(in);
 
-               if (tree_helper::Size(GET_NODE(operand)) == 1 && !tree_helper::is_bool(TM,GET_INDEX_NODE(operand)))
+               if(tree_helper::Size(GET_NODE(operand)) == 1 && !tree_helper::is_bool(TM, GET_INDEX_NODE(operand)))
                {
                   operand = CreateBitSelectionNodeOrCast(operand, 0, BB_index, prev_stmts_to_add);
                }
@@ -1552,18 +1552,18 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          {
             auto po_stmpt = pos.at(lut.po_index);
             /// add selection bit stmts
-            for(auto stmt: prev_stmts_to_add)
+            for(auto stmt : prev_stmts_to_add)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding statement " + GET_NODE(stmt)->ToString());
                block.second->PushBefore(stmt, po_stmpt);
             }
             prev_stmts_to_add.clear();
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Before statement " + GET_NODE(po_stmpt)->ToString());
-            auto *gimpleAssign = GetPointer<gimple_assign>(GET_NODE(po_stmpt));
+            auto* gimpleAssign = GetPointer<gimple_assign>(GET_NODE(po_stmpt));
             THROW_ASSERT(gimpleAssign, "unexpected condition");
             const std::string srcp_default = gimpleAssign->include_name + ":" + STR(gimpleAssign->line_number) + ":" + STR(gimpleAssign->column_number);
             auto ga_op0 = GET_NODE(gimpleAssign->op0);
-            auto *ssa_ga_op0 = GetPointer<ssa_name>(ga_op0);
+            auto* ssa_ga_op0 = GetPointer<ssa_name>(ga_op0);
             THROW_ASSERT(ssa_ga_op0, "unexpected condition");
             if(!lut.is_constant)
                internal_nets[lut.index] = gimpleAssign->op0;
@@ -1573,7 +1573,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                unsigned int integer_cst3_id = TM->new_tree_node_id();
                new_op1 = tree_man->CreateIntegerCst(ssa_ga_op0->type, lut.lut_constant, integer_cst3_id);
             }
-            else if(lut.fan_in.size()==1 && lut.lut_constant == 2)
+            else if(lut.fan_in.size() == 1 && lut.lut_constant == 2)
                new_op1 = op1;
             else
                new_op1 = tree_man->create_lut_expr(ssa_ga_op0->type, lut_constant_node, op1, op2, op3, op4, op5, op6, op7, op8, srcp_default);
@@ -1685,6 +1685,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
+         if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, SAME_FUNCTION));
          break;
       case(INVALIDATION_RELATIONSHIP):
