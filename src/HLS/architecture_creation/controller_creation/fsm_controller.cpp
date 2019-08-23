@@ -245,10 +245,12 @@ void fsm_controller::create_state_machine(std::string& parse)
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
 #endif
 
+      std::set<generic_objRef> active_fu;
       const tree_managerRef TreeM = HLSMgr->get_tree_manager();
       const auto& operations = astg->CGetStateInfo(v)->executing_operations;
       for(const auto& op : operations)
       {
+         active_fu.insert(HLS->Rfu->get(op));
          technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(op));
          technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(tree_helper::normalized_ID(data->CGetOpNodeInfo(op)->GetOperation()));
          THROW_ASSERT(GetPointer<operation>(op_tn)->time_m, "Time model not available for operation: " + GET_NAME(data, op));
@@ -283,14 +285,6 @@ void fsm_controller::create_state_machine(std::string& parse)
          }
       }
 
-      std::set<std::pair<unsigned int, unsigned int>> active_fu;
-      for(const auto& op : operations)
-      {
-         unsigned int fu_type = HLS->Rfu->get_assign(op);
-         unsigned int fu_index = HLS->Rfu->get_index(op);
-         active_fu.insert(std::make_pair(fu_type, fu_index));
-      }
-
       if(selectors.find(conn_binding::IN) != selectors.end())
       {
          for(const auto& s : selectors.at(conn_binding::IN))
@@ -321,6 +315,10 @@ void fsm_controller::create_state_machine(std::string& parse)
                      {
                         unsigned int reg_index = GetPointer<register_obj>(mux_slave)->get_register_index();
                         register_selectors[out_ports[s.second]] = reg_index;
+                     }
+                     else if(mux_slave->get_type() == generic_obj::resource_type::FUNCTIONAL_UNIT && active_fu.find(mux_slave) == active_fu.end())
+                     {
+                        present_state[v][out_ports[s.second]] = 2;
                      }
                   }
                }
