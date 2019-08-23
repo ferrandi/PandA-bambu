@@ -383,19 +383,19 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
 #endif
    else if(cm == GccWrapper_CompilerMode::CM_STD)
    {
-         std::string fname;
-         bool addTopFName = false;
+      std::string fname;
+      bool addTopFName = false;
       if(isWholeProgram)
-         {
-            fname = "main";
+      {
+         fname = "main";
          addTopFName = compiler.is_clang;
-         }
-         else if(Param->isOption(OPT_top_functions_names))
-         {
-            const auto top_functions_names = Param->getOption<const std::list<std::string>>(OPT_top_functions_names);
-            addTopFName = top_functions_names.size() == 1;
-            fname = top_functions_names.front();
-         }
+      }
+      else if(Param->isOption(OPT_top_functions_names))
+      {
+         const auto top_functions_names = Param->getOption<const std::list<std::string>>(OPT_top_functions_names);
+         addTopFName = top_functions_names.size() == 1;
+         fname = top_functions_names.front();
+      }
       if(addTopFName && (isWholeProgram || Param->getOption<bool>(OPT_do_not_expose_globals)))
       {
          if(compiler.is_clang)
@@ -713,7 +713,8 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
       }
       if(compiler.is_clang)
       {
-         const auto recipe = clang_recipes(optimization_level, Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler), compiler.expandMemOps_plugin_obj, compiler.expandMemOps_plugin_name, compiler.GepiCanon_plugin_obj, compiler.GepiCanon_plugin_name, compiler.CSROA_plugin_obj, compiler.CSROA_plugin_name, fname);
+         const auto recipe = clang_recipes(optimization_level, Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler), compiler.expandMemOps_plugin_obj, compiler.expandMemOps_plugin_name, compiler.GepiCanon_plugin_obj,
+                                           compiler.GepiCanon_plugin_name, compiler.CSROA_plugin_obj, compiler.CSROA_plugin_name, fname);
          command = compiler.llvm_opt.string() + recipe + temporary_file_o_bc;
          temporary_file_o_bc = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string()).string();
          command += " -o " + temporary_file_o_bc;
@@ -2754,15 +2755,18 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
                                           optimization_level
 #endif
-                                      , const GccWrapper_CompilerTarget
+                                      ,
+                                      const GccWrapper_CompilerTarget
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
                                           compiler
 #endif
-                                      , const std::string&
+                                      ,
+                                      const std::string&
 #ifndef _WIN32
                                           expandMemOps_plugin_obj
 #endif
-                                      , const std::string&
+                                      ,
+                                      const std::string&
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
                                           expandMemOps_plugin_name
 #endif
@@ -2771,7 +2775,8 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
 #ifndef _WIN32
                                           GepiCanon_plugin_obj
 #endif
-                                      , const std::string&
+                                      ,
+                                      const std::string&
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
                                           GepiCanon_plugin_name
 #endif
@@ -2780,11 +2785,13 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
 #ifndef _WIN32
                                           CSROA_plugin_obj
 #endif
-                                      , const std::string&
+                                      ,
+                                      const std::string&
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
                                           CSROA_plugin_name
 #endif
-                                      , const std::string& fname)
+                                      ,
+                                      const std::string& fname)
 {
    std::string recipe = "";
 #ifndef _WIN32
@@ -2811,209 +2818,214 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
          std::string complex_recipe;
          complex_recipe += " -tti "
                            "-mem2reg "
-                           "-" + expandMemOps_plugin_name + " "
-                           "-" + GepiCanon_plugin_name + " "
+                           "-" +
+                           expandMemOps_plugin_name +
+                           " "
+                           "-" +
+                           GepiCanon_plugin_name +
+                           " "
                            "-scalar-evolution "
-                           "-" + CSROA_plugin_name+"FV "
-                   "-targetlibinfo "
-                   "-tbaa "
-                   "-scoped-noalias "
-                   "-assumption-cache-tracker "
-                   "-profile-summary-info "
-                   "-forceattrs "
-                   "-inferattrs "
-                   "-ipsccp "
-                   "-globalopt "
-                   "-domtree "
-                   "-mem2reg "
-                   "-deadargelim "
-                   "-domtree "
-                   "-basicaa "
-                   "-aa ";
-         complex_recipe +=
-                   " -dse -loop-unroll "
-                   /// "-instcombine "
-                   "-simplifycfg "
-                   "-pgo-icall-prom "
-                   "-basiccg "
-                   "-globals-aa "
-                   "-prune-eh "
-                   "-inline "
-                   "-functionattrs "
-                   "-argpromotion "
-                   "-domtree "
-                   "-sroa "
-                   "-early-cse "
-                   "-speculative-execution "
-                   "-lazy-value-info "
-                   "-jump-threading "
-                   "-correlated-propagation "
-                   "-simplifycfg "
-                   "-domtree "
-                   "-basicaa "
-                   "-aa ";
-         complex_recipe += " -" + CSROA_plugin_name+"D" +
-                   " -dse -loop-unroll "
-                   /// "-instcombine "
-                   "-libcalls-shrinkwrap "
-                   "-tailcallelim "
-                   "-simplifycfg "
-                   "-reassociate "
-                   "-domtree "
-                   "-loops "
-                   "-loop-simplify "
-                   "-lcssa-verification "
-                   "-lcssa "
-                   "-basicaa "
-                   "-aa "
-                   "-scalar-evolution "
-                   "-loop-rotate "
-                   "-licm "
-                   "-loop-unswitch "
-                   "-simplifycfg "
-                   "-domtree "
-                   "-basicaa "
-                   "-aa ";
+                           "-" +
+                           CSROA_plugin_name +
+                           "FV "
+                           "-targetlibinfo "
+                           "-tbaa "
+                           "-scoped-noalias "
+                           "-assumption-cache-tracker "
+                           "-profile-summary-info "
+                           "-forceattrs "
+                           "-inferattrs "
+                           "-ipsccp "
+                           "-globalopt "
+                           "-domtree "
+                           "-mem2reg "
+                           "-deadargelim "
+                           "-domtree "
+                           "-basicaa "
+                           "-aa ";
+         complex_recipe += " -dse -loop-unroll "
+                           /// "-instcombine "
+                           "-simplifycfg "
+                           "-pgo-icall-prom "
+                           "-basiccg "
+                           "-globals-aa "
+                           "-prune-eh "
+                           "-inline "
+                           "-functionattrs "
+                           "-argpromotion "
+                           "-domtree "
+                           "-sroa "
+                           "-early-cse "
+                           "-speculative-execution "
+                           "-lazy-value-info "
+                           "-jump-threading "
+                           "-correlated-propagation "
+                           "-simplifycfg "
+                           "-domtree "
+                           "-basicaa "
+                           "-aa ";
+         complex_recipe += " -" + CSROA_plugin_name + "D" +
+                           " -dse -loop-unroll "
+                           /// "-instcombine "
+                           "-libcalls-shrinkwrap "
+                           "-tailcallelim "
+                           "-simplifycfg "
+                           "-reassociate "
+                           "-domtree "
+                           "-loops "
+                           "-loop-simplify "
+                           "-lcssa-verification "
+                           "-lcssa "
+                           "-basicaa "
+                           "-aa "
+                           "-scalar-evolution "
+                           "-loop-rotate "
+                           "-licm "
+                           "-loop-unswitch "
+                           "-simplifycfg "
+                           "-domtree "
+                           "-basicaa "
+                           "-aa ";
          complex_recipe += " -" + expandMemOps_plugin_name +
-                   " -dse -loop-unroll "
-                   /// "-instcombine "
-                   "-loops "
-                   "-loop-simplify "
-                   "-lcssa-verification "
-                   "-lcssa "
-                   "-scalar-evolution "
-                   "-indvars "
-                   "-loop-idiom "
-                   "-loop-deletion "
-                   "-loop-unroll "
-                   "-mldst-motion "
-                   "-aa "
-                   "-memdep "
-                   "-lazy-branch-prob "
-                   "-lazy-block-freq "
-                   "-opt-remark-emitter "
-                   "-gvn "
-                   "-basicaa "
-                   "-aa "
-                   "-memdep "
-                   "-memcpyopt "
-                   "-sccp "
-                   "-domtree "
-                   "-demanded-bits "
-                   "-bdce "
-                   "-basicaa "
-                   "-aa ";
+                           " -dse -loop-unroll "
+                           /// "-instcombine "
+                           "-loops "
+                           "-loop-simplify "
+                           "-lcssa-verification "
+                           "-lcssa "
+                           "-scalar-evolution "
+                           "-indvars "
+                           "-loop-idiom "
+                           "-loop-deletion "
+                           "-loop-unroll "
+                           "-mldst-motion "
+                           "-aa "
+                           "-memdep "
+                           "-lazy-branch-prob "
+                           "-lazy-block-freq "
+                           "-opt-remark-emitter "
+                           "-gvn "
+                           "-basicaa "
+                           "-aa "
+                           "-memdep "
+                           "-memcpyopt "
+                           "-sccp "
+                           "-domtree "
+                           "-demanded-bits "
+                           "-bdce "
+                           "-basicaa "
+                           "-aa ";
          complex_recipe += " -" + expandMemOps_plugin_name +
-                   " -dse -loop-unroll "
-                   /// "-instcombine "
-                   "-lazy-value-info "
-                   "-jump-threading "
-                   "-correlated-propagation "
-                   "-domtree "
-                   "-basicaa "
-                   "-aa "
-                   "-memdep "
-                   "-dse "
-                   "-loops "
-                   "-loop-simplify "
-                   "-lcssa-verification "
-                   "-lcssa "
-                   "-aa "
-                   "-scalar-evolution "
-                   "-licm "
-                   "-postdomtree "
-                   "-adce "
-                   "-simplifycfg "
-                   "-domtree "
-                   "-basicaa "
-                   "-aa ";
+                           " -dse -loop-unroll "
+                           /// "-instcombine "
+                           "-lazy-value-info "
+                           "-jump-threading "
+                           "-correlated-propagation "
+                           "-domtree "
+                           "-basicaa "
+                           "-aa "
+                           "-memdep "
+                           "-dse "
+                           "-loops "
+                           "-loop-simplify "
+                           "-lcssa-verification "
+                           "-lcssa "
+                           "-aa "
+                           "-scalar-evolution "
+                           "-licm "
+                           "-postdomtree "
+                           "-adce "
+                           "-simplifycfg "
+                           "-domtree "
+                           "-basicaa "
+                           "-aa ";
          complex_recipe += " -" + expandMemOps_plugin_name +
-                   " -loop-unroll "
-                   /// "-instcombine "
-                   "-barrier "
-                   "-elim-avail-extern "
-                   "-basiccg "
-                   "-rpo-functionattrs "
-                   "-globals-aa "
-                   "-float2int "
-                   "-domtree "
-                   "-loops "
-                   "-loop-simplify "
-                   "-lcssa-verification "
-                   "-lcssa "
-                   "-basicaa "
-                   "-aa "
-                   "-scalar-evolution "
-                   "-loop-rotate "
-                   "-loop-accesses "
-                   "-lazy-branch-prob "
-                   "-lazy-block-freq "
-                   "-opt-remark-emitter "
-                   "-loop-distribute "
-                   "-loop-simplify "
-                   "-lcssa-verification "
-                   "-lcssa "
-                   "-branch-prob "
-                   "-block-freq "
-                   "-scalar-evolution "
-                   "-basicaa "
-                   "-aa "
-                   "-loop-accesses "
-                   "-demanded-bits "
-                   "-lazy-branch-prob "
-                   "-lazy-block-freq "
-                   "-opt-remark-emitter "
-                   /// "-loop-vectorize "
-                   "-loop-simplify "
-                   "-scalar-evolution "
-                   "-aa "
-                   "-loop-accesses "
-                   "-loop-load-elim "
-                   "-basicaa "
-                   "-aa ";
+                           " -loop-unroll "
+                           /// "-instcombine "
+                           "-barrier "
+                           "-elim-avail-extern "
+                           "-basiccg "
+                           "-rpo-functionattrs "
+                           "-globals-aa "
+                           "-float2int "
+                           "-domtree "
+                           "-loops "
+                           "-loop-simplify "
+                           "-lcssa-verification "
+                           "-lcssa "
+                           "-basicaa "
+                           "-aa "
+                           "-scalar-evolution "
+                           "-loop-rotate "
+                           "-loop-accesses "
+                           "-lazy-branch-prob "
+                           "-lazy-block-freq "
+                           "-opt-remark-emitter "
+                           "-loop-distribute "
+                           "-loop-simplify "
+                           "-lcssa-verification "
+                           "-lcssa "
+                           "-branch-prob "
+                           "-block-freq "
+                           "-scalar-evolution "
+                           "-basicaa "
+                           "-aa "
+                           "-loop-accesses "
+                           "-demanded-bits "
+                           "-lazy-branch-prob "
+                           "-lazy-block-freq "
+                           "-opt-remark-emitter "
+                           /// "-loop-vectorize "
+                           "-loop-simplify "
+                           "-scalar-evolution "
+                           "-aa "
+                           "-loop-accesses "
+                           "-loop-load-elim "
+                           "-basicaa "
+                           "-aa ";
          complex_recipe += " -" + expandMemOps_plugin_name +
-                   " -dse -loop-unroll "
-                   /// "-instcombine "
-                   "-simplifycfg "
-                   "-domtree "
-                   "-basicaa "
-                   "-aa ";
+                           " -dse -loop-unroll "
+                           /// "-instcombine "
+                           "-simplifycfg "
+                           "-domtree "
+                           "-basicaa "
+                           "-aa ";
          complex_recipe += " -" + expandMemOps_plugin_name +
-                   " -dse -loop-unroll "
-                   /// "-instcombine "
-                   "-loops "
-                   "-loop-simplify "
-                   "-lcssa-verification "
-                   "-lcssa "
-                   "-scalar-evolution "
-                   "-loop-unroll ";
-         complex_recipe += " -" + expandMemOps_plugin_name  + " -" + CSROA_plugin_name+"WI" +
-                   " -dse -loop-unroll "
-                   /// "-instcombine "
-                   "-loop-simplify "
-                   "-lcssa-verification "
-                   "-lcssa "
-                   "-scalar-evolution "
-                   "-licm "
-                   "-alignment-from-assumptions "
-                   "-strip-dead-prototypes "
-                   "-globaldce "
-                   "-constmerge "
-                   "-domtree "
-                   "-loops "
-                   "-branch-prob "
-                   "-block-freq "
-                   "-loop-simplify "
-                   "-lcssa-verification "
-                   "-lcssa "
-                   "-basicaa "
-                   "-aa "
-                   "-scalar-evolution "
-                   "-branch-prob "
-                   "-block-freq "
-                   "-loop-sink "
-                   "-instsimplify ";
-         //complex_recipe += complex_recipe;
+                           " -dse -loop-unroll "
+                           /// "-instcombine "
+                           "-loops "
+                           "-loop-simplify "
+                           "-lcssa-verification "
+                           "-lcssa "
+                           "-scalar-evolution "
+                           "-loop-unroll ";
+         complex_recipe += " -" + expandMemOps_plugin_name + " -" + CSROA_plugin_name + "WI" +
+                           " -dse -loop-unroll "
+                           /// "-instcombine "
+                           "-loop-simplify "
+                           "-lcssa-verification "
+                           "-lcssa "
+                           "-scalar-evolution "
+                           "-licm "
+                           "-alignment-from-assumptions "
+                           "-strip-dead-prototypes "
+                           "-globaldce "
+                           "-constmerge "
+                           "-domtree "
+                           "-loops "
+                           "-branch-prob "
+                           "-block-freq "
+                           "-loop-simplify "
+                           "-lcssa-verification "
+                           "-lcssa "
+                           "-basicaa "
+                           "-aa "
+                           "-scalar-evolution "
+                           "-branch-prob "
+                           "-block-freq "
+                           "-loop-sink "
+                           "-instsimplify ";
+         // complex_recipe += complex_recipe;
          recipe += complex_recipe;
       }
       else if(optimization_level == GccWrapper_OptimizationSet::O0)
@@ -3034,8 +3046,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
                    "-domtree "
                    "-basicaa "
                    "-aa ";
-         recipe += " -" + expandMemOps_plugin_name +
-                   " -loop-unroll -simplifycfg ";
+         recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
       }
       else
       {

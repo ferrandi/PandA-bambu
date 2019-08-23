@@ -43,6 +43,7 @@
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Transforms/Utils/Local.h"
+#include "llvm/Transforms/Utils/PromoteMemToReg.h"
 #include <llvm/Analysis/InlineCost.h>
 #include <llvm/Analysis/ScalarEvolution.h>
 #include <llvm/Analysis/ScalarEvolutionExpressions.h>
@@ -52,7 +53,6 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
 #include <llvm/Transforms/Utils/Cloning.h>
-#include "llvm/Transforms/Utils/PromoteMemToReg.h"
 
 #define DEBUG_TYPE "csroa"
 
@@ -149,7 +149,7 @@ bool CustomScalarReplacementOfAggregatesPass::runOnModule(llvm::Module& module)
    return false;
 }
 
-bool CustomScalarReplacementOfAggregatesPass::SROA_wrapperInliningStep(llvm::Function* kernel_function, llvm::Module& module, ModulePass *modulePass)
+bool CustomScalarReplacementOfAggregatesPass::SROA_wrapperInliningStep(llvm::Function* kernel_function, llvm::Module& module, ModulePass* modulePass)
 {
    // Map linking any function with its modified version
    std::map<llvm::Function*, llvm::Function*> exp_fun_map;
@@ -1428,7 +1428,7 @@ void CustomScalarReplacementOfAggregatesPass::compute_op_dims_and_perform_functi
       llvm::Function* synthesized_function = nullptr;
 
       FunctionDimKey search_key = FunctionDimKey(called_function, dimensions);
-      std::map<std::string,std::set<std::string>> used_names;
+      std::map<std::string, std::set<std::string>> used_names;
       auto fd_it = function_dim_map.find(search_key);
       if(fd_it != function_dim_map.end())
       {
@@ -1468,18 +1468,18 @@ void CustomScalarReplacementOfAggregatesPass::compute_op_dims_and_perform_functi
             {
                unsigned int index = 0;
                std::string s = std::to_string(index);
-               while (used_names.find(Fname)->second.find(new_name+s) != used_names.find(Fname)->second.end())
+               while(used_names.find(Fname)->second.find(new_name + s) != used_names.find(Fname)->second.end())
                {
                   ++index;
                }
-               used_names[Fname].insert(new_name+s);
-               new_name = new_name+s;
+               used_names[Fname].insert(new_name + s);
+               new_name = new_name + s;
             }
             else
             {
                std::string s = std::to_string(0);
-               used_names[Fname].insert(new_name+s);
-               new_name = new_name+s;
+               used_names[Fname].insert(new_name + s);
+               new_name = new_name + s;
             }
 #endif
             cloned_function->setName(new_name);
@@ -1994,15 +1994,15 @@ void CustomScalarReplacementOfAggregatesPass::expand_signatures_and_call_sites(s
    {
       struct ArgObj
       {
-         unsigned long index={0};
-         llvm::Type* type={nullptr};
+         unsigned long index = {0};
+         llvm::Type* type = {nullptr};
          std::string arg_name;
          std::vector<unsigned long long> size;
       };
       class ExpArgs
       {
        public:
-         static void rec(ArgObj* arg, std::map<ArgObj*, std::vector<ArgObj*>>& exp_args_map_ref, std::map<unsigned long,ArgObj> &newMockFunctionArgs)
+         static void rec(ArgObj* arg, std::map<ArgObj*, std::vector<ArgObj*>>& exp_args_map_ref, std::map<unsigned long, ArgObj>& newMockFunctionArgs)
          {
             if(llvm::PointerType* ptr_ty = llvm::dyn_cast<llvm::PointerType>(arg->type))
             {
@@ -2145,7 +2145,7 @@ void CustomScalarReplacementOfAggregatesPass::expand_signatures_and_call_sites(s
       llvm::Function::arg_iterator arg_it_b = called_function->arg_begin();
       llvm::Function::arg_iterator arg_it_e = called_function->arg_end();
 
-      std::map<unsigned long,ArgObj> newMockFunctionArgs;
+      std::map<unsigned long, ArgObj> newMockFunctionArgs;
 
       // Go through all the function arguments
       for(auto arg_it = arg_it_b; arg_it != arg_it_e; arg_it++)
@@ -2157,7 +2157,7 @@ void CustomScalarReplacementOfAggregatesPass::expand_signatures_and_call_sites(s
          // Create the new argument and append it to the mock function
          auto argNo = newMockFunctionArgs.size();
          auto new_arg = &newMockFunctionArgs[argNo];
-         new_arg->index =  argNo;
+         new_arg->index = argNo;
          new_arg->type = new_arg_ty;
          new_arg->arg_name = new_arg_name;
 
@@ -2244,7 +2244,6 @@ void CustomScalarReplacementOfAggregatesPass::expand_signatures_and_call_sites(s
 
       // Track the function mapping (old->new)
       exp_fun_map[called_function] = new_function;
-
 
       // Do not preserve any analysis
       llvm::PreservedAnalyses::none();
@@ -2574,8 +2573,8 @@ void CustomScalarReplacementOfAggregatesPass::cleanup(std::map<llvm::Function*, 
                   {
                      if(a.hasAttribute((llvm::Attribute::AttrKind)attr_idx))
                      {
-                        //llvm::errs() << "Function: " << function->getName() << "\n  ";
-                        //llvm::errs() << " " << attr_idx;
+                        // llvm::errs() << "Function: " << function->getName() << "\n  ";
+                        // llvm::errs() << " " << attr_idx;
                         a.removeAttr((llvm::Attribute::AttrKind)attr_idx);
                      }
                   }
@@ -3018,7 +3017,7 @@ bool CustomScalarReplacementOfAggregatesPass::expansion_allowed(llvm::Value* agg
    }
 }
 
-void CustomScalarReplacementOfAggregatesPass::inline_wrappers(llvm::Function* kernel_function, std::vector<llvm::Function*>& inner_functions, ModulePass *modulePass)
+void CustomScalarReplacementOfAggregatesPass::inline_wrappers(llvm::Function* kernel_function, std::vector<llvm::Function*>& inner_functions, ModulePass* modulePass)
 {
    inner_functions.insert(inner_functions.begin(), kernel_function);
 
@@ -3028,7 +3027,7 @@ void CustomScalarReplacementOfAggregatesPass::inline_wrappers(llvm::Function* ke
    {
       bool doOpt = false;
       unsigned nStmtsCaller = 0;
-      for(const auto& bbCaller: *f)
+      for(const auto& bbCaller : *f)
       {
          nStmtsCaller += bbCaller.size();
       }
@@ -3041,23 +3040,24 @@ void CustomScalarReplacementOfAggregatesPass::inline_wrappers(llvm::Function* ke
             {
                auto cf = call_inst->getCalledFunction();
                assert(cf);
-               if(cf->isIntrinsic()) continue;
+               if(cf->isIntrinsic())
+                  continue;
                unsigned nStmtsCallee = 0;
-               for(const auto& bbCallee: *cf)
+               for(const auto& bbCallee : *cf)
                {
                   nStmtsCallee += bbCallee.size();
                }
                unsigned nusers = 0;
-               for (auto it: cf->users())
+               for(auto it : cf->users())
                {
                   ++nusers;
                }
-               //llvm::errs()<<cf->getName().str() << " number of users: "<< nusers << " Caller: " << nStmtsCaller << " Callee: " << nStmtsCallee << "\n";
-               auto inlineCost = nStmtsCaller+nusers*nStmtsCallee;
+               // llvm::errs()<<cf->getName().str() << " number of users: "<< nusers << " Caller: " << nStmtsCaller << " Callee: " << nStmtsCallee << "\n";
+               auto inlineCost = nStmtsCaller + nusers * nStmtsCallee;
                bool is_wrapper = strncmp(cf->getName().str().c_str(), std::string(wrapper_function_name).c_str(), std::string(wrapper_function_name).size()) == 0;
-               if(is_wrapper || (nusers<5 && inlineCost<CSROAInlineThreshold))
+               if(is_wrapper || (nusers < 5 && inlineCost < CSROAInlineThreshold))
                {
-                  //llvm::errs()<<cf->getName().str() << " Inlined!\n";
+                  // llvm::errs()<<cf->getName().str() << " Inlined!\n";
                   cf->removeFnAttr(llvm::Attribute::NoInline);
                   cf->removeFnAttr(llvm::Attribute::OptimizeNone);
                   llvm::InlineFunctionInfo IFI = llvm::InlineFunctionInfo();
@@ -3080,7 +3080,7 @@ void CustomScalarReplacementOfAggregatesPass::inline_wrappers(llvm::Function* ke
          llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
          const llvm::TargetTransformInfo& TTI = modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(*f);
          for(llvm::Function::iterator BBIt = f->begin(); BBIt != f->end();)
-                 llvm::SimplifyInstructionsInBlock(&*BBIt++, &TLI);
+            llvm::SimplifyInstructionsInBlock(&*BBIt++, &TLI);
          for(llvm::Function::iterator BBIt = f->begin(); BBIt != f->end();)
 #if __clang_major__ >= 6 && !defined(__APPLE__)
             llvm::simplifyCFG(&*BBIt++, TTI, 1);
@@ -3089,24 +3089,25 @@ void CustomScalarReplacementOfAggregatesPass::inline_wrappers(llvm::Function* ke
 #endif
          llvm::removeUnreachableBlocks(*f);
 
-         ///whenever it is possible the following promotes alloca to reg
+         /// whenever it is possible the following promotes alloca to reg
          {
             auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*f).getDomTree();
             auto& AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*f);
-            std::vector<llvm::AllocaInst *> Allocas;
-            llvm::BasicBlock &BB = f->getEntryBlock(); // Get the entry node for the function
+            std::vector<llvm::AllocaInst*> Allocas;
+            llvm::BasicBlock& BB = f->getEntryBlock(); // Get the entry node for the function
 
-            while (1) {
+            while(1)
+            {
                Allocas.clear();
 
                // Find allocas that are safe to promote, by looking at all instructions in
                // the entry node
-               for (llvm::BasicBlock::iterator I = BB.begin(), E = --BB.end(); I != E; ++I)
-                  if (llvm::AllocaInst *AI = llvm::dyn_cast<llvm::AllocaInst>(I)) // Is it an alloca?
-                     if (llvm::isAllocaPromotable(AI))
+               for(llvm::BasicBlock::iterator I = BB.begin(), E = --BB.end(); I != E; ++I)
+                  if(llvm::AllocaInst* AI = llvm::dyn_cast<llvm::AllocaInst>(I)) // Is it an alloca?
+                     if(llvm::isAllocaPromotable(AI))
                         Allocas.push_back(AI);
 
-               if (Allocas.empty())
+               if(Allocas.empty())
                   break;
 #if __clang_major__ != 4 && !defined(__APPLE__)
                llvm::PromoteMemToReg(Allocas, DT, &AC);
@@ -3114,14 +3115,11 @@ void CustomScalarReplacementOfAggregatesPass::inline_wrappers(llvm::Function* ke
                llvm::PromoteMemToReg(Allocas, DT, nullptr, &AC);
 #endif
             }
-
          }
       }
-
    }
 
    inner_functions.erase(inner_functions.begin());
-
 }
 
 CustomScalarReplacementOfAggregatesPass* createSROAFunctionVersioningPass(std::string kernel_name)

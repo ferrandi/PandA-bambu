@@ -89,7 +89,6 @@
 
 #include <boost/tokenizer.hpp>
 
-
 /// MAX metadata bit size
 #define MAX_METADATA_BITSIZE 10
 

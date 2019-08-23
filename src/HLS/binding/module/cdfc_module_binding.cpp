@@ -1591,9 +1591,9 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             const CliqueCovering_Algorithm clique_covering_method_used = clique_covering_algorithm;
             std::string res_name = allocation_information->get_fu_name(partition.first).first;
             std::string lib_name = HLS->HLS_T->get_technology_manager()->get_library(res_name);
-            bool disabling_slack_based_binding =
-                ((allocation_information->get_number_channels(partition.first) >= 1) and (!allocation_information->is_readonly_memory_unit(partition.first) || (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))) ||
-                lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY || allocation_information->get_number_fu(partition.first) != INFINITE_UINT;
+            bool disabling_slack_based_binding = ((allocation_information->get_number_channels(partition.first) >= 1) and
+                                                  (!allocation_information->is_readonly_memory_unit(partition.first) || (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))) ||
+                                                 lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY || allocation_information->get_number_fu(partition.first) != INFINITE_UINT;
 
             THROW_ASSERT(lib_name != PROXY_LIBRARY || 1 == allocation_information->get_number_fu(partition.first), "unexpected condition");
 
@@ -1674,8 +1674,9 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             /// Specify the minimum number of resources in case we have to use all the memory ports.
             /// That is relevant for memories attached to the bus
             /// Private memories should use the minimum number of ports to minimize the total area.
-            unsigned var =
-                allocation_information->is_direct_access_memory_unit(partition.first) ? (allocation_information->is_memory_unit(partition.first) ? allocation_information->get_memory_var(partition.first) : allocation_information->get_proxy_memory_var(partition.first)) : 0;
+            unsigned var = allocation_information->is_direct_access_memory_unit(partition.first) ?
+                               (allocation_information->is_memory_unit(partition.first) ? allocation_information->get_memory_var(partition.first) : allocation_information->get_proxy_memory_var(partition.first)) :
+                               0;
             if(var && !HLSMgr->Rmem->is_private_memory(var))
                module_clique->min_resources(allocation_information->get_number_channels(partition.first));
 

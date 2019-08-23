@@ -479,7 +479,8 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                 if(!gn_used->vdef and gn_used->bb_index == ga->bb_index and gn_used->get_kind() == gimple_assign_K)
                                                 {
                                                    const auto ga_used = GetPointer<gimple_assign>(GET_NODE(use.first));
-                                                   if(GET_NODE(ga_used->op0)->get_kind() == ssa_name_K and GET_NODE(ga_used->op1)->get_kind() == mem_ref_K && !(ga_used->predicate && GET_NODE(ga_used->predicate)->get_kind() == integer_cst_K && GetPointer<integer_cst>(GET_NODE(ga_used->predicate))->value == 0))
+                                                   if(GET_NODE(ga_used->op0)->get_kind() == ssa_name_K and GET_NODE(ga_used->op1)->get_kind() == mem_ref_K &&
+                                                      !(ga_used->predicate && GET_NODE(ga_used->predicate)->get_kind() == integer_cst_K && GetPointer<integer_cst>(GET_NODE(ga_used->predicate))->value == 0))
                                                    {
                                                       const auto mr_used = GetPointer<mem_ref>(GET_NODE(ga_used->op1));
                                                       if(GetPointer<integer_cst>(GET_NODE(mr->op1))->value == GetPointer<integer_cst>(GET_NODE(mr_used->op1))->value)
@@ -623,7 +624,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---gimple_multi_way_if with constant conditions");
                   modified = true;
-                  auto bbIndex=block_it->first;
+                  auto bbIndex = block_it->first;
                   auto bb = block_it->second;
                   for(auto& cond : gm->list_of_cond)
                   {
@@ -638,7 +639,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                {
                   /// remove same conditions
                   std::map<unsigned int, unsigned int> condIndex2BBdest;
-                  auto bbIndex=block_it->first;
+                  auto bbIndex = block_it->first;
                   auto bb = block_it->second;
                   auto do0ConstantCondRemoval = false;
                   for(auto& cond : gm->list_of_cond)

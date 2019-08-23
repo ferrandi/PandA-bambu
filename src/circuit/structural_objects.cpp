@@ -730,7 +730,7 @@ std::string structural_object::GetParameter(std::string name) const
    return default_parameters.at(name);
 }
 
-void structural_object::AddParameter(const std::string & name, const std::string & default_value)
+void structural_object::AddParameter(const std::string& name, const std::string& default_value)
 {
    THROW_ASSERT(default_parameters.find(name) == default_parameters.end() or default_parameters.at(name) == default_value, "Parameter " + name + " already added. Old default: " + default_parameters.at(name) + " New default: " + default_value);
    default_parameters[name] = default_value;
@@ -3982,7 +3982,7 @@ void module::change_port_direction(structural_objectRef port, port_o::port_direc
    GetPointer<port_o>(port)->set_port_direction(pdir);
 }
 
-void module::AddParameter(const std::string & name, const std::string & default_value)
+void module::AddParameter(const std::string& name, const std::string& default_value)
 {
    if(name != MEMORY_PARAMETER)
    {

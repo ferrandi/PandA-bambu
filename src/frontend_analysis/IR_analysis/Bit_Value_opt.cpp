@@ -271,7 +271,6 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
 #ifndef NDEBUG
                      AppM->RegisterTransformation(GetName(), stmt);
 #endif
-
                   }
                   else if(GetPointer<ssa_name>(GET_NODE(ga->op1)))
                   {
@@ -304,7 +303,10 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                            tree_nodeRef val;
                            if(bitwidth_op == 32)
                            {
-                              union {float dest; int source;} __conv_union;
+                              union {
+                                 float dest;
+                                 int source;
+                              } __conv_union;
                               __conv_union.source = static_cast<int>(int_const->value);
                               const auto data_value_id = TM->new_tree_node_id();
                               const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
@@ -312,7 +314,10 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                            }
                            else if(bitwidth_op == 64)
                            {
-                              union {double dest; long long int source;} __conv_union;
+                              union {
+                                 double dest;
+                                 long long int source;
+                              } __conv_union;
                               __conv_union.source = int_const->value;
                               const auto data_value_id = TM->new_tree_node_id();
                               const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
@@ -548,7 +553,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                      const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
                      tree_nodeRef bt = IRman->create_boolean_type();
                      tree_nodeRef cond_op0 = IRman->create_binary_operation(bt, data_bitsize_in0 == 1 ? me->op0 : me->op1, constNE0, srcp_default, ne_expr_K);
-                     tree_nodeRef op0_ga = IRman->CreateGimpleAssign(bt, TM->CreateUniqueIntegerCst(0,bt->index), TM->CreateUniqueIntegerCst(1,bt->index), cond_op0, B_id, srcp_default);
+                     tree_nodeRef op0_ga = IRman->CreateGimpleAssign(bt, TM->CreateUniqueIntegerCst(0, bt->index), TM->CreateUniqueIntegerCst(1, bt->index), cond_op0, B_id, srcp_default);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op0_ga));
                      B->PushBefore(op0_ga, stmt);
                      tree_nodeRef op0_ga_var = GetPointer<gimple_assign>(GET_NODE(op0_ga))->op0;

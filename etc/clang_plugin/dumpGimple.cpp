@@ -4890,7 +4890,7 @@ namespace llvm
    {
       if(!isVolatile)
       {
-         if(SrcAlign==DestAlign && DestAlign==Length->getZExtValue() && DestAlign<=8)
+         if(SrcAlign == DestAlign && DestAlign == Length->getZExtValue() && DestAlign <= 8)
          {
 #if PRINT_DBG_MSG
             llvm::errs() << "memcpy can be optimized\n";
@@ -4967,7 +4967,7 @@ namespace llvm
          srcIsGlobal = true;
          do_unrolling = do_unrolling && (dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0))->isConstant() || (LoopEndCount <= PEEL_THRESHOLD));
       }
-      else if(LoopEndCount==1)
+      else if(LoopEndCount == 1)
          do_unrolling = true;
       if(do_unrolling && !SrcIsVolatile && !DstIsVolatile && (srcIsAlloca || srcIsGlobal) && llvm::dyn_cast<llvm::BitCastInst>(DstAddr) && PeelCandidate)
       {
@@ -5990,15 +5990,15 @@ namespace llvm
                   I->eraseFromParent();
             if(!deadList.empty())
             {
-//               const llvm::TargetTransformInfo& TTI = modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
+               //               const llvm::TargetTransformInfo& TTI = modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
                for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
                   llvm::SimplifyInstructionsInBlock(&*BBIt++, &TLI);
-//               for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
-//#if __clang_major__ >= 6
-//                  llvm::simplifyCFG(&*BBIt++, TTI, 1);
-//#else
-//                  llvm::SimplifyCFG(&*BBIt++, TTI, 1);
-//#endif
+               //               for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
+               //#if __clang_major__ >= 6
+               //                  llvm::simplifyCFG(&*BBIt++, TTI, 1);
+               //#else
+               //                  llvm::SimplifyCFG(&*BBIt++, TTI, 1);
+               //#endif
                llvm::removeUnreachableBlocks(F);
             }
          }
@@ -6286,7 +6286,8 @@ namespace llvm
       modulePass = _modulePass;
       moduleContext = &M.getContext();
       TopFunctionName = _TopFunctionName;
-      if(!earlyAnalysis) buildMetaDataMap(M);
+      if(!earlyAnalysis)
+         buildMetaDataMap(M);
       auto res = !earlyAnalysis && lowerMemIntrinsics(M);
 
       res = res | (!earlyAnalysis && RebuildConstants(M));

@@ -66,13 +66,13 @@ namespace llvm
          initializeLoopPassPass(*PassRegistry::getPassRegistry());
       }
 
-      bool runOnFunction(llvm::Function &function) override
+      bool runOnFunction(llvm::Function& function) override
       {
          return GepiCanonicalizationPass::runOnFunction(function);
       }
       StringRef getPassName() const override
       {
-           return CLANG_VERSION_STRING(_plugin_GepiCanon);
+         return CLANG_VERSION_STRING(_plugin_GepiCanon);
       }
    };
 
@@ -92,7 +92,6 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon));
    PM.add(llvm::createVerifierPass());
 }
-
 
 #if ADD_RSP
 // These constructors add our pass to a list of global extensions.
