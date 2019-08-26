@@ -1616,7 +1616,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
       }
       THROW_ASSERT(prev_stmts_to_add.empty(), "unexpected condition");
       ///dependencies could be broken so we may need to reorder the lut based statements
-#ifndef NDEBUG
+#if HAVE_ASSERTS
       auto nStmts = statements.size();
 #endif
 //      for(auto stmt: statements)
