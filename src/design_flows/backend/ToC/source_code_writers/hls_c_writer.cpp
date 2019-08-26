@@ -790,10 +790,12 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
    // loop on the test vectors
    for(const auto& curr_test_vector : hls_c_backend_information->HLSMgr->RSim->test_vectors)
    {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering test vector " + STR(v_idx));
       // loop on the variables in memory
       for(const auto& l : mem)
       {
          std::string param = behavioral_helper->PrintVariable(l);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Considering memory variable " + param);
          if(param[0] == '"')
             param = "@" + STR(l);
 
@@ -824,8 +826,12 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
          }
 
          if(v_idx > 0 && is_memory)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Skip memory variable " + param);
             continue; // memory has been already initialized
+         }
 
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Init value is " + test_v);
          size_t reserved_mem_bytes = tree_helper::size(TM, l) / 8;
          if(reserved_mem_bytes == 0) // must be at least a byte
             reserved_mem_bytes = 1;
@@ -850,6 +856,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
          for(unsigned int i = 0; i < splitted.size(); i++)
          {
             THROW_ASSERT(splitted[i] != "", "Not well formed test vector: " + test_v);
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Considering token " + splitted[i]);
 
             std::string initial_string = splitted[i];
             std::string binary_string;
@@ -981,7 +988,9 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
             indented_output_stream->Append("// next_object_offset > reserved_mem_bytes\n");
             WriteZeroedBytes(next_object_offset - reserved_mem_bytes);
          }
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Considered memory variable " + param);
       }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered test vector " + STR(v_idx));
       ++v_idx;
    }
 }
@@ -1014,8 +1023,10 @@ void HLSCWriter::WriteMainTestbench()
    indented_output_stream->Append("}\n\n");
    // write additional initialization code needed by subclasses
    WriteExtraInitCode();
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written extra init code");
    // write C code used to print initialization values for the HDL simulator's memory
    WriteSimulatorInitMemory(function_id);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written simulator init memory");
    // ---- WRITE VARIABLES DECLARATIONS ----
    // declaration of the return variable of the top function, if not void
    if(return_type_index)
@@ -1033,6 +1044,7 @@ void HLSCWriter::WriteMainTestbench()
    }
    // parameters declaration
    WriteParamDecl(behavioral_helper);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written parameter declarations");
    // ---- WRITE PARAMETERS INITIALIZATION, FUNCTION CALLS AND CHECK RESULTS ----
    auto& test_vectors = hls_c_backend_information->HLSMgr->RSim->test_vectors;
    for(unsigned int v_idx = 0; v_idx < test_vectors.size(); v_idx++)
@@ -1066,7 +1078,7 @@ void HLSCWriter::WriteFile(const std::string& file_name)
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->C-based testbench generation for function " + behavioral_helper->get_function_name() + ": " + file_name);
 
    WriteMainTestbench();
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--Prepared testbench");
 
    indented_output_stream->WriteFile(file_name);
 }
