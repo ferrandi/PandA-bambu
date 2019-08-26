@@ -109,11 +109,11 @@
 #include "call_graph_manager.hpp"
 #include "loop.hpp"
 #include "loops.hpp"
+#include "omp_functions.hpp"
 #include "op_graph.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "tree_node.hpp"
 
 #include <boost/foreach.hpp>
 #include <boost/graph/depth_first_search.hpp>
@@ -275,6 +275,13 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       {
          has_registered_inputs = true;
       }
+   }
+
+   auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+   if(HLS->Param->isOption(OPT_context_switch))
+   {
+      if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
+         has_registered_inputs = true;
    }
    HLS->registered_inputs = has_registered_inputs;
 
@@ -668,6 +675,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          }
       }
    }
+   else
+      HLS->registered_done_port = false;
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->State Transition Graph Information of function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");

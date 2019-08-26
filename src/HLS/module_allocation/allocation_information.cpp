@@ -726,10 +726,11 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index) const
    {
       const auto right = GET_NODE(ga->op1);
       /// currently all the operations introduced after the allocation has been performed are bounded
-      THROW_ASSERT(GetPointer<cst_node>(right) or right->get_kind() == vec_cond_expr_K or right->get_kind() == nop_expr_K or right->get_kind() == lut_expr_K or right->get_kind() == lshift_expr_K or right->get_kind() == rshift_expr_K or right->get_kind() == bit_xor_expr_K or
-                       right->get_kind() == bit_not_expr_K or right->get_kind() == bit_ior_concat_expr_K or right->get_kind() == bit_ior_expr_K or right->get_kind() == bit_and_expr_K or right->get_kind() == convert_expr_K or
-                       right->get_kind() == truth_and_expr_K or right->get_kind() == truth_or_expr_K or right->get_kind() == truth_not_expr_K or right->get_kind() == cond_expr_K or right->get_kind() == ternary_plus_expr_K or
-                       right->get_kind() == ternary_mp_expr_K or right->get_kind() == ternary_pm_expr_K or right->get_kind() == ternary_mm_expr_K or right->get_kind() == ssa_name_K,
+      THROW_ASSERT(GetPointer<cst_node>(right) or right->get_kind() == vec_cond_expr_K or right->get_kind() == nop_expr_K or right->get_kind() == lut_expr_K or right->get_kind() == lshift_expr_K or right->get_kind() == rshift_expr_K or
+                       right->get_kind() == bit_xor_expr_K or right->get_kind() == bit_not_expr_K or right->get_kind() == bit_ior_concat_expr_K or right->get_kind() == bit_ior_expr_K or right->get_kind() == bit_and_expr_K or
+                       right->get_kind() == convert_expr_K or right->get_kind() == truth_and_expr_K or right->get_kind() == truth_or_expr_K or right->get_kind() == truth_not_expr_K or right->get_kind() == cond_expr_K or
+                       right->get_kind() == ternary_plus_expr_K or right->get_kind() == ternary_mp_expr_K or right->get_kind() == ternary_pm_expr_K or right->get_kind() == ternary_mm_expr_K or right->get_kind() == ssa_name_K or
+                       right->get_kind() == widen_mult_expr_K or right->get_kind() == mult_expr_K,
                    "Unexpected right part: " + right->get_kind_text());
       return true;
    }
@@ -1115,7 +1116,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
                const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
                const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
                max_size_in = std::max(max_size_in, element_size);
-               if(min_n_elements == 0 or 128 / element_size < min_n_elements)
+               if(min_n_elements == 0 or ((128 / element_size) < min_n_elements))
                   min_n_elements = 128 / element_size;
             }
             else
@@ -1152,8 +1153,8 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
                info->base128_input_nelem.push_back(128 / element_size);
                info->input_prec.push_back(element_size);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Type is " + STR(type_index) + " " + STR(TreeM->CGetTreeNode(type_index)) + " - Number of input elements (base128): " + STR(128 / element_size) + " - Number of real input elements: " + STR(vector_size / element_size) +
-                                  " - Input precision: " + STR(element_size));
+                              "---Type is " + STR(type_index) + " " + TreeM->CGetTreeNode(type_index)->ToString() + " - Number of input elements (base128): " + STR(128 / element_size) +
+                                  " - Number of real input elements: " + STR(vector_size / element_size) + " - Input precision: " + STR(element_size));
             }
             else
             {
@@ -1217,7 +1218,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       const auto max_size_in_true = std::max(max_size_in, *std::max_element(info->input_prec.begin(), info->input_prec.end()));
       for(const auto n_elements : info->base128_input_nelem)
       {
-         if(n_elements and (min_n_elements == 0 or n_elements < min_n_elements))
+         if(n_elements and (min_n_elements == 0 or (n_elements < min_n_elements)))
          {
             min_n_elements = n_elements;
          }
@@ -1252,7 +1253,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
          unsigned int output_size = resize_to_1_8_16_32_64_128_256_512(tree_helper::size(TreeM, nodeOutput_id));
          info->real_output_nelem = output_size / element_size;
-         info->base128_output_nelem = output_size / element_size;
+         info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;
       }
       else
@@ -1341,7 +1342,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
             {
                const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
                const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
-               info->base128_output_nelem = info->output_prec / element_size;
+               info->base128_output_nelem = 128 / element_size;
                info->real_output_nelem = info->output_prec / element_size;
                info->output_prec = element_size;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -1373,17 +1374,28 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       unsigned int nodeOutput_id = hls_manager->get_produced_value(function_index, node);
       THROW_ASSERT(nodeOutput_id, "unexpected condition");
       type_index = tree_helper::get_type_index(TreeM, nodeOutput_id);
-      info->output_prec = resize_to_1_8_16_32_64_128_256_512(tree_helper::size(TreeM, nodeOutput_id));
+      auto out_prec = tree_helper::size(TreeM, nodeOutput_id);
       if(tree_helper::is_a_vector(TreeM, type_index))
       {
          const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
          const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
-         info->real_output_nelem = info->output_prec / element_size;
-         info->base128_output_nelem = info->output_prec / element_size;
+         unsigned int output_size = resize_to_1_8_16_32_64_128_256_512(out_prec);
+         info->real_output_nelem = output_size / element_size;
+         info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;
       }
       else
       {
+         if(current_op == "plus_expr" || current_op == "minus_expr" || current_op == "pointer_plus_expr" || current_op == "ternary_plus_expr" || current_op == "ternary_pm_expr" || current_op == "ternary_mp_expr" || current_op == "ternary_mm_expr" ||
+            current_op == "negate_expr")
+         {
+            if(out_prec == 9 || out_prec == 17 || out_prec == 33)
+            {
+               --out_prec;
+               max_size_in = out_prec;
+            }
+         }
+         info->output_prec = resize_to_1_8_16_32_64_128_256_512(out_prec);
          info->real_output_nelem = 0;
          info->base128_output_nelem = 0;
       }
@@ -1414,7 +1426,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
          const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
          info->real_output_nelem = info->output_prec / element_size;
-         info->base128_output_nelem = info->output_prec / element_size;
+         info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Type is " + STR(type_index) + " " + STR(TreeM->CGetTreeNode(type_index)) + " - Number of output elements (base128): " + STR(info->base128_output_nelem) + " - Number of real output elements: " + STR(info->real_output_nelem) +
@@ -1585,25 +1597,25 @@ technology_nodeRef AllocationInformation::get_fu(const std::string& fu_name, con
    return HLS_T->get_technology_manager()->get_fu(fu_name, library_name);
 }
 
-unsigned int AllocationInformation::GetCycleLatency(const vertex operation) const
+unsigned int AllocationInformation::GetCycleLatency(const vertex operationID) const
 {
-   return GetCycleLatency(op_graph->CGetOpNodeInfo(operation)->GetNodeId());
+   return GetCycleLatency(op_graph->CGetOpNodeInfo(operationID)->GetNodeId());
 }
 
-unsigned int AllocationInformation::GetCycleLatency(const unsigned int operation) const
+unsigned int AllocationInformation::GetCycleLatency(const unsigned int operationID) const
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Get cycle latency of " + ((operation != ENTRY_ID and operation != EXIT_ID) ? STR(TreeM->CGetTreeNode(operation)) : "Entry/Exit"));
-   if(CanImplementSetNotEmpty(operation))
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Get cycle latency of " + ((operationID != ENTRY_ID and operationID != EXIT_ID) ? STR(TreeM->CGetTreeNode(operationID)) : "Entry/Exit"));
+   if(CanImplementSetNotEmpty(operationID))
    {
-      const unsigned int actual_latency = get_cycles(GetFuType(operation), operation);
+      const unsigned int actual_latency = get_cycles(GetFuType(operationID), operationID);
       const auto ret_value = actual_latency != 0 ? actual_latency : 1;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latency of allocation fu is " + STR(ret_value));
       return ret_value;
    }
    else
    {
-      THROW_ASSERT(operation != ENTRY_ID and operation != EXIT_ID, "Entry or exit not allocated");
-      const auto tn = TreeM->get_tree_node_const(operation);
+      THROW_ASSERT(operationID != ENTRY_ID and operationID != EXIT_ID, "Entry or exit not allocated");
+      const auto tn = TreeM->get_tree_node_const(operationID);
       const auto ga = GetPointer<const gimple_assign>(tn);
       if(ga)
       {
@@ -1622,6 +1634,30 @@ unsigned int AllocationInformation::GetCycleLatency(const unsigned int operation
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latency of original copy is " + STR(ret_value));
             return ret_value;
          }
+         else if(right->get_kind() == widen_mult_expr_K)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latency of not allocated fu is 1: possibly inaccurate");
+            const auto data_bitsize = tree_helper::Size(ga->op0);
+            const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("widen_mult_expr_FU_" + STR(fu_prec / 2) + "_" + STR(fu_prec / 2) + "_" + STR(fu_prec) + "_0", LIBRARY_STD_FU);
+            THROW_ASSERT(new_stmt_temp, "Functional unit not found: widen_mult_expr_FU_" + STR(fu_prec / 2) + "_" + STR(fu_prec / 2) + "_" + STR(fu_prec) + "_0");
+            const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
+            const auto new_stmt_op_temp = new_stmt_fu->get_operation("widen_mult_expr");
+            const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
+            return new_stmt_op->time_m->get_cycles();
+         }
+         else if(right->get_kind() == mult_expr_K)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latency of not allocated fu is 1: possibly inaccurate");
+            const auto data_bitsize = tree_helper::Size(ga->op0);
+            const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_0", LIBRARY_STD_FU);
+            THROW_ASSERT(new_stmt_temp, "Functional unit not found: mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_0");
+            const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
+            const auto new_stmt_op_temp = new_stmt_fu->get_operation("mult_expr");
+            const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
+            return new_stmt_op->time_m->get_cycles();
+         }
          else
             THROW_UNREACHABLE("Unsupported right part (" + GET_NODE(ga->op1)->get_kind_text() + ") of gimple assignment " + ga->ToString());
       }
@@ -1634,9 +1670,9 @@ unsigned int AllocationInformation::GetCycleLatency(const unsigned int operation
    return 0;
 }
 
-std::pair<double, double> AllocationInformation::GetTimeLatency(const vertex operation, const unsigned int functional_unit, const unsigned int stage) const
+std::pair<double, double> AllocationInformation::GetTimeLatency(const vertex operationID, const unsigned int functional_unit, const unsigned int stage) const
 {
-   return GetTimeLatency(op_graph->CGetOpNodeInfo(operation)->GetNodeId(), functional_unit, stage);
+   return GetTimeLatency(op_graph->CGetOpNodeInfo(operationID)->GetNodeId(), functional_unit, stage);
 }
 
 std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned int operation_index, const unsigned int functional_unit_type, const unsigned int stage) const
@@ -1868,6 +1904,58 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
          op_execution_time = op_execution_time - get_setup_hold_time();
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
          return std::pair<double, double>(op_execution_time, 0.0);
+      }
+      if(ga and GET_NODE(ga->op1)->get_kind() == widen_mult_expr_K)
+      {
+         const auto data_bitsize = tree_helper::Size(ga->op0);
+         const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("widen_mult_expr_FU_" + STR(fu_prec / 2) + "_" + STR(fu_prec / 2) + "_" + STR(fu_prec) + "_0", LIBRARY_STD_FU);
+         THROW_ASSERT(new_stmt_temp, "Functional unit not found: widen_mult_expr_FU_" + STR(fu_prec / 2) + "_" + STR(fu_prec / 2) + "_" + STR(fu_prec) + "_0");
+         const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
+         const auto new_stmt_op_temp = new_stmt_fu->get_operation("widen_mult_expr");
+         const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
+         auto op_execution_time = time_m_execution_time(new_stmt_op);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
+         op_execution_time = op_execution_time - get_setup_hold_time();
+         double actual_stage_period;
+         actual_stage_period = time_m_stage_period(new_stmt_op);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---actual_stage_period=" + STR(actual_stage_period));
+         double initial_stage_period = 0.0;
+         if(new_stmt_op->time_m->get_initiation_time() > 0)
+         {
+            if(actual_stage_period > HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period())
+               actual_stage_period = HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period();
+            initial_stage_period = actual_stage_period - get_setup_hold_time();
+         }
+         double stage_period = initial_stage_period;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + "," + STR(stage_period));
+         return std::pair<double, double>(op_execution_time, stage_period);
+      }
+      if(ga and GET_NODE(ga->op1)->get_kind() == mult_expr_K)
+      {
+         const auto data_bitsize = tree_helper::Size(ga->op0);
+         const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_0", LIBRARY_STD_FU);
+         THROW_ASSERT(new_stmt_temp, "Functional unit not found: mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_0");
+         const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
+         const auto new_stmt_op_temp = new_stmt_fu->get_operation("mult_expr");
+         const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
+         auto op_execution_time = time_m_execution_time(new_stmt_op);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
+         op_execution_time = op_execution_time - get_setup_hold_time();
+         double actual_stage_period;
+         actual_stage_period = time_m_stage_period(new_stmt_op);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---actual_stage_period=" + STR(actual_stage_period));
+         double initial_stage_period = 0.0;
+         if(new_stmt_op->time_m->get_initiation_time() > 0)
+         {
+            if(actual_stage_period > HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period())
+               actual_stage_period = HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period();
+            initial_stage_period = actual_stage_period - get_setup_hold_time();
+         }
+         double stage_period = initial_stage_period;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + "," + STR(stage_period));
+         return std::pair<double, double>(op_execution_time, stage_period);
       }
       if(ga and GET_NODE(ga->op1)->get_kind() == lut_expr_K)
       {

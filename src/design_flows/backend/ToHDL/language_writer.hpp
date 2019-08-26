@@ -122,7 +122,7 @@ class language_writer
    /**
     * Constructor
     */
-   language_writer(char open_char, char close_char, const ParameterConstRef& parameters);
+   language_writer(char open_char, char close_char, const ParameterConstRef parameters);
 
    /**
     * Destructor
@@ -135,7 +135,7 @@ class language_writer
     * @param TM is the technology manager
     * @param parameters is the set of input parameters
     */
-   static language_writerRef create_writer(HDLWriter_Language language, const technology_managerConstRef& TM, const ParameterConstRef& parameters);
+   static language_writerRef create_writer(HDLWriter_Language language, const technology_managerConstRef TM, const ParameterConstRef parameters);
 
    /**
     * Returns the name of the language writer.
@@ -274,7 +274,7 @@ class language_writer
     * @param clock_port is the clock port.
     * @param synch_reset when true the FSM will have an synchronous reset
     */
-   virtual void write_present_state_update(const std::string& reset_state, const std::string& reset_port, const std::string& clock_port, const std::string& reset_type, bool connect_present_next_state_signals) = 0;
+   virtual void write_present_state_update(const structural_objectRef cir, const std::string& reset_state, const std::string& reset_port, const std::string& clock_port, const std::string& reset_type, bool connect_present_next_state_signals) = 0;
    /**
     * Write the transition and output functions.
     * @param cir is the component.

@@ -67,8 +67,13 @@ REF_FORWARD_DECL(memory);
 REF_FORWARD_DECL(language_writer);
 //@}
 
-#include <map>
+/// STD include
 #include <string>
+
+/// STL include
+#include <map>
+#include <tuple>
+#include <unordered_set>
 #include <vector>
 
 /**

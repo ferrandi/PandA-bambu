@@ -263,7 +263,7 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case(EXTRACT_GIMPLE_COND_OP):
          return "ExtractGimpleCondOp";
 #endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       case(EXTRACT_OMP_ATOMIC):
          return "ExtractOmpAtomic";
       case(EXTRACT_OMP_FOR):

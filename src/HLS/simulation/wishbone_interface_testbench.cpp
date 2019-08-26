@@ -69,6 +69,13 @@
 #include "Discrepancy.hpp"
 #endif
 
+/// STD include
+#include <string>
+
+/// STL includes
+#include <map>
+#include <vector>
+
 /// technology/physical_library include
 #include "technology_wishbone.hpp"
 

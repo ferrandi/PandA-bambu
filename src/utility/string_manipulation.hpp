@@ -35,25 +35,22 @@
  * @brief Auxiliary methods for manipulating string
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
- * @author Fabrizio Ferrandi <fabrizio,ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef STRING_MANIPULATION_HPP
 #define STRING_MANIPULATION_HPP
 
+/// boost includes
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/lexical_cast.hpp>
+
 /// STD include
-#include <boost/algorithm/string/classification.hpp> // for is_any_of
-#include <boost/algorithm/string/split.hpp>          // for split
-#include <boost/lexical_cast.hpp>                    // for lexical_...
-#include <cstdlib>                                   // for strtod
-#include <cxxabi.h>                                  // for __cxa_de...
-#include <iosfwd>                                    // for stringst...
-#include <iostream>
-#include <string> // for string
+#include <cxxabi.h>
+
+/// STL include
 #include <vector>
+
 /**
  * Macro which performs a lexical_cast to a string
  */
@@ -259,6 +256,15 @@ inline std::string convert_fp_to_string(std::string num, unsigned int precision)
  */
 #define GET_CLASS(obj) string_demangle(typeid(obj).name())
 
+/**
+ * Convert a string storing a number in decimal format into a string in binary format
+ * @param C_value is the decimal format
+ * @param precision is the precision of the number
+ * @param real_type is true if the type of the number is real
+ * @param unsigned_type is true if the type of the number is unsigned
+ */
+std::string ConvertInBinary(const std::string& C_value, const unsigned int precision, const bool real_type, const bool unsigned_type);
+
 inline unsigned int ac_type_bitwidth(const std::string intType, bool& is_signed, bool& is_fixed)
 {
    is_fixed = false;
@@ -338,5 +344,4 @@ inline unsigned int ac_type_bitwidth(const std::string intType, bool& is_signed,
    }
    return inputBitWidth;
 }
-
 #endif

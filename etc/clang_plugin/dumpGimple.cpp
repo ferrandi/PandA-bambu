@@ -114,6 +114,8 @@ static std::string create_file_name_string(const std::string& outdir_name, const
    return outdir_name + "/" + dump_base_name + ".gimplePSSA";
 }
 
+#define PEEL_THRESHOLD 16
+
 namespace llvm
 {
    char DumpGimpleRaw::buffer[LOCAL_BUFFER_LEN];
@@ -219,6 +221,29 @@ namespace llvm
 #include "gcc/builtins.def"
    };
 #undef DEF_BUILTIN
+
+   static std::string getDemangled(const std::string& declname)
+   {
+      int status;
+      char* demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), nullptr, nullptr, &status);
+      if(status == 0)
+      {
+         std::string res = declname;
+         if(std::string(demangled_outbuffer).find_last_of('(') != std::string::npos)
+         {
+            res = demangled_outbuffer;
+            auto parPos = res.find('(');
+            assert(parPos != std::string::npos);
+            res = res.substr(0, parPos);
+         }
+         free(demangled_outbuffer);
+         return res;
+      }
+
+      assert(demangled_outbuffer == nullptr);
+
+      return declname;
+   }
 
    DumpGimpleRaw::DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool _onlyGlobals, std::map<std::string, std::vector<std::string>>* _fun2params)
        : outdir_name(_outdir_name),
@@ -1093,7 +1118,10 @@ namespace llvm
          auto ty = store.getValueOperand()->getType();
          auto type = assignCodeType(ty);
          auto written_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         if(store.getAlignment() && written_obj_size > (8 * store.getAlignment()))
+         auto funName = store.getFunction()->getName();
+         auto demangled = getDemangled(funName);
+         bool is_a_top_parameter = isa<llvm::Argument>(store.getPointerOperand()) && (funName == TopFunctionName || demangled == TopFunctionName);
+         if(store.getAlignment() && written_obj_size > (8 * store.getAlignment()) && !is_a_top_parameter)
             return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
          else
             return build2(GT(MEM_REF), type, addr, zero);
@@ -1784,7 +1812,11 @@ namespace llvm
          auto ty = load.getType();
          auto type = assignCodeType(ty);
          auto read_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         if(load.getAlignment() && read_obj_size > (8 * load.getAlignment()))
+         auto funName = load.getFunction()->getName();
+         auto demangled = getDemangled(funName);
+         bool is_a_top_parameter = isa<llvm::Argument>(load.getPointerOperand()) && (funName == TopFunctionName || demangled == TopFunctionName);
+
+         if(load.getAlignment() && read_obj_size > (8 * load.getAlignment()) && !is_a_top_parameter)
             return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
          else
             return build2(GT(MEM_REF), type, addr, zero);
@@ -2920,71 +2952,20 @@ namespace llvm
          /// Serialize gimple pairs because of use after def chain
          std::set<llvm::MemoryAccess*> visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
-         visited.insert(startingMA);
          if(llvm::ImmutableCallSite(inst) || isa<llvm::FenceInst>(inst))
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), nullptr, "vuse");
          else
          {
             const auto Loc = llvm::MemoryLocation::get(inst);
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), &Loc, "vuse");
-            /// add anti-dependencies
-            auto defMA = MSSA.getWalker()->getClobberingMemoryAccess(inst);
-            const void* VirtDef =
-                MSSA.isLiveOnEntryDef(defMA) ? nullptr : (defMA->getValueID() == llvm::Value::MemoryPhiVal ? gimple_phi_virtual_result(getVirtualGimplePhi(dyn_cast<llvm::MemoryPhi>(defMA), MSSA)) : dyn_cast<llvm::MemoryUseOrDef>(defMA)->getMemoryInst());
-            if(CurrentListofMAEntryDef.find(currentFunction) != CurrentListofMAEntryDef.end() && CurrentListofMAEntryDef.find(currentFunction)->second.find(VirtDef) != CurrentListofMAEntryDef.find(currentFunction)->second.end())
-            {
-               for(auto defInst : CurrentListofMAEntryDef.find(currentFunction)->second.find(VirtDef)->second)
-               {
-                  auto& AA = modulePass->getAnalysis<llvm::AAResultsWrapperPass>(*currentFunction).getAAResults();
-                  llvm::ImmutableCallSite UseCS(static_cast<const llvm::Instruction*>(inst));
-                  bool addVuse = false;
-                  if(UseCS)
-                  {
-                     const llvm::ModRefInfo I = AA.getModRefInfo(const_cast<llvm::Instruction*>(defInst), UseCS);
-#if __clang_major__ > 5
-                     addVuse = llvm::isModOrRefSet(I);
-#else
-                     addVuse = I != llvm::MRI_NoModRef;
-#endif
-                  }
-                  else
-                  {
-                     const auto Loc = llvm::MemoryLocation::get(inst);
-                     if(auto* DefLoad = dyn_cast<llvm::LoadInst>(defInst))
-                     {
-                        if(auto* UseLoad = dyn_cast<llvm::LoadInst>(inst))
-                           addVuse = !areLoadsReorderable(UseLoad, DefLoad);
-                     }
-                     else
-                     {
-                        auto I = AA.getModRefInfo(defInst, Loc);
-#if __clang_major__ > 5
-                        addVuse = llvm::isModSet(I);
-#else
-                        addVuse = I & llvm::MRI_Mod;
-#endif
-                     }
-                  }
-                  if(addVuse)
-                  {
-                     auto maDef = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA().getMemoryAccess(defInst);
-                     assert(maDef);
-                     const void* vuse = getSSA(maDef, defInst, currentFunction, false);
-                     serialize_child("vuse", vuse);
-                  }
-               }
-            }
          }
       }
       else if(ma->getValueID() == llvm::Value::MemoryDefVal)
       {
          const void* vdef = getSSA(ma, g, currentFunction, false);
          serialize_child("vdef", vdef);
-         serialize_child("vover", vdef);
          std::set<llvm::MemoryAccess*> visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
-         visited.insert(startingMA);
-         visited.insert(MSSA.getLiveOnEntryDef());
          if(llvm::ImmutableCallSite(inst) || isa<llvm::FenceInst>(inst))
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), nullptr, "vover");
          else
@@ -3011,25 +2992,25 @@ namespace llvm
          {
             defMA = immDefAcc;
          }
-         if(defMA->getValueID() == llvm::Value::MemoryPhiVal)
-            MA = defMA;
       }
+      else
+         defMA = MA;
       if(visited.find(defMA) != visited.end())
          return;
       visited.insert(defMA);
 
-      if(MA->getValueID() == llvm::Value::MemoryUseVal || MA->getValueID() == llvm::Value::MemoryDefVal)
+      if(defMA->getValueID() == llvm::Value::MemoryDefVal)
       {
          bool isDefault = false;
          const void* def_stmt = getVirtualDefStatement(defMA, isDefault, MSSA, currentFunction);
          serialize_child(tag, getSSA(MA, def_stmt, currentFunction, isDefault));
-         if(!MSSA.isLiveOnEntryDef(defMA) && !llvm::ImmutableCallSite(dyn_cast<llvm::MemoryUseOrDef>(defMA)->getMemoryInst()) && !isa<llvm::FenceInst>(dyn_cast<llvm::MemoryUseOrDef>(defMA)->getMemoryInst()))
+         if(!MSSA.isLiveOnEntryDef(defMA))
             serialize_gimple_aliased_reaching_defs(defMA, MSSA, visited, currentFunction, OrigLoc, tag);
       }
       else
       {
-         assert(MA->getValueID() == llvm::Value::MemoryPhiVal);
-         auto mp = dyn_cast<llvm::MemoryPhi>(MA);
+         assert(defMA->getValueID() == llvm::Value::MemoryPhiVal);
+         auto mp = dyn_cast<llvm::MemoryPhi>(defMA);
          for(auto index = 0u; index < mp->getNumIncomingValues(); ++index)
          {
             auto val = mp->getIncomingValue(index);
@@ -3044,32 +3025,29 @@ namespace llvm
                   visited.insert(val);
                }
             }
-            else
+            else if(val->getValueID() == llvm::Value::MemoryDefVal)
             {
-               if(val->getValueID() == llvm::Value::MemoryDefVal)
+               if(OrigLoc)
                {
-                  if(OrigLoc)
+                  val = MSSA.getWalker()->getClobberingMemoryAccess(val, *OrigLoc);
+               }
+               if(visited.find(val) == visited.end())
+               {
+                  if(val->getValueID() == llvm::Value::MemoryPhiVal)
+                     serialize_gimple_aliased_reaching_defs(val, MSSA, visited, currentFunction, OrigLoc, tag);
+                  else
                   {
-                     val = MSSA.getWalker()->getClobberingMemoryAccess(val, *OrigLoc);
-                  }
-                  if(visited.find(val) == visited.end())
-                  {
-                     if(val->getValueID() == llvm::Value::MemoryPhiVal)
+                     bool isDefault = false;
+                     const void* def_stmt = getVirtualDefStatement(val, isDefault, MSSA, currentFunction);
+                     serialize_child(tag, getSSA(val, def_stmt, currentFunction, isDefault));
+                     visited.insert(val);
+                     if(!MSSA.isLiveOnEntryDef(val))
                         serialize_gimple_aliased_reaching_defs(val, MSSA, visited, currentFunction, OrigLoc, tag);
-                     else
-                     {
-                        bool isDefault = false;
-                        const void* def_stmt = getVirtualDefStatement(val, isDefault, MSSA, currentFunction);
-                        serialize_child(tag, getSSA(val, def_stmt, currentFunction, isDefault));
-                        visited.insert(val);
-                        if(!MSSA.isLiveOnEntryDef(val))
-                           serialize_gimple_aliased_reaching_defs(val, MSSA, visited, currentFunction, OrigLoc, tag);
-                     }
                   }
                }
-               else
-                  serialize_gimple_aliased_reaching_defs(val, MSSA, visited, currentFunction, OrigLoc, tag);
             }
+            else
+               serialize_gimple_aliased_reaching_defs(val, MSSA, visited, currentFunction, OrigLoc, tag);
          }
       }
    }
@@ -4904,10 +4882,18 @@ namespace llvm
       return Type->getPrimitiveSizeInBits() / 8;
    }
 
-   static llvm::Type* getMemcpyLoopLoweringTypeLocal(llvm::LLVMContext& Context, llvm::Value* Length, unsigned SrcAlign, unsigned DestAlign, llvm::Value* SrcAddr, llvm::Value* DstAddr, const llvm::DataLayout* DL, bool isVolatile, bool& Optimize)
+   static llvm::Type* getMemcpyLoopLoweringTypeLocal(llvm::LLVMContext& Context, llvm::ConstantInt* Length, unsigned SrcAlign, unsigned DestAlign, llvm::Value* SrcAddr, llvm::Value* DstAddr, const llvm::DataLayout* DL, bool isVolatile, bool& Optimize)
    {
       if(!isVolatile)
       {
+         if(SrcAlign==DestAlign && DestAlign==Length->getZExtValue() && DestAlign<=8)
+         {
+#if PRINT_DBG_MSG
+            llvm::errs() << "memcpy can be optimized\n";
+            llvm::errs() << "Align=" << SrcAlign << "\n";
+#endif
+            return llvm::Type::getIntNTy(Context, SrcAlign * 8);
+         }
          unsigned localSrcAlign = SrcAlign;
          auto srcCheck = addrIsOfIntArrayType(SrcAddr, localSrcAlign, DL);
          if(srcCheck)
@@ -4965,13 +4951,26 @@ namespace llvm
 #else
       do_unrolling = true;
 #endif
-      if(do_unrolling && !SrcIsVolatile && !DstIsVolatile && llvm::dyn_cast<llvm::ConstantExpr>(SrcAddr) && cast<llvm::ConstantExpr>(SrcAddr)->getOpcode() == llvm::Instruction::BitCast &&
-         dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0)) && dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0))->isConstant() && llvm::dyn_cast<llvm::BitCastInst>(DstAddr) && PeelCandidate)
+      bool srcIsAlloca = false;
+      bool srcIsGlobal = false;
+      if(llvm::dyn_cast<llvm::BitCastInst>(SrcAddr) && dyn_cast<llvm::AllocaInst>(llvm::dyn_cast<llvm::BitCastInst>(SrcAddr)->getOperand(0)))
+      {
+         srcIsAlloca = true;
+         do_unrolling = do_unrolling && (LoopEndCount <= PEEL_THRESHOLD);
+      }
+      else if(llvm::dyn_cast<llvm::ConstantExpr>(SrcAddr) && cast<llvm::ConstantExpr>(SrcAddr)->getOpcode() == llvm::Instruction::BitCast && dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0)))
+      {
+         srcIsGlobal = true;
+         do_unrolling = do_unrolling && (dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0))->isConstant() || (LoopEndCount <= PEEL_THRESHOLD));
+      }
+      else if(LoopEndCount==1)
+         do_unrolling = true;
+      if(do_unrolling && !SrcIsVolatile && !DstIsVolatile && (srcIsAlloca || srcIsGlobal) && llvm::dyn_cast<llvm::BitCastInst>(DstAddr) && PeelCandidate)
       {
          llvm::PointerType* SrcOpType = llvm::PointerType::get(LoopOpType, SrcAS);
          llvm::PointerType* DstOpType = llvm::PointerType::get(LoopOpType, DstAS);
          llvm::IRBuilder<> Builder(InsertBefore);
-         auto srcAddress = Builder.CreateBitCast(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0), SrcOpType);
+         auto srcAddress = Builder.CreateBitCast(srcIsAlloca ? llvm::dyn_cast<llvm::BitCastInst>(SrcAddr)->getOperand(0) : cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0), SrcOpType);
          auto dstAddress = Builder.CreateBitCast(llvm::dyn_cast<llvm::BitCastInst>(DstAddr)->getOperand(0), DstOpType);
          for(auto LI = 0u; LI < LoopEndCount; ++LI)
          {
@@ -4996,12 +4995,10 @@ namespace llvm
          llvm::PointerType* DstOpType = llvm::PointerType::get(LoopOpType, DstAS);
          if(SrcAddr->getType() != SrcOpType)
          {
-            llvm::errs() << "Cast src\n";
             SrcAddr = PLBuilder.CreateBitCast(SrcAddr, SrcOpType);
          }
          if(DstAddr->getType() != DstOpType)
          {
-            llvm::errs() << "Cast dst\n";
             DstAddr = PLBuilder.CreateBitCast(DstAddr, DstOpType);
          }
 
@@ -6279,13 +6276,15 @@ namespace llvm
          }
       }
    }
-   bool DumpGimpleRaw::runOnModule(llvm::Module& M, llvm::ModulePass* _modulePass, const std::string& TopFunctionName)
+   bool DumpGimpleRaw::runOnModule(llvm::Module& M, llvm::ModulePass* _modulePass, const std::string& _TopFunctionName)
    {
       DL = &M.getDataLayout();
       modulePass = _modulePass;
       moduleContext = &M.getContext();
+      TopFunctionName = _TopFunctionName;
       buildMetaDataMap(M);
       auto res = lowerMemIntrinsics(M);
+
       res = res | RebuildConstants(M);
       res = res | lowerIntrinsics(M);
       compute_eSSA(M);
@@ -6321,6 +6320,7 @@ namespace llvm
 #ifdef DEBUG_RA
       assert(!llvm::verifyModule(M, &llvm::errs()));
 #endif
+
       if(!onlyGlobals)
       {
          for(const auto& fun : M.getFunctionList())

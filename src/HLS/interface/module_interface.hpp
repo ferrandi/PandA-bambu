@@ -45,9 +45,6 @@
 #ifndef _MODULE_INTERFACE_HPP_
 #define _MODULE_INTERFACE_HPP_
 
-/// Autoheader
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
 #include "hls_function_step.hpp"
 REF_FORWARD_DECL(module_interface);
 REF_FORWARD_DECL(structural_manager);

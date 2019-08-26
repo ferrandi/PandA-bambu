@@ -61,6 +61,12 @@
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 
+/// constants include
+#include "testbench_generation_constants.hpp"
+
+/// design_flows include
+#include "design_flow_manager.hpp"
+
 /// design_flows/backend/ToHDL includes
 #include "HDL_manager.hpp"
 #include "language_writer.hpp"
@@ -123,7 +129,27 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
          ret.insert(std::make_tuple(HLSFlowStep_Type::C_TESTBENCH_EXECUTION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
          if(parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw))
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::HW_DISCREPANCY_ANALYSIS, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+            if(design_flow_manager.lock()->GetStatus(HLS_step::ComputeSignature(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef())) == DesignFlowStep_Status::SUCCESS)
+            {
+               if(HLSMgr->RSim and HLSMgr->RSim->results_available)
+               {
+                  ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_VALUES_XML_GENERATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+               }
+               else
+               {
+                  ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_VALUES_C_GENERATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+               }
+            }
+
+            ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+#if HAVE_VCD_BUILT
+            if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
+            {
+               ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_SIGNAL_SELECTION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+            }
+#endif
+            break;
          }
          break;
       }
@@ -214,7 +240,7 @@ std::string TestbenchGenerationBaseStep::verilator_testbench() const
 {
    if(not parameters->getOption<bool>(OPT_generate_testbench))
       return "";
-   std::string simulation_values_path = output_directory + c_testbench_basename + ".txt";
+   std::string simulation_values_path = output_directory + STR(STR_CST_testbench_generation_basename) + ".txt";
 
    PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "  . Generation of the Verilator testbench");
 
@@ -318,7 +344,7 @@ std::string TestbenchGenerationBaseStep::create_HDL_testbench(bool xilinx_isim) 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating HDL testbench");
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
 
-   std::string simulation_values_path = output_directory + c_testbench_basename + ".txt";
+   std::string simulation_values_path = output_directory + STR(STR_CST_testbench_generation_basename) + ".txt";
    bool generate_vcd_output = (parameters->isOption(OPT_generate_vcd) and parameters->getOption<bool>(OPT_generate_vcd)) or (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy));
 
    std::string file_name = output_directory + hdl_testbench_basename + writer->get_extension();
@@ -360,7 +386,7 @@ void TestbenchGenerationBaseStep::write_initial_block(const std::string& simulat
    {
       writer->write_comment("VCD file generation\n");
       writer->write("$dumpfile(\"" + vcd_output_filename + "\");\n");
-      bool simulator_supports_dumpvars_directive = parameters->getOption<std::string>(OPT_simulator) == "MODELSIM" || parameters->getOption<std::string>(OPT_simulator) == "ICARUS";
+      bool simulator_supports_dumpvars_directive = parameters->getOption<std::string>(OPT_simulator) == "MODELSIM" || parameters->getOption<std::string>(OPT_simulator) == "ICARUS" || parameters->getOption<std::string>(OPT_simulator) == "XSIM";
       bool dump_all_signals = parameters->isOption(OPT_generate_vcd) && parameters->getOption<bool>(OPT_generate_vcd);
       if(dump_all_signals or not simulator_supports_dumpvars_directive or (static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)) == HDLWriter_Language::VHDL)
 #if HAVE_FROM_DISCREPANCY_BUILT
@@ -1630,9 +1656,9 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
    writer->write("parameter MEMSIZE = " + STR(testbench_memsize));
 
    /// writing memory-related parameters
-   if(mod->is_parameter(MEMORY_PARAMETER))
+   if(mod->ExistsParameter(MEMORY_PARAMETER))
    {
-      std::string memory_str = mod->get_parameter(MEMORY_PARAMETER);
+      std::string memory_str = mod->GetParameter(MEMORY_PARAMETER);
       std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
       for(const auto& i : mem_tag)
       {
@@ -2141,8 +2167,10 @@ void TestbenchGenerationBaseStep::read_input_value_from_file(const std::string& 
          std::string nonescaped_name = input_name;
          if(escaped_pos != std::string::npos)
             nonescaped_name.erase(std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
-         if(output_level > OUTPUT_LEVEL_MINIMUM)
+         if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+         {
             writer->write("$display(\"Value found for input " + nonescaped_name + ": %b\", " + input_name + ");\n");
+         }
       }
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n");

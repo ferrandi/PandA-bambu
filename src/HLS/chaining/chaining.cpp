@@ -40,8 +40,6 @@
  * Last modified by $Author$
  *
  */
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
 #include "chaining.hpp"
 
 #include "Parameter.hpp"

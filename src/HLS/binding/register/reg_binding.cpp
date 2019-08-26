@@ -49,19 +49,25 @@
 #include "function_behavior.hpp"
 
 #include "FPGA_device.hpp"
+#include "Parameter.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
 #include "liveness.hpp"
-#include "target_device.hpp"
+#include "omp_functions.hpp"
+#include "reg_binding_cs.hpp"
 
-#include "Parameter.hpp"
 #include "boost/lexical_cast.hpp"
 #include "structural_manager.hpp"
 #include "technology_manager.hpp"
 
 /// HLS/binding/storage_value_information
 #include "storage_value_information.hpp"
+
+/// STL includes
+#include <list>
+#include <set>
+#include <utility>
 
 /// technology/physical_library include
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
@@ -72,6 +78,27 @@ reg_binding::reg_binding(const hlsRef& HLS_, const HLS_managerRef HLSMgr_) : deb
 }
 
 reg_binding::~reg_binding() = default;
+
+reg_bindingRef reg_binding::create_reg_binding(const hlsRef& HLS, const HLS_managerRef HLSMgr_)
+{
+   if(HLS->Param->isOption(OPT_context_switch))
+   {
+      auto omp_functions = GetPointer<OmpFunctions>(HLSMgr_->Rfuns);
+      bool found = false;
+      if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
+         found = true;
+      if(omp_functions->parallelized_functions.find(HLS->functionId) != omp_functions->parallelized_functions.end())
+         found = true;
+      if(omp_functions->atomic_functions.find(HLS->functionId) != omp_functions->atomic_functions.end())
+         found = true;
+      if(found)
+         return reg_bindingRef(new reg_binding_cs(HLS, HLSMgr_));
+      else
+         return reg_bindingRef(new reg_binding(HLS, HLSMgr_));
+   }
+   else
+      return reg_bindingRef(new reg_binding(HLS, HLSMgr_));
+}
 
 void reg_binding::print_el(const_iterator& it) const
 {
@@ -199,7 +226,7 @@ void reg_binding::bind(unsigned int sv, unsigned int index)
 {
    reverse_map[sv] = index;
    if(unique_table.find(index) == unique_table.end())
-      unique_table[index] = generic_objRef(new register_obj(std::string("reg_") + STR(index)));
+      unique_table[index] = generic_objRef(new register_obj(index));
    auto i = this->find(sv);
    if(i == this->end())
       this->insert(std::make_pair(sv, unique_table[index]));
@@ -231,29 +258,19 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Allocating register number: " + std::to_string(i));
       generic_objRef regis = get(i);
       std::string name = regis->get_string();
-      std::string synch_reset = HLS->Param->getOption<std::string>(OPT_sync_reset);
-      std::string register_type_name;
       bool curr_is_is_without_enable = is_without_enable.find(i) != is_without_enable.end();
-
-      if(curr_is_is_without_enable)
-         register_type_name = register_STD;
-      else if(synch_reset == "no")
-         register_type_name = register_SE;
-      else if(synch_reset == "sync")
-         register_type_name = register_SRSE;
-      else
-         register_type_name = register_SARSE;
       all_regs_without_enable = all_regs_without_enable && curr_is_is_without_enable;
+      std::string register_type_name = CalculateRegisterName(i);
       std::string library = HLS->HLS_T->get_technology_manager()->get_library(register_type_name);
       structural_objectRef reg_mod = SM->add_module_from_technology_library(name, register_type_name, library, circuit, HLS->HLS_T->get_technology_manager());
       this->specialise_reg(reg_mod, i);
       structural_objectRef port_ck = reg_mod->find_member(CLOCK_PORT_NAME, port_o_K, reg_mod);
       SM->add_connection(clock_port, port_ck);
       structural_objectRef port_rst = reg_mod->find_member(RESET_PORT_NAME, port_o_K, reg_mod);
-      SM->add_connection(reset_port, port_rst);
+      if(port_rst != nullptr)
+         SM->add_connection(reset_port, port_rst);
       regis->set_structural_obj(reg_mod);
-
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Register " + std::to_string(i) + " successfully allocated");
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Register " + boost::lexical_cast<std::string>(i) + " successfully allocated");
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - End");
    if(HLS->output_level >= OUTPUT_LEVEL_MINIMUM)
@@ -269,4 +286,19 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, HLS->output_level, "---All registers are without enable: function pipelining may come for free");
    }
+}
+
+std::string reg_binding::CalculateRegisterName(unsigned int i)
+{
+   std::string register_type_name;
+   std::string synch_reset = HLS->Param->getOption<std::string>(OPT_sync_reset);
+   if(is_without_enable.find(i) != is_without_enable.end())
+      register_type_name = register_STD;
+   else if(synch_reset == "no")
+      register_type_name = register_SE;
+   else if(synch_reset == "sync")
+      register_type_name = register_SRSE;
+   else
+      register_type_name = register_SARSE;
+   return register_type_name;
 }

@@ -67,6 +67,10 @@
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 
+/// STL includes
+#include <tuple>
+#include <unordered_set>
+
 /// technology/physical_library include
 #include "copyrights_strings.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
@@ -341,7 +345,10 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
       structural_type_descriptorRef port_type = in_obj->get_typeRef();
       structural_objectRef top_obj;
       if(in_obj->get_kind() == port_vector_o_K)
+      {
+         THROW_ERROR("Should never be reached, in_obj is not a port vector");
          top_obj = SM->add_port_vector(FB->CGetBehavioralHelper()->PrintVariable(function_parameter), port_o::IN, GetPointer<port_o>(in_obj)->get_ports_size(), circuit, port_type);
+      }
       else
          top_obj = SM->add_port(FB->CGetBehavioralHelper()->PrintVariable(function_parameter), port_o::IN, circuit, port_type);
       if(has_registered_inputs)

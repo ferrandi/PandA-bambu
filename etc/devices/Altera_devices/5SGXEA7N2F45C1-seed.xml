@@ -41,6 +41,7 @@
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -162,6 +163,7 @@
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -283,6 +285,7 @@
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -404,6 +407,7 @@
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -526,6 +530,7 @@
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -648,6 +653,7 @@
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -770,6 +776,7 @@
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -891,6 +898,7 @@
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -1013,6 +1021,7 @@
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>

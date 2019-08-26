@@ -144,6 +144,13 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
       if(basic_block == cfg_bb_graph->CGetBBGraphInfo()->entry_vertex or basic_block == cfg_bb_graph->CGetBBGraphInfo()->exit_vertex)
          continue;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(cfg_bb_graph->CGetBBNodeInfo(basic_block)->block->number));
+      const auto bb_node_info = cfg_bb_graph->CGetBBNodeInfo(basic_block)->block;
+      if(not bb_node_info->loop_id)
+      {
+         // For the moment this pass is exploited only by vectorize; if we are outside loops, this is not necessary and does not work after split_return
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skip because in loop 0");
+         continue;
+      }
       /// NOTE: here cfg_bb_graph is correct
       if(boost::out_degree(basic_block, *cfg_bb_graph) == 2 and GET_CONST_NODE(cfg_bb_graph->CGetBBNodeInfo(basic_block)->block->CGetStmtList().back())->get_kind() == gimple_cond_K)
       {
@@ -170,7 +177,6 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
          }
          else if(function_behavior->CheckBBReachability(false_vertex, true_vertex))
          {
-            const auto bb_node_info = cfg_bb_graph->CGetBBNodeInfo(basic_block)->block;
             std::swap(bb_node_info->true_edge, bb_node_info->false_edge);
             auto last_stmt = bb_node_info->CGetStmtList().back();
             bb_node_info->RemoveStmt(last_stmt);
@@ -183,7 +189,6 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
          }
          else
          {
-            const auto bb_node_info = cfg_bb_graph->CGetBBNodeInfo(basic_block)->block;
             const auto basic_block_id = bb_node_info->number;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Subgraph dominated by BB" + STR(basic_block_id) + " has to be restructured");
             auto fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));

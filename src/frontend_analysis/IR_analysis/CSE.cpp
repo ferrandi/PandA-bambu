@@ -84,6 +84,7 @@
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
+#include "tree_manipulation.hpp"
 #include "tree_reindex.hpp"
 
 #include "basic_block.hpp"
@@ -116,6 +117,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case DEPENDENCE_RELATIONSHIP:
       {
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SIMPLE_CODE_MOTION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, SAME_FUNCTION));
          break;
       }
@@ -127,6 +129,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             {
                if(restart_phi_opt)
                   relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
+               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
                break;
             }
             case DesignFlowStep_Status::SKIPPED:
@@ -207,13 +210,13 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking: " + tn->ToString());
    if(GetPointer<gimple_node>(tn)->keep)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: null");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: null keep");
       return tree_nodeRef();
    }
    const gimple_assign* ga = GetPointer<gimple_assign>(tn);
    if(ga && (ga->clobber || ga->init_assignment))
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: null");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: null clobber/init_assignment");
       return tree_nodeRef();
    }
    if(ga && GET_NODE(ga->op0)->get_kind() == ssa_name_K)
@@ -231,7 +234,7 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
       enum kind op_kind = right_part->get_kind();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Right part type: " + right_part->get_kind_text());
 
-      /// check for LOADs, STOREs, MEMSET, MEMCPY, etc etc
+      /// check for LOADs, STOREs, MEMSET, MEMCPY, etc. etc.
       bool skip_check = check_loads(ga, right_part_index, right_part);
       std::vector<unsigned int> ins;
       if(skip_check)
@@ -273,16 +276,7 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
       }
       if(op_kind == ssa_name_K)
       {
-         auto* ssa_var = GetPointer<ssa_name>(right_part);
-         const auto def_stmt = GET_NODE(ssa_var->CGetDefStmt());
-         const auto def_gimple = GetPointer<gimple_node>(def_stmt);
-         if(def_gimple->bb_index == ga->bb_index && GetPointer<gimple_assign>(def_stmt))
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--return the associated def assignment");
-            return def_stmt;
-         }
-         else
-            ins.push_back(right_part_index);
+         ins.push_back(right_part_index);
       }
       else if(GetPointer<cst_node>(right_part))
       {
@@ -348,6 +342,7 @@ DesignFlowStep_Status CSE::InternalExec()
    bool IR_changed = false;
    restart_phi_opt = false;
    size_t n_equiv_stmt = 0;
+   auto IRman = tree_manipulationRef(new tree_manipulation(TM, parameters));
 
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
    auto* fd = GetPointer<function_decl>(temp);
@@ -418,6 +413,7 @@ DesignFlowStep_Status CSE::InternalExec()
       TreeNodeSet to_be_removed;
       for(const auto& stmt : B->CGetStmtList())
       {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing " + GET_NODE(stmt)->ToString());
 #ifndef NDEBUG
          if(not AppM->ApplyNewTransformation())
          {
@@ -429,84 +425,66 @@ DesignFlowStep_Status CSE::InternalExec()
          {
             auto* ref_ga = GetPointer<gimple_assign>(eq_tn);
             const gimple_assign* dead_ga = GetPointer<gimple_assign>(GET_NODE(stmt));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Replacing use of " + STR(dead_ga->op0));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Updating/Removing " + STR(dead_ga->op0));
             ref_ga->temporary_address = ref_ga->temporary_address && dead_ga->temporary_address;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---ref_ga->temporary_address" + (ref_ga->temporary_address ? std::string("T") : std::string("F")));
             // THROW_ASSERT(ref_ga->bb_index==dead_ga->bb_index, "unexpected condition");
             // THROW_ASSERT(ref_ga->bb_index==B->number, "unexpected condition");
             auto* ref_ssa = GetPointer<ssa_name>(GET_NODE(ref_ga->op0));
             auto* dead_ssa = GetPointer<ssa_name>(GET_NODE(dead_ga->op0));
-            /// update bit values with the longest
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bit_values dead" + dead_ssa->bit_values);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bit_values ref" + ref_ssa->bit_values);
-            if(dead_ssa->bit_values != ref_ssa->bit_values)
-            {
-               auto size = std::max(dead_ssa->bit_values.size(), ref_ssa->bit_values.size());
-               ref_ssa->bit_values = "";
-               for(auto i = 0u; i < size; ++i)
-                  ref_ssa->bit_values = ref_ssa->bit_values + "U";
-            }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bit_values ref" + ref_ssa->bit_values);
             if(dead_ssa->use_set && !ref_ssa->use_set)
                ref_ssa->use_set = dead_ssa->use_set;
-            if(tree_helper::CGetType(GET_CONST_NODE(ref_ga->op0))->get_kind() == integer_type_K)
+            auto ga_op_type = TM->GetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(ref_ga->op0))->index);
+            bool same_range = false;
+            if(GET_NODE(ga_op_type)->get_kind() == integer_type_K && ref_ssa->min && ref_ssa->max && dead_ssa->min && dead_ssa->max)
             {
-               const auto dead_min = dead_ssa->min;
-               const auto ref_min = ref_ssa->min;
-               if(ref_min)
-               {
-                  if(dead_min)
-                  {
-                     const auto dead_min_ic = GetPointer<const integer_cst>(GET_CONST_NODE(dead_min));
-                     const auto ref_min_ic = GetPointer<const integer_cst>(GET_CONST_NODE(ref_min));
-                     if(tree_helper::get_integer_cst_value(dead_min_ic) < tree_helper::get_integer_cst_value(ref_min_ic))
-                     {
-                        ref_ssa->min = dead_ssa->min;
-                     }
-                  }
-                  else
-                  {
-                     ref_ssa->min = tree_nodeRef();
-                  }
-               }
-               const auto dead_max = dead_ssa->max;
-               const auto ref_max = ref_ssa->max;
-               if(ref_max)
-               {
-                  if(dead_max)
-                  {
-                     const auto dead_max_ic = GetPointer<const integer_cst>(GET_CONST_NODE(dead_max));
-                     const auto ref_max_ic = GetPointer<const integer_cst>(GET_CONST_NODE(ref_max));
-                     if(tree_helper::get_integer_cst_value(dead_max_ic) > tree_helper::get_integer_cst_value(ref_max_ic))
-                     {
-                        ref_ssa->max = dead_ssa->max;
-                     }
-                  }
-                  else
-                  {
-                     ref_ssa->max = tree_nodeRef();
-                  }
-               }
+               const auto dead_min_ic = GetPointer<const integer_cst>(GET_CONST_NODE(ref_ssa->min));
+               const auto ref_min_ic = GetPointer<const integer_cst>(GET_CONST_NODE(dead_ssa->min));
+               const auto dead_max_ic = GetPointer<const integer_cst>(GET_CONST_NODE(ref_ssa->max));
+               const auto ref_max_ic = GetPointer<const integer_cst>(GET_CONST_NODE(dead_ssa->max));
+               if(dead_min_ic->value == ref_min_ic->value && dead_max_ic->value == ref_max_ic->value)
+                  same_range = true;
             }
-            const TreeNodeMap<size_t> StmtUses = dead_ssa->CGetUseStmts();
-            for(const auto& use : StmtUses)
+            if(!same_range && ref_ssa->min && ref_ssa->max && GET_NODE(ga_op_type)->get_kind() == integer_type_K)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace equivalent statement before: " + use.first->ToString());
-               TM->ReplaceTreeNode(use.first, dead_ga->op0, ref_ga->op0);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace equivalent statement after: " + use.first->ToString());
+               tree_nodeRef ssa_vd = IRman->create_ssa_name(tree_nodeRef(), ga_op_type, tree_nodeRef(), tree_nodeRef());
+               GetPointer<ssa_name>(GET_NODE(ssa_vd))->use_set = ref_ssa->use_set;
+               const std::string srcp_default = ref_ga->include_name + ":" + STR(ref_ga->line_number) + ":" + STR(ref_ga->column_number);
+               tree_nodeRef curr_ga = IRman->CreateGimpleAssign(ga_op_type, tree_nodeRef(), tree_nodeRef(), ssa_vd, ref_ga->bb_index, srcp_default);
+               TM->ReplaceTreeNode(curr_ga, GetPointer<gimple_assign>(GET_NODE(curr_ga))->op0, ref_ga->op0);
+               TM->ReplaceTreeNode(TM->GetTreeReindex(eq_tn->index), ref_ga->op0, ssa_vd);
+               B->PushAfter(curr_ga, TM->GetTreeReindex(eq_tn->index));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Updated old GA: " + ref_ga->ToString());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created new GA: " + curr_ga->ToString());
             }
-            to_be_removed.insert(stmt);
+            if(!same_range && dead_ssa->min && dead_ssa->max && GET_NODE(ga_op_type)->get_kind() == integer_type_K)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace equivalent statement before assign transformation: " + stmt->ToString());
+               TM->ReplaceTreeNode(stmt, dead_ga->op1, ref_ga->op0);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace equivalent statement after assign transformation: " + stmt->ToString());
+            }
+            else
+            {
+               const TreeNodeMap<size_t> StmtUses = dead_ssa->CGetUseStmts();
+               for(const auto& use : StmtUses)
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace equivalent statement before: " + use.first->ToString());
+                  TM->ReplaceTreeNode(use.first, dead_ga->op0, ref_ga->op0);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace equivalent statement after: " + use.first->ToString());
+               }
+               to_be_removed.insert(stmt);
+            }
 #ifndef NDEBUG
             AppM->RegisterTransformation(GetName(), stmt);
 #endif
             IR_changed = true;
             ++n_equiv_stmt;
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Replaced use of " + STR(dead_ga->op0));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Updated/Removed duplicated statement " + STR(dead_ga->op0));
          }
       }
       for(const auto& stmt : to_be_removed)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + STR(stmt));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + GET_NODE(stmt)->ToString());
          B->RemoveStmt(stmt);
       }
       if(B->CGetStmtList().empty() && B->CGetPhiList().empty() && !to_be_removed.empty())

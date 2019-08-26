@@ -130,6 +130,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BLOCK_FIX, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SWITCH_FIX, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
@@ -143,6 +144,27 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
       }
       case(INVALIDATION_RELATIONSHIP):
       {
+         switch(GetStatus())
+         {
+            case DesignFlowStep_Status::SUCCESS:
+            {
+               if(tree_helper::is_a_nop_function_decl(GetPointer<function_decl>(TM->get_tree_node_const(function_id))))
+                  relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
+               break;
+            }
+            case DesignFlowStep_Status::SKIPPED:
+            case DesignFlowStep_Status::UNCHANGED:
+            case DesignFlowStep_Status::UNEXECUTED:
+            case DesignFlowStep_Status::UNNECESSARY:
+            {
+               break;
+            }
+            case DesignFlowStep_Status::ABORTED:
+            case DesignFlowStep_Status::EMPTY:
+            case DesignFlowStep_Status::NONEXISTENT:
+            default:
+               THROW_UNREACHABLE("");
+         }
          break;
       }
       default:
@@ -289,144 +311,150 @@ DesignFlowStep_Status PhiOpt::InternalExec()
       WriteBBGraphDot("BB_Removed_Chains_" + GetName() + "_chain.dot");
    }
 
-   /// Workaround to avoid invalidation of pointer
-#if HAVE_STDCXX_11
-   CustomSet<decltype(sl->list_of_bloc)::key_type> blocks_to_be_analyzed;
-#else
-   CustomSet<unsigned int> blocks_to_be_analyzed;
-#endif
-   for(auto block : sl->list_of_bloc)
-      blocks_to_be_analyzed.insert(block.first);
-
-   /// Remove empty basic block
-   for(auto bloc_to_be_analyzed : blocks_to_be_analyzed)
+   restart = true;
+   while(restart)
    {
-      auto block = *(sl->list_of_bloc.find(bloc_to_be_analyzed));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(block.first));
+      restart = false;
+      /// Workaround to avoid invalidation of pointer
+#if HAVE_STDCXX_11
+      CustomSet<decltype(sl->list_of_bloc)::key_type> blocks_to_be_analyzed;
+#else
+      CustomSet<unsigned int> blocks_to_be_analyzed;
+#endif
+      for(auto block : sl->list_of_bloc)
+         blocks_to_be_analyzed.insert(block.first);
 
-      /// Remove nop
-      if(block.second->CGetStmtList().size() == 1 and GET_NODE(block.second->CGetStmtList().front())->get_kind() == gimple_nop_K)
+      /// Remove empty basic block
+      for(auto bloc_to_be_analyzed : blocks_to_be_analyzed)
       {
-         block.second->RemoveStmt(block.second->CGetStmtList().front());
-         bb_modified = true;
-      }
+         auto block = *(sl->list_of_bloc.find(bloc_to_be_analyzed));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(block.first));
 
-      if(block.second->CGetStmtList().size() or block.second->CGetPhiList().size())
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Basic block is not empty");
-         continue;
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Basic block is empty");
-      if(block.first == bloc::ENTRY_BLOCK_ID)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Basic block is Entry");
-         continue;
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Basic block is not entry");
-      if(block.first == bloc::EXIT_BLOCK_ID)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Basic block is Exit");
-         continue;
-      }
-#if HAVE_PRAGMA_BUILT
-      if(parameters->getOption<int>(OPT_gcc_openmp_simd))
-      {
-         if(block.second->list_of_pred.size() == 1)
+         /// Remove nop
+         if(block.second->CGetStmtList().size() == 1 and GET_NODE(block.second->CGetStmtList().front())->get_kind() == gimple_nop_K)
          {
-            const auto pred_block_id = block.second->list_of_pred.front();
-            const auto pred_block = sl->list_of_bloc.find(pred_block_id)->second;
-            if(pred_block->loop_id != block.second->loop_id)
+            block.second->RemoveStmt(block.second->CGetStmtList().front());
+            bb_modified = true;
+         }
+
+         if(block.second->CGetStmtList().size() or block.second->CGetPhiList().size())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Basic block is not empty");
+            continue;
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Basic block is empty");
+         if(block.first == bloc::ENTRY_BLOCK_ID)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Basic block is Entry");
+            continue;
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Basic block is not entry");
+         if(block.first == bloc::EXIT_BLOCK_ID)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Basic block is Exit");
+            continue;
+         }
+#if HAVE_PRAGMA_BUILT
+         if(parameters->getOption<int>(OPT_gcc_openmp_simd))
+         {
+            if(block.second->list_of_pred.size() == 1)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Basic block is Landing pad");
-               continue;
+               const auto pred_block_id = block.second->list_of_pred.front();
+               const auto pred_block = sl->list_of_bloc.find(pred_block_id)->second;
+               if(pred_block->loop_id != block.second->loop_id)
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Basic block is Landing pad");
+                  continue;
+               }
             }
          }
-      }
 #endif
 #ifndef NDEBUG
-      if(not(AppM->ApplyNewTransformation()))
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Reached limit of cfg transformations");
-         continue;
-      }
-      AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
+         if(not(AppM->ApplyNewTransformation()))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Reached limit of cfg transformations");
+            continue;
+         }
+         AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
 #endif
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Basic block is not Exit");
-      if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-      {
-         WriteBBGraphDot("BB_Before_" + GetName() + "_Before_BB" + STR(block.first) + ".dot");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written BB_Before_" + GetName() + "_Before_BB" + STR(block.first) + ".dot");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Basic block is not Exit");
+         if(debug_level >= DEBUG_LEVEL_PEDANTIC)
+         {
+            WriteBBGraphDot("BB_Before_" + GetName() + "_Before_BB" + STR(block.first) + ".dot");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written BB_Before_" + GetName() + "_Before_BB" + STR(block.first) + ".dot");
+         }
+         const auto pattern_type = IdentifyPattern(block.first);
+         switch(pattern_type)
+         {
+            case PhiOpt_PatternType::GIMPLE_NOTHING:
+            {
+               ApplyGimpleNothing(block.first);
+               bb_modified = true;
+               break;
+            }
+            case PhiOpt_PatternType::DIFF_NOTHING:
+            {
+               ApplyDiffNothing(block.first);
+               bb_modified = true;
+               restart = true;
+               break;
+            }
+            case PhiOpt_PatternType::IF_MERGE:
+            {
+               ApplyIfMerge(block.first);
+               bb_modified = true;
+               break;
+            }
+            case PhiOpt_PatternType::IF_NOTHING:
+            {
+               ApplyIfNothing(block.first);
+               bb_modified = true;
+               break;
+            }
+            case PhiOpt_PatternType::IF_REMOVE:
+            {
+               ApplyIfRemove(block.first);
+               bb_modified = true;
+               break;
+            }
+            case PhiOpt_PatternType::MULTI_MERGE:
+            {
+               ApplyMultiMerge(block.first);
+               bb_modified = true;
+               break;
+            }
+            case PhiOpt_PatternType::MULTI_NOTHING:
+            {
+               ApplyMultiNothing(block.first);
+               bb_modified = true;
+               break;
+            }
+            case PhiOpt_PatternType::MULTI_REMOVE:
+            {
+               ApplyMultiRemove(block.first);
+               bb_modified = true;
+               break;
+            }
+            case PhiOpt_PatternType::UNCHANGED:
+            {
+               break;
+            }
+            case PhiOpt_PatternType::UNKNOWN:
+            {
+               THROW_UNREACHABLE("Found an unknown pattern in CFG");
+               break;
+            }
+            default:
+            {
+               THROW_UNREACHABLE("");
+               break;
+            }
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed BB" + STR(block.first));
       }
-      const auto pattern_type = IdentifyPattern(block.first);
-      switch(pattern_type)
-      {
-         case PhiOpt_PatternType::GIMPLE_NOTHING:
-         {
-            ApplyGimpleNothing(block.first);
-            bb_modified = true;
-            break;
-         }
-         case PhiOpt_PatternType::DIFF_NOTHING:
-         {
-            ApplyDiffNothing(block.first);
-            bb_modified = true;
-            break;
-         }
-         case PhiOpt_PatternType::IF_MERGE:
-         {
-            ApplyIfMerge(block.first);
-            bb_modified = true;
-            break;
-         }
-         case PhiOpt_PatternType::IF_NOTHING:
-         {
-            ApplyIfNothing(block.first);
-            bb_modified = true;
-            break;
-         }
-         case PhiOpt_PatternType::IF_REMOVE:
-         {
-            ApplyIfRemove(block.first);
-            bb_modified = true;
-            break;
-         }
-         case PhiOpt_PatternType::MULTI_MERGE:
-         {
-            ApplyMultiMerge(block.first);
-            bb_modified = true;
-            break;
-         }
-         case PhiOpt_PatternType::MULTI_NOTHING:
-         {
-            ApplyMultiNothing(block.first);
-            bb_modified = true;
-            break;
-         }
-         case PhiOpt_PatternType::MULTI_REMOVE:
-         {
-            ApplyMultiRemove(block.first);
-            bb_modified = true;
-            break;
-         }
-         case PhiOpt_PatternType::UNCHANGED:
-         {
-            break;
-         }
-         case PhiOpt_PatternType::UNKNOWN:
-         {
-            THROW_UNREACHABLE("Found an unknown pattern in CFG");
-            break;
-         }
-         default:
-         {
-            THROW_UNREACHABLE("");
-            break;
-         }
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed BB" + STR(block.first));
    }
 
-   TreeNodeSet ce_to_be_removeds;
+   TreeNodeSet ces_to_be_removed;
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing redundant cond_expr");
    for(const auto& block : sl->list_of_bloc)
@@ -439,13 +467,14 @@ DesignFlowStep_Status PhiOpt::InternalExec()
             const auto* ce = GetPointer<const cond_expr>(GET_NODE(ga->op1));
             if(ce and ce->op1->index == ce->op2->index)
             {
-               ce_to_be_removeds.insert(statement);
+               ces_to_be_removed.insert(statement);
             }
          }
       }
    }
-
-   for(const auto& ce_to_be_removed : ce_to_be_removeds)
+   if(!ces_to_be_removed.empty())
+      bb_modified = true;
+   for(const auto& ce_to_be_removed : ces_to_be_removed)
    {
       RemoveCondExpr(ce_to_be_removed);
    }
@@ -484,6 +513,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed chains of BB");
+
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing nop with virtual operands");
    for(auto block : sl->list_of_bloc)
    {
@@ -492,7 +522,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
       for(auto stmt : block.second->CGetStmtList())
       {
          auto gn = GetPointer<gimple_node>(GET_NODE(stmt));
-         if(gn->get_kind() != gimple_nop_K or not gn->vdef)
+         if(gn->get_kind() != gimple_nop_K or not gn->vdef or (gn->vovers.find(gn->vdef) != gn->vovers.end() and gn->vovers.size() > 1) or (gn->vovers.find(gn->vdef) == gn->vovers.end() and (not gn->vovers.empty())))
          {
             continue;
          }
@@ -500,7 +530,6 @@ DesignFlowStep_Status PhiOpt::InternalExec()
          if(AppM->ApplyNewTransformation())
 #endif
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing gimple nop " + STR(gn->index));
             auto virtual_ssa = GetPointer<ssa_name>(GET_NODE(gn->vdef));
             THROW_ASSERT(virtual_ssa, "unexpected condition");
             THROW_ASSERT(virtual_ssa->virtual_flag, "unexpected condition");
@@ -513,7 +542,10 @@ DesignFlowStep_Status PhiOpt::InternalExec()
                {
                   auto use_stmt = virtual_ssa->CGetUseStmts().begin()->first;
                   TM->ReplaceTreeNode(use_stmt, gn->vdef, vuse);
+                  while(virtual_ssa->CGetUseStmts().find(use_stmt) != virtual_ssa->CGetUseStmts().end())
+                     virtual_ssa->RemoveUse(use_stmt);
                }
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing gimple nop " + STR(gn->index));
                to_be_removeds.insert(stmt);
 #ifndef NDEBUG
                AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
@@ -521,18 +553,22 @@ DesignFlowStep_Status PhiOpt::InternalExec()
             }
             else
             {
-               /// Check that all the uses are not in phi
-               bool phi = [&]() -> bool {
+               /// Check that all the uses are not in phi or not defining a self loop
+               bool cannotBeProp = [&]() -> bool {
                   for(const auto& use_stmt : virtual_ssa->CGetUseStmts())
                   {
                      if(GET_NODE(use_stmt.first)->get_kind() == gimple_phi_K)
                      {
                         return true;
                      }
+                     if(GET_INDEX_NODE(use_stmt.first) == GET_INDEX_NODE(stmt))
+                     {
+                        return true;
+                     }
                   }
                   return false;
                }();
-               if(not phi)
+               if(not cannotBeProp)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Virtual op not used in any phi");
                   while(virtual_ssa->CGetUseStmts().size())
@@ -557,6 +593,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
                         }
                      }
                   }
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing gimple nop " + STR(gn->index));
                   to_be_removeds.insert(stmt);
 #ifndef NDEBUG
                   AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
@@ -573,7 +610,6 @@ DesignFlowStep_Status PhiOpt::InternalExec()
          bb_modified = true;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(block.first));
    }
-
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed nop with virtual operands");
    bb_modified ? function_behavior->UpdateBBVersion() : 0;
    return bb_modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;

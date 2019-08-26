@@ -1,4 +1,4 @@
 <?xml version="1.0"?>
 <function>
-  <testbench na="19" nb="15"/>
+   <testbench na="{19}" nb="{15}"/>
 </function>

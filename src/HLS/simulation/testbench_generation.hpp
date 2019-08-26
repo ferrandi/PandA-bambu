@@ -41,6 +41,17 @@
 /// Superclass include
 #include "hls_step.hpp"
 
+/**
+ * Enum class used to specify which type of content has to be printed for memory initialization
+ */
+enum class TestbenchGeneration_MemoryType
+{
+   INPUT_PARAMETER,
+   MEMORY_INITIALIZATION,
+   OUTPUT_PARAMETER,
+   RETURN
+};
+
 class TestbenchGeneration
 #if(__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
     final

@@ -35,11 +35,6 @@
  * @brief Header class for the creation of the classical FSM controller.
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
- * $Locker:  $
- * $State: Exp $
  *
  */
 
@@ -47,6 +42,10 @@
 #define FSM_CONTROLLER_HPP
 
 #include "controller_creator_base_step.hpp"
+
+/// STD include
+#include <string>
+
 REF_FORWARD_DECL(tree_manager);
 CONSTREF_FORWARD_DECL(OpGraph);
 
@@ -69,12 +68,19 @@ class fsm_controller : public ControllerCreatorBaseStep
     */
    DesignFlowStep_Status InternalExec() override;
 
+ protected:
+   /**
+    * Set the correct NP functionality
+    * @param state_representation is the state representation of the FSM
+    */
+   virtual void add_correct_transition_memory(std::string state_representation);
+
  public:
    /**
     * Constructor.
     * @param design_flow_manager is the design flow manager
     */
-   fsm_controller(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   fsm_controller(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::FSM_CONTROLLER_CREATOR);
 
    /**
     * Destructor.

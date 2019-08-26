@@ -6,11 +6,7 @@ SUBDIRS=
 noinst_HEADERS= file_IO_constants.hpp treegcc_xml.hpp constants.hpp copyrights_strings.hpp
 
 if BUILD_BAMBU
-   noinst_HEADERS += bambu_results_xml.hpp
-endif
-
-if BUILD_BAMBU
-   noinst_HEADERS += bambu_results_xml.hpp
+   noinst_HEADERS += bambu_results_xml.hpp testbench_generation_constants.hpp
 endif
 
 if BUILD_LIB_FROM_AADL_ASN

@@ -103,6 +103,7 @@ class NP_functionality
       LIBRARY,
       GRAPH,
       FSM,
+      FSM_CS,
       SC_PROVIDED,
       VHDL_PROVIDED,
       VERILOG_PROVIDED,

@@ -97,7 +97,7 @@ class generic_obj
    structural_objectRef SM;
 
    /// output signal associated to element. It allows to connect multiple elements to output of this object.
-   /// So broadcast comunication is possible
+   /// So broadcast communication is possible
    structural_objectRef out_sign;
 
    /// connection obj id

@@ -624,30 +624,31 @@ void Translator::write_to_csv(const std::map<std::string, std::set<std::string>>
 }
 #endif
 
-void Translator::write_to_csv(const std::unordered_map<std::string, std::list<std::pair<std::string, std::string>>>& results, const std::string& file_name) const
+void Translator::write_to_csv(const std::map<std::string, CustomMap<std::string, std::string>>& results, const std::string& file_name) const
 {
    std::ofstream out(file_name.c_str());
    THROW_ASSERT(out, "Error in opening output file " + file_name);
-   std::list<std::pair<std::string, std::string>> first_line = results.begin()->second;
-   std::list<std::pair<std::string, std::string>>::const_iterator tag, tag_end = first_line.end();
-   out << "Benchmark, ";
-   for(tag = first_line.begin(); tag != tag_end; ++tag)
+   std::set<std::string> column_labels;
+   for(const auto row : results)
    {
-      out << tag->first << ", ";
+      for(const auto column : row.second)
+      {
+         column_labels.insert(column.first);
+      }
+   }
+   out << "Benchmark, ";
+   for(const auto column_label : column_labels)
+   {
+      out << column_label << ", ";
    }
    out << std::endl;
-   std::unordered_map<std::string, std::list<std::pair<std::string, std::string>>>::const_iterator line, line_end = results.end();
-   for(line = results.begin(); line != line_end; ++line)
+   for(const auto row : results)
    {
-      THROW_ASSERT(line->second.size() == first_line.size(), "Lines with different number of fields " + boost::lexical_cast<std::string>(line->second.size()) + " vs " + boost::lexical_cast<std::string>(first_line.size()));
-      out << line->first << ", ";
-      std::list<std::pair<std::string, std::string>>::const_iterator first_line_tag = first_line.begin();
-      std::list<std::pair<std::string, std::string>> current_line = line->second;
-      std::list<std::pair<std::string, std::string>>::const_iterator current_tag, current_tag_end = current_line.end();
-      for(current_tag = current_line.begin(); current_tag != current_tag_end; ++current_tag, ++first_line_tag)
+      THROW_ASSERT(column_labels.size() == row.second.size(), "Lines with different number of fields " + STR(row.second.size()) + " vs. " + STR(column_labels.size()));
+      out << row.first << ", ";
+      for(const auto column_label : column_labels)
       {
-         THROW_ASSERT(current_tag->first == first_line_tag->first, "Line with different column name: " + current_tag->first + " vs " + first_line_tag->first);
-         out << current_tag->second << ", ";
+         out << row.second.at(column_label) << ",";
       }
       out << std::endl;
    }

@@ -308,6 +308,8 @@ SerializeGimpleUseDefs(const GIMPLE_type current, const GIMPLE_type next_def);
  */
 void
 SerializeGimpleDefsDef(const GIMPLE_type previous, const GIMPLE_type current);
+void
+SerializeGimpleDefsDef2(const GIMPLE_type current);
 
 /**
  * Return the right operand of a gimple or NULL_TREE if this cannot be determined
@@ -1381,8 +1383,9 @@ serialize_vops (GIMPLE_type gs)
    {
       ///The gimple which defines the use
       GIMPLE_type def_stmt = SSA_NAME_DEF_STMT (vdef);
-
       SerializeGimpleDefsDef(def_stmt, gs);
+      SerializeGimpleDefsDef2(gs);
+
    }
 }
 
@@ -3577,6 +3580,23 @@ serialize_all_gimple_aliased_reaching_defs (GIMPLE_type stmt)
                   NULL, NULL);
 }
 
+static bool
+serialize_gimple_aliased_reaching_defs_2 (ao_ref *dummy_1, tree vdef, void *dummy_2)
+{
+   serialize_child ("vover", vdef);
+   return false;
+}
+
+static void
+serialize_gimple_aliased_reaching_defsdefs (GIMPLE_type stmt, tree ref)
+{
+   ao_ref refd;
+   ao_ref_init (&refd, ref);
+   walk_aliased_vdefs (&refd, gimple_vuse (stmt),
+                      serialize_gimple_aliased_reaching_defs_2,
+                      gimple_bb (stmt), NULL);
+}
+
 static
 void serialize_gimple_dependent_stmts_load(GIMPLE_type gs)
 {
@@ -3803,6 +3823,15 @@ SerializeGimpleDefsDef(const GIMPLE_type previous, const GIMPLE_type current)
       SerializeGimpleDefsDef(previous_previous, current);
    }
 }
+
+void
+SerializeGimpleDefsDef2(const GIMPLE_type current)
+{
+   tree * current_def = GetLeftOperand(current);
+   if(current_def)
+     serialize_gimple_aliased_reaching_defsdefs(current,*current_def);
+}
+
 
 /**
  * Return true if the gimple has to be considered a barrier (i.e., it writes and reads everything
