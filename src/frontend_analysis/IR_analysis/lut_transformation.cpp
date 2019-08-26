@@ -67,7 +67,7 @@
 #define ABC_NO_USE_READLINE
 #pragma endregion
 
-#define MAX_LUT_INT_SIZE 5
+#define MAX_LUT_INT_SIZE 0
 
 #define FMT_HEADER_ONLY 1
 #ifndef __APPLE__
@@ -404,6 +404,9 @@ class klut_network_ext : public mockturtle::klut_network
          while(nchar > res0.size())
             res0 = "0" + res0;
       }
+      kitty::create_from_hex_string(tt, res0);
+      return create_node(s, tt);
+   }
 
 #pragma endregion
 
@@ -1013,17 +1016,23 @@ static mockturtle::klut_network SimplifyLutNetwork(const kne& klut_e, unsigned m
    // std::cerr << "lut\n";
    // mockturtle::write_bench(mapped_klut, std::cout);
 #else
+   //   std::cerr << "std\n";
+   //   mockturtle::write_bench(mapped_klut, std::cout);
+   //   std::cerr << "===============\n";
+
    mockturtle::lut_mapping_params mp;
    mp.cut_enumeration_ps.cut_size = max_lut_size;
 
 #ifndef NDEBUG
-    //mp.verbose = true;
-    //mp.cut_enumeration_ps.very_verbose = true;
+   mp.verbose = false;
+   mp.cut_enumeration_ps.very_verbose = false;
 #endif
 
    mockturtle::lut_mapping<decltype(mapped_klut), true>(mapped_klut, mp);
 #endif
-    return *mockturtle::collapse_mapped_network<mockturtle::klut_network>(mapped_klut);
+   auto collapsed = *mockturtle::collapse_mapped_network<mockturtle::klut_network>(mapped_klut);
+   collapsed = mockturtle::cleanup_luts(collapsed);
+   return collapsed;
 }
 
 bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> block)
@@ -1076,6 +1085,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
       auto* gimpleAssign = GetPointer<gimple_assign>(GET_NODE(*currentStatement));
       enum kind code1 = GET_NODE(gimpleAssign->op1)->get_kind();
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing code " + GET_NODE(gimpleAssign->op1)->get_kind_text());
 
       if(code1 == lut_expr_K)
       {
@@ -1119,12 +1129,13 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             }
          }
 
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---translating in klut " + STR(GetPointer<integer_cst>(GET_NODE(le->op0))->value));
          auto res = klut_e.create_lut(ops, GetPointer<integer_cst>(GET_NODE(le->op0))->value);
          nodeRefToSignal[GET_INDEX_NODE(gimpleAssign->op0)] = res;
 
          if(this->CheckIfPO(gimpleAssign))
          {
-                std::cerr<<"is PO\n";
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is PO");
             klut_e.create_po(res);
             pos.push_back(*currentStatement);
          }
@@ -1208,7 +1219,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not a Boolean cond_expr");
             continue;
-
+         }
          std::vector<mockturtle::klut_network::signal> ops;
          for(auto op : {ce->op0, ce->op1, ce->op2})
          {
@@ -1242,12 +1253,13 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             }
          }
 
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---translating in klut");
          auto res = klut_e.create_ite(ops.at(0), ops.at(1), ops.at(2));
          nodeRefToSignal[GET_INDEX_NODE(gimpleAssign->op0)] = res;
 
          if(this->CheckIfPO(gimpleAssign))
          {
-                std::cerr<<"is PO\n";
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is PO");
             klut_e.create_po(res);
             pos.push_back(*currentStatement);
          }
@@ -1270,7 +1282,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
       if(CHECK_BIN_EXPR_BOOL_SIZE(binaryExpression))
       {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Boolean operands");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Boolean operands");
 
          klut_network_fn nodeCreateFn = GetBooleanNodeCreationFunction(code1);
 
@@ -1279,6 +1291,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not supported expression");
             continue;
          }
+
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---translating in klut");
 
          mockturtle::klut_network::signal res;
          mockturtle::klut_network::signal op1 = 0;
@@ -1300,12 +1314,13 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             }
             else if(CheckIfPI(binaryExpression->op0, BB_index))
             {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + GET_NODE(binaryExpression->op0)->ToString());
                op1 = klut_e.create_pi();
                pis.push_back(binaryExpression->op0);
+               nodeRefToSignal[GET_INDEX_NODE(binaryExpression->op0)] = op1;
             }
             else
                THROW_ERROR("unexpected condition");
-            nodeRefToSignal[GET_INDEX_NODE(binaryExpression->op0)] = op1;
          }
 
          // if the second operand has already been processed then the previous signal is used
@@ -1324,12 +1339,13 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             }
             else if(CheckIfPI(binaryExpression->op1, BB_index))
             {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + GET_NODE(binaryExpression->op1)->ToString());
                op2 = klut_e.create_pi();
                pis.push_back(binaryExpression->op1);
+               nodeRefToSignal[GET_INDEX_NODE(binaryExpression->op1)] = op2;
             }
             else
                THROW_ERROR("unexpected condition");
-            nodeRefToSignal[GET_INDEX_NODE(binaryExpression->op1)] = op2;
          }
 
          res = (klut_e.*nodeCreateFn)(op1, op2);
@@ -1464,10 +1480,10 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 #ifndef NDEBUG
       if(DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
          mockturtle::write_bench(klut, std::cout);
+#endif
 
       std::vector<klut_network_node> luts = ParseKLutNetwork(klut);
 
-       std::cerr << "PI size" << pis.size() << "\n";
       std::map<mockturtle::klut_network::node, tree_nodeRef> internal_nets;
       std::vector<tree_nodeRef> prev_stmts_to_add;
       for(auto lut : luts)
@@ -1590,8 +1606,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             const std::string srcp_default("built-in:0:0");
             auto boolType = tree_man->create_boolean_type();
             tree_nodeRef new_op1 = tree_man->create_lut_expr(boolType, lut_constant_node, op1, op2, op3, op4, op5, op6, op7, op8, srcp_default);
-             tree_nodeRef ssa_vd = tree_man->create_ssa_name(tree_nodeRef(), boolType);
-             prev_stmts_to_add.push_back(tree_man->create_gimple_modify_stmt(ssa_vd, new_op1, srcp_default, BB_index));
+            auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType->index), TM->CreateUniqueIntegerCst(1, boolType->index), new_op1, BB_index, srcp_default);
+            auto ssa_vd = GetPointer<gimple_assign>(GET_NODE(lut_ga))->op0;
+            prev_stmts_to_add.push_back(lut_ga);
             internal_nets[lut.index] = ssa_vd;
          }
       }
@@ -1686,7 +1703,8 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
          if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, SAME_FUNCTION));
+            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
          break;
       case(INVALIDATION_RELATIONSHIP):
          if(GetStatus() == DesignFlowStep_Status::SUCCESS)
