@@ -292,8 +292,7 @@
 #define OPT_LEVEL_RESET (1 + OPT_RESET)
 #define OPT_DISABLE_REG_INIT_VALUE (1 + OPT_LEVEL_RESET)
 #define OPT_SCHEDULING_MUX_MARGINS (1 + OPT_DISABLE_REG_INIT_VALUE)
-#define OPT_SPECULATIVE (1 + OPT_SCHEDULING_MUX_MARGINS)
-#define OPT_SERIALIZE_MEMORY_ACCESSES (1 + OPT_SPECULATIVE)
+#define OPT_SERIALIZE_MEMORY_ACCESSES (1 + OPT_SCHEDULING_MUX_MARGINS)
 #define OPT_SILP (1 + OPT_SERIALIZE_MEMORY_ACCESSES)
 #define OPT_SIMULATE (1 + OPT_SILP)
 #define OPT_SKIP_PIPE_PARAMETER (1 + OPT_SIMULATE)
@@ -1009,6 +1008,9 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "           name is in the list passed as argument.\n\n"
       << "    --discrepancy-permissive-ptrs\n"
       << "           Do not trigger hard errors on pointer variables.\n\n"
+      << "    --discrepancy-hw\n"
+      << "           Hardware Discrepancy Analysis.\n\n"
+
 #if HAVE_MODELSIM
       << "    --assert-debug\n"
       << "        Enable assertion debugging performed by Modelsim.\n\n"
