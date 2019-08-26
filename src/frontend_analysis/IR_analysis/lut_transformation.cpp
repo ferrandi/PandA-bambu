@@ -1616,11 +1616,15 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
       }
       THROW_ASSERT(prev_stmts_to_add.empty(), "unexpected condition");
       ///dependencies could be broken so we may need to reorder the lut based statements
+#ifndef NDEBUG
+      auto nStmts = statements.size();
+#endif
 //      for(auto stmt: statements)
 //         std::cerr<< "Before STMT " << stmt->ToString()<<"\n";
       block.second->ReorderLUTs();
 //      for(auto stmt: statements)
 //         std::cerr<< "STMT " << stmt->ToString()<<"\n";
+      THROW_ASSERT(nStmts == statements.size(), "unexpected result");
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(block.first));

@@ -340,16 +340,21 @@ void bloc::ReorderLUTs()
       if(GET_NODE(*pos)->get_kind() == gimple_assign_K)
       {
          auto ga = GetPointer<gimple_assign>(GET_NODE(*pos));
+         if(GET_NODE(ga->op0)->get_kind() != ssa_name_K)
+         {
+            ++pos;
+            continue;
+         }
          auto allDefinedP = [&](tree_nodeRef stmt) -> bool
          {
             const auto& uses = tree_helper::ComputeSsaUses(stmt);
             for(auto u: uses)
             {
-               auto ssa_node = GET_NODE(u.first);
-               auto ssa = GetPointer<ssa_name>(ssa_node);
                if(current_uses.find(u.first) == current_uses.end())
                {
-                  if(GetPointer<gimple_node>(GET_NODE(ssa->CGetDefStmt()))->bb_index != number)
+                  auto ssa_node = GET_NODE(u.first);
+                  auto ssa = GetPointer<ssa_name>(ssa_node);
+                  if(ssa->virtual_flag || GetPointer<gimple_node>(GET_NODE(ssa->CGetDefStmt()))->bb_index != number)
                      current_uses.insert(u.first);
                   else
                      return false;
