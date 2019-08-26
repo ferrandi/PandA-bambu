@@ -358,7 +358,6 @@ void bloc::ReorderLUTs()
             return true;
          };
 
-         const auto& uses = tree_helper::ComputeSsaUses(*pos);
          if(not allDefinedP(*pos))
          {
             list_of_postponed_stmt.push_back(*pos);
