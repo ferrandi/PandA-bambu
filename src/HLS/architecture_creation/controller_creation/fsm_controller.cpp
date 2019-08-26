@@ -247,6 +247,7 @@ void fsm_controller::create_state_machine(std::string& parse)
 
       std::set<generic_objRef> active_fu;
       const tree_managerRef TreeM = HLSMgr->get_tree_manager();
+
       const auto& operations = astg->CGetStateInfo(v)->executing_operations;
       for(const auto& op : operations)
       {
@@ -324,7 +325,7 @@ void fsm_controller::create_state_machine(std::string& parse)
                }
             }
          }
-     }
+      }
 
 #ifndef NDEBUG
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->default output after considering unbounded:");
@@ -504,7 +505,7 @@ void fsm_controller::create_state_machine(std::string& parse)
                }
             }
 
-            for(auto const &sel : register_selectors)
+            for(auto const& sel : register_selectors)
             {
                if(wren_list.find(sel.second) != wren_list.end() && ((transition_outputs[wren_list[sel.second]] == 0) || (transition_outputs[wren_list[sel.second]] == default_COND && present_state[v][wren_list[sel.second]] != 1)))
                   transition_outputs[sel.first] = 2;
