@@ -2787,6 +2787,9 @@ struct function_decl : public decl_node, public attr
    /// True if function write in memory somehow
    bool writing_memory;
 
+   /// True if function read from memory somehow
+   bool reading_memory;
+
 #if HAVE_FROM_PRAGMA_BUILT
    /// If different from zero, the parallel degree of the contained openmp loop
    size_t omp_for_wrapper;

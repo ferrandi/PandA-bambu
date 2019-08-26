@@ -283,6 +283,7 @@ void dead_code_elimination::add_gimple_nop(gimple_node* gc, const tree_managerRe
    if(old_gc->vovers.size())
    {
       new_gc->vovers = old_gc->vovers;
+      old_gc->vovers.clear();
    }
    bb->PushBefore(gimple_nop_node_ref, cur_stmt);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added statement " + GET_NODE(gimple_nop_node_ref)->ToString());
@@ -980,9 +981,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
       }
    } while(restart_analysis);
 
-   /// update function memory write flag
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Update memory write flag");
-   fd->writing_memory = false;
+   /// fix vdef/memdef
    for(block_it = blocks.begin(); block_it != block_it_end; ++block_it)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing BB" + boost::lexical_cast<std::string>(block_it->second->number));
@@ -991,6 +990,107 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + (*stmt)->ToString());
          auto* gn = GetPointer<gimple_node>(GET_NODE(*stmt));
+         if(auto ga = GetPointer<gimple_assign>(GET_NODE(*stmt)))
+         {
+            if(GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K)
+            {
+               auto* ce = GetPointer<call_expr>(GET_NODE(ga->op1));
+               if(GET_NODE(ce->fn)->get_kind() == addr_expr_K)
+               {
+                  const auto addr_node = GET_NODE(ce->fn);
+                  const auto* ae = GetPointer<const addr_expr>(addr_node);
+                  const auto fu_decl_node = GET_NODE(ae->op);
+                  THROW_ASSERT(fu_decl_node->get_kind() == function_decl_K, "node  " + STR(fu_decl_node) + " is not function_decl but " + fu_decl_node->get_kind_text());
+                  auto fdCalled = GetPointer<function_decl>(fu_decl_node);
+                  if(fdCalled->writing_memory || !fdCalled->body)
+                     ;
+                  else
+                  {
+                     if(gn->vdef && !is_single_write_memory)
+                     {
+                        /// fix vdef
+                        kill_vdef(TM,gn->vdef);
+                        gn->vdef = tree_nodeRef();
+                        gn->vovers.clear();
+                        modified = true;
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Nothing is written by this function: Fixed VDEF/VOVER ");
+                     }
+                     else if(gn->memdef && is_single_write_memory)
+                     {
+                        /// fix memdef
+                        kill_vdef(TM,gn->memdef);
+                        gn->memdef = tree_nodeRef();
+                        modified = true;
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Nothing is written by this function: Fixed MEMDEF ");
+                     }
+                  }
+               }
+            }
+         }
+         else if(auto gc = GetPointer<gimple_call>(GET_NODE(*stmt)))
+         {
+            tree_nodeRef temp_node = GET_NODE(gc->fn);
+            function_decl* fdCalled = nullptr;
+
+            if(temp_node->get_kind() == addr_expr_K)
+            {
+               auto* ue = GetPointer<unary_expr>(temp_node);
+               temp_node = ue->op;
+               fdCalled = GetPointer<function_decl>(GET_NODE(temp_node));
+            }
+            else if(temp_node->get_kind() == obj_type_ref_K)
+            {
+               temp_node = tree_helper::find_obj_type_ref_function(gc->fn);
+               fdCalled = GetPointer<function_decl>(GET_NODE(temp_node));
+            }
+            if(fdCalled)
+            {
+               if(fdCalled->writing_memory || !fdCalled->body)
+                  ;
+               else
+               {
+                  if(gn->vdef && !is_single_write_memory)
+                  {
+                     /// fix vdef
+                     kill_vdef(TM,gn->vdef);
+                     gn->vdef = tree_nodeRef();
+                     gn->vovers.clear();
+                     modified = true;
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Nothing is written by this function: Fixed VDEF/VOVER ");
+                  }
+                  else if(gn->memdef && is_single_write_memory)
+                  {
+                     /// fix memdef
+                     kill_vdef(TM,gn->memdef);
+                     gn->memdef = tree_nodeRef();
+                     modified = true;
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Nothing is written by this function: Fixed MEMDEF ");
+                  }
+               }
+            }
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement");
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed BB" + boost::lexical_cast<std::string>(block_it->second->number));
+   }
+
+   /// update function memory write flag
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Update memory read/write flag");
+   fd->writing_memory = false;
+   fd->reading_memory = false;
+   for(block_it = blocks.begin(); block_it != block_it_end; ++block_it)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing BB" + boost::lexical_cast<std::string>(block_it->second->number));
+      const auto& stmt_list = block_it->second->CGetStmtList();
+      for(auto stmt = stmt_list.rbegin(); stmt != stmt_list.rend(); stmt++)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + (*stmt)->ToString());
+         auto* gn = GetPointer<gimple_node>(GET_NODE(*stmt));
+
+         if(not gn->vuses.empty() && !is_single_write_memory)
+            fd->reading_memory = true;
+         else if(gn->memuse && is_single_write_memory)
+            fd->reading_memory = true;
          if(gn->vdef && !is_single_write_memory)
             fd->writing_memory = true;
          else if(gn->memdef && is_single_write_memory)
@@ -1006,7 +1106,8 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   const auto* ae = GetPointer<const addr_expr>(addr_node);
                   const auto fu_decl_node = GET_NODE(ae->op);
                   THROW_ASSERT(fu_decl_node->get_kind() == function_decl_K, "node  " + STR(fu_decl_node) + " is not function_decl but " + fu_decl_node->get_kind_text());
-                  if(GetPointer<function_decl>(fu_decl_node)->writing_memory)
+                  auto fdCalled = GetPointer<function_decl>(fu_decl_node);
+                  if(fdCalled->writing_memory || !fdCalled->body)
                      fd->writing_memory = true;
                }
                else
@@ -1014,6 +1115,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   fd->writing_memory = true; /// conservative analysis
                }
             }
+
          }
          else if(auto gc = GetPointer<gimple_call>(GET_NODE(*stmt)))
          {
@@ -1045,7 +1147,8 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed BB" + boost::lexical_cast<std::string>(block_it->second->number));
    }
-
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---write flag " +(fd->writing_memory ? std::string("T") : std::string("F")));
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---read flag " +(fd->reading_memory ? std::string("T") : std::string("F")));
    if(modified)
    {
       function_behavior->UpdateBBVersion();
