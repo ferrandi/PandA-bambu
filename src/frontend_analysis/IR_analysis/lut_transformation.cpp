@@ -33,6 +33,8 @@
 /**
  * @file lut_transformation.cpp
  * @brief identify and optmize lut expressions.
+ * @author Marco Speziali
+ * @author Davide Toschi 
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
@@ -1613,6 +1615,12 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          }
       }
       THROW_ASSERT(prev_stmts_to_add.empty(), "unexpected condition");
+      ///dependencies could be broken so we may need to reorder the lut based statements
+//      for(auto stmt: statements)
+//         std::cerr<< "Before STMT " << stmt->ToString()<<"\n";
+      block.second->ReorderLUTs();
+//      for(auto stmt: statements)
+//         std::cerr<< "STMT " << stmt->ToString()<<"\n";
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(block.first));
