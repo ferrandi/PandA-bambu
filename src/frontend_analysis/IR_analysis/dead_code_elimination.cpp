@@ -1008,6 +1008,18 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   {
                      if(gn->vdef && !is_single_write_memory)
                      {
+                        if(fdCalled->reading_memory)
+                        {
+                           /// all vovers become vuse
+                           for(auto vo: gn->vovers)
+                           {
+                              if(not gn->vdef || (GET_INDEX_NODE(vo) != GET_INDEX_NODE(gn->vdef)))
+                              {
+                                 gn->vuses.insert(vo);
+                                 GetPointer<ssa_name>(GET_NODE(vo))->AddUseStmt(*stmt);
+                              }
+                           }
+                        }
                         /// fix vdef
                         kill_vdef(TM,gn->vdef);
                         gn->vdef = tree_nodeRef();
@@ -1017,11 +1029,14 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                      }
                      else if(gn->memdef && is_single_write_memory)
                      {
-                        /// fix memdef
-                        kill_vdef(TM,gn->memdef);
-                        gn->memdef = tree_nodeRef();
-                        modified = true;
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Nothing is written by this function: Fixed MEMDEF ");
+                        if(not fdCalled->reading_memory)
+                        {
+                           /// fix memdef
+                           kill_vdef(TM,gn->memdef);
+                           gn->memdef = tree_nodeRef();
+                           modified = true;
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Nothing is written by this function: Fixed MEMDEF ");
+                        }
                      }
                   }
                }
@@ -1051,6 +1066,18 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                {
                   if(gn->vdef && !is_single_write_memory)
                   {
+                     if(fdCalled->reading_memory)
+                     {
+                        /// all vovers become vuse
+                        for(auto vo: gn->vovers)
+                        {
+                           if(not gn->vdef || (GET_INDEX_NODE(vo) != GET_INDEX_NODE(gn->vdef)))
+                           {
+                              gn->vuses.insert(vo);
+                              GetPointer<ssa_name>(GET_NODE(vo))->AddUseStmt(*stmt);
+                           }
+                        }
+                     }
                      /// fix vdef
                      kill_vdef(TM,gn->vdef);
                      gn->vdef = tree_nodeRef();
@@ -1060,11 +1087,14 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   }
                   else if(gn->memdef && is_single_write_memory)
                   {
-                     /// fix memdef
-                     kill_vdef(TM,gn->memdef);
-                     gn->memdef = tree_nodeRef();
-                     modified = true;
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Nothing is written by this function: Fixed MEMDEF ");
+                     if(not fdCalled->reading_memory)
+                     {
+                        /// fix memdef
+                        kill_vdef(TM,gn->memdef);
+                        gn->memdef = tree_nodeRef();
+                        modified = true;
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Nothing is written by this function: Fixed MEMDEF ");
+                     }
                   }
                }
             }
@@ -1109,10 +1139,13 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   auto fdCalled = GetPointer<function_decl>(fu_decl_node);
                   if(fdCalled->writing_memory || !fdCalled->body)
                      fd->writing_memory = true;
+                  if(fdCalled->reading_memory || !fdCalled->body)
+                     fd->reading_memory = true;
                }
                else
                {
                   fd->writing_memory = true; /// conservative analysis
+                  fd->reading_memory = true;
                }
             }
 
@@ -1137,12 +1170,20 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             {
                if(fdCalled->writing_memory || !fdCalled->body)
                   fd->writing_memory = true;
+               if(fdCalled->reading_memory || !fdCalled->body)
+                  fd->reading_memory = true;
             }
             else
+            {
                fd->writing_memory = true;
+               fd->reading_memory = true;
+            }
          }
          else if(GetPointer<gimple_asm>(GET_NODE(*stmt)))
+         {
             fd->writing_memory = true; /// more conservative than really needed
+            fd->reading_memory = true;
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement");
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed BB" + boost::lexical_cast<std::string>(block_it->second->number));
