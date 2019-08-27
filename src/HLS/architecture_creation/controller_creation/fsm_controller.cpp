@@ -247,6 +247,7 @@ void fsm_controller::create_state_machine(std::string& parse)
 
       std::set<generic_objRef> active_fu;
       const tree_managerRef TreeM = HLSMgr->get_tree_manager();
+
       const auto& operations = astg->CGetStateInfo(v)->executing_operations;
       for(const auto& op : operations)
       {

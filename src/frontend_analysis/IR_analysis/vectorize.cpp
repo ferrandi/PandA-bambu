@@ -571,6 +571,28 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
          transformations[tree_node->index] = SCALAR;
          break;
       }
+      case lut_expr_K:
+      {
+         auto* le = GetPointer<const lut_expr>(tree_node);
+         ClassifyTreeNode(loop_id, GET_NODE(le->op0));
+         ClassifyTreeNode(loop_id, GET_NODE(le->op1));
+         if(le->op2)
+            ClassifyTreeNode(loop_id, GET_NODE(le->op2));
+         if(le->op3)
+            ClassifyTreeNode(loop_id, GET_NODE(le->op3));
+         if(le->op4)
+            ClassifyTreeNode(loop_id, GET_NODE(le->op4));
+         if(le->op5)
+            ClassifyTreeNode(loop_id, GET_NODE(le->op5));
+         if(le->op6)
+            ClassifyTreeNode(loop_id, GET_NODE(le->op6));
+         if(le->op7)
+            ClassifyTreeNode(loop_id, GET_NODE(le->op7));
+         if(le->op8)
+            ClassifyTreeNode(loop_id, le->op8);
+         transformations[tree_node->index] = SCALAR;
+         break;
+      }
       case const_decl_K:
       case field_decl_K:
       case function_decl_K:
@@ -790,6 +812,7 @@ bool Vectorize::LookForScalar(const tree_nodeConstRef tree_node)
       case tree_list_K:
       case tree_vec_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -1953,6 +1976,35 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                return_value = new_tree_node_id;
                break;
             }
+            case lut_expr_K:
+            {
+               const auto* le = GetPointer<const lut_expr>(tn);
+               tree_node_schema[TOK(TOK_OP0)] = STR(Transform(le->op0->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
+               std::string include_name = le->include_name;
+               unsigned int line_number = le->line_number;
+               unsigned int column_number = le->column_number;
+               tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
+               tree_node_schema[TOK(TOK_TYPE)] = STR(le->type->index);
+               tree_node_schema[TOK(TOK_OP1)] = STR(Transform(le->op1->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
+               if(le->op2)
+                  tree_node_schema[TOK(TOK_OP2)] = STR(Transform(le->op2->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
+               if(le->op3)
+                  tree_node_schema[TOK(TOK_OP3)] = STR(Transform(le->op3->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
+               if(le->op4)
+                  tree_node_schema[TOK(TOK_OP4)] = STR(Transform(le->op4->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
+               if(le->op5)
+                  tree_node_schema[TOK(TOK_OP5)] = STR(Transform(le->op5->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
+               if(le->op6)
+                  tree_node_schema[TOK(TOK_OP6)] = STR(Transform(le->op6->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
+               if(le->op7)
+                  tree_node_schema[TOK(TOK_OP7)] = STR(Transform(le->op7->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
+               if(le->op8)
+                  tree_node_schema[TOK(TOK_OP8)] = STR(Transform(le->op8->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
+               unsigned int new_tree_node_id = TM->new_tree_node_id();
+               TM->create_tree_node(new_tree_node_id, tn->get_kind(), tree_node_schema);
+               return_value = new_tree_node_id;
+               break;
+            }
             case array_ref_K:
             {
                const auto* qe = GetPointer<const quaternary_expr>(tn);
@@ -2305,6 +2357,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   case tree_list_K:
                   case tree_vec_K:
                   case error_mark_K:
+                  case lut_expr_K:
                   case CASE_BINARY_EXPRESSION:
                   case CASE_CPP_NODES:
                   case CASE_CST_NODES:
@@ -2436,6 +2489,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   case target_mem_ref461_K:
                   case tree_list_K:
                   case tree_vec_K:
+                  case lut_expr_K:
                   case CASE_BINARY_EXPRESSION:
                   case CASE_CPP_NODES:
                   case CASE_CST_NODES:
@@ -2736,6 +2790,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             case ternary_pm_expr_K:
             case ternary_mp_expr_K:
             case ternary_mm_expr_K:
+            case lut_expr_K:
             case bit_ior_concat_expr_K:
             case error_mark_K:
             {

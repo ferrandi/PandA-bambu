@@ -1072,6 +1072,21 @@ void raw_writer::operator()(const target_expr* obj, unsigned int& mask)
    write_when_not_null(STOK(TOK_CLNP), obj->clnp);
 }
 
+void raw_writer::operator()(const lut_expr* obj, unsigned int& mask)
+{
+   mask = NO_VISIT;
+   obj->expr_node::visit(this);
+   write_when_not_null(STOK(TOK_OP0), obj->op0);
+   write_when_not_null(STOK(TOK_OP1), obj->op1);
+   write_when_not_null(STOK(TOK_OP2), obj->op2);
+   write_when_not_null(STOK(TOK_OP3), obj->op3);
+   write_when_not_null(STOK(TOK_OP4), obj->op4);
+   write_when_not_null(STOK(TOK_OP5), obj->op5);
+   write_when_not_null(STOK(TOK_OP6), obj->op6);
+   write_when_not_null(STOK(TOK_OP7), obj->op7);
+   write_when_not_null(STOK(TOK_OP8), obj->op8);
+}
+
 void raw_writer::operator()(const template_decl* obj, unsigned int& mask)
 {
    mask = NO_VISIT;

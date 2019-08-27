@@ -1373,6 +1373,20 @@ void tree_node_dup::operator()(const target_expr* obj, unsigned int& mask)
    SET_NODE_ID(clnp, target_expr);
 }
 
+void tree_node_dup::operator()(const lut_expr* obj, unsigned int& mask)
+{
+   THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
+   tree_node_mask::operator()(obj, mask);
+   SET_NODE_ID(op0, lut_expr);
+   SET_NODE_ID(op1, lut_expr);
+   SET_NODE_ID(op2, lut_expr);
+   SET_NODE_ID(op3, lut_expr);
+   SET_NODE_ID(op4, lut_expr);
+   SET_NODE_ID(op5, lut_expr);
+   SET_NODE_ID(op6, lut_expr);
+   SET_NODE_ID(op7, lut_expr);
+   SET_NODE_ID(op8, lut_expr);
+}
 void tree_node_dup::operator()(const template_decl* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");

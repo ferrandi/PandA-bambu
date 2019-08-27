@@ -1289,6 +1289,21 @@ void tree_node_factory::operator()(const target_expr* obj, unsigned int& mask)
    SET_NODE_ID_OPT(TOK_CLNP, clnp, target_expr);
 }
 
+void tree_node_factory::operator()(const lut_expr* obj, unsigned int& mask)
+{
+   THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
+   tree_node_mask::operator()(obj, mask);
+   SET_NODE_ID_OPT(TOK_OP0, op0, lut_expr);
+   SET_NODE_ID_OPT(TOK_OP1, op1, lut_expr);
+   SET_NODE_ID_OPT(TOK_OP2, op2, lut_expr);
+   SET_NODE_ID_OPT(TOK_OP3, op3, lut_expr);
+   SET_NODE_ID_OPT(TOK_OP4, op4, lut_expr);
+   SET_NODE_ID_OPT(TOK_OP5, op5, lut_expr);
+   SET_NODE_ID_OPT(TOK_OP6, op6, lut_expr);
+   SET_NODE_ID_OPT(TOK_OP7, op7, lut_expr);
+   SET_NODE_ID_OPT(TOK_OP8, op8, lut_expr);
+}
+
 void tree_node_factory::operator()(const template_decl* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");

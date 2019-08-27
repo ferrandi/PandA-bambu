@@ -33,6 +33,8 @@ CFLAGS_EXT=-O2
 CXXFLAGS_EXT=-O2
 CXXFLAGS_EXTFPLL=-O2
 
+# Check if compiler support c++17
+AC_COMPILE_STDCXX_17
 # Check if compiler support c++11
 AC_COMPILE_STDCXX_11
 # Check if compiler support c++0x
@@ -42,6 +44,11 @@ AC_HEXFLOAT
 
 
 ############################### c++0x/11 checking ##############################
+if test "x$ac_cv_cxx_compile_cxx17_native" = xno; then
+   if test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes; then
+      CXXFLAGS+=" --std=c++17 "
+      CXXFLAGS_EXT+=" --std=c++17 "
+   else
 if test "x$ac_cv_cxx_compile_cxx11_native" = xno; then
    if test "x$ac_cv_cxx_compile_cxx11_cxx" = xyes; then
       CXXFLAGS+=" --std=c++11 "
@@ -52,7 +59,9 @@ if test "x$ac_cv_cxx_compile_cxx11_native" = xno; then
             CXXFLAGS+=" --std=c++0x "
             CXXFLAGS_EXT+=" --std=c++0x "
          else
-            AC_MSG_ERROR("Compiler does not support C++11 nor C++0X")
+                  AC_MSG_ERROR("Compiler does not support C++17 nor C++11 nor C++0X")
+               fi
+            fi
          fi
       fi
    fi
@@ -3053,7 +3062,7 @@ if test "x$panda_WERROR" = xyes; then
    -Wswitch-enum \
    -Wswitch-default \
    -Wundef \
-   "
+   -Wno-error=unknown-pragmas"
    AX_CHECK_COMPILE_FLAG("-Wmissing-include-dirs", CXXFLAGS+=" -Wmissing-include-dirs ",,"-Werror") #it is not doing any real test
    AX_CHECK_COMPILE_FLAG("-Wlogical-op", CXXFLAGS+=" -Wlogical-op ",,"-Werror")
    AX_CHECK_COMPILE_FLAG("-Wunused-local-typedefs", CXXFLAGS+=" -Wunused-local-typedefs ",,"-Werror")
@@ -3066,6 +3075,7 @@ if test "x$panda_WERROR" = xyes; then
    fi
    AX_CHECK_COMPILE_FLAG("-Wmismatched-tags", CXXFLAGS+=" -Wno-mismatched-tags ",,"-Werror")
    AX_CHECK_COMPILE_FLAG("-Woverlength-strings", CXXFLAGS+=" -Wno-overlength-strings ",,"-Werror")
+   AX_CHECK_COMPILE_FLAG("-Wdeprecated-copy", CXXFLAGS+=" -Wno-deprecated-copy ",,"-Werror")
 else
    CXXFLAGS+=" -w "
 fi

@@ -325,6 +325,88 @@ void bloc::PushAfter(const tree_nodeRef new_stmt, const tree_nodeRef existing_st
 #endif
 }
 
+void bloc::ReorderLUTs()
+{
+   TreeNodeSet current_uses;
+   for(auto phi: list_of_phi)
+   {
+      auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
+      current_uses.insert(gp->res);
+   }
+   std::list<tree_nodeRef> list_of_postponed_stmt;
+   auto pos = list_of_stmt.begin();
+   while(pos != list_of_stmt.end())
+   {
+      if(GET_NODE(*pos)->get_kind() == gimple_assign_K)
+      {
+         auto ga = GetPointer<gimple_assign>(GET_NODE(*pos));
+         if(GET_NODE(ga->op0)->get_kind() != ssa_name_K)
+         {
+            ++pos;
+            continue;
+         }
+         auto allDefinedP = [&](tree_nodeRef stmt) -> bool
+         {
+            const auto& uses = tree_helper::ComputeSsaUses(stmt);
+            for(auto u: uses)
+            {
+               if(current_uses.find(u.first) == current_uses.end())
+               {
+                  auto ssa_node = GET_NODE(u.first);
+                  auto ssa = GetPointer<ssa_name>(ssa_node);
+                  if(ssa->virtual_flag || GetPointer<gimple_node>(GET_NODE(ssa->CGetDefStmt()))->bb_index != number)
+                     current_uses.insert(u.first);
+                  else
+                     return false;
+               }
+            }
+            return true;
+         };
+
+         if(not allDefinedP(*pos))
+         {
+            list_of_postponed_stmt.push_back(*pos);
+            const auto next_stmt = std::next(pos);
+            list_of_stmt.erase(pos);
+            pos = next_stmt;
+         }
+         else
+         {
+            current_uses.insert(ga->op0);
+            const auto next_stmt = std::next(pos);
+            auto posPostponed = list_of_postponed_stmt.begin();
+            while(posPostponed != list_of_postponed_stmt.end())
+            {
+               if(allDefinedP(*posPostponed))
+               {
+                  /// add back
+                  const auto next_stmtPostponed = std::next(posPostponed);
+                  list_of_stmt.insert(next_stmt, *posPostponed);
+                  auto gaPostponed = GetPointer<gimple_assign>(GET_NODE(*posPostponed));
+                  current_uses.insert(gaPostponed->op0);
+#if HAVE_BAMBU_BUILT
+                  if(schedule)
+                  {
+                     schedule->UpdateTime(gaPostponed->index);
+                  }
+#endif
+                  list_of_postponed_stmt.erase(posPostponed);
+                  posPostponed = next_stmtPostponed;
+               }
+               else
+                  ++posPostponed;
+            }
+            pos = next_stmt;
+         }
+      }
+      else
+      {
+         ++pos;
+      }
+   }
+}
+
+
 void bloc::AddPhi(const tree_nodeRef phi)
 {
    /// This check is necessary since during parsing of statement list statement has not yet been filled

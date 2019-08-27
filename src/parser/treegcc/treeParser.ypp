@@ -903,6 +903,7 @@ bool pred;
       | wusing_decl
       | waggr_init_expr
       | werror_mark
+      | wlut_expr
     ;
 
    fun_ext_static:
@@ -2277,7 +2278,58 @@ bool pred;
                        op
                        {NS(quaternary_expr, op3)}
                      ;
-
+   wlut_expr : TOK_BISON_LUT_EXPR{CTN(lut_expr)}
+                   wexpr_node
+                   op
+                   {NS(lut_expr,op0)}
+                   op
+                   {NS(lut_expr,op1)}
+                   wlut_expr_opt
+               ;
+   wlut_expr_opt : /* Empty */
+                   | wlut_expr_next2
+                   | wlut_expr_next2
+                     wlut_expr_next3
+                   | wlut_expr_next2
+                     wlut_expr_next3
+                     wlut_expr_next4
+                   | wlut_expr_next2
+                     wlut_expr_next3
+                     wlut_expr_next4
+                     wlut_expr_next5
+                   | wlut_expr_next2
+                     wlut_expr_next3
+                     wlut_expr_next4
+                     wlut_expr_next5
+                     wlut_expr_next6
+                   | wlut_expr_next2
+                     wlut_expr_next3
+                     wlut_expr_next4
+                     wlut_expr_next5
+                     wlut_expr_next6
+                     wlut_expr_next7
+                   | wlut_expr_next2
+                     wlut_expr_next3
+                     wlut_expr_next4
+                     wlut_expr_next5
+                     wlut_expr_next6
+                     wlut_expr_next7
+                     wlut_expr_next8
+               ;
+      wlut_expr_next2 : op{NS(lut_expr, op2)}
+                     ;
+      wlut_expr_next3 : op{NS(lut_expr, op3)}
+                        ;
+      wlut_expr_next4 : op{NS(lut_expr, op4)}
+                        ;
+      wlut_expr_next5 : op{NS(lut_expr, op5)}
+                        ;
+      wlut_expr_next6 : op{NS(lut_expr, op6)}
+                        ;
+      wlut_expr_next7 : op{NS(lut_expr, op7)}
+                        ;
+      wlut_expr_next8 : op{NS(lut_expr, op8)}
+                        ;
    //srcp: TOK_BISON_SRCP^ TOK_BISON_STRING TOK_BISON_NUMBER;
    wsrcp_opt     : /*empty*/| TOK_BISON_SRCP string_id{NSV(srcp, include_name, data->curr_string)} number_id{NSV(srcp, line_number, data->curr_unumber)} number_id{NSV(srcp, column_number, data->curr_unumber)};
 
