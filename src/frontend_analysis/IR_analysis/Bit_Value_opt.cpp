@@ -1778,17 +1778,6 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                      }
                   }
                }
-               else if(GET_NODE(ga->op1)->get_kind() == lut_expr_K)
-               {
-                  const auto le = GetPointer<const lut_expr>(GET_CONST_NODE(ga->op1));
-                  if(GET_CONST_NODE(le->op0)->get_kind() == integer_cst_K and GET_CONST_NODE(le->op1)->get_kind() == integer_cst_K)
-                  {
-                     if(GET_CONST_NODE(le->op1)->get_kind() == integer_cst_K || (le->op2 && GET_CONST_NODE(le->op2)->get_kind() == integer_cst_K) || (le->op3 && GET_CONST_NODE(le->op3)->get_kind() == integer_cst_K) ||
-                        (le->op4 && GET_CONST_NODE(le->op4)->get_kind() == integer_cst_K) || (le->op5 && GET_CONST_NODE(le->op5)->get_kind() == integer_cst_K) || (le->op6 && GET_CONST_NODE(le->op6)->get_kind() == integer_cst_K) ||
-                        (le->op7 && GET_CONST_NODE(le->op7)->get_kind() == integer_cst_K) || (le->op8 && GET_CONST_NODE(le->op8)->get_kind() == integer_cst_K))
-                        THROW_WARNING("RESTART LUT TRANSFORMATION");
-                  }
-               }
             }
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Statement analyzed " + GET_NODE(stmt)->ToString());
