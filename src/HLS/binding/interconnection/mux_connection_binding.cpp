@@ -1249,6 +1249,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          case save_expr_K:
          case vtable_ref_K:
          case with_cleanup_expr_K:
+         case extract_bit_expr_K:
          case CASE_TYPE_NODES:
          default:
             THROW_ERROR("determine_connection pattern not supported: " + std::string(tn->get_kind_text()) + " @" + STR(tree_var));
@@ -1981,6 +1982,7 @@ void mux_connection_binding::create_connections()
                   case vec_unpack_lo_expr_K:
                   case vec_unpack_float_hi_expr_K:
                   case vec_unpack_float_lo_expr_K:
+                  case extract_bit_expr_K:
                   default:
                      THROW_ERROR("MEMORY REFERENCE/LOAD-STORE type not supported: " + var_node->get_kind_text() + " " + STR(node_id));
                }
@@ -2225,7 +2227,7 @@ void mux_connection_binding::create_connections()
                {
                   add_conversion(port_num, size_tree_var, op, form_par_type, port_index, fu_obj, data, TreeM, tree_var, var_read, size_form_par);
                }
-               else if(first_valid_id && tree_var && first_valid_id != tree_var && form_par_type == 0 && data->CGetOpNodeInfo(*op)->GetOperation() != "rshift_expr" && data->CGetOpNodeInfo(*op)->GetOperation() != "lshift_expr" &&
+               else if(first_valid_id && tree_var && first_valid_id != tree_var && form_par_type == 0 && data->CGetOpNodeInfo(*op)->GetOperation() != "rshift_expr" && data->CGetOpNodeInfo(*op)->GetOperation() != "lshift_expr" && data->CGetOpNodeInfo(*op)->GetOperation() != "extract_bit_expr" &&
                        ((tree_helper::is_int(TreeM, tree_var) && tree_helper::is_unsigned(TreeM, first_valid_id)) || (tree_helper::is_unsigned(TreeM, tree_var) && tree_helper::is_int(TreeM, first_valid_id))))
                {
                   size_form_par = tree_helper::size(TreeM, tree_var); // we only need type conversion and not size conversion

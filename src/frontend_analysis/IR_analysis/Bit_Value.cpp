@@ -1413,6 +1413,10 @@ void Bit_Value::initialize()
                   {
                      best[ssa_node_id] = create_u_bitstring(1);
                   }
+                  else if(GET_NODE(ga->op1)->get_kind() == extract_bit_expr_K)
+                  {
+                     best[ssa_node_id] = create_u_bitstring(1);
+                  }
                   else
                   {
                      auto u_string = create_u_bitstring(tree_helper::Size(GET_NODE(ga->op0)));

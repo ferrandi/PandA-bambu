@@ -1630,6 +1630,41 @@ begin
         </component_o>
       </circuit>
     </cell>
+    <cell>
+      <name>extract_bit_expr_FU</name>
+      <operation operation_name="extract_bit_expr" />
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+      <circuit>
+        <component_o id="extract_bit_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2019 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="extract_bit_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="extract_bit_expr_FU in1 in2" VERILOG_PROVIDED="
+    assign out1 = (in1 &gt;&gt; in2)&amp;1;
+" VHDL_PROVIDED=
+"begin
+  process(in1, in2)
+  begin
+    out1 &lt;= shift_right(unsigned(in1), to_integer(unsigned(in2)))(0);
+  end process;
+"/>
+        </component_o>
+      </circuit>
+    </cell>
     <template>
       <name>ui_negate_expr_FU</name>
       <operation operation_name="negate_expr"  supported_types="UINT:*|VECTOR_BOOL:*" />

@@ -224,14 +224,14 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
       unsigned int bitwidth_values = tree_helper::Size(ga->op0);
       if(GetPointer<binary_expr>(GET_NODE(ga->op1)))
          bitwidth_values = std::max(bitwidth_values, tree_helper::Size(GetPointer<binary_expr>(GET_NODE(ga->op1))->op0));
-      if(parameters->IsParameter("CSE_size") and bitwidth_values < parameters->GetParameter<unsigned int>("CSE_size"))
+      tree_nodeRef right_part = GET_NODE(ga->op1);
+      enum kind op_kind = right_part->get_kind();
+      if(op_kind != extract_bit_expr_K and op_kind != lut_expr_K and parameters->IsParameter("CSE_size") and bitwidth_values < parameters->GetParameter<unsigned int>("CSE_size"))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: too small");
          return tree_nodeRef();
       }
-      tree_nodeRef right_part = GET_NODE(ga->op1);
       unsigned int right_part_index = GET_INDEX_NODE(ga->op1);
-      enum kind op_kind = right_part->get_kind();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Right part type: " + right_part->get_kind_text());
 
       /// check for LOADs, STOREs, MEMSET, MEMCPY, etc. etc.
@@ -332,6 +332,26 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: null");
             return tree_nodeRef();
          }
+      }
+      else if(GetPointer<lut_expr>(right_part))
+      {
+         auto* le = GetPointer<lut_expr>(right_part);
+         ins.push_back(GET_INDEX_NODE(le->op0));
+         ins.push_back(GET_INDEX_NODE(le->op1));
+         if(le->op2)
+            ins.push_back(GET_INDEX_NODE(le->op2));
+         if(le->op3)
+            ins.push_back(GET_INDEX_NODE(le->op3));
+         if(le->op4)
+            ins.push_back(GET_INDEX_NODE(le->op4));
+         if(le->op5)
+            ins.push_back(GET_INDEX_NODE(le->op5));
+         if(le->op6)
+            ins.push_back(GET_INDEX_NODE(le->op6));
+         if(le->op7)
+            ins.push_back(GET_INDEX_NODE(le->op7));
+         if(le->op8)
+            ins.push_back(GET_INDEX_NODE(le->op8));
       }
       else
       {

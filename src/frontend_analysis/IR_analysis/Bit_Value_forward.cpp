@@ -1586,6 +1586,76 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "res: " + bitstring_to_string(res));
       return res;
    }
+   else if(op_kind == extract_bit_expr_K)
+   {
+      res = create_u_bitstring(1);
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation extract_bit_expr: " + STR(output_uid) + " = SSAVAR >> constBitPos");
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "res: " + bitstring_to_string(res));
+      return res;
+      auto* operation = GetPointer<extract_bit_expr>(GET_NODE(ga->op1));
+      std::deque<bit_lattice> arg1_bitstring;
+      unsigned int arg1_uid = 0;
+      if(GET_NODE(operation->op0)->get_kind() == ssa_name_K)
+      {
+         arg1_uid = GET_INDEX_NODE(operation->op0);
+         if(current.find(arg1_uid) == current.end())
+            arg1_bitstring = create_u_bitstring(1);
+         else
+            arg1_bitstring = current.at(arg1_uid);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, first argument is ssa with bitstring -> " + bitstring_to_string(arg1_bitstring));
+      }
+      else if(GET_NODE(operation->op0)->get_kind() == integer_cst_K)
+      {
+         arg1_uid = GET_INDEX_NODE(operation->op0);
+         THROW_ASSERT(best.find(arg1_uid) != best.end(), "unexpected condition");
+         arg1_bitstring = best.at(arg1_uid);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<integer_cst>(GET_NODE(operation->op0))->value) + " : " + bitstring_to_string(arg1_bitstring));
+      }
+      else
+         return res;
+
+      if(GET_NODE(operation->op1)->get_kind() == ssa_name_K)
+      {
+         res = create_u_bitstring(1);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation: " + STR(output_uid) + " = " + STR(arg1_uid) + " >> " + STR(GET_INDEX_NODE(operation->op1)));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "res: " + bitstring_to_string(res));
+      }
+      else if(GET_NODE(operation->op1)->get_kind() == integer_cst_K)
+      {
+         auto* const2 = GetPointer<integer_cst>(GET_NODE(operation->op1));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, second argument is constant -> " + STR(const2->value));
+         if(const2->value < 0)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, negative right shift is undefined behavior");
+            res.push_back(bit_lattice::X);
+            return res;
+         }
+
+         if(arg1_bitstring.size() <= static_cast<size_t>(const2->value))
+         {
+            if(tree_helper::is_int(TM, arg1_uid))
+               res.push_front(arg1_bitstring.front());
+            else
+               res.push_front(bit_lattice::ZERO);
+         }
+         else
+         {
+            size_t new_lenght = arg1_bitstring.size() - static_cast<size_t>(const2->value);
+            std::deque<bit_lattice>::const_iterator arg1_it = arg1_bitstring.begin();
+            while(res.size() < new_lenght)
+            {
+               res.push_back(*arg1_it);
+               ++arg1_it;
+            }
+         }
+         while(res.size() > 1)
+            res.pop_front();
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation: " + STR(output_uid) + " = " + STR(arg1_uid) + " extract bit " + STR(GET_INDEX_NODE(operation->op1)));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "res: " + bitstring_to_string(arg1_bitstring) + ">>" + STR(const2->value) + " => " + bitstring_to_string(res));
+      }
+      else
+         return res;
+   }
 #endif
 #if 1
    else if(op_kind == rrotate_expr_K)

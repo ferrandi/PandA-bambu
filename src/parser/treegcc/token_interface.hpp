@@ -537,6 +537,7 @@ enum class TreeVocabularyTokenTypes_TokenEnum
    TOK_WIDEN_SUM_EXPR,
    TOK_WIDEN_MULT_EXPR,
    TOK_MULT_HIGHPART_EXPR,
+   TOK_EXTRACT_BIT_EXPR,
    TOK_ASSERT_EXPR,
    TOK_SYMBOL,
    TOK_BASE,

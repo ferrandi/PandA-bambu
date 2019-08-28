@@ -726,7 +726,7 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index) const
    {
       const auto right = GET_NODE(ga->op1);
       /// currently all the operations introduced after the allocation has been performed are bounded
-      THROW_ASSERT(GetPointer<cst_node>(right) or right->get_kind() == vec_cond_expr_K or right->get_kind() == nop_expr_K or right->get_kind() == lut_expr_K or right->get_kind() == lshift_expr_K or right->get_kind() == rshift_expr_K or
+      THROW_ASSERT(GetPointer<cst_node>(right) or right->get_kind() == vec_cond_expr_K or right->get_kind() == nop_expr_K or right->get_kind() == lut_expr_K or right->get_kind() == extract_bit_expr_K or right->get_kind() == lshift_expr_K or right->get_kind() == rshift_expr_K or
                        right->get_kind() == bit_xor_expr_K or right->get_kind() == bit_not_expr_K or right->get_kind() == bit_ior_concat_expr_K or right->get_kind() == bit_ior_expr_K or right->get_kind() == bit_and_expr_K or
                        right->get_kind() == convert_expr_K or right->get_kind() == truth_and_expr_K or right->get_kind() == truth_or_expr_K or right->get_kind() == truth_not_expr_K or right->get_kind() == cond_expr_K or
                        right->get_kind() == ternary_plus_expr_K or right->get_kind() == ternary_mp_expr_K or right->get_kind() == ternary_pm_expr_K or right->get_kind() == ternary_mm_expr_K or right->get_kind() == ssa_name_K or
@@ -1101,7 +1101,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       if(current_op == "cond_expr" || current_op == "vec_cond_expr") /// no constant characterization for cond expr
          is_second_constant = true;
       if(id == 0 || ((tree_helper::is_constant(TreeM, id) || tree_helper::is_concat_bit_ior_expr(TreeM, g->CGetOpNodeInfo(node)->GetNodeId())) && !is_constrained && !is_second_constant && vars_read.size() != 1 && current_op != "mult_expr" &&
-                     current_op != "widen_mult_expr" && (index == 1 || current_op != "lut_expr")))
+                     current_op != "widen_mult_expr" && (index == 1 || current_op != "lut_expr" || current_op != "extract_bit_expr")))
       {
          info->input_prec.push_back(0);
          info->real_input_nelem.push_back(0);
@@ -1606,7 +1606,7 @@ unsigned int AllocationInformation::GetCycleLatency(const unsigned int operation
          const auto right = GET_NODE(ga->op1);
          if(right->get_kind() == truth_and_expr_K or right->get_kind() == truth_or_expr_K or right->get_kind() == truth_not_expr_K or right->get_kind() == cond_expr_K or right->get_kind() == vec_cond_expr_K or right->get_kind() == ternary_plus_expr_K or
             right->get_kind() == ternary_mp_expr_K or right->get_kind() == ternary_pm_expr_K or right->get_kind() == ternary_mm_expr_K or right->get_kind() == ssa_name_K or right->get_kind() == integer_cst_K or right->get_kind() == rshift_expr_K or
-            right->get_kind() == lshift_expr_K or right->get_kind() == plus_expr_K or right->get_kind() == minus_expr_K or right->get_kind() == bit_and_expr_K or right->get_kind() == bit_ior_concat_expr_K or right->get_kind() == lut_expr_K or
+            right->get_kind() == lshift_expr_K or right->get_kind() == plus_expr_K or right->get_kind() == minus_expr_K or right->get_kind() == bit_and_expr_K or right->get_kind() == bit_ior_concat_expr_K or right->get_kind() == lut_expr_K or right->get_kind() == extract_bit_expr_K or
             right->get_kind() == convert_expr_K or right->get_kind() == nop_expr_K)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latency of not allocated fu is 1");
@@ -1956,6 +1956,11 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
          return std::pair<double, double>(op_execution_time, 0.0);
       }
       if(ga and GET_NODE(ga->op1)->get_kind() == bit_ior_concat_expr_K)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
+         return std::pair<double, double>(0, 0.0);
+      }
+      if(ga and GET_NODE(ga->op1)->get_kind() == extract_bit_expr_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
          return std::pair<double, double>(0, 0.0);

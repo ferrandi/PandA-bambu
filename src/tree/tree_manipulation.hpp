@@ -203,6 +203,8 @@ class tree_manipulation
    tree_nodeRef create_lut_expr(const tree_nodeRef& type, const tree_nodeRef& op0, const tree_nodeRef& op1, const tree_nodeRef& op2, const tree_nodeRef& op3, const tree_nodeRef& op4, const tree_nodeRef& op5, const tree_nodeRef& op6,
                                 const tree_nodeRef& op7, const tree_nodeRef& op8, const std::string& srcp) const;
 
+   tree_nodeRef create_extract_bit_expr(const tree_nodeRef& op0, const tree_nodeRef& op1, const std::string& srcp) const;
+
    /// CONST_OBJ_TREE_NODES
    /** Function used to create a integer_cst node.
     * @param  type is the type of the node.

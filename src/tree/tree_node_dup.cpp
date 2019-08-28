@@ -586,6 +586,8 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn)
          CREATE_TREE_NODE_CASE_BODY(omp_critical_pragma, node_id)
       case gimple_multi_way_if_K:
          CREATE_TREE_NODE_CASE_BODY(gimple_multi_way_if, node_id)
+      case extract_bit_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(extract_bit_expr, node_id)
       case do_stmt_K:
       case if_stmt_K:
       case for_stmt_K:

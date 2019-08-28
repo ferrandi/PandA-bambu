@@ -623,6 +623,27 @@ tree_nodeRef tree_manipulation::create_lut_expr(const tree_nodeRef& type, const 
 
    return node_ref;
 }
+
+tree_nodeRef tree_manipulation::create_extract_bit_expr(const tree_nodeRef& op0, const tree_nodeRef& op1, const std::string& srcp) const
+{
+   auto boolType = create_boolean_type();
+   THROW_ASSERT(op0->get_kind() == tree_reindex_K, "Operand 0 node is not a tree reindex");
+   THROW_ASSERT(op1->get_kind() == tree_reindex_K, "Operand 1 node is not a tree reindex");
+   THROW_ASSERT(!srcp.empty(), "It requires a non empty string");
+   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
+   unsigned int node_nid = this->TreeM->new_tree_node_id();
+
+   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(boolType));
+   IR_schema[TOK(TOK_OP0)] = STR(GET_INDEX_NODE(op0));
+   IR_schema[TOK(TOK_OP1)] = STR(GET_INDEX_NODE(op1));
+   IR_schema[TOK(TOK_SRCP)] = srcp;
+
+   this->TreeM->create_tree_node(node_nid, extract_bit_expr_K, IR_schema);
+   tree_nodeRef node_ref = TreeM->GetTreeReindex(node_nid);
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created node " + STR(GET_INDEX_NODE(node_ref)) + " (" + GET_NODE(node_ref)->get_kind_text() + ")");
+
+   return node_ref;
+}
 /// CONST_OBJ_TREE_NODES
 
 /// Create an integer_cst node

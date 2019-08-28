@@ -1778,6 +1778,38 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                      }
                   }
                }
+               else if(GET_NODE(ga->op1)->get_kind() == extract_bit_expr_K)
+               {
+                  const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
+                  auto* ebe = GetPointer<extract_bit_expr>(GET_NODE(ga->op1));
+                  THROW_ASSERT(GET_NODE(ebe->op1)->get_kind() == integer_cst_K, "unexpected condition");
+                  auto int_const = GetPointer<integer_cst>(GET_NODE(ebe->op1));
+                  auto ebe_op0_ssa = GetPointer<ssa_name>(GET_NODE(ebe->op0));
+                  if(ebe_op0_ssa)
+                  {
+                     if(int_const->value == 0)
+                     {
+                        auto defStmt = GET_NODE(ebe_op0_ssa->CGetDefStmt());
+                        if(defStmt->get_kind() == gimple_assign_K)
+                        {
+                           const auto prev_ga = GetPointer<const gimple_assign>(defStmt);
+                           if(GET_NODE(prev_ga->op1)->get_kind() == nop_expr_K)
+                           {
+                              auto ne = GetPointer<nop_expr>(GET_NODE(prev_ga->op1));
+                              if(tree_helper::is_bool(TM, GET_INDEX_NODE(ne->op)))
+                              {
+                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
+                                 tree_nodeRef bit_mask_constant_node = TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type));
+                                 auto masking = IRman->create_binary_operation(ebe->type, ne->op, bit_mask_constant_node, srcp_default, truth_and_expr_K);
+                                 TM->ReplaceTreeNode(stmt, ga->op1, masking);///replaced with redundant code to restart lut_transformation
+                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
+                                 modified = true;
+                              }
+                           }
+                        }
+                     }
+                  }
+               }
             }
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Statement analyzed " + GET_NODE(stmt)->ToString());

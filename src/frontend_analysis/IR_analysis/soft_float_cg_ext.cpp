@@ -571,6 +571,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                case vec_extractodd_expr_K:
                case vec_interleavehigh_expr_K:
                case vec_interleavelow_expr_K:
+               case extract_bit_expr_K:
                {
                   add_call = false;
                   break;

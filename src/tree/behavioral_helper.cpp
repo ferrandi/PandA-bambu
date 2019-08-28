@@ -504,6 +504,7 @@ std::string BehavioralHelper::print_init(unsigned int var, const var_pp_functorC
       case CASE_TERNARY_EXPRESSION:
       case CASE_TYPE_NODES:
       case target_expr_K:
+      case extract_bit_expr_K:
       default:
          THROW_ERROR("Currently not supported nodeID " + boost::lexical_cast<std::string>(var));
    }
@@ -1466,6 +1467,16 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          res += "((" + tree_helper::print_type(TM, return_index) + ")(" + print_node(right_op, v, vppf) + "))";
          break;
       }
+      case extract_bit_expr_K:
+      {
+         auto* be = GetPointer<binary_expr>(node);
+         unsigned int left_op = GET_INDEX_NODE(be->op0);
+         unsigned int right_op = GET_INDEX_NODE(be->op1);
+         res += "(_Bool)((" + print_node(left_op, v, vppf);
+         res += std::string(" >> ");
+         res += print_node(right_op, v, vppf) + ") & 1)";
+         break;
+      }
       case pointer_plus_expr_K:
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
@@ -1785,6 +1796,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                   case vec_interleavehigh_expr_K:
                   case vec_interleavelow_expr_K:
                   case error_mark_K:
+                  case extract_bit_expr_K:
                   case CASE_CPP_NODES:
                   case CASE_CST_NODES:
                   case CASE_DECL_NODES:
@@ -4972,6 +4984,7 @@ unsigned int BehavioralHelper::get_intermediate_var(unsigned int obj) const
       case vec_interleavelow_expr_K:
       case target_expr_K:
       case error_mark_K:
+      case extract_bit_expr_K:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
       case CASE_DECL_NODES:
@@ -5612,6 +5625,7 @@ bool BehavioralHelper::CanBeSpeculated(const unsigned int node_index) const
             case round_mod_expr_K:
             case trunc_mod_expr_K:
             case target_expr_K:
+            case extract_bit_expr_K:
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because it is a gimple_assign with " + GET_NODE(ga->op1)->get_kind_text() + " in right part of assignment");
                return true;

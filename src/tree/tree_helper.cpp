@@ -3551,6 +3551,7 @@ static unsigned int check_for_simple_pointer_arithmetic(const tree_nodeRef& node
       case vec_extractodd_expr_K:
       case vec_interleavehigh_expr_K:
       case vec_interleavelow_expr_K:
+      case extract_bit_expr_K:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
       case const_decl_K:
@@ -4126,6 +4127,7 @@ unsigned int tree_helper::get_base_index(const tree_managerConstRef& TM, const u
       case vec_unpack_float_lo_expr_K:
       case error_mark_K:
       case paren_expr_K:
+      case extract_bit_expr_K:
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:
       case CASE_GIMPLE_NODES:
@@ -4402,6 +4404,7 @@ bool tree_helper::is_fully_resolved(const tree_managerConstRef& TM, const unsign
       case vec_unpack_float_hi_expr_K:
       case vec_unpack_float_lo_expr_K:
       case error_mark_K:
+      case extract_bit_expr_K:
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:
       case CASE_GIMPLE_NODES:
@@ -5083,6 +5086,7 @@ std::string tree_helper::op_symbol(const tree_node* op)
       case with_size_expr_K:
       case error_mark_K:
       case paren_expr_K:
+      case extract_bit_expr_K:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
       case CASE_DECL_NODES:
@@ -6787,6 +6791,7 @@ bool tree_helper::is_packed_access(const tree_managerConstRef& TreeM, unsigned i
       case array_range_ref_K:
       case target_expr_K:
       case error_mark_K:
+      case extract_bit_expr_K:
       {
          res = false;
          break;
@@ -7224,6 +7229,7 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
             case vec_interleavehigh_expr_K:
             case vec_interleavelow_expr_K:
             case error_mark_K:
+            case extract_bit_expr_K:
             case CASE_CPP_NODES:
             case CASE_FAKE_NODES:
             case CASE_GIMPLE_NODES:
@@ -7512,6 +7518,7 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
       case vec_interleavehigh_expr_K:
       case vec_interleavelow_expr_K:
       case error_mark_K:
+      case extract_bit_expr_K:
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:
       case CASE_GIMPLE_NODES:

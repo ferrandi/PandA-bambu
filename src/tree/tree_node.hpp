@@ -526,7 +526,8 @@ class TreeNodeMap : public std::map<tree_nodeRef, value, TreeNodeSorter>
    case vec_extracteven_expr_K:    \
    case vec_extractodd_expr_K:     \
    case vec_interleavehigh_expr_K: \
-   case vec_interleavelow_expr_K
+   case vec_interleavelow_expr_K:  \
+   case extract_bit_expr_K
 
 /**
  * This macro collects all case labels for ternary_expr objects.
@@ -6081,5 +6082,13 @@ struct lut_expr : public expr_node
       GETID(op8)
    };
 };
+
+/**
+ * @brief extract_bit_expr extracts a bit value from a ssa/integer const
+ * op0 is the ssa variable
+ * op1 is the bit position
+ * return a boolean value
+ */
+CREATE_TREE_NODE_CLASS(extract_bit_expr, binary_expr);
 
 #endif

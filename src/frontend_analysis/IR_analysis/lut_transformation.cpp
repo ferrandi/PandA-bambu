@@ -168,31 +168,7 @@ bool lut_transformation::CHECK_BIN_EXPR_BOOL_SIZE(binary_expr* be) const
    auto type_id1 = b1->index;
    if(tree_helper::is_real(TM, type_id1) || tree_helper::is_a_complex(TM, type_id1) || tree_helper::is_a_vector(TM, type_id1) || tree_helper::is_a_struct(TM, type_id1))
       return false;
-   if(be->get_kind() == bit_and_expr_K)
-   {
-      if(GET_NODE(be->op0)->get_kind() == ssa_name_K && !tree_helper::is_bool(TM, GET_INDEX_NODE(be->op0)))
-      {
-         auto ssa = GetPointer<const ssa_name>(GET_NODE(be->op0));
-         if(!ssa->min || !ssa->max)
-            return false;
-         if(GetPointer<integer_cst>(GET_NODE(ssa->min))->value != 0 || GetPointer<integer_cst>(GET_NODE(ssa->max))->value != 1)
-            return false;
-      }
-      if(GET_NODE(be->op1)->get_kind() == ssa_name_K && !tree_helper::is_bool(TM, GET_INDEX_NODE(be->op1)))
-      {
-         auto ssa = GetPointer<const ssa_name>(GET_NODE(be->op1));
-         auto type_id = GET_INDEX_NODE(ssa->type);
-         if(tree_helper::is_real(TM, type_id) || tree_helper::is_a_complex(TM, type_id) || tree_helper::is_a_vector(TM, type_id) || tree_helper::is_a_struct(TM, type_id))
-            return false;
-         if(!ssa->min || !ssa->max)
-            return false;
-         if(GetPointer<integer_cst>(GET_NODE(ssa->min))->value != 0 || GetPointer<integer_cst>(GET_NODE(ssa->max))->value != 1)
-            return false;
-      }
-      return (tree_helper::Size(GET_NODE((be)->op0)) == 1 && tree_helper::Size(GET_NODE((be)->op1)) == 1);
-   }
-   else
-      return (tree_helper::Size(GET_NODE((be)->op0)) == 1 && tree_helper::Size(GET_NODE((be)->op1)) == 1);
+   return (tree_helper::Size(GET_NODE((be)->op0)) == 1 && tree_helper::Size(GET_NODE((be)->op1)) == 1);
 }
 bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int max) const
 {
@@ -216,11 +192,12 @@ bool lut_transformation::cannotBeLUT(tree_nodeRef op) const
    auto op_node = GET_NODE(op);
    auto code = op_node->get_kind();
 
-   return not ((GetPointer<truth_not_expr>(op_node) && CHECK_NOT_EXPR_SIZE(GetPointer<truth_not_expr>(op_node))) ||
-          (GetPointer<bit_not_expr>(op_node) && CHECK_NOT_EXPR_SIZE(GetPointer<bit_not_expr>(op_node))) ||
-          (GetPointer<cond_expr>(op_node) && CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(op_node))) ||
-          (VECT_CONTAINS(lutBooleanExpressibleOperations, code) && GetPointer<binary_expr>(op_node) && CHECK_BIN_EXPR_BOOL_SIZE(GetPointer<binary_expr>(op_node))) ||
-          (VECT_CONTAINS(lutIntegerExpressibleOperations, code) && GetPointer<binary_expr>(op_node) && CHECK_BIN_EXPR_INT_SIZE(GetPointer<binary_expr>(op_node), MAX_LUT_INT_SIZE)));
+   return not (GetPointer<lut_expr>(op_node) ||
+              (GetPointer<truth_not_expr>(op_node) && CHECK_NOT_EXPR_SIZE(GetPointer<truth_not_expr>(op_node))) ||
+              (GetPointer<bit_not_expr>(op_node) && CHECK_NOT_EXPR_SIZE(GetPointer<bit_not_expr>(op_node))) ||
+              (GetPointer<cond_expr>(op_node) && CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(op_node))) ||
+              (VECT_CONTAINS(lutBooleanExpressibleOperations, code) && GetPointer<binary_expr>(op_node) && CHECK_BIN_EXPR_BOOL_SIZE(GetPointer<binary_expr>(op_node))) ||
+              (VECT_CONTAINS(lutIntegerExpressibleOperations, code) && GetPointer<binary_expr>(op_node) && CHECK_BIN_EXPR_INT_SIZE(GetPointer<binary_expr>(op_node), MAX_LUT_INT_SIZE)));
 }
 
 #pragma endregion
@@ -690,51 +667,14 @@ static std::vector<bool> IntegerToBitArray(long long int n, size_t size)
 
 tree_nodeRef lut_transformation::CreateBitSelectionNodeOrCast(const tree_nodeRef source, int index, unsigned int BB_index, std::vector<tree_nodeRef>& prev_stmts_to_add)
 {
-   const unsigned int op_type_id = tree_helper::get_type_index(TM, GET_INDEX_NODE(source));
-   tree_nodeRef op_type = TM->CGetTreeReindex(op_type_id);
    const auto indexType = tree_man->CreateDefaultUnsignedLongLongInt();
+   tree_nodeRef bit_pos_constant = TM->CreateUniqueIntegerCst(index, GET_INDEX_NODE(indexType));
    const std::string srcp_default("built-in:0:0");
+   tree_nodeRef eb_op = tree_man->create_extract_bit_expr(source, bit_pos_constant, srcp_default);
    auto boolType = tree_man->create_boolean_type();
-   tree_nodeRef resVar0;
-   if(index)
-   {
-      tree_nodeRef shift_by_constant = TM->CreateUniqueIntegerCst(index, GET_INDEX_NODE(indexType));
-      tree_nodeRef rshift_op = tree_man->create_binary_operation(op_type, source, shift_by_constant, srcp_default, rshift_expr_K);
-      tree_nodeRef rshift_ga = tree_man->CreateGimpleAssign(op_type, tree_nodeRef(), tree_nodeRef(), rshift_op, BB_index, srcp_default);
-      prev_stmts_to_add.push_back(rshift_ga);
-      resVar0 = GetPointer<const gimple_assign>(GET_CONST_NODE(rshift_ga))->op0;
-   }
-   else
-      resVar0 = source;
-   auto addBitWiseAnd = [&]() -> bool {
-      if(GET_NODE(resVar0)->get_kind() == ssa_name_K)
-      {
-         auto ssa = GetPointer<const ssa_name>(GET_CONST_NODE(resVar0));
-         if(!ssa->min || !ssa->max)
-            return true;
-         if(GetPointer<integer_cst>(GET_NODE(ssa->min))->value == 0 && GetPointer<integer_cst>(GET_NODE(ssa->max))->value == 1)
-            return false;
-         else
-            return true;
-      }
-      else
-         return true;
-   }();
-
-   tree_nodeRef resVar1;
-   if(addBitWiseAnd)
-   {
-      tree_nodeRef constant_one = TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(op_type));
-      tree_nodeRef bit_wise_and = tree_man->create_binary_operation(op_type, resVar0, constant_one, srcp_default, bit_and_expr_K);
-      tree_nodeRef bit_wise_and_ga = tree_man->CreateGimpleAssign(op_type, TM->CreateUniqueIntegerCst(0, op_type_id), TM->CreateUniqueIntegerCst(1, op_type_id), bit_wise_and, BB_index, srcp_default);
-      prev_stmts_to_add.push_back(bit_wise_and_ga);
-      resVar1 = GetPointer<const gimple_assign>(GET_CONST_NODE(bit_wise_and_ga))->op0;
-   }
-   else
-      resVar1 = resVar0;
-   tree_nodeRef ga_nop = tree_man->CreateNopExpr(resVar1, boolType, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(boolType)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(boolType)));
-   prev_stmts_to_add.push_back(ga_nop);
-   return GetPointer<const gimple_assign>(GET_CONST_NODE(ga_nop))->op0;
+   tree_nodeRef eb_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(boolType)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(boolType)), eb_op, BB_index, srcp_default);
+   prev_stmts_to_add.push_back(eb_ga);
+   return GetPointer<const gimple_assign>(GET_CONST_NODE(eb_ga))->op0;
 }
 
 static klut_network_fn_v GetIntegerNodeCreationFunction(enum kind code)
@@ -1328,7 +1268,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          bool isSigned = tree_helper::is_int(TM, GET_INDEX_NODE(binaryExpression->op0));
          res = (klut_e.*nodeCreateFn)(op1, op2, isSigned);
          nodeRefToSignalBus[GET_INDEX_NODE(gimpleAssign->op0)] = res;
-
+         if(res.size() == 1)
+            nodeRefToSignal[GET_INDEX_NODE(gimpleAssign->op0)] = res.at(0);
          if(this->CheckIfPO(gimpleAssign))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is PO");
@@ -1598,6 +1539,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CSE_STEP, SAME_FUNCTION));
          break;
       case(INVALIDATION_RELATIONSHIP):
          if(GetStatus() == DesignFlowStep_Status::SUCCESS)

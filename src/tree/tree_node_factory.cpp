@@ -578,6 +578,8 @@ void tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_no
          CREATE_TREE_NODE_CASE_BODY(widen_mult_expr, node_id)
       case gimple_nop_K:
          CREATE_TREE_NODE_CASE_BODY(gimple_nop, node_id)
+      case extract_bit_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(extract_bit_expr, node_id)
       case assert_expr_K:
       case do_stmt_K:
       case for_stmt_K:
