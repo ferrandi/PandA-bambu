@@ -32,13 +32,8 @@
  */
 /**
  * @file lut_transformation.hpp
- * @brief recognize lut expressions.
- * @author Di Simone Jacopo
- * @author  Cappello Paolo
- * @author Inajjar Ilyas
- * @author Angelo Gallarello
- * @author  Stefano Longari
- * Marco Lattuada <marco.lattuada@polimi.it>
+ * @brief identify and optmize lut expressions.
+ * Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
 #ifndef LUT_TRANSFORMATION_HPP
@@ -89,11 +84,20 @@ class lut_transformation : public FunctionFrontendFlowStep
 #if HAVE_STDCXX_17
 
    /// The list of all operation that can be converted to a lut.
-   const std::vector<enum kind> lutExpressibleOperations = {bit_and_expr_K, truth_and_expr_K, bit_ior_expr_K, truth_or_expr_K, bit_xor_expr_K, truth_xor_expr_K, truth_not_expr_K, eq_expr_K,
-                                                            ge_expr_K,      lut_expr_K,       cond_expr_K,    gt_expr_K,       le_expr_K,      lt_expr_K,        ne_expr_K};
+   const std::vector<enum kind> lutBooleanExpressibleOperations = {bit_and_expr_K, truth_and_expr_K, bit_ior_expr_K, truth_or_expr_K, bit_xor_expr_K, truth_xor_expr_K, eq_expr_K,
+                                                                   ge_expr_K,      lut_expr_K,       cond_expr_K,    gt_expr_K,       le_expr_K,      lt_expr_K,        ne_expr_K};
 
-   bool CHECK_BIN_EXPR_BOOL_SIZE(binary_expr* be);
-   bool CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int max);
+   const std::vector<enum kind> lutIntegerExpressibleOperations = {eq_expr_K, ne_expr_K, lt_expr_K, le_expr_K, gt_expr_K, ge_expr_K};
+
+   bool CHECK_BIN_EXPR_BOOL_SIZE(binary_expr* be) const;
+   bool CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int max) const;
+   /**
+    * @brief cannotBeLUT returns true in case the op is an operation that cannot be translated in a LUT
+    * @param op is an operation
+    * @return true in case op cannot be translated in a LUT, false otherwise.
+    */
+   bool cannotBeLUT(tree_nodeRef op) const;
+
    /**
     * Checks if the provided `gimple_assign` is a primary output of lut network.
     *
@@ -102,6 +106,12 @@ class lut_transformation : public FunctionFrontendFlowStep
     */
    bool CheckIfPO(gimple_assign* gimpleAssign);
 
+   /**
+    * Checks if the ssa variable is a primary input of lut network.
+    *
+    * @param in is the ssa variable to check
+    * @return whether the provided ssa variable is a primary input
+    */
    bool CheckIfPI(tree_nodeRef in, unsigned int BB_index);
 
    bool ProcessBasicBlock(std::pair<unsigned int, blocRef> block);

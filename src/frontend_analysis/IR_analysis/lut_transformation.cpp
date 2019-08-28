@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -92,6 +92,7 @@
 #include <mockturtle/algorithms/node_resynthesis.hpp>
 #include <mockturtle/algorithms/node_resynthesis/dsd.hpp>
 #include <mockturtle/algorithms/node_resynthesis/shannon.hpp>
+#include <mockturtle/generators/arithmetic.hpp>
 #include <mockturtle/io/write_bench.hpp>
 #include <mockturtle/networks/aig.hpp>
 #include <mockturtle/networks/klut.hpp>
@@ -157,8 +158,7 @@
 
 #pragma region Macros declaration
 
-#define IS_GIMPLE_ASSIGN(it) (GET_NODE(*it)->get_kind() == gimple_assign_K)
-bool lut_transformation::CHECK_BIN_EXPR_BOOL_SIZE(binary_expr* be)
+bool lut_transformation::CHECK_BIN_EXPR_BOOL_SIZE(binary_expr* be) const
 {
    auto b0 = tree_helper::CGetType(GET_CONST_NODE(be->op0));
    auto type_id0 = b0->index;
@@ -194,7 +194,7 @@ bool lut_transformation::CHECK_BIN_EXPR_BOOL_SIZE(binary_expr* be)
    else
       return (tree_helper::Size(GET_NODE((be)->op0)) == 1 && tree_helper::Size(GET_NODE((be)->op1)) == 1);
 }
-bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int max)
+bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int max) const
 {
    auto b0 = tree_helper::CGetType(GET_CONST_NODE(be->op0));
    auto type_id0 = b0->index;
@@ -204,37 +204,59 @@ bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int m
    auto type_id1 = b1->index;
    if(tree_helper::is_real(TM, type_id1) || tree_helper::is_a_complex(TM, type_id1) || tree_helper::is_a_vector(TM, type_id1) || tree_helper::is_a_struct(TM, type_id1))
       return false;
-   return (tree_helper::Size(GET_NODE((be)->op0)) <= max && tree_helper::Size(GET_NODE((be)->op1)) <= max);
+   return (tree_helper::Size(GET_NODE((be)->op0)) <= max && tree_helper::Size(GET_NODE((be)->op1)) <= max) || GET_CONST_NODE(be->op0)->get_kind() == integer_cst_K || GET_CONST_NODE(be->op1)->get_kind() == integer_cst_K ;
 }
 #define CHECK_COND_EXPR_SIZE(ce) (tree_helper::Size(GET_NODE((ce)->op1)) == 1 && tree_helper::Size(GET_NODE((ce)->op2)) == 1)
 #define CHECK_NOT_EXPR_SIZE(ne) (tree_helper::Size(GET_NODE((ne)->op)) == 1)
 
 #define VECT_CONTAINS(v, x) (std::find(v.begin(), v.end(), x) != v.end())
 
+bool lut_transformation::cannotBeLUT(tree_nodeRef op) const
+{
+   auto op_node = GET_NODE(op);
+   auto code = op_node->get_kind();
+
+   return not ((GetPointer<truth_not_expr>(op_node) && CHECK_NOT_EXPR_SIZE(GetPointer<truth_not_expr>(op_node))) ||
+          (GetPointer<bit_not_expr>(op_node) && CHECK_NOT_EXPR_SIZE(GetPointer<bit_not_expr>(op_node))) ||
+          (GetPointer<cond_expr>(op_node) && CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(op_node))) ||
+          (VECT_CONTAINS(lutBooleanExpressibleOperations, code) && GetPointer<binary_expr>(op_node) && CHECK_BIN_EXPR_BOOL_SIZE(GetPointer<binary_expr>(op_node))) ||
+          (VECT_CONTAINS(lutIntegerExpressibleOperations, code) && GetPointer<binary_expr>(op_node) && CHECK_BIN_EXPR_INT_SIZE(GetPointer<binary_expr>(op_node), MAX_LUT_INT_SIZE)));
+}
+
 #pragma endregion
 
 #pragma region Types declaration
 
 /**
- * `aig_network_ext` class provides operations derived from the one already existing in `mockturtle::klut_network`.
+ * `klut_network_ext` class provides operations derived from the one already existing in `mockturtle::klut_network`.
  */
 class klut_network_ext : public mockturtle::klut_network
 {
  private:
-   void fix_inputs_size(std::vector<signal>* a, std::vector<signal>* b, bool fill_up_value)
+   void fix_inputs_size(std::vector<signal>* a, std::vector<signal>* b, bool signedValues)
    {
       if(a->size() > b->size())
       {
-         for(size_t i = 0; i < a->size() - b->size(); ++i)
+         auto msbPos = b->size() - 1;
+         auto niter = a->size() - b->size();
+         for(size_t i = 0; i < niter; ++i)
          {
-            b->push_back(get_constant(fill_up_value));
+            if(signedValues)
+               b->push_back(b->at(msbPos));
+            else
+               b->push_back(this->get_constant(false));
          }
       }
       else if(a->size() < b->size())
       {
-         for(size_t i = 0; i < b->size() - a->size(); ++i)
+         auto msbPos = a->size() - 1;
+         auto niter = b->size() - a->size();
+         for(size_t i = 0; i < niter; ++i)
          {
-            a->push_back(get_constant(fill_up_value));
+            if(signedValues)
+               a->push_back(a->at(msbPos));
+            else
+               a->push_back(this->get_constant(false));
          }
       }
    }
@@ -247,22 +269,6 @@ class klut_network_ext : public mockturtle::klut_network
       for(int i = 0; i < bits; ++i)
       {
          for(int j = i + 1; j < bits; ++j)
-         {
-            kitty::set_bit(tt, j + i * bits);
-         }
-      }
-
-      return tt;
-   }
-
-   kitty::dynamic_truth_table create_le_tt(int bits)
-   {
-      kitty::dynamic_truth_table tt(bits * 2);
-      kitty::clear(tt);
-
-      for(int i = 0; i < bits; ++i)
-      {
-         for(int j = i; j < bits; ++j)
          {
             kitty::set_bit(tt, j + i * bits);
          }
@@ -309,20 +315,6 @@ class klut_network_ext : public mockturtle::klut_network
     */
    signal create_eq(signal const a, signal const b)
    {
-      if(this->is_constant(a))
-      {
-         if(a == this->get_constant(true))
-            return b;
-         else
-            return this->create_not(b);
-      }
-      if(this->is_constant(b))
-      {
-         if(b == this->get_constant(true))
-            return a;
-         else
-            return this->create_not(a);
-      }
       return this->create_not(this->create_xor(a, b));
    }
 
@@ -336,20 +328,6 @@ class klut_network_ext : public mockturtle::klut_network
     */
    signal create_ne(signal const a, signal const b)
    {
-      if(this->is_constant(a))
-      {
-         if(a == this->get_constant(false))
-            return b;
-         else
-            return this->create_not(b);
-      }
-      if(this->is_constant(b))
-      {
-         if(b == this->get_constant(false))
-            return a;
-         else
-            return this->create_not(a);
-      }
       return this->create_xor(a, b);
    }
 #pragma endregion
@@ -379,9 +357,8 @@ class klut_network_ext : public mockturtle::klut_network
    std::vector<signal> get_constant_v(std::vector<bool> bits)
    {
       std::vector<signal> outputs;
-      outputs.reserve(bits.size());
-
-      std::transform(bits.begin(), bits.end(), outputs.begin(), [&](const bool b) { return b == false ? get_constant(false) : create_not(get_constant(false)); });
+      for(auto b : bits)
+         outputs.push_back(b == false ? this->get_constant(false) : this->create_not(this->get_constant(false)));
 
       return outputs;
    }
@@ -422,15 +399,15 @@ class klut_network_ext : public mockturtle::klut_network
    std::vector<signal> create_not_v(std::vector<signal> const& a)
    {
       std::vector<signal> outputs;
-      std::transform(a.begin(), a.end(), std::back_inserter(outputs), [&](auto const& s) { return this->create_not(s); });
-
+      for(auto s: a)
+         outputs.push_back(this->create_not(s));
       return outputs;
    }
 
-   std::vector<signal> create_and_v(std::vector<signal> const a, std::vector<signal> const b)
+   std::vector<signal> create_and_v(std::vector<signal> const &a, std::vector<signal> const &b, bool signedValues)
    {
       std::vector<signal> a_c(a), b_c(b);
-      this->fix_inputs_size(&a_c, &b_c, false);
+      this->fix_inputs_size(&a_c, &b_c, signedValues);
 
       std::vector<signal> outputs;
       outputs.reserve(a_c.size());
@@ -439,10 +416,10 @@ class klut_network_ext : public mockturtle::klut_network
       return outputs;
    }
 
-   std::vector<signal> create_or_v(std::vector<signal> const a, std::vector<signal> const b)
+   std::vector<signal> create_or_v(std::vector<signal> const &a, std::vector<signal> const &b, bool signedValues)
    {
       std::vector<signal> a_c(a), b_c(b);
-      this->fix_inputs_size(&a_c, &b_c, false);
+      this->fix_inputs_size(&a_c, &b_c, signedValues);
 
       std::vector<signal> outputs;
       outputs.reserve(a_c.size());
@@ -451,10 +428,10 @@ class klut_network_ext : public mockturtle::klut_network
       return outputs;
    }
 
-   std::vector<signal> create_xor_v(std::vector<signal> const a, std::vector<signal> const b)
+   std::vector<signal> create_xor_v(std::vector<signal> const &a, std::vector<signal> const &b, bool signedValues)
    {
       std::vector<signal> a_c(a), b_c(b);
-      this->fix_inputs_size(&a_c, &b_c, false);
+      this->fix_inputs_size(&a_c, &b_c, signedValues);
 
       std::vector<signal> outputs;
       outputs.reserve(a_c.size());
@@ -463,88 +440,56 @@ class klut_network_ext : public mockturtle::klut_network
       return outputs;
    }
 
-   std::vector<signal> create_lt_v(std::vector<signal> const a, std::vector<signal> const b)
+   std::vector<signal> create_lt_v(std::vector<signal> const &a, std::vector<signal> const &b, bool signedValues)
    {
       std::vector<signal> a_c(a), b_c(b);
-      this->fix_inputs_size(&a_c, &b_c, false);
+      this->fix_inputs_size(&a_c, &b_c, signedValues);
 
-      a_c.reserve(a_c.size() * 2);
-      std::copy(b_c.begin(), b_c.end(), std::back_inserter(a_c));
-
-      signal lt = this->create_node(a_c, this->create_lt_tt(static_cast<int>(a_c.size())));
-
-      return {lt};
+      if(!signedValues)
+      {
+         a_c.push_back(this->get_constant(false));
+         b_c.push_back(this->get_constant(false));
+      }
+      signal cbit = this->create_not(this->get_constant(false));
+      signal neg1, result = this->get_constant(false);
+      for (auto column = 0u; column < a_c.size(); ++column)
+      {
+         neg1 = this->create_not(b_c.at(column));
+         std::tie( result, cbit ) = mockturtle::full_adder(*this, a_c.at(column), neg1, cbit);
+      }
+      return {result};
    }
 
-   std::vector<signal> create_le_v(std::vector<signal> const a, std::vector<signal> const b)
+   std::vector<signal> create_ge_v(std::vector<signal> const &a, std::vector<signal> const &b, bool signedValues)
+   {
+      return this->create_not_v(this->create_lt_v(a, b, signedValues));
+   }
+
+   std::vector<signal> create_gt_v(std::vector<signal> const &a, std::vector<signal> const &b, bool signedValues)
+   {
+      return this->create_lt_v(b, a, signedValues);
+   }
+
+   std::vector<signal> create_le_v(std::vector<signal> const &a, std::vector<signal> const &b, bool signedValues)
+   {
+      return this->create_not_v(this->create_gt_v(a, b, signedValues));
+   }
+
+   std::vector<signal> create_eq_v(std::vector<signal> const &a, std::vector<signal> const &b, bool signedValues)
    {
       std::vector<signal> a_c(a), b_c(b);
-      this->fix_inputs_size(&a_c, &b_c, false);
-
-      a_c.reserve(a_c.size() * 2);
-      std::copy(b_c.begin(), b_c.end(), std::back_inserter(a_c));
-
-      signal le = this->create_node(a_c, this->create_le_tt(static_cast<int>(a_c.size())));
-
-      return {le};
-   }
-
-   std::vector<signal> create_ge_v(std::vector<signal> const a, std::vector<signal> const b)
-   {
-      return this->create_not_v(this->create_lt_v(a, b));
-   }
-
-   std::vector<signal> create_gt_v(std::vector<signal> const a, std::vector<signal> const b)
-   {
-      return this->create_not_v(this->create_le_v(a, b));
-   }
-
-   std::vector<signal> create_eq_v(std::vector<signal> const a, std::vector<signal> const b)
-   {
-      std::vector<signal> a_c(a), b_c(b);
-      this->fix_inputs_size(&a_c, &b_c, false);
+      this->fix_inputs_size(&a_c, &b_c, signedValues);
 
       std::vector<signal> outputs;
       outputs.reserve(a_c.size());
       std::transform(a_c.begin(), a_c.end(), b_c.begin(), std::back_inserter(outputs), [&](auto const& s1, auto const& s2) { return this->create_eq(s1, s2); });
 
-      if(VECT_CONTAINS(outputs, this->get_constant(false)))
-      {
-         return {this->get_constant(false)};
-      }
-
-      bool all_true = std::all_of(outputs.begin(), outputs.end(), [&](auto const& s) { return this->is_constant(s) && s == this->get_constant(true); });
-
-      if(all_true)
-      {
-         return {this->get_constant(true)};
-      }
-
       return {this->create_nary_and(outputs)};
    }
 
-   std::vector<signal> create_ne_v(std::vector<signal> const a, std::vector<signal> const b)
+   std::vector<signal> create_ne_v(std::vector<signal> const &a, std::vector<signal> const &b, bool signedValues)
    {
-      std::vector<signal> a_c(a), b_c(b);
-      this->fix_inputs_size(&a_c, &b_c, false);
-
-      std::vector<signal> outputs;
-      outputs.reserve(a_c.size());
-      std::transform(a_c.begin(), a_c.end(), b_c.begin(), std::back_inserter(outputs), [&](auto const& s1, auto const& s2) { return this->create_ne(s1, s2); });
-
-      if(VECT_CONTAINS(outputs, this->get_constant(true)))
-      {
-         return {this->get_constant(true)};
-      }
-
-      bool all_false = std::all_of(outputs.begin(), outputs.end(), [&](auto const& s) { return this->is_constant(s) && s == this->get_constant(false); });
-
-      if(all_false)
-      {
-         return {this->get_constant(false)};
-      }
-
-      return {this->create_nary_or(outputs)};
+      return this->create_not_v(this->create_eq_v(a, b, signedValues));
    }
 
 #pragma endregion
@@ -584,9 +529,10 @@ typedef mockturtle::klut_network::signal (klut_network_ext::*klut_network_fn)(co
  * Pointer that points to a function of `klut_network_ext`, that represents a binary operation between two `std::vector<mockturtle::klut_network::signal>`s
  * and returns a `std::vector<mockturtle::klut_network::signal>`.
  */
-typedef std::vector<mockturtle::klut_network::signal> (klut_network_ext::*klut_network_fn_v)(const std::vector<mockturtle::klut_network::signal>, const std::vector<mockturtle::klut_network::signal>);
+typedef std::vector<mockturtle::klut_network::signal> (klut_network_ext::*klut_network_fn_v)(std::vector<mockturtle::klut_network::signal> const &, std::vector<mockturtle::klut_network::signal>const &, bool);
 
 #pragma endregion
+
 
 /**
  * Checks whether the provided node is a primary input of lut network.
@@ -604,15 +550,7 @@ bool lut_transformation::CheckIfPI(tree_nodeRef in, unsigned int BB_index)
    auto* gaDef = GetPointer<gimple_assign>(def_stmt);
    if(gaDef->bb_index != BB_index)
       return true;
-   enum kind code = GET_NODE(gaDef->op1)->get_kind();
-
-   // TODO: add CHECK_BIN_EXPR_INT_SIZE?
-   if(!VECT_CONTAINS(lutExpressibleOperations, code) || (GetPointer<truth_not_expr>(GET_NODE(gaDef->op1)) && !CHECK_NOT_EXPR_SIZE(GetPointer<truth_not_expr>(GET_NODE(gaDef->op1)))) ||
-      (GetPointer<cond_expr>(GET_NODE(gaDef->op1)) && !CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(GET_NODE(gaDef->op1)))) || (GetPointer<binary_expr>(GET_NODE(gaDef->op1)) && !CHECK_BIN_EXPR_BOOL_SIZE(GetPointer<binary_expr>(GET_NODE(gaDef->op1)))))
-   {
-      return true;
-   }
-   return false;
+   return cannotBeLUT(gaDef->op1);
 }
 
 /**
@@ -631,7 +569,7 @@ bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> blo
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing CheckIfProcessable" + (*currentStatement)->ToString());
       // only gimple assignments are considered
-      if(!IS_GIMPLE_ASSIGN(currentStatement))
+      if(GET_NODE(*currentStatement)->get_kind() != gimple_assign_K)
       {
          continue;
       }
@@ -660,61 +598,10 @@ bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> blo
             }
          }
       }
-      else if(code == truth_not_expr_K)
+      else if(not cannotBeLUT(gimpleAssign->op1))
       {
-         if(CHECK_NOT_EXPR_SIZE(GetPointer<truth_not_expr>(GET_NODE(gimpleAssign->op1))))
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---CheckIfProcessable: not expr with Boolean operand returns true");
-            return true;
-         }
-      }
-      else if(code == cond_expr_K)
-      {
-         if(CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(GET_NODE(gimpleAssign->op1))))
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---CheckIfProcessable: cond expr with Boolean operand returns true");
-            return true;
-         }
-      }
-      else
-      { // check if it has lut-expressible operations
-         // checks if the operation code can be converted into a lut
-         // and if it is a binary expression with the correct size of operators
-         if(VECT_CONTAINS(lutExpressibleOperations, code) && GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)))
-         {
-            if(CHECK_BIN_EXPR_INT_SIZE(GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1)), MAX_LUT_INT_SIZE))
-            {
-               const auto op0 = GET_NODE(gimpleAssign->op0);
-               auto ssa0 = GetPointer<ssa_name>(op0);
-               THROW_ASSERT(ssa0, "unexpected condition");
-               const auto usedIn = ssa0->CGetUseStmts();
-
-               for(auto node : usedIn)
-               {
-                  auto* childGimpleNode = GetPointer<gimple_node>(GET_NODE(node.first));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing use " + childGimpleNode->ToString());
-                  THROW_ASSERT(childGimpleNode, "unexpected condition");
-
-                  if(childGimpleNode->bb_index != block.first)
-                  {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---not in the same bb");
-
-                     continue;
-                  }
-
-                  if(VECT_CONTAINS(lutExpressibleOperations, childGimpleNode->get_kind()) && childGimpleNode->get_kind() != rshift_expr_K)
-                  {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---compatible child operation found returning true");
-                     return true;
-                  }
-               }
-            }
-            else if(CHECK_BIN_EXPR_BOOL_SIZE(GetPointer<binary_expr>(GET_NODE(gimpleAssign->op1))))
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---CheckIfProcessable: binary expr with Boolean operand returns true");
-               return true;
-            }
-         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---CheckIfProcessable: " + GET_NODE(gimpleAssign->op1)->get_kind_text() + " can be a LUT");
+         return true;
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---CheckIfProcessable: false");
@@ -746,7 +633,7 @@ bool lut_transformation::CheckIfPO(gimple_assign* gimpleAssign)
 
       // the current operation is a primary output if it is used in
       // operation not belonging to the current basic block or if the operation
-      // in which it is used does not belong to the K-operations set
+      // in which it is used does cannot be a LUT
       if(childGimpleNode->bb_index != currentBBIndex)
       {
          return true;
@@ -756,19 +643,10 @@ bool lut_transformation::CheckIfPO(gimple_assign* gimpleAssign)
          auto* childGimpleAssign = GetPointer<gimple_assign>(GET_NODE(node.first));
          if(!childGimpleAssign)
             return true;
-         enum kind code = GET_NODE(childGimpleAssign->op1)->get_kind();
-
-         // it is a `PO` if code is not contained into `lutExpressibleOperations`
-         // TODO: add CHECK_BIN_EXPR_INT_SIZE
-         if(!VECT_CONTAINS(lutExpressibleOperations, code) || (GetPointer<truth_not_expr>(GET_NODE(childGimpleAssign->op1)) && !CHECK_NOT_EXPR_SIZE(GetPointer<truth_not_expr>(GET_NODE(childGimpleAssign->op1)))) ||
-            (GetPointer<cond_expr>(GET_NODE(childGimpleAssign->op1)) && !CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(GET_NODE(childGimpleAssign->op1)))) ||
-            (GetPointer<binary_expr>(GET_NODE(childGimpleAssign->op1)) && !CHECK_BIN_EXPR_BOOL_SIZE(GetPointer<binary_expr>(GET_NODE(childGimpleAssign->op1)))))
-         {
+         if(cannotBeLUT(childGimpleAssign->op1))
             return true;
-         }
       }
    }
-
    return false;
 }
 
@@ -805,13 +683,8 @@ static klut_network_fn GetBooleanNodeCreationFunction(enum kind code)
 static std::vector<bool> IntegerToBitArray(long long int n, size_t size)
 {
    std::vector<bool> bits;
-   bits.reserve(size);
-
    for(size_t i = 0; i < size; ++i)
-   {
-      bits.push_back((n & (1 << i)) ? true : false);
-   }
-
+      bits.push_back((n & (1ULL << i)) ? true : false);
    return bits;
 }
 
@@ -868,24 +741,18 @@ static klut_network_fn_v GetIntegerNodeCreationFunction(enum kind code)
 {
    switch(code)
    {
-      case bit_and_expr_K:
-         return &klut_network_ext::create_and_v;
-      case bit_ior_expr_K:
-         return &klut_network_ext::create_or_v;
-      case bit_xor_expr_K:
-         return &klut_network_ext::create_xor_v;
       case eq_expr_K:
          return &klut_network_ext::create_eq_v;
-      case ge_expr_K:
-         return &klut_network_ext::create_ge_v;
-      case gt_expr_K:
-         return &klut_network_ext::create_gt_v;
+      case ne_expr_K:
+         return &klut_network_ext::create_ne_v;
       case le_expr_K:
          return &klut_network_ext::create_le_v;
       case lt_expr_K:
          return &klut_network_ext::create_lt_v;
-      case ne_expr_K:
-         return &klut_network_ext::create_ne_v;
+      case ge_expr_K:
+         return &klut_network_ext::create_ge_v;
+      case gt_expr_K:
+         return &klut_network_ext::create_gt_v;
       default:
          return nullptr;
    }
@@ -898,12 +765,11 @@ static std::string ConvertBitsToString(const std::vector<bool>& bits, std::strin
 
    for(size_t i = 0; i < bits.size(); ++i)
    {
-      s += bits[i] ? true_string : false_string;
-
-      if(i != 0 && i != bits.size() - 1)
+      if(i != 0)
       {
          s += sep;
       }
+      s += bits[i] ? true_string : false_string;
    }
 
    return s;
@@ -929,7 +795,6 @@ static std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_ne
    mockturtle::topo_view ntk_topo{klut};
 
    ntk_topo.foreach_po([&](auto const& s, auto i) {
-      // std::cerr << "s" << s << " i " << i << std::endl;
       po_set[s].insert(i);
    });
 
@@ -1046,8 +911,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
    std::map<unsigned int, std::vector<mockturtle::klut_network::signal>> nodeRefToSignalBus;
 
    std::vector<tree_nodeRef> pis;
+   std::vector<unsigned> pis_offset;
    std::vector<tree_nodeRef> pos;
-   std::map<tree_nodeRef, int> nodeToBusIndex;
+   std::vector<unsigned> pos_offset;
 
    auto DefaultUnsignedLongLongInt = this->tree_man->CreateDefaultUnsignedLongLongInt();
 
@@ -1055,11 +921,13 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
     * Creates a const expression with 0 (gnd) as value, used for constant LUT inputs (index 0 in mockturtle)
     */
    pis.push_back(TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(DefaultUnsignedLongLongInt)));
+   pis_offset.push_back(0);
 
    /**
     * Creates a const expression with 1 (vdd) as value, used for constant LUT inputs (index 1 in mockturtle)
     */
    pis.push_back(TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(DefaultUnsignedLongLongInt)));
+   pis_offset.push_back(0);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(BB_index));
    const auto& statements = block.second->CGetStmtList();
@@ -1079,7 +947,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
       }
 #endif
 
-      if(!IS_GIMPLE_ASSIGN(currentStatement))
+      if(GET_NODE(*currentStatement)->get_kind() != gimple_assign_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not a gimple assign");
          continue;
@@ -1122,6 +990,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + GET_NODE(op)->ToString());
                   kop = klut_e.create_pi();
                   pis.push_back(op);
+                  pis_offset.push_back(0);
                }
                else
                   THROW_ERROR("unexpected condition");
@@ -1140,6 +1009,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is PO");
             klut_e.create_po(res);
             pos.push_back(*currentStatement);
+            pos_offset.push_back(0);
          }
 
          // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
@@ -1151,9 +1021,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          continue;
       }
 
-      if(code1 == truth_not_expr_K)
+      if(code1 == truth_not_expr_K || code1 == bit_not_expr_K)
       {
-         auto* ne = GetPointer<truth_not_expr>(GET_NODE(gimpleAssign->op1));
+         auto* ne = GetPointer<unary_expr>(GET_NODE(gimpleAssign->op1));
          auto is_size_one = CHECK_NOT_EXPR_SIZE(ne);
          if(!is_size_one)
          {
@@ -1184,6 +1054,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + GET_NODE(op)->ToString());
                   kop = klut_e.create_pi();
                   pis.push_back(op);
+                  pis_offset.push_back(0);
                }
                else
                   THROW_ERROR("unexpected condition");
@@ -1202,12 +1073,13 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is PO");
             klut_e.create_po(res);
             pos.push_back(*currentStatement);
+            pos_offset.push_back(0);
          }
 
          // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
          // mockturtle::write_bench(klut_e, std::cout);
          // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--truth_not_expr found");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--truth_not_expr/bit_not_expr found");
 
          modified = true;
          continue;
@@ -1246,6 +1118,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + GET_NODE(op)->ToString());
                   kop = klut_e.create_pi();
                   pis.push_back(op);
+                  pis_offset.push_back(0);
                }
                else
                   THROW_ERROR("unexpected condition");
@@ -1264,6 +1137,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is PO");
             klut_e.create_po(res);
             pos.push_back(*currentStatement);
+            pos_offset.push_back(0);
          }
 
          // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
@@ -1282,7 +1156,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          continue;
       }
 
-      if(CHECK_BIN_EXPR_BOOL_SIZE(binaryExpression))
+      if(VECT_CONTAINS(lutBooleanExpressibleOperations, code1) && CHECK_BIN_EXPR_BOOL_SIZE(binaryExpression))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Boolean operands");
 
@@ -1319,6 +1193,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + GET_NODE(binaryExpression->op0)->ToString());
                op1 = klut_e.create_pi();
                pis.push_back(binaryExpression->op0);
+               pis_offset.push_back(0);
                nodeRefToSignal[GET_INDEX_NODE(binaryExpression->op0)] = op1;
             }
             else
@@ -1344,6 +1219,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + GET_NODE(binaryExpression->op1)->ToString());
                op2 = klut_e.create_pi();
                pis.push_back(binaryExpression->op1);
+               pis_offset.push_back(0);
                nodeRefToSignal[GET_INDEX_NODE(binaryExpression->op1)] = op2;
             }
             else
@@ -1358,6 +1234,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is PO");
             klut_e.create_po(res);
             pos.push_back(*currentStatement);
+            pos_offset.push_back(0);
          }
 
          // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
@@ -1367,111 +1244,114 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          modified = true;
          continue;
       }
-      if(!CHECK_BIN_EXPR_INT_SIZE(binaryExpression, MAX_LUT_INT_SIZE))
+      if(VECT_CONTAINS(lutIntegerExpressibleOperations, code1) && CHECK_BIN_EXPR_INT_SIZE(binaryExpression, MAX_LUT_INT_SIZE))
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Integer operands");
+
+         klut_network_fn_v nodeCreateFn = GetIntegerNodeCreationFunction(code1);
+
+         if(nodeCreateFn == nullptr)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not supported expression");
+            continue;
+         }
+
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---translating in klut");
+
+         std::vector<mockturtle::klut_network::signal> res;
+         std::vector<mockturtle::klut_network::signal> op1 = {};
+         std::vector<mockturtle::klut_network::signal> op2 = {};
+
+         // if the first operand has already been processed then the previous signal is used
+         if(nodeRefToSignalBus.find(GET_INDEX_NODE(binaryExpression->op0)) != nodeRefToSignalBus.end())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + GET_NODE(binaryExpression->op0)->ToString());
+            op1 = nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op0)];
+         }
+         else
+         { // otherwise the operand is a primary input
+            if(GET_NODE(binaryExpression->op0)->get_kind() == integer_cst_K)
+            {
+               auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op0));
+               auto bits = IntegerToBitArray(int_const->value, tree_helper::Size(GET_NODE(binaryExpression->op0)));
+
+               op1 = klut_e.get_constant_v(bits);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used {" + ConvertBitsToString(bits) + "}");
+            }
+            else if(CheckIfPI(binaryExpression->op0, BB_index))
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PIs " + GET_NODE(binaryExpression->op0)->ToString());
+               op1 = klut_e.create_pi_v(tree_helper::Size(GET_NODE(binaryExpression->op0)));
+
+               unsigned int index = 0;
+               std::for_each(op1.begin(), op1.end(), [&binaryExpression, &pis, &pis_offset, &index](auto op) { pis.push_back(binaryExpression->op0); pis_offset.push_back(index); ++index;});
+
+               nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op0)] = op1;
+            }
+            else
+            {
+               THROW_ERROR("unexpected condition");
+            }
+         }
+
+         // if the second operand has already been processed then the previous signal is used
+         if(nodeRefToSignalBus.find(GET_INDEX_NODE(binaryExpression->op1)) != nodeRefToSignalBus.end())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + GET_NODE(binaryExpression->op1)->ToString());
+            op2 = nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op1)];
+         }
+         else
+         { // otherwise the operand is a primary input
+            if(GET_NODE(binaryExpression->op1)->get_kind() == integer_cst_K)
+            {
+               auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op1));
+               auto bits = IntegerToBitArray(int_const->value, tree_helper::Size(GET_NODE(binaryExpression->op1)));
+
+               op2 = klut_e.get_constant_v(bits);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used {" + ConvertBitsToString(bits) + "}");
+            }
+            else if(CheckIfPI(binaryExpression->op1, BB_index))
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PIs " + GET_NODE(binaryExpression->op1)->ToString());
+               op2 = klut_e.create_pi_v(tree_helper::Size(GET_NODE(binaryExpression->op1)));
+
+               unsigned int index = 0;
+               std::for_each(op2.begin(), op2.end(), [&binaryExpression, &pis, &pis_offset, &index](auto op) { pis.push_back(binaryExpression->op1); pis_offset.push_back(index); ++index;});
+
+               nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op1)] = op2;
+            }
+            else
+            {
+               THROW_ERROR("unexpected condition");
+            }
+         }
+         bool isSigned = tree_helper::is_int(TM, GET_INDEX_NODE(binaryExpression->op0));
+         res = (klut_e.*nodeCreateFn)(op1, op2, isSigned);
+         nodeRefToSignalBus[GET_INDEX_NODE(gimpleAssign->op0)] = res;
+
+         if(this->CheckIfPO(gimpleAssign))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is PO");
+            klut_e.create_po_v(res);
+
+            unsigned int index = 0;
+            std::for_each(res.begin(), res.end(), [&currentStatement, &pos, &pos_offset, &index](auto op) { pos.push_back(*currentStatement); pos_offset.push_back(index); ++index; });
+         }
+
+         // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+         // mockturtle::write_bench(klut_e, std::cout);
+         // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement ");
+         modified = true;
+         continue;
+      }
+      else
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Integer operands' size is too large");
          continue;
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Integer operands");
-
-      klut_network_fn_v nodeCreateFn = GetIntegerNodeCreationFunction(code1);
-
-      if(nodeCreateFn == nullptr)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not supported expression");
-         continue;
-      }
-
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---translating in klut");
-
-      std::vector<mockturtle::klut_network::signal> res;
-      std::vector<mockturtle::klut_network::signal> op1 = {};
-      std::vector<mockturtle::klut_network::signal> op2 = {};
-
-      // if the first operand has already been processed then the previous signal is used
-      if(nodeRefToSignalBus.find(GET_INDEX_NODE(binaryExpression->op0)) != nodeRefToSignalBus.end())
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + GET_NODE(binaryExpression->op0)->ToString());
-         op1 = nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op0)];
-      }
-      else
-      { // otherwise the operand is a primary input
-         if(GET_NODE(binaryExpression->op0)->get_kind() == integer_cst_K)
-         {
-            auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op0));
-            auto bits = IntegerToBitArray(int_const->value, tree_helper::Size(GET_NODE(binaryExpression->op0)));
-
-            op1 = klut_e.get_constant_v(bits);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used {" + ConvertBitsToString(bits) + "}");
-         }
-         else if(CheckIfPI(binaryExpression->op0, BB_index))
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PIs " + GET_NODE(binaryExpression->op0)->ToString());
-            op1 = klut_e.create_pi_v(tree_helper::Size(GET_NODE(binaryExpression->op0)));
-
-            std::for_each(op1.begin(), op1.end(), [&binaryExpression, &pis](auto op) { pis.push_back(binaryExpression->op0); });
-
-            nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op0)] = op1;
-            nodeToBusIndex[GET_NODE(binaryExpression->op0)] = 0;
-         }
-         else
-         {
-            THROW_ERROR("unexpected condition");
-         }
-      }
-
-      // if the second operand has already been processed then the previous signal is used
-      if(nodeRefToSignalBus.find(GET_INDEX_NODE(binaryExpression->op1)) != nodeRefToSignalBus.end())
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + GET_NODE(binaryExpression->op1)->ToString());
-         op2 = nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op1)];
-      }
-      else
-      { // otherwise the operand is a primary input
-         if(GET_NODE(binaryExpression->op1)->get_kind() == integer_cst_K)
-         {
-            auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op1));
-            auto bits = IntegerToBitArray(int_const->value, tree_helper::Size(GET_NODE(binaryExpression->op1)));
-
-#ifndef NDEBUG
-            op2 = klut_e.get_constant_v(bits);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used {" + ConvertBitsToString(bits) + "}");
-#endif
-         }
-         else if(CheckIfPI(binaryExpression->op1, BB_index))
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PIs " + GET_NODE(binaryExpression->op1)->ToString());
-            op2 = klut_e.create_pi_v(tree_helper::Size(GET_NODE(binaryExpression->op1)));
-
-            std::for_each(op2.begin(), op2.end(), [&binaryExpression, &pis](auto op) { pis.push_back(binaryExpression->op1); });
-
-            nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op1)] = op2;
-            nodeToBusIndex[GET_NODE(binaryExpression->op1)] = 0;
-         }
-         else
-         {
-            THROW_ERROR("unexpected condition");
-         }
-      }
-
-      res = (klut_e.*nodeCreateFn)(op1, op2);
-      nodeRefToSignalBus[GET_INDEX_NODE(gimpleAssign->op0)] = res;
-
-      if(this->CheckIfPO(gimpleAssign))
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is PO");
-         klut_e.create_po_v(res);
-
-         std::for_each(res.begin(), res.end(), [&currentStatement, &pos](auto op) { pos.push_back(*currentStatement); });
-      }
-
-      // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-      // mockturtle::write_bench(klut_e, std::cout);
-      // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement ");
-      modified = true;
-      continue;
    }
+
 
    if(modified)
    {
@@ -1526,16 +1406,16 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             if(klut.is_pi(in))
             {
                operand = pis.at(in);
+               auto operand_offset = pis_offset.at(in);
 
                if(tree_helper::Size(GET_NODE(operand)) == 1 && !tree_helper::is_bool(TM, GET_INDEX_NODE(operand)))
                {
+                  THROW_ASSERT(operand_offset==0, "unexpected condition");
                   operand = CreateBitSelectionNodeOrCast(operand, 0, BB_index, prev_stmts_to_add);
                }
                else if(tree_helper::Size(GET_NODE(operand)) > 1)
-               { // integer
-                  auto index = nodeToBusIndex[GET_NODE(operand)];
-                  nodeToBusIndex[GET_NODE(operand)] = index + 1;
-                  operand = CreateBitSelectionNodeOrCast(operand, index, BB_index, prev_stmts_to_add);
+               {
+                  operand = CreateBitSelectionNodeOrCast(operand, operand_offset, BB_index, prev_stmts_to_add);
                }
             }
             else if(internal_nets.find(in) != internal_nets.end())
@@ -1569,6 +1449,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          if(lut.is_po)
          {
             auto po_stmpt = pos.at(lut.po_index);
+            //auto po_offset = pos_offset.at(lut.po_index);
             /// add selection bit stmts
             for(auto stmt : prev_stmts_to_add)
             {
