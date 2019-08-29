@@ -1472,8 +1472,8 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          auto* be = GetPointer<binary_expr>(node);
          unsigned int left_op = GET_INDEX_NODE(be->op0);
          unsigned int right_op = GET_INDEX_NODE(be->op1);
-         res += "(_Bool)((" + print_node(left_op, v, vppf);
-         res += std::string(" >> ");
+         res += "(_Bool)(((unsigned long int)(" + print_node(left_op, v, vppf);
+         res += std::string(") >> ");
          res += print_node(right_op, v, vppf) + ") & 1)";
          break;
       }
