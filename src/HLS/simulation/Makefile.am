@@ -49,6 +49,8 @@ noinst_HEADERS = \
    CTestbenchExecution.hpp \
    compute_reserved_memory.hpp \
    memory_initialization_writer.hpp \
+   memory_initialization_writer_base.hpp \
+   memory_initialization_c_writer.hpp \
    minimal_interface_testbench.hpp \
    SimulationInformation.hpp \
    test_vector_parser.hpp \
@@ -67,6 +69,8 @@ lib_simulation_la_SOURCES = \
    CTestbenchExecution.cpp \
    compute_reserved_memory.cpp \
    memory_initialization_writer.cpp \
+   memory_initialization_writer_base.cpp \
+   memory_initialization_c_writer.cpp \
    minimal_interface_testbench.cpp \
    test_vector_parser.cpp \
    testbench_generation.cpp \

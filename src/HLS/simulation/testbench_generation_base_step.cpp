@@ -115,6 +115,7 @@ TestbenchGenerationBaseStep::TestbenchGenerationBaseStep(const ParameterConstRef
 {
    if(!boost::filesystem::exists(output_directory))
       boost::filesystem::create_directories(output_directory);
+   flag_cpp = _HLSMgr->get_tree_manager()->is_CPP() && !_parameters->isOption(OPT_pretty_print) && (!_parameters->isOption(OPT_discrepancy) || !_parameters->getOption<bool>(OPT_discrepancy) || !_parameters->isOption(OPT_discrepancy_hw) || !_parameters->getOption<bool>(OPT_discrepancy_hw));
 }
 
 TestbenchGenerationBaseStep::~TestbenchGenerationBaseStep() = default;
@@ -701,15 +702,6 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   }
                   writer->write(STR(STD_CLOSING_CHAR));
                   writer->write("end\n");
-                  writer->write("else\n");
-                  writer->write(STR(STD_OPENING_CHAR));
-                  writer->write("begin\n");
-                  {
-                     if(output_level > OUTPUT_LEVEL_MINIMUM)
-                        writer->write("$display(\"Value found for output " + unmangled_name + ": %b\", " + output_name + ");\n");
-                  }
-                  writer->write(STR(STD_CLOSING_CHAR));
-                  writer->write("end\n");
 
                   size_t escaped_pos = port_name.find('\\');
                   std::string nonescaped_name = port_name;
@@ -719,7 +711,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   {
                      if(output_level > OUTPUT_LEVEL_MINIMUM)
                      {
-                        writer->write("$display(\" res = %b " + nonescaped_name +
+                        writer->write("$display(\" comparision = %b " + nonescaped_name +
                                       " = %d "
                                       " _bambu_testbench_mem_[" +
                                       nonescaped_name + " + %d - base_addr] = %20.20f  expected = %20.20f \", ");
@@ -771,36 +763,9 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   {
                      if(output_level > OUTPUT_LEVEL_MINIMUM)
                      {
-                        writer->write("$display(\" res = %b " + nonescaped_name +
-                                      " = %d "
-                                      " _bambu_testbench_mem_[" +
-                                      nonescaped_name + " + %d - base_addr] = %d  expected = %d \\n\", ");
-                        writer->write("{");
-                        for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-                        {
-                           if(bitsize_index)
-                              writer->write(", ");
-                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
-                        }
-                        writer->write("} == " + output_name + ", ");
-                        writer->write(port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + ", {");
-                        for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-                        {
-                           if(bitsize_index)
-                              writer->write(", ");
-                           writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
-                        }
-                        writer->write("}, " + output_name + ");\n");
+                        writer->write("$display(\"" + nonescaped_name + " = %d _bambu_testbench_mem_[" + nonescaped_name + " + %d - base_addr] = %d  expected = %d \\n\", _bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_] == " + output_name + ", _i_, _bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_], " + output_name + ");\n");
                      }
-                     writer->write("if ({");
-                     for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-                     {
-                        if(bitsize_index)
-                           writer->write(", ");
-                        writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
-                     }
-                     writer->write("} !== " + output_name);
-                     writer->write(")\n");
+                     writer->write("if (_bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_] !== " + output_name + ")\n");
                   }
                   writer->write(STR(STD_OPENING_CHAR));
                   writer->write("begin\n");
@@ -1231,7 +1196,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   {
                      if(output_level > OUTPUT_LEVEL_MINIMUM)
                      {
-                        writer->write("$display(\" res = %b " + nonescaped_name +
+                        writer->write("$display(\" comparision = %b " + nonescaped_name +
                                       " = %d "
                                       " _bambu_testbench_mem_[" +
                                       nonescaped_name + " + %d - base_addr] = %20.20f  expected = %20.20f \", ");
@@ -1281,39 +1246,11 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   }
                   else
                   {
-                     long long int bytesize = bitsize / 8;
                      if(output_level > OUTPUT_LEVEL_MINIMUM)
                      {
-                        writer->write("$display(\" res = %b " + nonescaped_name +
-                                      " = %d "
-                                      " _bambu_testbench_mem_[" +
-                                      nonescaped_name + " + %d - base_addr] = %d  expected = %d \\n\", ");
-                        writer->write("{");
-                        for(unsigned int index = 0; index < bytesize; ++index)
-                        {
-                           if(index)
-                              writer->write(", ");
-                           writer->write("_bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_*" + boost::lexical_cast<std::string>(bytesize) + " + " + boost::lexical_cast<std::string>(bytesize - index - 1) + "]");
-                        }
-                        writer->write("} == " + output_name + ", ");
-                        writer->write(port_name + ", _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + ", {");
-                        for(unsigned int index = 0; index < bytesize; ++index)
-                        {
-                           if(index)
-                              writer->write(", ");
-                           writer->write("_bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_*" + boost::lexical_cast<std::string>(bytesize) + " + " + boost::lexical_cast<std::string>(bytesize - index - 1) + "]");
-                        }
-                        writer->write("}, " + output_name + ");\n");
+                        writer->write("$display(\"comparison = %d _bambu_testbench_mem_[" + nonescaped_name + " + %d - base_addr] = %d  expected = %d \\n\", _bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_] == " + output_name + ", _i_, _bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_], " + output_name + ");\n");
                      }
-                     writer->write("if ({");
-                     for(unsigned int index = 0; index < bytesize; ++index)
-                     {
-                        if(index)
-                           writer->write(", ");
-                        writer->write("_bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_*" + boost::lexical_cast<std::string>(bytesize) + " + " + boost::lexical_cast<std::string>(bytesize - index - 1) + "]");
-                     }
-                     writer->write("} !== " + output_name);
-                     writer->write(")\n");
+                     writer->write("if (_bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_] !== " + output_name + ")\n");
                   }
                   writer->write(STR(STD_OPENING_CHAR));
                   writer->write("begin\n");
