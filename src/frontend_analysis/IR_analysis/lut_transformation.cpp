@@ -1269,7 +1269,6 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             }
          }
          bool isSigned = tree_helper::is_int(TM, GET_INDEX_NODE(binaryExpression->op0));
-         std::cerr << "isSigned " << (isSigned ? "T":"F")<<"\n";
          res = (klut_e.*nodeCreateFn)(op1, op2, isSigned);
          nodeRefToSignalBus[GET_INDEX_NODE(gimpleAssign->op0)] = res;
          if(res.size() == 1)
@@ -1411,19 +1410,50 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             THROW_ASSERT(ssa_ga_op0, "unexpected condition");
             if(!lut.is_constant)
                internal_nets[lut.index] = gimpleAssign->op0;
-            tree_nodeRef new_op1;
+
             if(lut.is_constant)
             {
                unsigned int integer_cst3_id = TM->new_tree_node_id();
-               new_op1 = tree_man->CreateIntegerCst(ssa_ga_op0->type, lut.lut_constant, integer_cst3_id);
+               tree_nodeRef new_op1 = tree_man->CreateIntegerCst(ssa_ga_op0->type, lut.lut_constant, integer_cst3_id);
+               TM->ReplaceTreeNode(po_stmpt, gimpleAssign->op1, new_op1);
             }
             else if(lut.fan_in.size() == 1 && lut.lut_constant == 2)
-               new_op1 = op1;
+            {
+               auto op1_type_node = tree_helper::CGetType(GET_CONST_NODE(op1));
+               if(GET_INDEX_NODE(ssa_ga_op0->type) == op1_type_node->index)
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing " + STR(gimpleAssign->op1) + " with " + STR(op1));
+                  TM->ReplaceTreeNode(po_stmpt, gimpleAssign->op1, op1);
+               }
+               else
+               {
+                  tree_nodeRef new_op1 = tree_man->create_unary_operation(ssa_ga_op0->type, op1, srcp_default, nop_expr_K);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing " + STR(gimpleAssign->op1) + " with " + STR(new_op1));
+                  TM->ReplaceTreeNode(po_stmpt, gimpleAssign->op1, new_op1);
+               }
+            }
             else
-               new_op1 = tree_man->create_lut_expr(ssa_ga_op0->type, lut_constant_node, op1, op2, op3, op4, op5, op6, op7, op8, srcp_default);
+            {
+               if(tree_helper::is_bool(TM, GET_INDEX_NODE(gimpleAssign->op0)))
+               {
+                  tree_nodeRef new_op1 = tree_man->create_lut_expr(ssa_ga_op0->type, lut_constant_node, op1, op2, op3, op4, op5, op6, op7, op8, srcp_default);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing " + STR(gimpleAssign->op1) + " with " + STR(op1));
+                  TM->ReplaceTreeNode(po_stmpt, gimpleAssign->op1, new_op1);
+               }
+               else
+               {
+                  auto boolType = tree_man->create_boolean_type();
+                  tree_nodeRef lut_node = tree_man->create_lut_expr(boolType, lut_constant_node, op1, op2, op3, op4, op5, op6, op7, op8, srcp_default);
+                  auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType->index), TM->CreateUniqueIntegerCst(1, boolType->index), lut_node, BB_index, srcp_default);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding statement " + GET_NODE(lut_ga)->ToString());
+                  block.second->PushBefore(lut_ga, po_stmpt);
+                  auto ssa_vd = GetPointer<gimple_assign>(GET_NODE(lut_ga))->op0;
+                  tree_nodeRef new_op1 = tree_man->create_unary_operation(ssa_ga_op0->type, ssa_vd, srcp_default, nop_expr_K);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing " + STR(gimpleAssign->op1) + " with " + STR(op1));
+                  TM->ReplaceTreeNode(po_stmpt, gimpleAssign->op1, new_op1);
+               }
+            }
 
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing " + STR(gimpleAssign->op1) + " with " + STR(new_op1));
-            TM->ReplaceTreeNode(po_stmpt, gimpleAssign->op1, new_op1);
 #ifndef NDEBUG
             AppM->RegisterTransformation(GetName(), po_stmpt);
 #endif
