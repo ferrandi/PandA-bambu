@@ -857,14 +857,13 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
          if(v_idx > 0 && is_memory)
             continue; // memory has been already initialized
 
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Test vector is " + test_v);
 
          /// Retrieve the space to be reserved in memory
          const auto reserved_mem_bytes = [&]() -> size_t {
             if(is_memory)
             {
                const auto ret_value = tree_helper::size(TM, l) / 8;
-               return ret_value ? ret_value : 0;
+               return ret_value ? ret_value : 1;
             }
             else
             {
@@ -874,11 +873,13 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                return hls_c_backend_information->HLSMgr->RSim->param_mem_size.find(v_idx)->second.find(l)->second;
             }
          }();
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Symbol: " + param + " Reserved memory " + STR(reserved_mem_bytes) + " - Test vector is " + test_v);
 
 
          /// FIXME: for c++ code the old code is still used
          if(flag_cpp or is_memory)
          {
+            size_t printed_bytes = 0;
             std::string bits_offset = "";
             std::vector<std::string> splitted;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Processing c++ init " + test_v);
@@ -892,7 +893,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                std::string binary_string;
                if(is_memory)
                {
-                  WriteBinaryMemoryInit(initial_string, static_cast<unsigned int>(initial_string.size()), bits_offset);
+                  printed_bytes += WriteBinaryMemoryInit(initial_string, static_cast<unsigned int>(initial_string.size()), bits_offset);
                }
                else
                {
@@ -939,7 +940,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                            binary_string = ConvertInBinary("0", field_size, behavioral_helper->is_real(field_type->index), behavioral_helper->is_unsigned(field_type->index));
                         }
 
-                        WriteBinaryMemoryInit(binary_string, field_size, bits_offset);
+                        printed_bytes += WriteBinaryMemoryInit(binary_string, field_size, bits_offset);
                      }
                   }
                   else if(behavioral_helper->is_an_union(ptd_base_type))
@@ -947,7 +948,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                      unsigned int max_bitsize_field = 0;
                      tree_helper::accessed_greatest_bitsize(TM, ptd_base_type_node, ptd_base_type, max_bitsize_field);
                      binary_string = ConvertInBinary("0", max_bitsize_field, false, false);
-                     WriteBinaryMemoryInit(binary_string, max_bitsize_field, bits_offset);
+                     printed_bytes += WriteBinaryMemoryInit(binary_string, max_bitsize_field, bits_offset);
                   }
                   else if(behavioral_helper->is_an_array(ptd_base_type))
                   {
@@ -965,7 +966,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                      indented_output_stream->Append("for (__testbench_index0 = 0; __testbench_index0 < " + STR(num_elements) + "; ++__testbench_index0)\n{\n");
 
                      binary_string = ConvertInBinary(initial_string, data_bitsize, behavioral_helper->is_real(elmts_type), behavioral_helper->is_unsigned(elmts_type));
-                     WriteBinaryMemoryInit(binary_string, data_bitsize, bits_offset);
+                     printed_bytes += WriteBinaryMemoryInit(binary_string, data_bitsize, bits_offset);
                      indented_output_stream->Append("}\n");
                   }
                   else
@@ -982,7 +983,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                         THROW_ASSERT(data_bitsize % 8 == 0, "unexpected case");
                      }
 
-                     WriteBinaryMemoryInit(binary_string, data_bitsize, bits_offset);
+                     printed_bytes += WriteBinaryMemoryInit(binary_string, data_bitsize, bits_offset);
                   }
                }
             }
@@ -994,7 +995,13 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                   tail_padding += "0";
                tail_padding = tail_padding + bits_offset;
                bits_offset = "";
+            ++printed_bytes;
                indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"m" + tail_padding + "\\n\");\n");
+            }
+            if(reserved_mem_bytes > printed_bytes)
+            {
+               indented_output_stream->Append("// reserved_mem_bytes > printed_bytes\n");
+               WriteZeroedBytes(reserved_mem_bytes - printed_bytes);
             }
          }
          else
