@@ -9256,7 +9256,7 @@ VHDL_PROVIDED=
         <attribute name="SLICE" value_type="float64">3</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">1</attribute>
         <characterization_timestamp>2017-01-26T12:44:27</characterization_timestamp>
-        <operation operation_name="lut_expr" execution_time="0.98599999999999988"/>
+        <operation operation_name="lut_expr" execution_time="1.3890000000000001"/>
       </cell>
       <cell>
         <name>max_expr_FU_0_16_16</name>
