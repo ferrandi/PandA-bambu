@@ -427,6 +427,9 @@ class klut_network_ext : public mockturtle::klut_network
          a_c.push_back(this->get_constant(false));
          b_c.push_back(this->get_constant(false));
       }
+      a_c.push_back(a_c.at(a_c.size()-1));
+      b_c.push_back(b_c.at(b_c.size()-1));
+
       signal cbit = this->create_not(this->get_constant(false));
       signal neg1, result = this->get_constant(false);
       for (auto column = 0u; column < a_c.size(); ++column)
@@ -1266,6 +1269,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             }
          }
          bool isSigned = tree_helper::is_int(TM, GET_INDEX_NODE(binaryExpression->op0));
+         std::cerr << "isSigned " << (isSigned ? "T":"F")<<"\n";
          res = (klut_e.*nodeCreateFn)(op1, op2, isSigned);
          nodeRefToSignalBus[GET_INDEX_NODE(gimpleAssign->op0)] = res;
          if(res.size() == 1)
