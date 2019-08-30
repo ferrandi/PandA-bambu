@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018 Politecnico di Milano
+ *              Copyright (c) 2018-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,17 +31,17 @@
  *
  */
 /**
- * @file memory_initialization_writer.hpp
- * @brief Functor used to write initialization of the memory
+ * @file memory_initialization_writer_base.hpp
+ * @brief Abstract base class for functor used to write initialization of the memory
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-#ifndef MEMORY_INITIALIZATION_WRITER_HPP
-#define MEMORY_INITIALIZATION_WRITER_HPP
+#ifndef MEMORY_INITIALIZATION_WRITER_BASE_HPP
+#define MEMORY_INITIALIZATION_WRITER_BASE_HPP
 
 /// Superclass include
-#include "memory_initialization_writer_base.hpp"
+#include "c_initialization_parser_functor.hpp"
 
 /// STD include
 #include <string>
@@ -62,16 +62,41 @@ CONSTREF_FORWARD_DECL(tree_node);
 /**
  * Functor used to write initialization of the memory writer
  */
-class MemoryInitializationWriter : public MemoryInitializationWriterBase
+class MemoryInitializationWriterBase : public CInitializationParserFunctor
 {
  protected:
-   /// The stream corresponding to the memory initialization file
-   std::ofstream& output_stream;
+   /// The tree manager
+   const tree_managerConstRef TM;
+
+   /// The behavioral helper
+   const BehavioralHelperConstRef behavioral_helper;
+
+   /// The number of bytes to be written
+   const unsigned long int reserved_mem_bytes;
+
+   /// The number of bytes currently written
+   unsigned long int written_bytes;
+
+   /// The stack representing the current status of the parser; the content is the last dumped element.
+   /// First element of the pair is the tree node describing the type, the second element of the pair is the number of the field (for struct/union) or of the element (for array)
+   /// Second element is the number of seen elements (index of the last element + 1)
+   /// Note that storing last element dumped is equivalent to store next element to be dumped, but this approach make easier check of closes parenthesis
+   std::vector<std::pair<const tree_nodeConstRef, size_t>> status;
+
+   /// The variable/parameter being printed
+   const tree_nodeConstRef function_parameter;
+
+   /// The type of initialization being written
+   const TestbenchGeneration_MemoryType testbench_generation_memory_type;
+
+   /**
+    * Print the current status
+    */
+   const std::string PrintStatus() const;
 
  public:
    /**
     * Constructor
-    * @param output_stream is where memory initialization will be written
     * @param TM is the tree manager
     * @param behavioral_helper is the behavioral helper
     * @param reserved_mem_bytes is the number of bytes to be written
@@ -79,12 +104,27 @@ class MemoryInitializationWriter : public MemoryInitializationWriterBase
     * @param testbench_generation_memory_type is the type of initialization being printed
     * @param parameters is the set of input parameters
     */
-   MemoryInitializationWriter(std::ofstream& output_stream, const tree_managerConstRef TM, const BehavioralHelperConstRef behavioral_helper, const unsigned long int reserved_mem_bytes, const tree_nodeConstRef function_parameter,
+   MemoryInitializationWriterBase(const tree_managerConstRef TM, const BehavioralHelperConstRef behavioral_helper, const unsigned long int reserved_mem_bytes, const tree_nodeConstRef function_parameter,
                               const TestbenchGeneration_MemoryType testbench_generation_memory_type, const ParameterConstRef parameters);
 
    /**
-    * Process an element
+    * Check that all the necessary information was present in the initialization string
     */
-   void Process(const std::string& content) override;
+   void CheckEnd() override;
+
+   /**
+    * Start the initialization of a new aggregated data structure
+    */
+   void GoDown() override;
+
+   /**
+    * Consume an element of an aggregated data structure
+    */
+   void GoNext() override;
+
+   /**
+    * Ends the initialization of the current aggregated  data structure
+    */
+   void GoUp() override;
 };
 #endif
