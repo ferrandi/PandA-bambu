@@ -442,7 +442,8 @@ class klut_network_ext : public mockturtle::klut_network
 
    std::vector<signal> create_ge_v(std::vector<signal> const &a, std::vector<signal> const &b, bool signedValues)
    {
-      return this->create_not_v(this->create_lt_v(a, b, signedValues));
+      auto lt_res = this->create_lt_v(a, b, signedValues);
+      return {this->create_not(lt_res.at(0))};
    }
 
    std::vector<signal> create_gt_v(std::vector<signal> const &a, std::vector<signal> const &b, bool signedValues)
@@ -452,7 +453,7 @@ class klut_network_ext : public mockturtle::klut_network
 
    std::vector<signal> create_le_v(std::vector<signal> const &a, std::vector<signal> const &b, bool signedValues)
    {
-      return this->create_not_v(this->create_gt_v(a, b, signedValues));
+      return this->create_ge_v(b, a, signedValues);
    }
 
    std::vector<signal> create_eq_v(std::vector<signal> const &a, std::vector<signal> const &b, bool signedValues)
