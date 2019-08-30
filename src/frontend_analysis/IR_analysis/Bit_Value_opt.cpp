@@ -1904,16 +1904,38 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                               auto ne = GetPointer<unary_expr>(GET_NODE(prev_ga->op1));
                               if(tree_helper::is_bool(TM, GET_INDEX_NODE(ne->op)))
                               {
-                                 THROW_ASSERT(pos_value == 0, "unexpected condition");
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
-                                 tree_nodeRef bit_mask_constant_node = TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type));
-                                 auto masking = IRman->create_binary_operation(ebe->type, ne->op, bit_mask_constant_node, srcp_default, truth_and_expr_K);
-                                 TM->ReplaceTreeNode(stmt, ga->op1, masking);///replaced with redundant code to restart lut_transformation
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
-                                 modified = true;
+                                 if(pos_value == 0)
+                                 {
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
+                                    tree_nodeRef bit_mask_constant_node = TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type));
+                                    auto masking = IRman->create_binary_operation(ebe->type, ne->op, bit_mask_constant_node, srcp_default, truth_and_expr_K);
+                                    TM->ReplaceTreeNode(stmt, ga->op1, masking);///replaced with redundant code to restart lut_transformation
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
+                                    modified = true;
 #ifndef NDEBUG
-                                 AppM->RegisterTransformation(GetName(), stmt);
+                                    AppM->RegisterTransformation(GetName(), stmt);
 #endif
+                                 }
+                                 else
+                                 {
+                                    tree_nodeRef zero_node = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type));
+                                    const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
+                                    for(const auto& use : StmtUses)
+                                    {
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr constant usage before: " + use.first->ToString());
+                                       TM->ReplaceTreeNode(use.first, ga->op0, zero_node);
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr constant usage after: " + use.first->ToString());
+                                       modified = true;
+                                    }
+                                    if(ssa->CGetUseStmts().empty())
+                                    {
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
+                                       restart_dead_code = true;
+                                    }
+#ifndef NDEBUG
+                                    AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                                 }
                               }
                               else
                               {
@@ -2144,7 +2166,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                      for(const auto& use : StmtUses)
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr constant input usage before: " + use.first->ToString());
-                        TM->ReplaceTreeNode(use.first, ga->op0, ebe->op0);
+                        TM->ReplaceTreeNode(use.first, ga->op0, zero_node);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr constant input usage after: " + use.first->ToString());
                         modified = true;
                      }
