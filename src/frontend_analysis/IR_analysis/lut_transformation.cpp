@@ -1597,3 +1597,11 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 #pragma GCC diagnostic pop
 
 #endif
+
+bool lut_transformation::HasToBeExecuted() const
+{
+   if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
+      return true;
+   else
+      return false;
+}
