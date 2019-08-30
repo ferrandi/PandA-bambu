@@ -636,9 +636,17 @@ void MinimalInterfaceTestbench::write_input_signal_declaration(const tree_manage
                   pt_node = GET_NODE(GetPointer<array_type>(pt_node)->elts);
                }
             }
-            long long int bitsize = tree_helper::size(TreeM, pt_type_index);
 
-            writer->write("reg [" + STR(bitsize - 1) + ":0] ex_" + port_obj->get_id() + ";\n");
+            /// FIXME: real numbers at the moment have to be considered diffently because of computation of ulp; c++ code is still managed in the old way
+            if(tree_helper::is_real(TreeM, pt_type_index) or flag_cpp)
+            {
+               long long int bitsize = tree_helper::size(TreeM, pt_type_index);
+               writer->write("reg [" + STR(bitsize - 1) + ":0] ex_" + port_obj->get_id() + ";\n");
+            }
+            else
+            {
+               writer->write("reg [7:0] ex_" + port_obj->get_id() + ";\n");
+            }
          }
       }
       writer->write("\n");

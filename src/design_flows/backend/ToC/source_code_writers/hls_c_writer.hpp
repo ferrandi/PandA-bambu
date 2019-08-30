@@ -34,9 +34,6 @@
  * @file hls_c_writer.hpp
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
- * $Revision: $
- * $Date: $
- * Last modified by $Author: $
  *
  */
 
@@ -54,6 +51,9 @@ CONSTREF_FORWARD_DECL(HLSCBackendInformation);
 class HLSCWriter : public CWriter
 {
  protected:
+   /// True if the input code is c++
+   bool flag_cpp;
+
    /// Backend information
    const HLSCBackendInformationConstRef hls_c_backend_information;
 
@@ -121,7 +121,7 @@ class HLSCWriter : public CWriter
     * the tested function. The output is in a format that is recognized by
     * the HDL testbench generation
     */
-   void WriteExpectedResults(const BehavioralHelperConstRef behavioral_helper, const std::map<std::string, std::string>& curr_test_vector);
+   void WriteExpectedResults(const BehavioralHelperConstRef behavioral_helper, const std::map<std::string, std::string>& curr_test_vector, const unsigned v_idx);
 
    /**
     * Write some print statements used to dump the values used by the HDL to
@@ -159,6 +159,16 @@ class HLSCWriter : public CWriter
     * Writes implementation of __builtin_wait_call
     */
    virtual void WriteBuiltinWaitCall();
+
+   /**
+    * Write the print to fill values.txt with values for t parameters
+    * @param behavioral_helper is the helper used to print field names
+    * @param param is the string of the parameter currently printed
+    * @param type is the type of the currently printed piece of parameter
+    * @param nesting_level is the level of nesting of the currently printed field/element
+    * @param input specifies if the input syntax must be used
+    */
+   void WriteParamInMemory(const BehavioralHelperConstRef behavioral_helper, const std::string & param, const unsigned int type, const unsigned int nesting_level, bool input);
 
  public:
    /**
