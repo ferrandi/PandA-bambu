@@ -1241,10 +1241,10 @@ DesignFlowStep_Status allocation::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Operation " + current_op + " named " + GET_NAME(g, *v) + " mapped onto " + current_fu->get_name() + ", found in library " + TM->get_library(current_op) + " in position " + STR(gimple_return_current_id));
       }
-      // Artificial FUs
+      // direct mapping FUs
       else if(ASSIGN == current_op || ASSERT_EXPR == current_op || ADDR_EXPR == current_op || READ_COND == current_op || MULTI_READ_COND == current_op || NOP_EXPR == current_op || CONVERT_EXPR == current_op || SWITCH_COND == current_op ||
               GIMPLE_LABEL == current_op || GIMPLE_GOTO == current_op || GIMPLE_PRAGMA == current_op || ENTRY == current_op || EXIT == current_op || NOP == current_op || GIMPLE_PHI == current_op || GIMPLE_NOP == current_op ||
-              VIEW_CONVERT_EXPR == current_op)
+              VIEW_CONVERT_EXPR == current_op || EXTRACT_BIT_EXPR == current_op || LUT_EXPR == current_op)
       {
          unsigned int current_size = allocation_information->get_number_fu_types();
          if(current_op == ASSIGN)
@@ -1289,6 +1289,20 @@ DesignFlowStep_Status allocation::InternalExec()
             else
                current_fu = get_fu(ASSERT_EXPR_UNSIGNED_STD);
          }
+         else if(current_op == EXTRACT_BIT_EXPR)
+         {
+            unsigned int modify_tree_index = g->CGetOpNodeInfo(*v)->GetNodeId();
+            tree_nodeRef modify_node = TreeM->get_tree_node_const(modify_tree_index);
+            auto* gms = GetPointer<gimple_assign>(modify_node);
+            auto ebe = GetPointer<extract_bit_expr>(GET_NODE(gms->op1));;
+            bool intOP0 = tree_helper::is_int(TreeM, GET_INDEX_NODE(ebe->op0));
+            if(intOP0)
+               current_fu = get_fu(EXTRACT_BIT_EXPR_SIGNED_STD);
+            else
+               current_fu = get_fu(EXTRACT_BIT_EXPR_UNSIGNED_STD);
+         }
+         else if(current_op == LUT_EXPR)
+            current_fu = get_fu(LUT_EXPR_STD);
          else if(current_op == ADDR_EXPR)
             current_fu = get_fu(ADDR_EXPR_STD);
          else if(current_op == NOP_EXPR)
