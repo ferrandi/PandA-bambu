@@ -2297,10 +2297,6 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                            {
                               auto ce = GetPointer<cond_expr>(GET_NODE(prev_ga->op1));
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
-                              tree_nodeRef eb_op0 = IRman->create_extract_bit_expr(ce->op0, ebe->op1, srcp_default);
-                              tree_nodeRef eb_ga0 = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op0, B_id, srcp_default);
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga0));
-                              B->PushBefore(eb_ga0, stmt);
                               tree_nodeRef eb_op1 = IRman->create_extract_bit_expr(ce->op1, ebe->op1, srcp_default);
                               tree_nodeRef eb_ga1 = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op1, B_id, srcp_default);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga1));
@@ -2309,7 +2305,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                               tree_nodeRef eb_ga2 = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op2, B_id, srcp_default);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga2));
                               B->PushBefore(eb_ga2, stmt);
-                              auto ceRes = IRman->create_ternary_operation(ebe->type, GetPointer<gimple_assign>(GET_NODE(eb_ga0))->op0, GetPointer<gimple_assign>(GET_NODE(eb_ga1))->op0, GetPointer<gimple_assign>(GET_NODE(eb_ga2))->op0, srcp_default, cond_expr_K);
+                              auto ceRes = IRman->create_ternary_operation(ebe->type, ce->op0, GetPointer<gimple_assign>(GET_NODE(eb_ga1))->op0, GetPointer<gimple_assign>(GET_NODE(eb_ga2))->op0, srcp_default, cond_expr_K);
                               TM->ReplaceTreeNode(stmt, ga->op1, ceRes);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
                               modified = true;
