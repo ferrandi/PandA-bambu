@@ -640,6 +640,7 @@ static klut_network_fn GetBooleanNodeCreationFunction(enum kind code)
          return &klut_network_ext::create_and;
       case bit_ior_expr_K:
       case truth_or_expr_K:
+      case truth_orif_expr_K:
          return &klut_network_ext::create_or;
       case bit_xor_expr_K:
       case truth_xor_expr_K:

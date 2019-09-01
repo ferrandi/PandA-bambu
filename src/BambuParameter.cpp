@@ -1217,7 +1217,7 @@ int BambuParameter::Exec()
       {"mem-delay-read", required_argument, nullptr, OPT_MEM_DELAY_READ},
       {"mem-delay-write", required_argument, nullptr, OPT_MEM_DELAY_WRITE},
       {"host-profiling", no_argument, nullptr, OPT_HOST_PROFILING},
-      {"bitvalue-ipa", no_argument, nullptr, OPT_DISABLE_BITVALUE_IPA},
+      {"disable-bitvalue-ipa", no_argument, nullptr, OPT_DISABLE_BITVALUE_IPA},
       {"discrepancy", no_argument, nullptr, OPT_DISCREPANCY},
       {"discrepancy-force-uninitialized", no_argument, nullptr, OPT_DISCREPANCY_FORCE},
       {"discrepancy-no-load-pointers", no_argument, nullptr, OPT_DISCREPANCY_NO_LOAD_POINTERS},
