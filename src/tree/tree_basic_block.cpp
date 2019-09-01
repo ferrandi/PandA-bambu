@@ -374,28 +374,33 @@ void bloc::ReorderLUTs()
          {
             current_uses.insert(ga->op0);
             const auto next_stmt = std::next(pos);
-            auto posPostponed = list_of_postponed_stmt.begin();
-            while(posPostponed != list_of_postponed_stmt.end())
+            bool restart_postponed = false;
+            do
             {
-               if(allDefinedP(*posPostponed))
+               restart_postponed = false;
+               auto posPostponed = list_of_postponed_stmt.begin();
+               while(posPostponed != list_of_postponed_stmt.end())
                {
-                  /// add back
-                  const auto next_stmtPostponed = std::next(posPostponed);
-                  list_of_stmt.insert(next_stmt, *posPostponed);
-                  auto gaPostponed = GetPointer<gimple_assign>(GET_NODE(*posPostponed));
-                  current_uses.insert(gaPostponed->op0);
-#if HAVE_BAMBU_BUILT
-                  if(schedule)
+                  if(allDefinedP(*posPostponed))
                   {
-                     schedule->UpdateTime(gaPostponed->index);
-                  }
+                     /// add back
+                     list_of_stmt.insert(next_stmt, *posPostponed);
+                     auto gaPostponed = GetPointer<gimple_assign>(GET_NODE(*posPostponed));
+                     current_uses.insert(gaPostponed->op0);
+                     restart_postponed = true;
+#if HAVE_BAMBU_BUILT
+                     if(schedule)
+                     {
+                        schedule->UpdateTime(gaPostponed->index);
+                     }
 #endif
-                  list_of_postponed_stmt.erase(posPostponed);
-                  posPostponed = next_stmtPostponed;
+                     list_of_postponed_stmt.erase(posPostponed);
+                     break;
+                  }
+                  else
+                     ++posPostponed;
                }
-               else
-                  ++posPostponed;
-            }
+            } while (restart_postponed);
             pos = next_stmt;
          }
       }
