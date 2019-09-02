@@ -1132,6 +1132,10 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       if(!manage_forward_binary_operands(operation, arg1_uid, arg2_uid, arg1_bitstring, arg2_bitstring))
          return res;
 
+      if(arg1_bitstring.size()==1 && arg1_bitstring.at(0) == bit_lattice::X && !tree_helper::is_bool(TM, arg1_uid) && !tree_helper::is_int(TM, arg1_uid))
+         arg1_bitstring.push_front(bit_lattice::ZERO);
+      if(arg2_bitstring.size()==1 && arg2_bitstring.at(0) == bit_lattice::X && !tree_helper::is_bool(TM, arg2_uid) && !tree_helper::is_int(TM, arg2_uid))
+         arg1_bitstring.push_front(bit_lattice::ZERO);
       unsigned int max_size = tree_helper::Size(GET_NODE(ga->op0));
       if(max_size > arg2_bitstring.size())
       {
@@ -1588,10 +1592,6 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
    }
    else if(op_kind == extract_bit_expr_K)
    {
-      res = create_u_bitstring(1);
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation extract_bit_expr: " + STR(output_uid) + " = SSAVAR >> constBitPos");
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "res: " + bitstring_to_string(res));
-      return res;
       auto* operation = GetPointer<extract_bit_expr>(GET_NODE(ga->op1));
       std::deque<bit_lattice> arg1_bitstring;
       unsigned int arg1_uid = 0;
@@ -1613,48 +1613,32 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       }
       else
          return res;
+      THROW_ASSERT(GET_NODE(operation->op1)->get_kind() == integer_cst_K, "unexpected condition");
+      auto* const2 = GetPointer<integer_cst>(GET_NODE(operation->op1));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, second argument is constant -> " + STR(const2->value));
+      THROW_ASSERT(const2->value >= 0, "unexpected condition");
 
-      if(GET_NODE(operation->op1)->get_kind() == ssa_name_K)
+      if(arg1_bitstring.size() <= static_cast<size_t>(const2->value))
       {
-         res = create_u_bitstring(1);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation: " + STR(output_uid) + " = " + STR(arg1_uid) + " >> " + STR(GET_INDEX_NODE(operation->op1)));
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "res: " + bitstring_to_string(res));
-      }
-      else if(GET_NODE(operation->op1)->get_kind() == integer_cst_K)
-      {
-         auto* const2 = GetPointer<integer_cst>(GET_NODE(operation->op1));
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, second argument is constant -> " + STR(const2->value));
-         if(const2->value < 0)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, negative right shift is undefined behavior");
-            res.push_back(bit_lattice::X);
-            return res;
-         }
-
-         if(arg1_bitstring.size() <= static_cast<size_t>(const2->value))
-         {
-            if(tree_helper::is_int(TM, arg1_uid))
-               res.push_front(arg1_bitstring.front());
-            else
-               res.push_front(bit_lattice::ZERO);
-         }
+         if(tree_helper::is_int(TM, arg1_uid))
+            res.push_front(arg1_bitstring.front());
          else
+            res.push_front(bit_lattice::ZERO);
+      }
+      else
+      {
+         size_t new_lenght = arg1_bitstring.size() - static_cast<size_t>(const2->value);
+         std::deque<bit_lattice>::const_iterator arg1_it = arg1_bitstring.begin();
+         while(res.size() < new_lenght)
          {
-            size_t new_lenght = arg1_bitstring.size() - static_cast<size_t>(const2->value);
-            std::deque<bit_lattice>::const_iterator arg1_it = arg1_bitstring.begin();
-            while(res.size() < new_lenght)
-            {
-               res.push_back(*arg1_it);
-               ++arg1_it;
-            }
+            res.push_back(*arg1_it);
+            ++arg1_it;
          }
          while(res.size() > 1)
             res.pop_front();
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation: " + STR(output_uid) + " = " + STR(arg1_uid) + " extract bit " + STR(GET_INDEX_NODE(operation->op1)));
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "res: " + bitstring_to_string(arg1_bitstring) + ">>" + STR(const2->value) + " => " + bitstring_to_string(res));
       }
-      else
-         return res;
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation: " + STR(output_uid) + " = " + STR(arg1_uid) + " extract bit " + STR(GET_INDEX_NODE(operation->op1)));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "res: " + bitstring_to_string(arg1_bitstring) + ">>" + STR(const2->value) + " => " + bitstring_to_string(res));
    }
 #endif
 #if 1
