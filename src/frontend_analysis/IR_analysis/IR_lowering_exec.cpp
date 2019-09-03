@@ -2044,6 +2044,58 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   };
                   vc_expr1();
                }
+               else if(code1 == view_convert_expr_K || code1 == nop_expr_K)
+               {
+                  auto* ue = GetPointer<unary_expr>(GET_NODE(ga->op1));
+                  if(GET_NODE(ue->op)->get_kind() == var_decl_K)
+                  {
+                     auto vc = GetPointer<view_convert_expr>(GET_NODE(ga->op1));
+                     tree_nodeRef pt = tree_man->create_pointer_type(vc->type, GetPointer<type_node>(GET_NODE(vc->type))->algn);
+                     tree_nodeRef ae = tree_man->create_unary_operation(pt, ue->op, srcp_default, addr_expr_K);
+                     tree_nodeRef new_ga = tree_man->CreateGimpleAssign(pt, tree_nodeRef(), tree_nodeRef(), ae, block.first, srcp_default);
+                     GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = true;
+                     tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+                     tree_nodeRef offset = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(pt));
+                     tree_nodeRef mr = tree_man->create_binary_operation(vc->type, ssa_vd, offset, srcp_default, mem_ref_K);
+                     ga->op1 = mr;
+                     block.second->PushBefore(new_ga, *it_los);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
+                     restart_analysis = true;
+                  }
+                  else if(GET_NODE(ue->op)->get_kind() != ssa_name_K && !GetPointer<cst_node>(GET_NODE(ue->op)))
+                  {
+                     unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ue->op));
+                     tree_nodeRef op_type = TM->GetTreeReindex(type_index);
+                     tree_nodeRef op_ga = tree_man->CreateGimpleAssign(op_type, tree_nodeRef(), tree_nodeRef(), ue->op, block.first, srcp_default);
+                     tree_nodeRef op_vd = GetPointer<gimple_assign>(GET_NODE(op_ga))->op0;
+                     if(ga->temporary_address)
+                        GetPointer<gimple_assign>(GET_NODE(op_ga))->temporary_address = true;
+                     block.second->PushBefore(op_ga, *it_los);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(op_ga)->ToString());
+                     ue->op = op_vd;
+                     restart_analysis = true;
+                  }
+               }
+               else if(code1 == cond_expr_K)
+               {
+                  auto* ce = GetPointer<cond_expr>(GET_NODE(ga->op1));
+                  THROW_ASSERT(ce->op1 && ce->op2, "expected three parameters");
+                  if(GetPointer<binary_expr>(GET_NODE(ce->op0)))
+                  {
+#if HAVE_ASSERTS
+                     auto* be = GetPointer<binary_expr>(GET_NODE(ce->op0));
+                     THROW_ASSERT(be->get_kind() == le_expr_K or be->get_kind() == eq_expr_K or be->get_kind() == ne_expr_K or be->get_kind() == gt_expr_K or be->get_kind() == lt_expr_K or be->get_kind() == ge_expr_K, be->get_kind_text());
+#endif
+                     auto bt = tree_man->create_boolean_type();
+                     tree_nodeRef new_ga = tree_man->CreateGimpleAssign(bt, TM->CreateUniqueIntegerCst(0, bt->index), TM->CreateUniqueIntegerCst(1, bt->index), ce->op0, block.first, srcp_default);
+                     tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
+
+                     ce->op0 = ssa_vd;
+                     block.second->PushBefore(new_ga, *it_los);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
+                     restart_analysis = true;
+                  }
+               }
 #ifndef NDEBUG
                else if(reached_max_transformation_limit(*it_los))
                {
@@ -2052,59 +2104,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
 #endif
                else
                {
-                  if(code1 == cond_expr_K)
-                  {
-                     auto* ce = GetPointer<cond_expr>(GET_NODE(ga->op1));
-                     THROW_ASSERT(ce->op1 && ce->op2, "expected three parameters");
-                     if(GetPointer<binary_expr>(GET_NODE(ce->op0)))
-                     {
-#if HAVE_ASSERTS
-                        auto* be = GetPointer<binary_expr>(GET_NODE(ce->op0));
-                        THROW_ASSERT(be->get_kind() == le_expr_K or be->get_kind() == eq_expr_K or be->get_kind() == ne_expr_K or be->get_kind() == gt_expr_K or be->get_kind() == lt_expr_K or be->get_kind() == ge_expr_K, be->get_kind_text());
-#endif
-                        auto bt = tree_man->create_boolean_type();
-                        tree_nodeRef new_ga = tree_man->CreateGimpleAssign(bt, TM->CreateUniqueIntegerCst(0, bt->index), TM->CreateUniqueIntegerCst(1, bt->index), ce->op0, block.first, srcp_default);
-                        tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
-
-                        ce->op0 = ssa_vd;
-                        block.second->PushBefore(new_ga, *it_los);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
-                        restart_analysis = true;
-                     }
-                  }
-                  else if(code1 == view_convert_expr_K || code1 == nop_expr_K)
-                  {
-                     auto* ue = GetPointer<unary_expr>(GET_NODE(ga->op1));
-                     if(GET_NODE(ue->op)->get_kind() == var_decl_K)
-                     {
-                        auto vc = GetPointer<view_convert_expr>(GET_NODE(ga->op1));
-                        tree_nodeRef pt = tree_man->create_pointer_type(vc->type, GetPointer<type_node>(GET_NODE(vc->type))->algn);
-                        tree_nodeRef ae = tree_man->create_unary_operation(pt, ue->op, srcp_default, addr_expr_K);
-                        tree_nodeRef new_ga = tree_man->CreateGimpleAssign(pt, tree_nodeRef(), tree_nodeRef(), ae, block.first, srcp_default);
-                        GetPointer<gimple_assign>(GET_NODE(new_ga))->temporary_address = true;
-                        tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
-                        tree_nodeRef offset = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(pt));
-                        tree_nodeRef mr = tree_man->create_binary_operation(vc->type, ssa_vd, offset, srcp_default, mem_ref_K);
-                        ga->op1 = mr;
-                        block.second->PushBefore(new_ga, *it_los);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
-                        restart_analysis = true;
-                     }
-                     else if(GET_NODE(ue->op)->get_kind() != ssa_name_K && !GetPointer<cst_node>(GET_NODE(ue->op)))
-                     {
-                        unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ue->op));
-                        tree_nodeRef op_type = TM->GetTreeReindex(type_index);
-                        tree_nodeRef op_ga = tree_man->CreateGimpleAssign(op_type, tree_nodeRef(), tree_nodeRef(), ue->op, block.first, srcp_default);
-                        tree_nodeRef op_vd = GetPointer<gimple_assign>(GET_NODE(op_ga))->op0;
-                        if(ga->temporary_address)
-                           GetPointer<gimple_assign>(GET_NODE(op_ga))->temporary_address = true;
-                        block.second->PushBefore(op_ga, *it_los);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(op_ga)->ToString());
-                        ue->op = op_vd;
-                        restart_analysis = true;
-                     }
-                  }
-                  else if(code1 == bit_field_ref_K)
+                  if(code1 == bit_field_ref_K)
                   {
                      auto* bfr = GetPointer<bit_field_ref>(GET_NODE(ga->op1));
                      if(GET_NODE(bfr->op0)->get_kind() != ssa_name_K)
@@ -2317,6 +2317,10 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            unsigned int prev_index = GET_INDEX_NODE(ga->op1);
                            ga->op1 = expand_MC(op0, static_cast<integer_cst*>(cn), ga->op1, *it_los, block.second, type_expr, srcp_default);
                            restart_analysis = restart_analysis || (prev_index != GET_INDEX_NODE(ga->op1));
+#ifndef NDEBUG
+                           if(prev_index != GET_INDEX_NODE(ga->op1))
+                              AppM->RegisterTransformation(GetName(), *it_los);
+#endif
                         }
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Expanded");
                      }
