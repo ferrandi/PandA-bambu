@@ -1135,7 +1135,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       if(arg1_bitstring.size()==1 && arg1_bitstring.at(0) == bit_lattice::X && !tree_helper::is_bool(TM, arg1_uid) && !tree_helper::is_int(TM, arg1_uid))
          arg1_bitstring.push_front(bit_lattice::ZERO);
       if(arg2_bitstring.size()==1 && arg2_bitstring.at(0) == bit_lattice::X && !tree_helper::is_bool(TM, arg2_uid) && !tree_helper::is_int(TM, arg2_uid))
-         arg1_bitstring.push_front(bit_lattice::ZERO);
+         arg2_bitstring.push_front(bit_lattice::ZERO);
       unsigned int max_size = tree_helper::Size(GET_NODE(ga->op0));
       if(max_size > arg2_bitstring.size())
       {
