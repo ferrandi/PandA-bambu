@@ -80,6 +80,8 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 #include "utility.hpp"
+#include "hls_manager.hpp"
+#include "hls_target.hpp"
 
 Bit_Value_opt::Bit_Value_opt(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, BIT_VALUE_OPT, _design_flow_manager, _parameters), modified(false), restart_dead_code(false)
@@ -2312,6 +2314,75 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
 #ifndef NDEBUG
                               AppM->RegisterTransformation(GetName(), stmt);
 #endif
+                           }
+                           else if(prev_code1 == plus_expr_K)
+                           {
+                              THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
+                              const auto hls_target = GetPointer<const HLS_manager>(AppM)->get_HLS_target();
+                              THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "");
+                              auto max_lut_size = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
+                              auto pe = GetPointer<plus_expr>(GET_NODE(prev_ga->op1));
+                              if(GET_NODE(pe->op1)->get_kind() == integer_cst_K && tree_helper::Size(ebe->op0) <= max_lut_size)
+                              {
+                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
+                                 tree_nodeRef carry = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type));
+                                 tree_nodeRef sum;
+                                 for(long long int bitIndex=0; bitIndex <= pos_value; ++bitIndex)
+                                 {
+                                    tree_nodeRef bitIndex_node = TM->CreateUniqueIntegerCst(bitIndex, GET_INDEX_NODE(GetPointer<integer_cst>(GET_NODE(ebe->op1))->type));
+                                    tree_nodeRef eb_op1 = IRman->create_extract_bit_expr(pe->op0, bitIndex_node, srcp_default);
+                                    tree_nodeRef eb_ga1 = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op1, B_id, srcp_default);
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga1));
+                                    B->PushBefore(eb_ga1, stmt);
+                                    tree_nodeRef eb_op2 = IRman->create_extract_bit_expr(pe->op1, bitIndex_node, srcp_default);
+                                    tree_nodeRef eb_ga2 = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op2, B_id, srcp_default);
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga2));
+                                    B->PushBefore(eb_ga2, stmt);
+                                    auto sum0 = IRman->create_binary_operation(ebe->type, GetPointer<gimple_assign>(GET_NODE(eb_ga1))->op0, GetPointer<gimple_assign>(GET_NODE(eb_ga2))->op0, srcp_default, truth_xor_expr_K);
+                                    tree_nodeRef sum0_ga1 = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), sum0, B_id, srcp_default);
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(sum0_ga1));
+                                    B->PushBefore(sum0_ga1, stmt);
+                                    sum = IRman->create_binary_operation(ebe->type, GetPointer<gimple_assign>(GET_NODE(sum0_ga1))->op0, carry, srcp_default, truth_xor_expr_K);
+                                    if(bitIndex < pos_value)
+                                    {
+                                       auto sum_ga1 = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), sum, B_id, srcp_default);
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(sum_ga1));
+                                       B->PushBefore(sum_ga1, stmt);
+
+                                       auto and1 = IRman->create_binary_operation(ebe->type, GetPointer<gimple_assign>(GET_NODE(eb_ga1))->op0, carry, srcp_default, truth_and_expr_K);
+                                       auto and1_ga = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), and1, B_id, srcp_default);
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(and1_ga));
+                                       B->PushBefore(and1_ga, stmt);
+
+                                       auto and2 = IRman->create_binary_operation(ebe->type, GetPointer<gimple_assign>(GET_NODE(eb_ga2))->op0, carry, srcp_default, truth_and_expr_K);
+                                       auto and2_ga = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), and2, B_id, srcp_default);
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(and2_ga));
+                                       B->PushBefore(and2_ga, stmt);
+
+                                       auto and3 = IRman->create_binary_operation(ebe->type, GetPointer<gimple_assign>(GET_NODE(eb_ga1))->op0, GetPointer<gimple_assign>(GET_NODE(eb_ga2))->op0, srcp_default, truth_and_expr_K);
+                                       auto and3_ga = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), and3, B_id, srcp_default);
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(and3_ga));
+                                       B->PushBefore(and3_ga, stmt);
+
+                                       auto or1 = IRman->create_binary_operation(ebe->type, GetPointer<gimple_assign>(GET_NODE(and1_ga))->op0, GetPointer<gimple_assign>(GET_NODE(and2_ga))->op0, srcp_default, truth_or_expr_K);
+                                       auto or1_ga = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), or1, B_id, srcp_default);
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(or1_ga));
+                                       B->PushBefore(or1_ga, stmt);
+
+                                       auto carry1 = IRman->create_binary_operation(ebe->type, GetPointer<gimple_assign>(GET_NODE(or1_ga))->op0, GetPointer<gimple_assign>(GET_NODE(and3_ga))->op0, srcp_default, truth_or_expr_K);
+                                       auto carry1_ga = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), carry1, B_id, srcp_default);
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(carry1_ga));
+                                       B->PushBefore(carry1_ga, stmt);
+                                       carry = GetPointer<gimple_assign>(GET_NODE(carry1_ga))->op0;
+                                    }
+                                 }
+                                 TM->ReplaceTreeNode(stmt, ga->op1, sum);
+                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
+                                 modified = true;
+#ifndef NDEBUG
+                                 AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                              }
                            }
                         }
                      }
