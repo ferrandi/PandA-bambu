@@ -425,6 +425,7 @@ void SpiderParameter::CheckParameters()
             case(Parameters_FileFormat::FF_OBJECTIVECPP):
             case(Parameters_FileFormat::FF_CPP):
             case(Parameters_FileFormat::FF_FORTRAN):
+            case(Parameters_FileFormat::FF_LLVM):
 #endif
             case(Parameters_FileFormat::FF_CSV):
 #if HAVE_FROM_CSV_BUILT

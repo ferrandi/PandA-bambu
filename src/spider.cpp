@@ -233,6 +233,7 @@ int main(int argc, char* argv[])
                case(Parameters_FileFormat::FF_OBJECTIVECPP):
                case(Parameters_FileFormat::FF_CPP):
                case(Parameters_FileFormat::FF_FORTRAN):
+               case(Parameters_FileFormat::FF_LLVM):
 #endif
                case(Parameters_FileFormat::FF_CSV):
                case(Parameters_FileFormat::FF_CSV_RTL):
@@ -325,6 +326,7 @@ int main(int argc, char* argv[])
                case(Parameters_FileFormat::FF_OBJECTIVECPP):
                case(Parameters_FileFormat::FF_CPP):
                case(Parameters_FileFormat::FF_FORTRAN):
+               case(Parameters_FileFormat::FF_LLVM):
 #endif
                case(Parameters_FileFormat::FF_CSV):
 #if HAVE_FROM_CSV_BUILT
@@ -503,6 +505,7 @@ int main(int argc, char* argv[])
                case(Parameters_FileFormat::FF_OBJECTIVECPP):
                case(Parameters_FileFormat::FF_CPP):
                case(Parameters_FileFormat::FF_FORTRAN):
+               case(Parameters_FileFormat::FF_LLVM):
 #endif
 #if HAVE_FROM_CSV_BUILT
                case(Parameters_FileFormat::FF_CSV_RTL):
@@ -772,6 +775,7 @@ int main(int argc, char* argv[])
                case(Parameters_FileFormat::FF_OBJECTIVECPP):
                case(Parameters_FileFormat::FF_CPP):
                case(Parameters_FileFormat::FF_FORTRAN):
+               case(Parameters_FileFormat::FF_LLVM):
 #endif
                case(Parameters_FileFormat::FF_CSV):
                case(Parameters_FileFormat::FF_CSV_RTL):
@@ -838,6 +842,7 @@ int main(int argc, char* argv[])
          case(Parameters_FileFormat::FF_OBJECTIVECPP):
          case(Parameters_FileFormat::FF_CPP):
          case(Parameters_FileFormat::FF_FORTRAN):
+         case(Parameters_FileFormat::FF_LLVM):
 #endif
 #if HAVE_FROM_CSV_BUILT
          case(Parameters_FileFormat::FF_CSV_RTL):
