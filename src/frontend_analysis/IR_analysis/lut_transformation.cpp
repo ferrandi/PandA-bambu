@@ -1500,9 +1500,9 @@ void lut_transformation::Initialize()
 {
    TM = AppM->get_tree_manager();
    tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
-   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "");
+   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
    const auto hls_target = GetPointer<const HLS_manager>(AppM)->get_HLS_target();
-   THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "");
+   THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "unexpected condition");
    max_lut_size = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
 }
 
