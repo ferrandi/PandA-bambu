@@ -2469,6 +2469,193 @@ static __float32 __float32_mul(__float32 a, __float32 b)
 #endif
 }
 
+__float32
+ __float32_muladd(__float32 uiA, __float32 uiB, __float32 uiC)
+{
+    _Bool signA;
+    __int16 expA;
+    __bits32 sigA;
+    _Bool signB;
+    __int16 expB;
+    __bits32 sigB;
+    _Bool signC;
+    __int16 expC;
+    __bits32 sigC;
+    _Bool signProd;
+    __bits32 magBits, uiZ;
+    __int16 expProd;
+    __bits64 sigProd;
+    _Bool signZ;
+    __int16 expZ;
+    __bits32 sigZ;
+    __int16 expDiff;
+    __bits64 sig64Z, sig64C;
+    __int8 shiftDist;
+
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    signA = __extractFloat32Sign( uiA );
+    expA  = __extractFloat32Exp( uiA );
+    sigA  = __extractFloat32Frac( uiA );
+    signB = __extractFloat32Sign( uiB );
+    expB  = __extractFloat32Exp( uiB );
+    sigB  = __extractFloat32Frac( uiB );
+    signC = __extractFloat32Sign( uiC );
+    expC  = __extractFloat32Exp( uiC );
+    sigC  = __extractFloat32Frac( uiC );
+    signProd = signA ^ signB;
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    if ( expA == 0xFF ) {
+        if ( sigA || ((expB == 0xFF) && sigB) ) goto propagateNaN_ABC;
+        magBits = expB | sigB;
+        goto infProdArg;
+    }
+    if ( expB == 0xFF ) {
+        if ( sigB ) goto propagateNaN_ABC;
+        magBits = expA | sigA;
+        goto infProdArg;
+    }
+    if ( expC == 0xFF ) {
+        if ( sigC ) {
+            uiZ = 0;
+            goto propagateNaN_ZC;
+        }
+        uiZ = uiC;
+        goto uiZ;
+    }
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    if ( ! expA ) {
+        if ( ! sigA ) goto zeroProd;
+        __int8 nZeros;
+        __bits32 shift_0;
+        count_leading_zero_macro_lshift(24, sigA, nZeros, shift_0);
+        expA = 1 - nZeros;
+        sigA = shift_0;
+    }
+    if ( ! expB ) {
+        if ( ! sigB ) goto zeroProd;
+        __int8 nZeros;
+        __bits32 shift_0;
+        count_leading_zero_macro_lshift(24, sigB, nZeros, shift_0);
+        expB = 1 - nZeros;
+        sigB = shift_0;
+    }
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    expProd = expA + expB - 0x7E;
+    sigA = (sigA | 0x00800000)<<7;
+    sigB = (sigB | 0x00800000)<<7;
+    sigProd = (__bits64) sigA * sigB;
+    if ( sigProd <  0x2000000000000000ULL) {
+        --expProd;
+        sigProd <<= 1;
+    }
+    signZ = signProd;
+    if ( ! expC ) {
+        if ( ! sigC ) {
+            expZ = expProd - 1;
+            sigZ = sigProd>>31 | ((sigProd & (((__bits64) 1<<31) - 1)) != 0);
+            goto roundPack;
+        }
+        __int8 nZeros;
+        __bits32 shift_0;
+        count_leading_zero_macro_lshift(24, sigC, nZeros, shift_0);
+        expC = 1 - nZeros;
+        sigC = shift_0;
+    }
+    sigC = (sigC | 0x00800000)<<6;
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+    expDiff = expProd - expC;
+    if ( signProd == signC ) {
+        /*--------------------------------------------------------------------
+        *--------------------------------------------------------------------*/
+        if ( expDiff <= 0 ) {
+            __bits32 dist = 32 - expDiff;
+            __bits64 softfloat_shiftRightJam64 = (dist < 63) ? sigProd>>dist | ((__bits64) (sigProd<<(-dist & 63)) != 0) : (sigProd != 0);
+            expZ = expC;
+            sigZ = sigC + softfloat_shiftRightJam64;
+        } else {
+            __bits64 a = (__bits64) sigC<<32;
+            __bits64 softfloat_shiftRightJam64 = (expDiff < 63) ? a>>expDiff | ((__bits64) (a<<(-expDiff & 63)) != 0) : (a != 0);
+            expZ = expProd;
+            sig64Z =
+                sigProd
+                    + softfloat_shiftRightJam64;
+            sigZ = sig64Z>>32 | ((sig64Z & (((__bits64) 1<<32) - 1)) != 0);
+        }
+        if ( sigZ < 0x40000000 ) {
+            --expZ;
+            sigZ <<= 1;
+        }
+    } else {
+        /*--------------------------------------------------------------------
+        *--------------------------------------------------------------------*/
+        sig64C = (__bits64) sigC<<32;
+        if ( expDiff < 0 ) {
+            __bits32 dist = - expDiff;
+            __bits64 softfloat_shiftRightJam64 = (dist < 63) ? sigProd>>dist | ((__bits64) (sigProd<<(-dist & 63)) != 0) : (sigProd != 0);
+            signZ = signC;
+            expZ = expC;
+            sig64Z = sig64C - softfloat_shiftRightJam64;
+        } else if ( ! expDiff ) {
+            expZ = expProd;
+            sig64Z = sigProd - sig64C;
+            if ( ! sig64Z ) goto completeCancellation;
+            if ( sig64Z & 0x8000000000000000ULL ) {
+                signZ = ! signZ;
+                sig64Z = -sig64Z;
+            }
+        } else {
+            __bits64 softfloat_shiftRightJam64 = (expDiff < 63) ? sig64C>>expDiff | ((__bits64) (sig64C<<(-expDiff & 63)) != 0) : (sig64C != 0);
+            expZ = expProd;
+        }
+        shiftDist = __countLeadingZeros64( sig64Z ) - 1;
+        expZ -= shiftDist;
+        shiftDist -= 32;
+        if ( shiftDist < 0 ) {
+            sigZ = sig64Z>>(-shiftDist) | ((sig64Z & (((__bits64) 1<<(-shiftDist)) - 1)) != 0);
+        } else {
+            sigZ = (__bits64) sig64Z<<shiftDist;
+        }
+    }
+ roundPack:
+    return __roundAndPackFloat32( signZ, expZ, sigZ );
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+ propagateNaN_ABC:
+    uiZ = __propagateFloat32NaN( uiA, uiB );
+    goto propagateNaN_ZC;
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+ infProdArg:
+    if ( magBits ) {
+        uiZ = __packFloat32( signProd, 0xFF, 0 );
+        if ( expC != 0xFF ) goto uiZ;
+        if ( sigC ) goto propagateNaN_ZC;
+        if ( signProd == signC ) goto uiZ;
+    }
+    __float_raise( float_flag_invalid );
+    uiZ = 0xFFC00000;
+ propagateNaN_ZC:
+    uiZ = __propagateFloat32NaN( uiZ, uiC );
+    goto uiZ;
+    /*------------------------------------------------------------------------
+    *------------------------------------------------------------------------*/
+ zeroProd:
+    uiZ = uiC;
+    if ( ! (expC | sigC) && (signProd != signC) ) {
+ completeCancellation:
+        uiZ =
+            __packFloat32(
+                (__float_rounding_mode == float_round_down), 0, 0 );
+    }
+ uiZ:
+    return uiZ;
+
+}
 /*----------------------------------------------------------------------------
 | Returns the result of dividing the single-precision floating-point value `a'
 | by the corresponding value `b'.  The operation is performed according to the
