@@ -220,7 +220,6 @@ class OffNode
    }
 };
 
-
 class Andersen_AA
 {
    friend Constraint;
@@ -460,7 +459,7 @@ class Andersen_AA
    void id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Function* F);
    void add_store2_cons(const llvm::Value* D, const llvm::Value* S, size_t sz = 0);
 
-   void processBlock(const llvm::BasicBlock* BB, std::set<const llvm::BasicBlock *> &bb_seen);
+   void processBlock(const llvm::BasicBlock* BB, std::set<const llvm::BasicBlock*>& bb_seen);
 
  protected:
    u32 merge_nodes(u32 n1, u32 n2);
@@ -468,17 +467,17 @@ class Andersen_AA
  private:
    void hvn(bool do_union);
    void hr(bool do_union, u32 min_del);
-   void make_off_nodes(std::vector<u32> &main2off, std::vector<OffNode> &off_nodes);
-   void add_off_edges(std::vector<u32> &main2off, std::vector<OffNode> &off_nodes, u32 &next_ptr_eq, bool hcd = false);
-   void hvn_dfs(std::unordered_map<bitmap, u32> &lbl2pe, std::stack<u32> &dfs_stk, u32 &curr_dfs, std::vector<OffNode> &off_nodes, u32 &next_ptr_eq, u32 n, bool do_union);
-   void hvn_check_edge(std::unordered_map<bitmap, u32> &lbl2pe, std::stack<u32> &dfs_stk, u32 &curr_dfs, std::vector<OffNode> &off_nodes, u32 &next_ptr_eq, u32 n, u32 dest, bool do_union);
-   void hvn_label(std::unordered_map<bitmap, u32> &lbl2pe, std::vector<OffNode> &off_nodes, u32 &next_ptr_eq, u32 n);
-   void hu_label(std::vector<OffNode> &off_nodes,u32 &next_ptr_eq, u32 n);
-   void merge_ptr_eq(std::vector<u32> &main2off, std::vector<OffNode> &off_nodes);
+   void make_off_nodes(std::vector<u32>& main2off, std::vector<OffNode>& off_nodes);
+   void add_off_edges(std::vector<u32>& main2off, std::vector<OffNode>& off_nodes, u32& next_ptr_eq, bool hcd = false);
+   void hvn_dfs(std::unordered_map<bitmap, u32>& lbl2pe, std::stack<u32>& dfs_stk, u32& curr_dfs, std::vector<OffNode>& off_nodes, u32& next_ptr_eq, u32 n, bool do_union);
+   void hvn_check_edge(std::unordered_map<bitmap, u32>& lbl2pe, std::stack<u32>& dfs_stk, u32& curr_dfs, std::vector<OffNode>& off_nodes, u32& next_ptr_eq, u32 n, u32 dest, bool do_union);
+   void hvn_label(std::unordered_map<bitmap, u32>& lbl2pe, std::vector<OffNode>& off_nodes, u32& next_ptr_eq, u32 n);
+   void hu_label(std::vector<OffNode>& off_nodes, u32& next_ptr_eq, u32 n);
+   void merge_ptr_eq(std::vector<u32>& main2off, std::vector<OffNode>& off_nodes);
    void hcd();
-   void hcd_dfs(std::stack<u32> &dfs_stk, u32 &curr_dfs, std::vector<OffNode> &off_nodes, u32 n);
+   void hcd_dfs(std::stack<u32>& dfs_stk, u32& curr_dfs, std::vector<OffNode>& off_nodes, u32 n);
    void factor_ls();
-   void factor_ls(llvm::DenseMap<Constraint, u32> &factored_cons, const std::set<u32>& other, u32 ref, u32 off, bool load);
+   void factor_ls(llvm::DenseMap<Constraint, u32>& factored_cons, const std::set<u32>& other, u32 ref, u32 off, bool load);
    void cons_opt();
 
    void pts_init();

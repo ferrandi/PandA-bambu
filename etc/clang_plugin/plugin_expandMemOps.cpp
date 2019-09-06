@@ -129,7 +129,7 @@ namespace llvm
       {
          if(!isVolatile)
          {
-            if(SrcAlign==DestAlign && DestAlign==Length->getZExtValue() && DestAlign<=8)
+            if(SrcAlign == DestAlign && DestAlign == Length->getZExtValue() && DestAlign <= 8)
             {
 #if PRINT_DBG_MSG
                llvm::errs() << "memcpy can be optimized\n";
@@ -205,7 +205,7 @@ namespace llvm
             srcIsGlobal = true;
             do_unrolling = do_unrolling && (dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0))->isConstant() || (LoopEndCount <= PEEL_THRESHOLD));
          }
-         else if(LoopEndCount==1)
+         else if(LoopEndCount == 1)
             do_unrolling = true;
          if(do_unrolling && !SrcIsVolatile && !DstIsVolatile && (srcIsAlloca || srcIsGlobal) && llvm::dyn_cast<llvm::BitCastInst>(DstAddr) && PeelCandidate)
          {

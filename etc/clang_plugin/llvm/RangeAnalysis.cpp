@@ -4808,8 +4808,8 @@ namespace RangeAnalysis
          ConstantRange tmpT = (variable == Op0) ? ConstantRange::makeSatisfyingICmpRegion(pred, CR) : ConstantRange::makeSatisfyingICmpRegion(swappred, CR);
 
          auto bw = variable->getType()->getPrimitiveSizeInBits();
-         Range TValues = tmpT.isFullSet() ? Range(Regular,bw) : CR2R(tmpT, bw);
-         Range FValues = tmpT.isFullSet() ? Range(Empty,bw) : Range(Range_base::getAnti(TValues));
+         Range TValues = tmpT.isFullSet() ? Range(Regular, bw) : CR2R(tmpT, bw);
+         Range FValues = tmpT.isFullSet() ? Range(Empty, bw) : Range(Range_base::getAnti(TValues));
 
          // Create the interval using the intersection in the branch.
          std::shared_ptr<BasicInterval> BT = std::make_shared<BasicInterval>(TValues);

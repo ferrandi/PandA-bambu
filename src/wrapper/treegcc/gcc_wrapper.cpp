@@ -402,7 +402,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
          {
             command += " -fplugin=" + compiler.topfname_plugin_obj + " -mllvm -panda-TFN=" + fname;
             command += " -mllvm -panda-Internalize";
-            if(Param->IsParameter("enable-CSROA") && !compiler.CSROA_plugin_obj.empty() && !compiler.expandMemOps_plugin_obj.empty())
+            if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 && !compiler.CSROA_plugin_obj.empty() && !compiler.expandMemOps_plugin_obj.empty())
             {
                command += " -fplugin=" + compiler.expandMemOps_plugin_obj;
                if(!compiler.GepiCanon_plugin_obj.empty())
@@ -2852,7 +2852,9 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
                    "-domtree "
                    "-basicaa "
                    "-aa ";
-         complex_recipe += " -" + CSROA_plugin_name+"D" +
+         complex_recipe += "-" + expandMemOps_plugin_name + " "
+                   "-" + GepiCanon_plugin_name + " "
+                   "-" + CSROA_plugin_name+"D "
                    " -dse -loop-unroll "
                    /// "-instcombine "
                    "-libcalls-shrinkwrap "

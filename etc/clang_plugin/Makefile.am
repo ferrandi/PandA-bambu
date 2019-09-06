@@ -1,5 +1,5 @@
 #This is etc/clang_plugin/Makefile.am
-EXTRA_DIST = $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(top_srcdir)/etc/clang_plugin/gcc/cp-tree.def $(top_srcdir)/etc/clang_plugin/gcc/sync-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/gtm-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/sanitizer.def $(top_srcdir)/etc/clang_plugin/gcc/hsa-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/c-common.def $(top_srcdir)/etc/clang_plugin/gcc/gimple.def $(top_srcdir)/etc/clang_plugin/gcc/builtins.def $(top_srcdir)/etc/clang_plugin/gcc/brig-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/cilkplus.def $(top_srcdir)/etc/clang_plugin/gcc/omp-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/tree.def $(top_srcdir)/etc/clang_plugin/gcc/cilk-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/chkp-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/COPYING3 $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.hpp $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $(top_srcdir)/etc/clang_plugin/llvm/LICENSE.TXT $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.cpp $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.hpp $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp $(top_srcdir)/etc/clang_plugin/CSROA.hpp $(top_srcdir)/etc/clang_plugin/CSROA.cpp $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp
+EXTRA_DIST = $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(top_srcdir)/etc/clang_plugin/gcc/cp-tree.def $(top_srcdir)/etc/clang_plugin/gcc/sync-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/gtm-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/sanitizer.def $(top_srcdir)/etc/clang_plugin/gcc/hsa-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/c-common.def $(top_srcdir)/etc/clang_plugin/gcc/gimple.def $(top_srcdir)/etc/clang_plugin/gcc/builtins.def $(top_srcdir)/etc/clang_plugin/gcc/brig-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/cilkplus.def $(top_srcdir)/etc/clang_plugin/gcc/omp-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/tree.def $(top_srcdir)/etc/clang_plugin/gcc/cilk-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/chkp-builtins.def $(top_srcdir)/etc/clang_plugin/gcc/COPYING3 $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.hpp $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $(top_srcdir)/etc/clang_plugin/llvm/LICENSE.TXT $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.cpp $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.hpp $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.hpp $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp
 
 LD_LIBRARY_PATH=
 PANDA_PLUGIN_VERSION=0.11
@@ -427,7 +427,7 @@ clang4_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp
 	    $(I386_CLANG4_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp -o clang4_GepiCanon.o; \
 	fi;
 
-clang4_CSROA.o : $(top_srcdir)/etc/clang_plugin/CSROA.cpp $(top_srcdir)/etc/clang_plugin/CSROA.hpp
+clang4_CSROA.o : $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.hpp
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM4_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
@@ -436,7 +436,7 @@ clang4_CSROA.o : $(top_srcdir)/etc/clang_plugin/CSROA.cpp $(top_srcdir)/etc/clan
 	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM4_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	    $(I386_CLANG4_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/CSROA.cpp -o clang4_CSROA.o; \
+	    $(I386_CLANG4_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp -o clang4_CSROA.o; \
 	fi;
 
 bambuS2S-4: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
@@ -824,7 +824,7 @@ clang5_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp
 	    $(I386_CLANG5_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp -o clang5_GepiCanon.o; \
 	fi;
 
-clang5_CSROA.o : $(top_srcdir)/etc/clang_plugin/CSROA.cpp $(top_srcdir)/etc/clang_plugin/CSROA.hpp
+clang5_CSROA.o : $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.hpp
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
@@ -833,7 +833,7 @@ clang5_CSROA.o : $(top_srcdir)/etc/clang_plugin/CSROA.cpp $(top_srcdir)/etc/clan
 	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	    $(I386_CLANG5_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/CSROA.cpp -o clang5_CSROA.o; \
+	    $(I386_CLANG5_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp -o clang5_CSROA.o; \
 	fi;
 
 
@@ -1221,7 +1221,7 @@ clang6_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp
 	    $(I386_CLANG6_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp -o clang6_GepiCanon.o; \
 	fi;
 
-clang6_CSROA.o : $(top_srcdir)/etc/clang_plugin/CSROA.cpp $(top_srcdir)/etc/clang_plugin/CSROA.hpp
+clang6_CSROA.o : $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.hpp
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
@@ -1230,7 +1230,7 @@ clang6_CSROA.o : $(top_srcdir)/etc/clang_plugin/CSROA.cpp $(top_srcdir)/etc/clan
 	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM6_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	    $(I386_CLANG6_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/CSROA.cpp -o clang6_CSROA.o; \
+	    $(I386_CLANG6_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp -o clang6_CSROA.o; \
 	fi;
 
 bambuS2S-6: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
@@ -1617,7 +1617,7 @@ clang7_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp
 	fi;
 
 
-clang7_CSROA.o : $(top_srcdir)/etc/clang_plugin/CSROA.cpp $(top_srcdir)/etc/clang_plugin/CSROA.hpp
+clang7_CSROA.o : $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.hpp
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM7_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
@@ -1626,7 +1626,7 @@ clang7_CSROA.o : $(top_srcdir)/etc/clang_plugin/CSROA.cpp $(top_srcdir)/etc/clan
 	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM7_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	    $(I386_CLANG7_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/CSROA.cpp -o clang7_CSROA.o; \
+	    $(I386_CLANG7_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp -o clang7_CSROA.o; \
 	fi;
 
 bambuS2S-7: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
