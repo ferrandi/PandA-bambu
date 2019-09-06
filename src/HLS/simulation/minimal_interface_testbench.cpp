@@ -629,7 +629,27 @@ void MinimalInterfaceTestbench::write_input_signal_declaration(const tree_manage
          writer->write(HDL_manager::convert_to_identifier(writer.get(), port_name) + ";\n");
          if(port_obj->get_typeRef()->treenode > 0 && tree_helper::is_a_pointer(TreeM, port_obj->get_typeRef()->treenode))
          {
-            writer->write("reg [7:0] ex_" + port_obj->get_id() + ";\n");
+            unsigned int pt_type_index = tree_helper::get_pointed_type(TreeM, tree_helper::get_type_index(TreeM, port_obj->get_typeRef()->treenode));
+            tree_nodeRef pt_node = TreeM->get_tree_node_const(pt_type_index);
+            if(GetPointer<array_type>(pt_node))
+            {
+               while(GetPointer<array_type>(pt_node))
+               {
+                  pt_type_index = GET_INDEX_NODE(GetPointer<array_type>(pt_node)->elts);
+                  pt_node = GET_NODE(GetPointer<array_type>(pt_node)->elts);
+               }
+            }
+
+            /// FIXME: real numbers at the moment have to be considered diffently because of computation of ulp; c++ code is still managed in the old way
+            if(tree_helper::is_real(TreeM, pt_type_index) or flag_cpp)
+            {
+               long long int bitsize = tree_helper::size(TreeM, pt_type_index);
+               writer->write("reg [" + STR(bitsize - 1) + ":0] ex_" + port_obj->get_id() + ";\n");
+            }
+            else
+            {
+               writer->write("reg [7:0] ex_" + port_obj->get_id() + ";\n");
+            }
          }
       }
       writer->write("\n");

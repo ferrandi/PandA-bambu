@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018 Politecnico di Milano
+ *              Copyright (c) 2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -30,28 +30,15 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-/**
- * @file memory_initialization_writer.cpp
- * @brief Functor used to write initialization of the memory
- *
- * @author Marco Lattuada <marco.lattuada@polimi.it>
- *
- */
 
 /// Header include
-#include "memory_initialization_writer.hpp"
+#include "memory_initialization_c_writer.hpp"
 
-///. include
+/// . include
 #include "Parameter.hpp"
 
 /// HLS/simulation include
 #include "testbench_generation.hpp"
-
-/// STD include
-#include <string>
-
-/// STL include
-#include <utility>
 
 /// tree includes
 #include "behavioral_helper.hpp"
@@ -59,38 +46,35 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 
-/// utility include
+/// utility includes
 #include "dbgPrintHelper.hpp"
-#include "exceptions.hpp"
+#include "indented_output_stream.hpp"
 #include "utility.hpp"
 
-MemoryInitializationWriter::MemoryInitializationWriter(std::ofstream& _output_stream, const tree_managerConstRef _TM, const BehavioralHelperConstRef _behavioral_helper, const unsigned long int _reserved_mem_bytes,
-                                                       const tree_nodeConstRef _function_parameter, const TestbenchGeneration_MemoryType _testbench_generation_memory_type, const ParameterConstRef _parameters)
-    : MemoryInitializationWriterBase(_TM, _behavioral_helper, _reserved_mem_bytes, _function_parameter, _testbench_generation_memory_type, _parameters),
-      output_stream(_output_stream)
+MemoryInitializationCWriter::MemoryInitializationCWriter(const IndentedOutputStreamRef _indented_output_stream, const tree_managerConstRef _TM, const BehavioralHelperConstRef _behavioral_helper, const unsigned long int _reserved_mem_bytes, const tree_nodeConstRef _function_parameter, const TestbenchGeneration_MemoryType _testbench_generation_memory_type, const ParameterConstRef _parameters) :
+   MemoryInitializationWriterBase(_TM, _behavioral_helper, _reserved_mem_bytes, _function_parameter, _testbench_generation_memory_type, _parameters),
+   indented_output_stream(_indented_output_stream)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-void MemoryInitializationWriter::Process(const std::string& content)
+void MemoryInitializationCWriter::Process(const std::string& content)
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing " + content + " in binary form to initialize memory");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing C code to write " + content + " in binary form to initialize memory");
    unsigned int base_type_index = 0;
    /// Second, according to the type let's how many elements have to have been processed
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Currently writing " + status.back().first->get_kind_text());
    switch(status.back().first->get_kind())
    {
       case pointer_type_K:
-         base_type_index = tree_helper::get_pointed_type(TM, status.back().first->index);
-         break;
       case integer_type_K:
+      case real_type_K:
          base_type_index = status.back().first->index;
          break;
       case array_type_K:
       case boolean_type_K:
       case CharType_K:
       case enumeral_type_K:
-      case real_type_K:
       case complex_type_K:
       case record_type_K:
       case union_type_K:
@@ -148,12 +132,18 @@ void MemoryInitializationWriter::Process(const std::string& content)
          size = tree_helper::size(TM, base_type_index);
          binary_value = ConvertInBinary(content, size, false, tree_helper::is_unsigned(TM, base_type_index));
          break;
+      case real_type_K:
+         size = tree_helper::size(TM, base_type_index);
+         binary_value = ConvertInBinary(content, size, true, false);
+         break;
       case pointer_type_K:
+         size = tree_helper::size(TM, base_type_index);
+         binary_value = ConvertInBinary(content, size, false, true);
+         break;
       case array_type_K:
       case boolean_type_K:
       case CharType_K:
       case enumeral_type_K:
-      case real_type_K:
       case complex_type_K:
       case record_type_K:
       case union_type_K:
@@ -206,37 +196,27 @@ void MemoryInitializationWriter::Process(const std::string& content)
    switch(testbench_generation_memory_type)
    {
       case TestbenchGeneration_MemoryType::INPUT_PARAMETER:
-         output_stream << "//parameter: " << behavioral_helper->PrintVariable(function_parameter->index) << " value: " << content << std::endl;
-         output_stream << "p" << binary_value << std::endl;
-         break;
-      case TestbenchGeneration_MemoryType::OUTPUT_PARAMETER:
-         output_stream << "//expected value for output " + behavioral_helper->PrintVariable(function_parameter->index) + ": " << content << std::endl;
-         for(size_t bit = 0; bit < binary_value.size(); bit += 8)
-         {
-            output_stream << "o" << binary_value.substr(binary_value.size() - 8 - bit, 8) << std::endl;
-         }
+         indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//parameter: " + behavioral_helper->PrintVariable(function_parameter->index) + " value: " + content + "\\n\");\n");
+         indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"p" + binary_value + "\\n\");\n");
          break;
       case TestbenchGeneration_MemoryType::MEMORY_INITIALIZATION:
-         output_stream << "//memory initialization for variable " + behavioral_helper->PrintVariable(function_parameter->index) + " value: " + content << std::endl;
+         indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//memory initialization for variable: " + behavioral_helper->PrintVariable(function_parameter->index) + " value: " + content + "\\n\");\n");
          for(size_t bit = 0; bit < binary_value.size(); bit += 8)
          {
-            output_stream << "m" << binary_value.substr(binary_value.size() - 8 - bit, 8) << std::endl;
+            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"m" + binary_value.substr(binary_value.size() - 8 -bit, 8) + "\\n\");\n");
+         }
+         break;
+      case TestbenchGeneration_MemoryType::OUTPUT_PARAMETER:
+         indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output: " + behavioral_helper->PrintVariable(function_parameter->index) + " value: " + content + "\\n\");\n");
+         for(size_t bit = 0; bit < binary_value.size(); bit += 8)
+         {
+            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"o" + binary_value.substr(binary_value.size() - 8 -bit, 8) + "\\n\");\n");
          }
          break;
       case TestbenchGeneration_MemoryType::RETURN:
-         if(GetPointer<const type_node>(function_parameter))
-         {
-            output_stream << "//expected value for return value" << std::endl;
-            output_stream << "o" << binary_value << std::endl;
-         }
-         else
-         {
-            THROW_UNREACHABLE("");
-         }
-         break;
       default:
          THROW_UNREACHABLE("");
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written " + content + " (" + STR(binary_value.size() / 8) + " bytes) in binary form to initialize memory");
-}
 
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added code to write " + content + " (" + STR(binary_value.size() / 8) + " bytes) in binary form to initialize memory");
+}
