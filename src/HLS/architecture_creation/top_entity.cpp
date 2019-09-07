@@ -339,7 +339,7 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
 
    const structural_objectRef& Datapath = HLS->datapath->get_circ();
    const std::list<unsigned int>& function_parameters = BH->get_parameters();
-   // conn_binding& conn = *(HLS->Rconn);
+   const auto conn = HLS->Rconn;
    for(const auto function_parameter : function_parameters)
    {
       // generic_objRef input = conn.get_port(function_parameter, conn_binding::IN);
@@ -383,18 +383,25 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
    if(return_type_index)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Return type index is " + STR(return_type_index));
-      // generic_objRef return_port = conn.get_port(return_type_index, conn_binding::OUT);
-      // structural_objectRef ret_obj = return_port->get_structural_obj();
-      // structural_type_descriptorRef port_type = ret_obj->get_typeRef();
-      structural_objectRef ret_obj = Datapath->find_member(RETURN_PORT_NAME, port_o_K, Datapath); // port get by name in order to do not use conn_binding
-      THROW_ASSERT(ret_obj, "in_obj is not a port");
       structural_type_descriptorRef port_type;
-      if(HLSMgr->Rmem->has_base_address(return_type_index) && !HLSMgr->Rmem->has_parameter_base_address(return_type_index, HLS->functionId) && !HLSMgr->Rmem->is_parm_decl_stored(return_type_index))
+      structural_objectRef ret_obj;
+      if(conn)
       {
-         port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));
+         generic_objRef return_port = conn->get_port(return_type_index, conn_binding::OUT);
+         ret_obj = return_port->get_structural_obj();
+         port_type = ret_obj->get_typeRef();
       }
       else
-         port_type = structural_type_descriptorRef(new structural_type_descriptor(return_type_index, BH));
+      {
+         ret_obj = Datapath->find_member(RETURN_PORT_NAME, port_o_K, Datapath); // port get by name in order to do not use conn_binding
+         THROW_ASSERT(ret_obj, "in_obj is not a port");
+         if(HLSMgr->Rmem->has_base_address(return_type_index) && !HLSMgr->Rmem->has_parameter_base_address(return_type_index, HLS->functionId) && !HLSMgr->Rmem->is_parm_decl_stored(return_type_index))
+         {
+            port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));
+         }
+         else
+            port_type = structural_type_descriptorRef(new structural_type_descriptor(return_type_index, BH));
+      }
       structural_objectRef top_obj;
       if(ret_obj->get_kind() == port_vector_o_K)
       {
