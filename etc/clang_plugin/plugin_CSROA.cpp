@@ -101,7 +101,6 @@ static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_wrapp
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
    PM.add(llvm::createSimpleLoopUnrollPass());
-   PM.add(llvm::createPromoteMemoryToRegisterPass());
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_functionVersioning >);
    PM.add(llvm::createVerifierPass());
    PM.add(llvm::createIPSCCPPass());
@@ -139,29 +138,6 @@ static void loadPassLate(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
    PM.add(llvm::createDeadArgEliminationPass());
    PM.add(llvm::createArgumentPromotionPass());
    PM.add(llvm::createSimpleLoopUnrollPass());
-   PM.add(llvm::createPromoteMemoryToRegisterPass());
-   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_functionVersioning >);
-   PM.add(llvm::createVerifierPass());
-   PM.add(llvm::createIPSCCPPass());
-   PM.add(llvm::createGlobalDCEPass());
-   PM.add(llvm::createPromoteMemoryToRegisterPass());
-   PM.add(llvm::createDeadArgEliminationPass());
-   PM.add(llvm::createArgumentPromotionPass());
-   PM.add(llvm::createSimpleLoopUnrollPass());
-   PM.add(llvm::createCFGSimplificationPass());
-   PM.add(llvm::createVerifierPass());
-   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_disaggregation >);
-   PM.add(llvm::createVerifierPass());
-   PM.add(llvm::createReversePostOrderFunctionAttrsPass());
-   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_wrapperInlining >);
-   PM.add(llvm::createDeadStoreEliminationPass());
-   PM.add(llvm::createEarlyCSEPass(true));
-   PM.add(llvm::createConstantPropagationPass());
-   PM.add(llvm::createIPSCCPPass());
-   PM.add(llvm::createGlobalDCEPass());
-   PM.add(llvm::createPromoteMemoryToRegisterPass());
-   PM.add(llvm::createDeadArgEliminationPass());
-   PM.add(llvm::createArgumentPromotionPass());
 }
 
 #if ADD_RSP
