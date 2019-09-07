@@ -335,23 +335,23 @@ bool check_ptr_expandability(llvm::Use& ptr_use, llvm::Value* base_ptr, std::map
 {
    point_to_set_map.insert(std::make_pair(ptr_use.get(), base_ptr));
 
-   if(llvm::GetElementPtrInst* gep_inst = llvm::dyn_cast<llvm::GetElementPtrInst>(ptr_use.getUser()))
+   if(llvm::GEPOperator* gep_op = llvm::dyn_cast<llvm::GEPOperator>(ptr_use.getUser()))
    {
-      if(ptr_use.getOperandNo() == gep_inst->getPointerOperandIndex())
+      if(ptr_use.getOperandNo() == gep_op->getPointerOperandIndex())
       {
-         llvm::GetElementPtrInst* gepi_rec = gep_inst;
+         llvm::GEPOperator* gepop_rec = gep_op;
          bool chain_has_all_constant_indices = true;
-         while(gepi_rec != nullptr)
+         while(gepop_rec != nullptr)
          {
-            if(!gepi_rec->hasAllConstantIndices())
+            if(!gepop_rec->hasAllConstantIndices())
             {
                chain_has_all_constant_indices = false;
                break;
             }
-            gepi_rec = llvm::dyn_cast<llvm::GetElementPtrInst>(gepi_rec->getPointerOperand());
+            gepop_rec = llvm::dyn_cast<llvm::GEPOperator>(gepop_rec->getPointerOperand());
          }
          bool ret = true;
-         for(llvm::Use& use : gep_inst->uses())
+         for(llvm::Use& use : gep_op->uses())
          {
             bool ptr_exp = check_ptr_expandability(use, base_ptr, operands_expandability_map, point_to_set_map, chain_has_all_constant_indices, call_trace);
             ret = ret and ptr_exp;
@@ -374,16 +374,16 @@ bool check_ptr_expandability(llvm::Use& ptr_use, llvm::Value* base_ptr, std::map
    }
    else if(llvm::isa<llvm::CallInst>(ptr_use.getUser()) || llvm::isa<llvm::InvokeInst>(ptr_use.getUser()))
    {
-      llvm::GetElementPtrInst* gepi_rec = llvm::dyn_cast<llvm::GetElementPtrInst>(ptr_use.get());
+      llvm::GEPOperator* gepop_rec = llvm::dyn_cast<llvm::GEPOperator>(ptr_use.get());
       bool chain_has_all_constant_indices = true;
-      while(gepi_rec != nullptr)
+      while(gepop_rec != nullptr)
       {
-         if(!gepi_rec->hasAllConstantIndices())
+         if(!gepop_rec->hasAllConstantIndices())
          {
             chain_has_all_constant_indices = false;
             break;
          }
-         gepi_rec = llvm::dyn_cast<llvm::GetElementPtrInst>(gepi_rec->getPointerOperand());
+         gepop_rec = llvm::dyn_cast<llvm::GEPOperator>(gepop_rec->getPointerOperand());
       }
 
       auto call_inst = llvm::dyn_cast<llvm::Instruction>(ptr_use.getUser());
@@ -501,9 +501,9 @@ bool check_ptr_expandability(llvm::Use& ptr_use, llvm::Value* base_ptr, std::map
    }
 }
 
-void compute_aggregates_expandability_rec(llvm::Instruction* call_inst, llvm::Function* kernel_function, std::map<llvm::AllocaInst*, bool>& allocas_expandability_map, std::map<llvm::GlobalVariable*, bool>& globals_expandability_map,
-                                          std::map<std::pair<std::vector<llvm::Instruction*>, llvm::Use*>, bool>& operands_expandability_map, std::map<llvm::Value*, llvm::Value*>& point_to_set_map,
-                                          std::map<llvm::Instruction*, std::vector<llvm::Instruction*>>& compact_callgraph, const llvm::DataLayout& DL, std::vector<llvm::Instruction*>& call_trace)
+void compute_allocas_expandability_rec(llvm::Instruction* call_inst, llvm::Function* kernel_function, std::map<llvm::AllocaInst*, bool>& allocas_expandability_map, std::map<llvm::GlobalVariable*, bool>& globals_expandability_map,
+                                       std::map<std::pair<std::vector<llvm::Instruction*>, llvm::Use*>, bool>& operands_expandability_map, std::map<llvm::Value*, llvm::Value*>& point_to_set_map,
+                                       std::map<llvm::Instruction*, std::vector<llvm::Instruction*>>& compact_callgraph, const llvm::DataLayout& DL, std::vector<llvm::Instruction*>& call_trace)
 {
    call_trace.push_back(call_inst);
 
@@ -566,7 +566,32 @@ void compute_aggregates_expandability_rec(llvm::Instruction* call_inst, llvm::Fu
 
    for(llvm::Instruction* inner_call_inst : call_inst_vec)
    {
-      compute_aggregates_expandability_rec(inner_call_inst, nullptr, allocas_expandability_map, globals_expandability_map, operands_expandability_map, point_to_set_map, compact_callgraph, DL, call_trace);
+      compute_allocas_expandability_rec(inner_call_inst, nullptr, allocas_expandability_map, globals_expandability_map, operands_expandability_map, point_to_set_map, compact_callgraph, DL, call_trace);
+   }
+
+   call_trace.pop_back();
+}
+
+void compute_global_op_expandability_rec(llvm::Instruction* call_inst, const std::map<llvm::GlobalVariable*, bool>& globals_expandability_map, std::map<std::pair<std::vector<llvm::Instruction*>, llvm::Use*>, bool>& operands_expandability_map,
+                                         std::map<llvm::Value*, llvm::Value*>& point_to_set_map, std::map<llvm::Instruction*, std::vector<llvm::Instruction*>>& compact_callgraph, const llvm::DataLayout& DL, std::vector<llvm::Instruction*>& call_trace,
+                                         const std::set<llvm::Use*>& globals_as_exp)
+{
+   call_trace.push_back(call_inst);
+
+   auto call_it = compact_callgraph.find(call_inst);
+
+   if(call_it != compact_callgraph.end())
+   {
+      for(auto inner_call_inst : call_it->second)
+      {
+         for(llvm::Use& use : llvm::CallSite(inner_call_inst).args())
+         {
+            if(globals_as_exp.count(&use) > 0)
+            {
+               check_ptr_expandability(use, point_to_set_map.at(use.get()), operands_expandability_map, point_to_set_map, true, call_trace);
+            }
+         }
+      }
    }
 
    call_trace.pop_back();
@@ -577,7 +602,7 @@ void compute_aggregates_expandability(llvm::Function* kernel_function, llvm::Mod
                                       std::map<llvm::Instruction*, std::vector<llvm::Instruction*>>& compact_callgraph, const llvm::DataLayout& DL)
 {
    std::vector<llvm::Instruction*> call_trace;
-   compute_aggregates_expandability_rec(nullptr, kernel_function, allocas_expandability_map, globals_expandability_map, operands_expandability_map, point_to_set_map, compact_callgraph, DL, call_trace);
+   compute_allocas_expandability_rec(nullptr, kernel_function, allocas_expandability_map, globals_expandability_map, operands_expandability_map, point_to_set_map, compact_callgraph, DL, call_trace);
 
    std::set<llvm::Function*> function_worklist;
    for(auto cc_it : compact_callgraph)
@@ -589,7 +614,7 @@ void compute_aggregates_expandability(llvm::Function* kernel_function, llvm::Mod
    }
    function_worklist.insert(kernel_function);
 
-   call_trace.push_back(nullptr);
+   std::map<std::pair<std::vector<llvm::Instruction*>, llvm::Use*>, bool> operands_expandability_map_by_globals;
    for(llvm::GlobalVariable& global_var : module->globals())
    {
       bool all_uses_in_worklist = true;
@@ -610,13 +635,16 @@ void compute_aggregates_expandability(llvm::Function* kernel_function, llvm::Mod
       {
          if(global_var.getType()->getPointerElementType()->isAggregateType())
          {
+            call_trace.clear();
+            call_trace.push_back(nullptr);
+
             std::string size_msg = "";
             bool expandable_size = has_expandable_size(&global_var, DL, 1, size_msg);
 
             bool can_exp = true;
             for(llvm::Use& use : global_var.uses())
             {
-               bool ptr_exp = check_ptr_expandability(use, &global_var, operands_expandability_map, point_to_set_map, true, call_trace);
+               bool ptr_exp = check_ptr_expandability(use, &global_var, operands_expandability_map_by_globals, point_to_set_map, true, call_trace);
                can_exp = can_exp and ptr_exp;
             }
 
@@ -628,6 +656,7 @@ void compute_aggregates_expandability(llvm::Function* kernel_function, llvm::Mod
                global_var.print(base_rso);
                llvm::errs() << "WAR: " << base_str << "  cannot expand because of its size (" << size_msg << ")\n";
             }
+            call_trace.pop_back();
          }
          else
          {
@@ -639,7 +668,18 @@ void compute_aggregates_expandability(llvm::Function* kernel_function, llvm::Mod
          globals_expandability_map.insert(std::make_pair(&global_var, false));
       }
    }
-   call_trace.pop_back();
+
+   std::vector<llvm::Instruction*> null_call_trace = std::vector<llvm::Instruction*>(1, nullptr);
+   std::set<llvm::Use*> global_as_op;
+   for(auto& op_it : operands_expandability_map_by_globals)
+   {
+      if(op_it.first.first == null_call_trace)
+      {
+         global_as_op.insert(op_it.first.second);
+      }
+   }
+
+   compute_global_op_expandability_rec(nullptr, globals_expandability_map, operands_expandability_map, point_to_set_map, compact_callgraph, DL, call_trace, global_as_op);
 }
 
 void compute_callgraph_rec(llvm::Instruction* call_inst, llvm::Function* kernel_function, std::map<llvm::Instruction*, std::vector<llvm::Instruction*>>& compact_callgraph, std::vector<llvm::Instruction*>& call_trace)
@@ -698,7 +738,7 @@ void compute_callgraph(llvm::Function* kernel_function, std::map<llvm::Instructi
 }
 
 std::vector<unsigned long long> get_op_dims(llvm::Use* op_use, llvm::Instruction* parent_call_isnt, const std::map<std::pair<std::vector<llvm::Instruction*>, llvm::Use*>, std::vector<unsigned long long>>& op_dims_map,
-                                            std::vector<llvm::Instruction*>& call_trace)
+                                            const std::vector<llvm::Instruction*>& call_trace)
 {
    std::vector<llvm::Instruction*> parent_call_trace = std::vector<llvm::Instruction*>(call_trace.begin(), call_trace.end() - 1);
 
@@ -948,8 +988,10 @@ void compute_op_exp_and_dims_rec(llvm::Instruction* call_inst, llvm::Instruction
          {
             llvm::Use& op_use = call_inst->getOperandUse(idx);
 
+            std::pair<std::vector<llvm::Instruction*>, llvm::Use*> call_key = std::make_pair(call_trace, &op_use);
+
             std::vector<unsigned long long> dims = std::vector<unsigned long long>(1, 0);
-            auto exp_it = operands_expandability_map.find(std::make_pair(call_trace, &op_use));
+            auto exp_it = operands_expandability_map.find(call_key);
             if(exp_it != operands_expandability_map.end())
             {
                if(exp_it->second)
@@ -961,7 +1003,7 @@ void compute_op_exp_and_dims_rec(llvm::Instruction* call_inst, llvm::Instruction
 
                   if(!expandable_size)
                   {
-                     operands_expandability_map[std::make_pair(call_trace, &op_use)] = false;
+                     operands_expandability_map[call_key] = false;
 
                      if(!size_msg.empty())
                      {
@@ -978,10 +1020,10 @@ void compute_op_exp_and_dims_rec(llvm::Instruction* call_inst, llvm::Instruction
             }
             else
             {
-               operands_expandability_map.insert(std::make_pair(std::make_pair(call_trace, &op_use), false));
+               operands_expandability_map.insert(std::make_pair(call_key, false));
             }
 
-            operands_dimensions_map.insert(std::make_pair(std::make_pair(call_trace, &op_use), dims));
+            operands_dimensions_map.insert(std::make_pair(call_key, dims));
          }
       }
    }
@@ -1154,6 +1196,48 @@ void perform_function_versioning(std::map<llvm::Instruction*, std::vector<llvm::
       initialize_callsites(nullptr, call_trace, operands_expandability_map, operands_dimensions_map, compact_callgraph, op_exp_and_dim_by_callsite);
    }
 
+   if(operands_expandability_map.size() != operands_dimensions_map.size())
+   {
+      llvm::errs() << "ERR Exp and dim maps with different sizes (" << operands_expandability_map.size() << " vs. " << operands_dimensions_map.size() << ")\n";
+      llvm::errs() << "IN DIMS BUT MISSING IN EXP:\n";
+      for(auto dims_it : operands_dimensions_map)
+      {
+         const std::pair<std::vector<llvm::Instruction*>, llvm::Use*>& dim_key = dims_it.first;
+         if(operands_expandability_map.count(dim_key) == 0)
+         {
+            llvm::errs() << "  Use:  ";
+            dim_key.second->get()->dump();
+            llvm::errs() << "  User: " << dim_key.second->getUser();
+            dim_key.second->getUser()->dump();
+            llvm::errs() << "  Call trace:  ";
+            for(llvm::Instruction* c : dim_key.first)
+            {
+               llvm::errs() << " " << c << "=" << (c ? llvm::CallSite(c).getCalledFunction()->getName() : "KERNEL") << "  ";
+            }
+            llvm::errs() << "\n\n";
+         }
+      }
+      llvm::errs() << "IN EXP BUT MISSING IN DIMS:\n";
+      for(auto exp_it : operands_expandability_map)
+      {
+         const std::pair<std::vector<llvm::Instruction*>, llvm::Use*>& exp_key = exp_it.first;
+         if(operands_dimensions_map.count(exp_key) == 0)
+         {
+            llvm::errs() << "  Use:  ";
+            exp_key.second->get()->dump();
+            llvm::errs() << "  User: " << exp_key.second->getUser();
+            exp_key.second->getUser()->dump();
+            llvm::errs() << "  Call trace:  ";
+            for(llvm::Instruction* c : exp_key.first)
+            {
+               llvm::errs() << " " << c << "=" << (c ? llvm::CallSite(c).getCalledFunction()->getName() : "KERNEL") << "  ";
+            }
+            llvm::errs() << "\n\n";
+         }
+      }
+      exit(-1);
+   }
+
    auto op_exp_it = operands_expandability_map.begin();
    auto op_dim_it = operands_dimensions_map.begin();
    auto op_exp_it_end = operands_expandability_map.end();
@@ -1161,12 +1245,6 @@ void perform_function_versioning(std::map<llvm::Instruction*, std::vector<llvm::
 
    for(; op_exp_it != op_exp_it_end or op_dim_it != op_dim_it_end; ++op_exp_it, ++op_dim_it)
    {
-      if(op_exp_it == op_exp_it_end or op_dim_it == op_dim_it_end)
-      {
-         llvm::errs() << "ERR wrong iter\n";
-         exit(-1);
-      }
-
       if(op_exp_it->first != op_dim_it->first)
       {
          llvm::errs() << "ERR wrong iter\n";
@@ -1318,6 +1396,48 @@ bool check_function_versioning(const std::map<llvm::Instruction*, std::vector<ll
       initialize_callsites(nullptr, call_trace, operands_expandability_map, operands_dimensions_map, compact_callgraph, op_exp_and_dim_by_callsite);
    }
 
+   if(operands_expandability_map.size() != operands_dimensions_map.size())
+   {
+      llvm::errs() << "ERR Exp and dim maps with different sizes (" << operands_expandability_map.size() << " vs. " << operands_dimensions_map.size() << ")\n";
+      llvm::errs() << "IN DIMS BUT MISSING IN EXP:\n";
+      for(auto dims_it : operands_dimensions_map)
+      {
+         const std::pair<std::vector<llvm::Instruction*>, llvm::Use*>& dim_key = dims_it.first;
+         if(operands_expandability_map.count(dim_key) == 0)
+         {
+            llvm::errs() << "  Use:  ";
+            dim_key.second->get()->dump();
+            llvm::errs() << "  User: " << dim_key.second->getUser();
+            dim_key.second->getUser()->dump();
+            llvm::errs() << "  Call trace:  ";
+            for(llvm::Instruction* c : dim_key.first)
+            {
+               llvm::errs() << " " << c << "=" << (c ? llvm::CallSite(c).getCalledFunction()->getName() : "KERNEL") << "  ";
+            }
+            llvm::errs() << "\n\n";
+         }
+      }
+      llvm::errs() << "IN EXP BUT MISSING IN DIMS:\n";
+      for(auto exp_it : operands_expandability_map)
+      {
+         const std::pair<std::vector<llvm::Instruction*>, llvm::Use*>& exp_key = exp_it.first;
+         if(operands_dimensions_map.count(exp_key) == 0)
+         {
+            llvm::errs() << "  Use:  ";
+            exp_key.second->get()->dump();
+            llvm::errs() << "  User: " << exp_key.second->getUser();
+            exp_key.second->getUser()->dump();
+            llvm::errs() << "  Call trace:  ";
+            for(llvm::Instruction* c : exp_key.first)
+            {
+               llvm::errs() << " " << c << "=" << (c ? llvm::CallSite(c).getCalledFunction()->getName() : "KERNEL") << "  ";
+            }
+            llvm::errs() << "\n\n";
+         }
+      }
+      exit(-1);
+   }
+
    auto op_exp_it = operands_expandability_map.begin();
    auto op_dim_it = operands_dimensions_map.begin();
    auto op_exp_it_end = operands_expandability_map.end();
@@ -1325,12 +1445,6 @@ bool check_function_versioning(const std::map<llvm::Instruction*, std::vector<ll
 
    for(; op_exp_it != op_exp_it_end or op_dim_it != op_dim_it_end; ++op_exp_it, ++op_dim_it)
    {
-      if(op_exp_it == op_exp_it_end or op_dim_it == op_dim_it_end)
-      {
-         llvm::errs() << "ERR wrong iter\n";
-         exit(-1);
-      }
-
       if(op_exp_it->first != op_dim_it->first)
       {
          llvm::errs() << "ERR wrong iter\n";
@@ -2154,16 +2268,17 @@ bool compute_base_and_offset(llvm::Use* ptr_use, llvm::Value*& base_address, std
                signed long long offset = c_index->getSExtValue() * array_elmt_size.getSExtValue();
                llvm::APInt offset_ai(c_index->getBitWidth(), offset);
 
-               // Fold with the last element of the chain if constant as well
-               if(llvm::ConstantInt* c_last = llvm::dyn_cast<llvm::ConstantInt>(offset_chain.back()))
-               {
-                  signed long long offset_sum = c_last->getSExtValue() + offset_ai.getSExtValue();
-                  llvm::APInt offset_sum_ai(DL.getPointerTypeSizeInBits(gep_op->getType()), offset_sum);
-                  offset_chain.back() = llvm::ConstantInt::get(gep_op->getContext(), offset_sum_ai);
-               }
-               else
-               {
+               if (offset_chain.empty()) {
                   offset_chain.push_back(llvm::ConstantInt::get(gep_op->getContext(), offset_ai));
+               } else {
+                  // Fold with the last element of the chain if constant as well
+                  if (llvm::ConstantInt *c_last = llvm::dyn_cast<llvm::ConstantInt>(offset_chain.back())) {
+                     signed long long offset_sum = c_last->getSExtValue() + offset_ai.getSExtValue();
+                     llvm::APInt offset_sum_ai(DL.getPointerTypeSizeInBits(gep_op->getType()), offset_sum);
+                     offset_chain.back() = llvm::ConstantInt::get(gep_op->getContext(), offset_sum_ai);
+                  } else {
+                     offset_chain.push_back(llvm::ConstantInt::get(gep_op->getContext(), offset_ai));
+                  }
                }
             }
             else
