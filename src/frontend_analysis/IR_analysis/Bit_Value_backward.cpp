@@ -861,6 +861,37 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       return res_input1;
    }
 #endif
+   else if(op_kind == extract_bit_expr_K)
+   {
+      auto* operation = GetPointer<extract_bit_expr>(GET_NODE(ga->op1));
+      if(GET_INDEX_NODE(operation->op1) == output_id)
+      {
+         THROW_ERROR("unexpected condition");
+         return std::deque<bit_lattice>();
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "backward_transfer, bitstring of first operand is-> " + bitstring_to_string(output_bitstring));
+
+      auto* const2 = GetPointer<integer_cst>(GET_NODE(operation->op1));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "backward_transfer, created bitstring from constant -> " + STR(const2->value));
+      THROW_ASSERT(const2->value >= 0, "unexpected condition");
+      THROW_ASSERT(output_bitstring.size()==1, "unexpected condition");
+
+      std::deque<bit_lattice> res_input1 = output_bitstring;
+      const auto shift_value = static_cast<unsigned long long>(const2->value);
+      for(unsigned long long shift_value_it = 0; shift_value_it < shift_value; shift_value_it++)
+         res_input1.push_back(bit_lattice::X);
+      if(tree_helper::is_int(TM, GET_INDEX_NODE(operation->op0)))
+         res_input1.push_front(res_input1.front());
+
+      const auto shifted_type_size = tree_helper::Size(tree_helper::CGetType(GET_NODE(operation->op0)));
+      while(res_input1.size() > shifted_type_size)
+         res_input1.pop_front();
+
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "backward_transfer, operation: " + STR(GET_INDEX_NODE(ga->op0)) + " = " + STR(GET_INDEX_NODE(operation->op0)) + " extract_bit_expr " + STR(GET_INDEX_NODE(operation->op1)));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "input1: " + bitstring_to_string(res_input1));
+      return res_input1;
+
+   }
    else if(op_kind == rrotate_expr_K)
    {
       auto* operation = GetPointer<rrotate_expr>(GET_NODE(ga->op1));
@@ -1236,6 +1267,10 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
          }
          operation = GetPointer<array_ref>(GET_NODE(operation->op0));
       } while(operation);
+      return std::deque<bit_lattice>();
+   }
+   else if(op_kind == lut_expr_K)
+   {
       return std::deque<bit_lattice>();
    }
    else if(op_kind == addr_expr_K)

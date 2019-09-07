@@ -36,14 +36,18 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
 #ifndef _MEMORY_HPP_
 #define _MEMORY_HPP_
+
+/// STD include
+#include <string>
+
+/// STL includes
+#include <map>
+#include <set>
 
 #include "refcount.hpp"
 /**
@@ -52,14 +56,13 @@
 //@{
 REF_FORWARD_DECL(application_manager);
 REF_FORWARD_DECL(tree_manager);
+REF_FORWARD_DECL(memory);
 REF_FORWARD_DECL(memory_symbol);
+CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(structural_manager);
 REF_FORWARD_DECL(structural_object);
 //@}
 class xml_element;
-
-#include <map>
-#include <set>
 
 class memory
 {
@@ -209,7 +212,10 @@ class memory
    /**
     * Destructor
     */
-   ~memory();
+   virtual ~memory();
+
+   static memoryRef create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM, unsigned int _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address,
+                                  const unsigned int& _address_bitsize);
 
    /**
     * Return variables allocated out of the top module

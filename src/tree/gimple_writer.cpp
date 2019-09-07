@@ -222,6 +222,7 @@ void GimpleWriter::operator()(const unary_expr* obj, unsigned int& mask)
       case tree_list_K:
       case tree_vec_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -385,6 +386,14 @@ void GimpleWriter::operator()(const binary_expr* obj, unsigned int& mask)
       {
          obj->op0->visit(this);
          const std::string op = tree_helper::op_symbol(obj);
+         os << " " << op << " ";
+         obj->op1->visit(this);
+         break;
+      }
+      case extract_bit_expr_K:
+      {
+         obj->op0->visit(this);
+         const std::string op = "EXTRACT_BIT_EXPR";
          os << " " << op << " ";
          obj->op1->visit(this);
          break;
@@ -565,6 +574,7 @@ void GimpleWriter::operator()(const ternary_expr* obj, unsigned int& mask)
       case vtable_ref_K:
       case with_cleanup_expr_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -1227,6 +1237,29 @@ void GimpleWriter::operator()(const target_expr* obj, unsigned int& mask)
    obj->decl->visit(this);
    obj->init->visit(this);
    obj->clnp->visit(this);
+   obj->expr_node::visit(this);
+   os << ")";
+}
+void GimpleWriter::operator()(const lut_expr* obj, unsigned int& mask)
+{
+   mask = NO_VISIT;
+   os << "lut_expr (";
+   obj->op0->visit(this);
+   obj->op1->visit(this);
+   if(obj->op2)
+      obj->op2->visit(this);
+   if(obj->op3)
+      obj->op3->visit(this);
+   if(obj->op4)
+      obj->op4->visit(this);
+   if(obj->op5)
+      obj->op5->visit(this);
+   if(obj->op6)
+      obj->op6->visit(this);
+   if(obj->op7)
+      obj->op7->visit(this);
+   if(obj->op8)
+      obj->op8->visit(this);
    obj->expr_node::visit(this);
    os << ")";
 }

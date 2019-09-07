@@ -294,10 +294,10 @@ int main(int argc, char* argv[])
       if(parameters->isOption(OPT_serialize_output) && parameters->isOption(OPT_output_file))
       {
          std::ofstream ofile(parameters->getOption<std::string>(OPT_output_file), std::ios::out);
-         for(auto files: {HLSMgr->aux_files, HLSMgr->hdl_files})
-            for(auto file: files)
+         for(auto files : {HLSMgr->aux_files, HLSMgr->hdl_files})
+            for(auto file : files)
             {
-               std::cerr<< "File name: " << file<<"\n";
+               std::cerr << "File name: " << file << "\n";
                std::ifstream ifile(file, std::ios::in);
                ofile << ifile.rdbuf();
             }

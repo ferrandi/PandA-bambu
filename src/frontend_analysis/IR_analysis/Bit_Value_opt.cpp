@@ -47,6 +47,7 @@
 
 /// Autoheader include
 #include "config_HAVE_FROM_DISCREPANCY_BUILT.hpp"
+#include "config_HAVE_STDCXX_17.hpp"
 
 // Behavior include
 #include "application_manager.hpp"
@@ -145,8 +146,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-static
-void constrainSSA(ssa_name * op_ssa, tree_managerRef TM)
+static void constrainSSA(ssa_name* op_ssa, tree_managerRef TM)
 {
    auto nbit = op_ssa->bit_values.size();
    auto op0_type_id = GET_INDEX_NODE(op_ssa->type);
@@ -155,16 +155,16 @@ void constrainSSA(ssa_name * op_ssa, tree_managerRef TM)
    {
       bool isSigned = tree_helper::is_int(TM, op0_type_id);
       if(isSigned)
-         op_ssa->min =  TM->CreateUniqueIntegerCst(-(1ll<<(nbit-1)), op0_type_id);
+         op_ssa->min = TM->CreateUniqueIntegerCst(-(1ll << (nbit - 1)), op0_type_id);
       else
-         op_ssa->min =  TM->CreateUniqueIntegerCst(0, op0_type_id);
+         op_ssa->min = TM->CreateUniqueIntegerCst(0, op0_type_id);
       if(isSigned)
-         op_ssa->max =  TM->CreateUniqueIntegerCst((1ll<<(nbit-1))-1, op0_type_id);
+         op_ssa->max = TM->CreateUniqueIntegerCst((1ll << (nbit - 1)) - 1, op0_type_id);
       else
-         op_ssa->max =  TM->CreateUniqueIntegerCst((1ll<<nbit)-1, op0_type_id);
-      //std::cerr<<"var " << op_ssa->ToString()<<" ";
-      //std::cerr << "min " <<op_ssa->min->ToString() << " max " <<op_ssa->max->ToString()<<"\n";
-      //std::cerr << "nbit "<< nbit << " nbitType " << nbitType <<"\n";
+         op_ssa->max = TM->CreateUniqueIntegerCst((1ll << nbit) - 1, op0_type_id);
+      // std::cerr<<"var " << op_ssa->ToString()<<" ";
+      // std::cerr << "min " <<op_ssa->min->ToString() << " max " <<op_ssa->max->ToString()<<"\n";
+      // std::cerr << "nbit "<< nbit << " nbitType " << nbitType <<"\n";
    }
 }
 
@@ -272,7 +272,6 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
 #ifndef NDEBUG
                      AppM->RegisterTransformation(GetName(), stmt);
 #endif
-
                   }
                   else if(GetPointer<ssa_name>(GET_NODE(ga->op1)))
                   {
@@ -305,7 +304,10 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                            tree_nodeRef val;
                            if(bitwidth_op == 32)
                            {
-                              union {float dest; int source;} __conv_union;
+                              union {
+                                 float dest;
+                                 int source;
+                              } __conv_union;
                               __conv_union.source = static_cast<int>(int_const->value);
                               const auto data_value_id = TM->new_tree_node_id();
                               const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
@@ -313,7 +315,10 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                            }
                            else if(bitwidth_op == 64)
                            {
-                              union {double dest; long long int source;} __conv_union;
+                              union {
+                                 double dest;
+                                 long long int source;
+                              } __conv_union;
                               __conv_union.source = int_const->value;
                               const auto data_value_id = TM->new_tree_node_id();
                               const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
@@ -456,16 +461,16 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                }
                else if(GetPointer<ssa_name>(GET_NODE(ga->op1)))
                {
-                  if(!ssa->bit_values.empty() && ssa->bit_values.at(0) == '0' && ssa->bit_values.size()<=64)
+                  if(!ssa->bit_values.empty() && ssa->bit_values.at(0) == '0' && ssa->bit_values.size() <= 64)
                   {
                      const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
-                     tree_nodeRef bit_mask_constant_node = TM->CreateUniqueIntegerCst((1LL << (ssa->bit_values.size()-1))-1, ssa->type->index);
+                     tree_nodeRef bit_mask_constant_node = TM->CreateUniqueIntegerCst((1LL << (ssa->bit_values.size() - 1)) - 1, ssa->type->index);
                      tree_nodeRef band_expr = IRman->create_binary_operation(ssa->type, ga->op1, bit_mask_constant_node, srcp_default, bit_and_expr_K);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace ssa usage before: " + stmt->ToString());
                      TM->ReplaceTreeNode(stmt, ga->op1, band_expr);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace ssa usage after: " + stmt->ToString());
                      modified = true;
-                     ga->keep = true;///this prevent an infinite loop with CSE
+                     ga->keep = true; /// this prevent an infinite loop with CSE
                   }
                   else
                   {
@@ -549,7 +554,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                      const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
                      tree_nodeRef bt = IRman->create_boolean_type();
                      tree_nodeRef cond_op0 = IRman->create_binary_operation(bt, data_bitsize_in0 == 1 ? me->op0 : me->op1, constNE0, srcp_default, ne_expr_K);
-                     tree_nodeRef op0_ga = IRman->CreateGimpleAssign(bt, TM->CreateUniqueIntegerCst(0,bt->index), TM->CreateUniqueIntegerCst(1,bt->index), cond_op0, B_id, srcp_default);
+                     tree_nodeRef op0_ga = IRman->CreateGimpleAssign(bt, TM->CreateUniqueIntegerCst(0, bt->index), TM->CreateUniqueIntegerCst(1, bt->index), cond_op0, B_id, srcp_default);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op0_ga));
                      B->PushBefore(op0_ga, stmt);
                      tree_nodeRef op0_ga_var = GetPointer<gimple_assign>(GET_NODE(op0_ga))->op0;
@@ -1080,7 +1085,6 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
 #ifndef NDEBUG
                      AppM->RegisterTransformation(GetName(), stmt);
 #endif
-
                   }
                }
                else if(GET_NODE(ga->op1)->get_kind() == eq_expr_K || GET_NODE(ga->op1)->get_kind() == ne_expr_K)
@@ -1158,7 +1162,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
                         tree_nodeRef one_const_node = TM->CreateUniqueIntegerCst(1, op0_type_index);
                         tree_nodeRef bitwise_masked = IRman->create_binary_operation(op0_op_type, me->op0, one_const_node, srcp_default, bit_and_expr_K);
-                        tree_nodeRef op0_ga = IRman->CreateGimpleAssign(op0_op_type, TM->CreateUniqueIntegerCst(0,op0_type_index), TM->CreateUniqueIntegerCst(1,op0_type_index), bitwise_masked, B_id, srcp_default);
+                        tree_nodeRef op0_ga = IRman->CreateGimpleAssign(op0_op_type, TM->CreateUniqueIntegerCst(0, op0_type_index), TM->CreateUniqueIntegerCst(1, op0_type_index), bitwise_masked, B_id, srcp_default);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op0_ga));
                         B->PushBefore(op0_ga, stmt);
                         tree_nodeRef op0_ga_var = GetPointer<gimple_assign>(GET_NODE(op0_ga))->op0;
@@ -1280,6 +1284,46 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                else if(GET_NODE(ga->op1)->get_kind() == cond_expr_K)
                {
                   auto* me = GetPointer<cond_expr>(GET_NODE(ga->op1));
+                  if(!tree_helper::is_bool(TM, GET_INDEX_NODE(me->op0)))
+                  {
+                     /// try to fix cond_expr condition
+                     auto cond_op0_ssa = GetPointer<ssa_name>(GET_NODE(me->op0));
+                     if(cond_op0_ssa)
+                     {
+                        auto defStmt = GET_NODE(cond_op0_ssa->CGetDefStmt());
+                        if(defStmt->get_kind() == gimple_assign_K)
+                        {
+                           const auto prev_ga = GetPointer<const gimple_assign>(defStmt);
+                           auto prev_code1 = GET_NODE(prev_ga->op1)->get_kind();
+                           if(prev_code1 == nop_expr_K)
+                           {
+                              auto ne = GetPointer<nop_expr>(GET_NODE(prev_ga->op1));
+                              if(tree_helper::is_bool(TM, GET_INDEX_NODE(ne->op)))
+                              {
+                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace cond_expr condition before: " + stmt->ToString());
+                                 TM->ReplaceTreeNode(stmt, me->op0, ne->op);
+                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace cond_expr condition after: " + stmt->ToString());
+                                 modified = true;
+                                 if(cond_op0_ssa->CGetUseStmts().empty())
+                                 {
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
+                                    restart_dead_code = true;
+                                 }
+#ifndef NDEBUG
+                                 AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                              }
+                           }
+                        }
+                     }
+                  }
+#ifndef NDEBUG
+                  if(not AppM->ApplyNewTransformation())
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because reached limit of cfg transformations");
+                     continue;
+                  }
+#endif
                   tree_nodeRef op0 = GET_NODE(me->op1);
                   tree_nodeRef op1 = GET_NODE(me->op2);
                   tree_nodeRef condition = GET_NODE(me->op0);
@@ -1505,7 +1549,8 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         auto ull_value1 = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
                         if(ull_value0 == 1 && ull_value1 == 0)
                         {
-                           tree_nodeRef ga_nop = IRman->CreateNopExpr(me->op0, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type,TM->CreateUniqueIntegerCst(0, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type->index),TM->CreateUniqueIntegerCst(1, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type->index));
+                           tree_nodeRef ga_nop = IRman->CreateNopExpr(me->op0, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type, TM->CreateUniqueIntegerCst(0, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type->index),
+                                                                      TM->CreateUniqueIntegerCst(1, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type->index));
                            B->PushBefore(ga_nop, stmt);
                            modified = true;
 #ifndef NDEBUG
@@ -1517,6 +1562,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                      }
                   }
                }
+#if !HAVE_STDCXX_17
                else if(GET_NODE(ga->op1)->get_kind() == truth_not_expr_K)
                {
                   auto* tne = GetPointer<truth_not_expr>(GET_NODE(ga->op1));
@@ -1631,6 +1677,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
 #endif
                   }
                }
+#endif
                else if(GET_NODE(ga->op1)->get_kind() == bit_ior_expr_K)
                {
                   auto* bie = GetPointer<bit_ior_expr>(GET_NODE(ga->op1));
@@ -1774,15 +1821,586 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                      }
                   }
                }
-               else if(GET_NODE(ga->op1)->get_kind() == lut_expr_K)
+               else if(GET_NODE(ga->op1)->get_kind() == extract_bit_expr_K)
                {
-                  const auto le = GetPointer<const lut_expr>(GET_CONST_NODE(ga->op1));
-                  if(GET_CONST_NODE(le->op0)->get_kind() == integer_cst_K and GET_CONST_NODE(le->op1)->get_kind() == integer_cst_K)
+                  const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
+                  auto* ebe = GetPointer<extract_bit_expr>(GET_NODE(ga->op1));
+                  THROW_ASSERT(GET_NODE(ebe->op1)->get_kind() == integer_cst_K, "unexpected condition");
+                  auto pos_value = GetPointer<integer_cst>(GET_NODE(ebe->op1))->value;
+                  auto ebe_op0_ssa = GetPointer<ssa_name>(GET_NODE(ebe->op0));
+                  if(ebe_op0_ssa)
                   {
-                     const auto op0 = tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(le->op0)));
-                     const auto op1 = tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(le->op1)));
-                     const long long int value = ((op1 >> op0) & 1);
-                     ga->op1 = IRman->CreateIntegerCst(TM->GetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(ga->op0))->index), value, TM->new_tree_node_id());
+                     if(tree_helper::Size(ebe->op0) <= pos_value)
+                     {
+                        const auto right_id = GET_INDEX_NODE(ebe->op0);
+                        const bool right_signed = tree_helper::is_int(TM, right_id);
+                        if(right_signed)
+                        {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
+                           tree_nodeRef new_pos = TM->CreateUniqueIntegerCst(tree_helper::Size(ebe->op0)-1, GET_INDEX_NODE(GetPointer<integer_cst>(GET_NODE(ebe->op1))->type));
+                           tree_nodeRef eb_op = IRman->create_extract_bit_expr(ebe->op0, new_pos, srcp_default);
+                           tree_nodeRef eb_ga = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op, B_id, srcp_default);
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga));
+                           B->PushBefore(eb_ga, stmt);
+                           tree_nodeRef bit_mask_constant_node = TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type));
+                           auto masking = IRman->create_binary_operation(ebe->type, GetPointer<gimple_assign>(GET_NODE(eb_ga))->op0, bit_mask_constant_node, srcp_default, truth_and_expr_K);
+                           TM->ReplaceTreeNode(stmt, ga->op1, masking);///replaced with redundant code to restart lut_transformation
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
+                           modified = true;
+#ifndef NDEBUG
+                           AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                        }
+                        else
+                        {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
+                           tree_nodeRef zero_node = TM->CreateUniqueIntegerCst( 0, GET_INDEX_NODE(ebe->type));
+                           const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
+                           for(const auto& use : StmtUses)
+                           {
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
+                              TM->ReplaceTreeNode(use.first, ga->op0, zero_node);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
+                              modified = true;
+                           }
+                           if(ssa->CGetUseStmts().empty())
+                           {
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
+                              restart_dead_code = true;
+                           }
+#ifndef NDEBUG
+                           AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                        }
+                     }
+                     else if(tree_helper::is_bool(TM, GET_INDEX_NODE(ebe->op0)))
+                     {
+                        const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
+                        for(const auto& use : StmtUses)
+                        {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr input bool usage before: " + use.first->ToString());
+                           TM->ReplaceTreeNode(use.first, ga->op0, ebe->op0);
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr input bool usage after: " + use.first->ToString());
+                           modified = true;
+                        }
+                        if(ssa->CGetUseStmts().empty())
+                        {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
+                           restart_dead_code = true;
+                        }
+#ifndef NDEBUG
+                        AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                     }
+                     else
+                     {
+                        auto defStmt = GET_NODE(ebe_op0_ssa->CGetDefStmt());
+                        if(defStmt->get_kind() == gimple_assign_K)
+                        {
+                           const auto prev_ga = GetPointer<const gimple_assign>(defStmt);
+                           auto prev_code1 = GET_NODE(prev_ga->op1)->get_kind();
+                           if(prev_code1 == nop_expr_K || prev_code1 == convert_expr_K)
+                           {
+                              auto ne = GetPointer<unary_expr>(GET_NODE(prev_ga->op1));
+                              if(tree_helper::is_bool(TM, GET_INDEX_NODE(ne->op)))
+                              {
+                                 if(pos_value == 0)
+                                 {
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
+                                    tree_nodeRef bit_mask_constant_node = TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type));
+                                    auto masking = IRman->create_binary_operation(ebe->type, ne->op, bit_mask_constant_node, srcp_default, truth_and_expr_K);
+                                    TM->ReplaceTreeNode(stmt, ga->op1, masking);///replaced with redundant code to restart lut_transformation
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
+                                    modified = true;
+#ifndef NDEBUG
+                                    AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                                 }
+                                 else
+                                 {
+                                    tree_nodeRef zero_node = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type));
+                                    const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
+                                    for(const auto& use : StmtUses)
+                                    {
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr constant usage before: " + use.first->ToString());
+                                       TM->ReplaceTreeNode(use.first, ga->op0, zero_node);
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr constant usage after: " + use.first->ToString());
+                                       modified = true;
+                                    }
+                                    if(ssa->CGetUseStmts().empty())
+                                    {
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
+                                       restart_dead_code = true;
+                                    }
+#ifndef NDEBUG
+                                    AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                                 }
+                              }
+                              else
+                              {
+                                 const tree_nodeConstRef neType_node = tree_helper::CGetType(GET_NODE(ne->op));
+                                 if(neType_node->get_kind() == integer_type_K)
+                                 {
+                                    if(tree_helper::Size(ne->op) > pos_value)
+                                    {
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
+                                       tree_nodeRef eb_op = IRman->create_extract_bit_expr(ne->op, ebe->op1, srcp_default);
+                                       tree_nodeRef eb_ga = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op, B_id, srcp_default);
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga));
+                                       B->PushBefore(eb_ga, stmt);
+                                       tree_nodeRef bit_mask_constant_node = TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type));
+                                       auto masking = IRman->create_binary_operation(ebe->type, GetPointer<gimple_assign>(GET_NODE(eb_ga))->op0, bit_mask_constant_node, srcp_default, truth_and_expr_K);
+                                       TM->ReplaceTreeNode(stmt, ga->op1, masking);///replaced with redundant code to restart lut_transformation
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
+                                       modified = true;
+#ifndef NDEBUG
+                                       AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                                    }
+                                    else
+                                    {
+                                       const auto right_id = GET_INDEX_NODE(ne->op);
+                                       const bool right_signed = tree_helper::is_int(TM, right_id);
+                                       if(right_signed)
+                                       {
+                                          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
+                                          tree_nodeRef new_pos = TM->CreateUniqueIntegerCst(tree_helper::Size(ne->op)-1, GET_INDEX_NODE(GetPointer<integer_cst>(GET_NODE(ebe->op1))->type));
+                                          tree_nodeRef eb_op = IRman->create_extract_bit_expr(ne->op, new_pos, srcp_default);
+                                          tree_nodeRef eb_ga = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op, B_id, srcp_default);
+                                          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga));
+                                          B->PushBefore(eb_ga, stmt);
+                                          tree_nodeRef bit_mask_constant_node = TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type));
+                                          auto masking = IRman->create_binary_operation(ebe->type, GetPointer<gimple_assign>(GET_NODE(eb_ga))->op0, bit_mask_constant_node, srcp_default, truth_and_expr_K);
+                                          TM->ReplaceTreeNode(stmt, ga->op1, masking);///replaced with redundant code to restart lut_transformation
+                                          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
+                                          modified = true;
+#ifndef NDEBUG
+                                          AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                                       }
+                                       else
+                                       {
+                                          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
+                                          tree_nodeRef zero_node = TM->CreateUniqueIntegerCst( 0, GET_INDEX_NODE(ebe->type));
+                                          const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
+                                          for(const auto& use : StmtUses)
+                                          {
+                                             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
+                                             TM->ReplaceTreeNode(use.first, ga->op0, zero_node);
+                                             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
+                                             modified = true;
+                                          }
+                                          if(ssa->CGetUseStmts().empty())
+                                          {
+                                             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
+                                             restart_dead_code = true;
+                                          }
+#ifndef NDEBUG
+                                          AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                                       }
+                                    }
+                                 }
+                              }
+                           }
+                           else if(prev_code1 == bit_and_expr_K)
+                           {
+                              auto bae = GetPointer<bit_and_expr>(GET_NODE(prev_ga->op1));
+                              if(GET_NODE(bae->op0)->get_kind() == integer_cst_K || GET_NODE(bae->op1)->get_kind() == integer_cst_K)
+                              {
+                                 auto bae_op0 = bae->op0;
+                                 auto bae_op1 = bae->op1;
+                                 if(GET_NODE(bae->op0)->get_kind() == integer_cst_K)
+                                    std::swap(bae_op0, bae_op1);
+                                 auto bae_mask_value = GetPointer<integer_cst>(GET_NODE(bae_op1))->value;
+                                 auto masked_value = (bae_mask_value & (1ll << pos_value));
+                                 if(masked_value && GET_NODE(bae_op0)->get_kind() != integer_cst_K)
+                                 {
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
+                                    tree_nodeRef eb_op = IRman->create_extract_bit_expr(bae_op0, ebe->op1, srcp_default);
+                                    tree_nodeRef eb_ga = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op, B_id, srcp_default);
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga));
+                                    B->PushBefore(eb_ga, stmt);
+                                    tree_nodeRef bit_mask_constant_node = TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type));
+                                    auto masking = IRman->create_binary_operation(ebe->type, GetPointer<gimple_assign>(GET_NODE(eb_ga))->op0, bit_mask_constant_node, srcp_default, truth_and_expr_K);
+                                    TM->ReplaceTreeNode(stmt, ga->op1, masking);///replaced with redundant code to restart lut_transformation
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
+                                    modified = true;
+#ifndef NDEBUG
+                                    AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                                 }
+                                 else
+                                 {
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
+                                    tree_nodeRef zero_node = TM->CreateUniqueIntegerCst(masked_value ? 1 : 0, GET_INDEX_NODE(ebe->type));
+                                    const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
+                                    for(const auto& use : StmtUses)
+                                    {
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
+                                       TM->ReplaceTreeNode(use.first, ga->op0, zero_node);
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
+                                       modified = true;
+                                    }
+                                    if(ssa->CGetUseStmts().empty())
+                                    {
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
+                                       restart_dead_code = true;
+                                    }
+#ifndef NDEBUG
+                                    AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                                 }
+                              }
+                           }
+                           else if(prev_code1 == bit_ior_concat_expr_K)
+                           {
+                              auto bice = GetPointer<bit_ior_concat_expr>(GET_NODE(prev_ga->op1));
+                              THROW_ASSERT(GET_NODE(bice->op2)->get_kind() == integer_cst_K, "unexpected condition");
+                              auto nbit_value = GetPointer<integer_cst>(GET_NODE(bice->op2))->value;
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
+                              tree_nodeRef eb_op = IRman->create_extract_bit_expr(nbit_value>pos_value ? bice->op1 : bice->op0, ebe->op1, srcp_default);
+                              tree_nodeRef eb_ga = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op, B_id, srcp_default);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga));
+                              B->PushBefore(eb_ga, stmt);
+                              tree_nodeRef bit_mask_constant_node = TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type));
+                              auto masking = IRman->create_binary_operation(ebe->type, GetPointer<gimple_assign>(GET_NODE(eb_ga))->op0, bit_mask_constant_node, srcp_default, truth_and_expr_K);
+                              TM->ReplaceTreeNode(stmt, ga->op1, masking);///replaced with redundant code to restart lut_transformation
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
+                              modified = true;
+#ifndef NDEBUG
+                              AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                           }
+                           else if(prev_code1 == lshift_expr_K)
+                           {
+                              auto lse = GetPointer<lshift_expr>(GET_NODE(prev_ga->op1));
+                              if(GET_NODE(lse->op1)->get_kind() == integer_cst_K)
+                              {
+                                 auto lsbit_value = GetPointer<integer_cst>(GET_NODE(lse->op1))->value;
+                                 if((pos_value-lsbit_value)>=0)
+                                 {
+                                    tree_nodeRef new_pos = TM->CreateUniqueIntegerCst(pos_value-lsbit_value, GET_INDEX_NODE(GetPointer<integer_cst>(GET_NODE(ebe->op1))->type));
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
+                                    tree_nodeRef eb_op = IRman->create_extract_bit_expr(lse->op0, new_pos, srcp_default);
+                                    tree_nodeRef eb_ga = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op, B_id, srcp_default);
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga));
+                                    B->PushBefore(eb_ga, stmt);
+                                    tree_nodeRef bit_mask_constant_node = TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type));
+                                    auto masking = IRman->create_binary_operation(ebe->type, GetPointer<gimple_assign>(GET_NODE(eb_ga))->op0, bit_mask_constant_node, srcp_default, truth_and_expr_K);
+                                    TM->ReplaceTreeNode(stmt, ga->op1, masking);///replaced with redundant code to restart lut_transformation
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
+                                    modified = true;
+#ifndef NDEBUG
+                                    AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                                 }
+                                 else
+                                 {
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
+                                    tree_nodeRef zero_node = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type));
+                                    const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
+                                    for(const auto& use : StmtUses)
+                                    {
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage before: " + use.first->ToString());
+                                       TM->ReplaceTreeNode(use.first, ga->op0, zero_node);
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace constant usage after: " + use.first->ToString());
+                                       modified = true;
+                                    }
+                                    if(ssa->CGetUseStmts().empty())
+                                    {
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
+                                       restart_dead_code = true;
+                                    }
+#ifndef NDEBUG
+                                    AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                                 }
+                              }
+                           }
+                           else if(prev_code1 == rshift_expr_K)
+                           {
+                              auto rse = GetPointer<rshift_expr>(GET_NODE(prev_ga->op1));
+                              if(GET_NODE(rse->op1)->get_kind() == integer_cst_K)
+                              {
+                                 auto rsbit_value = GetPointer<integer_cst>(GET_NODE(rse->op1))->value;
+                                 THROW_ASSERT((pos_value+rsbit_value)>=0, "unexpected condition");
+                                 tree_nodeRef new_pos = TM->CreateUniqueIntegerCst(pos_value+rsbit_value, GET_INDEX_NODE(GetPointer<integer_cst>(GET_NODE(ebe->op1))->type));
+                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
+                                 tree_nodeRef eb_op = IRman->create_extract_bit_expr(rse->op0, new_pos, srcp_default);
+                                 tree_nodeRef eb_ga = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op, B_id, srcp_default);
+                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga));
+                                 B->PushBefore(eb_ga, stmt);
+                                 tree_nodeRef bit_mask_constant_node = TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type));
+                                 auto masking = IRman->create_binary_operation(ebe->type, GetPointer<gimple_assign>(GET_NODE(eb_ga))->op0, bit_mask_constant_node, srcp_default, truth_and_expr_K);
+                                 TM->ReplaceTreeNode(stmt, ga->op1, masking);///replaced with redundant code to restart lut_transformation
+                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
+                                 modified = true;
+#ifndef NDEBUG
+                                 AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                              }
+                              else if(GET_NODE(rse->op0)->get_kind() == integer_cst_K)
+                              {
+                                 long long res_value;
+                                 if(tree_helper::is_int(TM, GET_INDEX_NODE(rse->op0)))
+                                 {
+                                    auto val = GetPointer<integer_cst>(GET_NODE(rse->op0))->value;
+                                    val = (val >> pos_value);
+                                    res_value = val;
+                                 }
+                                 else
+                                 {
+                                    auto val = static_cast<unsigned long long>(GetPointer<integer_cst>(GET_NODE(rse->op0))->value);
+                                    val = (val >> pos_value);
+                                    res_value = static_cast<long long>(val);
+                                 }
+                                 std::cerr << "res_value " << res_value << "\n";
+                                 if(res_value)
+                                 {
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
+                                    unsigned int precision = tree_helper::Size(ebe_op0_ssa->type);
+                                    unsigned int log2;
+                                    for(log2 = 1; precision > (1u << log2); ++log2)
+                                       ;
+                                    tree_nodeRef op1, op2, op3, op4, op5, op6, op7, op8;
+                                    for(auto i = 0u; i < log2; ++i)
+                                    {
+                                       tree_nodeRef new_pos = TM->CreateUniqueIntegerCst(i, GET_INDEX_NODE(GetPointer<integer_cst>(GET_NODE(ebe->op1))->type));
+                                       tree_nodeRef eb_op = IRman->create_extract_bit_expr(rse->op1, new_pos, srcp_default);
+                                       tree_nodeRef eb_ga = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op, B_id, srcp_default);
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga));
+                                       B->PushBefore(eb_ga, stmt);
+                                       auto eb_ga_ssa_var = GetPointer<gimple_assign>(GET_NODE(eb_ga))->op0;
+                                       if(i==0)
+                                          op1 = eb_ga_ssa_var;
+                                       else if(i==1)
+                                          op2 = eb_ga_ssa_var;
+                                       else if(i==2)
+                                          op3 = eb_ga_ssa_var;
+                                       else if(i==3)
+                                          op4 = eb_ga_ssa_var;
+                                       else if(i==4)
+                                          op5 = eb_ga_ssa_var;
+                                       else if(i==5)
+                                          op6 = eb_ga_ssa_var;
+                                       else
+                                          THROW_ERROR("unexpected condition");
+                                    }
+                                    const auto LutConstType = IRman->CreateDefaultUnsignedLongLongInt();
+
+                                    tree_nodeRef lut_constant_node = TM->CreateUniqueIntegerCst(res_value, GET_INDEX_NODE(LutConstType));
+                                    tree_nodeRef eb_op = IRman->create_lut_expr(ebe->type, lut_constant_node, op1, op2, op3, op4, op5, op6, op7, op8, srcp_default);
+                                    tree_nodeRef eb_ga = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op, B_id, srcp_default);
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga));
+                                    B->PushBefore(eb_ga, stmt);
+                                    tree_nodeRef bit_mask_constant_node = TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type));
+                                    auto masking = IRman->create_binary_operation(ebe->type, GetPointer<gimple_assign>(GET_NODE(eb_ga))->op0, bit_mask_constant_node, srcp_default, truth_and_expr_K);
+                                    TM->ReplaceTreeNode(stmt, ga->op1, masking);///replaced with redundant code to restart lut_transformation
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
+                                    modified = true;
+#ifndef NDEBUG
+                                    AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                                 }
+                                 else
+                                 {
+                                    tree_nodeRef zero_node = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type));
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
+                                    TM->ReplaceTreeNode(stmt, ga->op1, zero_node);
+                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
+                                    modified = true;
+#ifndef NDEBUG
+                                    AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                                 }
+                              }
+                           }
+                           else if(prev_code1 == bit_not_expr_K)
+                           {
+                              auto bne = GetPointer<bit_not_expr>(GET_NODE(prev_ga->op1));
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
+                              tree_nodeRef eb_op = IRman->create_extract_bit_expr(bne->op, ebe->op1, srcp_default);
+                              tree_nodeRef eb_ga = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op, B_id, srcp_default);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga));
+                              B->PushBefore(eb_ga, stmt);
+                              auto negating = IRman->create_unary_operation(ebe->type, GetPointer<gimple_assign>(GET_NODE(eb_ga))->op0, srcp_default, truth_not_expr_K);
+                              TM->ReplaceTreeNode(stmt, ga->op1, negating);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
+                              modified = true;
+#ifndef NDEBUG
+                              AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                           }
+                           else if(prev_code1 == bit_and_expr_K)
+                           {
+                              auto bae = GetPointer<bit_and_expr>(GET_NODE(prev_ga->op1));
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
+                              tree_nodeRef eb_op0 = IRman->create_extract_bit_expr(bae->op0, ebe->op1, srcp_default);
+                              tree_nodeRef eb_ga0 = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op0, B_id, srcp_default);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga0));
+                              B->PushBefore(eb_ga0, stmt);
+                              tree_nodeRef eb_op1 = IRman->create_extract_bit_expr(bae->op1, ebe->op1, srcp_default);
+                              tree_nodeRef eb_ga1 = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op1, B_id, srcp_default);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga1));
+                              B->PushBefore(eb_ga1, stmt);
+                              auto anding = IRman->create_binary_operation(ebe->type, GetPointer<gimple_assign>(GET_NODE(eb_ga0))->op0, GetPointer<gimple_assign>(GET_NODE(eb_ga1))->op0, srcp_default, truth_and_expr_K);
+                              TM->ReplaceTreeNode(stmt, ga->op1, anding);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
+                              modified = true;
+#ifndef NDEBUG
+                              AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                           }
+                           else if(prev_code1 == bit_ior_expr_K)
+                           {
+                              auto bie = GetPointer<bit_ior_expr>(GET_NODE(prev_ga->op1));
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
+                              tree_nodeRef eb_op0 = IRman->create_extract_bit_expr(bie->op0, ebe->op1, srcp_default);
+                              tree_nodeRef eb_ga0 = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op0, B_id, srcp_default);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga0));
+                              B->PushBefore(eb_ga0, stmt);
+                              tree_nodeRef eb_op1 = IRman->create_extract_bit_expr(bie->op1, ebe->op1, srcp_default);
+                              tree_nodeRef eb_ga1 = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op1, B_id, srcp_default);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga1));
+                              B->PushBefore(eb_ga1, stmt);
+                              auto anding = IRman->create_binary_operation(ebe->type, GetPointer<gimple_assign>(GET_NODE(eb_ga0))->op0, GetPointer<gimple_assign>(GET_NODE(eb_ga1))->op0, srcp_default, truth_or_expr_K);
+                              TM->ReplaceTreeNode(stmt, ga->op1, anding);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
+                              modified = true;
+#ifndef NDEBUG
+                              AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                           }
+                           else if(prev_code1 == bit_xor_expr_K)
+                           {
+                              auto bxe = GetPointer<bit_xor_expr>(GET_NODE(prev_ga->op1));
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
+                              tree_nodeRef eb_op0 = IRman->create_extract_bit_expr(bxe->op0, ebe->op1, srcp_default);
+                              tree_nodeRef eb_ga0 = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op0, B_id, srcp_default);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga0));
+                              B->PushBefore(eb_ga0, stmt);
+                              tree_nodeRef eb_op1 = IRman->create_extract_bit_expr(bxe->op1, ebe->op1, srcp_default);
+                              tree_nodeRef eb_ga1 = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op1, B_id, srcp_default);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga1));
+                              B->PushBefore(eb_ga1, stmt);
+                              auto anding = IRman->create_binary_operation(ebe->type, GetPointer<gimple_assign>(GET_NODE(eb_ga0))->op0, GetPointer<gimple_assign>(GET_NODE(eb_ga1))->op0, srcp_default, truth_xor_expr_K);
+                              TM->ReplaceTreeNode(stmt, ga->op1, anding);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
+                              modified = true;
+#ifndef NDEBUG
+                              AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                           }
+                           else if(prev_code1 == cond_expr_K)
+                           {
+                              auto ce = GetPointer<cond_expr>(GET_NODE(prev_ga->op1));
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
+                              tree_nodeRef eb_op1 = IRman->create_extract_bit_expr(ce->op1, ebe->op1, srcp_default);
+                              tree_nodeRef eb_ga1 = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op1, B_id, srcp_default);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga1));
+                              B->PushBefore(eb_ga1, stmt);
+                              tree_nodeRef eb_op2 = IRman->create_extract_bit_expr(ce->op2, ebe->op1, srcp_default);
+                              tree_nodeRef eb_ga2 = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op2, B_id, srcp_default);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga2));
+                              B->PushBefore(eb_ga2, stmt);
+                              auto ceRes = IRman->create_ternary_operation(ebe->type, ce->op0, GetPointer<gimple_assign>(GET_NODE(eb_ga1))->op0, GetPointer<gimple_assign>(GET_NODE(eb_ga2))->op0, srcp_default, cond_expr_K);
+                              TM->ReplaceTreeNode(stmt, ga->op1, ceRes);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
+                              modified = true;
+#ifndef NDEBUG
+                              AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                           }
+                        }
+                     }
+                  }
+                  else if(GET_NODE(ebe->op0)->get_kind() == integer_cst_K)
+                  {
+                     bool res_value;
+                     if(tree_helper::is_int(TM, GET_INDEX_NODE(ebe->op0)))
+                     {
+                        auto val = GetPointer<integer_cst>(GET_NODE(ebe->op0))->value;
+                        val = (val >> pos_value) & 1;
+                        res_value = val;
+                     }
+                     else
+                     {
+                        auto val = static_cast<unsigned long long>(GetPointer<integer_cst>(GET_NODE(ebe->op0))->value);
+                        val = (val >> pos_value) & 1;
+                        res_value = val;
+                     }
+                     tree_nodeRef res_node = TM->CreateUniqueIntegerCst(res_value, GET_INDEX_NODE(ebe->type));
+                     const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
+                     for(const auto& use : StmtUses)
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr constant input usage before: " + use.first->ToString());
+                        TM->ReplaceTreeNode(use.first, ga->op0, res_node);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr constant input usage after: " + use.first->ToString());
+                        modified = true;
+                     }
+                     if(ssa->CGetUseStmts().empty())
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
+                        restart_dead_code = true;
+                     }
+#ifndef NDEBUG
+                     AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                  }
+               }
+               else if(GET_NODE(ga->op1)->get_kind() == nop_expr_K)
+               {
+                  auto* ne = GetPointer<nop_expr>(GET_NODE(ga->op1));
+                  if(tree_helper::is_bool(TM, GET_INDEX_NODE(ga->op0)))
+                  {
+                     if(tree_helper::is_bool(TM, GET_INDEX_NODE(ne->op)))
+                     {
+                        const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
+                        for(const auto& use : StmtUses)
+                        {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace bool nop usage before: " + use.first->ToString());
+                           TM->ReplaceTreeNode(use.first, ga->op0, ne->op);
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace bool nop usage after: " + use.first->ToString());
+                           modified = true;
+                        }
+                        if(ssa->CGetUseStmts().empty())
+                        {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
+                           restart_dead_code = true;
+                        }
+#ifndef NDEBUG
+                        AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                     }
+                     else
+                     {
+                        auto ne_op_ssa = GetPointer<ssa_name>(GET_NODE(ne->op));
+                        if(ne_op_ssa)
+                        {
+                           if(GET_NODE(ne_op_ssa->type)->get_kind() == integer_type_K)
+                           {
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
+                              const auto indexType = IRman->CreateDefaultUnsignedLongLongInt();
+                              tree_nodeRef zero_node = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(indexType));
+                              const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
+                              tree_nodeRef eb_op = IRman->create_extract_bit_expr(ne->op, zero_node, srcp_default);
+                              tree_nodeRef eb_ga = IRman->CreateGimpleAssign(ne->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ne->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ne->type)), eb_op, B_id, srcp_default);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga));
+                              B->PushBefore(eb_ga, stmt);
+                              tree_nodeRef bit_mask_constant_node = TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ne->type));
+                              auto masking = IRman->create_binary_operation(ne->type, GetPointer<gimple_assign>(GET_NODE(eb_ga))->op0, bit_mask_constant_node, srcp_default, truth_and_expr_K);
+                              TM->ReplaceTreeNode(stmt, ga->op1, masking);///replaced with redundant code to restart lut_transformation
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
+                              modified = true;
+#ifndef NDEBUG
+                              AppM->RegisterTransformation(GetName(), stmt);
+#endif
+
+                           }
+                        }
+                     }
                   }
                }
             }

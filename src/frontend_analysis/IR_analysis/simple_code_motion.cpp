@@ -367,16 +367,13 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       }
       case bit_ior_concat_expr_K:
       {
-         if(conservative)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No");
-            return FunctionFrontendFlowStep_Movable::UNMOVABLE;
-         }
-         else
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes");
-            return FunctionFrontendFlowStep_Movable::MOVABLE;
-         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes");
+         return FunctionFrontendFlowStep_Movable::MOVABLE;
+      }
+      case extract_bit_expr_K:
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes");
+         return FunctionFrontendFlowStep_Movable::MOVABLE;
       }
       case ge_expr_K:
       case gt_expr_K:
@@ -1055,9 +1052,10 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
 
 bool simple_code_motion::HasToBeExecuted() const
 {
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
    if(parameters->getOption<bool>(OPT_parse_pragma))
    {
+#if HAVE_EXPERIMENTAL
       /// If unroll loop has not yet been executed skip simple code motion
       const auto unroll_loops = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UNROLL_LOOPS, function_id));
       if(unroll_loops)
@@ -1070,6 +1068,7 @@ bool simple_code_motion::HasToBeExecuted() const
          }
       }
       else
+#endif
       {
          return false;
       }

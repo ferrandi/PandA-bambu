@@ -65,6 +65,21 @@
 // include from parser/discrepancy/
 #include "parse_discrepancy.hpp"
 
+/// STD include
+#include <limits>
+#include <string>
+
+/// STL include
+#include <algorithm>
+#include <list>
+#include <map>
+#include <set>
+#include <tuple>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
+
 // include from tree/
 #include "behavioral_helper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
@@ -652,20 +667,20 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       curr_module = curr_module->find_member(cfc_id, component_o_K, curr_module);
       THROW_ASSERT(curr_module, "unexpected condition");
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Found " + curr_module->get_path() + " of type " + GET_TYPE_NAME(curr_module));
-      GetPointer<module>(curr_module)->set_parameter("EPP_MISMATCH_ID", STR(scope_id));
+      GetPointer<module>(curr_module)->SetParameter("EPP_MISMATCH_ID", STR(scope_id));
 
       const size_t trace_len = i.second.size() + 1; // use one entry more in the trace to avoid ever accessing out of bounds
       const size_t metadata_word_size = scope_to_best_metadata_bits.at(scope);
-      size_t data_word_size = boost::lexical_cast<size_t>(GetPointer<module>(curr_module)->get_parameter("EPP_TRACE_BITSIZE"));
+      size_t data_word_size = boost::lexical_cast<size_t>(GetPointer<module>(curr_module)->GetParameter("EPP_TRACE_BITSIZE"));
       if((Discr->hw_discrepancy_info->fu_id_to_max_epp_path_val.at(f_id) + 1) == (1ULL << data_word_size))
       {
          data_word_size++;
-         GetPointer<module>(curr_module)->set_parameter("EPP_TRACE_BITSIZE", STR(data_word_size));
+         GetPointer<module>(curr_module)->SetParameter("EPP_TRACE_BITSIZE", STR(data_word_size));
       }
       const size_t invalid_epp_id = (1ULL << data_word_size) - 1;
-      GetPointer<module>(curr_module)->set_parameter("EPP_TRACE_LENGTH", STR(trace_len));
-      GetPointer<module>(curr_module)->set_parameter("EPP_TRACE_METADATA_BITSIZE", STR(metadata_word_size));
-      GetPointer<module>(curr_module)->set_parameter("EPP_TRACE_INITIAL_METADATA", STR(i.second.begin()->first));
+      GetPointer<module>(curr_module)->SetParameter("EPP_TRACE_LENGTH", STR(trace_len));
+      GetPointer<module>(curr_module)->SetParameter("EPP_TRACE_METADATA_BITSIZE", STR(metadata_word_size));
+      GetPointer<module>(curr_module)->SetParameter("EPP_TRACE_INITIAL_METADATA", STR(i.second.begin()->first));
 #ifndef NDEBUG
       for(const auto& id : i.second)
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---COMPRESSED_EPP " + STR(id.first) + ":" + STR(id.second));
@@ -689,7 +704,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
          init_file << NumberToBinaryString(0, metadata_word_size);
       init_file << NumberToBinaryString(invalid_epp_id, data_word_size) << std::endl;
       init_file.close();
-      GetPointer<module>(curr_module)->set_parameter("MEMORY_INIT_file", "\"\"" + init_filename + "\"\"");
+      GetPointer<module>(curr_module)->SetParameter("MEMORY_INIT_file", "\"\"" + init_filename + "\"\"");
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Initialized checker for scope " + i.first);
       scope_id++;
    }

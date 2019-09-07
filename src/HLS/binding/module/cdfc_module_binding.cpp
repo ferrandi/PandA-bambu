@@ -74,9 +74,7 @@
 
 /// HLS/binding/module include
 #include "fu_binding.hpp"
-#if HAVE_EXPERIMENTAL
 #include "parallel_memory_fu_binding.hpp"
-#endif
 
 /// HLS/binding/module include
 #include "module_binding_check.hpp"
@@ -112,10 +110,20 @@
 /// HLS/stg include
 #include "state_transition_graph_manager.hpp"
 
-/// STD include
+/// STD includes
 #include <cmath>
 #include <iosfwd>
+#include <limits>
 #include <string>
+
+/// STL includes
+#include <algorithm>
+#include <deque>
+#include <list>
+#include <map>
+#include <set>
+#include <utility>
+#include <vector>
 
 /// technology include
 #include "technology_manager.hpp"
@@ -258,11 +266,11 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation& co
       for(unsigned int port_index = 0; port_index < n_ports; ++port_index)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering port " + STR(port_index));
-         std::set<std::pair<conn_code, std::pair<unsigned int, vertex>>>& con_rel_per_vertex_per_port_index = con_rel[current_v][port_index];
          unsigned int tree_var = std::get<0>(vars_read[port_index]);
          if(tree_var != 0)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(TreeM->CGetTreeNode(tree_var)));
+            std::set<std::pair<conn_code, std::pair<unsigned int, vertex>>>& con_rel_per_vertex_per_port_index = con_rel[current_v][port_index];
             const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(current_v);
             const std::set<vertex>::const_iterator rs_it_end = running_states.end();
             for(auto rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
@@ -476,9 +484,10 @@ void estimate_muxes(const connection_relation& con_rel, unsigned int mux_prec, d
          total_muxes += current_muxs - 1;
       }
       if(do_estimation)
+      {
          tot_mux_area += HLS->allocation_information->estimate_muxNto1_area(mux_prec, current_muxs);
-      if(do_estimation)
          tot_mux_delay = std::max(tot_mux_delay, HLS->allocation_information->estimate_muxNto1_delay(mux_prec, current_muxs));
+      }
    }
    if(IS_DEBUGGING)
    {
@@ -1202,7 +1211,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          }
       }
 #if 0
-      for(tie(ei,ei_end) = boost::edges(*fsdg); ei != ei_end; ++ei)
+      for(tie(ei, ei_end) = boost::edges(*fsdg); ei != ei_end; ++ei)
       {
          vertex src = boost::source(*ei, *fsdg);
          if(!can_be_clustered(src, fsdg, fu, slack_time, 0)) continue;
@@ -1211,7 +1220,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          if(!can_be_clustered(tgt, fsdg, fu, slack_time, 0)) continue;
          if(all_candidate_vertices.find(tgt) == all_candidate_vertices.end()) continue;
          if(!HLS->chaining_information->may_be_chained_ops(src, tgt))
-            hc.add_edge(boost::get(boost::vertex_index, *fsdg, src), boost::get(boost::vertex_index, *fsdg, tgt), 2*get_src_vertex(src,tgt, HLSMgr,HLS->functionId)+(HLS->chaining_information->may_be_chained_ops(src, tgt)?1:0));
+            hc.add_edge(boost::get(boost::vertex_index, *fsdg, src), boost::get(boost::vertex_index, *fsdg, tgt), 2*get_src_vertex(src, tgt, HLSMgr, HLS->functionId)+(HLS->chaining_information->may_be_chained_ops(src, tgt)?1:0));
       }
 #endif
 
@@ -1474,7 +1483,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
 
       /// partition vertices for clique covering or bind the easy functional units
       std::map<unsigned int, unsigned int> numModule;
-      std::map<unsigned int, std::unordered_set<cdfc_vertex>, cdfc_resource_ordering_functor> partitions(r_functor);
+      std::map<unsigned int, CustomSet<cdfc_vertex>, cdfc_resource_ordering_functor> partitions(r_functor);
       for(const auto& fu_cv : candidate_vertices)
       {
          fu_unit = fu_cv.first;
@@ -1517,15 +1526,13 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       const std::unordered_map<vertex, double> starting_time_initial = starting_time;
 
       fu_bindingRef fu_best;
-#if HAVE_EXPERIMENTAL
-      if(parameters->getOption<int>(OPT_memory_banks_number) > 1)
+      if(parameters->getOption<int>(OPT_memory_banks_number) > 1 && !parameters->isOption(OPT_context_switch))
       {
          fu_best = fu_bindingRef(new ParallelMemoryFuBinding(HLSMgr, funId, parameters));
       }
       else
-#endif
       {
-         fu_best = fu_bindingRef(new fu_binding(HLSMgr, funId, parameters));
+         fu_best = fu_bindingRef(fu_binding::create_fu_binding(HLSMgr, funId, parameters));
       }
       double total_area_best = 0;
       size_t total_modules_allocated_best = 0;
@@ -1550,11 +1557,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             starting_time = starting_time_initial;
             total_area_muxes_prev = total_area_muxes;
             total_area_muxes = total_area_muxes_initial;
-         }
 
-         /// register binding is performed to improve mux estimation
-         if(iteration > 0)
-         {
             DesignFlowStepRef regb;
             // if(iteration%2)
             regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
@@ -1567,38 +1570,37 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          }
 
          START_TIME(clique_iteration_cputime[iteration]);
-         std::map<unsigned int, std::unordered_set<cdfc_vertex>, cdfc_resource_ordering_functor>::const_iterator p_it_end = partitions.end();
-         for(std::map<unsigned int, std::unordered_set<cdfc_vertex>, cdfc_resource_ordering_functor>::const_iterator p_it = partitions.begin(); p_it_end != p_it; ++p_it)
+         for(const auto partition : partitions)
          {
-            THROW_ASSERT(p_it->second.size() > 1, "bad projection");
-            auto vert_it_end = p_it->second.end();
-            const double mux_time = MODULE_BINDING_MUX_MARGIN * allocation_information->estimate_mux_time(p_it->first);
+            THROW_ASSERT(partition.second.size() > 1, "bad projection");
+            auto vert_it_end = partition.second.end();
+            const double mux_time = MODULE_BINDING_MUX_MARGIN * allocation_information->estimate_mux_time(partition.first);
             double controller_delay = allocation_information->EstimateControllerDelay();
-            double resource_area = allocation_information->compute_normalized_area(p_it->first);
-            unsigned int fu_prec = allocation_information->get_prec(p_it->first);
+            double resource_area = allocation_information->compute_normalized_area(partition.first);
+            unsigned int fu_prec = allocation_information->get_prec(partition.first);
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---controller_delay: " + STR(controller_delay) + " resource normalized area=" + STR(resource_area));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---mux_time: " + STR(mux_time) + " area_mux=" + STR(allocation_information->estimate_mux_area(p_it->first)));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---mux_time: " + STR(mux_time) + " area_mux=" + STR(allocation_information->estimate_mux_area(partition.first)));
 
             CliqueCovering_Algorithm clique_covering_algorithm = GetPointer<const CDFCModuleBindingSpecialization>(hls_flow_step_specialization)->clique_covering_algorithm;
-            if(allocation_information->is_one_cycle_direct_access_memory_unit(p_it->first) and not allocation_information->is_readonly_memory_unit(p_it->first))
+            if(allocation_information->is_one_cycle_direct_access_memory_unit(partition.first) and not allocation_information->is_readonly_memory_unit(partition.first))
             {
                clique_covering_algorithm = CliqueCovering_Algorithm::BIPARTITE_MATCHING;
             }
 
             const CliqueCovering_Algorithm clique_covering_method_used = clique_covering_algorithm;
-            std::string res_name = allocation_information->get_fu_name(p_it->first).first;
+            std::string res_name = allocation_information->get_fu_name(partition.first).first;
             std::string lib_name = HLS->HLS_T->get_technology_manager()->get_library(res_name);
-            bool disabling_slack_based_binding =
-                ((allocation_information->get_number_channels(p_it->first) >= 1) and (!allocation_information->is_readonly_memory_unit(p_it->first) || (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))) ||
-                lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY || allocation_information->get_number_fu(p_it->first) != INFINITE_UINT;
+            bool disabling_slack_based_binding = ((allocation_information->get_number_channels(partition.first) >= 1) and
+                                                  (!allocation_information->is_readonly_memory_unit(partition.first) || (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))) ||
+                                                 lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY || allocation_information->get_number_fu(partition.first) != INFINITE_UINT;
 
-            THROW_ASSERT(lib_name != PROXY_LIBRARY || 1 == allocation_information->get_number_fu(p_it->first), "unexpected condition");
+            THROW_ASSERT(lib_name != PROXY_LIBRARY || 1 == allocation_information->get_number_fu(partition.first), "unexpected condition");
 
             /// build the clique covering solver
             refcount<clique_covering<vertex>> module_clique(clique_covering<vertex>::create_solver(clique_covering_method_used));
             /// add vertex to the clique covering solver
-            for(auto vert_it = p_it->second.begin(); vert_it != vert_it_end; ++vert_it)
+            for(auto vert_it = partition.second.begin(); vert_it != vert_it_end; ++vert_it)
             {
                std::string el1_name = GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, *vert_it)]) + "(" + sdg->CGetOpNodeInfo(c2s[boost::get(boost::vertex_index, *CG, *vert_it)])->GetOperation() + ")";
                module_clique->add_vertex(c2s[boost::get(boost::vertex_index, *CG, *vert_it)], el1_name);
@@ -1608,7 +1610,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             {
                std::map<vertex, size_t> v2id;
                size_t max_id = 0, curr_id;
-               for(auto vert_it = p_it->second.begin(); vert_it != vert_it_end; ++vert_it)
+               for(auto vert_it = partition.second.begin(); vert_it != vert_it_end; ++vert_it)
                {
                   const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(c2s[boost::get(boost::vertex_index, *CG, *vert_it)]);
                   const std::set<vertex>::const_iterator rs_it_end = running_states.end();
@@ -1627,17 +1629,21 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                }
             }
             double local_mux_time = (disabling_slack_based_binding ? -std::numeric_limits<double>::infinity() : mux_time);
-            bool cond1 = compute_condition1(lib_name, allocation_information, local_mux_time, p_it->first);
+            bool cond1 = compute_condition1(lib_name, allocation_information, local_mux_time, partition.first);
             bool cond2 = compute_condition2(cond1, fu_prec, resource_area, small_normalized_resource_area);
 
             /// add the edges
             cdfc_edge_iterator cg_ei, cg_ei_end;
-            const cdfc_graphConstRef CG_subgraph(new cdfc_graph(*cdfc_bulk_graph, cdfc_graph_edge_selector<boost_cdfc_graph>(COMPATIBILITY_EDGE, &*cdfc_bulk_graph), cdfc_graph_vertex_selector<boost_cdfc_graph>(&p_it->second)));
+            const cdfc_graphConstRef CG_subgraph(new cdfc_graph(*cdfc_bulk_graph, cdfc_graph_edge_selector<boost_cdfc_graph>(COMPATIBILITY_EDGE, &*cdfc_bulk_graph), cdfc_graph_vertex_selector<boost_cdfc_graph>(&partition.second)));
             for(boost::tie(cg_ei, cg_ei_end) = boost::edges(*CG_subgraph); cg_ei != cg_ei_end; ++cg_ei)
             {
                vertex src = c2s[boost::get(boost::vertex_index, *CG_subgraph, boost::source(*cg_ei, *CG_subgraph))];
                vertex tgt = c2s[boost::get(boost::vertex_index, *CG_subgraph, boost::target(*cg_ei, *CG_subgraph))];
+#if HAVE_UNORDERED
                if(src > tgt)
+#else
+               if(GET_NAME(dfg, src) > GET_NAME(dfg, tgt))
+#endif
                   continue; /// only one edge is needed to build the undirected compatibility graph
                _w = weight_computation(cond1, cond2, src, tgt, local_mux_time, dfg, fu, slack_time, starting_time,
 #ifdef HC_APPROACH
@@ -1652,28 +1658,29 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                const auto output_directory = parameters->getOption<std::string>(OPT_dot_directory) + "/" + functionName + "/";
                if(!boost::filesystem::exists(output_directory))
                   boost::filesystem::create_directories(output_directory);
-               const auto file_name = output_directory + "MB_" + allocation_information->get_string_name(p_it->first) + ".dot";
+               const auto file_name = output_directory + "MB_" + allocation_information->get_string_name(partition.first) + ".dot";
                module_clique->writeDot(file_name);
             }
 
-            if(allocation_information->get_number_fu(p_it->first) != INFINITE_UINT)
+            if(allocation_information->get_number_fu(partition.first) != INFINITE_UINT)
             {
-               THROW_ASSERT(allocation_information->get_number_channels(p_it->first) == 0 || allocation_information->get_number_channels(p_it->first) == allocation_information->get_number_fu(p_it->first), "unexpected condition");
-               PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Defining resource constraints for  : " + allocation_information->get_string_name(p_it->first) + " to " + STR(allocation_information->get_number_fu(p_it->first)));
-               module_clique->suggest_min_resources(allocation_information->get_number_channels(p_it->first));
-               if(allocation_information->get_number_channels(p_it->first) > 0)
-                  module_clique->max_resources(allocation_information->get_number_channels(p_it->first));
+               THROW_ASSERT(allocation_information->get_number_channels(partition.first) == 0 || allocation_information->get_number_channels(partition.first) == allocation_information->get_number_fu(partition.first), "unexpected condition");
+               PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Defining resource constraints for  : " + allocation_information->get_string_name(partition.first) + " to " + STR(allocation_information->get_number_fu(partition.first)));
+               module_clique->suggest_min_resources(allocation_information->get_number_channels(partition.first));
+               if(allocation_information->get_number_channels(partition.first) > 0)
+                  module_clique->max_resources(allocation_information->get_number_channels(partition.first));
             }
 
             /// Specify the minimum number of resources in case we have to use all the memory ports.
             /// That is relevant for memories attached to the bus
             /// Private memories should use the minimum number of ports to minimize the total area.
-            unsigned var =
-                allocation_information->is_direct_access_memory_unit(p_it->first) ? (allocation_information->is_memory_unit(p_it->first) ? allocation_information->get_memory_var(p_it->first) : allocation_information->get_proxy_memory_var(p_it->first)) : 0;
+            unsigned var = allocation_information->is_direct_access_memory_unit(partition.first) ?
+                               (allocation_information->is_memory_unit(partition.first) ? allocation_information->get_memory_var(partition.first) : allocation_information->get_proxy_memory_var(partition.first)) :
+                               0;
             if(var && !HLSMgr->Rmem->is_private_memory(var))
-               module_clique->min_resources(allocation_information->get_number_channels(p_it->first));
+               module_clique->min_resources(allocation_information->get_number_channels(partition.first));
 
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting clique covering on a graph with " + STR(p_it->second.size()) + " vertices for " + allocation_information->get_string_name(p_it->first));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting clique covering on a graph with " + STR(partition.second.size()) + " vertices for " + allocation_information->get_string_name(partition.first));
 
             /// performing clique covering
             if(disabling_slack_based_binding)
@@ -1682,7 +1689,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
 #if HAVE_EXPERIMENTAL
                if(clique_covering_method_used == CliqueCovering_Algorithm::RANDOMIZED)
                {
-                  double area_resource = allocation_information->get_area(p_it->first) + 100 * allocation_information->get_DSPs(p_it->first);
+                  double area_resource = allocation_information->get_area(partition.first) + 100 * allocation_information->get_DSPs(partition.first);
                   module_register_binding_spec mrbs;
                   module_binding_check_no_filter<vertex> cq(fu_prec, area_resource, HLS, HLSMgr, slack_time, starting_time, controller_delay, mrbs);
                   module_clique->exec(no_filter_clique<vertex>(), cq);
@@ -1693,19 +1700,19 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                   no_check_clique<vertex> cq;
                   module_clique->exec(no_filter_clique<vertex>(), cq);
                }
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Number of cliques covering the graph: " + STR(module_clique->num_vertices()) + " for " + allocation_information->get_string_name(p_it->first));
-               if(module_clique->num_vertices() == 0 || (allocation_information->get_number_channels(p_it->first) >= 1 && module_clique->num_vertices() > allocation_information->get_number_channels(p_it->first)))
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Number of cliques covering the graph: " + STR(module_clique->num_vertices()) + " for " + allocation_information->get_string_name(partition.first));
+               if(module_clique->num_vertices() == 0 || (allocation_information->get_number_channels(partition.first) >= 1 && module_clique->num_vertices() > allocation_information->get_number_channels(partition.first)))
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Restarting with BIPARTITE_MATCHING: " + res_name);
                   module_clique = clique_covering<vertex>::create_solver(CliqueCovering_Algorithm::BIPARTITE_MATCHING);
-                  for(auto vert_it = p_it->second.begin(); vert_it != vert_it_end; ++vert_it)
+                  for(auto vert_it = partition.second.begin(); vert_it != vert_it_end; ++vert_it)
                   {
                      std::string el1_name = GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, *vert_it)]) + "(" + sdg->CGetOpNodeInfo(c2s[boost::get(boost::vertex_index, *CG, *vert_it)])->GetOperation() + ")";
                      module_clique->add_vertex(c2s[boost::get(boost::vertex_index, *CG, *vert_it)], el1_name);
                   }
                   std::map<vertex, size_t> v2id;
                   size_t max_id = 0, curr_id;
-                  for(auto vert_it = p_it->second.begin(); vert_it != vert_it_end; ++vert_it)
+                  for(auto vert_it = partition.second.begin(); vert_it != vert_it_end; ++vert_it)
                   {
                      const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(c2s[boost::get(boost::vertex_index, *CG, *vert_it)]);
                      const std::set<vertex>::const_iterator rs_it_end = running_states.end();
@@ -1722,12 +1729,16 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                         module_clique->add_subpartitions(curr_id, c2s[boost::get(boost::vertex_index, *CG, *vert_it)]);
                      }
                   }
-                  const cdfc_graphConstRef CG_subgraph0(new cdfc_graph(*cdfc_bulk_graph, cdfc_graph_edge_selector<boost_cdfc_graph>(COMPATIBILITY_EDGE, &*cdfc_bulk_graph), cdfc_graph_vertex_selector<boost_cdfc_graph>(&p_it->second)));
+                  const cdfc_graphConstRef CG_subgraph0(new cdfc_graph(*cdfc_bulk_graph, cdfc_graph_edge_selector<boost_cdfc_graph>(COMPATIBILITY_EDGE, &*cdfc_bulk_graph), cdfc_graph_vertex_selector<boost_cdfc_graph>(&partition.second)));
                   for(boost::tie(cg_ei, cg_ei_end) = boost::edges(*CG_subgraph0); cg_ei != cg_ei_end; ++cg_ei)
                   {
                      vertex src = c2s[boost::get(boost::vertex_index, *CG_subgraph0, boost::source(*cg_ei, *CG_subgraph0))];
                      vertex tgt = c2s[boost::get(boost::vertex_index, *CG_subgraph0, boost::target(*cg_ei, *CG_subgraph0))];
+#if HAVE_UNORDERED
                      if(src > tgt)
+#else
+                     if(GET_NAME(dfg, src) > GET_NAME(dfg, tgt))
+#endif
                         continue; /// only one edge is needed to build the undirected compatibility graph
                      _w = weight_computation(cond1, cond2, src, tgt, local_mux_time, dfg, fu, slack_time, starting_time,
 #ifdef HC_APPROACH
@@ -1737,26 +1748,26 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                      if(_w > 0)
                         module_clique->add_edge(src, tgt, _w);
                   }
-                  if(allocation_information->get_number_fu(p_it->first) != INFINITE_UINT)
+                  if(allocation_information->get_number_fu(partition.first) != INFINITE_UINT)
                   {
-                     THROW_ASSERT(allocation_information->get_number_channels(p_it->first) == 0 || allocation_information->get_number_channels(p_it->first) == allocation_information->get_number_fu(p_it->first), "unexpected condition");
+                     THROW_ASSERT(allocation_information->get_number_channels(partition.first) == 0 || allocation_information->get_number_channels(partition.first) == allocation_information->get_number_fu(partition.first), "unexpected condition");
 
-                     module_clique->suggest_min_resources(allocation_information->get_number_channels(p_it->first));
-                     if(allocation_information->get_number_channels(p_it->first) > 0)
-                        module_clique->max_resources(allocation_information->get_number_channels(p_it->first));
+                     module_clique->suggest_min_resources(allocation_information->get_number_channels(partition.first));
+                     if(allocation_information->get_number_channels(partition.first) > 0)
+                        module_clique->max_resources(allocation_information->get_number_channels(partition.first));
                   }
 
                   /// Specify the minimum number of resources in case we have to use all the memory ports.
                   /// That is relevant for memories attached to the bus
                   /// Private memories should use the minimum number of ports to minimize the total area.
                   if(var && !HLSMgr->Rmem->is_private_memory(var))
-                     module_clique->min_resources(allocation_information->get_number_channels(p_it->first));
+                     module_clique->min_resources(allocation_information->get_number_channels(partition.first));
                   no_check_clique<vertex> cq;
                   module_clique->exec(no_filter_clique<vertex>(), cq);
-                  if(allocation_information->get_number_fu(p_it->first) != INFINITE_UINT)
+                  if(allocation_information->get_number_fu(partition.first) != INFINITE_UINT)
                   {
-                     THROW_ASSERT(allocation_information->get_number_channels(p_it->first) == 0 || allocation_information->get_number_channels(p_it->first) == allocation_information->get_number_fu(p_it->first), "unexpected condition");
-                     if(allocation_information->get_number_channels(p_it->first) > 0 && module_clique->num_vertices() > allocation_information->get_number_channels(p_it->first) && !allocation_information->is_readonly_memory_unit(p_it->first))
+                     THROW_ASSERT(allocation_information->get_number_channels(partition.first) == 0 || allocation_information->get_number_channels(partition.first) == allocation_information->get_number_fu(partition.first), "unexpected condition");
+                     if(allocation_information->get_number_channels(partition.first) > 0 && module_clique->num_vertices() > allocation_information->get_number_channels(partition.first) && !allocation_information->is_readonly_memory_unit(partition.first))
                      {
                         THROW_ERROR("Something of wrong happen: no feasible solution exist for module binding: " + res_name + "[" + STR(module_clique->num_vertices()) + "]");
                      }
@@ -1766,7 +1777,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
 #if HAVE_EXPERIMENTAL
             else if(clique_covering_method_used == CliqueCovering_Algorithm::RANDOMIZED)
             {
-               double area_resource = allocation_information->get_area(p_it->first) + 100 * allocation_information->get_DSPs(p_it->first);
+               double area_resource = allocation_information->get_area(partition.first) + 100 * allocation_information->get_DSPs(partition.first);
                module_register_binding_spec mrbs;
                module_binding_check<vertex> cq(fu_prec, area_resource, HLS, HLSMgr, slack_time, starting_time, controller_delay, mrbs);
                module_clique->exec(no_filter_clique<vertex>(), cq);
@@ -1774,12 +1785,12 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
 #endif
             else
             {
-               double area_resource = allocation_information->get_area(p_it->first) + 100 * allocation_information->get_DSPs(p_it->first);
+               double area_resource = allocation_information->get_area(partition.first) + 100 * allocation_information->get_DSPs(partition.first);
                module_register_binding_spec mrbs;
                module_binding_check<vertex> cq(fu_prec, area_resource, HLS, HLSMgr, slack_time, starting_time, controller_delay, mrbs);
                module_clique->exec(slack_based_filtering(slack_time, starting_time, controller_delay, fu_prec, HLS, HLSMgr, area_resource, con_rel), cq);
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Number of cliques covering the graph: " + STR(module_clique->num_vertices()) + " for " + allocation_information->get_string_name(p_it->first));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Number of cliques covering the graph: " + STR(module_clique->num_vertices()) + " for " + allocation_information->get_string_name(partition.first));
             total_modules_allocated += module_clique->num_vertices();
             to_update.clear();
 
@@ -1789,12 +1800,20 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             unsigned int delta_nclique = 0;
             for(unsigned int i = 0; i < module_clique->num_vertices(); ++i)
             {
-               const std::set<vertex>& clique = module_clique->get_clique(i);
-               if(clique.empty())
+               const auto clique_temp = module_clique->get_clique(i);
+               if(clique_temp.empty())
                   continue;
+
+#if HAVE_UNORDERED
+               const auto clique = clique_temp;
+#else
+               OpVertexSet clique(sdg);
+               clique.insert(clique_temp.begin(), clique_temp.end());
+#endif
+
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing clique");
                fu_unit = fu->get_assign(*(clique.begin()));
-               THROW_ASSERT(fu_unit == p_it->first, "unexpected case");
+               THROW_ASSERT(fu_unit == partition.first, "unexpected case");
                unsigned int num = 0;
                if(numModule.find(fu_unit) == numModule.end())
                   numModule[fu_unit] = 1;
@@ -1887,8 +1906,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             }
 
             INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level,
-                           "---cdfc mux estimation " + STR(Tot_mux) + " -- Number of cliques covering the graph: " + STR(module_clique->num_vertices() + delta_nclique) + " " + functionName + "_" + allocation_information->get_string_name(p_it->first) +
-                               " with " + STR(p_it->second.size()) + " vertices");
+                           "---cdfc mux estimation " + STR(Tot_mux) + " -- Number of cliques covering the graph: " + STR(module_clique->num_vertices() + delta_nclique) + " " + functionName + "_" + allocation_information->get_string_name(partition.first) +
+                               " with " + STR(partition.second.size()) + " vertices");
          }
          if(iteration == 0 || total_area_best > total_area_muxes + total_resource_area)
          {

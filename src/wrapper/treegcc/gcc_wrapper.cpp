@@ -713,7 +713,8 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
       }
       if(compiler.is_clang)
       {
-         const auto recipe = clang_recipes(optimization_level, Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler), compiler.expandMemOps_plugin_obj, compiler.expandMemOps_plugin_name, compiler.GepiCanon_plugin_obj, compiler.GepiCanon_plugin_name, compiler.CSROA_plugin_obj, compiler.CSROA_plugin_name, fname);
+         const auto recipe = clang_recipes(optimization_level, Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler), compiler.expandMemOps_plugin_obj, compiler.expandMemOps_plugin_name, compiler.GepiCanon_plugin_obj,
+                                           compiler.GepiCanon_plugin_name, compiler.CSROA_plugin_obj, compiler.CSROA_plugin_name, fname);
          command = compiler.llvm_opt.string() + recipe + temporary_file_o_bc;
          temporary_file_o_bc = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string()).string();
          command += " -o " + temporary_file_o_bc;
@@ -2754,15 +2755,18 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
                                           optimization_level
 #endif
-                                      , const GccWrapper_CompilerTarget
+                                      ,
+                                      const GccWrapper_CompilerTarget
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
                                           compiler
 #endif
-                                      , const std::string&
+                                      ,
+                                      const std::string&
 #ifndef _WIN32
                                           expandMemOps_plugin_obj
 #endif
-                                      , const std::string&
+                                      ,
+                                      const std::string&
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
                                           expandMemOps_plugin_name
 #endif
@@ -2771,7 +2775,8 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
 #ifndef _WIN32
                                           GepiCanon_plugin_obj
 #endif
-                                      , const std::string&
+                                      ,
+                                      const std::string&
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
                                           GepiCanon_plugin_name
 #endif
@@ -2780,11 +2785,13 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
 #ifndef _WIN32
                                           CSROA_plugin_obj
 #endif
-                                      , const std::string&
+                                      ,
+                                      const std::string&
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
                                           CSROA_plugin_name
 #endif
-                                      , const std::string& fname)
+                                      ,
+                                      const std::string& fname)
 {
    std::string recipe = "";
 #ifndef _WIN32
@@ -2811,10 +2818,16 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
          std::string complex_recipe;
          complex_recipe += " -tti "
                            "-mem2reg "
-                           "-" + expandMemOps_plugin_name + " "
-                           "-" + GepiCanon_plugin_name + " "
+                           "-" +
+                           expandMemOps_plugin_name +
+                           " "
+                           "-" +
+                           GepiCanon_plugin_name +
+                           " "
                            "-scalar-evolution "
-                           "-" + CSROA_plugin_name+"FV "
+                           "-" +
+                           CSROA_plugin_name +
+                           "FV "
                    "-targetlibinfo "
                    "-tbaa "
                    "-scoped-noalias "
@@ -2830,8 +2843,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
                    "-domtree "
                    "-basicaa "
                    "-aa ";
-         complex_recipe +=
-                   " -dse -loop-unroll "
+         complex_recipe += " -dse -loop-unroll "
                    /// "-instcombine "
                    "-simplifycfg "
                    "-pgo-icall-prom "
@@ -3036,8 +3048,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
                    "-domtree "
                    "-basicaa "
                    "-aa ";
-         recipe += " -" + expandMemOps_plugin_name +
-                   " -loop-unroll -simplifycfg ";
+         recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
       }
       else
       {

@@ -65,14 +65,11 @@
 /// high-level syntesis sub-tasks results
 #include "conn_binding.hpp"
 #include "fu_binding.hpp"
-#include "reg_binding.hpp"
-#include "schedule.hpp"
-#if HAVE_EXPERIMENTAL
-#include "parallel_memory_conn_binding.hpp"
-#endif
 #include "liveness.hpp"
 #include "memory.hpp"
 #include "memory_symbol.hpp"
+#include "parallel_memory_conn_binding.hpp"
+#include "reg_binding.hpp"
 
 /// Allocation datastructure
 #include "allocation.hpp"
@@ -1252,6 +1249,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          case save_expr_K:
          case vtable_ref_K:
          case with_cleanup_expr_K:
+         case extract_bit_expr_K:
          case CASE_TYPE_NODES:
          default:
             THROW_ERROR("determine_connection pattern not supported: " + std::string(tn->get_kind_text()) + " @" + STR(tree_var));
@@ -1618,15 +1616,13 @@ void mux_connection_binding::create_connections()
    const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
    const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::FDFG);
    unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
-#if HAVE_EXPERIMENTAL
-   if(parameters->getOption<int>(OPT_memory_banks_number) > 1)
+   if(parameters->getOption<int>(OPT_memory_banks_number) > 1 && !parameters->isOption(OPT_context_switch))
    {
       HLS->Rconn = conn_bindingRef(new ParallelMemoryConnBinding(behavioral_helper, parameters));
    }
    else
-#endif
    {
-      HLS->Rconn = conn_bindingRef(new conn_binding(behavioral_helper, parameters));
+      HLS->Rconn = conn_bindingRef(conn_binding::create_conn_binding(HLSMgr, HLS, behavioral_helper, parameters));
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Starting execution of interconnection binding");
@@ -1986,6 +1982,7 @@ void mux_connection_binding::create_connections()
                   case vec_unpack_lo_expr_K:
                   case vec_unpack_float_hi_expr_K:
                   case vec_unpack_float_lo_expr_K:
+                  case extract_bit_expr_K:
                   default:
                      THROW_ERROR("MEMORY REFERENCE/LOAD-STORE type not supported: " + var_node->get_kind_text() + " " + STR(node_id));
                }
@@ -2066,6 +2063,7 @@ void mux_connection_binding::create_connections()
                case gimple_switch_K:
                case gimple_while_K:
                case error_mark_K:
+               case lut_expr_K:
                case CASE_BINARY_EXPRESSION:
                case CASE_CPP_NODES:
                case CASE_CST_NODES:
@@ -2160,6 +2158,7 @@ void mux_connection_binding::create_connections()
                case gimple_switch_K:
                case gimple_while_K:
                case error_mark_K:
+               case lut_expr_K:
                case CASE_BINARY_EXPRESSION:
                case CASE_CPP_NODES:
                case CASE_CST_NODES:
@@ -2228,7 +2227,7 @@ void mux_connection_binding::create_connections()
                {
                   add_conversion(port_num, size_tree_var, op, form_par_type, port_index, fu_obj, data, TreeM, tree_var, var_read, size_form_par);
                }
-               else if(first_valid_id && tree_var && first_valid_id != tree_var && form_par_type == 0 && data->CGetOpNodeInfo(*op)->GetOperation() != "rshift_expr" && data->CGetOpNodeInfo(*op)->GetOperation() != "lshift_expr" &&
+               else if(first_valid_id && tree_var && first_valid_id != tree_var && form_par_type == 0 && data->CGetOpNodeInfo(*op)->GetOperation() != "rshift_expr" && data->CGetOpNodeInfo(*op)->GetOperation() != "lshift_expr" && data->CGetOpNodeInfo(*op)->GetOperation() != "extract_bit_expr" &&
                        ((tree_helper::is_int(TreeM, tree_var) && tree_helper::is_unsigned(TreeM, first_valid_id)) || (tree_helper::is_unsigned(TreeM, tree_var) && tree_helper::is_int(TreeM, first_valid_id))))
                {
                   size_form_par = tree_helper::size(TreeM, tree_var); // we only need type conversion and not size conversion
@@ -2588,7 +2587,7 @@ void mux_connection_binding::create_connections()
       const std::set<unsigned int>& live_in = HLS->Rliv->get_live_in(*vIt);
       for(std::set<unsigned int>::const_iterator k = live_in.begin(); k != live_in.end(); ++k)
       {
-         if(!HLS->Rliv->has_state_in(*vIt,*k)) continue;
+         if(!HLS->Rliv->has_state_in(*vIt, *k)) continue;
          const std::set<vertex>& states_in = HLS->Rliv->get_state_in(*vIt,*k);
          const std::set<vertex>::const_iterator si_it_end = states_in.end();
          for(std::set<vertex>::const_iterator si_it=states_in.begin(); si_it != si_it_end; si_it++)

@@ -344,8 +344,8 @@ class GccWrapper
     */
    static size_t ConvertVersion(const std::string& version);
 
-   std::string clang_recipes(const GccWrapper_OptimizationSet optimization_level, const GccWrapper_CompilerTarget compiler_target, const std::string& expandMemOps_plugin_obj, const std::string& expandMemOps_plugin_name, const std::string &GepiCanon_plugin_obj, const std::string &GepiCanon_plugin_name, const std::string& CSROA_plugin_obj,
-                             const std::string& CSROA_plugin_name, const std::string &fname);
+   std::string clang_recipes(const GccWrapper_OptimizationSet optimization_level, const GccWrapper_CompilerTarget compiler_target, const std::string& expandMemOps_plugin_obj, const std::string& expandMemOps_plugin_name,
+                             const std::string& GepiCanon_plugin_obj, const std::string& GepiCanon_plugin_name, const std::string& CSROA_plugin_obj, const std::string& CSROA_plugin_name, const std::string& fname);
 
  public:
    /// The version of the gcc

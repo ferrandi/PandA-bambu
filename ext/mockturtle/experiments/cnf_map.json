@@ -1,0 +1,23 @@
+[
+  {
+    "entries": [
+      {
+        "benchmark": "assoc-4",
+        "eq_cnfmap": true,
+        "eq_tseytin": true,
+        "time_cnfmap": 0.113031,
+        "time_mapping": 0.0006489999999999999,
+        "time_tseytin": 0.333111
+      },
+      {
+        "benchmark": "assoc-5",
+        "eq_cnfmap": true,
+        "eq_tseytin": true,
+        "time_cnfmap": 1.89502,
+        "time_mapping": 0.001087,
+        "time_tseytin": 7.495737
+      }
+    ],
+    "version": "64b57ff"
+  }
+]

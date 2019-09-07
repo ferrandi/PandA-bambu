@@ -38,9 +38,6 @@
  * @author Katia Turati <turati@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
@@ -49,6 +46,10 @@
 
 /// parser/treegcc include
 #include "token_interface.hpp"
+
+/// STL include
+#include <algorithm>
+#include <utility>
 
 /// Tree include
 #include "ext_tree_node.hpp"
@@ -103,12 +104,12 @@ tree_helper::tree_helper() = default;
 
 tree_helper::~tree_helper() = default;
 
-unsigned int tree_helper::size(const tree_managerConstRef& tm, unsigned int index)
+unsigned int tree_helper::size(const tree_managerConstRef tm, unsigned int index)
 {
    return Size(tm->get_tree_node_const(index));
 }
 
-unsigned int tree_helper::Size(const tree_nodeConstRef& t)
+unsigned int tree_helper::Size(const tree_nodeConstRef t)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Getting size of " + t->get_kind_text() + " " + STR(t->index) + ": " + t->ToString());
    unsigned int return_value = 0;
@@ -384,6 +385,11 @@ unsigned int tree_helper::Size(const tree_nodeConstRef& t)
          return_value = Size(GET_NODE(te->type));
          break;
       }
+      case lut_expr_K:
+      {
+         return_value = 1;
+         break;
+      }
       case array_ref_K:
       {
          const auto* ar = GetPointer<const array_ref>(t);
@@ -533,7 +539,7 @@ unsigned int tree_helper::Size(const tree_nodeConstRef& t)
    return return_value;
 }
 
-std::string tree_helper::name_type(const tree_managerConstRef& tm, int unsigned index)
+std::string tree_helper::name_type(const tree_managerConstRef tm, int unsigned index)
 {
    const tree_nodeRef t = tm->get_tree_node_const(index);
    THROW_ASSERT(GetPointer<type_node>(t) || t->get_kind() == tree_list_K, std::string("expected a type_decl got ") + t->get_kind_text());
@@ -775,6 +781,7 @@ std::string tree_helper::name_type(const tree_managerConstRef& tm, int unsigned 
       case tree_vec_K:
       case typename_type_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -792,7 +799,7 @@ std::string tree_helper::name_type(const tree_managerConstRef& tm, int unsigned 
    return "";
 }
 
-std::string tree_helper::name_tmpl(const tree_managerConstRef& tm, const unsigned int index)
+std::string tree_helper::name_tmpl(const tree_managerConstRef tm, const unsigned int index)
 {
    const tree_nodeRef t = tm->get_tree_node_const(index);
    if(t->get_kind() == record_type_K)
@@ -817,7 +824,7 @@ std::string tree_helper::name_tmpl(const tree_managerConstRef& tm, const unsigne
    return "";
 }
 
-std::string tree_helper::record_name(const tree_managerConstRef& tm, const unsigned int index)
+std::string tree_helper::record_name(const tree_managerConstRef tm, const unsigned int index)
 {
    const tree_nodeRef t = tm->get_tree_node_const(index);
    if(t->get_kind() == record_type_K)
@@ -839,7 +846,7 @@ std::string tree_helper::record_name(const tree_managerConstRef& tm, const unsig
    return "";
 }
 
-std::string tree_helper::name_function(const tree_managerConstRef& tm, const unsigned int index)
+std::string tree_helper::name_function(const tree_managerConstRef tm, const unsigned int index)
 {
    const tree_nodeRef t = tm->get_tree_node_const(index);
    if(t->get_kind() == function_decl_K)
@@ -878,7 +885,7 @@ void tree_helper::get_mangled_fname(const function_decl* fd, std::string& fname)
    }
 }
 
-std::string tree_helper::print_function_name(const tree_managerConstRef& TM, const function_decl* fd)
+std::string tree_helper::print_function_name(const tree_managerConstRef TM, const function_decl* fd)
 {
    tree_nodeRef name;
    if(fd->builtin_flag)
@@ -961,7 +968,7 @@ std::string tree_helper::print_function_name(const tree_managerConstRef& TM, con
    return res;
 }
 
-std::tuple<std::string, unsigned int, unsigned int> tree_helper::get_definition(const tree_managerConstRef& tm, const unsigned int index, bool& is_system)
+std::tuple<std::string, unsigned int, unsigned int> tree_helper::get_definition(const tree_managerConstRef tm, const unsigned int index, bool& is_system)
 {
    is_system = false;
    tree_nodeRef node = tm->get_tree_node_const(index);
@@ -1022,7 +1029,7 @@ std::tuple<std::string, unsigned int, unsigned int> tree_helper::get_definition(
    return std::tuple<std::string, unsigned int, unsigned int>(include_name, line_number, column_number);
 }
 
-void tree_helper::get_used_variables(bool first_level_only, const tree_nodeRef& tRI, std::unordered_set<unsigned int>& list_of_variable)
+void tree_helper::get_used_variables(bool first_level_only, const tree_nodeRef tRI, std::unordered_set<unsigned int>& list_of_variable)
 {
    if(!tRI)
    {
@@ -1181,6 +1188,27 @@ void tree_helper::get_used_variables(bool first_level_only, const tree_nodeRef& 
          get_used_variables(first_level_only, qe->op1, list_of_variable);
          get_used_variables(first_level_only, qe->op2, list_of_variable);
          get_used_variables(first_level_only, qe->op3, list_of_variable);
+         break;
+      }
+      case lut_expr_K:
+      {
+         auto* le = GetPointer<lut_expr>(t);
+         get_used_variables(first_level_only, le->op0, list_of_variable);
+         get_used_variables(first_level_only, le->op1, list_of_variable);
+         if(le->op2)
+            get_used_variables(first_level_only, le->op2, list_of_variable);
+         if(le->op3)
+            get_used_variables(first_level_only, le->op3, list_of_variable);
+         if(le->op4)
+            get_used_variables(first_level_only, le->op4, list_of_variable);
+         if(le->op5)
+            get_used_variables(first_level_only, le->op5, list_of_variable);
+         if(le->op6)
+            get_used_variables(first_level_only, le->op6, list_of_variable);
+         if(le->op7)
+            get_used_variables(first_level_only, le->op7, list_of_variable);
+         if(le->op8)
+            get_used_variables(first_level_only, le->op8, list_of_variable);
          break;
       }
       case gimple_switch_K:
@@ -1348,7 +1376,7 @@ bool tree_helper::look_for_binfo_inheritance(binfo* b, const std::string& bcs)
    return false;
 }
 
-tree_nodeRef tree_helper::find_obj_type_ref_function(const tree_nodeRef& tn)
+tree_nodeRef tree_helper::find_obj_type_ref_function(const tree_nodeRef tn)
 {
    const tree_nodeRef curr_tn = GET_NODE(tn);
    unsigned int ind = GET_INDEX_NODE(tn);
@@ -1416,7 +1444,7 @@ tree_nodeRef tree_helper::find_obj_type_ref_function(const tree_nodeRef& tn)
    return tree_nodeRef();
 }
 
-bool tree_helper::is_system(const tree_managerConstRef& TM, const unsigned int index)
+bool tree_helper::is_system(const tree_managerConstRef TM, const unsigned int index)
 {
    const tree_nodeRef curr_tn = TM->get_tree_node_const(index);
    if(GetPointer<decl_node>(curr_tn))
@@ -1431,7 +1459,7 @@ bool tree_helper::is_system(const tree_managerConstRef& TM, const unsigned int i
 }
 
 #if HAVE_BAMBU_BUILT
-bool tree_helper::IsInLibbambu(const tree_managerConstRef& TM, const unsigned int index)
+bool tree_helper::IsInLibbambu(const tree_managerConstRef TM, const unsigned int index)
 {
    const tree_nodeConstRef curr_tn = TM->CGetTreeNode(index);
    if(GetPointer<const decl_node>(curr_tn) and GetPointer<const decl_node>(curr_tn)->libbambu_flag)
@@ -1446,12 +1474,12 @@ bool tree_helper::IsInLibbambu(const tree_managerConstRef& TM, const unsigned in
 }
 #endif
 
-const std::unordered_set<unsigned int> tree_helper::GetTypesToBeDeclaredBefore(const tree_managerConstRef& TM, const unsigned int index, const bool without_transformation)
+const std::unordered_set<unsigned int> tree_helper::GetTypesToBeDeclaredBefore(const tree_managerConstRef TM, const unsigned int index, const bool without_transformation)
 {
    return RecursiveGetTypesToBeDeclared(TM, index, false, without_transformation, true);
 }
 
-const std::unordered_set<unsigned int> tree_helper::GetTypesToBeDeclaredAfter(const tree_managerConstRef& TM, const unsigned int index, const bool without_transformation)
+const std::unordered_set<unsigned int> tree_helper::GetTypesToBeDeclaredAfter(const tree_managerConstRef TM, const unsigned int index, const bool without_transformation)
 {
    return RecursiveGetTypesToBeDeclared(TM, index, false, without_transformation, false);
 }
@@ -1520,7 +1548,7 @@ const std::unordered_set<unsigned int> tree_helper::RecursiveGetTypesToBeDeclare
             else
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Record type without named unqualified");
-               const std::list<tree_nodeConstRef> field_types = CGetFieldTypes(TM->CGetTreeNode(index));
+               const auto field_types = CGetFieldTypes(TM->CGetTreeNode(index));
                for(const auto& field_type : field_types)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering field type (" + STR(field_type->index) + ") " + STR(field_type));
@@ -1590,7 +1618,7 @@ const std::unordered_set<unsigned int> tree_helper::RecursiveGetTypesToBeDeclare
             else
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Union type without named unqualified");
-               const std::list<tree_nodeConstRef> field_types = CGetFieldTypes(TM->CGetTreeNode(index));
+               const auto field_types = CGetFieldTypes(TM->CGetTreeNode(index));
                for(const auto& field_type : field_types)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering field type (" + STR(field_type->index) + ") " + STR(field_type));
@@ -1725,6 +1753,7 @@ const std::unordered_set<unsigned int> tree_helper::RecursiveGetTypesToBeDeclare
       case tree_vec_K:
       case typename_type_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -1764,7 +1793,7 @@ unsigned int tree_helper::GetRealType(const tree_managerConstRef& TM, unsigned i
    return index;
 }
 
-unsigned int tree_helper::get_type_index(const tree_managerConstRef& TM, const unsigned int index, long long int& vec_size, bool& is_a_pointer, bool& is_a_function)
+unsigned int tree_helper::get_type_index(const tree_managerConstRef TM, const unsigned int index, long long int& vec_size, bool& is_a_pointer, bool& is_a_function)
 {
    is_a_pointer = false;
    is_a_function = false;
@@ -1810,7 +1839,7 @@ unsigned int tree_helper::get_type_index(const tree_managerConstRef& TM, const u
    return type_index;
 }
 
-tree_nodeRef tree_helper::GetFunctionReturnType(const tree_nodeRef& function)
+tree_nodeRef tree_helper::GetFunctionReturnType(const tree_nodeRef function)
 {
    tree_nodeRef fun_type;
    switch(function->get_kind())
@@ -1875,6 +1904,7 @@ tree_nodeRef tree_helper::GetFunctionReturnType(const tree_nodeRef& function)
       case void_type_K:
       case var_decl_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -1922,7 +1952,7 @@ tree_nodeRef tree_helper::GetFunctionReturnType(const tree_nodeRef& function)
    }
 }
 
-unsigned int tree_helper::get_pointed_type(const tree_managerConstRef& TM, const int unsigned index)
+unsigned int tree_helper::get_pointed_type(const tree_managerConstRef TM, const int unsigned index)
 {
    const tree_nodeRef T = TM->get_tree_node_const(index);
    switch(T->get_kind())
@@ -1994,6 +2024,7 @@ unsigned int tree_helper::get_pointed_type(const tree_managerConstRef& TM, const
       case void_type_K:
       case var_decl_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -2011,7 +2042,7 @@ unsigned int tree_helper::get_pointed_type(const tree_managerConstRef& TM, const
    return 0;
 }
 
-const tree_nodeConstRef tree_helper::CGetPointedType(const tree_nodeConstRef& pointer)
+const tree_nodeConstRef tree_helper::CGetPointedType(const tree_nodeConstRef pointer)
 {
    switch(pointer->get_kind())
    {
@@ -2070,6 +2101,7 @@ const tree_nodeConstRef tree_helper::CGetPointedType(const tree_nodeConstRef& po
       case vector_type_K:
       case void_type_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -2088,12 +2120,12 @@ const tree_nodeConstRef tree_helper::CGetPointedType(const tree_nodeConstRef& po
    return tree_nodeConstRef();
 }
 
-unsigned int tree_helper::GetElements(const tree_managerConstRef& TM, const unsigned int index)
+unsigned int tree_helper::GetElements(const tree_managerConstRef TM, const unsigned int index)
 {
    return CGetElements(TM->get_tree_node_const(index))->index;
 }
 
-const tree_nodeConstRef tree_helper::CGetElements(const tree_nodeConstRef& type)
+const tree_nodeConstRef tree_helper::CGetElements(const tree_nodeConstRef type)
 {
    const auto* at = GetPointer<const array_type>(type);
    if(at)
@@ -2109,7 +2141,7 @@ const tree_nodeConstRef tree_helper::CGetElements(const tree_nodeConstRef& type)
    return tree_nodeConstRef();
 }
 
-std::string tree_helper::get_type_name(const tree_managerConstRef& TM, const unsigned int index)
+std::string tree_helper::get_type_name(const tree_managerConstRef TM, const unsigned int index)
 {
    unsigned int type_index;
    tree_nodeRef type = get_type_node(TM->get_tree_node_const(index), type_index);
@@ -2140,7 +2172,7 @@ std::string tree_helper::get_type_name(const tree_managerConstRef& TM, const uns
    }
 }
 
-void tree_helper::get_parameter_types(const tree_managerConstRef& TM, const unsigned int index, std::list<unsigned int>& params)
+void tree_helper::get_parameter_types(const tree_managerConstRef TM, const unsigned int index, std::list<unsigned int>& params)
 {
    const tree_nodeRef T = TM->get_tree_node_const(index);
    tree_nodeRef Type;
@@ -2183,7 +2215,7 @@ void tree_helper::get_parameter_types(const tree_managerConstRef& TM, const unsi
    }
 }
 
-unsigned int tree_helper::get_type_index(const tree_managerConstRef& TM, const unsigned int index)
+unsigned int tree_helper::get_type_index(const tree_managerConstRef TM, const unsigned int index)
 {
    bool is_a_pointer;
    bool is_a_function;
@@ -2191,9 +2223,9 @@ unsigned int tree_helper::get_type_index(const tree_managerConstRef& TM, const u
    return get_type_index(TM, index, vec_size, is_a_pointer, is_a_function);
 }
 
-const std::list<tree_nodeConstRef> tree_helper::CGetFieldTypes(const tree_nodeConstRef& type)
+const std::vector<tree_nodeConstRef> tree_helper::CGetFieldTypes(const tree_nodeConstRef type)
 {
-   std::list<tree_nodeConstRef> ret;
+   std::vector<tree_nodeConstRef> ret;
    if(type->get_kind() == record_type_K)
    {
       const auto* rt = GetPointer<const record_type>(type);
@@ -2225,7 +2257,7 @@ const std::list<tree_nodeConstRef> tree_helper::CGetFieldTypes(const tree_nodeCo
    return ret;
 }
 
-unsigned int tree_helper::get_field_idx(const tree_managerConstRef& TM, const unsigned int index, unsigned int idx)
+unsigned int tree_helper::get_field_idx(const tree_managerConstRef TM, const unsigned int index, unsigned int idx)
 {
    tree_nodeRef node = TM->get_tree_node_const(index);
    THROW_ASSERT(GetPointer<record_type>(node) || GetPointer<union_type>(node), "expected record or union type");
@@ -2274,6 +2306,7 @@ tree_nodeRef tree_helper::get_type_node(const tree_nodeRef& node, unsigned int& 
          return_index = 0;
          return tree_nodeRef();
       }
+      case lut_expr_K:
       case CASE_UNARY_EXPRESSION:
       case CASE_BINARY_EXPRESSION:
       case CASE_TERNARY_EXPRESSION:
@@ -2398,7 +2431,7 @@ tree_nodeRef tree_helper::get_type_node(const tree_nodeRef& node, unsigned int& 
    return node;
 }
 
-const tree_nodeConstRef tree_helper::CGetType(const tree_nodeConstRef& node)
+const tree_nodeConstRef tree_helper::CGetType(const tree_nodeConstRef node)
 {
    switch(node->get_kind())
    {
@@ -2427,6 +2460,7 @@ const tree_nodeConstRef tree_helper::CGetType(const tree_nodeConstRef& node)
       {
          return tree_nodeRef();
       }
+      case lut_expr_K:
       case CASE_UNARY_EXPRESSION:
       case CASE_BINARY_EXPRESSION:
       case CASE_TERNARY_EXPRESSION:
@@ -3297,6 +3331,7 @@ bool tree_helper::is_a_variable(const tree_managerConstRef& TM, const unsigned i
       case tree_vec_K:
       case type_decl_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:
@@ -3516,6 +3551,7 @@ static unsigned int check_for_simple_pointer_arithmetic(const tree_nodeRef& node
       case vec_extractodd_expr_K:
       case vec_interleavehigh_expr_K:
       case vec_interleavelow_expr_K:
+      case extract_bit_expr_K:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
       case const_decl_K:
@@ -3801,6 +3837,7 @@ unsigned int tree_helper::get_base_index(const tree_managerConstRef& TM, const u
                      case vector_cst_K:
                      case void_cst_K:
                      case error_mark_K:
+                     case lut_expr_K:
                      case CASE_BINARY_EXPRESSION:
                      case CASE_CPP_NODES:
                      case CASE_FAKE_NODES:
@@ -3849,6 +3886,7 @@ unsigned int tree_helper::get_base_index(const tree_managerConstRef& TM, const u
             case vector_cst_K:
             case void_cst_K:
             case error_mark_K:
+            case lut_expr_K:
             case CASE_BINARY_EXPRESSION:
             case CASE_CPP_NODES:
             case CASE_FAKE_NODES:
@@ -3925,6 +3963,7 @@ unsigned int tree_helper::get_base_index(const tree_managerConstRef& TM, const u
             case tree_vec_K:
             case type_decl_K:
             case error_mark_K:
+            case lut_expr_K:
             case CASE_BINARY_EXPRESSION:
             case CASE_CPP_NODES:
             case CASE_FAKE_NODES:
@@ -4088,6 +4127,7 @@ unsigned int tree_helper::get_base_index(const tree_managerConstRef& TM, const u
       case vec_unpack_float_lo_expr_K:
       case error_mark_K:
       case paren_expr_K:
+      case extract_bit_expr_K:
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:
       case CASE_GIMPLE_NODES:
@@ -4364,6 +4404,7 @@ bool tree_helper::is_fully_resolved(const tree_managerConstRef& TM, const unsign
       case vec_unpack_float_hi_expr_K:
       case vec_unpack_float_lo_expr_K:
       case error_mark_K:
+      case extract_bit_expr_K:
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:
       case CASE_GIMPLE_NODES:
@@ -4811,6 +4852,7 @@ bool tree_helper::is_constant(const tree_managerConstRef& TM, const unsigned int
       case tree_list_K:
       case tree_vec_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_DECL_NODES:
@@ -5044,6 +5086,7 @@ std::string tree_helper::op_symbol(const tree_node* op)
       case with_size_expr_K:
       case error_mark_K:
       case paren_expr_K:
+      case extract_bit_expr_K:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
       case CASE_DECL_NODES:
@@ -5725,6 +5768,7 @@ std::string tree_helper::print_type(const tree_managerConstRef& TM, unsigned int
                case union_type_K:
                case vector_type_K:
                case error_mark_K:
+               case lut_expr_K:
                case CASE_BINARY_EXPRESSION:
                case CASE_CPP_NODES:
                case CASE_CST_NODES:
@@ -5963,6 +6007,7 @@ std::string tree_helper::print_type(const tree_managerConstRef& TM, unsigned int
                   case tree_vec_K:
                   case type_decl_K:
                   case error_mark_K:
+                  case lut_expr_K:
                   case CASE_BINARY_EXPRESSION:
                   case CASE_CPP_NODES:
                   case CASE_CST_NODES:
@@ -6144,6 +6189,7 @@ std::string tree_helper::print_type(const tree_managerConstRef& TM, unsigned int
       case ternary_mm_expr_K:
       case bit_ior_concat_expr_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -6514,6 +6560,7 @@ bool tree_helper::is_packed(const tree_managerConstRef& TreeM, unsigned int node
       case tree_list_K:
       case tree_vec_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -6744,6 +6791,7 @@ bool tree_helper::is_packed_access(const tree_managerConstRef& TreeM, unsigned i
       case array_range_ref_K:
       case target_expr_K:
       case error_mark_K:
+      case extract_bit_expr_K:
       {
          res = false;
          break;
@@ -6880,6 +6928,7 @@ void tree_helper::accessed_greatest_bitsize(const tree_managerConstRef& TreeM, c
       case typename_type_K:
       case var_decl_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -7015,6 +7064,7 @@ void tree_helper::accessed_minimum_bitsize(const tree_managerConstRef& TreeM, co
       case typename_type_K:
       case var_decl_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -7179,6 +7229,7 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
             case vec_interleavehigh_expr_K:
             case vec_interleavelow_expr_K:
             case error_mark_K:
+            case extract_bit_expr_K:
             case CASE_CPP_NODES:
             case CASE_FAKE_NODES:
             case CASE_GIMPLE_NODES:
@@ -7467,6 +7518,7 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
       case vec_interleavehigh_expr_K:
       case vec_interleavelow_expr_K:
       case error_mark_K:
+      case extract_bit_expr_K:
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:
       case CASE_GIMPLE_NODES:
@@ -7563,6 +7615,7 @@ size_t tree_helper::CountPointers(const tree_nodeConstRef& tn)
       case void_type_K:
       case target_expr_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -7724,6 +7777,39 @@ void tree_helper::compute_ssa_uses_rec_ptr(const tree_nodeRef& curr_tn, std::set
          if(qe->op3)
          {
             compute_ssa_uses_rec_ptr(qe->op3, ssa_uses);
+         }
+         break;
+      }
+      case lut_expr_K:
+      {
+         auto* le = GetPointer<lut_expr>(curr_tn);
+         compute_ssa_uses_rec_ptr(le->op0, ssa_uses);
+         compute_ssa_uses_rec_ptr(le->op1, ssa_uses);
+         if(le->op2)
+            compute_ssa_uses_rec_ptr(le->op2, ssa_uses);
+         if(le->op3)
+         {
+            compute_ssa_uses_rec_ptr(le->op3, ssa_uses);
+         }
+         if(le->op4)
+         {
+            compute_ssa_uses_rec_ptr(le->op4, ssa_uses);
+         }
+         if(le->op5)
+         {
+            compute_ssa_uses_rec_ptr(le->op5, ssa_uses);
+         }
+         if(le->op6)
+         {
+            compute_ssa_uses_rec_ptr(le->op6, ssa_uses);
+         }
+         if(le->op7)
+         {
+            compute_ssa_uses_rec_ptr(le->op7, ssa_uses);
+         }
+         if(le->op8)
+         {
+            compute_ssa_uses_rec_ptr(le->op8, ssa_uses);
          }
          break;
       }
@@ -7898,7 +7984,7 @@ TreeNodeMap<size_t> tree_helper::ComputeSsaUses(const tree_nodeRef& tn)
    return ret_value;
 }
 
-void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ssa_uses)
+void tree_helper::ComputeSsaUses(const tree_nodeRef tn, TreeNodeMap<size_t>& ssa_uses)
 {
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    const auto curr_tn = GET_NODE(tn);
@@ -8026,6 +8112,39 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
          if(qe->op3)
          {
             ComputeSsaUses(qe->op3, ssa_uses);
+         }
+         break;
+      }
+      case lut_expr_K:
+      {
+         auto* le = GetPointer<lut_expr>(curr_tn);
+         ComputeSsaUses(le->op0, ssa_uses);
+         ComputeSsaUses(le->op1, ssa_uses);
+         if(le->op2)
+            ComputeSsaUses(le->op2, ssa_uses);
+         if(le->op3)
+         {
+            ComputeSsaUses(le->op3, ssa_uses);
+         }
+         if(le->op4)
+         {
+            ComputeSsaUses(le->op4, ssa_uses);
+         }
+         if(le->op5)
+         {
+            ComputeSsaUses(le->op5, ssa_uses);
+         }
+         if(le->op6)
+         {
+            ComputeSsaUses(le->op6, ssa_uses);
+         }
+         if(le->op7)
+         {
+            ComputeSsaUses(le->op7, ssa_uses);
+         }
+         if(le->op8)
+         {
+            ComputeSsaUses(le->op8, ssa_uses);
          }
          break;
       }
@@ -8353,6 +8472,27 @@ void tree_helper::get_required_values(const tree_managerConstRef& TM, std::vecto
          get_required_values(TM, required, GET_NODE(te->op0), GET_INDEX_NODE(te->op0));
          get_required_values(TM, required, GET_NODE(te->op1), GET_INDEX_NODE(te->op1));
          get_required_values(TM, required, GET_NODE(te->op2), GET_INDEX_NODE(te->op2));
+         break;
+      }
+      case lut_expr_K:
+      {
+         auto* le = GetPointer<lut_expr>(tn);
+         get_required_values(TM, required, GET_NODE(le->op0), GET_INDEX_NODE(le->op0));
+         get_required_values(TM, required, GET_NODE(le->op1), GET_INDEX_NODE(le->op1));
+         if(le->op2)
+            get_required_values(TM, required, GET_NODE(le->op2), GET_INDEX_NODE(le->op2));
+         if(le->op3)
+            get_required_values(TM, required, GET_NODE(le->op3), GET_INDEX_NODE(le->op3));
+         if(le->op4)
+            get_required_values(TM, required, GET_NODE(le->op4), GET_INDEX_NODE(le->op4));
+         if(le->op5)
+            get_required_values(TM, required, GET_NODE(le->op5), GET_INDEX_NODE(le->op5));
+         if(le->op6)
+            get_required_values(TM, required, GET_NODE(le->op6), GET_INDEX_NODE(le->op6));
+         if(le->op7)
+            get_required_values(TM, required, GET_NODE(le->op7), GET_INDEX_NODE(le->op7));
+         if(le->op8)
+            get_required_values(TM, required, GET_NODE(le->op8), GET_INDEX_NODE(le->op8));
          break;
       }
       case gimple_cond_K:
@@ -8717,14 +8857,15 @@ bool tree_helper::LastStatement(const tree_nodeConstRef& statement)
       case target_mem_ref461_K:
       case tree_list_K:
       case tree_vec_K:
-      case CASE_BINARY_EXPRESSION:
-      case CASE_CPP_NODES:
-      case CASE_CST_NODES:
-      case CASE_DECL_NODES:
       case last_tree_K:
       case none_K:
       case placeholder_expr_K:
       case error_mark_K:
+      case lut_expr_K:
+      case CASE_BINARY_EXPRESSION:
+      case CASE_CPP_NODES:
+      case CASE_CST_NODES:
+      case CASE_DECL_NODES:
       case CASE_PRAGMA_NODES:
       case CASE_QUATERNARY_EXPRESSION:
       case CASE_TERNARY_EXPRESSION:

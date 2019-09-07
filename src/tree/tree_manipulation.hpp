@@ -185,6 +185,26 @@ class tree_manipulation
     */
    tree_nodeRef create_quaternary_operation(const tree_nodeRef& type, const tree_nodeRef& op0, const tree_nodeRef& op1, const tree_nodeRef& op2, const tree_nodeRef& op3, const std::string& srcp, enum kind operation_kind) const;
 
+   /**
+    * @brief create_lut_expr: function used to create a generic lut_expr operation
+    * @param type is the type of the expression (tree_reindex).
+    * @param op0 describes the LUT functionality as a constant integer.
+    * @param op1 is the first operand of the lut_expr expression (tree_reindex).
+    * @param op2 is the second operand of the lut_expr expression (tree_reindex).
+    * @param op3 is the third operand of the lut_expr expression (tree_reindex).
+    * @param op4 is the fourth operand of the lut_expr expression (tree_reindex).
+    * @param op5 is the fifth operand of the lut_expr expression (tree_reindex).
+    * @param op6 is the sixth operand of the lut_expr expression (tree_reindex).
+    * @param op7 is the seventh operand of the lut_expr expression (tree_reindex).
+    * @param op8 is the eighth operand of the lut_expr expression (tree_reindex).
+    * @param srcp is the definition of the source position.
+    * @return the tree_reindex node of the operation created.
+    */
+   tree_nodeRef create_lut_expr(const tree_nodeRef& type, const tree_nodeRef& op0, const tree_nodeRef& op1, const tree_nodeRef& op2, const tree_nodeRef& op3, const tree_nodeRef& op4, const tree_nodeRef& op5, const tree_nodeRef& op6,
+                                const tree_nodeRef& op7, const tree_nodeRef& op8, const std::string& srcp) const;
+
+   tree_nodeRef create_extract_bit_expr(const tree_nodeRef& op0, const tree_nodeRef& op1, const std::string& srcp) const;
+
    /// CONST_OBJ_TREE_NODES
    /** Function used to create a integer_cst node.
     * @param  type is the type of the node.
@@ -592,7 +612,7 @@ class tree_manipulation
     * @param max is the maximum value of the assigned ssa_var
     * @return the gimple assignment containing the nop expr as right part
     */
-   tree_nodeRef CreateNopExpr(const tree_nodeConstRef& operand, const tree_nodeConstRef& type, const tree_nodeConstRef &min, const tree_nodeConstRef &max) const;
+   tree_nodeRef CreateNopExpr(const tree_nodeConstRef& operand, const tree_nodeConstRef& type, const tree_nodeConstRef& min, const tree_nodeConstRef& max) const;
 
    /**
     * Create an unsigned integer type starting from signed type

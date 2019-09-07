@@ -1413,9 +1413,13 @@ void Bit_Value::initialize()
                   {
                      best[ssa_node_id] = create_u_bitstring(1);
                   }
+                  else if(GET_NODE(ga->op1)->get_kind() == extract_bit_expr_K)
+                  {
+                     best[ssa_node_id] = create_u_bitstring(1);
+                  }
                   else
                   {
-                     auto u_string =create_u_bitstring(tree_helper::Size(GET_NODE(ga->op0)));
+                     auto u_string = create_u_bitstring(tree_helper::Size(GET_NODE(ga->op0)));
                      if(lhs_ssa_is_signed && tree_helper::is_natural(TM, GET_INDEX_NODE(ga->op0)))
                      {
                         u_string.pop_front();

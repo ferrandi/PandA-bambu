@@ -229,5 +229,10 @@ class allocation : public HLSFunctionStep
     * @return true if the step has to be executed
     */
    bool HasToBeExecuted() const override;
+
+   /**
+    * Dump the initial intermediate representation
+    */
+   void PrintInitialIR() const override;
 };
 #endif

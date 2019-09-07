@@ -42,6 +42,7 @@
  */
 
 /// Autoheader include
+#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 
@@ -119,48 +120,46 @@ void fun_dominator_allocation::ComputeRelationships(DesignFlowStepSet& relations
    {
       case(PRECEDENCE_RELATIONSHIP):
       {
-#if HAVE_PRAGMA_BUILT && HAVE_EXPERIMENTAL
+#if HAVE_EXPERIMENTAL && HAVE_PRAGMA_BUILT
          if(parameters->isOption(OPT_parse_pragma) and parameters->getOption<bool>(OPT_parse_pragma) and relationship_type == PRECEDENCE_RELATIONSHIP)
          {
-            for(const auto input_function : HLSMgr->get_functions_with_body())
-            {
-               const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-               const ActorGraphFlowStepFactory* actor_graph_flow_step_factory = GetPointer<const ActorGraphFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("ActorGraph"));
-               const std::string actor_graph_creator_signature = ActorGraphFlowStep::ComputeSignature(ACTOR_GRAPHS_CREATOR, input_function, 0, "");
-               const vertex actor_graph_creator_step = design_flow_manager.lock()->GetDesignFlowStep(actor_graph_creator_signature);
-               const DesignFlowStepRef design_flow_step =
-                   actor_graph_creator_step ? design_flow_graph->CGetDesignFlowStepInfo(actor_graph_creator_step)->design_flow_step : actor_graph_flow_step_factory->CreateActorGraphStep(ACTOR_GRAPHS_CREATOR, input_function);
-               relationship.insert(design_flow_step);
-            }
+            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+            const ActorGraphFlowStepFactory* actor_graph_flow_step_factory = GetPointer<const ActorGraphFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("ActorGraph"));
+            const std::string actor_graph_creator_signature = ActorGraphFlowStep::ComputeSignature(ACTOR_GRAPHS_CREATOR, input_function, 0, "");
+            const vertex actor_graph_creator_step = design_flow_manager.lock()->GetDesignFlowStep(actor_graph_creator_signature);
+            const DesignFlowStepRef design_flow_step =
+                actor_graph_creator_step ? design_flow_graph->CGetDesignFlowStepInfo(actor_graph_creator_step)->design_flow_step : actor_graph_flow_step_factory->CreateActorGraphStep(ACTOR_GRAPHS_CREATOR, input_function);
+            relationship.insert(design_flow_step);
          }
+      }
 #endif
-         break;
-      }
-      case DEPENDENCE_RELATIONSHIP:
-      {
-         const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const auto* frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
-         const std::string frontend_flow_signature = ApplicationFrontendFlowStep::ComputeSignature(BAMBU_FRONTEND_FLOW);
-         const vertex frontend_flow_step = design_flow_manager.lock()->GetDesignFlowStep(frontend_flow_signature);
-         const DesignFlowStepRef design_flow_step = frontend_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(frontend_flow_step)->design_flow_step : frontend_flow_step_factory->CreateApplicationFrontendFlowStep(BAMBU_FRONTEND_FLOW);
-         relationship.insert(design_flow_step);
-
-         const auto* technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
-         const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
-         const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
-         const DesignFlowStepRef technology_design_flow_step =
-             technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
-         relationship.insert(technology_design_flow_step);
-         break;
-      }
-      case INVALIDATION_RELATIONSHIP:
-      {
-         break;
-      }
-      default:
-         THROW_UNREACHABLE("");
+      break;
    }
-   HLS_step::ComputeRelationships(relationship, relationship_type);
+   case DEPENDENCE_RELATIONSHIP:
+   {
+      const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+      const auto* frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
+      const std::string frontend_flow_signature = ApplicationFrontendFlowStep::ComputeSignature(BAMBU_FRONTEND_FLOW);
+      const vertex frontend_flow_step = design_flow_manager.lock()->GetDesignFlowStep(frontend_flow_signature);
+      const DesignFlowStepRef design_flow_step = frontend_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(frontend_flow_step)->design_flow_step : frontend_flow_step_factory->CreateApplicationFrontendFlowStep(BAMBU_FRONTEND_FLOW);
+      relationship.insert(design_flow_step);
+
+      const auto* technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
+      const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+      const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
+      const DesignFlowStepRef technology_design_flow_step =
+          technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+      relationship.insert(technology_design_flow_step);
+      break;
+   }
+   case INVALIDATION_RELATIONSHIP:
+   {
+      break;
+   }
+   default:
+      THROW_UNREACHABLE("");
+}
+HLS_step::ComputeRelationships(relationship, relationship_type);
 }
 
 DesignFlowStep_Status fun_dominator_allocation::Exec()

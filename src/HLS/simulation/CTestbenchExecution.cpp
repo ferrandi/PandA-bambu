@@ -79,6 +79,14 @@
 // include from HLS/
 #include "hls_manager.hpp"
 
+/// STD include
+#include <string>
+
+/// STL includes
+#include <list>
+#include <tuple>
+#include <unordered_set>
+
 // include from tree/
 #include "behavioral_helper.hpp"
 
@@ -90,7 +98,7 @@
 
 #include "string_manipulation.hpp" // for GET_CLASS
 
-CTestbenchExecution::CTestbenchExecution(const ParameterConstRef Param, const HLS_managerRef AppM, const DesignFlowManagerConstRef _design_flow_manager, const std::string _testbench_basename)
+CTestbenchExecution::CTestbenchExecution(const ParameterConstRef Param, const HLS_managerRef AppM, const DesignFlowManagerConstRef _design_flow_manager, const std::string& _testbench_basename)
     : HLS_step(Param, AppM, _design_flow_manager, HLSFlowStep_Type::C_TESTBENCH_EXECUTION), output_directory(Param->getOption<std::string>(OPT_output_directory) + "/simulation/"), testbench_basename(_testbench_basename)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -183,7 +191,8 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
       }
    }
 
-   if(((parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)) or (parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw))) and (!parameters->isOption(OPT_discrepancy_permissive_ptrs) || !parameters->getOption<bool>(OPT_discrepancy_permissive_ptrs)))
+   if(((parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)) or (parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw))) and
+      (!parameters->isOption(OPT_discrepancy_permissive_ptrs) || !parameters->getOption<bool>(OPT_discrepancy_permissive_ptrs)))
    {
       if(false
 #if HAVE_I386_GCC48_COMPILER

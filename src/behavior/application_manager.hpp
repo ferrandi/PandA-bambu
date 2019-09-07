@@ -120,7 +120,7 @@ class application_manager
    const int debug_level;
 
    /// put into relation formal parameters and the associated ssa variables
-   CustomMap<unsigned,unsigned> Parm2SSA_map;
+   CustomMap<unsigned, unsigned> Parm2SSA_map;
 
    /**
     * Returns the values produced by a vertex (recursive version)

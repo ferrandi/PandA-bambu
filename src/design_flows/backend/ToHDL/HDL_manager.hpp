@@ -193,7 +193,7 @@ class HDL_manager
     * @param the created files (file_name + other files)
     * @param the created aux files
     */
-   void hdl_gen(const std::string& file_name, const std::unordered_set<structural_objectRef>& cirs, bool equation, std::list<std::string>& hdl_files, std::list<std::string>& aux_files);
+   void hdl_gen(const std::string& file_name, const std::list<structural_objectRef>& cirs, bool equation, std::list<std::string>& hdl_files, std::list<std::string>& aux_files);
 
    /**
     * Converts a generic string to a language compliant identifier

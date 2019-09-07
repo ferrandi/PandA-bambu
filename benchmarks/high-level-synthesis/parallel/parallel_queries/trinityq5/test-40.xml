@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<function>
+   <testbench var_2="44960" p_var_3="16" p_var_4="53499" p_var_5="12" graph:init_file="../common/DB40_init" return="10"/>
+</function>

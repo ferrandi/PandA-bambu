@@ -108,7 +108,7 @@ class RTLCharacterization : public FunctionalUnitStep
    /**
     * Performing the specialization of the given object
     */
-   void specialize_fu(const module* mod, unsigned int prec, unsigned int bus_data_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_size_bitsize, size_t portsize_value);
+   void specialize_fu(const module* mod, unsigned int prec, unsigned int bus_data_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_size_bitsize, unsigned int bus_tag_bitsize, size_t portsize_value);
 
    /**
     * Generate the output file
@@ -166,8 +166,8 @@ class RTLCharacterization : public FunctionalUnitStep
     * @param constPort is the index of the constant port
     * @param is_commutative is true if all the operations are commutative
     */
-   void AnalyzeCell(functional_unit* fu, const unsigned int prec, const std::vector<std::string>& portsize_parameters, const size_t portsize_index, const std::vector<std::string>& pipe_parameters, const size_t stage_index, const unsigned int constPort,
-                    const bool is_commutative) override;
+   virtual void AnalyzeCell(functional_unit* fu, const unsigned int prec, const std::vector<std::string>& portsize_parameters, const size_t portsize_index, const std::vector<std::string>& pipe_parameters, const size_t stage_index,
+                            const unsigned int constPort, const bool is_commutative);
 
  public:
    /**
@@ -182,46 +182,46 @@ class RTLCharacterization : public FunctionalUnitStep
    /**
     * Destructor
     */
-   ~RTLCharacterization() override;
+   ~RTLCharacterization();
 
    /**
     * Perform RTL characterization of the modules with respect to the target device
     */
-   DesignFlowStep_Status Exec() override;
+   DesignFlowStep_Status Exec();
 
    /**
     * Check if this step has actually to be executed
     * @return true if the step has to be executed
     */
-   bool HasToBeExecuted() const override;
+   virtual bool HasToBeExecuted() const;
 
    /**
     * Return a unified identifier of this design step
     * @return the signature of the design step
     */
-   const std::string GetSignature() const override;
+   virtual const std::string GetSignature() const;
 
    /**
     * Return the name of this design step
     * @return the name of the pass (for debug purpose)
     */
-   const std::string GetName() const override;
+   virtual const std::string GetName() const;
 
    /**
     * Compute the relationships of a step with other steps
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   virtual void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type);
 
    /**
     * Return the factory to create this type of steps
     */
-   const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
+   virtual const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const;
 
    /**
     * Initialize the step (i.e., like a constructor, but executed just before exec
     */
-   void Initialize() override;
+   virtual void Initialize();
 };
 #endif

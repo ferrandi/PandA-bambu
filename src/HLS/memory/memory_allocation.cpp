@@ -62,6 +62,17 @@
 
 #include "math_function.hpp"
 
+/// STD include
+#include <string>
+
+/// STL includes
+#include <algorithm>
+#include <map>
+#include <set>
+#include <tuple>
+#include <unordered_set>
+#include <vector>
+
 /// tree includes
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "ext_tree_node.hpp"
@@ -117,6 +128,9 @@ const std::string MemoryAllocationSpecialization::GetKindText() const
          break;
       case MemoryAllocation_ChannelsType::MEM_ACC_P1N:
          ret += "P1N";
+         break;
+      case MemoryAllocation_ChannelsType::MEM_ACC_CS:
+         ret += "CS";
          break;
       default:
          THROW_UNREACHABLE("");
@@ -300,11 +314,13 @@ void memory_allocation::finalize_memory_allocation()
             for(auto arg2stms : bb2arg2stmtsR.second)
             {
                if(arg2stms.second.size() > 0)
+               {
                   for(auto stmt : arg2stms.second)
                   {
                      THROW_ASSERT(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != g->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition: STMT=" + STR(stmt));
                      RW_stmts.insert(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
                   }
+               }
             }
          }
       }
@@ -315,11 +331,13 @@ void memory_allocation::finalize_memory_allocation()
             for(auto arg2stms : bb2arg2stmtsW.second)
             {
                if(arg2stms.second.size() > 0)
+               {
                   for(auto stmt : arg2stms.second)
                   {
                      THROW_ASSERT(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != g->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition");
                      RW_stmts.insert(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
                   }
+               }
             }
          }
       }
@@ -440,7 +458,7 @@ void memory_allocation::finalize_memory_allocation()
    }
 
    const HLS_targetRef HLS_T = HLSMgr->get_HLS_target();
-   unsigned int bram_bitsize = 0, data_bus_bitsize, addr_bus_bitsize, size_bus_bitsize;
+   unsigned int bram_bitsize = 0, data_bus_bitsize = 0, addr_bus_bitsize = 0, size_bus_bitsize = 0;
    auto bram_bitsize_min = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_min");
    auto bram_bitsize_max = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max");
    HLSMgr->Rmem->set_maxbram_bitsize(bram_bitsize_max);
@@ -493,6 +511,7 @@ void memory_allocation::finalize_memory_allocation()
          ++addr_bus_bitsize;
    }
    HLSMgr->set_address_bitsize(addr_bus_bitsize);
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---SIZE bus bitsize: " + STR(size_bus_bitsize));
    if(needMemoryMappedRegisters)
       maximum_bus_size = std::max(maximum_bus_size, addr_bus_bitsize);
    data_bus_bitsize = maximum_bus_size;

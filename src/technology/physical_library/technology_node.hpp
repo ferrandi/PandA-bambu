@@ -165,6 +165,7 @@ enum class TargetDevice_Type;
 #define CHANNELS_TYPE_MEM_ACC_N1 "MEM_ACC_N1"
 #define CHANNELS_TYPE_MEM_ACC_NN "MEM_ACC_NN"
 #define CHANNELS_TYPE_MEM_ACC_P1N "MEM_ACC_P1N"
+#define CHANNELS_TYPE_MEM_ACC_CS "MEM_ACC_CS"
 
 #define MEMORY_CTRL_TYPE_D00 "D00"
 #define MEMORY_CTRL_TYPE_PROXY "PROXY"
@@ -189,6 +190,10 @@ enum class TargetDevice_Type;
 #define VIEW_CONVERT_STD_INT "view_convert_expr_FU"
 #define VIEW_CONVERT_STD_UINT "ui_view_convert_expr_FU"
 #define VIEW_CONVERT_STD_REAL "fp_view_convert_expr_FU"
+
+#define EXTRACT_BIT_EXPR_SIGNED_STD "extract_bit_expr_FU"
+#define EXTRACT_BIT_EXPR_UNSIGNED_STD "ui_extract_bit_expr_FU"
+#define LUT_EXPR_STD "lut_expr_FU"
 
 // For distributed controller
 #define CE_STD "CE_FU"

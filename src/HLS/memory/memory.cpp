@@ -43,16 +43,17 @@
  *
  */
 #include "memory.hpp"
+#include "memory_cs.hpp"
 
 #include "memory_symbol.hpp"
 
 #include "application_manager.hpp"
 #include "call_graph_manager.hpp"
 
+#include "Parameter.hpp"
 #include "funit_obj.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "tree_node.hpp"
 
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
@@ -64,6 +65,13 @@
 #include "xml_helper.hpp"
 
 #include "math_function.hpp"
+
+/// STL includes
+#include <algorithm>
+#include <vector>
+
+/// tree include
+#include "tree_node.hpp"
 
 /// we start to allocate from internal_base_address_alignment byte to align address to internal_base_address_alignment bits
 /// we can use address 0 in some cases but it is not safe in general.
@@ -105,6 +113,15 @@ memory::memory(const tree_managerRef _TreeM, unsigned int _off_base_address, uns
 
 memory::~memory() = default;
 
+memoryRef memory::create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM, unsigned int _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address,
+                                const unsigned int& _address_bitsize)
+{
+   if(_parameters->isOption(OPT_context_switch))
+      return memoryRef(new memory_cs(_TreeM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p, initial_internal_address, _address_bitsize));
+   else
+      return memoryRef(new memory(_TreeM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p, initial_internal_address, _address_bitsize));
+}
+
 std::map<unsigned int, memory_symbolRef> memory::get_ext_memory_variables() const
 {
    return external;
@@ -135,7 +152,9 @@ void memory::add_internal_variable(unsigned int funID_scope, unsigned int var)
 {
    memory_symbolRef m_sym;
    if(in_vars.find(var) != in_vars.end())
+   {
       m_sym = in_vars[var];
+   }
    else if(is_private_memory(var))
    {
       if(null_pointer_check)
@@ -144,7 +163,9 @@ void memory::add_internal_variable(unsigned int funID_scope, unsigned int var)
          m_sym = memory_symbolRef(new memory_symbol(var, internal_base_address_start, funID_scope));
       }
       else
+      {
          m_sym = memory_symbolRef(new memory_symbol(var, 0, funID_scope));
+      }
    }
    else
    {
@@ -395,11 +416,17 @@ unsigned int memory::get_base_address(unsigned int var, unsigned int funId) cons
 {
    THROW_ASSERT(has_base_address(var), "Variable not yet allocated: @" + STR(var));
    if(has_callSite_base_address(var))
+   {
       return get_callSite_base_address(var);
+   }
    if(has_internal_base_address(var))
+   {
       return get_internal_base_address(var);
+   }
    if(funId && has_parameter_base_address(var, funId))
+   {
       return get_parameter_base_address(var, funId);
+   }
    return get_external_base_address(var);
 }
 
@@ -543,10 +570,10 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
 {
    std::map<std::string, std::string> res_parameters;
 
-   if(src->is_parameter(MEMORY_PARAMETER))
+   if(src->ExistsParameter(MEMORY_PARAMETER))
    {
-      std::vector<std::string> current_src_parameters = convert_string_to_vector<std::string>(src->get_parameter(MEMORY_PARAMETER), ";");
-      for(const auto& current_src_parameter : current_src_parameters)
+      std::vector<std::string> current_src_parameters = convert_string_to_vector<std::string>(src->GetParameter(MEMORY_PARAMETER), ";");
+      for(const auto current_src_parameter : current_src_parameters)
       {
          std::vector<std::string> current_parameter = convert_string_to_vector<std::string>(current_src_parameter, "=");
          res_parameters[current_parameter[0]] = current_parameter[1];
@@ -560,10 +587,10 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
       for(unsigned int i = 0; i < srcModule->get_internal_objects_size(); ++i)
       {
          structural_objectRef subModule = srcModule->get_internal_object(i);
-         if(subModule->is_parameter(MEMORY_PARAMETER))
+         if(subModule->ExistsParameter(MEMORY_PARAMETER))
          {
-            std::vector<std::string> current_src_parameters = convert_string_to_vector<std::string>(subModule->get_parameter(MEMORY_PARAMETER), ";");
-            for(const auto& current_src_parameter : current_src_parameters)
+            std::vector<std::string> current_src_parameters = convert_string_to_vector<std::string>(subModule->GetParameter(MEMORY_PARAMETER), ";");
+            for(const auto current_src_parameter : current_src_parameters)
             {
                std::vector<std::string> current_parameter = convert_string_to_vector<std::string>(current_src_parameter, "=");
                res_parameters[current_parameter[0]] = current_parameter[1];
@@ -572,16 +599,17 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
       }
    }
 
-   if(tgt->get_circ()->is_parameter(MEMORY_PARAMETER))
+   if(not tgt->get_circ()->ExistsParameter(MEMORY_PARAMETER))
    {
-      std::vector<std::string> current_tgt_parameters = convert_string_to_vector<std::string>(tgt->get_circ()->get_parameter(MEMORY_PARAMETER), ";");
-      for(const auto& current_tgt_parameter : current_tgt_parameters)
-      {
-         std::vector<std::string> current_parameter = convert_string_to_vector<std::string>(current_tgt_parameter, "=");
-         if(res_parameters.find(current_parameter[0]) != res_parameters.end() && res_parameters[current_parameter[0]] != current_parameter[1])
-            THROW_ERROR("The parameter \"" + current_parameter[0] + "\" has been set with (at least) two different values");
-         res_parameters[current_parameter[0]] = current_parameter[1];
-      }
+      tgt->get_circ()->AddParameter(MEMORY_PARAMETER, "");
+   }
+   std::vector<std::string> current_tgt_parameters = convert_string_to_vector<std::string>(tgt->get_circ()->GetParameter(MEMORY_PARAMETER), ";");
+   for(unsigned int l = 0; l < current_tgt_parameters.size(); l++)
+   {
+      std::vector<std::string> current_parameter = convert_string_to_vector<std::string>(current_tgt_parameters[l], "=");
+      if(res_parameters.find(current_parameter[0]) != res_parameters.end() && res_parameters[current_parameter[0]] != current_parameter[1])
+         THROW_ERROR("The parameter \"" + current_parameter[0] + "\" has been set with (at least) two different values");
+      res_parameters[current_parameter[0]] = current_parameter[1];
    }
 
    if(res_parameters.size() == 0)
@@ -594,16 +622,16 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
          memory_parameters += ";";
       memory_parameters += res_parameter.first + "=" + res_parameter.second;
    }
-   tgt->get_circ()->set_parameter(MEMORY_PARAMETER, memory_parameters);
+   tgt->get_circ()->SetParameter(MEMORY_PARAMETER, memory_parameters);
 }
 
 void memory::add_memory_parameter(const structural_managerRef SM, const std::string& name, const std::string& value)
 {
-   std::string memory_parameters;
-   if(SM->get_circ()->is_parameter(MEMORY_PARAMETER))
+   if(not SM->get_circ()->ExistsParameter(MEMORY_PARAMETER))
    {
-      memory_parameters = SM->get_circ()->get_parameter(MEMORY_PARAMETER) + ";";
+      SM->get_circ()->AddParameter(MEMORY_PARAMETER, "");
    }
+   auto memory_parameters = SM->get_circ()->GetParameter(MEMORY_PARAMETER) + ";";
    std::vector<std::string> current_parameters = convert_string_to_vector<std::string>(memory_parameters, ";");
    for(const auto& l : current_parameters)
    {
@@ -617,7 +645,7 @@ void memory::add_memory_parameter(const structural_managerRef SM, const std::str
       }
    }
    memory_parameters += name + "=" + value;
-   SM->get_circ()->set_parameter(MEMORY_PARAMETER, memory_parameters);
+   SM->get_circ()->SetParameter(MEMORY_PARAMETER, memory_parameters);
 }
 
 void memory::xwrite(xml_element* node)
