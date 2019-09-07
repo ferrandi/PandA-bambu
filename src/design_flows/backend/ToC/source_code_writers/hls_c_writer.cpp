@@ -935,7 +935,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
             param = "@" + STR(l);
 
          bool is_memory = false;
-         std::string test_v = "0";
+         std::string test_v;
          if(mem_vars.find(l) != mem_vars.end() && std::find(parameters.begin(), parameters.end(), l) == parameters.end())
          {
             is_memory = true;
@@ -961,6 +961,14 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                if(test_v.back() == '}')
                   test_v.pop_back();
             }
+         }
+         else if(flag_cpp or interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+         {
+            test_v = "0";
+         }
+         else
+         {
+            test_v = "{0}";
          }
 
          if(v_idx > 0 && is_memory)
