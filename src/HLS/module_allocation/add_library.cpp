@@ -200,7 +200,7 @@ DesignFlowStep_Status add_library::InternalExec()
       op->time_m = time_model::create_model(device->get_type(), parameters);
       op->primary_inputs_registered = HLS->registered_inputs;
       /// First computing if operation is bounded, then computing call_delay; call_delay depends on the value of bounded
-      if(HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->is_a_dag)
+      if(HLS->STG and HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->is_a_dag)
       {
          bool is_bounded = !HLSMgr->Rmem->has_proxied_internal_variables(funId) && !parameters->getOption<bool>(OPT_disable_bounded_function);
          const structural_objectRef cir = HLS->top->get_circ();
@@ -233,7 +233,7 @@ DesignFlowStep_Status add_library::InternalExec()
       {
          op->bounded = false;
       }
-      double call_delay = HLS->allocation_information->estimate_call_delay();
+      double call_delay = HLS->allocation_information ? HLS->allocation_information->estimate_call_delay() : clock_period_value;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Estimated call delay " + STR(call_delay));
       if(op->bounded)
       {

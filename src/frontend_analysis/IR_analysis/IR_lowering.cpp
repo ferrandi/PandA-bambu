@@ -1557,9 +1557,25 @@ bool IR_lowering::reached_max_transformation_limit(tree_nodeRef
 )
 {
 #ifndef NDEBUG
-   if((not AppM->ApplyNewTransformation()) and not(stmt and GetPointer<gimple_assign>(GET_NODE(stmt)) and GetPointer<cond_expr>(GET_NODE(GetPointer<gimple_assign>(GET_NODE(stmt))->op1))))
-      if(not AppM->ApplyNewTransformation())
-         return true;
+   if(stmt)
+   {
+      const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
+      if(ga)
+      {
+         const auto op0 = GET_CONST_NODE(ga->op0);
+         const auto op1 = GET_CONST_NODE(ga->op1);
+         if(op1->get_kind() == cond_expr_K)
+         {
+            return false;
+         }
+         if(not ga->init_assignment and op0->get_kind() == ssa_name_K and op1->get_kind() == var_decl_K)
+         {
+            return false;
+         }
+      }
+   }
+   if(not AppM->ApplyNewTransformation())
+      return true;
 #endif
    return false;
 }
