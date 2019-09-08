@@ -930,11 +930,12 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
       for(const auto& l : mem)
       {
          std::string param = behavioral_helper->PrintVariable(l);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Considering memory variable " + param);
          if(param[0] == '"')
             param = "@" + STR(l);
 
          bool is_memory = false;
-         std::string test_v = "0";
+         std::string test_v;
          if(mem_vars.find(l) != mem_vars.end() && std::find(parameters.begin(), parameters.end(), l) == parameters.end())
          {
             is_memory = true;
@@ -961,9 +962,20 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                   test_v.pop_back();
             }
          }
+         else if(flag_cpp or interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+         {
+            test_v = "0";
+         }
+         else
+         {
+            test_v = "{0}";
+         }
 
          if(v_idx > 0 && is_memory)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Skip memory variable " + param);
             continue; // memory has been already initialized
+         }
 
 
          /// Retrieve the space to be reserved in memory
@@ -1128,6 +1140,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
             indented_output_stream->Append("// next_object_offset > reserved_mem_bytes\n");
             WriteZeroedBytes(next_object_offset - reserved_mem_bytes);
          }
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Considered memory variable " + param);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered test vector " + STR(v_idx));
       ++v_idx;
@@ -1224,7 +1237,7 @@ void HLSCWriter::WriteFile(const std::string& file_name)
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->C-based testbench generation for function " + behavioral_helper->get_function_name() + ": " + file_name);
 
    WriteMainTestbench();
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--Prepared testbench");
 
    indented_output_stream->WriteFile(file_name);
 }

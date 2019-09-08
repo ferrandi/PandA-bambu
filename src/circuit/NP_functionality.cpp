@@ -55,6 +55,8 @@
 #include <list>                                      // for _List_co...
 #include <utility>                                   // for pair
 
+#include <iostream>
+
 NP_functionality::NP_functionaly_type NP_functionality::to_NP_functionaly_type(const std::string& val)
 {
    unsigned int i;

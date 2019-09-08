@@ -127,30 +127,23 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::C_TESTBENCH_EXECUTION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
-         if(parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw))
+         ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         if(design_flow_manager.lock()->GetStatus(HLS_step::ComputeSignature(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef())) == DesignFlowStep_Status::SUCCESS)
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
-            if(design_flow_manager.lock()->GetStatus(HLS_step::ComputeSignature(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef())) == DesignFlowStep_Status::SUCCESS)
+            if(HLSMgr->RSim and HLSMgr->RSim->results_available)
             {
-               if(HLSMgr->RSim and HLSMgr->RSim->results_available)
-               {
-                  ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_VALUES_XML_GENERATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
-               }
-               else
-               {
-                  ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_VALUES_C_GENERATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
-               }
+               ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_VALUES_XML_GENERATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
             }
+            else
+            {
+               ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_VALUES_C_GENERATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+            }
+         }
 
-            ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
-#if HAVE_VCD_BUILT
-            if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
-            {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_SIGNAL_SELECTION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
-            }
-#endif
-            break;
+         ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
+         {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_SIGNAL_SELECTION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
          }
          break;
       }
@@ -460,6 +453,7 @@ void TestbenchGenerationBaseStep::init_extra_signals(bool withMemory) const
 
 void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef TreeM) const
 {
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing output checks");
    const HLSFlowStep_Type interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);
    if(interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
    {
@@ -625,7 +619,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
 
-   if(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION or interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+   if(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION or interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION or interface_type == HLSFlowStep_Type::INTERFACE_CS_GENERATION)
    {
       const auto& DesignSignature = HLSMgr->RSim->simulationArgSignature;
       for(auto par : DesignSignature)
@@ -658,6 +652,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             if(GetPointer<port_o>(portInst)->get_is_memory() || (GetPointer<port_o>(portInst)->get_is_extern() && GetPointer<port_o>(portInst)->get_is_global()) || !portInst->get_typeRef()->treenode ||
                !tree_helper::is_a_pointer(TreeM, portInst->get_typeRef()->treenode))
                continue;
+
             std::string unmangled_name = portInst->get_id();
             std::string port_name = HDL_manager::convert_to_identifier(writer.get(), unmangled_name);
             std::string output_name = "ex_" + unmangled_name;
@@ -709,7 +704,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                      nonescaped_name.erase(std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
                   if(is_real)
                   {
-                     if(output_level > OUTPUT_LEVEL_MINIMUM)
+                     if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
                      {
                         writer->write("$display(\" comparision = %b " + nonescaped_name +
                                       " = %d "
@@ -734,7 +729,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                      }
                      if(bitsize == 32 || bitsize == 64)
                      {
-                        if(output_level > OUTPUT_LEVEL_MINIMUM)
+                        if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
                         {
                            writer->write("$display(\" FP error %f \\n\", compute_ulp" + (bitsize == 32 ? STR(32) : STR(64)) + "({");
                            for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
@@ -761,7 +756,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   }
                   else
                   {
-                     if(output_level > OUTPUT_LEVEL_MINIMUM)
+                     if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
                      {
                         writer->write("$display(\"" + nonescaped_name + " = %d _bambu_testbench_mem_[" + nonescaped_name + " + %d - base_addr] = %d  expected = %d \\n\", _bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_] == " + output_name + ", _i_, _bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_], " + output_name + ");\n");
                      }
@@ -903,7 +898,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   writer->write(STR(STD_OPENING_CHAR));
                   writer->write("begin\n");
                   {
-                     if(output_level > OUTPUT_LEVEL_MINIMUM)
+                     if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
                         writer->write("$display(\"Value found for output " + orig_name + ": %b\", " + output_name + ");\n");
                   }
                   writer->write(STR(STD_CLOSING_CHAR));
@@ -1042,7 +1037,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   writer->write(STR(STD_OPENING_CHAR));
                   writer->write("begin\n");
                   {
-                     if(output_level > OUTPUT_LEVEL_MINIMUM)
+                     if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
                         writer->write("$display(\"Value found for output " + orig_name + ": %b\", " + output_name + ");\n");
                   }
                   writer->write(STR(STD_CLOSING_CHAR));
@@ -1182,7 +1177,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   writer->write(STR(STD_OPENING_CHAR));
                   writer->write("begin\n");
                   {
-                     if(output_level > OUTPUT_LEVEL_MINIMUM)
+                     if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
                         writer->write("$display(\"Value found for output " + variableName + ": %b\", " + output_name + ");\n");
                   }
                   writer->write(STR(STD_CLOSING_CHAR));
@@ -1333,7 +1328,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             writer->write(STR(STD_OPENING_CHAR));
             writer->write("begin\n");
             {
-               if(output_level > OUTPUT_LEVEL_MINIMUM)
+               if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
                   writer->write("$display(\"Value found for output " + output_name + ": %b\", " + output_name + ");\n");
             }
             writer->write(STR(STD_CLOSING_CHAR));
@@ -1448,6 +1443,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
    writer->write("end\n");
    writer->write(STR(STD_CLOSING_CHAR));
    writer->write("end\n\n");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written output checks");
 }
 
 void TestbenchGenerationBaseStep::write_underlying_testbench(const std::string simulation_values_path, bool generate_vcd_output, bool xilinx_isim, const tree_managerConstRef TreeM) const
