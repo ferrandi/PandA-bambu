@@ -354,15 +354,15 @@ def CreateJunitBody(directory,ju_file):
             command_args = command_args.replace(abs_benchmarks_root + "/", "")
             args_file.close()
             if return_value == "0":
-                ju_file.write("    <testcase classname=\"PandA-bambu-tests\" name=\"" + command_args.replace("\\", "") + "\">\n")
+                ju_file.write("    <testcase classname=\"PandA-bambu-tests\" name=\"" + command_args.replace("\\", "").replace("\"", "&quot;") + "\">\n")
             else:
                 if return_value == "124":
-                    ju_file.write("    <testcase classname=\"PandA-bambu-tests\" name=\"" + command_args.replace("\\", "") + "\">\n")
+                    ju_file.write("    <testcase classname=\"PandA-bambu-tests\" name=\"" + command_args.replace("\\", "").replace("\"", "&quot;") + "\">\n")
                     ju_file.write("      <failure type=\"FAILURE(Timeout)\"></failure>\n")
                     ju_file.write("      <system-out>\n")
                     ju_file.write("<![CDATA[\n")
                 else:
-                    ju_file.write("    <testcase classname=\"PandA-bambu-tests\" name=\"" + command_args.replace("\\", "") + "\">\n")
+                    ju_file.write("    <testcase classname=\"PandA-bambu-tests\" name=\"" + command_args.replace("\\", "").replace("\"", "&quot;") + "\">\n")
                     ju_file.write("      <failure type=\"FAILURE\"></failure>\n")
                     ju_file.write("      <system-out>\n")
                     ju_file.write("<![CDATA[\n")
