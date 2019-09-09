@@ -113,8 +113,8 @@ class flopoco_wrapper
    {
       port_in,
       port_out,
-      clock,
-      reset
+      clk,
+      rst
    } port_type;
    /// Component types
    typedef enum
