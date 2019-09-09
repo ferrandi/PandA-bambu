@@ -51,16 +51,18 @@
 
 namespace llvm
 {
+   template <int OPT_SELECTION>
    struct CLANG_VERSION_SYMBOL(_plugin_GepiCanon);
 }
 
 namespace llvm
 {
+   template <int OPT_SELECTION>
    struct CLANG_VERSION_SYMBOL(_plugin_GepiCanon) : public GepiCanonicalizationPass
    {
     public:
       static char ID;
-      CLANG_VERSION_SYMBOL(_plugin_GepiCanon)() : GepiCanonicalizationPass(ID)
+      CLANG_VERSION_SYMBOL(_plugin_GepiCanon)() : GepiCanonicalizationPass(ID, OPT_SELECTION)
       {
          initializeTargetTransformInfoWrapperPassPass(*PassRegistry::getPassRegistry());
          initializeLoopPassPass(*PassRegistry::getPassRegistry());
@@ -72,24 +74,35 @@ namespace llvm
       }
       StringRef getPassName() const override
       {
-         return CLANG_VERSION_STRING(_plugin_GepiCanon);
+         if(OPT_SELECTION == SROA_ptrIteratorSimplification)
+            return CLANG_VERSION_STRING(_plugin_GepiCanon) "PS";
+         else if(OPT_SELECTION == SROA_chunkOperationsLowering)
+            return CLANG_VERSION_STRING(_plugin_GepiCanon) "COL";
+         else if(OPT_SELECTION == SROA_bitcastVectorRemoval)
+            return CLANG_VERSION_STRING(_plugin_GepiCanon) "BVR";
       }
    };
 
-   char CLANG_VERSION_SYMBOL(_plugin_GepiCanon)::ID = 0;
+   template <int OPT_SELECTION>
+   char CLANG_VERSION_SYMBOL(_plugin_GepiCanon)<OPT_SELECTION>::ID = 0;
 
 } // namespace llvm
 
 #ifndef _WIN32
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon)> XPassFV(CLANG_VERSION_STRING(_plugin_GepiCanon), "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
-
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) <SROA_ptrIteratorSimplification>> XPassPS(CLANG_VERSION_STRING(_plugin_GepiCanon) "PS", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) <SROA_chunkOperationsLowering>> XPassCOL(CLANG_VERSION_STRING(_plugin_GepiCanon) "COL", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) <SROA_bitcastVectorRemoval>> XPassBVR(CLANG_VERSION_STRING(_plugin_GepiCanon) "BVR", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
    PM.add(llvm::createPromoteMemoryToRegisterPass());
-   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon));
+   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon)<SROA_ptrIteratorSimplification>);
+   PM.add(llvm::createVerifierPass());
+   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon)<SROA_chunkOperationsLowering>);
+   PM.add(llvm::createVerifierPass());
+   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon)<SROA_bitcastVectorRemoval>);
    PM.add(llvm::createVerifierPass());
 }
 
@@ -102,8 +115,8 @@ static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_GepiCanon_Ox)(l
 #ifdef _WIN32
 using namespace llvm;
 
-INITIALIZE_PASS_BEGIN(clang7_plugin_GepiCanon, "clang7_plugin_GepiCanonFV", "GepiCanonicalizationPass", true, false)
-INITIALIZE_PASS_END(clang7_plugin_GepiCanon, "clang7_plugin_GepiCanon", "GepiCanonicalizationPass", true, false)
+INITIALIZE_PASS_BEGIN(clang7_plugin_GepiCanon<SROA_ptrIteratorSimplification>, "clang7_plugin_GepiCanonPS", "GepiCanonicalizationPass", true, false)
+INITIALIZE_PASS_END(clang7_plugin_GepiCanon<SROA_ptrIteratorSimplification>, "clang7_plugin_GepiCanonPS", "GepiCanonicalizationPass", true, false)
 namespace llvm
 {
    void clang7_plugin_GepiCanon_init()

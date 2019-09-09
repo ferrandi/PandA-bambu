@@ -59,11 +59,19 @@
 
 #include "CustomScalarReplacementOfAggregatesPass.hpp"
 
+#define DEBUG_CSROA
+
 static llvm::cl::opt<uint32_t> MaxNumScalarTypes("csroa-expanded-scalar-threshold", llvm::cl::Hidden, llvm::cl::init(64), llvm::cl::desc("Max amount of scalar types contained in a type for allowing disaggregation"));
 
 static llvm::cl::opt<uint32_t> MaxTypeByteSize("csroa-type-byte-size", llvm::cl::Hidden, llvm::cl::init(32 * 8), llvm::cl::desc("Max type size (in bytes) allowed for disaggregation"));
 
 static llvm::cl::opt<uint32_t> CSROAInlineThreshold("csroa-inline-threshold", llvm::cl::Hidden, llvm::cl::init(200), llvm::cl::desc("number of maximum statements of the single called function after the inline is applied"));
+
+#ifdef DEBUG_CSROA
+static llvm::cl::opt<int32_t> CSROAMaxTransformations("csroa-max-transformations", llvm::cl::Hidden, llvm::cl::init(-1), llvm::cl::desc("number of maximum allocas expanded (default=-1, infinite number of transformations"));
+
+std::set<llvm::Value*> recorded_expanded_aggregates;
+#endif
 
 class Utilities
 {
@@ -292,6 +300,18 @@ bool has_expandable_size(llvm::Value* aggregate, const llvm::DataLayout& DL, uns
          {
             msg = "# aggregate types is " + std::to_string(non_aggregate_types) + " (allowed " + std::to_string(MaxNumScalarTypes) + ") and allocates size is " + std::to_string(allocated_size) + "(allowed " + std::to_string(MaxTypeByteSize) + ")";
          }
+#ifdef DEBUG_CSROA
+         else if(CSROAMaxTransformations != -1)
+         {
+            if(recorded_expanded_aggregates.find(aggregate) == recorded_expanded_aggregates.end() && recorded_expanded_aggregates.size() >= CSROAMaxTransformations)
+            {
+               msg = "# maximum limit of alloca expanded reached";
+               return false;
+            }
+            else if(recorded_expanded_aggregates.find(aggregate) == recorded_expanded_aggregates.end())
+               recorded_expanded_aggregates.insert(aggregate);
+         }
+#endif
          return expandable_size;
       }
       else
@@ -2268,15 +2288,21 @@ bool compute_base_and_offset(llvm::Use* ptr_use, llvm::Value*& base_address, std
                signed long long offset = c_index->getSExtValue() * array_elmt_size.getSExtValue();
                llvm::APInt offset_ai(c_index->getBitWidth(), offset);
 
-               if (offset_chain.empty()) {
+               if(offset_chain.empty())
+               {
                   offset_chain.push_back(llvm::ConstantInt::get(gep_op->getContext(), offset_ai));
-               } else {
+               }
+               else
+               {
                   // Fold with the last element of the chain if constant as well
-                  if (llvm::ConstantInt *c_last = llvm::dyn_cast<llvm::ConstantInt>(offset_chain.back())) {
+                  if(llvm::ConstantInt* c_last = llvm::dyn_cast<llvm::ConstantInt>(offset_chain.back()))
+                  {
                      signed long long offset_sum = c_last->getSExtValue() + offset_ai.getSExtValue();
                      llvm::APInt offset_sum_ai(DL.getPointerTypeSizeInBits(gep_op->getType()), offset_sum);
                      offset_chain.back() = llvm::ConstantInt::get(gep_op->getContext(), offset_sum_ai);
-                  } else {
+                  }
+                  else
+                  {
                      offset_chain.push_back(llvm::ConstantInt::get(gep_op->getContext(), offset_ai));
                   }
                }
@@ -4131,6 +4157,9 @@ void inline_wrappers(llvm::Function* kernel_function, std::set<llvm::Function*>&
 bool CustomScalarReplacementOfAggregatesPass::runOnModule(llvm::Module& module)
 {
    llvm::Function* kernel_function = module.getFunction(kernel_name);
+#ifdef DEBUG_CSROA
+   recorded_expanded_aggregates.clear();
+#endif
 
    assert(kernel_function != nullptr && "Unknown kernel function!");
 
@@ -4159,6 +4188,11 @@ bool CustomScalarReplacementOfAggregatesPass::runOnModule(llvm::Module& module)
       propagate_constant_arguments(function_worklist);
 
       assert(!llvm::verifyModule(module, &llvm::errs()));
+
+#ifdef DEBUG_CSROA
+      if(CSROAMaxTransformations != -1)
+         llvm::errs() << "Number of alloca expanded " << recorded_expanded_aggregates.size() << "\n";
+#endif
 
       return true;
    }
@@ -4255,6 +4289,10 @@ bool CustomScalarReplacementOfAggregatesPass::runOnModule(llvm::Module& module)
 
       assert(!llvm::verifyModule(module, &llvm::errs()));
 
+#ifdef DEBUG_CSROA
+      if(CSROAMaxTransformations != -1)
+         llvm::errs() << "Number of alloca expanded " << recorded_expanded_aggregates.size() << "\n";
+#endif
       return true;
    }
 
@@ -4288,6 +4326,10 @@ bool CustomScalarReplacementOfAggregatesPass::runOnModule(llvm::Module& module)
 
       assert(!llvm::verifyModule(module, &llvm::errs()));
 
+#ifdef DEBUG_CSROA
+      if(CSROAMaxTransformations != -1)
+         llvm::errs() << "Number of alloca expanded " << recorded_expanded_aggregates.size() << "\n";
+#endif
       return true;
    }
 
