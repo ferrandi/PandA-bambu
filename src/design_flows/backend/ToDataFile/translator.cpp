@@ -83,9 +83,7 @@
 #include "exceptions.hpp"
 #include "fileIO.hpp"
 #include "utility.hpp"
-#include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/replace.hpp>
-#include <boost/algorithm/string/split.hpp>
 #include <boost/filesystem/operations.hpp>
 
 /// XML include
@@ -184,7 +182,7 @@ bool Translator::LatexColumnFormat::Compare(const long double A, const Compariso
       }
       default:
       {
-         THROW_UNREACHABLE("Operator " + boost::lexical_cast<std::string>(comparator) + " not supported");
+         THROW_UNREACHABLE("Operator " + STR(comparator) + " not supported");
       }
    }
    return false;
@@ -489,15 +487,15 @@ void Translator::write_to_xml(const std::map<enum rtl_kind, std::map<enum mode_k
    if(data.find(is_main_R) != data.end() and data.find(is_main_R)->second.find(none_R) != data.find(is_main_R)->second.end())
    {
       long double is_main_value = data.find(is_main_R)->second.find(none_R)->second;
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "is_main is " + boost::lexical_cast<std::string>(is_main_value));
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "is_main is " + STR(is_main_value));
       xml_element* is_main = rtl_weights->add_child_element("is_main");
-      WRITE_XNVM2(STR_XML_weights_cycles, boost::lexical_cast<std::string>(is_main_value), is_main);
+      WRITE_XNVM2(STR_XML_weights_cycles, STR(is_main_value), is_main);
    }
    if(data.find(backward_branches_R) != data.end() and data.find(backward_branches_R)->second.find(none_R) != data.find(backward_branches_R)->second.end())
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Translator: write_to_xml: br is not zero");
       xml_element* backward_branches = rtl_weights->add_child_element("backward_branches");
-      WRITE_XNVM2(STR_XML_weights_cycles, boost::lexical_cast<std::string>(data.find(backward_branches_R)->second.find(none_R)->second), backward_branches);
+      WRITE_XNVM2(STR_XML_weights_cycles, STR(data.find(backward_branches_R)->second.find(none_R)->second), backward_branches);
    }
    std::map<enum rtl_kind, std::map<enum mode_kind, long double>>::const_iterator it, it_end = data.end();
    for(it = data.begin(); it != it_end; ++it)
@@ -510,13 +508,13 @@ void Translator::write_to_xml(const std::map<enum rtl_kind, std::map<enum mode_k
       {
          if(it2->first == none_R)
          {
-            WRITE_XNVM2(STR_XML_weights_cycles, boost::lexical_cast<std::string>(it2->second), node);
+            WRITE_XNVM2(STR_XML_weights_cycles, STR(it2->second), node);
          }
          else
          {
             xml_element* mode = node->add_child_element(STR_XML_weights_mode);
             WRITE_XNVM2("name", rtl_node::GetString(it2->first), mode);
-            WRITE_XNVM2(STR_XML_weights_cycles, boost::lexical_cast<std::string>(it2->second), mode);
+            WRITE_XNVM2(STR_XML_weights_cycles, STR(it2->second), mode);
          }
       }
    }
@@ -530,7 +528,7 @@ void Translator::write_to_csv(const std::map<std::string, std::set<std::string>>
    std::unordered_set<std::string> skipping;
    BOOST_PP_SEQ_FOR_EACH(SKIPPING_MACRO, BOOST_PP_EMPTY, SKIPPED_COLUMN);
 
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Translating " + boost::lexical_cast<std::string>(results.size()));
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Translating " + STR(results.size()));
    std::ofstream out(file_name.c_str());
    THROW_ASSERT(out, "Error in opening output file " + file_name);
    out << "Benchmark ";
@@ -594,7 +592,7 @@ void Translator::write_to_csv(const std::map<std::string, std::set<std::string>>
                operations += 1;
             if(tag->first == "Dynamic_operations")
             {
-               PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      Operations " + boost::lexical_cast<std::string>(operations));
+               PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      Operations " + STR(operations));
                out << " - Operations " << operations << " ";
             }
             for(it4 = cat_tags.begin(); it4 != it4_end; ++it4)
@@ -964,7 +962,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
       if(escaped_index.size() > data_width[(latex_column_formats.begin())->source_name])
       {
          data_width[(latex_column_formats.begin())->source_name] = escaped_index.size();
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Set data width for column " + std::string((latex_column_formats.begin())->source_name) + " to " + boost::lexical_cast<std::string>(escaped_index.size()));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Set data width for column " + std::string((latex_column_formats.begin())->source_name) + " to " + STR(escaped_index.size()));
       }
 
       const auto& current_line = line.second;
@@ -974,7 +972,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
          if(current_tag.second.size() > data_width[current_tag.first])
          {
             data_width[current_tag.first] = current_tag.second.size();
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---New column width " + boost::lexical_cast<std::string>(data_width[current_tag.first]));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---New column width " + STR(data_width[current_tag.first]));
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Read column " + current_tag.first);
       }
@@ -1058,7 +1056,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
       else if(column.text_format == LatexColumnFormat::TF_number)
       {
          data_width[column.source_name] += 4;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---New size of " + std::string(column.source_name) + ": " + boost::lexical_cast<std::string>(data_width[column.source_name]));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---New size of " + std::string(column.source_name) + ": " + STR(data_width[column.source_name]));
       }
    }
    for(auto const& column : latex_column_formats)
@@ -1136,7 +1134,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
          size_t numerical_delimiters_size = (column.text_format == LatexColumnFormat::TF_number or column.text_format == LatexColumnFormat::TF_exponential) ? 4 : 0;
          if(value.size() + numerical_delimiters_size < data_width[column.source_name])
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Resize to " + boost::lexical_cast<std::string>(data_width[column.source_name]));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Resize to " + STR(data_width[column.source_name]));
             value.resize(data_width[column.source_name] - numerical_delimiters_size, ' ');
          }
          out << value;
@@ -1220,7 +1218,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
          size_t numerical_delimiters_size = (column.text_format == LatexColumnFormat::TF_number or column.text_format == LatexColumnFormat::TF_exponential) ? 4 : 0;
          if(value.size() + numerical_delimiters_size < data_width[column.source_name])
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Resize to " + boost::lexical_cast<std::string>(data_width[column.source_name]));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Resize to " + STR(data_width[column.source_name]));
             value.resize(data_width[column.source_name] - numerical_delimiters_size, ' ');
          }
          out << value;
@@ -1320,7 +1318,7 @@ void Translator::get_normalization(std::unordered_map<std::string, long double>&
                LOAD_XVM(name, feature);
                LOAD_XVM(value, feature);
                normalization[name] = value;
-               PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read feature normalization" + name + " " + boost::lexical_cast<std::string>(value));
+               PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read feature normalization" + name + " " + STR(value));
             }
          }
       }
@@ -1453,5 +1451,5 @@ void Translator::read_column_formats(const XMLDomParserRef parser, std::list<Lat
       latex_column_formats.push_back(latex_column_format);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Read information about new column");
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Read " + boost::lexical_cast<std::string>(latex_column_formats.size()) + " column format");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Read " + STR(latex_column_formats.size()) + " column format");
 }

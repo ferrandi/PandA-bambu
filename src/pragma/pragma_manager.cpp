@@ -38,8 +38,6 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Date$
- * Last modified by $Author$
  *
  */
 
@@ -95,6 +93,14 @@
 /// parser/treegcc include
 #include "token_interface.hpp"
 
+/// STD include
+#include <string>
+
+/// STL includes
+#include <list>
+#include <map>
+#include <vector>
+
 /// Task graph include
 #if HAVE_TASK_GRAPHS_BUILT
 #include "task_graph_manager.hpp"
@@ -115,8 +121,6 @@
 #include "exceptions.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 #include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/split.hpp>
 #include <boost/graph/depth_first_search.hpp>
 #include <boost/graph/reverse_graph.hpp>
 #include <boost/regex.hpp>
@@ -186,8 +190,7 @@ void pragma_manager::AddFunctionDefinitionPragmas(const std::string& function_na
       boost::regex_match(pragma, what, expr, boost::match_default | boost::match_partial);
       if(what[0].matched)
       {
-         std::vector<std::string> splitted;
-         boost::algorithm::split(splitted, pragma, boost::algorithm::is_any_of(" \t\n"));
+         std::vector<std::string> splitted = SplitString(pragma, " \t\n");
          // #[\0]pragma call_hw N1 N2
          std::vector<std::string>::iterator it = std::find(splitted.begin(), splitted.end(), STR_CST_pragma_keyword_call_hw);
          THROW_ASSERT(it != splitted.end(), "Something wrong");

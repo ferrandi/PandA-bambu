@@ -64,8 +64,6 @@
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "exceptions.hpp"
 #include "string_manipulation.hpp" // for STR
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/split.hpp>
 #include <boost/lexical_cast.hpp>
 #include <iostream>
 
@@ -2827,8 +2825,7 @@ bool tree_helper::HasToBeDeclared(const tree_managerConstRef& TM, const unsigned
          if(GetPointer<complex_type>(type))
          {
             std::string name1 = tree_helper::name_type(TM, index);
-            std::vector<std::string> splitted;
-            boost::algorithm::split(splitted, name1, boost::algorithm::is_any_of(" "));
+            std::vector<std::string> splitted = SplitString(name1, " ");
             if(splitted.size() > 1 and (splitted[0] == "_Complex" or splitted[0] == "__complex__" or splitted[0] == "complex"))
             {
                return false;
