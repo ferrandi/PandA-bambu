@@ -63,6 +63,14 @@
 #include "hls_flow_step_factory.hpp"
 #include "hls_target.hpp"
 
+/// STD include
+#include <string>
+
+/// STL includes
+#include <list>
+#include <tuple>
+#include <unordered_set>
+
 generate_hdl::generate_hdl(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::GENERATE_HDL)
 {
 }
@@ -101,10 +109,10 @@ DesignFlowStep_Status generate_hdl::Exec()
 {
    HDL_managerRef HM = HDL_managerRef(new HDL_manager(HLSMgr, HLSMgr->get_HLS_target()->get_target_device(), parameters));
    std::string file_name = parameters->getOption<std::string>(OPT_top_file);
-   std::unordered_set<structural_objectRef> top_circuits;
+   std::list<structural_objectRef> top_circuits;
    for(const auto top_function : HLSMgr->CGetCallGraphManager()->GetRootFunctions())
    {
-      top_circuits.insert(HLSMgr->get_HLS(top_function)->top->get_circ());
+      top_circuits.push_back(HLSMgr->get_HLS(top_function)->top->get_circ());
    }
    HM->hdl_gen(file_name, top_circuits, false, HLSMgr->hdl_files, HLSMgr->aux_files);
    return DesignFlowStep_Status::SUCCESS;

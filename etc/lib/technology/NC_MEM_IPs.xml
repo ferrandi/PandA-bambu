@@ -1327,6 +1327,7 @@ assign proxy_sel_STORE = int_sel_STORE;"/>
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <parameter name="nbit_read_addr">32</parameter>
           <parameter name="n_byte_on_databus">4</parameter>
@@ -2008,6 +2009,7 @@ begin
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <parameter name="nbit_read_addr">32</parameter>
           <parameter name="n_byte_on_databus">4</parameter>
@@ -5371,6 +5373,7 @@ endgenerate"/>
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -5514,6 +5517,7 @@ ADDRESS_DECODING_LOGIC #(.BITSIZE_memory_addr_a(nbit_read_addr), .BITSIZE_memory
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -5622,6 +5626,7 @@ ADDRESS_DECODING_LOGIC #(.BITSIZE_memory_addr_a(nbit_read_addr), .BITSIZE_memory
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -5822,6 +5827,7 @@ ADDRESS_DECODING_LOGIC_NN_instance : ADDRESS_DECODING_LOGIC_NN generic map (BITS
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -5994,6 +6000,7 @@ ADDRESS_DECODING_LOGIC_instance : ADDRESS_DECODING_LOGIC generic map (BITSIZE_me
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -6106,6 +6113,7 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SP generic map (BITSIZE_in1
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -6305,6 +6313,7 @@ ADDRESS_DECODING_LOGIC_NN_instance : ADDRESS_DECODING_LOGIC_NN generic map (BITS
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -6448,6 +6457,7 @@ ADDRESS_DECODING_LOGIC #(.BITSIZE_memory_addr_a(nbit_read_addr), .BITSIZE_memory
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -6603,6 +6613,7 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1), .PORTSIZE_in1(PORTSIZE_in
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -9497,6 +9508,7 @@ endgenerate"/>
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -9639,6 +9651,7 @@ ADDRESS_DECODING_LOGIC #(.BITSIZE_memory_addr_a(nbit_read_addr), .BITSIZE_memory
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -9782,6 +9795,7 @@ ADDRESS_DECODING_LOGIC #(.BITSIZE_memory_addr_a(nbit_read_addr), .BITSIZE_memory
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -9937,6 +9951,7 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1), .PORTSIZE_in1(PORTSIZE_in
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -10092,6 +10107,7 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1), .PORTSIZE_in1(PORTSIZE_in
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -10200,6 +10216,7 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1), .PORTSIZE_in1(PORTSIZE_in
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -10942,6 +10959,7 @@ begin
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -11818,6 +11836,7 @@ assign Sout_DataRdy = Sin_DataRdy;"/>
           <parameter name="BUS_PIPELINED">1</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
           <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">

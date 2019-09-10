@@ -85,7 +85,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_OMP_ATOMIC, SAME_FUNCTION));
 #endif
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(VECTORIZE, SAME_FUNCTION));

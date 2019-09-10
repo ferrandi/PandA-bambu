@@ -68,7 +68,7 @@
 /// utility include
 #include "indented_output_stream.hpp"
 
-language_writer::language_writer(char open_char, char close_char, const ParameterConstRef& _parameters)
+language_writer::language_writer(char open_char, char close_char, const ParameterConstRef _parameters)
     : indented_output_stream(new IndentedOutputStream(open_char, close_char, 2)), parameters(_parameters), debug_level(_parameters->getOption<int>(OPT_debug_level))
 {
 }
@@ -90,7 +90,7 @@ unsigned int language_writer::bitnumber(long long unsigned int n)
    return count;
 }
 
-language_writerRef language_writer::create_writer(const HDLWriter_Language language, const technology_managerConstRef& _TM, const ParameterConstRef& _parameters)
+language_writerRef language_writer::create_writer(const HDLWriter_Language language, const technology_managerConstRef _TM, const ParameterConstRef _parameters)
 {
    THROW_ASSERT(_parameters, "");
    switch(language)

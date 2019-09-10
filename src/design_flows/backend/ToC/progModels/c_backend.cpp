@@ -441,7 +441,7 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships, const Desi
          switch(c_backend_type)
          {
             case CB_SEQUENTIAL:
-               {
+            {
                std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> frontend_relationships;
                frontend_relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(BAMBU_FRONTEND_FLOW, FrontendFlowStep::WHOLE_APPLICATION));
                FrontendFlowStep::CreateSteps(design_flow_manager.lock(), frontend_relationships, AppM, relationships);

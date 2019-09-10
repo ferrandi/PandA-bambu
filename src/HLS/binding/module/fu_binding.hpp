@@ -61,6 +61,7 @@ CONSTREF_FORWARD_DECL(AllocationInformation);
 REF_FORWARD_DECL(AllocationInformation);
 class funit_obj;
 REF_FORWARD_DECL(generic_obj);
+REF_FORWARD_DECL(fu_binding);
 REF_FORWARD_DECL(hls);
 CONSTREF_FORWARD_DECL(HLS_manager);
 REF_FORWARD_DECL(HLS_manager);
@@ -165,12 +166,20 @@ class fu_binding
     * @param var_call_sites_rel is the relation between var and call sites having a proxy as module parameter
     * @param SM is the structural manager
     */
-   static void manage_killing_memory_proxies(std::map<unsigned int, structural_objectRef>& mem_obj, std::map<unsigned int, unsigned int>& reverse_memory_units, std::map<unsigned int, std::set<structural_objectRef>>& var_call_sites_rel,
-                                             const structural_managerRef SM, const hlsRef HLS, unsigned int& _unique_id);
+   void manage_killing_memory_proxies(std::map<unsigned int, structural_objectRef>& mem_obj, std::map<unsigned int, unsigned int>& reverse_memory_units, std::map<unsigned int, std::set<structural_objectRef>>& var_call_sites_rel,
+                                      const structural_managerRef SM, const hlsRef HLS, unsigned int& _unique_id);
 
-   static void manage_killing_function_proxies(std::map<unsigned int, structural_objectRef>& fun_obj, std::map<std::string, unsigned int>& reverse_function_units, std::map<std::string, std::set<structural_objectRef>>& fun_call_sites_rel,
-                                               const structural_managerRef SM, const hlsRef HLS, unsigned int& _unique_id);
+   void manage_killing_function_proxies(std::map<unsigned int, structural_objectRef>& fun_obj, std::map<std::string, unsigned int>& reverse_function_units, std::map<std::string, std::set<structural_objectRef>>& fun_call_sites_rel,
+                                        const structural_managerRef SM, const hlsRef HLS, unsigned int& _unique_id);
 
+   /**
+    * @brief call_version_of_jms used to allow at the derived class to call the right joinMergeSplit
+    * @param SM
+    * @param HLS
+    * @param primary_outs
+    * @param circuit
+    * @param _unique_id
+    */
  public:
    /// The value used to identified unknown functional unit
    static const unsigned int UNKNOWN;
@@ -191,6 +200,15 @@ class fu_binding
     * Destructor.
     */
    virtual ~fu_binding();
+
+   /**
+    * @brief create_fu_binding: factory method for fu_binding
+    * @param _HLSMgr
+    * @param _function_id
+    * @param _parameters
+    * @return the correct class of fu_binding
+    */
+   static fu_bindingRef create_fu_binding(const HLS_managerConstRef _HLSMgr, const unsigned int _function_id, const ParameterConstRef _parameters);
 
    /**
     * Binds an operation vertex to a functional unit. The functional unit is identified by an id and
@@ -236,7 +254,7 @@ class fu_binding
     */
    unsigned int get_number(unsigned int unit) const
    {
-      auto it = allocation_map.find(unit);
+      std::map<unsigned int, unsigned int>::const_iterator it = allocation_map.find(unit);
       if(it != allocation_map.end())
          return it->second;
       else
@@ -245,7 +263,7 @@ class fu_binding
 
    /**
     * Redefinition of the [] operator. It is necessary because segfaults happen when the vertex is not into the map
-    * and so the object has not been created yet. This operator can be used only to read information since it returns
+    * and so the object has not been created yet. This operator can be used only to read informations since it returns
     * a constant object. It's necessary because a direct manipulation of object can create data inconsistence with
     * objects.
     * @param v is the vertex you want to get the object
@@ -290,13 +308,13 @@ class fu_binding
     */
    virtual void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port, structural_objectRef reset_port);
 
-   static void manage_extern_global_port(const structural_managerRef SM, structural_objectRef port_in, unsigned int dir, structural_objectRef circuit, unsigned int num);
+   virtual void manage_extern_global_port(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM, structural_objectRef port_in, unsigned int dir, structural_objectRef circuit, unsigned int num);
 
    /**
     * Manage the connections between memory ports
     */
    static void manage_memory_ports_chained(const structural_managerRef SM, const std::set<structural_objectRef>& memory_modules, const structural_objectRef circuit);
-   static void manage_memory_ports_parallel_chained(const structural_managerRef SM, const std::set<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& unique_id);
+   virtual void manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const std::set<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& unique_id);
 
    /**
     * Return the operations that are executed by the given functional unit
@@ -317,7 +335,7 @@ class fu_binding
 
    virtual bool manage_module_ports(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM, const structural_objectRef curr_gate, unsigned int num);
 
-   static void join_merge_split(const structural_managerRef SM, const hlsRef HLS, std::map<structural_objectRef, std::set<structural_objectRef>>& primary_outs, const structural_objectRef circuit, unsigned int& unique_id);
+   virtual void join_merge_split(const structural_managerRef SM, const hlsRef HLS, std::map<structural_objectRef, std::set<structural_objectRef>>& primary_outs, const structural_objectRef circuit, unsigned int& unique_id);
 
    /**
     * specify if vertex v have or not its ports swapped

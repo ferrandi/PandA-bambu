@@ -47,8 +47,21 @@
 #include "graph.hpp"
 
 #include "hash_helper.hpp"
+
+/// STD include
+#include <string>
+
+/// STL includes
+#include <deque>
+#include <map>
+#include <set>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
+#include <vector>
+
+/// utility include
+#include "custom_set.hpp"
 
 //#define HC_APPROACH
 
@@ -91,7 +104,7 @@ struct cdfc_graph_vertex_selector
 {
  public:
    typedef typename boost::graph_traits<Graph>::vertex_descriptor vertex_descriptor;
-   typedef std::unordered_set<vertex_descriptor> SET_container;
+   typedef CustomSet<vertex_descriptor> SET_container;
    /// constructor
    cdfc_graph_vertex_selector() : all(true), support(nullptr)
    {

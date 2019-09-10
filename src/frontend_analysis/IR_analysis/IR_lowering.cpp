@@ -153,7 +153,6 @@ void IR_lowering::ComputeRelationships(DesignFlowStepSet& relationship, const De
    FunctionFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }
 
-
 /// the code for lowering of div, mult and rem comes from GCC sources (expmed.c)
 
 enum alg_code
@@ -955,7 +954,7 @@ tree_nodeRef IR_lowering::expand_smod_pow2(tree_nodeRef op0, unsigned long long 
 
    tree_nodeRef bt = tree_man->create_boolean_type();
    tree_nodeRef cond_op0 = tree_man->create_binary_operation(bt, op0, const0, srcp_default, lt_expr_K);
-   tree_nodeRef signmask_ga = tree_man->CreateGimpleAssign(type, TM->CreateUniqueIntegerCst(0,bt->index), TM->CreateUniqueIntegerCst(1,bt->index), cond_op0, block->number, srcp_default);
+   tree_nodeRef signmask_ga = tree_man->CreateGimpleAssign(type, TM->CreateUniqueIntegerCst(0, bt->index), TM->CreateUniqueIntegerCst(1, bt->index), cond_op0, block->number, srcp_default);
 #ifndef NDEBUG
    AppM->RegisterTransformation(GetName(), signmask_ga);
 #endif
@@ -1011,7 +1010,7 @@ tree_nodeRef IR_lowering::expand_sdiv_pow2(tree_nodeRef op0, unsigned long long 
 
    tree_nodeRef bt = tree_man->create_boolean_type();
    tree_nodeRef cond_op0 = tree_man->create_binary_operation(bt, op0, const0, srcp_default, lt_expr_K);
-   tree_nodeRef cond_op0_ga = tree_man->CreateGimpleAssign(bt, TM->CreateUniqueIntegerCst(0,bt->index), TM->CreateUniqueIntegerCst(1,bt->index), cond_op0, block->number, srcp_default);
+   tree_nodeRef cond_op0_ga = tree_man->CreateGimpleAssign(bt, TM->CreateUniqueIntegerCst(0, bt->index), TM->CreateUniqueIntegerCst(1, bt->index), cond_op0, block->number, srcp_default);
    block->PushBefore(cond_op0_ga, stmt);
    tree_nodeRef cond_op0_ga_var = GetPointer<gimple_assign>(GET_NODE(cond_op0_ga))->op0;
    tree_nodeRef t_ga;
@@ -1558,9 +1557,25 @@ bool IR_lowering::reached_max_transformation_limit(tree_nodeRef
 )
 {
 #ifndef NDEBUG
-   if((not AppM->ApplyNewTransformation()) and not(stmt and GetPointer<gimple_assign>(GET_NODE(stmt)) and GetPointer<cond_expr>(GET_NODE(GetPointer<gimple_assign>(GET_NODE(stmt))->op1))))
-      if(not AppM->ApplyNewTransformation())
-         return true;
+   if(stmt)
+   {
+      const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
+      if(ga)
+      {
+         const auto op0 = GET_CONST_NODE(ga->op0);
+         const auto op1 = GET_CONST_NODE(ga->op1);
+         if(op1->get_kind() == cond_expr_K)
+         {
+            return false;
+         }
+         if(not ga->init_assignment and op0->get_kind() == ssa_name_K and op1->get_kind() == var_decl_K)
+         {
+            return false;
+         }
+      }
+   }
+   if(not AppM->ApplyNewTransformation())
+      return true;
 #endif
    return false;
 }

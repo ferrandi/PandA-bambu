@@ -442,7 +442,7 @@ DesignFlowStep_Status CSE::InternalExec()
                const auto ref_min_ic = GetPointer<const integer_cst>(GET_CONST_NODE(dead_ssa->min));
                const auto dead_max_ic = GetPointer<const integer_cst>(GET_CONST_NODE(ref_ssa->max));
                const auto ref_max_ic = GetPointer<const integer_cst>(GET_CONST_NODE(dead_ssa->max));
-               if(dead_min_ic->value == ref_min_ic->value && dead_max_ic->value == ref_max_ic->value )
+               if(dead_min_ic->value == ref_min_ic->value && dead_max_ic->value == ref_max_ic->value)
                   same_range = true;
             }
             if(!same_range && ref_ssa->min && ref_ssa->max && GET_NODE(ga_op_type)->get_kind() == integer_type_K)

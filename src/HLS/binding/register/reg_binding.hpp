@@ -89,7 +89,7 @@ class reg_binding : public variable2obj<generic_objRef>
    /// relation between registers and their bitsize
    std::map<unsigned int, unsigned int> bitsize_map;
 
-   /// HLS data-structure
+   /// HLS datastructure
    hlsRef HLS;
 
    /// information about all the HLS synthesis
@@ -110,11 +110,11 @@ class reg_binding : public variable2obj<generic_objRef>
    void compute_is_without_enable();
 
    /**
-    * Specialize a register according to the type of the variables crossing it.
+    * Specialise a register according to the type of the variables crossing it.
     * @param reg is the register
     * @param reg is the id of the register
     */
-   void specialise_reg(structural_objectRef& reg, unsigned int r);
+   virtual void specialise_reg(structural_objectRef& reg, unsigned int r);
 
  public:
    /**
@@ -125,12 +125,19 @@ class reg_binding : public variable2obj<generic_objRef>
    /**
     * Destructor.
     */
-   ~reg_binding() override;
+   virtual ~reg_binding();
+
+   static reg_bindingRef create_reg_binding(const hlsRef& HLS, const HLS_managerRef HLSMgr_);
 
    /**
     *
     */
    void bind(unsigned int sv, unsigned int index);
+
+   /**
+    * return the name of register to be used
+    */
+   virtual std::string CalculateRegisterName(unsigned int i);
 
    /**
     * returns number of used register
@@ -169,7 +176,7 @@ class reg_binding : public variable2obj<generic_objRef>
    /**
     * Function that print the register binding associated with a storage value.
     */
-   void print_el(const_iterator& it) const override;
+   void print_el(const_iterator& it) const;
 
    /**
     * Returns reference to register object associated to a given index

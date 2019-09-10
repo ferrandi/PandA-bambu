@@ -137,13 +137,13 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
                THROW_UNREACHABLE("");
             auto booleanType = tree_man->create_boolean_type();
             auto new_be = tree_man->create_binary_operation(booleanType, be->op0, be->op1, srcp_string, new_kind);
-            auto new_ga = tree_man->CreateGimpleAssign(booleanType, TreeM->CreateUniqueIntegerCst(0,booleanType->index), TreeM->CreateUniqueIntegerCst(1,booleanType->index), new_be, 0, srcp_string);
+            auto new_ga = tree_man->CreateGimpleAssign(booleanType, TreeM->CreateUniqueIntegerCst(0, booleanType->index), TreeM->CreateUniqueIntegerCst(1, booleanType->index), new_be, 0, srcp_string);
             block.second->PushBefore(new_ga, stmt);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(new_ga));
             auto new_not = tree_man->create_unary_operation(booleanType, GetPointer<gimple_assign>(GET_NODE(new_ga))->op0, srcp_string, truth_not_expr_K);
             if(GET_INDEX_NODE(be->type) != GET_INDEX_NODE(booleanType))
             {
-               auto new_ga_not = tree_man->CreateGimpleAssign(booleanType, TreeM->CreateUniqueIntegerCst(0,booleanType->index), TreeM->CreateUniqueIntegerCst(1,booleanType->index), new_not, 0, srcp_string);
+               auto new_ga_not = tree_man->CreateGimpleAssign(booleanType, TreeM->CreateUniqueIntegerCst(0, booleanType->index), TreeM->CreateUniqueIntegerCst(1, booleanType->index), new_not, 0, srcp_string);
                block.second->PushBefore(new_ga_not, stmt);
                auto new_nop = tree_man->create_unary_operation(be->type, GetPointer<gimple_assign>(GET_NODE(new_ga_not))->op0, srcp_string, nop_expr_K);
                TreeM->ReplaceTreeNode(stmt, ga->op1, new_nop);

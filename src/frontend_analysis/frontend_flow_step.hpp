@@ -66,6 +66,9 @@
 #include "design_flow_step.hpp" // for DesignFlowStep
 #include "refcount.hpp"         // for REF_FORWARD_DECL
 
+/// STD include
+#include <functional>
+
 /// Forward declaration
 CONSTREF_FORWARD_DECL(application_manager);
 REF_FORWARD_DECL(application_manager);
@@ -179,7 +182,7 @@ typedef enum
 #if HAVE_BAMBU_BUILT
    EXTRACT_GIMPLE_COND_OP,
 #endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
    EXTRACT_OMP_ATOMIC,
    EXTRACT_OMP_FOR,
 #endif

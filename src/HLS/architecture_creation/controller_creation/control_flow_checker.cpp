@@ -32,9 +32,6 @@
  */
 /**
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  */
 
 // include class header
@@ -57,6 +54,16 @@
 #include "language_writer.hpp"
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
+
+/// STD include
+#include <string>
+
+/// STL include
+#include <algorithm>
+#include <map>
+#include <set>
+#include <tuple>
+#include <unordered_set>
 
 // include from  tree/
 #include "behavioral_helper.hpp"
@@ -693,13 +700,13 @@ DesignFlowStep_Status ControlFlowChecker::InternalExec()
    const unsigned int state_bitsize = comp_state_bitsize(one_hot_encoding, HLSMgr, funId, max_value);
 
    size_t epp_trace_bitsize = discr_info->fu_id_to_epp_trace_bitsize.at(funId);
-   GetPointer<module>(checker_circuit)->set_parameter("STATE_BITSIZE", STR(state_bitsize));
-   GetPointer<module>(checker_circuit)->set_parameter("EPP_TRACE_BITSIZE", STR(epp_trace_bitsize));
-   GetPointer<module>(checker_circuit)->set_parameter("EPP_TRACE_METADATA_BITSIZE", STR(0));
-   GetPointer<module>(checker_circuit)->set_parameter("MEMORY_INIT_file", "\"\"trace.mem\"\"");
-   GetPointer<module>(checker_circuit)->set_parameter("EPP_TRACE_LENGTH", STR(0));
-   GetPointer<module>(checker_circuit)->set_parameter("EPP_MISMATCH_ID", STR(0));
-   GetPointer<module>(checker_circuit)->set_parameter("EPP_TRACE_INITIAL_METADATA", STR(0));
+   GetPointer<module>(checker_circuit)->SetParameter("STATE_BITSIZE", STR(state_bitsize));
+   GetPointer<module>(checker_circuit)->SetParameter("EPP_TRACE_BITSIZE", STR(epp_trace_bitsize));
+   GetPointer<module>(checker_circuit)->SetParameter("EPP_TRACE_METADATA_BITSIZE", STR(0));
+   GetPointer<module>(checker_circuit)->SetParameter("MEMORY_INIT_file", "\"\"trace.mem\"\"");
+   GetPointer<module>(checker_circuit)->SetParameter("EPP_TRACE_LENGTH", STR(0));
+   GetPointer<module>(checker_circuit)->SetParameter("EPP_MISMATCH_ID", STR(0));
+   GetPointer<module>(checker_circuit)->SetParameter("EPP_TRACE_INITIAL_METADATA", STR(0));
 
    add_common_ports(checker_circuit, state_bitsize);
 

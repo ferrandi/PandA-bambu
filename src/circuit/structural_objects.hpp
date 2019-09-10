@@ -46,19 +46,31 @@
 #ifndef STRUCTURAL_OBJECTS_HPP
 #define STRUCTURAL_OBJECTS_HPP
 
-#include "config_HAVE_BAMBU_BUILT.hpp"      // for HAVE_BAMBU_BUILT
-#include "config_HAVE_KOALA_BUILT.hpp"      // for HAVE_KOALA_BUILT
-#include "config_HAVE_TECHNOLOGY_BUILT.hpp" // for HAVE_TECHNOLOGY_...
-#include "config_HAVE_TUCANO_BUILT.hpp"     // for HAVE_TUCANO_BUILT
+/// Autoheader include
+#include "config_HAVE_BAMBU_BUILT.hpp"
+#include "config_HAVE_KOALA_BUILT.hpp"
+#include "config_HAVE_TECHNOLOGY_BUILT.hpp"
+#include "config_HAVE_TUCANO_BUILT.hpp"
 
-#include "NP_functionality.hpp" // for NP_functionalityRef
-#include "exceptions.hpp"       // for THROW_UNREACHABLE
-#include "refcount.hpp"         // for REF_FORWARD_DECL
-#include <map>                  // for map
-#include <ostream>              // for ostream
-#include <string>               // for string
-#include <utility>              // for pair
-#include <vector>               // for vector
+/// STL include
+#include <algorithm>
+#include <map>
+#include <set>
+#include <utility>
+#include <vector>
+
+/// utility include
+#include "custom_map.hpp"
+
+#include <ostream>
+#include <string>
+
+#include "simple_indent.hpp"
+#include "utility.hpp"
+
+#include "NP_functionality.hpp"
+#include "exceptions.hpp"
+#include "refcount.hpp"
 
 /**
  * @name Forward declarations.
@@ -105,6 +117,12 @@ class simple_indent;
 #define NOTIFIER_PORT_MISMATCH "out_mismatch"
 #define NOTIFIER_PORT_MISMATCH_ID "out_mismatch_id"
 #define NOTIFIER_PORT_MISMATCH_OFFSET "out_mismatch_trace_offset"
+#define SELECTOR_REGISTER_FILE "selector_register_file"
+#define SUSPENSION "suspension"
+#define REQUEST_ACCEPTED "request_accepted"
+#define TASKS_POOL_END "task_pool_end"
+#define DONE_SCHEDULER "done_scheduler"
+#define DONE_REQUEST "done_request"
 #define PROXY_PREFIX "PROXY_PREF_"
 #define WRAPPED_PROXY_PREFIX "WRAPPED_PROXY_PREF_"
 
@@ -343,8 +361,11 @@ class structural_object
    /// True if the structural object is a black box (e.g., a library component).
    bool black_box;
 
-   /// Map between parameter string and related values
-   std::map<std::string, std::string> parameters_list;
+   /// Map between parameter string and related values of an instance
+   CustomMap<std::string, std::string> parameters;
+
+   /// Map between parameter string and its default value
+   CustomMap<std::string, std::string> default_parameters;
 
  protected:
    /// debug level for the object
@@ -482,33 +503,41 @@ class structural_object
     * @param name is parameter name
     * @param value is parameter value
     */
-   void set_parameter(const std::string& name, const std::string& value);
+   void SetParameter(const std::string& name, const std::string& value);
 
    /**
     * Check if a parameter has been specified
     * @param name is parameter name
     */
-   bool is_parameter(std::string name) const;
+   bool ExistsParameter(std::string name) const;
 
    /**
-    * Get the value associated to parameter if it has been associated. It throws an exception if it has not
+    * Get the value associated to parameter if it has been associated; if it has not specified returns the default
+    * @param name is parameter name
+    * @return parameter value
+    */
+   std::string GetParameter(std::string name) const;
+
+   /**
+    * Get the value associated to parameter if it has been associate; It throws an exception if it has not
     * been associated
     * @param name is parameter name
     * @return parameter value
     */
-   std::string get_parameter(std::string name) const;
+   std::string GetDefaultParameter(std::string name) const;
 
-   /// return the whole parameter list
-   std::map<std::string, std::string> get_parameters()
-   {
-      return parameters_list;
-   }
+   /**
+    * return the whole set of parameters
+    * @return the whole set of parameters
+    */
+   CustomMap<std::string, std::string> GetParameters();
 
-   /// set the whole parameter list
-   void set_parameters(std::map<std::string, std::string>& p)
-   {
-      parameters_list = p;
-   }
+   /**
+    * Add a parameter
+    * @param name is the name of the parameter
+    * @param default_value is the default of the value
+    */
+   virtual void AddParameter(const std::string & name, const std::string & default_value);
 
    /**
     * Return a unique identifier of the structural object.
@@ -888,6 +917,17 @@ struct port_o : public structural_object
    bool get_is_size_bus() const;
 
    /**
+    * set the is_tag_bus attribute.
+    * @param c when true the port is a port used as an tag bus
+    */
+   void set_is_tag_bus(bool c);
+
+   /**
+    * return true if the port works as an tag bus
+    */
+   bool get_is_tag_bus() const;
+
+   /**
     * set the is_doubled attribute.
     * @param c when true the port has a doubled size w.r.t the precision
     */
@@ -1010,9 +1050,10 @@ struct port_o : public structural_object
     * @param bus_size_bitsize bitsize of sizes
     * @param bus_addr_bitsize bitsize of addresses
     * @param bus_data_bitsize bitsize of data
+    * @param bus_tag_bitsize bitsize of tag
     * @param port is the port to be resized
     */
-   static void resize_busport(unsigned int bus_size_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_data_bitsize, structural_objectRef port);
+   static void resize_busport(unsigned int bus_size_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_data_bitsize, unsigned int bus_tag_bitsize, structural_objectRef port);
 
    /**
     * auxiliary function used to resize the standard ports
@@ -1102,6 +1143,9 @@ struct port_o : public structural_object
    /// when true the port is a size bus
    bool is_size_bus;
 
+   /// when true the port is a tag bus
+   bool is_tag_bus;
+
    /// when true the port has a doubled size
    bool is_doubled;
 
@@ -1141,6 +1185,7 @@ struct port_o : public structural_object
    static const bool is_master_DEFAULT = false;
    static const bool is_data_bus_DEFAULT = false;
    static const bool is_addr_bus_DEFAULT = false;
+   static const bool is_tag_bus_DEFAULT = false;
    static const bool is_size_bus_DEFAULT = false;
    static const bool is_doubled_DEFAULT = false;
    static const bool is_halved_DEFAULT = false;
@@ -2213,6 +2258,13 @@ class module : public structural_object
     */
    structural_objectRef get_generic_object(const technology_managerConstRef TM) const;
 #endif
+
+   /**
+    * Add a parameter
+    * @param name is the name of the parameter
+    * @param default_value is the default of the value
+    */
+   void AddParameter(const std::string & name, const std::string & default_value) override;
 };
 
 /**

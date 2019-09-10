@@ -81,5 +81,10 @@ class LoadTechnology : public TechnologyFlowStep
     * @return the exit status of this step
     */
    DesignFlowStep_Status Exec() override;
+
+   /**
+    * Dump the final intermediate representation
+    */
+   void PrintFinalIR() const override;
 };
 #endif

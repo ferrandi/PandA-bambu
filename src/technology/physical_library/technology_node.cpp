@@ -80,7 +80,16 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 
-simple_indent technology_node::PP('[', ']', 2);
+/// STL include
+#include <algorithm>
+#include <list>
+#include <set>
+#include <utility>
+
+/// utility include
+#include "string_manipulation.hpp"
+
+simple_indent technology_node::PP('[', ']', 3);
 
 technology_node::technology_node() = default;
 
@@ -114,16 +123,14 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
    {
       std::string supported_types_string;
       LOAD_XVFM(supported_types_string, Enode, supported_types);
-      std::vector<std::string> types;
-      boost::algorithm::split(types, supported_types_string, boost::algorithm::is_any_of("|"));
+      std::vector<std::string> types = SplitString(supported_types_string, "|");
       for(std::vector<std::string>::const_iterator type = types.begin(); type != types.end(); ++type)
       {
          if(*type == "")
             THROW_ERROR("wrong XML syntax for supported_types attribute: null type description in \"" + supported_types_string + "\" [" + operation_name + "]");
          std::string type_name;
          std::vector<unsigned int> type_precs;
-         std::vector<std::string> type_name_to_precs;
-         boost::algorithm::split(type_name_to_precs, *type, boost::algorithm::is_any_of(":"));
+         std::vector<std::string> type_name_to_precs = SplitString(*type, ":");
          if(type_name_to_precs.size() != 2)
             THROW_ERROR("wrong XML syntax for supported_types attribute around \":\" \"" + *type + "\" [" + operation_name + "]");
          type_name = type_name_to_precs[0];
@@ -132,8 +139,7 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
 
          if(type_name_to_precs[1] != "*")
          {
-            std::vector<std::string> precs;
-            boost::algorithm::split(precs, type_name_to_precs[1], boost::algorithm::is_any_of(","));
+            std::vector<std::string> precs = SplitString(type_name_to_precs[1], ",");;
             for(std::vector<std::string>::const_iterator single_prec = precs.begin(); single_prec != precs.end() && *single_prec != ""; ++single_prec)
             {
                auto type_uint = boost::lexical_cast<unsigned int>(*single_prec);
@@ -380,12 +386,17 @@ void functional_unit::print(std::ostream& os) const
 {
    PP(os, "FU:\n[");
    PP(os, functional_unit_name + "\n");
+   if(memory_type != "")
+      PP(os, "memory_type: " + memory_type + "\n");
    if(list_of_operation.size() > 0)
    {
       std::copy(list_of_operation.begin(), list_of_operation.end(), std::ostream_iterator<const technology_nodeRef>(os, ""));
       PP(os, "\n");
    }
-   PP(os, "A: " + boost::lexical_cast<std::string>(area_m->get_area_value()) + "\n");
+   if(area_m)
+   {
+      PP(os, "A: " + boost::lexical_cast<std::string>(area_m->get_area_value()) + "\n");
+   }
 #if HAVE_CIRCUIT_BUILT
    if(CM)
       CM->print(os);
@@ -414,8 +425,7 @@ void functional_unit::gload(const std::string& definition, const std::string& fu
 #endif
 )
 {
-   std::list<std::string> splitted;
-   boost::algorithm::split(splitted, definition, boost::algorithm::is_any_of(" ;\t"));
+   std::list<std::string> splitted = SplitString(definition, " ;\t");
 
 #if HAVE_CIRCUIT_BUILT
    std::set<std::string> inputs;
@@ -454,7 +464,7 @@ void functional_unit::gload(const std::string& definition, const std::string& fu
 #if 0
             double area = boost::lexical_cast<double>(*s);
             double height = Param->getOption<double>("cell-height");
-            double width = (double)area / (double)height;
+            double width = area / height;
 #endif
             n++;
             break;
@@ -475,10 +485,10 @@ void functional_unit::gload(const std::string& definition, const std::string& fu
             //            boolean_parseY(*s, inputs, output, 0);
 
             // std::cerr << "Output= " << output << std::endl;
-            structural_objectRef p = structural_objectRef(new port_o(debug_level, obj, port_o::OUT));
-            p->set_id(output);
-            p->set_type(bool_type);
-            mobj->add_out_port(p);
+            structural_objectRef new_port = structural_objectRef(new port_o(debug_level, obj, port_o::OUT));
+            new_port->set_id(output);
+            new_port->set_type(bool_type);
+            mobj->add_out_port(new_port);
             for(std::set<std::string>::iterator i = inputs.begin(); i != inputs.end(); ++i)
             {
                if(i->find("CONST") != std::string::npos)
@@ -659,7 +669,7 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
 {
    TargetDevice_Type dv_type = device->get_type();
 #ifndef NDEBUG
-   auto debug_level = Param->getOption<int>(OPT_circuit_debug_level);
+   auto debug_level = Param->get_class_debug_level(GET_CLASS(*this));
 #endif
 #if HAVE_TECHNOLOGY_BUILT && HAVE_CMOS_BUILT
    int output_pin_counter = 0;
@@ -1008,27 +1018,28 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
    }
    else
 #endif
-       /// FPGA technology
-       if(dv_type == TargetDevice_Type::FPGA)
    {
-      /// area stuff
-      if(attributes.find("area") != attributes.end())
-         area_m->set_area_value(attributes["area"]->get_content<double>());
-      auto* clb = GetPointer<clb_model>(area_m);
-      if(attributes.find("REGISTERS") != attributes.end())
-         clb->set_resource_value(clb_model::REGISTERS, attributes["REGISTERS"]->get_content<double>());
-      if(attributes.find("SLICE_LUTS") != attributes.end())
-         clb->set_resource_value(clb_model::SLICE_LUTS, attributes["SLICE_LUTS"]->get_content<double>());
-      if(attributes.find("SLICE") != attributes.end())
-         clb->set_resource_value(clb_model::SLICE, attributes["SLICE"]->get_content<double>());
-      if(attributes.find("LUT_FF_PAIRS") != attributes.end())
-         clb->set_resource_value(clb_model::LUT_FF_PAIRS, attributes["LUT_FF_PAIRS"]->get_content<double>());
-      if(attributes.find("DSP") != attributes.end())
-         clb->set_resource_value(clb_model::DSP, attributes["DSP"]->get_content<double>());
-      if(attributes.find("BRAM") != attributes.end())
-         clb->set_resource_value(clb_model::BRAM, attributes["BRAM"]->get_content<double>());
+      /// FPGA technology
+      if(dv_type == TargetDevice_Type::FPGA)
+      {
+         /// area stuff
+         if(attributes.find("area") != attributes.end())
+            area_m->set_area_value(attributes["area"]->get_content<double>());
+         auto* clb = GetPointer<clb_model>(area_m);
+         if(attributes.find("REGISTERS") != attributes.end())
+            clb->set_resource_value(clb_model::REGISTERS, attributes["REGISTERS"]->get_content<double>());
+         if(attributes.find("SLICE_LUTS") != attributes.end())
+            clb->set_resource_value(clb_model::SLICE_LUTS, attributes["SLICE_LUTS"]->get_content<double>());
+         if(attributes.find("SLICE") != attributes.end())
+            clb->set_resource_value(clb_model::SLICE, attributes["SLICE"]->get_content<double>());
+         if(attributes.find("LUT_FF_PAIRS") != attributes.end())
+            clb->set_resource_value(clb_model::LUT_FF_PAIRS, attributes["LUT_FF_PAIRS"]->get_content<double>());
+         if(attributes.find("DSP") != attributes.end())
+            clb->set_resource_value(clb_model::DSP, attributes["DSP"]->get_content<double>());
+         if(attributes.find("BRAM") != attributes.end())
+            clb->set_resource_value(clb_model::BRAM, attributes["BRAM"]->get_content<double>());
+      }
    }
-
 #if 0
 
    std::string type = "UNKNOWN";
@@ -1058,7 +1069,7 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
       {
          CM = structural_managerRef(new structural_manager);
          structural_type_descriptorRef build_type = structural_type_descriptorRef(new structural_type_descriptor("BUILD"));
-         CM->set_top_info("BUILD",build_type);
+         CM->set_top_info("BUILD", build_type);
          //top must be a component_o
          const xml_node::node_list listC = EnodeC->get_children();
          for (xml_node::node_list::const_iterator iterC = listC.begin(); iterC != listC.end(); ++iterC)
@@ -1133,10 +1144,8 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
                tm->fall_fanout_delay = fall_fanout_delay;
 
                pin_timing_models[input][output] = model;
-
             }
          }
-
       }
 #endif
    }

@@ -65,14 +65,11 @@
 /// high-level syntesis sub-tasks results
 #include "conn_binding.hpp"
 #include "fu_binding.hpp"
-#include "reg_binding.hpp"
-#include "schedule.hpp"
-#if HAVE_EXPERIMENTAL
-#include "parallel_memory_conn_binding.hpp"
-#endif
 #include "liveness.hpp"
 #include "memory.hpp"
 #include "memory_symbol.hpp"
+#include "parallel_memory_conn_binding.hpp"
+#include "reg_binding.hpp"
 
 /// Allocation datastructure
 #include "allocation.hpp"
@@ -1618,15 +1615,13 @@ void mux_connection_binding::create_connections()
    const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
    const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::FDFG);
    unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
-#if HAVE_EXPERIMENTAL
-   if(parameters->getOption<int>(OPT_memory_banks_number) > 1)
+   if(parameters->getOption<int>(OPT_memory_banks_number) > 1 && !parameters->isOption(OPT_context_switch))
    {
       HLS->Rconn = conn_bindingRef(new ParallelMemoryConnBinding(behavioral_helper, parameters));
    }
    else
-#endif
    {
-      HLS->Rconn = conn_bindingRef(new conn_binding(behavioral_helper, parameters));
+      HLS->Rconn = conn_bindingRef(conn_binding::create_conn_binding(HLSMgr, HLS, behavioral_helper, parameters));
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Starting execution of interconnection binding");
@@ -2588,7 +2583,7 @@ void mux_connection_binding::create_connections()
       const std::set<unsigned int>& live_in = HLS->Rliv->get_live_in(*vIt);
       for(std::set<unsigned int>::const_iterator k = live_in.begin(); k != live_in.end(); ++k)
       {
-         if(!HLS->Rliv->has_state_in(*vIt,*k)) continue;
+         if(!HLS->Rliv->has_state_in(*vIt, *k)) continue;
          const std::set<vertex>& states_in = HLS->Rliv->get_state_in(*vIt,*k);
          const std::set<vertex>::const_iterator si_it_end = states_in.end();
          for(std::set<vertex>::const_iterator si_it=states_in.begin(); si_it != si_it_end; si_it++)

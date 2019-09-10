@@ -55,6 +55,14 @@
 /// HLS/scheduling include
 #include "schedule.hpp"
 
+/// STD include
+#include <string>
+
+/// STL includes
+#include <map>
+#include <set>
+#include <vector>
+
 /// technology include
 #include "target_manager.hpp"
 #include "technology_manager.hpp"
@@ -73,6 +81,7 @@
 /// utility include
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "math_function.hpp"
+#include "string_manipulation.hpp"
 
 FunctionalUnitStep::FunctionalUnitStep(const target_managerRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
     : DesignFlowStep(_design_flow_manager, _parameters), TM(_target->get_technology_manager()), target(_target), has_first_synthesis_id(0)
@@ -111,6 +120,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
    if(fu_base_name == READ_COND_STD)
       precision.insert(1);
    else
+   {
       for(auto ops = Ops.begin(); ops != ops_end; ++ops)
       {
          auto* curr_op = GetPointer<operation>(*ops);
@@ -155,16 +165,13 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
 
          if(pipe_parameters_str != "")
          {
-            std::vector<std::string> parameters_split;
-            boost::algorithm::split(parameters_split, pipe_parameters_str, boost::algorithm::is_any_of("|"));
+            std::vector<std::string> parameters_split = SplitString(pipe_parameters_str, "|");
             const std::vector<std::string>::const_iterator pp_it_end = parameters_split.end();
             for(std::vector<std::string>::const_iterator pp_it = parameters_split.begin(); pp_it != pp_it_end; ++pp_it)
             {
-               std::vector<std::string> precision_pipe_param_pair;
-               boost::algorithm::split(precision_pipe_param_pair, *pp_it, boost::algorithm::is_any_of(":"));
+               std::vector<std::string> precision_pipe_param_pair = SplitString(*pp_it, ":");
                THROW_ASSERT(precision_pipe_param_pair.size() == 2, "malformed pipe parameter string");
-               std::vector<std::string> pipe_params;
-               boost::algorithm::split(pipe_params, precision_pipe_param_pair[1], boost::algorithm::is_any_of(","));
+               std::vector<std::string> pipe_params = SplitString( precision_pipe_param_pair[1], ",");
                THROW_ASSERT(pipe_params.size() > 0, "malformed pipe parameter string");
                if(precision_pipe_param_pair[0] == "*")
                {
@@ -198,16 +205,13 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
          std::string portsize_parameters_str = curr_op->portsize_parameters;
          if(portsize_parameters_str != "")
          {
-            std::vector<std::string> parameters_split;
-            boost::algorithm::split(parameters_split, portsize_parameters_str, boost::algorithm::is_any_of("|"));
+            std::vector<std::string> parameters_split = SplitString(portsize_parameters_str, "|");
             const std::vector<std::string>::const_iterator pp_it_end = parameters_split.end();
             for(std::vector<std::string>::const_iterator pp_it = parameters_split.begin(); pp_it != pp_it_end; ++pp_it)
             {
-               std::vector<std::string> precision_portsize_param_pair;
-               boost::algorithm::split(precision_portsize_param_pair, *pp_it, boost::algorithm::is_any_of(":"));
+               std::vector<std::string> precision_portsize_param_pair = SplitString(*pp_it, ":");
                THROW_ASSERT(precision_portsize_param_pair.size() == 2, "malformed portsize parameter string");
-               std::vector<std::string> portsize_params;
-               boost::algorithm::split(portsize_params, precision_portsize_param_pair[1], boost::algorithm::is_any_of(","));
+               std::vector<std::string> portsize_params = SplitString(precision_portsize_param_pair[1], ",");
                THROW_ASSERT(portsize_params.size() > 0, "malformed portsize parameter string");
                if(precision_portsize_param_pair[0] == "*")
                {
@@ -228,6 +232,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
             }
          }
       }
+   }
 
    if(Ops.begin() == Ops.end())
       is_commutative = false;
@@ -447,10 +452,8 @@ void FunctionalUnitStep::Initialize()
       THROW_ASSERT(device->has_parameter("DSPs_x_sizes"), "device description is not complete");
       std::string DSPs_x_sizes = device->get_parameter<std::string>("DSPs_x_sizes");
       std::string DSPs_y_sizes = device->get_parameter<std::string>("DSPs_y_sizes");
-      std::vector<std::string> DSPs_x_sizes_vec;
-      std::vector<std::string> DSPs_y_sizes_vec;
-      boost::algorithm::split(DSPs_x_sizes_vec, DSPs_x_sizes, boost::algorithm::is_any_of(","));
-      boost::algorithm::split(DSPs_y_sizes_vec, DSPs_y_sizes, boost::algorithm::is_any_of(","));
+      std::vector<std::string> DSPs_x_sizes_vec = SplitString(DSPs_x_sizes, ",");
+      std::vector<std::string> DSPs_y_sizes_vec = SplitString(DSPs_y_sizes, ",");
       for(size_t DSP_index = 0; DSP_index < DSPs_y_sizes_vec.size(); DSP_index++)
       {
          const auto DSPs_x_value = boost::lexical_cast<unsigned int>(DSPs_x_sizes_vec[DSP_index]);

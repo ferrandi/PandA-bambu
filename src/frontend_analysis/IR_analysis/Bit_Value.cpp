@@ -1415,7 +1415,7 @@ void Bit_Value::initialize()
                   }
                   else
                   {
-                     auto u_string =create_u_bitstring(tree_helper::Size(GET_NODE(ga->op0)));
+                     auto u_string = create_u_bitstring(tree_helper::Size(GET_NODE(ga->op0)));
                      if(lhs_ssa_is_signed && tree_helper::is_natural(TM, GET_INDEX_NODE(ga->op0)))
                      {
                         u_string.pop_front();

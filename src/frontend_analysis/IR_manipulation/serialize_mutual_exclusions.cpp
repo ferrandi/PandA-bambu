@@ -147,7 +147,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
       const auto bb_node_info = cfg_bb_graph->CGetBBNodeInfo(basic_block)->block;
       if(not bb_node_info->loop_id)
       {
-         //For the moment this pass is exploited only by vectorize; if we are outside loops, this is not necessary and does not work after split_return
+         // For the moment this pass is exploited only by vectorize; if we are outside loops, this is not necessary and does not work after split_return
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skip because in loop 0");
          continue;
       }

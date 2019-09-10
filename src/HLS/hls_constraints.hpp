@@ -46,20 +46,26 @@
 #ifndef HLS_CONSTRAINTS_HPP
 #define HLS_CONSTRAINTS_HPP
 
+/// STD include
+#include <iosfwd>
+#include <limits>
+#include <string>
+
+/// STL include
+#include <map>
+#include <set>
+#include <utility>
+
+/// utility includes
+#include "custom_map.hpp"
 #include "refcount.hpp"
+#include "utility.hpp"
+
 REF_FORWARD_DECL(HLS_constraints);
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(target_device);
 class xml_element;
 
-#include <iosfwd>
-#include <map>
-#include <set>
-#include <string>
-
-#include "custom_map.hpp"
-#include "utility.hpp"
-#include <unordered_map>
 
 /// macro used to convert the functional unit name and the library in an unique string.
 #define ENCODE_FU_LIB(fu_name, library) fu_name + ":" + library
@@ -72,11 +78,11 @@ class xml_element;
 class HLS_constraints
 {
    /// For each functional unit tech_constraints stores the number of resources.
-   std::unordered_map<std::string, unsigned int> tech_constraints;
+   CustomMap<std::string, unsigned int> tech_constraints;
 
    /// put into relation the vertex name with the functional unit, its library and the functional unit index
    /// this map can be used to define a binding for a vertex.
-   std::unordered_map<std::string, std::pair<std::string, std::pair<std::string, unsigned int>>> binding_constraints;
+   CustomMap<std::string, std::pair<std::string, std::pair<std::string, unsigned int>>> binding_constraints;
 
    /// map between an operation vertex and its given scheduling priority value
    CustomMap<std::string, int> scheduling_constraints;
