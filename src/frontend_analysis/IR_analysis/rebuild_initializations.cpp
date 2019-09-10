@@ -874,7 +874,7 @@ bool rebuild_initialization2::look_for_ROMs()
          }
          else if(stmt_kind == gimple_assign_K && !gn->vuses.empty())
          {
-            auto* ga = dynamic_cast<gimple_assign*>(gn);
+            auto ga = GetPointer<gimple_assign>(GET_NODE(inst));
             auto op1 = GET_NODE(ga->op1);
             if(op1->get_kind() == mem_ref_K)
             {
@@ -965,7 +965,7 @@ bool rebuild_initialization2::look_for_ROMs()
          auto stmt_kind = GET_NODE(inst)->get_kind();
          if(stmt_kind == gimple_assign_K && !gn->vuses.empty())
          {
-            auto* ga = dynamic_cast<gimple_assign*>(gn);
+            auto ga = GetPointer<gimple_assign>(GET_NODE(inst));
             auto op1 = GET_NODE(ga->op1);
             if(op1->get_kind() == mem_ref_K)
             {
@@ -1066,7 +1066,7 @@ bool rebuild_initialization2::look_for_ROMs()
          auto stmt_kind = GET_NODE(inst)->get_kind();
          if(stmt_kind == gimple_assign_K && gn->vdef)
          {
-            auto* ga = dynamic_cast<gimple_assign*>(gn);
+            auto ga = GetPointer<gimple_assign>(GET_NODE(inst));
             auto op0 = GET_NODE(ga->op0);
             if(op0->get_kind() == mem_ref_K)
             {
