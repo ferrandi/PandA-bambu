@@ -160,13 +160,16 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
    for(const auto& ma : address)
       mem.push_back(ma.second);
 
+   HLSMgr->RSim->simulationArgSignature.clear();
    const auto function_parameters = behavioral_helper->get_parameters();
-   for(const auto& function_pointer : function_parameters)
+   for(const auto& function_parameter : function_parameters)
    {
+      const auto function_parameter_name = behavioral_helper->PrintVariable(function_parameter);
+      HLSMgr->RSim->simulationArgSignature.push_back(function_parameter_name);
       // if the function has some pointer parameters some memory needs to be
       // reserved for the place where they point to
-      if(behavioral_helper->is_a_pointer(function_pointer) && mem_vars.find(function_pointer) == mem_vars.end())
-         mem.push_back(function_pointer);
+      if(behavioral_helper->is_a_pointer(function_parameter) && mem_vars.find(function_parameter) == mem_vars.end())
+         mem.push_back(function_parameter);
    }
    unsigned int v_idx = 0;
 

@@ -476,8 +476,8 @@ build/src/parser/treegcc/treeLexer.cpp
 build/src/parser/treegcc/treeParser.cpp
 build/src/parser/treegcc/treeParser.hpp
 build/src/revision_hash.hpp
-etc/clang_plugin/CSROA.cpp
-etc/clang_plugin/CSROA.hpp
+etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp
+etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.hpp
 etc/clang_plugin/GepiCanonicalizationPass.cpp
 etc/clang_plugin/GepiCanonicalizationPass.hpp
 etc/clang_plugin/HardekopfLin_AA.cpp

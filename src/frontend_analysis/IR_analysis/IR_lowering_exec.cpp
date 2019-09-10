@@ -2389,9 +2389,6 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      ga->op1 = mr;
                      block.second->PushBefore(new_ga, *it_los);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
-#ifndef NDEBUG
-                     AppM->RegisterTransformation(GetName(), new_ga);
-#endif
                      restart_analysis = true;
                   }
                   else if(code1 == lt_expr_K)

@@ -97,7 +97,7 @@
 #include "llvm/RangeAnalysis.hpp"
 #include "llvm/eSSA.hpp"
 
-#include "CSROA.hpp"
+#include "CustomScalarReplacementOfAggregatesPass.hpp"
 
 #include <cxxabi.h>
 #include <iomanip>
@@ -6379,6 +6379,7 @@ namespace llvm
          RA->printRanges(M, llvm::errs());
          delete RA;
       }
+      M.print(llvm::errs(), nullptr);
       return res;
    }
 } // namespace llvm

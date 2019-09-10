@@ -402,7 +402,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
          {
             command += " -fplugin=" + compiler.topfname_plugin_obj + " -mllvm -panda-TFN=" + fname;
             command += " -mllvm -panda-Internalize";
-            if(Param->IsParameter("enable-CSROA") && !compiler.CSROA_plugin_obj.empty() && !compiler.expandMemOps_plugin_obj.empty())
+            if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 && !compiler.CSROA_plugin_obj.empty() && !compiler.expandMemOps_plugin_obj.empty())
             {
                command += " -fplugin=" + compiler.expandMemOps_plugin_obj;
                if(!compiler.GepiCanon_plugin_obj.empty())
@@ -2751,24 +2751,24 @@ size_t GccWrapper::ConvertVersion(const std::string& version)
    return ret_value;
 }
 
-std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet 
+std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
-optimization_level
+                                          optimization_level
 #endif
                                       ,
                                       const GccWrapper_CompilerTarget
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
-compiler
+                                          compiler
 #endif
                                       ,
                                       const std::string&
 #ifndef _WIN32
-expandMemOps_plugin_obj
+                                          expandMemOps_plugin_obj
 #endif
                                       ,
                                       const std::string&
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
-expandMemOps_plugin_name
+                                          expandMemOps_plugin_name
 #endif
                                       ,
                                       const std::string&
@@ -2864,7 +2864,9 @@ expandMemOps_plugin_name
                    "-domtree "
                    "-basicaa "
                    "-aa ";
-         complex_recipe += " -" + CSROA_plugin_name + "D" +
+         complex_recipe += "-" + expandMemOps_plugin_name + " "
+                   "-" + GepiCanon_plugin_name + " "
+                   "-" + CSROA_plugin_name+"D "
                    " -dse -loop-unroll "
                    /// "-instcombine "
                    "-libcalls-shrinkwrap "
@@ -2999,7 +3001,7 @@ expandMemOps_plugin_name
                    "-lcssa "
                    "-scalar-evolution "
                    "-loop-unroll ";
-         complex_recipe += " -" + expandMemOps_plugin_name + " -" + CSROA_plugin_name + "WI" +
+         complex_recipe += " -" + expandMemOps_plugin_name  + " -" + CSROA_plugin_name+"WI" +
                    " -dse -loop-unroll "
                    /// "-instcombine "
                    "-loop-simplify "
@@ -3025,7 +3027,7 @@ expandMemOps_plugin_name
                    "-block-freq "
                    "-loop-sink "
                    "-instsimplify ";
-         // complex_recipe += complex_recipe;
+         //complex_recipe += complex_recipe;
          recipe += complex_recipe;
       }
       else if(optimization_level == GccWrapper_OptimizationSet::O0)

@@ -69,6 +69,11 @@
 /// HLS/memory include
 #include "memory.hpp"
 
+/// STL includes
+#include <set>
+#include <tuple>
+#include <unordered_set>
+
 /// technology include
 #include "technology_manager.hpp"
 
@@ -149,7 +154,7 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
       case HLSFlowStep_Type::DATAPATH_CS_CREATOR:
          return "DatapathCreatorCS";
       case HLSFlowStep_Type::DATAPATH_CS_PARALLEL_CREATOR:
-         return "DatapathCreatorCSParalle";
+         return "DatapathCreatorCSParallel";
       case HLSFlowStep_Type::CLASSICAL_HLS_SYNTHESIS_FLOW:
          return "ClassicalHLSSynthesisFlow";
 #if HAVE_EXPERIMENTAL

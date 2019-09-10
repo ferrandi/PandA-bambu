@@ -48,7 +48,7 @@
 #include "llvm/Transforms/Utils.h"
 #endif
 
-#include "CSROA.hpp"
+#include "CustomScalarReplacementOfAggregatesPass.hpp"
 
 namespace llvm
 {
@@ -127,8 +127,17 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
 
 static void loadPassLate(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
+   PM.add(llvm::createReversePostOrderFunctionAttrsPass());
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_wrapperInlining >);
    PM.add(llvm::createDeadStoreEliminationPass());
+   PM.add(llvm::createEarlyCSEPass(true));
+   PM.add(llvm::createConstantPropagationPass());
+   PM.add(llvm::createIPSCCPPass());
+   PM.add(llvm::createGlobalDCEPass());
+   PM.add(llvm::createPromoteMemoryToRegisterPass());
+   PM.add(llvm::createDeadArgEliminationPass());
+   PM.add(llvm::createArgumentPromotionPass());
+   PM.add(llvm::createSimpleLoopUnrollPass());
 }
 
 #if ADD_RSP
