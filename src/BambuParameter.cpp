@@ -195,6 +195,7 @@
 #include "cpu_time.hpp"
 #include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
+#include "string_manipulation.hpp"
 #include "utility.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
@@ -2206,8 +2207,7 @@ int BambuParameter::Exec()
          case OPT_DISCREPANCY_ONLY:
          {
             setOption(OPT_discrepancy, true);
-            std::vector<std::string> splitted;
-            boost::algorithm::split(splitted, optarg, boost::algorithm::is_any_of(" ,"));
+            std::vector<std::string> splitted = SplitString(optarg, " ,");
             std::string discrepancy_functions;
             for(auto& f : splitted)
             {
@@ -2255,9 +2255,8 @@ int BambuParameter::Exec()
          }
          case INPUT_OPT_C_NO_PARSE:
          {
-            std::vector<std::string> Splitted;
+            std::vector<std::string> Splitted = SplitString(optarg, " ,");
             std::string no_parse_files;
-            boost::algorithm::split(Splitted, optarg, boost::algorithm::is_any_of(" ,"));
             for(auto& i : Splitted)
             {
                boost::trim(i);
@@ -2268,9 +2267,8 @@ int BambuParameter::Exec()
          }
          case INPUT_OPT_C_PYTHON_NO_PARSE:
          {
-            std::vector<std::string> Splitted;
+            std::vector<std::string> Splitted = SplitString(optarg, " ,");
             std::string no_parse_c_python_files;
-            boost::algorithm::split(Splitted, optarg, boost::algorithm::is_any_of(" ,"));
             for(auto& i : Splitted)
             {
                boost::trim(i);
@@ -3246,8 +3244,7 @@ void BambuParameter::CheckParameters()
    if(isOption(OPT_file_input_data))
    {
       std::string input_data = getOption<std::string>(OPT_file_input_data);
-      std::vector<std::string> splitted;
-      boost::algorithm::split(splitted, input_data, boost::algorithm::is_any_of(","));
+      std::vector<std::string> splitted = SplitString(input_data, ",");
       size_t i_end = splitted.size();
       for(size_t i = 0; i < i_end; i++)
       {

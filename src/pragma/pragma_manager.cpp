@@ -325,8 +325,7 @@ std::unordered_map<std::string, std::string> pragma_manager::ExtractClauses(cons
       }
    }
 
-   std::vector<std::string> splitted;
-   boost::algorithm::split(splitted, trimmed_clauses, boost::algorithm::is_any_of(" \t\n"));
+   std::vector<std::string> splitted = SplitString(trimmed_clauses, " \t\n");
 
    for(auto clause : splitted)
    {

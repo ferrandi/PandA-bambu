@@ -62,6 +62,15 @@
 /// design_flows/backend/ToC/progModels include
 #include "c_backend.hpp"
 
+/// STD include
+#include <string>
+
+///STL includes
+#include <set>
+#include <utility>
+#include <unordered_set>
+#include <vector>
+
 /// tree include
 #include "behavioral_helper.hpp"
 
@@ -134,11 +143,10 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Read " + line);
             if(line.size())
             {
+               std::vector<std::string> splitted = SplitString(line, " ");
+               THROW_ASSERT(splitted.size() == 2, line);
                if(line.find("Function") != std::string::npos)
                {
-                  std::vector<std::string> splitted;
-                  boost::algorithm::split(splitted, line, boost::algorithm::is_any_of(" "));
-                  THROW_ASSERT(splitted.size() == 2, line);
                   const auto function_behavior = AppM->CGetFunctionBehavior(boost::lexical_cast<unsigned int>(splitted[1]));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found data of function " + function_behavior->CGetBehavioralHelper()->get_function_name());
                   profiling_information = function_behavior->profiling_information;
@@ -146,9 +154,6 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
                }
                else
                {
-                  std::vector<std::string> splitted;
-                  boost::algorithm::split(splitted, line, boost::algorithm::is_any_of(" "));
-                  THROW_ASSERT(splitted.size() == 2, line);
                   const auto bb_index = boost::lexical_cast<unsigned int>(splitted[0]);
                   if(bb_index_map.find(bb_index) != bb_index_map.end())
                   {

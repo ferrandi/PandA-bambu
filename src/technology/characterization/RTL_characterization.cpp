@@ -1081,11 +1081,9 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
 
 const std::string RTLCharacterization::ComputeComponent(const std::string& input) const
 {
-   std::vector<std::string> component_cell;
-   boost::algorithm::split(component_cell, input, boost::algorithm::is_any_of(","));
+   std::vector<std::string> component_cell = SplitString(input, ",");
    THROW_ASSERT(component_cell.size() > 0, input);
-   std::vector<std::string> component_or_cell;
-   boost::algorithm::split(component_or_cell, component_cell[0], boost::algorithm::is_any_of("-"));
+   std::vector<std::string> component_or_cell = SplitString(component_cell[0], "-");
    THROW_ASSERT(component_or_cell.size() == 2, component_or_cell[0]);
    return component_or_cell[0];
 }
@@ -1093,12 +1091,10 @@ const std::string RTLCharacterization::ComputeComponent(const std::string& input
 const CustomSet<std::string> RTLCharacterization::ComputeCells(const std::string& input) const
 {
    CustomSet<std::string> ret;
-   std::vector<std::string> component_cells;
-   boost::algorithm::split(component_cells, input, boost::algorithm::is_any_of(","));
+   std::vector<std::string> component_cells = SplitString(input, ",");
    for(const auto& component_cell : component_cells)
    {
-      std::vector<std::string> component_or_cell;
-      boost::algorithm::split(component_or_cell, component_cell, boost::algorithm::is_any_of("-"));
+      std::vector<std::string> component_or_cell = SplitString(component_cell, "-");;
       THROW_ASSERT(component_or_cell.size() == 2, component_cell);
       THROW_ASSERT(component_or_cell[0] == component, component_or_cell[0] + " vs " + component);
       ret.insert(component_or_cell[1]);

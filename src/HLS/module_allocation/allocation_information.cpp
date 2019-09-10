@@ -73,6 +73,13 @@
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
 
+/// STL includes
+#include <algorithm>
+#include <map>
+#include <set>
+#include <tuple>
+#include <unordered_map>
+
 const std::pair<const CustomMap<unsigned int, std::unordered_map<unsigned int, double>>&, const CustomMap<unsigned int, std::unordered_map<unsigned int, double>>&>
 AllocationInformation::InitializeMuxDB(const AllocationInformationConstRef allocation_information)
 {
@@ -96,15 +103,13 @@ AllocationInformation::InitializeMuxDB(const AllocationInformationConstRef alloc
       mux_precisions.push_back(16);
       mux_precisions.push_back(32);
       mux_precisions.push_back(64);
-      std::vector<std::string> parameters_split;
-      boost::algorithm::split(parameters_split, temp_portsize_parameters, boost::algorithm::is_any_of("|"));
+      std::vector<std::string> parameters_split = SplitString(temp_portsize_parameters, "|");
       THROW_ASSERT(parameters_split.size() > 0, "unexpected portsize_parameter format");
       for(auto module_prec : mux_precisions)
       {
          for(auto& el_indx : parameters_split)
          {
-            std::vector<std::string> parameters_pairs;
-            boost::algorithm::split(parameters_pairs, el_indx, boost::algorithm::is_any_of(":"));
+            std::vector<std::string> parameters_pairs = SplitString(el_indx, ":");
             if(parameters_pairs[0] == "*")
             {
                temp_portsize_parameters = parameters_pairs[1];
@@ -117,8 +122,7 @@ AllocationInformation::InitializeMuxDB(const AllocationInformationConstRef alloc
             }
          }
          THROW_ASSERT(temp_portsize_parameters != "", "expected some portsize0_parameters for the the template operation");
-         std::vector<std::string> portsize_parameters;
-         boost::algorithm::split(portsize_parameters, temp_portsize_parameters, boost::algorithm::is_any_of(","));
+         std::vector<std::string> portsize_parameters = SplitString(temp_portsize_parameters, ",");
          for(auto n_inputs : portsize_parameters)
          {
             const technology_nodeRef fu_cur_obj =
@@ -198,10 +202,8 @@ const std::tuple<const std::vector<unsigned int>&, const std::vector<unsigned in
          THROW_ASSERT(hls_target->get_target_device()->has_parameter("DSPs_y_sizes"), "device description is not complete");
          std::string DSPs_x_sizes = hls_target->get_target_device()->get_parameter<std::string>("DSPs_x_sizes");
          std::string DSPs_y_sizes = hls_target->get_target_device()->get_parameter<std::string>("DSPs_y_sizes");
-         std::vector<std::string> DSPs_x_sizes_vec;
-         std::vector<std::string> DSPs_y_sizes_vec;
-         boost::algorithm::split(DSPs_x_sizes_vec, DSPs_x_sizes, boost::algorithm::is_any_of(","));
-         boost::algorithm::split(DSPs_y_sizes_vec, DSPs_y_sizes, boost::algorithm::is_any_of(","));
+         std::vector<std::string> DSPs_x_sizes_vec = SplitString(DSPs_x_sizes, ",");
+         std::vector<std::string> DSPs_y_sizes_vec = SplitString(DSPs_y_sizes, ",");
          size_t n_elements = DSPs_x_sizes_vec.size();
          DSP_x_db.resize(n_elements);
          DSP_y_db.resize(n_elements);
@@ -2243,12 +2245,12 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       std::string library = HLS_T->get_technology_manager()->get_library(component_name);
       technology_nodeRef f_unit_alias = HLS_T->get_technology_manager()->get_fu(component_name, library);
       THROW_ASSERT(f_unit_alias, "Library miss component: " + component_name);
-      functional_unit * fu_alias= GetPointer<functional_unit>(f_unit_alias);
-      technology_nodeRef op_alias_node =fu_alias->get_operation(operation_name);
+      functional_unit * fu_alias = GetPointer<functional_unit>(f_unit_alias);
+      technology_nodeRef op_alias_node = fu_alias->get_operation(operation_name);
       operation * op_alias = op_alias_node ? GetPointer<operation>(op_alias_node) : GetPointer<operation>(fu_alias->get_operations().front());
       double alias_exec_time = op_alias->time_m->get_initiation_time() != 0u ? time_m_stage_period(op_alias) : time_m_execution_time(op_alias);
-      functional_unit * fu_cur= GetPointer<functional_unit>(current_fu);
-      technology_nodeRef op_cur_node =fu_cur->get_operation(operation_name);
+      functional_unit * fu_cur = GetPointer<functional_unit>(current_fu);
+      technology_nodeRef op_cur_node = fu_cur->get_operation(operation_name);
       operation * op_cur = GetPointer<operation>(op_cur_node);
       double cur_exec_time = op_cur->time_m->get_initiation_time() != 0u ? time_m_stage_period(op_cur) : time_m_execution_time(op_cur);
       res_value += cur_exec_time - alias_exec_time;
@@ -3126,7 +3128,7 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
       if(is_second_plus_minus)
       {
           const auto fu_type = GetFuType(second_operation);
-          if(get_prec(fu_type)>32)
+          if(get_prec(fu_type) > 32)
           {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing connection time " + STR(first_operation) + "-->" + STR(second_operation));
             auto ret = get_setup_hold_time()/3;

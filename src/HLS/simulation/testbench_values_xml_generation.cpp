@@ -86,6 +86,7 @@
 
 /// utility includes
 #include "dbgPrintHelper.hpp"
+#include "string_manipulation.hpp"
 #include "utility.hpp"
 
 void TestbenchValuesXMLGeneration::Initialize()
@@ -226,8 +227,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
 
          if(is_memory)
          {
-            std::vector<std::string> splitted;
-            boost::algorithm::split(splitted, test_v, boost::algorithm::is_any_of(","));
+            std::vector<std::string> splitted = SplitString(test_v, ",");
             for(const auto element : splitted)
             {
                THROW_ASSERT(element.size() % 8 == 0, element + ": " + STR(element.size()));

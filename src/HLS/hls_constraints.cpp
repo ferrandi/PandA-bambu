@@ -65,13 +65,15 @@
 #include <vector>
 #include <utility>
 
+/// utility include
+#include "string_manipulation.hpp"
+
 const double HLS_constraints::clock_period_resource_fraction_DEFAULT = 1.0;
 
 /// function used to extract the functional unit name and its library from a string.
 void DECODE_FU_LIB(std::string& fu_name, std::string& fu_library, const std::string& combined)
 {
-   std::vector<std::string> splitted;
-   boost::algorithm::split(splitted, combined, boost::algorithm::is_any_of(":"));
+   std::vector<std::string> splitted = SplitString(combined, ":");
    fu_name = splitted[0];
    fu_library = splitted[1];
 }

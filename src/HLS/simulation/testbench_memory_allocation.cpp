@@ -183,8 +183,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
 
                if(base_type_byte_size == 0)
                   base_type_byte_size = 1;
-               std::vector<std::string> splitted;
-               boost::algorithm::split(splitted, test_v, boost::algorithm::is_any_of(","));
+               std::vector<std::string> splitted = SplitString(test_v, ",");
                reserved_bytes = (static_cast<unsigned int>(splitted.size())) * base_type_byte_size;
             }
             else
