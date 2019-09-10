@@ -313,8 +313,7 @@ bool PragmaParser::recognize_call_point_hw_pragma(std::string& line) const
    line = std::string(STR_CST_pragma_function_single_line_two_arguments) + "(";
    line += "\"" + std::string(STR_CST_pragma_keyword_map) + "\"";
    line += ", ";
-   std::vector<std::string> splitted;
-   boost::algorithm::split(splitted, old_line, boost::algorithm::is_any_of(" "));
+   std::vector<std::string> splitted = SplitString(old_line, " ");
    THROW_ASSERT(splitted.size() == 4 or splitted.size() == 5, "Error in syntax of mapping pragma: " + old_line);
    THROW_ASSERT(splitted[2] == std::string(STR_CST_pragma_keyword_call_point_hw), "Expecting " + std::string(STR_CST_pragma_keyword_call_point_hw) + " - Found : " + splitted[2]);
    line += "\"" + std::string(STR_CST_pragma_keyword_call_point_hw) + "\"";

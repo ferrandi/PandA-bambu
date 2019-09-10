@@ -70,8 +70,6 @@
 /// Utility include
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/split.hpp>
 
 /// Wrapper include
 #include "gcc_wrapper.hpp"

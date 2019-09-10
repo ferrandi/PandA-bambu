@@ -2003,13 +2003,11 @@ std::string allocation::get_compliant_pipelined_unit(double clock, const std::st
    THROW_ASSERT(fun_temp_operation, "operation not present in the template description");
    auto* template_op = GetPointer<operation>(fun_temp_operation);
    std::string temp_pipe_parameters = template_op->pipe_parameters;
-   std::vector<std::string> parameters_split;
-   boost::algorithm::split(parameters_split, temp_pipe_parameters, boost::algorithm::is_any_of("|"));
+   std::vector<std::string> parameters_split = SplitString(temp_pipe_parameters, "|");
    THROW_ASSERT(parameters_split.size() > 0, "unexpected pipe_parameter format");
    for(auto& el_indx : parameters_split)
    {
-      std::vector<std::string> parameters_pairs;
-      boost::algorithm::split(parameters_pairs, el_indx, boost::algorithm::is_any_of(":"));
+      std::vector<std::string> parameters_pairs = SplitString(el_indx, ":");
       if(parameters_pairs[0] == "*")
       {
          temp_pipe_parameters = parameters_pairs[1];
@@ -2027,10 +2025,9 @@ std::string allocation::get_compliant_pipelined_unit(double clock, const std::st
       }
    }
    THROW_ASSERT(temp_pipe_parameters != "", "expected some pipe_parameters for the the template operation");
-   std::vector<std::string> pipe_parameters;
    std::string fastest_pipe_parameter = "0";
    double fastest_stage_period = std::numeric_limits<double>::max();
-   boost::algorithm::split(pipe_parameters, temp_pipe_parameters, boost::algorithm::is_any_of(","));
+   std::vector<std::string> pipe_parameters = SplitString(temp_pipe_parameters, ",");
    const std::vector<std::string>::const_iterator st_end = pipe_parameters.end();
    std::vector<std::string>::const_iterator st_next;
    unsigned int skip_pipe_parameter = 0;

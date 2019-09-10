@@ -36,9 +36,6 @@
  * @brief Parser for deep profiling information
  *
  * @author Daniele Loiacono <loiacono@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
@@ -74,9 +71,7 @@
 #endif
 
 /// boost include
-#include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/replace.hpp>
-#include <boost/algorithm/string/split.hpp>
 #include <boost/filesystem/operations.hpp>
 
 /// constants include
@@ -148,9 +143,10 @@
 #include "features_extractor.hpp"
 #endif
 
-/// utility include
+/// utility includes
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "exceptions.hpp"
+#include "string_manipulation.hpp"
 
 #define MAX_LENGTH 10000
 
@@ -585,8 +581,7 @@ int main(int argc, char* argv[])
             if(output_format != Parameters_FileFormat::FF_XML)
                THROW_ERROR("Not supported combination input file - output file types");
             const std::string sequences = parameters->getOption<std::string>(OPT_normalization_sequences);
-            std::vector<std::string> sequences_splitted;
-            boost::split(sequences_splitted, sequences, boost::is_any_of("-"));
+            std::vector<std::string> sequences_splitted = SplitString(sequences, "-");
             for(size_t sequence_number = 0; sequence_number < sequences_splitted.size(); sequence_number++)
             {
                const auto input_files = parameters->getOption<const CustomSet<std::string>>(OPT_input_file);

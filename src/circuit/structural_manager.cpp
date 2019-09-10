@@ -58,9 +58,7 @@
 #include "graph_info.hpp"                            // for GraphInf...
 #include "library_manager.hpp"                       // for attribute
 #include "refcount.hpp"                              // for GetPointer
-#include <boost/algorithm/string/classification.hpp> // for is_any_of
 #include <boost/algorithm/string/predicate.hpp>      // for starts_with
-#include <boost/algorithm/string/split.hpp>          // for split
 #include <boost/graph/adjacency_list.hpp>            // for target
 #include <boost/graph/filtered_graph.hpp>            // for edges
 #include <boost/graph/graph_traits.hpp>              // for graph_tr...
@@ -223,8 +221,7 @@ structural_objectRef structural_manager::add_port(std::string id, port_o::port_d
                   {
 #if HAVE_TECHNOLOGY_BUILT
                      std::string equation = NPF->get_NP_functionality(NP_functionality::EQUATION);
-                     std::vector<std::string> tokens;
-                     boost::algorithm::split(tokens, equation, boost::algorithm::is_any_of(";"));
+                     std::vector<std::string> tokens = SplitString(equation, ";");
                      for(auto& token : tokens)
                      {
                         if(boost::algorithm::starts_with(token, id))

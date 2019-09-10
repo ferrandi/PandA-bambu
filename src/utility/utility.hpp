@@ -45,9 +45,6 @@
 
 #include "config_HAVE_ASSERTS.hpp"
 
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/detail/classification.hpp>
-#include <boost/algorithm/string/split.hpp>
 #include <boost/concept/usage.hpp>
 #include <boost/date_time.hpp>
 #include <boost/date_time/posix_time/ptime.hpp>
@@ -136,8 +133,7 @@ template <class G>
 std::vector<G> convert_string_to_vector(const std::string& string_form, const std::string& separator, bool trim_empty_elements = true)
 {
    std::vector<G> vector_form;
-   std::vector<std::string> tmp_vector_form;
-   boost::split(tmp_vector_form, string_form, boost::is_any_of(separator));
+   std::vector<std::string> tmp_vector_form = SplitString(string_form, separator);
    for(auto& i : tmp_vector_form)
    {
       if(trim_empty_elements and i.size() == 0)

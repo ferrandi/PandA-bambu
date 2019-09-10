@@ -155,8 +155,7 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& a
                continue;
             }
             line = TrimSpaces(line);
-            std::vector<std::string> filevalues;
-            boost::algorithm::split(filevalues, line, boost::algorithm::is_any_of("\t "));
+            std::vector<std::string> filevalues = SplitString(line, "\t ");
             if(filevalues[0] == "X")
             {
                CopyStdout(log_file);
@@ -246,8 +245,7 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& a
                continue;
             }
             line = TrimSpaces(line);
-            std::vector<std::string> filevalues;
-            boost::algorithm::split(filevalues, line, boost::algorithm::is_any_of("\t "));
+            std::vector<std::string> filevalues = SplitString(line, "\t ");
             if(filevalues[0] == "X")
             {
                CopyStdout(log_file);
@@ -301,8 +299,7 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& a
             {
                continue;
             }
-            std::vector<std::string> filevalues;
-            boost::algorithm::split(filevalues, line, boost::algorithm::is_any_of("\t"));
+            std::vector<std::string> filevalues = SplitString(line, "\t ");
             boost::trim(filevalues[0]);
             boost::trim(filevalues[1]);
             if(filevalues[0] != "2" && filevalues[0] != "3")
