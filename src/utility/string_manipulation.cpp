@@ -150,7 +150,7 @@ const std::vector<std::string> SplitString(const std::string & input, const std:
 {
    std::vector<std::string> ret_value;
 #ifndef __clang_analyzer__
-   boost::algorithm::split(ret_value, input, boost::algorithm::is_any_of(seperators));
+   boost::algorithm::split(ret_value, input, boost::algorithm::is_any_of(separators));
 #endif
    return ret_value;
 }

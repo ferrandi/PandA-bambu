@@ -5403,8 +5403,7 @@ std::string tree_helper::print_type(const tree_managerConstRef& TM, unsigned int
                }
                else if(GET_NODE(td->type)->get_kind() == complex_type_K)
                {
-                  std::vector<std::string> splitted;
-                  boost::algorithm::split(splitted, typename_value, boost::algorithm::is_any_of(" "));
+                  std::vector<std::string> splitted = SplitString(typename_value, " ");
                   if((splitted[0] == "_Complex" || splitted[0] == "__complex__" || splitted[0] == "complex"))
                   {
                      res += "__complex__";

@@ -36,9 +36,6 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
@@ -130,7 +127,6 @@
 #endif
 
 /// Boost include
-#include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 
 /// Constants include
@@ -186,6 +182,7 @@
 #include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
 #include "refcount.hpp"
+#include "string_manipulation.hpp"
 #include "xml_helper.hpp"
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
@@ -614,8 +611,7 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
 #ifndef NDEBUG
       case OPT_DEBUG_CLASSES:
       {
-         std::vector<std::string> Splitted;
-         boost::algorithm::split(Splitted, optarg_param, boost::algorithm::is_any_of(","));
+         std::vector<std::string> Splitted = SplitString(optarg_param, ",");
          for(const auto& i : Splitted)
          {
             add_debug_class(i);
@@ -661,8 +657,7 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
       case INPUT_OPT_PANDA_PARAMETER:
       {
          std::string param_pair(optarg_param);
-         std::vector<std::string> splitted;
-         boost::algorithm::split(splitted, param_pair, boost::algorithm::is_any_of("="));
+         std::vector<std::string> splitted = SplitString(param_pair, "=");
          if(splitted.size() != 2)
          {
             THROW_ERROR("panda-parameter should be in the form <parameter>=<value>: " + param_pair);
@@ -1657,9 +1652,8 @@ template <>
 const CustomSet<std::string> Parameter::getOption(const enum enum_option name) const
 {
    CustomSet<std::string> ret;
-   std::vector<std::string> splitted;
    const std::string to_be_splitted = getOption<std::string>(name);
-   boost::algorithm::split(splitted, to_be_splitted, boost::algorithm::is_any_of(STR_CST_string_separator));
+   std::vector<std::string> splitted = SplitString(to_be_splitted, STR_CST_string_separator);
    size_t i_end = splitted.size();
    for(size_t i = 0; i < i_end; i++)
    {
@@ -1672,9 +1666,8 @@ template <>
 const std::list<std::string> Parameter::getOption(const enum enum_option name) const
 {
    std::list<std::string> ret;
-   std::vector<std::string> splitted;
    const std::string to_be_splitted = getOption<std::string>(name);
-   boost::algorithm::split(splitted, to_be_splitted, boost::algorithm::is_any_of(STR_CST_string_separator));
+   std::vector<std::string> splitted = SplitString(to_be_splitted, STR_CST_string_separator);
    size_t i_end = splitted.size();
    for(size_t i = 0; i < i_end; i++)
    {
@@ -1734,8 +1727,7 @@ std::unordered_set<ActorGraphEstimator_Algorithm> Parameter::getOption(const enu
    std::unordered_set<ActorGraphEstimator_Algorithm> return_value;
    const std::string temp = getOption<std::string>(name);
 
-   std::vector<std::string> splitted;
-   boost::algorithm::split(splitted, temp, boost::algorithm::is_any_of(","));
+   std::vector<std::string> splitted = SplitString(temp, ",");
    size_t i_end = splitted.size();
    for(size_t i = 0; i < i_end; i++)
    {
