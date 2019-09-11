@@ -1174,7 +1174,7 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
             {
                auto port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
                if(single_proc || output_index == i)
-                  indented_output_stream->Append("  " + port_name + " <= '1';\n");
+                  indented_output_stream->Append("  " + port_name + " <= 'X';\n");
             }
          }
          if(single_proc || output_index == mod->get_out_port_size())
@@ -1205,7 +1205,7 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
                         break;
 
                      case '2':
-                        indented_output_stream->Append(port_name + " <= '1';\n");
+                        indented_output_stream->Append(port_name + " <= 'X';\n");
                         break;
 
                      default:
@@ -1333,7 +1333,7 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
                   if(single_proc || output_index == i2)
                   {
                      if(transition_outputs[i2] == '2')
-                        indented_output_stream->Append(port_name + " <= '1';\n");
+                        indented_output_stream->Append(port_name + " <= 'X';\n");
                      else
                         indented_output_stream->Append(port_name + " <= '" + transition_outputs[i2] + "';\n");
                   }
