@@ -1362,6 +1362,15 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
 
    /// really useful for one-hot encoding
    indented_output_stream->Append("when others =>\n");
+   for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
+   {
+      if(boost::starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") || boost::starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
+      {
+         auto port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
+         if(single_proc || output_index == i)
+            indented_output_stream->Append("  " + port_name + " <= 'X';\n");
+      }
+   }
 
    indented_output_stream->Deindent();
    indented_output_stream->Append("end case;\n");
