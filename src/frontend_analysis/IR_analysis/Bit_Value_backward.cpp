@@ -874,7 +874,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       auto* const2 = GetPointer<integer_cst>(GET_NODE(operation->op1));
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "backward_transfer, created bitstring from constant -> " + STR(const2->value));
       THROW_ASSERT(const2->value >= 0, "unexpected condition");
-      THROW_ASSERT(output_bitstring.size()==1, "unexpected condition");
+      THROW_ASSERT(output_bitstring.size() == 1, "unexpected condition");
 
       std::deque<bit_lattice> res_input1 = output_bitstring;
       const auto shift_value = static_cast<unsigned long long>(const2->value);
@@ -890,7 +890,6 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "backward_transfer, operation: " + STR(GET_INDEX_NODE(ga->op0)) + " = " + STR(GET_INDEX_NODE(operation->op0)) + " extract_bit_expr " + STR(GET_INDEX_NODE(operation->op1)));
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "input1: " + bitstring_to_string(res_input1));
       return res_input1;
-
    }
    else if(op_kind == rrotate_expr_K)
    {

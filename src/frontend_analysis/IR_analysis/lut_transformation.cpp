@@ -34,7 +34,7 @@
  * @file lut_transformation.cpp
  * @brief identify and optmize lut expressions.
  * @author Marco Speziali
- * @author Davide Toschi 
+ * @author Davide Toschi
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
@@ -180,7 +180,7 @@ bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int m
    auto type_id1 = b1->index;
    if(tree_helper::is_real(TM, type_id1) || tree_helper::is_a_complex(TM, type_id1) || tree_helper::is_a_vector(TM, type_id1) || tree_helper::is_a_struct(TM, type_id1))
       return false;
-   return (tree_helper::Size(GET_NODE((be)->op0)) <= max && tree_helper::Size(GET_NODE((be)->op1)) <= max) || GET_CONST_NODE(be->op0)->get_kind() == integer_cst_K || GET_CONST_NODE(be->op1)->get_kind() == integer_cst_K ;
+   return (tree_helper::Size(GET_NODE((be)->op0)) <= max && tree_helper::Size(GET_NODE((be)->op1)) <= max) || GET_CONST_NODE(be->op0)->get_kind() == integer_cst_K || GET_CONST_NODE(be->op1)->get_kind() == integer_cst_K;
 }
 #define CHECK_COND_EXPR_SIZE(ce) (tree_helper::Size(GET_NODE((ce)->op1)) == 1 && tree_helper::Size(GET_NODE((ce)->op2)) == 1)
 #define CHECK_NOT_EXPR_SIZE(ne) (tree_helper::Size(GET_NODE((ne)->op)) == 1)
@@ -192,9 +192,7 @@ bool lut_transformation::cannotBeLUT(tree_nodeRef op) const
    auto op_node = GET_NODE(op);
    auto code = op_node->get_kind();
 
-   return not (GetPointer<lut_expr>(op_node) ||
-              (GetPointer<truth_not_expr>(op_node) && CHECK_NOT_EXPR_SIZE(GetPointer<truth_not_expr>(op_node))) ||
-              (GetPointer<bit_not_expr>(op_node) && CHECK_NOT_EXPR_SIZE(GetPointer<bit_not_expr>(op_node))) ||
+   return not(GetPointer<lut_expr>(op_node) || (GetPointer<truth_not_expr>(op_node) && CHECK_NOT_EXPR_SIZE(GetPointer<truth_not_expr>(op_node))) || (GetPointer<bit_not_expr>(op_node) && CHECK_NOT_EXPR_SIZE(GetPointer<bit_not_expr>(op_node))) ||
               (GetPointer<cond_expr>(op_node) && CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(op_node))) ||
               (VECT_CONTAINS(lutBooleanExpressibleOperations, code) && GetPointer<binary_expr>(op_node) && CHECK_BIN_EXPR_BOOL_SIZE(GetPointer<binary_expr>(op_node))) ||
               (VECT_CONTAINS(lutIntegerExpressibleOperations, code) && GetPointer<binary_expr>(op_node) && CHECK_BIN_EXPR_INT_SIZE(GetPointer<binary_expr>(op_node), MAX_LUT_INT_SIZE)));
@@ -376,12 +374,12 @@ class klut_network_ext : public mockturtle::klut_network
    std::vector<signal> create_not_v(std::vector<signal> const& a)
    {
       std::vector<signal> outputs;
-      for(auto s: a)
+      for(auto s : a)
          outputs.push_back(this->create_not(s));
       return outputs;
    }
 
-   std::vector<signal> create_and_v(std::vector<signal> const &a, std::vector<signal> const &b, bool signedValues)
+   std::vector<signal> create_and_v(std::vector<signal> const& a, std::vector<signal> const& b, bool signedValues)
    {
       std::vector<signal> a_c(a), b_c(b);
       this->fix_inputs_size(&a_c, &b_c, signedValues);
@@ -393,7 +391,7 @@ class klut_network_ext : public mockturtle::klut_network
       return outputs;
    }
 
-   std::vector<signal> create_or_v(std::vector<signal> const &a, std::vector<signal> const &b, bool signedValues)
+   std::vector<signal> create_or_v(std::vector<signal> const& a, std::vector<signal> const& b, bool signedValues)
    {
       std::vector<signal> a_c(a), b_c(b);
       this->fix_inputs_size(&a_c, &b_c, signedValues);
@@ -405,7 +403,7 @@ class klut_network_ext : public mockturtle::klut_network
       return outputs;
    }
 
-   std::vector<signal> create_xor_v(std::vector<signal> const &a, std::vector<signal> const &b, bool signedValues)
+   std::vector<signal> create_xor_v(std::vector<signal> const& a, std::vector<signal> const& b, bool signedValues)
    {
       std::vector<signal> a_c(a), b_c(b);
       this->fix_inputs_size(&a_c, &b_c, signedValues);
@@ -417,7 +415,7 @@ class klut_network_ext : public mockturtle::klut_network
       return outputs;
    }
 
-   std::vector<signal> create_lt_v(std::vector<signal> const &a, std::vector<signal> const &b, bool signedValues)
+   std::vector<signal> create_lt_v(std::vector<signal> const& a, std::vector<signal> const& b, bool signedValues)
    {
       std::vector<signal> a_c(a), b_c(b);
       this->fix_inputs_size(&a_c, &b_c, signedValues);
@@ -427,36 +425,36 @@ class klut_network_ext : public mockturtle::klut_network
          a_c.push_back(this->get_constant(false));
          b_c.push_back(this->get_constant(false));
       }
-      a_c.push_back(a_c.at(a_c.size()-1));
-      b_c.push_back(b_c.at(b_c.size()-1));
+      a_c.push_back(a_c.at(a_c.size() - 1));
+      b_c.push_back(b_c.at(b_c.size() - 1));
 
       signal cbit = this->create_not(this->get_constant(false));
       signal neg1, result = this->get_constant(false);
-      for (auto column = 0u; column < a_c.size(); ++column)
+      for(auto column = 0u; column < a_c.size(); ++column)
       {
          neg1 = this->create_not(b_c.at(column));
-         std::tie( result, cbit ) = mockturtle::full_adder(*this, a_c.at(column), neg1, cbit);
+         std::tie(result, cbit) = mockturtle::full_adder(*this, a_c.at(column), neg1, cbit);
       }
       return {result};
    }
 
-   std::vector<signal> create_ge_v(std::vector<signal> const &a, std::vector<signal> const &b, bool signedValues)
+   std::vector<signal> create_ge_v(std::vector<signal> const& a, std::vector<signal> const& b, bool signedValues)
    {
       auto lt_res = this->create_lt_v(a, b, signedValues);
       return {this->create_not(lt_res.at(0))};
    }
 
-   std::vector<signal> create_gt_v(std::vector<signal> const &a, std::vector<signal> const &b, bool signedValues)
+   std::vector<signal> create_gt_v(std::vector<signal> const& a, std::vector<signal> const& b, bool signedValues)
    {
       return this->create_lt_v(b, a, signedValues);
    }
 
-   std::vector<signal> create_le_v(std::vector<signal> const &a, std::vector<signal> const &b, bool signedValues)
+   std::vector<signal> create_le_v(std::vector<signal> const& a, std::vector<signal> const& b, bool signedValues)
    {
       return this->create_ge_v(b, a, signedValues);
    }
 
-   std::vector<signal> create_eq_v(std::vector<signal> const &a, std::vector<signal> const &b, bool signedValues)
+   std::vector<signal> create_eq_v(std::vector<signal> const& a, std::vector<signal> const& b, bool signedValues)
    {
       std::vector<signal> a_c(a), b_c(b);
       this->fix_inputs_size(&a_c, &b_c, signedValues);
@@ -468,7 +466,7 @@ class klut_network_ext : public mockturtle::klut_network
       return {this->create_nary_and(outputs)};
    }
 
-   std::vector<signal> create_ne_v(std::vector<signal> const &a, std::vector<signal> const &b, bool signedValues)
+   std::vector<signal> create_ne_v(std::vector<signal> const& a, std::vector<signal> const& b, bool signedValues)
    {
       return this->create_not_v(this->create_eq_v(a, b, signedValues));
    }
@@ -510,10 +508,9 @@ typedef mockturtle::klut_network::signal (klut_network_ext::*klut_network_fn)(co
  * Pointer that points to a function of `klut_network_ext`, that represents a binary operation between two `std::vector<mockturtle::klut_network::signal>`s
  * and returns a `std::vector<mockturtle::klut_network::signal>`.
  */
-typedef std::vector<mockturtle::klut_network::signal> (klut_network_ext::*klut_network_fn_v)(std::vector<mockturtle::klut_network::signal> const &, std::vector<mockturtle::klut_network::signal>const &, bool);
+typedef std::vector<mockturtle::klut_network::signal> (klut_network_ext::*klut_network_fn_v)(std::vector<mockturtle::klut_network::signal> const&, std::vector<mockturtle::klut_network::signal> const&, bool);
 
 #pragma endregion
-
 
 /**
  * Checks whether the provided node is a primary input of lut network.
@@ -739,9 +736,7 @@ static std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_ne
 
    mockturtle::topo_view ntk_topo{klut};
 
-   ntk_topo.foreach_po([&](auto const& s, auto i) {
-      po_set[s].insert(i);
-   });
+   ntk_topo.foreach_po([&](auto const& s, auto i) { po_set[s].insert(i); });
 
    ntk_topo.foreach_node([&](const auto& node) {
       if(ntk_topo.is_pi(node) || ntk_topo.is_constant(node))
@@ -1229,7 +1224,11 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                op1 = klut_e.create_pi_v(tree_helper::Size(GET_NODE(binaryExpression->op0)));
 
                unsigned int index = 0;
-               std::for_each(op1.begin(), op1.end(), [&binaryExpression, &pis, &pis_offset, &index](auto op) { pis.push_back(binaryExpression->op0); pis_offset.push_back(index); ++index;});
+               std::for_each(op1.begin(), op1.end(), [&binaryExpression, &pis, &pis_offset, &index](auto op) {
+                  pis.push_back(binaryExpression->op0);
+                  pis_offset.push_back(index);
+                  ++index;
+               });
 
                nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op0)] = op1;
             }
@@ -1261,7 +1260,11 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                op2 = klut_e.create_pi_v(tree_helper::Size(GET_NODE(binaryExpression->op1)));
 
                unsigned int index = 0;
-               std::for_each(op2.begin(), op2.end(), [&binaryExpression, &pis, &pis_offset, &index](auto op) { pis.push_back(binaryExpression->op1); pis_offset.push_back(index); ++index;});
+               std::for_each(op2.begin(), op2.end(), [&binaryExpression, &pis, &pis_offset, &index](auto op) {
+                  pis.push_back(binaryExpression->op1);
+                  pis_offset.push_back(index);
+                  ++index;
+               });
 
                nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op1)] = op2;
             }
@@ -1281,7 +1284,11 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             klut_e.create_po_v(res);
 
             unsigned int index = 0;
-            std::for_each(res.begin(), res.end(), [&currentStatement, &pos, &pos_offset, &index](auto op) { pos.push_back(*currentStatement); pos_offset.push_back(index); ++index; });
+            std::for_each(res.begin(), res.end(), [&currentStatement, &pos, &pos_offset, &index](auto op) {
+               pos.push_back(*currentStatement);
+               pos_offset.push_back(index);
+               ++index;
+            });
          }
 
          // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---====");
@@ -1297,7 +1304,6 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          continue;
       }
    }
-
 
    if(modified)
    {
@@ -1356,7 +1362,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
                if(tree_helper::Size(GET_NODE(operand)) == 1 && !tree_helper::is_bool(TM, GET_INDEX_NODE(operand)))
                {
-                  THROW_ASSERT(operand_offset==0, "unexpected condition");
+                  THROW_ASSERT(operand_offset == 0, "unexpected condition");
                   operand = CreateBitSelectionNodeOrCast(operand, 0, BB_index, prev_stmts_to_add);
                }
                else if(tree_helper::Size(GET_NODE(operand)) > 1)
@@ -1395,7 +1401,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          if(lut.is_po)
          {
             auto po_stmpt = pos.at(lut.po_index);
-            //auto po_offset = pos_offset.at(lut.po_index);
+            // auto po_offset = pos_offset.at(lut.po_index);
             /// add selection bit stmts
             for(auto stmt : prev_stmts_to_add)
             {
@@ -1473,15 +1479,15 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          }
       }
       THROW_ASSERT(prev_stmts_to_add.empty(), "unexpected condition");
-      ///dependencies could be broken so we may need to reorder the lut based statements
+      /// dependencies could be broken so we may need to reorder the lut based statements
 #if HAVE_ASSERTS
       auto nStmts = statements.size();
 #endif
-//      for(auto stmt: statements)
-//         std::cerr<< "Before STMT " << stmt->ToString()<<"\n";
+      //      for(auto stmt: statements)
+      //         std::cerr<< "Before STMT " << stmt->ToString()<<"\n";
       block.second->ReorderLUTs();
-//      for(auto stmt: statements)
-//         std::cerr<< "STMT " << stmt->ToString()<<"\n";
+      //      for(auto stmt: statements)
+      //         std::cerr<< "STMT " << stmt->ToString()<<"\n";
       THROW_ASSERT(nStmts == statements.size(), "unexpected result");
    }
 

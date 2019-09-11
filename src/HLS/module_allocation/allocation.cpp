@@ -1294,7 +1294,8 @@ DesignFlowStep_Status allocation::InternalExec()
             unsigned int modify_tree_index = g->CGetOpNodeInfo(*v)->GetNodeId();
             tree_nodeRef modify_node = TreeM->get_tree_node_const(modify_tree_index);
             auto* gms = GetPointer<gimple_assign>(modify_node);
-            auto ebe = GetPointer<extract_bit_expr>(GET_NODE(gms->op1));;
+            auto ebe = GetPointer<extract_bit_expr>(GET_NODE(gms->op1));
+            ;
             bool intOP0 = tree_helper::is_int(TreeM, GET_INDEX_NODE(ebe->op0));
             if(intOP0)
                current_fu = get_fu(EXTRACT_BIT_EXPR_SIGNED_STD);

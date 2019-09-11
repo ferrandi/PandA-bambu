@@ -1273,10 +1273,10 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
             {
                if(single_proc || output_index == i)
                {
-                  switch (current_output[i])
+                  switch(current_output[i])
                   {
                      case '1':
-                  indented_output_stream->Append(port_name + " = 1'b" + current_output[i] + ";\n");
+                        indented_output_stream->Append(port_name + " = 1'b" + current_output[i] + ";\n");
                         break;
 
                      case '2':
@@ -1295,14 +1295,14 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
       if(!skip_state_transition)
       {
          for(unsigned int i = 0; i < state_transitions.size(); i++)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing transition " + state_transitions[i]);
-         tokenizer transition_tokens(state_transitions[i], sep);
-         tokenizer::const_iterator itt = transition_tokens.begin();
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing transition " + state_transitions[i]);
+            tokenizer transition_tokens(state_transitions[i], sep);
+            tokenizer::const_iterator itt = transition_tokens.begin();
 
-         tokenizer::const_iterator current_input_it;
-         std::string input_string = *itt;
-         if(mod->get_in_port_size() - numInputIgnored)
+            tokenizer::const_iterator current_input_it;
+            std::string input_string = *itt;
+            if(mod->get_in_port_size() - numInputIgnored)
             {
                boost::char_separator<char> comma_sep(",", nullptr);
                tokenizer current_input_tokens(input_string, comma_sep);
@@ -1333,11 +1333,11 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                {
                   bool first_test = true;
                   for(unsigned int ind = 0; ind < mod->get_in_port_size(); ind++)
-               {
-                  port_name = HDL_manager::convert_to_identifier(this, mod->get_in_port(ind)->get_id());
-                  unsigned int port_size = mod->get_in_port(ind)->get_typeRef()->size;
-                  unsigned int vec_size = mod->get_in_port(ind)->get_typeRef()->vector_size;
-                  if(port_name != reset_port && port_name != clock_port && port_name != start_port && port_name != STR(SELECTOR_REGISTER_FILE))
+                  {
+                     port_name = HDL_manager::convert_to_identifier(this, mod->get_in_port(ind)->get_id());
+                     unsigned int port_size = mod->get_in_port(ind)->get_typeRef()->size;
+                     unsigned int vec_size = mod->get_in_port(ind)->get_typeRef()->vector_size;
+                     if(port_name != reset_port && port_name != clock_port && port_name != start_port && port_name != STR(SELECTOR_REGISTER_FILE))
                      {
                         std::string in_or_conditions = *current_input_it;
                         boost::char_separator<char> pipe_sep("|", nullptr);
@@ -1368,7 +1368,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                               {
                                  unsigned n_bits = vec_size == 0 ? port_size : vec_size;
                                  auto pos = boost::lexical_cast<unsigned int>((*in_or_conditions_tokens_it).substr(1));
-                                 res_or_conditions += (n_bits>1 ? std::string("[") + STR(pos) + "]":"") + " == 1'b1";
+                                 res_or_conditions += (n_bits > 1 ? std::string("[") + STR(pos) + "]" : "") + " == 1'b1";
                               }
                               else
                               {
@@ -1462,14 +1462,14 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
             continue;
          if(mod->get_out_port(i)->get_id() == NEXT_STATE_PORT_NAME)
             continue;
-      if(boost::starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") || boost::starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
-      {
-         port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
-         if(single_proc || output_index == i)
-            indented_output_stream->Append(port_name + " = 1'bX;");
-         if(single_proc)
-            indented_output_stream->Append("\n");
-      }
+         if(boost::starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") || boost::starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
+         {
+            port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
+            if(single_proc || output_index == i)
+               indented_output_stream->Append(port_name + " = 1'bX;");
+            if(single_proc)
+               indented_output_stream->Append("\n");
+         }
       }
       indented_output_stream->Append(scc1);
    }

@@ -328,7 +328,7 @@ void bloc::PushAfter(const tree_nodeRef new_stmt, const tree_nodeRef existing_st
 void bloc::ReorderLUTs()
 {
    TreeNodeSet current_uses;
-   for(auto phi: list_of_phi)
+   for(auto phi : list_of_phi)
    {
       auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
       current_uses.insert(gp->res);
@@ -345,10 +345,9 @@ void bloc::ReorderLUTs()
             ++pos;
             continue;
          }
-         auto allDefinedP = [&](tree_nodeRef stmt) -> bool
-         {
+         auto allDefinedP = [&](tree_nodeRef stmt) -> bool {
             const auto& uses = tree_helper::ComputeSsaUses(stmt);
-            for(auto u: uses)
+            for(auto u : uses)
             {
                if(current_uses.find(u.first) == current_uses.end())
                {
@@ -400,7 +399,7 @@ void bloc::ReorderLUTs()
                   else
                      ++posPostponed;
                }
-            } while (restart_postponed);
+            } while(restart_postponed);
             pos = next_stmt;
          }
       }
@@ -410,7 +409,6 @@ void bloc::ReorderLUTs()
       }
    }
 }
-
 
 void bloc::AddPhi(const tree_nodeRef phi)
 {

@@ -76,7 +76,6 @@
 #include <utility>
 #include <vector>
 
-
 // technology/physical_library include
 #include "technology_node.hpp"
 

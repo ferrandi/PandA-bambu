@@ -569,7 +569,7 @@ void WishboneInterfaceTestbench::write_signals(const tree_managerConstRef TreeM,
             /// FIXME: real numbers at the moment have to be considered diffently because of computation of ulp; c++ code is still managed in the old way
             if(tree_helper::is_real(TreeM, pt_type_index) or flag_cpp)
             {
-               writer->write("reg [" + STR(expectedVariableBitSize-1) + ":0] ex_" + variableName + ";\n");
+               writer->write("reg [" + STR(expectedVariableBitSize - 1) + ":0] ex_" + variableName + ";\n");
             }
             else
             {

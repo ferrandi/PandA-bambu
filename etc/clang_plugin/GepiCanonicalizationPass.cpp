@@ -617,13 +617,13 @@ bool GepiCanonicalizationPass::runOnFunction(llvm::Function& function)
    switch(optimization_selection)
    {
       case SROA_ptrIteratorSimplification:
-         llvm::errs()<<"ptr_iterator_simplification\n";
+         llvm::errs() << "ptr_iterator_simplification\n";
          return ptr_iterator_simplification(function);
       case SROA_chunkOperationsLowering:
-         llvm::errs()<<"chunk_operations_lowering\n";
+         llvm::errs() << "chunk_operations_lowering\n";
          return chunk_operations_lowering(function);
       case SROA_bitcastVectorRemoval:
-         llvm::errs()<<"bitcast_vector_removal\n";
+         llvm::errs() << "bitcast_vector_removal\n";
          return bitcast_vector_removal(function);
       default:
          llvm::errs() << "ERR No optimization found\n";

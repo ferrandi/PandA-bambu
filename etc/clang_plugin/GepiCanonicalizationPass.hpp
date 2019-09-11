@@ -42,9 +42,9 @@
 
 enum SROA_optimizations
 {
-    SROA_ptrIteratorSimplification,
-    SROA_chunkOperationsLowering,
-    SROA_bitcastVectorRemoval
+   SROA_ptrIteratorSimplification,
+   SROA_chunkOperationsLowering,
+   SROA_bitcastVectorRemoval
 };
 
 class GepiCanonicalizationPass : public llvm::FunctionPass
@@ -52,8 +52,8 @@ class GepiCanonicalizationPass : public llvm::FunctionPass
  public:
    char ID = 0;
 
-private:
-    unsigned short optimization_selection = 0;
+ private:
+   unsigned short optimization_selection = 0;
 
  public:
    explicit GepiCanonicalizationPass(char& _ID, unsigned short optimization_selection) : llvm::FunctionPass(_ID), optimization_selection(optimization_selection)

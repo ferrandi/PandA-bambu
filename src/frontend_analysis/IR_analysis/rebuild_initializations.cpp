@@ -527,7 +527,7 @@ bool rebuild_initialization2::extract_var_decl(const mem_ref* me, unsigned& vd_i
    {                                      \
       nonConstantVars.insert(VD);         \
       auto key = TM->CGetTreeReindex(VD); \
-      inits.erase(key);                \
+      inits.erase(key);                   \
    } while(0)
 
 #if REBUILD2_DEVEL

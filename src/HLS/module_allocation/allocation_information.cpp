@@ -740,11 +740,11 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index) const
    {
       const auto right = GET_NODE(ga->op1);
       /// currently all the operations introduced after the allocation has been performed are bounded
-      THROW_ASSERT(GetPointer<cst_node>(right) or right->get_kind() == vec_cond_expr_K or right->get_kind() == nop_expr_K or right->get_kind() == lut_expr_K or right->get_kind() == extract_bit_expr_K or right->get_kind() == lshift_expr_K or right->get_kind() == rshift_expr_K or
-                       right->get_kind() == bit_xor_expr_K or right->get_kind() == bit_not_expr_K or right->get_kind() == bit_ior_concat_expr_K or right->get_kind() == bit_ior_expr_K or right->get_kind() == bit_and_expr_K or
-                       right->get_kind() == convert_expr_K or right->get_kind() == truth_and_expr_K or right->get_kind() == truth_or_expr_K or right->get_kind() == truth_xor_expr_K or right->get_kind() == truth_not_expr_K or right->get_kind() == cond_expr_K or
-                       right->get_kind() == ternary_plus_expr_K or right->get_kind() == ternary_mp_expr_K or right->get_kind() == ternary_pm_expr_K or right->get_kind() == ternary_mm_expr_K or right->get_kind() == ssa_name_K or
-                       right->get_kind() == widen_mult_expr_K or right->get_kind() == mult_expr_K,
+      THROW_ASSERT(GetPointer<cst_node>(right) or right->get_kind() == vec_cond_expr_K or right->get_kind() == nop_expr_K or right->get_kind() == lut_expr_K or right->get_kind() == extract_bit_expr_K or right->get_kind() == lshift_expr_K or
+                       right->get_kind() == rshift_expr_K or right->get_kind() == bit_xor_expr_K or right->get_kind() == bit_not_expr_K or right->get_kind() == bit_ior_concat_expr_K or right->get_kind() == bit_ior_expr_K or
+                       right->get_kind() == bit_and_expr_K or right->get_kind() == convert_expr_K or right->get_kind() == truth_and_expr_K or right->get_kind() == truth_or_expr_K or right->get_kind() == truth_xor_expr_K or
+                       right->get_kind() == truth_not_expr_K or right->get_kind() == cond_expr_K or right->get_kind() == ternary_plus_expr_K or right->get_kind() == ternary_mp_expr_K or right->get_kind() == ternary_pm_expr_K or
+                       right->get_kind() == ternary_mm_expr_K or right->get_kind() == ssa_name_K or right->get_kind() == widen_mult_expr_K or right->get_kind() == mult_expr_K,
                    "Unexpected right part: " + right->get_kind_text());
       return true;
    }
@@ -1618,10 +1618,10 @@ unsigned int AllocationInformation::GetCycleLatency(const unsigned int operation
       if(ga)
       {
          const auto right = GET_NODE(ga->op1);
-         if(right->get_kind() == truth_and_expr_K or right->get_kind() == truth_or_expr_K or right->get_kind() == truth_xor_expr_K or right->get_kind() == truth_not_expr_K or right->get_kind() == cond_expr_K or right->get_kind() == vec_cond_expr_K or right->get_kind() == ternary_plus_expr_K or
-            right->get_kind() == ternary_mp_expr_K or right->get_kind() == ternary_pm_expr_K or right->get_kind() == ternary_mm_expr_K or right->get_kind() == ssa_name_K or right->get_kind() == integer_cst_K or right->get_kind() == rshift_expr_K or
-            right->get_kind() == lshift_expr_K or right->get_kind() == plus_expr_K or right->get_kind() == minus_expr_K or right->get_kind() == bit_and_expr_K or right->get_kind() == bit_ior_concat_expr_K or right->get_kind() == lut_expr_K or right->get_kind() == extract_bit_expr_K or
-            right->get_kind() == convert_expr_K or right->get_kind() == nop_expr_K)
+         if(right->get_kind() == truth_and_expr_K or right->get_kind() == truth_or_expr_K or right->get_kind() == truth_xor_expr_K or right->get_kind() == truth_not_expr_K or right->get_kind() == cond_expr_K or right->get_kind() == vec_cond_expr_K or
+            right->get_kind() == ternary_plus_expr_K or right->get_kind() == ternary_mp_expr_K or right->get_kind() == ternary_pm_expr_K or right->get_kind() == ternary_mm_expr_K or right->get_kind() == ssa_name_K or right->get_kind() == integer_cst_K or
+            right->get_kind() == rshift_expr_K or right->get_kind() == lshift_expr_K or right->get_kind() == plus_expr_K or right->get_kind() == minus_expr_K or right->get_kind() == bit_and_expr_K or right->get_kind() == bit_ior_concat_expr_K or
+            right->get_kind() == lut_expr_K or right->get_kind() == extract_bit_expr_K or right->get_kind() == convert_expr_K or right->get_kind() == nop_expr_K)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latency of not allocated fu is 1");
             return 1;

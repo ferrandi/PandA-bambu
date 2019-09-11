@@ -1095,7 +1095,8 @@ const CustomSet<std::string> RTLCharacterization::ComputeCells(const std::string
    std::vector<std::string> component_cells = SplitString(input, ",");
    for(const auto& component_cell : component_cells)
    {
-      std::vector<std::string> component_or_cell = SplitString(component_cell, "-");;
+      std::vector<std::string> component_or_cell = SplitString(component_cell, "-");
+      ;
       THROW_ASSERT(component_or_cell.size() == 2, component_cell);
       THROW_ASSERT(component_or_cell[0] == component, component_or_cell[0] + " vs " + component);
       ret.insert(component_or_cell[1]);

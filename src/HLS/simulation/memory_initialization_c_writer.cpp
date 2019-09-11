@@ -51,9 +51,9 @@
 #include "indented_output_stream.hpp"
 #include "utility.hpp"
 
-MemoryInitializationCWriter::MemoryInitializationCWriter(const IndentedOutputStreamRef _indented_output_stream, const tree_managerConstRef _TM, const BehavioralHelperConstRef _behavioral_helper, const unsigned long int _reserved_mem_bytes, const tree_nodeConstRef _function_parameter, const TestbenchGeneration_MemoryType _testbench_generation_memory_type, const ParameterConstRef _parameters) :
-   MemoryInitializationWriterBase(_TM, _behavioral_helper, _reserved_mem_bytes, _function_parameter, _testbench_generation_memory_type, _parameters),
-   indented_output_stream(_indented_output_stream)
+MemoryInitializationCWriter::MemoryInitializationCWriter(const IndentedOutputStreamRef _indented_output_stream, const tree_managerConstRef _TM, const BehavioralHelperConstRef _behavioral_helper, const unsigned long int _reserved_mem_bytes,
+                                                         const tree_nodeConstRef _function_parameter, const TestbenchGeneration_MemoryType _testbench_generation_memory_type, const ParameterConstRef _parameters)
+    : MemoryInitializationWriterBase(_TM, _behavioral_helper, _reserved_mem_bytes, _function_parameter, _testbench_generation_memory_type, _parameters), indented_output_stream(_indented_output_stream)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -205,14 +205,14 @@ void MemoryInitializationCWriter::Process(const std::string& content)
          indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//memory initialization for variable: " + behavioral_helper->PrintVariable(function_parameter->index) + " value: " + content + "\\n\");\n");
          for(size_t bit = 0; bit < binary_value.size(); bit += 8)
          {
-            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"m" + binary_value.substr(binary_value.size() - 8 -bit, 8) + "\\n\");\n");
+            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"m" + binary_value.substr(binary_value.size() - 8 - bit, 8) + "\\n\");\n");
          }
          break;
       case TestbenchGeneration_MemoryType::OUTPUT_PARAMETER:
          indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output: " + behavioral_helper->PrintVariable(function_parameter->index) + " value: " + content + "\\n\");\n");
          for(size_t bit = 0; bit < binary_value.size(); bit += 8)
          {
-            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"o" + binary_value.substr(binary_value.size() - 8 -bit, 8) + "\\n\");\n");
+            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"o" + binary_value.substr(binary_value.size() - 8 - bit, 8) + "\\n\");\n");
          }
          break;
       case TestbenchGeneration_MemoryType::RETURN:

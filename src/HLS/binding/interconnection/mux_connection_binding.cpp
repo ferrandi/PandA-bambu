@@ -2227,7 +2227,8 @@ void mux_connection_binding::create_connections()
                {
                   add_conversion(port_num, size_tree_var, op, form_par_type, port_index, fu_obj, data, TreeM, tree_var, var_read, size_form_par);
                }
-               else if(first_valid_id && tree_var && first_valid_id != tree_var && form_par_type == 0 && data->CGetOpNodeInfo(*op)->GetOperation() != "rshift_expr" && data->CGetOpNodeInfo(*op)->GetOperation() != "lshift_expr" && data->CGetOpNodeInfo(*op)->GetOperation() != "extract_bit_expr" &&
+               else if(first_valid_id && tree_var && first_valid_id != tree_var && form_par_type == 0 && data->CGetOpNodeInfo(*op)->GetOperation() != "rshift_expr" && data->CGetOpNodeInfo(*op)->GetOperation() != "lshift_expr" &&
+                       data->CGetOpNodeInfo(*op)->GetOperation() != "extract_bit_expr" &&
                        ((tree_helper::is_int(TreeM, tree_var) && tree_helper::is_unsigned(TreeM, first_valid_id)) || (tree_helper::is_unsigned(TreeM, tree_var) && tree_helper::is_int(TreeM, first_valid_id))))
                {
                   size_form_par = tree_helper::size(TreeM, tree_var); // we only need type conversion and not size conversion

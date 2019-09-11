@@ -1011,7 +1011,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                         if(fdCalled->reading_memory)
                         {
                            /// all vovers become vuse
-                           for(auto vo: gn->vovers)
+                           for(auto vo : gn->vovers)
                            {
                               if(not gn->vdef || (GET_INDEX_NODE(vo) != GET_INDEX_NODE(gn->vdef)))
                               {
@@ -1021,7 +1021,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                            }
                         }
                         /// fix vdef
-                        kill_vdef(TM,gn->vdef);
+                        kill_vdef(TM, gn->vdef);
                         gn->vdef = tree_nodeRef();
                         gn->vovers.clear();
                         modified = true;
@@ -1032,7 +1032,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                         if(not fdCalled->reading_memory)
                         {
                            /// fix memdef
-                           kill_vdef(TM,gn->memdef);
+                           kill_vdef(TM, gn->memdef);
                            gn->memdef = tree_nodeRef();
                            modified = true;
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Nothing is written by this function: Fixed MEMDEF ");
@@ -1069,7 +1069,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                      if(fdCalled->reading_memory)
                      {
                         /// all vovers become vuse
-                        for(auto vo: gn->vovers)
+                        for(auto vo : gn->vovers)
                         {
                            if(not gn->vdef || (GET_INDEX_NODE(vo) != GET_INDEX_NODE(gn->vdef)))
                            {
@@ -1079,7 +1079,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                         }
                      }
                      /// fix vdef
-                     kill_vdef(TM,gn->vdef);
+                     kill_vdef(TM, gn->vdef);
                      gn->vdef = tree_nodeRef();
                      gn->vovers.clear();
                      modified = true;
@@ -1090,7 +1090,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                      if(not fdCalled->reading_memory)
                      {
                         /// fix memdef
-                        kill_vdef(TM,gn->memdef);
+                        kill_vdef(TM, gn->memdef);
                         gn->memdef = tree_nodeRef();
                         modified = true;
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Nothing is written by this function: Fixed MEMDEF ");
@@ -1148,7 +1148,6 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   fd->reading_memory = true;
                }
             }
-
          }
          else if(auto gc = GetPointer<gimple_call>(GET_NODE(*stmt)))
          {
@@ -1188,8 +1187,8 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed BB" + boost::lexical_cast<std::string>(block_it->second->number));
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---write flag " +(fd->writing_memory ? std::string("T") : std::string("F")));
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---read flag " +(fd->reading_memory ? std::string("T") : std::string("F")));
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---write flag " + (fd->writing_memory ? std::string("T") : std::string("F")));
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---read flag " + (fd->reading_memory ? std::string("T") : std::string("F")));
    if(modified)
    {
       function_behavior->UpdateBBVersion();
