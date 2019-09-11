@@ -50,17 +50,28 @@
 // include from HLS/simulation
 #include "SimulationInformation.hpp"
 
+/// STD include
+#include <string>
+
+/// STL include
+#include <tuple>
+#include <unordered_set>
+#include <vector>
+
 /// technology/physical_library/models includes
 #include "time_model.hpp"
 
 // include from wrapper/simulation
 #include "SimulationTool.hpp"
 
+/// utility includes
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "utility.hpp"
 
 SimulationEvaluation::SimulationEvaluation(const ParameterConstRef _Param, const HLS_managerRef _hls_mgr, const DesignFlowManagerConstRef _design_flow_manager)
     : EvaluationBaseStep(_Param, _hls_mgr, 0, _design_flow_manager, HLSFlowStep_Type::SIMULATION_EVALUATION), already_executed(false)
 {
+   debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
 }
 
 SimulationEvaluation::~SimulationEvaluation() = default;
