@@ -1244,9 +1244,9 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                skip_state_transition = false;
             }
          }
-         }
-         if(skip_state)
-            continue;
+      }
+      if(skip_state)
+         continue;
 
       indented_output_stream->Append(soc1);
       indented_output_stream->Append(present_state + " :\n");
@@ -1276,7 +1276,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                   switch (current_output[i])
                   {
                      case '1':
-                        indented_output_stream->Append(port_name + " = 1'b" + current_output[i] + ";\n");
+                  indented_output_stream->Append(port_name + " = 1'b" + current_output[i] + ";\n");
                         break;
 
                      case '2':
@@ -1287,14 +1287,14 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                         THROW_ERROR("Unsupported value in current output");
                         break;
                   }
+               }
             }
          }
-      }
       }
 
       if(!skip_state_transition)
       {
-      for(unsigned int i = 0; i < state_transitions.size(); i++)
+         for(unsigned int i = 0; i < state_transitions.size(); i++)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing transition " + state_transitions[i]);
          tokenizer transition_tokens(state_transitions[i], sep);
@@ -1303,122 +1303,122 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
          tokenizer::const_iterator current_input_it;
          std::string input_string = *itt;
          if(mod->get_in_port_size() - numInputIgnored)
-         {
-            boost::char_separator<char> comma_sep(",", nullptr);
-            tokenizer current_input_tokens(input_string, comma_sep);
-            current_input_it = current_input_tokens.begin();
+            {
+               boost::char_separator<char> comma_sep(",", nullptr);
+               tokenizer current_input_tokens(input_string, comma_sep);
+               current_input_it = current_input_tokens.begin();
+               ++itt;
+            }
+            std::string next_state = *itt;
             ++itt;
-         }
-         std::string next_state = *itt;
-         ++itt;
-         std::string transition_outputs = *itt;
-         ++itt;
-         THROW_ASSERT(itt == transition_tokens.end(), "Bad transition format");
+            std::string transition_outputs = *itt;
+            ++itt;
+            THROW_ASSERT(itt == transition_tokens.end(), "Bad transition format");
 
-         if(!unique_transition)
-         {
-            if(i == 0)
+            if(!unique_transition)
             {
-               indented_output_stream->Append("if (");
-            }
-            else if((i + 1) == state_transitions.size())
-            {
-               indented_output_stream->Append("else");
-            }
-            else
-            {
-               indented_output_stream->Append("else if (");
-            }
-            if((i + 1) < state_transitions.size())
-            {
-               bool first_test = true;
-               for(unsigned int ind = 0; ind < mod->get_in_port_size(); ind++)
+               if(i == 0)
+               {
+                  indented_output_stream->Append("if (");
+               }
+               else if((i + 1) == state_transitions.size())
+               {
+                  indented_output_stream->Append("else");
+               }
+               else
+               {
+                  indented_output_stream->Append("else if (");
+               }
+               if((i + 1) < state_transitions.size())
+               {
+                  bool first_test = true;
+                  for(unsigned int ind = 0; ind < mod->get_in_port_size(); ind++)
                {
                   port_name = HDL_manager::convert_to_identifier(this, mod->get_in_port(ind)->get_id());
                   unsigned int port_size = mod->get_in_port(ind)->get_typeRef()->size;
                   unsigned int vec_size = mod->get_in_port(ind)->get_typeRef()->vector_size;
                   if(port_name != reset_port && port_name != clock_port && port_name != start_port && port_name != STR(SELECTOR_REGISTER_FILE))
-                  {
-                     std::string in_or_conditions = *current_input_it;
-                     boost::char_separator<char> pipe_sep("|", nullptr);
-                     tokenizer in_or_conditions_tokens(in_or_conditions, pipe_sep);
-
-                     if((*in_or_conditions_tokens.begin()) != "-")
                      {
-                        if(!first_test)
-                           indented_output_stream->Append(" && ");
-                        else
-                           first_test = false;
-                        bool first_test_or = true;
-                        bool need_parenthesis = false;
-                        std::string res_or_conditions;
-                        for(tokenizer::const_iterator in_or_conditions_tokens_it = in_or_conditions_tokens.begin(); in_or_conditions_tokens_it != in_or_conditions_tokens.end(); ++in_or_conditions_tokens_it)
-                        {
-                           THROW_ASSERT((*in_or_conditions_tokens_it) != "-", "wrong conditions structure");
-                           if(!first_test_or)
-                           {
-                              res_or_conditions += " || ";
-                              need_parenthesis = true;
-                           }
-                           else
-                              first_test_or = false;
+                        std::string in_or_conditions = *current_input_it;
+                        boost::char_separator<char> pipe_sep("|", nullptr);
+                        tokenizer in_or_conditions_tokens(in_or_conditions, pipe_sep);
 
-                           res_or_conditions += port_name;
-                           if((*in_or_conditions_tokens_it)[0] == '&')
-                           {
-                              unsigned n_bits = vec_size == 0 ? port_size : vec_size;
-                              auto pos = boost::lexical_cast<unsigned int>((*in_or_conditions_tokens_it).substr(1));
-                                 res_or_conditions += (n_bits > 1 ? std::string("[") + STR(pos) + "]" : "") + " == 1'b1";
-                           }
+                        if((*in_or_conditions_tokens.begin()) != "-")
+                        {
+                           if(!first_test)
+                              indented_output_stream->Append(" && ");
                            else
+                              first_test = false;
+                           bool first_test_or = true;
+                           bool need_parenthesis = false;
+                           std::string res_or_conditions;
+                           for(tokenizer::const_iterator in_or_conditions_tokens_it = in_or_conditions_tokens.begin(); in_or_conditions_tokens_it != in_or_conditions_tokens.end(); ++in_or_conditions_tokens_it)
                            {
-                              res_or_conditions += std::string(" == ") + ((*in_or_conditions_tokens_it)[0] == '-' ? "-" : "") + (vec_size == 0 ? boost::lexical_cast<std::string>(port_size) : boost::lexical_cast<std::string>(vec_size));
-                              if(port_size > 1 || (port_size == 1 && vec_size > 0))
-                                 res_or_conditions += "'d" + (((*in_or_conditions_tokens_it)[0] == '-') ? ((*in_or_conditions_tokens_it).substr(1)) : *in_or_conditions_tokens_it);
+                              THROW_ASSERT((*in_or_conditions_tokens_it) != "-", "wrong conditions structure");
+                              if(!first_test_or)
+                              {
+                                 res_or_conditions += " || ";
+                                 need_parenthesis = true;
+                              }
                               else
-                                 res_or_conditions += "'b" + *in_or_conditions_tokens_it;
+                                 first_test_or = false;
+
+                              res_or_conditions += port_name;
+                              if((*in_or_conditions_tokens_it)[0] == '&')
+                              {
+                                 unsigned n_bits = vec_size == 0 ? port_size : vec_size;
+                                 auto pos = boost::lexical_cast<unsigned int>((*in_or_conditions_tokens_it).substr(1));
+                                 res_or_conditions += (n_bits>1 ? std::string("[") + STR(pos) + "]":"") + " == 1'b1";
+                              }
+                              else
+                              {
+                                 res_or_conditions += std::string(" == ") + ((*in_or_conditions_tokens_it)[0] == '-' ? "-" : "") + (vec_size == 0 ? boost::lexical_cast<std::string>(port_size) : boost::lexical_cast<std::string>(vec_size));
+                                 if(port_size > 1 || (port_size == 1 && vec_size > 0))
+                                    res_or_conditions += "'d" + (((*in_or_conditions_tokens_it)[0] == '-') ? ((*in_or_conditions_tokens_it).substr(1)) : *in_or_conditions_tokens_it);
+                                 else
+                                    res_or_conditions += "'b" + *in_or_conditions_tokens_it;
+                              }
                            }
+                           if(need_parenthesis)
+                              res_or_conditions = "(" + res_or_conditions + ")";
+                           indented_output_stream->Append(res_or_conditions);
                         }
-                        if(need_parenthesis)
-                           res_or_conditions = "(" + res_or_conditions + ")";
-                        indented_output_stream->Append(res_or_conditions);
+                        ++current_input_it;
                      }
-                     ++current_input_it;
+                  }
+                  indented_output_stream->Append(")");
+               }
+               indented_output_stream->Append(soc);
+               indented_output_stream->Append("begin");
+               indented_output_stream->Append(soc);
+            }
+            if(single_proc || output_index == mod->get_out_port_size())
+               indented_output_stream->Append("_next_state = " + next_state + ";\n");
+            for(unsigned int ind = 0; ind < mod->get_out_port_size(); ind++)
+            {
+               if(mod->get_out_port(ind)->get_id() == PRESENT_STATE_PORT_NAME)
+                  continue;
+               if(mod->get_out_port(ind)->get_id() == NEXT_STATE_PORT_NAME)
+                  continue;
+               port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(ind)->get_id());
+               if(transition_outputs[ind] != '-')
+               {
+                  if(single_proc || output_index == ind)
+                  {
+                     if(transition_outputs[ind] == '2')
+                        indented_output_stream->Append(port_name + " = 1'bX;\n");
+                     else
+                        indented_output_stream->Append(port_name + " = 1'b" + transition_outputs[ind] + ";\n");
                   }
                }
-               indented_output_stream->Append(")");
             }
-            indented_output_stream->Append(soc);
-            indented_output_stream->Append("begin");
-            indented_output_stream->Append(soc);
-         }
-         if(single_proc || output_index == mod->get_out_port_size())
-            indented_output_stream->Append("_next_state = " + next_state + ";\n");
-         for(unsigned int ind = 0; ind < mod->get_out_port_size(); ind++)
-         {
-            if(mod->get_out_port(ind)->get_id() == PRESENT_STATE_PORT_NAME)
-               continue;
-            if(mod->get_out_port(ind)->get_id() == NEXT_STATE_PORT_NAME)
-               continue;
-            port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(ind)->get_id());
-            if(transition_outputs[ind] != '-')
+            if(!unique_transition)
             {
-               if(single_proc || output_index == ind)
-               {
-                  if(transition_outputs[ind] == '2')
-                     indented_output_stream->Append(port_name + " = 1'bX;\n");
-                  else
-                     indented_output_stream->Append(port_name + " = 1'b" + transition_outputs[ind] + ";\n");
-               }
+               indented_output_stream->Append(scc1);
+               indented_output_stream->Append("end");
+               indented_output_stream->Append(scc);
             }
          }
-         if(!unique_transition)
-         {
-            indented_output_stream->Append(scc1);
-            indented_output_stream->Append("end");
-            indented_output_stream->Append(scc);
-         }
-      }
       }
 
       indented_output_stream->Append(scc1);
@@ -1434,7 +1434,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
          {
             if(boost::starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") || boost::starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
             {
-                port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
+               port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
                if(single_proc || output_index == i)
                   indented_output_stream->Append(port_name + " = 1'bX;");
                if(single_proc)
@@ -1442,7 +1442,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
             }
          }
          if(single_proc || output_index == mod->get_out_port_size())
-         indented_output_stream->Append("_next_state = " + present_state + ";");
+            indented_output_stream->Append("_next_state = " + present_state + ";");
          indented_output_stream->Append(scc);
          indented_output_stream->Append("end");
       }
@@ -1456,23 +1456,29 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
    {
       indented_output_stream->Append(soc);
       indented_output_stream->Append("_next_state = " + reset_state + ";\n");
-   for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
-   {
-      if(mod->get_out_port(i)->get_id() == PRESENT_STATE_PORT_NAME)
-         continue;
-      if(mod->get_out_port(i)->get_id() == NEXT_STATE_PORT_NAME)
-         continue;
-      port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
-         indented_output_stream->Append(port_name + " = 1'bX;\n");
-   }
-   indented_output_stream->Append(scc1);
+      for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
+      {
+         if(mod->get_out_port(i)->get_id() == PRESENT_STATE_PORT_NAME)
+            continue;
+         if(mod->get_out_port(i)->get_id() == NEXT_STATE_PORT_NAME)
+            continue;
+      if(boost::starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") || boost::starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
+      {
+         port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
+         if(single_proc || output_index == i)
+            indented_output_stream->Append(port_name + " = 1'bX;");
+         if(single_proc)
+            indented_output_stream->Append("\n");
+      }
+      }
+      indented_output_stream->Append(scc1);
    }
    else
    {
       indented_output_stream->Append("\n");
    }
-      indented_output_stream->Append("end");
-      indented_output_stream->Append(scc);
+   indented_output_stream->Append("end");
+   indented_output_stream->Append(scc);
    indented_output_stream->Append(scc1);
    indented_output_stream->Append("endcase\n");
    indented_output_stream->Append(scc1);
