@@ -79,6 +79,9 @@
 #include "simple_indent.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
+/// STL include
+#include <map>
+
 const unsigned int technology_manager::XML = 1 << 0;
 #if HAVE_FROM_LIBERTY
 #define LIBERTY_VERSION "0.1"
@@ -153,16 +156,16 @@ double technology_manager::get_area(const std::string& fu_name, const std::strin
 #if 0
 double technology_manager::get_height(const std::string&fu_name, const std::string&Library) const
 {
-   technology_nodeRef node = get_fu(fu_name,Library);
-   THROW_ASSERT(GetPointer<functional_unit>(node),"Unit " + fu_name + " not stored into library ("+Library+")");
+   technology_nodeRef node = get_fu(fu_name, Library);
+   THROW_ASSERT(GetPointer<functional_unit>(node), "Unit " + fu_name + " not stored into library (" + Library + ")");
    THROW_ASSERT(GetPointer<cell_model>(GetPointer<functional_unit>(node)->area), "malformed library");
    return GetPointer<cell_model>(GetPointer<functional_unit>(node)->area)->get_height_value();
 }
 
 double technology_manager::get_width(const std::string&fu_name, const std::string&Library) const
 {
-   technology_nodeRef node = get_fu(fu_name,Library);
-   THROW_ASSERT(GetPointer<functional_unit>(node),"Unit " + fu_name + " not stored into library ("+Library+")");
+   technology_nodeRef node = get_fu(fu_name, Library);
+   THROW_ASSERT(GetPointer<functional_unit>(node), "Unit " + fu_name + " not stored into library (" + Library + ")");
    THROW_ASSERT(GetPointer<cell_model>(GetPointer<functional_unit>(node)->area), "malformed library");
    return GetPointer<cell_model>(GetPointer<functional_unit>(node)->area)->get_width_value();
 }
@@ -323,8 +326,7 @@ void technology_manager::gload(const std::string& file_name, const fileIO_istrea
       if(!file or line.size() == 0 or boost::algorithm::starts_with(line, "#"))
          continue;
 
-      std::vector<std::string> splitted;
-      boost::algorithm::split(splitted, line, boost::algorithm::is_any_of(" ;\t"));
+      std::vector<std::string> splitted = SplitString(line, " ; \t");
       if(splitted[0] == "PIN")
          continue;
 

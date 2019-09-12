@@ -88,7 +88,6 @@
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
 #include "fileIO.hpp"
-#include "utility.hpp"
 
 #define SIM_SUBDIR (Param->getOption<std::string>(OPT_output_directory) + std::string("/modelsim"))
 

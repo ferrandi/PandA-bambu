@@ -64,8 +64,10 @@
 #include <unistd.h>
 
 /// STL include
+#include <list>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 #define IVERILOG "iverilog"
 #define IVL "ivl"
@@ -74,7 +76,9 @@
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
 #include "fileIO.hpp"
-#include "utility.hpp"
+
+/// utility include
+#include "string_manipulation.hpp"
 
 #define SIM_SUBDIR (Param->getOption<std::string>(OPT_output_directory) + std::string("/icarus"))
 
@@ -169,8 +173,7 @@ unsigned int IcarusWrapper::compile_verilog(const std::string& FileName)
       IncludeList = Param->getOption<std::string>("include");
    if(IncludeList.size())
    {
-      std::vector<std::string> splitted;
-      boost::algorithm::split(splitted, IncludeList, boost::algorithm::is_any_of(";"));
+      std::vector<std::string> splitted = SplitString(IncludeList, ";");
       for(unsigned int i = 0; i < splitted.size(); i++)
       {
          Include += " -y " + splitted[i];

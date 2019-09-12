@@ -111,14 +111,12 @@ void TestVectorParser::ParseUserString(std::vector<std::map<std::string, std::st
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Preprocessed string " + local_string);
    test_vectors.push_back(std::map<std::string, std::string>());
-   std::vector<std::string> testbench_parameters;
-   boost::algorithm::split(testbench_parameters, local_string, boost::algorithm::is_any_of("$"));
+   std::vector<std::string> testbench_parameters = SplitString(local_string, "$");
    unsigned int index = 0;
    for(auto parameter : testbench_parameters)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Examining " + parameter);
-      std::vector<std::string> temp;
-      boost::algorithm::split(temp, parameter, boost::algorithm::is_any_of("="));
+      std::vector<std::string> temp = SplitString(parameter, "=");
       if(temp.size() != 2)
       {
          THROW_ERROR("Error in processing --simulate arg");

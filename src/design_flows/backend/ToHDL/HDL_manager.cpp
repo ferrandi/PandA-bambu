@@ -958,14 +958,12 @@ void HDL_manager::write_flopoco_module(const structural_objectRef& cir, std::lis
 
 void HDL_manager::write_behavioral(const language_writerRef writer, const structural_objectRef&, const std::string& behav) const
 {
-   std::vector<std::string> SplitVec;
-   boost::algorithm::split(SplitVec, behav, boost::algorithm::is_any_of(";"));
+   std::vector<std::string> SplitVec = SplitString(behav, ";");
    THROW_ASSERT(SplitVec.size(), "Expected at least one behavioral description");
 
    for(auto& i : SplitVec)
    {
-      std::vector<std::string> SplitVec2;
-      boost::algorithm::split(SplitVec2, i, boost::algorithm::is_any_of("="));
+      std::vector<std::string> SplitVec2 = SplitString(i, "=");
       THROW_ASSERT(SplitVec2.size() == 2, "Expected two operands");
       writer->write_assign(SplitVec2[0], SplitVec2[1]);
    }
@@ -978,8 +976,7 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
    std::string fsm_desc = fsm_desc_i;
    boost::algorithm::erase_all(fsm_desc, "\n");
 
-   std::vector<std::string> SplitVec;
-   boost::algorithm::split(SplitVec, fsm_desc, boost::algorithm::is_any_of(";"));
+   std::vector<std::string> SplitVec = SplitString(fsm_desc, ";");
    THROW_ASSERT(SplitVec.size() > 1, "Expected more than one ';' in the fsm specification (the first is the reset)");
 
    typedef boost::tokenizer<boost::char_separator<char>> tokenizer;
