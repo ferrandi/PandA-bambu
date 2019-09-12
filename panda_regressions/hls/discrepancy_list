@@ -618,7 +618,6 @@ gcc_regression_simple/packed-2.c
 gcc_regression_simple/pending-4.c
 gcc_regression_simple/pr15262-1.c
 gcc_regression_simple/pr15262.c
-gcc_regression_simple/pr15296.c
 gcc_regression_simple/pr16790-1.c
 gcc_regression_simple/pr17078-1.c
 gcc_regression_simple/pr17133.c
