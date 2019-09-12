@@ -58,6 +58,13 @@
 /// STD include
 #include <fstream>
 
+/// STL includes
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
+
 /// Tree include
 #include "basic_block.hpp"
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
@@ -520,8 +527,7 @@ bool rebuild_initialization2::extract_var_decl(const mem_ref* me, unsigned& vd_i
    {                                      \
       nonConstantVars.insert(VD);         \
       auto key = TM->CGetTreeReindex(VD); \
-      if(inits.find(key) != inits.end())  \
-         inits.erase(key);                \
+      inits.erase(key);                \
    } while(0)
 
 #if REBUILD2_DEVEL
@@ -539,8 +545,7 @@ tree_nodeRef getAssign(tree_nodeRef SSAop, unsigned vd_index, std::set<unsigned>
    {
       nonConstantVars.insert(vd_index);
       auto key = TM->CGetTreeReindex(vd_index);
-      if(inits.find(key) != inits.end())
-         inits.erase(key);
+      inits.erase(key);
       return tree_nodeRef();
    }
    else
@@ -590,7 +595,7 @@ bool rebuild_initialization2::look_for_ROMs()
          }
          if(stmt_kind == gimple_assign_K && gn->vdef)
          {
-            auto* ga = dynamic_cast<gimple_assign*>(gn);
+            auto ga = GetPointer<gimple_assign>(GET_NODE(inst));
             auto op0 = GET_NODE(ga->op0);
             auto op1 = GET_NODE(ga->op1);
             if(op0->get_kind() == mem_ref_K)
@@ -869,7 +874,7 @@ bool rebuild_initialization2::look_for_ROMs()
          }
          else if(stmt_kind == gimple_assign_K && !gn->vuses.empty())
          {
-            auto* ga = dynamic_cast<gimple_assign*>(gn);
+            auto ga = GetPointer<gimple_assign>(GET_NODE(inst));
             auto op1 = GET_NODE(ga->op1);
             if(op1->get_kind() == mem_ref_K)
             {
@@ -881,8 +886,7 @@ bool rebuild_initialization2::look_for_ROMs()
                if(resolved)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---variable read: " + TM->get_tree_node_const(vd_index)->ToString());
-                  if(VarsReadSeen.find(vd_index) != VarsReadSeen.end())
-                     VarsReadSeen.insert(vd_index);
+                  VarsReadSeen.insert(vd_index);
                }
                else
                {
@@ -961,7 +965,7 @@ bool rebuild_initialization2::look_for_ROMs()
          auto stmt_kind = GET_NODE(inst)->get_kind();
          if(stmt_kind == gimple_assign_K && !gn->vuses.empty())
          {
-            auto* ga = dynamic_cast<gimple_assign*>(gn);
+            auto ga = GetPointer<gimple_assign>(GET_NODE(inst));
             auto op1 = GET_NODE(ga->op1);
             if(op1->get_kind() == mem_ref_K)
             {
@@ -1062,7 +1066,7 @@ bool rebuild_initialization2::look_for_ROMs()
          auto stmt_kind = GET_NODE(inst)->get_kind();
          if(stmt_kind == gimple_assign_K && gn->vdef)
          {
-            auto* ga = dynamic_cast<gimple_assign*>(gn);
+            auto ga = GetPointer<gimple_assign>(GET_NODE(inst));
             auto op0 = GET_NODE(ga->op0);
             if(op0->get_kind() == mem_ref_K)
             {

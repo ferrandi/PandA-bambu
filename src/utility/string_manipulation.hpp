@@ -41,12 +41,11 @@
 #define STRING_MANIPULATION_HPP
 
 /// boost includes
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/split.hpp>
 #include <boost/lexical_cast.hpp>
 
 /// STD include
 #include <cxxabi.h>
+#include <string>
 
 /// STL include
 #include <vector>
@@ -57,6 +56,14 @@
 #ifndef STR
 #define STR(s) boost::lexical_cast<std::string>(s)
 #endif
+
+/**
+ * Function which splits a string into tokens
+ * @param input is the string to be split
+ * @param seperators is the set of characters to be used to compute the tokens
+ * @return the identified tokens
+ */
+const std::vector<std::string> SplitString(const std::string & input, const std::string & separators);
 
 /**
  * Function which adds escape to selected characters
@@ -108,8 +115,7 @@ inline void remove_escaped(std::string& ioString)
 inline std::string TrimSpaces(const std::string& value)
 {
    std::string temp;
-   std::vector<std::string> splitted;
-   boost::algorithm::split(splitted, value, boost::algorithm::is_any_of(" \n\t\r"));
+   std::vector<std::string> splitted = SplitString(value, " \n\t\r");
    bool first = true;
    for(auto& i : splitted)
    {
@@ -265,7 +271,7 @@ inline std::string convert_fp_to_string(std::string num, unsigned int precision)
  */
 std::string ConvertInBinary(const std::string& C_value, const unsigned int precision, const bool real_type, const bool unsigned_type);
 
-inline unsigned int ac_type_bitwidth(const std::string intType, bool& is_signed, bool& is_fixed)
+inline unsigned int ac_type_bitwidth(const std::string & intType, bool& is_signed, bool& is_fixed)
 {
    is_fixed = false;
    is_signed = false;

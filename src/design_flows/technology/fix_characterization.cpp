@@ -45,6 +45,13 @@
 ///. include
 #include "Parameter.hpp"
 
+/// STD include
+#include <string>
+
+/// STL includes
+#include <unordered_set>
+#include <vector>
+
 /// technology include
 #include "technology_manager.hpp"
 
@@ -113,8 +120,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
             /// shift ops
             if(template_name == "rshift_expr_FU" || template_name == "ui_rshift_expr_FU" || template_name == "lshift_expr_FU" || template_name == "ui_lshift_expr_FU" || template_name == "ui_lrotate_expr_FU" || template_name == "ui_rrotate_expr_FU")
             {
-               std::vector<std::string> template_parameters;
-               boost::algorithm::split(template_parameters, single_fu->fu_template_parameters, boost::algorithm::is_any_of(" "));
+               std::vector<std::string> template_parameters = SplitString(single_fu->fu_template_parameters, " ");
                THROW_ASSERT(template_parameters.size() == 3, single_fu->fu_template_parameters);
                if(template_parameters[1] == "0")
                {
@@ -134,8 +140,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
             if(template_name == "vec_rshift_expr_FU" || template_name == "ui_vec_rshift_expr_FU" || template_name == "vec1_rshift_expr_FU" || template_name == "ui_vec1_rshift_expr_FU" || template_name == "vec_lshift_expr_FU" ||
                template_name == "ui_vec_lshift_expr_FU" || template_name == "vec1_lshift_expr_FU" || template_name == "ui_vec1_lshift_expr_FU")
             {
-               std::vector<std::string> template_parameters;
-               boost::algorithm::split(template_parameters, single_fu->fu_template_parameters, boost::algorithm::is_any_of(" "));
+               std::vector<std::string> template_parameters = SplitString(single_fu->fu_template_parameters, " ");
                THROW_ASSERT(template_parameters.size() >= 4, single_fu->fu_template_parameters);
                if(template_parameters[2] == "0")
                {
@@ -169,8 +174,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
             /// bitwise ops
             if(template_name == "bit_and_expr_FU" || template_name == "ui_bit_and_expr_FU" || template_name == "bit_ior_expr_FU" || template_name == "ui_bit_ior_expr_FU")
             {
-               std::vector<std::string> template_parameters;
-               boost::algorithm::split(template_parameters, single_fu->fu_template_parameters, boost::algorithm::is_any_of(" "));
+               std::vector<std::string> template_parameters = SplitString(single_fu->fu_template_parameters, " ");
                THROW_ASSERT(template_parameters.size() == 3, single_fu->fu_template_parameters);
                if(template_parameters[0] == "0" || template_parameters[1] == "0")
                {
@@ -189,8 +193,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
             /// vectorize bitwise ops
             if(template_name == "vec_bit_and_expr_FU" || template_name == "ui_vec_bit_and_expr_FU" || template_name == "vec_bit_ior_expr_FU" || template_name == "ui_vec_bit_ior_expr_FU")
             {
-               std::vector<std::string> template_parameters;
-               boost::algorithm::split(template_parameters, single_fu->fu_template_parameters, boost::algorithm::is_any_of(" "));
+               std::vector<std::string> template_parameters = SplitString(single_fu->fu_template_parameters, " ");
                THROW_ASSERT(template_parameters.size() >= 5, single_fu->fu_template_parameters);
                if(template_parameters[0] == "0" || template_parameters[2] == "0")
                {
@@ -209,8 +212,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
             /// cond expr ops
             if(template_name == "cond_expr_FU" || template_name == "ui_cond_expr_FU" || template_name == "fp_cond_expr_FU")
             {
-               std::vector<std::string> template_parameters;
-               boost::algorithm::split(template_parameters, single_fu->fu_template_parameters, boost::algorithm::is_any_of(" "));
+               std::vector<std::string> template_parameters = SplitString(single_fu->fu_template_parameters, " ");
                THROW_ASSERT(template_parameters.size() == 4, single_fu->fu_template_parameters);
                if(template_parameters[0] == "0")
                {
@@ -229,8 +231,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
             /// vectorize cond expr ops
             if(template_name == "vec_cond_expr_FU" || template_name == "ui_vec_cond_expr_FU")
             {
-               std::vector<std::string> template_parameters;
-               boost::algorithm::split(template_parameters, single_fu->fu_template_parameters, boost::algorithm::is_any_of(" "));
+               std::vector<std::string> template_parameters = SplitString(single_fu->fu_template_parameters, " ");
                THROW_ASSERT(template_parameters.size() >= 6, single_fu->fu_template_parameters);
                if(template_parameters[0] == "0")
                {
@@ -250,8 +251,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
             ///64 bits plus/minus
             if(template_name == "plus_expr_FU" or template_name == "ui_plus_expr_FU" or template_name == "minus_expr_FU" or template_name == "ui_minus_expr_FU")
             {
-               std::vector<std::string> template_parameters;
-               boost::algorithm::split(template_parameters, single_fu->fu_template_parameters, boost::algorithm::is_any_of(" "));
+               std::vector<std::string> template_parameters = SplitString(single_fu->fu_template_parameters, " ");
                const auto output_size = boost::lexical_cast<size_t>(template_parameters.back());
                ///Strictly larger than 32 (i.e., not 32)
                if(output_size > 32)
@@ -261,7 +261,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
                      if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Fixing execution time of " + GetPointer<const operation>(op)->operation_name + " on " + fu.first);
-                        (GetPointer<operation>(op))->time_m->set_execution_time(GetPointer<operation>(op)->time_m->get_execution_time() + connection_time ,0);
+                        (GetPointer<operation>(op))->time_m->set_execution_time(GetPointer<operation>(op)->time_m->get_execution_time() + connection_time, 0);
                      }
                   }
                }
@@ -269,8 +269,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
             ///64 bits ternary
             if(template_name == "ternary_alu_expr_FU" or template_name == "ui_ternary_alu_expr_FU" or template_name == "ternary_mm_expr_FU" or template_name == "ui_ternary_mm_expr_FU" or template_name == "ternary_mp_expr_FU" or template_name == "ui_ternary_mp_expr_FU" or template_name == "ternary_pm_expr_FU" or template_name == "ui_ternary_pm_expr_FU" or template_name == "ternary_plus_expr_FU" or template_name == "ui_ternary_plus_expr_FU")
             {
-               std::vector<std::string> template_parameters;
-               boost::algorithm::split(template_parameters, single_fu->fu_template_parameters, boost::algorithm::is_any_of(" "));
+               std::vector<std::string> template_parameters = SplitString(single_fu->fu_template_parameters, " ");
                const auto output_size = boost::lexical_cast<size_t>(template_parameters.back());
                ///Strictly larger than 32 (i.e., not 32)
                if(output_size > 32)
@@ -280,7 +279,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
                      if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Fixing execution time of " + GetPointer<const operation>(op)->operation_name + " on " + fu.first);
-                        (GetPointer<operation>(op))->time_m->set_execution_time(GetPointer<operation>(op)->time_m->get_execution_time() + connection_time ,0);
+                        (GetPointer<operation>(op))->time_m->set_execution_time(GetPointer<operation>(op)->time_m->get_execution_time() + connection_time, 0);
                      }
                   }
                }
@@ -313,8 +312,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
                if(single_fu->fu_template_parameters.find(" 0") != std::string::npos or (single_fu->fu_template_parameters.size() >= 2 and single_fu->fu_template_parameters.substr(0, 2) == "0 "))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fixing " + single_fu->get_name());
-                  std::vector<std::string> template_parameters;
-                  boost::algorithm::split(template_parameters, single_fu->fu_template_parameters, boost::algorithm::is_any_of(" "));
+               std::vector<std::string> template_parameters = SplitString(single_fu->fu_template_parameters, " ");
                   const auto output_size = boost::lexical_cast<size_t>(template_parameters.back());
                   std::string cell_name = template_name;
                   for(const auto& template_parameter : template_parameters)

@@ -1494,6 +1494,7 @@ AC_CONFIG_FILES(
                  examples/mm/Makefile
                  examples/mm_float/Makefile
                  examples/omp_simd/Makefile
+                 examples/parallel_queries/Makefile
                  examples/libm/Makefile
                  examples/softfloat/Makefile
                  examples/VGA/Makefile

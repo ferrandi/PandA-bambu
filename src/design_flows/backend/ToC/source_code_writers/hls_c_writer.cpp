@@ -442,8 +442,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef behavio
             if(curr_test_vector.find(param) != curr_test_vector.end())
                test_v = curr_test_vector.find(param)->second;
 
-            std::vector<std::string> splitted;
-            boost::algorithm::split(splitted, test_v, boost::algorithm::is_any_of(","));
+            std::vector<std::string> splitted = SplitString(test_v, ",");
 
             unsigned int base_type_bytesize = tree_helper::size(TM, base_type) / 8;
             if(base_type_bytesize == 0) // must be at least a byte
@@ -467,9 +466,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef behavio
             {
                if(!reference_type_p && !interfaceBaseAlloc && (behavioral_helper->is_a_struct(base_type) || behavioral_helper->is_an_union(base_type)))
                {
-                  std::vector<std::string> splitted_fields;
-                  std::string field_value = splitted[i];
-                  boost::algorithm::split(splitted_fields, field_value, boost::algorithm::is_any_of("|"));
+                  std::vector<std::string> splitted_fields = SplitString(splitted[i], "|");
                   const auto fields = tree_helper::CGetFieldTypes(TM->CGetTreeNode(base_type));
                   size_t n_values = splitted_fields.size();
                   unsigned int index = 0;
@@ -718,8 +715,7 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
          if(flag_cpp or interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
          {
             bool reference_type_p = false;
-            std::vector<std::string> splitted;
-            boost::algorithm::split(splitted, test_v, boost::algorithm::is_any_of(","));
+            std::vector<std::string> splitted = SplitString(test_v, ",");
 
             unsigned int base_type = tree_helper::get_type_index(TM, p);
             tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
@@ -1001,9 +997,8 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
          {
             size_t printed_bytes = 0;
             std::string bits_offset = "";
-            std::vector<std::string> splitted;
+            std::vector<std::string> splitted = SplitString(test_v, ",");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Processing c++ init " + test_v);
-            boost::algorithm::split(splitted, test_v, boost::algorithm::is_any_of(","));
             for(unsigned int i = 0; i < splitted.size(); i++)
             {
                THROW_ASSERT(splitted[i] != "", "Not well formed test vector: " + test_v);
@@ -1042,8 +1037,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                   unsigned int data_bitsize = tree_helper::size(TM, ptd_base_type);
                   if(behavioral_helper->is_a_struct(ptd_base_type))
                   {
-                     std::vector<std::string> splitted_fields;
-                     boost::algorithm::split(splitted_fields, initial_string, boost::algorithm::is_any_of("|"));
+                     std::vector<std::string> splitted_fields = SplitString(initial_string, "|");
                      const auto fields = tree_helper::CGetFieldTypes(TM->CGetTreeNode(ptd_base_type));
                      size_t n_values = splitted_fields.size();
                      unsigned int index = 0;
