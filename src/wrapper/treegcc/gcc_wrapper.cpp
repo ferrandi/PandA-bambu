@@ -416,7 +416,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       else
       {
          const auto top_functions_names = Param->getOption<const std::list<std::string>>(OPT_top_functions_names);
-         addPlugin = top_functions_names.size() == 1;
+         addPlugin = top_functions_names.size() == 1 && !Param->isOption(OPT_top_design_name);
          fname = top_functions_names.front();
          if(fname == "main" && !compiler.is_clang)
             addPlugin = false;
@@ -452,9 +452,19 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       }
    }
 
+   /// manage optimization level
+   auto local_parameters_line = parameters_line;
+   if(cm == GccWrapper_CompilerMode::CM_LTO)
+   {
+      boost::replace_all(local_parameters_line, "-O4", "");
+      boost::replace_all(local_parameters_line, "-O3", "");
+      boost::replace_all(local_parameters_line, "-O2", "");
+      boost::replace_all(local_parameters_line, "-O1", "");
+   }
+
    if(!(Param->getOption<bool>(OPT_compute_size_of)))
       command += " -D\"" + std::string(STR_CST_panda_sizeof) + "(arg)=" + STR_CST_string_sizeof + "(#arg)\"";
-   command += " " + parameters_line;
+   command += " " + local_parameters_line;
    if(original_file_name == "-" or original_file_name == "/dev/null")
    {
       command += real_file_name;
@@ -670,7 +680,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
       else if(Param->isOption(OPT_top_functions_names))
       {
          const auto top_functions_names = Param->getOption<const std::list<std::string>>(OPT_top_functions_names);
-         addTFNPlugin = top_functions_names.size() == 1;
+         addTFNPlugin = top_functions_names.size() == 1 && !Param->isOption(OPT_top_design_name);
          fname = top_functions_names.front();
          if(fname == "main" && !compiler.is_clang)
             addTFNPlugin = false;
