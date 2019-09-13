@@ -90,9 +90,18 @@ struct ChunkInit
    }
 };
 
-void recursive_copy_lowering(llvm::Type* type, std::vector<unsigned long long> gepi_idxs, llvm::Value* load_ptr, llvm::Value* store_ptr, llvm::LoadInst* load_inst, llvm::StoreInst* store_inst)
+void recursive_copy_lowering(llvm::Type* type, std::vector<unsigned long long> gepi_idxs, llvm::Value* load_ptr, llvm::Value* store_ptr, llvm::LoadInst* load_inst, llvm::StoreInst* store_inst, unsigned long long fitting)
 {
-   if(type->isAggregateType())
+   if(fitting > 1)
+   {
+      gepi_idxs.push_back(0);
+      for(unsigned long long idx = 0; idx < fitting; ++idx)
+      {
+         gepi_idxs.back() = idx;
+         recursive_copy_lowering(type, gepi_idxs, load_ptr, store_ptr, load_inst, store_inst, 1);
+      }
+   }
+   else if(type->isAggregateType())
    {
       gepi_idxs.push_back(0);
 
@@ -101,7 +110,7 @@ void recursive_copy_lowering(llvm::Type* type, std::vector<unsigned long long> g
          for(unsigned long long idx = 0; idx < type->getStructNumElements(); ++idx)
          {
             gepi_idxs.back() = idx;
-            recursive_copy_lowering(type->getStructElementType(idx), gepi_idxs, load_ptr, store_ptr, load_inst, store_inst);
+            recursive_copy_lowering(type->getStructElementType(idx), gepi_idxs, load_ptr, store_ptr, load_inst, store_inst, 1);
          }
       }
       else if(type->isArrayTy())
@@ -109,7 +118,7 @@ void recursive_copy_lowering(llvm::Type* type, std::vector<unsigned long long> g
          for(unsigned long long idx = 0; idx < type->getArrayNumElements(); ++idx)
          {
             gepi_idxs.back() = idx;
-            recursive_copy_lowering(type->getArrayElementType(), gepi_idxs, load_ptr, store_ptr, load_inst, store_inst);
+            recursive_copy_lowering(type->getArrayElementType(), gepi_idxs, load_ptr, store_ptr, load_inst, store_inst, 1);
          }
       }
       else
@@ -127,7 +136,11 @@ void recursive_copy_lowering(llvm::Type* type, std::vector<unsigned long long> g
          gepi_name += "." + std::to_string(idx);
          gepi_value_idxs.push_back(llvm::ConstantInt::get(llvm::IntegerType::get(load_ptr->getContext(), 32), idx));
       }
-
+      load_ptr->dump();
+      for(const auto& v : gepi_value_idxs)
+      {
+         v->dump();
+      }
       llvm::GetElementPtrInst* load_gep_inst = llvm::GetElementPtrInst::Create(nullptr, load_ptr, gepi_value_idxs, gepi_name, load_inst);
       llvm::GetElementPtrInst* store_gep_inst = llvm::GetElementPtrInst::Create(nullptr, store_ptr, gepi_value_idxs, gepi_name, store_inst);
 
@@ -210,9 +223,25 @@ void recursive_init_lowering(llvm::Type* type, llvm::ConstantInt* init_value, st
    }
 }
 
-void lower_chunk_copy(const ChunkCopy& chunk_copy)
+void lower_chunk_copy(const ChunkCopy& chunk_copy, const llvm::DataLayout& DL)
 {
-   recursive_copy_lowering(chunk_copy.src_ty->getPointerElementType(), std::vector<unsigned long long>(1, 0), chunk_copy.loaded_ptr, chunk_copy.stored_ptr, chunk_copy.load_inst, chunk_copy.store_inst);
+   llvm::errs() << "INFO: Lowered chunk copy\n";
+   llvm::errs() << "          Load bitcast:  ";
+   chunk_copy.load_bitcast_op->dump();
+   llvm::errs() << "          Load inst:     ";
+   chunk_copy.load_inst->dump();
+   llvm::errs() << "          Store bitcast: ";
+   chunk_copy.store_bitcast_op->dump();
+   llvm::errs() << "          Store inst:    ";
+   chunk_copy.store_bitcast_op->dump();
+
+   double fitting = (double)DL.getTypeAllocSize(chunk_copy.dest_ty->getPointerElementType()) / (double)DL.getTypeAllocSize(chunk_copy.src_ty->getPointerElementType());
+   std::vector<unsigned long long> gepi_idxs = std::vector<unsigned long long>();
+   if(fitting == 1)
+   {
+      gepi_idxs.push_back(0);
+   }
+   recursive_copy_lowering(chunk_copy.src_ty->getPointerElementType(), gepi_idxs, chunk_copy.loaded_ptr, chunk_copy.stored_ptr, chunk_copy.load_inst, chunk_copy.store_inst, fitting);
 
    chunk_copy.store_inst->eraseFromParent();
    if(llvm::BitCastInst* store_bitcast = llvm::dyn_cast<llvm::BitCastInst>(chunk_copy.store_bitcast_op))
@@ -237,6 +266,16 @@ void lower_chunk_copy(const ChunkCopy& chunk_copy)
 
 void lower_chunk_init(const ChunkInit& chunk_init)
 {
+   llvm::errs() << "INFO: Lowered chunk init\n";
+   llvm::errs() << "          Store bitcast: ";
+   chunk_init.store_bitcast_op->dump();
+   llvm::errs() << "          Store inst:    ";
+   chunk_init.store_bitcast_op->dump();
+   llvm::errs() << "          Stored val:    ";
+   chunk_init.stored_value->dump();
+   llvm::errs() << "          Stored ptr:    ";
+   chunk_init.stored_ptr->dump();
+
    const llvm::DataLayout& DL = chunk_init.store_inst->getModule()->getDataLayout();
    unsigned long long lo_bit = 0;
    unsigned long long hi_bit = DL.getTypeSizeInBits(chunk_init.src_ty->getPointerElementType());
@@ -480,7 +519,7 @@ bool chunk_operations_lowering(llvm::Function& function)
 
    for(const ChunkCopy& chunk_copy : chunk_copy_vec)
    {
-      lower_chunk_copy(chunk_copy);
+      lower_chunk_copy(chunk_copy, function.getParent()->getDataLayout());
    }
 
    for(const ChunkInit& chunk_init : chunk_init_vec)
@@ -617,13 +656,10 @@ bool GepiCanonicalizationPass::runOnFunction(llvm::Function& function)
    switch(optimization_selection)
    {
       case SROA_ptrIteratorSimplification:
-         llvm::errs() << "ptr_iterator_simplification\n";
          return ptr_iterator_simplification(function);
       case SROA_chunkOperationsLowering:
-         llvm::errs() << "chunk_operations_lowering\n";
          return chunk_operations_lowering(function);
       case SROA_bitcastVectorRemoval:
-         llvm::errs() << "bitcast_vector_removal\n";
          return bitcast_vector_removal(function);
       default:
          llvm::errs() << "ERR No optimization found\n";
