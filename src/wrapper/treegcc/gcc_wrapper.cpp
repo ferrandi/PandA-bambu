@@ -411,6 +411,11 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
                   command += " -fplugin=" + compiler.GepiCanon_plugin_obj;
                }
                command += " -fplugin=" + compiler.CSROA_plugin_obj + " -mllvm -panda-KN=" + fname;
+               if(Param->IsParameter("max-CSROA"))
+               {
+                  auto max_CSROA = Param->GetParameter<int>("max-CSROA");
+                  command += " -mllvm -csroa-max-transformations=" + STR(max_CSROA);
+               }
             }
          }
          else
@@ -2817,6 +2822,11 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
    boost::replace_all(renamed_pluginCSROA, ".so", "_opt.so");
    recipe += " -load=" + renamed_pluginCSROA;
    recipe += " -panda-KN=" + fname;
+   if(Param->IsParameter("max-CSROA"))
+   {
+      auto max_CSROA = Param->GetParameter<int>("max-CSROA");
+      recipe += " -csroa-max-transformations=" + STR(max_CSROA);
+   }
 #endif
 #if HAVE_I386_CLANG4_COMPILER
    if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG4)
@@ -2989,7 +2999,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
                    "-lcssa "
                    "-scalar-evolution "
                    "-loop-unroll ";
-         complex_recipe += " -" + expandMemOps_plugin_name  + " -" + CSROA_plugin_name+"WI" +
+         complex_recipe += " -" + expandMemOps_plugin_name  + " -" + CSROA_plugin_name+"WI " +
                            "-domtree -basicaa -aa -memdep -dse -aa -memoryssa -early-cse-memssa -constprop -ipsccp -globaldce -domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops -loop-simplify -lcssa-verification -lcssa -basicaa -aa "
                            "-scalar-evolution -loop-unroll "
                    " -dse -loop-unroll "
