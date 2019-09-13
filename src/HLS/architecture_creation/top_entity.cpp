@@ -36,9 +36,6 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "top_entity.hpp"
@@ -66,6 +63,15 @@
 #include "BambuParameter.hpp"
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
+
+/// STD include
+#include <string>
+
+/// STL includes
+#include <list>
+#include <map>
+#include <tuple>
+#include <unordered_set>
 
 /// technology/physical_library include
 #include "copyrights_strings.hpp"
@@ -220,7 +226,7 @@ DesignFlowStep_Status top_entity::InternalExec()
    if(datapath_start)
       SM->add_connection(sync_datapath_controller, controller_start);
    structural_objectRef done_signal_out;
-   if(HLS->registered_done_port && parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR)
+   if(HLS->registered_done_port and (parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR or parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR))
    {
       const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
       std::string delay_unit;
@@ -333,15 +339,28 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
 
    const structural_objectRef& Datapath = HLS->datapath->get_circ();
    const std::list<unsigned int>& function_parameters = BH->get_parameters();
-   conn_binding& conn = *(HLS->Rconn);
+   const auto conn = HLS->Rconn;
    for(const auto function_parameter : function_parameters)
    {
-      generic_objRef input = conn.get_port(function_parameter, conn_binding::IN);
-      structural_objectRef in_obj = input->get_structural_obj();
-      structural_type_descriptorRef port_type = in_obj->get_typeRef();
+      // generic_objRef input = conn.get_port(function_parameter, conn_binding::IN);
+      // structural_objectRef in_obj = input->get_structural_obj();
+      // structural_type_descriptorRef port_type = in_obj->get_typeRef();
+      std::string prefix = "in_port_";
+      structural_objectRef in_obj = Datapath->find_member(prefix + BH->PrintVariable(function_parameter), port_o_K, Datapath); // port get by name in order to do not use conn_binding
+      THROW_ASSERT(in_obj, "in_obj is not a port");
+      structural_type_descriptorRef port_type;
+      if(HLSMgr->Rmem->has_base_address(function_parameter) && !HLSMgr->Rmem->has_parameter_base_address(function_parameter, HLS->functionId) && !HLSMgr->Rmem->is_parm_decl_stored(function_parameter))
+      {
+         port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));
+      }
+      else
+         port_type = structural_type_descriptorRef(new structural_type_descriptor(function_parameter, BH));
       structural_objectRef top_obj;
       if(in_obj->get_kind() == port_vector_o_K)
+      {
+         THROW_ERROR("Should never be reached, in_obj is not a port vector");
          top_obj = SM->add_port_vector(FB->CGetBehavioralHelper()->PrintVariable(function_parameter), port_o::IN, GetPointer<port_o>(in_obj)->get_ports_size(), circuit, port_type);
+      }
       else
          top_obj = SM->add_port(FB->CGetBehavioralHelper()->PrintVariable(function_parameter), port_o::IN, circuit, port_type);
       if(has_registered_inputs)
@@ -364,9 +383,25 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
    if(return_type_index)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Return type index is " + STR(return_type_index));
-      generic_objRef return_port = conn.get_port(return_type_index, conn_binding::OUT);
-      structural_objectRef ret_obj = return_port->get_structural_obj();
-      structural_type_descriptorRef port_type = ret_obj->get_typeRef();
+      structural_type_descriptorRef port_type;
+      structural_objectRef ret_obj;
+      if(conn)
+      {
+         generic_objRef return_port = conn->get_port(return_type_index, conn_binding::OUT);
+         ret_obj = return_port->get_structural_obj();
+         port_type = ret_obj->get_typeRef();
+      }
+      else
+      {
+         ret_obj = Datapath->find_member(RETURN_PORT_NAME, port_o_K, Datapath); // port get by name in order to do not use conn_binding
+         THROW_ASSERT(ret_obj, "in_obj is not a port");
+         if(HLSMgr->Rmem->has_base_address(return_type_index) && !HLSMgr->Rmem->has_parameter_base_address(return_type_index, HLS->functionId) && !HLSMgr->Rmem->is_parm_decl_stored(return_type_index))
+         {
+            port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));
+         }
+         else
+            port_type = structural_type_descriptorRef(new structural_type_descriptor(return_type_index, BH));
+      }
       structural_objectRef top_obj;
       if(ret_obj->get_kind() == port_vector_o_K)
       {

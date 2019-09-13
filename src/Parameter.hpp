@@ -64,7 +64,11 @@
 #include "config_HAVE_TO_C_BUILT.hpp"
 #include "config_RELEASE.hpp"
 
+/// STD include
+#include <string>
+
 /// STL include
+#include <list>
 #include <map>
 #include <unordered_set>
 #include <vector>
@@ -116,7 +120,7 @@ enum class DiopsisInstrumentWriter_Type;
 #define PARAMETER_NOTPARSED INT_MAX
 
 #define BAMBU_OPTIONS                                                                                                                                                                                                                                       \
-   (chaining)(chaining_algorithm)(constraints_file)(controller_architecture)(datapath_architecture)(distram_threshold)(DSP_allocation_coefficient)(DSP_margin_combinational)(DSP_margin_pipelined)(estimate_logic_and_connections)(evaluation)(             \
+   (chaining)(chaining_algorithm)(constraints_file)(context_switch) (controller_architecture)(datapath_architecture)(distram_threshold)(DSP_allocation_coefficient)(DSP_margin_combinational)(DSP_margin_pipelined)(estimate_logic_and_connections)(evaluation)(             \
        evaluation_mode)(evaluation_objectives)(experimental_setup)(export_core)(export_core_mode)(fsm_encoding)(fu_binding_algorithm)(generate_testbench)(generate_vcd)(hls_flow)(hls_div)(hls_fpdiv)(interface)(interface_type)(additional_top)(           \
        data_bus_bitsize)(addr_bus_bitsize)(libm_std_rounding)(liveness_algorithm)(scheduling_mux_margins)(scheduling_priority)(scheduling_algorithm)(simulate)(simulator)(simulation_output)(speculative)(storage_value_insertion_algorithm)(stg)(          \
        stg_algorithm)(register_allocation_algorithm)(register_grouping)(registered_inputs)(resp_model)(datapath_interconnection_algorithm)(insert_memory_profile)(timing_simulation)(top_file)(assert_debug)(memory_allocation_algorithm)(                  \
@@ -125,7 +129,7 @@ enum class DiopsisInstrumentWriter_Type;
        use_asynchronous_memories)(do_not_chain_memories)(bram_high_latency)(cdfc_module_binding_algorithm)(function_allocation_algorithm)(testbench_input_string)(testbench_input_xml)(weighted_clique_register_algorithm)(disable_function_proxy)(         \
        memory_mapped_top)(do_not_expose_globals)(connect_iob)(profiling_output)(disable_bounded_function)(discrepancy)(discrepancy_force)(discrepancy_hw)(discrepancy_no_load_pointers)(discrepancy_only)(discrepancy_permissive_ptrs)(dry_run_evaluation)( \
        find_max_cfg_transformations)(generate_taste_architecture)(initial_internal_address)(mem_delay_read)(mem_delay_write)(memory_banks_number)(mixed_design)(no_parse_c_python)(num_threads)(post_rescheduling)(technology_file)(                        \
-       testbench_extra_gcc_flags)(timing_violation_abort)(top_design_name)(visualizer)
+       testbench_extra_gcc_flags)(timing_violation_abort)(top_design_name)(visualizer)(serialize_output)
 
 #define FRAMEWORK_OPTIONS                                                                                                                                                                                                                                     \
    (architecture)(benchmark_name)(cat_args)(cfg_max_transformations)(compatible_compilers)(compute_size_of)(configuration_name)(debug_level)(default_compiler)(dot_directory)(dump_profiling_data)(file_costs)(file_input_data)(host_compiler)(ilp_max_time)( \
@@ -146,7 +150,7 @@ enum class DiopsisInstrumentWriter_Type;
        regularity_forward)(regularity_hierarchical)(regularity_include_sequential)(regularity_max_inputs)(regularity_min_frequency)(regularity_min_size)(regularity_window_size)(reordering)(perform_resynthesis)(print_templates)(                           \
        reimplement_standard_cells)(separate_templates)(set_constraint)(set_optimization_goal)(skew_values)(split_roots)(store_library_creator_db)(synthesis_tool_xml)(template_file)(xml_library_cells)(xml_library_statistics)
 
-#define SYNTHESIS_OPTIONS                                                                                                                                                                                                                           \
+#define SYNTHESIS_OPTIONS                                                                                                                                                                                                                        \
    (clock_period)(clock_name)(reset_name)(start_name)(done_name)(design_analysis_steps)(design_compiler_compile_log)(design_compiler_split_log)(design_parameters)(design_hierarchy)(device_string)(dump_genlib)(estimate_library)(export_ip_core)( \
        import_ip_core)(input_liberty_library_file)(ip_xact_architecture_template)(ip_xact_parameters)(is_structural)(lib2xml)(min_metric)(parse_edif)(rtl)(synthesis_flow)(structural_HDL)(target_device)(target_library)(target_library_source)(   \
        target_technology)(target_technology_file)(target_device_file)(target_device_script)(target_device_type)(top_component)(uniquify)(writer_language)
@@ -233,7 +237,7 @@ class OptionMap : public std::map<std::string, std::string>
 #define LAST_GCC_OPT INPUT_OPT_WRITE_GCC_XML
 
 /// define the GCC short option string
-#define GCC_SHORT_OPTIONS_STRING "cf:g:I:D:U:O::l:L:W:Em:g::"
+#define GCC_SHORT_OPTIONS_STRING "cf:I:D:U:O::l:L:W:Em:g::"
 
 #if !RELEASE
 #define GCC_LONG_OPTIONS_RAW_XML {"use-raw", no_argument, nullptr, INPUT_OPT_USE_RAW}, {"read-GCC-XML", required_argument, nullptr, INPUT_OPT_READ_GCC_XML}, {"write-GCC-XML", required_argument, nullptr, INPUT_OPT_WRITE_GCC_XML},
@@ -266,8 +270,8 @@ enum class Parameters_FileFormat
    FF_OBJECTIVECPP, /**< (Input/Output) Objective C++ source file */
    FF_FORTRAN,      /**< (Input/Output) Fortran source file */
 #endif
+   FF_CSV, /**< (Input) comma separated value */
 #if HAVE_EXPERIMENTAL
-   FF_CSV,     /**< (Input) comma separated value */
    FF_CSV_RTL, /**< (Output) comma separated value rtl sequences */
    FF_CSV_TRE, /**< (Output) comma seperated value tree sequences */
 #endif

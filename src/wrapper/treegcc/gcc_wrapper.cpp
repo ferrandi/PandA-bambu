@@ -225,7 +225,11 @@
 #endif
 /// STD include
 #include <cerrno>
+#include <string>
 #include <unistd.h>
+
+/// STL include
+#include <list>
 
 /// Tree includes
 #include "parse_tree.hpp"
@@ -240,10 +244,7 @@
 #include "exceptions.hpp"
 #include "fileIO.hpp"
 #include "string_manipulation.hpp"
-#include "treegcc_constants.hpp"
 #include "utility.hpp"
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/split.hpp>
 #include <boost/regex.hpp>
 
 /// XML includes used for writing and reading the configuration file
@@ -2222,7 +2223,7 @@ void GccWrapper::GetSystemIncludes(std::vector<std::string>& includes) const
 
    // Ok, now here there are the list of the system paths in which
    // the system includes are found
-   boost::algorithm::split(includes, list_of_dirs, boost::algorithm::is_any_of(" "));
+   includes = SplitString(list_of_dirs, " ");
 }
 
 void GccWrapper::GetGccConfig() const
@@ -2724,8 +2725,7 @@ const std::string GccWrapper::AddSourceCodeIncludes(const std::list<std::string>
 size_t GccWrapper::ConvertVersion(const std::string& version)
 {
    size_t ret_value = 0;
-   std::vector<std::string> version_tokens;
-   boost::algorithm::split(version_tokens, version, boost::algorithm::is_any_of("."));
+   std::vector<std::string> version_tokens = SplitString(version, ".");
    for(size_t index = version_tokens.size(); index > 0; index--)
    {
       const auto shifter = static_cast<size_t>(pow(100, static_cast<double>(version_tokens.size() - index)));
@@ -2735,7 +2735,23 @@ size_t GccWrapper::ConvertVersion(const std::string& version)
    return ret_value;
 }
 
-std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet optimization_level, const GccWrapper_CompilerTarget compiler, const std::string& expandMemOps_plugin_obj, const std::string& expandMemOps_plugin_name)
+std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
+optimization_level
+#endif
+, const GccWrapper_CompilerTarget
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
+compiler
+#endif
+, const std::string&
+#ifndef _WIN32
+expandMemOps_plugin_obj
+#endif
+, const std::string&
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
+expandMemOps_plugin_name
+#endif
+)
 {
    std::string recipe = "";
 #ifndef _WIN32

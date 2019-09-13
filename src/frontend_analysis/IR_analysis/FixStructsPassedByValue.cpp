@@ -226,7 +226,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
             const std::vector<tree_nodeRef> args = {// & new_local_var_decl
                                                     tree_man->CreateAddrExpr(GET_NODE(new_local_var_decl), srcp),
                                                     // src is the new pointer-to-struct parm_decl
-                                                    tree_man->create_ssa_name(*p_decl_it, ptr_type),
+                                                    tree_man->create_ssa_name(*p_decl_it, ptr_type, tree_nodeRef(), tree_nodeRef()),
                                                     // sizeof(var_decl)
                                                     tree_man->CreateIntegerCst(formal_type_node, static_cast<long long>(ptd_type_size), TM->new_tree_node_id())};
             const auto gimple_call_memcpy = tree_man->create_gimple_call(TM->CGetTreeReindex(memcpy_function_id), args, srcp, bb_index);
@@ -355,7 +355,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                /*
                 * if there is a call to a function without body we don't turn
                 * structs parameters into pointers, because we would also need
-                * to change de body of the function to alter how the parameter
+                * to change the body of the function to alter how the parameter
                 * is used.
                 */
                if(not fd->body)

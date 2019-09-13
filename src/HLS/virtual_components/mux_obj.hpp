@@ -69,6 +69,9 @@ class mux_obj : public generic_obj
    /// reference to generic_obj associated with the multiplexer
    generic_objRef target;
 
+   /// reference to generic_obj target of the mux tree's dataflow
+   generic_objRef tree_target;
+
    /// selector object. It can be both a port or the root of a logic gate
    generic_objRef selector;
 
@@ -82,8 +85,9 @@ class mux_obj : public generic_obj
     * @param second is reference to second input
     * @param level is the mux level
     * @param name is the id
+    * @param target is the overall mux tree target
     */
-   mux_obj(const generic_objRef first, const generic_objRef second, unsigned int level, const std::string& name);
+   mux_obj(const generic_objRef first, const generic_objRef second, unsigned int level, const std::string& name, const generic_objRef overall_target);
 
    /**
     * Destructor.
@@ -95,6 +99,12 @@ class mux_obj : public generic_obj
     * @param tgt is reference to generic_obj where multiplexer output is connected
     */
    void set_target(const generic_objRef tgt);
+
+   /**
+    * Returns the object which will receive the mux tree result
+    * @return the target of the mux tree
+    */
+   generic_objRef get_final_target();
 
    /**
     * Gets the selector

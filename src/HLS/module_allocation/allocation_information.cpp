@@ -73,6 +73,13 @@
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
 
+/// STL includes
+#include <algorithm>
+#include <map>
+#include <set>
+#include <tuple>
+#include <unordered_map>
+
 const std::pair<const CustomMap<unsigned int, std::unordered_map<unsigned int, double>>&, const CustomMap<unsigned int, std::unordered_map<unsigned int, double>>&>
 AllocationInformation::InitializeMuxDB(const AllocationInformationConstRef allocation_information)
 {
@@ -96,15 +103,13 @@ AllocationInformation::InitializeMuxDB(const AllocationInformationConstRef alloc
       mux_precisions.push_back(16);
       mux_precisions.push_back(32);
       mux_precisions.push_back(64);
-      std::vector<std::string> parameters_split;
-      boost::algorithm::split(parameters_split, temp_portsize_parameters, boost::algorithm::is_any_of("|"));
+      std::vector<std::string> parameters_split = SplitString(temp_portsize_parameters, "|");
       THROW_ASSERT(parameters_split.size() > 0, "unexpected portsize_parameter format");
       for(auto module_prec : mux_precisions)
       {
          for(auto& el_indx : parameters_split)
          {
-            std::vector<std::string> parameters_pairs;
-            boost::algorithm::split(parameters_pairs, el_indx, boost::algorithm::is_any_of(":"));
+            std::vector<std::string> parameters_pairs = SplitString(el_indx, ":");
             if(parameters_pairs[0] == "*")
             {
                temp_portsize_parameters = parameters_pairs[1];
@@ -117,8 +122,7 @@ AllocationInformation::InitializeMuxDB(const AllocationInformationConstRef alloc
             }
          }
          THROW_ASSERT(temp_portsize_parameters != "", "expected some portsize0_parameters for the the template operation");
-         std::vector<std::string> portsize_parameters;
-         boost::algorithm::split(portsize_parameters, temp_portsize_parameters, boost::algorithm::is_any_of(","));
+         std::vector<std::string> portsize_parameters = SplitString(temp_portsize_parameters, ",");
          for(auto n_inputs : portsize_parameters)
          {
             const technology_nodeRef fu_cur_obj =
@@ -198,10 +202,8 @@ const std::tuple<const std::vector<unsigned int>&, const std::vector<unsigned in
          THROW_ASSERT(hls_target->get_target_device()->has_parameter("DSPs_y_sizes"), "device description is not complete");
          std::string DSPs_x_sizes = hls_target->get_target_device()->get_parameter<std::string>("DSPs_x_sizes");
          std::string DSPs_y_sizes = hls_target->get_target_device()->get_parameter<std::string>("DSPs_y_sizes");
-         std::vector<std::string> DSPs_x_sizes_vec;
-         std::vector<std::string> DSPs_y_sizes_vec;
-         boost::algorithm::split(DSPs_x_sizes_vec, DSPs_x_sizes, boost::algorithm::is_any_of(","));
-         boost::algorithm::split(DSPs_y_sizes_vec, DSPs_y_sizes, boost::algorithm::is_any_of(","));
+         std::vector<std::string> DSPs_x_sizes_vec = SplitString(DSPs_x_sizes, ",");
+         std::vector<std::string> DSPs_y_sizes_vec = SplitString(DSPs_y_sizes, ",");
          size_t n_elements = DSPs_x_sizes_vec.size();
          DSP_x_db.resize(n_elements);
          DSP_y_db.resize(n_elements);
@@ -726,10 +728,11 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index) const
    {
       const auto right = GET_NODE(ga->op1);
       /// currently all the operations introduced after the allocation has been performed are bounded
-      THROW_ASSERT(GetPointer<cst_node>(right) or right->get_kind() == vec_cond_expr_K or right->get_kind() == nop_expr_K or right->get_kind() == lut_expr_K or right->get_kind() == lshift_expr_K or right->get_kind() == rshift_expr_K or right->get_kind() == bit_xor_expr_K or
-                       right->get_kind() == bit_not_expr_K or right->get_kind() == bit_ior_concat_expr_K or right->get_kind() == bit_ior_expr_K or right->get_kind() == bit_and_expr_K or right->get_kind() == convert_expr_K or
-                       right->get_kind() == truth_and_expr_K or right->get_kind() == truth_or_expr_K or right->get_kind() == truth_not_expr_K or right->get_kind() == cond_expr_K or right->get_kind() == ternary_plus_expr_K or
-                       right->get_kind() == ternary_mp_expr_K or right->get_kind() == ternary_pm_expr_K or right->get_kind() == ternary_mm_expr_K or right->get_kind() == ssa_name_K or right->get_kind() == widen_mult_expr_K or right->get_kind() == mult_expr_K,
+      THROW_ASSERT(GetPointer<cst_node>(right) or right->get_kind() == vec_cond_expr_K or right->get_kind() == nop_expr_K or right->get_kind() == lut_expr_K or right->get_kind() == lshift_expr_K or right->get_kind() == rshift_expr_K or
+                       right->get_kind() == bit_xor_expr_K or right->get_kind() == bit_not_expr_K or right->get_kind() == bit_ior_concat_expr_K or right->get_kind() == bit_ior_expr_K or right->get_kind() == bit_and_expr_K or
+                       right->get_kind() == convert_expr_K or right->get_kind() == truth_and_expr_K or right->get_kind() == truth_or_expr_K or right->get_kind() == truth_not_expr_K or right->get_kind() == cond_expr_K or
+                       right->get_kind() == ternary_plus_expr_K or right->get_kind() == ternary_mp_expr_K or right->get_kind() == ternary_pm_expr_K or right->get_kind() == ternary_mm_expr_K or right->get_kind() == ssa_name_K or
+                       right->get_kind() == widen_mult_expr_K or right->get_kind() == mult_expr_K,
                    "Unexpected right part: " + right->get_kind_text());
       return true;
    }
@@ -1115,7 +1118,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
                const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
                const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
                max_size_in = std::max(max_size_in, element_size);
-               if(min_n_elements == 0 or 128 / element_size < min_n_elements)
+               if(min_n_elements == 0 or ((128 / element_size) < min_n_elements))
                   min_n_elements = 128 / element_size;
             }
             else
@@ -1152,8 +1155,8 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
                info->base128_input_nelem.push_back(128 / element_size);
                info->input_prec.push_back(element_size);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Type is " + STR(type_index) + " " + STR(TreeM->CGetTreeNode(type_index)) + " - Number of input elements (base128): " + STR(128 / element_size) + " - Number of real input elements: " + STR(vector_size / element_size) +
-                                  " - Input precision: " + STR(element_size));
+                              "---Type is " + STR(type_index) + " " + TreeM->CGetTreeNode(type_index)->ToString() + " - Number of input elements (base128): " + STR(128 / element_size) +
+                                  " - Number of real input elements: " + STR(vector_size / element_size) + " - Input precision: " + STR(element_size));
             }
             else
             {
@@ -1217,7 +1220,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       const auto max_size_in_true = std::max(max_size_in, *std::max_element(info->input_prec.begin(), info->input_prec.end()));
       for(const auto n_elements : info->base128_input_nelem)
       {
-         if(n_elements and (min_n_elements == 0 or n_elements < min_n_elements))
+         if(n_elements and (min_n_elements == 0 or (n_elements < min_n_elements)))
          {
             min_n_elements = n_elements;
          }
@@ -1252,7 +1255,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
          unsigned int output_size = resize_to_1_8_16_32_64_128_256_512(tree_helper::size(TreeM, nodeOutput_id));
          info->real_output_nelem = output_size / element_size;
-         info->base128_output_nelem = output_size / element_size;
+         info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;
       }
       else
@@ -1341,7 +1344,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
             {
                const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
                const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
-               info->base128_output_nelem = info->output_prec / element_size;
+               info->base128_output_nelem = 128 / element_size;
                info->real_output_nelem = info->output_prec / element_size;
                info->output_prec = element_size;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -1373,17 +1376,28 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       unsigned int nodeOutput_id = hls_manager->get_produced_value(function_index, node);
       THROW_ASSERT(nodeOutput_id, "unexpected condition");
       type_index = tree_helper::get_type_index(TreeM, nodeOutput_id);
-      info->output_prec = resize_to_1_8_16_32_64_128_256_512(tree_helper::size(TreeM, nodeOutput_id));
+      auto out_prec = tree_helper::size(TreeM, nodeOutput_id);
       if(tree_helper::is_a_vector(TreeM, type_index))
       {
          const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
          const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
-         info->real_output_nelem = info->output_prec / element_size;
-         info->base128_output_nelem = info->output_prec / element_size;
+         unsigned int output_size = resize_to_1_8_16_32_64_128_256_512(out_prec);
+         info->real_output_nelem = output_size / element_size;
+         info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;
       }
       else
       {
+         if(current_op == "plus_expr" || current_op == "minus_expr" || current_op == "pointer_plus_expr" || current_op == "ternary_plus_expr" || current_op == "ternary_pm_expr" || current_op == "ternary_mp_expr" || current_op == "ternary_mm_expr" ||
+            current_op == "negate_expr")
+         {
+            if(out_prec == 9 || out_prec == 17 || out_prec == 33)
+            {
+               --out_prec;
+               max_size_in = out_prec;
+            }
+         }
+         info->output_prec = resize_to_1_8_16_32_64_128_256_512(out_prec);
          info->real_output_nelem = 0;
          info->base128_output_nelem = 0;
       }
@@ -1414,7 +1428,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          const unsigned int element_type = tree_helper::GetElements(TreeM, type_index);
          const unsigned int element_size = static_cast<unsigned int>(tree_helper::size(TreeM, element_type));
          info->real_output_nelem = info->output_prec / element_size;
-         info->base128_output_nelem = info->output_prec / element_size;
+         info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Type is " + STR(type_index) + " " + STR(TreeM->CGetTreeNode(type_index)) + " - Number of output elements (base128): " + STR(info->base128_output_nelem) + " - Number of real output elements: " + STR(info->real_output_nelem) +
@@ -1627,8 +1641,8 @@ unsigned int AllocationInformation::GetCycleLatency(const unsigned int operation
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latency of not allocated fu is 1: possibly inaccurate");
             const auto data_bitsize = tree_helper::Size(ga->op0);
             const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("widen_mult_expr_FU_" + STR(fu_prec/2) + "_" + STR(fu_prec/2) + "_" + STR(fu_prec)+"_0", LIBRARY_STD_FU);
-            THROW_ASSERT(new_stmt_temp, "Functional unit not found: widen_mult_expr_FU_" + STR(fu_prec/2) + "_" + STR(fu_prec/2) + "_" + STR(fu_prec)+"_0");
+            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("widen_mult_expr_FU_" + STR(fu_prec / 2) + "_" + STR(fu_prec / 2) + "_" + STR(fu_prec) + "_0", LIBRARY_STD_FU);
+            THROW_ASSERT(new_stmt_temp, "Functional unit not found: widen_mult_expr_FU_" + STR(fu_prec / 2) + "_" + STR(fu_prec / 2) + "_" + STR(fu_prec) + "_0");
             const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
             const auto new_stmt_op_temp = new_stmt_fu->get_operation("widen_mult_expr");
             const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
@@ -1639,8 +1653,8 @@ unsigned int AllocationInformation::GetCycleLatency(const unsigned int operation
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latency of not allocated fu is 1: possibly inaccurate");
             const auto data_bitsize = tree_helper::Size(ga->op0);
             const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec)+"_0", LIBRARY_STD_FU);
-            THROW_ASSERT(new_stmt_temp, "Functional unit not found: mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec)+"_0");
+            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_0", LIBRARY_STD_FU);
+            THROW_ASSERT(new_stmt_temp, "Functional unit not found: mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_0");
             const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
             const auto new_stmt_op_temp = new_stmt_fu->get_operation("mult_expr");
             const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
@@ -1897,8 +1911,8 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
       {
          const auto data_bitsize = tree_helper::Size(ga->op0);
          const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("widen_mult_expr_FU_" + STR(fu_prec/2) + "_" + STR(fu_prec/2) + "_" + STR(fu_prec)+"_0", LIBRARY_STD_FU);
-         THROW_ASSERT(new_stmt_temp, "Functional unit not found: widen_mult_expr_FU_" + STR(fu_prec/2) + "_" + STR(fu_prec/2) + "_" + STR(fu_prec)+"_0");
+         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("widen_mult_expr_FU_" + STR(fu_prec / 2) + "_" + STR(fu_prec / 2) + "_" + STR(fu_prec) + "_0", LIBRARY_STD_FU);
+         THROW_ASSERT(new_stmt_temp, "Functional unit not found: widen_mult_expr_FU_" + STR(fu_prec / 2) + "_" + STR(fu_prec / 2) + "_" + STR(fu_prec) + "_0");
          const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
          const auto new_stmt_op_temp = new_stmt_fu->get_operation("widen_mult_expr");
          const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
@@ -1923,8 +1937,8 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
       {
          const auto data_bitsize = tree_helper::Size(ga->op0);
          const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec)+"_0", LIBRARY_STD_FU);
-         THROW_ASSERT(new_stmt_temp, "Functional unit not found: mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec)+"_0");
+         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_0", LIBRARY_STD_FU);
+         THROW_ASSERT(new_stmt_temp, "Functional unit not found: mult_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) + "_0");
          const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
          const auto new_stmt_op_temp = new_stmt_fu->get_operation("mult_expr");
          const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
@@ -2231,12 +2245,12 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       std::string library = HLS_T->get_technology_manager()->get_library(component_name);
       technology_nodeRef f_unit_alias = HLS_T->get_technology_manager()->get_fu(component_name, library);
       THROW_ASSERT(f_unit_alias, "Library miss component: " + component_name);
-      functional_unit * fu_alias= GetPointer<functional_unit>(f_unit_alias);
-      technology_nodeRef op_alias_node =fu_alias->get_operation(operation_name);
+      functional_unit * fu_alias = GetPointer<functional_unit>(f_unit_alias);
+      technology_nodeRef op_alias_node = fu_alias->get_operation(operation_name);
       operation * op_alias = op_alias_node ? GetPointer<operation>(op_alias_node) : GetPointer<operation>(fu_alias->get_operations().front());
       double alias_exec_time = op_alias->time_m->get_initiation_time() != 0u ? time_m_stage_period(op_alias) : time_m_execution_time(op_alias);
-      functional_unit * fu_cur= GetPointer<functional_unit>(current_fu);
-      technology_nodeRef op_cur_node =fu_cur->get_operation(operation_name);
+      functional_unit * fu_cur = GetPointer<functional_unit>(current_fu);
+      technology_nodeRef op_cur_node = fu_cur->get_operation(operation_name);
       operation * op_cur = GetPointer<operation>(op_cur_node);
       double cur_exec_time = op_cur->time_m->get_initiation_time() != 0u ? time_m_stage_period(op_cur) : time_m_execution_time(op_cur);
       res_value += cur_exec_time - alias_exec_time;
@@ -3114,7 +3128,7 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
       if(is_second_plus_minus)
       {
           const auto fu_type = GetFuType(second_operation);
-          if(get_prec(fu_type)>32)
+          if(get_prec(fu_type) > 32)
           {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing connection time " + STR(first_operation) + "-->" + STR(second_operation));
             auto ret = get_setup_hold_time()/3;

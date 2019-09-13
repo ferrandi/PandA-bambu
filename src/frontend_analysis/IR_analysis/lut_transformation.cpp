@@ -250,9 +250,7 @@ std::string lut_transformation::AddZeroes(const std::string& _bitString, double 
 
 tree_nodeRef lut_transformation::CreateGimpleAssign(const tree_nodeRef type, const tree_nodeRef op, const unsigned int bb_index, const std::string& srcp_default)
 {
-   tree_nodeRef ssa_vd = tree_man->create_ssa_name(tree_nodeRef(), type);
-   auto ret_value = tree_man->create_gimple_modify_stmt(ssa_vd, op, srcp_default, bb_index);
-   return ret_value;
+   return tree_man->CreateGimpleAssign(type, tree_nodeRef(), tree_nodeRef(), op, bb_index, srcp_default);
 }
 
 /**
@@ -607,7 +605,8 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, SAME_FUNCTION));
+         if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
+            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -618,6 +617,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
          break;
       }

@@ -338,12 +338,14 @@ class tree_manipulation
     * Function used to create a ssa_name node.
     * @param  var is the variable being referenced.
     * @param  type is the type of the ssa_node
+    * @param  min is the minimum value of the ssa_var
+    * @param  max is the maximum value of the ssa_var
     * @param  volatile_flag flag set to true in case a ssa_name is never defined (default false).
     * @param  virtual_flag flag for virtual phi (default false).
     * @return the tree_reindex node of the ssa_name.
     *
     */
-   tree_nodeRef create_ssa_name(const tree_nodeConstRef& var, const tree_nodeConstRef& type, bool volatile_flag = false, bool virtual_flag = false) const;
+   tree_nodeRef create_ssa_name(const tree_nodeConstRef& var, const tree_nodeConstRef& type, const tree_nodeConstRef& min, const tree_nodeConstRef& max, bool volatile_flag = false, bool virtual_flag = false) const;
 
    /// GIMPLE_PHI
 
@@ -372,11 +374,13 @@ class tree_manipulation
    /**
     * Create gimple assignment
     * @param type is the type the assignment
+    * @param min is the minimum value of the assigned ssa_var
+    * @param max is the maximum value of the assigned ssa_var
     * @param op is the right part
     * @param bb_index is the index of the basic block index
     * @param srcp is the srcp to be assigned
     */
-   tree_nodeRef CreateGimpleAssign(const tree_nodeRef& type, const tree_nodeRef& op, unsigned int bb_index, const std::string& srcp) const;
+   tree_nodeRef CreateGimpleAssign(const tree_nodeRef& type, const tree_nodeConstRef& min, const tree_nodeConstRef& max, const tree_nodeRef& op, unsigned int bb_index, const std::string& srcp) const;
 
    /// GIMPLE_CALL
    tree_nodeRef create_gimple_call(const tree_nodeConstRef& called_function, const std::vector<tree_nodeRef>& args, const std::string& srcp, const unsigned int bb_index) const;
@@ -584,9 +588,11 @@ class tree_manipulation
     * Create a nop_expr to perform a conversion
     * @param operand is the operand to be converted
     * @param type is the destination type
-    * @return the gimple assignemnt containing the nop expr as right part
+    * @param min is the minimum value of the assigned ssa_var
+    * @param max is the maximum value of the assigned ssa_var
+    * @return the gimple assignment containing the nop expr as right part
     */
-   tree_nodeRef CreateNopExpr(const tree_nodeConstRef& operand, const tree_nodeConstRef& type) const;
+   tree_nodeRef CreateNopExpr(const tree_nodeConstRef& operand, const tree_nodeConstRef& type, const tree_nodeConstRef& min, const tree_nodeConstRef& max) const;
 
    /**
     * Create an unsigned integer type starting from signed type

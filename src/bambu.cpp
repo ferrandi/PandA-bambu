@@ -140,6 +140,13 @@ int main(int argc, char* argv[])
          case PARAMETER_NOTPARSED:
          {
             exit_code = PARAMETER_NOTPARSED;
+            std::string cat_args;
+            for(int i = 0; i < argc; i++)
+            {
+               cat_args += std::string(argv[i]) + " ";
+            }
+
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, parameters->getOption<int>(OPT_output_level), " ==  Bambu executed with: " + cat_args + "\n");
             THROW_ERROR("Bad Parameters format");
             break;
          }
@@ -283,6 +290,17 @@ int main(int argc, char* argv[])
       if(not(parameters->getOption<bool>(OPT_no_clean)))
       {
          boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
+      }
+      if(parameters->isOption(OPT_serialize_output) && parameters->isOption(OPT_output_file))
+      {
+         std::ofstream ofile(parameters->getOption<std::string>(OPT_output_file), std::ios::out);
+         for(auto files : {HLSMgr->aux_files, HLSMgr->hdl_files})
+            for(auto file : files)
+            {
+               std::cerr << "File name: " << file << "\n";
+               std::ifstream ifile(file, std::ios::in);
+               ofile << ifile.rdbuf();
+            }
       }
       return EXIT_SUCCESS; // Bambu tool has completed execution without errors
    }

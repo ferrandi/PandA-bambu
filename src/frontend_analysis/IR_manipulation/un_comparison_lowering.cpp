@@ -114,7 +114,6 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
             continue;
          }
          auto be = GetPointer<binary_expr>(GET_NODE(ga->op1));
-         auto sn = GetPointer<ssa_name>(GET_NODE(ga->op0));
          if(not be)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped" + STR(stmt));
@@ -138,17 +137,15 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
                THROW_UNREACHABLE("");
             auto booleanType = tree_man->create_boolean_type();
             auto new_be = tree_man->create_binary_operation(booleanType, be->op0, be->op1, srcp_string, new_kind);
-            auto new_ssa = tree_man->create_ssa_name(sn->var, booleanType);
-            auto new_ga = tree_man->create_gimple_modify_stmt(new_ssa, new_be, srcp_string, 0);
+            auto new_ga = tree_man->CreateGimpleAssign(booleanType, TreeM->CreateUniqueIntegerCst(0, booleanType->index), TreeM->CreateUniqueIntegerCst(1, booleanType->index), new_be, 0, srcp_string);
             block.second->PushBefore(new_ga, stmt);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(new_ga));
-            auto new_not = tree_man->create_unary_operation(booleanType, new_ssa, srcp_string, truth_not_expr_K);
+            auto new_not = tree_man->create_unary_operation(booleanType, GetPointer<gimple_assign>(GET_NODE(new_ga))->op0, srcp_string, truth_not_expr_K);
             if(GET_INDEX_NODE(be->type) != GET_INDEX_NODE(booleanType))
             {
-               auto new_ssa_not = tree_man->create_ssa_name(sn->var, booleanType);
-               auto new_ga_not = tree_man->create_gimple_modify_stmt(new_ssa_not, new_not, srcp_string, 0);
+               auto new_ga_not = tree_man->CreateGimpleAssign(booleanType, TreeM->CreateUniqueIntegerCst(0, booleanType->index), TreeM->CreateUniqueIntegerCst(1, booleanType->index), new_not, 0, srcp_string);
                block.second->PushBefore(new_ga_not, stmt);
-               auto new_nop = tree_man->create_unary_operation(be->type, new_ssa_not, srcp_string, nop_expr_K);
+               auto new_nop = tree_man->create_unary_operation(be->type, GetPointer<gimple_assign>(GET_NODE(new_ga_not))->op0, srcp_string, nop_expr_K);
                TreeM->ReplaceTreeNode(stmt, ga->op1, new_nop);
             }
             else

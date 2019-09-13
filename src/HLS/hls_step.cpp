@@ -69,6 +69,11 @@
 /// HLS/memory include
 #include "memory.hpp"
 
+/// STL includes
+#include <set>
+#include <tuple>
+#include <unordered_set>
+
 /// technology include
 #include "technology_manager.hpp"
 
@@ -146,6 +151,10 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "ChordalColoringRegisterBinding";
       case HLSFlowStep_Type::CLASSIC_DATAPATH_CREATOR:
          return "ClassicDatapathCreator";
+      case HLSFlowStep_Type::DATAPATH_CS_CREATOR:
+         return "DatapathCreatorCS";
+      case HLSFlowStep_Type::DATAPATH_CS_PARALLEL_CREATOR:
+         return "DatapathCreatorCSParallel";
       case HLSFlowStep_Type::CLASSICAL_HLS_SYNTHESIS_FLOW:
          return "ClassicalHLSSynthesisFlow";
 #if HAVE_EXPERIMENTAL
@@ -160,6 +169,8 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "CTestbenchExecution";
       case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION:
          return "DominatorMemoryAllocation";
+      case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS:
+         return "DominatorMemoryAllocationCS";
       case HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION:
          return "DominatorFunctionAllocation";
       case HLSFlowStep_Type::DRY_RUN_EVALUATION:
@@ -195,6 +206,8 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
 #endif
       case HLSFlowStep_Type::FSM_CONTROLLER_CREATOR:
          return "FsmControllerCreator";
+      case HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR:
+         return "FsmCSControllerCreator";
       case HLSFlowStep_Type::FSM_NI_SSA_LIVENESS:
          return "FsmNiSsaLiveness";
 #if HAVE_EXPERIMENTAL
@@ -229,6 +242,8 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
 #endif
       case HLSFlowStep_Type::INITIALIZE_HLS:
          return "InitializeHLS";
+      case HLSFlowStep_Type::INTERFACE_CS_GENERATION:
+         return "InterfaceCSGeneration";
 #if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::K_COFAMILY_REGISTER_BINDING:
          return "KCofamilyRegisterBinding";
@@ -254,16 +269,32 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "NpiInterfaceGeneration";
       case HLSFlowStep_Type::NUM_AF_EDGES_EVALUATION:
          return "NumAfEdgesEvaluation";
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
+#endif
+#if HAVE_FROM_PRAGMA_BUILT
       case HLSFlowStep_Type::OMP_ALLOCATION:
          return "OmpAllocation";
+#endif
+#if HAVE_FROM_PRAGMA_BUILT
       case HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW:
          return "OmpBodyLoopSynthesisFlow";
+#endif
+#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
       case HLSFlowStep_Type::OMP_FOR_WRAPPER_SYNTHESIS_FLOW:
          return "OmpForWrapperSynthesisFlow";
+#endif
+#if HAVE_FROM_PRAGMA_BUILT
+      case HLSFlowStep_Type::OMP_FOR_WRAPPER_CS_SYNTHESIS_FLOW:
+         return "OmpForWrapperCSSynthesisFlow";
+#endif
+#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
       case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION:
          return "OmpFunctionAllocation";
 #endif
+#if HAVE_FROM_PRAGMA_BUILT
+      case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS:
+         return "OmpFunctionAllocationCS";
+#endif
+#if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::PARALLEL_CONTROLLER_CREATOR:
          return "ParallelControllerCreator";
 #endif
@@ -295,6 +326,10 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "TestbenchGeneration";
       case HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION:
          return "TestbenchMemoryAllocation";
+      case HLSFlowStep_Type::TESTBENCH_VALUES_C_GENERATION:
+         return "TestbenchValuesCGeneration";
+      case HLSFlowStep_Type::TESTBENCH_VALUES_XML_GENERATION:
+         return "TestbenchValuesXMLGeneration";
       case HLSFlowStep_Type::TEST_VECTOR_PARSER:
          return "TestVectorParser";
 #if HAVE_EXPERIMENTAL
@@ -303,6 +338,10 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
 #endif
       case HLSFlowStep_Type::TOP_ENTITY_CREATION:
          return "TopEntityCreation";
+      case HLSFlowStep_Type::TOP_ENTITY_CS_CREATION:
+         return "TopEntityCSCreation";
+      case HLSFlowStep_Type::TOP_ENTITY_CS_PARALLEL_CREATION:
+         return "TopEntityCSParallelCreation";
       case HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION:
          return "TopEntityMemoryMappedCreation";
       case HLSFlowStep_Type::UNIQUE_MODULE_BINDING:

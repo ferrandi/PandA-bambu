@@ -225,7 +225,7 @@ inline std::string GetDirectory(const boost::filesystem::path file)
 }
 
 /**
- * Return the extenstion of the file
+ * Return the extension of the file
  * @param file is the starting file
  * @return the extension of the file
  */
@@ -276,6 +276,16 @@ inline void CopyFile(boost::filesystem::path file_source, boost::filesystem::pat
    }
    else
       boost::filesystem::copy_file(file_source, file_target, boost::filesystem::copy_option::overwrite_if_exists);
+}
+
+/**
+ * Build a path by combining two relative paths
+ * @param first_part is the first part to be combined
+ * @param second_part is the second part to be combined
+ */
+inline std::string BuildPath(const std::string& first_part, const std::string second_part)
+{
+   return (boost::filesystem::path(first_part) / boost::filesystem::path(second_part)).string();
 }
 
 /**

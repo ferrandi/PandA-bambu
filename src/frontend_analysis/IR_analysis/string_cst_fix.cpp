@@ -438,4 +438,3 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed recursively " + STR(GET_INDEX_NODE(tn)) + ": " + STR(tn));
    return;
 }
-

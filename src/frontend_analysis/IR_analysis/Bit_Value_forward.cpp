@@ -1896,13 +1896,12 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
       std::deque<bit_lattice> arg3_bitstring;
-      unsigned int arg1_uid = 0;
       unsigned int arg2_uid = 0;
       unsigned int arg3_uid = 0;
 
       if(GET_NODE(operation->op0)->get_kind() == ssa_name_K)
       {
-         arg1_uid = GET_INDEX_NODE(operation->op0);
+         const auto arg1_uid = GET_INDEX_NODE(operation->op0);
          if(current.find(arg1_uid) == current.end())
          {
             const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(operation->op0));
@@ -1916,7 +1915,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       }
       else if(GET_NODE(operation->op0)->get_kind() == integer_cst_K)
       {
-         arg1_uid = GET_INDEX_NODE(operation->op0);
+         const auto arg1_uid = GET_INDEX_NODE(operation->op0);
          THROW_ASSERT(best.find(arg1_uid) != best.end(), "unexpected condition");
          arg1_bitstring = best.at(arg1_uid);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<integer_cst>(GET_NODE(operation->op0))->value) + " : " + bitstring_to_string(arg1_bitstring));
@@ -2128,10 +2127,7 @@ void Bit_Value::forward()
                   }
 
                   THROW_ASSERT(best.find(output_uid) != best.end(), "unexpected condition");
-                  if(current.find(output_uid) == current.end())
-                  {
-                     current[output_uid] = best.at(output_uid);
-                  }
+                  current.insert(std::make_pair(output_uid, best.at(output_uid)));
                   std::deque<bit_lattice> res = forward_transfer(ga);
                   current_updated = update_current(std::move(res), output_uid) or current_updated;
                }
@@ -2158,10 +2154,7 @@ void Bit_Value::forward()
                }
 
                THROW_ASSERT(best.find(output_uid) != best.end(), "unexpected condition");
-               if(current.find(output_uid) == current.end())
-               {
-                  current[output_uid] = best.at(output_uid);
-               }
+               current.insert(std::make_pair(output_uid, best.at(output_uid)));
 
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "res id: " + STR(output_uid));
                std::deque<bit_lattice> res = create_x_bitstring(1);

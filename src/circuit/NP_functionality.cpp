@@ -46,14 +46,18 @@
 #include "xml_attribute.hpp"                         // for attribut...
 #include "xml_element.hpp"                           // for xml_element
 #include "xml_helper.hpp"                            // for WRITE_XNVM2
-#include <boost/algorithm/string/classification.hpp> // for is_any_of
-#include <boost/algorithm/string/split.hpp>          // for split
 #include <boost/iterator/iterator_facade.hpp>        // for operator!=
 #include <boost/lexical_cast.hpp>                    // for lexical_...
 #include <boost/token_functions.hpp>                 // for char_sep...
 #include <boost/tokenizer.hpp>                       // for tokenize...
 #include <list>                                      // for _List_co...
 #include <utility>                                   // for pair
+
+/// STD include
+#include <iostream>
+
+/// utility include
+#include "string_manipulation.hpp"
 
 NP_functionality::NP_functionaly_type NP_functionality::to_NP_functionaly_type(const std::string& val)
 {
@@ -75,6 +79,7 @@ const char* NP_functionality::NP_functionaly_typeNames[] = {"TABLE",
                                                             "LIBRARY",
                                                             "GRAPH",
                                                             "FSM",
+                                                            "FSM_CS",
                                                             "SC_PROVIDED",
                                                             "VHDL_PROVIDED",
                                                             "VERILOG_PROVIDED",
@@ -152,9 +157,6 @@ std::string NP_functionality::get_library_name() const
    boost::char_separator<char> sep(" ", nullptr);
    tokenizer tokens(library_description, sep);
    return *tokens.begin();
-   // std::vector<std::string> splitted;
-   // boost::algorithm::split(splitted, library_description, boost::algorithm::is_any_of(" "));
-   // return splitted[LIBRARY_NAME];
 }
 
 void NP_functionality::get_library_parameters(std::vector<std::string>& parameters) const
@@ -182,16 +184,14 @@ void NP_functionality::get_port_list(std::map<unsigned int, std::map<std::string
    {
       return;
    }
-   std::vector<std::string> splitted;
-   boost::algorithm::split(splitted, port_list, boost::algorithm::is_any_of(";"));
+   std::vector<std::string> splitted = SplitString(port_list, ",");
    for(auto port_description : splitted)
    {
       if(port_description.empty())
       {
          continue;
       }
-      std::vector<std::string> ports;
-      boost::algorithm::split(ports, port_description, boost::algorithm::is_any_of(":"));
+      std::vector<std::string> ports = SplitString(port_description, ":");
       THROW_ASSERT(ports.size() == 4, "Wrong format for NP_functionality::PORT_LIST functionality");
       if(ports[0] == "I")
       {

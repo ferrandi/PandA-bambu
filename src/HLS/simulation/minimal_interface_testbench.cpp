@@ -70,6 +70,9 @@
 // include from HLS/simulation
 #include "SimulationInformation.hpp"
 
+/// STD include
+#include <string>
+
 /// tree include
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_helper.hpp"
@@ -636,9 +639,17 @@ void MinimalInterfaceTestbench::write_input_signal_declaration(const tree_manage
                   pt_node = GET_NODE(GetPointer<array_type>(pt_node)->elts);
                }
             }
-            long long int bitsize = tree_helper::size(TreeM, pt_type_index);
 
-            writer->write("reg [" + STR(bitsize - 1) + ":0] ex_" + port_obj->get_id() + ";\n");
+            /// FIXME: real numbers at the moment have to be considered diffently because of computation of ulp; c++ code is still managed in the old way
+            if(tree_helper::is_real(TreeM, pt_type_index) or flag_cpp)
+            {
+               long long int bitsize = tree_helper::size(TreeM, pt_type_index);
+               writer->write("reg [" + STR(bitsize - 1) + ":0] ex_" + port_obj->get_id() + ";\n");
+            }
+            else
+            {
+               writer->write("reg [7:0] ex_" + port_obj->get_id() + ";\n");
+            }
          }
       }
       writer->write("\n");
@@ -812,7 +823,7 @@ void MinimalInterfaceTestbench::read_input_value_from_file_RNONE(const std::stri
          std::string nonescaped_name = input_name;
          if(escaped_pos != std::string::npos)
             nonescaped_name.erase(std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
-         if(output_level > OUTPUT_LEVEL_MINIMUM)
+         if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
             writer->write("$display(\"Value found for input " + nonescaped_name + ": %b\", " + input_name + ");\n");
       }
       writer->write(STR(STD_CLOSING_CHAR));
@@ -823,6 +834,7 @@ void MinimalInterfaceTestbench::read_input_value_from_file_RNONE(const std::stri
 
 void MinimalInterfaceTestbench::write_file_reading_operations() const
 {
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Write file reading operations");
    /// file reading operations
    // cppcheck-suppress variableScope
    bool first_valid_input = true;
@@ -878,6 +890,7 @@ void MinimalInterfaceTestbench::write_file_reading_operations() const
    }
    if(not first_valid_input)
       writer->write("_ch_ = $fgetc(file);\n");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written file reading operations");
 }
 
 std::string MinimalInterfaceTestbench::memory_aggregate_slices(unsigned int i, long long int bitsize, long long int Mout_addr_ram_bitsize) const

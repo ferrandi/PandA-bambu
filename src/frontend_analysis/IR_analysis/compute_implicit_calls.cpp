@@ -331,7 +331,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
 
       /// add a cast
       tree_nodeRef nop_init_var = tree_man->create_unary_operation(pt, init_var, srcp_default, nop_expr_K);
-      tree_nodeRef nop_init_var_ga = tree_man->CreateGimpleAssign(pt, nop_init_var, BB1_index, srcp_default);
+      tree_nodeRef nop_init_var_ga = tree_man->CreateGimpleAssign(pt, tree_nodeRef(), tree_nodeRef(), nop_init_var, BB1_index, srcp_default);
       init_var = GetPointer<gimple_assign>(GET_NODE(nop_init_var_ga))->op0;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding cast statement " + GET_NODE(nop_init_var_ga)->ToString());
 
@@ -355,7 +355,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       const auto copy_byte_size = dst_size / 8;
       tree_nodeRef copy_byte_size_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(copy_byte_size), GET_INDEX_NODE(offset_type));
       tree_nodeRef pp = tree_man->create_binary_operation(pt, init_var, copy_byte_size_node, srcp_default, pointer_plus_expr_K);
-      tree_nodeRef pp_ga = tree_man->CreateGimpleAssign(pt, pp, BB1_index, srcp_default);
+      tree_nodeRef pp_ga = tree_man->CreateGimpleAssign(pt, tree_nodeRef(), tree_nodeRef(), pp, BB1_index, srcp_default);
       GetPointer<gimple_assign>(GET_NODE(pp_ga))->temporary_address = true;
       tree_nodeRef vd_limit = GetPointer<gimple_assign>(GET_NODE(pp_ga))->op0;
       GetPointer<ssa_name>(GET_NODE(vd_limit))->use_set = PointToSolutionRef(new PointToSolution());
@@ -364,7 +364,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(pp_ga)->ToString());
       tree_nodeRef size_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(tree_helper::Size(type_node1) / 8), GET_INDEX_NODE(offset_type));
       tree_nodeRef pp_ind = tree_man->create_binary_operation(pt, gp->res, size_node, srcp_default, pointer_plus_expr_K);
-      tree_nodeRef pp_ga_ind = tree_man->CreateGimpleAssign(pt, pp_ind, BBN1_block_index, srcp_default);
+      tree_nodeRef pp_ga_ind = tree_man->CreateGimpleAssign(pt, tree_nodeRef(), tree_nodeRef(), pp_ind, BBN1_block_index, srcp_default);
       GetPointer<gimple_assign>(GET_NODE(pp_ga_ind))->temporary_address = true;
       BBN1_block->PushBack(pp_ga_ind);
       tree_nodeRef vd_ind = GetPointer<gimple_assign>(GET_NODE(pp_ga_ind))->op0;
@@ -376,7 +376,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       /// the comparison
       const auto boolean_type = tree_man->create_boolean_type();
       const auto comparison = tree_man->create_binary_operation(boolean_type, vd_ind, vd_limit, srcp_default, ne_expr_K);
-      tree_nodeRef comp_ga = tree_man->CreateGimpleAssign(boolean_type, comparison, BBN1_block_index, srcp_default);
+      tree_nodeRef comp_ga = tree_man->CreateGimpleAssign(boolean_type, TM->CreateUniqueIntegerCst(0, type_index), TM->CreateUniqueIntegerCst(1, type_index), comparison, BBN1_block_index, srcp_default);
       BBN1_block->PushBack(comp_ga);
       tree_nodeRef comp_res = GetPointer<gimple_assign>(GET_NODE(comp_ga))->op0;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---comparison assign " + STR(comp_ga));

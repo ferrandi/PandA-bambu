@@ -140,7 +140,7 @@
 #if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
 #include "extended_pdg_computation.hpp"
 #endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
 #include "extract_omp_atomic.hpp"
 #include "extract_omp_for.hpp"
 #endif
@@ -410,7 +410,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #if HAVE_BAMBU_BUILT
       case EXTRACT_GIMPLE_COND_OP:
 #endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       case EXTRACT_OMP_ATOMIC:
       case EXTRACT_OMP_FOR:
 #endif
@@ -808,7 +808,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
 #if HAVE_BAMBU_BUILT
       case EXTRACT_GIMPLE_COND_OP:
 #endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       case EXTRACT_OMP_ATOMIC:
       case EXTRACT_OMP_FOR:
 #endif
@@ -1159,7 +1159,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
          return DesignFlowStepRef(new ExtractGimpleCondOp(AppM, design_flow_manager.lock(), function_id, parameters));
       }
 #endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       case EXTRACT_OMP_ATOMIC:
       {
          return DesignFlowStepRef(new ExtractOmpAtomic(AppM, function_id, design_flow_manager.lock(), parameters));

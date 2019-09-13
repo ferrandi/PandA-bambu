@@ -794,7 +794,6 @@ gcc_regression_simple/strct-pack-3.c
 gcc_regression_simple/strct-pack-4.c
 gcc_regression_simple/string-opt-18.c
 gcc_regression_simple/struct-aliasing-1.c
-gcc_regression_simple/struct-cpy-1.c
 gcc_regression_simple/struct-ini-1.c
 gcc_regression_simple/struct-ini-2.c
 gcc_regression_simple/struct-ini-3.c

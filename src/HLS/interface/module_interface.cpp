@@ -43,14 +43,12 @@
  * $State: Exp $
  *
  */
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
 #include "module_interface.hpp"
 
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
+#include "omp_functions.hpp"
 
 #include "hls.hpp"
 #include "hls_manager.hpp"
@@ -68,11 +66,18 @@
 
 /// HLS/module_allocation includes
 #include "add_library.hpp"
+
+/// STL includes
+#include <tuple>
+#include <unordered_set>
+
+/// utility include
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 
 module_interface::module_interface(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
     : HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
+   THROW_ASSERT(_parameters, "Parameter null");
 }
 
 module_interface::~module_interface() = default;
@@ -91,7 +96,32 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
          }
          else
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::TOP_ENTITY_CREATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_function_allocation_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION)); // add dependence to omp_function
+            if(HLSMgr->Rfuns)
+            {
+               bool found = false;
+               if(parameters->isOption(OPT_context_switch))
+               {
+                  auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+                  THROW_ASSERT(omp_functions, "OMP_functions must not be null");
+                  if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
+                     found = true;
+                  if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end())
+                     found = true;
+                  if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end())
+                     found = true;
+                  if(found) // use new top_entity
+                  {
+                     const HLSFlowStep_Type top_entity_type = HLSFlowStep_Type::TOP_ENTITY_CS_CREATION;
+                     ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+                  }
+               }
+               if(!found) // use standard
+               {
+                  const HLSFlowStep_Type top_entity_type = HLSFlowStep_Type::TOP_ENTITY_CREATION;
+                  ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+               }
+            }
          }
          break;
       }

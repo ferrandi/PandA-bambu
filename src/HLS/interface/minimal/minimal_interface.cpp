@@ -39,9 +39,6 @@
  *
  * @author Marco Minutoli <mminutoli@gmail.com>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "minimal_interface.hpp"
@@ -69,10 +66,23 @@
 // HLS/simulation include
 #include "testbench_generation_base_step.hpp"
 
+/// STD include
+#include <string>
+
+/// STL includes
+#include <list>
+#include <map>
+#include <set>
+#include <utility>
+#include <vector>
+
+
 // technology/physical_library include
 #include "technology_node.hpp"
 
+/// utility include
 #include "copyrights_strings.hpp"
+#include "string_manipulation.hpp"
 
 minimal_interface::minimal_interface(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
     : module_interface(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
@@ -279,7 +289,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       {
          if(with_master && !Has_unknown_addresses)
          {
-            THROW_ASSERT(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) != MemoryAllocation_ChannelsType::MEM_ACC_P1N, "unexpected condition");
+            THROW_ASSERT(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) != (MemoryAllocation_ChannelsType::MEM_ACC_P1N), "unexpected condition");
             /// allocate the unique shared memory
             structural_objectRef shared_memory;
             bool is_memory_splitted;
@@ -306,27 +316,27 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             std::ofstream init_file_a((init_filename).c_str());
             std::ofstream init_file_b((+"0_" + init_filename).c_str());
 
-            auto* shared_memory_module = GetPointer<module>(shared_memory);
-            shared_memory_module->set_parameter("address_space_begin", std::to_string(base_address));
-            shared_memory_module->set_parameter("address_space_rangesize", std::to_string(n_bytes));
+            module* shared_memory_module = GetPointer<module>(shared_memory);
+            shared_memory_module->SetParameter("address_space_begin", STR(base_address));
+            shared_memory_module->SetParameter("address_space_rangesize", STR(n_bytes));
             if(parameters->isOption(OPT_sparse_memory) && parameters->getOption<bool>(OPT_sparse_memory))
-               shared_memory_module->set_parameter("USE_SPARSE_MEMORY", std::to_string(1));
+               shared_memory_module->SetParameter("USE_SPARSE_MEMORY", "1");
             else
-               shared_memory_module->set_parameter("USE_SPARSE_MEMORY", std::to_string(0));
+               shared_memory_module->SetParameter("USE_SPARSE_MEMORY", "0");
             if(is_memory_splitted)
             {
-               shared_memory_module->set_parameter("MEMORY_INIT_file_a", "\"\"" + init_filename + "\"\"");
-               shared_memory_module->set_parameter("MEMORY_INIT_file_b", "\"\"0_" + init_filename + "\"\"");
+               shared_memory_module->SetParameter("MEMORY_INIT_file_a", "\"\"" + init_filename + "\"\"");
+               shared_memory_module->SetParameter("MEMORY_INIT_file_b", "\"\"0_" + init_filename + "\"\"");
             }
             else
-               shared_memory_module->set_parameter("MEMORY_INIT_file", "\"\"" + init_filename + "\"\"");
-            shared_memory_module->set_parameter("n_elements", std::to_string(vec_size));
-            shared_memory_module->set_parameter("data_size", std::to_string(bus_data_bitsize));
-            shared_memory_module->set_parameter("BRAM_BITSIZE", std::to_string(bram_bitsize));
+               shared_memory_module->SetParameter("MEMORY_INIT_file", "\"\"" + init_filename + "\"\"");
+            shared_memory_module->SetParameter("n_elements", STR(vec_size));
+            shared_memory_module->SetParameter("data_size", STR(bus_data_bitsize));
+            shared_memory_module->SetParameter("BRAM_BITSIZE", STR(bram_bitsize));
             if((Has_extern_allocated_data && parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::INTERN_UNALIGNED) || Has_unknown_addresses)
-               shared_memory_module->set_parameter("BUS_PIPELINED", std::to_string(0));
+               shared_memory_module->SetParameter("BUS_PIPELINED", "0");
             else
-               shared_memory_module->set_parameter("BUS_PIPELINED", std::to_string(1));
+               shared_memory_module->SetParameter("BUS_PIPELINED", "1");
             unsigned int n_ports = parameters->isOption(OPT_channels_number) ? parameters->getOption<unsigned int>(OPT_channels_number) : 0;
             for(unsigned int i = 0; i < shared_memory_module->get_in_port_size(); i++)
             {
@@ -356,7 +366,6 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             unsigned int nbyte_on_memory = (bram_bitsize / 8);
 
             std::string init_v;
-            std::vector<std::string> splitted;
             std::string current_bits;
             unsigned int counter = 0;
             bool is_even = true;
@@ -369,7 +378,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             for(std::list<std::pair<unsigned int, memory_symbolRef>>::const_iterator m = mem_variables.begin(); m != mem_variables.end(); ++m)
             {
                init_v = TestbenchGenerationBaseStep::print_var_init(HLSMgr->get_tree_manager(), m->first, HLSMgr->Rmem);
-               boost::algorithm::split(splitted, init_v, boost::algorithm::is_any_of(","));
+               std::vector<std::string> splitted = SplitString(init_v, ",");
                unsigned int byte_allocated = 0;
                unsigned int actual_byte = tree_helper::size(HLSMgr->get_tree_manager(), m->first) / 8;
                std::vector<std::string> eightbit_string;
@@ -917,7 +926,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             {
                auto TM = HLSMgr->get_HLS_target()->get_technology_manager();
                std::string library_name = TM->get_library(VIEW_CONVERT_STD_INT);
-               auto c_obj = SM_minimal_interface->add_module_from_technology_library(port_name+"_"+VIEW_CONVERT_STD_INT, VIEW_CONVERT_STD_INT, library_name, interfaceObj, TM);
+               auto c_obj = SM_minimal_interface->add_module_from_technology_library(port_name + "_" + VIEW_CONVERT_STD_INT, VIEW_CONVERT_STD_INT, library_name, interfaceObj, TM);
                auto bit_size_port = port_out->get_typeRef()->size;
                structural_objectRef in1 = GetPointer<module>(c_obj)->get_in_port(0);
                in1->type_resize(bit_size_port);
@@ -935,7 +944,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             {
                auto TM = HLSMgr->get_HLS_target()->get_technology_manager();
                std::string library_name = TM->get_library(VIEW_CONVERT_STD_UINT);
-               auto c_obj = SM_minimal_interface->add_module_from_technology_library(port_name+"_"+VIEW_CONVERT_STD_UINT, VIEW_CONVERT_STD_UINT, library_name, interfaceObj, TM);
+               auto c_obj = SM_minimal_interface->add_module_from_technology_library(port_name + "_" + VIEW_CONVERT_STD_UINT, VIEW_CONVERT_STD_UINT, library_name, interfaceObj, TM);
                auto bit_size_port = port_out->get_typeRef()->size;
                structural_objectRef in1 = GetPointer<module>(c_obj)->get_in_port(0);
                in1->type_resize(bit_size_port);

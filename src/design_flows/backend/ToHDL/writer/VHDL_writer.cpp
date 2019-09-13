@@ -67,6 +67,9 @@
 /// HLS/stg include
 #include "state_transition_graph_manager.hpp"
 
+/// STL include
+#include <utility>
+
 /// technology/physical_library include
 #include "technology_node.hpp"
 
@@ -827,7 +830,7 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
          }
          else
          {
-            const auto parameter = mod->get_parameter(name);
+            const auto parameter = mod->GetParameter(name);
             const auto parameter_type = mod->get_parameter_type(TM, name);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter " + name + " has value " + parameter);
             switch(parameter_type)
@@ -855,19 +858,19 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
                   {
                      if(GetPointer<const module>(mod->get_owner()))
                      {
-                        if(mod->get_owner()->is_parameter(parameter))
+                        if(mod->get_owner()->ExistsParameter(parameter))
                         {
 #if HAVE_ASSERTS
                            const auto actual_parameter_type = GetPointer<const module>(mod->get_owner())->get_parameter_type(TM, parameter);
 #endif
                            THROW_ASSERT(actual_parameter_type == parameter_type, "");
                         }
-                        else if(mod->get_owner()->is_parameter(MEMORY_PARAMETER))
+                        else if(mod->get_owner()->ExistsParameter(MEMORY_PARAMETER))
                         {
 #if HAVE_ASSERTS
                            bool found = false;
 #endif
-                           std::string memory_str = mod->get_owner()->get_parameter(MEMORY_PARAMETER);
+                           std::string memory_str = mod->get_owner()->GetParameter(MEMORY_PARAMETER);
                            std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
                            for(const auto& i : mem_tag)
                            {
@@ -1010,7 +1013,7 @@ void VHDL_writer::write_state_declaration(const structural_objectRef&, const std
    }
 }
 
-void VHDL_writer::write_present_state_update(const std::string& reset_state, const std::string& reset_port, const std::string& clock_port, const std::string& reset_type, bool)
+void VHDL_writer::write_present_state_update(const structural_objectRef, const std::string& reset_state, const std::string& reset_port, const std::string& clock_port, const std::string& reset_type, bool)
 {
    write_comment("concurrent process#1: state registers\n");
    if(reset_type == "no" || reset_type == "sync")
@@ -1139,11 +1142,31 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
 
       for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
       {
+         if(mod->get_out_port(i)->get_id() == PRESENT_STATE_PORT_NAME)
+            continue;
+         if(mod->get_out_port(i)->get_id() == NEXT_STATE_PORT_NAME)
+            continue;
+
          std::string port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
-         if(default_output[i] != current_output[i] and current_output[i] != '-')
+         if(default_output[i] != current_output[i])
          {
             if(single_proc || output_index == i)
-               indented_output_stream->Append(port_name + " <= '" + current_output[i] + "';\n");
+            {
+               switch (current_output[i])
+               {
+                  case '1':
+                     indented_output_stream->Append(port_name + " <= '" + current_output[i] + "';\n");
+                     break;
+
+                  case '2':
+                     indented_output_stream->Append(port_name + " <= 'X';\n");
+                     break;
+
+                  default:
+                     THROW_ERROR("Unsupported value in current output");
+                     break;
+               }
+            }
          }
       }
 
@@ -1266,7 +1289,12 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
             {
                std::string port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i2)->get_id());
                if(single_proc || output_index == i2)
-                  indented_output_stream->Append(port_name + " <= '" + transition_outputs[i2] + "';\n");
+               {
+                  if(transition_outputs[i2] == '2')
+                     indented_output_stream->Append(port_name + " <= 'X';\n");
+                  else
+                     indented_output_stream->Append(port_name + " <= '" + transition_outputs[i2] + "';\n");
+               }
             }
          }
          indented_output_stream->Deindent();
@@ -1346,10 +1374,10 @@ void VHDL_writer::write_module_parametrization_decl(const structural_objectRef& 
    auto* mod = GetPointer<module>(cir);
    bool first_it = true;
    /// writing memory-related parameters
-   if(mod->is_parameter(MEMORY_PARAMETER))
+   if(mod->ExistsParameter(MEMORY_PARAMETER) and mod->GetParameter(MEMORY_PARAMETER) != "")
    {
       indented_output_stream->Append("generic(\n");
-      std::string memory_str = mod->get_parameter(MEMORY_PARAMETER);
+      std::string memory_str = mod->GetParameter(MEMORY_PARAMETER);
       std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
       for(const auto& i : mem_tag)
       {
@@ -1411,7 +1439,7 @@ void VHDL_writer::write_module_parametrization_decl(const structural_objectRef& 
          }
          else
          {
-            const auto parameter = mod->get_parameter(name);
+            const auto parameter = mod->GetDefaultParameter(name);
             const auto parameter_type = mod->get_parameter_type(TM, name);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter " + name + " has default value " + parameter);
             switch(parameter_type)
@@ -1536,12 +1564,11 @@ void VHDL_writer::write_header()
    indented_output_stream->Append("\n");
    indented_output_stream->Append("package body panda_pkg is\n");
    indented_output_stream->Append("   function resize_signed(input : signed; size : integer) return signed is\n");
-   indented_output_stream->Append("     variable ret : signed(size-1 downto 0);\n");
    indented_output_stream->Append("   begin\n");
    indented_output_stream->Append("     if (size > input'length) then\n");
    indented_output_stream->Append("       return resize(input, size);\n");
    indented_output_stream->Append("     else\n");
-   indented_output_stream->Append("       return input(size-1 downto 0);\n");
+   indented_output_stream->Append("       return input(size-1+input'right downto input'right);\n");
    indented_output_stream->Append("     end if;\n");
    indented_output_stream->Append("   end function;\n");
    indented_output_stream->Append("end package body;\n");

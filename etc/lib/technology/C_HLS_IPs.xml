@@ -103,6 +103,56 @@
       </circuit>
     </cell>
     <cell>
+      <name>ASSIGN_VEC_SIGNED_FU</name>
+      <operation operation_name="ASSIGN" supported_types="VECTOR_INT:*"/>
+      <circuit>
+        <component_o id="ASSIGN_VEC_SIGNED_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2019 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ASSIGN_VEC_SIGNED_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ASSIGN_VEC_SIGNED_FU in1 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1];\n  end\nendgenerate" VHDL_PROVIDED="begin\nprocess(in1)
+begin
+   for index in 0 to NUM_ELEM_out1-1 loop
+       out1((index+1)*BITSIZE_out1-1 downto index*BITSIZE_out1) &lt;= std_logic_vector(resize_signed(signed(in1((index+1)*BITSIZE_in1-1 downto index*BITSIZE_in1)), BITSIZE_out1));
+   end loop;
+end process;"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>ASSIGN_VEC_UNSIGNED_FU</name>
+      <operation operation_name="ASSIGN" supported_types="VECTOR_UINT:*"/>
+      <circuit>
+        <component_o id="ASSIGN_VEC_UNSIGNED_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2019 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ASSIGN_VEC_UNSIGNED_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ASSIGN_VEC_UNSIGNED_FU in1 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1];\n  end\nendgenerate" VHDL_PROVIDED="begin\nprocess(in1)
+begin
+   for index in 0 to NUM_ELEM_out1-1 loop
+       out1((index+1)*BITSIZE_out1-1 downto index*BITSIZE_out1) &lt;= std_logic_vector(resize(unsigned(in1((index+1)*BITSIZE_in1-1 downto index*BITSIZE_in1), BITSIZE_out1)));
+   end loop;
+end process;"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
       <name>assert_expr_FU</name>
       <operation operation_name="assert_expr" supported_types="INT:*" />
       <circuit>
@@ -3795,6 +3845,92 @@ out1 &lt;= resize(in1, BITSIZE_out1) or resize(in2, BITSIZE_out1);"/>
             <connected_objects/>
           </port_vector_o>
           <NP_functionality LIBRARY="out1 Min_oe_ram Mout_oe_ram Min_we_ram Mout_we_ram Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size M_DataRdy access_allowed access_request" IP_COMPONENT="MEMORY_CTRL_P1N" VERILOG_GENERATOR="printf_verilog_generator_p1n.cpp"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>PRINTFCS</name>
+      <operation operation_name="printf" execution_time="0.0000001" bounded="0"/>
+      <operation operation_name="__builtin_printf" execution_time="0.0000001" bounded="0"/>
+      <channels_type>MEM_ACC_CS</channels_type>
+      <circuit>
+        <component_o id="PRINTFN">
+          <parameter name="TAG_MEM_REQ">0</parameter>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2016 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="PRINTFN"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="var_arg" dir="IN" is_var_args="1">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="sel_printf" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="sel___builtin_printf" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+             <structural_type_descriptor type="INT" size="1" />
+          </port_o>
+          <port_o id="M_Rdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="Min_tag" dir="IN" is_memory="1" is_global="1" is_extern="1" is_tag_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="request_accepted" dir="IN" is_memory="1" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_master="1" >
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="Mout_we_ram" dir="OUT" is_memory="1" is_master="1" >
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="Mout_tag_ram" dir="OUT" is_memory="1" is_master="1" is_tag_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="out1 M_Rdata_ram M_DataRdy Min_tag request_accepted Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram TAG_MEM_REQ" IP_COMPONENT="mem_ctrl_kernel" VERILOG_GENERATOR="printf_verilog_generator_CS.cpp"/>
         </component_o>
       </circuit>
     </cell>

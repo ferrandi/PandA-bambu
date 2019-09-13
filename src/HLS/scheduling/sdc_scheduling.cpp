@@ -486,6 +486,7 @@ void SDCScheduling::ComputeRelationships(DesignFlowStepSet& relationship, const 
                                                            GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateFunctionFrontendFlowStep(FrontendFlowStepType::SDC_CODE_MOTION, funId);
             relationship.insert(design_flow_step);
          }
+         if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
             vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, funId));
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
@@ -514,10 +515,10 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
       }
       case PRECEDENCE_RELATIONSHIP:
       {
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
          if(parameters->getOption<bool>(OPT_parse_pragma))
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::CALLED_FUNCTIONS));
          }
          else
 #endif

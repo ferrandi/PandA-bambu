@@ -5411,11 +5411,17 @@ bool BehavioralHelper::IsDefaultSsaName(const unsigned int ssa_name_index) const
    return sn and sn->default_flag;
 }
 
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
 size_t BehavioralHelper::GetOmpForDegree() const
 {
    const auto fd = GetPointer<const function_decl>(TM->get_tree_node_const(function_index));
    return fd->omp_for_wrapper;
+}
+
+bool BehavioralHelper::IsOmpFunctionAtomic() const
+{
+   const auto fd = GetPointer<const function_decl>(TM->get_tree_node_const(function_index));
+   return fd->omp_atomic;
 }
 
 bool BehavioralHelper::IsOmpBodyLoop() const
@@ -5423,7 +5429,9 @@ bool BehavioralHelper::IsOmpBodyLoop() const
    const auto fd = GetPointer<const function_decl>(TM->get_tree_node_const(function_index));
    return fd->omp_body_loop;
 }
+#endif
 
+#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
 bool BehavioralHelper::IsOmpAtomic() const
 {
    const auto fd = GetPointer<const function_decl>(TM->get_tree_node_const(function_index));

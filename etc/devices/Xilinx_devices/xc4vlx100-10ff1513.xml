@@ -476,6 +476,7 @@
             <parameter name="BUS_PIPELINED">1</parameter>
             <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
             <parameter name="PRIVATE_MEMORY">0</parameter>
+            <parameter name="READ_ONLY_MEMORY">0</parameter>
             <parameter name="USE_SPARSE_MEMORY">1</parameter>
             <parameter name="address_space_begin">0</parameter>
             <parameter name="address_space_rangesize">4</parameter>
@@ -606,6 +607,7 @@
             <parameter name="BUS_PIPELINED">1</parameter>
             <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
             <parameter name="PRIVATE_MEMORY">0</parameter>
+            <parameter name="READ_ONLY_MEMORY">0</parameter>
             <parameter name="USE_SPARSE_MEMORY">1</parameter>
             <parameter name="address_space_begin">0</parameter>
             <parameter name="address_space_rangesize">4</parameter>
@@ -736,6 +738,7 @@
             <parameter name="BUS_PIPELINED">1</parameter>
             <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
             <parameter name="PRIVATE_MEMORY">0</parameter>
+            <parameter name="READ_ONLY_MEMORY">0</parameter>
             <parameter name="USE_SPARSE_MEMORY">1</parameter>
             <parameter name="address_space_begin">0</parameter>
             <parameter name="address_space_rangesize">4</parameter>
@@ -867,6 +870,7 @@
             <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_b.data&quot;&quot;</parameter>
             <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.data&quot;&quot;</parameter>
             <parameter name="PRIVATE_MEMORY">0</parameter>
+            <parameter name="READ_ONLY_MEMORY">0</parameter>
             <parameter name="USE_SPARSE_MEMORY">1</parameter>
             <parameter name="address_space_begin">0</parameter>
             <parameter name="address_space_rangesize">4</parameter>
@@ -998,6 +1002,7 @@
             <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_b.data&quot;&quot;</parameter>
             <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.data&quot;&quot;</parameter>
             <parameter name="PRIVATE_MEMORY">0</parameter>
+            <parameter name="READ_ONLY_MEMORY">0</parameter>
             <parameter name="USE_SPARSE_MEMORY">1</parameter>
             <parameter name="address_space_begin">0</parameter>
             <parameter name="address_space_rangesize">4</parameter>
@@ -1129,6 +1134,7 @@
             <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_b.data&quot;&quot;</parameter>
             <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.data&quot;&quot;</parameter>
             <parameter name="PRIVATE_MEMORY">0</parameter>
+            <parameter name="READ_ONLY_MEMORY">0</parameter>
             <parameter name="USE_SPARSE_MEMORY">1</parameter>
             <parameter name="address_space_begin">0</parameter>
             <parameter name="address_space_rangesize">4</parameter>
@@ -1326,6 +1332,7 @@
             <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_b.data&quot;&quot;</parameter>
             <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.data&quot;&quot;</parameter>
             <parameter name="PRIVATE_MEMORY">0</parameter>
+            <parameter name="READ_ONLY_MEMORY">0</parameter>
             <parameter name="USE_SPARSE_MEMORY">1</parameter>
             <parameter name="address_space_begin">0</parameter>
             <parameter name="address_space_rangesize">4</parameter>
@@ -1457,6 +1464,7 @@
             <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_b.data&quot;&quot;</parameter>
             <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.data&quot;&quot;</parameter>
             <parameter name="PRIVATE_MEMORY">0</parameter>
+            <parameter name="READ_ONLY_MEMORY">0</parameter>
             <parameter name="USE_SPARSE_MEMORY">1</parameter>
             <parameter name="address_space_begin">0</parameter>
             <parameter name="address_space_rangesize">4</parameter>
@@ -1588,6 +1596,7 @@
             <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_b.data&quot;&quot;</parameter>
             <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.data&quot;&quot;</parameter>
             <parameter name="PRIVATE_MEMORY">0</parameter>
+            <parameter name="READ_ONLY_MEMORY">0</parameter>
             <parameter name="USE_SPARSE_MEMORY">1</parameter>
             <parameter name="address_space_begin">0</parameter>
             <parameter name="address_space_rangesize">4</parameter>

@@ -329,7 +329,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
    connect_with_signal_name(SM, wrappedObj, DONE_PORT_NAME, interfaceObj, WB_IRQ_PORT_NAME, STR(DONE_PORT_NAME) + "_INT");
 
    structural_objectRef constBitZero = SM->add_module_from_technology_library("constBitZero", CONSTANT_STD, LIBRARY_STD, interfaceObj, HLS->HLS_T->get_technology_manager());
-   constBitZero->set_parameter("value", "1'b0");
+   constBitZero->SetParameter("value", "1'b0");
    connect_with_signal(SM, wrappedObj, START_PORT_NAME, constBitZero, "out1");
 
    unsigned int data_bus_bitsize = get_data_bus_bitsize();
@@ -394,14 +394,14 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
 
          structural_objectRef constBaseAddressOut1 = constBaseAddress->find_member("out1", port_o_K, constBaseAddress);
          GetPointer<port_o>(constBaseAddressOut1)->set_type(addr_type);
-         constBaseAddress->set_parameter("value", baseAddressParameter + " + " + STR(HLSMgr->Rmem->get_first_address(HLS->functionId)));
+         constBaseAddress->SetParameter("value", baseAddressParameter + " + " + STR(HLSMgr->Rmem->get_first_address(HLS->functionId)));
          connect_with_signal(SM, addressRangeChecker, "base", constBaseAddress, "out1");
 
          structural_objectRef constMaxAddress = SM->add_module_from_technology_library("const_max_address", CONSTANT_STD, LIBRARY_STD, interfaceObj, HLS->HLS_T->get_technology_manager());
 
          structural_objectRef constMaxAddressOut1 = constMaxAddress->find_member("out1", port_o_K, constMaxAddress);
          GetPointer<port_o>(constMaxAddressOut1)->set_type(addr_type);
-         constMaxAddress->set_parameter("value", baseAddressParameter + " + " + STR(HLSMgr->Rmem->get_last_address(HLS->functionId, HLSMgr)));
+         constMaxAddress->SetParameter("value", baseAddressParameter + " + " + STR(HLSMgr->Rmem->get_last_address(HLS->functionId, HLSMgr)));
          connect_with_signal(SM, addressRangeChecker, "max_address", constMaxAddress, "out1");
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Added addressRangeChecker");
 
@@ -725,7 +725,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Adding slave addressFilter");
       structural_objectRef addressFilterAddrIS = SM->add_module_from_technology_library("addressFilterAddrIS", ADDRESS_FILTER_WB, WBLIBRARY, interfaceObj, HLS->HLS_T->get_technology_manager());
-      GetPointer<module>(addressFilterAddrIS)->set_parameter("MAX_ADDRESS", baseAddressParameter + " + " + STR(HLSMgr->Rmem->get_last_address(HLS->functionId, HLSMgr)));
+      GetPointer<module>(addressFilterAddrIS)->SetParameter("MAX_ADDRESS", baseAddressParameter + " + " + STR(HLSMgr->Rmem->get_last_address(HLS->functionId, HLSMgr)));
 
       structural_objectRef afAddrISIn1 = addressFilterAddrIS->find_member("in1", port_o_K, addressFilterAddrIS);
       GetPointer<port_o>(afAddrISIn1)->set_type(addr_type);

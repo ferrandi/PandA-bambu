@@ -140,7 +140,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_BAMBU_BUILT
       case EXTRACT_GIMPLE_COND_OP:
 #endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       case EXTRACT_OMP_ATOMIC:
       case EXTRACT_OMP_FOR:
 #endif

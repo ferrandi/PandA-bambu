@@ -63,15 +63,16 @@
 
 /// STD include
 #include <getopt.h>
+#include <string>
 
 /// STL include
+#include <vector>
 
 /// Utility include
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "string_manipulation.hpp"
 #include "utility.hpp"
-#include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/replace.hpp>
-#include <boost/algorithm/string/split.hpp>
 
 /// PARAMETERS STUFF ***********************///
 #define INPUT_OPT_ACCURACY 256
@@ -242,9 +243,8 @@ int SpiderParameter::Exec()
          }
          case INPUT_OPT_BENCHMARK_BOUNDS:
          {
-            std::vector<std::string> splitted;
             std::string to_be_splitted(optarg);
-            boost::algorithm::split(splitted, to_be_splitted, boost::algorithm::is_any_of(","));
+            std::vector<std::string> splitted = SplitString(to_be_splitted, ",");
             if(splitted.size() != 2)
             {
                THROW_ERROR("Error in argument of --benchmark-bounds: " + std::string(optarg));
@@ -426,8 +426,8 @@ void SpiderParameter::CheckParameters()
             case(Parameters_FileFormat::FF_CPP):
             case(Parameters_FileFormat::FF_FORTRAN):
 #endif
-#if HAVE_FROM_CSV_BUILT
             case(Parameters_FileFormat::FF_CSV):
+#if HAVE_FROM_CSV_BUILT
             case(Parameters_FileFormat::FF_CSV_RTL):
             case(Parameters_FileFormat::FF_CSV_TRE):
 #endif

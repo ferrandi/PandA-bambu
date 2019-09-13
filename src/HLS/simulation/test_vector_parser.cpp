@@ -42,35 +42,13 @@
 
 #include "test_vector_parser.hpp"
 
-#include "gcc_wrapper.hpp"
-
-/// utility/ include
-#include "dbgPrintHelper.hpp"
-
-/// utility/exceptions/ include
-#include "exceptions.hpp"
-
-/// parser/polixml include
-#include "xml_dom_parser.hpp"
-
-/// polixml include
-#include "xml_document.hpp"
-
-/// utility include
-#include "fileIO.hpp"
-
-/// behavior/ include
-#include "call_graph.hpp"
-#include "call_graph_manager.hpp"
-
-/// tree/ include
-#include "behavioral_helper.hpp"
-#include "function_behavior.hpp"
-
 /// behavior include
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
+
+/// boost include
+#include <boost/algorithm/string.hpp>
 
 /// design_flows include
 #include "design_flow_graph.hpp"
@@ -84,11 +62,31 @@
 #include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
 
-// include from HLS/simulation
+/// include from HLS/simulation
 #include "SimulationInformation.hpp"
 
+/// parser/polixml include
+#include "xml_dom_parser.hpp"
+
+/// polixml include
+#include "xml_document.hpp"
+
+/// STL include
+#include <tuple>
+#include <utility>
+#include <unordered_set>
+
+/// tree/ include
+#include "behavioral_helper.hpp"
+
+/// utility includes
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
+#include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
-#include <boost/algorithm/string.hpp>
+
+/// wrapper/treegcc include
+#include "gcc_wrapper.hpp"
 
 TestVectorParser::TestVectorParser(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TEST_VECTOR_PARSER)
 {
@@ -111,15 +109,14 @@ void TestVectorParser::ParseUserString(std::vector<std::map<std::string, std::st
       else if(*it == '=' && last_comma != it_end)
          *last_comma = '$';
    }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Preprocessed string " + local_string);
    test_vectors.push_back(std::map<std::string, std::string>());
-   std::vector<std::string> testbench_parameters;
-   boost::algorithm::split(testbench_parameters, local_string, boost::algorithm::is_any_of("$"));
+   std::vector<std::string> testbench_parameters = SplitString(local_string, "$");
    unsigned int index = 0;
    for(auto parameter : testbench_parameters)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Examining " + parameter);
-      std::vector<std::string> temp;
-      boost::algorithm::split(temp, parameter, boost::algorithm::is_any_of("="));
+      std::vector<std::string> temp = SplitString(parameter, "=");
       if(temp.size() != 2)
       {
          THROW_ERROR("Error in processing --simulate arg");
@@ -182,14 +179,31 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
             for(const auto function_parameter : behavioral_helper->get_parameters())
             {
                std::string param = behavioral_helper->PrintVariable(function_parameter);
-               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Parameter: " + param + (behavioral_helper->is_a_pointer(function_parameter) ? " (memory access)" : " (input value)"));
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Parameter: " + param + (behavioral_helper->is_a_pointer(function_parameter) ? " (memory access)" : " (input value)"));
                if((Enode)->get_attribute(param))
                {
                   test_vector[param] = boost::lexical_cast<std::string>((Enode)->get_attribute(param)->get_value());
                }
+               else if((Enode)->get_attribute(param + ":init_file"))
+               {
+                  const auto test_directory = GetDirectory(input_xml_filename);
+                  const auto input_file_name = BuildPath(test_directory, Enode->get_attribute(param + ":init_file")->get_value());
+                  const auto input_file = fileIO_istream_open(input_file_name);
+                  test_vector[param] = std::string(std::istreambuf_iterator<char>(*input_file), std::istreambuf_iterator<char>());
+               }
                else if(!behavioral_helper->is_a_pointer(function_parameter))
                {
                   THROW_ERROR("Missing input value for parameter: " + param);
+               }
+            }
+            if(behavioral_helper->GetFunctionReturnType(function_id) and ((Enode)->get_attribute("return")))
+            {
+               /// If discrepancy is enabled, then xml output is ignored
+               if(not(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)))
+               {
+                  HLSMgr->RSim->results_available = true;
+                  test_vector["return"] = ((Enode)->get_attribute("return")->get_value());
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Expected return value is " + test_vector["return"]);
                }
             }
             test_vectors.emplace_back(std::move(test_vector));
@@ -262,7 +276,7 @@ DesignFlowStep_Status TestVectorParser::Exec()
    size_t n_vectors =
 #endif
        ParseTestVectors(HLSMgr->RSim->test_vectors);
-   PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Number of input test vectors: " + STR(n_vectors));
+   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Number of input test vectors: " + STR(n_vectors));
    return DesignFlowStep_Status::SUCCESS;
 }
 

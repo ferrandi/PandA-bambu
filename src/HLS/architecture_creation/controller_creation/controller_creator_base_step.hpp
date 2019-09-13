@@ -44,15 +44,21 @@
 #ifndef CONTROLLER_CREATOR_BASE_STEP_HPP
 #define CONTROLLER_CREATOR_BASE_STEP_HPP
 
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
+/// Superclass include
 #include "hls_function_step.hpp"
 
-#include <fstream>
-#include <map>
-
+/// graph include
 #include "graph.hpp"
+
+/// STD include
+#include <fstream>
+
+/// STL includes
+#include <map>
+#include <tuple>
+#include <unordered_set>
+
+/// utility include
 #include "refcount.hpp"
 
 /**
@@ -99,7 +105,7 @@ class ControllerCreatorBaseStep : public HLSFunctionStep
     * This member function adds the standard ports (clock, reset, done and command ones) to a circuit.
     * \param circuit it is the datastructure of the component where to add these ports
     */
-   void add_common_ports(structural_objectRef circuit);
+   virtual void add_common_ports(structural_objectRef circuit);
 
    /// structural representation of the resulting controller circuit
    structural_managerRef SM;

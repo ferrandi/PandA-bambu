@@ -36,9 +36,6 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
@@ -51,16 +48,20 @@
 
 #include "BambuParameter.hpp"
 
+#include "register_obj.hpp"
 #include "commandport_obj.hpp"
+#include "funit_obj.hpp"
 #include "conn_binding.hpp"
+#include "reg_binding.hpp"
 #include "fu_binding.hpp"
+#include "mux_obj.hpp"
+#include "connection_obj.hpp"
 #include "schedule.hpp"
 
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
 
 #include "exceptions.hpp"
-#include <deque>
 #include <iosfwd>
 
 #include "tree_helper.hpp"
@@ -76,8 +77,22 @@
 #include "technology_manager.hpp"
 #include "time_model.hpp"
 
+/// HLS/binding/storage_value_insertion
+#include "storage_value_information.hpp"
+
+/// HLS/liveness include
+#include "liveness.hpp"
+
 /// HLS/module_allocation
 #include "allocation_information.hpp"
+
+/// STL includes
+#include <deque>
+#include <list>
+#include <map>
+#include <set>
+#include <utility>
+#include <vector>
 
 /// technology/physical_library include
 #include "technology_node.hpp"
@@ -85,8 +100,8 @@
 #include "copyrights_strings.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-fsm_controller::fsm_controller(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
-    : ControllerCreatorBaseStep(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::FSM_CONTROLLER_CREATOR)
+fsm_controller::fsm_controller(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+    : ControllerCreatorBaseStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -124,8 +139,7 @@ DesignFlowStep_Status fsm_controller::InternalExec()
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating state machine representations...");
    std::string state_representation;
    this->create_state_machine(state_representation);
-
-   SM->add_NP_functionality(circuit, NP_functionality::FSM, state_representation);
+   add_correct_transition_memory(state_representation); // if CS is activated some register are memory
 
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Machine encoding");
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, state_representation);
@@ -176,8 +190,13 @@ void fsm_controller::create_state_machine(std::string& parse)
    THROW_ASSERT(std::find(working_list.begin(), working_list.end(), first_state) != working_list.end(), "unexpected case");
    working_list.erase(std::find(working_list.begin(), working_list.end(), first_state));
    working_list.push_front(first_state); /// ensure that first_state is the really first one...
+
+   std::map<vertex, std::vector<bool>> state_Xregs;
+   std::map<unsigned int, unsigned int> wren_list;
+   std::map<unsigned int, unsigned int> register_selectors;
    for(const auto& v : working_list)
    {
+      state_Xregs[v] = std::vector<bool>(HLS->Rreg->get_used_regs(), true);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + astg->CGetStateInfo(v)->name);
       present_state[v] = std::vector<long long int>(out_num, 0);
       if(selectors.find(conn_binding::IN) != selectors.end())
@@ -188,20 +207,20 @@ void fsm_controller::create_state_machine(std::string& parse)
             std::map<vertex, std::set<vertex>> activations_check;
 #endif
             const auto& activations = GetPointer<commandport_obj>(s.second)->get_activations();
-            for(const auto& activation : activations)
+            for(const auto& a : activations)
             {
 #ifndef NDEBUG
-               if(activations_check.find(std::get<0>(activation)) != activations_check.end())
+               if(activations_check.find(std::get<0>(a)) != activations_check.end())
                {
-                  THROW_ASSERT(!activations_check.find(std::get<0>(activation))->second.empty(), "empty set not expected here");
-                  if(activations_check.find(std::get<0>(activation))->second.find(std::get<1>(activation)) == activations_check.find(std::get<0>(activation))->second.end())
+                  THROW_ASSERT(!activations_check.find(std::get<0>(a))->second.empty(), "empty set not expected here");
+                  if(activations_check.at(std::get<0>(a)).find(std::get<1>(a)) == activations_check.at(std::get<0>(a)).end())
                   {
-                     if(std::get<1>(activation) == NULL_VERTEX)
+                     if(std::get<1>(a) == NULL_VERTEX)
                         THROW_ERROR("non compatible transitions added");
-                     else if(activations_check.find(std::get<0>(activation))->second.find(NULL_VERTEX) != activations_check.find(std::get<0>(activation))->second.end())
+                     else if(activations_check.at(std::get<0>(a)).find(NULL_VERTEX) != activations_check.at(std::get<0>(a)).end())
                         THROW_ERROR("non compatible transitions added");
                      else
-                        activations_check[std::get<0>(activation)].insert(std::get<1>(activation));
+                        activations_check[std::get<0>(a)].insert(std::get<1>(a));
                   }
                   else
                   {
@@ -209,11 +228,9 @@ void fsm_controller::create_state_machine(std::string& parse)
                   }
                }
                else
-               {
-                  activations_check[std::get<0>(activation)].insert(std::get<1>(activation));
-               }
+                  activations_check[std::get<0>(a)].insert(std::get<1>(a));
 #endif
-               if(std::get<0>(activation) == v)
+               if(std::get<0>(a) == v)
                {
                   present_state[v][out_ports[s.second]] = 1;
                }
@@ -228,6 +245,7 @@ void fsm_controller::create_state_machine(std::string& parse)
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
 #endif
 
+      const tree_managerRef TreeM = HLSMgr->get_tree_manager();
       const auto& operations = astg->CGetStateInfo(v)->executing_operations;
       for(const auto& op : operations)
       {
@@ -245,7 +263,7 @@ void fsm_controller::create_state_machine(std::string& parse)
          structural_objectRef done_port_i = fu_module->find_member(DONE_PORT_NAME, port_o_K, top);
          /// do some checks
          if(!GetPointer<operation>(op_tn)->is_bounded() && (!start_port_i || !done_port_i))
-            THROW_ERROR("Unbonded operations have to have both done_port and start_port ports!");
+            THROW_ERROR("Unbonded operations have to have both done_port and start_port ports!" + STR(TreeM->CGetTreeNode(data->CGetOpNodeInfo(op)->GetNodeId())));
          if(((GET_TYPE(data, op) & TYPE_EXTERNAL && start_port_i) or !GetPointer<operation>(op_tn)->is_bounded() or start_port_i) and !stg->CGetStateInfo(v)->is_dummy and
             std::find(stg->CGetStateInfo(v)->starting_operations.begin(), stg->CGetStateInfo(v)->starting_operations.end(), op) != stg->CGetStateInfo(v)->starting_operations.end())
          {
@@ -254,6 +272,62 @@ void fsm_controller::create_state_machine(std::string& parse)
             present_state[v][unbounded_port] = 1;
          }
       }
+
+      for(auto in0 : HLS->Rliv->get_live_in(v))
+      {
+         if(HLS->storage_value_information->is_a_storage_value(v, in0))
+         {
+            unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(v, in0);
+            unsigned int accessed_reg = HLS->Rreg->get_register(storage_value_index);
+            state_Xregs[v][accessed_reg] = false;
+         }
+      }
+
+      std::set<std::pair<unsigned int, unsigned int>> active_fu;
+      for(const auto& op : operations)
+      {
+         unsigned int fu_type = HLS->Rfu->get_assign(op);
+         unsigned int fu_index = HLS->Rfu->get_index(op);
+         active_fu.insert(std::make_pair(fu_type, fu_index));
+      }
+
+      if(selectors.find(conn_binding::IN) != selectors.end())
+      {
+         for(const auto& s : selectors.at(conn_binding::IN))
+         {
+            if(s.second->get_type() == generic_obj::COMMAND_PORT)
+            {
+               auto current_port = GetPointer<commandport_obj>(s.second);
+               // compute X values for wr_enable signals
+               if(current_port->get_command_type() == commandport_obj::command_type::WRENABLE)
+               {
+                  auto reg_obj = GetPointer<register_obj>(current_port->get_elem());
+                  wren_list.insert(std::make_pair(reg_obj->get_register_index(), out_ports[s.second]));
+                  if(state_Xregs[v][reg_obj->get_register_index()] && v != first_state)
+                  {
+                     present_state[v][out_ports[s.second]] = 2;
+                     PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Set X value for wr_en on register reg_");
+                     PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, reg_obj->get_register_index());
+                     PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "\n");
+                  }
+               }
+               else if(current_port->get_command_type() == commandport_obj::command_type::SELECTOR)
+               {
+                  auto selector_slave = current_port->get_elem();
+                  if(GetPointer<mux_obj>(selector_slave))
+                  {
+                     auto mux_slave = GetPointer<mux_obj>(selector_slave)->get_final_target();
+                     if(mux_slave->get_type() == generic_obj::resource_type::REGISTER)
+                     {
+                        unsigned int reg_index = GetPointer<register_obj>(mux_slave)->get_register_index();
+                        register_selectors[out_ports[s.second]] = reg_index;
+                     }
+                  }
+               }
+            }
+         }
+     }
+
 #ifndef NDEBUG
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->default output after considering unbounded:");
       for(const auto a : present_state[v])
@@ -274,7 +348,7 @@ void fsm_controller::create_state_machine(std::string& parse)
          continue;
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + stg->CGetStateInfo(v)->name);
 
-      parse += stg->CGetStateInfo(v)->name + " 0" + input_vector_to_string(present_state[v], false);
+      parse += stg->CGetStateInfo(v)->name + " 0" + input_vector_to_string(present_state[v], 0);
 
       std::list<EdgeDescriptor> sorted;
       EdgeDescriptor default_edge;
@@ -299,36 +373,34 @@ void fsm_controller::create_state_machine(std::string& parse)
          sorted.push_back(default_edge);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Sorted next states");
 
-      unsigned int j = 0;
       bool done_port_is_registered = HLS->registered_done_port;
-      std::list<EdgeDescriptor>::const_iterator e_it_end = sorted.end();
-      for(std::list<EdgeDescriptor>::const_iterator e_it = sorted.begin(); e_it != e_it_end; ++e_it, ++j)
+      for(const auto e : sorted)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Considering successor state " + stg->CGetStateInfo(boost::target(*e_it, *stg))->name);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Number of inputs is " + std::to_string(in_num));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Considering successor state " + stg->CGetStateInfo(boost::target(e, *stg))->name);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Number of inputs is " + boost::lexical_cast<std::string>(in_num));
          std::vector<std::string> in(in_num, "-");
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing condition");
-         auto transitionType = stg->CGetTransitionInfo(*e_it)->get_type();
+         auto transitionType = stg->CGetTransitionInfo(e)->get_type();
          if(transitionType == DONTCARE_COND)
             ; // do nothing
          else if(transitionType == TRUE_COND)
          {
-            auto op = stg->CGetTransitionInfo(*e_it)->get_operation();
+            auto op = stg->CGetTransitionInfo(e)->get_operation();
             THROW_ASSERT(cond_ports.find(op) != cond_ports.end(), "the port is missing");
             THROW_ASSERT(in[cond_ports.find(op)->second] == "-", "two different values for the same condition port");
             in[cond_ports.find(op)->second] = "1";
          }
          else if(transitionType == FALSE_COND)
          {
-            auto op = stg->CGetTransitionInfo(*e_it)->get_operation();
+            auto op = stg->CGetTransitionInfo(e)->get_operation();
             THROW_ASSERT(cond_ports.find(op) != cond_ports.end(), "the port is missing");
             THROW_ASSERT(in[cond_ports.find(op)->second] == "-", "two different values for the same condition port");
             in[cond_ports.find(op)->second] = "0";
          }
          else if(transitionType == ALL_FINISHED)
          {
-            auto ops = stg->CGetTransitionInfo(*e_it)->get_operations();
+            auto ops = stg->CGetTransitionInfo(e)->get_operations();
             if(ops.size() == 1)
             {
                auto op = *(ops.begin());
@@ -338,7 +410,7 @@ void fsm_controller::create_state_machine(std::string& parse)
             }
             else
             {
-               auto state = stg->CGetTransitionInfo(*e_it)->get_ref_state();
+               auto state = stg->CGetTransitionInfo(e)->get_ref_state();
                THROW_ASSERT(mu_ports.find(state) != mu_ports.end(), "the port is missing");
                THROW_ASSERT(in[mu_ports.find(state)->second] == "-", "two different values for the same condition port");
                in[mu_ports.find(state)->second] = "1";
@@ -346,7 +418,7 @@ void fsm_controller::create_state_machine(std::string& parse)
          }
          else if(transitionType == NOT_ALL_FINISHED)
          {
-            auto ops = stg->CGetTransitionInfo(*e_it)->get_operations();
+            auto ops = stg->CGetTransitionInfo(e)->get_operations();
             if(ops.size() == 1)
             {
                auto op = *(ops.begin());
@@ -356,7 +428,7 @@ void fsm_controller::create_state_machine(std::string& parse)
             }
             else
             {
-               auto state = stg->CGetTransitionInfo(*e_it)->get_ref_state();
+               auto state = stg->CGetTransitionInfo(e)->get_ref_state();
                THROW_ASSERT(mu_ports.find(state) != mu_ports.end(), "the port is missing");
                THROW_ASSERT(in[mu_ports.find(state)->second] == "-", "two different values for the same condition port");
                in[mu_ports.find(state)->second] = "0";
@@ -364,12 +436,12 @@ void fsm_controller::create_state_machine(std::string& parse)
          }
          else if(transitionType == CASE_COND)
          {
-            auto op = stg->CGetTransitionInfo(*e_it)->get_operation();
+            auto op = stg->CGetTransitionInfo(e)->get_operation();
             THROW_ASSERT(cond_ports.find(op) != cond_ports.end(), "the port is missing");
             THROW_ASSERT(in[cond_ports.find(op)->second] == "-", "two different values for the same condition port");
             std::string value = in[cond_ports.find(op)->second];
             THROW_ASSERT(value == "-", "two different values for the same condition port");
-            auto labels = stg->CGetTransitionInfo(*e_it)->get_labels();
+            auto labels = stg->CGetTransitionInfo(e)->get_labels();
             for(auto label : labels)
             {
                if(value == "-")
@@ -377,7 +449,7 @@ void fsm_controller::create_state_machine(std::string& parse)
                else
                   value += "|" + get_guard_value(TreeM, label, op, data);
             }
-            if(stg->CGetTransitionInfo(*e_it)->get_has_default())
+            if(stg->CGetTransitionInfo(e)->get_has_default())
             {
                if(value == "-")
                   value = STR(default_COND);
@@ -397,7 +469,7 @@ void fsm_controller::create_state_machine(std::string& parse)
             else
                parse += "," + *in_it;
 
-         vertex tgt = boost::target(*e_it, *stg);
+         vertex tgt = boost::target(e, *stg);
          bool last_transition = tgt == HLS->STG->get_exit_state();
          vertex next_state = last_transition ? first_state : tgt;
          bool assert_done_port = false;
@@ -417,6 +489,7 @@ void fsm_controller::create_state_machine(std::string& parse)
             if(present_state[v][k] == 1 && unbounded_ports.find(k) == unbounded_ports.end())
                transition_outputs[k] = 0;
          }
+
          if(selectors.find(conn_binding::IN) != selectors.end())
          {
             for(const auto& s : selectors.at(conn_binding::IN))
@@ -427,12 +500,19 @@ void fsm_controller::create_state_machine(std::string& parse)
                   THROW_ASSERT(v != NULL_VERTEX && std::get<0>(a) != NULL_VERTEX, "error on source vertex");
                   if(std::get<0>(a) == v && (std::get<1>(a) == tgt || std::get<1>(a) == NULL_VERTEX))
                   {
-                     THROW_ASSERT(present_state[v][out_ports[s.second]] == 1, "unexpected condition");
+                     THROW_ASSERT(present_state[v][out_ports[s.second]] != 0, "unexpected condition");
                      transition_outputs[out_ports[s.second]] = 1;
                   }
                }
             }
+
+            for(auto const &sel : register_selectors)
+            {
+               if(wren_list.find(sel.second) != wren_list.end() && ((transition_outputs[wren_list[sel.second]] == 0) || (transition_outputs[wren_list[sel.second]] == default_COND && present_state[v][wren_list[sel.second]] != 1)))
+                  transition_outputs[sel.first] = 2;
+            }
          }
+
          for(unsigned int k = 0; k < out_num; k++)
          {
             if(present_state[v][k] == transition_outputs[k])
@@ -453,6 +533,7 @@ void fsm_controller::create_state_machine(std::string& parse)
       parse += "\n";
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed state " + stg->CGetStateInfo(v)->name);
    }
+
    // std::cerr << "Finite_state_machine representation: " << std::endl;
    // std::cerr << parse << std::endl << std::endl;
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Created state machine");
@@ -495,4 +576,10 @@ std::string fsm_controller::get_guard_value(const tree_managerRef TM, const unsi
          return res_string;
       }
    }
+}
+
+void fsm_controller::add_correct_transition_memory(std::string state_representation)
+{
+   structural_objectRef circuit = this->SM->get_circ();
+   SM->add_NP_functionality(circuit, NP_functionality::FSM, state_representation);
 }

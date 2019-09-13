@@ -41,12 +41,19 @@
 /// Header include
 #include "generate_synthesis_scripts.hpp"
 
+/// . include
+#include "Parameter.hpp"
+
 /// behavior include
 #include "call_graph_manager.hpp"
 
 /// HLS include
 #include "hls.hpp"
 #include "hls_manager.hpp"
+
+/// STL includes
+#include <tuple>
+#include <unordered_set>
 
 /// tree include
 #include "behavioral_helper.hpp"
@@ -57,6 +64,7 @@
 GenerateSynthesisScripts::GenerateSynthesisScripts(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::GENERATE_SYNTHESIS_SCRIPT)
 {
+   debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 GenerateSynthesisScripts::~GenerateSynthesisScripts() = default;
