@@ -53,6 +53,9 @@
 #include "technology_node.hpp"
 #include "tree_node.hpp"
 
+/// behavior include
+#include "call_graph_manager.hpp"
+
 /// STD includes
 #include <cmath>
 #include <string>
@@ -104,6 +107,13 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    /// function name to be synthesized
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const std::string function_name = FB->CGetBehavioralHelper()->get_function_name();
+   std::string module_name = function_name;
+   const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
+   bool is_top = top_functions.find(funId) != top_functions.end();
+   if(is_top)
+   {
+      module_name = "_" + function_name;
+   }
 
    /// Test on previuos steps. They checks if datapath and controller have been created. If they didn't,
    /// top circuit cannot be created.
@@ -118,9 +128,9 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Top circuit creation");
 
    /// main circuit type
-   structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor(function_name));
+   structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor(module_name));
    /// setting top circuit component
-   SM->set_top_info(function_name, module_type);
+   SM->set_top_info(module_name, module_type);
    structural_objectRef circuit = SM->get_circ();
    THROW_ASSERT(circuit, "Top circuit is missing");
    // Now the top circuit is created, just as an empty box. <circuit> is a reference to the structural object that
