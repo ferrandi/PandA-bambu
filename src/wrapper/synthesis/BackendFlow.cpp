@@ -203,14 +203,14 @@ void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_
 
 BackendFlow::BackendFlow(const ParameterConstRef _Param, std::string _flow_name, const target_managerRef _manager)
     : Param(_Param),
-      debug_level(_Param->getOption<int>(OPT_debug_level)),
       output_level(_Param->getOption<unsigned int>(OPT_output_level)),
       flow_name(std::move(_flow_name)),
       out_dir(Param->getOption<std::string>(OPT_output_directory) + "/" + flow_name),
       target(_manager),
-      root(nullptr)
+      root(nullptr),
+      default_flow_parameters(DesignParametersRef(new DesignParameters))
 {
-   default_flow_parameters = DesignParametersRef(new DesignParameters);
+   debug_level = Param->get_class_debug_level(GET_CLASS(*this));
 
    if(!boost::filesystem::exists(out_dir))
       boost::filesystem::create_directories(out_dir);
@@ -295,7 +295,6 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
       synthesis_file_list += hdl_file + ";";
    }
    const structural_objectRef obj = SM->get_circ();
-
    actual_parameters = DesignParametersRef(new DesignParameters);
    actual_parameters->component_name = obj->get_id();
    if(flow_name.size())
