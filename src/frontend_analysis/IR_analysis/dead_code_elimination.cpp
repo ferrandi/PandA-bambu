@@ -346,6 +346,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                /// in case of virtual uses it is better not perform the elimination
                if(ga->predicate && GET_NODE(ga->predicate)->get_kind() == integer_cst_K && GetPointer<integer_cst>(GET_NODE(ga->predicate))->value == 0)
                {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Dead predicate found");
                   if(ga->vdef && !is_single_write_memory)
                   {
                      kill_vdef(TM, ga->vdef);
@@ -886,6 +887,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                std::list<tree_nodeRef> stmts_to_be_removed;
                for(auto stmt = stmt_list.rbegin(); stmt != stmt_list.rend(); stmt++)
                {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + (*stmt)->ToString());
                   auto node_stmt = GET_NODE(*stmt);
                   auto gn = GetPointer<gimple_node>(node_stmt);
                   if(gn->vdef && !is_single_write_memory)
@@ -905,6 +907,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                         kill_uses(TM, ga->op0);
                   }
                   stmts_to_be_removed.push_back(*stmt);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed stmt " + (*stmt)->ToString());
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statements");
                if(!stmts_to_be_removed.empty())
