@@ -74,8 +74,6 @@
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "hash_helper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/split.hpp>
 #include <boost/cast.hpp>
 #include <boost/filesystem/convenience.hpp>
 #include <boost/filesystem/fstream.hpp>

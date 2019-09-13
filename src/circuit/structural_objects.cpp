@@ -37,9 +37,6 @@
  * @author Matteo Barbati <mbarbati@gmail.com>
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "structural_objects.hpp"
@@ -53,9 +50,7 @@
 #include "HDL_manager.hpp"                           // for structur...
 #include "NP_functionality.hpp"                      // for NP_funct...
 #include <algorithm>                                 // for find, min
-#include <boost/algorithm/string/classification.hpp> // for is_any_of
 #include <boost/algorithm/string/replace.hpp>        // for replace_all
-#include <boost/algorithm/string/split.hpp>          // for split
 #include <boost/iterator/iterator_facade.hpp>        // for operator!=
 #include <boost/iterator/iterator_traits.hpp>        // for iterator...
 #include <boost/lexical_cast.hpp>                    // for lexical_...
@@ -72,7 +67,6 @@
 #include "exceptions.hpp"          // for THROW_AS...
 #include "library_manager.hpp"     // for attribute
 #include "simple_indent.hpp"       // for simple_i...
-#include "string_manipulation.hpp" // for STR
 #include "structural_manager.hpp"  // for structur...
 #include "technology_manager.hpp"  // for technolo...
 #include "technology_node.hpp"     // for function...
@@ -83,10 +77,8 @@
 #include "xml_node.hpp"            // for xml_node...
 #include "xml_text_node.hpp"       // for xml_text...
 
-#if HAVE_TUCANO_BUILT
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#endif
+/// utility include
+#include "string_manipulation.hpp"
 
 #if HAVE_EXPERIMENTAL
 #include "layout_model.hpp"
@@ -3629,8 +3621,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
             continue;
          std::string connected_path = conn;
          connected_path = connected_path.substr(scope.size() + 1, connected_path.size());
-         std::vector<std::string> elements;
-         boost::algorithm::split(elements, connected_path, boost::algorithm::is_any_of(HIERARCHY_SEPARATOR));
+         std::vector<std::string> elements = SplitString(connected_path, HIERARCHY_SEPARATOR);
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "     * Connected to " + connected_path << ": " << elements.size());
          structural_objectRef connnected_object;
          if(elements.size() == 1)
@@ -4464,8 +4455,7 @@ std::string structural_object::get_equation(const structural_objectRef out_obj, 
             /*if (GetPointer<module>(strobj)->get_out_port_size() > 1)
                THROW_ERROR("Multi-out module not supported");
             */
-            std::vector<std::string> tokens;
-            boost::algorithm::split(tokens, tmp, boost::algorithm::is_any_of(";"));
+            std::vector<std::string> tokens = SplitString(tmp, ";");
             for(unsigned int i = 0; i < tokens.size(); i++)
             {
                if(boost::algorithm::starts_with(tokens[i], out_obj->get_id()))
@@ -4569,8 +4559,7 @@ std::string structural_object::get_equation(const structural_objectRef out_obj, 
                std::string tmp = NPF->get_NP_functionality(NP_functionality::EQUATION);
                if (GetPointer<module>(strobj)->get_out_port_size() > 1)
                   THROW_ERROR("Multi-out module not supported");
-               std::vector<std::string> tokens;
-               boost::algorithm::split(tokens, tmp, boost::algorithm::is_any_of(";"));
+               std::vector<std::string> tokens = SplitString(tmp, ";");
                for(unsigned int i = 0; i < tokens.size(); i++)
                {
                   if (tokens[i].find(GetPointer<module>(strobj)->get_out_port(0)->get_id()) == 0)

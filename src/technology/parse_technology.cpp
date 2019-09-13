@@ -72,14 +72,18 @@
 #include <string>
 
 #include "simple_indent.hpp"
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/filesystem.hpp>
 
 #include "Parameter.hpp"
 #include "cpu_time.hpp"
 #include "utility.hpp"
+
+/// STL include
+#include <vector>
+
+/// utility include
+#include "string_manipulation.hpp"
 
 void read_technology_File(const std::string& fn, const technology_managerRef& TM, const ParameterConstRef& Param, const target_deviceRef& device)
 {
@@ -150,15 +154,13 @@ void read_technology_library(const technology_managerRef& TM, const ParameterCon
       std::string LibFile = Param->getOption<std::string>(OPT_input_liberty_library_file);
 
       std::string XmlList;
-      std::vector<std::string> SplittedLibs;
-      boost::algorithm::split(SplittedLibs, LibFile, boost::algorithm::is_any_of(";"));
+      std::vector<std::string> SplittedLibs = SplitString(LibFile, ",");
       for(unsigned int i = 0; i < SplittedLibs.size(); i++)
       {
          if(SplittedLibs.size() == 0)
             continue;
          boost::trim(SplittedLibs[i]);
-         std::vector<std::string> SplittedLib;
-         boost::algorithm::split(SplittedLib, SplittedLibs[i], boost::algorithm::is_any_of(":"));
+         std::vector<std::string> SplittedLib = SplitString(SplittedLibs[i], ":");
          std::string LibraryFile;
          if(SplittedLib.size() < 1 or SplittedLib.size() > 2)
             THROW_ERROR("Malformed input liberty description: \"" + SplittedLibs[i] + "\"");
@@ -210,8 +212,7 @@ void read_technology_library(const technology_managerRef& TM, const ParameterCon
 
       std::string LibraryName;
       auto XmlLibraryList = Param->getOption<std::string>("input_xml_library_file");
-      std::vector<std::string> SplittedLibs;
-      boost::algorithm::split(SplittedLibs, XmlLibraryList, boost::algorithm::is_any_of(";"));
+      std::vector<std::string> SplittedLibs = SplitString(XmlLibraryList, ";");
       for(unsigned int i = 0; i < SplittedLibs.size(); i++)
       {
          if(SplittedLibs.empty())
@@ -242,16 +243,14 @@ void read_technology_library(const technology_managerRef& TM, const ParameterCon
    if(Param->isOption("input_lef_library_file"))
    {
       std::string FileList = Param->getOption<std::string>("input_lef_library_file");
-      std::vector<std::string> SplittedLibs;
-      boost::algorithm::split(SplittedLibs, FileList, boost::algorithm::is_any_of(";"));
+      std::vector<std::string> SplittedLibs = SplitString(FileList, ";");
       for(unsigned int i = 0; i < SplittedLibs.size(); i++)
       {
          if(SplittedLibs.size() == 0)
             continue;
          boost::trim(SplittedLibs[i]);
 
-         std::vector<std::string> SplittedName;
-         boost::algorithm::split(SplittedName, SplittedLibs[i], boost::algorithm::is_any_of(":"));
+         std::vector<std::string> SplittedName = SplitString(SplittedLibs[i], ":");
 
          if(SplittedName.size() != 2)
             THROW_ERROR("Malformed LEF description: \"" + SplittedLibs[i] + "\"");
@@ -275,16 +274,14 @@ void read_technology_library(const technology_managerRef& TM, const ParameterCon
    if(Param->isOption("input_db_library_file"))
    {
       std::string FileList = Param->getOption<std::string>("input_db_library_file");
-      std::vector<std::string> SplittedLibs;
-      boost::algorithm::split(SplittedLibs, FileList, boost::algorithm::is_any_of(";"));
+      std::vector<std::string> SplittedLibs = SplitString(FileList, ";");
       for(unsigned int i = 0; i < SplittedLibs.size(); i++)
       {
          if(SplittedLibs.size() == 0)
             continue;
          boost::trim(SplittedLibs[i]);
 
-         std::vector<std::string> SplittedName;
-         boost::algorithm::split(SplittedName, SplittedLibs[i], boost::algorithm::is_any_of(":"));
+         std::vector<std::string> SplittedName = SplitString(SplittedLibs[i], ":");
 
          if(SplittedName.size() != 2)
             THROW_ERROR("Malformed db description: \"" + SplittedLibs[i] + "\"");

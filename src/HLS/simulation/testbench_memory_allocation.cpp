@@ -63,6 +63,7 @@
 #include <map>
 #include <tuple>
 #include <unordered_set>
+#include <vector>
 
 /// tree include
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
@@ -78,6 +79,7 @@
 TestbenchMemoryAllocation::TestbenchMemoryAllocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION)
 {
+   flag_cpp = _HLSMgr->get_tree_manager()->is_CPP() && !_parameters->isOption(OPT_pretty_print) && (!_parameters->isOption(OPT_discrepancy) || !_parameters->getOption<bool>(OPT_discrepancy) || !_parameters->isOption(OPT_discrepancy_hw) || !_parameters->getOption<bool>(OPT_discrepancy_hw));
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
@@ -91,6 +93,7 @@ DesignFlowStep_Status TestbenchMemoryAllocation::Exec()
 
 void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
 {
+   const HLSFlowStep_Type interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);
    const tree_managerConstRef TM = HLSMgr->get_tree_manager();
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
@@ -148,6 +151,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped " + param);
             continue; // memory has been already initialized
          }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Initialization string is " + test_v);
 
          unsigned int reserved_bytes = tree_helper::size(TM, *l) / 8;
          if(reserved_bytes == 0)
@@ -157,31 +161,37 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          {
             unsigned int base_type = tree_helper::get_type_index(TM, *l);
             tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
-#if 0
-            unsigned int ptd_base_type = 0;
-            if(pt_node->get_kind() == pointer_type_K)
-               ptd_base_type = GET_INDEX_NODE(GetPointer<pointer_type>(pt_node)->ptd);
-            else if(pt_node->get_kind() == reference_type_K)
-               ptd_base_type = GET_INDEX_NODE(GetPointer<reference_type>(pt_node)->refd);
-            else
-               THROW_ERROR("A pointer type is expected");
-            unsigned int base_type_byte_size;
+            if(flag_cpp or interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+            {
+               unsigned int ptd_base_type = 0;
+               if(pt_node->get_kind() == pointer_type_K)
+                  ptd_base_type = GET_INDEX_NODE(GetPointer<pointer_type>(pt_node)->ptd);
+               else if(pt_node->get_kind() == reference_type_K)
+                  ptd_base_type = GET_INDEX_NODE(GetPointer<reference_type>(pt_node)->refd);
+               else
+                  THROW_ERROR("A pointer type is expected");
+               unsigned int base_type_byte_size;
 
-            if(behavioral_helper->is_a_struct(ptd_base_type))
-               base_type_byte_size = tree_helper::size(TM, ptd_base_type) / 8;
-            else if(behavioral_helper->is_an_array(ptd_base_type))
-               base_type_byte_size = tree_helper::get_array_data_bitsize(TM, ptd_base_type) / 8;
-            else if(tree_helper::size(TM, ptd_base_type) == 1)
-               base_type_byte_size = 1;
-            else
-               base_type_byte_size = tree_helper::size(TM, ptd_base_type) / 8;
+               if(behavioral_helper->is_a_struct(ptd_base_type))
+                  base_type_byte_size = tree_helper::size(TM, ptd_base_type) / 8;
+               else if(behavioral_helper->is_an_array(ptd_base_type))
+                  base_type_byte_size = tree_helper::get_array_data_bitsize(TM, ptd_base_type) / 8;
+               else if(tree_helper::size(TM, ptd_base_type) == 1)
+                  base_type_byte_size = 1;
+               else
+                  base_type_byte_size = tree_helper::size(TM, ptd_base_type) / 8;
 
-            if(base_type_byte_size == 0)
-               base_type_byte_size = 1;
-#endif
-            const CInitializationParserFunctorRef c_initialization_parser_functor = CInitializationParserFunctorRef(new ComputeReservedMemory(TM, TM->CGetTreeNode(*l)));
-            c_initialization_parser->Parse(c_initialization_parser_functor, test_v);
-            reserved_bytes = GetPointer<ComputeReservedMemory>(c_initialization_parser_functor)->GetReservedBytes();
+               if(base_type_byte_size == 0)
+                  base_type_byte_size = 1;
+               std::vector<std::string> splitted = SplitString(test_v, ",");
+               reserved_bytes = (static_cast<unsigned int>(splitted.size())) * base_type_byte_size;
+            }
+            else
+            {
+               const CInitializationParserFunctorRef c_initialization_parser_functor = CInitializationParserFunctorRef(new ComputeReservedMemory(TM, TM->CGetTreeNode(*l)));
+               c_initialization_parser->Parse(c_initialization_parser_functor, test_v);
+               reserved_bytes = GetPointer<ComputeReservedMemory>(c_initialization_parser_functor)->GetReservedBytes();
+            }
 
             if(HLSMgr->RSim->param_address[v_idx].find(*l) == HLSMgr->RSim->param_address[v_idx].end())
             {

@@ -45,9 +45,11 @@
 #include "xml_element.hpp"
 #include "xml_text_node.hpp"
 
-/// Boost include
-#include <boost/algorithm/string.hpp>
+/// STL include
 #include <vector>
+
+/// utility include
+#include "string_manipulation.hpp"
 
 xml_element* xml_child::add_child_element(const std::string& _name)
 {
@@ -104,9 +106,8 @@ int xml_node::get_line() const
 const CustomSet<xml_nodeRef> xml_child::CGetDescendants(const std::string& path) const
 {
    CustomSet<xml_nodeRef> ret;
-   std::vector<std::string> splitted;
+   std::vector<std::string> splitted = SplitString(path, "/");
    CustomSet<xml_nodeRef> iteration_input_nodes, iteration_output_nodes;
-   boost::algorithm::split(splitted, path, boost::algorithm::is_any_of("/"));
    for(const auto& child : get_children())
    {
       const auto* child_xml = GetPointer<const xml_element>(child);

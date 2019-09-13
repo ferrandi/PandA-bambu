@@ -47,6 +47,14 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "token_interface.hpp"
 
+/// STD include
+#include <string>
+
+/// STL includes
+#include <unordered_set>
+#include <utility>
+#include <vector>
+
 unsigned int HWCallInjection::builtinWaitCallDeclIdx = 0;
 
 HWCallInjection::HWCallInjection(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int funId, const DesignFlowManagerConstRef DFM) : FunctionFrontendFlowStep(_AppM, funId, HWCALL_INJECTION, DFM, Param), already_executed(false)
@@ -143,8 +151,7 @@ bool HWCallInjection::isHardwareCall(tree_nodeRef expr)
          std::string name = tree_helper::name_function(TM, GET_INDEX_NODE(FD));
          std::string cmdArg = Param->getOption<std::string>(OPT_additional_top);
 
-         std::vector<std::string> additionalTops;
-         boost::algorithm::split(additionalTops, cmdArg, boost::algorithm::is_any_of(","));
+         std::vector<std::string> additionalTops = SplitString(cmdArg, ",");
 
          result |= std::find(additionalTops.begin(), additionalTops.end(), name) != additionalTops.end();
       }
