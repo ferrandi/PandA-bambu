@@ -101,7 +101,6 @@ gcc_regression_simple/20001112-1.c
 gcc_regression_simple/20001121-1.c
 gcc_regression_simple/20001130-2.c
 gcc_regression_simple/20001203-1.c
-gcc_regression_simple/20001203-2.c
 gcc_regression_simple/20001221-1.c
 gcc_regression_simple/20001228-1.c
 gcc_regression_simple/20010106-1.c
