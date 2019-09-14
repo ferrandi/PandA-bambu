@@ -2516,6 +2516,9 @@ dequeue_and_serialize ()
 #endif
 #if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
       queue_and_serialize_type (t);
+#else
+      if(SSA_NAME_VAR (t))
+         queue_and_serialize_type (SSA_NAME_VAR (t));
 #endif
       serialize_child ("var", SSA_NAME_VAR (t));
       serialize_int ("vers", SSA_NAME_VERSION (t));
