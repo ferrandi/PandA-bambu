@@ -1,6 +1,7 @@
 language: cpp
 cache: ccache
-group: travis_latest
+os: linux
+dist: xenial
 sudo: required
 compiler:
  - gcc
@@ -14,7 +15,7 @@ addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
-      - llvm-toolchain-trusty-6.0
+      - llvm-toolchain-xenial-6.0
     packages:
     - autoconf
     - autoconf-archive
