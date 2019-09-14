@@ -463,6 +463,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       boost::replace_all(local_parameters_line, "-O3", "");
       boost::replace_all(local_parameters_line, "-O2", "");
       boost::replace_all(local_parameters_line, "-O1", "");
+      local_parameters_line += " -O1 ";
    }
 
    if(!(Param->getOption<bool>(OPT_compute_size_of)))
@@ -2812,22 +2813,25 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
    boost::replace_all(renamed_pluginEMO, ".so", "_opt.so");
    recipe += " -load=" + renamed_pluginEMO;
 #endif
-#ifndef _WIN32
-   auto renamed_pluginGC = GepiCanon_plugin_obj;
-   boost::replace_all(renamed_pluginGC, ".so", "_opt.so");
-   recipe += " -load=" + renamed_pluginGC;
-#endif
-#ifndef _WIN32
-   auto renamed_pluginCSROA = CSROA_plugin_obj;
-   boost::replace_all(renamed_pluginCSROA, ".so", "_opt.so");
-   recipe += " -load=" + renamed_pluginCSROA;
-   recipe += " -panda-KN=" + fname;
-   if(Param->IsParameter("max-CSROA"))
+   if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty())
    {
-      auto max_CSROA = Param->GetParameter<int>("max-CSROA");
-      recipe += " -csroa-max-transformations=" + STR(max_CSROA);
-   }
+#ifndef _WIN32
+      auto renamed_pluginGC = GepiCanon_plugin_obj;
+      boost::replace_all(renamed_pluginGC, ".so", "_opt.so");
+      recipe += " -load=" + renamed_pluginGC;
 #endif
+#ifndef _WIN32
+      auto renamed_pluginCSROA = CSROA_plugin_obj;
+      boost::replace_all(renamed_pluginCSROA, ".so", "_opt.so");
+      recipe += " -load=" + renamed_pluginCSROA;
+      recipe += " -panda-KN=" + fname;
+      if(Param->IsParameter("max-CSROA"))
+      {
+         auto max_CSROA = Param->GetParameter<int>("max-CSROA");
+         recipe += " -csroa-max-transformations=" + STR(max_CSROA);
+      }
+#endif
+   }
 #if HAVE_I386_CLANG4_COMPILER
    if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG4)
    {
@@ -2841,7 +2845,9 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
                            expandMemOps_plugin_name +
                            " "
                            "-domtree "
-                           "-mem2reg "
+                           "-mem2reg ";
+         if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty())
+            complex_recipe +=
                            "-" +
                            GepiCanon_plugin_name +
                            "PS "
@@ -2856,7 +2862,8 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
                            CSROA_plugin_name +
                            "FV "
                            "-ipsccp -globaldce -domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops -loop-simplify -lcssa-verification -lcssa -basicaa -aa -scalar-evolution -loop-unroll -simplifycfg ";
-         complex_recipe += "-" + expandMemOps_plugin_name +
+         if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty())
+            complex_recipe += "-" + expandMemOps_plugin_name +
                            " "
                            "-" +
                            GepiCanon_plugin_name +
@@ -2869,8 +2876,8 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
                            "BVR "
                            "-" +
                            CSROA_plugin_name +
-                           "D "
-                           "-ipsccp -globalopt -dse -loop-unroll "
+                           "D ";
+         complex_recipe += "-ipsccp -globalopt -dse -loop-unroll "
                            "-instcombine "
                    "-libcalls-shrinkwrap "
                    "-tailcallelim "
@@ -2999,8 +3006,9 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
                    "-lcssa "
                    "-scalar-evolution "
                    "-loop-unroll ";
-         complex_recipe += " -" + expandMemOps_plugin_name  + " -" + CSROA_plugin_name+"WI " +
-                           "-domtree -basicaa -aa -memdep -dse -aa -memoryssa -early-cse-memssa -constprop -ipsccp -globaldce -domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops -loop-simplify -lcssa-verification -lcssa -basicaa -aa "
+        if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty())
+           complex_recipe += " -" + expandMemOps_plugin_name  + " -" + CSROA_plugin_name+"WI ";
+         complex_recipe += "-domtree -basicaa -aa -memdep -dse -aa -memoryssa -early-cse-memssa -constprop -ipsccp -globaldce -domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops -loop-simplify -lcssa-verification -lcssa -basicaa -aa "
                            "-scalar-evolution -loop-unroll "
                    " -dse -loop-unroll "
                            "-instcombine "
@@ -3030,29 +3038,9 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
          //complex_recipe += complex_recipe;
          recipe += complex_recipe;
       }
-      else if(optimization_level == GccWrapper_OptimizationSet::O0)
-      {
-         recipe += " -tti "
-                   "-targetlibinfo "
-                   "-tbaa "
-                   "-scoped-noalias "
-                   "-assumption-cache-tracker "
-                   "-profile-summary-info "
-                   "-forceattrs "
-                   "-inferattrs "
-                   "-ipsccp "
-                   "-globalopt "
-                   "-domtree "
-                   "-mem2reg "
-                   "-deadargelim "
-                   "-domtree "
-                   "-basicaa "
-                   "-aa ";
-         recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
-      }
       else
       {
-         const auto opt_level = WriteOptimizationLevel(optimization_level);
+         const auto opt_level = optimization_level == GccWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
          recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
          recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
       }
@@ -3062,7 +3050,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
 #if HAVE_I386_CLANG5_COMPILER
        if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG5)
    {
-      const auto opt_level = WriteOptimizationLevel(optimization_level);
+      const auto opt_level = optimization_level == GccWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
       recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
    }
@@ -3071,7 +3059,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
 #if HAVE_I386_CLANG6_COMPILER
        if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG6)
    {
-      const auto opt_level = WriteOptimizationLevel(optimization_level);
+      const auto opt_level = optimization_level == GccWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
       recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
    }
@@ -3080,7 +3068,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
 #if HAVE_I386_CLANG7_COMPILER
        if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG7)
    {
-      const auto opt_level = WriteOptimizationLevel(optimization_level);
+      const auto opt_level = optimization_level == GccWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
       recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
    }
