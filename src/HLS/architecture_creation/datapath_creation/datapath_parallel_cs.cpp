@@ -53,6 +53,9 @@
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
 
+/// HLS/function_allocation include
+#include "omp_functions.hpp"
+
 /// STD include
 #include <cmath>
 #include <string>
@@ -138,16 +141,27 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
    std::set<structural_objectRef> memory_modules;
    const structural_managerRef& SM = this->HLS->datapath;
    const structural_objectRef circuit = SM->get_circ();
-   std::string kernel_model = "kernel";
-   std::string kernel_library = HLS->HLS_T->get_technology_manager()->get_library(kernel_model);
+   auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
+   const auto kernel_functions = omp_functions->kernel_functions;
+#ifndef NDEBUG
+   if(kernel_functions.size() > 1)
+   {
+      for(const auto kernel_function : kernel_functions)
+         INDENT_DBG_MEX(DEBUG_LEVEL_NONE, debug_level, "Kernel function " + HLSMgr->CGetFunctionBehavior(kernel_function)->CGetBehavioralHelper()->get_function_name());
+      THROW_UNREACHABLE("More than one kernel function");
+   }
+#endif
+   const auto kernel_function_id = *(kernel_functions.begin());
+   const auto kernel_function_name = HLSMgr->CGetFunctionBehavior(kernel_function_id)->CGetBehavioralHelper()->get_function_name();
+   std::string kernel_library = HLS->HLS_T->get_technology_manager()->get_library(kernel_function_name);
    structural_objectRef kernel_mod;
    unsigned int addr_kernel = static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_num_threads)));
    if(!addr_kernel)
       addr_kernel = 1;
    for(unsigned int i = 0; i < HLS->Param->getOption<unsigned int>(OPT_num_threads); ++i)
    {
-      std::string kernel_name = "kernel_" + STR(i);
-      kernel_mod = SM->add_module_from_technology_library(kernel_name, kernel_model, kernel_library, circuit, HLS->HLS_T->get_technology_manager());
+      std::string kernel_module_name = kernel_function_name + "_" + STR(i);
+      kernel_mod = SM->add_module_from_technology_library(kernel_module_name, kernel_function_name, kernel_library, circuit, HLS->HLS_T->get_technology_manager());
       memory_modules.insert(kernel_mod);
       connect_module_kernel(kernel_mod, i);
       // setting num of kernel in each scheduler
@@ -158,7 +172,8 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
 
    for(unsigned int i = 0; i < HLS->Param->getOption<unsigned int>(OPT_num_threads); ++i)
    {
-      kernel_mod = circuit->find_member("kernel_" + STR(i), component_o_K, circuit);
+      kernel_mod = circuit->find_member(kernel_function_name + "_" + STR(i), component_o_K, circuit);
+      THROW_ASSERT(kernel_mod, "");
       connect_i_module_kernel(kernel_mod);
    }
    return DesignFlowStep_Status::SUCCESS;
@@ -290,7 +305,7 @@ void datapath_parallel_cs::instantiate_component_parallel(structural_objectRef c
    if(!addr_kern)
       addr_kern = 1;
    GetPointer<module>(mem_par_mod)->SetParameter("ADDR_ACC", STR(addr_kern));
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter memory_ctrl_top setted!");
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter memory_ctrl_top set!");
 
    resize_ctrl_parallel_ports(mem_par_mod);
 }
@@ -350,7 +365,7 @@ void datapath_parallel_cs::manage_extern_global_port_parallel(const structural_m
    structural_objectRef mem_paral_port;
    structural_objectRef memory_parallel = circuit->find_member("memory_parallel", component_o_K, circuit);
    unsigned int num_kernel = 0;
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connecting memory_port of memory_parallel");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Connecting memory_port of memory_parallel");
    for(const auto memory_module : memory_modules)
    {
       for(unsigned int j = 0; j < GetPointer<module>(memory_module)->get_in_port_size(); j++) // from ctrl_parallel to module
@@ -422,4 +437,5 @@ void datapath_parallel_cs::manage_extern_global_port_parallel(const structural_m
          }
       }
    }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Connected memory_port of memory_parallel");
 }
