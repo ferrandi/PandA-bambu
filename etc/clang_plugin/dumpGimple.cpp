@@ -6379,7 +6379,7 @@ namespace llvm
          RA->printRanges(M, llvm::errs());
          delete RA;
       }
-      M.print(llvm::errs(), nullptr);
+      //M.print(llvm::errs(), nullptr);
       return res;
    }
 } // namespace llvm
