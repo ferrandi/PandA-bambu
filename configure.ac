@@ -3068,7 +3068,7 @@ if test "x$panda_WERROR" = xyes; then
    AX_CHECK_COMPILE_FLAG("-Wlogical-op", CXXFLAGS+=" -Wlogical-op ",,"-Werror")
    AX_CHECK_COMPILE_FLAG("-Wunused-local-typedefs", CXXFLAGS+=" -Wunused-local-typedefs ",,"-Werror")
    #Disabled as error because of BOOST_FOREACH
-   AX_CXXFLAGS_GCC_OPTION(-Wzero-as-null-pointer-constant,, CXXFLAGS+=" -Wzero-as-null-pointer-constant -Wno-error=zero-as-null-pointer-constant",)
+   AX_CXXFLAGS_GCC_OPTION(-Wzero-as-null-pointer-constant,, CXXFLAGS+=" -Wzero-as-null-pointer-constant -Wno-error=zero-as-null-pointer-constant ",)
 
    AC_COMPILE_WPEDANTIC
    if test "x$panda_WPEDANTIC" = xyes; then
@@ -3076,7 +3076,7 @@ if test "x$panda_WERROR" = xyes; then
    fi
    AX_CHECK_COMPILE_FLAG("-Wmismatched-tags", CXXFLAGS+=" -Wno-mismatched-tags ",,"-Werror")
    AX_CHECK_COMPILE_FLAG("-Woverlength-strings", CXXFLAGS+=" -Wno-overlength-strings ",,"-Werror")
-   AX_CHECK_COMPILE_FLAG("-Wdeprecated-copy", CXXFLAGS+=" -Wno-deprecated-copy ",,"-Werror")
+   AX_CXXFLAGS_GCC_OPTION(-Wdeprecated-copy,, CXXFLAGS+=" -Wno-deprecated-copy -Wno-error=deprecated-copy ",)
 else
    CXXFLAGS+=" -w "
 fi
