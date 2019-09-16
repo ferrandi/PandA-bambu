@@ -2275,12 +2275,12 @@ endgenerate"/>
     </circuit>
   </cell>
   <cell>
-  <name>controller_parallel</name>
+  <name>__controller_parallel</name>
   <circuit>
-    <component_o id="controller_parallel">
-      <structural_type_descriptor id_type="controller_parallel"/>
+    <component_o id="__controller_parallel">
+      <structural_type_descriptor id_type="__controller_parallel"/>
       <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-      <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>
+      <copyright>Copyright (C) 2018 Politecnico di Milano</copyright>
       <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
       <license>PANDA_LGPLv3</license>
       <port_o id="clock" dir="IN" is_clock="1">
@@ -2313,7 +2313,7 @@ endgenerate"/>
       <port_o id="request" dir="OUT">
         <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
       </port_o>
-      <NP_functionality LIBRARY="controller_parallel done_port_accelerator done_request_accelerator start_port_accelerator request LoopIteration"
+      <NP_functionality LIBRARY="__controller_parallel done_port_accelerator done_request_accelerator start_port_accelerator request LoopIteration"
       IP_COMPONENT="ui_ne_expr_FU,read_cond_FU,register_SE,fifo,CallDispatcher,Counter,MUX_GATE,UUdata_converter_FU,constant_value,ASSIGN_UNSIGNED_FU,ui_plus_expr_FU" VERILOG_PROVIDED="
 parameter [2:0] S_0 = 3'd0,
   S_1 = 3'd1,
@@ -2351,7 +2351,6 @@ wire [31:0] DoneCounter_value;      // From DoneCounter of Counter.v
 wire [31:0] StartCounter_value;     // From StartCounter of Counter.v
 wire [31:0] number_req_tasks;
 wire [31:0]          request;    // From CallDispatcher_i0 of CallDispatcher.v
-wire OUT_UNBOUNDED_parallel_18797_18995;
 wire [PORTSIZE_start_port_accelerator-1:0] selected_worker;        // From CallDispatcher_i0 of CallDispatcher.v
 reg reset_counter;
 reg next_reset_counter;
@@ -2418,7 +2417,6 @@ begin
         wrenable_reg_0 = 1'b1;
         selector_MUX_2_reg_0_0_0_0 = 1'b1;
         selector_IN_UNBOUNDED_parallel_18797_18995 = 1'b1;
-//          if (OUT_UNBOUNDED_parallel_18797_18995 == 1'b0)
         if (fifo_full == 1'b1)
           begin
             _next_state = S_3;
@@ -2434,7 +2432,6 @@ begin
       begin
         wrenable_reg_0 = 1'b1;
         selector_MUX_2_reg_0_0_0_0 = 1'b1;
-//          if (OUT_UNBOUNDED_parallel_18797_18995 == 1'b0)
         if (fifo_full == 1'b1)
           begin
             _next_state = S_3;
@@ -2553,8 +2550,6 @@ register_SE #(.BITSIZE_in1(32), .BITSIZE_out1(32)) reg_1 (
 UUdata_converter_FU #(.BITSIZE_in1(1), .BITSIZE_out1(32)) conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32 (.out1(out_conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32), .in1(out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0));
 
 ASSIGN_UNSIGNED_FU #(.BITSIZE_in1(1), .BITSIZE_out1(1)) ASSIGN_UNSIGNED_FU_u_assign_0 (.out1(out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0), .in1(out_const_0));
-
-//assign OUT_UNBOUNDED_parallel_18797_18995 = selector_IN_UNBOUNDED_parallel_18797_18995 &amp; !fifo_full;
 
 constant_value #(.BITSIZE_out1(1), .value(1'b0)) const_0 (.out1(out_const_0));
 constant_value #(.BITSIZE_out1(1), .value(1'b1)) const_1 (.out1(out_const_1));

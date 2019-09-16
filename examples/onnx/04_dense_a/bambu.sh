@@ -18,4 +18,4 @@ bambu $root_dir/04_dense_a.parallel.c \
       --generate-tb=$root_dir/test.xml \
       --pretty-print=a.c --no-iob --device-name=EP4SGX530KH40C2 --evaluation \
       --experimental-set=BAMBU -fopenmp --pragma-parse --std=c99 -O3\
-      --num-threads=2  --memory-banks-number=4  --channels-number=2 --context_switch=4 --no-clean -fdump-tree-all --debug-classes=ExtractOmpFor,OmpFunctionAllocationCS,GenerateHdl,verilog_writer
+      --num-threads=2  --memory-banks-number=4  --channels-number=2 --context_switch=4
