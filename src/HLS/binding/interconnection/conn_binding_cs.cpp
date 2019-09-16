@@ -76,12 +76,6 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    const structural_managerRef SM = HLS->datapath;
    const structural_objectRef circuit = SM->get_circ();
-   structural_objectRef constantFalse(new constant_o(debug_level, SM->get_circ(), "0"));
-   constantFalse->set_type(bool_type);
-   GetPointer<module>(circuit)->add_internal_object(constantFalse);
-   structural_objectRef constantTrue(new constant_o(debug_level, SM->get_circ(), "1"));
-   constantTrue->set_type(bool_type);
-   GetPointer<module>(circuit)->add_internal_object(constantTrue);
 
    bool addedLoad = false;
    bool addedStore = false;
@@ -126,7 +120,14 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
    }
 
    if(num_suspension == 0 && !addedLoad && !addedStore && !andStartMemOp_required)
+   {
+      structural_objectRef suspension_datapath = circuit->find_member(STR(SUSPENSION), port_o_K, circuit);
+      structural_objectRef constantFalse(new constant_o(debug_level, SM->get_circ(), "0"));
+      constantFalse->set_type(bool_type);
+      GetPointer<module>(circuit)->add_internal_object(constantFalse);
+      SM->add_connection(constantFalse, suspension_datapath);
       return;
+   }
    structural_objectRef suspensionOr = SM->add_module_from_technology_library("suspensionOr", OR_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD), circuit, HLS->HLS_T->get_technology_manager());
    structural_objectRef port_in_or = suspensionOr->find_member("in", port_vector_o_K, suspensionOr);
    structural_objectRef port_out_or = suspensionOr->find_member("out1", port_o_K, suspensionOr);

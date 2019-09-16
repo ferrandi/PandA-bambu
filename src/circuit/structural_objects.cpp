@@ -1270,9 +1270,10 @@ structural_objectRef port_o::find_bounded_object(const structural_objectConstRef
          if(connected_objects[i].lock()->get_owner() == _owner->get_owner())
          {
             res = connected_objects[i].lock();
+            THROW_WARNING("more than one" + res->get_path());
          }
    }
-   THROW_ASSERT(port_count == 1, "Too many bindings to " + get_owner()->get_path() + HIERARCHY_SEPARATOR + get_id() + " of type " + get_owner()->get_typeRef()->id_type + " res " + res->get_path());
+   THROW_ASSERT(port_count == 1, "Too many bindings to " + get_owner()->get_path() + HIERARCHY_SEPARATOR + get_id() + " of type " + get_owner()->get_typeRef()->id_type + " res " + res->get_path() + " -->" + STR(port_count));
    return res;
 }
 

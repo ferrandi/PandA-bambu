@@ -213,7 +213,6 @@ void top_entity_cs::add_input_register(structural_objectRef port_in, const std::
    if(not register_file_selector_signal)
    {
       register_file_selector_signal = SM->add_sign(STR(SELECTOR_REGISTER_FILE) + "_signal", circuit, register_file_selector_port->get_typeRef());
-      SM->add_connection(register_file_selector_port, register_file_selector_signal);
    }
    SM->add_connection(register_file_selector_signal, rf_register_file_selector_port);
 
