@@ -1169,7 +1169,7 @@ parameter S_0 = 3'b000,
 genvar i;
 generate
   for(i=0; i&lt;NUM_BANK; i=i+1)
-  begin
+  begin : memory_ctrl_loop0
     // IN - I am putting data from parallel
     fifio #(.BITSIZE_data_in(MEMORY_REQUEST_TOTAL_SIZE), .BITSIZE_data_out(MEMORY_REQUEST_TOTAL_SIZE), .ADDR_WIDTH(FIFO_IN), .DEPTH(2**FIFO_IN)) to_memory_fifo (.full (to_memory_fifo_full[i]), .empty (to_memory_fifo_empty[i]), .data_out (to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]), .clock (clock), .reset (reset), .rd_en (to_memory_fifo_rd_en[i]), .wr_en (to_memory_fifo_wr_en[i]), .data_in (to_memory_fifo_data_in[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]));
       // apsl ERROR_write_atomic_in_fifo: assert never to_memory_fifo_data_in[MEMORY_REQUEST_TOTAL_SIZE * i + ATOMIC_BIT_OFFSET] &amp;&amp; to_memory_fifo_data_in[MEMORY_REQUEST_TOTAL_SIZE * i + 1] &amp;&amp; to_memory_fifo_wr_en[i];
@@ -1412,7 +1412,7 @@ endgenerate
 genvar j;
 generate
 for(i=0; i&lt;NUM_CHANNEL; i=i+1)
-  begin
+  begin : memory_ctrl_loop1
     //arbiter to decide in case of multiple data ready which one go down
     PT_RR_FU #(.BITSIZE_ops(1), .PORTSIZE_ops(NUM_BANK_NUM_CHANNEL_RATIO), .BITSIZE_rops(1), .PORTSIZE_rops(NUM_BANK_NUM_CHANNEL_RATIO)) RR_fifo_in(.ops(selector_mux_from_memory_fifo_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)-1:NUM_BANK_NUM_CHANNEL_RATIO*i]), .ENABLE(1'b1), .clock(clock), .reset(!reset), .rops(request_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)-1:NUM_BANK_NUM_CHANNEL_RATIO*i]));
 
@@ -1445,7 +1445,7 @@ for(i=0; i&lt;NUM_CHANNEL; i=i+1)
 
     ///Generate all_incoming_atomic_write: for each channel, for each bank we check if the current memory request is an atomic write targeting that bank
     for(j=0; j&lt;NUM_BANK; j=j+1)
-    begin
+    begin : memory_ctrl_loop2
        assign all_incoming_atomic_write[((MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK*i) + (MEMORY_REQUEST_TOTAL_SIZE*(j+1)))-1:(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK*i) + (MEMORY_REQUEST_TOTAL_SIZE*j)] =
           data_in[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp;&amp; data_in[MEMORY_REQUEST_TOTAL_SIZE*i + WE_BIT_OFFSET] &amp;&amp; data_in[MEMORY_REQUEST_TOTAL_SIZE*i + MSB_BANK_TAG : MEMORY_REQUEST_TOTAL_SIZE*i + LSB_BANK_TAG] == j
              ?
@@ -1630,7 +1630,7 @@ parameter S_0 = 3'b000,
 genvar i;
 generate
   for(i=0; i&lt;NUM_BANK; i=i+1)
-  begin
+  begin  : memory_ctrl_loop0
     // IN - I am putting data from parallel
     fifio #(.BITSIZE_data_in(MEMORY_REQUEST_TOTAL_SIZE), .BITSIZE_data_out(MEMORY_REQUEST_TOTAL_SIZE), .ADDR_WIDTH(FIFO_IN), .DEPTH(2**FIFO_IN)) to_memory_fifo (.full (to_memory_fifo_full[i]), .empty (to_memory_fifo_empty[i]), .data_out (to_memory_fifo_data_out[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]), .clock (clock), .reset (reset), .rd_en (to_memory_fifo_rd_en[i]), .wr_en (to_memory_fifo_wr_en[i]), .data_in (to_memory_fifo_data_in[MEMORY_REQUEST_TOTAL_SIZE*(i+1)-1:MEMORY_REQUEST_TOTAL_SIZE*i]));
       // apsl ERROR_write_atomic_in_fifo: assert never to_memory_fifo_data_in[MEMORY_REQUEST_TOTAL_SIZE * i + ATOMIC_BIT_OFFSET] &amp;&amp; to_memory_fifo_data_in[MEMORY_REQUEST_TOTAL_SIZE * i + 1] &amp;&amp; to_memory_fifo_wr_en[i];
@@ -1865,7 +1865,7 @@ endgenerate
 genvar j;
 generate
 for(i=0; i&lt;NUM_CHANNEL; i=i+1)
-  begin
+  begin : memory_ctrl_loop1
     //arbiter to decide in case of multiple data ready which one go down
     PT_RR_FU #(.BITSIZE_ops(1), .PORTSIZE_ops(NUM_BANK_NUM_CHANNEL_RATIO), .BITSIZE_rops(1), .PORTSIZE_rops(NUM_BANK_NUM_CHANNEL_RATIO)) RR_fifo_in(.ops(selector_mux_from_memory_fifo_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)-1:NUM_BANK_NUM_CHANNEL_RATIO*i]), .ENABLE(1'b1), .clock(clock), .reset(!reset), .rops(request_out[NUM_BANK_NUM_CHANNEL_RATIO*(i+1)-1:NUM_BANK_NUM_CHANNEL_RATIO*i]));
 
@@ -1898,7 +1898,7 @@ for(i=0; i&lt;NUM_CHANNEL; i=i+1)
 
     ///Generate all_incoming_atomic_write: for each channel, for each bank we check if the current memory request is an atomic write targeting that bank
     for(j=0; j&lt;NUM_BANK; j=j+1)
-    begin
+    begin : memory_ctrl_loop2
        assign all_incoming_atomic_write[((MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK*i) + (MEMORY_REQUEST_TOTAL_SIZE*(j+1)))-1:(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK*i) + (MEMORY_REQUEST_TOTAL_SIZE*j)] =
           data_in[MEMORY_REQUEST_TOTAL_SIZE*i + ATOMIC_BIT_OFFSET] &amp;&amp; data_in[MEMORY_REQUEST_TOTAL_SIZE*i + WE_BIT_OFFSET] &amp;&amp; data_in[MEMORY_REQUEST_TOTAL_SIZE*i + MSB_BANK_TAG : MEMORY_REQUEST_TOTAL_SIZE*i + LSB_BANK_TAG] == j
              ?
@@ -2018,7 +2018,7 @@ wire [SIZE_TOT_IN*NUM_CHANNEL-1:0] data_in;
 genvar i;
 generate
 for(i=0; i&lt;NUM_CHANNEL; i=i+1)  //or a x ingressi
-begin
+begin : memory_ctrl_parallel_loop0
   assign OUT_Mout_oe_ram[(i+1)*BITSIZE_Mout_oe_ram-1:i*BITSIZE_Mout_oe_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_oe_ram-1] : {BITSIZE_Mout_oe_ram{1'b0}};
   assign OUT_Mout_we_ram[(i+1)*BITSIZE_Mout_we_ram-1:i*BITSIZE_Mout_we_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] : {BITSIZE_Mout_we_ram{1'b0}};
   assign OUT_Mout_addr_ram[(i+1)*BITSIZE_Mout_addr_ram-1:i*BITSIZE_Mout_addr_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] : {BITSIZE_Mout_addr_ram{1'b0}};
@@ -2036,7 +2036,7 @@ endgenerate
 
 generate
 for(i=0; i&lt;NUM_ACC; i=i+1)
-  begin
+  begin : memory_ctrl_parallel_loop1
     //check if there is a real request
     assign fifo_wait_notempty[i]=Mout_oe_ram[i]||Mout_we_ram[i];
 
@@ -2569,7 +2569,7 @@ end
 genvar i;
 generate
   for(i=0; i&lt;PORTSIZE_start_port_accelerator; i=i+1)  //or a x ingressi
-  begin
+  begin   : parallel_start_loop
     always @(*) begin
       next_worker_status[i] = worker_status[i];
       if (selected_worker[i])
