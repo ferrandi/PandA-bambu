@@ -1,4 +1,5 @@
 #include "c_backend_api.h"
+#include <math.h>
 
 #ifdef BAMBU_PROFILING
 extern void __builtin_bambu_time_start();
@@ -115,7 +116,7 @@ int32_t fused_nn_softmax( void* args,  void* arg_type_ids, int32_t num_args) {
 
 int32_t mlp_wrapper(float* placeholder, float* placeholder1, float* placeholder2, float* tensor)
 {
-  float* T_add;
+  float T_add[10];
   int32_t res1, res2;
   a0[0].data = placeholder;
   a1[0].data = placeholder1;
