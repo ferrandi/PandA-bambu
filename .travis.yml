@@ -9,7 +9,7 @@ install: make -f Makefile.init
 
 before_script: mkdir build
 
-script: cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-verilator --enable-glpk --enable-opt && make -j4
+script: cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-verilator --enable-glpk --enable-opt --with-opt-level=0 && make -j4
 
 addons:
   apt:
