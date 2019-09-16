@@ -163,11 +163,20 @@ int32_t fused_nn_contrib_conv2d_NCHWc( void* args,  void* arg_type_ids, int32_t 
   return 0;
 }
 
+int32_t conv(TVMValue* param0, TVMValue* param1, TVMValue* param2){
+
+  int32_t res1, res2, res3;
+  res1 = fused_layout_transform_2(param0, 0, 0);
+  res2 = fused_nn_contrib_conv2d_NCHWc(param1, 0, 0);
+  res3 = fused_layout_transform_1(param2, 0, 0);
+  return res3;
+}
+
 int32_t fused_conv2d_wrapper(float* X, float* p0, float* T_fused_layout_transform_1) {
 
   float out_fused_layout_transform_2[64];
   float out_conv[128];
-  int32_t res1, res2, res3;
+  int32_t res;
   a0[0].data = X;
   a1[0].data = out_fused_layout_transform_2;
   param0[0].v_handle = a0;
@@ -190,16 +199,13 @@ int32_t fused_conv2d_wrapper(float* X, float* p0, float* T_fused_layout_transfor
   __builtin_bambu_time_start();
 #endif
 
-  res1 = fused_layout_transform_2(param0, 0, 0);
-  res2 = fused_nn_contrib_conv2d_NCHWc(param1, 0, 0);
-  res3 = fused_layout_transform_1(param2, 0, 0);
-    
+    res = conv(param0, param1, param2);
     
 #ifdef BAMBU_PROFILING
   __builtin_bambu_time_stop();
 #endif
     
-    return res1;
+    return res;
 }
 
 
