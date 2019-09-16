@@ -19,4 +19,4 @@ bambu $root_dir/04_dense_a.parallel.c \
       --no-iob --device-name=EP4SGX530KH40C2 --evaluation \
       --simulator=VERILATOR\
       -fopenmp --pragma-parse --std=c99\
-      --num-threads=2  --memory-banks-number=4  --channels-number=2 --context_switch=4 --debug-classes=conn_binding_cs,top_entity_cs,fu_binding_cs
+      --num-threads=2  --memory-banks-number=4  --channels-number=2 --context_switch=4
