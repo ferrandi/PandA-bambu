@@ -16,6 +16,7 @@ bambu $root_dir/04_dense_a.parallel.c \
       --memory-allocation-policy=NO_BRAM \
       --mem-delay-read=20 --mem-delay-write=20 \
       --generate-tb=$root_dir/test.xml \
-      --pretty-print=a.c --no-iob --device-name=EP4SGX530KH40C2 --evaluation \
-      --experimental-set=BAMBU -fopenmp --pragma-parse --std=c99 -O3\
+      --no-iob --device-name=EP4SGX530KH40C2 --evaluation \
+      --simulator=VERILATOR\
+      -fopenmp --pragma-parse --std=c99\
       --num-threads=2  --memory-banks-number=4  --channels-number=2 --context_switch=4
