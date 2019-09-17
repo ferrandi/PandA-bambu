@@ -17,4 +17,5 @@ bambu $root_dir/04_dense_a.parallel.c \
       --mem-delay-read=20 --mem-delay-write=20 \
       --generate-tb=$root_dir/test.xml \
       --simulator=VERILATOR\
+       --std=c99 \
       --no-iob --device-name=EP4SGX530KH40C2 --evaluation 
