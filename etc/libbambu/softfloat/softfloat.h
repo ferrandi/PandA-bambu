@@ -30,6 +30,8 @@ these four paragraphs for those parts of this code that are retained.
 
 =============================================================================*/
 
+#define __FORCE_INLINE __attribute__((always_inline)) inline
+
 /*----------------------------------------------------------------------------
 | The macro `FLOATX80' must be defined to enable the extended double-precision
 | floating-point format `__floatx80'.  If this macro is not defined, the
@@ -218,24 +220,24 @@ static void __float_raise(__int8);
 *----------------------------------------------------------------------------*/
 static __float32 __int32_to_float32(__int32);
 SF_ADAPTER3_unary(__int32_to_float32, 32, 32);
-static inline __float32 __int8_to_float32(__int8 a)
+static __FORCE_INLINE __float32 __int8_to_float32(__int8 a)
 {
    return __int32_to_float32(a);
 }
 SF_ADAPTER3_unary(__int8_to_float32, 8, 32);
-static inline __float32 __int16_to_float32(__int16 a)
+static __FORCE_INLINE __float32 __int16_to_float32(__int16 a)
 {
    return __int32_to_float32(a);
 }
 SF_ADAPTER3_unary(__int16_to_float32, 16, 32);
 static __float32 __uint32_to_float32(__uint32);
 SF_UADAPTER3_unary(__uint32_to_float32, 32, 32);
-static inline __float32 __uint8_to_float32(__uint8 a)
+static __FORCE_INLINE __float32 __uint8_to_float32(__uint8 a)
 {
    return __uint32_to_float32(a);
 }
 SF_UADAPTER3_unary(__uint8_to_float32, 8, 32);
-static inline __float32 __uint16_to_float32(__uint16 a)
+static __FORCE_INLINE __float32 __uint16_to_float32(__uint16 a)
 {
    return __uint32_to_float32(a);
 }
@@ -307,18 +309,18 @@ static __float32 __float32_divSRT4(__float32, __float32);
 SF_ADAPTER1(__float32_divSRT4, 32);
 static __float32 __float32_rem(__float32, __float32);
 static __float32 __float32_sqrt(__float32);
-SF_ADAPTER1_unary(__float32_sqrt, 32); // inline float sqrtf(float x) {return float32_sqrtif(x);}
+SF_ADAPTER1_unary(__float32_sqrt, 32); // __FORCE_INLINE float sqrtf(float x) {return float32_sqrtif(x);}
 static __flag __float32_eq(__float32, __float32);
 static __flag __float32_le(__float32, __float32);
 SF_ADAPTER2(__float32_le, 32);
 static __flag __float32_lt(__float32, __float32);
 SF_ADAPTER2(__float32_lt, 32);
-static inline __flag __float32_ge(__float32 a, __float32 b)
+static __FORCE_INLINE __flag __float32_ge(__float32 a, __float32 b)
 {
    return __float32_le(b, a);
 }
 SF_ADAPTER2(__float32_ge, 32);
-static inline __flag __float32_gt(__float32 a, __float32 b)
+static __FORCE_INLINE __flag __float32_gt(__float32 a, __float32 b)
 {
    return __float32_lt(b, a);
 }
@@ -371,18 +373,18 @@ static __float64 __float64_divG(__float64, __float64);
 SF_ADAPTER1(__float64_divG, 64);
 static __float64 __float64_rem(__float64, __float64);
 static __float64 __float64_sqrt(__float64);
-SF_ADAPTER1_unary(__float64_sqrt, 64); // inline double sqrt(double x) {return float64_sqrtif(x);}
+SF_ADAPTER1_unary(__float64_sqrt, 64); // __FORCE_INLINE double sqrt(double x) {return float64_sqrtif(x);}
 static __flag __float64_eq(__float64, __float64);
 static __flag __float64_le(__float64, __float64);
 SF_ADAPTER2(__float64_le, 64);
 static __flag __float64_lt(__float64, __float64);
 SF_ADAPTER2(__float64_lt, 64);
-static inline __flag __float64_ge(__float64 a, __float64 b)
+static __FORCE_INLINE __flag __float64_ge(__float64 a, __float64 b)
 {
    return __float64_le(b, a);
 }
 SF_ADAPTER2(__float64_ge, 64);
-static inline __flag __float64_gt(__float64 a, __float64 b)
+static __FORCE_INLINE __flag __float64_gt(__float64 a, __float64 b)
 {
    return __float64_lt(b, a);
 }
@@ -428,18 +430,18 @@ static __floatx80 __floatx80_div(__floatx80, __floatx80);
 SF_ADAPTER1(__floatx80_div, x80);
 static __floatx80 __floatx80_rem(__floatx80, __floatx80);
 static __floatx80 __floatx80_sqrt(__floatx80);
-SF_ADAPTER1_unary(__floatx80_sqrt, x80); // inline long double sqrtl(long double x) {return floatx80_sqrtif(x);}
+SF_ADAPTER1_unary(__floatx80_sqrt, x80); // __FORCE_INLINE long double sqrtl(long double x) {return floatx80_sqrtif(x);}
 static __flag __floatx80_eq(__floatx80, __floatx80);
 static __flag __floatx80_le(__floatx80, __floatx80);
 SF_ADAPTER2(__floatx80_le, x80);
 static __flag __floatx80_lt(__floatx80, __floatx80);
 SF_ADAPTER2(__floatx80_lt, x80);
-static inline __flag __floatx80_ge(__floatx80 a, __floatx80 b)
+static __FORCE_INLINE __flag __floatx80_ge(__floatx80 a, __floatx80 b)
 {
    return __floatx80_le(b, a);
 }
 SF_ADAPTER2(__floatx80_ge, x80);
-static inline __flag __floatx80_gt(__floatx80 a, __floatx80 b)
+static __FORCE_INLINE __flag __floatx80_gt(__floatx80 a, __floatx80 b)
 {
    return __floatx80_lt(b, a);
 }
@@ -480,18 +482,18 @@ static __float128 __float128_div(__float128, __float128);
 SF_ADAPTER1(__float128_div, 128);
 static __float128 __float128_rem(__float128, __float128);
 static __float128 __float128_sqrt(__float128);
-SF_ADAPTER1_unary(__float128_sqrt, 128); // inline __float128 sqrtl(__float128 x) {return float128_sqrtif(x);}
+SF_ADAPTER1_unary(__float128_sqrt, 128); // __FORCE_INLINE __float128 sqrtl(__float128 x) {return float128_sqrtif(x);}
 static __flag __float128_eq(__float128, __float128);
 static __flag __float128_le(__float128, __float128);
 SF_ADAPTER2(__float128_le, 128);
 static __flag __float128_lt(__float128, __float128);
 SF_ADAPTER2(__float128_lt, 128);
-static inline __flag __float128_ge(__float128 a, __float128 b)
+static __FORCE_INLINE __flag __float128_ge(__float128 a, __float128 b)
 {
    return __float128_le(b, a);
 }
 SF_ADAPTER2(__float128_ge, 128);
-static inline __flag __float128_gt(__float128 a, __float128 b)
+static __FORCE_INLINE __flag __float128_gt(__float128 a, __float128 b)
 {
    return __float128_lt(b, a);
 }
