@@ -156,10 +156,12 @@ if BUILD_TASTE
       -I$(top_srcdir)/src/intermediate_representations/aadl_asn
 endif
 
-hls_constraints.cpp : constraints_STD.data
+hls_constraints.cpp : constraints_STD.data constraints_STD_ALUs.data
 #The tab in this rule can't be replaced by blanks
 constraints_STD.data: $(top_srcdir)/etc/lib/technology/constraints_STD.xml
 	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/constraints_STD.xml constraints_STD.data
+constraints_STD_ALUs.data: $(top_srcdir)/etc/lib/technology/constraints_STD_ALUs.xml
+	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/constraints_STD_ALUs.xml constraints_STD_ALUs.data
 
 #Documentation stuff
 DOX_TAGFILES = src src/behavior src/circuit src/technology src/HLS/scheduling src/HLS/module_allocation src/HLS/binding src/HLS/binding/register src/HLS/binding/module src/HLS/binding/interconnection src/HLS/controller src/HLS/datapath src/HLS/hls_flow src/HLS/evaluation src/HLS/target /src/HLS/chaining src/HLS/function_allocation 

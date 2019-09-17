@@ -944,15 +944,18 @@ bool allocation::check_templated_units(double clock_period, node_kind_prec_infoR
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "- fu_template_parameters: \"" + fu_template_parameters + "\"");
    std::string pipeline_id =
        get_compliant_pipelined_unit(clock_period, curr_op->pipe_parameters, current_fu, curr_op->get_name(), library->get_library_name(), template_suffix, node_info->input_prec.size() > 1 ? node_info->input_prec[1] : node_info->input_prec[0]);
-   if(pipeline_id != "")
-      required_prec += " " + pipeline_id;
-   // if the computed parameters is different from what was used to build this specialization skip it.
-   if(required_prec != fu_template_parameters)
+   if(not curr_op->pipe_parameters.empty())
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + required_prec + " vs. " + fu_template_parameters);
-      return true;
-   }
+      if(pipeline_id != "")
+         required_prec += " " + pipeline_id;
+      // if the computed parameters is different from what was used to build this specialization skip it.
+      if(required_prec != fu_template_parameters)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + required_prec + " vs. " + fu_template_parameters);
+         return true;
+      }
 
+   }
    if(pipeline_id == "")
    {
       if(curr_op->time_m->get_cycles() == 0 && allocation_information->time_m_execution_time(curr_op) > clock_period)

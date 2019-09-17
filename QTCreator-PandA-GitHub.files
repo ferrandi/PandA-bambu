@@ -1279,6 +1279,8 @@ src/HLS/architecture_creation/controller_creation/control_flow_checker.hpp
 src/HLS/architecture_creation/controller_creation/control_flow_checker.hpp
 src/HLS/architecture_creation/controller_creation/controller_creator_base_step.cpp
 src/HLS/architecture_creation/controller_creation/controller_creator_base_step.hpp
+src/HLS/architecture_creation/controller_creation/controller_cs.cpp
+src/HLS/architecture_creation/controller_creation/controller_cs.hpp
 src/HLS/architecture_creation/controller_creation/fsm_controller.cpp
 src/HLS/architecture_creation/controller_creation/fsm_controller.hpp
 src/HLS/architecture_creation/datapath_creation/classic_datapath.cpp
@@ -1287,6 +1289,8 @@ src/HLS/architecture_creation/datapath_creation/datapath_creator.cpp
 src/HLS/architecture_creation/datapath_creation/datapath_creator.hpp
 src/HLS/architecture_creation/top_entity.cpp
 src/HLS/architecture_creation/top_entity.hpp
+src/HLS/architecture_creation/top_entity_parallel_cs.cpp
+src/HLS/architecture_creation/top_entity_parallel_cs.hpp
 src/HLS/backend/generate_hdl.cpp
 src/HLS/backend/generate_hdl.hpp
 src/HLS/backend/generate_simulation_scripts.cpp
@@ -1366,6 +1370,12 @@ src/HLS/function_allocation/function_allocation.cpp
 src/HLS/function_allocation/function_allocation.hpp
 src/HLS/function_allocation/functions.cpp
 src/HLS/function_allocation/functions.hpp
+src/HLS/function_allocation/omp_function_allocation.cpp
+src/HLS/function_allocation/omp_function_allocation.hpp
+src/HLS/function_allocation/omp_function_allocation_CS.cpp
+src/HLS/function_allocation/omp_function_allocation_CS.hpp
+src/HLS/function_allocation/omp_functions.cpp
+src/HLS/function_allocation/omp_functions.hpp
 src/HLS/hls.cpp
 src/HLS/hls.hpp
 src/HLS/hls_constraints.cpp
@@ -1709,7 +1719,13 @@ src/frontend_analysis/IR_analysis/dead_code_elimination.cpp
 src/frontend_analysis/IR_analysis/dead_code_elimination.hpp
 src/frontend_analysis/IR_analysis/determine_memory_accesses.cpp
 src/frontend_analysis/IR_analysis/determine_memory_accesses.hpp
+src/frontend_analysis/IR_analysis/extract_omp_atomic.cpp
+src/frontend_analysis/IR_analysis/extract_omp_atomic.hpp
+src/frontend_analysis/IR_analysis/extract_omp_for.cpp
+src/frontend_analysis/IR_analysis/extract_omp_for.hpp
 src/frontend_analysis/IR_analysis/extract_patterns.cpp
+src/frontend_analysis/IR_analysis/extract_patterns.cpp
+src/frontend_analysis/IR_analysis/extract_patterns.hpp
 src/frontend_analysis/IR_analysis/extract_patterns.hpp
 src/frontend_analysis/IR_analysis/fanout_opt.cpp
 src/frontend_analysis/IR_analysis/fanout_opt.hpp

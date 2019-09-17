@@ -459,9 +459,14 @@ void HLS_constraints::add_builtin_constraints()
    const char* builtin_constraints_data = {
 #include "constraints_STD.data"
    };
+   const char* builtin_constraints_data_ALUs = {
+#include "constraints_STD_ALUs.data"
+   };
    try
    {
-      XMLDomParser parser("builtin_constraints_data", builtin_constraints_data);
+      XMLDomParser parser_noALUs("builtin_constraints_data", builtin_constraints_data);
+      XMLDomParser parser_ALUs("builtin_constraints_data_ALUs", builtin_constraints_data_ALUs);
+      XMLDomParser &parser = parameters->isOption(OPT_use_ALUs) && parameters->getOption<bool>(OPT_use_ALUs) ? parser_ALUs : parser_noALUs;
       parser.Exec();
       if(parser)
       {

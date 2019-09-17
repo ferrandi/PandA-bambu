@@ -13,6 +13,9 @@
       <DSPs_rx_sizes value="16"/>
       <DSPs_ry_sizes value="16"/>
       <max_lut_size value="4"/>
+      <RelativeConnectionOffset value="3"/>
+      <OutputDSPConnectionRatio value="7"/>
+      <OutputCarryConnectionRatio value="7"/>
   </device>
   <technology>
     <library>
@@ -11282,6 +11285,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="INT:16" execution_time="3.3410000000000002"/>
         <operation operation_name="ternary_mp_expr" supported_types="INT:16" execution_time="3.3410000000000002"/>
         <operation operation_name="ternary_mm_expr" supported_types="INT:16" execution_time="3.3410000000000002"/>
+        <operation operation_name="plus_expr" supported_types="INT:16" execution_time="3.3410000000000002"/>
+        <operation operation_name="minus_expr" supported_types="INT:16" execution_time="3.3410000000000002"/>
       </cell>
       <cell>
         <name>ternary_alu_expr_FU_0_1_1_1</name>
@@ -11296,6 +11301,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="INT:1" execution_time="1.369"/>
         <operation operation_name="ternary_mp_expr" supported_types="INT:1" execution_time="1.369"/>
         <operation operation_name="ternary_mm_expr" supported_types="INT:1" execution_time="1.369"/>
+        <operation operation_name="plus_expr" supported_types="INT:1" execution_time="1.369"/>
+        <operation operation_name="minus_expr" supported_types="INT:1" execution_time="1.369"/>
       </cell>
       <cell>
         <name>ternary_alu_expr_FU_0_32_32_32</name>
@@ -11310,6 +11317,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="INT:32" execution_time="3.75"/>
         <operation operation_name="ternary_mp_expr" supported_types="INT:32" execution_time="3.75"/>
         <operation operation_name="ternary_mm_expr" supported_types="INT:32" execution_time="3.75"/>
+        <operation operation_name="plus_expr" supported_types="INT:32" execution_time="3.75"/>
+        <operation operation_name="minus_expr" supported_types="INT:32" execution_time="3.75"/>
       </cell>
       <cell>
         <name>ternary_alu_expr_FU_0_64_64_64</name>
@@ -11324,6 +11333,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="INT:64" execution_time="4.7229999999999999"/>
         <operation operation_name="ternary_mp_expr" supported_types="INT:64" execution_time="4.7229999999999999"/>
         <operation operation_name="ternary_mm_expr" supported_types="INT:64" execution_time="4.7229999999999999"/>
+        <operation operation_name="plus_expr" supported_types="INT:64" execution_time="4.7229999999999999"/>
+        <operation operation_name="minus_expr" supported_types="INT:64" execution_time="4.7229999999999999"/>
       </cell>
       <cell>
         <name>ternary_alu_expr_FU_0_8_8_8</name>
@@ -11338,6 +11349,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="INT:8" execution_time="3.0110000000000001"/>
         <operation operation_name="ternary_mp_expr" supported_types="INT:8" execution_time="3.0110000000000001"/>
         <operation operation_name="ternary_mm_expr" supported_types="INT:8" execution_time="3.0110000000000001"/>
+        <operation operation_name="plus_expr" supported_types="INT:8" execution_time="3.0110000000000001"/>
+        <operation operation_name="minus_expr" supported_types="INT:8" execution_time="3.0110000000000001"/>
       </cell>
       <cell>
         <name>ternary_alu_expr_FU_16_0_16_16</name>
@@ -11352,6 +11365,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="INT:16" execution_time="3.3410000000000002"/>
         <operation operation_name="ternary_mp_expr" supported_types="INT:16" execution_time="3.3410000000000002"/>
         <operation operation_name="ternary_mm_expr" supported_types="INT:16" execution_time="3.3410000000000002"/>
+        <operation operation_name="plus_expr" supported_types="INT:16" execution_time="3.3410000000000002"/>
+        <operation operation_name="minus_expr" supported_types="INT:16" execution_time="3.3410000000000002"/>
       </cell>
       <cell>
         <name>ternary_alu_expr_FU_16_16_0_16</name>
@@ -11366,6 +11381,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="INT:16" execution_time="3.3410000000000002"/>
         <operation operation_name="ternary_mp_expr" supported_types="INT:16" execution_time="3.3410000000000002"/>
         <operation operation_name="ternary_mm_expr" supported_types="INT:16" execution_time="3.3410000000000002"/>
+        <operation operation_name="plus_expr" supported_types="INT:16" execution_time="3.3410000000000002"/>
+        <operation operation_name="minus_expr" supported_types="INT:16" execution_time="3.3410000000000002"/>
       </cell>
       <cell>
         <name>ternary_alu_expr_FU_16_16_16_16</name>
@@ -11379,6 +11396,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="INT:16" execution_time="3.3410000000000002"/>
         <operation operation_name="ternary_mp_expr" supported_types="INT:16" execution_time="3.3410000000000002"/>
         <operation operation_name="ternary_mm_expr" supported_types="INT:16" execution_time="3.3410000000000002"/>
+        <operation operation_name="plus_expr" supported_types="INT:16" execution_time="3.3410000000000002"/>
+        <operation operation_name="minus_expr" supported_types="INT:16" execution_time="3.3410000000000002"/>
       </cell>
       <cell>
         <name>ternary_alu_expr_FU_1_0_1_1</name>
@@ -11393,6 +11412,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="INT:1" execution_time="1.369"/>
         <operation operation_name="ternary_mp_expr" supported_types="INT:1" execution_time="1.369"/>
         <operation operation_name="ternary_mm_expr" supported_types="INT:1" execution_time="1.369"/>
+        <operation operation_name="plus_expr" supported_types="INT:1" execution_time="1.369"/>
+        <operation operation_name="minus_expr" supported_types="INT:1" execution_time="1.369"/>
       </cell>
       <cell>
         <name>ternary_alu_expr_FU_1_1_0_1</name>
@@ -11407,6 +11428,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="INT:1" execution_time="1.369"/>
         <operation operation_name="ternary_mp_expr" supported_types="INT:1" execution_time="1.369"/>
         <operation operation_name="ternary_mm_expr" supported_types="INT:1" execution_time="1.369"/>
+        <operation operation_name="plus_expr" supported_types="INT:1" execution_time="1.369"/>
+        <operation operation_name="minus_expr" supported_types="INT:1" execution_time="1.369"/>
       </cell>
       <cell>
         <name>ternary_alu_expr_FU_1_1_1_1</name>
@@ -11420,6 +11443,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="INT:1" execution_time="1.369"/>
         <operation operation_name="ternary_mp_expr" supported_types="INT:1" execution_time="1.369"/>
         <operation operation_name="ternary_mm_expr" supported_types="INT:1" execution_time="1.369"/>
+        <operation operation_name="plus_expr" supported_types="INT:1" execution_time="1.369"/>
+        <operation operation_name="minus_expr" supported_types="INT:1" execution_time="1.369"/>
       </cell>
       <cell>
         <name>ternary_alu_expr_FU_32_0_32_32</name>
@@ -11434,6 +11459,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="INT:32" execution_time="3.75"/>
         <operation operation_name="ternary_mp_expr" supported_types="INT:32" execution_time="3.75"/>
         <operation operation_name="ternary_mm_expr" supported_types="INT:32" execution_time="3.75"/>
+        <operation operation_name="plus_expr" supported_types="INT:32" execution_time="3.75"/>
+        <operation operation_name="minus_expr" supported_types="INT:32" execution_time="3.75"/>
       </cell>
       <cell>
         <name>ternary_alu_expr_FU_32_32_0_32</name>
@@ -11448,6 +11475,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="INT:32" execution_time="3.75"/>
         <operation operation_name="ternary_mp_expr" supported_types="INT:32" execution_time="3.75"/>
         <operation operation_name="ternary_mm_expr" supported_types="INT:32" execution_time="3.75"/>
+        <operation operation_name="plus_expr" supported_types="INT:32" execution_time="3.75"/>
+        <operation operation_name="minus_expr" supported_types="INT:32" execution_time="3.75"/>
       </cell>
       <cell>
         <name>ternary_alu_expr_FU_32_32_32_32</name>
@@ -11461,6 +11490,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="INT:32" execution_time="3.75"/>
         <operation operation_name="ternary_mp_expr" supported_types="INT:32" execution_time="3.75"/>
         <operation operation_name="ternary_mm_expr" supported_types="INT:32" execution_time="3.75"/>
+        <operation operation_name="plus_expr" supported_types="INT:32" execution_time="3.75"/>
+        <operation operation_name="minus_expr" supported_types="INT:32" execution_time="3.75"/>
       </cell>
       <cell>
         <name>ternary_alu_expr_FU_64_0_64_64</name>
@@ -11475,6 +11506,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="INT:64" execution_time="4.7229999999999999"/>
         <operation operation_name="ternary_mp_expr" supported_types="INT:64" execution_time="4.7229999999999999"/>
         <operation operation_name="ternary_mm_expr" supported_types="INT:64" execution_time="4.7229999999999999"/>
+        <operation operation_name="plus_expr" supported_types="INT:64" execution_time="4.7229999999999999"/>
+        <operation operation_name="minus_expr" supported_types="INT:64" execution_time="4.7229999999999999"/>
       </cell>
       <cell>
         <name>ternary_alu_expr_FU_64_64_0_64</name>
@@ -11489,6 +11522,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="INT:64" execution_time="4.7229999999999999"/>
         <operation operation_name="ternary_mp_expr" supported_types="INT:64" execution_time="4.7229999999999999"/>
         <operation operation_name="ternary_mm_expr" supported_types="INT:64" execution_time="4.7229999999999999"/>
+        <operation operation_name="plus_expr" supported_types="INT:64" execution_time="4.7229999999999999"/>
+        <operation operation_name="minus_expr" supported_types="INT:64" execution_time="4.7229999999999999"/>
       </cell>
       <cell>
         <name>ternary_alu_expr_FU_64_64_64_64</name>
@@ -11502,6 +11537,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="INT:64" execution_time="4.7229999999999999"/>
         <operation operation_name="ternary_mp_expr" supported_types="INT:64" execution_time="4.7229999999999999"/>
         <operation operation_name="ternary_mm_expr" supported_types="INT:64" execution_time="4.7229999999999999"/>
+        <operation operation_name="plus_expr" supported_types="INT:64" execution_time="4.7229999999999999"/>
+        <operation operation_name="minus_expr" supported_types="INT:64" execution_time="4.7229999999999999"/>
       </cell>
       <cell>
         <name>ternary_alu_expr_FU_8_0_8_8</name>
@@ -11516,6 +11553,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="INT:8" execution_time="3.0110000000000001"/>
         <operation operation_name="ternary_mp_expr" supported_types="INT:8" execution_time="3.0110000000000001"/>
         <operation operation_name="ternary_mm_expr" supported_types="INT:8" execution_time="3.0110000000000001"/>
+        <operation operation_name="plus_expr" supported_types="INT:8" execution_time="3.0110000000000001"/>
+        <operation operation_name="minus_expr" supported_types="INT:8" execution_time="3.0110000000000001"/>
       </cell>
       <cell>
         <name>ternary_alu_expr_FU_8_8_0_8</name>
@@ -11530,6 +11569,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="INT:8" execution_time="3.0110000000000001"/>
         <operation operation_name="ternary_mp_expr" supported_types="INT:8" execution_time="3.0110000000000001"/>
         <operation operation_name="ternary_mm_expr" supported_types="INT:8" execution_time="3.0110000000000001"/>
+        <operation operation_name="plus_expr" supported_types="INT:8" execution_time="3.0110000000000001"/>
+        <operation operation_name="minus_expr" supported_types="INT:8" execution_time="3.0110000000000001"/>
       </cell>
       <cell>
         <name>ternary_alu_expr_FU_8_8_8_8</name>
@@ -11543,6 +11584,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="INT:8" execution_time="3.0110000000000001"/>
         <operation operation_name="ternary_mp_expr" supported_types="INT:8" execution_time="3.0110000000000001"/>
         <operation operation_name="ternary_mm_expr" supported_types="INT:8" execution_time="3.0110000000000001"/>
+        <operation operation_name="plus_expr" supported_types="INT:8" execution_time="3.0110000000000001"/>
+        <operation operation_name="minus_expr" supported_types="INT:8" execution_time="3.0110000000000001"/>
       </cell>
       <cell>
         <name>ternary_mm_expr_FU_0_16_16_16</name>
@@ -21495,6 +21538,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.3410000000000002"/>
         <operation operation_name="ternary_mp_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.3410000000000002"/>
         <operation operation_name="ternary_mm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.3410000000000002"/>
+        <operation operation_name="plus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.3410000000000002"/>
+        <operation operation_name="minus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.3410000000000002"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_0_1_1_1</name>
@@ -21509,6 +21554,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.369"/>
         <operation operation_name="ternary_mp_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.369"/>
         <operation operation_name="ternary_mm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.369"/>
+        <operation operation_name="plus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.369"/>
+        <operation operation_name="minus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.369"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_0_32_32_32</name>
@@ -21523,6 +21570,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.75"/>
         <operation operation_name="ternary_mp_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.75"/>
         <operation operation_name="ternary_mm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.75"/>
+        <operation operation_name="plus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.75"/>
+        <operation operation_name="minus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.75"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_0_64_64_64</name>
@@ -21537,6 +21586,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.7229999999999999"/>
         <operation operation_name="ternary_mp_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.7229999999999999"/>
         <operation operation_name="ternary_mm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.7229999999999999"/>
+        <operation operation_name="plus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.7229999999999999"/>
+        <operation operation_name="minus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.7229999999999999"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_0_8_8_8</name>
@@ -21551,6 +21602,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.0110000000000001"/>
         <operation operation_name="ternary_mp_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.0110000000000001"/>
         <operation operation_name="ternary_mm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.0110000000000001"/>
+        <operation operation_name="plus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.0110000000000001"/>
+        <operation operation_name="minus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.0110000000000001"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_16_0_16_16</name>
@@ -21565,6 +21618,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.3410000000000002"/>
         <operation operation_name="ternary_mp_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.3410000000000002"/>
         <operation operation_name="ternary_mm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.3410000000000002"/>
+        <operation operation_name="plus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.3410000000000002"/>
+        <operation operation_name="minus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.3410000000000002"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_16_16_0_16</name>
@@ -21579,6 +21634,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.3410000000000002"/>
         <operation operation_name="ternary_mp_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.3410000000000002"/>
         <operation operation_name="ternary_mm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.3410000000000002"/>
+        <operation operation_name="plus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.3410000000000002"/>
+        <operation operation_name="minus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.3410000000000002"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_16_16_16_16</name>
@@ -21592,6 +21649,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.3410000000000002"/>
         <operation operation_name="ternary_mp_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.3410000000000002"/>
         <operation operation_name="ternary_mm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.3410000000000002"/>
+        <operation operation_name="plus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.3410000000000002"/>
+        <operation operation_name="minus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.3410000000000002"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_1_0_1_1</name>
@@ -21606,6 +21665,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.369"/>
         <operation operation_name="ternary_mp_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.369"/>
         <operation operation_name="ternary_mm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.369"/>
+        <operation operation_name="plus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.369"/>
+        <operation operation_name="minus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.369"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_1_1_0_1</name>
@@ -21620,6 +21681,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.369"/>
         <operation operation_name="ternary_mp_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.369"/>
         <operation operation_name="ternary_mm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.369"/>
+        <operation operation_name="plus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.369"/>
+        <operation operation_name="minus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.369"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_1_1_1_1</name>
@@ -21633,6 +21696,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.369"/>
         <operation operation_name="ternary_mp_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.369"/>
         <operation operation_name="ternary_mm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.369"/>
+        <operation operation_name="plus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.369"/>
+        <operation operation_name="minus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.369"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_32_0_32_32</name>
@@ -21647,6 +21712,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.75"/>
         <operation operation_name="ternary_mp_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.75"/>
         <operation operation_name="ternary_mm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.75"/>
+        <operation operation_name="plus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.75"/>
+        <operation operation_name="minus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.75"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_32_32_0_32</name>
@@ -21661,6 +21728,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.75"/>
         <operation operation_name="ternary_mp_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.75"/>
         <operation operation_name="ternary_mm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.75"/>
+        <operation operation_name="plus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.75"/>
+        <operation operation_name="minus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.75"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_32_32_32_32</name>
@@ -21674,6 +21743,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.75"/>
         <operation operation_name="ternary_mp_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.75"/>
         <operation operation_name="ternary_mm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.75"/>
+        <operation operation_name="plus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.75"/>
+        <operation operation_name="minus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.75"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_64_0_64_64</name>
@@ -21688,6 +21759,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.7229999999999999"/>
         <operation operation_name="ternary_mp_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.7229999999999999"/>
         <operation operation_name="ternary_mm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.7229999999999999"/>
+        <operation operation_name="plus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.7229999999999999"/>
+        <operation operation_name="minus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.7229999999999999"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_64_64_0_64</name>
@@ -21702,6 +21775,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.7229999999999999"/>
         <operation operation_name="ternary_mp_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.7229999999999999"/>
         <operation operation_name="ternary_mm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.7229999999999999"/>
+        <operation operation_name="plus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.7229999999999999"/>
+        <operation operation_name="minus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.7229999999999999"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_64_64_64_64</name>
@@ -21715,6 +21790,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.7229999999999999"/>
         <operation operation_name="ternary_mp_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.7229999999999999"/>
         <operation operation_name="ternary_mm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.7229999999999999"/>
+        <operation operation_name="plus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.7229999999999999"/>
+        <operation operation_name="minus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.7229999999999999"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_8_0_8_8</name>
@@ -21729,6 +21806,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.0110000000000001"/>
         <operation operation_name="ternary_mp_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.0110000000000001"/>
         <operation operation_name="ternary_mm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.0110000000000001"/>
+        <operation operation_name="plus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.0110000000000001"/>
+        <operation operation_name="minus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.0110000000000001"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_8_8_0_8</name>
@@ -21743,6 +21822,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.0110000000000001"/>
         <operation operation_name="ternary_mp_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.0110000000000001"/>
         <operation operation_name="ternary_mm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.0110000000000001"/>
+        <operation operation_name="plus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.0110000000000001"/>
+        <operation operation_name="minus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.0110000000000001"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_8_8_8_8</name>
@@ -21756,6 +21837,8 @@ VHDL_PROVIDED=
         <operation operation_name="ternary_pm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.0110000000000001"/>
         <operation operation_name="ternary_mp_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.0110000000000001"/>
         <operation operation_name="ternary_mm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.0110000000000001"/>
+        <operation operation_name="plus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.0110000000000001"/>
+        <operation operation_name="minus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.0110000000000001"/>
       </cell>
       <cell>
         <name>ui_ternary_mm_expr_FU_0_16_16_16</name>

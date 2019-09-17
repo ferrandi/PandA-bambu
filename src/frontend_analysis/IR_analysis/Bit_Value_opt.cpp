@@ -1080,13 +1080,16 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                   }
                   else if(GET_NODE(ga->op1)->get_kind() == minus_expr_K && GetPointer<integer_cst>(op0) && GetPointer<integer_cst>(op0)->value == 0)
                   {
-                     const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
-                     tree_nodeRef res_expr = IRman->create_unary_operation(ga_op_type, me->op1, srcp_default, negate_expr_K);
-                     TM->ReplaceTreeNode(stmt, ga->op1, res_expr);
-                     modified = true;
+                     if(!parameters->isOption(OPT_use_ALUs) || !parameters->getOption<bool>(OPT_use_ALUs))
+                     {
+                        const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
+                        tree_nodeRef res_expr = IRman->create_unary_operation(ga_op_type, me->op1, srcp_default, negate_expr_K);
+                        TM->ReplaceTreeNode(stmt, ga->op1, res_expr);
+                        modified = true;
 #ifndef NDEBUG
-                     AppM->RegisterTransformation(GetName(), stmt);
+                        AppM->RegisterTransformation(GetName(), stmt);
 #endif
+                     }
                   }
                }
                else if(GET_NODE(ga->op1)->get_kind() == eq_expr_K || GET_NODE(ga->op1)->get_kind() == ne_expr_K)
