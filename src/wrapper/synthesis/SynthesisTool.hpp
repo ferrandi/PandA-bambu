@@ -69,7 +69,7 @@ class xml_element;
 #define PARAM_HDL_files "HDL_files"
 #define PARAM_clk_name "clk_name"
 #define PARAM_clk_period "clk_period"
-#define PARAM_clk_period_default 1
+#define PARAM_clk_period_default (1.0/50)
 #define PARAM_clk_freq "clk_freq"
 #define PARAM_time_constrained "time_constrained"
 #define PARAM_is_combinational "is_combinational"
