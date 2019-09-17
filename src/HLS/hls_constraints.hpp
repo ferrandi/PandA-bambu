@@ -72,7 +72,7 @@ class xml_element;
 /**
  * @class HLS_constraints
  * @ingroup HLS
- * Data structure used to store all the HLS contraints
+ * Data structure used to store all the HLS constraints
  */
 class HLS_constraints
 {
