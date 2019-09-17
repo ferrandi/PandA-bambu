@@ -3375,7 +3375,10 @@ void AllocationInformation::Initialize()
    connection_offset = parameters->IsParameter("ConnectionOffset") ? parameters->GetParameter<double>("ConnectionOffset") :
                                                                      parameters->IsParameter("RelativeConnectionOffset") ?
                                                                      parameters->GetParameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
-                                                                     HLS_T->get_target_device()->has_parameter("connection_offset") ? HLS_T->get_target_device()->get_parameter<double>("connection_offset") : NUM_CST_allocation_default_connection_offset;
+                                                                     HLS_T->get_target_device()->has_parameter("RelativeConnectionOffset") ?
+                                                                     HLS_T->get_target_device()->get_parameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
+                                                                     HLS_T->get_target_device()->has_parameter("ConnectionOffset") ?
+                                                                     HLS_T->get_target_device()->get_parameter<double>("ConnectionOffset") : NUM_CST_allocation_default_connection_offset;
 
    output_DSP_connection_time = parameters->IsParameter("OutputDSPConnectionRatio") ?
                                     parameters->GetParameter<double>("OutputDSPConnectionRatio") * get_setup_hold_time() :
