@@ -909,7 +909,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
       }
       else
       {
-         THROW_ASSERT(!cir->get_black_box(), "black box componet has to be managed in a different way");
+         THROW_ASSERT(!cir->get_black_box(), "black box component has to be managed in a different way");
       }
    }
 
@@ -1044,11 +1044,12 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
    if(parameters->IsParameter("multi-proc-fsm") and parameters->GetParameter<int>("multi-proc-fsm") == 1)
    {
       auto* mod = GetPointer<module>(cir);
-      for(unsigned int output_index = 0; output_index <= mod->get_out_port_size(); output_index++)
+      const auto n_outs = mod->get_out_port_size();
+      for(unsigned int output_index = 0; output_index <= n_outs; output_index++)
       {
-         if(mod->get_out_port(output_index)->get_id() == PRESENT_STATE_PORT_NAME)
+         if(output_index != n_outs && mod->get_out_port(output_index)->get_id() == PRESENT_STATE_PORT_NAME)
             continue;
-         if(mod->get_out_port(output_index)->get_id() == NEXT_STATE_PORT_NAME)
+         if(output_index != n_outs && mod->get_out_port(output_index)->get_id() == NEXT_STATE_PORT_NAME)
             continue;
          writer->write_transition_output_functions(false, output_index, cir, reset_state, reset_port, start_port, clock_port, first, end);
       }

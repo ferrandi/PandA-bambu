@@ -78,8 +78,8 @@
 
 /// STL include
 #include <tuple>
-#include <vector>
 #include <utility>
+#include <vector>
 
 /// technology include
 #include "technology_manager.hpp"

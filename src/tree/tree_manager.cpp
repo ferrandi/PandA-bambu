@@ -427,6 +427,39 @@ void tree_manager::collapse_into(const unsigned int& funID, std::unordered_map<u
          }
          break;
       }
+      case lut_expr_K:
+      {
+         auto* le = GetPointer<lut_expr>(curr_tn);
+         collapse_into(funID, stmt_to_bloc, le->op0, removed_nodes);
+         collapse_into(funID, stmt_to_bloc, le->op1, removed_nodes);
+         if(le->op2)
+            collapse_into(funID, stmt_to_bloc, le->op2, removed_nodes);
+         if(le->op3)
+         {
+            collapse_into(funID, stmt_to_bloc, le->op3, removed_nodes);
+         }
+         if(le->op4)
+         {
+            collapse_into(funID, stmt_to_bloc, le->op4, removed_nodes);
+         }
+         if(le->op5)
+         {
+            collapse_into(funID, stmt_to_bloc, le->op5, removed_nodes);
+         }
+         if(le->op6)
+         {
+            collapse_into(funID, stmt_to_bloc, le->op6, removed_nodes);
+         }
+         if(le->op7)
+         {
+            collapse_into(funID, stmt_to_bloc, le->op7, removed_nodes);
+         }
+         if(le->op8)
+         {
+            collapse_into(funID, stmt_to_bloc, le->op8, removed_nodes);
+         }
+         break;
+      }
       case var_decl_K:
       case result_decl_K:
       case parm_decl_K:
@@ -1044,6 +1077,39 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
          }
          break;
       }
+      case lut_expr_K:
+      {
+         auto* le = GetPointer<lut_expr>(curr_tn);
+         RecursiveReplaceTreeNode(le->op0, old_node, new_node, stmt, false);
+         RecursiveReplaceTreeNode(le->op1, old_node, new_node, stmt, false);
+         if(le->op2)
+            RecursiveReplaceTreeNode(le->op2, old_node, new_node, stmt, false);
+         if(le->op3)
+         {
+            RecursiveReplaceTreeNode(le->op3, old_node, new_node, stmt, false);
+         }
+         if(le->op4)
+         {
+            RecursiveReplaceTreeNode(le->op4, old_node, new_node, stmt, false);
+         }
+         if(le->op5)
+         {
+            RecursiveReplaceTreeNode(le->op5, old_node, new_node, stmt, false);
+         }
+         if(le->op6)
+         {
+            RecursiveReplaceTreeNode(le->op6, old_node, new_node, stmt, false);
+         }
+         if(le->op7)
+         {
+            RecursiveReplaceTreeNode(le->op7, old_node, new_node, stmt, false);
+         }
+         if(le->op8)
+         {
+            RecursiveReplaceTreeNode(le->op8, old_node, new_node, stmt, false);
+         }
+         break;
+      }
       case gimple_phi_K:
       {
          auto* gp = GetPointer<gimple_phi>(curr_tn);
@@ -1293,6 +1359,39 @@ void tree_manager::erase_usage_info(const tree_nodeRef& tn, const tree_nodeRef& 
          }
          break;
       }
+      case lut_expr_K:
+      {
+         auto* le = GetPointer<lut_expr>(curr_tn);
+         erase_usage_info(le->op0, stmt);
+         erase_usage_info(le->op1, stmt);
+         if(le->op2)
+            erase_usage_info(le->op2, stmt);
+         if(le->op3)
+         {
+            erase_usage_info(le->op3, stmt);
+         }
+         if(le->op4)
+         {
+            erase_usage_info(le->op4, stmt);
+         }
+         if(le->op5)
+         {
+            erase_usage_info(le->op5, stmt);
+         }
+         if(le->op6)
+         {
+            erase_usage_info(le->op6, stmt);
+         }
+         if(le->op7)
+         {
+            erase_usage_info(le->op7, stmt);
+         }
+         if(le->op8)
+         {
+            erase_usage_info(le->op8, stmt);
+         }
+         break;
+      }
       case var_decl_K:
       case result_decl_K:
       case parm_decl_K:
@@ -1471,6 +1570,39 @@ void tree_manager::insert_usage_info(const tree_nodeRef& tn, const tree_nodeRef&
          if(qe->op3)
          {
             insert_usage_info(qe->op3, stmt);
+         }
+         break;
+      }
+      case lut_expr_K:
+      {
+         auto* le = GetPointer<lut_expr>(curr_tn);
+         insert_usage_info(le->op0, stmt);
+         insert_usage_info(le->op1, stmt);
+         if(le->op2)
+            insert_usage_info(le->op2, stmt);
+         if(le->op3)
+         {
+            insert_usage_info(le->op3, stmt);
+         }
+         if(le->op4)
+         {
+            insert_usage_info(le->op4, stmt);
+         }
+         if(le->op5)
+         {
+            insert_usage_info(le->op5, stmt);
+         }
+         if(le->op6)
+         {
+            insert_usage_info(le->op6, stmt);
+         }
+         if(le->op7)
+         {
+            insert_usage_info(le->op7, stmt);
+         }
+         if(le->op8)
+         {
+            insert_usage_info(le->op8, stmt);
          }
          break;
       }

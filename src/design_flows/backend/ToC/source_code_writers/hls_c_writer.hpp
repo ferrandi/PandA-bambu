@@ -168,7 +168,7 @@ class HLSCWriter : public CWriter
     * @param nesting_level is the level of nesting of the currently printed field/element
     * @param input specifies if the input syntax must be used
     */
-   void WriteParamInMemory(const BehavioralHelperConstRef behavioral_helper, const std::string & param, const unsigned int type, const unsigned int nesting_level, bool input);
+   void WriteParamInMemory(const BehavioralHelperConstRef behavioral_helper, const std::string& param, const unsigned int type, const unsigned int nesting_level, bool input);
 
  public:
    /**

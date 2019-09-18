@@ -574,6 +574,20 @@ void tree_node_reached::operator()(const target_expr* obj, unsigned int& mask)
    CHECK_AND_ADD(obj->clnp, target_expr::clnp);
 }
 
+void tree_node_reached::operator()(const lut_expr* obj, unsigned int& mask)
+{
+   tree_node_mask::operator()(obj, mask);
+   CHECK_AND_ADD(obj->op0, lut_expr::op0);
+   CHECK_AND_ADD(obj->op1, lut_expr::op1);
+   CHECK_AND_ADD(obj->op2, lut_expr::op2);
+   CHECK_AND_ADD(obj->op3, lut_expr::op3);
+   CHECK_AND_ADD(obj->op4, lut_expr::op4);
+   CHECK_AND_ADD(obj->op5, lut_expr::op5);
+   CHECK_AND_ADD(obj->op6, lut_expr::op6);
+   CHECK_AND_ADD(obj->op7, lut_expr::op7);
+   CHECK_AND_ADD(obj->op8, lut_expr::op8);
+}
+
 void tree_node_reached::operator()(const template_decl* obj, unsigned int& mask)
 {
    tree_node_mask::operator()(obj, mask);
@@ -1369,6 +1383,8 @@ void tree_node_index_factory::create_tree_node(const unsigned int node_id, const
          CREATE_TREE_NODE_CASE_BODY(widen_mult_expr, node_id)
       case gimple_multi_way_if_K:
          CREATE_TREE_NODE_CASE_BODY(gimple_multi_way_if, node_id)
+      case extract_bit_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(extract_bit_expr, node_id)
       case do_stmt_K:
       case for_stmt_K:
       case if_stmt_K:
@@ -2106,6 +2122,21 @@ void tree_node_index_factory::operator()(const target_expr* obj, unsigned int& m
    SET_NODE_ID(decl, target_expr);
    SET_NODE_ID(init, target_expr);
    SET_NODE_ID(clnp, target_expr);
+}
+
+void tree_node_index_factory::operator()(const lut_expr* obj, unsigned int& mask)
+{
+   THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
+   tree_node_mask::operator()(obj, mask);
+   SET_NODE_ID(op0, lut_expr);
+   SET_NODE_ID(op1, lut_expr);
+   SET_NODE_ID(op2, lut_expr);
+   SET_NODE_ID(op3, lut_expr);
+   SET_NODE_ID(op4, lut_expr);
+   SET_NODE_ID(op5, lut_expr);
+   SET_NODE_ID(op6, lut_expr);
+   SET_NODE_ID(op7, lut_expr);
+   SET_NODE_ID(op8, lut_expr);
 }
 
 void tree_node_index_factory::operator()(const template_decl* obj, unsigned int& mask)

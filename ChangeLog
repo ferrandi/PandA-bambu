@@ -9,8 +9,8 @@ New features introduced:
 - Added to CLANG/LLVM based analysis an interprocedural value range analysis based on the following paper: Fernando Magno Quintao Pereira, Raphael Ernani Rodrigues, and Victor Hugo Sperle Campos. "A fast and low-overhead technique to secure programs against integer overflows", In Proceedings of the 2013 IEEE/ACM International Symposium on Code Generation and Optimization (CGO) (CGO '13). Washington, DC, USA, 1-11.
     The implementation started from code available at this link:https://code.google.com/archive/p/range-analysis/.
     The original code went through a deep revision and it has been changed to be compatible to a recent version of LLVM. Some extensions have been also added:
-    - Added anti range support
-    - Redesigned many Range operations to take into account wrapping and to improve the reductions performed
+    - Added anti range support.
+    - Redesigned many Range operations to take into account wrapping and to improve the reductions performed.
     - Integrated the LLVM lazy value range analysis.
     - Added support to range value propagation of load from constant arrays.
     - Added support to range value propagation of load and store from generic arrays.
@@ -45,6 +45,8 @@ New features introduced:
 - Improved and fixed the synthesis of empty functions.
 - Added option --VHDL-library=libraryname to specify the library in which the synthesized function has to be compiled.
 - Extented the VHDL support to other bambu library components.
+- If it is supported, the compiler used to compile the PandA framework uses the c++17 standard (-std=c++17), otherwise, it uses c++11 standard.
+- Integrated Mockturtle library from EPFL (https://github.com/lsils/mockturtle) to simplify LUT-based expressions.
 
 This release includes also a set of fixes:
     on COND_EXPR_RESTRUCTURING step

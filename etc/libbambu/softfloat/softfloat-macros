@@ -38,7 +38,7 @@ these four paragraphs for those parts of this code that are retained.
 | The result is stored in the location pointed to by `zPtr'.
 *----------------------------------------------------------------------------*/
 
-static /*INLINE*/ void __shift32RightJamming( __bits32 a, __int16 count, __bits32 *zPtr )
+static __FORCE_INLINE void __shift32RightJamming( __bits32 a, __int16 count, __bits32 *zPtr )
 {
     __bits32 z;
 
@@ -64,7 +64,7 @@ static /*INLINE*/ void __shift32RightJamming( __bits32 a, __int16 count, __bits3
 | The result is stored in the location pointed to by `zPtr'.
 *----------------------------------------------------------------------------*/
 
-static /*INLINE*/ void __shift64RightJamming( __bits64 a, __int16 count, __bits64 *zPtr )
+static __FORCE_INLINE void __shift64RightJamming( __bits64 a, __int16 count, __bits64 *zPtr )
 {
     __bits64 z;
 
@@ -98,7 +98,7 @@ static /*INLINE*/ void __shift64RightJamming( __bits64 a, __int16 count, __bits6
 | described above, and is returned at the location pointed to by `z1Ptr'.)
 *----------------------------------------------------------------------------*/
 
-static /*INLINE*/ void
+static __FORCE_INLINE void
  __shift64ExtraRightJamming(
      __bits64 a0, __bits64 a1, __int16 count, __bits64 *z0Ptr, __bits64 *z1Ptr )
 {
@@ -135,7 +135,7 @@ static /*INLINE*/ void
 | which are stored at the locations pointed to by `z0Ptr' and `z1Ptr'.
 *----------------------------------------------------------------------------*/
 
-static /*INLINE*/ void
+static __FORCE_INLINE void
  __shift128Right(
      __bits64 a0, __bits64 a1, __int16 count, __bits64 *z0Ptr, __bits64 *z1Ptr )
 {
@@ -170,7 +170,7 @@ static /*INLINE*/ void
 | the locations pointed to by `z0Ptr' and `z1Ptr'.
 *----------------------------------------------------------------------------*/
 
-static /*INLINE*/ void
+static __FORCE_INLINE void
  __shift128RightJamming(
      __bits64 a0, __bits64 a1, __int16 count, __bits64 *z0Ptr, __bits64 *z1Ptr )
 {
@@ -221,7 +221,7 @@ static /*INLINE*/ void
 | `z2Ptr'.)
 *----------------------------------------------------------------------------*/
 
-static /*INLINE*/ void
+static __FORCE_INLINE void
  __shift128ExtraRightJamming(
      __bits64 a0,
      __bits64 a1,
@@ -279,7 +279,7 @@ static /*INLINE*/ void
 | pieces which are stored at the locations pointed to by `z0Ptr' and `z1Ptr'.
 *----------------------------------------------------------------------------*/
 
-static /*INLINE*/ void
+static __FORCE_INLINE void
  __shortShift128Left(
      __bits64 a0, __bits64 a1, __int16 count, __bits64 *z0Ptr, __bits64 *z1Ptr )
 {
@@ -298,7 +298,7 @@ static /*INLINE*/ void
 | `z1Ptr', and `z2Ptr'.
 *----------------------------------------------------------------------------*/
 
-static /*INLINE*/ void
+static __FORCE_INLINE void
  __shortShift192Left(
      __bits64 a0,
      __bits64 a1,
@@ -333,7 +333,7 @@ static /*INLINE*/ void
 | are stored at the locations pointed to by `z0Ptr' and `z1Ptr'.
 *----------------------------------------------------------------------------*/
 
-static /*INLINE*/ void
+static __FORCE_INLINE void
  __add128(
      __bits64 a0, __bits64 a1, __bits64 b0, __bits64 b1, __bits64 *z0Ptr, __bits64 *z1Ptr )
 {
@@ -353,7 +353,7 @@ static /*INLINE*/ void
 | `z1Ptr', and `z2Ptr'.
 *----------------------------------------------------------------------------*/
 
-static /*INLINE*/ void
+static __FORCE_INLINE void
  __add192(
      __bits64 a0,
      __bits64 a1,
@@ -391,7 +391,7 @@ static /*INLINE*/ void
 | `z1Ptr'.
 *----------------------------------------------------------------------------*/
 
-static /*INLINE*/ void
+static __FORCE_INLINE void
  __sub128(
      __bits64 a0, __bits64 a1, __bits64 b0, __bits64 b1, __bits64 *z0Ptr, __bits64 *z1Ptr )
 {
@@ -409,7 +409,7 @@ static /*INLINE*/ void
 | pointed to by `z0Ptr', `z1Ptr', and `z2Ptr'.
 *----------------------------------------------------------------------------*/
 
-static /*INLINE*/ void
+static __FORCE_INLINE void
  __sub192(
      __bits64 a0,
      __bits64 a1,
@@ -445,7 +445,7 @@ static /*INLINE*/ void
 | `z0Ptr' and `z1Ptr'.
 *----------------------------------------------------------------------------*/
 
-static /*INLINE*/ void __mul64To128( __bits64 a, __bits64 b, __bits64 *z0Ptr, __bits64 *z1Ptr )
+static __FORCE_INLINE void __mul64To128( __bits64 a, __bits64 b, __bits64 *z0Ptr, __bits64 *z1Ptr )
 {
     __bits32 aHigh, aLow, bHigh, bLow;
     __bits64 z0, zMiddleA, zMiddleB, z1;
@@ -475,7 +475,7 @@ static /*INLINE*/ void __mul64To128( __bits64 a, __bits64 b, __bits64 *z0Ptr, __
 | `z2Ptr'.
 *----------------------------------------------------------------------------*/
 
-static /*INLINE*/ void
+static __FORCE_INLINE void
  __mul128By64To192(
      __bits64 a0,
      __bits64 a1,
@@ -503,7 +503,7 @@ static /*INLINE*/ void
 | the locations pointed to by `z0Ptr', `z1Ptr', `z2Ptr', and `z3Ptr'.
 *----------------------------------------------------------------------------*/
 
-static /*INLINE*/ void
+static __FORCE_INLINE void
  __mul128To256(
      __bits64 a0,
      __bits64 a1,
@@ -609,7 +609,7 @@ static __bits32 __estimateSqrt32( __int16 aExp, __bits32 a )
 *----------------------------------------------------------------------------*/
 
 #define NO_CLZ_TABLE
-static __int8 __countLeadingZeros32( __bits32 a )
+static __attribute__((always_inline)) inline __int8 __countLeadingZeros32( __bits32 a )
 {
 #if 1
    __bits8 res;
@@ -674,7 +674,7 @@ static __int8 __countLeadingZeros32( __bits32 a )
 | `a'.  If `a' is zero, 64 is returned.
 *----------------------------------------------------------------------------*/
 
-static __int8 __countLeadingZeros64( __bits64 a )
+static __FORCE_INLINE __int8 __countLeadingZeros64( __bits64 a )
 {
 #if 1
   unsigned char res;
@@ -701,7 +701,7 @@ static __int8 __countLeadingZeros64( __bits64 a )
 | Otherwise, returns 0.
 *----------------------------------------------------------------------------*/
 
-static /*INLINE*/ __flag __eq128( __bits64 a0, __bits64 a1, __bits64 b0, __bits64 b1 )
+static __FORCE_INLINE __flag __eq128( __bits64 a0, __bits64 a1, __bits64 b0, __bits64 b1 )
 {
 
     return ( a0 == b0 ) && ( a1 == b1 );
@@ -714,7 +714,7 @@ static /*INLINE*/ __flag __eq128( __bits64 a0, __bits64 a1, __bits64 b0, __bits6
 | Otherwise, returns 0.
 *----------------------------------------------------------------------------*/
 
-static /*INLINE*/ __flag __le128( __bits64 a0, __bits64 a1, __bits64 b0, __bits64 b1 )
+static __FORCE_INLINE __flag __le128( __bits64 a0, __bits64 a1, __bits64 b0, __bits64 b1 )
 {
 
     return ( a0 < b0 ) || ( ( a0 == b0 ) && ( a1 <= b1 ) );
@@ -727,7 +727,7 @@ static /*INLINE*/ __flag __le128( __bits64 a0, __bits64 a1, __bits64 b0, __bits6
 | returns 0.
 *----------------------------------------------------------------------------*/
 
-static /*INLINE*/ __flag __lt128( __bits64 a0, __bits64 a1, __bits64 b0, __bits64 b1 )
+static __FORCE_INLINE __flag __lt128( __bits64 a0, __bits64 a1, __bits64 b0, __bits64 b1 )
 {
 
     return ( a0 < b0 ) || ( ( a0 == b0 ) && ( a1 < b1 ) );
@@ -740,7 +740,7 @@ static /*INLINE*/ __flag __lt128( __bits64 a0, __bits64 a1, __bits64 b0, __bits6
 | Otherwise, returns 0.
 *----------------------------------------------------------------------------*/
 
-static /*INLINE*/ __flag __ne128( __bits64 a0, __bits64 a1, __bits64 b0, __bits64 b1 )
+static __FORCE_INLINE __flag __ne128( __bits64 a0, __bits64 a1, __bits64 b0, __bits64 b1 )
 {
 
     return ( a0 != b0 ) || ( a1 != b1 );

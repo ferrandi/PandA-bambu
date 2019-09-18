@@ -293,7 +293,8 @@
 #define OPT_LEVEL_RESET (1 + OPT_RESET)
 #define OPT_DISABLE_REG_INIT_VALUE (1 + OPT_LEVEL_RESET)
 #define OPT_SCHEDULING_MUX_MARGINS (1 + OPT_DISABLE_REG_INIT_VALUE)
-#define OPT_SDC_SCHEDULING (1 + OPT_SCHEDULING_MUX_MARGINS)
+#define OPT_USE_ALUS (1 + OPT_SCHEDULING_MUX_MARGINS)
+#define OPT_SDC_SCHEDULING (1 + OPT_USE_ALUS)
 #define OPT_SERIALIZE_MEMORY_ACCESSES (1 + OPT_SDC_SCHEDULING)
 #define OPT_SILP (1 + OPT_SERIALIZE_MEMORY_ACCESSES)
 #define OPT_SIMULATE (1 + OPT_SILP)
@@ -1179,6 +1180,7 @@ int BambuParameter::Exec()
       {"DSP-margin-combinational", required_argument, nullptr, OPT_DSP_MARGIN_COMBINATIONAL},
       {"DSP-margin-pipelined", required_argument, nullptr, OPT_DSP_MARGIN_PIPELINED},
       {"mux-margins", required_argument, nullptr, OPT_SCHEDULING_MUX_MARGINS},
+      {"use-ALUs", no_argument, nullptr, OPT_USE_ALUS},
       {"timing-model", required_argument, nullptr, OPT_TIMING_MODEL},
       {"registered-inputs", required_argument, nullptr, OPT_REGISTERED_INPUTS},
       {"fsm-encoding", required_argument, nullptr, OPT_FSM_ENCODING},
@@ -1218,7 +1220,7 @@ int BambuParameter::Exec()
       {"mem-delay-read", required_argument, nullptr, OPT_MEM_DELAY_READ},
       {"mem-delay-write", required_argument, nullptr, OPT_MEM_DELAY_WRITE},
       {"host-profiling", no_argument, nullptr, OPT_HOST_PROFILING},
-      {"bitvalue-ipa", no_argument, nullptr, OPT_DISABLE_BITVALUE_IPA},
+      {"disable-bitvalue-ipa", no_argument, nullptr, OPT_DISABLE_BITVALUE_IPA},
       {"discrepancy", no_argument, nullptr, OPT_DISCREPANCY},
       {"discrepancy-force-uninitialized", no_argument, nullptr, OPT_DISCREPANCY_FORCE},
       {"discrepancy-no-load-pointers", no_argument, nullptr, OPT_DISCREPANCY_NO_LOAD_POINTERS},
@@ -1501,14 +1503,14 @@ int BambuParameter::Exec()
             else
 #endif
 #if HAVE_COIN_OR
-            if(optarg[0] == 'C')
+                if(optarg[0] == 'C')
             {
                setOption(OPT_ilp_solver, meilp_solver::COIN_OR);
             }
             else
 #endif
 #if HAVE_LP_SOLVE
-            if(optarg[0] == 'L')
+                if(optarg[0] == 'L')
             {
                setOption(OPT_ilp_solver, meilp_solver::LP_SOLVE);
             }
@@ -1959,6 +1961,11 @@ int BambuParameter::Exec()
          case OPT_SCHEDULING_MUX_MARGINS:
          {
             setOption(OPT_scheduling_mux_margins, optarg);
+            break;
+         }
+         case OPT_USE_ALUS:
+         {
+            setOption(OPT_use_ALUs, true);
             break;
          }
          case OPT_TIMING_MODEL:
@@ -3751,6 +3758,7 @@ void BambuParameter::SetDefaults()
 
    panda_parameters["CSE_size"] = "2";
    panda_parameters["PortSwapping"] = "1";
+   //   panda_parameters["enable-CSROA"] = "1";
 }
 
 void BambuParameter::add_bambu_library(std::string lib)

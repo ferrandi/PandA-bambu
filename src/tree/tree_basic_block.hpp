@@ -207,6 +207,11 @@ struct bloc
    void PushAfter(const tree_nodeRef new_stmt, const tree_nodeRef existing_stmt);
 
    /**
+    * @brief ReorderLUTs reorders the LUT statements to fix the def-use relations.
+    */
+   void ReorderLUTs();
+
+   /**
     * Remove a statement
     * @param statement is the statement to be removed
     */

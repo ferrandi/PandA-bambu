@@ -121,6 +121,7 @@ tree_nodeRef tree_manipulation::create_unary_operation(const tree_nodeRef& type,
       case tree_list_K:
       case tree_vec_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -180,6 +181,7 @@ tree_nodeRef tree_manipulation::create_unary_operation(const tree_nodeRef& type,
       case tree_list_K:
       case tree_vec_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -240,6 +242,7 @@ tree_nodeRef tree_manipulation::create_binary_operation(const tree_nodeRef& type
       case tree_list_K:
       case tree_vec_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
       case CASE_DECL_NODES:
@@ -299,6 +302,7 @@ tree_nodeRef tree_manipulation::create_binary_operation(const tree_nodeRef& type
       case tree_list_K:
       case tree_vec_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -361,6 +365,7 @@ tree_nodeRef tree_manipulation::create_ternary_operation(const tree_nodeRef& typ
       case tree_list_K:
       case tree_vec_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -420,6 +425,7 @@ tree_nodeRef tree_manipulation::create_ternary_operation(const tree_nodeRef& typ
       case tree_list_K:
       case tree_vec_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -484,6 +490,7 @@ tree_nodeRef tree_manipulation::create_quaternary_operation(const tree_nodeRef& 
       case tree_list_K:
       case tree_vec_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -542,6 +549,7 @@ tree_nodeRef tree_manipulation::create_quaternary_operation(const tree_nodeRef& 
       case tree_list_K:
       case tree_vec_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -573,6 +581,69 @@ tree_nodeRef tree_manipulation::create_quaternary_operation(const tree_nodeRef& 
    return node_ref;
 }
 
+tree_nodeRef tree_manipulation::create_lut_expr(const tree_nodeRef& type, const tree_nodeRef& op0, const tree_nodeRef& op1, const tree_nodeRef& op2, const tree_nodeRef& op3, const tree_nodeRef& op4, const tree_nodeRef& op5, const tree_nodeRef& op6,
+                                                const tree_nodeRef& op7, const tree_nodeRef& op8, const std::string& srcp) const
+{
+   THROW_ASSERT(type->get_kind() == tree_reindex_K, "Type node is not a tree reindex");
+   THROW_ASSERT(op0->get_kind() == tree_reindex_K, "Operand 0 node is not a tree reindex");
+   THROW_ASSERT(op1->get_kind() == tree_reindex_K, "Operand 1 node is not a tree reindex");
+   THROW_ASSERT(!op2 || op2->get_kind() == tree_reindex_K, "Operand 2 node is not a tree reindex");
+   THROW_ASSERT(!op3 || op3->get_kind() == tree_reindex_K, "Operand 3 node is not a tree reindex");
+   THROW_ASSERT(!op4 || op4->get_kind() == tree_reindex_K, "Operand 4 node is not a tree reindex");
+   THROW_ASSERT(!op5 || op5->get_kind() == tree_reindex_K, "Operand 5 node is not a tree reindex");
+   THROW_ASSERT(!op6 || op6->get_kind() == tree_reindex_K, "Operand 6 node is not a tree reindex");
+   THROW_ASSERT(!op7 || op7->get_kind() == tree_reindex_K, "Operand 7 node is not a tree reindex");
+   THROW_ASSERT(!op8 || op8->get_kind() == tree_reindex_K, "Operand 8 node is not a tree reindex");
+   THROW_ASSERT(!srcp.empty(), "It requires a non empty string");
+   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
+   unsigned int node_nid = this->TreeM->new_tree_node_id();
+
+   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(type));
+   IR_schema[TOK(TOK_OP0)] = STR(GET_INDEX_NODE(op0));
+   IR_schema[TOK(TOK_OP1)] = STR(GET_INDEX_NODE(op1));
+   if(op2)
+      IR_schema[TOK(TOK_OP2)] = STR(GET_INDEX_NODE(op2));
+   if(op3)
+      IR_schema[TOK(TOK_OP3)] = STR(GET_INDEX_NODE(op3));
+   if(op4)
+      IR_schema[TOK(TOK_OP4)] = STR(GET_INDEX_NODE(op4));
+   if(op5)
+      IR_schema[TOK(TOK_OP5)] = STR(GET_INDEX_NODE(op5));
+   if(op6)
+      IR_schema[TOK(TOK_OP6)] = STR(GET_INDEX_NODE(op6));
+   if(op7)
+      IR_schema[TOK(TOK_OP7)] = STR(GET_INDEX_NODE(op7));
+   if(op8)
+      IR_schema[TOK(TOK_OP8)] = STR(GET_INDEX_NODE(op8));
+   IR_schema[TOK(TOK_SRCP)] = srcp;
+
+   this->TreeM->create_tree_node(node_nid, lut_expr_K, IR_schema);
+   tree_nodeRef node_ref = TreeM->GetTreeReindex(node_nid);
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created node " + STR(GET_INDEX_NODE(node_ref)) + " (" + GET_NODE(node_ref)->get_kind_text() + ")");
+
+   return node_ref;
+}
+
+tree_nodeRef tree_manipulation::create_extract_bit_expr(const tree_nodeRef& op0, const tree_nodeRef& op1, const std::string& srcp) const
+{
+   auto boolType = create_boolean_type();
+   THROW_ASSERT(op0->get_kind() == tree_reindex_K, "Operand 0 node is not a tree reindex");
+   THROW_ASSERT(op1->get_kind() == tree_reindex_K, "Operand 1 node is not a tree reindex");
+   THROW_ASSERT(!srcp.empty(), "It requires a non empty string");
+   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
+   unsigned int node_nid = this->TreeM->new_tree_node_id();
+
+   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(boolType));
+   IR_schema[TOK(TOK_OP0)] = STR(GET_INDEX_NODE(op0));
+   IR_schema[TOK(TOK_OP1)] = STR(GET_INDEX_NODE(op1));
+   IR_schema[TOK(TOK_SRCP)] = srcp;
+
+   this->TreeM->create_tree_node(node_nid, extract_bit_expr_K, IR_schema);
+   tree_nodeRef node_ref = TreeM->GetTreeReindex(node_nid);
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created node " + STR(GET_INDEX_NODE(node_ref)) + " (" + GET_NODE(node_ref)->get_kind_text() + ")");
+
+   return node_ref;
+}
 /// CONST_OBJ_TREE_NODES
 
 /// Create an integer_cst node
@@ -600,13 +671,10 @@ tree_nodeRef tree_manipulation::CreateRealCst(const tree_nodeConstRef& type, con
    unsigned int type_node_nid = type->index;
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    IR_schema[TOK(TOK_TYPE)] = STR(type_node_nid);
-   std::stringstream ss;
-   ss << value;
-   IR_schema[TOK(TOK_VALR)] = ss.str();
 
    std::stringstream ssX;
 #if HAVE_HEXFLOAT
-   ss << std::hexfloat << value;
+   ssX << std::hexfloat << value;
 #else
    {
       char buffer[256];
@@ -614,7 +682,8 @@ tree_nodeRef tree_manipulation::CreateRealCst(const tree_nodeConstRef& type, con
       ssX << buffer;
    }
 #endif
-   IR_schema[TOK(TOK_VALX)] = ss.str();
+   IR_schema[TOK(TOK_VALR)] = ssX.str();
+   IR_schema[TOK(TOK_VALX)] = ssX.str();
 
    this->TreeM->create_tree_node(real_cst_nid, real_cst_K, IR_schema);
    tree_nodeRef node_ref = TreeM->GetTreeReindex(real_cst_nid);
