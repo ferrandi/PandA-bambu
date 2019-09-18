@@ -716,7 +716,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                            AppM->RegisterTransformation(GetName(), stmt);
 #endif
                         }
-                        continue;
+                        return;
                      }
                      tree_nodeRef op0 = GET_NODE(me->op0);
                      tree_nodeRef op1 = GET_NODE(me->op1);
@@ -1342,7 +1342,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                      if(not AppM->ApplyNewTransformation())
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because reached limit of cfg transformations");
-                        continue;
+                        return;
                      }
 #endif
                      tree_nodeRef op0 = GET_NODE(me->op1);
