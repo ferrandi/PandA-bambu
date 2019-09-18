@@ -298,12 +298,15 @@ void fsm_controller::create_state_machine(std::string& parse)
                {
                   auto reg_obj = GetPointer<register_obj>(current_port->get_elem());
                   wren_list.insert(std::make_pair(reg_obj->get_register_index(), out_ports[s.second]));
-                  if(state_Xregs[v][reg_obj->get_register_index()] && v != first_state)
+                  if(parameters->IsParameter("enable-FSMX") && parameters->GetParameter<int>("enable-FSMX") == 1)
                   {
-                     present_state[v][out_ports[s.second]] = 2;
-                     PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Set X value for wr_en on register reg_");
-                     PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, reg_obj->get_register_index());
-                     PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "\n");
+                     if(state_Xregs[v][reg_obj->get_register_index()] && v != first_state)
+                     {
+                        present_state[v][out_ports[s.second]] = 2;
+                        PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Set X value for wr_en on register reg_");
+                        PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, reg_obj->get_register_index());
+                        PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "\n");
+                     }
                   }
                }
                else if(current_port->get_command_type() == commandport_obj::command_type::SELECTOR)
@@ -319,7 +322,8 @@ void fsm_controller::create_state_machine(std::string& parse)
                      }
                      else if(mux_slave->get_type() == generic_obj::resource_type::FUNCTIONAL_UNIT && active_fu.find(mux_slave) == active_fu.end())
                      {
-                        present_state[v][out_ports[s.second]] = 2;
+                        if(parameters->IsParameter("enable-FSMX") && parameters->GetParameter<int>("enable-FSMX") == 1)
+                           present_state[v][out_ports[s.second]] = 2;
                      }
                   }
                }
@@ -507,8 +511,11 @@ void fsm_controller::create_state_machine(std::string& parse)
 
             for(auto const& sel : register_selectors)
             {
-               if(wren_list.find(sel.second) != wren_list.end() && ((transition_outputs[wren_list[sel.second]] == 0) || (transition_outputs[wren_list[sel.second]] == default_COND && present_state[v][wren_list[sel.second]] != 1)))
-                  transition_outputs[sel.first] = 2;
+               if(parameters->IsParameter("enable-FSMX") && parameters->GetParameter<int>("enable-FSMX") == 1)
+               {
+                  if(wren_list.find(sel.second) != wren_list.end() && ((transition_outputs[wren_list[sel.second]] == 0) || (transition_outputs[wren_list[sel.second]] == default_COND && present_state[v][wren_list[sel.second]] != 1)))
+                     transition_outputs[sel.first] = 2;
+               }
             }
          }
 
