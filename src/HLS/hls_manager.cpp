@@ -124,7 +124,7 @@ hlsRef HLS_manager::create_HLS(const HLS_managerRef HLSMgr, unsigned int functio
       /// creates the new HLS data structure associated with the function
       const std::string function_name = tree_helper::name_function(HLSMgr->get_tree_manager(), functionId);
       HLS_constraintsRef HLS_C = HLS_constraintsRef(new HLS_constraints(HLSMgr->get_parameter(), function_name));
-      for(auto globalRC: HLSMgr->global_resource_constraints)
+      for(auto globalRC : HLSMgr->global_resource_constraints)
          if(HLS_C->get_number_fu(globalRC.first.first, globalRC.first.second) == INFINITE_UINT)
             HLS_C->set_number_fu(globalRC.first.first, globalRC.first.second, globalRC.second);
       HLSMgr->hlsMap[functionId] = hlsRef(new hls(HLSMgr->get_parameter(), functionId, Operations, HLSMgr->get_HLS_target(), HLS_C));

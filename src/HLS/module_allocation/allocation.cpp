@@ -954,7 +954,6 @@ bool allocation::check_templated_units(double clock_period, node_kind_prec_infoR
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + required_prec + " vs. " + fu_template_parameters);
          return true;
       }
-
    }
    if(pipeline_id == "")
    {

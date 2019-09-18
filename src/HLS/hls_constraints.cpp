@@ -466,7 +466,7 @@ void HLS_constraints::add_builtin_constraints()
    {
       XMLDomParser parser_noALUs("builtin_constraints_data", builtin_constraints_data);
       XMLDomParser parser_ALUs("builtin_constraints_data_ALUs", builtin_constraints_data_ALUs);
-      XMLDomParser &parser = parameters->isOption(OPT_use_ALUs) && parameters->getOption<bool>(OPT_use_ALUs) ? parser_ALUs : parser_noALUs;
+      XMLDomParser& parser = parameters->isOption(OPT_use_ALUs) && parameters->getOption<bool>(OPT_use_ALUs) ? parser_ALUs : parser_noALUs;
       parser.Exec();
       if(parser)
       {
