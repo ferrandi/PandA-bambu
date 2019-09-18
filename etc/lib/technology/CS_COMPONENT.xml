@@ -166,10 +166,10 @@ end"/>
       <name>register_file</name>
       <circuit>
         <component_o id="register_file">
-          <parameter name="BITSIZE_MEM">1</parameter>
+          <parameter name="n_elements">1</parameter>
           <structural_type_descriptor id_type="register_file"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2017-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -187,14 +187,29 @@ end"/>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o> in1
-          <NP_functionality LIBRARY="register_file in1 selector_register_file out1 BITSIZE_MEM " VERILOG_PROVIDED="
-reg [BITSIZE_in1-1:0] ram [BITSIZE_MEM-1:0];
+          <NP_functionality LIBRARY="register_file in1 selector_register_file out1 n_elements " VERILOG_PROVIDED="
+`ifdef _SIM_HAVE_CLOG2
+  parameter nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
+`else
+  parameter nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
+`endif
+reg [BITSIZE_in1-1:0] ram [0:n_elements-1] /* synthesis syn_ramstyle = &quot;no_rw_check&quot; */;
+wire [nbit_read_addr-1:0] memory_addr_a;
 always @(posedge clock)
 begin
 if (wenable)
-  ram[selector_register_file] &lt;= in1;
+  ram[memory_addr_a] &lt;= in1;
 end
-assign out1 = ram[selector_register_file];"/>
+assign out1 = ram[memory_addr_a];
+
+generate
+  if (n_elements==1)
+    assign memory_addr_a = {nbit_read_addr{1&apos;b0}};
+  else
+    assign memory_addr_a = selector_register_file;
+endgenerate
+
+"/>
         </component_o>
       </circuit>
     </cell>
