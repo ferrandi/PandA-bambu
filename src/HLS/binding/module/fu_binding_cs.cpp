@@ -62,6 +62,7 @@
 
 fu_binding_cs::fu_binding_cs(const HLS_managerConstRef _HLSMgr, const unsigned int _function_id, const ParameterConstRef _parameters) : fu_binding(_HLSMgr, _function_id, _parameters)
 {
+   debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 fu_binding_cs::~fu_binding_cs()

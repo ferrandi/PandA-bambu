@@ -1,0 +1,18 @@
+%Generated at 2019-09-18 17:21:36.457732 with bambu Version: PandA 0.9.6-dev - Revision 283bb75d54a0c2092384c66f4e8245e2c8f1f8c4-bambu-onnx with arguments --simulator=VERILATOR
+\begin{tabular}{|l|c|c|c|c|c|c|c|c|c|c|}
+\hline
+Benchmark           & Cycles    & Period                 & Slack     & Fmax       & Wall-clock             & LUTs      & Slices   & BRAMB18 & DSP48s & HLS Time(s) \\
+\hline
+MLP\_parallel       & $ 27194 $ & $ 4.950 \cdot 10^{0} $ & $ -1.65 $ & $ 202.02 $ & $ 1.346 \cdot 10^{2} $ & $ 3883  $ & $ 1524 $ & $ 0   $ & $ 7  $ & $ 20.32   $ \\
+dense\_64\_parallel & $ 9260  $ & $ 4.770 \cdot 10^{0} $ & $ -1.47 $ & $ 209.64 $ & $ 4.417 \cdot 10^{1} $ & $ 4367  $ & $ 1813 $ & $ 2   $ & $ 20 $ & $ 8.67    $ \\
+dense\_8\_parallel  & $ 1336  $ & $ 4.779 \cdot 10^{0} $ & $ -1.48 $ & $ 209.25 $ & $ 6.385 \cdot 10^{0} $ & $ 4345  $ & $ 1826 $ & $ 2   $ & $ 20 $ & $ 8.63    $ \\
+\hline
+Average             & $       $ & $ 4.833 \cdot 10^{0} $ & $ -1.53 $ & $ 206.97 $ & $                    $ & $       $ & $      $ & $     $ & $    $ & $         $ \\
+\hline
+Overall             & $ 37790 $ & $                    $ & $       $ & $        $ & $ 1.852 \cdot 10^{2} $ & $ 12595 $ & $ 5163 $ & $ 4   $ & $ 47 $ & $ 37.62   $ \\
+\hline
+\end{tabular}
+%Benchmarks:
+%04_dense_a/04_dense_a.parallel.c --benchmark-name=dense_8_parallel -IBENCHMARKS_ROOT/common/ --top-fname=fused_nn_dense_add_wrapper --top-rtldesign-name=fused_nn_dense_add --generate-tb=BENCHMARKS_ROOT/04_dense_a/test.xml
+%05_dense_b/05_dense_b.parallel.c --benchmark-name=dense_64_parallel -IBENCHMARKS_ROOT/common/ --top-fname=fused_nn_dense_add_wrapper --top-rtldesign-name=fused_nn_dense_add --generate-tb=BENCHMARKS_ROOT/05_dense_b/test.xml
+%e1_mlp/e1_mlp.parallel.c --benchmark-name=MLP_parallel -IBENCHMARKS_ROOT/common/ --top-fname=mlp_wrapper --top-rtldesign-name=fused_nn_softmax --generate-tb=BENCHMARKS_ROOT/e1_mlp/test.xml -lm

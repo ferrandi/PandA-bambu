@@ -188,7 +188,7 @@ void top_entity_cs::add_input_register(structural_objectRef port_in, const std::
    auto register_library = TM->get_library("register_file");
    auto register_file_module = SM->add_module_from_technology_library(port_prefix + "_REG", "register_file", register_library, circuit, TM);
    unsigned int cs_number = HLS->Param->getOption<unsigned int>(OPT_context_switch);
-   GetPointer<module>(register_file_module)->SetParameter("BITSIZE_MEM", STR(cs_number));
+   GetPointer<module>(register_file_module)->SetParameter("n_elements", STR(cs_number));
 
    /// Resizing input port
    GetPointer<module>(register_file_module)->get_in_port(1)->type_resize(GET_TYPE_SIZE(port_in));
@@ -213,7 +213,6 @@ void top_entity_cs::add_input_register(structural_objectRef port_in, const std::
    if(not register_file_selector_signal)
    {
       register_file_selector_signal = SM->add_sign(STR(SELECTOR_REGISTER_FILE) + "_signal", circuit, register_file_selector_port->get_typeRef());
-      SM->add_connection(register_file_selector_port, register_file_selector_signal);
    }
    SM->add_connection(register_file_selector_signal, rf_register_file_selector_port);
 

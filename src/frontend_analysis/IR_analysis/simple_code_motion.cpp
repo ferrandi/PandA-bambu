@@ -1067,11 +1067,7 @@ bool simple_code_motion::HasToBeExecuted() const
             return false;
          }
       }
-      else
 #endif
-      {
-         return false;
-      }
    }
 #endif
    return FunctionFrontendFlowStep::HasToBeExecuted();

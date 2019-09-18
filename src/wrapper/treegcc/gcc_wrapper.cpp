@@ -394,7 +394,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       else if(Param->isOption(OPT_top_functions_names))
       {
          const auto top_functions_names = Param->getOption<const std::list<std::string>>(OPT_top_functions_names);
-         addTopFName = top_functions_names.size() == 1;
+         addTopFName = top_functions_names.size() == 1 && !Param->isOption(OPT_top_design_name);
          fname = top_functions_names.front();
       }
       if(addTopFName && (isWholeProgram || Param->getOption<bool>(OPT_do_not_expose_globals)))
@@ -684,7 +684,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string
       else if(Param->isOption(OPT_top_functions_names))
       {
          const auto top_functions_names = Param->getOption<const std::list<std::string>>(OPT_top_functions_names);
-         addTFNPlugin = top_functions_names.size() == 1;
+         addTFNPlugin = top_functions_names.size() == 1 && !Param->isOption(OPT_top_design_name);
          fname = top_functions_names.front();
          if(fname == "main" && !compiler.is_clang)
             addTFNPlugin = false;

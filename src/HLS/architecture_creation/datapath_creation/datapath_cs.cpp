@@ -88,6 +88,7 @@ void datapath_cs::add_ports()
    }
    if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
    {
+      THROW_ASSERT(!found, "unexpected condition");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding ports for kernel module");
       unsigned int num_slots = static_cast<unsigned int>(ceil(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch))));
       if(!num_slots)

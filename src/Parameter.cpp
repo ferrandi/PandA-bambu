@@ -1186,24 +1186,29 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::string& file_name, con
    }
    if(extension == "m" or extension == "mi")
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--C source file");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Objective C source file");
       return Parameters_FileFormat::FF_OBJECTIVEC;
    }
    if(extension == "mm" or extension == "M" or extension == "mii")
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--C source file");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Objective C++ source file");
       return Parameters_FileFormat::FF_OBJECTIVECPP;
    }
    if(extension == "ii" or extension == "cc" or extension == "cp" or extension == "cxx" or extension == "cpp" or extension == "CPP" or extension == "c++" or extension == "C")
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--C source file");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--C++ source file");
       return Parameters_FileFormat::FF_CPP;
    }
    if(extension == "f" or extension == "for" or extension == "ftn" or extension == "F" or extension == "FOR" or extension == "fpp" or extension == "FPP" or extension == "FTN" or extension == "f90" or extension == "f95" or extension == "f03" or
       extension == "f08" or extension == "F90" or extension == "F95" or extension == "F03" or extension == "F08")
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--C source file");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Fortran source file");
       return Parameters_FileFormat::FF_FORTRAN;
+   }
+   if(extension == "ll")
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--LLVM bitcode source file");
+      return Parameters_FileFormat::FF_LLVM;
    }
 #endif
    if(extension == "csv")
