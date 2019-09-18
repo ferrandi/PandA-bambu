@@ -1,9 +1,8 @@
 #include "c_backend_api.h"
 
-TVMValue param[3];
+TVMValue param[2];
 TVMArray a0[1];
 TVMArray a1[1];
-TVMArray a2[1];
 
 int32_t fused_tanh_exp_nn_relu_sigmoid( void* args,  void* arg_type_ids, int32_t num_args);
 #ifdef BAMBU_PROFILING

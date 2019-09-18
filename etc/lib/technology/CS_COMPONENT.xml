@@ -188,6 +188,17 @@ end"/>
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o> in1
           <NP_functionality LIBRARY="register_file in1 selector_register_file out1 n_elements " VERILOG_PROVIDED="
+`ifndef _SIM_HAVE_CLOG2
+  function integer log2;
+     input integer value;
+     integer temp_value;
+    begin
+      temp_value = value-1;
+      for (log2=0; temp_value&gt;0; log2=log2+1)
+        temp_value = temp_value&gt;&gt;1;
+    end
+  endfunction
+`endif
 `ifdef _SIM_HAVE_CLOG2
   parameter nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
 `else

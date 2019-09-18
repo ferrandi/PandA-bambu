@@ -1,4 +1,5 @@
 #include "c_backend_api.h"
+#include <math.h>
 
 #ifdef BAMBU_PROFILING
 extern void __builtin_bambu_time_start();
