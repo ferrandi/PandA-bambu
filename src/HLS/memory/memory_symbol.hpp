@@ -44,6 +44,7 @@
 #define _MEMORY_SYMBOL_HPP_
 
 #include "refcount.hpp"
+#include <string>
 
 class memory_symbol
 {

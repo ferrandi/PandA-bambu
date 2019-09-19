@@ -50,6 +50,7 @@
 
 #include "refcount.hpp"
 #include <utility>
+#include <string>
 
 /**
  * @name Forward declarations
