@@ -113,3 +113,10 @@ jobs:
     - store_artifacts:
         path: /tmp/circleci-test-results2
 
+workflows:
+  version: 2
+  build:
+    jobs:
+      - bambu-linux
+      - bambu-macos
+
