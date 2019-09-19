@@ -1462,6 +1462,14 @@ src/HLS/scheduling/sdc_scheduling.hpp
 src/HLS/simulation/CTestbenchExecution.cpp
 src/HLS/simulation/CTestbenchExecution.hpp
 src/HLS/simulation/SimulationInformation.hpp
+src/HLS/simulation/c_initialization_flex_lexer.hpp
+src/HLS/simulation/c_initialization_flex_lexer.lpp
+src/HLS/simulation/c_initialization_parser.cpp
+src/HLS/simulation/c_initialization_parser.hpp
+src/HLS/simulation/c_initialization_parser_functor.cpp
+src/HLS/simulation/c_initialization_parser_functor.hpp
+src/HLS/simulation/c_initialization_parser_node.hpp
+src/HLS/simulation/c_initialization_yparser.ypp
 src/HLS/simulation/minimal_interface_testbench.cpp
 src/HLS/simulation/minimal_interface_testbench.hpp
 src/HLS/simulation/test_vector_parser.cpp
