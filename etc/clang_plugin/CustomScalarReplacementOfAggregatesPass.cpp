@@ -2834,9 +2834,6 @@ void process_single_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb, std::se
 
             user_inst = new_inst;
 
-            llvm::errs() << "   expanded as ";
-            wrapper_call->dump();
-
             // Keep track on where to split
             llvm::Instruction* split_before = user_inst;
 
@@ -2973,6 +2970,9 @@ void process_single_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb, std::se
 
                split_before = else_term;
             }
+
+            llvm::errs() << "   expanded as ";
+            wrapper_call->dump();
 
             // TODO Fix it
             user_inst->replaceAllUsesWith(llvm::UndefValue::get(user_inst->getType()));
