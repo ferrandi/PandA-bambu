@@ -159,8 +159,10 @@ if BUILD_BAMBU
       -I$(top_srcdir)/src/intermediate_representations/hls \
       -I$(top_srcdir)/src/technology \
       -I$(top_srcdir)/src/technology/physical_library/models
+if BUILD_MOCKTURTLE
    lib_IR_analysis_la_LIBADD = \
       $(top_builddir)/ext/lib_mockturtle.la
+endif
 
 if BUILD_LIB_ILP
    noinst_HEADERS += \

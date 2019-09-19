@@ -54,6 +54,7 @@
 #include "mockturtle/algorithms/cut_enumeration/gia_cut.hpp"
 #include "mockturtle/algorithms/cut_enumeration/mf_cut.hpp"
 #include "mockturtle/algorithms/cleanup.hpp"
+#include "mockturtle/algorithms/extract_linear.hpp"
 #include "mockturtle/algorithms/xmg_algebraic_rewriting.hpp"
 #include "mockturtle/algorithms/dsd_decomposition.hpp"
 #include "mockturtle/algorithms/cnf.hpp"

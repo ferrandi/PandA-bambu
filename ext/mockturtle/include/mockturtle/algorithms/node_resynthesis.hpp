@@ -136,7 +136,7 @@ public:
     } );
 
     /* map primary outputs */
-    ntk.foreach_po( [&]( auto const& f ) {
+    ntk.foreach_po( [&]( auto const& f, auto index ) {
         auto const o = ntk.is_complemented( f ) ? ntk_dest.create_not( node2new[f] ) : node2new[f];
         ntk_dest.create_po( o );
 

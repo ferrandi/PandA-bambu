@@ -54,10 +54,8 @@ public:
   {
   }
 
-  NtkDest run()
+  void run( NtkDest& dest )
   {
-    NtkDest dest;
-
     node_map<signal<NtkDest>, NtkSource> node_to_signal( ntk );
 
     /* special map for output drivers to perform some optimizations */
@@ -136,22 +134,32 @@ public:
 
     /* primary inputs */
     ntk.foreach_pi( [&]( auto n ) {
+      signal<NtkDest> dest_signal;
       switch ( node_driver_type[n] )
       {
       default:
       case driver_type::none:
       case driver_type::pos:
-        node_to_signal[n] = dest.create_pi();
+        dest_signal = dest.create_pi();
+        node_to_signal[n] = dest_signal;
         break;
 
       case driver_type::neg:
-        node_to_signal[n] = dest.create_not( dest.create_pi() );
+        dest_signal = dest.create_pi();
+        node_to_signal[n] = dest.create_not( dest_signal );
         break;
 
       case driver_type::mixed:
-        node_to_signal[n] = dest.create_pi();
+        dest_signal = dest.create_pi();
+        node_to_signal[n] = dest_signal;
         opposites[n] = dest.create_not( node_to_signal[n] );
         break;
+      }
+
+      if constexpr ( has_has_name_v<NtkSource> && has_get_name_v<NtkSource> && has_set_name_v<NtkDest> )
+      {
+        if ( ntk.has_name( ntk.make_signal( n ) ) )
+          dest.set_name( dest_signal, ntk.get_name( ntk.make_signal( n ) ) );
       }
     } );
 
@@ -186,7 +194,7 @@ public:
     } );
 
     /* outputs */
-    ntk.foreach_po( [&]( auto const& f ) {
+    ntk.foreach_po( [&]( auto const& f, auto index ) {
       if ( ntk.is_complemented( f ) && node_driver_type[f] == driver_type::mixed )
       {
         dest.create_po( opposites[ntk.get_node( f )] );
@@ -195,9 +203,15 @@ public:
       {
         dest.create_po( node_to_signal[f] );
       }
-    } );
 
-    return dest;
+      if constexpr ( has_has_output_name_v<NtkSource> && has_get_output_name_v<NtkSource> && has_set_output_name_v<NtkDest> )
+      {
+        if ( ntk.has_output_name( index ) )
+        {
+          dest.set_output_name( index, ntk.get_output_name( index ) );
+        }
+      }
+      });
   }
 
 private:
@@ -210,7 +224,7 @@ private:
  *
  * Collapses a mapped network into a k-LUT network.  In the mapped network each
  * cell is represented in terms of a collection of nodes from the subject graph.
- * This methods creates a new network in which each cell is represented by a
+ * This method creates a new network in which each cell is represented by a
  * single node.
  *
  * This function performs some optimizations with respect to possible output
@@ -274,7 +288,82 @@ std::optional<NtkDest> collapse_mapped_network( NtkSource const& ntk )
   else
   {
     detail::collapse_mapped_network_impl<NtkDest, NtkSource> p( ntk );
-    return p.run();
+    NtkDest dest;
+    p.run( dest );
+    return dest;
+  }
+}
+
+/*! \brief Collapse mapped network into k-LUT network.
+ *
+ * Collapses a mapped network into a k-LUT network.  In the mapped network each
+ * cell is represented in terms of a collection of nodes from the subject graph.
+ * This method creates a new network in which each cell is represented by a
+ * single node.
+ *
+ * This function performs some optimizations with respect to possible output
+ * complementations in the subject graph:
+ *
+ * - If an output driver is only used in positive form, nothing changes
+ * - If an output driver is only used in complemented form, the cell function
+ *   of the node is negated.
+ * - If an output driver is used in both forms, two nodes will be created for
+ *   the mapped node.
+ *
+ * **Required network functions for parameter ntk (type NtkSource):**
+ * - `has_mapping`
+ * - `get_constant`
+ * - `get_node`
+ * - `foreach_pi`
+ * - `foreach_po`
+ * - `foreach_node`
+ * - `foreach_cell_fanin`
+ * - `is_constant`
+ * - `is_pi`
+ * - `is_cell_root`
+ * - `cell_function`
+ * - `is_complemented`
+ *
+ * **Required network functions for return value (type NtkDest):**
+ * - `get_constant`
+ * - `create_pi`
+ * - `create_node`
+ * - `create_not`
+ */
+template<class NtkDest, class NtkSource>
+bool collapse_mapped_network( NtkDest& dest, NtkSource const& ntk )
+{
+  static_assert( is_network_type_v<NtkSource>, "NtkSource is not a network type" );
+  static_assert( is_network_type_v<NtkDest>, "NtkDest is not a network type" );
+
+  static_assert( has_has_mapping_v<NtkSource>, "NtkSource does not implement the has_mapping method" );
+  static_assert( has_num_gates_v<NtkSource>, "NtkSource does not implement the num_gates method" );
+  static_assert( has_get_constant_v<NtkSource>, "NtkSource does not implement the get_constant method" );
+  static_assert( has_get_node_v<NtkSource>, "NtkSource does not implement the get_node method" );
+  static_assert( has_foreach_pi_v<NtkSource>, "NtkSource does not implement the foreach_pi method" );
+  static_assert( has_foreach_po_v<NtkSource>, "NtkSource does not implement the foreach_po method" );
+  static_assert( has_foreach_node_v<NtkSource>, "NtkSource does not implement the foreach_node method" );
+  static_assert( has_foreach_cell_fanin_v<NtkSource>, "NtkSource does not implement the foreach_cell_fanin method" );
+  static_assert( has_is_constant_v<NtkSource>, "NtkSource does not implement the is_constant method" );
+  static_assert( has_is_pi_v<NtkSource>, "NtkSource does not implement the is_pi method" );
+  static_assert( has_is_cell_root_v<NtkSource>, "NtkSource does not implement the is_cell_root method" );
+  static_assert( has_cell_function_v<NtkSource>, "NtkSource does not implement the cell_function method" );
+  static_assert( has_is_complemented_v<NtkSource>, "NtkSource does not implement the is_complemented method" );
+
+  static_assert( has_get_constant_v<NtkDest>, "NtkDest does not implement the get_constant method" );
+  static_assert( has_create_pi_v<NtkDest>, "NtkDest does not implement the create_pi method" );
+  static_assert( has_create_node_v<NtkDest>, "NtkDest does not implement the create_node method" );
+  static_assert( has_create_not_v<NtkDest>, "NtkDest does not implement the create_not method" );
+
+  if ( !ntk.has_mapping() && ntk.num_gates() > 0 )
+  {
+    return false;
+  }
+  else
+  {
+    detail::collapse_mapped_network_impl<NtkDest, NtkSource> p( ntk );
+    p.run( dest );
+    return true;
   }
 }
 

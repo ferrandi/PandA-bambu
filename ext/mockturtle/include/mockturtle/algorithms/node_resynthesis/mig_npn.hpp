@@ -42,7 +42,6 @@
 #include <kitty/print.hpp>
 
 #include "../../algorithms/cleanup.hpp"
-#include "../../io/write_bench.hpp"
 #include "../../networks/mig.hpp"
 #include "../../traits.hpp"
 #include "../../views/topo_view.hpp"

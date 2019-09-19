@@ -1305,11 +1305,15 @@ src/HLS/binding/interconnection/conn_binding.cpp
 src/HLS/binding/interconnection/conn_binding.hpp
 src/HLS/binding/interconnection/conn_binding_creator.cpp
 src/HLS/binding/interconnection/conn_binding_creator.hpp
+src/HLS/binding/interconnection/conn_binding_cs.cpp
+src/HLS/binding/interconnection/conn_binding_cs.hpp
 src/HLS/binding/interconnection/connection_obj.hpp
 src/HLS/binding/interconnection/direct_conn.hpp
 src/HLS/binding/interconnection/mux_conn.hpp
 src/HLS/binding/interconnection/mux_connection_binding.cpp
 src/HLS/binding/interconnection/mux_connection_binding.hpp
+src/HLS/binding/interconnection/parallel_memory_conn_binding.cpp
+src/HLS/binding/interconnection/parallel_memory_conn_binding.hpp
 src/HLS/binding/interconnection/port_swapping.cpp
 src/HLS/binding/interconnection/port_swapping.hpp
 src/HLS/binding/module/cdfc_module_binding.cpp

@@ -210,7 +210,19 @@ mockturtle/lib/sparsepp/sparsepp/spp_timer.h\
 mockturtle/lib/sparsepp/sparsepp/spp_traits.h\
 mockturtle/lib/sparsepp/sparsepp/spp_utils.h\
 mockturtle/test/catch2/catch.hpp\
-mockturtle/test/test_networks.hpp
+mockturtle/test/test_networks.hpp\
+mockturtle/docs/algorithms/extract_linear.rst\
+mockturtle/docs/algorithms/linear_resynthesis.rst\
+mockturtle/include/mockturtle/algorithms/extract_linear.hpp\
+mockturtle/include/mockturtle/algorithms/linear_resynthesis.hpp\
+mockturtle/include/mockturtle/generators/majority_n.hpp\
+mockturtle/include/mockturtle/properties/mccost.hpp\
+mockturtle/test/algorithms/extract_linear.cpp\
+mockturtle/test/algorithms/linear_resynthesis.cpp\
+mockturtle/test/generators/majority_n.cpp\
+mockturtle/test/properties/mccost.cpp\
+mockturtle/test/views/names_view.cpp
+
 
 SUBDIRS =
 DIST_SUBDIRS =
@@ -303,15 +315,17 @@ install-exec-hook:
 	cp -r $(top_srcdir)/ext/GRLIB  $(libdir)
 endif
 
-
-noinst_LTLIBRARIES = lib_mockturtle.la
+noinst_LTLIBRARIES =
 METASOURCES = AUTO
 
+if BUILD_MOCKTURTLE
+noinst_LTLIBRARIES += lib_mockturtle.la
 lib_mockturtle_la_SOURCES = mockturtle/lib/abcsat/AbcGlucose.cpp mockturtle/lib/abcsat/Glucose.cpp mockturtle/lib/abcsat/satSolver.cpp mockturtle/lib/abcsat/satStore.cpp  mockturtle/lib/abcsat/SimpSolver.cpp
 lib_mockturtle_la_CPPFLAGS = \
       -I$(top_srcdir)/ext/mockturtle/lib/abcsat/\
       -DLIN64 -DABC_NAMESPACE=pabc -DABC_NO_USE_READLINE
 CXXFLAGS = -Wno-error=undef -Wno-unknown-pragmas -Wno-sign-conversion -Wno-conversion -Wno-shadow -Wno-switch-enum -Wno-unused-parameter -Wno-old-style-cast -Wno-cast-qual -Wno-zero-as-null-pointer-constant -Wno-non-virtual-dtor -Wno-pedantic -Wno-parentheses -Wno-switch-default -Wno-ctor-dtor-privacy -Wno-overloaded-virtual -Wno-sign-promo 
+endif
 
 #define FMT_HEADER_ONLY 1
 
