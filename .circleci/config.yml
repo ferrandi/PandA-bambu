@@ -118,5 +118,4 @@ workflows:
   build:
     jobs:
       - bambu-linux
-      - bambu-macos
 
