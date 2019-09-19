@@ -168,6 +168,8 @@ bool lut_transformation::CHECK_BIN_EXPR_BOOL_SIZE(binary_expr* be) const
    auto type_id1 = b1->index;
    if(tree_helper::is_real(TM, type_id1) || tree_helper::is_a_complex(TM, type_id1) || tree_helper::is_a_vector(TM, type_id1) || tree_helper::is_a_struct(TM, type_id1))
       return false;
+   if(tree_helper::is_int(TM, GET_INDEX_NODE((be->op0))) || tree_helper::is_int(TM, GET_INDEX_NODE((be->op1))))
+      return false;
    return (tree_helper::Size(GET_NODE((be)->op0)) == 1 && tree_helper::Size(GET_NODE((be)->op1)) == 1);
 }
 bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int max) const
