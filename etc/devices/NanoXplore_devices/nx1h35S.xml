@@ -184,8 +184,8 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">82</attribute>
         <attribute name="BRAM" value_type="float64">2</attribute>
         <characterization_timestamp>2017-05-23T19:35:15</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="1.8700000000000001"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="1.8700000000000001"/>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="2.8700000000000001"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="2.8700000000000001"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_N1_SDS_BUS</name>
@@ -290,8 +290,8 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">82</attribute>
         <attribute name="BRAM" value_type="float64">2</attribute>
         <characterization_timestamp>2017-05-23T19:37:46</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="1.9370000000000001"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="1.9370000000000001"/>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="2.9370000000000001"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="2.9370000000000001"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_NN_SDS_BUS</name>
@@ -499,8 +499,8 @@
         <attribute name="SLICE_LUTS" value_type="float64">148</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">112</attribute>
         <characterization_timestamp>2016-06-08T22:11:29</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="1.5700000000000001"/>
-        <operation operation_name="STORE" execution_time="1.5700000000000001"/>
+        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="2.7350000000000001"/>
+        <operation operation_name="STORE" execution_time="2.7350000000000001"/>
       </cell>
       <cell>
         <name>BMEMORY_CTRLN_D10_3</name>
@@ -509,8 +509,8 @@
         <attribute name="SLICE_LUTS" value_type="float64">148</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">112</attribute>
         <characterization_timestamp>2016-06-08T22:11:48</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="1.5700000000000001"/>
-        <operation operation_name="STORE" execution_time="1.5700000000000001"/>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="2.7350000000000001"/>
+        <operation operation_name="STORE" execution_time="2.7350000000000001"/>
       </cell>
       <cell>
         <name>BMEMORY_CTRLN_D10_4</name>
@@ -519,8 +519,8 @@
         <attribute name="SLICE_LUTS" value_type="float64">150</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">112</attribute>
         <characterization_timestamp>2017-01-23T15:41:25</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="5" initiation_time="1" stage_period="1.5440000000000003"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="1.5440000000000003"/>
+        <operation operation_name="LOAD" cycles="5" initiation_time="1" stage_period="2.7350000000000001"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="2.7350000000000001"/>
       </cell>
       <cell>
         <name>BMEMORY_CTRLN_D11</name>
@@ -529,8 +529,8 @@
         <attribute name="SLICE_LUTS" value_type="float64">147</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">111</attribute>
         <characterization_timestamp>2016-06-08T22:11:54</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="1.5009999999999999"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="1.5009999999999999"/>
+        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="2.5009999999999999"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="2.5009999999999999"/>
       </cell>
       <cell>
         <name>BMEMORY_CTRLN_D11_3</name>
@@ -539,8 +539,8 @@
         <attribute name="SLICE_LUTS" value_type="float64">147</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">111</attribute>
         <characterization_timestamp>2016-06-08T22:11:57</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="1.5009999999999999"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="1.5009999999999999"/>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="2.7350000000000001"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="2.7350000000000001"/>
       </cell>
       <cell>
         <name>BMEMORY_CTRLN_D11_4</name>
@@ -549,8 +549,8 @@
         <attribute name="SLICE_LUTS" value_type="float64">154</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">116</attribute>
         <characterization_timestamp>2017-01-23T15:41:23</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="5" initiation_time="1" stage_period="1.4180000000000001"/>
-        <operation operation_name="STORE" cycles="3" initiation_time="1" stage_period="1.4180000000000001"/>
+        <operation operation_name="LOAD" cycles="5" initiation_time="1" stage_period="2.7350000000000001"/>
+        <operation operation_name="STORE" cycles="3" initiation_time="1" stage_period="2.7350000000000001"/>
       </cell>
       <cell>
         <name>BMEMORY_CTRLN_D21</name>
@@ -559,8 +559,8 @@
         <attribute name="SLICE_LUTS" value_type="float64">148</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">112</attribute>
         <characterization_timestamp>2016-06-08T22:13:49</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="1.5049999999999999"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="1.5049999999999999"/>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="2.5049999999999999"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="2.5049999999999999"/>
       </cell>
       <cell>
         <name>BMEMORY_CTRLN_D21_3</name>
@@ -569,8 +569,8 @@
         <attribute name="SLICE_LUTS" value_type="float64">148</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">112</attribute>
         <characterization_timestamp>2016-06-08T22:14:01</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="5" initiation_time="1" stage_period="1.5049999999999999"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="1.5049999999999999"/>
+        <operation operation_name="LOAD" cycles="5" initiation_time="1" stage_period="2.5049999999999999"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="2.5049999999999999"/>
       </cell>
       <cell>
         <name>BMEMORY_CTRLN_D21_4</name>
@@ -579,8 +579,8 @@
         <attribute name="SLICE_LUTS" value_type="float64">154</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">116</attribute>
         <characterization_timestamp>2017-01-23T15:41:21</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="6" initiation_time="1" stage_period="1.4210000000000003"/>
-        <operation operation_name="STORE" cycles="3" initiation_time="1" stage_period="1.4210000000000003"/>
+        <operation operation_name="LOAD" cycles="6" initiation_time="1" stage_period="2.4210000000000003"/>
+        <operation operation_name="STORE" cycles="3" initiation_time="1" stage_period="2.4210000000000003"/>
       </cell>
       <cell>
         <name>BMEMORY_CTRL_D10</name>
@@ -589,8 +589,8 @@
         <attribute name="SLICE_LUTS" value_type="float64">58</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">40</attribute>
         <characterization_timestamp>2016-06-08T22:13:35</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="1.4099999999999999"/>
-        <operation operation_name="STORE" execution_time="1.4099999999999999"/>
+        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="2.7350000000000001"/>
+        <operation operation_name="STORE" execution_time="2.7350000000000001"/>
       </cell>
       <cell>
         <name>BMEMORY_CTRL_D10_3</name>
@@ -599,8 +599,8 @@
         <attribute name="SLICE_LUTS" value_type="float64">58</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">40</attribute>
         <characterization_timestamp>2016-06-08T22:13:38</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="1.4099999999999999"/>
-        <operation operation_name="STORE" execution_time="1.4099999999999999"/>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="2.7350000000000001"/>
+        <operation operation_name="STORE" execution_time="2.7350000000000001"/>
       </cell>
       <cell>
         <name>BMEMORY_CTRL_D10_4</name>
@@ -609,8 +609,8 @@
         <attribute name="SLICE_LUTS" value_type="float64">59</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">40</attribute>
         <characterization_timestamp>2017-01-23T15:42:10</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="5" initiation_time="1" stage_period="1.4670000000000001"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="1.4670000000000001"/>
+        <operation operation_name="LOAD" cycles="5" initiation_time="1" stage_period="2.4670000000000001"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="2.4670000000000001"/>
       </cell>
       <cell>
         <name>BMEMORY_CTRL_D11</name>
@@ -619,8 +619,8 @@
         <attribute name="SLICE_LUTS" value_type="float64">58</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">40</attribute>
         <characterization_timestamp>2016-06-08T22:13:38</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="1.4690000000000001"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="1.4690000000000001"/>
+        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="2.7350000000000001"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="2.7350000000000001"/>
       </cell>
       <cell>
         <name>BMEMORY_CTRL_D11_3</name>
@@ -629,8 +629,8 @@
         <attribute name="SLICE_LUTS" value_type="float64">58</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">40</attribute>
         <characterization_timestamp>2016-06-08T22:13:39</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="1.4690000000000001"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="1.4690000000000001"/>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="2.7350000000000001"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="2.7350000000000001"/>
       </cell>
       <cell>
         <name>BMEMORY_CTRL_D11_4</name>
@@ -639,8 +639,8 @@
         <attribute name="SLICE_LUTS" value_type="float64">61</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">42</attribute>
         <characterization_timestamp>2017-01-23T15:42:37</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="5" initiation_time="1" stage_period="1.4370000000000001"/>
-        <operation operation_name="STORE" cycles="3" initiation_time="1" stage_period="1.4370000000000001"/>
+        <operation operation_name="LOAD" cycles="5" initiation_time="1" stage_period="2.7350000000000001"/>
+        <operation operation_name="STORE" cycles="3" initiation_time="1" stage_period="2.7350000000000001"/>
       </cell>
       <cell>
         <name>BMEMORY_CTRL_D21</name>
@@ -649,8 +649,8 @@
         <attribute name="SLICE_LUTS" value_type="float64">58</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">40</attribute>
         <characterization_timestamp>2016-06-08T22:13:45</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="1.492"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="1.492"/>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="2.7350000000000001"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="2.7350000000000001"/>
       </cell>
       <cell>
         <name>BMEMORY_CTRL_D21_3</name>
@@ -659,8 +659,8 @@
         <attribute name="SLICE_LUTS" value_type="float64">58</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">40</attribute>
         <characterization_timestamp>2016-06-08T22:14:03</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="5" initiation_time="1" stage_period="1.492"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="1.492"/>
+        <operation operation_name="LOAD" cycles="5" initiation_time="1" stage_period="2.7350000000000001"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="2.7350000000000001"/>
       </cell>
       <cell>
         <name>BMEMORY_CTRL_D21_4</name>
@@ -669,8 +669,8 @@
         <attribute name="SLICE_LUTS" value_type="float64">61</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">42</attribute>
         <characterization_timestamp>2017-01-23T15:42:34</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="6" initiation_time="1" stage_period="1.3260000000000003"/>
-        <operation operation_name="STORE" cycles="3" initiation_time="1" stage_period="1.3260000000000003"/>
+        <operation operation_name="LOAD" cycles="6" initiation_time="1" stage_period="2.3260000000000003"/>
+        <operation operation_name="STORE" cycles="3" initiation_time="1" stage_period="2.3260000000000003"/>
       </cell>
       <cell>
         <name>CLOSE</name>
@@ -678,7 +678,7 @@
         <attribute name="REGISTERS" value_type="float64">66</attribute>
         <attribute name="SLICE_LUTS" value_type="float64">3</attribute>
         <characterization_timestamp>2016-06-08T22:13:28</characterization_timestamp>
-        <operation operation_name="close" cycles="1" stage_period="0.83499999999999996"/>
+        <operation operation_name="close" cycles="1" stage_period="2.83499999999999996"/>
       </cell>
       <cell>
         <name>FFdata_converter_FU</name>
@@ -5995,7 +5995,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">475</attribute>
         <template name="fp_fix_trunc_expr_64_u64_FU" parameter="64 64 500"/>
         <characterization_timestamp>2016-06-09T00:28:04</characterization_timestamp>
-        <operation operation_name="fix_trunc_expr_64_to_u64" supported_types="REAL:64" pipe_parameters="500" cycles="9" initiation_time="1" stage_period="1.964"/>
+        <operation operation_name="fix_trunc_expr_64_to_u64" supported_types="REAL:64" pipe_parameters="500" cycles="9" initiation_time="1" stage_period="2.964"/>
       </cell>
       <cell>
         <name>fp_fix_trunc_expr_64_u64_FU_64_64_700</name>
@@ -6005,7 +6005,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">477</attribute>
         <template name="fp_fix_trunc_expr_64_u64_FU" parameter="64 64 700"/>
         <characterization_timestamp>2016-06-09T00:28:03</characterization_timestamp>
-        <operation operation_name="fix_trunc_expr_64_to_u64" supported_types="REAL:64" pipe_parameters="700" cycles="10" initiation_time="1" stage_period="1.8660000000000001"/>
+        <operation operation_name="fix_trunc_expr_64_to_u64" supported_types="REAL:64" pipe_parameters="700" cycles="10" initiation_time="1" stage_period="2.8660000000000001"/>
       </cell>
       <cell>
         <name>fp_float_expr_32_32_FU_32_32_100</name>
@@ -9704,7 +9704,7 @@
         <template name="mult_expr_FU" parameter="0 32 32 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-11-11T22:49:03</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.9340000000000002"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.9340000000000002"/>
       </cell>
       <cell>
         <name>mult_expr_FU_0_32_32_7</name>
@@ -9715,7 +9715,7 @@
         <template name="mult_expr_FU" parameter="0 32 32 7"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-11-11T22:49:03</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="1.8800000000000001"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="2.8800000000000001"/>
       </cell>
       <cell>
         <name>mult_expr_FU_0_64_64_0</name>
@@ -10073,7 +10073,7 @@
         <template name="mult_expr_FU" parameter="32 0 32 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-11-11T22:49:03</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.9340000000000002"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.9340000000000002"/>
       </cell>
       <cell>
         <name>mult_expr_FU_32_0_32_7</name>
@@ -10084,7 +10084,7 @@
         <template name="mult_expr_FU" parameter="32 0 32 7"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-11-11T22:49:03</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="1.8800000000000001"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="2.8800000000000001"/>
       </cell>
       <cell>
         <name>mult_expr_FU_32_32_32_0</name>
@@ -19475,7 +19475,7 @@
         <template name="ui_mult_expr_FU" parameter="0 32 32 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-11-11T22:56:24</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.8800000000000001"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.8800000000000001"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_0_32_32_7</name>
@@ -19486,7 +19486,7 @@
         <template name="ui_mult_expr_FU" parameter="0 32 32 7"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-11-11T22:56:26</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="1.8800000000000001"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="2.8800000000000001"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_0_64_64_0</name>
@@ -19844,7 +19844,7 @@
         <template name="ui_mult_expr_FU" parameter="32 0 32 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-11-11T22:56:24</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.8800000000000001"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.8800000000000001"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_32_0_32_7</name>
@@ -19855,7 +19855,7 @@
         <template name="ui_mult_expr_FU" parameter="32 0 32 7"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-11-11T22:56:26</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="1.8800000000000001"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="2.8800000000000001"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_32_32_32_0</name>
@@ -25176,7 +25176,7 @@
         <template name="ui_vec_dot_prod_expr_FU" parameter="0 1 128 1 128 2 64 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T06:38:55</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="1.103"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.103"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_0_1_128_1_128_2_64_2</name>
@@ -25187,7 +25187,7 @@
         <template name="ui_vec_dot_prod_expr_FU" parameter="0 1 128 1 128 2 64 2"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T06:39:16</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="1.357"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.357"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_0_1_128_1_128_2_64_3</name>
@@ -25198,7 +25198,7 @@
         <template name="ui_vec_dot_prod_expr_FU" parameter="0 1 128 1 128 2 64 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T06:39:23</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.698"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.698"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_0_1_128_1_128_2_64_4</name>
@@ -25209,7 +25209,7 @@
         <template name="ui_vec_dot_prod_expr_FU" parameter="0 1 128 1 128 2 64 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T06:39:41</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.698"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.698"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_0_1_128_1_128_2_64_5</name>
@@ -25220,7 +25220,7 @@
         <template name="ui_vec_dot_prod_expr_FU" parameter="0 1 128 1 128 2 64 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T06:39:51</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.698"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.698"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_0_1_128_1_128_2_64_6</name>
@@ -25231,7 +25231,7 @@
         <template name="ui_vec_dot_prod_expr_FU" parameter="0 1 128 1 128 2 64 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T06:40:04</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.698"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.698"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_0_32_4_32_4_64_2_0</name>
@@ -25731,7 +25731,7 @@
         <template name="ui_vec_dot_prod_expr_FU" parameter="1 128 0 1 128 2 64 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T06:53:04</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="1.103"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.103"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_1_128_0_1_128_2_64_2</name>
@@ -25742,7 +25742,7 @@
         <template name="ui_vec_dot_prod_expr_FU" parameter="1 128 0 1 128 2 64 2"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T06:53:18</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="1.357"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.357"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_1_128_0_1_128_2_64_3</name>
@@ -25753,7 +25753,7 @@
         <template name="ui_vec_dot_prod_expr_FU" parameter="1 128 0 1 128 2 64 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T06:53:17</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.698"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.698"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_1_128_0_1_128_2_64_4</name>
@@ -25764,7 +25764,7 @@
         <template name="ui_vec_dot_prod_expr_FU" parameter="1 128 0 1 128 2 64 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T06:53:54</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.698"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.698"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_1_128_0_1_128_2_64_5</name>
@@ -25775,7 +25775,7 @@
         <template name="ui_vec_dot_prod_expr_FU" parameter="1 128 0 1 128 2 64 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T06:53:58</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.698"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.698"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_1_128_0_1_128_2_64_6</name>
@@ -25786,7 +25786,7 @@
         <template name="ui_vec_dot_prod_expr_FU" parameter="1 128 0 1 128 2 64 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T06:54:14</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.698"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.698"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_1_128_1_128_0_2_64_0</name>
@@ -25808,7 +25808,7 @@
         <template name="ui_vec_dot_prod_expr_FU" parameter="1 128 1 128 0 2 64 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T06:54:25</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="1.3680000000000001"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.3680000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_1_128_1_128_0_2_64_2</name>
@@ -25819,7 +25819,7 @@
         <template name="ui_vec_dot_prod_expr_FU" parameter="1 128 1 128 0 2 64 2"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T06:54:41</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="1.103"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.103"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_1_128_1_128_0_2_64_3</name>
@@ -25830,7 +25830,7 @@
         <template name="ui_vec_dot_prod_expr_FU" parameter="1 128 1 128 0 2 64 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T06:54:51</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.091"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.091"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_1_128_1_128_0_2_64_4</name>
@@ -25841,7 +25841,7 @@
         <template name="ui_vec_dot_prod_expr_FU" parameter="1 128 1 128 0 2 64 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T06:55:27</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_1_128_1_128_0_2_64_5</name>
@@ -25852,7 +25852,7 @@
         <template name="ui_vec_dot_prod_expr_FU" parameter="1 128 1 128 0 2 64 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T06:55:47</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_1_128_1_128_0_2_64_6</name>
@@ -25863,7 +25863,7 @@
         <template name="ui_vec_dot_prod_expr_FU" parameter="1 128 1 128 0 2 64 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T06:55:48</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_1_128_1_128_1_128_2_64_0</name>
@@ -25883,7 +25883,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">241</attribute>
         <template name="ui_vec_dot_prod_expr_FU" parameter="1 128 1 128 1 128 2 64 1"/>
         <characterization_timestamp>2016-06-09T06:56:58</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="1.4430000000000001"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.4430000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_1_128_1_128_1_128_2_64_2</name>
@@ -25893,7 +25893,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">242</attribute>
         <template name="ui_vec_dot_prod_expr_FU" parameter="1 128 1 128 1 128 2 64 2"/>
         <characterization_timestamp>2016-06-09T06:57:24</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="1.4199999999999999"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.4199999999999999"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_1_128_1_128_1_128_2_64_3</name>
@@ -25903,7 +25903,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">323</attribute>
         <template name="ui_vec_dot_prod_expr_FU" parameter="1 128 1 128 1 128 2 64 3"/>
         <characterization_timestamp>2016-06-09T06:57:32</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.6279999999999999"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.6279999999999999"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_1_128_1_128_1_128_2_64_4</name>
@@ -25913,7 +25913,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">576</attribute>
         <template name="ui_vec_dot_prod_expr_FU" parameter="1 128 1 128 1 128 2 64 4"/>
         <characterization_timestamp>2016-06-09T06:57:32</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.6279999999999999"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.6279999999999999"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_1_128_1_128_1_128_2_64_5</name>
@@ -25923,7 +25923,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">576</attribute>
         <template name="ui_vec_dot_prod_expr_FU" parameter="1 128 1 128 1 128 2 64 5"/>
         <characterization_timestamp>2016-06-09T06:57:38</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.6279999999999999"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.6279999999999999"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_1_128_1_128_1_128_2_64_6</name>
@@ -25933,7 +25933,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">576</attribute>
         <template name="ui_vec_dot_prod_expr_FU" parameter="1 128 1 128 1 128 2 64 6"/>
         <characterization_timestamp>2016-06-09T06:58:07</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.6279999999999999"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.6279999999999999"/>
       </cell>
       <cell>
         <name>ui_vec_dot_prod_expr_FU_32_4_0_32_4_64_2_0</name>
@@ -28698,7 +28698,7 @@
         <template name="ui_vec_mult_expr_FU" parameter="0 16 8 16 8 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T07:57:14</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.177"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.177"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_0_16_8_16_8_4</name>
@@ -28709,7 +28709,7 @@
         <template name="ui_vec_mult_expr_FU" parameter="0 16 8 16 8 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T07:57:16</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.177"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.177"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_0_16_8_16_8_5</name>
@@ -28720,7 +28720,7 @@
         <template name="ui_vec_mult_expr_FU" parameter="0 16 8 16 8 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T07:57:43</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.177"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.177"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_0_16_8_16_8_6</name>
@@ -28731,7 +28731,7 @@
         <template name="ui_vec_mult_expr_FU" parameter="0 16 8 16 8 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T07:57:54</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.1399999999999999"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.1399999999999999"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_0_1_128_1_128_0</name>
@@ -28751,7 +28751,7 @@
         <template name="ui_vec_mult_expr_FU" parameter="0 1 128 1 128 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T07:57:41</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="1.101"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.101"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_0_1_128_1_128_2</name>
@@ -28772,7 +28772,7 @@
         <template name="ui_vec_mult_expr_FU" parameter="0 1 128 1 128 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T07:58:09</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_0_1_128_1_128_4</name>
@@ -28783,7 +28783,7 @@
         <template name="ui_vec_mult_expr_FU" parameter="0 1 128 1 128 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T07:58:16</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_0_1_128_1_128_5</name>
@@ -28794,7 +28794,7 @@
         <template name="ui_vec_mult_expr_FU" parameter="0 1 128 1 128 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T07:58:45</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_0_1_128_1_128_6</name>
@@ -28805,7 +28805,7 @@
         <template name="ui_vec_mult_expr_FU" parameter="0 1 128 1 128 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T07:58:55</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_0_32_4_32_4_0</name>
@@ -28887,7 +28887,7 @@
         <template name="ui_vec_mult_expr_FU" parameter="0 32 4 32 4 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:01:09</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.4610000000000001"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.4610000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_0_64_2_64_2_0</name>
@@ -29092,7 +29092,7 @@
         <template name="ui_vec_mult_expr_FU" parameter="16 8 0 16 8 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T07:57:14</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.177"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.177"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_16_8_0_16_8_4</name>
@@ -29103,7 +29103,7 @@
         <template name="ui_vec_mult_expr_FU" parameter="16 8 0 16 8 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T07:57:16</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.177"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.177"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_16_8_0_16_8_5</name>
@@ -29114,7 +29114,7 @@
         <template name="ui_vec_mult_expr_FU" parameter="16 8 0 16 8 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T07:57:43</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.177"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.177"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_16_8_0_16_8_6</name>
@@ -29125,7 +29125,7 @@
         <template name="ui_vec_mult_expr_FU" parameter="16 8 0 16 8 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T07:57:54</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.1399999999999999"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.1399999999999999"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_16_8_16_8_16_8_0</name>
@@ -29165,7 +29165,7 @@
         <attribute name="DSP" value_type="float64">8</attribute>
         <template name="ui_vec_mult_expr_FU" parameter="16 8 16 8 16 8 3"/>
         <characterization_timestamp>2016-06-09T08:05:27</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.1399999999999999"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.1399999999999999"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_16_8_16_8_16_8_4</name>
@@ -29175,7 +29175,7 @@
         <attribute name="DSP" value_type="float64">8</attribute>
         <template name="ui_vec_mult_expr_FU" parameter="16 8 16 8 16 8 4"/>
         <characterization_timestamp>2016-06-09T08:05:34</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.1399999999999999"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.1399999999999999"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_16_8_16_8_16_8_5</name>
@@ -29185,7 +29185,7 @@
         <attribute name="DSP" value_type="float64">8</attribute>
         <template name="ui_vec_mult_expr_FU" parameter="16 8 16 8 16 8 5"/>
         <characterization_timestamp>2016-06-09T08:05:37</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.371"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.371"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_16_8_16_8_16_8_6</name>
@@ -29195,7 +29195,7 @@
         <attribute name="DSP" value_type="float64">8</attribute>
         <template name="ui_vec_mult_expr_FU" parameter="16 8 16 8 16 8 6"/>
         <characterization_timestamp>2016-06-09T08:05:52</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.0589999999999999"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.0589999999999999"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_1_128_0_1_128_0</name>
@@ -29215,7 +29215,7 @@
         <template name="ui_vec_mult_expr_FU" parameter="1 128 0 1 128 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T07:57:41</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="1.101"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.101"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_1_128_0_1_128_2</name>
@@ -29236,7 +29236,7 @@
         <template name="ui_vec_mult_expr_FU" parameter="1 128 0 1 128 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T07:58:09</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_1_128_0_1_128_4</name>
@@ -29247,7 +29247,7 @@
         <template name="ui_vec_mult_expr_FU" parameter="1 128 0 1 128 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T07:58:16</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_1_128_0_1_128_5</name>
@@ -29258,7 +29258,7 @@
         <template name="ui_vec_mult_expr_FU" parameter="1 128 0 1 128 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T07:58:45</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_1_128_0_1_128_6</name>
@@ -29269,7 +29269,7 @@
         <template name="ui_vec_mult_expr_FU" parameter="1 128 0 1 128 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T07:58:55</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_1_128_1_128_1_128_0</name>
@@ -29289,7 +29289,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">128</attribute>
         <template name="ui_vec_mult_expr_FU" parameter="1 128 1 128 1 128 1"/>
         <characterization_timestamp>2016-06-09T08:05:46</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="1.1399999999999999"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.1399999999999999"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_1_128_1_128_1_128_2</name>
@@ -29299,7 +29299,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">128</attribute>
         <template name="ui_vec_mult_expr_FU" parameter="1 128 1 128 1 128 2"/>
         <characterization_timestamp>2016-06-09T08:06:02</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="1.3160000000000001"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.3160000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_1_128_1_128_1_128_3</name>
@@ -29309,7 +29309,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">129</attribute>
         <template name="ui_vec_mult_expr_FU" parameter="1 128 1 128 1 128 3"/>
         <characterization_timestamp>2016-06-09T08:06:02</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.087"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.087"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_1_128_1_128_1_128_4</name>
@@ -29319,7 +29319,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">128</attribute>
         <template name="ui_vec_mult_expr_FU" parameter="1 128 1 128 1 128 4"/>
         <characterization_timestamp>2016-06-09T08:07:25</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.109"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.109"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_1_128_1_128_1_128_5</name>
@@ -29329,7 +29329,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">384</attribute>
         <template name="ui_vec_mult_expr_FU" parameter="1 128 1 128 1 128 5"/>
         <characterization_timestamp>2016-06-09T08:06:58</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_1_128_1_128_1_128_6</name>
@@ -29339,7 +29339,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">384</attribute>
         <template name="ui_vec_mult_expr_FU" parameter="1 128 1 128 1 128 6"/>
         <characterization_timestamp>2016-06-09T08:07:00</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_32_4_0_32_4_0</name>
@@ -29421,7 +29421,7 @@
         <template name="ui_vec_mult_expr_FU" parameter="32 4 0 32 4 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:01:09</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.4610000000000001"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.4610000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_32_4_32_4_32_4_0</name>
@@ -29486,7 +29486,7 @@
         <attribute name="DSP" value_type="float64">12</attribute>
         <template name="ui_vec_mult_expr_FU" parameter="32 4 32 4 32 4 5"/>
         <characterization_timestamp>2016-06-09T08:09:31</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:32" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.4099999999999999"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_UINT:32" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.7350000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_mult_expr_FU_32_4_32_4_32_4_6</name>
@@ -30872,7 +30872,7 @@
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="0 16 8 32 4 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:33:16</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.1220000000000001"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.1220000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_0_16_8_32_4_4</name>
@@ -30883,7 +30883,7 @@
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="0 16 8 32 4 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:33:22</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.1220000000000001"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.1220000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_0_16_8_32_4_5</name>
@@ -30894,7 +30894,7 @@
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="0 16 8 32 4 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:33:45</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.216"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.216"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_0_16_8_32_4_6</name>
@@ -30905,7 +30905,7 @@
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="0 16 8 32 4 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:34:03</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.367"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.367"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_0_1_128_2_64_0</name>
@@ -30925,7 +30925,7 @@
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="0 1 128 2 64 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:33:14</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="1.03"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.03"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_0_1_128_2_64_2</name>
@@ -30946,7 +30946,7 @@
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="0 1 128 2 64 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:33:28</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_0_1_128_2_64_4</name>
@@ -30957,7 +30957,7 @@
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="0 1 128 2 64 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:33:32</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_0_1_128_2_64_5</name>
@@ -30968,7 +30968,7 @@
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="0 1 128 2 64 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:33:46</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_0_1_128_2_64_6</name>
@@ -30979,7 +30979,7 @@
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="0 1 128 2 64 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:33:49</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_0_32_4_64_2_0</name>
@@ -31265,7 +31265,7 @@
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="16 8 0 32 4 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:33:16</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.1220000000000001"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.1220000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_16_8_0_32_4_4</name>
@@ -31276,7 +31276,7 @@
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="16 8 0 32 4 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:33:22</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.1220000000000001"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.1220000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_16_8_0_32_4_5</name>
@@ -31287,7 +31287,7 @@
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="16 8 0 32 4 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:33:45</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.216"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.216"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_16_8_0_32_4_6</name>
@@ -31298,7 +31298,7 @@
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="16 8 0 32 4 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:34:03</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.367"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.367"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_16_8_16_8_32_4_0</name>
@@ -31338,7 +31338,7 @@
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="16 8 16 8 32 4 3"/>
         <characterization_timestamp>2016-06-09T08:40:48</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.204"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.204"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_16_8_16_8_32_4_4</name>
@@ -31348,7 +31348,7 @@
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="16 8 16 8 32 4 4"/>
         <characterization_timestamp>2016-06-09T08:40:57</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.204"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.204"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_16_8_16_8_32_4_5</name>
@@ -31358,7 +31358,7 @@
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="16 8 16 8 32 4 5"/>
         <characterization_timestamp>2016-06-09T08:41:17</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.2450000000000001"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.2450000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_16_8_16_8_32_4_6</name>
@@ -31368,7 +31368,7 @@
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="16 8 16 8 32 4 6"/>
         <characterization_timestamp>2016-06-09T08:41:33</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.131"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.131"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_1_128_0_2_64_0</name>
@@ -31388,7 +31388,7 @@
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="1 128 0 2 64 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:33:14</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="1.03"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.03"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_1_128_0_2_64_2</name>
@@ -31409,7 +31409,7 @@
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="1 128 0 2 64 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:33:28</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_1_128_0_2_64_4</name>
@@ -31420,7 +31420,7 @@
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="1 128 0 2 64 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:33:32</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_1_128_0_2_64_5</name>
@@ -31431,7 +31431,7 @@
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="1 128 0 2 64 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:33:46</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_1_128_0_2_64_6</name>
@@ -31442,7 +31442,7 @@
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="1 128 0 2 64 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:33:49</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_1_128_1_128_2_64_0</name>
@@ -31462,7 +31462,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="1 128 1 128 2 64 1"/>
         <characterization_timestamp>2016-06-09T08:41:34</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="1.2010000000000001"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.2010000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_1_128_1_128_2_64_2</name>
@@ -31472,7 +31472,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="1 128 1 128 2 64 2"/>
         <characterization_timestamp>2016-06-09T08:41:43</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="1.256"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.256"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_1_128_1_128_2_64_3</name>
@@ -31482,7 +31482,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="1 128 1 128 2 64 3"/>
         <characterization_timestamp>2016-06-09T08:42:16</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.26"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.26"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_1_128_1_128_2_64_4</name>
@@ -31492,7 +31492,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">65</attribute>
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="1 128 1 128 2 64 4"/>
         <characterization_timestamp>2016-06-09T08:42:14</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.0940000000000001"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.0940000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_1_128_1_128_2_64_5</name>
@@ -31502,7 +31502,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">192</attribute>
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="1 128 1 128 2 64 5"/>
         <characterization_timestamp>2016-06-09T08:42:07</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_1_128_1_128_2_64_6</name>
@@ -31512,7 +31512,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">192</attribute>
         <template name="ui_vec_widen_mult_hi_expr_FU" parameter="1 128 1 128 2 64 6"/>
         <characterization_timestamp>2016-06-09T08:42:57</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_hi_expr_FU_32_4_0_64_2_0</name>
@@ -32019,7 +32019,7 @@
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="0 16 8 32 4 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:49:27</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.0620000000000001"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.0620000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_0_16_8_32_4_4</name>
@@ -32030,7 +32030,7 @@
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="0 16 8 32 4 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:49:51</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.0620000000000001"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.0620000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_0_16_8_32_4_5</name>
@@ -32041,7 +32041,7 @@
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="0 16 8 32 4 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:50:25</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.0620000000000001"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.0620000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_0_16_8_32_4_6</name>
@@ -32052,7 +32052,7 @@
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="0 16 8 32 4 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:50:48</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.1919999999999999"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.1919999999999999"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_0_1_128_2_64_0</name>
@@ -32082,7 +32082,7 @@
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="0 1 128 2 64 2"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:50:52</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="1.1240000000000001"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.1240000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_0_1_128_2_64_3</name>
@@ -32093,7 +32093,7 @@
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="0 1 128 2 64 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:51:04</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_0_1_128_2_64_4</name>
@@ -32104,7 +32104,7 @@
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="0 1 128 2 64 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:51:23</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_0_1_128_2_64_5</name>
@@ -32115,7 +32115,7 @@
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="0 1 128 2 64 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:51:29</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_0_1_128_2_64_6</name>
@@ -32126,7 +32126,7 @@
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="0 1 128 2 64 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:52:17</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_0_32_4_64_2_0</name>
@@ -32412,7 +32412,7 @@
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="16 8 0 32 4 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:49:27</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.0620000000000001"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.0620000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_16_8_0_32_4_4</name>
@@ -32423,7 +32423,7 @@
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="16 8 0 32 4 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:49:51</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.0620000000000001"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.0620000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_16_8_0_32_4_5</name>
@@ -32434,7 +32434,7 @@
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="16 8 0 32 4 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:50:25</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.0620000000000001"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.0620000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_16_8_0_32_4_6</name>
@@ -32445,7 +32445,7 @@
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="16 8 0 32 4 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:50:48</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.1919999999999999"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.1919999999999999"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_16_8_16_8_32_4_0</name>
@@ -32485,7 +32485,7 @@
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="16 8 16 8 32 4 3"/>
         <characterization_timestamp>2016-06-09T08:58:28</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.2050000000000001"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.2050000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_16_8_16_8_32_4_4</name>
@@ -32495,7 +32495,7 @@
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="16 8 16 8 32 4 4"/>
         <characterization_timestamp>2016-06-09T08:58:30</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.2050000000000001"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.2050000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_16_8_16_8_32_4_5</name>
@@ -32505,7 +32505,7 @@
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="16 8 16 8 32 4 5"/>
         <characterization_timestamp>2016-06-09T08:59:15</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.1140000000000001"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.1140000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_16_8_16_8_32_4_6</name>
@@ -32515,7 +32515,7 @@
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="16 8 16 8 32 4 6"/>
         <characterization_timestamp>2016-06-09T08:59:33</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.0449999999999999"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.0449999999999999"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_1_128_0_2_64_0</name>
@@ -32545,7 +32545,7 @@
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="1 128 0 2 64 2"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:50:52</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="1.1240000000000001"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.1240000000000001"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_1_128_0_2_64_3</name>
@@ -32556,7 +32556,7 @@
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="1 128 0 2 64 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:51:04</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_1_128_0_2_64_4</name>
@@ -32567,7 +32567,7 @@
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="1 128 0 2 64 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:51:23</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_1_128_0_2_64_5</name>
@@ -32578,7 +32578,7 @@
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="1 128 0 2 64 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:51:29</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_1_128_0_2_64_6</name>
@@ -32589,7 +32589,7 @@
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="1 128 0 2 64 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T08:52:17</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_1_128_1_128_2_64_0</name>
@@ -32609,7 +32609,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="1 128 1 128 2 64 1"/>
         <characterization_timestamp>2016-06-09T08:59:06</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="1.238"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.238"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_1_128_1_128_2_64_2</name>
@@ -32619,7 +32619,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="1 128 1 128 2 64 2"/>
         <characterization_timestamp>2016-06-09T08:59:16</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="1.103"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.103"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_1_128_1_128_2_64_3</name>
@@ -32629,7 +32629,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="1 128 1 128 2 64 3"/>
         <characterization_timestamp>2016-06-09T08:59:45</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.091"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.091"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_1_128_1_128_2_64_4</name>
@@ -32639,7 +32639,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="1 128 1 128 2 64 4"/>
         <characterization_timestamp>2016-06-09T09:00:07</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.002"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.002"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_1_128_1_128_2_64_5</name>
@@ -32649,7 +32649,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">192</attribute>
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="1 128 1 128 2 64 5"/>
         <characterization_timestamp>2016-06-09T08:59:55</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_1_128_1_128_2_64_6</name>
@@ -32659,7 +32659,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">192</attribute>
         <template name="ui_vec_widen_mult_lo_expr_FU" parameter="1 128 1 128 2 64 6"/>
         <characterization_timestamp>2016-06-09T09:00:27</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_UINT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>ui_vec_widen_mult_lo_expr_FU_32_4_0_64_2_0</name>
@@ -33255,7 +33255,7 @@
         <template name="ui_widen_mult_expr_FU" parameter="0 32 64 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-11-11T22:28:53</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.8800000000000001"/>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.8800000000000001"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_0_32_64_7</name>
@@ -33266,7 +33266,7 @@
         <template name="ui_widen_mult_expr_FU" parameter="0 32 64 7"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-11-11T22:28:53</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="1.8800000000000001"/>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="2.8800000000000001"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_0_64_128_0</name>
@@ -33625,7 +33625,7 @@
         <template name="ui_widen_mult_expr_FU" parameter="32 0 64 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-11-11T22:28:53</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.8800000000000001"/>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.8800000000000001"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_32_0_64_7</name>
@@ -33636,7 +33636,7 @@
         <template name="ui_widen_mult_expr_FU" parameter="32 0 64 7"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-11-11T22:28:53</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="1.8800000000000001"/>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="2.8800000000000001"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_32_32_64_0</name>
@@ -35266,7 +35266,7 @@
         <template name="vec_dot_prod_expr_FU" parameter="0 1 128 1 128 2 64 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T09:38:36</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="1.103"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.103"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_0_1_128_1_128_2_64_2</name>
@@ -35277,7 +35277,7 @@
         <template name="vec_dot_prod_expr_FU" parameter="0 1 128 1 128 2 64 2"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T09:38:56</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="1.357"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.357"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_0_1_128_1_128_2_64_3</name>
@@ -35288,7 +35288,7 @@
         <template name="vec_dot_prod_expr_FU" parameter="0 1 128 1 128 2 64 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T09:39:01</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.698"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.698"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_0_1_128_1_128_2_64_4</name>
@@ -35299,7 +35299,7 @@
         <template name="vec_dot_prod_expr_FU" parameter="0 1 128 1 128 2 64 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T09:39:02</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.698"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.698"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_0_1_128_1_128_2_64_5</name>
@@ -35310,7 +35310,7 @@
         <template name="vec_dot_prod_expr_FU" parameter="0 1 128 1 128 2 64 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T09:39:11</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.698"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.698"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_0_1_128_1_128_2_64_6</name>
@@ -35321,7 +35321,7 @@
         <template name="vec_dot_prod_expr_FU" parameter="0 1 128 1 128 2 64 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T09:39:17</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.698"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.698"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_0_32_4_32_4_64_2_0</name>
@@ -35821,7 +35821,7 @@
         <template name="vec_dot_prod_expr_FU" parameter="1 128 0 1 128 2 64 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T09:52:01</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="1.103"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.103"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_1_128_0_1_128_2_64_2</name>
@@ -35832,7 +35832,7 @@
         <template name="vec_dot_prod_expr_FU" parameter="1 128 0 1 128 2 64 2"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T09:52:48</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="1.357"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.357"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_1_128_0_1_128_2_64_3</name>
@@ -35843,7 +35843,7 @@
         <template name="vec_dot_prod_expr_FU" parameter="1 128 0 1 128 2 64 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T09:52:46</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.698"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.698"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_1_128_0_1_128_2_64_4</name>
@@ -35854,7 +35854,7 @@
         <template name="vec_dot_prod_expr_FU" parameter="1 128 0 1 128 2 64 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T09:53:34</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.698"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.698"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_1_128_0_1_128_2_64_5</name>
@@ -35865,7 +35865,7 @@
         <template name="vec_dot_prod_expr_FU" parameter="1 128 0 1 128 2 64 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T09:53:43</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.698"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.698"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_1_128_0_1_128_2_64_6</name>
@@ -35876,7 +35876,7 @@
         <template name="vec_dot_prod_expr_FU" parameter="1 128 0 1 128 2 64 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T09:53:43</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.698"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.698"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_1_128_1_128_0_2_64_0</name>
@@ -35898,7 +35898,7 @@
         <template name="vec_dot_prod_expr_FU" parameter="1 128 1 128 0 2 64 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T09:53:37</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="1.3680000000000001"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.3680000000000001"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_1_128_1_128_0_2_64_2</name>
@@ -35909,7 +35909,7 @@
         <template name="vec_dot_prod_expr_FU" parameter="1 128 1 128 0 2 64 2"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T09:53:47</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="1.103"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.103"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_1_128_1_128_0_2_64_3</name>
@@ -35920,7 +35920,7 @@
         <template name="vec_dot_prod_expr_FU" parameter="1 128 1 128 0 2 64 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T09:54:02</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.091"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.091"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_1_128_1_128_0_2_64_4</name>
@@ -35931,7 +35931,7 @@
         <template name="vec_dot_prod_expr_FU" parameter="1 128 1 128 0 2 64 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T09:54:01</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_1_128_1_128_0_2_64_5</name>
@@ -35942,7 +35942,7 @@
         <template name="vec_dot_prod_expr_FU" parameter="1 128 1 128 0 2 64 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T09:54:31</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_1_128_1_128_0_2_64_6</name>
@@ -35953,7 +35953,7 @@
         <template name="vec_dot_prod_expr_FU" parameter="1 128 1 128 0 2 64 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T09:55:13</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_1_128_1_128_1_128_2_64_0</name>
@@ -35973,7 +35973,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">241</attribute>
         <template name="vec_dot_prod_expr_FU" parameter="1 128 1 128 1 128 2 64 1"/>
         <characterization_timestamp>2016-06-09T09:56:25</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="1.4430000000000001"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.4430000000000001"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_1_128_1_128_1_128_2_64_2</name>
@@ -35983,7 +35983,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">242</attribute>
         <template name="vec_dot_prod_expr_FU" parameter="1 128 1 128 1 128 2 64 2"/>
         <characterization_timestamp>2016-06-09T09:56:33</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="1.4199999999999999"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.4199999999999999"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_1_128_1_128_1_128_2_64_3</name>
@@ -35993,7 +35993,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">323</attribute>
         <template name="vec_dot_prod_expr_FU" parameter="1 128 1 128 1 128 2 64 3"/>
         <characterization_timestamp>2016-06-09T09:56:43</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.6279999999999999"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.6279999999999999"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_1_128_1_128_1_128_2_64_4</name>
@@ -36003,7 +36003,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">576</attribute>
         <template name="vec_dot_prod_expr_FU" parameter="1 128 1 128 1 128 2 64 4"/>
         <characterization_timestamp>2016-06-09T09:56:54</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.6279999999999999"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.6279999999999999"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_1_128_1_128_1_128_2_64_5</name>
@@ -36013,7 +36013,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">576</attribute>
         <template name="vec_dot_prod_expr_FU" parameter="1 128 1 128 1 128 2 64 5"/>
         <characterization_timestamp>2016-06-09T09:57:02</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.6279999999999999"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.6279999999999999"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_1_128_1_128_1_128_2_64_6</name>
@@ -36023,7 +36023,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">576</attribute>
         <template name="vec_dot_prod_expr_FU" parameter="1 128 1 128 1 128 2 64 6"/>
         <characterization_timestamp>2016-06-09T09:57:38</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.6279999999999999"/>
+        <operation operation_name="dot_prod_expr" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.6279999999999999"/>
       </cell>
       <cell>
         <name>vec_dot_prod_expr_FU_32_4_0_32_4_64_2_0</name>
@@ -38788,7 +38788,7 @@
         <template name="vec_mult_expr_FU" parameter="0 16 8 16 8 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T10:54:56</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.4019999999999999"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.4019999999999999"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_0_16_8_16_8_4</name>
@@ -38799,7 +38799,7 @@
         <template name="vec_mult_expr_FU" parameter="0 16 8 16 8 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T10:54:54</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.4019999999999999"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.4019999999999999"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_0_16_8_16_8_5</name>
@@ -38810,7 +38810,7 @@
         <template name="vec_mult_expr_FU" parameter="0 16 8 16 8 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T10:54:59</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.4019999999999999"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.4019999999999999"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_0_16_8_16_8_6</name>
@@ -38821,7 +38821,7 @@
         <template name="vec_mult_expr_FU" parameter="0 16 8 16 8 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T10:55:03</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.1799999999999999"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.1799999999999999"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_0_1_128_1_128_0</name>
@@ -38841,7 +38841,7 @@
         <template name="vec_mult_expr_FU" parameter="0 1 128 1 128 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T10:54:42</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="1.101"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.101"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_0_1_128_1_128_2</name>
@@ -38862,7 +38862,7 @@
         <template name="vec_mult_expr_FU" parameter="0 1 128 1 128 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T10:55:29</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_0_1_128_1_128_4</name>
@@ -38873,7 +38873,7 @@
         <template name="vec_mult_expr_FU" parameter="0 1 128 1 128 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T10:55:48</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_0_1_128_1_128_5</name>
@@ -38884,7 +38884,7 @@
         <template name="vec_mult_expr_FU" parameter="0 1 128 1 128 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T10:56:07</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_0_1_128_1_128_6</name>
@@ -38895,7 +38895,7 @@
         <template name="vec_mult_expr_FU" parameter="0 1 128 1 128 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T10:56:14</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_0_32_4_32_4_0</name>
@@ -39182,7 +39182,7 @@
         <template name="vec_mult_expr_FU" parameter="16 8 0 16 8 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T10:54:56</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.4019999999999999"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.4019999999999999"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_16_8_0_16_8_4</name>
@@ -39193,7 +39193,7 @@
         <template name="vec_mult_expr_FU" parameter="16 8 0 16 8 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T10:54:54</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.4019999999999999"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.4019999999999999"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_16_8_0_16_8_5</name>
@@ -39204,7 +39204,7 @@
         <template name="vec_mult_expr_FU" parameter="16 8 0 16 8 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T10:54:59</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.4019999999999999"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.4019999999999999"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_16_8_0_16_8_6</name>
@@ -39215,7 +39215,7 @@
         <template name="vec_mult_expr_FU" parameter="16 8 0 16 8 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T10:55:03</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.1799999999999999"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.1799999999999999"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_16_8_16_8_16_8_0</name>
@@ -39255,7 +39255,7 @@
         <attribute name="DSP" value_type="float64">8</attribute>
         <template name="vec_mult_expr_FU" parameter="16 8 16 8 16 8 3"/>
         <characterization_timestamp>2016-06-09T11:02:12</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.1830000000000001"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.1830000000000001"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_16_8_16_8_16_8_4</name>
@@ -39265,7 +39265,7 @@
         <attribute name="DSP" value_type="float64">8</attribute>
         <template name="vec_mult_expr_FU" parameter="16 8 16 8 16 8 4"/>
         <characterization_timestamp>2016-06-09T11:02:35</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.1830000000000001"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.1830000000000001"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_16_8_16_8_16_8_5</name>
@@ -39275,7 +39275,7 @@
         <attribute name="DSP" value_type="float64">8</attribute>
         <template name="vec_mult_expr_FU" parameter="16 8 16 8 16 8 5"/>
         <characterization_timestamp>2016-06-09T11:02:47</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.1699999999999999"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.1699999999999999"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_16_8_16_8_16_8_6</name>
@@ -39285,7 +39285,7 @@
         <attribute name="DSP" value_type="float64">8</attribute>
         <template name="vec_mult_expr_FU" parameter="16 8 16 8 16 8 6"/>
         <characterization_timestamp>2016-06-09T11:02:58</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.276"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.276"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_1_128_0_1_128_0</name>
@@ -39305,7 +39305,7 @@
         <template name="vec_mult_expr_FU" parameter="1 128 0 1 128 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T10:54:42</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="1.101"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.101"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_1_128_0_1_128_2</name>
@@ -39326,7 +39326,7 @@
         <template name="vec_mult_expr_FU" parameter="1 128 0 1 128 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T10:55:29</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_1_128_0_1_128_4</name>
@@ -39337,7 +39337,7 @@
         <template name="vec_mult_expr_FU" parameter="1 128 0 1 128 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T10:55:48</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_1_128_0_1_128_5</name>
@@ -39348,7 +39348,7 @@
         <template name="vec_mult_expr_FU" parameter="1 128 0 1 128 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T10:56:07</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_1_128_0_1_128_6</name>
@@ -39359,7 +39359,7 @@
         <template name="vec_mult_expr_FU" parameter="1 128 0 1 128 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T10:56:14</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_1_128_1_128_1_128_0</name>
@@ -39379,7 +39379,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">128</attribute>
         <template name="vec_mult_expr_FU" parameter="1 128 1 128 1 128 1"/>
         <characterization_timestamp>2016-06-09T11:02:40</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="1.1399999999999999"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.1399999999999999"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_1_128_1_128_1_128_2</name>
@@ -39389,7 +39389,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">128</attribute>
         <template name="vec_mult_expr_FU" parameter="1 128 1 128 1 128 2"/>
         <characterization_timestamp>2016-06-09T11:03:01</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="1.3160000000000001"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.3160000000000001"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_1_128_1_128_1_128_3</name>
@@ -39399,7 +39399,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">129</attribute>
         <template name="vec_mult_expr_FU" parameter="1 128 1 128 1 128 3"/>
         <characterization_timestamp>2016-06-09T11:03:14</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.087"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.087"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_1_128_1_128_1_128_4</name>
@@ -39409,7 +39409,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">128</attribute>
         <template name="vec_mult_expr_FU" parameter="1 128 1 128 1 128 4"/>
         <characterization_timestamp>2016-06-09T11:04:12</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.109"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.109"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_1_128_1_128_1_128_5</name>
@@ -39419,7 +39419,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">384</attribute>
         <template name="vec_mult_expr_FU" parameter="1 128 1 128 1 128 5"/>
         <characterization_timestamp>2016-06-09T11:03:58</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_1_128_1_128_1_128_6</name>
@@ -39429,7 +39429,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">384</attribute>
         <template name="vec_mult_expr_FU" parameter="1 128 1 128 1 128 6"/>
         <characterization_timestamp>2016-06-09T11:04:14</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="mult_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_mult_expr_FU_32_4_0_32_4_0</name>
@@ -41117,7 +41117,7 @@
         <template name="vec_widen_mult_hi_expr_FU" parameter="0 16 8 32 4 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:31:41</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.4019999999999999"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.4019999999999999"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_0_16_8_32_4_4</name>
@@ -41128,7 +41128,7 @@
         <template name="vec_widen_mult_hi_expr_FU" parameter="0 16 8 32 4 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:31:50</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.4019999999999999"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.4019999999999999"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_0_16_8_32_4_5</name>
@@ -41139,7 +41139,7 @@
         <template name="vec_widen_mult_hi_expr_FU" parameter="0 16 8 32 4 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:32:01</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.0649999999999999"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.0649999999999999"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_0_16_8_32_4_6</name>
@@ -41150,7 +41150,7 @@
         <template name="vec_widen_mult_hi_expr_FU" parameter="0 16 8 32 4 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:32:09</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.0509999999999999"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.0509999999999999"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_0_1_128_2_64_0</name>
@@ -41170,7 +41170,7 @@
         <template name="vec_widen_mult_hi_expr_FU" parameter="0 1 128 2 64 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:31:44</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="1.03"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.03"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_0_1_128_2_64_2</name>
@@ -41191,7 +41191,7 @@
         <template name="vec_widen_mult_hi_expr_FU" parameter="0 1 128 2 64 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:32:00</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_0_1_128_2_64_4</name>
@@ -41202,7 +41202,7 @@
         <template name="vec_widen_mult_hi_expr_FU" parameter="0 1 128 2 64 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:32:14</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_0_1_128_2_64_5</name>
@@ -41213,7 +41213,7 @@
         <template name="vec_widen_mult_hi_expr_FU" parameter="0 1 128 2 64 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:32:13</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_0_1_128_2_64_6</name>
@@ -41224,7 +41224,7 @@
         <template name="vec_widen_mult_hi_expr_FU" parameter="0 1 128 2 64 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:32:31</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_0_32_4_64_2_0</name>
@@ -41510,7 +41510,7 @@
         <template name="vec_widen_mult_hi_expr_FU" parameter="16 8 0 32 4 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:31:41</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.4019999999999999"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.4019999999999999"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_16_8_0_32_4_4</name>
@@ -41521,7 +41521,7 @@
         <template name="vec_widen_mult_hi_expr_FU" parameter="16 8 0 32 4 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:31:50</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.4019999999999999"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.4019999999999999"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_16_8_0_32_4_5</name>
@@ -41532,7 +41532,7 @@
         <template name="vec_widen_mult_hi_expr_FU" parameter="16 8 0 32 4 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:32:01</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.0649999999999999"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.0649999999999999"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_16_8_0_32_4_6</name>
@@ -41543,7 +41543,7 @@
         <template name="vec_widen_mult_hi_expr_FU" parameter="16 8 0 32 4 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:32:09</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.0509999999999999"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.0509999999999999"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_16_8_16_8_32_4_0</name>
@@ -41583,7 +41583,7 @@
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="vec_widen_mult_hi_expr_FU" parameter="16 8 16 8 32 4 3"/>
         <characterization_timestamp>2016-06-09T11:39:33</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.137"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.137"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_16_8_16_8_32_4_4</name>
@@ -41593,7 +41593,7 @@
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="vec_widen_mult_hi_expr_FU" parameter="16 8 16 8 32 4 4"/>
         <characterization_timestamp>2016-06-09T11:39:38</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.137"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.137"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_16_8_16_8_32_4_5</name>
@@ -41603,7 +41603,7 @@
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="vec_widen_mult_hi_expr_FU" parameter="16 8 16 8 32 4 5"/>
         <characterization_timestamp>2016-06-09T11:39:53</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.26"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.26"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_16_8_16_8_32_4_6</name>
@@ -41613,7 +41613,7 @@
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="vec_widen_mult_hi_expr_FU" parameter="16 8 16 8 32 4 6"/>
         <characterization_timestamp>2016-06-09T11:40:14</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.014"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.014"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_1_128_0_2_64_0</name>
@@ -41633,7 +41633,7 @@
         <template name="vec_widen_mult_hi_expr_FU" parameter="1 128 0 2 64 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:31:44</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="1.03"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.03"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_1_128_0_2_64_2</name>
@@ -41654,7 +41654,7 @@
         <template name="vec_widen_mult_hi_expr_FU" parameter="1 128 0 2 64 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:32:00</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_1_128_0_2_64_4</name>
@@ -41665,7 +41665,7 @@
         <template name="vec_widen_mult_hi_expr_FU" parameter="1 128 0 2 64 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:32:14</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_1_128_0_2_64_5</name>
@@ -41676,7 +41676,7 @@
         <template name="vec_widen_mult_hi_expr_FU" parameter="1 128 0 2 64 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:32:13</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_1_128_0_2_64_6</name>
@@ -41687,7 +41687,7 @@
         <template name="vec_widen_mult_hi_expr_FU" parameter="1 128 0 2 64 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:32:31</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_1_128_1_128_2_64_0</name>
@@ -41707,7 +41707,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <template name="vec_widen_mult_hi_expr_FU" parameter="1 128 1 128 2 64 1"/>
         <characterization_timestamp>2016-06-09T11:40:01</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="1.2010000000000001"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.2010000000000001"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_1_128_1_128_2_64_2</name>
@@ -41717,7 +41717,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <template name="vec_widen_mult_hi_expr_FU" parameter="1 128 1 128 2 64 2"/>
         <characterization_timestamp>2016-06-09T11:40:21</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="1.256"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.256"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_1_128_1_128_2_64_3</name>
@@ -41727,7 +41727,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <template name="vec_widen_mult_hi_expr_FU" parameter="1 128 1 128 2 64 3"/>
         <characterization_timestamp>2016-06-09T11:40:36</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.26"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.26"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_1_128_1_128_2_64_4</name>
@@ -41737,7 +41737,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">65</attribute>
         <template name="vec_widen_mult_hi_expr_FU" parameter="1 128 1 128 2 64 4"/>
         <characterization_timestamp>2016-06-09T11:41:38</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.0940000000000001"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.0940000000000001"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_1_128_1_128_2_64_5</name>
@@ -41747,7 +41747,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">192</attribute>
         <template name="vec_widen_mult_hi_expr_FU" parameter="1 128 1 128 2 64 5"/>
         <characterization_timestamp>2016-06-09T11:41:48</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_1_128_1_128_2_64_6</name>
@@ -41757,7 +41757,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">192</attribute>
         <template name="vec_widen_mult_hi_expr_FU" parameter="1 128 1 128 2 64 6"/>
         <characterization_timestamp>2016-06-09T11:42:08</characterization_timestamp>
-        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_hi_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_widen_mult_hi_expr_FU_32_4_0_64_2_0</name>
@@ -42264,7 +42264,7 @@
         <template name="vec_widen_mult_lo_expr_FU" parameter="0 16 8 32 4 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:48:00</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.4019999999999999"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.4019999999999999"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_0_16_8_32_4_4</name>
@@ -42275,7 +42275,7 @@
         <template name="vec_widen_mult_lo_expr_FU" parameter="0 16 8 32 4 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:48:50</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.4019999999999999"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.4019999999999999"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_0_16_8_32_4_5</name>
@@ -42286,7 +42286,7 @@
         <template name="vec_widen_mult_lo_expr_FU" parameter="0 16 8 32 4 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:49:11</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.1830000000000001"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.1830000000000001"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_0_16_8_32_4_6</name>
@@ -42297,7 +42297,7 @@
         <template name="vec_widen_mult_lo_expr_FU" parameter="0 16 8 32 4 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:49:31</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.2050000000000001"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.2050000000000001"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_0_1_128_2_64_0</name>
@@ -42327,7 +42327,7 @@
         <template name="vec_widen_mult_lo_expr_FU" parameter="0 1 128 2 64 2"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:49:36</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="1.1240000000000001"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.1240000000000001"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_0_1_128_2_64_3</name>
@@ -42338,7 +42338,7 @@
         <template name="vec_widen_mult_lo_expr_FU" parameter="0 1 128 2 64 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:50:07</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_0_1_128_2_64_4</name>
@@ -42349,7 +42349,7 @@
         <template name="vec_widen_mult_lo_expr_FU" parameter="0 1 128 2 64 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:50:08</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_0_1_128_2_64_5</name>
@@ -42360,7 +42360,7 @@
         <template name="vec_widen_mult_lo_expr_FU" parameter="0 1 128 2 64 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:50:21</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_0_1_128_2_64_6</name>
@@ -42371,7 +42371,7 @@
         <template name="vec_widen_mult_lo_expr_FU" parameter="0 1 128 2 64 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:50:57</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_0_32_4_64_2_0</name>
@@ -42657,7 +42657,7 @@
         <template name="vec_widen_mult_lo_expr_FU" parameter="16 8 0 32 4 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:48:00</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.4019999999999999"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.4019999999999999"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_16_8_0_32_4_4</name>
@@ -42668,7 +42668,7 @@
         <template name="vec_widen_mult_lo_expr_FU" parameter="16 8 0 32 4 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:48:50</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.4019999999999999"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.4019999999999999"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_16_8_0_32_4_5</name>
@@ -42679,7 +42679,7 @@
         <template name="vec_widen_mult_lo_expr_FU" parameter="16 8 0 32 4 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:49:11</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.1830000000000001"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.1830000000000001"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_16_8_0_32_4_6</name>
@@ -42690,7 +42690,7 @@
         <template name="vec_widen_mult_lo_expr_FU" parameter="16 8 0 32 4 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:49:31</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.2050000000000001"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.2050000000000001"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_16_8_16_8_32_4_0</name>
@@ -42730,7 +42730,7 @@
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="vec_widen_mult_lo_expr_FU" parameter="16 8 16 8 32 4 3"/>
         <characterization_timestamp>2016-06-09T11:57:34</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.127"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.127"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_16_8_16_8_32_4_4</name>
@@ -42740,7 +42740,7 @@
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="vec_widen_mult_lo_expr_FU" parameter="16 8 16 8 32 4 4"/>
         <characterization_timestamp>2016-06-09T11:57:33</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.127"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.127"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_16_8_16_8_32_4_5</name>
@@ -42750,7 +42750,7 @@
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="vec_widen_mult_lo_expr_FU" parameter="16 8 16 8 32 4 5"/>
         <characterization_timestamp>2016-06-09T11:57:55</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.4019999999999999"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.4019999999999999"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_16_8_16_8_32_4_6</name>
@@ -42760,7 +42760,7 @@
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="vec_widen_mult_lo_expr_FU" parameter="16 8 16 8 32 4 6"/>
         <characterization_timestamp>2016-06-09T11:58:21</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.4419999999999999"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:16" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.4419999999999999"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_1_128_0_2_64_0</name>
@@ -42790,7 +42790,7 @@
         <template name="vec_widen_mult_lo_expr_FU" parameter="1 128 0 2 64 2"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:49:36</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="1.1240000000000001"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.1240000000000001"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_1_128_0_2_64_3</name>
@@ -42801,7 +42801,7 @@
         <template name="vec_widen_mult_lo_expr_FU" parameter="1 128 0 2 64 3"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:50:07</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_1_128_0_2_64_4</name>
@@ -42812,7 +42812,7 @@
         <template name="vec_widen_mult_lo_expr_FU" parameter="1 128 0 2 64 4"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:50:08</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_1_128_0_2_64_5</name>
@@ -42823,7 +42823,7 @@
         <template name="vec_widen_mult_lo_expr_FU" parameter="1 128 0 2 64 5"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:50:21</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_1_128_0_2_64_6</name>
@@ -42834,7 +42834,7 @@
         <template name="vec_widen_mult_lo_expr_FU" parameter="1 128 0 2 64 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-06-09T11:50:57</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_1_128_1_128_2_64_0</name>
@@ -42854,7 +42854,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <template name="vec_widen_mult_lo_expr_FU" parameter="1 128 1 128 2 64 1"/>
         <characterization_timestamp>2016-06-09T11:58:17</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="1.238"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.238"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_1_128_1_128_2_64_2</name>
@@ -42864,7 +42864,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <template name="vec_widen_mult_lo_expr_FU" parameter="1 128 1 128 2 64 2"/>
         <characterization_timestamp>2016-06-09T11:58:38</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="1.103"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.103"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_1_128_1_128_2_64_3</name>
@@ -42874,7 +42874,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <template name="vec_widen_mult_lo_expr_FU" parameter="1 128 1 128 2 64 3"/>
         <characterization_timestamp>2016-06-09T11:58:50</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.091"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.091"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_1_128_1_128_2_64_4</name>
@@ -42884,7 +42884,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <template name="vec_widen_mult_lo_expr_FU" parameter="1 128 1 128 2 64 4"/>
         <characterization_timestamp>2016-06-09T11:59:39</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.002"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="2.002"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_1_128_1_128_2_64_5</name>
@@ -42894,7 +42894,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">192</attribute>
         <template name="vec_widen_mult_lo_expr_FU" parameter="1 128 1 128 2 64 5"/>
         <characterization_timestamp>2016-06-09T11:59:31</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_1_128_1_128_2_64_6</name>
@@ -42904,7 +42904,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">192</attribute>
         <template name="vec_widen_mult_lo_expr_FU" parameter="1 128 1 128 2 64 6"/>
         <characterization_timestamp>2016-06-09T11:59:35</characterization_timestamp>
-        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.637"/>
+        <operation operation_name="widen_mult_lo_expr" commutative="1" supported_types="VECTOR_INT:1" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.637"/>
       </cell>
       <cell>
         <name>vec_widen_mult_lo_expr_FU_32_4_0_64_2_0</name>
@@ -43500,7 +43500,7 @@
         <template name="widen_mult_expr_FU" parameter="0 32 64 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-11-11T23:03:31</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.9340000000000002"/>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.9340000000000002"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_0_32_64_7</name>
@@ -43511,7 +43511,7 @@
         <template name="widen_mult_expr_FU" parameter="0 32 64 7"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-11-11T23:03:34</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="1.8800000000000001"/>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="2.8800000000000001"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_0_64_128_0</name>
@@ -43867,7 +43867,7 @@
         <template name="widen_mult_expr_FU" parameter="32 0 64 6"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-11-11T23:03:31</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.9340000000000002"/>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.9340000000000002"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_32_0_64_7</name>
@@ -43878,7 +43878,7 @@
         <template name="widen_mult_expr_FU" parameter="32 0 64 7"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-11-11T23:03:34</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="1.8800000000000001"/>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="2.8800000000000001"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_32_32_64_0</name>
