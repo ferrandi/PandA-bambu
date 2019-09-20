@@ -106,6 +106,19 @@ typedef union {
       res_c.b = fun_name(a_c.b, b_c.b);                             \
       return res_c.f;                                               \
    }
+
+#define SF_ADAPTER1_ternary(fun_name, prec)                                 \
+   __Tfloat##prec fun_name##if(__Tfloat##prec a, __Tfloat##prec b, __Tfloat##prec c); \
+   __Tfloat##prec fun_name##if(__Tfloat##prec a, __Tfloat##prec b, __Tfloat##prec c)  \
+   {                                                                \
+      __convert##prec a_c, b_c, c_c, res_c;                         \
+      a_c.f = a;                                                    \
+      b_c.f = b;                                                    \
+      c_c.f = c;                                                    \
+      res_c.b = fun_name(a_c.b, b_c.b, c_c.b);                      \
+      return res_c.f;                                               \
+   }
+
 #define SF_ADAPTER1_unary(fun_name, prec)         \
    __Tfloat##prec fun_name##if(__Tfloat##prec a); \
    __Tfloat##prec fun_name##if(__Tfloat##prec a)  \
@@ -330,6 +343,9 @@ static __flag __float32_le_quiet(__float32, __float32);
 static __flag __float32_lt_quiet(__float32, __float32);
 static __flag __float32_is_signaling_nan(__float32);
 // static __flag __float32_ltgt_quiet( __float32 a, __float32 b) {return !__float32_eq(b,a);}SF_ADAPTER2(__float32_ltgt_quiet,32);
+
+static __float32 __float32_muladd(__float32 uiA, __float32 uiB, __float32 uiC);
+SF_ADAPTER1_ternary(__float32_muladd, 32);
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE double-precision conversion routines.

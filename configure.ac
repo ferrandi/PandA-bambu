@@ -66,6 +66,7 @@ if test "x$ac_cv_cxx_compile_cxx11_native" = xno; then
       fi
    fi
 fi
+AM_CONDITIONAL(BUILD_MOCKTURTLE, test "x$ac_cv_cxx_compile_cxx17_native" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes)
 
 AM_PO_SUBDIRS
 
@@ -1494,6 +1495,7 @@ AC_CONFIG_FILES(
                  examples/mm/Makefile
                  examples/mm_float/Makefile
                  examples/omp_simd/Makefile
+                 examples/onnx/Makefile
                  examples/parallel_queries/Makefile
                  examples/libm/Makefile
                  examples/softfloat/Makefile

@@ -1266,13 +1266,13 @@ structural_objectRef port_o::find_bounded_object(const structural_objectConstRef
 
    if(port_count > 1)
    {
-      for(unsigned int i = 0; i < connected_objects.size(); i++)
-         if(connected_objects[i].lock()->get_owner() == _owner->get_owner())
-         {
-            res = connected_objects[i].lock();
-         }
+      INDENT_DBG_MEX(0, 0, "Too many bindings to " + get_path());
+      for(const auto connected_object : connected_objects)
+      {
+         INDENT_DBG_MEX(0, 0, "---" + connected_object.lock()->get_path());
+      }
+      THROW_UNREACHABLE("");
    }
-   THROW_ASSERT(port_count == 1, "Too many bindings to " + get_owner()->get_path() + HIERARCHY_SEPARATOR + get_id() + " of type " + get_owner()->get_typeRef()->id_type + " res " + res->get_path());
    return res;
 }
 

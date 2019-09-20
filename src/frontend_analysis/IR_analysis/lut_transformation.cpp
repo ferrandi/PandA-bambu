@@ -168,6 +168,8 @@ bool lut_transformation::CHECK_BIN_EXPR_BOOL_SIZE(binary_expr* be) const
    auto type_id1 = b1->index;
    if(tree_helper::is_real(TM, type_id1) || tree_helper::is_a_complex(TM, type_id1) || tree_helper::is_a_vector(TM, type_id1) || tree_helper::is_a_struct(TM, type_id1))
       return false;
+   if(tree_helper::is_int(TM, GET_INDEX_NODE((be->op0))) || tree_helper::is_int(TM, GET_INDEX_NODE((be->op1))))
+      return false;
    return (tree_helper::Size(GET_NODE((be)->op0)) == 1 && tree_helper::Size(GET_NODE((be)->op1)) == 1);
 }
 bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int max) const
@@ -348,6 +350,8 @@ class klut_network_ext : public mockturtle::klut_network
     */
    signal create_lut(std::vector<signal> s, uint64_t f)
    {
+      if(f==static_cast<uint64_t>(-1LL))
+         return this->create_not(this->get_constant(false));
       kitty::dynamic_truth_table tt(static_cast<int>(s.size()));
       std::stringstream resHex;
       resHex << std::hex << f;

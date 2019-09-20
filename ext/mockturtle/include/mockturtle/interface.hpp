@@ -443,6 +443,9 @@ public:
   /*! \brief Returns the level of a node. */
   uint32_t level( node const& n ) const;
 
+  /*! \brief Returns true, if node is on critical path */
+  bool is_on_critical_path( node const& n ) const;
+
   /*! \brief Returns true if node is an AND gate. */
   bool is_and( node const& n ) const;
 

@@ -438,6 +438,8 @@ namespace llvm
                      return assignCode(t, GT(GIMPLE_ASSIGN));
                   case llvm::Intrinsic::rint:
                      return assignCode(t, GT(GIMPLE_ASSIGN));
+                  case llvm::Intrinsic::fmuladd:
+                     return assignCode(t, GT(GIMPLE_ASSIGN));
 #if __clang_major__ != 4
                   case llvm::Intrinsic::ssa_copy:
                      return assignCode(t, GT(GIMPLE_SSACOPY));
@@ -596,6 +598,8 @@ namespace llvm
             fd->print(llvm::errs());
             llvm_unreachable("Plugin Error");
          }
+         case Intrinsic::fmuladd:
+            return "__float32_muladdif";
          default:
             fd->print(llvm::errs());
             llvm_unreachable("Plugin Error");
@@ -4831,6 +4835,7 @@ namespace llvm
          case llvm::Intrinsic::memmove:
          case llvm::Intrinsic::trap:
          case llvm::Intrinsic::rint:
+         case Intrinsic::fmuladd:
             return true;
          default:
             return false;

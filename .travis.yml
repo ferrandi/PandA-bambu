@@ -9,7 +9,7 @@ install: make -f Makefile.init
 
 before_script: mkdir build
 
-script: cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-verilator --enable-glpk --enable-opt --with-opt-level=0 && make -j4
+script: cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-verilator --enable-glpk --enable-opt --with-opt-level=0 CXX=g++-8 CC=gcc-8  && make -j4
 
 addons:
   apt:
@@ -28,8 +28,6 @@ addons:
     - g++-8-multilib
     - gfortran-8
     - gfortran-8-multilib
-    - clang++-6.0
-    - libclang-6.0-dev
     - libbdd-dev 
     - libboost-all-dev
     - libmpc-dev

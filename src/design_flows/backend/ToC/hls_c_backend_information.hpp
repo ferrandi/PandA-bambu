@@ -47,6 +47,7 @@
 /// STL include
 #include <map>
 #include <vector>
+#include <string>
 
 CONSTREF_FORWARD_DECL(HLS_manager);
 

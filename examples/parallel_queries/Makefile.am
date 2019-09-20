@@ -40,6 +40,7 @@ trinityq6/test-1.xml \
 trinityq6/test-40.xml \
 trinityq7/lubm_trinityq7.c \
 trinityq7/test-1.xml \
-trinityq7/test-40.xml
+trinityq7/test-40.xml\
+README
 
 TESTS=bambu.sh

@@ -272,8 +272,8 @@ clang4_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimple
 	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANG4_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang4_plugin_dumpGimpleSSA.o;\
-	  $(I386_CLANG4_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang4_plugin_dumpGimpleSSA.o;\
+	  $(I386_CLANG4_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang4_plugin_dumpGimpleSSA.o;\
+	  $(I386_CLANG4_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang4_plugin_dumpGimpleSSA.o;\
 	fi;
 
 clang4_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
@@ -285,8 +285,8 @@ clang4_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGim
 	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM4_HEADER_DIR) $(WFLAGS) -I. -DCPP_LANGUAGE';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANG4_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang4_plugin_dumpGimpleSSACpp.o;\
-	  $(I386_CLANG4_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang4_plugin_dumpGimpleSSACpp.o;\
+	  $(I386_CLANG4_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang4_plugin_dumpGimpleSSACpp.o;\
+	  $(I386_CLANG4_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang4_plugin_dumpGimpleSSACpp.o;\
 	fi;
 
 clang4_plugin_expandMemOps.o : $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
@@ -442,9 +442,9 @@ clang4_CSROA.o : $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggrega
 bambuS2S-4: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
 	case $(host_os) in \
 	  darwin*) \
-	    $(I386_CLANG4_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG4_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG4_LIBSD)  -o $@;;\
+	    $(I386_CLANG4_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG4_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG4_LIBSD)  -o $@;;\
 	  *) \
-	    $(I386_CLANG4_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG4_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG4_LIBS)  -o $@;;\
+	    $(I386_CLANG4_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG4_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG4_LIBS)  -o $@;;\
 	esac;
 
 
@@ -681,8 +681,8 @@ clang5_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimple
 	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANG5_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang5_plugin_dumpGimpleSSA.o;\
-	  $(I386_CLANG5_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang5_plugin_dumpGimpleSSA.o;\
+	  $(I386_CLANG5_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang5_plugin_dumpGimpleSSA.o;\
+	  $(I386_CLANG5_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang5_plugin_dumpGimpleSSA.o;\
 	fi;
 
 clang5_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
@@ -694,8 +694,8 @@ clang5_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGim
 	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I. -DCPP_LANGUAGE';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANG5_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang5_plugin_dumpGimpleSSACpp.o;\
-	  $(I386_CLANG5_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang5_plugin_dumpGimpleSSACpp.o;\
+	  $(I386_CLANG5_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang5_plugin_dumpGimpleSSACpp.o;\
+	  $(I386_CLANG5_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang5_plugin_dumpGimpleSSACpp.o;\
 	fi;
 
 clang5_plugin_expandMemOps.o : $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
@@ -840,9 +840,9 @@ clang5_CSROA.o : $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggrega
 bambuS2S-5: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
 	case $(host_os) in \
 	  darwin*) \
-	    $(I386_CLANG5_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG5_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG5_LIBSD)  -o $@;;\
+	    $(I386_CLANG5_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG5_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG5_LIBSD)  -o $@;;\
 	  *) \
-	    $(I386_CLANG5_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG5_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG5_LIBS)  -o $@;;\
+	    $(I386_CLANG5_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG5_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG5_LIBS)  -o $@;;\
 	esac;
 
 ###### 
@@ -1078,8 +1078,8 @@ clang6_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimple
 	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANG6_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang6_plugin_dumpGimpleSSA.o;\
-	  $(I386_CLANG6_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang6_plugin_dumpGimpleSSA.o;\
+	  $(I386_CLANG6_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang6_plugin_dumpGimpleSSA.o;\
+	  $(I386_CLANG6_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang6_plugin_dumpGimpleSSA.o;\
 	fi;
 
 clang6_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
@@ -1091,8 +1091,8 @@ clang6_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGim
 	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM6_HEADER_DIR) $(WFLAGS) -I. -DCPP_LANGUAGE';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANG6_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang6_plugin_dumpGimpleSSACpp.o;\
-	  $(I386_CLANG6_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang6_plugin_dumpGimpleSSACpp.o;\
+	  $(I386_CLANG6_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang6_plugin_dumpGimpleSSACpp.o;\
+	  $(I386_CLANG6_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang6_plugin_dumpGimpleSSACpp.o;\
 	fi;
 
 clang6_plugin_expandMemOps.o : $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
@@ -1236,9 +1236,9 @@ clang6_CSROA.o : $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggrega
 bambuS2S-6: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
 	case $(host_os) in \
 	  darwin*) \
-	    $(I386_CLANG6_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG6_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG6_LIBSD)  -o $@;;\
+	    $(I386_CLANG6_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG6_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG6_LIBSD)  -o $@;;\
 	  *) \
-	    $(I386_CLANG6_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG6_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG6_LIBS)  -o $@;;\
+	    $(I386_CLANG6_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG6_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG6_LIBS)  -o $@;;\
 	esac;
 
 ###### 
@@ -1473,8 +1473,8 @@ clang7_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimple
 	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM7_HEADER_DIR) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANG7_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang7_plugin_dumpGimpleSSA.o;\
-	  $(I386_CLANG7_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang7_plugin_dumpGimpleSSA.o;\
+	  $(I386_CLANG7_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang7_plugin_dumpGimpleSSA.o;\
+	  $(I386_CLANG7_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang7_plugin_dumpGimpleSSA.o;\
 	fi;
 
 clang7_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
@@ -1486,8 +1486,8 @@ clang7_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGim
 	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM7_HEADER_DIR) $(WFLAGS) -I. -DCPP_LANGUAGE';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANG7_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang7_plugin_dumpGimpleSSACpp.o;\
-	  $(I386_CLANG7_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang7_plugin_dumpGimpleSSACpp.o;\
+	  $(I386_CLANG7_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang7_plugin_dumpGimpleSSACpp.o;\
+	  $(I386_CLANG7_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o clang7_plugin_dumpGimpleSSACpp.o;\
 	fi;
 
 clang7_plugin_expandMemOps.o : $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
@@ -1632,9 +1632,9 @@ clang7_CSROA.o : $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggrega
 bambuS2S-7: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
 	case $(host_os) in \
 	  darwin*) \
-	    $(I386_CLANG7_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG7_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG7_LIBSD)  -o $@;;\
+	    $(I386_CLANG7_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG7_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG7_LIBSD)  -o $@;;\
 	  *) \
-	    $(I386_CLANG7_PLUGIN_COMPILER) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG7_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG7_LIBS)  -o $@;;\
+	    $(I386_CLANG7_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG7_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG7_LIBS)  -o $@;;\
 	esac;
 
 ###### 

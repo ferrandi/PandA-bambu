@@ -328,6 +328,11 @@ bool ptr_iterator_simplification(llvm::Function& function)
    {
       llvm::GetElementPtrInst* ind_var_gepi = nullptr;
       llvm::Value* init_ptr = nullptr;
+      llvm::Value* stop_ptr = nullptr;
+      llvm::CmpInst* cmp_inst = nullptr;
+      llvm::Value* base_ptr = nullptr;
+      llvm::Value* init_val = nullptr;
+      llvm::Value* stop_val = nullptr;
 
       for(unsigned short idx = 0; idx < 2; ++idx)
       {
@@ -363,86 +368,190 @@ bool ptr_iterator_simplification(llvm::Function& function)
          }
       }
 
-      if(ind_var_gepi != nullptr and init_ptr != nullptr)
+      if(ind_var_gepi == nullptr or init_ptr == nullptr)
       {
-         if(ind_var_gepi->getNumIndices() == 1)
-         {
-            llvm::Value* gepi_index = ind_var_gepi->getOperand(1);
-            std::string new_phi_node_name = phi_node->getName().str() + ".c";
-            llvm::PHINode* new_phi_node = llvm::PHINode::Create(gepi_index->getType(), 2, new_phi_node_name, phi_node);
+         llvm::errs() << "INFO: In function " << function.getName().str() << " cannot canonicalize 2op pointer iterator (cannot properly find indvar/init):\n";
+         llvm::errs() << "   Phi node: ";
+         phi_node->dump();
+         continue;
+      }
 
-            for(unsigned short idx = 0; idx < 2; ++idx)
+      if(ind_var_gepi->getNumIndices() != 1 or !ind_var_gepi->hasOneUse())
+      {
+         llvm::errs() << "INFO: In function " << function.getName().str() << " cannot canonicalize 2op pointer iterator (cannot properly find indvar):\n";
+         llvm::errs() << "   Phi node: ";
+         phi_node->dump();
+         ind_var_gepi = nullptr;
+         continue;
+      }
+
+      for(llvm::Use& u : phi_node->uses())
+      {
+         if(llvm::CmpInst* cmp_inst_use = llvm::dyn_cast<llvm::CmpInst>(u.getUser()))
+         {
+            if(cmp_inst == nullptr)
             {
-               if(phi_node->getIncomingValue(idx) == init_ptr)
+               cmp_inst = cmp_inst_use;
+
+               if(u.getOperandNo() == 0)
                {
-                  llvm::Constant* zero_cint = llvm::ConstantInt::get(gepi_index->getType(), 0, false);
-                  new_phi_node->addIncoming(zero_cint, phi_node->getIncomingBlock(idx));
-               }
-               else if(phi_node->getIncomingValue(idx) == ind_var_gepi)
-               {
-                  llvm::Constant* one_cint = llvm::ConstantInt::get(gepi_index->getType(), 1, false);
-                  std::string add_inst_name = ind_var_gepi->getName().str() + ".add";
-                  llvm::BinaryOperator* add_inst = llvm::BinaryOperator::Create(llvm::Instruction::Add, new_phi_node, gepi_index, add_inst_name, ind_var_gepi);
-                  new_phi_node->addIncoming(add_inst, phi_node->getIncomingBlock(idx));
+                  stop_ptr = cmp_inst->getOperand(1);
                }
                else
                {
-                  exit(-1);
+                  stop_ptr = cmp_inst->getOperand(0);
                }
             }
-
-            std::vector<llvm::Value*> idx_vec;
-            if(!llvm::isa<llvm::Argument>(init_ptr))
+            else
             {
-               if(init_ptr->getType()->isAggregateType())
-               {
-                  llvm::Constant* zero_cint = llvm::ConstantInt::get(gepi_index->getType(), 0, false);
-                  idx_vec.push_back(zero_cint);
-               }
+               cmp_inst = nullptr;
+               stop_ptr = nullptr;
+               break;
             }
-            idx_vec.push_back(new_phi_node);
+         }
+      }
 
-            std::string new_gepi_name = phi_node->getName().str() + ".gepi";
-            llvm::Type* gepi_type = llvm::cast<llvm::PointerType>(init_ptr->getType()->getScalarType())->getElementType();
-            llvm::GetElementPtrInst* new_gepi = llvm::GetElementPtrInst::Create(gepi_type, init_ptr, idx_vec, new_gepi_name);
-            new_gepi->insertAfter(get_last_phi(phi_node->getParent()));
+      if(cmp_inst == nullptr or stop_ptr == nullptr)
+      {
+         llvm::errs() << "INFO: In function " << function.getName().str() << " cannot canonicalize 2op pointer iterator (cannot properly find cmp/stop):\n";
+         llvm::errs() << "   Phi node: ";
+         phi_node->dump();
+         continue;
+      }
 
-            std::vector<llvm::CmpInst*> cmp_inst_vec;
-            for(llvm::Use& u : phi_node->uses())
+      if(llvm::GEPOperator* stop_ptr_gep_op = llvm::dyn_cast<llvm::GEPOperator>(stop_ptr))
+      {
+         if(stop_ptr_gep_op->getNumIndices() == 1)
+         {
+            base_ptr = stop_ptr_gep_op->getPointerOperand();
+            stop_val = stop_ptr_gep_op->getOperand(1);
+
+            if(init_ptr == base_ptr)
             {
-               if(llvm::CmpInst* cmp_inst = llvm::dyn_cast<llvm::CmpInst>(u.getUser()))
-               {
-                  cmp_inst_vec.push_back(cmp_inst);
-               }
+               init_val = llvm::ConstantInt::get(stop_val->getType(), 0);
             }
-            phi_node->replaceAllUsesWith(new_gepi);
-            phi_node->eraseFromParent();
-
-            for(llvm::CmpInst* cmp_inst : cmp_inst_vec)
+            else if(llvm::GEPOperator* init_ptr_gep_op = llvm::dyn_cast<llvm::GEPOperator>(init_ptr))
             {
-               llvm::GetElementPtrInst* gepi0 = llvm::dyn_cast<llvm::GetElementPtrInst>(cmp_inst->getOperand(0));
-               llvm::GetElementPtrInst* gepi1 = llvm::dyn_cast<llvm::GetElementPtrInst>(cmp_inst->getOperand(1));
-
-               if(gepi0 and gepi1)
+               if(init_ptr_gep_op->getNumIndices() == 1)
                {
-                  if(gepi0->getNumIndices() == 1 and gepi1->getNumIndices() == 1)
+                  if(init_ptr_gep_op->getPointerOperand() == base_ptr)
                   {
-                     llvm::Value* idx0 = gepi0->getOperand(1);
-                     llvm::Value* idx1 = gepi1->getOperand(1);
-
-                     cmp_inst->setOperand(0, idx0);
-                     cmp_inst->setOperand(1, idx1);
+                     init_val = init_ptr_gep_op->getOperand(1);
+                  }
+                  else
+                  {
+                     stop_val = nullptr;
+                     base_ptr = nullptr;
                   }
                }
+               else
+               {
+                  stop_val = nullptr;
+                  base_ptr = nullptr;
+               }
             }
-
-            ++transformation_count;
+            else
+            {
+               stop_val = nullptr;
+               base_ptr = nullptr;
+            }
          }
+      }
+
+      if(init_val == nullptr or stop_val == nullptr or base_ptr == nullptr)
+      {
+         llvm::errs() << "INFO: In function " << function.getName().str() << " cannot canonicalize 2op pointer iterator (cannot properly find init/stop/base):\n";
+         llvm::errs() << "   Phi node: ";
+         phi_node->dump();
+         continue;
+      }
+
+      if(ind_var_gepi != nullptr and cmp_inst != nullptr and init_ptr != nullptr and stop_ptr != nullptr and init_val != nullptr and stop_val != nullptr and base_ptr != nullptr)
+      {
+         llvm::errs() << "INFO: In function " << function.getName().str() << " Canonicalizing 2op pointer iterator:\n";
+         llvm::errs() << "   Phi node: ";
+         phi_node->dump();
+         llvm::errs() << "     Ind var gepi: ";
+         ind_var_gepi->dump();
+         llvm::errs() << "     Cmp inst: ";
+         cmp_inst->dump();
+         llvm::errs() << "     Init ptr: ";
+         init_ptr->dump();
+         llvm::errs() << "     Stop ptr: ";
+         stop_ptr->dump();
+         llvm::errs() << "     Base ptr: ";
+         base_ptr->dump();
+         llvm::errs() << "     Init val: ";
+         init_val->dump();
+         llvm::errs() << "     Stop val: ";
+         stop_val->dump();
+         llvm::Value* gepi_index = ind_var_gepi->getOperand(1);
+         std::string new_phi_node_name = phi_node->getName().str() + ".phi";
+         llvm::PHINode* new_phi_node = llvm::PHINode::Create(gepi_index->getType(), 2, new_phi_node_name, phi_node);
+
+         for(unsigned short idx = 0; idx < 2; ++idx)
+         {
+            if(phi_node->getIncomingValue(idx) == init_ptr)
+            {
+               new_phi_node->addIncoming(init_val, phi_node->getIncomingBlock(idx));
+            }
+            else if(phi_node->getIncomingValue(idx) == ind_var_gepi)
+            {
+               std::string add_inst_name = ind_var_gepi->getName().str() + ".add";
+               llvm::BinaryOperator* add_inst = llvm::BinaryOperator::Create(llvm::Instruction::Add, new_phi_node, gepi_index, add_inst_name, ind_var_gepi);
+               new_phi_node->addIncoming(add_inst, phi_node->getIncomingBlock(idx));
+
+               llvm::errs() << "   New add: ";
+               add_inst->dump();
+            }
+            else
+            {
+               exit(-1);
+            }
+         }
+
+         llvm::errs() << "   New phi node: ";
+         new_phi_node->dump();
+
+         std::vector<llvm::Value*> idx_vec;
+         if(!llvm::isa<llvm::Argument>(init_ptr))
+         {
+            if(init_ptr->getType()->isAggregateType())
+            {
+               llvm::Constant* zero_cint = llvm::ConstantInt::get(gepi_index->getType(), 0, false);
+               idx_vec.push_back(zero_cint);
+            }
+         }
+         idx_vec.push_back(new_phi_node);
+
+         std::string new_gepi_name = phi_node->getName().str() + ".gepi";
+         // llvm::Type* gepi_type = llvm::cast<llvm::PointerType>(init_ptr->getType()->getScalarType())->getElementType();
+         llvm::GetElementPtrInst* new_gepi = llvm::GetElementPtrInst::Create(nullptr, base_ptr, idx_vec, new_gepi_name);
+         new_gepi->insertAfter(get_last_phi(phi_node->getParent()));
+
+         phi_node->replaceAllUsesWith(new_gepi);
+         phi_node->eraseFromParent();
+         ind_var_gepi->eraseFromParent();
+
+         llvm::errs() << "   New gepi: ";
+         new_gepi->dump();
+
+         cmp_inst->setOperand(0, new_phi_node);
+         cmp_inst->setOperand(1, stop_val);
+
+         llvm::errs() << "   New cmp: ";
+         cmp_inst->dump();
+
+         ++transformation_count;
       }
    }
 
    for(llvm::PHINode* phi_node : one_op_phi_vec)
    {
+      llvm::errs() << "INFO: Canonicalizing 1op pointer iterator:\n";
+      llvm::errs() << "   Phi node: ";
+      phi_node->dump();
+
       phi_node->replaceAllUsesWith(phi_node->getIncomingValue(0));
       phi_node->eraseFromParent();
 

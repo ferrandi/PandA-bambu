@@ -75,3 +75,4 @@ config.h.in~
 .vscode
 obj/
 *swp
+*orig

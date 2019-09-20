@@ -2189,7 +2189,6 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                                        val = (val >> pos_value);
                                        res_value = static_cast<long long>(val);
                                     }
-                                    std::cerr << "res_value " << res_value << "\n";
                                     if(res_value)
                                     {
                                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());

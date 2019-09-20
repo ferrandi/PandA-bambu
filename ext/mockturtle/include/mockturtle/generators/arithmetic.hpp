@@ -40,6 +40,7 @@
 #include <kitty/dynamic_truth_table.hpp>
 
 #include "../traits.hpp"
+#include "../networks/aig.hpp"
 #include "control.hpp"
 
 namespace mockturtle
@@ -52,7 +53,8 @@ namespace mockturtle
  *
  * By default creates a seven 2-input gate network composed of AND, NOR, and OR
  * gates.  If network has `create_node` function, creates two 3-input gate
- * network.
+ * network.  If the network has ternary `create_maj` and `create_xor3`
+ * functions, it will use them (except for AIGs).
  *
  * \param ntk Network
  * \param a First input operand
@@ -75,6 +77,13 @@ inline std::pair<signal<Ntk>, signal<Ntk>> full_adder( Ntk& ntk, const signal<Nt
     const auto sum = ntk.create_node( {a, b, c}, tt_xor );
     const auto carry = ntk.create_node( {a, b, c}, tt_maj );
 
+    return {sum, carry};
+  }
+  /* use MAJ and XOR3 if available by network, unless network is AIG */
+  else if constexpr ( !std::is_same_v<typename Ntk::base_type, aig_network> && has_create_maj_v<Ntk> && has_create_xor3_v<Ntk> )
+  {
+    const auto carry = ntk.create_maj( a, b, c);
+    const auto sum = ntk.create_xor3( a, b, c );
     return {sum, carry};
   }
   else
@@ -226,6 +235,96 @@ inline std::vector<signal<Ntk>> carry_ripple_multiplier( Ntk& ntk, std::vector<s
   return res;
 }
 
+// CLA implementation based on Alan Mishchenko's implementation in
+// https://github.com/berkeley-abc/abc/blob/master/src/base/wlc/wlcBlast.c
+namespace detail
+{
+
+template<typename Ntk>
+inline std::pair<signal<Ntk>, signal<Ntk>> carry_lookahead_adder_inplace_rec( Ntk& ntk,
+                                                                              typename std::vector<signal<Ntk>>::iterator genBegin,
+                                                                              typename std::vector<signal<Ntk>>::iterator genEnd,
+                                                                              typename std::vector<signal<Ntk>>::iterator proBegin,
+                                                                              typename std::vector<signal<Ntk>>::iterator carBegin )
+{
+  auto const term_case = [&]( signal<Ntk> const& gen0, signal<Ntk> const& gen1, signal<Ntk> const& pro0, signal<Ntk> const& pro1, signal<Ntk> const& car ) -> std::tuple<signal<Ntk>, signal<Ntk>, signal<Ntk>> {
+    auto tmp = ntk.create_and( gen0, pro1 );
+    auto rPro = ntk.create_and( pro0, pro1 );
+    auto rGen = ntk.create_or( ntk.create_or( gen1, tmp ), ntk.create_and( rPro, car ) );
+    auto rCar = ntk.create_or( gen0, ntk.create_and( pro0, car ) );
+
+    return {rGen, rPro, rCar};
+  };
+
+  auto m = std::distance( genBegin, genEnd );
+
+  if ( m == 2 )
+  {
+    const auto [gen, pro, car] = term_case( *genBegin, *( genBegin + 1 ), *proBegin, *( proBegin + 1 ), *carBegin );
+    *( carBegin + 1 ) = car;
+    return {gen, pro};
+  }
+  else
+  {
+    m >>= 1;
+    const auto [gen0, pro0] = carry_lookahead_adder_inplace_rec( ntk, genBegin, genBegin + m, proBegin, carBegin );
+    *( carBegin + m ) = gen0;
+    const auto [gen1, pro1] = carry_lookahead_adder_inplace_rec( ntk, genBegin + m, genEnd, proBegin + m, carBegin + m );
+
+    const auto [gen, pro, car] = term_case( gen0, gen1, pro0, pro1, *carBegin );
+    *( carBegin + m ) = car;
+    return {gen, pro};
+  }
+}
+
+template<typename Ntk>
+inline void carry_lookahead_adder_inplace_pow2( Ntk& ntk, std::vector<signal<Ntk>>& a, std::vector<signal<Ntk>> const& b, signal<Ntk>& carry )
+{
+  if ( a.size() == 1u )
+  {
+    a[0] = full_adder( ntk, a[0], b[0], carry ).first;
+    return;
+  }
+
+  std::vector<signal<Ntk>> gen( a.size() ), pro( a.size() ), car( a.size() + 1 );
+  car[0] = carry;
+  std::transform( a.begin(), a.end(), b.begin(), gen.begin(), [&]( auto const& f, auto const& g ) { return ntk.create_and( f, g ); } );
+  std::transform( a.begin(), a.end(), b.begin(), pro.begin(), [&]( auto const& f, auto const& g ) { return ntk.create_xor( f, g ); } );
+
+  carry_lookahead_adder_inplace_rec( ntk, gen.begin(), gen.end(), pro.begin(), car.begin() );
+  std::transform( pro.begin(), pro.end(), car.begin(), a.begin(), [&]( auto const& f, auto const& g ) { return ntk.create_xor( f, g ); } );
+}
+
+}
+
+/*! \brief Creates carry lookahead adder structure.
+ *
+ * Creates a carry lookahead structure composed of full adders.  The vectors `a`
+ * and `b` must have the same size.  The resulting sum bits are eventually
+ * stored in `a` and the carry bit will be overriden to store the output carry
+ * bit.
+ *
+ * \param a First input operand, will also have the output after the call
+ * \param b Second input operand
+ * \param carry Carry bit, will also have the output carry after the call
+ */
+template<typename Ntk>
+inline void carry_lookahead_adder_inplace( Ntk& ntk, std::vector<signal<Ntk>>& a, std::vector<signal<Ntk>> const& b, signal<Ntk>& carry )
+{
+  /* extend bitsize to next power of two */
+  const auto log2 = static_cast<uint32_t>( std::ceil( std::log2( static_cast<double>( a.size() + 1 ) ) ) );
+
+  std::vector<signal<Ntk>> a_ext( a.begin(), a.end() );
+  a_ext.resize( 1 << log2, ntk.get_constant( false ) );
+  std::vector<signal<Ntk>> b_ext( b.begin(), b.end() );
+  b_ext.resize( 1 << log2, ntk.get_constant( false ) );
+
+  detail::carry_lookahead_adder_inplace_pow2( ntk, a_ext, b_ext, carry );
+
+  std::copy_n( a_ext.begin(), a.size(), a.begin() );
+  carry = a_ext[a.size()];
+}
+
 /*! \brief Creates a sideways sum adder using half and full adders
  *
  * The function creates the adder in `ntk` and returns output signals,
@@ -243,30 +342,31 @@ inline std::vector<signal<Ntk>> sideways_sum_adder( Ntk& ntk, std::vector<signal
 
   int out_n = 1; // floor(log2(n) + 1)
   int tmpn = n;
-  while( tmpn >>= 1 ) out_n++;
+  while ( tmpn >>= 1 )
+    out_n++;
 
   std::list<signal<Ntk>> sum_bits, carry_bits;
 
-  auto *first_level  = &sum_bits;
-  auto *second_level = &carry_bits;
+  auto* first_level = &sum_bits;
+  auto* second_level = &carry_bits;
 
   auto res = constant_word( ntk, 0, out_n );
   int output_ind = 0;
 
-  for(int i = 0; i < n; i++)
-    first_level->push_back(a[i]);
+  for ( int i = 0; i < n; i++ )
+    first_level->push_back( a[i] );
 
-  while(1)
+  while ( 1 )
   {
-    while(!first_level->empty())
+    while ( !first_level->empty() )
     {
-      if(first_level->size() == 1)
+      if ( first_level->size() == 1 )
       {
         auto in_sig = first_level->front();
         first_level->pop_front();
         res[output_ind++] = in_sig;
       }
-      else if(first_level->size() == 2)
+      else if ( first_level->size() == 2 )
       {
         auto in_sig1 = first_level->front();
         first_level->pop_front();
@@ -275,8 +375,8 @@ inline std::vector<signal<Ntk>> sideways_sum_adder( Ntk& ntk, std::vector<signal
         signal<Ntk> tmp_sum;
         signal<Ntk> tmp_carry;
         std::tie( tmp_sum, tmp_carry ) = half_adder( ntk, in_sig1, in_sig2 );
-        first_level->push_back(tmp_sum);
-        second_level->push_back(tmp_carry);
+        first_level->push_back( tmp_sum );
+        second_level->push_back( tmp_carry );
       }
       else // first_level->size() >=3
       {
@@ -289,12 +389,13 @@ inline std::vector<signal<Ntk>> sideways_sum_adder( Ntk& ntk, std::vector<signal
         signal<Ntk> tmp_sum;
         signal<Ntk> tmp_carry;
         std::tie( tmp_sum, tmp_carry ) = full_adder( ntk, in_sig1, in_sig2, in_sig3 );
-        first_level->push_back(tmp_sum);
-        second_level->push_back(tmp_carry);
+        first_level->push_back( tmp_sum );
+        second_level->push_back( tmp_carry );
       }
     }
 
-    if(second_level->empty()) break;
+    if ( second_level->empty() )
+      break;
 
     // swapping buffers
     auto tmp = first_level;
