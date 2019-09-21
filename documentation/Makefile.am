@@ -308,6 +308,67 @@ PRJ_DOC = \
            tutorial_fpt_2017/target/third/README\
            tutorial_fpt_2017/target/third/solution/module.c\
            tutorial_fpt_2017/target/third/solution/synthesize.sh\
+          tutorial_pnnl_2019/intro/first/module.c\ 
+          tutorial_pnnl_2019/intro/first/bambu.sh\ 
+          tutorial_pnnl_2019/PandA-bambu-PNNL19.pdf\ 
+          tutorial_pnnl_2019/VM-setup.pdf\ 
+          tutorial_pnnl_2019/1hHOBambu.pdf\ 
+          tutorial_pnnl_2019/memory/second/hint.sh\ 
+          tutorial_pnnl_2019/memory/second/solution/adpcm.c\ 
+          tutorial_pnnl_2019/memory/second/solution/synthesize.sh\ 
+          tutorial_pnnl_2019/memory/second/adpcm.c\ 
+          tutorial_pnnl_2019/memory/second/README\ 
+          tutorial_pnnl_2019/memory/fourth/mips.c\ 
+          tutorial_pnnl_2019/memory/fourth/imem.h\ 
+          tutorial_pnnl_2019/memory/fourth/solution/synthesize1.sh\ 
+          tutorial_pnnl_2019/memory/fourth/solution/mips.c\ 
+          tutorial_pnnl_2019/memory/fourth/solution/imem.h\ 
+          tutorial_pnnl_2019/memory/fourth/solution/synthesize2.sh\ 
+          tutorial_pnnl_2019/memory/fourth/hint1.sh\ 
+          tutorial_pnnl_2019/memory/fourth/hint2.sh\ 
+          tutorial_pnnl_2019/memory/fourth/README\ 
+          tutorial_pnnl_2019/memory/fifth/mips.c\ 
+          tutorial_pnnl_2019/memory/fifth/imem.h\ 
+          tutorial_pnnl_2019/memory/fifth/solution/synthesize1.sh\ 
+          tutorial_pnnl_2019/memory/fifth/solution/mips.c\ 
+          tutorial_pnnl_2019/memory/fifth/solution/imem.h\ 
+          tutorial_pnnl_2019/memory/fifth/solution/synthesize2.sh\ 
+          tutorial_pnnl_2019/memory/fifth/hint1.sh\ 
+          tutorial_pnnl_2019/memory/fifth/hint2.sh\ 
+          tutorial_pnnl_2019/memory/fifth/README\ 
+          tutorial_pnnl_2019/memory/first/hint.sh\ 
+          tutorial_pnnl_2019/memory/first/solution/adpcm.c\ 
+          tutorial_pnnl_2019/memory/first/solution/synthesize.sh\ 
+          tutorial_pnnl_2019/memory/first/adpcm.c\ 
+          tutorial_pnnl_2019/memory/first/README\ 
+          tutorial_pnnl_2019/memory/sixth/mips.c\ 
+          tutorial_pnnl_2019/memory/sixth/imem.h\ 
+          tutorial_pnnl_2019/memory/sixth/solution/synthesize1.sh\ 
+          tutorial_pnnl_2019/memory/sixth/solution/mips.c\ 
+          tutorial_pnnl_2019/memory/sixth/solution/imem.h\ 
+          tutorial_pnnl_2019/memory/sixth/solution/synthesize2.sh\ 
+          tutorial_pnnl_2019/memory/sixth/hint1.sh\ 
+          tutorial_pnnl_2019/memory/sixth/hint2.sh\ 
+          tutorial_pnnl_2019/memory/sixth/README\ 
+          tutorial_pnnl_2019/memory/third/mips.c\ 
+          tutorial_pnnl_2019/memory/third/imem.h\ 
+          tutorial_pnnl_2019/memory/third/solution/synthesize1.sh\ 
+          tutorial_pnnl_2019/memory/third/solution/mips.c\ 
+          tutorial_pnnl_2019/memory/third/solution/imem.h\ 
+          tutorial_pnnl_2019/memory/third/solution/synthesize2.sh\ 
+          tutorial_pnnl_2019/memory/third/hint1.sh\ 
+          tutorial_pnnl_2019/memory/third/hint2.sh\ 
+          tutorial_pnnl_2019/memory/third/README\ 
+          tutorial_pnnl_2019/optimizations/second/hint.txt\ 
+          tutorial_pnnl_2019/optimizations/second/solution/adpcm.c\ 
+          tutorial_pnnl_2019/optimizations/second/solution/synthesize.sh\ 
+          tutorial_pnnl_2019/optimizations/second/adpcm.c\ 
+          tutorial_pnnl_2019/optimizations/second/README\ 
+          tutorial_pnnl_2019/optimizations/first/hint.sh\ 
+          tutorial_pnnl_2019/optimizations/first/solution/adpcm.c\ 
+          tutorial_pnnl_2019/optimizations/first/solution/synthesize.sh\ 
+          tutorial_pnnl_2019/optimizations/first/adpcm.c\ 
+          tutorial_pnnl_2019/optimizations/first/README\
           tutorial_pact_2019/Introduction/second/module.c\
           tutorial_pact_2019/Introduction/second/bambu.sh\
           tutorial_pact_2019/Introduction/fourth/test.xml\
@@ -366,7 +427,6 @@ PRJ_DOC = \
           tutorial_pact_2019/Target-Customization/second/README\
           tutorial_pact_2019/Target-Customization/Target-Customization.pdf\
           tutorial_pact_2019/Target-Customization/first/hint.sh\
-          tutorial_pact_2019/Target-Customization/first/solution\
           tutorial_pact_2019/Target-Customization/first/solution/module.c\
           tutorial_pact_2019/Target-Customization/first/solution/synthesize.sh\
           tutorial_pact_2019/Target-Customization/first/hint.c\
@@ -463,6 +523,7 @@ DOX_TAGFILES = src src/utility
 EXTRA_DIST = $(PRJ_DOC)
 
 #do not touch the following line
+
 
 
 
