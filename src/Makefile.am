@@ -8,7 +8,7 @@ AM_LDFLAGS += $(BOOST_LDFLAGS)
 bin_PROGRAMS =
 noinst_LTLIBRARIES =
 
-noinst_HEADERS = Parameter.hpp constant_strings.hpp global_variables.hpp
+noinst_HEADERS = Parameter.hpp constant_strings.hpp
 
 Parameter.cpp : branch_name.hpp revision_hash.hpp
 

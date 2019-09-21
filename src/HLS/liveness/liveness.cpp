@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file liveness.cpp
  * @brief Class used to store liveness results
@@ -41,69 +41,60 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "liveness.hpp"
 
 ///. include
-#include "constant_strings.hpp"
 #include "Parameter.hpp"
+#include "constant_strings.hpp"
 
-///behavior include
+/// behavior include
 #include "basic_block.hpp"
 
-///HLS include
-#include "hls_manager.hpp"
+/// HLS include
 #include "hls.hpp"
+#include "hls_manager.hpp"
 
-
-///tree includes
+/// tree includes
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 
 #include "loop.hpp"
 #include "loops.hpp"
 
-
-liveness::liveness(const HLS_managerRef _HLSMgr, const ParameterConstRef _Param) :
-   TreeM(_HLSMgr->get_tree_manager()),
-   Param(_Param),
-   null_vertex_string("NULL_VERTEX"),
-   HLSMgr(_HLSMgr)
+liveness::liveness(const HLS_managerRef _HLSMgr, const ParameterConstRef _Param) : TreeM(_HLSMgr->get_tree_manager()), Param(_Param), null_vertex_string("NULL_VERTEX"), HLSMgr(_HLSMgr)
 
 {
 }
 
-liveness::~liveness()
-{
-
-}
+liveness::~liveness() = default;
 
 bool liveness::is_defined(unsigned int var) const
 {
-   if(var_op_definition.find(var)!=var_op_definition.end())
+   if(var_op_definition.find(var) != var_op_definition.end())
       return true;
 
    return false;
 }
 
-void liveness::set_live_in(const vertex & v, unsigned int var)
+void liveness::set_live_in(const vertex& v, unsigned int var)
 {
    live_in[v].insert(var);
 }
 
-void liveness::set_live_in(const vertex & v, const std::set<unsigned int> & live_set)
+void liveness::set_live_in(const vertex& v, const std::set<unsigned int>& live_set)
 {
    live_in[v].insert(live_set.begin(), live_set.end());
 }
 
-void liveness::set_live_in(const vertex & v, const std::set<unsigned int>::const_iterator first, const std::set<unsigned int>::const_iterator last)
+void liveness::set_live_in(const vertex& v, const std::set<unsigned int>::const_iterator first, const std::set<unsigned int>::const_iterator last)
 {
    live_in[v].insert(first, last);
 }
 
-void liveness::erase_el_live_in(const vertex & v, unsigned int var)
+void liveness::erase_el_live_in(const vertex& v, unsigned int var)
 {
    live_in[v].erase(var);
 }
@@ -116,17 +107,17 @@ const std::set<unsigned int>& liveness::get_live_in(const vertex& v) const
       return empty_set;
 }
 
-void liveness::set_live_out(const vertex & v, unsigned int var)
+void liveness::set_live_out(const vertex& v, unsigned int var)
 {
    live_out[v].insert(var);
 }
 
-void liveness::set_live_out(const vertex & v, const std::set<unsigned int> & vars)
+void liveness::set_live_out(const vertex& v, const std::set<unsigned int>& vars)
 {
    live_out[v].insert(vars.begin(), vars.end());
 }
 
-void liveness::set_live_out(const vertex & v, const std::set<unsigned int>::const_iterator first, const std::set<unsigned int>::const_iterator last)
+void liveness::set_live_out(const vertex& v, const std::set<unsigned int>::const_iterator first, const std::set<unsigned int>::const_iterator last)
 {
    live_out[v].insert(first, last);
 }
@@ -148,27 +139,29 @@ vertex liveness::get_op_where_defined(unsigned int var) const
 {
    THROW_ASSERT(var_op_definition.find(var) != var_op_definition.end(), "var never defined " + TreeM->get_tree_node_const(var)->ToString());
    return var_op_definition.find(var)->second;
-
 }
 
 bool liveness::has_op_where_defined(unsigned int var) const
 {
-   return(var_op_definition.find(var) != var_op_definition.end());
+   return (var_op_definition.find(var) != var_op_definition.end());
 }
 
 const std::set<vertex>& liveness::get_state_in(vertex state, vertex op, unsigned int var) const
 {
    THROW_ASSERT(state_in_definitions.find(state) != state_in_definitions.end(), "state never used " + get_name(state));
    THROW_ASSERT(state_in_definitions.find(state)->second.find(op) != state_in_definitions.find(state)->second.end(), "op never used in state " + get_name(state));
-   THROW_ASSERT(state_in_definitions.find(state)->second.find(op)->second.find(var) != state_in_definitions.find(state)->second.find(op)->second.end(), "var never used in the given state. Var: " + boost::lexical_cast<std::string>(var));
+   THROW_ASSERT(state_in_definitions.find(state)->second.find(op)->second.find(var) != state_in_definitions.find(state)->second.find(op)->second.end(), "var never used in the given state. Var: " + std::to_string(var));
    return state_in_definitions.find(state)->second.find(op)->second.find(var)->second;
 }
 
 bool liveness::has_state_in(vertex state, vertex op, unsigned int var) const
 {
-   if(state_in_definitions.find(state) == state_in_definitions.end()) return false;
-   if(state_in_definitions.find(state)->second.find(op) == state_in_definitions.find(state)->second.end()) return false;
-   if(state_in_definitions.find(state)->second.find(op)->second.find(var) == state_in_definitions.find(state)->second.find(op)->second.end()) return false;
+   if(state_in_definitions.find(state) == state_in_definitions.end())
+      return false;
+   if(state_in_definitions.find(state)->second.find(op) == state_in_definitions.find(state)->second.end())
+      return false;
+   if(state_in_definitions.find(state)->second.find(op)->second.find(var) == state_in_definitions.find(state)->second.find(op)->second.end())
+      return false;
    return true;
 }
 
@@ -181,15 +174,18 @@ const std::set<vertex>& liveness::get_state_out(vertex state, vertex op, unsigne
 {
    THROW_ASSERT(state_out_definitions.find(state) != state_out_definitions.end(), "state never used " + get_name(state));
    THROW_ASSERT(state_out_definitions.find(state)->second.find(op) != state_out_definitions.find(state)->second.end(), "op never used in state " + get_name(state));
-   THROW_ASSERT(state_out_definitions.find(state)->second.find(op)->second.find(var) != state_out_definitions.find(state)->second.find(op)->second.end(), "var never used in the given state. Var: " + boost::lexical_cast<std::string>(var));
+   THROW_ASSERT(state_out_definitions.find(state)->second.find(op)->second.find(var) != state_out_definitions.find(state)->second.find(op)->second.end(), "var never used in the given state. Var: " + std::to_string(var));
    return state_out_definitions.find(state)->second.find(op)->second.find(var)->second;
 }
 
 bool liveness::has_state_out(vertex state, vertex op, unsigned int var) const
 {
-   if(state_out_definitions.find(state) == state_out_definitions.end()) return false;
-   if(state_out_definitions.find(state)->second.find(op) == state_out_definitions.find(state)->second.end()) return false;
-   if(state_out_definitions.find(state)->second.find(op)->second.find(var) == state_out_definitions.find(state)->second.find(op)->second.end()) return false;
+   if(state_out_definitions.find(state) == state_out_definitions.end())
+      return false;
+   if(state_out_definitions.find(state)->second.find(op) == state_out_definitions.find(state)->second.end())
+      return false;
+   if(state_out_definitions.find(state)->second.find(op)->second.find(var) == state_out_definitions.find(state)->second.find(op)->second.end())
+      return false;
    return true;
 }
 
@@ -212,19 +208,20 @@ const std::set<vertex>& liveness::get_state_where_run(vertex op) const
 
 const std::string& liveness::get_name(vertex v) const
 {
-   if(v == NULL_VERTEX) return null_vertex_string;
+   if(v == NULL_VERTEX)
+      return null_vertex_string;
    THROW_ASSERT(names.find(v) != names.end(), "state without a name");
    return names.find(v)->second;
 }
 
-bool liveness::are_in_conflict (vertex op1, vertex op2) const
+bool liveness::are_in_conflict(vertex op1, vertex op2) const
 {
-   //if(!HLS)
+   // if(!HLS)
    {
       const std::set<vertex>& op1_run = get_state_where_run(op1);
       const std::set<vertex>& op2_run = get_state_where_run(op2);
       const std::set<vertex>::const_iterator op1_run_it_end = op1_run.end();
-      for(std::set<vertex>::const_iterator op1_run_it = op1_run.begin(); op1_run_it != op1_run_it_end; ++op1_run_it)
+      for(auto op1_run_it = op1_run.begin(); op1_run_it != op1_run_it_end; ++op1_run_it)
          if(op2_run.find(*op1_run_it) != op2_run.end())
             return true;
       return false;

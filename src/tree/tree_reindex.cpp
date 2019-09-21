@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file tree_reindex.cpp
  * @brief Class implementation of the tree_reindex support class.
@@ -42,50 +42,37 @@
  * @warning This file is still in a work in progress state
  * @warning Last modified by $Author$
  *
-*/
+ */
 #include "tree_reindex.hpp"
 
-tree_reindex::tree_reindex(const unsigned int i, const tree_nodeRef & tn)
-  : tree_node(i), actual_tree_node(tn)
+tree_reindex::tree_reindex(const unsigned int i, const tree_nodeRef& tn) : tree_node(i), actual_tree_node(tn)
 {
 }
 
-
-tree_reindex::~tree_reindex()
-{}
-
+tree_reindex::~tree_reindex() = default;
 
 void tree_reindex::print(std::ostream& os) const
 {
    if(html)
    {
-      os << "<a href=\"" <<  index  <<"\">@" << index << "</a>";
+      os << "<a href=\"" << index << "\">@" << index << "</a>";
    }
    else
    {
       os << "@" << index;
-        //// only for debug purpose
-        /*
-      if(!test_null(actual_tree_node))
-      {
-      os << "{";
-      actual_tree_node->tree_node::print(os);
-      os << "}";
-   }
-        */
    }
 }
 
-void tree_reindex::visit(tree_node_visitor * const v) const
+void tree_reindex::visit(tree_node_visitor* const v) const
 {
-   unsigned int mask=ALL_VISIT;
+   unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
-   VISIT_MEMBER(mask,actual_tree_node,visit(v));
+   VISIT_MEMBER(mask, actual_tree_node, visit(v));
 }
 
 bool tree_reindex::html = false;
 
-bool lt_tree_reindex::operator()(const tree_nodeRef &x, const tree_nodeRef &y)const
+bool lt_tree_reindex::operator()(const tree_nodeRef& x, const tree_nodeRef& y) const
 {
-   return GET_INDEX_NODE(x)<GET_INDEX_NODE(y);
+   return GET_INDEX_NODE(x) < GET_INDEX_NODE(y);
 }

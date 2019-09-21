@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file instruction_writer.cpp
  * @brief Simple class to print single instruction
@@ -40,29 +40,29 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Autoheader include
-#include "config_HAVE_MPPB.hpp"
+/// Autoheader include
 #include "config_HAVE_GRAPH_PARTITIONING_BUILT.hpp"
+#include "config_HAVE_MPPB.hpp"
 
-///Header include
+/// Header include
 #include "instruction_writer.hpp"
 
-///behavior include
+/// behavior include
 #include "application_manager.hpp"
 
-///design_flows/backend/ToC/source_code_writers
+/// design_flows/backend/ToC/source_code_writers
 #if HAVE_GRAPH_PARTITIONING_BUILT
 #include "pthread_instruction_writer.hpp"
 #endif
 
-///design_flows/codesign/partitioning/graph_partitioningh
+/// design_flows/codesign/partitioning/graph_partitioningh
 #if HAVE_GRAPH_PARTITIONING_BUILT
 #include "partitioning_manager.hpp"
 #endif
 
-///Backend include
+/// Backend include
 #include "c_writer.hpp"
 #if HAVE_MPPB
 #include "mppb_instruction_writer.hpp"
@@ -70,39 +70,38 @@
 #include "prettyPrintVertex.hpp"
 #include "simple_indent.hpp"
 
-///Behavior include
-#include "function_behavior.hpp"
-#include "behavioral_helper.hpp"
+/// Behavior include
 #include "basic_block.hpp"
+#include "behavioral_helper.hpp"
+#include "function_behavior.hpp"
 #include "loop.hpp"
 #include "loops.hpp"
 
-///design_flows/backend/ToC/progmodels include
+/// design_flows/backend/ToC/progmodels include
 #include "actor_graph_backend.hpp"
 
-///Graph include
+/// Graph include
 #include "graph.hpp"
 
-///Parameter include
+/// Parameter include
 #include "Parameter.hpp"
 
-///STD include
+/// STD include
+#include <cmath>
 #include <fstream>
 #include <iosfwd>
 #include <ostream>
-#include <math.h>
 
-///tree includes
+/// tree includes
 #include "var_pp_functor.hpp"
 
-///utility include
+/// utility include
 #include "indented_output_stream.hpp"
 #include "refcount.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 
-InstructionWriter::InstructionWriter(const application_managerConstRef _AppM, const IndentedOutputStreamRef _indented_output_stream, const ParameterConstRef _parameters) :
-   AppM(_AppM),
-   indented_output_stream(_indented_output_stream),
-   parameters(_parameters)
+InstructionWriter::InstructionWriter(const application_managerConstRef _AppM, const IndentedOutputStreamRef _indented_output_stream, const ParameterConstRef _parameters)
+    : AppM(_AppM), indented_output_stream(_indented_output_stream), parameters(_parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -112,7 +111,7 @@ InstructionWriterRef InstructionWriter::CreateInstructionWriter(const ActorGraph
    switch(actor_graph_backend_type)
    {
 #if HAVE_MPPB
-      case(ActorGraphBackend_Type::BA_MPPB) :
+      case(ActorGraphBackend_Type::BA_MPPB):
       {
          return InstructionWriterRef(new MppbInstructionWriter(AppM, indented_output_stream, true, parameters));
       }
@@ -134,24 +133,21 @@ InstructionWriterRef InstructionWriter::CreateInstructionWriter(const ActorGraph
       {
          THROW_UNREACHABLE("");
       }
-
    }
    return InstructionWriterRef();
 }
 
-InstructionWriter::~InstructionWriter()
-{}
+InstructionWriter::~InstructionWriter() = default;
 
 void InstructionWriter::Initialize()
-{}
+{
+}
 
 void InstructionWriter::write(const FunctionBehaviorConstRef function_behavior, const vertex statement, const var_pp_functorConstRef varFunctor)
 {
-   const std::string statement_string =
-      function_behavior->CGetBehavioralHelper()->print_vertex
-      (function_behavior->CGetOpGraph(FunctionBehavior::CFG), statement, varFunctor);
+   const std::string statement_string = function_behavior->CGetBehavioralHelper()->print_vertex(function_behavior->CGetOpGraph(FunctionBehavior::CFG), statement, varFunctor);
 
-   if (statement_string.size())
+   if(statement_string.size())
       indented_output_stream->Append(statement_string);
 }
 
@@ -169,4 +165,3 @@ void InstructionWriter::WriteComment(const std::string& text)
 {
    indented_output_stream->Append("//" + text + "\n");
 }
-

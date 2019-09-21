@@ -11,7 +11,7 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (c) 2004-2018 Politecnico di Milano
+ *            Copyright (C) 2004-2019 Politecnico di Milano
  *
  * This file is part of the PandA framework.
  *
@@ -29,45 +29,48 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include "HWCallInjection.hpp"
 
+#include "Parameter.hpp"
 #include "application_manager.hpp"
 #include "behavioral_helper.hpp"
-#include "Parameter.hpp"
-#include "tree_basic_block.hpp"
-#include "tree_reindex.hpp"
-#include "tree_helper.hpp"
-#include "tree_manipulation.hpp"
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
 #include "op_graph.hpp"
+#include "tree_basic_block.hpp"
+#include "tree_helper.hpp"
+#include "tree_manager.hpp"
+#include "tree_manipulation.hpp"
+#include "tree_node.hpp"
+#include "tree_reindex.hpp"
 
-///parser/treegcc include
+/// parser/treegcc include
+#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "token_interface.hpp"
+
+/// STD include
+#include <string>
+
+/// STL includes
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 unsigned int HWCallInjection::builtinWaitCallDeclIdx = 0;
 
-
-HWCallInjection::HWCallInjection(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int funId, const DesignFlowManagerConstRef DFM) :
-   FunctionFrontendFlowStep(_AppM, funId, HWCALL_INJECTION, DFM, Param),
-   already_executed(false)
+HWCallInjection::HWCallInjection(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int funId, const DesignFlowManagerConstRef DFM) : FunctionFrontendFlowStep(_AppM, funId, HWCALL_INJECTION, DFM, Param), already_executed(false)
 {
-  debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
+   debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
+HWCallInjection::~HWCallInjection() = default;
 
-HWCallInjection::~HWCallInjection(){}
-
-
-DesignFlowStep_Status
-HWCallInjection::InternalExec()
+DesignFlowStep_Status HWCallInjection::InternalExec()
 {
    tree_managerRef TM = AppM->get_tree_manager();
    tree_nodeRef tn = TM->get_tree_node_const(function_id);
-   function_decl * fd = GetPointer<function_decl>(tn);
+   auto* fd = GetPointer<function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement_list");
 
    for(const auto& block : sl->list_of_bloc)
@@ -77,7 +80,7 @@ HWCallInjection::InternalExec()
       while(stmt != list_of_stmt.end())
       {
          stmt++;
-         if (isHardwareCall(GET_NODE(*(std::prev(stmt)))))
+         if(isHardwareCall(GET_NODE(*(std::prev(stmt)))))
          {
             buildBuiltinCall(block.second, *(std::prev(stmt)));
          }
@@ -87,22 +90,20 @@ HWCallInjection::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> >
-HWCallInjection::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType RT) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> HWCallInjection::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType RT) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(RT)
    {
-      case (DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          break;
       }
-      case (INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case (PRECEDENCE_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -114,54 +115,48 @@ HWCallInjection::ComputeFrontendRelationships(const DesignFlowStep::Relationship
    return relationships;
 }
 
-
-bool
-HWCallInjection::isHardwareCall(tree_nodeRef expr)
+bool HWCallInjection::isHardwareCall(tree_nodeRef expr)
 {
    tree_managerRef TM = AppM->get_tree_manager();
    const ParameterConstRef Param = AppM->get_parameter();
 
    tree_nodeRef FD;
-   if (expr->get_kind() == gimple_call_K)
+   if(expr->get_kind() == gimple_call_K)
    {
-      gimple_call * GC = GetPointer<gimple_call>(expr);
-      FD = GetPointer<addr_expr>(GET_NODE(GC->fn)) ?
-           GetPointer<addr_expr>(GET_NODE(GC->fn))->op
-           : GC->fn;
+      auto* GC = GetPointer<gimple_call>(expr);
+      FD = GetPointer<addr_expr>(GET_NODE(GC->fn)) ? GetPointer<addr_expr>(GET_NODE(GC->fn))->op : GC->fn;
    }
-   else if (expr->get_kind() == gimple_assign_K)
+   else if(expr->get_kind() == gimple_assign_K)
    {
-      gimple_assign * GA = GetPointer<gimple_assign>(expr);
-      if (GET_NODE(GA->op1)->get_kind() == call_expr_K || GET_NODE(GA->op1)->get_kind() == aggr_init_expr_K)
+      auto* GA = GetPointer<gimple_assign>(expr);
+      if(GET_NODE(GA->op1)->get_kind() == call_expr_K || GET_NODE(GA->op1)->get_kind() == aggr_init_expr_K)
       {
-         call_expr * CE = GetPointer<call_expr>(GET_NODE(GA->op1));
-         FD = GetPointer<addr_expr>(GET_NODE(CE->fn)) ?
-              GetPointer<addr_expr>(GET_NODE(CE->fn))->op
-              : CE->fn;
+         auto* CE = GetPointer<call_expr>(GET_NODE(GA->op1));
+         FD = GetPointer<addr_expr>(GET_NODE(CE->fn)) ? GetPointer<addr_expr>(GET_NODE(CE->fn))->op : CE->fn;
       }
    }
 
    // When the instruction is not a function call return false.
-   if (!FD) return false;
+   if(!FD)
+      return false;
 
    bool result = false;
-   if (GET_NODE(FD)->get_kind() == function_decl_K)
+   if(GET_NODE(FD)->get_kind() == function_decl_K)
    {
-      function_decl * FDPtr = GetPointer<function_decl>(GET_NODE(FD));
+      auto* FDPtr = GetPointer<function_decl>(GET_NODE(FD));
       result = FDPtr->hwcall_flag;
 
-      if (!result)
+      if(!result)
       {
          std::string name = tree_helper::name_function(TM, GET_INDEX_NODE(FD));
          std::string cmdArg = Param->getOption<std::string>(OPT_additional_top);
 
-         std::vector<std::string> additionalTops;
-         boost::algorithm::split(additionalTops, cmdArg, boost::algorithm::is_any_of(","));
+         std::vector<std::string> additionalTops = SplitString(cmdArg, ",");
 
          result |= std::find(additionalTops.begin(), additionalTops.end(), name) != additionalTops.end();
       }
    }
-   else if (GET_NODE(FD)->get_kind() == ssa_name_K)
+   else if(GET_NODE(FD)->get_kind() == ssa_name_K)
    {
       // This is the case for function pointers call.
       result = true;
@@ -170,9 +165,7 @@ HWCallInjection::isHardwareCall(tree_nodeRef expr)
    return result;
 }
 
-
-void
-HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef stmt)
+void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef stmt)
 {
    tree_nodeRef expr = GET_NODE(stmt);
    tree_managerRef TM = AppM->get_tree_manager();
@@ -180,7 +173,7 @@ HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef stmt)
 
    unsigned int retVar = 0;
 
-   if (!builtinWaitCallDeclIdx)
+   if(!builtinWaitCallDeclIdx)
    {
       unsigned int varArgParamList = TM->new_tree_node_id();
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> varArgParamMap;
@@ -213,35 +206,32 @@ HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef stmt)
       TM->create_tree_node(builtinWaitCallDeclIdx, function_decl_K, builtinFunctionDeclMap);
    }
 
-   srcp * srcPtr = GetPointer<srcp>(expr);
+   auto* srcPtr = GetPointer<srcp>(expr);
 
    tree_nodeRef functionDeclTN = TM->GetTreeNode(builtinWaitCallDeclIdx);
-   function_decl * functionDecl = GetPointer<function_decl>(functionDeclTN);
+   auto* functionDecl = GetPointer<function_decl>(functionDeclTN);
 
    unsigned int addrExprBuiltinCall = TM->new_tree_node_id();
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> addrExprBuiltinCallMap;
-   addrExprBuiltinCallMap[TOK(TOK_TYPE)] =
-         STR(GET_INDEX_NODE(IRman->create_pointer_type(functionDecl->type)));
+   addrExprBuiltinCallMap[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(IRman->create_pointer_type(functionDecl->type, 8)));
    addrExprBuiltinCallMap[TOK(TOK_OP)] = STR(builtinWaitCallDeclIdx);
-   addrExprBuiltinCallMap[TOK(TOK_SRCP)] =
-         srcPtr->include_name + ":" + STR(srcPtr->line_number) + ":" + STR(srcPtr->column_number);
+   addrExprBuiltinCallMap[TOK(TOK_SRCP)] = srcPtr->include_name + ":" + STR(srcPtr->line_number) + ":" + STR(srcPtr->column_number);
    TM->create_tree_node(addrExprBuiltinCall, addr_expr_K, addrExprBuiltinCallMap);
 
    unsigned int gimpleCallIdx = TM->new_tree_node_id();
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimpleCallMap;
    gimpleCallMap[TOK(TOK_FN)] = STR(addrExprBuiltinCall);
-   gimpleCallMap[TOK(TOK_SRCP)] =
-         srcPtr->include_name + ":" + STR(srcPtr->line_number) + ":" + STR(srcPtr->column_number);
+   gimpleCallMap[TOK(TOK_SRCP)] = srcPtr->include_name + ":" + STR(srcPtr->line_number) + ":" + STR(srcPtr->column_number);
    TM->create_tree_node(gimpleCallIdx, gimple_call_K, gimpleCallMap);
 
    tree_nodeRef builtinGimpleCallTN = TM->GetTreeNode(gimpleCallIdx);
    tree_nodeRef builtinCallTN = TM->GetTreeReindex(gimpleCallIdx);
-   gimple_call * builtinGimpleCall = GetPointer<gimple_call>(builtinGimpleCallTN);
+   auto* builtinGimpleCall = GetPointer<gimple_call>(builtinGimpleCallTN);
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> HasReturnMap;
    HasReturnMap[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(IRman->create_default_integer_type()));
-   if (GetPointer<gimple_call>(expr))
+   if(GetPointer<gimple_call>(expr))
    {
-      gimple_call * GC = GetPointer<gimple_call>(expr);
+      auto* GC = GetPointer<gimple_call>(expr);
       builtinGimpleCall->AddArg(GC->fn);
 
       unsigned int HasReturnIdx = TM->new_tree_node_id();
@@ -249,16 +239,14 @@ HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef stmt)
       TM->create_tree_node(HasReturnIdx, integer_cst_K, HasReturnMap);
       builtinGimpleCall->AddArg(TM->GetTreeReindex(HasReturnIdx));
 
-      for (std::vector<tree_nodeRef>::const_iterator
-                 argItr = GC->args.begin(), argEnd = GC->args.end();
-           argItr != argEnd; ++argItr)
+      for(std::vector<tree_nodeRef>::const_iterator argItr = GC->args.begin(), argEnd = GC->args.end(); argItr != argEnd; ++argItr)
       {
          builtinGimpleCall->AddArg(*argItr);
       }
 
       builtinGimpleCall->memuse = GC->memuse;
       builtinGimpleCall->memdef = GC->memdef;
-      ssa_name * ssamemdef = builtinGimpleCall->memdef ? GetPointer<ssa_name>(GET_NODE(builtinGimpleCall->memdef)) : nullptr;
+      ssa_name* ssamemdef = builtinGimpleCall->memdef ? GetPointer<ssa_name>(GET_NODE(builtinGimpleCall->memdef)) : nullptr;
       if(ssamemdef)
       {
          ssamemdef->SetDefStmt(builtinCallTN);
@@ -267,7 +255,7 @@ HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef stmt)
       builtinGimpleCall->vuses = GC->vuses;
       builtinGimpleCall->vovers = GC->vovers;
       builtinGimpleCall->vdef = GC->vdef;
-      ssa_name * ssavdef = builtinGimpleCall->vdef ? GetPointer<ssa_name>(GET_NODE(builtinGimpleCall->vdef)) : nullptr;
+      ssa_name* ssavdef = builtinGimpleCall->vdef ? GetPointer<ssa_name>(GET_NODE(builtinGimpleCall->vdef)) : nullptr;
       if(ssavdef)
       {
          ssavdef->SetDefStmt(builtinCallTN);
@@ -293,12 +281,12 @@ HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef stmt)
       GC->use_set = PointToSolutionRef(new PointToSolution());
       GC->clobbered_set = PointToSolutionRef(new PointToSolution());
    }
-   else if (GetPointer<gimple_assign>(expr))
+   else if(GetPointer<gimple_assign>(expr))
    {
-      gimple_assign * GA = GetPointer<gimple_assign>(expr);
-      if (GET_NODE(GA->op1)->get_kind() == call_expr_K || GET_NODE(GA->op1)->get_kind() == aggr_init_expr_K)
+      auto* GA = GetPointer<gimple_assign>(expr);
+      if(GET_NODE(GA->op1)->get_kind() == call_expr_K || GET_NODE(GA->op1)->get_kind() == aggr_init_expr_K)
       {
-         call_expr * CE = GetPointer<call_expr>(GET_NODE(GA->op1));
+         auto* CE = GetPointer<call_expr>(GET_NODE(GA->op1));
          builtinGimpleCall->AddArg(CE->fn);
 
          unsigned int HasReturnIdx = TM->new_tree_node_id();
@@ -306,19 +294,17 @@ HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef stmt)
          TM->create_tree_node(HasReturnIdx, integer_cst_K, HasReturnMap);
          builtinGimpleCall->AddArg(TM->GetTreeReindex(HasReturnIdx));
 
-         for (std::vector<tree_nodeRef>::const_iterator
-                    argItr = CE->args.begin(), argEnd = CE->args.end();
-              argItr != argEnd; ++argItr)
+         for(std::vector<tree_nodeRef>::const_iterator argItr = CE->args.begin(), argEnd = CE->args.end(); argItr != argEnd; ++argItr)
          {
             builtinGimpleCall->AddArg(*argItr);
          }
 
-         if (ssa_name * ssaRet = GetPointer<ssa_name>(GET_NODE(GA->op0)))
+         if(auto* ssaRet = GetPointer<ssa_name>(GET_NODE(GA->op0)))
          {
             retVar = TM->new_tree_node_id();
             std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> retVarMap;
 
-            retVarMap[TOK(TOK_SRCP)] = GA->include_name+":"+STR(GA->line_number)+":"+STR(GA->column_number);
+            retVarMap[TOK(TOK_SRCP)] = GA->include_name + ":" + STR(GA->line_number) + ":" + STR(GA->column_number);
             if(ssaRet->type)
             {
                retVarMap[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(ssaRet->type));
@@ -327,7 +313,7 @@ HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef stmt)
             }
             else
             {
-               var_decl * vd = GetPointer<var_decl>(GET_NODE(ssaRet->var));
+               auto* vd = GetPointer<var_decl>(GET_NODE(ssaRet->var));
                retVarMap[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(vd->type));
                retVarMap[TOK(TOK_SIZE)] = STR(GET_INDEX_NODE(GetPointer<type_node>(GET_NODE(vd->type))->size));
                retVarMap[TOK(TOK_ALGN)] = STR(GetPointer<type_node>(GET_NODE(vd->type))->algn);
@@ -347,21 +333,21 @@ HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef stmt)
             GA->op1 = TM->GetTreeReindex(retVar);
          }
 
-         if (!retVar) retVar = GET_INDEX_NODE(GA->op0);
+         if(!retVar)
+            retVar = GET_INDEX_NODE(GA->op0);
 
          unsigned int addrExprReturnValue = TM->new_tree_node_id();
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> addrExprReturnValueMap;
-         addrExprReturnValueMap[TOK(TOK_TYPE)] =
-               STR(GET_INDEX_NODE(IRman->create_pointer_type(
-                   TM->GetTreeReindex(tree_helper::get_type_index(TM, retVar)))));
+         auto typeRetVar = TM->GetTreeReindex(tree_helper::get_type_index(TM, retVar));
+         addrExprReturnValueMap[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(IRman->create_pointer_type(typeRetVar, ALGN_POINTER)));
          addrExprReturnValueMap[TOK(TOK_OP)] = STR(retVar);
-         addrExprReturnValueMap[TOK(TOK_SRCP)] = GA->include_name+":"+STR(GA->line_number)+":"+STR(GA->column_number);
+         addrExprReturnValueMap[TOK(TOK_SRCP)] = GA->include_name + ":" + STR(GA->line_number) + ":" + STR(GA->column_number);
          TM->create_tree_node(addrExprReturnValue, addr_expr_K, addrExprReturnValueMap);
          builtinGimpleCall->AddArg(TM->GetTreeReindex(addrExprReturnValue));
 
          builtinGimpleCall->memuse = GA->memuse;
          builtinGimpleCall->memdef = GA->memdef;
-         ssa_name * ssamemdef = builtinGimpleCall->memdef ? GetPointer<ssa_name>(GET_NODE(builtinGimpleCall->memdef)) : nullptr;
+         ssa_name* ssamemdef = builtinGimpleCall->memdef ? GetPointer<ssa_name>(GET_NODE(builtinGimpleCall->memdef)) : nullptr;
          if(ssamemdef)
          {
             ssamemdef->SetDefStmt(builtinCallTN);
@@ -370,7 +356,7 @@ HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef stmt)
          builtinGimpleCall->vuses = GA->vuses;
          builtinGimpleCall->vovers = GA->vovers;
          builtinGimpleCall->vdef = GA->vdef;
-         ssa_name * ssavdef = builtinGimpleCall->vdef ? GetPointer<ssa_name>(GET_NODE(builtinGimpleCall->vdef)) : nullptr;
+         ssa_name* ssavdef = builtinGimpleCall->vdef ? GetPointer<ssa_name>(GET_NODE(builtinGimpleCall->vdef)) : nullptr;
          if(ssavdef)
          {
             ssavdef->SetDefStmt(builtinCallTN);
@@ -407,7 +393,7 @@ HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef stmt)
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding to BB" + STR(block->number) + " stmt: " + builtinCallTN->ToString());
    block->PushBefore(builtinCallTN, stmt);
-   if (not retVar)
+   if(not retVar)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---removing from BB" + STR(block->number) + " stmt: " + stmt->ToString());
       block->RemoveStmt(stmt);

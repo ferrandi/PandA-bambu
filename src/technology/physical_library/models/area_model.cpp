@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file area_model.cpp
  * @brief Implementation of the base methods for the class area_model
@@ -39,14 +39,14 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
-///Header include
+ */
+/// Header include
 #include "area_model.hpp"
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_CMOS_BUILT.hpp"
 
-///available models
+/// available models
 #if HAVE_CMOS_BUILT
 #include "cell_model.hpp"
 #endif
@@ -56,21 +56,15 @@
 
 #include "exceptions.hpp"
 
-
 const double area_model::area_DEFAULT = 1.0;
 
-area_model::area_model(const ParameterConstRef _Param_) :
-   Param(_Param_)
+area_model::area_model(const ParameterConstRef& _Param_) : Param(_Param_)
 {
-
 }
 
-area_model::~area_model()
-{
+area_model::~area_model() = default;
 
-}
-
-area_modelRef area_model::create_model(const TargetDevice_Type type, const ParameterConstRef Param)
+area_modelRef area_model::create_model(const TargetDevice_Type type, const ParameterConstRef& Param)
 {
    switch(type)
    {
@@ -85,5 +79,3 @@ area_modelRef area_model::create_model(const TargetDevice_Type type, const Param
    }
    return area_modelRef();
 }
-
-

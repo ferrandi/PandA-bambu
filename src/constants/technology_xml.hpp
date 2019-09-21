@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (C) 2015-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file technology_xml.hpp
  * @brief xml nodes used in technology libraries files
@@ -41,10 +41,9 @@
 #ifndef TECHNOLOGY_XML_HPP
 #define TECHNOLOGY_XML_HPP
 
-///The root node of target file
+/// The root node of target file
 #define STR_XML_technology_target_root "target"
 
-///The root node of technology libraries file
+/// The root node of technology libraries file
 #define STR_XML_technology_root "technology"
 #endif
-

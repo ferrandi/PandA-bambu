@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file fun_dominator_allocation.hpp
  * @brief Class to allocate function in HLS based on dominators
@@ -39,7 +39,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef FUN_DOMINATOR_ALLOCATION_HPP
 #define FUN_DOMINATOR_ALLOCATION_HPP
@@ -48,38 +48,38 @@
 
 class fun_dominator_allocation : public function_allocation
 {
-   protected:
-      ///True if this step has yet been executed
-      bool already_executed;
+ protected:
+   /// True if this step has yet been executed
+   bool already_executed;
 
-   public:
-      /**
-       * Constructor
-       */
-      fun_dominator_allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION);
+ public:
+   /**
+    * Constructor
+    */
+   fun_dominator_allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION);
 
-      /**
-       * Destructor
-       */
-      ~fun_dominator_allocation();
+   /**
+    * Destructor
+    */
+   ~fun_dominator_allocation() override;
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status Exec();
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status Exec() override;
 
-      /**
-       * Compute the relationships of a step with other steps
-       * @param dependencies is where relationships will be stored
-       * @param relationship_type is the type of relationship to be computed
-       */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type);
+   /**
+    * Compute the relationships of a step with other steps
+    * @param dependencies is where relationships will be stored
+    * @param relationship_type is the type of relationship to be computed
+    */
+   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      virtual bool HasToBeExecuted() const;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 };
 #endif

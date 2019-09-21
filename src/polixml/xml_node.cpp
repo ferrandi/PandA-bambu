@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file xml_node.cpp
  * @brief
@@ -40,17 +40,20 @@
  */
 
 #include "xml_node.hpp"
+#include "xml_att_decl_node.hpp"
+#include "xml_comment_node.hpp"
 #include "xml_element.hpp"
 #include "xml_text_node.hpp"
-#include "xml_comment_node.hpp"
-#include "xml_att_decl_node.hpp"
 
-///Boost include
-#include <boost/algorithm/string.hpp>
+/// STL include
+#include <vector>
+
+/// utility include
+#include "string_manipulation.hpp"
 
 xml_element* xml_child::add_child_element(const std::string& _name)
 {
-   xml_element* new_el = new xml_element(_name);
+   auto* new_el = new xml_element(_name);
    xml_nodeRef new_ref(new_el);
    child_list.push_back(new_ref);
    return new_el;
@@ -62,12 +65,13 @@ xml_element* xml_child::add_child_element(const xml_nodeRef& node)
    return GetPointer<xml_element>(node);
 }
 
-
 xml_text_node* xml_child::add_child_text(const std::string& content)
 {
-   xml_text_node* new_el = new xml_text_node(content);
+   auto* new_el = new xml_text_node(content);
    if(!first_text)
+   {
       first_text = new_el;
+   }
    xml_nodeRef new_ref(new_el);
    child_list.push_back(new_ref);
    return new_el;
@@ -75,7 +79,7 @@ xml_text_node* xml_child::add_child_text(const std::string& content)
 
 xml_comment_node* xml_child::add_child_comment(const std::string& content)
 {
-   xml_comment_node* new_el = new xml_comment_node(content);
+   auto* new_el = new xml_comment_node(content);
    xml_nodeRef new_ref(new_el);
    child_list.push_back(new_ref);
    return new_el;
@@ -83,13 +87,13 @@ xml_comment_node* xml_child::add_child_comment(const std::string& content)
 
 xml_att_decl_node* xml_child::add_child_attribute_declaration(const std::string& _name)
 {
-   xml_att_decl_node* new_el = new xml_att_decl_node(_name);
+   auto* new_el = new xml_att_decl_node(_name);
    xml_nodeRef new_ref(new_el);
    child_list.push_back(new_ref);
    return new_el;
 }
 
-void xml_node::set_line(int _line) 
+void xml_node::set_line(int _line)
 {
    line = _line;
 }
@@ -102,14 +106,15 @@ int xml_node::get_line() const
 const CustomSet<xml_nodeRef> xml_child::CGetDescendants(const std::string& path) const
 {
    CustomSet<xml_nodeRef> ret;
-   std::vector<std::string> splitted;
+   std::vector<std::string> splitted = SplitString(path, "/");
    CustomSet<xml_nodeRef> iteration_input_nodes, iteration_output_nodes;
-   boost::algorithm::split(splitted, path, boost::algorithm::is_any_of("/"));
    for(const auto& child : get_children())
    {
-      const xml_element* child_xml = GetPointer<const xml_element>(child);
+      const auto* child_xml = GetPointer<const xml_element>(child);
       if(not child_xml)
+      {
          continue;
+      }
       iteration_input_nodes.insert(child);
    }
    for(size_t level = 0; level < splitted.size(); level++)
@@ -127,9 +132,11 @@ const CustomSet<xml_nodeRef> xml_child::CGetDescendants(const std::string& path)
             {
                for(const auto& child : GetPointer<xml_child>(iteration_input_node)->get_children())
                {
-                  const xml_element * child_xml = GetPointer<const xml_element>(child);
+                  const auto* child_xml = GetPointer<const xml_element>(child);
                   if(not child_xml)
+                  {
                      continue;
+                  }
                   iteration_output_nodes.insert(child);
                }
             }

@@ -28,10 +28,10 @@ namespace flopoco{
 		/**
 		 *  Destructor
 		 */
-		~IntDualSub();
+		~IntDualSub() override;
 
-		void emulate(TestCase* tc);
-		void buildStandardTestCases(TestCaseList* tcl);
+		void emulate(TestCase* tc) override;
+		void buildStandardTestCases(TestCaseList* tcl) override;
 
 
 	 

@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file LUT_model.hpp
  * @brief Class implementation
@@ -39,25 +39,19 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "LUT_model.hpp"
 
 #include "polixml.hpp"
 
-LUT_model::LUT_model(const ParameterConstRef _Param) :
-      time_model(_Param)
+LUT_model::LUT_model(const ParameterConstRef _Param) : time_model(_Param)
 {
-
 }
 
-LUT_model::~LUT_model()
-{
-
-}
+LUT_model::~LUT_model() = default;
 
 void LUT_model::xwrite(xml_element*, const std::string&)
 {
-
 }
 
 void LUT_model::set_timing_value(value_t val, double num)
@@ -73,7 +67,7 @@ bool LUT_model::is_timing_value(value_t val) const
 
 double LUT_model::get_timing_value(value_t val) const
 {
-   if (!is_timing_value(val))
+   if(!is_timing_value(val))
       return 0;
    return timing_results.find(val)->second;
 }

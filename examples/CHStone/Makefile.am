@@ -130,9 +130,23 @@ CHStone_xc7vx690t-3ffg1930-VVD_10.0_O3_sdc.tex\
 CHStone_xc7z020-1clg484-VVD_10.0_O2_sdc_aligned_access.tex\
 CHStone_xc7z020-1clg484-VVD_10.0_O3_sdc.tex\
 CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_access.tex\
-CHStone_xc7z020-1clg484-VVD_15.0_O3_sdc.tex
-
-
+CHStone_xc7z020-1clg484-VVD_15.0_O3_sdc.tex\
+xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang4.sh\
+xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang5.sh\
+xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang6.sh\
+xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang7.sh\
+CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang4.tex\
+CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang5.tex\
+CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang6.tex\
+CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang7.tex\
+xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC5.sh\
+xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC6.sh\
+xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC7.sh\
+xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC8.sh\
+CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC5.tex\
+CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC6.tex\
+CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC7.tex\
+CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC8.tex
 #do not touch the following line
 
 

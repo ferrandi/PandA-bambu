@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file LUT_model.hpp
  * @brief Class specification for the timing model based on LUTs
@@ -39,7 +39,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef _LUT_MODEL_HPP_
 #define _LUT_MODEL_HPP_
 
@@ -48,7 +48,7 @@
 #include <map>
 #include <set>
 
-///Utility include
+/// Utility include
 #include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(Parameter);
@@ -56,53 +56,50 @@ CONSTREF_FORWARD_DECL(technology_manager);
 
 class LUT_model : public time_model
 {
-   public:
+ public:
+   typedef enum
+   {
+      COMBINATIONAL_DELAY,
+      MINIMUM_PERIOD_POST_MAP,
+      MINIMUM_PERIOD_POST_PAR
+   } value_t;
 
-      typedef enum
-      {
-         COMBINATIONAL_DELAY,
-         MINIMUM_PERIOD_POST_MAP,
-         MINIMUM_PERIOD_POST_PAR
-      } value_t;
+ protected:
+   /// timing characterization
+   std::map<value_t, double> timing_results;
 
-   protected:
+ public:
+   /**
+    * @name Constructors and destructors.
+    */
+   //@{
+   /**
+    * Constructor
+    */
+   explicit LUT_model(const ParameterConstRef Param);
 
-      ///timing characterization
-      std::map<value_t, double> timing_results;
+   /**
+    * Destructor
+    */
+   ~LUT_model() override;
+   //@}
 
-   public:
+   void xwrite(xml_element* pin_node, const std::string& output_pin) override;
 
-      /**
-       * @name Constructors and destructors.
-       */
-      //@{
-      /**
-       * Constructor
-       */
-      explicit LUT_model(const ParameterConstRef Param);
+   /**
+    * Sets the timing information for the specified type
+    */
+   void set_timing_value(value_t val, double num);
 
-      /**
-       * Destructor
-       */
-      virtual ~LUT_model();
-      //@}
+   /**
+    * Returns true if the specified timing value has been set, false otherwise
+    */
+   bool is_timing_value(value_t val) const;
 
-      void xwrite(xml_element* pin_node, const std::string& output_pin);
-
-      /**
-       * Sets the timing information for the specified type
-       */
-      void set_timing_value(value_t val, double num);
-
-      /**
-       * Returns true if the specified timing value has been set, false otherwise
-       */
-      bool is_timing_value(value_t val) const;
-
-      /**
-       * Returns the timing information for the given type
-       */
-      double get_timing_value(value_t val) const;
+   /**
+    * Returns the timing information for the given type
+    */
+   double get_timing_value(value_t val) const;
 };
 
 typedef refcount<LUT_model> LUT_modelRef;

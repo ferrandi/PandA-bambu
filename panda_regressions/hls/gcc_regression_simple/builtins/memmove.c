@@ -84,9 +84,11 @@ main_test (void)
   bcopy (s++, p + 1, 0);
   if (memcmp (p, "abfghi", 7) || s != s1 + 2)
     abort ();
+#ifndef __clang__
   __builtin_bcopy ("ABCDE", p + 4, 1);
   if (memcmp (p, "abfgAi", 7))
     abort ();
+#endif
 }
 int main()
 {

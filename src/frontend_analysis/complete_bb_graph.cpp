@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,40 +29,40 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file complete_bb_graph.cpp
  * @brief This class models the ending of execution of all steps which can modify control flow graph of basic blocks
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
-
-///Header include
+ */
 #include "complete_bb_graph.hpp"
 
-///. include
-#include "Parameter.hpp"
+#include "config_HAVE_BAMBU_BUILT.hpp"  // for HAVE_BAMBU_BUILT
+#include "config_HAVE_EXPERIMENTAL.hpp" // for HAVE_EXPERIMENTAL
+#include "config_HAVE_ZEBU_BUILT.hpp"   // for HAVE_ZEBU_BUILT
 
-///utility include
-#include "utility.hpp"
+#include "Parameter.hpp"           // for Parameter, ParameterConstRef
+#include "exceptions.hpp"          // for THROW_UNREACHABLE
+#include "hash_helper.hpp"         // for hash
+#include "string_manipulation.hpp" // for GET_CLASS
 
-CompleteBBGraph::CompleteBBGraph(const application_managerRef _AppM, const unsigned int _function_index, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   FunctionFrontendFlowStep(_AppM, _function_index, COMPLETE_BB_GRAPH, _design_flow_manager, _parameters)
+CompleteBBGraph::CompleteBBGraph(const application_managerRef _AppM, const unsigned int _function_index, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_index, COMPLETE_BB_GRAPH, _design_flow_manager, _parameters)
 {
    composed = true;
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-CompleteBBGraph::~CompleteBBGraph()
-{}
+CompleteBBGraph::~CompleteBBGraph() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > CompleteBBGraph::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> CompleteBBGraph::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(BLOCK_FIX, SAME_FUNCTION));
 #if HAVE_ZEBU_BUILT
@@ -86,7 +86,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 #endif
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }

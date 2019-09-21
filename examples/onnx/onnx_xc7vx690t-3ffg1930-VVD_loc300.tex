@@ -1,0 +1,32 @@
+%Generated at 2019-09-18 16:07:12.208506 with bambu Version: PandA 0.9.6-dev - Revision 31a8959cffa9fd5ef1bf3f2aa843aacfd7357582-bambu-onnx with arguments --simulator=VERILATOR
+\begin{tabular}{|l|c|c|c|c|c|c|c|c|c|c|}
+\hline
+Benchmark   & Cycles    & Period                 & Slack     & Fmax       & Wall-clock              & LUTs      & Slices    & BRAMB18 & DSP48s & HLS Time(s) \\
+\hline
+MLP         & $ 12566 $ & $ 3.286 \cdot 10^{0} $ & $ 0.01  $ & $ 304.32 $ & $ 4.129 \cdot 10^{1}  $ & $ 1938  $ & $ 716   $ & $ 0   $ & $ 6  $ & $ 22.91   $ \\
+activations & $ 2993  $ & $ 4.544 \cdot 10^{0} $ & $ -1.24 $ & $ 220.07 $ & $ 1.360 \cdot 10^{1}  $ & $ 7059  $ & $ 2840  $ & $ 0   $ & $ 10 $ & $ 36.64   $ \\
+dense\_64   & $ 2377  $ & $ 3.457 \cdot 10^{0} $ & $ -0.16 $ & $ 289.27 $ & $ 8.217 \cdot 10^{0}  $ & $ 1052  $ & $ 477   $ & $ 0   $ & $ 2  $ & $ 9.73    $ \\
+dense\_8    & $ 305   $ & $ 3.552 \cdot 10^{0} $ & $ -0.25 $ & $ 281.53 $ & $ 1.083 \cdot 10^{0}  $ & $ 1031  $ & $ 466   $ & $ 0   $ & $ 2  $ & $ 9.68    $ \\
+maxpool\_32 & $ 3019  $ & $ 3.284 \cdot 10^{0} $ & $ 0.02  $ & $ 304.51 $ & $ 9.914 \cdot 10^{0}  $ & $ 1069  $ & $ 547   $ & $ 0   $ & $ 0  $ & $ 6.46    $ \\
+maxpool\_8  & $ 40    $ & $ 4.263 \cdot 10^{0} $ & $ -0.96 $ & $ 234.58 $ & $ 1.705 \cdot 10^{-1} $ & $ 3395  $ & $ 1653  $ & $ 0   $ & $ 0  $ & $ 8.29    $ \\
+softmax\_64 & $ 7563  $ & $ 5.297 \cdot 10^{0} $ & $ -2.00 $ & $ 188.79 $ & $ 4.006 \cdot 10^{1}  $ & $ 13013 $ & $ 5854  $ & $ 0   $ & $ 6  $ & $ 46.72   $ \\
+softmax\_8  & $ 626   $ & $ 4.234 \cdot 10^{0} $ & $ -0.93 $ & $ 236.18 $ & $ 2.650 \cdot 10^{0}  $ & $ 3524  $ & $ 1515  $ & $ 0   $ & $ 6  $ & $ 20.66   $ \\
+vecmul\_64  & $ 712   $ & $ 5.694 \cdot 10^{0} $ & $ -2.39 $ & $ 175.62 $ & $ 4.054 \cdot 10^{0}  $ & $ 6799  $ & $ 4596  $ & $ 0   $ & $ 2  $ & $ 53.16   $ \\
+vecmul\_8   & $ 96    $ & $ 3.679 \cdot 10^{0} $ & $ -0.38 $ & $ 271.81 $ & $ 3.532 \cdot 10^{-1} $ & $ 981   $ & $ 736   $ & $ 0   $ & $ 2  $ & $ 6.80    $ \\
+\hline
+Average     & $       $ & $ 4.129 \cdot 10^{0} $ & $ -0.83 $ & $ 250.67 $ & $                     $ & $       $ & $       $ & $     $ & $    $ & $         $ \\
+\hline
+Overall     & $ 30297 $ & $                    $ & $       $ & $        $ & $ 1.214 \cdot 10^{2}  $ & $ 39861 $ & $ 19400 $ & $ 0   $ & $ 36 $ & $ 221.05  $ \\
+\hline
+\end{tabular}
+%Benchmarks:
+%01_vecmul_a/01_vecmul_a.scalarized.ll 01_vecmul_a/01_vecmul_a.wrapper.c --benchmark-name=vecmul_8 -IBENCHMARKS_ROOT/common/ --top-fname=fused_multiply_wrapper --top-rtldesign-name=fused_multiply --generate-tb=BENCHMARKS_ROOT/01_vecmul_a/test.xml
+%02_vecmul_b/02_vecmul_b.scalarized.ll 02_vecmul_b/02_vecmul_b.wrapper.c --benchmark-name=vecmul_64 -IBENCHMARKS_ROOT/common/ --top-fname=fused_multiply_wrapper --top-rtldesign-name=fused_multiply --generate-tb=BENCHMARKS_ROOT/02_vecmul_b/test.xml
+%04_dense_a/04_dense_a.parallel.c --benchmark-name=dense_8 -IBENCHMARKS_ROOT/common/ --top-fname=fused_nn_dense_add_wrapper --top-rtldesign-name=fused_nn_dense_add --generate-tb=BENCHMARKS_ROOT/04_dense_a/test.xml
+%05_dense_b/05_dense_b.parallel.c --benchmark-name=dense_64 -IBENCHMARKS_ROOT/common/ --top-fname=fused_nn_dense_add_wrapper --top-rtldesign-name=fused_nn_dense_add --generate-tb=BENCHMARKS_ROOT/05_dense_b/test.xml
+%06_softmax_a/06_softmax_a.scalarized.ll 06_softmax_a/06_softmax_a.wrapper.c --benchmark-name=softmax_8 -IBENCHMARKS_ROOT/common/ --top-fname=fused_nn_softmax_wrapper --top-rtldesign-name=fused_nn_softmax --generate-tb=BENCHMARKS_ROOT/06_softmax_a/test.xml -lm
+%07_softmax_b/07_softmax_b.scalarized.ll 07_softmax_b/07_softmax_b.wrapper.c --benchmark-name=softmax_64 -IBENCHMARKS_ROOT/common/ --top-fname=fused_nn_softmax_wrapper --top-rtldesign-name=fused_nn_softmax --generate-tb=BENCHMARKS_ROOT/07_softmax_b/test.xml -lm
+%12_maxp_a/12_maxp_a.scalarized.ll 12_maxp_a/12_maxp_a.wrapper.c --benchmark-name=maxpool_8 -IBENCHMARKS_ROOT/common/ --top-fname=fused_nn_max_pool2d_wrapper --top-rtldesign-name=fused_nn_max_pool2d --generate-tb=BENCHMARKS_ROOT/12_maxp_a/test.xml
+%13_maxp_b/13_maxp_b.scalarized.ll 13_maxp_b/13_maxp_b.wrapper.c --benchmark-name=maxpool_32 -IBENCHMARKS_ROOT/common/ --top-fname=fused_nn_max_pool2d_wrapper --top-rtldesign-name=fused_nn_max_pool2d --generate-tb=BENCHMARKS_ROOT/13_maxp_b/test.xml
+%15_thxprlsg/15_thxprlsg.scalarized.ll 15_thxprlsg/15_thxprlsg.wrapper.c --benchmark-name=activations -IBENCHMARKS_ROOT/common/ --top-fname=fused_activations_wrapper --top-rtldesign-name=fused_tanh_exp_nn_relu_sigmoid --generate-tb=BENCHMARKS_ROOT/15_thxprlsg/test.xml -lm
+%e1_mlp/e1_mlp.parallel.c --benchmark-name=MLP -IBENCHMARKS_ROOT/common/ --top-fname=mlp_wrapper --top-rtldesign-name=fused_nn_softmax --generate-tb=BENCHMARKS_ROOT/e1_mlp/test.xml -lm

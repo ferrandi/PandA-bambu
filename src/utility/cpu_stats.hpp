@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file cpu_stats.hpp
  * @brief Utility managing CPU statistics.
@@ -40,13 +40,14 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef CPU_STATS_HPP
 #define CPU_STATS_HPP
 
 #include <ostream>
+#include <string>
 
-extern void util_print_cpu_stats(std::ostream& os);
-extern std::string PrintVirtualDataMemoryUsage();
+void util_print_cpu_stats(std::ostream& os);
+std::string PrintVirtualDataMemoryUsage();
 
 #endif

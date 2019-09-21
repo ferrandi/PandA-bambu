@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2014-2018 Politecnico di Milano
+ *              Copyright (C) 2014-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,32 +48,32 @@ typedef unsigned int div_USItype __attribute__ ((mode (SI)));
 typedef unsigned int div_UDItype __attribute__ ((mode (DI)));
 /// compute the 64bit multiplication between a and b and return only the 32 most significant bits
 div_USItype __builtin_umulh32(div_USItype a, div_USItype b);
-inline div_USItype __builtin_umulh32(div_USItype a, div_USItype b)
+__FORCE_INLINE div_USItype __builtin_umulh32(div_USItype a, div_USItype b)
 {
   return ((div_UDItype)(div_USItype)(a) * (div_USItype)(b))>>32;
 }
 
 ///compute the 32bit multiplication between a and b and return only the 16 most significant bits
 div_UHItype __builtin_umulh16(div_UHItype a, div_UHItype b);
-inline div_UHItype __builtin_umulh16(div_UHItype a, div_UHItype b)
+__FORCE_INLINE div_UHItype __builtin_umulh16(div_UHItype a, div_UHItype b)
 {
   return ((div_USItype)(div_UHItype)(a) * (div_UHItype)(b))>>16;
 }
 
 div_UHItype __builtin_umulh816(div_UHItype a, div_UHItype b);
-inline div_UHItype __builtin_umulh816(div_UHItype a, div_UHItype b)
+__FORCE_INLINE div_UHItype __builtin_umulh816(div_UHItype a, div_UHItype b)
 {
   return ((div_USItype)(div_UHItype)(a) * (div_UHItype)(b))>>8;
 }
 
 div_USItype __builtin_umulh1632(div_USItype a, div_USItype b);
-inline div_USItype __builtin_umulh1632(div_USItype a, div_USItype b)
+__FORCE_INLINE div_USItype __builtin_umulh1632(div_USItype a, div_USItype b)
 {
   return (((div_UDItype)a) * b)>>16;
 }
 
 div_UDItype __builtin_umulh64(div_UDItype u, div_UDItype v);
-inline div_UDItype __builtin_umulh64(div_UDItype u, div_UDItype v)
+__FORCE_INLINE div_UDItype __builtin_umulh64(div_UDItype u, div_UDItype v)
 {
     register div_USItype u0, v0, k, u1, v1, w1, w2;
     register div_UDItype t, t0, t1;
@@ -102,35 +102,30 @@ inline div_UDItype __builtin_umulh64(div_UDItype u, div_UDItype v)
         ++zExp;\
     }\
     {\
-        __bits16 c0c1 = (bSig << 1) >> 16;\
-        __bits8 c0 = c0c1 >> 8;\
-        __bits8 b0 = bSig>>24;\
-        __bits8 half_b0 = b0>>1;\
-        __bits8 r01 = 255 - c0;\
-        __bits8 r02 = 105 - b0;\
-        __bits8 r03 = 255 - half_b0;\
-        __bits8 temp_max_r1r3 = r01 > r03 ? r01 : r03; \
-        __bits8 r0 = r02 > temp_max_r1r3 ? r02 : temp_max_r1r3; /* initial reciprocal estimate of $r_0$*/\
-        __bits16 const1 = (unsigned short)-2;\
-        __bits16 d0d1_sub1 = const1 - ((__bits16)r0<<8);\
-        __bits16 k0k1 = __builtin_umulh816(c0c1,r0);\
-        __bits16 d0d1 = d0d1_sub1 - k0k1;\
-        __bits16 f2f1 = __builtin_umulh16(d0d1, d0d1) + d0d1;\
-        __bits16 r1r2 = __builtin_umulh816(f2f1,r0) + ((__bits16)r0<<8); /* estimate of $r_1$*/\
+        static const __bits16 softfloat_approxRecip_1k0s[16] = {\
+            0xFFC4, 0xF0BE, 0xE363, 0xD76F, 0xCCAD, 0xC2F0, 0xBA16, 0xB201,\
+            0xAA97, 0xA3C6, 0x9D7A, 0x97A6, 0x923C, 0x8D32, 0x887E, 0x8417\
+        };\
+        static const __bits16 softfloat_approxRecip_1k1s[16] = {\
+            0xF0F1, 0xD62C, 0xBFA1, 0xAC77, 0x9C0A, 0x8DDB, 0x8185, 0x76BA,\
+            0x6D3B, 0x64D4, 0x5D5C, 0x56B1, 0x50B6, 0x4B55, 0x4679, 0x4211\
+        };\
+        __bits8 index = bSig>>27 & 0xF;\
+        __bits16 eps = (__bits16) (bSig>>11);\
+        __bits16 r0 = softfloat_approxRecip_1k0s[index]\
+                 - ((softfloat_approxRecip_1k1s[index] * (__bits32) eps)>>20);\
+        __bits32 sigma0 = ~(__bits32) ((r0 * (__bits64) bSig)>>7);\
+        __bits32 r = ((__bits32) r0<<16) + ((r0 * (__bits32) ((sigma0>>16)))>>8);\
         _Bool rem_ge;\
-        /*__bits32 p = r1r2 << 15;*/\
-        /*ga0 = __builtin_umulh32(aSig, p) << 2;*/\
-        ga0 = ((((div_UDItype)(div_USItype)(aSig>>6) * (div_USItype)(r1r2))<<21)>>32)<<2;\
-        /*gb0 = __builtin_umulh32(bSig, p);*/\
-        gb0 = (((div_UDItype)(div_USItype)(bSig>>8) * (div_USItype)(r1r2))<<23)>>32;\
+        __bits32 p = (__bits32) r >> 1;\
+        ga0 = __builtin_umulh32(aSig, p) << 2;\
+        gb0 = __builtin_umulh32(bSig, p);\
         gb1 = 0x80000000U - gb0;\
-        /*ga1 = __builtin_umulh32(ga0, gb1) << 1;*/\
         ga1 = ((((div_UDItype)(div_USItype)(ga0>>2) * (div_USItype)(gb1))<<2)>>32)<<1;\
         zSig = (ga1 + 0x10) >> 5;\
         __bits32 zSigminus1 = zSig-1;\
         zSig <<= 6;\
         zSigminus1 <<= 6;\
-        /*rem0 = __builtin_umulh32(bSig, zSig);*/\
         rem0 = (((div_UDItype)(div_USItype)(bSig>>8) * (div_USItype)(zSig>>6))<<14)>>32;\
         rem = aSig - rem0;\
         rem_ge = ((__sbits32) rem) <= 0;\
@@ -194,29 +189,23 @@ inline div_UDItype __builtin_umulh64(div_UDItype u, div_UDItype v)
         ++zExp;\
     }\
     {\
-        __bits16 c0c1 = (bSig << 1) >> (16+32);\
-        __bits8 c0 = c0c1 >> 8;\
-        __bits8 b0 = bSig>>(24+32);\
-        __bits8 half_b0 = b0>>1;\
-        __bits8 r01 = 255 - c0;\
-        __bits8 r02 = 105 - b0;\
-        __bits8 r03 = 255 - half_b0;\
-        __bits8 temp_max_r1r3 = r01 > r03 ? r01 : r03; \
-        __bits8 r0 = r02 > temp_max_r1r3 ? r02 : temp_max_r1r3; /* initial reciprocal estimate of $r_0$*/\
-        __bits16 const1 = (unsigned short)-2;\
-        __bits16 d0d1_sub1 = const1 - ((__bits16)r0<<8);\
-        __bits16 k0k1 = __builtin_umulh816(c0c1,r0);\
-        __bits16 d0d1 = d0d1_sub1 - k0k1;\
-        __bits16 f2f1 = __builtin_umulh16(d0d1, d0d1) + d0d1;\
-        __bits16 r1r2 = __builtin_umulh816(f2f1,r0) + ((__bits16)r0<<8); /* estimate of $r_1$*/\
-        __bits32 const2 = (unsigned int)-2;\
-        __bits32 c0c1c2c3 = (bSig << 1) >> 32;\
-        __bits32 d0d1d2d3_sub1 = const2 - ((__bits32)r1r2<<16);\
-        __bits32 k0k1k2k3 = __builtin_umulh1632(c0c1c2c3,r1r2);\
-        __bits32 d0d1d2d3 = d0d1d2d3_sub1 - k0k1k2k3;\
-        __bits32 f4f3f2f1 = __builtin_umulh32(d0d1d2d3, d0d1d2d3) + d0d1d2d3;\
-        __bits32 r1r2r3r4 = __builtin_umulh1632(f4f3f2f1,r1r2) + ((__bits32)r1r2<<16); /* estimate of $r_2$*/\
-        __bits64 p = ((__bits64)r1r2r3r4) << 15+16;\
+        static const __bits16 softfloat_approxRecip_1k0s[16] = {\
+            0xFFC4, 0xF0BE, 0xE363, 0xD76F, 0xCCAD, 0xC2F0, 0xBA16, 0xB201,\
+            0xAA97, 0xA3C6, 0x9D7A, 0x97A6, 0x923C, 0x8D32, 0x887E, 0x8417\
+        };\
+        static const __bits16 softfloat_approxRecip_1k1s[16] = {\
+            0xF0F1, 0xD62C, 0xBFA1, 0xAC77, 0x9C0A, 0x8DDB, 0x8185, 0x76BA,\
+            0x6D3B, 0x64D4, 0x5D5C, 0x56B1, 0x50B6, 0x4B55, 0x4679, 0x4211\
+        };\
+        __bits8 index = bSig>>(27+32) & 0xF;\
+        __bits16 eps = (__bits16) (bSig>>(11+32));\
+        __bits16 r0 = softfloat_approxRecip_1k0s[index]\
+                 - ((softfloat_approxRecip_1k1s[index] * (__bits32) eps)>>20);\
+        __bits32 sigma0 = ~(__bits32) ((r0 * (bSig>>32))>>7);\
+        __bits32 r = ((__bits32) r0<<16) + ((r0 * (__bits64) sigma0)>>24);\
+        __bits32 sqrSigma0 = ((__bits64) sigma0 * sigma0)>>32;\
+        r += ((__bits32) r * (__bits64) sqrSigma0)>>48;\
+        __bits64 p = ((__bits64)r) << (15+16);\
         ga0 = __builtin_umulh64(aSig, p) << 2;\
         gb0 = __builtin_umulh64(bSig, p);\
         gb1 = 0x8000000000000000U - gb0;\

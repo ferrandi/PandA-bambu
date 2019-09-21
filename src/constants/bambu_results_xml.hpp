@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2018 Politecnico di Milano
+ *              Copyright (C) 2016-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file bambu_results_xml.hpp
  * @brief constant strings used in bambu results
@@ -41,14 +41,12 @@
 #ifndef BAMBU_RESULTS_XML_HPP
 #define BAMBU_RESULTS_XML_HPP
 
-///The attribute containing bambu results
+/// The attribute containing bambu results
 #define STR_XML_bambu_results_bambu_args "bambu_args"
 
-///The attribute containing bambu version
+/// The attribute containing bambu version
 #define STR_XML_bambu_results_bambu_version "bambu_version"
 
-///The attribute containing the timestamp of the synthesis
+/// The attribute containing the timestamp of the synthesis
 #define STR_XML_bambu_results_timestamp "timestamp"
 #endif
-
-

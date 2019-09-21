@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,9 +31,9 @@
  *   *   Free Software Foundation, Inc.,
  *   51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA.
  *
-*/
+ */
 /**
- * @file exceptions.icpp
+ * @file exceptions.cpp
  * @brief exceptions managed by PandA
  *
  * This structure is used to manage the exception arised by the Panda toolset.
@@ -43,40 +43,28 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Utility include
+/// Utility include
 #include <cstdlib>
-#ifndef _WIN32
-#include <sys/wait.h>
-#endif
-
-#include <iosfwd>
 
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wcast-qual"
 
 #ifdef _WIN32
-#define WIFEXITED(w)    (((w) & 0X7F) == 0)
-#define WEXITSTATUS(w)  (((w) & 0XFF00)>>8)
-#define WIFSIGNALED(w) (((w) & 0xff) != 0 && ((w) & 0xff) != 0x7f)
+#define WIFEXITED(w) (((w)&0X7F) == 0)
+#define WEXITSTATUS(w) (((w)&0XFF00) >> 8)
+#define WIFSIGNALED(w) (((w)&0xff) != 0 && ((w)&0xff) != 0x7f)
 #endif
 
 bool IsError(const int error_value)
 {
-   int status =  WEXITSTATUS(error_value);
-   if (status == -1 or (not WIFEXITED(status) or status == EXIT_FAILURE) or (WIFSIGNALED(status)))
-      return true;
-   else
-      return false;
+   int status = WEXITSTATUS(error_value);
+   return status == -1 or (not WIFEXITED(status) or status == EXIT_FAILURE) or (WIFSIGNALED(status));
 }
 
 bool is_failure(const int error_value)
 {
-   int status =  WEXITSTATUS(error_value);
-   if(status == EXIT_FAILURE)
-      return true;
-   else
-      return false;
+   int status = WEXITSTATUS(error_value);
+   return status == EXIT_FAILURE;
 }
-

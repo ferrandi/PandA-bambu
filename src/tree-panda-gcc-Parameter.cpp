@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file tree-panda-gcc-Parameter.cpp
  *
@@ -38,11 +38,13 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Autoheader include
-#include "config_RELEASE.hpp"
-#include "config_HAVE_MAPPING_BUILT.hpp"
+/// Autoheader include
+#include "config_HAVE_I386_CLANG4_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG5_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG6_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG7_COMPILER.hpp"
 #include "config_HAVE_I386_GCC45_COMPILER.hpp"
 #include "config_HAVE_I386_GCC46_COMPILER.hpp"
 #include "config_HAVE_I386_GCC47_COMPILER.hpp"
@@ -51,37 +53,39 @@
 #include "config_HAVE_I386_GCC5_COMPILER.hpp"
 #include "config_HAVE_I386_GCC6_COMPILER.hpp"
 #include "config_HAVE_I386_GCC7_COMPILER.hpp"
+#include "config_HAVE_I386_GCC8_COMPILER.hpp"
+#include "config_HAVE_MAPPING_BUILT.hpp"
+#include "config_RELEASE.hpp"
 
-///Header include
+/// Header include
 #include "tree-panda-gcc-Parameter.hpp"
 
-///Boost include
-#include <boost/algorithm/string/split.hpp>
+/// Boost include
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem/convenience.hpp>
 #include <boost/filesystem/path.hpp>
 
-///Constants include
+/// Constants include
 #include "constants.hpp"
 
-///STD include
+/// STD include
 #include <climits>
 #include <cstring>
 #include <iosfwd>
 
-///STL include
+/// STL include
 #include <unordered_set>
 #include <vector>
 
-///Utility include
+/// Utility include
 #include "boost/lexical_cast.hpp"
 #include "cpu_time.hpp"
 #include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
-#include <getopt.h>
 #include "module_interface.hpp"
 #include "utility.hpp"
+#include <getopt.h>
 
 /// Wrapper include
 #include "gcc_wrapper.hpp"
@@ -102,16 +106,12 @@
 #define OPT_MINUS_MAP 269
 #define OPT_GC_SECTIONS 270
 
-
-tree_panda_gcc_parameter::tree_panda_gcc_parameter(const std::string&_program_name, int _argc, char ** const _argv) :
-   Parameter(_program_name, _argc, _argv)
+tree_panda_gcc_parameter::tree_panda_gcc_parameter(const std::string& _program_name, int _argc, char** const _argv) : Parameter(_program_name, _argc, _argv)
 {
    SetDefaults();
 }
 
-tree_panda_gcc_parameter::~tree_panda_gcc_parameter()
-{
-}
+tree_panda_gcc_parameter::~tree_panda_gcc_parameter() = default;
 
 int tree_panda_gcc_parameter::Exec()
 {
@@ -122,38 +122,35 @@ int tree_panda_gcc_parameter::Exec()
 
    const char* const short_options = COMMON_SHORT_OPTIONS_STRING "o:Ss::x:tn:cM::i:C:ru:e:T:" GCC_SHORT_OPTIONS_STRING;
 
-   const struct option long_options[] =
-      {
-         COMMON_LONG_OPTIONS,
-         {"iplugindir", required_argument, nullptr, OPT_IPLUGINDIR},
-         {"print-file-name", required_argument, nullptr, OPT_PRINT_FILE_NAME},
-         {"MF", required_argument, nullptr, OPT_MF},
-         {"MT", required_argument, nullptr, OPT_MT},
-         {"MQ", required_argument, nullptr, OPT_MQ},
-         {"include", required_argument, nullptr, OPT_MINUS_INCLUDE},
-         {"Map", required_argument, nullptr, OPT_MINUS_MAP},
-         {"start-group", no_argument, nullptr, OPT_START_GROUP},
-         {"end-group", no_argument, nullptr, OPT_END_GROUP},
-         {"gc-sections", no_argument, nullptr, OPT_GC_SECTIONS},
-         GCC_LONG_OPTIONS,
-         {nullptr , 0, nullptr, 0}
-      };
+   const struct option long_options[] = {COMMON_LONG_OPTIONS,
+                                         {"iplugindir", required_argument, nullptr, OPT_IPLUGINDIR},
+                                         {"print-file-name", required_argument, nullptr, OPT_PRINT_FILE_NAME},
+                                         {"MF", required_argument, nullptr, OPT_MF},
+                                         {"MT", required_argument, nullptr, OPT_MT},
+                                         {"MQ", required_argument, nullptr, OPT_MQ},
+                                         {"include", required_argument, nullptr, OPT_MINUS_INCLUDE},
+                                         {"Map", required_argument, nullptr, OPT_MINUS_MAP},
+                                         {"start-group", no_argument, nullptr, OPT_START_GROUP},
+                                         {"end-group", no_argument, nullptr, OPT_END_GROUP},
+                                         {"gc-sections", no_argument, nullptr, OPT_GC_SECTIONS},
+                                         GCC_LONG_OPTIONS,
+                                         {nullptr, 0, nullptr, 0}};
 
-   if (argc == 1)
+   if(argc == 1)
    {
       PrintUsage(std::cerr);
       return EXIT_SUCCESS;
    }
 
-   while (1)
+   while(true)
    {
       int next_option = getopt_long_only(argc, argv, short_options, long_options, &option_index);
 
       // no more options are available
-      if (next_option == -1)
+      if(next_option == -1)
          break;
 
-      switch (next_option)
+      switch(next_option)
       {
          case 'o':
             setOption(OPT_output_file, optarg);
@@ -170,8 +167,7 @@ int tree_panda_gcc_parameter::Exec()
          }
          case 's':
          {
-
-            if(optarg==nullptr)
+            if(optarg == nullptr)
             {
                // -s has been passed
                /// the default of tree-panda-gcc is the silent mode so nothing has to be done
@@ -180,8 +176,8 @@ int tree_panda_gcc_parameter::Exec()
             {
                ///
                std::string parameter(optarg);
-               if(boost::algorithm::starts_with(parameter,"td="))
-                  setOption(OPT_gcc_standard, parameter.substr(parameter.find("=")+1));
+               if(boost::algorithm::starts_with(parameter, "td="))
+                  setOption(OPT_gcc_standard, parameter.substr(parameter.find("=") + 1));
                else
                   THROW_ERROR("unexpected parameter: " + parameter);
             }
@@ -190,7 +186,7 @@ int tree_panda_gcc_parameter::Exec()
          case 'M':
          {
             std::string gcc_extra_options;
-            if(optarg!=nullptr)
+            if(optarg != nullptr)
                gcc_extra_options = "-M" + std::string(optarg);
             else
                gcc_extra_options = "-M";
@@ -303,9 +299,9 @@ int tree_panda_gcc_parameter::Exec()
          }
          default:
          {
-            bool exit_success=false;
+            bool exit_success = false;
             bool res = ManageGccOptions(next_option, optarg);
-            if (res)
+            if(res)
                res = ManageDefaultOptions(next_option, optarg, exit_success);
             if(exit_success)
                return EXIT_SUCCESS;
@@ -317,16 +313,15 @@ int tree_panda_gcc_parameter::Exec()
       }
    }
 
-
 #if !RELEASE
-   if (isOption(OPT_write_parameter_xml))
+   if(isOption(OPT_write_parameter_xml))
    {
       const std::string file_name = getOption<std::string>(OPT_write_parameter_xml);
       write_xml_configuration_file(file_name);
       return EXIT_SUCCESS;
    }
 #endif
-   while (optind < argc)
+   while(optind < argc)
    {
       if(GetExtension(argv[optind]) == "o")
       {
@@ -368,26 +363,22 @@ void tree_panda_gcc_parameter::CheckParameters()
    Parameter::CheckParameters();
 }
 
-void tree_panda_gcc_parameter::PrintHelp(std::ostream &os) const
+void tree_panda_gcc_parameter::PrintHelp(std::ostream& os) const
 {
    os << "Usage: " << getOption<std::string>(OPT_program_name) << " [options] <input_file1> [<input_file2> ... <input_fileN>]" << std::endl;
    os << std::endl;
    os << "Options: \n"
-   << "\n";
+      << "\n";
    PrintGeneralOptionsUsage(os);
-   os
-   << "\n";
+   os << "\n";
    PrintOutputOptionsUsage(os);
-   os
-   << "    -o=<file>                        Specify the output file name\n"
-   << "\n";
+   os << "    -o=<file>                        Specify the output file name\n"
+      << "\n";
    PrintGccOptionsUsage(os);
-   os
-   << "\n"
-   ;
+   os << "\n";
 }
 
-void tree_panda_gcc_parameter::PrintProgramName(std::ostream &os) const
+void tree_panda_gcc_parameter::PrintProgramName(std::ostream& os) const
 {
    os << "********************************************************************************" << std::endl;
    os << "   _                                             _" << std::endl;
@@ -439,41 +430,66 @@ void tree_panda_gcc_parameter::SetDefaults()
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC6));
 #elif HAVE_I386_GCC7_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7));
+#elif HAVE_I386_GCC8_COMPILER
+   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC8));
+#elif HAVE_I386_CLANG4_COMPILER
+   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4));
+#elif HAVE_I386_CLANG5_COMPILER
+   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5));
+#elif HAVE_I386_CLANG6_COMPILER
+   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6));
+#elif HAVE_I386_CLANG7_COMPILER
+   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG7));
 #else
    THROW_ERROR("No GCC compiler available");
 #endif
    setOption(OPT_compatible_compilers, 0
 #if HAVE_I386_GCC45_COMPILER
-      | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC45)
+                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC45)
 #endif
 #if HAVE_I386_GCC46_COMPILER
-      | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC46)
+                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC46)
 #endif
 #if HAVE_I386_GCC47_COMPILER
-      | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC47)
+                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC47)
 #endif
 #if HAVE_I386_GCC48_COMPILER
-      | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC48)
+                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC48)
 #endif
 #if HAVE_I386_GCC49_COMPILER
-      | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC49)
+                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC49)
 #endif
 #if HAVE_I386_GCC5_COMPILER
-      | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC5)
+                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC5)
 #endif
 #if HAVE_I386_GCC6_COMPILER
-      | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC6)
+                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC6)
 #endif
 #if HAVE_I386_GCC7_COMPILER
-      | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7)
+                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7)
+#endif
+#if HAVE_I386_GCC8_COMPILER
+                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC8)
+#endif
+#if HAVE_I386_CLANG4_COMPILER
+                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4)
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5)
+#endif
+#if HAVE_I386_CLANG6_COMPILER
+                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6)
+#endif
+#if HAVE_I386_CLANG7_COMPILER
+                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG7)
 #endif
 #if HAVE_ARM_COMPILER
-      | static_cast<int>(GccWrapper_CompilerTarget::CT_ARM_GCC)
+                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_ARM_GCC)
 #endif
 #if HAVE_SPARC_COMPILER
-      | static_cast<int>(GccWrapper_CompilerTarget::CT_SPARC_GCC)
+                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_SPARC_GCC)
 #endif
-      );
+   );
    setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
    setOption(OPT_without_transformation, true);
    setOption(OPT_precision, 3);

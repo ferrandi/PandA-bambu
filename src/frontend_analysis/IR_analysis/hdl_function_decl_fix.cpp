@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (C) 2015-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,50 +29,48 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file hdl_function_decl_fix.cpp
  * @brief Pre-analysis step fixing names of functions which clash with signal names
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "hdl_function_decl_fix.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior include
+/// behavior include
 #include "application_manager.hpp"
 
-///design_flows/backend/ToHDL include
+/// design_flows/backend/ToHDL include
 #include "language_writer.hpp"
 
-///HLS includes
+/// HLS includes
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
 
-///parser/treegcc include
+/// parser/treegcc include
 #include "token_interface.hpp"
 
-///tree includes
+/// tree includes
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-///utility include
-#include "utility.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 
-HDLFunctionDeclFix::HDLFunctionDeclFix(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   ApplicationFrontendFlowStep(_AppM, HDL_FUNCTION_DECL_FIX, _design_flow_manager, _parameters)
+HDLFunctionDeclFix::HDLFunctionDeclFix(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : ApplicationFrontendFlowStep(_AppM, HDL_FUNCTION_DECL_FIX, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-HDLFunctionDeclFix::~HDLFunctionDeclFix()
-{}
+HDLFunctionDeclFix::~HDLFunctionDeclFix() = default;
 
 DesignFlowStep_Status HDLFunctionDeclFix::Exec()
 {
@@ -105,7 +103,7 @@ DesignFlowStep_Status HDLFunctionDeclFix::Exec()
       {
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
          unsigned int var_decl_name_nid_test;
-         unsigned var_decl_unique_id=0;
+         unsigned var_decl_unique_id = 0;
          do
          {
             IR_schema[TOK(TOK_STRG)] = in->strg + STR(var_decl_unique_id++);
@@ -124,20 +122,19 @@ DesignFlowStep_Status HDLFunctionDeclFix::Exec()
       }
    }
    return changed_tree ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
-
 }
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > HDLFunctionDeclFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> HDLFunctionDeclFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CREATE_TREE_MANAGER, WHOLE_APPLICATION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       case(PRECEDENCE_RELATIONSHIP):
       {
          break;
@@ -148,6 +145,4 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
    }
    return relationships;
-
 }
-

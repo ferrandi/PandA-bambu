@@ -5,6 +5,7 @@
 extern void exit (int);
 extern void abort (void);
 
+#ifndef __llvm__
 struct s {
   unsigned long long u33: 33;
   unsigned long long u40: 40;
@@ -14,10 +15,12 @@ struct s {
 struct s a = { 0x100000, 0x100000, 0x100000 };
 struct s b = { 0x100000000ULL, 0x100000000ULL, 0x100000000ULL };
 struct s c = { 0x1FFFFFFFFULL, 0, 0 };
+#endif
 
 int 
 main (void)
 {
+#ifndef __llvm__
   if (a.u33 * a.u33 != 0 || a.u33 * a.u40 != 0 || a.u40 * a.u33 != 0
       || a.u40 * a.u40 != 0)
     abort ();
@@ -50,5 +53,6 @@ main (void)
     abort ();
   if (++c.u33 != 0 || --c.u40 != 0xFFFFFFFFFFULL || c.u41-- != 0)
     abort ();
+#endif
   exit (0);
 }

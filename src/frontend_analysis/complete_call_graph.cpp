@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,40 +29,41 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file complete_call_graph.cpp
  * @brief This class models the ending of execution of all functions which can add a function to call graph
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
-
-///Header include
+ */
 #include "complete_call_graph.hpp"
 
-///. include
-#include "Parameter.hpp"
+#include "config_HAVE_BAMBU_BUILT.hpp"       // for HAVE_BAMBU_BUILT
+#include "config_HAVE_EXPERIMENTAL.hpp"      // for HAVE_EXPERIMENTAL
+#include "config_HAVE_FROM_PRAGMA_BUILT.hpp" // for HAVE_FROM_PRAGMA_BUILT
+#include "config_HAVE_ZEBU_BUILT.hpp"        // for HAVE_ZEBU_BUILT
 
-///utility include
-#include "utility.hpp"
+#include "Parameter.hpp"           // for Parameter, OPT_hls_div
+#include "exceptions.hpp"          // for THROW_UNREACHABLE
+#include "hash_helper.hpp"         // for hash
+#include "string_manipulation.hpp" // for GET_CLASS
+#include <string>                  // for string, operator!=, bas...
 
-CompleteCallGraph::CompleteCallGraph(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   ApplicationFrontendFlowStep(_AppM, COMPLETE_CALL_GRAPH, _design_flow_manager, _parameters)
+CompleteCallGraph::CompleteCallGraph(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) : ApplicationFrontendFlowStep(_AppM, COMPLETE_CALL_GRAPH, _design_flow_manager, _parameters)
 {
    composed = true;
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-CompleteCallGraph::~CompleteCallGraph()
-{}
+CompleteCallGraph::~CompleteCallGraph() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > CompleteCallGraph::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> CompleteCallGraph::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
 #if HAVE_ZEBU_BUILT
@@ -73,7 +74,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(DETERMINE_MEMORY_ACCESSES, ALL_FUNCTIONS));
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(MEM_CG_EXT, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(UN_COMPARISON_LOWERING, ALL_FUNCTIONS));
-         if (parameters->isOption(OPT_soft_float) and parameters->getOption<bool>(OPT_soft_float))
+         if(parameters->isOption(OPT_soft_float) and parameters->getOption<bool>(OPT_soft_float))
          {
             relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
             if(parameters->IsParameter("ConstantFloating") and parameters->GetParameter<unsigned int>("ConstantFloating"))
@@ -81,20 +82,20 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
                relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(CONSTANT_FLOP_WRAPPER, ALL_FUNCTIONS));
             }
          }
-         if (parameters->isOption(OPT_hls_div) && parameters->getOption<std::string>(OPT_hls_div) != "none")
+         if(parameters->isOption(OPT_hls_div) && parameters->getOption<std::string>(OPT_hls_div) != "none")
          {
-             relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(HLS_DIV_CG_EXT, ALL_FUNCTIONS));
+            relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(HLS_DIV_CG_EXT, ALL_FUNCTIONS));
          }
 #endif
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_EXPERIMENTAL && HAVE_BAMBU_BUILT
-         if (parameters->getOption<bool>(OPT_parse_pragma))
+         if(parameters->getOption<bool>(OPT_parse_pragma))
          {
-             relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(CHECK_CRITICAL_SESSION, ALL_FUNCTIONS));
+            relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(CHECK_CRITICAL_SESSION, ALL_FUNCTIONS));
          }
 #endif
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }

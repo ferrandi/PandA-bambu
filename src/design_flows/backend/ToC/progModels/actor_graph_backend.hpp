@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file actor_graph_backend.hpp
  * @brief Abstract class to write an actor graphs
@@ -39,22 +39,22 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef ACTOR_GRAPH_BACKEND_HPP
 #define ACTOR_GRAPH_BACKEND_HPP
 
-///Autoheader includes
+/// Autoheader includes
 #include "config_HAVE_GRAPH_PARTITIONING_BUILT.hpp"
 #include "config_HAVE_MPPB.hpp"
 
-///intermediate_representations/actor_graphs include
+/// intermediate_representations/actor_graphs include
 #include "actor_graph_backend.hpp"
 
-///utility includes
+/// utility includes
 #include "refcount.hpp"
 
-///STL include
+/// STL include
 #include <unordered_map>
 
 REF_FORWARD_DECL(ActorGraphBackend);
@@ -72,12 +72,12 @@ enum class ActorGraph_Type;
 enum class ActorGraphBackend_Type
 {
 #if HAVE_MPPB
-   BA_MPPB,         /**< Mppb backend */
+   BA_MPPB, /**< Mppb backend */
 #endif
-   BA_NONE,         /**< Plain backend */
+   BA_NONE, /**< Plain backend */
 #if HAVE_GRAPH_PARTITIONING_BUILT
-   BA_OPENMP,       /**< Openmp backend */
-   BA_PTHREAD       /**< Pthread backend */
+   BA_OPENMP, /**< Openmp backend */
+   BA_PTHREAD /**< Pthread backend */
 #endif
 };
 
@@ -85,62 +85,63 @@ std::string ToString(ActorGraphBackend_Type actor_graph_backend_type);
 
 class ActorGraphBackend
 {
-   protected:
-      ///The partitioning manager
-      const PartitioningManagerConstRef partitioning_manager;
+ protected:
+   /// The partitioning manager
+   const PartitioningManagerConstRef partitioning_manager;
 
-      ///The map containing all the actor graph writers
-      const std::unordered_map<ActorGraph_Type, ActorGraphBackendRef> & actor_graph_backends;
+   /// The map containing all the actor graph writers
+   const std::unordered_map<ActorGraph_Type, ActorGraphBackendRef>& actor_graph_backends;
 
-      ///The writer used to print the content of an actor
-      const CWriterRef c_writer;
+   /// The writer used to print the content of an actor
+   const CWriterRef c_writer;
 
-      ///The output stream
-      const IndentedOutputStreamRef indented_output_stream;
+   /// The output stream
+   const IndentedOutputStreamRef indented_output_stream;
 
-      ///The set of input parameters
-      const ParameterConstRef parameters;
+   /// The set of input parameters
+   const ParameterConstRef parameters;
 
-      ///True if comments have to be printed
-      const bool verbose;
+   /// True if comments have to be printed
+   const bool verbose;
 
-      ///The debug_level
-      int debug_level;
+   /// The debug_level
+   int debug_level;
 
-   public:
-      /**
-       * Constructor
-       * @param partitioning_manager is the partitioning manager
-       * @param actor_graph_backends are the backend used to print graphs;
-       * NOTE: this parameters has to be passed by reference; it is actually allocated in ParallelCWriter
-       * @param c_writer is the writer used to print content of the actor
-       * @param indented_output_stream is the output stream
-       * @param parameters is the set of input parameters
-       * @param verbose specifies if comments have to be printed
-       */
-      ActorGraphBackend(const PartitioningManagerConstRef partitioning_manager, const std::unordered_map<ActorGraph_Type, ActorGraphBackendRef> & actor_graph_backends, const CWriterRef c_writer, const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef parameters, const bool verbose);
+ public:
+   /**
+    * Constructor
+    * @param partitioning_manager is the partitioning manager
+    * @param actor_graph_backends are the backend used to print graphs;
+    * NOTE: this parameters has to be passed by reference; it is actually allocated in ParallelCWriter
+    * @param c_writer is the writer used to print content of the actor
+    * @param indented_output_stream is the output stream
+    * @param parameters is the set of input parameters
+    * @param verbose specifies if comments have to be printed
+    */
+   ActorGraphBackend(const PartitioningManagerConstRef& partitioning_manager, const std::unordered_map<ActorGraph_Type, ActorGraphBackendRef>& actor_graph_backends, const CWriterRef& c_writer, const IndentedOutputStreamRef& indented_output_stream,
+                     const ParameterConstRef& parameters, const bool verbose);
 
-      /**
-       * Destructor
-       */
-      virtual ~ActorGraphBackend();
+   /**
+    * Destructor
+    */
+   virtual ~ActorGraphBackend();
 
-      /**
-       * Write the implementation of the body of a loop associated with an actor graph
-       * @param actor_graph_manager is the actor graph
-       */
-      virtual void WriteBodyLoop(const ActorGraphManagerConstRef actor_graph_manager) = 0;
+   /**
+    * Write the implementation of the body of a loop associated with an actor graph
+    * @param actor_graph_manager is the actor graph
+    */
+   virtual void WriteBodyLoop(const ActorGraphManagerConstRef actor_graph_manager) = 0;
 
-      /**
-       * Write the implementation of an actor graph
-       * @param actor_graph_manager is the actor graph manager to be created
-       */
-      virtual void WriteActorGraph(const ActorGraphManagerConstRef actor_graph_manager)= 0;
+   /**
+    * Write the implementation of an actor graph
+    * @param actor_graph_manager is the actor graph manager to be created
+    */
+   virtual void WriteActorGraph(const ActorGraphManagerConstRef actor_graph_manager) = 0;
 
-      /**
-       * @return the associated writer
-       */
-      virtual const ActorGraphWriterRef GetActorGraphWriter() = 0;
+   /**
+    * @return the associated writer
+    */
+   virtual const ActorGraphWriterRef GetActorGraphWriter() = 0;
 };
 typedef refcount<ActorGraphBackend> ActorGraphBackendRef;
 #endif

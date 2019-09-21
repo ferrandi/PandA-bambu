@@ -11,7 +11,7 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (c) 2004-2018 Politecnico di Milano
+ *            Copyright (C) 2004-2019 Politecnico di Milano
  *
  * This file is part of the PandA framework.
  *
@@ -29,7 +29,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #ifndef HW_CALL_INJECTION_HPP
 #define HW_CALL_INJECTION_HPP
 
@@ -44,34 +43,32 @@ REF_FORWARD_DECL(bloc);
 REF_FORWARD_DECL(HWCallInjection);
 REF_FORWARD_DECL(tree_node);
 
-
 class HWCallInjection : public FunctionFrontendFlowStep
 {
-   private:
-      static unsigned int builtinWaitCallDeclIdx;
+ private:
+   static unsigned int builtinWaitCallDeclIdx;
 
-      ///True if already executed
-      bool already_executed;
+   /// True if already executed
+   bool already_executed;
 
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType RT) const;
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType RT) const override;
 
-      bool isHardwareCall(tree_nodeRef FD);
+   bool isHardwareCall(tree_nodeRef FD);
 
-      void buildBuiltinCall(const blocRef block, const tree_nodeRef stmt);
+   void buildBuiltinCall(const blocRef block, const tree_nodeRef stmt);
 
-   public:
-      HWCallInjection(const ParameterConstRef Param, const application_managerRef AppM,
-            unsigned int funId, const DesignFlowManagerConstRef DFM);
+ public:
+   HWCallInjection(const ParameterConstRef Param, const application_managerRef AppM, unsigned int funId, const DesignFlowManagerConstRef DFM);
 
-      virtual ~HWCallInjection();
+   ~HWCallInjection() override;
 
-      DesignFlowStep_Status InternalExec();
+   DesignFlowStep_Status InternalExec() override;
 
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      virtual bool HasToBeExecuted() const;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 };
 
 #endif

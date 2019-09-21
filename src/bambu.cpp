@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -35,7 +35,7 @@
  * @brief High level Synthesis tool.
  *
  * Main file used to perform high-level synthesis starting from a C-based specification.
- * See \ref src_bambu for further informations
+ * See \ref src_bambu for further information
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Christian Pilato <pilato@elet.polimi.it>
@@ -44,70 +44,71 @@
  *
  */
 
-///Autoheader includes
+/// Autoheader includes
 #include "config_HAVE_ACTOR_GRAPHS_BUILT.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 #include "config_NPROFILE.hpp"
 
+#include <boost/filesystem/operations.hpp>
+
 ///. includes
 #include "BambuParameter.hpp"
-#include "global_variables.hpp"
 
-///behavior includes
+/// behavior includes
 #include "application_manager.hpp"
 #include "call_graph_manager.hpp"
 
-///design_flows includes
+/// design_flows includes
 #include "design_flow.hpp"
 #include "design_flow_factory.hpp"
 #include "design_flow_manager.hpp"
 
-///design_flows/c_backend/ToC includes
+/// design_flows/c_backend/ToC includes
 #include "c_backend_step_factory.hpp"
 #include "hls_c_backend_information.hpp"
 
 #if HAVE_ACTOR_GRAPHS_BUILT
-///design_flows/codesign include
+/// design_flows/codesign include
 #include "actor_graph_flow_step_factory.hpp"
 #endif
 
-///frontend_flow includes
+/// frontend_flow includes
 #include "frontend_flow_step.hpp"
 #include "frontend_flow_step_factory.hpp"
 
-///HLS includes
+/// HLS includes
 #include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
 #include "hls_step.hpp"
 #include "hls_target.hpp"
 
 #if HAVE_FROM_AADL_ASN_BUILT
-///parser include
+/// parser include
 #include "parser_flow_step_factory.hpp"
 #endif
 
 #if HAVE_PRAGMA_BUILT
-///pragma includes
+/// pragma includes
 #include "pragma_manager.hpp"
 #endif
 
-///STD includes
-#include <iosfwd>
+/// STD includes
 #include <cstdlib>
+#include <iosfwd>
 
-///technology include
+/// technology include
 #include "technology_flow_step_factory.hpp"
 
-///tree include
+/// tree include
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 
-///utility include
+/// utility include
 #include "cpu_time.hpp"
 
-///wrapper/treegcc includes
+/// wrapper/treegcc includes
 #include "gcc_wrapper.hpp"
 
 /**
@@ -116,7 +117,7 @@
  * @param argc is the number of arguments
  * @param argv is the array of arguments passed to the program.
  */
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
    srand(static_cast<unsigned int>(time(nullptr)));
 
@@ -137,35 +138,42 @@ int main(int argc, char *argv[])
       switch(parameters->Exec())
       {
          case PARAMETER_NOTPARSED:
+         {
+            exit_code = PARAMETER_NOTPARSED;
+            std::string cat_args;
+            for(int i = 0; i < argc; i++)
             {
-               exit_code = PARAMETER_NOTPARSED;
-               THROW_ERROR("Bad Parameters format");
-               break;
+               cat_args += std::string(argv[i]) + " ";
             }
+
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, parameters->getOption<int>(OPT_output_level), " ==  Bambu executed with: " + cat_args + "\n");
+            THROW_ERROR("Bad Parameters format");
+            break;
+         }
          case EXIT_SUCCESS:
+         {
+            if(not(parameters->getOption<bool>(OPT_no_clean)))
             {
-               if(not (parameters->getOption<bool>(OPT_no_clean)))
-               {
-                  boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
-               }
-               return EXIT_SUCCESS;
+               boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
             }
+            return EXIT_SUCCESS;
+         }
          case PARAMETER_PARSED:
-            {
-               exit_code = EXIT_FAILURE;
-               break;
-            }
+         {
+            exit_code = EXIT_FAILURE;
+            break;
+         }
          default:
-            {
-               THROW_ERROR("Bad Parameters parsing");
-            }
+         {
+            THROW_ERROR("Bad Parameters parsing");
+         }
       }
 
-      int output_level = parameters->getOption<int>(OPT_output_level);
+      auto output_level = parameters->getOption<int>(OPT_output_level);
       if(output_level >= OUTPUT_LEVEL_MINIMUM)
          parameters->PrintFullHeader(std::cerr);
 
-      //Include sysdir
+      // Include sysdir
       if(parameters->getOption<bool>(OPT_gcc_include_sysdir))
       {
          const GccWrapperRef gcc_wrapper(new GccWrapper(parameters, GccWrapper_CompilerTarget::CT_NO_GCC, GccWrapper_OptimizationSet::O0));
@@ -176,7 +184,7 @@ int main(int argc, char *argv[])
          {
             INDENT_OUT_MEX(0, 0, *system_include);
          }
-         if(not (parameters->getOption<bool>(OPT_no_clean)))
+         if(not(parameters->getOption<bool>(OPT_no_clean)))
          {
             boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
          }
@@ -187,7 +195,7 @@ int main(int argc, char *argv[])
       {
          const GccWrapperRef gcc_wrapper(new GccWrapper(parameters, GccWrapper_CompilerTarget::CT_NO_GCC, GccWrapper_OptimizationSet::O0));
          gcc_wrapper->GetGccConfig();
-         if(not (parameters->getOption<bool>(OPT_no_clean)))
+         if(not(parameters->getOption<bool>(OPT_no_clean)))
          {
             boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
          }
@@ -196,7 +204,7 @@ int main(int argc, char *argv[])
       if(!parameters->isOption(OPT_input_file))
       {
          PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "no input files\n");
-         if(not (parameters->getOption<bool>(OPT_no_clean)))
+         if(not(parameters->getOption<bool>(OPT_no_clean)))
          {
             boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
          }
@@ -205,7 +213,7 @@ int main(int argc, char *argv[])
       STOP_TIME(cpu_time);
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Parameters parsed in " + print_cpu_time(cpu_time) + " seconds\n");
 
-      // up to now all parameters have been parsed and datastructures created, so synthesis can start
+      // up to now all parameters have been parsed and data structures created, so synthesis can start
 
       /// ==== Creating target for the synthesis ==== ///
       HLS_targetRef HLS_T = HLS_target::create_target(parameters);
@@ -254,7 +262,7 @@ int main(int argc, char *argv[])
       }
 
       /// pretty printing
-      if (parameters->isOption(OPT_pretty_print))
+      if(parameters->isOption(OPT_pretty_print))
       {
          std::string outFileName = parameters->getOption<std::string>(OPT_pretty_print);
          const DesignFlowStepRef c_backend = GetPointer<const CBackendStepFactory>(c_backend_step_factory)->CreateCBackendStep(CBackend::CB_SEQUENTIAL, outFileName, CBackendInformationConstRef());
@@ -268,7 +276,7 @@ int main(int argc, char *argv[])
          design_flow_manager->RegisterFactory(ag_frontend_flow_step_factory);
          DesignFlowStepSet design_flow_steps;
          std::set<unsigned int> input_functions = HLSMgr->get_functions_with_body();
-         for (const auto input_fun_id : input_functions)
+         for(const auto input_fun_id : input_functions)
          {
             const DesignFlowStepRef design_flow_step = GetPointer<const ActorGraphFlowStepFactory>(ag_frontend_flow_step_factory)->CreateActorGraphStep(ACTOR_GRAPHS_CREATOR, input_fun_id);
             design_flow_steps.insert(design_flow_step);
@@ -276,39 +284,47 @@ int main(int argc, char *argv[])
          design_flow_manager->AddSteps(design_flow_steps);
       }
 #endif
-      std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> hls_flow_step
-         (parameters->getOption<HLSFlowStep_Type>(OPT_synthesis_flow), HLSFlowStepSpecializationConstRef());
-      design_flow_manager->AddSteps
-         (GetPointer<const HLSFlowStepFactory>(hls_flow_step_factory)->
-          CreateHLSFlowSteps(hls_flow_step));
+      std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> hls_flow_step(parameters->getOption<HLSFlowStep_Type>(OPT_synthesis_flow), HLSFlowStepSpecializationConstRef());
+      design_flow_manager->AddSteps(GetPointer<const HLSFlowStepFactory>(hls_flow_step_factory)->CreateHLSFlowSteps(hls_flow_step));
       design_flow_manager->Exec();
-      if(not (parameters->getOption<bool>(OPT_no_clean)))
+      if(not(parameters->getOption<bool>(OPT_no_clean)))
       {
          boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
+      }
+      if(parameters->isOption(OPT_serialize_output) && parameters->isOption(OPT_output_file))
+      {
+         std::ofstream ofile(parameters->getOption<std::string>(OPT_output_file), std::ios::out);
+         for(auto files : {HLSMgr->aux_files, HLSMgr->hdl_files})
+            for(auto file : files)
+            {
+               std::cerr << "File name: " << file << "\n";
+               std::ifstream ifile(file, std::ios::in);
+               ofile << ifile.rdbuf();
+            }
       }
       return EXIT_SUCCESS; // Bambu tool has completed execution without errors
    }
 
    // exception catching
-   catch (const char * str)
+   catch(const char* str)
    {
       if(EXIT_SUCCESS == exit_code)
          exit_code = EXIT_FAILURE;
       std::cerr << str << std::endl;
    }
-   catch (const std::string& str)
+   catch(const std::string& str)
    {
       if(EXIT_SUCCESS == exit_code)
          exit_code = EXIT_FAILURE;
       std::cerr << str << std::endl;
    }
-   catch (std::exception &e)
+   catch(std::exception& e)
    {
       std::cerr << e.what() << std::endl;
       if(EXIT_SUCCESS == exit_code)
          exit_code = EXIT_FAILURE;
    }
-   catch (...)
+   catch(...)
    {
       if(EXIT_SUCCESS == exit_code)
          exit_code = EXIT_FAILURE;
@@ -318,26 +334,23 @@ int main(int argc, char *argv[])
    switch(exit_code)
    {
       case PARAMETER_NOTPARSED:
-         {
-            parameters->PrintUsage(std::cout);
-            break;
-         }
+      {
+         parameters->PrintUsage(std::cout);
+         break;
+      }
       case EXIT_FAILURE:
-         {
-            if(parameters)
-               parameters->PrintBugReport(std::cout);
-            break;
-         }
+      {
+         if(parameters)
+            parameters->PrintBugReport(std::cout);
+         break;
+      }
       default:
-         {
-
-         }
+      {
+      }
    }
-   if(parameters && not (parameters->getOption<bool>(OPT_no_clean)))
+   if(parameters && not(parameters->getOption<bool>(OPT_no_clean)))
    {
       boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
    }
    return exit_code;
-
 }
-

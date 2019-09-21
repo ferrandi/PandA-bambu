@@ -23,7 +23,7 @@ namespace flopoco{
 		LZOC(Target* target, int wIn, map<string, double> inputDelays = emptyDelayMap);
 	
 		/** The LZOC destructor	*/
-		~LZOC();
+		~LZOC() override;
 
 
 		/** 
@@ -36,7 +36,7 @@ namespace flopoco{
 		 * Emulate a correctly rounded division using MPFR.
 		 * @param tc a TestCase partially filled with input values 
 		 */
-		void emulate(TestCase * tc);
+		void emulate(TestCase * tc) override;
 	
 	protected:
 

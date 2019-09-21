@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2017-2018 Politecnico di Milano
+ *              Copyright (C) 2017-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,34 +29,32 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file design_flow_factory.cpp
  * @brief Factory for creating design flows
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
-*/
-
-///Header include
+ */
 #include "design_flow_factory.hpp"
+#include "design_flow.hpp"             // for DesignFlow_Type, DesignFlow
+#include "design_flow_step.hpp"        // for DesignFlowStepRef, DesignFlo...
+#include "exceptions.hpp"              // for THROW_UNREACHABLE, THROW_ASSERT
+#include "non_deterministic_flows.hpp" // for NonDeterministicFlows
 
-///design_flows include
-#include "non_deterministic_flows.hpp"
+DesignFlowFactory::DesignFlowFactory(const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) : DesignFlowStepFactory(_design_flow_manager, _parameters)
+{
+}
 
-DesignFlowFactory::DesignFlowFactory(const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   DesignFlowStepFactory(_design_flow_manager, _parameters)
-{}
-
-DesignFlowFactory::~DesignFlowFactory()
-{}
+DesignFlowFactory::~DesignFlowFactory() = default;
 
 const std::string DesignFlowFactory::GetPrefix() const
 {
    return "DF";
 }
 
-DesignFlowStepRef DesignFlowFactory::CreateFlowStep(const std::string&signature) const
+DesignFlowStepRef DesignFlowFactory::CreateFlowStep(const std::string& signature) const
 {
    THROW_ASSERT(signature.substr(0, GetPrefix().size() + 2) == GetPrefix() + "::", signature);
    const auto design_flow_type = DesignFlow::KindTextToEnum(signature.substr(4));
@@ -68,9 +66,9 @@ const DesignFlowStepRef DesignFlowFactory::CreateDesignFlow(const DesignFlow_Typ
    switch(design_flow_type)
    {
       case DesignFlow_Type::NON_DETERMINISTIC_FLOWS:
-         {
-            return DesignFlowStepRef(new NonDeterministicFlows(design_flow_manager.lock(), parameters));
-         }
+      {
+         return DesignFlowStepRef(new NonDeterministicFlows(design_flow_manager.lock(), parameters));
+      }
 
       default:
          THROW_UNREACHABLE("");
@@ -78,5 +76,3 @@ const DesignFlowStepRef DesignFlowFactory::CreateDesignFlow(const DesignFlow_Typ
    THROW_UNREACHABLE("");
    return DesignFlowStepRef();
 }
-
-

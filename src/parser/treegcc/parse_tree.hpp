@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file parse_tree.hpp
  * @brief Specification of the tree (GCC raw) parsing interface function.
@@ -42,16 +42,16 @@
  * @warning This file is still in a work in progress state
  * @warning Last modified by $Author$
  *
-*/
+ */
 #ifndef PARSE_TREE_HPP
 #define PARSE_TREE_HPP
 
-///Utility include
+/// Utility include
 #include "refcount.hpp"
 
 /**
  * @name forward declarations
-*/
+ */
 //@{
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(tree_manager);
@@ -65,6 +65,6 @@ REF_FORWARD_DECL(tree_manager);
  * @return the tree manager associated to the raw file.
 
 */
-tree_managerRef ParseTreeFile(const ParameterConstRef Param, const std::string& f);
+tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string& f);
 
 #endif

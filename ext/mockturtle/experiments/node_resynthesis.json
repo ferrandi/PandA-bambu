@@ -1,0 +1,121 @@
+[
+  {
+    "entries": [
+      {
+        "benchmark": "adder",
+        "equivalent": true,
+        "gates": 1274,
+        "runtime": 0.029726055
+      },
+      {
+        "benchmark": "bar",
+        "equivalent": true,
+        "gates": 3165,
+        "runtime": 0.483808406
+      },
+      {
+        "benchmark": "div",
+        "equivalent": true,
+        "gates": 50957,
+        "runtime": 1.340190056
+      },
+      {
+        "benchmark": "log2",
+        "equivalent": true,
+        "gates": 34127,
+        "runtime": 22.571192962999998
+      },
+      {
+        "benchmark": "max",
+        "equivalent": true,
+        "gates": 2933,
+        "runtime": 0.076812926
+      },
+      {
+        "benchmark": "multiplier",
+        "equivalent": true,
+        "gates": 28633,
+        "runtime": 2.4795954129999997
+      },
+      {
+        "benchmark": "sin",
+        "equivalent": true,
+        "gates": 5923,
+        "runtime": 60.605859627
+      },
+      {
+        "benchmark": "sqrt",
+        "equivalent": true,
+        "gates": 19361,
+        "runtime": 0.771200023
+      },
+      {
+        "benchmark": "square",
+        "equivalent": true,
+        "gates": 22117,
+        "runtime": 53.808202958
+      },
+      {
+        "benchmark": "arbiter",
+        "equivalent": true,
+        "gates": 12097,
+        "runtime": 0.28894655999999996
+      },
+      {
+        "benchmark": "cavlc",
+        "equivalent": true,
+        "gates": 775,
+        "runtime": 322.234820671
+      },
+      {
+        "benchmark": "ctrl",
+        "equivalent": true,
+        "gates": 137,
+        "runtime": 2.2837081130000003
+      },
+      {
+        "benchmark": "dec",
+        "equivalent": true,
+        "gates": 312,
+        "runtime": 0.004797668
+      },
+      {
+        "benchmark": "i2c",
+        "equivalent": true,
+        "gates": 1440,
+        "runtime": 38.334125027999995
+      },
+      {
+        "benchmark": "int2float",
+        "equivalent": true,
+        "gates": 266,
+        "runtime": 0.9932858059999999
+      },
+      {
+        "benchmark": "mem_ctrl",
+        "equivalent": true,
+        "gates": 49588,
+        "runtime": 18.852139336
+      },
+      {
+        "benchmark": "priority",
+        "equivalent": true,
+        "gates": 1120,
+        "runtime": 0.037422988000000004
+      },
+      {
+        "benchmark": "router",
+        "equivalent": true,
+        "gates": 317,
+        "runtime": 0.006736271
+      },
+      {
+        "benchmark": "voter",
+        "equivalent": true,
+        "gates": 14417,
+        "runtime": 3.7673946430000003
+      }
+    ],
+    "version": "e617b08"
+  }
+]

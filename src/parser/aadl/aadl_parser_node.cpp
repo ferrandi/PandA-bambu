@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (C) 2015-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,30 +29,35 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file aadl_parser_node.cpp
  * @brief Specification of the data structure associated with a node during aadl parsing
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "aadl_parser_node.hpp"
+#include <ostream>
 
-std::ostream & operator<<(std::ostream & os, const AadlParserNode & aadl_parser_node)
+std::ostream& operator<<(std::ostream& os, const AadlParserNode& aadl_parser_node)
 {
-   if(aadl_parser_node.strg != "")
+   if(!aadl_parser_node.strg.empty())
+   {
       os << aadl_parser_node.strg;
-   if(aadl_parser_node.property_associations.size())
+   }
+   if(!aadl_parser_node.property_associations.empty())
    {
       bool first = true;
       for(const auto& property_association : aadl_parser_node.property_associations)
       {
          if(not first)
+         {
             os << ", ";
-         os << property_association.first  << " => " << property_association.second;
+         }
+         os << property_association.first << " => " << property_association.second;
          first = false;
       }
    }
@@ -62,13 +67,17 @@ std::ostream & operator<<(std::ostream & os, const AadlParserNode & aadl_parser_
       for(const auto& feature : aadl_parser_node.features)
       {
          if(not first_feature)
+         {
             os << " -- ";
+         }
          os << feature.first << ": ";
          bool first_property = true;
          for(const auto& property : feature.second)
          {
             if(not first_property)
+            {
                os << ",";
+            }
             os << property.first << " => " << property.second;
             first_property = false;
          }
@@ -77,5 +86,3 @@ std::ostream & operator<<(std::ostream & os, const AadlParserNode & aadl_parser_
    }
    return os;
 }
-
-

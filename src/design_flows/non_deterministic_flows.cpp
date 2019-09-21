@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2017-2018 Politecnico di Milano
+ *              Copyright (C) 2017-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,23 +29,22 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file non_deterministic_flows.cpp
  * @brief Design flow to check different non deterministic flows
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
 #include "non_deterministic_flows.hpp"
-
-///. include
-#include "Parameter.hpp"
-
-///utility include
-#include "fileIO.hpp"
+#include "Parameter.hpp"                   // for Parameter, OPT_output_tem...
+#include "dbgPrintHelper.hpp"              // for DEBUG_LEVEL_VERY_PEDANTIC
+#include "exceptions.hpp"                  // for IsError, THROW_ASSERT
+#include "fileIO.hpp"                      // for PandaSystem
+#include "string_manipulation.hpp"         // for STR
+#include <boost/filesystem/operations.hpp> // for create_directory, exists
 
 const std::string NonDeterministicFlows::ComputeArgString(const size_t seed) const
 {
@@ -53,7 +52,7 @@ const std::string NonDeterministicFlows::ComputeArgString(const size_t seed) con
    std::string arg_string;
    for(const auto& arg : argv)
    {
-      ///Executable
+      /// Executable
       if(arg_string == "")
       {
          THROW_ASSERT(arg.size() and arg[0] == '/', "Relative path executable not supported " + arg);
@@ -78,7 +77,7 @@ bool NonDeterministicFlows::ExecuteTool(const size_t seed) const
    const auto arg_string = ComputeArgString(seed);
    const auto temp_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
    const auto new_directory = temp_directory + "/" + STR(seed);
-   if (boost::filesystem::exists(new_directory))
+   if(boost::filesystem::exists(new_directory))
       boost::filesystem::remove_all(new_directory);
    boost::filesystem::create_directory(new_directory);
    const auto ret = PandaSystem(parameters, "cd " + new_directory + "; " + arg_string, new_directory + "/tool_execution_output");
@@ -94,22 +93,21 @@ bool NonDeterministicFlows::ExecuteTool(const size_t seed) const
    }
 }
 
-NonDeterministicFlows::NonDeterministicFlows(const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   DesignFlow(_design_flow_manager, DesignFlow_Type::NON_DETERMINISTIC_FLOWS, _parameters)
-{}
+NonDeterministicFlows::NonDeterministicFlows(const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) : DesignFlow(_design_flow_manager, DesignFlow_Type::NON_DETERMINISTIC_FLOWS, _parameters)
+{
+}
 
-NonDeterministicFlows::~NonDeterministicFlows()
-{}
+NonDeterministicFlows::~NonDeterministicFlows() = default;
 
 DesignFlowStep_Status NonDeterministicFlows::Exec()
 {
-   const size_t initial_seed = parameters->getOption<size_t>(OPT_seed);
-   const size_t number_of_runs = parameters->getOption<size_t>(OPT_test_multiple_non_deterministic_flows);
+   const auto initial_seed = parameters->getOption<size_t>(OPT_seed);
+   const auto number_of_runs = parameters->getOption<size_t>(OPT_test_multiple_non_deterministic_flows);
    for(size_t run = 0; run < number_of_runs; run++)
    {
       if(not ExecuteTool(initial_seed + run))
       {
-         return  DesignFlowStep_Status::ABORTED;
+         return DesignFlowStep_Status::ABORTED;
       }
    }
    return DesignFlowStep_Status::SUCCESS;

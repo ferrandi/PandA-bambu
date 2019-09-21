@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 
 /**
  * @file IC_device.hpp
@@ -48,44 +48,39 @@
 
 class IC_device : public target_device
 {
-   protected:
+ protected:
+   /**
+    * Initialize the target device based on the given parameters
+    */
+   void initialize() override;
 
-      /**
-       * Initialize the target device based on the given parameters
-       */
-      void initialize();
+ public:
+   /**
+    * Constructor of the class
+    * @param Param is the reference to the class that contains all the parameters
+    */
+   IC_device(const ParameterConstRef Param, const technology_managerRef TM);
 
-   public:
+   /**
+    * Destructor of the class
+    */
+   ~IC_device() override;
 
-      /**
-       * Constructor of the class
-       * @param Param is the reference to the class that contains all the parameters
-       */
-      IC_device(const ParameterConstRef Param, const technology_managerRef TM);
+   /**
+    * Load all data specific for a given technology
+    */
+   void load_devices(const target_deviceRef device) override;
 
-      /**
-       * Destructor of the class
-       */
-      virtual ~IC_device();
+   /**
+    * Set the proper dimension for the target device
+    */
+   virtual void set_dimension(double area);
 
-      /**
-       * Load all data specific for a given technology
-       */
-      virtual void load_devices(const target_deviceRef device);
-
-      /**
-       * Set the proper dimension for the target device
-       */
-      virtual void set_dimension(double area);
-
-      /**
-       * Method to write an XML node
-       * @param node is the node for writing the information
-       */
-      virtual void xwrite(xml_element* node);
-
+   /**
+    * Method to write an XML node
+    * @param node is the node for writing the information
+    */
+   void xwrite(xml_element* node) override;
 };
 
 #endif
-
-

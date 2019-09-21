@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file data_dependence_computation.cpp
  * @brief Base class for different data dependence computation
@@ -38,52 +38,53 @@
  *
  */
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
-///Header include
+/// Header include
 #include "data_dependence_computation.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior include
+/// behavior include
+#include "application_manager.hpp"
 #include "function_behavior.hpp"
 #include "op_graph.hpp"
 #include "operations_graph_constructor.hpp"
-#include "application_manager.hpp"
 
-///tree include
+/// tree include
 #include "behavioral_helper.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 
-DataDependenceComputation::DataDependenceComputation(const application_managerRef _AppM, unsigned int _function_id, const FrontendFlowStepType _frontend_flow_step_type, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   FunctionFrontendFlowStep(_AppM, _function_id, _frontend_flow_step_type, _design_flow_manager, _parameters)
-{}
+DataDependenceComputation::DataDependenceComputation(const application_managerRef _AppM, unsigned int _function_id, const FrontendFlowStepType _frontend_flow_step_type, const DesignFlowManagerConstRef _design_flow_manager,
+                                                     const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, _frontend_flow_step_type, _design_flow_manager, _parameters)
+{
+}
 
-DataDependenceComputation::~DataDependenceComputation()
-{}
+DataDependenceComputation::~DataDependenceComputation() = default;
 
 DesignFlowStep_Status DataDependenceComputation::InternalExec()
 {
    if(frontend_flow_step_type == SCALAR_SSA_DATA_FLOW_ANALYSIS)
    {
-      return ComputeDependences<unsigned int>(DFG_SCA_SELECTOR, FB_DFG_SCA_SELECTOR, ADG_SCA_SELECTOR, FB_ADG_SCA_SELECTOR);
+      return Computedependencies<unsigned int>(DFG_SCA_SELECTOR, FB_DFG_SCA_SELECTOR, ADG_SCA_SELECTOR, FB_ADG_SCA_SELECTOR);
    }
-   else if(frontend_flow_step_type == VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS or
-      frontend_flow_step_type == MEMORY_DATA_FLOW_ANALYSIS
+   else if(frontend_flow_step_type == VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS or frontend_flow_step_type == MEMORY_DATA_FLOW_ANALYSIS
 #if HAVE_EXPERIMENTAL && HAVE_ZEBU_BUILT
-      or frontend_flow_step_type == REFINED_AGGREGATE_DATA_FLOW_ANALYSIS
+           or frontend_flow_step_type == REFINED_AGGREGATE_DATA_FLOW_ANALYSIS
 #endif
    )
    {
-      return ComputeDependences<unsigned int>(DFG_AGG_SELECTOR, FB_DFG_AGG_SELECTOR, ADG_AGG_SELECTOR, FB_ADG_AGG_SELECTOR);
+      return Computedependencies<unsigned int>(DFG_AGG_SELECTOR, FB_DFG_AGG_SELECTOR, ADG_AGG_SELECTOR, FB_ADG_AGG_SELECTOR);
    }
 #if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
    else if(frontend_flow_step_type == DYNAMIC_AGGREGATE_DATA_FLOW_ANALYSIS)
    {
-      return ComputeDependences<unsigned int>(DFG_AGG_SELECTOR, FB_DFG_AGG_SELECTOR, ADG_AGG_SELECTOR, FB_ADG_AGG_SELECTOR);
+      return Computedependencies<unsigned int>(DFG_AGG_SELECTOR, FB_DFG_AGG_SELECTOR, ADG_AGG_SELECTOR, FB_ADG_AGG_SELECTOR);
    }
 #endif
    else
@@ -94,7 +95,7 @@ DesignFlowStep_Status DataDependenceComputation::InternalExec()
 }
 
 template <typename type>
-DesignFlowStep_Status DataDependenceComputation::ComputeDependences(const int dfg_selector, const int fb_dfg_selector, const int adg_selector, const int fb_adg_selector)
+DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int dfg_selector, const int fb_dfg_selector, const int adg_selector, const int fb_adg_selector)
 {
    const auto TM = AppM->get_tree_manager();
    const OpGraphConstRef cfg = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
@@ -102,14 +103,14 @@ DesignFlowStep_Status DataDependenceComputation::ComputeDependences(const int df
 #ifndef NDEBUG
    const std::string function_name = behavioral_helper->get_function_name();
 #endif
-   //Maps between a variable and its definitions
-   std::map<type, std::set<vertex> > defs, overs;
+   // Maps between a variable and its definitions
+   std::map<type, std::set<vertex>> defs, overs;
    VertexIterator vi, vi_end;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing definitions");
-   for (boost::tie(vi, vi_end) = boost::vertices(*cfg); vi != vi_end; vi++)
+   for(boost::tie(vi, vi_end) = boost::vertices(*cfg); vi != vi_end; vi++)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Definitions in " + GET_NAME(cfg, *vi));
-      const auto & local_defs = GetVariables<type>(*vi, FunctionBehavior_VariableAccessType::DEFINITION);
+      const auto& local_defs = GetVariables<type>(*vi, FunctionBehavior_VariableAccessType::DEFINITION);
       for(auto local_def : local_defs)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + TM->get_tree_node_const(local_def)->ToString());
@@ -119,10 +120,10 @@ DesignFlowStep_Status DataDependenceComputation::ComputeDependences(const int df
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed definitions");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing overwritings");
-   for (boost::tie(vi, vi_end) = boost::vertices(*cfg); vi != vi_end; vi++)
+   for(boost::tie(vi, vi_end) = boost::vertices(*cfg); vi != vi_end; vi++)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Overwritings in " + GET_NAME(cfg, *vi));
-      const auto & local_overs = GetVariables<type>(*vi, FunctionBehavior_VariableAccessType::OVER);
+      const auto& local_overs = GetVariables<type>(*vi, FunctionBehavior_VariableAccessType::OVER);
       for(auto local_over : local_overs)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + TM->get_tree_node_const(local_over)->ToString());
@@ -132,9 +133,9 @@ DesignFlowStep_Status DataDependenceComputation::ComputeDependences(const int df
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed overwritings");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing dependencies");
-   for (boost::tie(vi, vi_end) = boost::vertices(*cfg); vi != vi_end; vi++)
+   for(boost::tie(vi, vi_end) = boost::vertices(*cfg); vi != vi_end; vi++)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing anti and data dependences of vertex " + GET_NAME(cfg, *vi));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing anti and data dependencies of vertex " + GET_NAME(cfg, *vi));
       for(auto local_use : GetVariables<type>(*vi, FunctionBehavior_VariableAccessType::USE))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering use of " + TM->get_tree_node_const(local_use)->ToString());
@@ -153,7 +154,7 @@ DesignFlowStep_Status DataDependenceComputation::ComputeDependences(const int df
                   if(function_behavior->CheckFeedbackReachability(*vi, this_def))
                   {
                      function_behavior->ogc->AddEdge(*vi, this_def, fb_adg_selector);
-                     ///NOTE: label associated with forward selector also on feedback edge
+                     /// NOTE: label associated with forward selector also on feedback edge
                      function_behavior->ogc->add_edge_info(this_def, *vi, ADG_SELECTOR, local_use);
                   }
                }
@@ -169,7 +170,7 @@ DesignFlowStep_Status DataDependenceComputation::ComputeDependences(const int df
                   if(function_behavior->CheckFeedbackReachability(this_def, *vi))
                   {
                      function_behavior->ogc->AddEdge(this_def, *vi, fb_dfg_selector);
-                     ///NOTE: label associated with forward selector also on feedback edge
+                     /// NOTE: label associated with forward selector also on feedback edge
                      function_behavior->ogc->add_edge_info(this_def, *vi, DFG_SELECTOR, local_use);
                   }
                }
@@ -196,8 +197,8 @@ DesignFlowStep_Status DataDependenceComputation::ComputeDependences(const int df
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed anti and data dependences of vertex " + GET_NAME(cfg, *vi));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing output dependences of vertex " + GET_NAME(cfg, *vi));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed anti and data dependencies of vertex " + GET_NAME(cfg, *vi));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing output dependencies of vertex " + GET_NAME(cfg, *vi));
       for(auto local_def : GetVariables<type>(*vi, FunctionBehavior_VariableAccessType::OVER))
       {
          if(defs.find(local_def) != defs.end())
@@ -212,33 +213,33 @@ DesignFlowStep_Status DataDependenceComputation::ComputeDependences(const int df
                   if(function_behavior->CheckFeedbackReachability(*vi, this_def))
                   {
                      function_behavior->ogc->AddEdge(*vi, this_def, FB_ODG_AGG_SELECTOR);
-                     ///NOTE: label associated with forward selector also on feedback edge
+                     /// NOTE: label associated with forward selector also on feedback edge
                      function_behavior->ogc->add_edge_info(*vi, this_def, ODG_SELECTOR, local_def);
                   }
                }
             }
          }
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed output dependences of vertex " + GET_NAME(cfg, *vi));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed output dependencies of vertex " + GET_NAME(cfg, *vi));
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed dependencies");
    if(parameters->getOption<bool>(OPT_print_dot))
    {
       std::string file_name;
       file_name = "OP_DFG.dot";
-      function_behavior->CGetOpGraph(FunctionBehavior::DFG)->WriteDot(file_name,1);
+      function_behavior->CGetOpGraph(FunctionBehavior::DFG)->WriteDot(file_name, 1);
       file_name = "OP_FDFG.dot";
-      function_behavior->CGetOpGraph(FunctionBehavior::FDFG)->WriteDot(file_name,1);
+      function_behavior->CGetOpGraph(FunctionBehavior::FDFG)->WriteDot(file_name, 1);
       file_name = "OP_ADG.dot";
-      function_behavior->CGetOpGraph(FunctionBehavior::ADG)->WriteDot(file_name,1);
+      function_behavior->CGetOpGraph(FunctionBehavior::ADG)->WriteDot(file_name, 1);
       file_name = "OP_FADG.dot";
-      function_behavior->CGetOpGraph(FunctionBehavior::FADG)->WriteDot(file_name,1);
+      function_behavior->CGetOpGraph(FunctionBehavior::FADG)->WriteDot(file_name, 1);
       file_name = "OP_ODG.dot";
-      function_behavior->CGetOpGraph(FunctionBehavior::ODG)->WriteDot(file_name,1);
+      function_behavior->CGetOpGraph(FunctionBehavior::ODG)->WriteDot(file_name, 1);
       file_name = "OP_FODG.dot";
-      function_behavior->CGetOpGraph(FunctionBehavior::FODG)->WriteDot(file_name,1);
+      function_behavior->CGetOpGraph(FunctionBehavior::FODG)->WriteDot(file_name, 1);
       file_name = "OP_SAODG1.dot";
-      function_behavior->CGetOpGraph(FunctionBehavior::SAODG)->WriteDot(file_name,1);
+      function_behavior->CGetOpGraph(FunctionBehavior::SAODG)->WriteDot(file_name, 1);
    }
 #ifndef NDEBUG
    try
@@ -247,19 +248,19 @@ DesignFlowStep_Status DataDependenceComputation::ComputeDependences(const int df
       std::deque<vertex> vertices;
       boost::topological_sort(*dfg, std::front_inserter(vertices));
    }
-   catch (const char* msg)
+   catch(const char* msg)
    {
       THROW_UNREACHABLE("dfg graph of function " + function_name + " is not acyclic");
    }
-   catch (const std::string& msg)
+   catch(const std::string& msg)
    {
       THROW_UNREACHABLE("dfg graph of function " + function_name + " is not acyclic");
    }
-   catch (const std::exception& ex)
+   catch(const std::exception& ex)
    {
       THROW_UNREACHABLE("dfg graph of function " + function_name + " is not acyclic");
    }
-   catch ( ... )
+   catch(...)
    {
       THROW_UNREACHABLE("dfg graph of function " + function_name + " is not acyclic");
    }

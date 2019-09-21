@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2015-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -34,20 +34,20 @@
  *
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  *
-*/
+ */
 #ifndef UNFOLDED_CALL_GRAPH_HPP
 #define UNFOLDED_CALL_GRAPH_HPP
 
 #include "graph.hpp"
-#include "UnfoldedFunctionInfo.hpp"
-#include "UnfoldedCallInfo.hpp"
 
 class UnfoldedCallGraph : public RawGraph
 {
-   public:
-      explicit UnfoldedCallGraph(GraphInfoRef g_info) : RawGraph(g_info) {};
+ public:
+   explicit UnfoldedCallGraph(GraphInfoRef g_info) : RawGraph(g_info)
+   {
+   }
 
-      ~UnfoldedCallGraph() {};
+   ~UnfoldedCallGraph() = default;
 };
 
 typedef boost::graph_traits<UnfoldedCallGraph>::vertex_descriptor UnfoldedVertexDescriptor;

@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file area_model.hpp
  * @brief Abstract class representing a generic area/resource model
@@ -39,12 +39,12 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef _AREA_MODEL_HPP_
 #define _AREA_MODEL_HPP_
 
 #include "refcount.hpp"
-///refcount definition for the class
+/// refcount definition for the class
 REF_FORWARD_DECL(area_model);
 CONSTREF_FORWARD_DECL(Parameter);
 class xml_element;
@@ -54,72 +54,67 @@ enum class TargetDevice_Type;
 
 class area_model
 {
-   public:
+ public:
+   typedef enum
+   {
+      PRE_TECHNOLOGY_MAPPING,
+      POST_TECHNOLOGY_MAPPING
+   } chacterization_t;
 
-      typedef enum
-      {
-         PRE_TECHNOLOGY_MAPPING,
-         POST_TECHNOLOGY_MAPPING
-      } chacterization_t;
+   typedef enum
+   {
+      COMBINATIONAL_AREA,
+      NONCOMBINATIONAL_AREA,
+      CELL_AREA,
+      INTERCONNECT_AREA,
+      TOTAL_AREA
+   } element_t;
 
-      typedef enum
-      {
-         COMBINATIONAL_AREA,
-         NONCOMBINATIONAL_AREA,
-         CELL_AREA,
-         INTERCONNECT_AREA,
-         TOTAL_AREA
-      } element_t;
+ protected:
+   /// class containing all the parameters
+   const ParameterConstRef Param;
 
-   protected:
+ public:
+   /**
+    * @name Constructors and destructors.
+    */
+   //@{
+   /// Constructor.
+   explicit area_model(const ParameterConstRef& _Param_);
 
-      /// class containing all the parameters
-      const ParameterConstRef Param;
+   /// Destructor.
+   virtual ~area_model();
+   //@}
 
-   public:
+   /**
+    * Print method.
+    */
+   virtual void print(std::ostream& os) const = 0;
 
-      /**
-       * @name Constructors and destructors.
-       */
-      //@{
-      ///Constructor.
-      explicit area_model(const ParameterConstRef _Param_);
+   /**
+    * Factory method.
+    */
+   static area_modelRef create_model(const TargetDevice_Type type, const ParameterConstRef& Param);
 
-      ///Destructor.
-      virtual ~area_model();
-      //@}
+   /**
+    * Set the nominal value for the area of the component
+    */
+   virtual void set_area_value(const double& _area_) = 0;
 
-      /**
-       * Print method.
-       */
-      virtual void print(std::ostream& os) const = 0;
+   /**
+    * Return the nominal value for the area of the component
+    */
+   virtual double get_area_value() const = 0;
 
-      /**
-       * Factory method.
-       */
-      static
-      area_modelRef create_model(const TargetDevice_Type type, const ParameterConstRef Param);
+   /**
+    * Checks if there is a characterization value
+    */
+   virtual bool is_characterization(unsigned int characterization_type) const = 0;
 
-      /**
-       * Set the nominal value for the area of the component
-       */
-      virtual void set_area_value(const double& _area_)= 0;
-
-      /**
-       * Return the nominal value for the area of the component
-       */
-      virtual double get_area_value() const = 0;
-
-      /**
-       * Checks if there is a characterization value
-       */
-      virtual bool is_characterization(unsigned int characterization_type) const = 0;
-
-      ///default area value
-      static const double area_DEFAULT;
-
+   /// default area value
+   static const double area_DEFAULT;
 };
-///refcount definition of the class
+/// refcount definition of the class
 typedef refcount<area_model> area_modelRef;
 
 #endif

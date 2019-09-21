@@ -1,10 +1,4 @@
 libm-tests/conversion.c --benchmark-name=conversion_test
-libm-tests/gamma.c --benchmark-name=gamma_test
-libm-tests/lgamma.c --benchmark-name=lgamma_test
-libm-tests/tgamma.c --benchmark-name=tgamma_test
-libm-tests/gammaf.c --benchmark-name=gammaf_test
-libm-tests/lgammaf.c --benchmark-name=lgammaf_test
-libm-tests/tgammaf.c --benchmark-name=tgammaf_test
 libm-tests/test-float.c --top-fname=fpclassify_test --benchmark-name=fpclassify
 libm-tests/test-float.c --top-fname=isfinite_test --benchmark-name=isfinite
 libm-tests/test-float.c --top-fname=isnormal_test --benchmark-name=isnormal
@@ -44,6 +38,7 @@ libm-tests/test-float.c --top-fname=erf_test --benchmark-name=erf
 libm-tests/test-float.c --top-fname=erfc_test --benchmark-name=erfc
 libm-tests/test-float.c --top-fname=gamma_test --benchmark-name=gamma
 libm-tests/test-float.c --top-fname=lgamma_test --benchmark-name=lgamma
+libm-tests/test-float.c --top-fname=tgamma_test --benchmark-name=tgamma
 libm-tests/test-float.c --top-fname=ceil_test --benchmark-name=ceil
 libm-tests/test-float.c --top-fname=floor_test --benchmark-name=floor
 libm-tests/test-float.c --top-fname=rint_test --benchmark-name=rint
@@ -90,6 +85,7 @@ libm-tests/test-double.c --top-fname=erf_test --benchmark-name=erf_double
 libm-tests/test-double.c --top-fname=erfc_test --benchmark-name=erfc_double
 libm-tests/test-double.c --top-fname=gamma_test --benchmark-name=gamma_double
 libm-tests/test-double.c --top-fname=lgamma_test --benchmark-name=lgamma_double
+libm-tests/test-double.c --top-fname=tgamma_test --benchmark-name=tgamma_double
 libm-tests/test-double.c --top-fname=ceil_test --benchmark-name=ceil_double
 libm-tests/test-double.c --top-fname=floor_test --benchmark-name=floor_double
 libm-tests/test-double.c --top-fname=rint_test --benchmark-name=rint_double

@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,50 +29,53 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file mem_dominator_allocation.hpp
  * @brief Class to allocate memories in HLS based on dominators
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef MEMORY_DOMINATOR_ALLOCATION_HPP
 #define MEMORY_DOMINATOR_ALLOCATION_HPP
 
+/// Superclass include
 #include "memory_allocation.hpp"
+
+/// STL includes
+#include <set>
+#include <vector>
 
 class mem_dominator_allocation : public memory_allocation
 {
-   protected:
-      std::vector<unsigned int> getFunctionAllocationOrder(std::set<unsigned int> top_functions);
+ protected:
+   std::vector<unsigned int> getFunctionAllocationOrder(std::set<unsigned int> top_functions);
 
-   public:
-      /**
-       * Constructor
-       * @param design_flow_manager is the design flow manager
-       */
-      mem_dominator_allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
+ public:
+   /**
+    * Constructor
+    * @param design_flow_manager is the design flow manager
+    */
+   mem_dominator_allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization,
+                            const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION);
 
-      /**
-       * Destructor
-       */
-      ~mem_dominator_allocation();
+   /**
+    * Destructor
+    */
+   ~mem_dominator_allocation() override;
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status Exec();
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      virtual void Initialize();
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 };
 
 #endif

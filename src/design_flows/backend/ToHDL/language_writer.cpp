@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file language_writer.cpp
  * @brief This classes starting from a structural representation write different HDL based descriptions (VHDL, Verilog, SystemC).
@@ -40,19 +40,19 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
-///constants include
+/// constants include
 #include "copyrights_strings.hpp"
 
 #include "language_writer.hpp"
 
+#include "VHDL_writer.hpp"
 #include "sv_writer.hpp"
 #include "verilog_writer.hpp"
-#include "VHDL_writer.hpp"
 #if HAVE_EXPERIMENTAL
 #include "SystemC_writer.hpp"
 #include "blif_writer.hpp"
@@ -65,38 +65,35 @@
 ///. include
 #include "Parameter.hpp"
 
-///utility include
+/// utility include
 #include "indented_output_stream.hpp"
 
-language_writer::language_writer(char open_char, char close_char, const ParameterConstRef _parameters) :
-   indented_output_stream(new IndentedOutputStream(open_char, close_char, 2)),
-   parameters(_parameters),
-   debug_level(_parameters->getOption<int>(OPT_debug_level))
+language_writer::language_writer(char open_char, char close_char, const ParameterConstRef _parameters)
+    : indented_output_stream(new IndentedOutputStream(open_char, close_char, 2)), parameters(_parameters), debug_level(_parameters->getOption<int>(OPT_debug_level))
 {
-
 }
 
-language_writer::~language_writer()
-{
+language_writer::~language_writer() = default;
 
-}
-
-unsigned int language_writer::bitnumber(unsigned int n)
+unsigned int language_writer::bitnumber(long long unsigned int n)
 {
-   unsigned int count=0;
-   while (n)
+   unsigned int count = 0;
+   while(n)
    {
       count++;
       n >>= 1;
    }
-   if (count == 0) return 1;
+   if(count == 0)
+   {
+      return 1;
+   }
    return count;
 }
 
 language_writerRef language_writer::create_writer(const HDLWriter_Language language, const technology_managerConstRef _TM, const ParameterConstRef _parameters)
 {
    THROW_ASSERT(_parameters, "");
-   switch (language)
+   switch(language)
    {
       case HDLWriter_Language::VERILOG:
          return language_writerRef(new verilog_writer(_parameters));
@@ -124,19 +121,17 @@ language_writerRef language_writer::create_writer(const HDLWriter_Language langu
    return language_writerRef();
 }
 
-void language_writer::write(const std::string&rawString)
+void language_writer::write(const std::string& rawString)
 {
    indented_output_stream->Append(rawString);
 }
 
-void language_writer::write_header ()
+void language_writer::write_header()
 {
-
 }
 
 void language_writer::write_timing_specification(const technology_managerConstRef, const structural_objectRef&)
 {
-
 }
 
 const std::string language_writer::WriteString() const
@@ -144,7 +139,7 @@ const std::string language_writer::WriteString() const
    return indented_output_stream->WriteString();
 }
 
-void language_writer::WriteFile(const std::string&filename) const
+void language_writer::WriteFile(const std::string& filename) const
 {
    indented_output_stream->WriteFile(filename);
 }
@@ -165,8 +160,8 @@ COPYING3_SHORT_MACRO
 
 void language_writer::WriteLicense()
 {
-   for(unsigned int row=0; row < COPYING3_SHORT_NROW; ++row)
+   for(auto& row : COPYING3_SHORT)
    {
-      write_comment(std::string(COPYING3_SHORT[row]));
+      write_comment(std::string(row));
    }
 }

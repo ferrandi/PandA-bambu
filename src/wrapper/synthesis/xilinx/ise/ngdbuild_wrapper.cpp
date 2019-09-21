@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file ngdbuild_wrapper.cpp
  * @brief Implementation of the wrapper to NGDBUILD
@@ -41,8 +41,8 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
-///Header include
+ */
+/// Header include
 #include "ngdbuild_wrapper.hpp"
 
 #include "config_XILINX_SETTINGS.hpp"
@@ -51,19 +51,17 @@
 #include "xml_script_command.hpp"
 
 #include "Parameter.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include <iostream>
 
-//constructor
-ngdbuild_wrapper::ngdbuild_wrapper(const ParameterConstRef _Param, const std::string& _output_dir, const target_deviceRef _device) :
-   XilinxWrapper(_Param, NGDBUILD_TOOL_ID, _device, _output_dir, "ngdbuild")
+// constructor
+ngdbuild_wrapper::ngdbuild_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir, const target_deviceRef& _device) : XilinxWrapper(_Param, NGDBUILD_TOOL_ID, _device, _output_dir, "ngdbuild")
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the NGDBUILD wrapper...");
 }
 
-//destructor
-ngdbuild_wrapper::~ngdbuild_wrapper()
-{
-
-}
+// destructor
+ngdbuild_wrapper::~ngdbuild_wrapper() = default;
 
 void ngdbuild_wrapper::init_reserved_vars()
 {
@@ -81,13 +79,16 @@ std::string ngdbuild_wrapper::get_command_line(const DesignParametersRef& dp) co
    std::ostringstream s;
    s << get_tool_exec();
    if(output_level > OUTPUT_LEVEL_VERY_PEDANTIC)
-      s << " -verbose"; // Reports all messages
-   else
-      s << " -quiet"; // Only report Warning and Error messages.
-   for (std::vector<xml_parameter_tRef>::const_iterator it = xml_tool_options.begin(); it != xml_tool_options.end(); ++it)
    {
-      const xml_parameter_tRef & option = *it;
-      if (option->checkCondition(dp))
+      s << " -verbose"; // Reports all messages
+   }
+   else
+   {
+      s << " -quiet"; // Only report Warning and Error messages.
+   }
+   for(const auto& option : xml_tool_options)
+   {
+      if(option->checkCondition(dp))
       {
          std::string value = toString(option, dp);
          replace_parameters(dp, value);

@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file node_info.hpp
  * @brief Base class description of data information associated with each node of a graph.
@@ -40,37 +40,37 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef NODE_INFO_HPP
 #define NODE_INFO_HPP
 
-///STD include
+/// STD include
 #include <ostream>
 
-///Utility include
+/// Utility include
 #include "refcount.hpp"
 
 REF_FORWARD_DECL(NodeInfo);
 
 struct NodeInfo
 {
-   ///Constructor
+   /// Constructor
    NodeInfo();
 
-   ///Destructor
+   /// Destructor
    virtual ~NodeInfo();
 
    /**
     * Print the information associated with the node of the graph.
     * @param os is the output stream.
-   */
-   virtual void print(std::ostream& ) const;
+    */
+   virtual void print(std::ostream&, int detail_level = 0) const;
 
    /**
     * Friend definition of the << operator.
     * @param os is the output stream.
     * @param s is the node to print.
-   */
+    */
    friend std::ostream& operator<<(std::ostream& os, const NodeInfo& s)
    {
       s.print(os);
@@ -80,10 +80,10 @@ struct NodeInfo
     * Friend definition of the << operator. Pointer version.
     * @param os is the output stream.
     * @param s is the node to print.
-   */
-   friend std::ostream& operator<<(std::ostream& os, const NodeInfoRef & s)
+    */
+   friend std::ostream& operator<<(std::ostream& os, const NodeInfoRef& s)
    {
-      if (s)
+      if(s)
          s->print(os);
       return os;
    }
@@ -91,7 +91,6 @@ struct NodeInfo
 
 /**
  * RefCount type definition of the NodeInfo class structure
-*/
+ */
 typedef refcount<NodeInfo> NodeInfoRef;
 #endif
-

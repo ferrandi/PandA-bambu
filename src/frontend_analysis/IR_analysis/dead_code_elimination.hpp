@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,67 +29,89 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file dead_code_elimination.hpp
- * @brief Eliminates unuseful definitions
+ * @brief Eliminate dead code
  *
  * @author Andrea Cuoccio <andrea.cuoccio@gmail.com>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef DEAD_CODE_ELIMINATION_HPP
 #define DEAD_CODE_ELIMINATION_HPP
-///Super class include
+/// Super class include
 #include "function_frontend_flow_step.hpp"
 
-///Utility include
+/// Utility include
 #include "refcount.hpp"
 
-///behaviour include
+/// behaviour include
 #include "call_graph.hpp"
 
-///Frontend include
+/// Frontend include
 #include "Parameter.hpp"
 
-///Tree include
+/// Tree include
 #include "tree_manager.hpp"
+
+/**
+ * @name forward declarations
+ */
+//@{
+REF_FORWARD_DECL(bloc);
+class statement_list;
+class gimple_node;
+//@}
 
 class dead_code_elimination : public FunctionFrontendFlowStep
 {
-   private:
+ private:
+   std::map<unsigned int, unsigned int> last_bitvalue_ver;
 
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   std::map<unsigned int, unsigned int> last_bb_ver;
 
-   public:
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      /**
-       * Constructor
-       * @param Param is the set of the parameters
-       * @param AppM is the application manager
-       * @param function_id is the index of the function
-       * @param design_flow_manager is the design flow manager
-       */
-      dead_code_elimination(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   void kill_uses(const tree_managerRef TM, tree_nodeRef op0) const;
+   void kill_vdef(const tree_managerRef TM, tree_nodeRef vdef);
+   unsigned move2emptyBB(const tree_managerRef TM, statement_list* sl, unsigned pred, blocRef bb_pred, unsigned cand_bb_dest, unsigned bb_dest) const;
+   void add_gimple_nop(gimple_node* gc, const tree_managerRef TM, tree_nodeRef cur_stmt, blocRef bb);
 
-      /**
-       * Destructor
-       */
-      ~dead_code_elimination();
+ public:
+   /**
+    * Constructor
+    * @param Param is the set of the parameters
+    * @param AppM is the application manager
+    * @param function_id is the index of the function
+    * @param design_flow_manager is the design flow manager
+    */
+   dead_code_elimination(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Performes dead code elimination.
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status InternalExec();
+   /**
+    * Destructor
+    */
+   ~dead_code_elimination() override;
+
+   /**
+    * Performs dead code elimination.
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
+
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 };
 
 #endif
-

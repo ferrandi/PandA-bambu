@@ -12,7 +12,7 @@
 *                       Politecnico di Milano - DEIB
 *                        System Architectures Group
 *             ***********************************************
-*              Copyright (c) 2004-2018 Politecnico di Milano
+*              Copyright (C) 2004-2019 Politecnico di Milano
 *
 *   This file is part of the PandA framework.
 *
@@ -142,6 +142,10 @@ typedef gimple* GIMPLE_type;
 
 #if __GNUC__ > 4
 #include "builtins.h"
+#endif
+
+#if __GNUC__ > 7
+#include "attribs.h"
 #endif
 
 #if __GNUC__ > 4

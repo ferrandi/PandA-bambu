@@ -1,18 +1,18 @@
-/** 
- * Porting of the libm library to the PandA framework 
+/**
+ * Porting of the libm library to the PandA framework
  * starting from the original FDLIBM 5.3 (Freely Distributable LIBM) developed by SUN
  * plus the newlib version 1.19 from RedHat and plus uClibc version 0.9.32.1 developed by Erik Andersen.
  * The author of this port is Fabrizio Ferrandi from Politecnico di Milano.
  * The porting fall under the LGPL v2.1, see the files COPYING.LIB and COPYING.LIBM_PANDA in this directory.
  * Date: September, 11 2013.
-*/
+ */
 /*
  * ====================================================
  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
  *
  * Developed at SunSoft, a Sun Microsystems, Inc. business.
  * Permission to use, copy, modify, and distribute this
- * software is freely granted, provided that this notice 
+ * software is freely granted, provided that this notice
  * is preserved.
  * ====================================================
  */
@@ -28,8 +28,8 @@
  *	__hide_ieee754_rem_pio2	... argument reduction routine
  *
  * Method.
- *      Let S,C and T denote the sin, cos and tan respectively on 
- *	[-PI/4, +PI/4]. Reduce the argument x to y1+y2 = x-k*pi/2 
+ *      Let S,C and T denote the sin, cos and tan respectively on
+ *	[-PI/4, +PI/4]. Reduce the argument x to y1+y2 = x-k*pi/2
  *	in [-pi/4 , +pi/4], and let n = k mod 4.
  *	We have
  *
@@ -47,33 +47,40 @@
  *      trig(NaN)    is that NaN;
  *
  * Accuracy:
- *	TRIG(x) returns trig(x) nearly rounded 
+ *	TRIG(x) returns trig(x) nearly rounded
  */
 
-double __builtin_cos(double x)
+double cos(double x)
 {
-	double y[2],z=0.0;
-	int n, ix;
+   double y[2], z = 0.0;
+   int n, ix;
 
-    /* High word of x. */
-	ix = GET_HI(x);
+   /* High word of x. */
+   ix = GET_HI(x);
 
-    /* |x| ~< pi/4 */
-	ix &= 0x7fffffff;
-	if(ix <= 0x3fe921fb) return __hide_kernel_cos(x,z);
+   /* |x| ~< pi/4 */
+   ix &= 0x7fffffff;
+   if(ix <= 0x3fe921fb)
+      return __hide_kernel_cos(x, z);
 
-    /* cos(Inf or NaN) is NaN */
-	else if (ix>=0x7ff00000) return __builtin_nan("");
+   /* cos(Inf or NaN) is NaN */
+   else if(ix >= 0x7ff00000)
+      return __builtin_nan("");
 
-    /* argument reduction needed */
-	else {
-	    n = __hide_ieee754_rem_pio2(x,y);
-	    switch(n&3) {
-		case 0: return  __hide_kernel_cos(y[0],y[1]);
-		case 1: return -__hide_kernel_sin(y[0],y[1],1);
-		case 2: return -__hide_kernel_cos(y[0],y[1]);
-		default:
-		        return  __hide_kernel_sin(y[0],y[1],1);
-	    }
-	}
+   /* argument reduction needed */
+   else
+   {
+      n = __hide_ieee754_rem_pio2(x, y);
+      switch(n & 3)
+      {
+         case 0:
+            return __hide_kernel_cos(y[0], y[1]);
+         case 1:
+            return -__hide_kernel_sin(y[0], y[1], 1);
+         case 2:
+            return -__hide_kernel_cos(y[0], y[1]);
+         default:
+            return __hide_kernel_sin(y[0], y[1], 1);
+      }
+   }
 }

@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file host_profiling.cpp
  * @brief Analysis step performing profiling of loops, paths or both
@@ -37,71 +37,68 @@
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_POLIXML_BUILT.hpp"
 
-///Header include
+/// Header include
 #include "host_profiling.hpp"
 
-///Behavior include
-#include "behavioral_helper.hpp"
+/// Behavior include
 #include "application_manager.hpp"
+#include "behavioral_helper.hpp"
 #include "function_behavior.hpp"
 #include "loop.hpp"
 #include "loops.hpp"
 #include "profiling_information.hpp"
 
-///Constants include
+/// Constants include
 #include "host_profiling_xml.hpp"
 
-///Frontend include
+/// Frontend include
 #include "Parameter.hpp"
 
-///Graph include
+/// Graph include
 #include "basic_block.hpp"
 #include "graph.hpp"
 
-///STD include
-#include <unistd.h>
+/// STD include
 #include <cerrno>
+#include <unistd.h>
 
-///STL include
+/// STL include
 #include <unordered_map>
 
-///Utility include
-#include <boost/lexical_cast.hpp>
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/filesystem/operations.hpp>
+/// Utility include
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "hash_helper.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
+#include <boost/cast.hpp>
 #include <boost/filesystem/convenience.hpp>
 #include <boost/filesystem/fstream.hpp>
+#include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
-#include <boost/cast.hpp>
-#include "utility.hpp"
+#include <boost/lexical_cast.hpp>
 
 HostProfiling_Method operator&(const HostProfiling_Method first, const HostProfiling_Method second)
 {
    return static_cast<HostProfiling_Method>(static_cast<int>(first) | static_cast<int>(second));
 }
 
-HostProfiling::HostProfiling(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   ApplicationFrontendFlowStep(_AppM, HOST_PROFILING, _design_flow_manager, _parameters)
+HostProfiling::HostProfiling(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) : ApplicationFrontendFlowStep(_AppM, HOST_PROFILING, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-HostProfiling::~HostProfiling()
-{
-}
+HostProfiling::~HostProfiling() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > HostProfiling::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> HostProfiling::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          const HostProfiling_Method profiling_method = parameters->getOption<HostProfiling_Method>(OPT_profiling_method);
          THROW_ASSERT(profiling_method != HostProfiling_Method::PM_NONE, "Host profiilng required but algorithm has not been selected");
@@ -117,8 +114,8 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 #endif
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -135,42 +132,42 @@ DesignFlowStep_Status HostProfiling::Exec()
    return DesignFlowStep_Status::EMPTY;
 }
 
-void HostProfiling::normalize(const application_managerRef AppM, const std::unordered_map<unsigned int, std::unordered_map<unsigned int, unsigned long long> > & loop_instances, const ParameterConstRef parameters)
+void HostProfiling::normalize(const application_managerRef AppM, const std::unordered_map<unsigned int, std::unordered_map<unsigned int, unsigned long long>>& loop_instances, const ParameterConstRef parameters)
 {
 #ifndef NDEBUG
    const int debug_level = parameters->get_class_debug_level("HostProfiling");
 #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Normalizing loop iteration");
-   //Iterating over all functions with body
-   for (const auto f : AppM->get_functions_with_body())
+   // Iterating over all functions with body
+   for(const auto f : AppM->get_functions_with_body())
    {
-      //Normalizing basic block execution time
-      //First computing number of execution of the function
-      //number of function execution
+      // Normalizing basic block execution time
+      // First computing number of execution of the function
+      // number of function execution
       const FunctionBehaviorRef FB = AppM->GetFunctionBehavior(f);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Function: " + FB->CGetBehavioralHelper()->get_function_name());
 
-      //Normalizing loop number of iteration and frequency
-      const std::list<LoopConstRef> & loops = FB->CGetLoops()->GetList();
+      // Normalizing loop number of iteration and frequency
+      const std::list<LoopConstRef>& loops = FB->CGetLoops()->GetList();
       std::list<LoopConstRef>::const_iterator loop, loop_end = loops.end();
       for(loop = loops.begin(); loop != loop_end; ++loop)
       {
          unsigned int loop_id = (*loop)->GetId();
-         ///FIXME: zero loop
+         /// FIXME: zero loop
          if(loop_id == 0)
             continue;
-         long double avg_number = 0.0;
-         long double abs_execution = 0.0;
-         PathProfilingInformation & path_profiling = FB->profiling_information->path_profiling;
+         long double avg_number = 0.0L;
+         long double abs_execution = 0.0L;
+         PathProfilingInformation& path_profiling = FB->profiling_information->path_profiling;
          if(path_profiling.find(loop_id) == path_profiling.end())
             continue;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Loop: " + boost::lexical_cast<std::string>(loop_id));
          const auto& elements = path_profiling.find(loop_id)->second;
-         for(std::map<std::set<unsigned int>, long double>::const_iterator k = elements.begin(); k != elements.end(); ++k)
+         for(const auto& element : elements)
          {
-            abs_execution += k->second;
+            abs_execution += element.second;
          }
-         if(abs_execution != 0.0)
+         if(abs_execution != 0.0L)
          {
             if(loop_instances.find(f) == loop_instances.end())
             {
@@ -184,7 +181,7 @@ void HostProfiling::normalize(const application_managerRef AppM, const std::unor
          FB->profiling_information->avg_iterations[(*loop)->GetId()] = avg_number;
          FB->profiling_information->abs_iterations[(*loop)->GetId()] = static_cast<unsigned long long int>(llroundl(abs_execution));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Factor: " + boost::lexical_cast<std::string>(abs_execution));
-         for(std::map<std::set<unsigned int>, long double>::iterator k = path_profiling.at(loop_id).begin(); k != path_profiling.at(loop_id).end(); ++k)
+         for(auto k = path_profiling.at(loop_id).begin(); k != path_profiling.at(loop_id).end(); ++k)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->New path");
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Absolute path: " + boost::lexical_cast<std::string>(k->second));

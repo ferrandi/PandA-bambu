@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,11 +29,11 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 
 /**
  * @file FPGA_technology.cpp
- * @brief 
+ * @brief
  *
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
@@ -46,36 +46,29 @@
 
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
+#include "fileIO.hpp"
 #include "polixml.hpp"
 #include "xml_dom_parser.hpp"
-#include "fileIO.hpp"
 #include "xml_helper.hpp"
 
-#include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/convenience.hpp>
+#include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
 #include <cmath>
 
-FPGA_technology::FPGA_technology(const ParameterConstRef param) :
-   target_technology(param)
+FPGA_technology::FPGA_technology(const ParameterConstRef& param) : target_technology(param)
 {
    type = FPGA;
-
 }
 
-FPGA_technology::~FPGA_technology( )
-{
-
-}
+FPGA_technology::~FPGA_technology() = default;
 
 void FPGA_technology::initialize()
 {
-
 }
 
 std::string FPGA_technology::get_string_type() const
 {
    return "FPGA";
 }
-

@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file ext_tree_node.hpp
  * @brief Classes specification of the tree_node data structures not present in the gcc.
@@ -42,17 +42,23 @@
  * $Date$
  * Last modified by $
  *
-*/
+ */
 #ifndef EXT_TREE_NODE_HPP
 #define EXT_TREE_NODE_HPP
 
+#include "tree_common.hpp" // for GET_KIND, blackbox_pragma_K, call_hw_prag...
 #include "tree_node.hpp"
-#include <unordered_map>
+#include <list>          // for list
+#include <string>        // for string
+#include <unordered_map> // for unordered_map
+#include <utility>       // for pair
 
 struct null_node : public tree_node
 {
    /// constructor
-   explicit null_node(unsigned int i) : tree_node(i) {}
+   explicit null_node(unsigned int i) : tree_node(i)
+   {
+   }
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(null_node)
@@ -64,16 +70,21 @@ struct null_node : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(tree_node)=0};
+   enum
+   {
+      GETID(tree_node) = 0
+   };
 };
 
 struct gimple_pragma : public gimple_node
 {
    /// constructor
-   explicit gimple_pragma(unsigned int i) : gimple_node(i), is_block(false), is_opening(true) {}
+   explicit gimple_pragma(unsigned int i) : gimple_node(i), is_block(false), is_opening(true)
+   {
+   }
 
    /// attribute for pragma: true when the pragma refers to a block
    bool is_block;
@@ -100,17 +111,23 @@ struct gimple_pragma : public gimple_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(gimple_node)=0, GETID(scope), GETID(directive)};
-
+   enum
+   {
+      GETID(gimple_node) = 0,
+      GETID(scope),
+      GETID(directive)
+   };
 };
 
 struct profiling_pragma : public tree_node
 {
    /// constructor
-   explicit profiling_pragma(unsigned int i) : tree_node(i) {}
+   explicit profiling_pragma(unsigned int i) : tree_node(i)
+   {
+   }
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(profiling_pragma)
@@ -122,16 +139,21 @@ struct profiling_pragma : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(tree_node)=0};
+   enum
+   {
+      GETID(tree_node) = 0
+   };
 };
 
 struct statistical_profiling : public profiling_pragma
 {
    /// constructor
-   explicit statistical_profiling(unsigned int i) : profiling_pragma(i) {}
+   explicit statistical_profiling(unsigned int i) : profiling_pragma(i)
+   {
+   }
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(statistical_profiling)
@@ -143,16 +165,21 @@ struct statistical_profiling : public profiling_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(profiling_pragma)=0};
+   enum
+   {
+      GETID(profiling_pragma) = 0
+   };
 };
 
 struct map_pragma : public tree_node
 {
    /// constructor
-   explicit map_pragma(unsigned int i) : tree_node(i) {}
+   explicit map_pragma(unsigned int i) : tree_node(i)
+   {
+   }
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(map_pragma)
@@ -164,10 +191,13 @@ struct map_pragma : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(tree_node)=0};
+   enum
+   {
+      GETID(tree_node) = 0
+   };
 };
 
 /**
@@ -176,7 +206,9 @@ struct map_pragma : public tree_node
 struct call_hw_pragma : public map_pragma
 {
    /// constructor
-   explicit call_hw_pragma(unsigned int i) : map_pragma(i) {}
+   explicit call_hw_pragma(unsigned int i) : map_pragma(i)
+   {
+   }
 
    /// The name of the component
    std::string HW_component;
@@ -194,10 +226,13 @@ struct call_hw_pragma : public map_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(map_pragma)=0};
+   enum
+   {
+      GETID(map_pragma) = 0
+   };
 };
 
 /**
@@ -206,7 +241,9 @@ struct call_hw_pragma : public map_pragma
 struct call_point_hw_pragma : public map_pragma
 {
    /// constructor
-   explicit call_point_hw_pragma(unsigned int i) : map_pragma(i), recursive(false) {}
+   explicit call_point_hw_pragma(unsigned int i) : map_pragma(i), recursive(false)
+   {
+   }
 
    /// The name of the component
    std::string HW_component;
@@ -227,16 +264,21 @@ struct call_point_hw_pragma : public map_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(map_pragma)=0};
+   enum
+   {
+      GETID(map_pragma) = 0
+   };
 };
 
 struct issue_pragma : public tree_node
 {
    /// constructor
-   explicit issue_pragma(unsigned int i) : tree_node(i) {}
+   explicit issue_pragma(unsigned int i) : tree_node(i)
+   {
+   }
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(issue_pragma)
@@ -248,16 +290,21 @@ struct issue_pragma : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(tree_node)=0};
+   enum
+   {
+      GETID(tree_node) = 0
+   };
 };
 
 struct blackbox_pragma : public issue_pragma
 {
    /// constructor
-   explicit blackbox_pragma(unsigned int i) : issue_pragma(i) {}
+   explicit blackbox_pragma(unsigned int i) : issue_pragma(i)
+   {
+   }
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(blackbox_pragma)
@@ -269,17 +316,21 @@ struct blackbox_pragma : public issue_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(issue_pragma)=0};
+   enum
+   {
+      GETID(issue_pragma) = 0
+   };
 };
-
 
 struct omp_pragma : public tree_node
 {
    /// constructor
-   explicit omp_pragma(unsigned int i) : tree_node(i) {}
+   explicit omp_pragma(unsigned int i) : tree_node(i)
+   {
+   }
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(omp_pragma)
@@ -291,16 +342,21 @@ struct omp_pragma : public tree_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(tree_node)=0};
+   enum
+   {
+      GETID(tree_node) = 0
+   };
 };
 
 struct omp_parallel_pragma : public omp_pragma
 {
    /// constructor
-   explicit omp_parallel_pragma(unsigned int i) : omp_pragma(i), is_shortcut(false) {}
+   explicit omp_parallel_pragma(unsigned int i) : omp_pragma(i), is_shortcut(false)
+   {
+   }
 
    /// map between the clauses that can be associated with the OpenMP parallel pragma and their value (e.g. number of threads)
    std::unordered_map<std::string, std::string> clauses;
@@ -318,16 +374,21 @@ struct omp_parallel_pragma : public omp_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(omp_pragma)=0};
+   enum
+   {
+      GETID(omp_pragma) = 0
+   };
 };
 
 struct omp_sections_pragma : public omp_pragma
 {
    /// constructor
-   explicit omp_sections_pragma(unsigned int i) : omp_pragma(i), is_shortcut(false) {}
+   explicit omp_sections_pragma(unsigned int i) : omp_pragma(i), is_shortcut(false)
+   {
+   }
 
    /// flag to check if this pragma is shortcut with a OpenMP parallel pragma
    bool is_shortcut;
@@ -342,16 +403,21 @@ struct omp_sections_pragma : public omp_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(omp_pragma)=0};
+   enum
+   {
+      GETID(omp_pragma) = 0
+   };
 };
 
 struct omp_parallel_sections_pragma : public omp_pragma
 {
    /// constructor
-   explicit omp_parallel_sections_pragma(unsigned int i) : omp_pragma(i) {}
+   explicit omp_parallel_sections_pragma(unsigned int i) : omp_pragma(i)
+   {
+   }
 
    /// The parallel part (the tree_node is a omp_parallel_pragma one)
    tree_nodeRef op0;
@@ -369,16 +435,23 @@ struct omp_parallel_sections_pragma : public omp_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(omp_pragma)=0, GETID(op0), GETID(op1)};
+   enum
+   {
+      GETID(omp_pragma) = 0,
+      GETID(op0),
+      GETID(op1)
+   };
 };
 
 struct omp_section_pragma : public omp_pragma
 {
    /// constructor
-   explicit omp_section_pragma(unsigned int i) : omp_pragma(i) {}
+   explicit omp_section_pragma(unsigned int i) : omp_pragma(i)
+   {
+   }
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(omp_section_pragma)
@@ -390,15 +463,18 @@ struct omp_section_pragma : public omp_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(omp_pragma)=0};
+   enum
+   {
+      GETID(omp_pragma) = 0
+   };
 };
 
 struct omp_target_pragma : public omp_pragma
 {
-   ///Clauses associated with the directives
+   /// Clauses associated with the directives
    std::unordered_map<std::string, std::string> clauses;
 
    /// constructor
@@ -414,15 +490,18 @@ struct omp_target_pragma : public omp_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(omp_pragma)=0};
+   enum
+   {
+      GETID(omp_pragma) = 0
+   };
 };
 
 struct omp_task_pragma : public omp_pragma
 {
-   ///Clauses associated with the directives
+   /// Clauses associated with the directives
    std::unordered_map<std::string, std::string> clauses;
 
    /// constructor
@@ -438,15 +517,18 @@ struct omp_task_pragma : public omp_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(omp_pragma)=0};
+   enum
+   {
+      GETID(omp_pragma) = 0
+   };
 };
 
 struct omp_critical_pragma : public omp_pragma
 {
-   ///Clauses associated with the directives
+   /// Clauses associated with the directives
    std::unordered_map<std::string, std::string> clauses;
 
    /// constructor
@@ -462,16 +544,21 @@ struct omp_critical_pragma : public omp_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(omp_pragma)=0};
+   enum
+   {
+      GETID(omp_pragma) = 0
+   };
 };
 
 struct omp_atomic_pragma : public omp_pragma
 {
    /// constructor
-   explicit omp_atomic_pragma(unsigned int i) : omp_pragma(i) {}
+   explicit omp_atomic_pragma(unsigned int i) : omp_pragma(i)
+   {
+   }
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(omp_atomic_pragma)
@@ -483,16 +570,21 @@ struct omp_atomic_pragma : public omp_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(omp_pragma)=0};
+   enum
+   {
+      GETID(omp_pragma) = 0
+   };
 };
 
 struct omp_for_pragma : public omp_pragma
 {
    /// constructor
-   explicit omp_for_pragma(unsigned int i) : omp_pragma(i) {}
+   explicit omp_for_pragma(unsigned int i) : omp_pragma(i)
+   {
+   }
 
    /// map between the clauses that can be associated with the OpenMP parallel pragma and their value (e.g. number of threads)
    std::unordered_map<std::string, std::string> clauses;
@@ -507,16 +599,21 @@ struct omp_for_pragma : public omp_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(omp_pragma)=0};
+   enum
+   {
+      GETID(omp_pragma) = 0
+   };
 };
 
 struct omp_simd_pragma : public omp_pragma
 {
    /// constructor
-   explicit omp_simd_pragma(unsigned int i) : omp_pragma(i) {}
+   explicit omp_simd_pragma(unsigned int i) : omp_pragma(i)
+   {
+   }
 
    /// map between the clauses that can be associated with the OpenMP parallel pragma and their value (e.g. number of threads)
    std::unordered_map<std::string, std::string> clauses;
@@ -531,16 +628,21 @@ struct omp_simd_pragma : public omp_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(omp_pragma)=0};
+   enum
+   {
+      GETID(omp_pragma) = 0
+   };
 };
 
 struct omp_declare_simd_pragma : public omp_pragma
 {
    /// constructor
-   explicit omp_declare_simd_pragma(unsigned int i) : omp_pragma(i) {}
+   explicit omp_declare_simd_pragma(unsigned int i) : omp_pragma(i)
+   {
+   }
 
    /// map between the clauses that can be associated with the OpenMP parallel pragma and their value (e.g. number of threads)
    std::unordered_map<std::string, std::string> clauses;
@@ -555,20 +657,25 @@ struct omp_declare_simd_pragma : public omp_pragma
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(omp_pragma)=0};
+   enum
+   {
+      GETID(omp_pragma) = 0
+   };
 };
 
 /**
  * This struct specifies the while expression
  * Used to represent a while construct
  */
-struct gimple_while :public gimple_node
+struct gimple_while : public gimple_node
 {
    /// constructor
-   explicit gimple_while(unsigned int i) : gimple_node(i) {}
+   explicit gimple_while(unsigned int i) : gimple_node(i)
+   {
+   }
 
    /// The boolean condition
    tree_nodeRef op0;
@@ -583,20 +690,26 @@ struct gimple_while :public gimple_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(gimple_node)=0, GETID(op0)};
+   enum
+   {
+      GETID(gimple_node) = 0,
+      GETID(op0)
+   };
 };
 
 /**
  * This struct specifies the for expression
  * Used to represent a for construct
  */
-struct gimple_for :public gimple_while
+struct gimple_for : public gimple_while
 {
    /// constructor
-   explicit gimple_for(unsigned int i) : gimple_while(i) {}
+   explicit gimple_for(unsigned int i) : gimple_while(i)
+   {
+   }
 
    /// initialization
    tree_nodeRef op1;
@@ -617,30 +730,36 @@ struct gimple_for :public gimple_while
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(gimple_while)=0, GETID(op1), GETID(op2)};
+   enum
+   {
+      GETID(gimple_while) = 0,
+      GETID(op1),
+      GETID(op2)
+   };
 };
 
 /**
  * This struct specifies a multi-way-if construct
  */
-struct gimple_multi_way_if :public gimple_node
+struct gimple_multi_way_if : public gimple_node
 {
    /// constructor
-   explicit gimple_multi_way_if(unsigned int i) : gimple_node(i) {}
+   explicit gimple_multi_way_if(unsigned int i) : gimple_node(i)
+   {
+   }
 
    /// The list of pair condition basic block
-   std::list<std::pair< tree_nodeRef, unsigned int> > list_of_cond;
+   std::list<std::pair<tree_nodeRef, unsigned int>> list_of_cond;
 
    /**
     * Add a pair <cond, bb_index> to the list of cond.
     * @param cond is the condition.
     * @param bb_ind is the basic block index.
     */
-   void add_cond(const tree_nodeRef cond, unsigned int bb_ind);
-
+   void add_cond(const tree_nodeRef& cond, unsigned int bb_ind);
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(gimple_multi_way_if)
@@ -652,11 +771,14 @@ struct gimple_multi_way_if :public gimple_node
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class
     */
-   virtual void visit(tree_node_visitor * const v) const;
+   void visit(tree_node_visitor* const v) const override;
 
    /// visitor enum
-   enum {GETID(gimple_node)=0, GETID(list_of_cond)};
+   enum
+   {
+      GETID(gimple_node) = 0,
+      GETID(list_of_cond)
+   };
 };
 
 #endif
-

@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file memory_allocation.hpp
  * @brief Base class to allocate memories in high-level synthesis
@@ -40,7 +40,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef _MEMORY_ALLOCATION_HPP_
 #define _MEMORY_ALLOCATION_HPP_
@@ -54,12 +54,13 @@ REF_FORWARD_DECL(memory_allocation);
  */
 enum class MemoryAllocation_Policy
 {
-   LSS = 0,   /// all local variables, static variables and strings are allocated on BRAMs
-   GSS,       /// all global variables, static variables and strings are allocated on BRAMs
-   ALL_BRAM,  /// all objects that need to be stored in memory are allocated on BRAMs
-   NO_BRAM,   /// all objects that need to be stored in memory are allocated on an external memory
+   LSS = 0,            /// all local variables, static variables and strings are allocated on BRAMs
+   GSS,                /// all global variables, static variables and strings are allocated on BRAMs
+   ALL_BRAM,           /// all objects that need to be stored in memory are allocated on BRAMs
+   NO_BRAM,            /// all objects that need to be stored in memory are allocated on an external memory
    EXT_PIPELINED_BRAM, /// all objects that need to be stored in memory are allocated on an external pipelined memory
-   NONE       /// no policy
+   INTERN_UNALIGNED,   /// all objects with an unaligned access are clustered on a single STD_BRAM
+   NONE                /// no policy
 };
 
 /**
@@ -70,7 +71,8 @@ enum class MemoryAllocation_ChannelsType
    MEM_ACC_11 = 0, /// for each memory at maximum one direct access and one indirect access
    MEM_ACC_N1,     /// for each memory at maximum n parallel direct accesses and one indirect access
    MEM_ACC_NN,     /// for each memory at maximum n parallel direct accesses and n parallel indirect accesses
-   MEM_ACC_P1N     /// only external memory access Datapath see only 1 memory port, while the bus manage parallel accesses
+   MEM_ACC_P1N,    /// only external memory access Datapath see only 1 memory port, while the bus manage parallel accesses
+   MEM_ACC_CS      /// memory architecture for non blocking request
 };
 
 /**
@@ -78,29 +80,29 @@ enum class MemoryAllocation_ChannelsType
  */
 class MemoryAllocationSpecialization : public HLSFlowStepSpecialization
 {
-   public:
-      ///memory allocation policy
-      const MemoryAllocation_Policy memory_allocation_policy;
+ public:
+   /// memory allocation policy
+   const MemoryAllocation_Policy memory_allocation_policy;
 
-      ///number of channels
-      const MemoryAllocation_ChannelsType memory_allocation_channels_type;
+   /// number of channels
+   const MemoryAllocation_ChannelsType memory_allocation_channels_type;
 
-      /**
-       * Constructor
-       * @param memory_allocation_policy is the memory allocation policy
-       * @param memory_allocation_channels_type is the number of channels
-       */
-      MemoryAllocationSpecialization(const MemoryAllocation_Policy memory_allocation_policy, const MemoryAllocation_ChannelsType memory_allocation_channels_type);
+   /**
+    * Constructor
+    * @param memory_allocation_policy is the memory allocation policy
+    * @param memory_allocation_channels_type is the number of channels
+    */
+   MemoryAllocationSpecialization(const MemoryAllocation_Policy memory_allocation_policy, const MemoryAllocation_ChannelsType memory_allocation_channels_type);
 
-      /**
-       * Return the string representation of this
-       */
-      const std::string GetKindText() const;
+   /**
+    * Return the string representation of this
+    */
+   const std::string GetKindText() const override;
 
-      /**
-       * Return the contribution to the signature of a step given by the specialization
-       */
-      virtual const std::string GetSignature() const;
+   /**
+    * Return the contribution to the signature of a step given by the specialization
+    */
+   const std::string GetSignature() const override;
 };
 
 /**
@@ -108,53 +110,72 @@ class MemoryAllocationSpecialization : public HLSFlowStepSpecialization
  */
 class memory_allocation : public HLS_step
 {
-   protected:
-      ///True if this step has already been executed
-      bool already_executed;
+ protected:
+   /// list of functions to be analyzed
+   std::set<unsigned int> func_list;
 
-      ///list of functions to be analyzed
-      std::set<unsigned int> func_list;
+   /// The memory allocation policy
+   const MemoryAllocation_Policy memory_allocation_policy;
 
-      ///The memory allocation policy
-      const MemoryAllocation_Policy memory_allocation_policy;
+   /// The version of memory representation on which this step was applied
+   unsigned int memory_version;
 
-      /**
-       * Prepares the datastructures for the memory allocation
-       */
-      void setup_memory_allocation();
+   /// The version of BB IR representation on which this step was applied
+   std::map<unsigned int, unsigned int> last_bb_ver;
 
-      /**
-       * Performs a final analysis of the memory allocation to finalize the datastructure
-       */
-      void finalize_memory_allocation();
+   /// The version of bit value IR representation on which this step was applied
+   std::map<unsigned int, unsigned int> last_bitvalue_ver;
 
-      /**
-       * Compute the relationship of this step
-       * @param relationship_type is the type of relationship to be considered
-       * @return the steps in relationship with this
-       */
-      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   /**
+    * Prepares the datastructures for the memory allocation
+    */
+   void setup_memory_allocation();
 
-   public:
-      /**
-       * Constructor
-       * @param design_flow_manager is the design flow manager
-       * @param hls_flow_step_type is the algorithm to be used
-       */
-      memory_allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
+   /**
+    * Performs a final analysis of the memory allocation to finalize the datastructure
+    */
+   void finalize_memory_allocation();
 
-      /**
-       * Destructor
-       */
-      ~memory_allocation();
+   /**
+    * Compute the relationship of this step
+    * @param relationship_type is the type of relationship to be considered
+    * @return the steps in relationship with this
+    */
+   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      void allocate_parameters(unsigned int functionId);
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   virtual DesignFlowStep_Status InternalExec() = 0;
 
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      virtual bool HasToBeExecuted() const;
+ public:
+   /**
+    * Constructor
+    * @param design_flow_manager is the design flow manager
+    * @param hls_flow_step_type is the algorithm to be used
+    */
+   memory_allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
+                     const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
+
+   /**
+    * Destructor
+    */
+   ~memory_allocation() override;
+
+   void allocate_parameters(unsigned int functionId);
+
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
+
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status Exec() override;
 };
 
 #endif

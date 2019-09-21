@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,32 +42,34 @@
 
 // include from utility/
 #include "refcount.hpp"
+#include <string>
 
-enum discrepancy_type_mask {
-   DISCR_NONE     = 0,
-   DISCR_ADDR     = 1 << 0,
-   DISCR_REAL     = 1 << 1,
-   DISCR_COMPLEX  = 1 << 2,
-   DISCR_VECTOR   = 1 << 3,
+enum discrepancy_type_mask
+{
+   DISCR_NONE = 0,
+   DISCR_ADDR = 1 << 0,
+   DISCR_REAL = 1 << 1,
+   DISCR_COMPLEX = 1 << 2,
+   DISCR_VECTOR = 1 << 3,
 };
 
-inline static discrepancy_type_mask operator&(const discrepancy_type_mask & a, const discrepancy_type_mask & b)
+inline static discrepancy_type_mask operator&(const discrepancy_type_mask& a, const discrepancy_type_mask& b)
 {
    return static_cast<discrepancy_type_mask>(static_cast<int>(a) & static_cast<int>(b));
 }
 
-inline static discrepancy_type_mask & operator&=(discrepancy_type_mask & a, const discrepancy_type_mask & b)
+inline static discrepancy_type_mask& operator&=(discrepancy_type_mask& a, const discrepancy_type_mask& b)
 {
    a = a & b;
    return a;
 }
 
-inline static discrepancy_type_mask operator|(const discrepancy_type_mask & a, const discrepancy_type_mask & b)
+inline static discrepancy_type_mask operator|(const discrepancy_type_mask& a, const discrepancy_type_mask& b)
 {
    return static_cast<discrepancy_type_mask>(static_cast<int>(a) | static_cast<int>(b));
 }
 
-inline static discrepancy_type_mask & operator|=(discrepancy_type_mask & a, const discrepancy_type_mask & b)
+inline static discrepancy_type_mask& operator|=(discrepancy_type_mask& a, const discrepancy_type_mask& b)
 {
    a = a | b;
    return a;
@@ -78,26 +80,25 @@ inline static discrepancy_type_mask & operator|=(discrepancy_type_mask & a, cons
  */
 class DiscrepancyOpInfo
 {
-   public:
-
-      unsigned long n_cycles;
-      unsigned int stg_fun_id;
-      unsigned int op_id;
-      unsigned int ssa_name_node_id;
-      unsigned int bitsize;
-      unsigned int vec_base_bitsize;
-      enum discrepancy_type_mask type;
-      bool is_bounded_op;
-      std::set<unsigned int> start_states;
-      std::set<unsigned int> exec_states;
-      std::set<unsigned int> end_states;
-      std::string ssa_name;
+ public:
+   unsigned long n_cycles;
+   unsigned int stg_fun_id;
+   unsigned int op_id;
+   unsigned int ssa_name_node_id;
+   unsigned int bitsize;
+   unsigned int vec_base_bitsize;
+   enum discrepancy_type_mask type;
+   bool is_bounded_op;
+   std::set<unsigned int> start_states;
+   std::set<unsigned int> exec_states;
+   std::set<unsigned int> end_states;
+   std::string ssa_name;
 };
 
-bool operator != (const DiscrepancyOpInfo & a, const DiscrepancyOpInfo &b);
-bool operator == (const DiscrepancyOpInfo & a, const DiscrepancyOpInfo &b);
-bool operator < (const DiscrepancyOpInfo & a, const DiscrepancyOpInfo &b);
-bool operator <= (const DiscrepancyOpInfo & a, const DiscrepancyOpInfo &b);
-bool operator > (const DiscrepancyOpInfo & a, const DiscrepancyOpInfo &b);
-bool operator >= (const DiscrepancyOpInfo & a, const DiscrepancyOpInfo &b);
+bool operator!=(const DiscrepancyOpInfo& a, const DiscrepancyOpInfo& b);
+bool operator==(const DiscrepancyOpInfo& a, const DiscrepancyOpInfo& b);
+bool operator<(const DiscrepancyOpInfo& a, const DiscrepancyOpInfo& b);
+bool operator<=(const DiscrepancyOpInfo& a, const DiscrepancyOpInfo& b);
+bool operator>(const DiscrepancyOpInfo& a, const DiscrepancyOpInfo& b);
+bool operator>=(const DiscrepancyOpInfo& a, const DiscrepancyOpInfo& b);
 #endif

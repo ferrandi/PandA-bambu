@@ -39,3 +39,10 @@ main_test (void)
   if (memcmp ("efgh", "abcd", 4) <= 0)
     link_error ();
 }
+
+int main()
+{
+  main_test();
+  exit(0);
+}
+

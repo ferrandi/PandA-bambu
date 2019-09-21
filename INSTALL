@@ -27,8 +27,10 @@ Currently accepted parameters are:
                    within the framework
   --enable-altera: enable Altera RTL synthesis tool execution within the framework
   --enable-lattice: enable Lattice RTL synthesis tool execution within the framework
+  --enable-nanoxplore: enable BRAVE FPGA NanoXplore RTL synthesis tool execution within the framework
   --enable-modelsim: enable Modelsim-based simulation directly within the framework
   --with-mentor-license=<license-file/license-server>
+  --with-nanoxplore-license=<license-file/license-server>
   --enable-icarus: enable Icarus-based simulation
                    http://iverilog.icarus.com/
   --enable-verilator: enable Verilator-based simulation
@@ -45,9 +47,9 @@ mixed-language simulator. Both Modelsim from Mentor and XSIM/ISIM from Xilinx
 have such support.
 
 The suggested configuration is
-../configure --prefix=/opt/panda --enable-flopoco --enable-icarus --enable-verilator --enable-xilinx --enable-modelsim --enable-altera --enable-opt --enable-lattice --enable-release --with-mentor-license=<license-string>
+../configure --prefix=/opt/panda --enable-flopoco --enable-icarus --enable-verilator --enable-xilinx --enable-modelsim --enable-altera --enable-nanoxplore --enable-opt --enable-lattice --enable-release --with-mentor-license=<license-string> --with-nanoxplore-license=<license-string>
 
-Options --enable-xilinx, --enable-modelsim, --enable-altera, --enable-lattice, and --with-mentor-license=<license-string> require that third-party tools have been installed before PandA is configured. Details on where these third-party tools are searched are provided at the end of this file.
+Options --enable-xilinx, --enable-modelsim, --enable-altera, --enable-lattice, --enable-nanoxplore, --with-mentor-license=<license-string>, and --with-nanoxplore-license=<license-string> require that third-party tools have been installed before PandA is configured. Details on where these third-party tools are searched are provided at the end of this file.
 
 7) Compile the tool:
   $make
@@ -93,6 +95,80 @@ Ubuntu packages
 
 The following packages have to be installed under Ubuntu to compile PandA
 
+Ubuntu 18.04 64bit:
+- autoconf
+- autoconf-archive
+- automake
+- libtool
+- g++
+- gcc-4.8
+- g++-4.8
+- gcc-5
+- g++-5
+- gcc-6
+- g++-6
+- gcc-7
+- g++-7
+- gcc-8
+- g++-8
+- gcc-4.8-plugin-dev
+- gcc-5-plugin-dev
+- gcc-6-plugin-dev
+- gcc-7-plugin-dev
+- gcc-8-plugin-dev
+- gcc-4.8-multilib
+- gcc-5-multilib
+- gcc-6-multilib
+- gcc-7-multilib
+- gcc-7-multilib
+- g++-4.8-multilib
+- g++-5-multilib
+- g++-6-multilib
+- g++-7-multilib
+- g++-8-multilib
+- gfortran-4.8
+- gfortran-4.8-multilib 
+- gfortran-5
+- gfortran-5-multilib
+- gfortran-6 
+- gfortran-6-multilib
+- gfortran-7
+- gfortran-7-multilib
+- gfortran-8
+- gfortran-8-multilib
+- clang-4.0
+- libclang-4.0-dev
+- clang-5.0
+- libclang-5.0-dev
+- clang-6.0
+- libclang-6.0-dev
+- clang-7
+- libclang-7-dev
+- libbdd-dev
+- libboost-all-dev
+- libmpc-dev
+- libmpfr-dev
+- libxml2-dev
+- liblzma-dev
+- libmpfi-dev
+- zlib1g-dev
+- libicu-dev
+- bison
+- doxygen
+- flex
+- graphviz
+- iverilog
+- verilator
+- pkg-config
+- libsuitesparse-dev
+- libglpk-dev
+- make
+
+
+In a single line:
+sudo apt-get install autoconf autoconf-archive automake libtool g++ gcc-4.8 g++-4.8 gcc-5 g++-5 gcc-6 g++-6 gcc-7 g++-7 gcc-8 g++-8 gcc-4.8-plugin-dev gcc-5-plugin-dev gcc-6-plugin-dev gcc-7-plugin-dev  gcc-8-plugin-dev gcc-4.8-multilib gcc-5-multilib gcc-6-multilib gcc-7-multilib gcc-8-multilib g++-4.8-multilib g++-5-multilib g++-6-multilib g++-7-multilib g++-8-multilib gfortran-4.8 gfortran-4.8-multilib gfortran-5 gfortran-5-multilib gfortran-6 gfortran-6-multilib gfortran-7 gfortran-7-multilib gfortran-8 gfortran-8-multilib clang-4.0 libclang-4.0-dev clang-4.0 libclang-6.0-dev clang-6.0 libclang-6.0-dev clang-7 libclang-7-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator make libsuitesparse-dev libglpk-dev
+
+
 Ubuntu 17.04 64bit and Ubuntu 17.04 32bit:
 - autoconf
 - autoconf-archive
@@ -123,6 +199,9 @@ Ubuntu 17.04 64bit and Ubuntu 17.04 32bit:
 - gfortran-5-multilib
 - gfortran-6 
 - gfortran-6-multilib
+- clang-4.0
+- libclang-4.0-dev
+- libbdd-dev
 - libboost-all-dev
 - libmpc-dev
 - libmpfr-dev
@@ -144,7 +223,7 @@ Ubuntu 17.04 64bit and Ubuntu 17.04 32bit:
 
 
 In a single line:
-sudo apt install autoconf autoconf-archive automake libtool g++ gcc-4.8 g++-4.8 gcc-4.9 g++-4.9 gcc-5 g++-5 gcc-6 g++-6 gcc-4.8-plugin-dev gcc-4.9-plugin-dev gcc-5-plugin-dev gcc-6-plugin-dev gcc-4.8-multilib gcc-4.9-multilib gcc-5-multilib gcc-6-multilib g++-4.8-multilib g++-4.9-multilib g++-5-multilib g++-6-multilib libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator make libsuitesparse-dev libglpk-dev
+sudo apt install autoconf autoconf-archive automake libtool g++ gcc-4.8 g++-4.8 gcc-4.9 g++-4.9 gcc-5 g++-5 gcc-6 g++-6 gcc-4.8-plugin-dev gcc-4.9-plugin-dev gcc-5-plugin-dev gcc-6-plugin-dev gcc-4.8-multilib gcc-4.9-multilib gcc-5-multilib gcc-6-multilib g++-4.8-multilib g++-4.9-multilib g++-5-multilib g++-6-multilib gfortran-4.8 gfortran-4.8-multilib gfortran-4.9 gfortran-4.9-multilib gfortran-5 gfortran-5-multilib gfortran-6 gfortran-6-multilib clang-4.0 libclang-4.0-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator make libsuitesparse-dev libglpk-dev
 
 Ubuntu 16.10 64bit:
 - autoconf
@@ -176,6 +255,9 @@ Ubuntu 16.10 64bit:
 - gfortran-5-multilib
 - gfortran-6 
 - gfortran-6-multilib
+- clang-4.0
+- libclang-4.0-dev
+- libbdd-dev
 - libboost-all-dev
 - libmpc-dev
 - libmpfr-dev
@@ -197,7 +279,7 @@ Ubuntu 16.10 64bit:
 
 
 In a single line:
-sudo apt install autoconf autoconf-archive automake libtool g++ gcc-4.8 g++-4.8 gcc-4.9 g++-4.9 gcc-5 g++-5 gcc-6 g++-6 gcc-4.8-plugin-dev gcc-4.9-plugin-dev gcc-5-plugin-dev gcc-6-plugin-dev gcc-4.8-multilib gcc-4.9-multilib gcc-5-multilib gcc-6-multilib g++-4.8-multilib g++-4.9-multilib g++-5-multilib g++-6-multilib libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator make libsuitesparse-dev libglpk-dev
+sudo apt install autoconf autoconf-archive automake libtool g++ gcc-4.8 g++-4.8 gcc-4.9 g++-4.9 gcc-5 g++-5 gcc-6 g++-6 gcc-4.8-plugin-dev gcc-4.9-plugin-dev gcc-5-plugin-dev gcc-6-plugin-dev gcc-4.8-multilib gcc-4.9-multilib gcc-5-multilib gcc-6-multilib g++-4.8-multilib g++-4.9-multilib g++-5-multilib g++-6-multilib gfortran-4.8 gfortran-4.8-multilib gfortran-4.9 gfortran-4.9-multilib gfortran-5 gfortran-5-multilib gfortran-6 gfortran-6-multilib clang-4.0 libclang-4.0-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator make libsuitesparse-dev libglpk-dev
 
 Ubuntu 16.04 64bit:
 - autoconf
@@ -225,6 +307,9 @@ Ubuntu 16.04 64bit:
 - gfortran-4.9-multilib
 - gfortran-5 
 - gfortran-5-multilib
+- clang-4.0
+- libclang-4.0-dev
+- libbdd-dev
 - libboost-all-dev
 - libmpc-dev
 - libmpfr-dev
@@ -246,7 +331,7 @@ Ubuntu 16.04 64bit:
 
 
 In a single line:
-sudo apt-get install autoconf autoconf-archive automake libtool g++ gcc-4.8 g++-4.8 gcc-4.9 g++-4.9 gcc-5 g++-5 gcc-4.8-plugin-dev gcc-4.9-plugin-dev gcc-5-plugin-dev  gcc-4.8-multilib gcc-4.9-multilib gcc-5-multilib g++-4.8-multilib g++-4.9-multilib g++-5-multilib gfortran-4.8 gfortran-4.8-multilib gfortran-4.9 gfortran-4.9-multilib gfortran-5 gfortran-5-multilib libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator make libsuitesparse-dev libglpk-dev
+sudo apt-get install autoconf autoconf-archive automake libtool g++ gcc-4.8 g++-4.8 gcc-4.9 g++-4.9 gcc-5 g++-5 gcc-4.8-plugin-dev gcc-4.9-plugin-dev gcc-5-plugin-dev  gcc-4.8-multilib gcc-4.9-multilib gcc-5-multilib g++-4.8-multilib g++-4.9-multilib g++-5-multilib gfortran-4.8 gfortran-4.8-multilib gfortran-4.9 gfortran-4.9-multilib gfortran-5 gfortran-5-multilib clang-4.0 libclang-4.0-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator make libsuitesparse-dev libglpk-dev
 
 
 Ubuntu 14.04 LTS 64bit and Ubuntu 14.04 LTS 32bit:
@@ -310,14 +395,27 @@ Debian unstable (sid):
 - g++-5
 - gcc-6
 - g++-6
+- gcc-7
+- g++-7
+- gcc-8
+- g++-8
 - gcc-5-plugin-dev
 - gcc-6-plugin-dev
 - gcc-7-plugin-dev
+- gcc-8-plugin-dev
 - gcc-5-multilib
 - gcc-6-multilib
 - gcc-7-multilib
+- gcc-8-multilib
 - gfortran
 - gfortran-multilib 
+- clang-4.0
+- libclang-4.0-dev
+- clang-5.0
+- libclang-5.0-dev
+- clang-6.0
+- libclang-6.0-dev
+- libbdd-dev
 - libboost-all-dev
 - libmpc-dev
 - libmpfr-dev
@@ -338,7 +436,7 @@ Debian unstable (sid):
 - make
 
 In a single line (as root user):
-apt install autoconf autoconf-archive libtool make g++ gcc-5 g++-5 gcc-6 g++-6 gcc-5-plugin-dev gcc-6-plugin-dev gcc-7-plugin-dev gcc-5-multilib gcc-6-multilib gcc-7-multilib gfortran gfortran-multilib libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config
+apt install autoconf autoconf-archive libtool make g++ gcc-5 g++-5 gcc-6 g++-6 gcc-7 g++-7 gcc-5-plugin-dev gcc-6-plugin-dev gcc-7-plugin-dev gcc-8-plugin-dev gcc-5-multilib gcc-6-multilib gcc-7-multilib gcc-8-multilib gfortran gfortran-multilib clang-4.0 libclang-4.0-dev clang-5.0 libclang-5.0-dev clang-6.0 libclang-6.0-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config
 
 Debian 9 (Stretch):
 - autoconf
@@ -351,6 +449,9 @@ Debian 9 (Stretch):
 - gcc-6-plugin-dev
 - gfortran
 - gfortran-multilib 
+- clang-4.0
+- libclang-4.0-dev
+- libbdd-dev
 - libcloog-ppl1
 - libboost-all-dev
 - libmpc-dev
@@ -371,7 +472,7 @@ Debian 9 (Stretch):
 - libglpk-dev
 
 In a single line (as root user):
-apt install autoconf autoconf-archive libtool make gcc g++ gcc-multilib gcc-6-plugin-dev gfortran gfortran-multilib libcloog-ppl1 libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config libsuitesparse-dev libglpk-dev
+apt install autoconf autoconf-archive libtool make gcc g++ gcc-multilib gcc-6-plugin-dev gfortran gfortran-multilib libcloog-ppl1 clang-4.0 libclang-4.0-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config libsuitesparse-dev libglpk-dev
 
 CentOS 6/Scientific Linux distributions
 *************
@@ -445,6 +546,7 @@ The following packages have to be installed under Centos 7 to compile PandA:
 - make
 - mpfr-devel
 - suitesparse-static
+- verilator
 - xz-devel
 - zlib-devel
 
@@ -452,7 +554,7 @@ Extra packages for Enterprise Linux (EPEL) is required:
 yum install epel-release
 
 In a single line (as root):
-yum install autoconf autoconf-archive automake bison boost-devel flex gcc-c++ gcc-plugin-devel glibc-devel.i686 glpk-devel libgcc.i686 libicu-devel libtool libtool-ltdl-devel libxml2-devel make mpfr-devel suitesparse-static xz-devel zlib-devel
+yum install autoconf autoconf-archive automake bison boost-devel flex gcc-c++ gcc-plugin-devel glibc-devel.i686 glpk-devel libgcc.i686 libicu-devel libtool libtool-ltdl-devel libxml2-devel make mpfr-devel suitesparse-static verilator xz-devel zlib-devel
 
 FloPoCo is currently not supported by bambu under CentOS 7.
 
@@ -468,65 +570,52 @@ sudo dnf install autoconf autoconf-archive libtool boost-devel mpfr-devel xml2 l
 The following packages have to be installed under Fedora 25 (64 bit) to compile PandA:
 sudo dnf install autoconf autoconf-archive libtool boost-devel mpfr-devel xml2 lzma-devel mpfi-devel zlib-devel bison flex doxygen graphviz iverilog verilator gcc gcc-c++ gcc-plugin-devel.x86_64 gcc-plugin-devel.i686 libxml2-devel glibc glibc-devel glibc.i686 glibc-devel.i686 libgcc.i686 make suitesparse-static libtool-ltdl-devel glpk-devel gawk
 
+The following packages have to be installed under Fedora 29 (64 bit) to compile PandA:
+sudo dnf install autoconf autoconf-archive libtool boost-devel mpfr-devel xml2 lzma-devel mpfi-devel zlib-devel bison flex doxygen graphviz iverilog verilator gcc gcc-c++ gcc-plugin-devel.x86_64 gcc-plugin-devel.i686 libxml2-devel glibc glibc-devel glibc.i686 glibc-devel.i686 libgcc.i686 make suitesparse-static libtool-ltdl-devel glpk-devel gawk clang clang-devel llvm llvm-devel
+
 ArchLinux
 *************
 
-First of all let's start installing all the dependencies. Before starting you
-will need to enable the multilib repository in pacman. If you don't know how to
-do it, take a look at
-https://wiki.archlinux.org/index.php/multilib.
+The following packages have to be installed under ArchLinux to compile PandA:
 
-After a `pacman -Sy` you can proceed to install part of the
-dependencies with
+- base-devel 
+- multilib-devel 
+- boost 
+- iverilog 
+- gcc-multilib 
+- autoconf-archive 
+- verilator 
+- mpfi 
+- clang 
+- llvm 
+- gcc 
+- gcc-fortran 
+- git 
+- tar 
+- suitesparse 
+- glpk 
+- readline
 
-    $ pacman -S base-devel multilib-devel boost iverilog gcc-multilib autoconf-archive
+In a single line:
+sudo pacman -S base-devel multilib-devel boost iverilog gcc-multilib autoconf-archive verilator mpfi clang llvm gcc gcc-fortran git tar suitesparse glpk readline
 
-After this command has completed, you only miss mpfi that unfortunately is not in the official repositories. However you can find it in the AUR at https://aur.archlinux.org.
+A working configure example is:
+../configure --prefix=$HOME/panda --enable-verilator --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast
 
-If you have never installed something from AUR, these are the instruction to install yaourt, a wrapper for pacman which adds automated access to the AUR using the same syntax as pacman.
-- Open pacman's configuration file to add the custom repository.
+Mac OSX
+*************
+To compile PandA on MacOSX you need to install MacPorts (version 2.5.4 or later).
 
-    $ sudo vi /etc/pacman.conf
+Here the list of commands required: 
+     $sudo port -N -q install git autoconf autoconf-archive automake bison flex boost libtool SuiteSparse glpk iverilog clang-6.0 gcc8 mpfi coreutils
+     $sudo cp /opt/local/bin/greadlink /opt/local/bin/readlink
+     $git clone https://github.com/ferrandi/PandA-bambu.git
+     $cd PandA-bambu
+     $make -f Makefile.init
+     $mkdir build
+     $cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast --with-clang6=/opt/local/bin/clang-mp-6.0 --with-gcc8=/opt/local/bin/gcc-mp-8 LDFLAGS=-L/opt/local/lib CPPFLAGS=-I/opt/local/include/ && make -j3 && make install && make clean
 
-- Add the archlinuxfr repository to the bottom.
 
-[archlinuxfr]
-SigLevel = Never
-Server = http://repo.archlinux.fr/$arch
-
-The $arch variable just specifies whether your distribution is x86 or x86_64. It will be replaced when the file is processed.
-- After the custom repository has been added to pacman.conf, the package database needs to be synchronized to include packages from archlinuxfr and any updates from standard packages that yaourt or its dependencies need.
-
-sudo pacman -Sy
-
-- Now, yaourt and its dependencies can be installed just like any other package via pacman.
-
-sudo pacman -S yaourt
-
-yaour can now be used to install aur packages:
-
-    $ yaourt --noconfirm -Sb mpfi
-
-Anyway you can find more information at
-https://wiki.archlinux.org/index.php/Arch_User_Repository.
-
-As an option you can install verilator. Again, it is not available on
-the official repos but you can find the PKGBUILD in the AUR at
-https://aur.archlinux.org/packages/verilator/.
-
-Once all the dependencies are installed you're ready to compile PandA.
-Extract PandA from the archive and procede with the usual configure,
-make and make install sequence.
-
-    $ ../configure --with-gcc48=/usr/bin/gcc --enable-bambu \
-         --enable-icarus  --prefix=/opt/panda --enable-flopoco \
-         --enable-verilator --disable-release
-
-    $ make -j4
-    $ make install
-
-At the time of writing ArchLinux comes with gcc-4.8 but in the future
-you will need to pass --with-gcc49.
 
 Notes on Ubuntu 13.04 64bit and XILINX ISE 14.6
 *************
@@ -550,6 +639,18 @@ once the package has been converted you can install with:
   $sudo dpkg -i diamond-3-9-base-x64_3.9-100_amd64.deb
 
 
+Notes on NanoXplore tools
+*************
+The tested version of NanoXplore tools is the 2.9.4.
+The configuration of the PandA framework may require to add this option to the configure script:
+  --with-nanoxplore-bypass=<operating-system-distribution>
+where possible value can be:
+  x86_64_UBUNTU_14
+  x86_64_UBUNTU_16
+  x86_64_UBUNTU_18
+  x86_64_DEBIAN_9
+  x86_64_RHEL_6
+
 Notes on Modelsim
 *************
 
@@ -566,11 +667,12 @@ For Lattice it checks this set of directories /usr/local/diamond/*
 For Mentor it checks this set of directories /opt/mentor and /opt/mentor/*
 For Xilinx ISE it checks these sets of directories /opt/Xilinx/* and /opt/Xilinx/*/ISE*
 For Xilinx VIVADO it checks this set of directories /opt/Xilinx/* and /opt/Xilinx/Vivado/*
+For BRAVE FPGA NanoXplore it checks this set of directories /opt/NanoXplore/NXmap/*
 Anyway, it is possible to specify a different position of the filesystem for the configuration script to look into.
 This is the list of options that may be useful for this purpose:
   --with-altera-dir=DIR  where the root where ALTERA tools are installed
   --with-lattice-dir=DIR  where the root where LATTICE tools are installed
   --with-mentor-dir=DIR  where the root where MENTOR tools are installed
   --with-xilinx-root-dir=DIR  where the root where XILINX tools are installed
-
+  --with-nanoxplore-dir=DIR  where the root where BRAVE FPGA NanoXplore tools are installed
 

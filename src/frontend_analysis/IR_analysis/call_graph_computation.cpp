@@ -1,4 +1,4 @@
-   /*
+/*
  *
  *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
  *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file call_graph_computation.cpp
  * @brief Build call_graph data structure starting from the tree_manager.
@@ -40,60 +40,57 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "call_graph_computation.hpp"
 
-///Behavior include
+/// Behavior include
 #include "application_manager.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
 
-///Parameter include
+/// Parameter include
 #include "Parameter.hpp"
 
-///Tree include
+/// Tree include
 #include "behavioral_helper.hpp"
-#include "tree_basic_block.hpp"
-#include "tree_manager.hpp"
-#include "tree_helper.hpp"
-#include "tree_node.hpp"
 #include "ext_tree_node.hpp"
+#include "tree_basic_block.hpp"
+#include "tree_helper.hpp"
+#include "tree_manager.hpp"
+#include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-///Utility include
+/// Utility include
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 
-call_graph_computation::call_graph_computation(const ParameterConstRef _parameters, const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager) :
-   ApplicationFrontendFlowStep(_AppM, FUNCTION_ANALYSIS, _design_flow_manager, _parameters),
-   CGM(_AppM->GetCallGraphManager()),
-   current(0)
+call_graph_computation::call_graph_computation(const ParameterConstRef _parameters, const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager)
+    : ApplicationFrontendFlowStep(_AppM, FUNCTION_ANALYSIS, _design_flow_manager, _parameters), CGM(_AppM->GetCallGraphManager()), current(0)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-call_graph_computation::~call_graph_computation()
-{
-}
+call_graph_computation::~call_graph_computation() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > call_graph_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> call_graph_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CREATE_TREE_MANAGER, WHOLE_APPLICATION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP):
       {
 #if HAVE_FROM_PRAGMA_BUILT
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PRAGMA_ANALYSIS, WHOLE_APPLICATION));
@@ -121,66 +118,59 @@ DesignFlowStep_Status call_graph_computation::Exec()
    const auto functions = TM->GetAllFunctions();
 
    // iterate on functions and add them to the call graph
-   for (const auto f_id : functions)
+   for(const auto f_id : functions)
    {
       const std::string fu_name = tree_helper::name_function(TM, f_id);
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-            "---Adding function " + STR(f_id) + " " + fu_name + " to call graph");
-      if (fu_name == "__start_pragma__" or
-            fu_name == "__close_pragma__" or
-            boost::algorithm::starts_with(fu_name,"__pragma__"))
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Adding function " + STR(f_id) + " " + fu_name + " to call graph");
+      if(fu_name == "__start_pragma__" or fu_name == "__close_pragma__" or boost::algorithm::starts_with(fu_name, "__pragma__"))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Skipped...");
          continue;
       }
       // avoid nested functions
       const tree_nodeRef fun = TM->get_tree_node_const(f_id);
-      const function_decl* fd = GetPointer<const function_decl>(fun);
-      if (fd->scpe and GET_NODE(fd->scpe)->get_kind() == function_decl_K)
+      const auto* fd = GetPointer<const function_decl>(fun);
+      if(fd->scpe and GET_NODE(fd->scpe)->get_kind() == function_decl_K)
       {
          THROW_ERROR_CODE(NESTED_FUNCTIONS_EC, "Nested functions not yet supported " + STR(f_id));
       }
 
       // add the function to the call graph if necessary
-      if (not CGM->IsVertex(f_id))
+      if(not CGM->IsVertex(f_id))
       {
          bool has_body = TM->get_implementation_node(f_id) != 0;
-         BehavioralHelperRef helper =
-            BehavioralHelperRef(new BehavioralHelper(AppM, f_id, has_body, parameters));
-         FunctionBehaviorRef FB =
-            FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
+         BehavioralHelperRef helper = BehavioralHelperRef(new BehavioralHelper(AppM, f_id, has_body, parameters));
+         FunctionBehaviorRef FB = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
          CGM->AddFunction(f_id, FB);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-               "---Added function " + STR(f_id) + " " + fu_name + " to call graph");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Added function " + STR(f_id) + " " + fu_name + " to call graph");
       }
       else
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-               "---Function " + STR(f_id) + " " + fu_name + " was already in call graph");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Function " + STR(f_id) + " " + fu_name + " was already in call graph");
       }
    }
 
    // iterate on the bodies of the functions to find calls
-   for (const auto f_id : functions)
+   for(const auto f_id : functions)
    {
       current = f_id;
       const std::string fu_name = tree_helper::name_function(TM, f_id);
       bool has_body = TM->get_implementation_node(f_id) != 0;
-      if (has_body)
+      if(has_body)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Analyze body of " + fu_name );
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Analyze body of " + fu_name);
          const tree_nodeRef fun = TM->get_tree_node_const(f_id);
-         const function_decl * fd = GetPointer<const function_decl>(fun);
-         const statement_list * sl = GetPointer<const statement_list>(GET_NODE(fd->body));
-         if (sl->list_of_bloc.empty())
+         const auto* fd = GetPointer<const function_decl>(fun);
+         const auto* sl = GetPointer<const statement_list>(GET_NODE(fd->body));
+         if(sl->list_of_bloc.empty())
          {
             THROW_ERROR("We can only work on CFG provided by GCC");
          }
          else
          {
-            for (const auto & b : sl->list_of_bloc)
+            for(const auto& b : sl->list_of_bloc)
             {
-               for (const auto& stmt : b.second->CGetStmtList())
+               for(const auto& stmt : b.second->CGetStmtList())
                {
                   call_graph_computation_recursive(TM, stmt, stmt->index, FunctionEdgeInfo::CallType::function_address);
                }
@@ -189,43 +179,39 @@ DesignFlowStep_Status call_graph_computation::Exec()
       }
    }
 
-   if (debug_level >= DEBUG_LEVEL_PEDANTIC or parameters->getOption<bool>(OPT_print_dot))
+   if(debug_level >= DEBUG_LEVEL_PEDANTIC or parameters->getOption<bool>(OPT_print_dot))
       CGM->CGetCallGraph()->WriteDot("call_graph.dot");
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Created call graph");
    return DesignFlowStep_Status::SUCCESS;
 }
 
-void call_graph_computation::call_graph_computation_recursive(
-      const tree_managerRef & TM,
-      const tree_nodeRef & tn,
-      unsigned int node_stmt,
-      enum FunctionEdgeInfo::CallType call_type)
+void call_graph_computation::call_graph_computation_recursive(const tree_managerRef& TM, const tree_nodeRef& tn, unsigned int node_stmt, enum FunctionEdgeInfo::CallType call_type)
 {
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
-   const tree_nodeRef &curr_tn = GET_NODE(tn);
+   const tree_nodeRef& curr_tn = GET_NODE(tn);
    unsigned int ind = GET_INDEX_NODE(tn);
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Recursive analysis of " + STR(ind) + " of type " + curr_tn->get_kind_text() + "(statement is " + STR(node_stmt) + ")");
 
-   switch (curr_tn->get_kind())
+   switch(curr_tn->get_kind())
    {
       case function_decl_K:
       {
          unsigned int impl = TM->get_implementation_node(ind);
-         if (impl)
+         if(impl)
             ind = impl;
-         ///check for nested function
-         function_decl* fd = GetPointer<function_decl>(curr_tn);
+         /// check for nested function
+         auto* fd = GetPointer<function_decl>(curr_tn);
          if(fd->scpe && GET_NODE(fd->scpe)->get_kind() == function_decl_K)
          {
-            THROW_ERROR_CODE(NESTED_FUNCTIONS_EC,"Nested functions not yet supported "+STR(ind));
-            THROW_ERROR("Nested functions not yet supported "+STR(ind));
+            THROW_ERROR_CODE(NESTED_FUNCTIONS_EC, "Nested functions not yet supported " + STR(ind));
+            THROW_ERROR("Nested functions not yet supported " + STR(ind));
          }
          CGM->AddCallPoint(current, ind, node_stmt, call_type);
          break;
       }
       case gimple_return_K:
       {
-         gimple_return* re = GetPointer<gimple_return>(curr_tn);
+         auto* re = GetPointer<gimple_return>(curr_tn);
          if(re->op)
          {
             call_graph_computation_recursive(TM, re->op, node_stmt, call_type);
@@ -234,7 +220,7 @@ void call_graph_computation::call_graph_computation_recursive(
       }
       case gimple_assign_K:
       {
-         gimple_assign* me = GetPointer<gimple_assign>(curr_tn);
+         auto* me = GetPointer<gimple_assign>(curr_tn);
 
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Analyzing left part");
          call_graph_computation_recursive(TM, me->op0, node_stmt, call_type);
@@ -254,11 +240,11 @@ void call_graph_computation::call_graph_computation_recursive(
       case aggr_init_expr_K:
       case call_expr_K:
       {
-         call_expr* ce = GetPointer<call_expr>(curr_tn);
+         auto* ce = GetPointer<call_expr>(curr_tn);
          tree_nodeRef fun_node = GET_NODE(ce->fn);
          if(fun_node->get_kind() == addr_expr_K)
          {
-            unary_expr* ue = GetPointer<unary_expr>(fun_node);
+            auto* ue = GetPointer<unary_expr>(fun_node);
             fun_node = ue->op;
          }
          else if(fun_node->get_kind() == obj_type_ref_K)
@@ -275,11 +261,11 @@ void call_graph_computation::call_graph_computation_recursive(
       }
       case gimple_call_K:
       {
-         gimple_call* ce = GetPointer<gimple_call>(curr_tn);
+         auto* ce = GetPointer<gimple_call>(curr_tn);
          tree_nodeRef fun_node = GET_NODE(ce->fn);
          if(fun_node->get_kind() == addr_expr_K)
          {
-            unary_expr* ue = GetPointer<unary_expr>(fun_node);
+            auto* ue = GetPointer<unary_expr>(fun_node);
             fun_node = ue->op;
          }
          else if(fun_node->get_kind() == obj_type_ref_K)
@@ -295,7 +281,7 @@ void call_graph_computation::call_graph_computation_recursive(
       }
       case cond_expr_K:
       {
-         cond_expr* ce = GetPointer<cond_expr>(curr_tn);
+         auto* ce = GetPointer<cond_expr>(curr_tn);
          call_graph_computation_recursive(TM, ce->op0, node_stmt, call_type);
          call_graph_computation_recursive(TM, ce->op1, node_stmt, call_type);
          call_graph_computation_recursive(TM, ce->op2, node_stmt, call_type);
@@ -303,20 +289,20 @@ void call_graph_computation::call_graph_computation_recursive(
       }
       case gimple_cond_K:
       {
-         gimple_cond* gc = GetPointer<gimple_cond>(curr_tn);
+         auto* gc = GetPointer<gimple_cond>(curr_tn);
          call_graph_computation_recursive(TM, gc->op0, node_stmt, call_type);
          break;
       }
       /* Unary expressions.  */
       case CASE_UNARY_EXPRESSION:
       {
-         unary_expr * ue = GetPointer<unary_expr>(curr_tn);
+         auto* ue = GetPointer<unary_expr>(curr_tn);
          call_graph_computation_recursive(TM, ue->op, node_stmt, call_type);
          break;
       }
       case CASE_BINARY_EXPRESSION:
       {
-         binary_expr* be = GetPointer<binary_expr>(curr_tn);
+         auto* be = GetPointer<binary_expr>(curr_tn);
          call_graph_computation_recursive(TM, be->op0, node_stmt, call_type);
          call_graph_computation_recursive(TM, be->op1, node_stmt, call_type);
          break;
@@ -324,13 +310,13 @@ void call_graph_computation::call_graph_computation_recursive(
       /*ternary expressions*/
       case gimple_switch_K:
       {
-         gimple_switch* se = GetPointer<gimple_switch>(curr_tn);
+         auto* se = GetPointer<gimple_switch>(curr_tn);
          call_graph_computation_recursive(TM, se->op0, node_stmt, call_type);
          break;
       }
       case gimple_multi_way_if_K:
       {
-         gimple_multi_way_if* gmwi=GetPointer<gimple_multi_way_if>(curr_tn);
+         auto* gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
          for(const auto& cond : gmwi->list_of_cond)
             if(cond.first)
                call_graph_computation_recursive(TM, cond.first, node_stmt, call_type);
@@ -356,7 +342,7 @@ void call_graph_computation::call_graph_computation_recursive(
       case ternary_mm_expr_K:
       case bit_ior_concat_expr_K:
       {
-         ternary_expr * te = GetPointer<ternary_expr>(curr_tn);
+         auto* te = GetPointer<ternary_expr>(curr_tn);
          call_graph_computation_recursive(TM, te->op0, node_stmt, call_type);
          call_graph_computation_recursive(TM, te->op1, node_stmt, call_type);
          if(te->op2)
@@ -365,7 +351,7 @@ void call_graph_computation::call_graph_computation_recursive(
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
-         quaternary_expr * qe = GetPointer<quaternary_expr>(curr_tn);
+         auto* qe = GetPointer<quaternary_expr>(curr_tn);
          call_graph_computation_recursive(TM, qe->op0, node_stmt, call_type);
          call_graph_computation_recursive(TM, qe->op1, node_stmt, call_type);
          if(qe->op2)
@@ -374,10 +360,31 @@ void call_graph_computation::call_graph_computation_recursive(
             call_graph_computation_recursive(TM, qe->op3, node_stmt, call_type);
          break;
       }
+      case lut_expr_K:
+      {
+         auto* le = GetPointer<lut_expr>(curr_tn);
+         call_graph_computation_recursive(TM, le->op0, node_stmt, call_type);
+         call_graph_computation_recursive(TM, le->op1, node_stmt, call_type);
+         if(le->op2)
+            call_graph_computation_recursive(TM, le->op2, node_stmt, call_type);
+         if(le->op3)
+            call_graph_computation_recursive(TM, le->op3, node_stmt, call_type);
+         if(le->op4)
+            call_graph_computation_recursive(TM, le->op4, node_stmt, call_type);
+         if(le->op5)
+            call_graph_computation_recursive(TM, le->op5, node_stmt, call_type);
+         if(le->op6)
+            call_graph_computation_recursive(TM, le->op6, node_stmt, call_type);
+         if(le->op7)
+            call_graph_computation_recursive(TM, le->op7, node_stmt, call_type);
+         if(le->op8)
+            call_graph_computation_recursive(TM, le->op8, node_stmt, call_type);
+         break;
+      }
       case constructor_K:
       {
-         constructor * c = GetPointer<constructor>(curr_tn);
-         for (const auto & i : c->list_of_idx_valu)
+         auto* c = GetPointer<constructor>(curr_tn);
+         for(const auto& i : c->list_of_idx_valu)
          {
             call_graph_computation_recursive(TM, i.second, node_stmt, call_type);
          }
@@ -385,8 +392,8 @@ void call_graph_computation::call_graph_computation_recursive(
       }
       case var_decl_K:
       {
-         ///var decl performs an assignment when init is not null
-         var_decl * vd = GetPointer<var_decl>(curr_tn);
+         /// var decl performs an assignment when init is not null
+         auto* vd = GetPointer<var_decl>(curr_tn);
          if(vd->init)
             call_graph_computation_recursive(TM, vd->init, node_stmt, call_type);
       }

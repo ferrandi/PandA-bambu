@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file constants.hpp
  * @brief other constants
@@ -43,11 +43,10 @@
 #ifndef CONSTANTS_HPP
 #define CONSTANTS_HPP
 
-///The character used to separate concatenated string
-#define STR_CST_string_separator std::string(1,31)
+/// The character used to separate concatenated string
+#define STR_CST_string_separator std::string(1, 31)
 
-///The character used to separate concatenated string
+/// The character used to separate concatenated string
 #define STR_CST_string_separator_char static_cast<char>(31)
 
 #endif
-

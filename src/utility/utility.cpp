@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (C) 2015-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,36 +29,38 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file utility.cpp
  * @brief This file collects some utility functions and macros.
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
-*/
-
-///Header include
+ */
 #include "utility.hpp"
 
-TimeStamp::TimeStamp() :
-   boost::posix_time::ptime(boost::date_time::parse_delimited_time<boost::posix_time::ptime>("1970-01-01T00:00:00", 'T'))
-{}
+#include <boost/date_time/posix_time/posix_time_types.hpp>
+#include <boost/date_time/posix_time/time_formatters.hpp>
+#include <boost/date_time/time_parsing.hpp>
 
-TimeStamp::TimeStamp(boost::posix_time::ptime timestamp) :
-   boost::posix_time::ptime(timestamp)
-{}
+TimeStamp::TimeStamp() : boost::posix_time::ptime(boost::date_time::parse_delimited_time<boost::posix_time::ptime>("1970-01-01T00:00:00", 'T'))
+{
+}
 
-TimeStamp::TimeStamp(const std::string&timestamp) :
-   boost::posix_time::ptime(boost::date_time::parse_delimited_time<boost::posix_time::ptime>(timestamp, 'T'))
-{}
+TimeStamp::TimeStamp(boost::posix_time::ptime timestamp) : boost::posix_time::ptime(timestamp)
+{
+}
+
+TimeStamp::TimeStamp(const std::string& timestamp) : boost::posix_time::ptime(boost::date_time::parse_delimited_time<boost::posix_time::ptime>(timestamp, 'T'))
+{
+}
 
 TimeStamp TimeStamp::GetCurrentTimeStamp()
 {
    return TimeStamp(boost::posix_time::second_clock::local_time());
 }
 
-std::ostream & operator<<(std::ostream & os, const TimeStamp & timestamp)
+std::ostream& operator<<(std::ostream& os, const TimeStamp& timestamp)
 {
    if(timestamp.is_special())
    {

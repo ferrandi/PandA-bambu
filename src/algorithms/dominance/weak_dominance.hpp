@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file weak_dominance.hpp
  * @brief Class specifying weak dominance calculus.
@@ -39,19 +39,14 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef WEAK_DOMINANCE_HPP
 #define WEAK_DOMINANCE_HPP
 
-///Graph include
 #include "graph.hpp"
-
-///Stl include
-#include <unordered_map>
-
-///Utility include
 #include "refcount.hpp"
+#include <unordered_map>
 
 CONSTREF_FORWARD_DECL(Parameter);
 
@@ -62,55 +57,55 @@ CONSTREF_FORWARD_DECL(Parameter);
  */
 class weak_dominance
 {
-   private:
-      ///the input graph (not const since node info are copied in the new graph
-      const graph * input;
+ private:
+   /// the input graph (not const since node info are copied in the new graph
+   const graph* input;
 
-      ///the entry vertex
-      vertex start;
+   /// the entry vertex
+   vertex start;
 
-      ///the exit vertex
-      vertex end;
+   /// the exit vertex
+   vertex end;
 
-      ///the selector used in output graph
-      const int selector;
+   /// the selector used in output graph
+   const int selector;
 
-      ///The set of input parameters
-      const ParameterConstRef param;
+   /// The set of input parameters
+   const ParameterConstRef param;
 
-      ///the debug level
-      const int debug_level;
+   /// the debug level
+   const int debug_level;
 
-      /**
-       * Add a weak dominance edge between two nodes
-       * @param source is the source vertex
-       * @param target is the target vertex
-       * @param output is the graph
-       */
-      void add_edge(vertex source, vertex target, graphs_collection * output);
+   /**
+    * Add a weak dominance edge between two nodes
+    * @param source is the source vertex
+    * @param target is the target vertex
+    * @param output is the graph
+    */
+   void add_edge(vertex source, vertex target, graphs_collection* output);
 
-   public:
-      /**
-       * Constructor
-       * @param _input is the input graph
-       * @param _start is the start vertex
-       * @param _end is the end vertex
-       * @param _param is the set of input parameters
-       * @param _selector is the selctor of edges to be added
-       */
-      weak_dominance(const graph * _input, vertex _start, vertex _end, const ParameterConstRef param, int selector = WD_SELECTOR);
+ public:
+   /**
+    * Constructor
+    * @param _input is the input graph
+    * @param _start is the start vertex
+    * @param _end is the end vertex
+    * @param _param is the set of input parameters
+    * @param _selector is the selctor of edges to be added
+    */
+   weak_dominance(const graph* _input, vertex _start, vertex _end, const ParameterConstRef param, int selector = WD_SELECTOR);
 
-      /**
-       * Destructor
-       */
-      ~weak_dominance(){}
+   /**
+    * Destructor
+    */
+   ~weak_dominance() = default;
 
-      /**
-       * Compute weak dominance info
-       * @param output is the graph on which weak dominance edges have to be added;
-       * @param i2o is the map from input vertex to output vertex
-       * @param o2i is the map from output vertex to input vertex
-       */
-      void calculate_weak_dominance_info(graphs_collection * output, std::unordered_map<vertex, vertex> & i2o, std::unordered_map<vertex, vertex> & o2i);
+   /**
+    * Compute weak dominance info
+    * @param output is the graph on which weak dominance edges have to be added;
+    * @param i2o is the map from input vertex to output vertex
+    * @param o2i is the map from output vertex to input vertex
+    */
+   void calculate_weak_dominance_info(graphs_collection* output, std::unordered_map<vertex, vertex>& i2o, std::unordered_map<vertex, vertex>& o2i);
 };
 #endif

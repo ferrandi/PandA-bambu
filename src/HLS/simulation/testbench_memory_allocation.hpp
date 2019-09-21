@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 
 #ifndef __TESTBENCH_MEMORY_ALLOCATION_HPP__
 #define __TESTBENCH_MEMORY_ALLOCATION_HPP__
@@ -38,55 +38,41 @@
 
 class TestbenchMemoryAllocation : public HLS_step
 {
-   public:
+ protected:
+   /// True if the input code is c++
+   bool flag_cpp;
 
-      /**
-       * Constructor
-       */
-      TestbenchMemoryAllocation
-      (
-         const ParameterConstRef _parameters,
-         const HLS_managerRef _HLSMgr,
-         const DesignFlowManagerConstRef _design_flow_manager
-      );
+ public:
+   /**
+    * Constructor
+    */
+   TestbenchMemoryAllocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager);
 
-      /**
-       * Destructor
-       */
-      ~TestbenchMemoryAllocation();
+   /**
+    * Destructor
+    */
+   ~TestbenchMemoryAllocation() override;
 
-      /**
-       * Executes the step
-       */
-      DesignFlowStep_Status Exec();
+   /**
+    * Executes the step
+    */
+   DesignFlowStep_Status Exec() override;
 
-      /**
-       * Compute the HLS relationships of this step
-       */
-      const std::unordered_set
-      <
-         std::tuple
-         <
-            HLSFlowStep_Type,
-            HLSFlowStepSpecializationConstRef,
-            HLSFlowStep_Relationship
-         >
-      >
-      ComputeHLSRelationships
-      (const DesignFlowStep::RelationshipType relationship_type)
-      const;
+   /**
+    * Compute the HLS relationships of this step
+    */
+   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   protected:
+ protected:
+   /**
+    * Alloc the extra memory needed for the testbench input values
+    */
+   void AllocTestbenchMemory(void) const;
 
-      /**
-       * Alloc the extra memory needed for the testbench input values
-       */
-      void AllocTestbenchMemory(void) const;
-
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      virtual bool HasToBeExecuted() const;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 };
 #endif

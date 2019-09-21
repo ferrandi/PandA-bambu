@@ -1,7 +1,7 @@
 EXTRA_DIST= \
   Keccak.c \
   keccak_CycloneII_10ns.sh \
-  keccak_CycloneII_4ns.sh \
+  keccak_CycloneII_5ns.sh \
   keccak_ECP3_9ns.sh \
   keccak_V5_4ns.sh \
   keccak_V7_2ns.sh \
@@ -30,4 +30,4 @@ EXTRA_DIST= \
 #do not touch the following line
 
 
-TESTS=multi.sh keccak_CycloneII_10ns.sh keccak_CycloneII_4ns.sh keccak_ECP3_9ns.sh keccak_V5_4ns.sh keccak_V7_2ns.sh
+TESTS=multi.sh keccak_CycloneII_10ns.sh keccak_CycloneII_5ns.sh keccak_ECP3_9ns.sh keccak_V5_4ns.sh keccak_V7_2ns.sh

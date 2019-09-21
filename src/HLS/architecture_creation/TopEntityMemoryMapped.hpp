@@ -11,7 +11,7 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (c) 2004-2018 Politecnico di Milano
+ *            Copyright (C) 2004-2019 Politecnico di Milano
  *
  * This file is part of the PandA framework.
  *
@@ -63,54 +63,50 @@ class module;
  */
 class TopEntityMemoryMapped : public top_entity
 {
-   public:
-      /**
-       * Constructor.
-       * @param Param The set of parameters.
-       * @param HLSMgr The HLS manager.
-       * @param funId The tree index of the synthesized function.
-       */
-      TopEntityMemoryMapped(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+ public:
+   /**
+    * Constructor.
+    * @param Param The set of parameters.
+    * @param HLSMgr The HLS manager.
+    * @param funId The tree index of the synthesized function.
+    */
+   TopEntityMemoryMapped(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Destructor.
-       */
-      virtual ~TopEntityMemoryMapped();
+   /**
+    * Destructor.
+    */
+   ~TopEntityMemoryMapped() override;
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status InternalExec();
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-   private:
-      /**
-       * Allocates the in/out parameters of the module as internal registers
-       */
-      void allocate_parameters() const;
+ private:
+   /**
+    * Allocates the in/out parameters of the module as internal registers
+    */
+   void allocate_parameters() const;
 
-      void insertMemoryMappedRegister(structural_managerRef SM,
-            structural_objectRef wrappedObj);
+   void insertMemoryMappedRegister(structural_managerRef SM, structural_objectRef wrappedObj);
 
-      void insertStartDoneLogic(structural_managerRef SM,
-            structural_objectRef wrapperObj);
+   void insertStartDoneLogic(structural_managerRef SM, structural_objectRef wrapperObj);
 
-      void insertStatusRegister(structural_managerRef SM,
-            structural_objectRef wrappedObj);
+   void insertStatusRegister(structural_managerRef SM, structural_objectRef wrappedObj);
 
-      void forwardPorts(structural_managerRef SM,
-            structural_objectRef wrappedObj);
+   void forwardPorts(structural_managerRef SM, structural_objectRef wrappedObj);
 
-      std::list<std::string> ParametersName;
-      std::set<structural_objectRef> AddedComponents;
-      bool needMemoryMappedRegisters;
+   std::list<std::string> ParametersName;
+   std::set<structural_objectRef> AddedComponents;
+   bool needMemoryMappedRegisters{false};
 
-      /// true when the module is a root function
-      bool is_root_function;
+   /// true when the module is a root function
+   bool is_root_function{false};
 
-      void resizing_IO(module*fu_module, unsigned int max_n_ports) const;
+   void resizing_IO(module* fu_module, unsigned int max_n_ports) const;
 
-      virtual void Initialize();
+   void Initialize() override;
 };
 
 #endif /* _TOPENTITYMEMORYMAPPED_H_ */

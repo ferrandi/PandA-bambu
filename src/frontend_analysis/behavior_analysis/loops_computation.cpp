@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file loops_computation.cpp
  * @brief Analysis step performing loops computation.
@@ -41,44 +41,46 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
-///Header include
+ */
+/// Header include
 #include "loops_computation.hpp"
 
-#include "application_manager.hpp"
-#include "graph.hpp"
-#include "function_behavior.hpp"
-#include "behavioral_helper.hpp"
-#include "loops.hpp"
-#include "loop.hpp"
-#include "basic_block.hpp"
-#include "tree_basic_block.hpp"
 #include "Parameter.hpp"
+#include "application_manager.hpp"
+#include "basic_block.hpp"
+#include "behavioral_helper.hpp"
+#include "function_behavior.hpp"
+#include "graph.hpp"
+#include "loop.hpp"
+#include "loops.hpp"
+#include "tree_basic_block.hpp"
 
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "hash_helper.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 #include <iosfwd>
 
-loops_computation::loops_computation(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
-   FunctionFrontendFlowStep(_AppM, _function_id, LOOPS_IDENTIFICATION, _design_flow_manager, _parameters)
+loops_computation::loops_computation(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, LOOPS_IDENTIFICATION, _design_flow_manager, _parameters)
 {
-    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
+   debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-loops_computation::~loops_computation()
-{}
+loops_computation::~loops_computation() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > loops_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> loops_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BASIC_BLOCKS_CFG_COMPUTATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DOM_POST_DOM_COMPUTATION, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -110,7 +112,7 @@ DesignFlowStep_Status loops_computation::InternalExec()
    std::list<LoopConstRef>::const_iterator loop_end = loops.end();
    for(std::list<LoopConstRef>::const_iterator loop = loops.begin(); loop != loop_end; ++loop)
    {
-      ///FIXME: zero loop
+      /// FIXME: zero loop
       if((*loop)->GetId() == 0)
          continue;
       const std::unordered_set<vertex> blocks = (*loop)->get_blocks();
@@ -122,6 +124,6 @@ DesignFlowStep_Status loops_computation::InternalExec()
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  Basic block " + boost::lexical_cast<std::string>(bb_node_info->block->number));
       }
    }
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,  "Number of reducible loops: " + boost::lexical_cast<std::string>(function_behavior->CGetLoops()->NumLoops()));
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Number of reducible loops: " + boost::lexical_cast<std::string>(function_behavior->CGetLoops()->NumLoops()));
    return DesignFlowStep_Status::SUCCESS;
 }

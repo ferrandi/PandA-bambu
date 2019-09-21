@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file evaluation_base_step.hpp
  * @brief Base class to compute evaluations about high-level synthesis
@@ -38,7 +38,7 @@
  *
  */
 
-///Superclass include
+/// Superclass include
 #include "hls_function_step.hpp"
 
 #ifndef EVALUATION_BASE_STEP_HPP
@@ -49,34 +49,34 @@
  */
 class EvaluationBaseStep : public HLSFunctionStep
 {
-   protected:
-      ///List of steps performing evaluations
-      std::vector<DesignFlowStepRef> cost_functions;
+ protected:
+   /// List of steps performing evaluations
+   std::vector<DesignFlowStepRef> cost_functions;
 
-      /// List of objectives that have to be evaluated
-      std::vector<HLSFlowStep_Type> cost_function_list;
+   /// List of objectives that have to be evaluated
+   std::vector<HLSFlowStep_Type> cost_function_list;
 
-      /// store the result of the evaluation
-      std::vector<double> evaluations;
+   /// store the result of the evaluation
+   std::vector<double> evaluations;
 
-   public:
-      /**
-       * Constructor
-       * @param parameters is the set of input parameters
-       * @HLSMgr is the HLS manager
-       * @param design_flow_manager is the design flow manager
-       * @param hls_flow_step_type the particular type of evaluation
-       */
-      EvaluationBaseStep(const ParameterConstRef parameters, const HLS_managerRef HLSMgr, const unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
+ public:
+   /**
+    * Constructor
+    * @param parameters is the set of input parameters
+    * @HLSMgr is the HLS manager
+    * @param design_flow_manager is the design flow manager
+    * @param hls_flow_step_type the particular type of evaluation
+    */
+   EvaluationBaseStep(const ParameterConstRef parameters, const HLS_managerRef HLSMgr, const unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
 
-      /**
-       * Destructor
-       */
-      ~EvaluationBaseStep();
+   /**
+    * Destructor
+    */
+   ~EvaluationBaseStep() override;
 
-      /**
-       * Returns the results of the evaluation
-       */
-      const std::vector<double> & GetEvaluations() const;
+   /**
+    * Returns the results of the evaluation
+    */
+   const std::vector<double>& GetEvaluations() const;
 };
 #endif

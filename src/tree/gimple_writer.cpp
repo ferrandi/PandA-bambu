@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file GimpleWriter.cpp
  * @brief tree node writer. This class exploiting the visitor design pattern write a tree node according to the gimple format (i.e. the format used by gcc in plain text dump of gimple)
@@ -39,89 +39,96 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
-///Header include
+ */
+/// Header include
 #include "gimple_writer.hpp"
 
-///Behavior include
+#include <algorithm>                          // for transform
+#include <boost/algorithm/string/replace.hpp> // for replace_all
+#include <boost/lexical_cast.hpp>             // for lexical_cast
+#include <cctype>                             // for toupper
+#include <cstddef>                            // for size_t
+#include <string>                             // for string, operator+
+#include <unordered_map>                      // for unordered_map<>:...
+#include <utility>                            // for pair, operator!=
+#include <vector>                             // for vector, vector<>...
+
+/// Behavior include
 #include "basic_block.hpp"
 
-///parser/treegcc include
+/// parser/treegcc include
 #include "token_interface.hpp"
 
-///Tree include
+/// Tree include
 #include "ext_tree_node.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-GimpleWriter::GimpleWriter(std::ostream & _os, const bool _use_uid) :
-   os(_os),
-   use_uid(_use_uid),
-   current_node_index(0)
+GimpleWriter::GimpleWriter(std::ostream& _os, const bool _use_uid) : os(_os), use_uid(_use_uid), current_node_index(0)
 {
 }
 
-void GimpleWriter::operator()(const tree_node * , unsigned int & )
+void GimpleWriter::operator()(const tree_node*, unsigned int&)
 {
 }
 
-void GimpleWriter::operator()(const WeightedNode * obj, unsigned int & mask)
+void GimpleWriter::operator()(const WeightedNode* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const tree_reindex * obj, unsigned int & )
+void GimpleWriter::operator()(const tree_reindex* obj, unsigned int&)
 {
    current_node_index = obj->index;
-//   obj->actual_tree_node->visit(this);
+   //   obj->actual_tree_node->visit(this);
 }
 
-void GimpleWriter::operator()(const attr* , unsigned int & mask)
+void GimpleWriter::operator()(const attr*, unsigned int& mask)
 {
    mask = NO_VISIT;
 }
 
-void GimpleWriter::operator()(const srcp* , unsigned int & mask)
+void GimpleWriter::operator()(const srcp*, unsigned int& mask)
 {
    mask = NO_VISIT;
 }
 
-void GimpleWriter::operator()(const decl_node* obj, unsigned int & mask)
+void GimpleWriter::operator()(const decl_node* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->tree_node::visit(this);
    obj->srcp::visit(this);
 }
 
-void GimpleWriter::operator()(const expr_node* obj, unsigned int & mask)
+void GimpleWriter::operator()(const expr_node* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->WeightedNode::visit(this);
    obj->srcp::visit(this);
 }
 
-void GimpleWriter::operator()(const gimple_node* obj, unsigned int & mask)
+void GimpleWriter::operator()(const gimple_node* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->WeightedNode::visit(this);
    obj->srcp::visit(this);
 }
 
-void GimpleWriter::operator()(const unary_expr* obj, unsigned int & mask)
+void GimpleWriter::operator()(const unary_expr* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    switch(obj->get_kind())
    {
       case abs_expr_K:
-         {
-            os << "ABS_EXPR <";
-            obj->op->visit(this);
-            os << ">";
-            break;
-         }
+      {
+         os << "ABS_EXPR <";
+         obj->op->visit(this);
+         os << ">";
+         break;
+      }
       case addr_expr_K:
       {
          os << "&";
@@ -193,8 +200,8 @@ void GimpleWriter::operator()(const unary_expr* obj, unsigned int & mask)
       case vec_unpack_float_hi_expr_K:
       case vec_unpack_float_lo_expr_K:
       {
-         std::string str=obj->get_kind_text();
-         std::transform(str.begin(), str.end(),str.begin(), ::toupper);
+         std::string str = obj->get_kind_text();
+         std::transform(str.begin(), str.end(), str.begin(), ::toupper);
          os << "<" << str;
          obj->op->visit(this);
          os << ">";
@@ -215,6 +222,7 @@ void GimpleWriter::operator()(const unary_expr* obj, unsigned int & mask)
       case tree_list_K:
       case tree_vec_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -235,7 +243,7 @@ void GimpleWriter::operator()(const unary_expr* obj, unsigned int & mask)
    obj->expr_node::visit(this);
 }
 
-void GimpleWriter::operator()(const binary_expr* obj, unsigned int & mask)
+void GimpleWriter::operator()(const binary_expr* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    switch(obj->get_kind())
@@ -301,8 +309,8 @@ void GimpleWriter::operator()(const binary_expr* obj, unsigned int & mask)
       case rrotate_expr_K:
       case vec_pack_trunc_expr_K:
       {
-         std::string str=obj->get_kind_text();
-         std::transform(str.begin(), str.end(),str.begin(), ::toupper);
+         std::string str = obj->get_kind_text();
+         std::transform(str.begin(), str.end(), str.begin(), ::toupper);
          os << "<" << str;
          obj->op0->visit(this);
          os << " , ";
@@ -358,7 +366,6 @@ void GimpleWriter::operator()(const binary_expr* obj, unsigned int & mask)
       case truth_xor_expr_K:
       case try_catch_expr_K:
       case try_finally_K:
-      case ltgt_expr_K:
       case unge_expr_K:
       case ungt_expr_K:
       case unle_expr_K:
@@ -378,8 +385,23 @@ void GimpleWriter::operator()(const binary_expr* obj, unsigned int & mask)
       case vec_interleavelow_expr_K:
       {
          obj->op0->visit(this);
-         const std::string op = tree_helper::op_symbol (obj);
+         const std::string op = tree_helper::op_symbol(obj);
          os << " " << op << " ";
+         obj->op1->visit(this);
+         break;
+      }
+      case extract_bit_expr_K:
+      {
+         obj->op0->visit(this);
+         const std::string op = "EXTRACT_BIT_EXPR";
+         os << " " << op << " ";
+         obj->op1->visit(this);
+         break;
+      }
+      case ltgt_expr_K:
+      {
+         obj->op0->visit(this);
+         os << " <!=> ";
          obj->op1->visit(this);
          break;
       }
@@ -411,7 +433,7 @@ void GimpleWriter::operator()(const binary_expr* obj, unsigned int & mask)
       case lut_expr_K:
       {
          os << "LUT<";
-         const lut_expr* obj2 = dynamic_cast<const lut_expr *>(obj);
+         const auto* obj2 = dynamic_cast<const lut_expr*>(obj);
          obj2->op0->visit(this);
          os << ", ";
          obj2->op1->visit(this);
@@ -442,7 +464,7 @@ void GimpleWriter::operator()(const binary_expr* obj, unsigned int & mask)
    obj->expr_node::visit(this);
 }
 
-void GimpleWriter::operator()(const ternary_expr* obj, unsigned int & mask)
+void GimpleWriter::operator()(const ternary_expr* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    switch(obj->get_kind())
@@ -460,7 +482,7 @@ void GimpleWriter::operator()(const ternary_expr* obj, unsigned int & mask)
       }
       case component_ref_K:
       {
-         const indirect_ref * ir = GetPointer<indirect_ref>(GET_NODE(obj->op0));
+         const indirect_ref* ir = GetPointer<indirect_ref>(GET_NODE(obj->op0));
          if(ir)
          {
             ir->op->visit(this);
@@ -552,6 +574,7 @@ void GimpleWriter::operator()(const ternary_expr* obj, unsigned int & mask)
       case vtable_ref_K:
       case with_cleanup_expr_K:
       case error_mark_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -570,7 +593,7 @@ void GimpleWriter::operator()(const ternary_expr* obj, unsigned int & mask)
    obj->expr_node::visit(this);
 }
 
-void GimpleWriter::operator()(const quaternary_expr* obj, unsigned int & mask)
+void GimpleWriter::operator()(const quaternary_expr* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    if(obj->get_kind() == array_ref_K)
@@ -583,7 +606,7 @@ void GimpleWriter::operator()(const quaternary_expr* obj, unsigned int & mask)
    obj->expr_node::visit(this);
 }
 
-void GimpleWriter::operator()(const type_node* obj, unsigned int & mask)
+void GimpleWriter::operator()(const type_node* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    if(obj->qual != TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN)
@@ -599,38 +622,38 @@ void GimpleWriter::operator()(const type_node* obj, unsigned int & mask)
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const memory_tag* obj, unsigned int & mask)
+void GimpleWriter::operator()(const memory_tag* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->decl_node::visit(this);
 }
 
-void GimpleWriter::operator()(const cst_node*obj, unsigned int &mask)
+void GimpleWriter::operator()(const cst_node* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->type->visit(this);
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const error_mark*obj, unsigned int &mask)
+void GimpleWriter::operator()(const error_mark* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << "error_mark";
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const array_type* obj, unsigned int & mask)
+void GimpleWriter::operator()(const array_type* obj, unsigned int& mask)
 {
    obj->elts->visit(this);
    os << "[";
-   ///Computing size
+   /// Computing size
    tree_nodeRef array_length = GET_NODE(obj->size);
-   tree_nodeRef array_element = GET_NODE (obj->elts);
-   if (array_length->get_kind() == integer_cst_K)
+   tree_nodeRef array_element = GET_NODE(obj->elts);
+   if(array_length->get_kind() == integer_cst_K)
    {
-      integer_cst *arr_ic = GetPointer<integer_cst>(array_length);
-      type_node *tn = GetPointer<type_node>(array_element);
-      integer_cst *eln_ic = GetPointer<integer_cst>(GET_NODE(tn->size));
+      auto* arr_ic = GetPointer<integer_cst>(array_length);
+      auto* tn = GetPointer<type_node>(array_element);
+      auto* eln_ic = GetPointer<integer_cst>(GET_NODE(tn->size));
       os << boost::lexical_cast<std::string>(tree_helper::get_integer_cst_value(arr_ic) / tree_helper::get_integer_cst_value(eln_ic));
    }
 
@@ -639,49 +662,48 @@ void GimpleWriter::operator()(const array_type* obj, unsigned int & mask)
    obj->type_node::visit(this);
 }
 
-void GimpleWriter::operator()(const gimple_asm* obj, unsigned int & mask)
+void GimpleWriter::operator()(const gimple_asm* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->gimple_node::visit(this);
 }
 
-
-void GimpleWriter::operator()(const baselink* obj, unsigned int & mask)
+void GimpleWriter::operator()(const baselink* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const gimple_bind* obj, unsigned int & mask)
+void GimpleWriter::operator()(const gimple_bind* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->expr_node::visit(this);
 }
 
-void GimpleWriter::operator()(const binfo* obj, unsigned int & mask)
+void GimpleWriter::operator()(const binfo* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const block* obj, unsigned int & mask)
+void GimpleWriter::operator()(const block* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const call_expr* obj, unsigned int & mask)
+void GimpleWriter::operator()(const call_expr* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
-   const addr_expr * ae = GetPointer<addr_expr>(GET_NODE(obj->fn));
+   const addr_expr* ae = GetPointer<addr_expr>(GET_NODE(obj->fn));
    if(ae)
    {
-      const function_decl * fd = GetPointer<function_decl>(GET_NODE(ae->op));
+      const function_decl* fd = GetPointer<function_decl>(GET_NODE(ae->op));
       if(fd)
       {
          fd->name->visit(this);
          os << " (";
-         const std::vector<tree_nodeRef> & args = obj->args;
+         const std::vector<tree_nodeRef>& args = obj->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
          for(arg = args.begin(); arg != arg_end; ++arg)
          {
@@ -694,12 +716,12 @@ void GimpleWriter::operator()(const call_expr* obj, unsigned int & mask)
    }
    else
    {
-      const ssa_name * sn = GetPointer<ssa_name>(GET_NODE(obj->fn));
+      const ssa_name* sn = GetPointer<ssa_name>(GET_NODE(obj->fn));
       if(sn)
       {
          sn->visit(this);
          os << " (";
-         const std::vector<tree_nodeRef> & args = obj->args;
+         const std::vector<tree_nodeRef>& args = obj->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
          for(arg = args.begin(); arg != arg_end; ++arg)
          {
@@ -712,18 +734,18 @@ void GimpleWriter::operator()(const call_expr* obj, unsigned int & mask)
    }
 }
 
-void GimpleWriter::operator()(const aggr_init_expr* obj, unsigned int & mask)
+void GimpleWriter::operator()(const aggr_init_expr* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
-   const addr_expr * ae = GetPointer<addr_expr>(GET_NODE(obj->fn));
+   const addr_expr* ae = GetPointer<addr_expr>(GET_NODE(obj->fn));
    if(ae)
    {
-      const function_decl * fd = GetPointer<function_decl>(GET_NODE(ae->op));
+      const function_decl* fd = GetPointer<function_decl>(GET_NODE(ae->op));
       if(fd)
       {
          fd->name->visit(this);
          os << " (";
-         const std::vector<tree_nodeRef> & args = obj->args;
+         const std::vector<tree_nodeRef>& args = obj->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
          for(arg = args.begin(); arg != arg_end; ++arg)
          {
@@ -736,12 +758,12 @@ void GimpleWriter::operator()(const aggr_init_expr* obj, unsigned int & mask)
    }
    else
    {
-      const ssa_name * sn = GetPointer<ssa_name>(GET_NODE(obj->fn));
+      const ssa_name* sn = GetPointer<ssa_name>(GET_NODE(obj->fn));
       if(sn)
       {
          sn->visit(this);
          os << " (";
-         const std::vector<tree_nodeRef> & args = obj->args;
+         const std::vector<tree_nodeRef>& args = obj->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
          for(arg = args.begin(); arg != arg_end; ++arg)
          {
@@ -753,22 +775,23 @@ void GimpleWriter::operator()(const aggr_init_expr* obj, unsigned int & mask)
       }
    }
    os << "ctor: " << obj->ctor;
-   if(obj->slot) obj->slot->visit(this);
+   if(obj->slot)
+      obj->slot->visit(this);
 }
 
-void GimpleWriter::operator()(const gimple_call* obj, unsigned int & mask)
+void GimpleWriter::operator()(const gimple_call* obj, unsigned int& mask)
 {
    obj->gimple_node::visit(this);
    mask = NO_VISIT;
-   const addr_expr * ae = GetPointer<addr_expr>(GET_NODE(obj->fn));
+   const addr_expr* ae = GetPointer<addr_expr>(GET_NODE(obj->fn));
    if(ae)
    {
-      const function_decl * fd = GetPointer<function_decl>(GET_NODE(ae->op));
+      const function_decl* fd = GetPointer<function_decl>(GET_NODE(ae->op));
       if(fd)
       {
          fd->name->visit(this);
          os << " (";
-         const std::vector<tree_nodeRef> & args = obj->args;
+         const std::vector<tree_nodeRef>& args = obj->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
          for(arg = args.begin(); arg != arg_end; ++arg)
          {
@@ -779,10 +802,9 @@ void GimpleWriter::operator()(const gimple_call* obj, unsigned int & mask)
          os << ")";
       }
    }
-
 }
 
-void GimpleWriter::operator()(const case_label_expr* obj, unsigned int & mask)
+void GimpleWriter::operator()(const case_label_expr* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    if(obj->default_flag)
@@ -805,7 +827,7 @@ void GimpleWriter::operator()(const case_label_expr* obj, unsigned int & mask)
    obj->expr_node::visit(this);
 }
 
-void GimpleWriter::operator()(const cast_expr* obj, unsigned int & mask)
+void GimpleWriter::operator()(const cast_expr* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << "cast_expr ";
@@ -816,19 +838,19 @@ void GimpleWriter::operator()(const cast_expr* obj, unsigned int & mask)
    obj->expr_node::visit(this);
 }
 
-void GimpleWriter::operator()(const complex_cst* obj, unsigned int & mask)
+void GimpleWriter::operator()(const complex_cst* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->cst_node::visit(this);
 }
 
-void GimpleWriter::operator()(const complex_type* obj, unsigned int & mask)
+void GimpleWriter::operator()(const complex_type* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->type_node::visit(this);
 }
 
-void GimpleWriter::operator()(const gimple_cond* obj, unsigned int & mask)
+void GimpleWriter::operator()(const gimple_cond* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << "if (";
@@ -837,13 +859,13 @@ void GimpleWriter::operator()(const gimple_cond* obj, unsigned int & mask)
    obj->gimple_node::visit(this);
 }
 
-void GimpleWriter::operator()(const const_decl* obj, unsigned int & mask)
+void GimpleWriter::operator()(const const_decl* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->decl_node::visit(this);
 }
 
-void GimpleWriter::operator()(const constructor* obj, unsigned int & mask)
+void GimpleWriter::operator()(const constructor* obj, unsigned int& mask)
 {
    os << "{";
    os << "}";
@@ -851,19 +873,19 @@ void GimpleWriter::operator()(const constructor* obj, unsigned int & mask)
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const enumeral_type* obj, unsigned int & mask)
+void GimpleWriter::operator()(const enumeral_type* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->type_node::visit(this);
 }
 
-void GimpleWriter::operator()(const expr_stmt* obj, unsigned int & mask)
+void GimpleWriter::operator()(const expr_stmt* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const field_decl* obj, unsigned int & mask)
+void GimpleWriter::operator()(const field_decl* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    if(obj->name)
@@ -872,7 +894,7 @@ void GimpleWriter::operator()(const field_decl* obj, unsigned int & mask)
    obj->attr::visit(this);
 }
 
-void GimpleWriter::operator()(const function_decl* obj, unsigned int & mask)
+void GimpleWriter::operator()(const function_decl* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << std::endl;
@@ -884,13 +906,13 @@ void GimpleWriter::operator()(const function_decl* obj, unsigned int & mask)
    os << ")" << std::endl << std::endl;
    name->visit(this);
    os << " (";
-   const std::vector<tree_nodeRef> & list_of_args = obj->list_of_args;
+   const std::vector<tree_nodeRef>& list_of_args = obj->list_of_args;
    std::vector<tree_nodeRef>::const_iterator arg, arg_end = list_of_args.end();
    for(arg = list_of_args.begin(); arg != arg_end; ++arg)
    {
       if(arg != list_of_args.begin())
          os << ", ";
-      const parm_decl * pd = GetPointer<parm_decl>(GET_NODE(*arg));
+      const parm_decl* pd = GetPointer<parm_decl>(GET_NODE(*arg));
       pd->type->visit(this);
       os << " ";
       pd->name->visit(this);
@@ -907,13 +929,13 @@ void GimpleWriter::operator()(const function_decl* obj, unsigned int & mask)
    obj->attr::visit(this);
 }
 
-void GimpleWriter::operator()(const function_type* obj, unsigned int & mask)
+void GimpleWriter::operator()(const function_type* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->type_node::visit(this);
 }
 
-void GimpleWriter::operator()(const gimple_assign* obj, unsigned int & mask)
+void GimpleWriter::operator()(const gimple_assign* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    if(obj->predicate)
@@ -925,43 +947,46 @@ void GimpleWriter::operator()(const gimple_assign* obj, unsigned int & mask)
    obj->op0->visit(this);
    os << " = ";
    obj->op1->visit(this);
+   if(obj->clobber)
+      os << "clobber";
+   if(obj->temporary_address)
+      os << "addr";
    obj->gimple_node::visit(this);
 }
 
-void GimpleWriter::operator()(const gimple_goto* obj, unsigned int & mask)
+void GimpleWriter::operator()(const gimple_goto* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->gimple_node::visit(this);
 }
 
-
-void GimpleWriter::operator()(const handler* obj, unsigned int & mask)
+void GimpleWriter::operator()(const handler* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const identifier_node* obj, unsigned int & mask)
+void GimpleWriter::operator()(const identifier_node* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << obj->strg;
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const integer_cst* obj, unsigned int & mask)
+void GimpleWriter::operator()(const integer_cst* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << tree_helper::get_integer_cst_value(obj);
    obj->cst_node::visit(this);
 }
 
-void GimpleWriter::operator()(const integer_type* obj, unsigned int & mask)
+void GimpleWriter::operator()(const integer_type* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->type_node::visit(this);
 }
 
-void GimpleWriter::operator()(const gimple_label* obj, unsigned int & mask)
+void GimpleWriter::operator()(const gimple_label* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->op->visit(this);
@@ -969,32 +994,32 @@ void GimpleWriter::operator()(const gimple_label* obj, unsigned int & mask)
    obj->gimple_node::visit(this);
 }
 
-void GimpleWriter::operator()(const method_type* obj, unsigned int & mask)
+void GimpleWriter::operator()(const method_type* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->function_type::visit(this);
 }
 
-void GimpleWriter::operator()(const namespace_decl* obj, unsigned int & mask)
+void GimpleWriter::operator()(const namespace_decl* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->decl_node::visit(this);
 }
 
-void GimpleWriter::operator()(const overload* obj, unsigned int & mask)
+void GimpleWriter::operator()(const overload* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const parm_decl* obj, unsigned int & mask)
+void GimpleWriter::operator()(const parm_decl* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->name->visit(this);
    obj->decl_node::visit(this);
 }
 
-void GimpleWriter::operator()(const gimple_phi* obj, unsigned int & mask)
+void GimpleWriter::operator()(const gimple_phi* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << "  # ";
@@ -1011,7 +1036,7 @@ void GimpleWriter::operator()(const gimple_phi* obj, unsigned int & mask)
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const pointer_type* obj, unsigned int & mask)
+void GimpleWriter::operator()(const pointer_type* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    if(not obj->name)
@@ -1022,20 +1047,20 @@ void GimpleWriter::operator()(const pointer_type* obj, unsigned int & mask)
    obj->type_node::visit(this);
 }
 
-void GimpleWriter::operator()(const real_cst* obj, unsigned int & mask)
+void GimpleWriter::operator()(const real_cst* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << obj->valr;
    obj->cst_node::visit(this);
 }
 
-void GimpleWriter::operator()(const real_type* obj, unsigned int & mask)
+void GimpleWriter::operator()(const real_type* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->type_node::visit(this);
 }
 
-void GimpleWriter::operator()(const record_type* obj, unsigned int & mask)
+void GimpleWriter::operator()(const record_type* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    if(not obj->name or GET_CONST_NODE(obj->name)->get_kind() != type_decl_K)
@@ -1043,20 +1068,20 @@ void GimpleWriter::operator()(const record_type* obj, unsigned int & mask)
    obj->type_node::visit(this);
 }
 
-void GimpleWriter::operator()(const reference_type* obj, unsigned int & mask)
+void GimpleWriter::operator()(const reference_type* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->type_node::visit(this);
 }
 
-void GimpleWriter::operator()(const result_decl* obj, unsigned int & mask)
+void GimpleWriter::operator()(const result_decl* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << "<retval>";
    obj->decl_node::visit(this);
 }
 
-void GimpleWriter::operator()(const gimple_return* obj, unsigned int & mask)
+void GimpleWriter::operator()(const gimple_return* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << "return";
@@ -1068,19 +1093,19 @@ void GimpleWriter::operator()(const gimple_return* obj, unsigned int & mask)
    obj->gimple_node::visit(this);
 }
 
-void GimpleWriter::operator()(const return_stmt* obj, unsigned int & mask)
+void GimpleWriter::operator()(const return_stmt* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const scope_ref* obj, unsigned int & mask)
+void GimpleWriter::operator()(const scope_ref* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->expr_node::visit(this);
 }
 
-void GimpleWriter::operator()(const ssa_name* obj, unsigned int & mask)
+void GimpleWriter::operator()(const ssa_name* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    if(obj->type)
@@ -1090,21 +1115,22 @@ void GimpleWriter::operator()(const ssa_name* obj, unsigned int & mask)
       os << ") ";
    }
    os << " ";
-   if(obj->var) obj->var->visit(this);
+   if(obj->var)
+      obj->var->visit(this);
    os << "_" << obj->vers;
    if(obj->orig_vers)
       os << "_[" << obj->orig_vers << "]";
    if(obj->default_flag)
       os << "(D)";
-//   if(obj->min) obj->min->visit(this);
-//   if(obj->max) obj->max->visit(this);
+   //   if(obj->min) obj->min->visit(this);
+   //   if(obj->max) obj->max->visit(this);
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const statement_list* obj, unsigned int & mask)
+void GimpleWriter::operator()(const statement_list* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
-   const std::map<unsigned int, blocRef> & list_of_block = obj->list_of_bloc;
+   const std::map<unsigned int, blocRef>& list_of_block = obj->list_of_bloc;
    std::map<unsigned int, blocRef>::const_iterator block, block_end = list_of_block.end();
    for(block = list_of_block.begin(); block != block_end; ++block)
    {
@@ -1124,7 +1150,7 @@ void GimpleWriter::operator()(const statement_list* obj, unsigned int & mask)
       for(const auto& stmt : block->second->CGetStmtList())
       {
          const tree_nodeConstRef statement = GET_NODE(stmt);
-         ///We print only MEMUSE and MEMDEF as VUSE and VDEF like gcc -fdump-tree-all
+         /// We print only MEMUSE and MEMDEF as VUSE and VDEF like gcc -fdump-tree-all
          if(GetPointer<const gimple_node>(statement) and GetPointer<const gimple_node>(statement)->memuse)
          {
             os << "VUSE ";
@@ -1146,7 +1172,7 @@ void GimpleWriter::operator()(const statement_list* obj, unsigned int & mask)
          const blocRef next_true = list_of_block.find(block->second->true_edge)->second;
          if(next_true->CGetStmtList().size() and GET_NODE(next_true->CGetStmtList().front())->get_kind() == gimple_label_K)
          {
-            const gimple_label * le = GetPointer<gimple_label>(GET_NODE(next_true->CGetStmtList().front()));
+            const gimple_label* le = GetPointer<gimple_label>(GET_NODE(next_true->CGetStmtList().front()));
             os << " (";
             le->op->visit(this);
             os << ")";
@@ -1157,7 +1183,7 @@ void GimpleWriter::operator()(const statement_list* obj, unsigned int & mask)
          const blocRef next_false = list_of_block.find(block->second->false_edge)->second;
          if(next_false->CGetStmtList().size() and GET_NODE(next_false->CGetStmtList().back())->get_kind() == gimple_label_K)
          {
-            const gimple_label * le = GetPointer<gimple_label>(GET_NODE(next_false->CGetStmtList().front()));
+            const gimple_label* le = GetPointer<gimple_label>(GET_NODE(next_false->CGetStmtList().front()));
             os << " (";
             le->op->visit(this);
             os << ")";
@@ -1173,7 +1199,7 @@ void GimpleWriter::operator()(const statement_list* obj, unsigned int & mask)
             const blocRef next = list_of_block.find(succ_index)->second;
             if(next->CGetStmtList().size() and GET_NODE(next->CGetStmtList().back())->get_kind() == gimple_label_K)
             {
-               const gimple_label * le = GetPointer<gimple_label>(GET_NODE(next->CGetStmtList().front()));
+               const gimple_label* le = GetPointer<gimple_label>(GET_NODE(next->CGetStmtList().front()));
                os << " (";
                le->op->visit(this);
                os << ")";
@@ -1186,14 +1212,14 @@ void GimpleWriter::operator()(const statement_list* obj, unsigned int & mask)
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const string_cst* obj, unsigned int & mask)
+void GimpleWriter::operator()(const string_cst* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << "\"" << obj->strg << "\"";
    obj->cst_node::visit(this);
 }
 
-void GimpleWriter::operator()(const gimple_switch* obj, unsigned int & mask)
+void GimpleWriter::operator()(const gimple_switch* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << "switch (";
@@ -1204,7 +1230,7 @@ void GimpleWriter::operator()(const gimple_switch* obj, unsigned int & mask)
    obj->gimple_node::visit(this);
 }
 
-void GimpleWriter::operator()(const target_expr* obj, unsigned int & mask)
+void GimpleWriter::operator()(const target_expr* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << "target_expr (";
@@ -1214,14 +1240,37 @@ void GimpleWriter::operator()(const target_expr* obj, unsigned int & mask)
    obj->expr_node::visit(this);
    os << ")";
 }
+void GimpleWriter::operator()(const lut_expr* obj, unsigned int& mask)
+{
+   mask = NO_VISIT;
+   os << "lut_expr (";
+   obj->op0->visit(this);
+   obj->op1->visit(this);
+   if(obj->op2)
+      obj->op2->visit(this);
+   if(obj->op3)
+      obj->op3->visit(this);
+   if(obj->op4)
+      obj->op4->visit(this);
+   if(obj->op5)
+      obj->op5->visit(this);
+   if(obj->op6)
+      obj->op6->visit(this);
+   if(obj->op7)
+      obj->op7->visit(this);
+   if(obj->op8)
+      obj->op8->visit(this);
+   obj->expr_node::visit(this);
+   os << ")";
+}
 
-void GimpleWriter::operator()(const template_decl* obj, unsigned int & mask)
+void GimpleWriter::operator()(const template_decl* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->decl_node::visit(this);
 }
 
-void GimpleWriter::operator()(const template_parm_index* obj, unsigned int & mask)
+void GimpleWriter::operator()(const template_parm_index* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->type->visit(this);
@@ -1235,7 +1284,7 @@ void GimpleWriter::operator()(const template_parm_index* obj, unsigned int & mas
    os << "_" << obj->orig_level;
 }
 
-void GimpleWriter::operator()(const tree_list* obj, unsigned int & mask)
+void GimpleWriter::operator()(const tree_list* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->valu->visit(this);
@@ -1247,7 +1296,7 @@ void GimpleWriter::operator()(const tree_list* obj, unsigned int & mask)
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const tree_vec* obj, unsigned int & mask)
+void GimpleWriter::operator()(const tree_vec* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    std::vector<tree_nodeRef>::const_iterator op, op_end = obj->list_of_op.end();
@@ -1260,26 +1309,26 @@ void GimpleWriter::operator()(const tree_vec* obj, unsigned int & mask)
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const try_block* obj, unsigned int & mask)
+void GimpleWriter::operator()(const try_block* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const type_decl* obj, unsigned int & mask)
+void GimpleWriter::operator()(const type_decl* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->name->visit(this);
    obj->decl_node::visit(this);
 }
 
-void GimpleWriter::operator()(const union_type* obj, unsigned int & mask)
+void GimpleWriter::operator()(const union_type* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->type_node::visit(this);
 }
 
-void GimpleWriter::operator()(const var_decl* obj, unsigned int & mask)
+void GimpleWriter::operator()(const var_decl* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    if(obj->name)
@@ -1299,14 +1348,14 @@ void GimpleWriter::operator()(const var_decl* obj, unsigned int & mask)
    obj->attr::visit(this);
 }
 
-void GimpleWriter::operator()(const vector_cst* obj, unsigned int & mask)
+void GimpleWriter::operator()(const vector_cst* obj, unsigned int& mask)
 {
    os << "{ ";
    size_t vector_size = obj->list_of_valu.size();
-   for (size_t i = 0; i < vector_size; i++)
+   for(size_t i = 0; i < vector_size; i++)
    {
       obj->list_of_valu[i]->visit(this);
-      if (i != (obj->list_of_valu).size() - 1)
+      if(i != (obj->list_of_valu).size() - 1)
          os << ", ";
    }
    os << " }";
@@ -1315,7 +1364,7 @@ void GimpleWriter::operator()(const vector_cst* obj, unsigned int & mask)
    obj->cst_node::visit(this);
 }
 
-void GimpleWriter::operator()(const type_argument_pack* obj, unsigned int & mask)
+void GimpleWriter::operator()(const type_argument_pack* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    if(not obj->unql and not obj->name)
@@ -1328,7 +1377,7 @@ void GimpleWriter::operator()(const type_argument_pack* obj, unsigned int & mask
    obj->type_node::visit(this);
 }
 
-void GimpleWriter::operator()(const nontype_argument_pack* obj, unsigned int & mask)
+void GimpleWriter::operator()(const nontype_argument_pack* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << "nontype_argument_pack ";
@@ -1337,18 +1386,35 @@ void GimpleWriter::operator()(const nontype_argument_pack* obj, unsigned int & m
    obj->expr_node::visit(this);
 }
 
-void GimpleWriter::operator()(const expr_pack_expansion* obj, unsigned int & mask)
+void GimpleWriter::operator()(const type_pack_expansion* obj, unsigned int& mask)
+{
+   mask = NO_VISIT;
+   os << "type_pack_expansion ";
+   if(obj->op)
+      obj->op->visit(this);
+   if(obj->param_packs)
+      obj->param_packs->visit(this);
+   if(obj->arg)
+      obj->arg->visit(this);
+   mask = NO_VISIT;
+   obj->type_node::visit(this);
+}
+
+void GimpleWriter::operator()(const expr_pack_expansion* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << "expr_pack_expansion ";
-   obj->op->visit(this);
-   obj->param_packs->visit(this);
-   obj->arg->visit(this);
+   if(obj->op)
+      obj->op->visit(this);
+   if(obj->param_packs)
+      obj->param_packs->visit(this);
+   if(obj->arg)
+      obj->arg->visit(this);
    mask = NO_VISIT;
    obj->expr_node::visit(this);
 }
 
-void GimpleWriter::operator()(const vector_type* obj, unsigned int & mask)
+void GimpleWriter::operator()(const vector_type* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    if(not obj->unql and not obj->name)
@@ -1361,7 +1427,7 @@ void GimpleWriter::operator()(const vector_type* obj, unsigned int & mask)
    obj->type_node::visit(this);
 }
 
-void GimpleWriter::operator()(const target_mem_ref* obj, unsigned int & mask)
+void GimpleWriter::operator()(const target_mem_ref* obj, unsigned int& mask)
 {
    os << "MEM[";
    if(obj->symbol)
@@ -1392,7 +1458,7 @@ void GimpleWriter::operator()(const target_mem_ref* obj, unsigned int & mask)
    obj->WeightedNode::visit(this);
 }
 
-void GimpleWriter::operator()(const target_mem_ref461* obj, unsigned int & mask)
+void GimpleWriter::operator()(const target_mem_ref461* obj, unsigned int& mask)
 {
    os << "MEM[";
    if(obj->base)
@@ -1428,18 +1494,18 @@ void GimpleWriter::operator()(const target_mem_ref461* obj, unsigned int & mask)
    mask = NO_VISIT;
    obj->WeightedNode::visit(this);
 }
-void GimpleWriter::operator()(const bloc*, unsigned int & mask)
+void GimpleWriter::operator()(const bloc*, unsigned int& mask)
 {
    mask = NO_VISIT;
 }
 
-void GimpleWriter::operator()(const null_node* obj, unsigned int & mask)
+void GimpleWriter::operator()(const null_node* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const gimple_pragma * obj, unsigned int & mask)
+void GimpleWriter::operator()(const gimple_pragma* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->gimple_node::visit(this);
@@ -1449,42 +1515,42 @@ void GimpleWriter::operator()(const gimple_pragma * obj, unsigned int & mask)
    obj->directive->visit(this);
 }
 
-void GimpleWriter::operator()(const omp_pragma* obj, unsigned int & mask)
+void GimpleWriter::operator()(const omp_pragma* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << "omp";
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const omp_parallel_pragma* , unsigned int & mask)
+void GimpleWriter::operator()(const omp_parallel_pragma*, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << " parallel";
 }
 
-void GimpleWriter::operator()(const omp_sections_pragma* , unsigned int & mask)
+void GimpleWriter::operator()(const omp_sections_pragma*, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << " sections";
 }
 
-void GimpleWriter::operator()(const omp_parallel_sections_pragma* obj, unsigned int & mask)
+void GimpleWriter::operator()(const omp_parallel_sections_pragma* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->omp_pragma::visit(this);
 }
 
-void GimpleWriter::operator()(const omp_section_pragma* , unsigned int & mask)
+void GimpleWriter::operator()(const omp_section_pragma*, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << " section";
 }
 
-void GimpleWriter::operator()(const omp_for_pragma * obj, unsigned int & mask)
+void GimpleWriter::operator()(const omp_for_pragma* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << " parallel for";
-   const std::unordered_map<std::string, std::string> & clauses = obj->clauses;
+   const std::unordered_map<std::string, std::string>& clauses = obj->clauses;
    std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
    for(clause = clauses.begin(); clause != clause_end; ++clause)
    {
@@ -1492,11 +1558,11 @@ void GimpleWriter::operator()(const omp_for_pragma * obj, unsigned int & mask)
    }
 }
 
-void GimpleWriter::operator()(const omp_simd_pragma * obj, unsigned int & mask)
+void GimpleWriter::operator()(const omp_simd_pragma* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << " simd";
-   const std::unordered_map<std::string, std::string> & clauses = obj->clauses;
+   const std::unordered_map<std::string, std::string>& clauses = obj->clauses;
    std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
    for(clause = clauses.begin(); clause != clause_end; ++clause)
    {
@@ -1504,11 +1570,11 @@ void GimpleWriter::operator()(const omp_simd_pragma * obj, unsigned int & mask)
    }
 }
 
-void GimpleWriter::operator()(const omp_declare_simd_pragma * obj, unsigned int & mask)
+void GimpleWriter::operator()(const omp_declare_simd_pragma* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << " declare simd";
-   const std::unordered_map<std::string, std::string> & clauses = obj->clauses;
+   const std::unordered_map<std::string, std::string>& clauses = obj->clauses;
    std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
    for(clause = clauses.begin(); clause != clause_end; ++clause)
    {
@@ -1516,88 +1582,85 @@ void GimpleWriter::operator()(const omp_declare_simd_pragma * obj, unsigned int 
    }
 }
 
-void GimpleWriter::operator()(const omp_target_pragma * obj, unsigned int & mask)
+void GimpleWriter::operator()(const omp_target_pragma* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << " target";
-   const std::unordered_map<std::string, std::string> & clauses = obj->clauses;
+   const std::unordered_map<std::string, std::string>& clauses = obj->clauses;
    std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
    for(clause = clauses.begin(); clause != clause_end; ++clause)
    {
       os << " " + clause->first + (clause->second != "" ? "(" + clause->second + ")" : "");
    }
-
 }
 
-void GimpleWriter::operator()(const omp_critical_pragma * obj, unsigned int & mask)
+void GimpleWriter::operator()(const omp_critical_pragma* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << " critical";
-   const std::unordered_map<std::string, std::string> & clauses = obj->clauses;
+   const std::unordered_map<std::string, std::string>& clauses = obj->clauses;
    std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
    for(clause = clauses.begin(); clause != clause_end; ++clause)
    {
       os << " " + clause->first + (clause->second != "" ? "(" + clause->second + ")" : "");
    }
-
 }
 
-void GimpleWriter::operator()(const omp_task_pragma * obj, unsigned int & mask)
+void GimpleWriter::operator()(const omp_task_pragma* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << " task";
-   const std::unordered_map<std::string, std::string> & clauses = obj->clauses;
+   const std::unordered_map<std::string, std::string>& clauses = obj->clauses;
    std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
    for(clause = clauses.begin(); clause != clause_end; ++clause)
    {
       os << " " + clause->first + (clause->second != "" ? "(" + clause->second + ")" : "");
    }
-
 }
 
-void GimpleWriter::operator()(const map_pragma* obj, unsigned int & mask)
+void GimpleWriter::operator()(const map_pragma* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const call_hw_pragma * obj, unsigned int & mask)
+void GimpleWriter::operator()(const call_hw_pragma* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const call_point_hw_pragma * obj, unsigned int & mask)
+void GimpleWriter::operator()(const call_point_hw_pragma* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const issue_pragma* obj, unsigned int & mask)
+void GimpleWriter::operator()(const issue_pragma* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const blackbox_pragma* obj, unsigned int & mask)
+void GimpleWriter::operator()(const blackbox_pragma* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->issue_pragma::visit(this);
 }
 
-void GimpleWriter::operator()(const profiling_pragma* obj, unsigned int & mask)
+void GimpleWriter::operator()(const profiling_pragma* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->tree_node::visit(this);
 }
 
-void GimpleWriter::operator()(const statistical_profiling* obj, unsigned int & mask)
+void GimpleWriter::operator()(const statistical_profiling* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    obj->profiling_pragma::visit(this);
 }
 
-void GimpleWriter::operator()(const gimple_while* obj, unsigned int & mask)
+void GimpleWriter::operator()(const gimple_while* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << "while (";
@@ -1606,7 +1669,7 @@ void GimpleWriter::operator()(const gimple_while* obj, unsigned int & mask)
    obj->gimple_node::visit(this);
 }
 
-void GimpleWriter::operator()(const gimple_for * obj, unsigned int & mask)
+void GimpleWriter::operator()(const gimple_for* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << "for (";
@@ -1619,7 +1682,7 @@ void GimpleWriter::operator()(const gimple_for * obj, unsigned int & mask)
    obj->gimple_node::visit(this);
 }
 
-void GimpleWriter::operator()(const gimple_multi_way_if * obj, unsigned int & mask)
+void GimpleWriter::operator()(const gimple_multi_way_if* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << "multi_way_if (";

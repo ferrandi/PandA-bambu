@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,58 +29,56 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file bb_cdg_computation.hpp
- * @brief Analysis step computing basic block control dependences
+ * @brief Analysis step computing basic block control dependencies
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef BB_CDG_COMPUTATION_HPP
 #define BB_CDG_COMPUTATION_HPP
 
-///Superclass include
+/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
 /**
  * loops computation analysis step
-*/
-class BBCdgComputation: public FunctionFrontendFlowStep
+ */
+class BBCdgComputation : public FunctionFrontendFlowStep
 {
-   private:
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+ private:
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
+ public:
+   /**
+    * Constructor.
+    * @param Param is the set of the parameters
+    * @param AppM is the application manager
+    * @param function_id is the node id of the function analyzed.
+    * @param design_flow_manager is the design flow manager
+    */
+   BBCdgComputation(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Constructor.
-       * @param Param is the set of the parameters
-       * @param AppM is the application manager
-       * @param function_id is the node id of the function analyzed.
-       * @param design_flow_manager is the design flow manager
-       */
-      BBCdgComputation(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   /**
+    *  Destructor
+    */
+   ~BBCdgComputation() override;
 
-      /**
-       *  Destructor
-       */
-      ~BBCdgComputation();
+   /**
+    * Performs the computation of the CDG representation
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /**
-       * Performs the computation of the CDG representation
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status InternalExec();
-
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      virtual void Initialize();
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 };
 #endif
-

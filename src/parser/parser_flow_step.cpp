@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (C) 2015-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,29 +29,30 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file parser_flow_step.cpp
  * @brief This class contains the base representation for a generic parser step
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "parser_flow_step.hpp"
 
-///design_flows include
+#include <utility>
+
+/// design_flows include
 #include "design_flow_manager.hpp"
+#include "string_manipulation.hpp" // for STR
 
-ParserFlowStep::ParserFlowStep(const DesignFlowManagerConstRef _design_flow_manager, const ParserFlowStep_Type _parser_step_type, const std::string&_file_name, const ParameterConstRef _parameters) :
-   DesignFlowStep(_design_flow_manager, _parameters),
-   parser_step_type(_parser_step_type),
-   file_name(_file_name)
-{}
+ParserFlowStep::ParserFlowStep(const DesignFlowManagerConstRef _design_flow_manager, const ParserFlowStep_Type _parser_step_type, const std::string& _file_name, const ParameterConstRef _parameters)
+    : DesignFlowStep(_design_flow_manager, _parameters), parser_step_type(_parser_step_type), file_name(_file_name)
+{
+}
 
-ParserFlowStep::~ParserFlowStep()
-{}
+ParserFlowStep::~ParserFlowStep() = default;
 
 const std::string ParserFlowStep::GetSignature() const
 {
@@ -63,7 +64,7 @@ const std::string ParserFlowStep::GetName() const
    return "Parser::" + GetKindText() + "::" + file_name;
 }
 
-const std::string ParserFlowStep::ComputeSignature(const ParserFlowStep_Type parser_step_type, const std::string&file_name)
+const std::string ParserFlowStep::ComputeSignature(const ParserFlowStep_Type parser_step_type, const std::string& file_name)
 {
    return "Parser::" + STR(parser_step_type) + "::" + file_name;
 }
@@ -95,7 +96,7 @@ bool ParserFlowStep::HasToBeExecuted() const
    return true;
 }
 
-void ParserFlowStep::ComputeRelationships(DesignFlowStepSet &, const DesignFlowStep::RelationshipType)
+void ParserFlowStep::ComputeRelationships(DesignFlowStepSet&, const DesignFlowStep::RelationshipType)
 {
 }
 
@@ -103,4 +104,3 @@ const DesignFlowStepFactoryConstRef ParserFlowStep::CGetDesignFlowStepFactory() 
 {
    return design_flow_manager.lock()->CGetDesignFlowStepFactory("Parser");
 }
-

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2018 Politecnico di Milano
+ *              Copyright (C) 2016-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,59 +29,59 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file clean_virtual_phi.hpp
  * @brief Manipulation step which removes virtual phi introduced by GCC
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #pragma once
 
-///Superclass include
+/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
-///utility includes
+/// utility includes
 #include "refcount.hpp"
 
 class CleanVirtualPhi : public FunctionFrontendFlowStep
 {
-   protected:
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+ protected:
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor.
-       * @param AppM is the application manager
-       * @param function_id is the node id of the function analyzed.
-       * @param design_flow_manager is the design flow manager
-       * @param parameters is the set of input parameters
-       */
-      CleanVirtualPhi(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor.
+    * @param AppM is the application manager
+    * @param function_id is the node id of the function analyzed.
+    * @param design_flow_manager is the design flow manager
+    * @param parameters is the set of input parameters
+    */
+   CleanVirtualPhi(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-      /**
-       *  Destructor
-       */
-      ~CleanVirtualPhi();
+   /**
+    *  Destructor
+    */
+   ~CleanVirtualPhi() override;
 
-      /**
-       * Performs the loops analysis
-       */
-      DesignFlowStep_Status InternalExec();
+   /**
+    * Performs the loops analysis
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      virtual void Initialize();
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      virtual bool HasToBeExecuted() const;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 };

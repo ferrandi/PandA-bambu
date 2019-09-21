@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file var_pp_functor.hpp
  *
@@ -43,14 +43,10 @@
 #ifndef _VAR_PP_FUNCTOR_HPP
 #define _VAR_PP_FUNCTOR_HPP
 
-///STL include
-#include <unordered_set>
-
-///Utility include
-#include "custom_set.hpp"
+#include "custom_set.hpp" // for CustomSet
 #include "refcount.hpp"
-
-#include "graph.hpp"
+#include <string> // for string
+#include <utility>
 
 /**
  * @name Forward declarations.
@@ -61,54 +57,54 @@ CONSTREF_FORWARD_DECL(BehavioralHelper);
 REF_FORWARD_DECL(var_pp_functor);
 //@}
 
-
 /**
  * Base class functor used by prettyPrintVertex to print variables
-*/
+ */
 struct var_pp_functor
 {
    /// Destructor
-   virtual ~var_pp_functor() {}
+   virtual ~var_pp_functor()
+   {
+   }
 
    /**
     * This functor returns a string representing the variable (usually the name of the variable). This can be used both in variable declaration and in variable use.
     * The string returned depends on the type of manipulation performed by the backend layer.
     * @param var is the nodeid of the variable that should be analyzed.
     */
-   virtual std::string operator() (unsigned int var) const = 0;
-
+   virtual std::string operator()(unsigned int var) const = 0;
 };
 typedef refcount<var_pp_functor> var_pp_functorRef;
 typedef refcount<const var_pp_functor> var_pp_functorConstRef;
 
 /**
  * Standard functor that returns the name of a variable
-*/
+ */
 struct std_var_pp_functor : public var_pp_functor
 {
-private:
-   ///behavioral helper
+ private:
+   /// behavioral helper
    const BehavioralHelperConstRef BH;
 
-public:
-   ///Constructor
-   explicit std_var_pp_functor(const BehavioralHelperConstRef _BH): BH(_BH) {}
+ public:
+   /// Constructor
+   explicit std_var_pp_functor(const BehavioralHelperConstRef _BH) : BH(_BH)
+   {
+   }
 
-   ///Destructor
-   ~std_var_pp_functor() {}
+   /// Destructor
+   ~std_var_pp_functor() override = default;
 
    /**
     * return the name of the variable.
     * @param var is the nodeid of the variable.
-   */
-   std::string operator() (unsigned int var) const;
-
+    */
+   std::string operator()(unsigned int var) const override;
 };
 
-
 /**
-* Pointer version functor that returns the name of a variable with a star in front.
-*/
+ * Pointer version functor that returns the name of a variable with a star in front.
+ */
 struct pointer_var_pp_functor : public var_pp_functor
 {
    /**
@@ -116,28 +112,28 @@ struct pointer_var_pp_functor : public var_pp_functor
     * @param BH is the behavioral helper.
     * @param vars is the reference to the set of variables for which a star should be returned along with their name.
     * @param add_restrict controls the addition to the parameters declarations of the __restrict__ keyword.
-   */
+    */
    pointer_var_pp_functor(const BehavioralHelperConstRef _BH, const CustomSet<unsigned int> vars, bool _add_restrict = false);
 
    /**
     * Destructor
     */
-   ~pointer_var_pp_functor() {}
+   ~pointer_var_pp_functor() override = default;
 
    /**
     * return the name of the variable with a star as a prefix.
     * @param var is the nodeid of the variable.
-   */
-   std::string operator() (unsigned int var) const;
+    */
+   std::string operator()(unsigned int var) const override;
 
-private:
-   ///reference to the set of variable that has to have a star in front when returned by operator()
+ private:
+   /// reference to the set of variable that has to have a star in front when returned by operator()
    const CustomSet<unsigned int> pointer_based_variables;
 
-   ///behavioral helper
+   /// behavioral helper
    const BehavioralHelperConstRef BH;
 
-   ///standard functor used for print array variable
+   /// standard functor used for print array variable
    const std_var_pp_functor std_functor;
 
    /// it controls the addition to the parameters declarations of the __restrict__ keyword.
@@ -145,11 +141,11 @@ private:
 };
 
 /**
-* Address version functor that returns the name of a variable with "&" in front.
-*/
+ * Address version functor that returns the name of a variable with "&" in front.
+ */
 struct address_var_pp_functor : public var_pp_functor
 {
-public:
+ public:
    /**
     * Constructor
     * @param BH is the behavioral helper.
@@ -157,48 +153,48 @@ public:
     */
    address_var_pp_functor(const BehavioralHelperConstRef _BH, const CustomSet<unsigned int> vars, const CustomSet<unsigned int> pointer_vars);
 
-   ///Destructor
-   ~address_var_pp_functor() {}
+   /// Destructor
+   ~address_var_pp_functor() override = default;
 
    /**
     * return the name of the variable with a star as a prefix.
     * @param var is the nodeid of the variable.
-   */
-   std::string operator() (unsigned int var) const;
+    */
+   std::string operator()(unsigned int var) const override;
 
-private:
-   ///reference to the set of variable that has to have a star in front when returned by operator()
+ private:
+   /// reference to the set of variable that has to have a star in front when returned by operator()
    const CustomSet<unsigned int> addr_based_variables;
 
-   ///reference to the set of variable that has to have a star in front when returned by operator()
+   /// reference to the set of variable that has to have a star in front when returned by operator()
    const CustomSet<unsigned int> pointer_based_variables;
 
-   ///behavioral helper
+   /// behavioral helper
    const BehavioralHelperConstRef BH;
 };
 
 struct isolated_var_pp_functor : public var_pp_functor
 {
-private:
-   ///behavioral helper
+ private:
+   /// behavioral helper
    const BehavioralHelperConstRef BH;
    unsigned int repl_var;
    std::string var_string;
 
-public:
-   ///Constructor
-   isolated_var_pp_functor(const BehavioralHelperConstRef _BH, unsigned int _repl_var, const std::string& _var_string): BH(_BH), repl_var(_repl_var), var_string(_var_string) {}
+ public:
+   /// Constructor
+   isolated_var_pp_functor(const BehavioralHelperConstRef _BH, unsigned int _repl_var, std::string _var_string) : BH(_BH), repl_var(_repl_var), var_string(std::move(_var_string))
+   {
+   }
 
-   ///Destructor
-   ~isolated_var_pp_functor() {}
+   /// Destructor
+   ~isolated_var_pp_functor() override = default;
 
    /**
     * return the name of the variable.
     * @param var is the nodeid of the variable.
-   */
-   std::string operator() (unsigned int var) const;
+    */
+   std::string operator()(unsigned int var) const override;
 };
 
-
 #endif
-

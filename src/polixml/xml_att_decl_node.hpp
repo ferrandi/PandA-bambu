@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,10 +29,10 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file xml_att_decl_node.hpp
- * @brief 
+ * @brief
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
@@ -45,15 +45,17 @@
 
 #include "refcount.hpp"
 
-#include "xml_node.hpp"
 #include "xml_attribute.hpp"
+#include "xml_node.hpp"
 
 #include <string>
 
 struct xml_att_decl_node : public xml_node, attribute_sequence
 {
-   ///constructor
-   explicit xml_att_decl_node(const std::string& _name) : xml_node(_name){}
+   /// constructor
+   explicit xml_att_decl_node(const std::string& _name) : xml_node(_name)
+   {
+   }
 
    /**
     * Print the class.
@@ -61,7 +63,7 @@ struct xml_att_decl_node : public xml_node, attribute_sequence
     * @param formatted when true the xml is formatted in human readable way.
     * @param pp is the pretty print helper.
     */
-   void print(std::ostream& os, bool , simple_indent* ) const
+   void print(std::ostream& os, bool, simple_indent*) const override
    {
       os << "<!ATTLIST" << get_name();
       if(has_attributes())
@@ -73,4 +75,3 @@ struct xml_att_decl_node : public xml_node, attribute_sequence
 };
 
 #endif
- 

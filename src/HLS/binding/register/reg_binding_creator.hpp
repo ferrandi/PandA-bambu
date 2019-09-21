@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file reg_binding_creator.hpp
  * @brief Base class for all the register allocation algorithms.
@@ -40,11 +40,11 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef _REG_BINDING_CREATOR_HPP_
 #define _REG_BINDING_CREATOR_HPP_
 
-///superclass include
+/// superclass include
 #include "hls_function_step.hpp"
 REF_FORWARD_DECL(reg_binding_creator);
 
@@ -53,31 +53,32 @@ REF_FORWARD_DECL(reg_binding_creator);
  */
 class reg_binding_creator : public HLSFunctionStep
 {
-   protected:
-      ///lower bound
-      unsigned int register_lower_bound;
+ protected:
+   /// lower bound
+   unsigned int register_lower_bound;
 
-      /**
-       * Compute the relationship of this step
-       * @param relationship_type is the type of relationship to be considered
-       * @return the steps in relationship with this
-       */
-      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   /**
+    * Compute the relationship of this step
+    * @param relationship_type is the type of relationship to be considered
+    * @return the steps in relationship with this
+    */
+   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor
-       * @param design_flow_manager is the design flow manager
-       * @param hls_flow_step_type is the register binding algorithm to be used
-       */
-      reg_binding_creator(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
+ public:
+   /**
+    * Constructor
+    * @param design_flow_manager is the design flow manager
+    * @param hls_flow_step_type is the register binding algorithm to be used
+    */
+   reg_binding_creator(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
+                       const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
 
-      /**
-       * Destructor.
-       */
-      virtual ~reg_binding_creator();
+   /**
+    * Destructor.
+    */
+   ~reg_binding_creator() override;
 };
-///refcount definition of the class
+/// refcount definition of the class
 typedef refcount<reg_binding_creator> reg_binding_creatorRef;
 
 #endif

@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,20 +29,17 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 
 /**
  * @file spider.cpp
  * @brief Parser for deep profiling information
  *
  * @author Daniele Loiacono <loiacono@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_CMOS_BUILT.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_ARCH_BUILT.hpp"
@@ -52,18 +49,17 @@
 #include "config_HAVE_R.hpp"
 
 ///. includes
-#include "global_variables.hpp"
 #include "SpiderParameter.hpp"
 
 #if HAVE_REGRESSORS_BUILT
-///algorithms/regressors include
+/// algorithms/regressors include
 #include "cross_validation.hpp"
 #if HAVE_R
 #include "linear_regression.hpp"
 #endif
 #include "regressor.hpp"
 
-///algorithms/regressors/preprocessing includes
+/// algorithms/regressors/preprocessing includes
 #include "cell_selection.hpp"
 #if HAVE_FROM_LIBERTY
 #include "cell_area_preprocessing.hpp"
@@ -74,12 +70,11 @@
 #endif
 #endif
 
-///boost include
-#include <boost/algorithm/string/classification.hpp>
+/// boost include
 #include <boost/algorithm/string/replace.hpp>
-#include <boost/algorithm/string/split.hpp>
+#include <boost/filesystem/operations.hpp>
 
-///constants include
+/// constants include
 #if HAVE_R
 #include "regressors_constants.hpp"
 #endif
@@ -87,11 +82,11 @@
 #include "physical_library_models_constants.hpp"
 #endif
 
-///design_flows include
+/// design_flows include
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 
-///design_flows/backend/ToDataFile includes
+/// design_flows/backend/ToDataFile includes
 #if HAVE_TECHNOLOGY_BUILT
 #include "to_data_file_step.hpp"
 #include "to_data_file_step_factory.hpp"
@@ -102,41 +97,41 @@
 #endif
 
 #if HAVE_TECHNOLOGY_BUILT
-///design_flows/technology include
+/// design_flows/technology include
 #include "technology_flow_step.hpp"
 #include "technology_flow_step_factory.hpp"
 #endif
 
-///parser/data_xml include
+/// parser/data_xml include
 #include "data_xml_parser.hpp"
 
 #if HAVE_FROM_CSV_BUILT
-///parser/csv include
+/// parser/csv include
 #include "parse_csv.hpp"
 #endif
 
 #if HAVE_FROM_PROFILING_ANALYIS_BUILT
-///parser/rapid_miner include
+/// parser/rapid_miner include
 #include "parse_rapid_miner.hpp"
 #endif
 
 #if HAVE_RTL_BUILT
-///RTL include
+/// RTL include
 #include "rtl_node.hpp"
 #endif
 
-///STD include
+/// STD include
 #include <fstream>
 #include <iosfwd>
 #include <string>
 
-///STL includes
+/// STL includes
 #include <map>
 #include <set>
 #include <unordered_map>
 
 #if HAVE_TECHNOLOGY_BUILT
-///technology include
+/// technology include
 #include "parse_technology.hpp"
 #include "target_manager.hpp"
 #include "target_technology.hpp"
@@ -144,25 +139,27 @@
 #endif
 
 #if HAVE_FROM_LIBERTY
-///technology/physical_library/models include
+/// technology/physical_library/models include
 #include "features_extractor.hpp"
 #endif
 
-///utility include
+/// utility includes
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "exceptions.hpp"
+#include "string_manipulation.hpp"
 
 #define MAX_LENGTH 10000
 
-#define INIT(x,y) x.push_back(std::string(y))
+#define INIT(x, y) x.push_back(std::string(y))
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
    ParameterRef parameters;
    try
    {
       // ---------- Parameter parsing ------------ //
       parameters = ParameterRef(new SpiderParameter(argv[0], argc, argv));
-      switch (parameters->Exec())
+      switch(parameters->Exec())
       {
          case PARAMETER_NOTPARSED:
          {
@@ -171,7 +168,7 @@ int main(int argc, char *argv[])
          }
          case EXIT_SUCCESS:
          {
-            if(not (parameters->getOption<bool>(OPT_no_clean)))
+            if(not(parameters->getOption<bool>(OPT_no_clean)))
             {
                boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
             }
@@ -184,7 +181,7 @@ int main(int argc, char *argv[])
          }
          default:
          {
-            if(not (parameters->getOption<bool>(OPT_no_clean)))
+            if(not(parameters->getOption<bool>(OPT_no_clean)))
             {
                boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
             }
@@ -192,18 +189,18 @@ int main(int argc, char *argv[])
          }
       }
 #if !defined(NDEBUG) || HAVE_EXPERIMENTAL
-      int debug_level = parameters->getOption<int>(OPT_debug_level);
+      auto debug_level = parameters->getOption<int>(OPT_debug_level);
 #endif
       Parameters_FileFormat input_format = parameters->getOption<Parameters_FileFormat>(OPT_input_format);
       Parameters_FileFormat output_format = parameters->getOption<Parameters_FileFormat>(OPT_output_format);
       switch(input_format)
       {
 #if HAVE_FROM_CSV_BUILT
-         case (Parameters_FileFormat::FF_CSV) :
+         case(Parameters_FileFormat::FF_CSV):
          {
             TranslatorConstRef tr(new Translator(parameters));
             std::string csv_file;
-            const auto input_files = parameters->getOption<const CustomSet<std::string> >(OPT_input_file);
+            const auto input_files = parameters->getOption<const CustomSet<std::string>>(OPT_input_file);
             for(const auto input_file : input_files)
             {
                if(parameters->GetFileFormat(input_file, false) == Parameters_FileFormat::FF_CSV)
@@ -212,13 +209,13 @@ int main(int argc, char *argv[])
                   break;
                }
             }
-            std::map<std::string, CustomMap<std::string, std::string> > results;
+            std::map<std::string, CustomMap<std::string, std::string>> results;
             ParseCsvFile(results, csv_file, parameters);
             switch(output_format)
             {
-               case (Parameters_FileFormat::FF_TEX) :
+               case(Parameters_FileFormat::FF_TEX):
                {
-                  ///Read data
+                  /// Read data
                   tr->write_to_latex(results, Parameters_FileFormat::FF_CSV, parameters->getOption<std::string>(OPT_output_file));
                   break;
                }
@@ -232,6 +229,7 @@ int main(int argc, char *argv[])
                case(Parameters_FileFormat::FF_OBJECTIVECPP):
                case(Parameters_FileFormat::FF_CPP):
                case(Parameters_FileFormat::FF_FORTRAN):
+               case(Parameters_FileFormat::FF_LLVM):
 #endif
                case(Parameters_FileFormat::FF_CSV):
                case(Parameters_FileFormat::FF_CSV_RTL):
@@ -281,15 +279,15 @@ int main(int argc, char *argv[])
             break;
          }
 #endif
-         case (Parameters_FileFormat::FF_XML) :
+         case(Parameters_FileFormat::FF_XML):
          {
             switch(output_format)
             {
                case(Parameters_FileFormat::FF_TEX):
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Input: XML - Output: TEX");
-                  const auto input_files = parameters->getOption<const CustomSet<std::string> >(OPT_input_file);
-                  std::map<std::string, CustomMap<std::string, std::string> > results;
+                  const auto input_files = parameters->getOption<const CustomSet<std::string>>(OPT_input_file);
+                  std::map<std::string, CustomMap<std::string, std::string>> results;
                   const DataXmlParserConstRef data_xml_parser(new DataXmlParser(parameters));
                   data_xml_parser->Parse(input_files, results);
                   TranslatorConstRef tr(new Translator(parameters));
@@ -301,8 +299,8 @@ int main(int argc, char *argv[])
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Input: XML - Output: XML");
                   std::unordered_map<std::string, long double> results;
-                  std::map<enum rtl_kind, std::map<enum mode_kind, long double> > output;
-                  const auto input_files = parameters->getOption<const CustomSet<std::string> >(OPT_input_file);
+                  std::map<enum rtl_kind, std::map<enum mode_kind, long double>> output;
+                  const auto input_files = parameters->getOption<const CustomSet<std::string>>(OPT_input_file);
                   if(input_files.size() != 1)
                      THROW_ERROR("Only one rapid miner output can be analyzed at a time");
                   parse_rapid_miner(*(input_files.begin()), results, debug_level);
@@ -324,9 +322,10 @@ int main(int argc, char *argv[])
                case(Parameters_FileFormat::FF_OBJECTIVECPP):
                case(Parameters_FileFormat::FF_CPP):
                case(Parameters_FileFormat::FF_FORTRAN):
+               case(Parameters_FileFormat::FF_LLVM):
 #endif
-#if HAVE_FROM_CSV_BUILT
                case(Parameters_FileFormat::FF_CSV):
+#if HAVE_FROM_CSV_BUILT
                case(Parameters_FileFormat::FF_CSV_RTL):
                case(Parameters_FileFormat::FF_CSV_TRE):
 #endif
@@ -380,8 +379,8 @@ int main(int argc, char *argv[])
             break;
          }
 #if HAVE_FROM_LIBERTY && HAVE_R && HAVE_CMOS_BUILT
-         case (Parameters_FileFormat::FF_LIB) :
-         case (Parameters_FileFormat::FF_XML_CELLS) :
+         case(Parameters_FileFormat::FF_LIB):
+         case(Parameters_FileFormat::FF_XML_CELLS):
          {
             if(output_format != Parameters_FileFormat::FF_XML)
                THROW_ERROR("Not supported combination input file - output file types");
@@ -405,11 +404,11 @@ int main(int argc, char *argv[])
             }
             const technology_managerRef TM = technology_managerRef(new technology_manager(parameters));
 
-            ///read the technology library
+            /// read the technology library
             read_technology_library(TM, parameters, target_device::create_device(target_device::IC, parameters, TM));
 
-            ///Generate features
-            std::map<std::string, std::map<std::string, long double> > data, preprocessed_data;
+            /// Generate features
+            std::map<std::string, std::map<std::string, long double>> data, preprocessed_data;
             FeaturesExtractorRef features_extractor(new FeaturesExtractor(parameters));
             std::set<std::string> column_names;
             features_extractor->ExtractAreaFeatures(TM, data, column_names);
@@ -468,24 +467,29 @@ int main(int argc, char *argv[])
             break;
          }
 #endif
-         case(Parameters_FileFormat::FF_XML_BAMBU_RESULTS) :
+         case(Parameters_FileFormat::FF_XML_BAMBU_RESULTS):
 #if HAVE_SOURCE_CODE_STATISTICS_XML
-         case(Parameters_FileFormat::FF_XML_STAT) :
+         case(Parameters_FileFormat::FF_XML_STAT):
 #endif
          {
-            const auto input_files = parameters->getOption<const CustomSet<std::string> >(OPT_input_file);
-            std::map<std::string, CustomMap<std::string, std::string> > results;
+            const auto input_files = parameters->getOption<const CustomSet<std::string>>(OPT_input_file);
+            std::map<std::string, CustomMap<std::string, std::string>> results;
             const DataXmlParserConstRef data_xml_parser(new DataXmlParser(parameters));
             data_xml_parser->Parse(input_files, results);
             TranslatorConstRef tr(new Translator(parameters));
             switch(output_format)
             {
-               case(Parameters_FileFormat::FF_TEX) :
+               case(Parameters_FileFormat::FF_TEX):
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Input: xml - Output: tex");
                   tr->write_to_latex(results, input_format, parameters->getOption<std::string>(OPT_output_file));
                   break;
-
+               }
+               case(Parameters_FileFormat::FF_CSV):
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Input: XML - Output: CSV");
+                  tr->write_to_csv(results, parameters->getOption<std::string>(OPT_output_file));
+                  break;
                }
 #if HAVE_FROM_AADL_ASN_BUILT
                case(Parameters_FileFormat::FF_AADL):
@@ -497,9 +501,9 @@ int main(int argc, char *argv[])
                case(Parameters_FileFormat::FF_OBJECTIVECPP):
                case(Parameters_FileFormat::FF_CPP):
                case(Parameters_FileFormat::FF_FORTRAN):
+               case(Parameters_FileFormat::FF_LLVM):
 #endif
 #if HAVE_FROM_CSV_BUILT
-               case(Parameters_FileFormat::FF_CSV):
                case(Parameters_FileFormat::FF_CSV_RTL):
                case(Parameters_FileFormat::FF_CSV_TRE):
 #endif
@@ -556,7 +560,7 @@ int main(int argc, char *argv[])
             break;
          }
 #if HAVE_R
-         case(Parameters_FileFormat::FF_XML_SYM_SIM) :
+         case(Parameters_FileFormat::FF_XML_SYM_SIM):
          {
             int output_level = parameters->getOption<int>(OPT_output_level);
             if(output_level >= OUTPUT_LEVEL_MINIMUM)
@@ -580,13 +584,12 @@ int main(int argc, char *argv[])
             if(output_format != Parameters_FileFormat::FF_XML)
                THROW_ERROR("Not supported combination input file - output file types");
             const std::string sequences = parameters->getOption<std::string>(OPT_normalization_sequences);
-            std::vector<std::string> sequences_splitted;
-            boost::split(sequences_splitted, sequences, boost::is_any_of("-"));
+            std::vector<std::string> sequences_splitted = SplitString(sequences, "-");
             for(size_t sequence_number = 0; sequence_number < sequences_splitted.size(); sequence_number++)
             {
-               const auto input_files = parameters->getOption<const CustomSet<std::string> >(OPT_input_file);
+               const auto input_files = parameters->getOption<const CustomSet<std::string>>(OPT_input_file);
                const PreprocessingConstRef performance_estimation_preprocessing(new PerformanceEstimationPreprocessing(sequences_splitted[sequence_number], parameters));
-               std::map<std::string, std::map<std::string, long double> > data, filtered_data, preprocessed_data;
+               std::map<std::string, std::map<std::string, long double>> data, filtered_data, preprocessed_data;
                std::set<std::string> column_names;
                performance_estimation_preprocessing->ReadData(input_files, data, column_names);
                const PreprocessingConstRef cell_selection(new CellSelection(parameters));
@@ -609,7 +612,7 @@ int main(int argc, char *argv[])
                   }
                   long double max_error = 0.0;
                   std::string benchmark_to_be_removed;
-                  const std::unordered_map<std::string, long double> & training_errors = results->training_errors;
+                  const std::unordered_map<std::string, long double>& training_errors = results->training_errors;
                   std::unordered_map<std::string, long double>::const_iterator training_error, training_error_end = training_errors.end();
                   for(training_error = training_errors.begin(); training_error != training_error_end; ++training_error)
                   {
@@ -645,7 +648,8 @@ int main(int argc, char *argv[])
                      break;
                   }
                   data = preprocessed_data;
-                  const PreprocessingConstRef significance_preprocessing(new SignificancePreprocessing(GetPointer<LinearRegressionResults>(results)->regressor_significances, GetPointer<LinearRegressionResults>(results)->regressor_minimum_significance, parameters));
+                  const PreprocessingConstRef significance_preprocessing(
+                      new SignificancePreprocessing(GetPointer<LinearRegressionResults>(results)->regressor_significances, GetPointer<LinearRegressionResults>(results)->regressor_minimum_significance, parameters));
                   significance_preprocessing->Exec(data, preprocessed_data, column_names, STR_CST_cycles);
                }
             }
@@ -655,13 +659,12 @@ int main(int argc, char *argv[])
 #if HAVE_TECHNOLOGY_BUILT
          case(Parameters_FileFormat::FF_XML_TARGET):
          {
-            int output_level = parameters->getOption<int>(OPT_output_level);
+            auto output_level = parameters->getOption<int>(OPT_output_level);
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Merging characterizations");
             // Technology library manager
             technology_managerRef TM = technology_managerRef(new technology_manager(parameters));
 
-
-            ///creating the datastructure representing the target device
+            /// creating the datastructure representing the target device
             target_deviceRef device = target_device::create_device(TargetDevice_Type::FPGA, parameters, TM);
             target_managerRef target = target_managerRef(new target_manager(parameters, TM, device));
 
@@ -673,17 +676,20 @@ int main(int argc, char *argv[])
 
             const std::string load_technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY);
             const vertex load_technology_flow_step = design_flow_manager->GetDesignFlowStep(load_technology_flow_signature);
-            const DesignFlowStepRef load_technology_design_flow_step = load_technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(load_technology_flow_step)->design_flow_step : GetPointer<const TechnologyFlowStepFactory>(technology_flow_step_factory)->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY);
+            const DesignFlowStepRef load_technology_design_flow_step = load_technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(load_technology_flow_step)->design_flow_step :
+                                                                                                   GetPointer<const TechnologyFlowStepFactory>(technology_flow_step_factory)->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY);
             design_flow_manager->AddStep(load_technology_design_flow_step);
 
             const std::string fix_technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::FIX_CHARACTERIZATION);
             const vertex fix_technology_flow_step = design_flow_manager->GetDesignFlowStep(fix_technology_flow_signature);
-            const DesignFlowStepRef fix_technology_design_flow_step = fix_technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(fix_technology_flow_step)->design_flow_step : GetPointer<const TechnologyFlowStepFactory>(technology_flow_step_factory)->CreateTechnologyFlowStep(TechnologyFlowStep_Type::FIX_CHARACTERIZATION);
+            const DesignFlowStepRef fix_technology_design_flow_step = fix_technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(fix_technology_flow_step)->design_flow_step :
+                                                                                                 GetPointer<const TechnologyFlowStepFactory>(technology_flow_step_factory)->CreateTechnologyFlowStep(TechnologyFlowStep_Type::FIX_CHARACTERIZATION);
             design_flow_manager->AddStep(fix_technology_design_flow_step);
 
             const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::WRITE_TECHNOLOGY);
             const vertex technology_flow_step = design_flow_manager->GetDesignFlowStep(technology_flow_signature);
-            const DesignFlowStepRef technology_design_flow_step = technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : GetPointer<const TechnologyFlowStepFactory>(technology_flow_step_factory)->CreateTechnologyFlowStep(TechnologyFlowStep_Type::WRITE_TECHNOLOGY);
+            const DesignFlowStepRef technology_design_flow_step = technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
+                                                                                         GetPointer<const TechnologyFlowStepFactory>(technology_flow_step_factory)->CreateTechnologyFlowStep(TechnologyFlowStep_Type::WRITE_TECHNOLOGY);
             design_flow_manager->AddStep(technology_design_flow_step);
             design_flow_manager->Exec();
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--Merged characterizations");
@@ -695,8 +701,7 @@ int main(int argc, char *argv[])
             // Technology library manager
             technology_managerRef TM = technology_managerRef(new technology_manager(parameters));
 
-
-            ///creating the datastructure representing the target device
+            /// creating the datastructure representing the target device
             target_deviceRef device = target_device::create_device(TargetDevice_Type::FPGA, parameters, TM);
             target_managerRef target = target_managerRef(new target_manager(parameters, TM, device));
 
@@ -711,7 +716,8 @@ int main(int argc, char *argv[])
 
             const std::string to_data_file_step_signature = ToDataFileStep::ComputeSignature(ToDataFileStep_Type::GENERATE_FU_LIST);
             const vertex to_data_file_vertex = design_flow_manager->GetDesignFlowStep(to_data_file_step_signature);
-            const DesignFlowStepRef to_data_file_step = to_data_file_vertex ? design_flow_graph->CGetDesignFlowStepInfo(to_data_file_vertex)->design_flow_step : GetPointer<const ToDataFileStepFactory>(to_data_file_step_factory)->CreateStep(to_data_file_step_signature);
+            const DesignFlowStepRef to_data_file_step =
+                to_data_file_vertex ? design_flow_graph->CGetDesignFlowStepInfo(to_data_file_vertex)->design_flow_step : GetPointer<const ToDataFileStepFactory>(to_data_file_step_factory)->CreateStep(to_data_file_step_signature);
             design_flow_manager->AddStep(to_data_file_step);
             design_flow_manager->Exec();
 #else
@@ -726,7 +732,7 @@ int main(int argc, char *argv[])
          {
             switch(output_format)
             {
-               case(Parameters_FileFormat::FF_XML) :
+               case(Parameters_FileFormat::FF_XML):
                {
                   int output_level = parameters->getOption<int>(OPT_output_level);
                   if(output_level >= OUTPUT_LEVEL_MINIMUM)
@@ -747,7 +753,7 @@ int main(int argc, char *argv[])
                      }
                   }
                   XMLGeneratorConstRef generator(new XMLGenerator(parameters));
-                  const auto input_files = parameters->getOption<const CustomSet<std::string> >(OPT_input_file);
+                  const auto input_files = parameters->getOption<const CustomSet<std::string>>(OPT_input_file);
                   if(input_files.size() > 1)
                      THROW_ERROR("Symbolic sequence weight models can be built only starting from a single file");
                   const std::string output_file = parameters->getOption<std::string>(OPT_output_file);
@@ -764,6 +770,7 @@ int main(int argc, char *argv[])
                case(Parameters_FileFormat::FF_OBJECTIVECPP):
                case(Parameters_FileFormat::FF_CPP):
                case(Parameters_FileFormat::FF_FORTRAN):
+               case(Parameters_FileFormat::FF_LLVM):
 #endif
                case(Parameters_FileFormat::FF_CSV):
                case(Parameters_FileFormat::FF_CSV_RTL):
@@ -817,6 +824,9 @@ int main(int argc, char *argv[])
 #else
          case(Parameters_FileFormat::FF_XML_WGT_SYM):
 #endif
+#if !HAVE_FROM_CSV_BUILT
+         case(Parameters_FileFormat::FF_CSV):
+#endif
 #if HAVE_FROM_AADL_ASN_BUILT
          case(Parameters_FileFormat::FF_AADL):
          case(Parameters_FileFormat::FF_ASN):
@@ -827,6 +837,7 @@ int main(int argc, char *argv[])
          case(Parameters_FileFormat::FF_OBJECTIVECPP):
          case(Parameters_FileFormat::FF_CPP):
          case(Parameters_FileFormat::FF_FORTRAN):
+         case(Parameters_FileFormat::FF_LLVM):
 #endif
 #if HAVE_FROM_CSV_BUILT
          case(Parameters_FileFormat::FF_CSV_RTL):
@@ -864,7 +875,7 @@ int main(int argc, char *argv[])
          case(Parameters_FileFormat::FF_XML_IP_XACT_DESIGN):
          case(Parameters_FileFormat::FF_XML_IP_XACT_GENERATOR):
          case(Parameters_FileFormat::FF_XML_SKIP_ROW):
-#if ! HAVE_R
+#if !HAVE_R
          case(Parameters_FileFormat::FF_XML_SYM_SIM):
 #endif
          case(Parameters_FileFormat::FF_XML_TEX_TABLE):
@@ -874,23 +885,23 @@ int main(int argc, char *argv[])
             THROW_ERROR("Not supported input file type " + STR(static_cast<int>(input_format)));
       }
    }
-   catch (const char * str)
+   catch(const char* str)
    {
       std::cerr << str << std::endl;
    }
-   catch (const std::string& str)
+   catch(const std::string& str)
    {
       std::cerr << str << std::endl;
    }
-   catch (std::exception& inException)
+   catch(std::exception& inException)
    {
       PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, inException.what());
    }
-   catch (...)
+   catch(...)
    {
       std::cerr << "Unknown error type" << std::endl;
    }
-   if(not (parameters->getOption<bool>(OPT_no_clean)))
+   if(not(parameters->getOption<bool>(OPT_no_clean)))
    {
       boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
    }

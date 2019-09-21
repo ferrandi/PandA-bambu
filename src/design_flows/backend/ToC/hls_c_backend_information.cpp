@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file hls_c_backend_information.cpp
  * @brief Class to pass information to the hls backend
@@ -39,19 +39,15 @@
  * $Date: $
  * Last modified by $Author: $
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "hls_c_backend_information.hpp"
 
-HLSCBackendInformation::HLSCBackendInformation
-(
-   const std::string& _results_filename,
-   const HLS_managerConstRef _HLSMgr
-) :
-   results_filename(_results_filename),
-   HLSMgr(_HLSMgr)
-{}
+#include <utility>
 
-HLSCBackendInformation::~HLSCBackendInformation()
-{}
+HLSCBackendInformation::HLSCBackendInformation(std::string _results_filename, const HLS_managerConstRef& _HLSMgr) : results_filename(std::move(_results_filename)), HLSMgr(_HLSMgr)
+{
+}
+
+HLSCBackendInformation::~HLSCBackendInformation() = default;

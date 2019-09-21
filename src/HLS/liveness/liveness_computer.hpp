@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file liveness_computer.hpp
  * @brief Class specification for algorithms that compute the liveness of variables
@@ -41,7 +41,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef LIVENESS_COMPUTER_HPP
 #define LIVENESS_COMPUTER_HPP
 
@@ -50,26 +50,25 @@ REF_FORWARD_DECL(liveness_computer);
 
 class liveness_computer : public HLSFunctionStep
 {
-   protected:
+ protected:
+   /**
+    * Compute the relationship of this step
+    * @param relationship_type is the type of relationship to be considered
+    * @return the steps in relationship with this
+    */
+   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      /**
-       * Compute the relationship of this step
-       * @param relationship_type is the type of relationship to be considered
-       * @return the steps in relationship with this
-       */
-      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+ public:
+   /**
+    * Constructor
+    * @param design_flow_manager is the design flow manager
+    * @param hls_flow_step_type is the type of liveness computation
+    */
+   liveness_computer(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
 
-   public:
-      /**
-       * Constructor
-       * @param design_flow_manager is the design flow manager
-       * @param hls_flow_step_type is the type of liveness computation
-       */
-      liveness_computer(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
-
-      /**
-       * Destructor
-       */
-      virtual ~liveness_computer();
+   /**
+    * Destructor
+    */
+   ~liveness_computer() override;
 };
 #endif

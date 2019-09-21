@@ -3,7 +3,7 @@
    Copyright (C) 1997-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Richard Henderson (rth@cygnus.com) and
-		  Jakub Jelinek (jj@ultra.linux.cz).
+        Jakub Jelinek (jj@ultra.linux.cz).
 
    The GNU C Library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -28,19 +28,18 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "soft-fp.h"
 #include "single.h"
+#include "soft-fp.h"
 
-SFtype
-__negsf2 (SFtype a)
+SFtype __negsf2(SFtype a)
 {
-  FP_DECL_S (A);
-  FP_DECL_S (R);
-  SFtype r;
+   FP_DECL_S(A);
+   FP_DECL_S(R);
+   SFtype r;
 
-  FP_UNPACK_RAW_S (A, a);
-  FP_NEG_S (R, A);
-  FP_PACK_RAW_S (r, R);
+   FP_UNPACK_RAW_S(A, a);
+   FP_NEG_S(R, A);
+   FP_PACK_RAW_S(r, R);
 
-  return r;
+   return r;
 }

@@ -1,35 +1,35 @@
 /*
-*
-*                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
-*                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
-*                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
-*                _/      _/    _/ _/    _/ _/   _/ _/    _/
-*               _/      _/    _/ _/    _/ _/_/_/  _/    _/
-*
-*             ***********************************************
-*                              PandA Project
-*                     URL: http://panda.dei.polimi.it
-*                       Politecnico di Milano - DEIB
-*                        System Architectures Group
-*             ***********************************************
-*              Copyright (c) 2004-2018 Politecnico di Milano
-*
-*   This file is part of the PandA framework.
-*
-*   The PandA framework is free software; you can redistribute it and/or modify
-*   it under the terms of the GNU General Public License as published by
-*   the Free Software Foundation; either version 3 of the License, or
-*   (at your option) any later version.
-*
-*   This program is distributed in the hope that it will be useful,
-*   but WITHOUT ANY WARRANTY; without even the implied warranty of
-*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*   GNU General Public License for more details.
-*
-*   You should have received a copy of the GNU General Public License
-*   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*
-*/
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (C) 2004-2019 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
 /**
  * @file port_swapping.cpp
  * @brief Implementation of the port swapping algorithm described in the following paper:
@@ -39,51 +39,50 @@
  * @author Davide Conficconi <davide.conficconi@mail.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
-*/
-///Header include
+ */
+/// Header include
 #include "port_swapping.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///boost include
+/// boost include
 #include <boost/graph/random_spanning_tree.hpp>
 
-#include "hls.hpp"
-#include "hls_manager.hpp"
 #include "allocation_information.hpp"
 #include "fu_binding.hpp"
-#include "storage_value_information.hpp"
+#include "hls.hpp"
+#include "hls_manager.hpp"
 #include "liveness.hpp"
 #include "reg_binding.hpp"
+#include "storage_value_information.hpp"
 
-///parser/treegcc include
+/// parser/treegcc include
 #include "token_interface.hpp"
 
-///STD include
+/// STD include
 #include <random>
 
 #include "behavioral_helper.hpp"
+#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_helper.hpp"
 
 #define SET_A 0
 #define SET_B 1
 #define SET_AB 2
 
-port_swapping::port_swapping(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
-   HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::PORT_SWAPPING)
+port_swapping::port_swapping(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
+    : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::PORT_SWAPPING)
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
 }
 
-port_swapping::~port_swapping()
-{
+port_swapping::~port_swapping() = default;
 
-}
-
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > port_swapping::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> port_swapping::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ret;
+   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -220,7 +219,7 @@ port_swapping::PSVertex port_swapping::find_max_degree(std::set<std::pair<PSVert
    return v;
 }
 
-void port_swapping::update_degree( PSGraph g2, std::set<std::pair<PSVertex, unsigned int>>& dSet)
+void port_swapping::update_degree(PSGraph g2, std::set<std::pair<PSVertex, unsigned int>>& dSet)
 {
    auto g2_vertices = boost::vertices(g2);
    for(auto iterator = g2_vertices.first; iterator != g2_vertices.second; ++iterator)
@@ -232,15 +231,12 @@ port_swapping::PSVertex port_swapping::get_co_tree_vertex(PSVertex v, std::vecto
    for(auto ed : e)
       if(v == ed.second)
          return ed.first;
-      else if (v == ed.first)
+      else if(v == ed.first)
          return ed.second;
    return v;
 }
 
-void port_swapping::port_swapping_algorithm(PSGraph g,
-      std::vector<PSMultiStart>& vector_sets,
-      size_t num_vertices_g,
-      PSVertex root)
+void port_swapping::port_swapping_algorithm(PSGraph g, std::vector<PSMultiStart>& vector_sets, size_t num_vertices_g, PSVertex root)
 {
    //
    // Generating the Spanning Tree starting from Graph g
@@ -251,23 +247,21 @@ void port_swapping::port_swapping_algorithm(PSGraph g,
    std::vector<PSVertex> p(num_vertices(g));
 
    std::vector<PSVertex> component(boost::num_vertices(g));
-   size_t num_components = boost::connected_components (g, &component[0]);
+   size_t num_components = boost::connected_components(g, &component[0]);
    PSVertex connection_ver_1 = *vertices(g).first;
    for(size_t count = 1; count < num_components; count++)
    {
       for(size_t i = 0; i < num_vertices_g; i++)
          if(component[i] == count)
          {
-            PSVertex connection_ver_2 = PSVertex(i);
+            auto connection_ver_2 = PSVertex(i);
             add_edge(connection_ver_1, connection_ver_2, g);
             connection_ver_1 = connection_ver_2;
             break;
          }
    }
 
-   boost::random_spanning_tree(g, generator, boost::root_vertex(root).
-                        predecessor_map(boost::make_iterator_property_map(p.begin(),
-                                        boost::get(boost::vertex_index, g))));
+   boost::random_spanning_tree(g, generator, boost::root_vertex(root).predecessor_map(boost::make_iterator_property_map(p.begin(), boost::get(boost::vertex_index, g))));
 
    //
    // Generating a list of edges following the predecessor map created
@@ -304,8 +298,7 @@ void port_swapping::port_swapping_algorithm(PSGraph g,
    std::vector<PSE> co_tree_edges;
    for(auto e : g_edges)
    {
-      if(find(spt_edges.begin(), spt_edges.end(), PSE(source(e, g), target(e, g))) != spt_edges.end() ||
-            find(spt_edges.begin(), spt_edges.end(), PSE(target(e, g), source(e, g))) != spt_edges.end())
+      if(find(spt_edges.begin(), spt_edges.end(), PSE(source(e, g), target(e, g))) != spt_edges.end() || find(spt_edges.begin(), spt_edges.end(), PSE(target(e, g), source(e, g))) != spt_edges.end())
          continue;
       else
          co_tree_edges.push_back(PSE(source(e, g), target(e, g)));
@@ -332,7 +325,7 @@ void port_swapping::port_swapping_algorithm(PSGraph g,
    auto g2_vertices = boost::vertices(g2);
    update_degree(g2, degree_set);
 
-   //while(num_edges(g2) != 0)
+   // while(num_edges(g2) != 0)
    for(auto iterator = g2_vertices.first; iterator != g2_vertices.second; ++iterator)
    {
       if(out_degree(*iterator, g2) == 1)
@@ -341,7 +334,7 @@ void port_swapping::port_swapping_algorithm(PSGraph g,
          cover_set.insert(u1);
          clear_vertex(u1, g2);
       }
-      else if (out_degree(*iterator, g2) > 1)
+      else if(out_degree(*iterator, g2) > 1)
       {
          auto u2 = find_max_degree(degree_set);
          cover_set.insert(u2);
@@ -384,7 +377,7 @@ void port_swapping::port_swapping_algorithm(PSGraph g,
    return;
 }
 
-std::vector<std::pair<port_swapping::PSVertex, unsigned int> > port_swapping::p_swap(PSGraph g)
+std::vector<std::pair<port_swapping::PSVertex, unsigned int>> port_swapping::p_swap(PSGraph g)
 {
    auto g_vertices = vertices(g);
    std::vector<PSMultiStart> vector_sets;
@@ -404,7 +397,7 @@ std::vector<std::pair<port_swapping::PSVertex, unsigned int> > port_swapping::p_
          best_candidate = vset;
       }
 
-   std::vector<std::pair<PSVertex, unsigned int> > return_values;
+   std::vector<std::pair<PSVertex, unsigned int>> return_values;
    for(auto vertex_set : best_candidate.vset)
       return_values.push_back(std::make_pair(vertex_set.v, vertex_set.belongs));
    return return_values;
@@ -412,19 +405,11 @@ std::vector<std::pair<port_swapping::PSVertex, unsigned int> > port_swapping::p_
 
 bool port_swapping::is_commutative_op(const std::string& operation)
 {
-   return operation == STOK(TOK_PLUS_EXPR)
-          || operation == STOK(TOK_POINTER_PLUS_EXPR)
-          || operation == STOK(TOK_MULT_EXPR)
-          || operation == STOK(TOK_BIT_IOR_EXPR)
-          || operation == STOK(TOK_BIT_XOR_EXPR)
-          || operation == STOK(TOK_BIT_AND_EXPR)
-          || operation == STOK(TOK_EQ_EXPR)
-          || operation == STOK(TOK_NE_EXPR)
-          || operation == STOK(TOK_WIDEN_SUM_EXPR)
-          || operation == STOK(TOK_WIDEN_MULT_EXPR);
+   return operation == STOK(TOK_PLUS_EXPR) || operation == STOK(TOK_POINTER_PLUS_EXPR) || operation == STOK(TOK_MULT_EXPR) || operation == STOK(TOK_BIT_IOR_EXPR) || operation == STOK(TOK_BIT_XOR_EXPR) || operation == STOK(TOK_BIT_AND_EXPR) ||
+          operation == STOK(TOK_EQ_EXPR) || operation == STOK(TOK_NE_EXPR) || operation == STOK(TOK_WIDEN_SUM_EXPR) || operation == STOK(TOK_WIDEN_MULT_EXPR);
 }
 
-unsigned int port_swapping::get_results(PSVertex operand, std::vector<std::pair<PSVertex, unsigned int> > results)
+unsigned int port_swapping::get_results(PSVertex operand, std::vector<std::pair<PSVertex, unsigned int>> results)
 {
    for(auto res : results)
    {
@@ -448,15 +433,14 @@ DesignFlowStep_Status port_swapping::InternalExec()
       PSVertex second_op;
    } Operands;
 
-
-   std::map<std::pair<unsigned int, unsigned int>, std::vector<vertex> > fu_map;
+   std::map<std::pair<unsigned int, unsigned int>, std::vector<vertex>> fu_map;
    std::map<std::tuple<unsigned int, unsigned int, unsigned int>, PSVertex> op_vertex_map;
    std::tuple<unsigned int, unsigned int, unsigned int> key_value;
    std::vector<PSVertex> vertices_in_op;
    std::vector<Operands> operands;
-   std::vector<std::pair<PSVertex, unsigned int> > results;
+   std::vector<std::pair<PSVertex, unsigned int>> results;
    bool changed = false;
-   size_t n_swaps=0;
+   size_t n_swaps = 0;
    vertices_in_op.resize(2);
 
    PSVertex v_input;
@@ -481,8 +465,7 @@ DesignFlowStep_Status port_swapping::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Functional Unit INDEX: " + STR(fu.first.second));
       for(const auto& fu_operation : fu.second)
       {
-
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operation: " + GET_NAME(data,fu_operation) + " (" + data->CGetOpNodeInfo(fu_operation)->GetOperation() + ")");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operation: " + GET_NAME(data, fu_operation) + " (" + data->CGetOpNodeInfo(fu_operation)->GetOperation() + ")");
          std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(HLS->functionId, fu_operation);
          THROW_ASSERT(var_read.size() == 2, STR(var_read.size()) + " Vertices in op has wrong size!");
          for(unsigned int var_num = 0; var_num < var_read.size(); var_num++)
@@ -499,7 +482,7 @@ DesignFlowStep_Status port_swapping::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Read: " + behavioral_helper->PrintVariable(tree_var));
                const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(fu_operation);
                const std::set<vertex>::const_iterator rs_it_end = running_states.end();
-               for(std::set<vertex>::const_iterator rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
+               for(auto rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
                {
                   vertex state = *rs_it;
                   if(tree_helper::is_parameter(TreeM, tree_var) || !HLS->Rliv->has_op_where_defined(tree_var))
@@ -511,7 +494,7 @@ DesignFlowStep_Status port_swapping::InternalExec()
                   {
                      vertex def_op = HLS->Rliv->get_op_where_defined(tree_var);
                      const std::set<vertex>& def_op_ending_states = HLS->Rliv->get_state_where_end(def_op);
-                     if((GET_TYPE(data, def_op) & TYPE_PHI)==0)
+                     if((GET_TYPE(data, def_op) & TYPE_PHI) == 0)
                      {
                         if(def_op_ending_states.find(state) != def_op_ending_states.end())
                         {
@@ -540,8 +523,8 @@ DesignFlowStep_Status port_swapping::InternalExec()
                      }
                   }
 
-                  ///no more than one running state could be considered
-                  break;///TOBEFIXED
+                  /// no more than one running state could be considered
+                  break; /// TOBEFIXED
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
             }
@@ -589,18 +572,18 @@ DesignFlowStep_Status port_swapping::InternalExec()
          unsigned int op1, op2;
          op1 = get_results(opt.first_op, results);
          op2 = get_results(opt.second_op, results);
-         if((op1 == op2)  &&  (op1 == SET_B || op1 == SET_A))
+         if((op1 == op2) && (op1 == SET_B || op1 == SET_A))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- Error in the algorithm");
          }
-         else if((op1 == SET_A && op2 == SET_B) || (op1 == SET_AB && op2 == SET_B ) || (op1 == SET_A && op2 == SET_AB  ) || (op1 == SET_AB && op2 == SET_AB))
+         else if((op1 == SET_A && op2 == SET_B) || (op1 == SET_AB && op2 == SET_B) || (op1 == SET_A && op2 == SET_AB) || (op1 == SET_AB && op2 == SET_AB))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- No swap to do");
             HLS->Rfu->set_ports_are_swapped(opt.op, false);
          }
-         else if ((op1  == SET_AB && op2 == SET_A) || (op1 == SET_B && op2 == SET_AB))
+         else if((op1 == SET_AB && op2 == SET_A) || (op1 == SET_B && op2 == SET_AB))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--> Swap ports in operation: " + GET_NAME(data,opt.op));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--> Swap ports in operation: " + GET_NAME(data, opt.op));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- Vertices swapped: " + STR(opt.first_op) + " and " + STR(opt.second_op));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
             HLS->Rfu->set_ports_are_swapped(opt.op, true);

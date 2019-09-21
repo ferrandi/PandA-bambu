@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -45,10 +45,14 @@
 #ifndef GCC_WRAPPER_HPP
 #define GCC_WRAPPER_HPP
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_ARM_COMPILER.hpp"
 #include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_FROM_RTL_BUILT.hpp"
+#include "config_HAVE_I386_CLANG4_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG5_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG6_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG7_COMPILER.hpp"
 #include "config_HAVE_I386_GCC45_COMPILER.hpp"
 #include "config_HAVE_I386_GCC46_COMPILER.hpp"
 #include "config_HAVE_I386_GCC47_COMPILER.hpp"
@@ -57,52 +61,55 @@
 #include "config_HAVE_I386_GCC5_COMPILER.hpp"
 #include "config_HAVE_I386_GCC6_COMPILER.hpp"
 #include "config_HAVE_I386_GCC7_COMPILER.hpp"
+#include "config_HAVE_I386_GCC8_COMPILER.hpp"
 #include "config_HAVE_SPARC_COMPILER.hpp"
 #include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_HAVE_ZEBU_BUILT.hpp"
 
-///boost include
+/// boost include
 #include <boost/filesystem/path.hpp>
 
-///STD include
+/// STD include
 #include <iosfwd>
 #include <map>
 #include <set>
 #include <unordered_map>
 #include <vector>
 
-///utility include
-#include <boost/filesystem/path.hpp>
+/// utility include
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
 #include "refcount.hpp"
+#include <boost/filesystem/path.hpp>
 
 REF_FORWARD_DECL(application_manager);
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(tree_manager);
 
-///Possible optimization sets
+/// Possible optimization sets
 enum class GccWrapper_OptimizationSet
 {
-   O0,      /**< -O0 */
-   O1,      /**< -O1 */
-   O2,      /**< -O2 */
-   O3,      /**< -O3 */
-   O4,      /**< -O4 */
-   O5,      /**< -O5 */
-   Og,      /**< -Og */
-   Os,      /**< -Os */
+   O0,    /**< -O0 */
+   O1,    /**< -O1 */
+   O2,    /**< -O2 */
+   O3,    /**< -O3 */
+   O4,    /**< -O4 */
+   O5,    /**< -O5 */
+   Og,    /**< -Og */
+   Os,    /**< -Os */
+   Oz,    /**< -Oz */
+   Ofast, /**< -Ofast */
 #if HAVE_BAMBU_BUILT
-   OBAMBU,  /**< Bambu optimizationss + OPT_gcc_opt_level */
-   OSF,     /**< Bambu optimizations for soft float: O3 + -finline-limit=10000 */
+   OBAMBU, /**< Bambu optimizationss + OPT_gcc_opt_level */
+   OSF,    /**< Bambu optimizations for soft float: O3 + -finline-limit=10000 */
 #endif
 #if HAVE_TUCANO_BUILT
    OTUCANO, /**< Tucano optimizations + OPT_gcc_opt_level */
 #endif
 #if HAVE_ZEBU_BUILT
-   OZEBU,   /**< Zebu optimizations + OPT_gcc_opt_level */
+   OZEBU, /**< Zebu optimizations + OPT_gcc_opt_level */
 #endif
 };
 
@@ -136,13 +143,36 @@ enum class GccWrapper_CompilerTarget
 #if HAVE_I386_GCC7_COMPILER
    CT_I386_GCC7 = 128,
 #endif
+#if HAVE_I386_GCC8_COMPILER
+   CT_I386_GCC8 = 256,
+#endif
+#if HAVE_I386_CLANG4_COMPILER
+   CT_I386_CLANG4 = 512,
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+   CT_I386_CLANG5 = 1024,
+#endif
+#if HAVE_I386_CLANG6_COMPILER
+   CT_I386_CLANG6 = 2048,
+#endif
+#if HAVE_I386_CLANG7_COMPILER
+   CT_I386_CLANG7 = 4096,
+#endif
 #if HAVE_ARM_COMPILER
-   CT_ARM_GCC = 256,
+   CT_ARM_GCC = 8192,
 #endif
 #if HAVE_SPARC_COMPILER
-   CT_SPARC_GCC = 512,
-   CT_SPARC_ELF_GCC = 1024
+   CT_SPARC_GCC = 16384,
+   CT_SPARC_ELF_GCC = 32768
 #endif
+};
+
+enum class GccWrapper_CompilerMode
+{
+   CM_STD = 0,
+   CM_EMPTY,
+   CM_ANALYZER,
+   CM_LTO
 };
 
 /**
@@ -152,248 +182,269 @@ enum class GccWrapper_CompilerTarget
  */
 class GccWrapper
 {
-   private:
-      ///Class storing information of a compiler
-      class Compiler
-      {
-         public:
-            ///The cpp executable
-            boost::filesystem::path cpp;
+ private:
+   /// Class storing information of a compiler
+   class Compiler
+   {
+    public:
+      /// The cpp executable
+      boost::filesystem::path cpp;
 
-            ///The gcc executable
-            boost::filesystem::path gcc;
+      /// The gcc executable
+      boost::filesystem::path gcc;
 
-            ///The extra_options
-            std::string extra_options;
+      /// The extra_options
+      std::string extra_options;
 
-            ///The plugin to dump empty gimple
-            std::string empty_plugin_obj;
-            std::string empty_plugin_name;
+      /// The plugin to dump empty gimple
+      std::string empty_plugin_obj;
+      std::string empty_plugin_name;
 
-            ///The plugin to dump ssa gimple
-            std::string ssa_plugin_obj;
-            std::string ssa_plugin_name;
+      /// The plugin to dump ssa gimple
+      std::string ssa_plugin_obj;
+      std::string ssa_plugin_name;
 
-            ///The plugin making visible only the top function
-            std::string topfname_plugin_obj;
-            std::string topfname_plugin_name;
+      /// The plugin expanding MemOps calls
+      std::string expandMemOps_plugin_obj;
+      std::string expandMemOps_plugin_name;
+
+      /// The plugin canocalizing GEPIs
+      std::string GepiCanon_plugin_obj;
+      std::string GepiCanon_plugin_name;
+
+      /// The plugin performing Custom Scalar Replacement of Aggregates
+      std::string CSROA_plugin_obj;
+      std::string CSROA_plugin_name;
+
+      /// The plugin making visible only the top function
+      std::string topfname_plugin_obj;
+      std::string topfname_plugin_name;
+
+      /// The plugin making visible only the top function
+      std::string ASTAnalyzer_plugin_obj;
+      std::string ASTAnalyzer_plugin_name;
+
+      /// The clang llvm-link executable
+      boost::filesystem::path llvm_link;
+
+      /// The clang llvm-opt executable
+      boost::filesystem::path llvm_opt;
 
 #if HAVE_FROM_RTL_BUILT
-            ///The plugin to dump gimple and rtl
-            std::string rtl_plugin;
+      /// The plugin to dump gimple and rtl
+      std::string rtl_plugin;
 #endif
-      };
+      /// true when compiler is based on clang/llvm
+      bool is_clang;
+      Compiler() : is_clang(false)
+      {
+      }
+   };
 
-      /// The set of input parameters
-      const ParameterConstRef Param;
+   /// The set of input parameters
+   const ParameterConstRef Param;
 
-      ///The target compiler to be used
-      const GccWrapper_CompilerTarget compiler_target;
+   /// The target compiler to be used
+   const GccWrapper_CompilerTarget compiler_target;
 
-      ///The set of optimizations to be applied
-      const GccWrapper_OptimizationSet OS;
+   /// The set of optimizations to be applied
+   const GccWrapper_OptimizationSet OS;
 
-      ///Counter used to create unique file name for patched files
-      unsigned int file_name_counter;
+   /// The gcc parameters line for compiling a file
+   std::string gcc_compiling_parameters;
 
-      ///The gcc parameters line for compiling a file
-      std::string gcc_compiling_parameters;
+   /// The gcc parameters line for creating an executable
+   std::string gcc_linking_parameters;
 
-      ///The gcc parameters line for creating an executable
-      std::string gcc_linking_parameters;
+   /// The set of files for which tree manager has already been computed
+   CustomSet<std::string> already_processed_files;
 
-      ///The set of files for which tree manager has already been computed
-      CustomSet<std::string> already_processed_files;
+   /// debug level
+   int output_level;
 
-      /// debug level
-      int output_level;
+   /// debug level
+   int debug_level;
 
-      /// debug level
-      int debug_level;
+   /// The values of optimizations parameters
+   std::map<std::string, int> parameter_values;
 
-      ///The values of optimizations parameters
-      std::map<std::string, int> parameter_values;
+   /// The set of activated optimizations
+   std::map<std::string, bool> optimization_flags;
 
-      ///The set of activated optimizations
-      std::map<std::string, bool> optimization_flags;
+   /// The value of parametric activate optimizations
+   std::map<std::string, int> optimization_values;
 
-      ///The value of parametric activate optimizations
-      std::map<std::string, int> optimization_values;
+   /**
+    * Invoke gcc to compile file(s)
+    * @param original_file_name is the original file passed through command line; this information is necessary to retrieve include directory
+    * @param real_rile_name stores the source code file which is actually compiled; the function can modified it in case of empty file
+    * @param parameters_line are the parameters to be passed to gcc
+    * @param empty_file tells if .001.tu tree has to be produced
+    * @param enable Analyzer plugin.
+    */
+   void CompileFile(const std::string& original_file_name, std::string& real_file_name, const std::string& parameters_line, GccWrapper_CompilerMode cm = GccWrapper_CompilerMode::CM_STD);
 
-      /**
-       * Invoke gcc to compile file(s)
-       * @param original_file_name is the original file passed through command line; this information is necessary to retrieve include directory
-       * @param real_rile_name stores the source code file which is actually compiled; the function can modified it in case of empty file
-       * @param parameters_line are the parameters to be passed to gcc
-       * @param empty_file tells if .001.tu tree has to be produced
-       */
-      void CompileFile(const std::string& original_file_name, std::string & real_file_name, const std::string& parameters_line, bool empty_file = false);
+   /**
+    * Return the compiler for a given target
+    * @return a structure containing information about compiler
+    */
+   Compiler GetCompiler() const;
 
-      /**
-       * Return the compiler for a given target
-       * @return a structure containing information about compiler
-       */
-      Compiler GetCompiler() const;
-
-      /**
-       * Initialize the gcc parameters line
-       * @param OS is the optimizations set to be considered
-       * @return the string with the parameters
-       */
-      void InitializeGccParameters();
+   /**
+    * Initialize the gcc parameters line
+    * @param OS is the optimizations set to be considered
+    * @return the string with the parameters
+    */
+   void InitializeGccParameters();
 
 #if HAVE_BAMBU_BUILT || HAVE_TUCANO_BUILT || HAVE_ZEBU_BUILT
-      /**
-       * Analyze the command line options
-       */
-      void ReadParameters();
+   /**
+    * Analyze the command line options
+    */
+   void ReadParameters();
 
-      /**
-       * Set the default options for gcc
-       */
-      void SetGccDefault();
+   /**
+    * Set the default options for gcc
+    */
+   void SetGccDefault();
 #endif
 
 #if HAVE_BAMBU_BUILT
-      /**
-       * Set the default options for gcc in bambu
-       */
-      void SetBambuDefault();
+   /**
+    * Set the default options for gcc in bambu
+    */
+   void SetBambuDefault();
 #endif
 
 #if HAVE_ZEBU_BUILT
-      /**
-       * Set the default options for gcc in zebu
-       */
-      // cppcheck-suppress unusedPrivateFunction
-      void SetZebuDefault();
+   /**
+    * Set the default options for gcc in zebu
+    */
+   // cppcheck-suppress unusedPrivateFunction
+   void SetZebuDefault();
 #endif
 
-      /**
-       * Write the string containing gcc optimization options
-       * @return the string with optimization options to be passed to the gcc
-       */
-      std::string WriteOptimizationsString();
+   /**
+    * Write the string containing gcc optimization options
+    * @return the string with optimization options to be passed to the gcc
+    */
+   std::string WriteOptimizationsString();
 
-      /**
-       * Add includes of source file directories
-       * @param source_files are the source files to be considered
-       * @return the string to be passed to gcc
-       */
-      const std::string AddSourceCodeIncludes(const std::list<std::string> & source_files) const;
+   /**
+    * Add includes of source file directories
+    * @param source_files are the source files to be considered
+    * @return the string to be passed to gcc
+    */
+   const std::string AddSourceCodeIncludes(const std::list<std::string>& source_files) const;
 
-      /**
-       * Convert a string version to a number
-       * @param version is the version to be converted
-       * @return the corresponding number
-       */
-      static
-      size_t ConvertVersion(const std::string&version);
+   /**
+    * Convert a string version to a number
+    * @param version is the version to be converted
+    * @return the corresponding number
+    */
+   static size_t ConvertVersion(const std::string& version);
 
-   public:
-      ///The version of the gcc
-      static
-         std::string current_gcc_version;
+   std::string clang_recipes(const GccWrapper_OptimizationSet optimization_level, const GccWrapper_CompilerTarget compiler_target, const std::string& expandMemOps_plugin_obj, const std::string& expandMemOps_plugin_name,
+                             const std::string& GepiCanon_plugin_obj, const std::string& GepiCanon_plugin_name, const std::string& CSROA_plugin_obj, const std::string& CSROA_plugin_name, const std::string& fname);
 
-      ///The version of the plugin
-      static
-         std::string current_plugin_version;
+ public:
+   /// The version of the gcc
+   static std::string current_gcc_version;
 
-      /**
-       * Constructor
-       * @param Param is the set of parameters
-       * @param compiler is the compiler to be used
-       * @param OS is the optimization set
-       */
-      GccWrapper(const ParameterConstRef Param, const GccWrapper_CompilerTarget compiler, const GccWrapper_OptimizationSet OS);
+   /// The version of the plugin
+   static std::string current_plugin_version;
 
-      /**
-       * Destructor
-       */
-      ~GccWrapper();
+   /**
+    * Constructor
+    * @param Param is the set of parameters
+    * @param compiler is the compiler to be used
+    * @param OS is the optimization set
+    */
+   GccWrapper(const ParameterConstRef Param, const GccWrapper_CompilerTarget compiler, const GccWrapper_OptimizationSet OS);
 
-      /**
-       * This function fills the tree manager with the nodes created from a set of source files
-       * @param TM is where tree_manager will be stored
-       * @param source_files are the source files to be compiled; key is the original source code file, value is the transformed source code file
-       */
-      void FillTreeManager(const tree_managerRef TM, CustomMap<std::string, std::string> & input_files);
+   /**
+    * Destructor
+    */
+   ~GccWrapper();
 
-      /**
-       * Return the list of gcc system include
-       * @param includes is where result will be stored
-       */
-      void GetSystemIncludes(std::vector<std::string> & includes) const;
+   /**
+    * This function fills the tree manager with the nodes created from a set of source files
+    * @param TM is where tree_manager will be stored
+    * @param source_files are the source files to be compiled; key is the original source code file, value is the transformed source code file
+    */
+   void FillTreeManager(const tree_managerRef TM, CustomMap<std::string, std::string>& input_files);
 
-      /**
-       * Dump the gcc configuration
-       */
-      void GetGccConfig() const;
+   /**
+    * Return the list of gcc system include
+    * @param includes is where result will be stored
+    */
+   void GetSystemIncludes(std::vector<std::string>& includes) const;
 
-      /**
-       * Function that print of stdout some useful information passing the given option
-       */
-      void QueryGccConfig(const std::string& gcc_option) const;
+   /**
+    * Dump the gcc configuration
+    */
+   void GetGccConfig() const;
 
-      /**
-       * Return the total number of lines of the benchmark
-       * @param Param is the set of input parameters
-       * @return the total number of lines of the benchmark
-       */
-      static
-         size_t GetSourceCodeLines(const ParameterConstRef Param);
+   /**
+    * Function that print of stdout some useful information passing the given option
+    */
+   void QueryGccConfig(const std::string& gcc_option) const;
 
-      /**
-       * Create an executable starting from source code
-       * @param file_names is the list of string; it must be a list since in some cases the order matters
-       * @param executable_name is the name of the executable
-       * @param extra_gcc_options is extra options to be used only for this compilation
-       */
-      void CreateExecutable(const std::list<std::string> & file_names, const std::string& executable_name, const std::string& extra_gcc_options) const;
+   /**
+    * Return the total number of lines of the benchmark
+    * @param Param is the set of input parameters
+    * @return the total number of lines of the benchmark
+    */
+   static size_t GetSourceCodeLines(const ParameterConstRef Param);
 
-      /**
-       * Create an executable starting from source code
-       * @param file_names is the set of filename
-       * @param executable_name is the name of the executable
-       * @param extra_gcc_options is extra options to be used only for this compilation
-       */
-      void CreateExecutable(const CustomSet<std::string> & file_names, const std::string& executable_name, const std::string& extra_gcc_options) const;
+   /**
+    * Create an executable starting from source code
+    * @param file_names is the list of string; it must be a list since in some cases the order matters
+    * @param executable_name is the name of the executable
+    * @param extra_gcc_options is extra options to be used only for this compilation
+    */
+   void CreateExecutable(const std::list<std::string>& file_names, const std::string& executable_name, const std::string& extra_gcc_options) const;
 
-      /**
-       * Read gcc configuration from file
-       * @param file_name is the name of the file
-       */
-      void ReadXml(const std::string&file_name);
+   /**
+    * Create an executable starting from source code
+    * @param file_names is the set of filename
+    * @param executable_name is the name of the executable
+    * @param extra_gcc_options is extra options to be used only for this compilation
+    */
+   void CreateExecutable(const CustomSet<std::string>& file_names, const std::string& executable_name, const std::string& extra_gcc_options) const;
 
-      /**
-       * Write gcc configuration on file
-       * @param file_name is the name of the file
-       */
-      void WriteXml(const std::string&file_name) const;
+   /**
+    * Read gcc configuration from file
+    * @param file_name is the name of the file
+    */
+   void ReadXml(const std::string& file_name);
 
-      /**
-       * Writes the optimization level as a string
-       * @param optimization_level is the optimization level to be printed
-       * @return the optimization level in string format
-       */
-      static
-      std::string WriteOptimizationLevel(const GccWrapper_OptimizationSet optimiation_level);
+   /**
+    * Write gcc configuration on file
+    * @param file_name is the name of the file
+    */
+   void WriteXml(const std::string& file_name) const;
 
-      /**
-       * Check if the combination gcc-plugin is supported; if not it throws error
-       * @param gcc_version is the gcc version in form x.x.x
-       * @param plugin_version is the plugin version in form x.x
-       */
-      static
-         void CheckGccCompatibleVersion(const std::string&gcc_version, const std::string&plugin_version);
+   /**
+    * Writes the optimization level as a string
+    * @param optimization_level is the optimization level to be printed
+    * @return the optimization level in string format
+    */
+   static std::string WriteOptimizationLevel(const GccWrapper_OptimizationSet optimiation_level);
 
-      /**
-       * Return the size of the pointer in bit
-       * @param parameters is the set of input parameters
-       * @return the size of pointers in bit
-       */
-      static
-      size_t CGetPointerSize(const ParameterConstRef parameters);
+   /**
+    * Check if the combination gcc-plugin is supported; if not it throws error
+    * @param gcc_version is the gcc version in form x.x.x
+    * @param plugin_version is the plugin version in form x.x
+    */
+   static void CheckGccCompatibleVersion(const std::string& gcc_version, const std::string& plugin_version);
+
+   /**
+    * Return the size of the pointer in bit
+    * @param parameters is the set of input parameters
+    * @return the size of pointers in bit
+    */
+   static size_t CGetPointerSize(const ParameterConstRef parameters);
 };
 
 /// Refcount definition for the GccWrapper class

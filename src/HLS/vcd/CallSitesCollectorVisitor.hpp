@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (C) 2015-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -34,7 +34,7 @@
  *
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  *
-*/
+ */
 #ifndef CALL_SITES_COLLECTOR_VISITOR_HPP
 #define CALL_SITES_COLLECTOR_VISITOR_HPP
 
@@ -46,37 +46,34 @@
 #include <unordered_set>
 
 CONSTREF_FORWARD_DECL(CallGraphManager);
+REF_FORWARD_DECL(HLS_manager);
 
 class CallSitesCollectorVisitor : public boost::default_dfs_visitor
 {
-   private:
-      /// The call graph manager
-      const CallGraphManagerConstRef CGMan;
-      /// Maps every function to the calls it performs
-      std::unordered_map<unsigned int, std::unordered_set<unsigned int> > & fu_id_to_call_ids;
-      /// Maps every id of a call site to the id of the called function
-      std::unordered_map<unsigned int, std::unordered_set<unsigned int> > & call_id_to_called_id;
-      /// Set of indirect calls
-      std::unordered_set<unsigned int> & indirect_calls;
+ private:
+   /// A refcount to the HLSMgr
+   const HLS_managerRef HLSMgr;
 
-   public:
-      /**
-       * Constructor
-       */
-      CallSitesCollectorVisitor(CallGraphManagerConstRef cgman,
-         std::unordered_map<unsigned int, std::unordered_set<unsigned int> > & _fu_id_to_call_ids,
-         std::unordered_map<unsigned int, std::unordered_set<unsigned int> > & _call_id_to_called_id,
-         std::unordered_set<unsigned int> & _indirect_calls);
+   /// A refcount to the call graph manager
+   const CallGraphManagerConstRef CGMan;
 
-      /**
-       * Destructor
-       */
-      ~CallSitesCollectorVisitor();
+ public:
+   /**
+    * Constructor
+    */
+   CallSitesCollectorVisitor(const HLS_managerRef& _HLSMgr);
 
-      void back_edge(const EdgeDescriptor &, const CallGraph &);
+   /**
+    * Destructor
+    */
+   ~CallSitesCollectorVisitor();
 
-      void examine_edge(const EdgeDescriptor &, const CallGraph &);
+   void start_vertex(const vertex&, const CallGraph&);
 
-      void discover_vertex(const vertex & v, const CallGraph &);
+   void back_edge(const EdgeDescriptor&, const CallGraph&);
+
+   void examine_edge(const EdgeDescriptor&, const CallGraph&);
+
+   void discover_vertex(const vertex& v, const CallGraph&);
 };
 #endif

@@ -20,7 +20,7 @@ AM_LFLAGS = -L -B -+  -olex.yy.c
 noinst_HEADERS = asn_parser.hpp asn_lexer.hpp asn_parser_node.hpp
 
 lib_asnparser_la_SOURCES = asn_yparser.ypp asn_lexer.lpp asn_parser.cpp asn_parser_node.cpp
-AM_YFLAGS = -d -l --report=state,lookahead,itemset -Wnone
+AM_YFLAGS = -d -l --report=state,lookahead,itemset
 
 if BISON_2_7_OR_GREATER
 BUILT_SOURCES = asn_yparser.hpp asn_lexer.cpp asn_yparser.cpp

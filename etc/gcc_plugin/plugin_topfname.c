@@ -12,7 +12,7 @@
 *                       Politecnico di Milano - DEIB
 *                        System Architectures Group
 *             ***********************************************
-*              Copyright (c) 2004-2018 Politecnico di Milano
+*              Copyright (C) 2004-2019 Politecnico di Milano
 *
 *   This file is part of the PandA framework.
 *
@@ -583,7 +583,7 @@ unsigned int TopFnameIPA (void)
 {
   gcc_assert (!flag_whole_program);
   gcc_assert(*TopFunctionName);
-  printf("TopFnameIPA %s\n", TopFunctionName);
+  //printf("TopFnameIPA %s\n", TopFunctionName);
   whole_program_function_and_variable_visibility();
   return 0;
 }

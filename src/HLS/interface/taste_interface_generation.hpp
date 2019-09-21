@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (C) 2015-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,21 +29,21 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file taste_interface_generation.hpp
  * @brief Class to generate interface for taste architecture
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef TASTE_INTERFACE_GENERATION_HPP
 #define TASTE_INTERFACE_GENERATION_HPP
 
-///Superclass include
+/// Superclass include
 #include "module_interface.hpp"
 
-///utility include
+/// utility include
 #include "refcount.hpp"
 
 REF_FORWARD_DECL(structural_manager);
@@ -53,42 +53,41 @@ REF_FORWARD_DECL(structural_manager);
  */
 class TasteInterfaceGeneration : public module_interface
 {
-   protected:
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+ protected:
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor
-       */
-      TasteInterfaceGeneration(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+ public:
+   /**
+    * Constructor
+    */
+   TasteInterfaceGeneration(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Destructor
-       */
-      virtual ~TasteInterfaceGeneration();
+   /**
+    * Destructor
+    */
+   ~TasteInterfaceGeneration() override;
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status InternalExec();
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /**
-       * Compute the relationships of a step with other steps
-       * @param dependencies is where relationships will be stored
-       * @param relationship_type is the type of relationship to be computed
-       */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type);
+   /**
+    * Compute the relationships of a step with other steps
+    * @param dependencies is where relationships will be stored
+    * @param relationship_type is the type of relationship to be computed
+    */
+   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      virtual bool HasToBeExecuted() const;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 };
 #endif
-

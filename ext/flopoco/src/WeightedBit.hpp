@@ -19,7 +19,7 @@
 #include <sstream>
 #include <iostream>
 #include <fstream>
-#include <math.h>	
+#include <cmath>	
 
 
 using namespace std;
@@ -60,7 +60,7 @@ namespace flopoco{
 
 
 			/** destructor */ 
-			~WeightedBit(){};
+            ~WeightedBit()= default;
 		
 
 			/** return the cycle at which this bit is defined */

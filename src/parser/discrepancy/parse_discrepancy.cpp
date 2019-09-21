@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
@@ -38,7 +38,7 @@
 #include "config_HAVE_BISON_2_7_OR_GREATER.hpp"
 
 #include "parse_discrepancy.hpp"
-
+#include <iostream>
 #if HAVE_BISON_2_7_OR_GREATER
 #include "discrepancyParser.hpp"
 #else
@@ -50,25 +50,24 @@
 
 REF_FORWARD_DECL(Discrepancy);
 
-extern void discrepancy_parseY
-(const std::string& fname, DiscrepancyRef Discrepancy);
+extern void discrepancy_parseY(const std::string& fname, DiscrepancyRef Discrepancy);
 
-void parse_discrepancy (const std::string& c_trace_filename, DiscrepancyRef Discrepancy)
+void parse_discrepancy(const std::string& c_trace_filename, DiscrepancyRef Discrepancy)
 {
    try
    {
       discrepancy_parseY(c_trace_filename, Discrepancy);
       return;
    }
-   catch (const char * msg)
+   catch(const char* msg)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string& msg)
+   catch(const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }
-   catch ( ... )
+   catch(...)
    {
       std::cerr << "unknown exception" << std::endl;
    }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file sched_based_chaining_computation.hpp
  * @brief chaining computation starting from the results of the scheduling step
@@ -43,30 +43,30 @@
 
 REF_FORWARD_DECL(ChainingInformation);
 
-class sched_based_chaining_computation: public chaining
+class sched_based_chaining_computation : public chaining
 {
-   public:
-      /**
-       * Constructor
-       * @param design_flow_manager is the design flow manager
-       */
-      sched_based_chaining_computation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+ public:
+   /**
+    * Constructor
+    * @param design_flow_manager is the design flow manager
+    */
+   sched_based_chaining_computation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Destructor
-       */
-      ~sched_based_chaining_computation();
+   /**
+    * Destructor
+    */
+   ~sched_based_chaining_computation() override;
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      virtual void Initialize();
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status InternalExec();
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 };
 
 typedef refcount<sched_based_chaining_computation> sched_based_chaining_computationRef;

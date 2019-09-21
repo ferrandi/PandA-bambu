@@ -1,0 +1,7 @@
+common/atominIncrement.c common/data.c -IBENCHMARKS_ROOT/common/ --benchmark-name=tq1-1DB  --generate-tb=BENCHMARKS_ROOT/trinityq1/test-1.xml  trinityq1/lubm_trinityq1.c --top-fname=search
+common/atominIncrement.c common/data.c -IBENCHMARKS_ROOT/common/ --benchmark-name=tq2-1DB  --generate-tb=BENCHMARKS_ROOT/trinityq2/test-1.xml  trinityq2/lubm_trinityq2.c --top-fname=search
+common/atominIncrement.c common/data.c -IBENCHMARKS_ROOT/common/ --benchmark-name=tq3-1DB  --generate-tb=BENCHMARKS_ROOT/trinityq3/test-1.xml  trinityq3/lubm_trinityq3.c --top-fname=search
+common/atominIncrement.c common/data.c -IBENCHMARKS_ROOT/common/ --benchmark-name=tq4-1DB  --generate-tb=BENCHMARKS_ROOT/trinityq4/test-1.xml  trinityq4/lubm_trinityq4.c --top-fname=search
+common/atominIncrement.c common/data.c -IBENCHMARKS_ROOT/common/ --benchmark-name=tq5-1DB  --generate-tb=BENCHMARKS_ROOT/trinityq5/test-1.xml  trinityq5/lubm_trinityq5.c --top-fname=search
+common/atominIncrement.c common/data.c -IBENCHMARKS_ROOT/common/ --benchmark-name=tq6-1DB  --generate-tb=BENCHMARKS_ROOT/trinityq6/test-1.xml  trinityq6/lubm_trinityq6.c --top-fname=search
+common/atominIncrement.c common/data.c -IBENCHMARKS_ROOT/common/ --benchmark-name=tq7-1DB  --generate-tb=BENCHMARKS_ROOT/trinityq7/test-1.xml  trinityq7/lubm_trinityq7.c --top-fname=search

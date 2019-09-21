@@ -3,7 +3,7 @@
    Copyright (C) 1997-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Richard Henderson (rth@cygnus.com) and
-		  Jakub Jelinek (jj@ultra.linux.cz).
+        Jakub Jelinek (jj@ultra.linux.cz).
 
    The GNU C Library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -28,28 +28,30 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "soft-fp.h"
 #include "double.h"
+#include "soft-fp.h"
 
-CMPtype
-__ledf2 (DFtype a, DFtype b)
+CMPtype __ledf2(DFtype a, DFtype b)
 {
-  FP_DECL_EX;
-  FP_DECL_D (A);
-  FP_DECL_D (B);
-  CMPtype r;
+   FP_DECL_EX;
+   FP_DECL_D(A);
+   FP_DECL_D(B);
+   CMPtype r;
 
-  FP_INIT_EXCEPTIONS;
-  FP_UNPACK_RAW_D (A, a);
-  FP_UNPACK_RAW_D (B, b);
-  FP_CMP_D (r, A, B, 2);
-  if (r == 2)
-    FP_SET_EXCEPTION (FP_EX_INVALID);
-  FP_HANDLE_EXCEPTIONS;
+   FP_INIT_EXCEPTIONS;
+   FP_UNPACK_RAW_D(A, a);
+   FP_UNPACK_RAW_D(B, b);
+   FP_CMP_D(r, A, B, 2);
+   if(r == 2)
+      FP_SET_EXCEPTION(FP_EX_INVALID);
+   FP_HANDLE_EXCEPTIONS;
 
-  return r;
+   return r;
 }
 
-strong_alias (__ledf2, __ltdf2);
+strong_alias(__ledf2, __ltdf2);
 
-inline CMPtype __float64_leif(DFtype a, DFtype b) {return __ledf2(a, b);}
+inline CMPtype __float64_leif(DFtype a, DFtype b)
+{
+   return __ledf2(a, b);
+}

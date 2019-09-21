@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file data_xml_parser.hpp
  * @brief Parse xml file containing generic data
@@ -42,14 +42,14 @@
 #ifndef DATA_XML_PARSER_HPP
 #define DATA_XML_PARSER_HPP
 
-///STD include
+/// STD include
 #include <string>
 
-///STL include
+/// STL include
 #include <map>
 #include <unordered_map>
 
-///Utility include
+/// Utility include
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "refcount.hpp"
@@ -61,32 +61,32 @@ CONSTREF_FORWARD_DECL(Parameter);
  */
 class DataXmlParser
 {
-   private:
-      ///The set of input paraemeters
-      const ParameterConstRef parameters;
+ private:
+   /// The set of input paraemeters
+   const ParameterConstRef parameters;
 
-      ///The debug level
-      const int debug_level;
+   /// The debug level
+   const int debug_level;
 
-   public:
-      /**
-       * Constructor
-       * @param parameters is the set of input parameters
-       */
-      explicit DataXmlParser(const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor
+    * @param parameters is the set of input parameters
+    */
+   explicit DataXmlParser(const ParameterConstRef& parameters);
 
-      /**
-       * Destructor
-       */
-      ~DataXmlParser();
+   /**
+    * Destructor
+    */
+   ~DataXmlParser();
 
-      /**
-       * Parse xml file
-       * @param file_names is the input file
-       * @param output is where data will be saved: first key is the benchmark name (sorted by name thanks to map),
-       * second key is the characteristic, value is the actual value
-       */
-      void Parse(const CustomSet<std::string> & file_names, std::map<std::string, CustomMap<std::string, std::string> > & output) const;
+   /**
+    * Parse xml file
+    * @param file_names is the input file
+    * @param output is where data will be saved: first key is the benchmark name (sorted by name thanks to map),
+    * second key is the characteristic, value is the actual value
+    */
+   void Parse(const CustomSet<std::string>& file_names, std::map<std::string, CustomMap<std::string, std::string>>& output) const;
 };
 /// Refcount definition for the class ParseProfilingAnalysis
 typedef refcount<const DataXmlParser> DataXmlParserConstRef;

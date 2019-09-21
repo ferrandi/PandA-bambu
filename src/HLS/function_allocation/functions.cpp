@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file memory.cpp
  * @brief Datastructure to describe functions allocation in high-level synthesis
@@ -40,27 +40,25 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "functions.hpp"
 #include "exceptions.hpp"
+#include "string_manipulation.hpp" //STR
 
+functions::functions() = default;
 
-functions::functions() 
-{}
+functions::~functions() = default;
 
-functions::~functions()
-{}
-
-void functions::map_shared_function(unsigned int funID_scope, std::string fun)
+void functions::map_shared_function(unsigned int funID_scope, const std::string& fun)
 {
    shared_functions[funID_scope].insert(fun);
-   THROW_ASSERT(proxied_functions.find(fun) == proxied_functions.end(), "function already mapped in a different scope: " + fun + "->" + STR(proxied_functions.find(fun)->second));
+   THROW_ASSERT(proxied_functions.find(fun) == proxied_functions.end(), "function already mapped in a different scope: " + fun + "->" + STR(proxied_functions.at(fun)));
    proxied_functions[fun] = funID_scope;
 }
 
 const std::set<std::string>& functions::get_shared_functions(unsigned int funID_scope) const
 {
-   return shared_functions.find(funID_scope)->second;
+   return shared_functions.at(funID_scope);
 }
 
 bool functions::has_shared_functions(unsigned int funID_scope) const
@@ -68,12 +66,12 @@ bool functions::has_shared_functions(unsigned int funID_scope) const
    return shared_functions.find(funID_scope) != shared_functions.end();
 }
 
-bool functions::is_a_shared_function(unsigned int funID_scope, std::string fun) const
+bool functions::is_a_shared_function(unsigned int funID_scope, const std::string& fun) const
 {
-   return (has_shared_functions(funID_scope) && shared_functions.find(funID_scope)->second.find(fun) != shared_functions.find(funID_scope)->second.end());
+   return (has_shared_functions(funID_scope) && shared_functions.at(funID_scope).find(fun) != shared_functions.at(funID_scope).end());
 }
 
-void functions::add_shared_function_proxy(unsigned int funID_scope, std::string fun)
+void functions::add_shared_function_proxy(unsigned int funID_scope, const std::string& fun)
 {
    shared_function_proxy[funID_scope].insert(fun);
 }
@@ -81,7 +79,7 @@ void functions::add_shared_function_proxy(unsigned int funID_scope, std::string 
 const std::set<std::string>& functions::get_proxied_shared_functions(unsigned int funID_scope) const
 {
    THROW_ASSERT(has_proxied_shared_functions(funID_scope), "No proxy functions for " + STR(funID_scope));
-   return shared_function_proxy.find(funID_scope)->second;
+   return shared_function_proxy.at(funID_scope);
 }
 
 bool functions::has_proxied_shared_functions(unsigned int funID_scope) const
@@ -89,18 +87,18 @@ bool functions::has_proxied_shared_functions(unsigned int funID_scope) const
    return shared_function_proxy.find(funID_scope) != shared_function_proxy.end();
 }
 
-bool functions::is_a_proxied_shared_function(unsigned int funID_scope, std::string fun) const
+bool functions::is_a_proxied_shared_function(unsigned int funID_scope, const std::string& fun) const
 {
-   return (has_proxied_shared_functions(funID_scope) && shared_function_proxy.find(funID_scope)->second.find(fun) != shared_function_proxy.find(funID_scope)->second.end());
+   return (has_proxied_shared_functions(funID_scope) && shared_function_proxy.at(funID_scope).find(fun) != shared_function_proxy.at(funID_scope).end());
 }
 
-bool functions::is_a_proxied_function(std::string fun) const
+bool functions::is_a_proxied_function(const std::string& fun) const
 {
    return proxied_functions.find(fun) != proxied_functions.end();
 }
 
-unsigned int functions::get_proxy_mapping(std::string fun) const
+unsigned int functions::get_proxy_mapping(const std::string& fun) const
 {
    THROW_ASSERT(proxied_functions.find(fun) != proxied_functions.end(), "this is not a proxy function");
-   return proxied_functions.find(fun)->second;
+   return proxied_functions.at(fun);
 }

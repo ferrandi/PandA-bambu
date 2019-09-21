@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file VIVADO_xsim_wrapper.hpp
  * @brief Wrapper to XSIM by XILINX VIVADO
@@ -40,7 +40,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef XILINX_VIVADO_XSIM_WRAPPER_HPP
 #define XILINX_VIVADO_XSIM_WRAPPER_HPP
 
@@ -49,12 +49,11 @@
 CONSTREF_FORWARD_DECL(Parameter);
 class xml_element;
 
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
 
-
-#define XSIM_SUBDIR       (Param->getOption<std::string>(OPT_output_directory) + std::string("/xsim"))
+#define XSIM_SUBDIR (Param->getOption<std::string>(OPT_output_directory) + std::string("/xsim"))
 
 /**
  * @class VIVADO_xsim_wrapper
@@ -62,46 +61,44 @@ class xml_element;
  */
 class VIVADO_xsim_wrapper : public SimulationTool
 {
-   private:
+ private:
+   /// suffix added to the XSIM dir
+   std::string suffix;
 
-      ///suffix added to the XSIM dir
-      std::string suffix;
+   /**
+    * @brief create the project file for VIVADO xelab
+    * @param top_filename top entity/filename
+    * @param file_list list of files to be simulated
+    * @return name of the project file
+    */
+   std::string create_project_script(const std::string& top_filename, const std::list<std::string>& file_list);
 
-      /**
-       * @brief create the project file for VIVADO xelab
-       * @param top_filename top entity/filename
-       * @param file_list list of files to be simulated
-       * @return name of the project file
-       */
-      std::string create_project_script(const std::string& top_filename, const std::list<std::string>& file_list);
+   /**
+    * Generates the proper simulation script
+    */
+   void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list) override;
 
-      /**
-       * Generates the proper simulation script
-       */
-      void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string> & file_list);
+ public:
+   /**
+    * Constructor
+    * @param Param is the set of parameters
+    */
+   VIVADO_xsim_wrapper(const ParameterConstRef& Param, std::string suffix);
 
-   public:
+   /**
+    * Destructor
+    */
+   ~VIVADO_xsim_wrapper() override;
 
-      /**
-       * Constructor
-       * @param Param is the set of parameters
-       */
-      VIVADO_xsim_wrapper(const ParameterConstRef Param, const std::string &suffix);
+   /**
+    * Checks if the current specification can be executed or not
+    */
+   void CheckExecution() override;
 
-      /**
-       * Destructor
-       */
-      ~VIVADO_xsim_wrapper();
-
-      /**
-       * Checks if the current specification can be executed or not
-       */
-      virtual void CheckExecution();
-
-      /**
-       * Remove files created during simulation
-       */
-      virtual void Clean() const;
+   /**
+    * Remove files created during simulation
+    */
+   void Clean() const override;
 };
 /// Refcount definition for the class
 typedef refcount<VIVADO_xsim_wrapper> VIVADO_xsim_wrapperRef;

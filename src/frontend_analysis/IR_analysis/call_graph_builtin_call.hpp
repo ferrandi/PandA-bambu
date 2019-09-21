@@ -11,7 +11,7 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (c) 2004-2018 Politecnico di Milano
+ *            Copyright (C) 2004-2019 Politecnico di Milano
  *
  * This file is part of the PandA framework.
  *
@@ -28,7 +28,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 
 /// @file
 /// @brief This file contains the declaration of the
@@ -49,43 +48,38 @@ REF_FORWARD_DECL(tree_node);
 /// @brief Pass to add function called through pointers to the call graph.
 class CallGraphBuiltinCall : public FunctionFrontendFlowStep
 {
-   private:
-      typedef std::map<std::string, std::set<unsigned int> > TypeDeclarationMap;
-      bool modified;
+ private:
+   typedef std::map<std::string, std::set<unsigned int>> TypeDeclarationMap;
+   bool modified;
 
-      /**
-       * Map function types to matching declarations.
-       */
-      TypeDeclarationMap typeToDeclaration;
+   /**
+    * Map function types to matching declarations.
+    */
+   TypeDeclarationMap typeToDeclaration;
 
-      void lookForBuiltinCall(const tree_nodeRef TN);
+   void lookForBuiltinCall(const tree_nodeRef TN);
 
-      void ExtendCallGraph(unsigned int callerIdx, tree_nodeRef funType,
-            unsigned int stmtIdx);
+   void ExtendCallGraph(unsigned int callerIdx, tree_nodeRef funType, unsigned int stmtIdx);
 
-   protected:
-      /// @brief State relationship with other design step
-      ///
-      /// @param RT Type of the relationship to be considered
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> >
-         ComputeFrontendRelationships(DesignFlowStep::RelationshipType RT) const;
+ protected:
+   /// @brief State relationship with other design step
+   ///
+   /// @param RT Type of the relationship to be considered
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(DesignFlowStep::RelationshipType RT) const override;
 
-   public:
-      /// @brief Ctor.
-      ///
-      /// @param AM Application Manager
-      /// @param functionId Function id of the analyzed function.
-      /// @param DFM Design Flow Manager
-      /// @param P Set of parameters
-      CallGraphBuiltinCall(const application_managerRef AM,
-            unsigned int functionId,
-            const DesignFlowManagerConstRef DFM,
-            const ParameterConstRef P);
+ public:
+   /// @brief Ctor.
+   ///
+   /// @param AM Application Manager
+   /// @param functionId Function id of the analyzed function.
+   /// @param DFM Design Flow Manager
+   /// @param P Set of parameters
+   CallGraphBuiltinCall(const application_managerRef AM, unsigned int functionId, const DesignFlowManagerConstRef DFM, const ParameterConstRef P);
 
-      virtual ~CallGraphBuiltinCall();
-      void Initialize();
+   ~CallGraphBuiltinCall() override;
+   void Initialize() override;
 
-      DesignFlowStep_Status InternalExec();
+   DesignFlowStep_Status InternalExec() override;
 };
 
 #endif /* CALL_GRAPH_BUILTIN_CALL_H */

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (C) 2015-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,21 +29,21 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file cond_expr_restructuring.hpp
  * @brief Analysis step restructing tree of cond_expr to reduce critical path delay
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef COND_EXPR_RESTRUCTURING_HPP
 #define COND_EXPR_RESTRUCTURING_HPP
 
-///Superclass include
+/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
-///utility include
+/// utility include
 #include "refcount.hpp"
 
 REF_FORWARD_DECL(AllocationInformation);
@@ -54,69 +54,69 @@ REF_FORWARD_DECL(tree_node);
 
 class CondExprRestructuring : public FunctionFrontendFlowStep
 {
-   private:
-      ///The schedule
-      ScheduleRef schedule;
+ private:
+   /// The schedule
+   ScheduleRef schedule;
 
-      ///The allocation information
-      AllocationInformationRef allocation_information;
+   /// The allocation information
+   AllocationInformationRef allocation_information;
 
-      ///The tree manager
-      tree_managerRef TM;
+   /// The tree manager
+   tree_managerRef TM;
 
-      /**
-       * Return true if tree node is a gimple_assign with a cond_expr in the right part
-       * @param tn is the tree reindex to be considered
-       */
-      bool IsCondExprGimple(const tree_nodeConstRef tn) const;
+   /**
+    * Return true if tree node is a gimple_assign with a cond_expr in the right part
+    * @param tn is the tree reindex to be considered
+    */
+   bool IsCondExprGimple(const tree_nodeConstRef tn) const;
 
-      /**
-       * Given a gimple_assign with cond_expr in the right part and one of its operand it checks:
-       * - if operand is a ssa_name
-       * - if operand is defined in the same basic block
-       * - if operand is defined in a gimple_assign whose right a part is another cond_expr
-       * - if operand is on the relative critical path (i.e., it delays execution of tn
-       * @param tn is the starting gimple_assign
-       * @param first is true if first operand has to be considered, false if second oeprand has to be considered
-       * @return the chained gimple_assignment if all conditions hold
-       */
-      tree_nodeRef IsCondExprChain(const tree_nodeConstRef tn, const bool first) const;
+   /**
+    * Given a gimple_assign with cond_expr in the right part and one of its operand it checks:
+    * - if operand is a ssa_name
+    * - if operand is defined in the same basic block
+    * - if operand is defined in a gimple_assign whose right a part is another cond_expr
+    * - if operand is on the relative critical path (i.e., it delays execution of tn
+    * @param tn is the starting gimple_assign
+    * @param first is true if first operand has to be considered, false if second oeprand has to be considered
+    * @return the chained gimple_assignment if all conditions hold
+    */
+   tree_nodeRef IsCondExprChain(const tree_nodeConstRef tn, const bool first) const;
 
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor.
-       * @param AppM is the application manager
-       * @param function_id is the node id of the function analyzed.
-       * @param design_flow_manager is the design flow manager
-       * @param parameters is the set of input parameters
-       */
-      CondExprRestructuring(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor.
+    * @param AppM is the application manager
+    * @param function_id is the node id of the function analyzed.
+    * @param design_flow_manager is the design flow manager
+    * @param parameters is the set of input parameters
+    */
+   CondExprRestructuring(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-      /**
-       *  Destructor
-       */
-      ~CondExprRestructuring();
+   /**
+    *  Destructor
+    */
+   ~CondExprRestructuring() override;
 
-      /**
-       * Performs the loops analysis
-       */
-      DesignFlowStep_Status InternalExec();
+   /**
+    * Performs the loops analysis
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      virtual void Initialize();
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      virtual bool HasToBeExecuted() const;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 };
 #endif

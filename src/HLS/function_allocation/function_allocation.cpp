@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file function_allocation.cpp
  * @brief Base class to allocate functions in high-level synthesis
@@ -39,28 +39,24 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "function_allocation.hpp"
 #include "fun_dominator_allocation.hpp"
 #include "hls_manager.hpp"
 
 #include "Parameter.hpp"
-#include "xml_helper.hpp"
 #include "polixml.hpp"
+#include "xml_helper.hpp"
 
-///HLS/function_allocation include
+/// HLS/function_allocation include
 #include "functions.hpp"
 
-function_allocation::function_allocation(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
-   HLS_step(_Param, _HLSMgr, _design_flow_manager, _hls_flow_step_type)
+function_allocation::function_allocation(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+    : HLS_step(_Param, _HLSMgr, _design_flow_manager, _hls_flow_step_type)
 {
-
 }
 
-function_allocation::~function_allocation()
-{
-
-}
+function_allocation::~function_allocation() = default;
 
 void function_allocation::Initialize()
 {

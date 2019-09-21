@@ -12,7 +12,7 @@
 *                       Politecnico di Milano - DEIB
 *                        System Architectures Group
 *             ***********************************************
-*              Copyright (c) 2004-2018 Politecnico di Milano
+*              Copyright (C) 2004-2019 Politecnico di Milano
 *
 *   This file is part of the PandA framework.
 *
@@ -199,6 +199,9 @@ dg_descriptor_tree_marked_p(const void *p)
 #pragma GCC diagnostic ignored "-Wunused-function"
 #pragma GCC diagnostic ignored "-Wundef"
 #endif
+#if (__GNUC__ == 8)
+#include "gtype_roots_gcc8.h"
+#endif
 #if (__GNUC__ == 7)
 #include "gtype_roots_gcc7.h"
 #endif
@@ -246,11 +249,11 @@ static void queue_and_serialize_index (const char *field, tree t);
 static void queue_and_serialize_gimple_index (const char *field, GIMPLE_type t);
 static void queue_and_serialize_statement_index (const char *field, struct control_flow_graph * cfg);
 static void queue_and_serialize_type (const_tree t);
-static void dequeue_and_serialize ();
-static void dequeue_and_serialize_gimple ();
-static void dequeue_and_serialize_statement ();
-static void serialize_new_line ();
-static void serialize_maybe_newline ();
+static void dequeue_and_serialize(void);
+static void dequeue_and_serialize_gimple(void);
+static void dequeue_and_serialize_statement (void);
+static void serialize_new_line(void);
+static void serialize_maybe_newline(void);
 static void serialize_pointer (const char *field, void *ptr);
 static void serialize_int (const char *field, int i);
 static void serialize_wide_int (const char *field, HOST_WIDE_INT i);
@@ -262,7 +265,7 @@ static void serialize_string (const char *string);
 static void serialize_string_field (const char *field, const char *str);
 static void serialize_gimple_dependent_stmts_load(GIMPLE_type gs);
 static void add_referenced_var_map(tree var);
-static void compute_referenced_var_map();
+static void compute_referenced_var_map(void);
 
 
 /**
@@ -299,12 +302,14 @@ void
 SerializeGimpleUseDefs(const GIMPLE_type current, const GIMPLE_type next_def);
 
 /**
- * Add output dependences by dumping further vdef to the currently analyzed gimple
+ * Add output dependencies by dumping further vdef to the currently analyzed gimple
  * @param previous is potentially the first gimple of the pair
  * @param current is the currently analyzed gimple 
  */
 void
 SerializeGimpleDefsDef(const GIMPLE_type previous, const GIMPLE_type current);
+void
+SerializeGimpleDefsDef2(const GIMPLE_type current);
 
 /**
  * Return the right operand of a gimple or NULL_TREE if this cannot be determined
@@ -390,7 +395,9 @@ void
 DumpGimpleInit(char *_outdir_name)
 {
     /* Register our GC root-walking callback: */
-#if (__GNUC__ == 7)
+#if (__GNUC__ == 8)
+    ggc_register_root_tab(gt_ggc_r_gtype_roots_gcc8_h);
+#elif (__GNUC__ == 7)
     ggc_register_root_tab(gt_ggc_r_gtype_roots_gcc7_h);
 #elif (__GNUC__ == 6)
     ggc_register_root_tab(gt_ggc_r_gtype_roots_gcc6_h);
@@ -1060,7 +1067,7 @@ static void
 serialize_pointer (const char *field, void *ptr)
 {
   serialize_maybe_newline ();
-  fprintf (serialize_gimple_info.stream, "%-4s: %-8lx ", field, (unsigned long) ptr);
+  fprintf (serialize_gimple_info.stream, "%-4s: %-8llx ", field, (unsigned long long) ptr);
   serialize_gimple_info.column += 15;
 }
 
@@ -1340,8 +1347,10 @@ serialize_vops (GIMPLE_type gs)
    /// check for true dependencies by exploiting GCC alias analysis infrastructure
    if(vuse != NULL_TREE)
    {
-      ///Serialize gimple pairs becuase of use after def chain
+      ///Serialize gimple pairs because of use after def chain
       serialize_gimple_dependent_stmts_load(gs);
+      if(SSA_NAME_IS_DEFAULT_DEF(vuse))
+         serialize_child ("vuse", vuse);
       ///Serialize gimple pairs because of def after use chain
 
       ///The other uses
@@ -1374,8 +1383,9 @@ serialize_vops (GIMPLE_type gs)
    {
       ///The gimple which defines the use
       GIMPLE_type def_stmt = SSA_NAME_DEF_STMT (vdef);
-
       SerializeGimpleDefsDef(def_stmt, gs);
+      SerializeGimpleDefsDef2(gs);
+
    }
 }
 
@@ -1406,7 +1416,6 @@ serialize_string_cst (const char *field, const char *str, int length, unsigned i
       serialize_int ("lngt", lngt + 1);
    }
 }
-
 #ifdef CPP_LANGUAGE
 /* Dump a representation of the specific operator for an overloaded
    operator associated with node t.  */
@@ -1414,150 +1423,306 @@ serialize_string_cst (const char *field, const char *str, int length, unsigned i
 static void
 serialize_op (tree t)
 {
+#if (__GNUC__ > 7)
+   switch (DECL_OVERLOADED_OPERATOR_CODE_RAW (t))
+#else
    switch (DECL_OVERLOADED_OPERATOR_P (t))
+#endif
    {
+#if (__GNUC__ > 7)
+      case OVL_OP_NEW_EXPR:
+#else
       case NEW_EXPR:
+#endif
          serialize_string ("new");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_VEC_NEW_EXPR:
+#else
       case VEC_NEW_EXPR:
+#endif
          serialize_string ("vecnew");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_DELETE_EXPR:
+#else
       case DELETE_EXPR:
+#endif
          serialize_string ("delete");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_VEC_DELETE_EXPR:
+#else
       case VEC_DELETE_EXPR:
+#endif
          serialize_string ("vecdelete");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_UNARY_PLUS_EXPR:
+#else
       case UNARY_PLUS_EXPR:
+#endif
          serialize_string ("pos");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_NEGATE_EXPR:
+#else
       case NEGATE_EXPR:
+#endif
          serialize_string ("neg");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_ADDR_EXPR:
+#else
       case ADDR_EXPR:
+#endif
          serialize_string ("addr");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_INDIRECT_REF:
+#else
       case INDIRECT_REF:
+#endif
          serialize_string("deref");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_BIT_NOT_EXPR:
+#else
       case BIT_NOT_EXPR:
+#endif
          serialize_string("not");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_TRUTH_NOT_EXPR:
+#else
       case TRUTH_NOT_EXPR:
+#endif
          serialize_string("lnot");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_PREINCREMENT_EXPR:
+#else
       case PREINCREMENT_EXPR:
+#endif
          serialize_string("preinc");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_PREDECREMENT_EXPR:
+#else
       case PREDECREMENT_EXPR:
+#endif
          serialize_string("predec");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_PLUS_EXPR:
+#else
       case PLUS_EXPR:
+#endif
          if (DECL_ASSIGNMENT_OPERATOR_P (t))
             serialize_string ("plusassign");
          else
             serialize_string("plus");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_MINUS_EXPR:
+#else
       case MINUS_EXPR:
+#endif
          if (DECL_ASSIGNMENT_OPERATOR_P (t))
             serialize_string ("minusassign");
          else
             serialize_string("minus");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_MULT_EXPR:
+#else
       case MULT_EXPR:
+#endif
          if (DECL_ASSIGNMENT_OPERATOR_P (t))
             serialize_string ("multassign");
          else
             serialize_string ("mult");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_TRUNC_DIV_EXPR:
+#else
       case TRUNC_DIV_EXPR:
+#endif
          if (DECL_ASSIGNMENT_OPERATOR_P (t))
             serialize_string ("divassign");
          else
             serialize_string ("div");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_TRUNC_MOD_EXPR:
+#else
       case TRUNC_MOD_EXPR:
+#endif
          if (DECL_ASSIGNMENT_OPERATOR_P (t))
             serialize_string ("modassign");
          else
             serialize_string ("mod");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_BIT_AND_EXPR:
+#else
       case BIT_AND_EXPR:
+#endif
          if (DECL_ASSIGNMENT_OPERATOR_P (t))
             serialize_string ("andassign");
          else
             serialize_string ("and");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_BIT_IOR_EXPR:
+#else
       case BIT_IOR_EXPR:
+#endif
          if (DECL_ASSIGNMENT_OPERATOR_P (t))
             serialize_string ("orassign");
          else
             serialize_string ("or");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_BIT_XOR_EXPR:
+#else
       case BIT_XOR_EXPR:
+#endif
          if (DECL_ASSIGNMENT_OPERATOR_P (t))
             serialize_string ("xorassign");
          else
             serialize_string ("xor");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_LSHIFT_EXPR:
+#else
       case LSHIFT_EXPR:
+#endif
          if (DECL_ASSIGNMENT_OPERATOR_P (t))
             serialize_string ("lshiftassign");
          else
             serialize_string ("lshift");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_RSHIFT_EXPR:
+#else
       case RSHIFT_EXPR:
+#endif
          if (DECL_ASSIGNMENT_OPERATOR_P (t))
             serialize_string ("rshiftassign");
          else
             serialize_string ("rshift");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_EQ_EXPR:
+#else
       case EQ_EXPR:
+#endif
          serialize_string ("eq");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_NE_EXPR:
+#else
       case NE_EXPR:
+#endif
          serialize_string ("ne");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_LT_EXPR:
+#else
       case LT_EXPR:
+#endif
          serialize_string ("lt");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_GT_EXPR:
+#else
       case GT_EXPR:
+#endif
          serialize_string ("gt");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_LE_EXPR:
+#else
       case LE_EXPR:
+#endif
          serialize_string ("le");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_GE_EXPR:
+#else
       case GE_EXPR:
+#endif
          serialize_string ("ge");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_TRUTH_ANDIF_EXPR:
+#else
       case TRUTH_ANDIF_EXPR:
+#endif
          serialize_string ("land");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_TRUTH_ORIF_EXPR:
+#else
       case TRUTH_ORIF_EXPR:
+#endif
          serialize_string ("lor");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_COMPOUND_EXPR:
+#else
       case COMPOUND_EXPR:
+#endif
          serialize_string ("compound");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_MEMBER_REF:
+#else
       case MEMBER_REF:
+#endif
          serialize_string ("memref");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_COMPONENT_REF:
+#else
       case COMPONENT_REF:
+#endif
          serialize_string ("ref");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_ARRAY_REF:
+#else
       case ARRAY_REF:
+#endif
          serialize_string ("subs");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_POSTINCREMENT_EXPR:
+#else
       case POSTINCREMENT_EXPR:
+#endif
          serialize_string ("postinc");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_POSTDECREMENT_EXPR:
+#else
       case POSTDECREMENT_EXPR:
+#endif
          serialize_string ("postdec");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_CALL_EXPR:
+#else
       case CALL_EXPR:
+#endif
          serialize_string ("call");
          break;
+#if (__GNUC__ > 7)
+      case OVL_OP_NOP_EXPR:
+#else
       case NOP_EXPR:
+#endif
          if (DECL_ASSIGNMENT_OPERATOR_P (t))
             serialize_string ("assign");
          break;
@@ -1633,10 +1798,9 @@ gcc_assert(t!=0);
       }
    }
 
-   if (TREE_CODE(t) == RECORD_TYPE)
+   if (TREE_CODE(t) == RECORD_TYPE && CLASS_TYPE_P(t))
    {
       int i = 0;
-
       /* Indicates whether or not (and how) a template was expanded for this class.
                  0=no information yet/non-template class
                  1=implicit template instantiation
@@ -1669,12 +1833,20 @@ gcc_assert(t!=0);
    switch (code)
    {
       case IDENTIFIER_NODE:
+#if (__GNUC__ > 7)
+         if (IDENTIFIER_ANY_OP_P (t))
+#else
          if (IDENTIFIER_OPNAME_P (t))
+#endif
          {
             serialize_string ("operator");
             return true;
          }
+#if (__GNUC__ > 7)
+         else if (IDENTIFIER_CONV_OP_P (t))
+#else
          else if (IDENTIFIER_TYPENAME_P (t))
+#endif
          {
             serialize_child ("tynm", TREE_TYPE (t));
             return true;
@@ -1807,7 +1979,11 @@ gcc_assert(t!=0);
          break;
 
       case OVERLOAD:
+#if (__GNUC__ > 7)
+         serialize_child ("crnt", OVL_FIRST (t));
+#else
          serialize_child ("crnt", OVL_CURRENT (t));
+#endif
          serialize_child ("chan", OVL_CHAIN (t));
          break;
 
@@ -1927,12 +2103,14 @@ gcc_assert(t!=0);
       case NONTYPE_ARGUMENT_PACK:
          serialize_child ("arg", ARGUMENT_PACK_ARGS(t) );
          break;
+      case TYPE_PACK_EXPANSION:
       case EXPR_PACK_EXPANSION:
          serialize_child ("op", PACK_EXPANSION_PATTERN(t) );
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
          serialize_child ("param_packs", PACK_EXPANSION_PARAMETER_PACKS(t) );
          serialize_child ("arg", PACK_EXPANSION_EXTRA_ARGS(t) );
 #endif
+         break;
       default:
          break;
    }
@@ -1991,6 +2169,10 @@ dequeue_and_serialize ()
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6 && __GNUC_PATCHLEVEL__>= 1)
   else if(TREE_CODE (t) == BIT_NOT_EXPR && TREE_CODE (TREE_TYPE (t)) == BOOLEAN_TYPE) /*incorrect encoding of not of a boolean expression*/
     code_name ="truth_not_expr";
+#endif
+#if __GNUC__ > 7
+  else if(TREE_CODE (t) == POINTER_DIFF_EXPR)
+     code_name ="minus_expr";
 #endif
   else
     code_name = GET_TREE_CODE_NAME(TREE_CODE (t));
@@ -2077,10 +2259,21 @@ dequeue_and_serialize ()
 
        case tcc_binary:
        case tcc_comparison:
-         serialize_child ("op", TREE_OPERAND (t, 0));
-         serialize_child ("op", TREE_OPERAND (t, 1));
+        {
+#if __GNUC__ > 7
+           if(TREE_CODE (t) == POINTER_DIFF_EXPR)
+           {
+              serialize_child ("op", build1 (NOP_EXPR, TREE_TYPE (t), TREE_OPERAND (t, 0)));
+              serialize_child ("op", build1 (NOP_EXPR, TREE_TYPE (t), TREE_OPERAND (t, 1)));
+           }
+           else
+#endif
+           {
+              serialize_child ("op", TREE_OPERAND (t, 0));
+              serialize_child ("op", TREE_OPERAND (t, 1));
+           }
          break;
-
+        }
        case tcc_expression:
        case tcc_reference:
        case tcc_statement:
@@ -2098,7 +2291,8 @@ dequeue_and_serialize ()
     /* All declarations have names.  */
     if (DECL_NAME (t))
       serialize_child ("name", DECL_NAME (t));
-    if (DECL_ASSEMBLER_NAME_SET_P (t) && DECL_ASSEMBLER_NAME (t) != DECL_NAME (t))
+    if (HAS_DECL_ASSEMBLER_NAME_P (t)
+        && DECL_ASSEMBLER_NAME_SET_P (t) && DECL_ASSEMBLER_NAME (t) != DECL_NAME (t))
       serialize_child ("mngl", DECL_ASSEMBLER_NAME (t));
     if (DECL_ABSTRACT_ORIGIN (t))
       serialize_child ("orig", DECL_ABSTRACT_ORIGIN (t));
@@ -2294,15 +2488,19 @@ dequeue_and_serialize ()
       if (TYPE_FIELDS(t))
          for ( op = TYPE_FIELDS (t); op; op = TREE_CHAIN(op))
          {
-            serialize_child ("flds", op);
+            if(TREE_CODE(op) == FIELD_DECL || TREE_CODE (t) == UNION_TYPE)
+               serialize_child ("flds", op);
+            else
+               serialize_child ("fncs", op);
          }
 
+#if __GNUC__ < 8
       if (TYPE_METHODS(t))
          for ( op = TYPE_METHODS (t); op; op = TREE_CHAIN(op))
          {
             serialize_child ("fncs", op);
          }
-
+#endif
       /*serialize_child ("flds", TYPE_FIELDS (t));
       serialize_child ("fncs", TYPE_METHODS (t));*/
       break;
@@ -2318,6 +2516,9 @@ dequeue_and_serialize ()
 #endif
 #if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7)
       queue_and_serialize_type (t);
+#else
+      if(SSA_NAME_VAR (t))
+         queue_and_serialize_type (SSA_NAME_VAR (t));
 #endif
       serialize_child ("var", SSA_NAME_VAR (t));
       serialize_int ("vers", SSA_NAME_VERSION (t));
@@ -2425,6 +2626,8 @@ if (!POINTER_TYPE_P (TREE_TYPE (t))
       }
       if(TREE_READONLY(t) && TREE_CODE (t) != RESULT_DECL && TREE_CODE (t) != FIELD_DECL)
          serialize_string ("readonly");
+      if(TREE_CODE (t) == VAR_DECL && !TREE_ADDRESSABLE(t))
+         serialize_string ("addr_not_taken");
       break;
 
     case FUNCTION_DECL:
@@ -2482,7 +2685,11 @@ if (!POINTER_TYPE_P (TREE_TYPE (t))
 
 #if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
 	unsigned i;
-	for (i = 0; i < VECTOR_CST_NELTS (t); ++i)
+#if (__GNUC__ > 7)
+    for (i = 0; i < VECTOR_CST_NELTS (t).to_constant (); ++i)
+#else
+    for (i = 0; i < VECTOR_CST_NELTS (t); ++i)
+#endif
             serialize_child ("valu", VECTOR_CST_ELT (t, i));
 #else
          tree elt;
@@ -3353,7 +3560,7 @@ serialize_gimple_aliased_reaching_defs_1 (ao_ref *dummy_1, tree vdef, void *dumm
   tree vuse = gimple_vuse (def_stmt);
   GIMPLE_type vuse_stmt = SSA_NAME_DEF_STMT (vuse);
   if (gimple_code (vuse_stmt) == GIMPLE_PHI)
-     return true;
+     return false;
   else
      return false;
 }
@@ -3374,6 +3581,23 @@ serialize_all_gimple_aliased_reaching_defs (GIMPLE_type stmt)
   walk_aliased_vdefs (NULL, gimple_vuse (stmt),
                   serialize_gimple_aliased_reaching_defs_1,
                   NULL, NULL);
+}
+
+static bool
+serialize_gimple_aliased_reaching_defs_2 (ao_ref *dummy_1, tree vdef, void *dummy_2)
+{
+   serialize_child ("vover", vdef);
+   return false;
+}
+
+static void
+serialize_gimple_aliased_reaching_defsdefs (GIMPLE_type stmt, tree ref)
+{
+   ao_ref refd;
+   ao_ref_init (&refd, ref);
+   walk_aliased_vdefs (&refd, gimple_vuse (stmt),
+                      serialize_gimple_aliased_reaching_defs_2,
+                      gimple_bb (stmt), NULL);
 }
 
 static
@@ -3544,7 +3768,7 @@ SerializeGimpleUseDefs(GIMPLE_type current, GIMPLE_type next_def)
    ///Now check if there is an anti-dependence because of alias
    ///Get right operand of current gimple
    tree * use = GetRightOperand(current);
-   ///Get left oprand of other_use_stmt
+   ///Get left operand of other_use_stmt
    tree * def = GetLeftOperand(next_def);
 
    if(use == NULL || def == NULL)
@@ -3568,7 +3792,7 @@ SerializeGimpleUseDefs(GIMPLE_type current, GIMPLE_type next_def)
 }
 
 /**
- * Add output dependences by dumping further vdef to the currently analyzed gimple
+ * Add output dependencies by dumping further vdef to the currently analyzed gimple
  * @param previous is potentially the first gimple of the pair
  * @param current is the currently analyzed gimple 
  */
@@ -3582,7 +3806,7 @@ SerializeGimpleDefsDef(const GIMPLE_type previous, const GIMPLE_type current)
       return;
    }
    ///Now check if there is an output-dependence because of alias
-   ///Get left oprand of previous gimple 
+   ///Get left operand of previous gimple
    tree * previous_def = GetLeftOperand(previous);
    ///Get right operand of current gimple
    tree * current_def = GetLeftOperand(current);
@@ -3602,6 +3826,15 @@ SerializeGimpleDefsDef(const GIMPLE_type previous, const GIMPLE_type current)
       SerializeGimpleDefsDef(previous_previous, current);
    }
 }
+
+void
+SerializeGimpleDefsDef2(const GIMPLE_type current)
+{
+   tree * current_def = GetLeftOperand(current);
+   if(current_def)
+     serialize_gimple_aliased_reaching_defsdefs(current,*current_def);
+}
+
 
 /**
  * Return true if the gimple has to be considered a barrier (i.e., it writes and reads everything

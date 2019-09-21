@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file bitfield_obj.hpp
  * @brief Base class for bitfield managing into datapath
@@ -40,7 +40,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef BITFIELD_OBJ_HPP
 #define BITFIELD_OBJ_HPP
@@ -49,34 +49,37 @@
 
 class bitfield_obj : public generic_obj
 {
+   /// number of bit of in/out ports
+   unsigned int bitsize;
 
-      /// number of bit of in/out ports
-      unsigned int bitsize;
+ public:
+   /**
+    * Constructor
+    */
+   bitfield_obj(const std::string& _name) : generic_obj(BITFIELD_OBJ, _name), bitsize(0)
+   {
+   }
 
-   public:
+   /**
+    * Destructor.
+    */
+   ~bitfield_obj() override = default;
 
+   /**
+    * add a size to the component
+    */
+   void add_bitsize(unsigned int _bitsize)
+   {
+      bitsize = _bitsize > bitsize ? _bitsize : bitsize;
+   }
 
-      /**
-       * Constructor
-       */
-      bitfield_obj(const std::string& _name) : generic_obj(BITFIELD_OBJ, _name), bitsize(0) {}
-
-      /**
-       * Destructor.
-       */
-      ~bitfield_obj() {}
-
-      /**
-       * add a size to the component
-       */
-      void add_bitsize(unsigned int _bitsize) {bitsize = _bitsize>bitsize?_bitsize:bitsize;}
-
-      /**
-       * return the maximum bitsize associated with the component
-       */
-      unsigned int get_bitsize() const {return bitsize;}
-
+   /**
+    * return the maximum bitsize associated with the component
+    */
+   unsigned int get_bitsize() const
+   {
+      return bitsize;
+   }
 };
 
 #endif
-

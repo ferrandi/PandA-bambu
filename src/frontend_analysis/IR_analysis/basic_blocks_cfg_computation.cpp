@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,26 +29,26 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file basic_blocks_cfg_computation.cpp
  * @brief Build basic block control flow graph data structure starting from the tree_manager.
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
-*/
+ */
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_ZEBU_BUILT.hpp"
 
-///Header include
+/// Header include
 #include "basic_blocks_cfg_computation.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior includes
+/// behavior includes
 #include "application_manager.hpp"
 #include "basic_block.hpp"
 #include "basic_blocks_graph_constructor.hpp"
@@ -59,26 +59,26 @@
 #endif
 #include "operations_graph_constructor.hpp"
 
-///design_flow includes
+/// design_flow includes
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 
-///frontend_analysis/IR_analysis
+/// frontend_analysis/IR_analysis
 #include "operations_cfg_computation.hpp"
 
-///graph include
+/// graph include
 #include "graph.hpp"
 
-///STD include
+/// STD include
 #include <fstream>
 
-///STL include
+/// STL include
 #include <list>
 
-///parser/treegcc include
+/// parser/treegcc include
 #include "token_interface.hpp"
 
-///tree include
+/// tree include
 #include "behavioral_helper.hpp"
 #include "behavioral_writer_helper.hpp"
 #include "ext_tree_node.hpp"
@@ -86,24 +86,24 @@
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
 
-///utility include
+/// utility include
 #include "dbgPrintHelper.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 
-BasicBlocksCfgComputation::BasicBlocksCfgComputation(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
-   FunctionFrontendFlowStep(_AppM, _function_id, BASIC_BLOCKS_CFG_COMPUTATION, _design_flow_manager, _parameters)
+BasicBlocksCfgComputation::BasicBlocksCfgComputation(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, BASIC_BLOCKS_CFG_COMPUTATION, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-BasicBlocksCfgComputation::~BasicBlocksCfgComputation()
-{}
+BasicBlocksCfgComputation::~BasicBlocksCfgComputation() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > BasicBlocksCfgComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BasicBlocksCfgComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COMPLETE_BB_GRAPH, SAME_FUNCTION));
 #if HAVE_BAMBU_BUILT
@@ -121,11 +121,11 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 #endif
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP):
       {
 #if HAVE_ZEBU_BUILT
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_STRUCTURING, SAME_FUNCTION));
@@ -136,6 +136,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COND_EXPR_RESTRUCTURING, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CSE_STEP, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FANOUT_OPT, SAME_FUNCTION));
 #if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SDC_CODE_MOTION, SAME_FUNCTION));
 #endif
@@ -164,34 +165,29 @@ void BasicBlocksCfgComputation::Initialize()
 
 DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
 {
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(true);
-   }
-
    const tree_managerRef TM = AppM->get_tree_manager();
    const BasicBlocksGraphConstructorRef bbgc = function_behavior->bbgc;
    tree_nodeRef tn = TM->get_tree_node_const(function_id);
-   function_decl * fd = GetPointer<function_decl>(tn);
+   auto* fd = GetPointer<function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement_list");
    std::map<unsigned int, blocRef>::iterator it_bb, it_bb_end = sl->list_of_bloc.end();
-   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end ; ++it_bb)
+   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end; ++it_bb)
    {
-      if (it_bb->second->number != BB_ENTRY and it_bb->second->number != BB_EXIT)
+      if(it_bb->second->number != BB_ENTRY and it_bb->second->number != BB_EXIT)
          continue;
       bbgc->add_vertex(it_bb->second);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added basic block with index " + boost::lexical_cast<std::string>(it_bb->second->number));
-      if (it_bb->second->number == BB_EXIT)
+      if(it_bb->second->number == BB_EXIT)
       {
          const vertex exit = bbgc->Cget_vertex(BB_EXIT);
          bbgc->connect_to_entry(exit);
       }
    }
-   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end ; ++it_bb)
+   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end; ++it_bb)
    {
-      if (it_bb->second->number == BB_ENTRY || it_bb->second->number == BB_EXIT)
+      if(it_bb->second->number == BB_ENTRY || it_bb->second->number == BB_EXIT)
          continue;
       bbgc->add_vertex(it_bb->second);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added basic block with index " + boost::lexical_cast<std::string>(it_bb->second->number));
@@ -199,7 +195,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
    std::map<unsigned int, blocRef>::const_iterator b_end = sl->list_of_bloc.end();
    for(std::map<unsigned int, blocRef>::const_iterator b = sl->list_of_bloc.begin(); b != b_end; ++b)
    {
-      if (b->second->number == BB_ENTRY || b->second->number == BB_EXIT)
+      if(b->second->number == BB_ENTRY || b->second->number == BB_EXIT)
          continue;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering connections for BB" + boost::lexical_cast<std::string>(b->first));
       const vertex current = bbgc->Cget_vertex(b->second->number);
@@ -210,15 +206,15 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
       }
       if(b->second->list_of_succ.empty())
       {
-         //PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Connecting Basic block " + boost::lexical_cast<std::string>((*b)->number) + " to EXIT");
-         //bbgc->connect_to_exit(current);
+         // PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Connecting Basic block " + boost::lexical_cast<std::string>((*b)->number) + " to EXIT");
+         // bbgc->connect_to_exit(current);
       }
       else
       {
          std::vector<unsigned int>::const_iterator su_end = b->second->list_of_succ.end();
          for(std::vector<unsigned int>::const_iterator su = b->second->list_of_succ.begin(); su != su_end; ++su)
          {
-            if((*su)== bloc::EXIT_BLOCK_ID)
+            if((*su) == bloc::EXIT_BLOCK_ID)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Connecting Basic block " + boost::lexical_cast<std::string>(b->second->number) + " to EXIT");
                bbgc->connect_to_exit(current);
@@ -227,7 +223,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Connecting Basic block " + boost::lexical_cast<std::string>(b->second->number) + " to " + boost::lexical_cast<std::string>(*su));
                bbgc->AddEdge(current, bbgc->Cget_vertex(*su), CFG_SELECTOR);
-               //Considering label
+               // Considering label
                if(*su == b->second->true_edge)
                {
                   bbgc->add_bb_edge_info(current, bbgc->Cget_vertex(*su), CFG_SELECTOR, T_COND);
@@ -238,7 +234,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
                }
             }
          }
-         const auto & statements = b->second->CGetStmtList();
+         const auto& statements = b->second->CGetStmtList();
          if(!statements.empty())
          {
             tree_nodeRef last = statements.back();
@@ -246,7 +242,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
             if(GET_NODE(last)->get_kind() == gimple_switch_K)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->BB" + boost::lexical_cast<std::string>(b->first) + " ends with a switch");
-               //Map between gimple_label and index of basic block
+               // Map between gimple_label and index of basic block
                std::map<tree_nodeRef, unsigned int> label_to_bb;
                su_end = b->second->list_of_succ.end();
                for(std::vector<unsigned int>::const_iterator su = b->second->list_of_succ.begin(); su != su_end; ++su)
@@ -254,17 +250,17 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
                   THROW_ASSERT(sl->list_of_bloc[*su]->CGetStmtList().size(), "Empty Basic Block");
                   const auto first = sl->list_of_bloc[*su]->CGetStmtList().front();
                   THROW_ASSERT(GetPointer<gimple_label>(GET_NODE(first)), "First operation of BB" + STR(*su) + " is a " + GET_NODE(first)->get_kind_text() + ": " + GET_NODE(first)->ToString());
-                  gimple_label * le = GetPointer<gimple_label>(GET_NODE(first));
+                  auto* le = GetPointer<gimple_label>(GET_NODE(first));
                   label_to_bb[GET_NODE(le->op)] = *su;
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Gimple label of BB" + boost::lexical_cast<std::string>(*su) + " is " + boost::lexical_cast<std::string>(GET_INDEX_NODE(le->op)));
                }
-               gimple_switch * se = GetPointer<gimple_switch>(GET_NODE(last));
+               auto* se = GetPointer<gimple_switch>(GET_NODE(last));
                THROW_ASSERT(se->op1, "case_label_exprs not found");
-               tree_vec * tv = GetPointer<tree_vec>(GET_NODE(se->op1));
-               std::vector<tree_nodeRef>::iterator it_end = tv->list_of_op.end();
-               for(std::vector<tree_nodeRef>::iterator it = tv->list_of_op.begin(); it != it_end; ++it)
+               auto* tv = GetPointer<tree_vec>(GET_NODE(se->op1));
+               auto it_end = tv->list_of_op.end();
+               for(auto it = tv->list_of_op.begin(); it != it_end; ++it)
                {
-                  case_label_expr * cl = GetPointer<case_label_expr>(GET_NODE(*it));
+                  auto* cl = GetPointer<case_label_expr>(GET_NODE(*it));
                   THROW_ASSERT(label_to_bb.find(GET_NODE(cl->got)) != label_to_bb.end(), "There is not corresponding case_label_exprs with index " + boost::lexical_cast<std::string>(GET_INDEX_NODE(cl->got)));
                   if(cl->default_flag)
                   {
@@ -277,10 +273,10 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
             }
-            ///computed goto
-            else if(GET_NODE(last)->get_kind() == gimple_goto_K && b->second->list_of_succ.size() >1)
+            /// computed goto
+            else if(GET_NODE(last)->get_kind() == gimple_goto_K && b->second->list_of_succ.size() > 1)
             {
-               //Map between gimple_label and index of basic block
+               // Map between gimple_label and index of basic block
                su_end = b->second->list_of_succ.end();
                for(std::vector<unsigned int>::const_iterator su = b->second->list_of_succ.begin(); su != su_end; ++su)
                {
@@ -290,7 +286,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
             /// multi-way if
             else if(GET_NODE(last)->get_kind() == gimple_multi_way_if_K)
             {
-               gimple_multi_way_if* gmwi = GetPointer<gimple_multi_way_if>(GET_NODE(last));
+               auto* gmwi = GetPointer<gimple_multi_way_if>(GET_NODE(last));
                for(const auto& cond : gmwi->list_of_cond)
                {
                   bbgc->add_bb_edge_info(current, bbgc->Cget_vertex(cond.second), CFG_SELECTOR, cond.first ? cond.first->index : default_COND);
@@ -301,7 +297,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered connections for BB" + boost::lexical_cast<std::string>(b->first));
    }
    const vertex exit = bbgc->Cget_vertex(BB_EXIT);
-   const BBGraphRef  fcfg = function_behavior->GetBBGraph(FunctionBehavior::FBB);
+   const BBGraphRef fcfg = function_behavior->GetBBGraph(FunctionBehavior::FBB);
    VertexIterator v, v_end;
    for(boost::tie(v, v_end) = boost::vertices(*fcfg); v != v_end; v++)
    {
@@ -316,7 +312,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
    if(GetPointer<const operations_cfg_computation>(operations_cfg_computation_step)->CGetBBVersion() == function_behavior->GetBBVersion())
    {
       const auto op_graph = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
-      const auto &tree_node_to_operation = op_graph->CGetOpGraphInfo()->tree_node_to_operation;
+      const auto& tree_node_to_operation = op_graph->CGetOpGraphInfo()->tree_node_to_operation;
       const auto bb_graph = function_behavior->GetBBGraph(FunctionBehavior::BB);
       const auto bb_index_map = bb_graph->CGetBBGraphInfo()->bb_index_map;
       bbgc->add_operation_to_bb(op_graph->CGetOpGraphInfo()->entry_vertex, BB_ENTRY);
@@ -327,9 +323,9 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
          THROW_ASSERT(bb_index_map.find(bb_index) != bb_index_map.end(), "BB" + STR(bb_index) + " is not in the graph");
          const auto bb_vertex = bb_index_map.find(bb_index)->second;
          const auto bb_node_info = bb_graph->GetBBNodeInfo(bb_vertex);
-         if (block.second->number == BB_ENTRY or block.second->number == BB_EXIT)
+         if(block.second->number == BB_ENTRY or block.second->number == BB_EXIT)
             continue;
-         THROW_ASSERT(!(block.second->CGetStmtList().empty() && block.second->CGetPhiList().empty()), "unexpected condition: BB"+ STR(bb_index));
+         THROW_ASSERT(!(block.second->CGetStmtList().empty() && block.second->CGetPhiList().empty()), "unexpected condition: BB" + STR(bb_index));
          for(const auto& phi : block.second->CGetPhiList())
          {
             const auto op_index = phi->index;
@@ -345,7 +341,6 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
             bb_node_info->statements_list.push_back(op_vertex);
          }
       }
-
    }
    if(parameters->getOption<bool>(OPT_print_dot))
    {

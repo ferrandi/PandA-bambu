@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file memory_symbol.cpp
  * @brief Implementations of the methods to manage memory symbols
@@ -40,26 +40,20 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "memory_symbol.hpp"
 
 #include "exceptions.hpp"
 
 #include "language_writer.hpp"
+#include "string_manipulation.hpp" //STR
+#include "utility.hpp"
 
-memory_symbol::memory_symbol(unsigned int var, unsigned int addr, unsigned int funId) :
-   variable(var),
-   name(STR(MEM_PREFIX) + "var_" + STR(var) + "_" + STR(funId)),
-   address(addr),
-   resolved(false)
+memory_symbol::memory_symbol(unsigned int var, unsigned int addr, unsigned int funId) : variable(var), name(STR(MEM_PREFIX) + "var_" + STR(var) + "_" + STR(funId)), address(addr), resolved(false)
 {
-
 }
 
-memory_symbol::~memory_symbol()
-{
-
-}
+memory_symbol::~memory_symbol() = default;
 
 void memory_symbol::set_address(unsigned int _address)
 {

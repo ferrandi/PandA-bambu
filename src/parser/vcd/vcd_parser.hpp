@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
@@ -40,10 +40,11 @@
 // include from STL
 #include <list>
 #include <map>
-#include <unordered_map>
-#include <unordered_set>
 #include <stack>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
 
 // include from parser/vcd/
 #include "sig_variation.hpp"
@@ -56,39 +57,38 @@ CONSTREF_FORWARD_DECL(Parameter);
 
 class vcd_sig_info
 {
-   public:
-      /// the type of the signal in vcd file
-      std::string type;
-      /// true if the vcd_signal is part of a vector
-      bool is_vec;
-      /// position of the msb of this signal in the vector. valid only if is_vec == true
-      size_t msb;
-      /// position of the lsb of this signal in the vector. valid only if is_vec == true
-      size_t lsb;
-      /*
-       * if the signal is a vector, this puts in relationship every bit in the
-       * vector with the vcd_id related to that bit. the size of this map can
-       * be: 0 if the signal is not a vector, 1 if the signal is a bit vector
-       * but in the vcd the variations are already grouped together, or (msb -
-       * lsb + 1) if the signal is a vector and in the vcd a different id is
-       * used for every bit
-       */
-      std::unordered_map<std::string, size_t> vcd_id_to_bit;
+ public:
+   /// the type of the signal in vcd file
+   std::string type;
+   /// true if the vcd_signal is part of a vector
+   bool is_vec;
+   /// position of the msb of this signal in the vector. valid only if is_vec == true
+   size_t msb;
+   /// position of the lsb of this signal in the vector. valid only if is_vec == true
+   size_t lsb;
+   /*
+    * if the signal is a vector, this puts in relationship every bit in the
+    * vector with the vcd_id related to that bit. the size of this map can
+    * be: 0 if the signal is not a vector, 1 if the signal is a bit vector
+    * but in the vcd the variations are already grouped together, or (msb -
+    * lsb + 1) if the signal is a vector and in the vcd a different id is
+    * used for every bit
+    */
+   std::unordered_map<std::string, size_t> vcd_id_to_bit;
 
-      vcd_sig_info(const std::string&_type, const bool _is_vec, const size_t _msb, const size_t _lsb) :
-         type(_type), is_vec(_is_vec), msb(_msb), lsb(_lsb)
-      {}
+   vcd_sig_info(std::string _type, const bool _is_vec, const size_t _msb, const size_t _lsb) : type(std::move(_type)), is_vec(_is_vec), msb(_msb), lsb(_lsb)
+   {
+   }
 };
 
 class vcd_parser
-{ 
-   public:
-
+{
+ public:
    /**
     * constructor
     * @param [in] params: is the class holding bambu parameters
     */
-   explicit vcd_parser(const ParameterConstRef & params);
+   explicit vcd_parser(const ParameterConstRef& params);
 
    /**
     * this is the type used to select which signals have to be filtered during
@@ -97,9 +97,7 @@ class vcd_parser
     * the value type is a std::unordered_set containing all the names of the
     * signal that have to be selected in that scope
     */
-   typedef
-      std::unordered_map<std::string, std::unordered_set<std::string> >
-      vcd_filter_t;
+   typedef std::unordered_map<std::string, std::unordered_set<std::string>> vcd_filter_t;
 
    /**
     * this type is the result of a parse.
@@ -107,9 +105,7 @@ class vcd_parser
     * the secondary key is the name of the signal.
     * the value type is std::list of sig_variation representing the waveform
     */
-   typedef
-      std::unordered_map<std::string, std::unordered_map<std::string, std::list<sig_variation> > >
-      vcd_trace_t;
+   typedef std::unordered_map<std::string, std::unordered_map<std::string, std::list<sig_variation>>> vcd_trace_t;
 
    /**
     * parses a file selecting only a predefined set of signals.
@@ -118,19 +114,16 @@ class vcd_parser
     * selected if this parameter is empty
     * @return: the traces of the selected vcd signals
     */
-   vcd_trace_t parse_vcd(
-      const std::string& vcd_file_to_parse,
-      const vcd_filter_t & selected_signals);
+   vcd_trace_t parse_vcd(const std::string& vcd_file_to_parse, const vcd_filter_t& selected_signals);
 
-   private:
-
+ private:
    /**
     * Debug Level
     */
    const int debug_level;
 
    // ---- METADATA ON THE PARSED FILE ----
-   
+
    /**
     * name of the vcd file to parse
     */
@@ -139,7 +132,7 @@ class vcd_parser
    /**
     * file pointer to the vcd file to parse
     */
-   FILE * vcd_fp;
+   FILE* vcd_fp;
 
    /**
     * total number of signals in the vcd file
@@ -168,7 +161,7 @@ class vcd_parser
    /**
     * maps every signal id in the vcd to the set of the corresponding pairs (scope, hdl signal name)
     */
-   std::map<std::string, std::unordered_set<std::pair<std::string, std::string> > > vcd_id_to_scope_and_name;
+   std::map<std::string, std::unordered_set<std::pair<std::string, std::string>>> vcd_id_to_scope_and_name;
 
    /* Parses the simulation part in the vcd_file */
    int vcd_parse_sim();
@@ -182,9 +175,9 @@ class vcd_parser
    /* Parses $var token */
    int vcd_parse_def_var(const std::string& scope);
 
-   void vcd_push_def_scope(std::stack<std::string> & scope);
+   void vcd_push_def_scope(std::stack<std::string>& scope);
 
-   void vcd_pop_def_scope(std::stack<std::string> & scope);
+   void vcd_pop_def_scope(std::stack<std::string>& scope);
 
    /* Parses vector in simulation part */
    int vcd_parse_sim_vector(char* value, unsigned long timestamp);
@@ -215,14 +208,7 @@ class vcd_parser
     * @param [in] msb: most significant bit of the signal
     * @param [in] lsb: less significant bit of the signal
     */
-   void vcd_add_signal(
-         const std::string& scope,
-         const std::string& name,
-         const std::string& vcd_id,
-         const std::string& type,
-         const bool isvect,
-         const unsigned int msb,
-         const unsigned int lsb);
+   void vcd_add_signal(const std::string& scope, const std::string& name, const std::string& vcd_id, const std::string& type, const bool isvect, const unsigned int msb, const unsigned int lsb);
 
    /**
     * check if the port vectors declarations are consistent
@@ -233,9 +219,6 @@ class vcd_parser
    void init_variations();
 
    /* add the parsed variation to the proper signal */
-   void add_variation(const std::string& id,
-         const std::string& value,
-         unsigned long long ts);
-
+   void add_variation(const std::string& id, const std::string& value, unsigned long long ts);
 };
 #endif

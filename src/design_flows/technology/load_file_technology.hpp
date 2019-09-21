@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (C) 2015-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file load_file_technology.hpp
  * @brief This class loads a technology library from a file specified at command line
@@ -37,14 +37,14 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
-*/
+ */
 #ifndef LOAD_FILE_TECHNOLOGY_HPP
 #define LOAD_FILE_TECHNOLOGY_HPP
 
-///Superclass include
+/// Superclass include
 #include "technology_flow_step.hpp"
 
-///utility include
+/// utility include
 #include "refcount.hpp"
 
 REF_FORWARD_DECL(target_device);
@@ -55,31 +55,31 @@ REF_FORWARD_DECL(technology_manager);
  */
 class LoadFileTechnology : public TechnologyFlowStep
 {
-   protected:
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      virtual const std::unordered_set<TechnologyFlowStep_Type> ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+ protected:
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<TechnologyFlowStep_Type> ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor.
-       * @param TM is the technology manager
-       * @param design_flow_manager is the design flow manager
-       * @param parameters is the set of input parameters
-       */
-      LoadFileTechnology(const technology_managerRef TM, const target_deviceRef target, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor.
+    * @param TM is the technology manager
+    * @param design_flow_manager is the design flow manager
+    * @param parameters is the set of input parameters
+    */
+   LoadFileTechnology(const technology_managerRef TM, const target_deviceRef target, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-      /**
-       * Destructor
-       */
-      ~LoadFileTechnology();
+   /**
+    * Destructor
+    */
+   ~LoadFileTechnology() override;
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status Exec();
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status Exec() override;
 };
 #endif

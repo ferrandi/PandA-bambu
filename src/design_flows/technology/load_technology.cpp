@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,43 +29,53 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file load_technology.cpp
  * @brief Pseudo step to force dependencies from all load_*_technology steps
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "load_technology.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///technology include
-#include "parse_technology.hpp"
+/// STD include
+#include <string>
 
-///technology/target_device include
+/// STL include
+#include <unordered_set>
+
+/// technology includes
+#include "parse_technology.hpp"
+#include "technology_manager.hpp"
+
+/// technology/target_device include
 #include "target_device.hpp"
 
-LoadTechnology::LoadTechnology(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_TECHNOLOGY, _parameters)
+/// utility includes
+#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "string_manipulation.hpp" // for GET_CLASS
+
+LoadTechnology::LoadTechnology(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_TECHNOLOGY, _parameters)
 {
    composed = true;
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-LoadTechnology::~LoadTechnology()
-{}
+LoadTechnology::~LoadTechnology() = default;
 
 const std::unordered_set<TechnologyFlowStep_Type> LoadTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    std::unordered_set<TechnologyFlowStep_Type> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(TechnologyFlowStep_Type::LOAD_DEFAULT_TECHNOLOGY);
 #if HAVE_CIRCUIT_BUILT
@@ -84,8 +94,8 @@ const std::unordered_set<TechnologyFlowStep_Type> LoadTechnology::ComputeTechnol
 #endif
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -102,3 +112,10 @@ DesignFlowStep_Status LoadTechnology::Exec()
    return DesignFlowStep_Status::EMPTY;
 }
 
+void LoadTechnology::PrintFinalIR() const
+{
+   const std::string file_name = parameters->getOption<std::string>(OPT_output_temporary_directory) + "after_" + GetName() + ".tm";
+   std::ofstream raw_file(file_name.c_str());
+   TM->print(raw_file);
+   raw_file.close();
+}

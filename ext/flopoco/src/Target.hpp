@@ -25,7 +25,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <math.h>
+#include <cmath>
 #include "Targets/DSP.hpp"
 #include "IntMultipliers/MultiplierBlock.hpp"
 
@@ -54,7 +54,7 @@ namespace flopoco{
 		}
 	
 		/** The destructor */
-		virtual ~Target() {}
+        virtual ~Target() {}
 
 
 

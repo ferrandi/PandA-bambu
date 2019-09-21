@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2017-2018 Politecnico di Milano
+ *              Copyright (C) 2017-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file dry_runevaluation.hpp
  * @brief Class to generate an empty evaluation report
@@ -42,35 +42,34 @@
 #ifndef DRY_RUN_EVALUATION_HPP
 #define DRY_RUN_EVALUATION_HPP
 
-///base class include
+/// base class include
 #include "evaluation_base_step.hpp"
 
 class DryRunEvaluation : public EvaluationBaseStep
 {
-   public:
-      /**
-       * Constructor
-       * @param design_flow_manager is the design flow manager
-       * @param hls_flow_step_type is the type of evaluation
-       */
-      DryRunEvaluation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+ public:
+   /**
+    * Constructor
+    * @param design_flow_manager is the design flow manager
+    * @param hls_flow_step_type is the type of evaluation
+    */
+   DryRunEvaluation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Destructor
-       */
-      virtual ~DryRunEvaluation();
+   /**
+    * Destructor
+    */
+   ~DryRunEvaluation() override;
 
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      virtual bool HasToBeExecuted() const;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status InternalExec();
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 };
 #endif
-

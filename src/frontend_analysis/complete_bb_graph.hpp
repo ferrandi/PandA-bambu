@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,54 +29,52 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file complete_bb_graph.hpp
  * @brief This class models the ending of execution of all steps which can modify control flow graph of basic blocks
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
 #ifndef COMPLETE_BB_GRAPH_HPP
 #define COMPLETE_BB_GRAPH_HPP
 
-///Superclass include
-#include "function_frontend_flow_step.hpp"
+#include "design_flow_step.hpp"            // for DesignFlowStep, DesignFlo...
+#include "frontend_flow_step.hpp"          // for FrontendFlowStep::Functio...
+#include "function_frontend_flow_step.hpp" // for DesignFlowManagerConstRef
+#include <unordered_set>                   // for unordered_set
+#include <utility>                         // for pair
 
-///Utility include
-#include "refcount.hpp"
-
-class CompleteBBGraph: public FunctionFrontendFlowStep
+class CompleteBBGraph : public FunctionFrontendFlowStep
 {
-   private:
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+ private:
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor
-       * @param AppM is the application manager
-       * @param function_index is the index of the function
-       * @param design_flow_manager is the design flow manager
-       * @param _Param is the set of the parameters
-       */
-      CompleteBBGraph(const application_managerRef AppM, const unsigned int function_index, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor
+    * @param AppM is the application manager
+    * @param function_index is the index of the function
+    * @param design_flow_manager is the design flow manager
+    * @param _Param is the set of the parameters
+    */
+   CompleteBBGraph(const application_managerRef AppM, const unsigned int function_index, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-      /**
-       * Destructor
-       */
-      ~CompleteBBGraph();
+   /**
+    * Destructor
+    */
+   ~CompleteBBGraph() override;
 
-      /**
-       * Execute this step
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status InternalExec();
+   /**
+    * Execute this step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 };
 #endif
-
-

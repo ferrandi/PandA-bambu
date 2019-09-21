@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file tree_node_mask.hpp
  * @brief tree node mask. This class factorize the mask initialization common to all visitor classes.
@@ -39,15 +39,14 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef TREE_NODE_MASK_HPP
 #define TREE_NODE_MASK_HPP
 
-#include <ostream>
-#include <boost/preprocessor/seq/for_each.hpp>
-#include <boost/preprocessor/facilities/empty.hpp>
 #include "refcount.hpp"
 #include "tree_node.hpp"
+#include <boost/preprocessor/facilities/empty.hpp>
+#include <boost/preprocessor/seq/for_each.hpp>
 
 /**
  * @name forward declarations
@@ -55,12 +54,12 @@
 //@{
 REF_FORWARD_DECL(tree_node_mask);
 //@}
-///class factorizing the mask initialization which is common to all visitor classes.
+/// class factorizing the mask initialization which is common to all visitor classes.
 struct tree_node_mask : public tree_node_visitor
 {
-      ///tree_node visitors
-      BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO_DECL, BOOST_PP_EMPTY, OBJ_SPECIALIZED_SEQ)
-      BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO, BOOST_PP_EMPTY, OBJ_NOT_SPECIALIZED_SEQ)
+   /// tree_node visitors
+   BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO_DECL, BOOST_PP_EMPTY, OBJ_SPECIALIZED_SEQ)
+   BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO, BOOST_PP_EMPTY, OBJ_NOT_SPECIALIZED_SEQ)
 };
 
 #endif

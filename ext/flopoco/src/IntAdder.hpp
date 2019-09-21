@@ -47,13 +47,13 @@ namespace flopoco {
 		/**
 		 *  Destructor
 		 */
-		~IntAdder();
+		~IntAdder() override;
 		
 		/**
 		 * The emulate function.
 		 * @param[in] tc               a list of test-cases
 		 */
-		void emulate ( TestCase* tc );
+		void emulate ( TestCase* tc ) override;
 				
 	protected:
 		/**

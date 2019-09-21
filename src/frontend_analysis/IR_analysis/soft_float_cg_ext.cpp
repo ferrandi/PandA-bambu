@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,88 +29,85 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file soft_float_cg_ext.cpp
  * @brief Step that extends the call graph with the soft-float calls where appropriate.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "soft_float_cg_ext.hpp"
 
-///design_flows include
+/// design_flows include
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "design_flow_step.hpp"
 
-///frontend_analysis
+/// frontend_analysis
 #include "symbolic_application_frontend_flow_step.hpp"
 
-///Behavior include
+/// Behavior include
 #include "application_manager.hpp"
+#include "behavioral_helper.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
-#include "behavioral_helper.hpp"
 
-///Graph include
+/// Graph include
 #include "basic_block.hpp"
 #include "basic_blocks_graph_constructor.hpp"
 
-///Parameter include
+/// Parameter include
 #include "Parameter.hpp"
 
-///STD include
+/// STD include
 #include <fstream>
 
-///STL include
+/// STL include
 #include <map>
 #include <string>
 
-///Tree include
+/// Tree include
 #include "ext_tree_node.hpp"
 #include "tree_basic_block.hpp"
+#include "tree_helper.hpp"
 #include "tree_manager.hpp"
+#include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include "tree_helper.hpp"
-#include "tree_manipulation.hpp"
 
-///Utility include
+/// Utility include
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 
-soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
-   FunctionFrontendFlowStep(_AppM, _function_id, SOFT_FLOAT_CG_EXT, _design_flow_manager, _parameters),
-   TreeM(_AppM->get_tree_manager()),
-   tree_man(new tree_manipulation(TreeM, parameters)),
-   modified(false)
+soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, SOFT_FLOAT_CG_EXT, _design_flow_manager, _parameters), TreeM(_AppM->get_tree_manager()), tree_man(new tree_manipulation(TreeM, parameters)), modified(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-soft_float_cg_ext::~soft_float_cg_ext()
-{}
+soft_float_cg_ext::~soft_float_cg_ext() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > soft_float_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> soft_float_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(UN_COMPARISON_LOWERING, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -126,13 +123,12 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
 {
    const tree_nodeRef curr_tn = TreeM->GetTreeNode(function_id);
    tree_nodeRef Scpe = TreeM->GetTreeReindex(function_id);
-   function_decl * fd = GetPointer<function_decl>(curr_tn);
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto* fd = GetPointer<function_decl>(curr_tn);
+   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
    modified = false;
 
    for(const auto& block : sl->list_of_bloc)
-   {  
-      
+   {
       for(const auto& stmt : block.second->CGetStmtList())
       {
          RecursiveExaminate(stmt, stmt);
@@ -143,15 +139,14 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
 }
 
 void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement, const tree_nodeRef current_tree_node)
-{  
+{
    THROW_ASSERT(current_tree_node->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Update recursively (" + STR(current_tree_node->index) + ") " + STR(current_tree_node));
    const tree_nodeRef curr_tn = GET_NODE(current_tree_node);
-   const std::string current_srcp = [curr_tn] () -> std::string
-   {
+   const std::string current_srcp = [curr_tn]() -> std::string {
       const auto srcp_tn = GetPointer<const srcp>(curr_tn);
       if(srcp_tn)
-      {  
+      {
          return srcp_tn->include_name + ":" + STR(srcp_tn->line_number) + ":" + STR(srcp_tn->column_number);
       }
       return "";
@@ -161,8 +156,8 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       case call_expr_K:
       case aggr_init_expr_K:
       {
-         const call_expr * ce = GetPointer<call_expr>(curr_tn);
-         const std::vector<tree_nodeRef> & args = ce->args;
+         const call_expr* ce = GetPointer<call_expr>(curr_tn);
+         const std::vector<tree_nodeRef>& args = ce->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
          unsigned int parm_index = 0;
          for(arg = args.begin(); arg != arg_end; ++arg)
@@ -174,8 +169,8 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       }
       case gimple_call_K:
       {
-         const gimple_call * ce = GetPointer<gimple_call>(curr_tn);
-         const std::vector<tree_nodeRef> & args = ce->args;
+         const gimple_call* ce = GetPointer<gimple_call>(curr_tn);
+         const std::vector<tree_nodeRef>& args = ce->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
          unsigned int parm_index = 0;
          for(arg = args.begin(); arg != arg_end; ++arg)
@@ -187,7 +182,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       }
       case gimple_assign_K:
       {
-         gimple_assign * gm = GetPointer<gimple_assign>(curr_tn);
+         auto* gm = GetPointer<gimple_assign>(curr_tn);
          RecursiveExaminate(current_statement, gm->op0);
          RecursiveExaminate(current_statement, gm->op1);
          if(gm->predicate)
@@ -211,14 +206,14 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
          tree_nodeRef current = current_tree_node;
          while(current)
          {
-            RecursiveExaminate(current_statement,GetPointer<tree_list>(GET_NODE(current))->valu);
+            RecursiveExaminate(current_statement, GetPointer<tree_list>(GET_NODE(current))->valu);
             current = GetPointer<tree_list>(GET_NODE(current))->chan;
          }
          break;
       }
-      case CASE_UNARY_EXPRESSION :
+      case CASE_UNARY_EXPRESSION:
       {
-         const unary_expr * ue = GetPointer<unary_expr>(curr_tn);
+         const unary_expr* ue = GetPointer<unary_expr>(curr_tn);
          RecursiveExaminate(current_statement, ue->op);
          tree_nodeRef expr_type = GET_NODE(ue->type);
          unsigned int op_expr_type_index;
@@ -231,23 +226,23 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                {
                   unsigned int bitsize_in = tree_helper::size(TreeM, op_expr_type_index);
                   if(bitsize_in < 32)
-                    bitsize_in = 32;
+                     bitsize_in = 32;
                   else if(bitsize_in > 32 && bitsize_in < 64)
-                    bitsize_in = 64;
+                     bitsize_in = 64;
                   unsigned int bitsize_out = tree_helper::size(TreeM, GET_INDEX_NODE(ue->type));
                   if(bitsize_in < 32)
-                    bitsize_in = 32;
+                     bitsize_in = 32;
                   else if(bitsize_in > 32 && bitsize_in < 64)
-                    bitsize_in = 64;
+                     bitsize_in = 64;
                   std::string bitsize_str_in = bitsize_in == 96 ? "x80" : STR(bitsize_in);
                   std::string bitsize_str_out = bitsize_out == 96 ? "x80" : STR(bitsize_out);
                   std::string fu_name;
                   if(op_expr_type->get_kind() != real_type_K)
                   {
                      if(tree_helper::is_unsigned(TreeM, op_expr_type_index))
-                        fu_name = "__uint"+bitsize_str_in+"_to_float"+bitsize_str_out+"if";
+                        fu_name = "__uint" + bitsize_str_in + "_to_float" + bitsize_str_out + "if";
                      else
-                        fu_name = "__int"+bitsize_str_in+"_to_float"+bitsize_str_out+"if";
+                        fu_name = "__int" + bitsize_str_in + "_to_float" + bitsize_str_out + "if";
                      unsigned int called_function_id = TreeM->function_index(fu_name);
                      std::vector<tree_nodeRef> args;
                      args.push_back(ue->op);
@@ -314,6 +309,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                case tree_list_K:
                case tree_vec_K:
                case error_mark_K:
+               case lut_expr_K:
                case CASE_BINARY_EXPRESSION:
                case CASE_CPP_NODES:
                case CASE_CST_NODES:
@@ -325,14 +321,13 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                case CASE_TERNARY_EXPRESSION:
                case CASE_TYPE_NODES:
                {
-                  THROW_ERROR("not yet supported soft float function: " +curr_tn->get_kind_text());
+                  THROW_ERROR("not yet supported soft float function: " + curr_tn->get_kind_text());
                   break;
                }
                default:
                {
                   THROW_UNREACHABLE("");
                }
-
             }
          }
          if(op_expr_type->get_kind() == real_type_K)
@@ -344,13 +339,13 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                   unsigned int bitsize_in = tree_helper::size(TreeM, op_expr_type_index);
                   unsigned int bitsize_out = tree_helper::size(TreeM, GET_INDEX_NODE(ue->type));
                   if(bitsize_out < 32)
-                    bitsize_out = 32;
+                     bitsize_out = 32;
                   else if(bitsize_out > 32 && bitsize_out < 64)
-                    bitsize_out = 64;
+                     bitsize_out = 64;
                   bool is_unsigned = tree_helper::is_unsigned(TreeM, GET_INDEX_NODE(ue->type));
                   std::string bitsize_str_in = bitsize_in == 96 ? "x80" : STR(bitsize_in);
                   std::string bitsize_str_out = bitsize_out == 96 ? "x80" : STR(bitsize_out);
-                  std::string fu_name = "__float"+bitsize_str_in+"_to_"+ (is_unsigned ? "u" : "") +"int"+bitsize_str_out+"_round_to_zeroif";
+                  std::string fu_name = "__float" + bitsize_str_in + "_to_" + (is_unsigned ? "u" : "") + "int" + bitsize_str_out + "_round_to_zeroif";
                   unsigned int called_function_id = TreeM->function_index(fu_name);
                   THROW_ASSERT(called_function_id, "The library miss this function " + fu_name);
                   THROW_ASSERT(AppM->GetFunctionBehavior(called_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
@@ -375,6 +370,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                case target_mem_ref461_K:
                case tree_list_K:
                case tree_vec_K:
+               case lut_expr_K:
                case CASE_BINARY_EXPRESSION:
                case CASE_CPP_NODES:
                case CASE_CST_NODES:
@@ -427,16 +423,16 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                case error_mark_K:
                   break;
                default:
-                  {
-                     THROW_UNREACHABLE("");
-                  }
+               {
+                  THROW_UNREACHABLE("");
+               }
             }
          }
          break;
       }
-      case CASE_BINARY_EXPRESSION :
+      case CASE_BINARY_EXPRESSION:
       {
-         const binary_expr * be = GetPointer<binary_expr>(curr_tn);
+         const binary_expr* be = GetPointer<binary_expr>(curr_tn);
          RecursiveExaminate(current_statement, be->op0);
          RecursiveExaminate(current_statement, be->op1);
          unsigned int expr_type_index;
@@ -465,6 +461,17 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                case rdiv_expr_K:
                {
                   fu_suffix = "div";
+                  unsigned int bitsize = tree_helper::size(TreeM, expr_type_index);
+                  if(bitsize == 32 || bitsize == 64)
+                  {
+                     THROW_ASSERT(parameters->isOption(OPT_hls_fpdiv), "a default is expected");
+                     if(parameters->getOption<std::string>(OPT_hls_fpdiv) == "SRT4")
+                        fu_suffix = fu_suffix + "SRT4";
+                     else if(parameters->getOption<std::string>(OPT_hls_fpdiv) == "G")
+                        fu_suffix = fu_suffix + "G";
+                     else
+                        THROW_ERROR("FP-Division algorithm not supported:" + parameters->getOption<std::string>(OPT_hls_fpdiv));
+                  }
                   break;
                }
                case gt_expr_K:
@@ -487,8 +494,12 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                   fu_suffix = "le";
                   break;
                }
-               case uneq_expr_K:
                case ltgt_expr_K:
+               {
+                  fu_suffix = "ltgt_quiet";
+                  break;
+               }
+               case uneq_expr_K:
                case unge_expr_K:
                case ungt_expr_K:
                case unle_expr_K:
@@ -560,6 +571,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                case vec_extractodd_expr_K:
                case vec_interleavehigh_expr_K:
                case vec_interleavelow_expr_K:
+               case extract_bit_expr_K:
                {
                   add_call = false;
                   break;
@@ -589,19 +601,19 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                case CASE_TERNARY_EXPRESSION:
                case CASE_TYPE_NODES:
                case CASE_UNARY_EXPRESSION:
-                  {
-                     break;
-                  }
+               {
+                  break;
+               }
                default:
-                  {
-                     THROW_UNREACHABLE("");
-                  }
+               {
+                  THROW_UNREACHABLE("");
+               }
             }
             if(add_call)
             {
                unsigned int bitsize = tree_helper::size(TreeM, expr_type_index);
                std::string bitsize_str = bitsize == 96 ? "x80" : STR(bitsize);
-               std::string fu_name = "__float"+bitsize_str+"_"+fu_suffix+"if";
+               std::string fu_name = "__float" + bitsize_str + "_" + fu_suffix + "if";
                unsigned int called_function_id = TreeM->function_index(fu_name);
                THROW_ASSERT(called_function_id, "The library miss this function " + fu_name);
                THROW_ASSERT(AppM->GetFunctionBehavior(called_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
@@ -615,9 +627,9 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
          }
          break;
       }
-      case CASE_TERNARY_EXPRESSION :
-      { 
-         const ternary_expr * te = GetPointer<ternary_expr>(curr_tn);
+      case CASE_TERNARY_EXPRESSION:
+      {
+         const ternary_expr* te = GetPointer<ternary_expr>(curr_tn);
          RecursiveExaminate(current_statement, te->op0);
          if(te->op1)
             RecursiveExaminate(current_statement, te->op1);
@@ -625,9 +637,9 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
             RecursiveExaminate(current_statement, te->op2);
          break;
       }
-      case CASE_QUATERNARY_EXPRESSION :
-      {  
-         const quaternary_expr * qe = GetPointer<quaternary_expr>(curr_tn);
+      case CASE_QUATERNARY_EXPRESSION:
+      {
+         const quaternary_expr* qe = GetPointer<quaternary_expr>(curr_tn);
          RecursiveExaminate(current_statement, qe->op0);
          if(qe->op1)
             RecursiveExaminate(current_statement, qe->op1);
@@ -637,11 +649,32 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
             RecursiveExaminate(current_statement, qe->op3);
          break;
       }
+      case lut_expr_K:
+      {
+         auto* le = GetPointer<lut_expr>(curr_tn);
+         RecursiveExaminate(current_statement, le->op0);
+         RecursiveExaminate(current_statement, le->op1);
+         if(le->op2)
+            RecursiveExaminate(current_statement, le->op2);
+         if(le->op3)
+            RecursiveExaminate(current_statement, le->op3);
+         if(le->op4)
+            RecursiveExaminate(current_statement, le->op4);
+         if(le->op5)
+            RecursiveExaminate(current_statement, le->op5);
+         if(le->op6)
+            RecursiveExaminate(current_statement, le->op6);
+         if(le->op7)
+            RecursiveExaminate(current_statement, le->op7);
+         if(le->op8)
+            RecursiveExaminate(current_statement, le->op8);
+         break;
+      }
       case constructor_K:
       {
-         const constructor * co = GetPointer<constructor>(curr_tn);
-         const std::vector<std::pair< tree_nodeRef, tree_nodeRef> > & list_of_idx_valu = co->list_of_idx_valu;
-         std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::const_iterator it, it_end = list_of_idx_valu.end();
+         const constructor* co = GetPointer<constructor>(curr_tn);
+         const std::vector<std::pair<tree_nodeRef, tree_nodeRef>>& list_of_idx_valu = co->list_of_idx_valu;
+         std::vector<std::pair<tree_nodeRef, tree_nodeRef>>::const_iterator it, it_end = list_of_idx_valu.end();
          for(it = list_of_idx_valu.begin(); it != it_end; ++it)
          {
             RecursiveExaminate(current_statement, it->second);
@@ -650,34 +683,34 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       }
       case gimple_cond_K:
       {
-         const gimple_cond * gc = GetPointer<gimple_cond>(curr_tn);
+         const gimple_cond* gc = GetPointer<gimple_cond>(curr_tn);
          RecursiveExaminate(current_statement, gc->op0);
          break;
       }
       case gimple_switch_K:
       {
-         const gimple_switch * se = GetPointer<gimple_switch>(curr_tn);
+         const gimple_switch* se = GetPointer<gimple_switch>(curr_tn);
          RecursiveExaminate(current_statement, se->op0);
          break;
       }
       case gimple_multi_way_if_K:
       {
-         gimple_multi_way_if* gmwi=GetPointer<gimple_multi_way_if>(curr_tn);
+         auto* gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
          for(const auto& cond : gmwi->list_of_cond)
             if(cond.first)
                RecursiveExaminate(current_statement, cond.first);
          break;
       }
       case gimple_return_K:
-      {  
-         const gimple_return * re = GetPointer<gimple_return>(curr_tn);
+      {
+         const gimple_return* re = GetPointer<gimple_return>(curr_tn);
          if(re->op)
             RecursiveExaminate(current_statement, re->op);
          break;
       }
       case gimple_for_K:
       {
-         const gimple_for * gf = GetPointer<const gimple_for>(curr_tn);
+         const auto* gf = GetPointer<const gimple_for>(curr_tn);
          RecursiveExaminate(current_statement, gf->op0);
          RecursiveExaminate(current_statement, gf->op1);
          RecursiveExaminate(current_statement, gf->op2);
@@ -685,7 +718,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       }
       case gimple_while_K:
       {
-         const gimple_while * gw = GetPointer<gimple_while>(curr_tn);
+         const gimple_while* gw = GetPointer<gimple_while>(curr_tn);
          RecursiveExaminate(current_statement, gw->op0);
          break;
       }
@@ -696,7 +729,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       }
       case target_mem_ref_K:
       {
-         const target_mem_ref * tmr = GetPointer<target_mem_ref>(curr_tn);
+         const target_mem_ref* tmr = GetPointer<target_mem_ref>(curr_tn);
          if(tmr->symbol)
             RecursiveExaminate(current_statement, tmr->symbol);
          if(tmr->base)
@@ -707,7 +740,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       }
       case target_mem_ref461_K:
       {
-         const target_mem_ref461 * tmr = GetPointer<target_mem_ref461>(curr_tn);
+         const target_mem_ref461* tmr = GetPointer<target_mem_ref461>(curr_tn);
          if(tmr->base)
             RecursiveExaminate(current_statement, tmr->base);
          if(tmr->idx)
@@ -766,4 +799,3 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Updated recursively (" + STR(current_tree_node->index) + ") " + STR(current_tree_node));
    return;
 }
-

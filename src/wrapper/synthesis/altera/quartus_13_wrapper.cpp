@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2018 Politecnico di Milano
+ *              Copyright (C) 2016-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file quartus_13_wrapper.cpp
  * @brief Wrapper to quartus 13.x
@@ -38,25 +38,22 @@
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "quartus_13_wrapper.hpp"
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_QUARTUS_13_64BIT.hpp"
 
-///wrapper/synthesis include
+/// wrapper/synthesis include
 #include "xml_script_command.hpp"
 
-Quartus13Wrapper::Quartus13Wrapper(const ParameterConstRef _Param, const std::string& _output_dir, const target_deviceRef _device) :
-   AlteraWrapper(_Param, QUARTUS_FLOW_TOOL_EXEC, _device, _output_dir, QUARTUS_FLOW_TOOL_ID)
-{}
-
-Quartus13Wrapper::~Quartus13Wrapper()
+Quartus13Wrapper::Quartus13Wrapper(const ParameterConstRef& _Param, const std::string& _output_dir, const target_deviceRef& _device) : AlteraWrapper(_Param, QUARTUS_13_FLOW_TOOL_EXEC, _device, _output_dir, QUARTUS_13_FLOW_TOOL_ID)
 {
-
 }
+
+Quartus13Wrapper::~Quartus13Wrapper() = default;
 std::string Quartus13Wrapper::get_command_line(const DesignParametersRef& dp) const
 {
    std::ostringstream s;
@@ -65,10 +62,9 @@ std::string Quartus13Wrapper::get_command_line(const DesignParametersRef& dp) co
    s << " --64bit ";
 #endif
    s << script_name;
-   for (std::vector<xml_parameter_tRef>::const_iterator it = xml_tool_options.begin(); it != xml_tool_options.end(); ++it)
+   for(const auto& option : xml_tool_options)
    {
-      const xml_parameter_tRef & option = *it;
-      if (option->checkCondition(dp))
+      if(option->checkCondition(dp))
       {
          std::string value = toString(option, dp);
          replace_parameters(dp, value);
@@ -78,5 +74,3 @@ std::string Quartus13Wrapper::get_command_line(const DesignParametersRef& dp) co
    s << std::endl;
    return s.str();
 }
-
-

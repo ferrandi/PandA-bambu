@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file library_manager.hpp
  * @brief Class specification of the manager for each library.
@@ -41,7 +41,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef _LIBRARY_MANAGER_HPP
 #define _LIBRARY_MANAGER_HPP
 
@@ -49,8 +49,8 @@
 #include "config_HAVE_FROM_LIBERTY.hpp"
 #include "config_HAVE_LIBRARY_COMPILER.hpp"
 
-#include "refcount.hpp"
 #include "boost/lexical_cast.hpp"
+#include "refcount.hpp"
 
 /**
  * @name Forward declarations.
@@ -68,16 +68,15 @@ enum class TargetDevice_Type;
 class xml_element;
 //@}
 
-#include <string>
-#include <vector>
 #include <map>
 #include <set>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 struct attribute
 {
-   public:
-
+ public:
    typedef enum
    {
       FLOAT64 = 0,
@@ -86,20 +85,17 @@ struct attribute
       STRING
    } value_t;
 
-
-   private:
-
+ private:
    std::string content;
 
-   value_t value_type;
+   value_t value_type{FLOAT64};
 
    std::vector<attributeRef> content_list;
 
-   public:
+ public:
+   attribute(const value_t _value_type, std::string _content);
 
-   attribute(const value_t _value_type, const std::string& _content);
-
-   attribute(const std::string& _value_type, const std::string& _content);
+   attribute(const std::string& _value_type, std::string _content);
 
    explicit attribute(const std::vector<attributeRef>& _content);
 
@@ -111,16 +107,20 @@ struct attribute
 
    unsigned int get_value_type() const;
 
-   template<class G>
-   G get_content() const { return boost::lexical_cast<G>(content); }
+   template <class G>
+   G get_content() const
+   {
+      return boost::lexical_cast<G>(content);
+   }
 
-   const std::vector<attributeRef>& get_content_list() const { return content_list; }
+   const std::vector<attributeRef>& get_content_list() const
+   {
+      return content_list;
+   }
 
-   static
-   void xload(const xml_element* node, std::vector<std::string>& ordered_attributes, std::map<std::string, attributeRef>& attributes);
+   static void xload(const xml_element* node, std::vector<std::string>& ordered_attributes, std::map<std::string, attributeRef>& attributes);
 
    void xwrite(xml_element* xml_node, const std::string& name);
-
 };
 typedef refcount<attribute> attributeRef;
 
@@ -129,131 +129,129 @@ typedef refcount<attribute> attributeRef;
  */
 class library_manager
 {
-   public:
+ public:
+   /// typedef for the identification of the functional units contained into the library
+   typedef std::map<std::string, technology_nodeRef> fu_map_type;
 
-      ///typedef for the identification of the functional units contained into the library
-      typedef std::map<std::string, technology_nodeRef> fu_map_type;
-
-      /**
-       * @name Library output formats
-       */
-      //@{
-      ///available information for the library
-      typedef enum
-      {
-         XML,
+   /**
+    * @name Library output formats
+    */
+   //@{
+   /// available information for the library
+   typedef enum
+   {
+      XML,
 #if HAVE_FROM_LIBERTY
-         LIBERTY,
+      LIBERTY,
 #endif
 #if HAVE_EXPERIMENTAL
-         LEF,
+      LEF,
 #endif
 #if HAVE_LIBRARY_COMPILER
-         DB,
+      DB,
 #endif
-      } info_t;
-      //@}
+   } info_t;
+   //@}
 
-   private:
+ private:
+   /// class containing all the parameters
+   const ParameterConstRef Param;
 
-      ///class containing all the parameters
-      const ParameterConstRef Param;
+   /// string identifier of the library
+   std::string name;
 
-      ///string identifier of the library
-      std::string name;
+   /// datastructure to identify the units that are contained into the library
+   fu_map_type fu_map;
 
-      ///datastructure to identify the units that are contained into the library
-      fu_map_type fu_map;
+   std::vector<std::string> ordered_attributes;
 
-      std::vector<std::string> ordered_attributes;
+   /// attributes of the library
+   std::map<std::string, attributeRef> attributes;
 
-      ///attributes of the library
-      std::map<std::string, attributeRef> attributes;
+   /// files that provide information about the library
+   std::map<unsigned int, std::string> info;
 
-      ///files that provide information about the library
-      std::map<unsigned int, std::string> info;
+   /// flag to check if the library is standard (i.e., provided in input) or virtual
+   bool is_std;
 
-      ///flag to check if the library is standard (i.e., provided in input) or virtual
-      bool is_std;
+   /**
+    * Set the default attributes for the library
+    */
+   void set_default_attributes();
 
-      /**
-       * Set the default attributes for the library
-       */
-      void set_default_attributes();
+   std::set<std::string> dont_use;
 
-      std::set<std::string> dont_use;
+ public:
+   /**
+    * @name Constructors and destructors.
+    */
+   //@{
+   /// Constructor.
+   library_manager(ParameterConstRef Param, bool std = true);
 
-   public:
+   library_manager(std::string library_name, ParameterConstRef Param, bool std = true);
 
-      /**
-       * @name Constructors and destructors.
-       */
-      //@{
-      ///Constructor.
-      library_manager(const ParameterConstRef Param, bool std = true);
+   /// Destructor.
+   ~library_manager();
+   //@}
 
-      library_manager(const std::string& library_name, const ParameterConstRef Param, bool std = true);
+   /**
+    * Check if the library is virtual or not
+    * @return true if the library is virtual, false otherwise (i.e., it is a standard library or, however, a library already characterized)
+    */
+   bool is_virtual() const;
 
-      ///Destructor.
-      ~library_manager();
-      //@}
+   /**
+    * Set a cell to be not used
+    */
+   void set_dont_use(const std::string& name);
 
-      /**
-       * Check if the library is virtual or not
-       * @return true if the library is virtual, false otherwise (i.e., it is a standard library or, however, a library already characterized)
-       */
-      bool is_virtual() const;
+   /**
+    * Set a cell to be used
+    */
+   void remove_dont_use(const std::string& name);
 
-      /**
-       * Set a cell to be not used
-       */
-      void set_dont_use(const std::string& name);
+   /**
+    * Return the cells not to be used for the synthesis
+    */
+   std::set<std::string> get_dont_use_cells() const;
 
-      /**
-       * Set a cell to be used
-       */
-      void remove_dont_use(const std::string& name);
+   size_t get_dont_use_num() const;
 
-      /**
-       * Return the cells not to be used for the synthesis
-       */
-      std::set<std::string> get_dont_use_cells() const;
+   void set_info(unsigned int type, const std::string& information);
 
-      size_t get_dont_use_num() const;
+   bool is_info(unsigned int type) const;
 
-      void set_info(unsigned int type, const std::string& information);
+   std::string get_info(const info_t type, const TargetDevice_Type dv_type);
 
-      bool is_info(unsigned int type) const;
+   void erase_info();
 
-      std::string get_info(const info_t type, const TargetDevice_Type dv_type);
+   static void xload(const xml_element* node, const library_managerRef& LM, const ParameterConstRef& Param, const target_deviceRef& device);
 
-      void erase_info();
+   void xwrite(xml_element* rootnode, TargetDevice_Type dv_type);
 
-      static
-      void xload(const xml_element* node, const library_managerRef LM, const ParameterConstRef Param, const target_deviceRef device);
+   std::string get_library_name() const;
 
-      void xwrite(xml_element* rootnode, TargetDevice_Type dv_type);
+   void add(const technology_nodeRef& node);
 
-      std::string get_library_name() const;
+   void update(const technology_nodeRef& node);
 
-      void add(const technology_nodeRef& node);
+   bool is_fu(const std::string& name) const;
 
-      void update(const technology_nodeRef& node);
+   technology_nodeRef get_fu(const std::string& name) const;
 
-      bool is_fu(const std::string& name) const;
+   void remove_fu(const std::string& name);
 
-      technology_nodeRef get_fu(const std::string& name) const;
+   size_t get_gate_count() const;
 
-      void remove_fu(const std::string& name);
-
-      size_t get_gate_count() const;
-
-      /**
-       * Return the list of the resources contained into the given library
-       * @return a datastructure that maps the name of the cells contained into the library with the related technology_node's
-       */
-     const fu_map_type& get_library_fu() const { return fu_map; }
-
+   /**
+    * Return the list of the resources contained into the given library
+    * @return a datastructure that maps the name of the cells contained into the library with the related technology_node's
+    */
+   const fu_map_type& get_library_fu() const
+   {
+      return fu_map;
+   }
 };
 
 typedef refcount<library_manager> library_managerRef;

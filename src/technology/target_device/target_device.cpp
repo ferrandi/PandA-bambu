@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file target_device.cpp
  * @brief
@@ -42,46 +42,38 @@
  */
 #include "target_device.hpp"
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_CMOS_BUILT.hpp"
 #if HAVE_CMOS_BUILT
 #include "IC_device.hpp"
 #endif
 #include "FPGA_device.hpp"
 
-#include "technology_manager.hpp"
 #include "target_technology.hpp"
+#include "technology_manager.hpp"
 
 #include "exceptions.hpp"
 
-///XML includes
+/// XML includes
+#include "fileIO.hpp"
 #include "polixml.hpp"
 #include "xml_dom_parser.hpp"
-#include "fileIO.hpp"
 #include "xml_helper.hpp"
-///parameters' includes
+/// parameters' includes
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
-///boost includes for file manipulations
+/// boost includes for file manipulations
+#include "string_manipulation.hpp" // for GET_CLASS
 #include <boost/filesystem.hpp>
 
-target_device::target_device(const ParameterConstRef _Param, const technology_managerRef _TM, const TargetDevice_Type type) :
-      device_type(type),
-      Param(_Param),
-      TM(_TM),
-      core_height(0),
-      core_width(0),
-      debug_level(_Param->get_class_debug_level(GET_CLASS(*this)))
+target_device::target_device(const ParameterConstRef& _Param, const technology_managerRef& _TM, const TargetDevice_Type type)
+    : device_type(type), Param(_Param), TM(_TM), core_height(0), core_width(0), debug_level(_Param->get_class_debug_level(GET_CLASS(*this)))
 {
-
 }
 
-target_device::~target_device( )
-{
+target_device::~target_device() = default;
 
-}
-
-target_deviceRef target_device::create_device(const TargetDevice_Type type, const ParameterConstRef param, const technology_managerRef TM)
+target_deviceRef target_device::create_device(const TargetDevice_Type type, const ParameterConstRef& param, const technology_managerRef& TM)
 {
    switch(type)
    {
@@ -94,28 +86,28 @@ target_deviceRef target_device::create_device(const TargetDevice_Type type, cons
       default:
          THROW_UNREACHABLE("");
    }
-   ///this point should never be reached
+   /// this point should never be reached
    return target_deviceRef();
 }
 
-void target_device::xload(const target_deviceRef device, const xml_element* node)
+void target_device::xload(const target_deviceRef& device, const xml_element* node)
 {
-   const xml_node::node_list c_list = node->get_children();
-   for(xml_node::node_list::const_iterator n = c_list.begin(); n != c_list.end(); ++n)
+   const xml_node::node_list& c_list = node->get_children();
+   for(const auto& n : c_list)
    {
-      if ((*n)->get_name() == "device")
+      if(n->get_name() == "device")
       {
-         const xml_element* dev_xml = GetPointer<const xml_element>(*n);
+         const auto* dev_xml = GetPointer<const xml_element>(n);
          xload_device_parameters(dev_xml);
       }
    }
 
-   for(xml_node::node_list::const_iterator n = c_list.begin(); n != c_list.end(); ++n)
+   for(const auto& n : c_list)
    {
-      //The second part of the condition is false when we are generating the list of functional units in spider
-      if ((*n)->get_name() == "technology" and (not Param->isOption(OPT_input_format) or Param->getOption<Parameters_FileFormat>(OPT_input_format) != Parameters_FileFormat::FF_XML_TEC))
+      // The second part of the condition is false when we are generating the list of functional units in spider
+      if(n->get_name() == "technology" and (not Param->isOption(OPT_input_format) or Param->getOption<Parameters_FileFormat>(OPT_input_format) != Parameters_FileFormat::FF_XML_TEC))
       {
-         const xml_element* tech_xml = GetPointer<const xml_element>(*n);
+         const auto* tech_xml = GetPointer<const xml_element>(n);
          TM->xload(tech_xml, device);
       }
    }
@@ -123,24 +115,36 @@ void target_device::xload(const target_deviceRef device, const xml_element* node
 
 void target_device::xload_device_parameters(const xml_element* dev_xml)
 {
-   const xml_node::node_list t_list = dev_xml->get_children();
-   for(xml_node::node_list::const_iterator t = t_list.begin(); t != t_list.end(); ++t)
+   const xml_node::node_list& t_list = dev_xml->get_children();
+   for(const auto& t : t_list)
    {
-      const xml_element* t_elem = GetPointer<const xml_element>(*t);
-      if (!t_elem) continue;
+      const auto* t_elem = GetPointer<const xml_element>(t);
+      if(!t_elem)
+      {
+         continue;
+      }
 
       std::string value;
       LOAD_XVM(value, t_elem);
 
       parameters[t_elem->get_name()] = value;
-      if (t_elem->get_name() == "model") const_cast<Parameter *>(Param.get())->setOption("device_name", value);
-      if (t_elem->get_name() == "speed_grade") const_cast<Parameter *>(Param.get())->setOption("device_speed", value);
-      if (t_elem->get_name() == "package") const_cast<Parameter *>(Param.get())->setOption("device_package", value);
+      if(t_elem->get_name() == "model")
+      {
+         const_cast<Parameter*>(Param.get())->setOption("device_name", value);
+      }
+      if(t_elem->get_name() == "speed_grade")
+      {
+         const_cast<Parameter*>(Param.get())->setOption("device_speed", value);
+      }
+      if(t_elem->get_name() == "package")
+      {
+         const_cast<Parameter*>(Param.get())->setOption("device_package", value);
+      }
    }
-   if (device_type == TargetDevice_Type::FPGA)
+   if(device_type == TargetDevice_Type::FPGA)
    {
-      std::string device_string = Param->getOption<std::string>("device_name") + Param->getOption<std::string>("device_speed")  + Param->getOption<std::string>("device_package");
-      const_cast<Parameter *>(Param.get())->setOption(OPT_device_string, device_string);
+      std::string device_string = Param->getOption<std::string>("device_name") + Param->getOption<std::string>("device_speed") + Param->getOption<std::string>("device_package");
+      const_cast<Parameter*>(Param.get())->setOption(OPT_device_string, device_string);
    }
 }
 

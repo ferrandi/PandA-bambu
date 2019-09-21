@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file multiplier_conn_obj.hpp
  * @brief Class implementation of the multiplier connection module.
@@ -41,7 +41,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef MULTIPLIER_CONN_OBJ_HPP
 #define MULTIPLIER_CONN_OBJ_HPP
 
@@ -53,50 +53,62 @@
  */
 class multiplier_conn_obj : public generic_obj
 {
+   /// number of bit of in/out ports
+   unsigned int bitsize;
 
-      /// number of bit of in/out ports
-      unsigned int bitsize;
+   /// when true the multiplication is a multiplication to a constant
+   bool multiply_by_constant_p;
 
-      /// when true the multiplication is a multiplication to a constant
-      bool multiply_by_constant_p;
+   /// constant value operand
+   unsigned int constant_value;
 
-      /// constant value operand
-      unsigned int constant_value;
+ public:
+   /**
+    * Constructor
+    */
+   multiplier_conn_obj(const std::string& _name) : generic_obj(MULTIPLIER_CONN_OBJ, _name), bitsize(0), multiply_by_constant_p(false), constant_value(0)
+   {
+   }
 
-   public:
+   /**
+    * Destructor.
+    */
+   ~multiplier_conn_obj() override = default;
 
-      /**
-       * Constructor
-       */
-      multiplier_conn_obj(const std::string& _name) : generic_obj(MULTIPLIER_CONN_OBJ, _name), bitsize(0), multiply_by_constant_p(false), constant_value(0) {}
+   /**
+    * add a size to the component
+    */
+   void add_bitsize(unsigned int _bitsize)
+   {
+      bitsize = _bitsize > bitsize ? _bitsize : bitsize;
+   }
 
-      /**
-       * Destructor.
-       */
-      ~multiplier_conn_obj() {}
+   /**
+    * return the maximum bitsize associated with the component
+    */
+   unsigned int get_bitsize() const
+   {
+      return bitsize;
+   }
 
-      /**
-       * add a size to the component
-       */
-      void add_bitsize(unsigned int _bitsize) {bitsize = _bitsize>bitsize?_bitsize:bitsize;}
+   /// set the multiplication as a multiplication to a constant
+   void set_multiplication_to_constant(unsigned int _constant_value)
+   {
+      multiply_by_constant_p = true;
+      constant_value = _constant_value;
+   }
 
-      /**
-       * return the maximum bitsize associated with the component
-       */
-      unsigned int get_bitsize() const {return bitsize;}
+   /// return the constant value
+   unsigned int get_constant_value() const
+   {
+      return constant_value;
+   }
 
-      /// set the multiplication as a multiplication to a constant
-      void set_multiplication_to_constant(unsigned int _constant_value)
-      {
-         multiply_by_constant_p = true;
-         constant_value = _constant_value;
-      }
-
-      /// return the constant value
-      unsigned int get_constant_value() const {return constant_value;}
-
-      /// return true in case of multiplication to a constant
-      bool is_multiplication_to_constant() const {return multiply_by_constant_p;}
+   /// return true in case of multiplication to a constant
+   bool is_multiplication_to_constant() const
+   {
+      return multiply_by_constant_p;
+   }
 };
 
 #endif // MULTIPLIER_CONN_OBJ_HPP

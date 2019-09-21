@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2018 Politecnico di Milano
+ *              Copyright (C) 2016-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,52 +29,52 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file hls_ir.hpp
  * @brief Base class for intermediate representation used by HLS steps
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef HLS_IR_HPP
 #define HLS_IR_HPP
 
-///Superclass include
+/// Superclass include
 #include "intermediate_representation.hpp"
 
-///utility include
+/// utility include
 #include "refcount.hpp"
 
 REF_FORWARD_DECL(HLS_manager);
 
 class HLSIR : public IntermediateRepresentation
 {
-   protected:
-      ///The HLS manager
-      const HLS_managerRef hls_manager;
+ protected:
+   /// The HLS manager
+   const HLS_managerRef hls_manager;
 
-   public:
-      /**
-       * Constructor
-       * @param hls_manager is the HLS manager
-       * @param parameters is the set of input parameters
-       */
-      HLSIR(const HLS_managerRef hls_manager, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor
+    * @param hls_manager is the HLS manager
+    * @param parameters is the set of input parameters
+    */
+   HLSIR(const HLS_managerRef& hls_manager, const ParameterConstRef& parameters);
 
-      /**
-       * Destructor
-       */
-      virtual ~HLSIR();
+   /**
+    * Destructor
+    */
+   ~HLSIR() override;
 
-      /**
-       * Initialize all the data structure
-       */
-      virtual void Initialize() = 0;
+   /**
+    * Initialize all the data structure
+    */
+   void Initialize() override = 0;
 
-      /**
-       * Clear all the data structure
-       */
-      virtual void Clear() = 0;
+   /**
+    * Clear all the data structure
+    */
+   void Clear() override = 0;
 };
 #endif

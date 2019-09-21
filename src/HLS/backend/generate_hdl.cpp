@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file generate_hdl.cpp
  * @brief Implementation of the class to generate HDL code
@@ -39,73 +39,80 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "generate_hdl.hpp"
 
-#include "structural_manager.hpp"
 #include "behavioral_helper.hpp"
+#include "structural_manager.hpp"
 
 #include "hls.hpp"
-#include "hls_manager.hpp"
 #include "hls_constraints.hpp"
+#include "hls_manager.hpp"
 
 #include "BackendFlow.hpp"
 
 #include "Parameter.hpp"
 
-///behavior include
+/// behavior include
 #include "call_graph_manager.hpp"
 
-///design_flow_manager/backend/ToHDL includes
+/// design_flow_manager/backend/ToHDL includes
 #include "HDL_manager.hpp"
 
-///HLS includes
+/// HLS includes
 #include "hls_flow_step_factory.hpp"
 #include "hls_target.hpp"
 
-generate_hdl::generate_hdl(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager):
-   HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::GENERATE_HDL)
-{
+/// STD include
+#include <string>
 
+/// STL includes
+#include <list>
+#include <tuple>
+#include <unordered_set>
+
+generate_hdl::generate_hdl(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::GENERATE_HDL)
+{
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > generate_hdl::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> generate_hdl::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ret;
+   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
+      {
+         ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
+         if(parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw))
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
-            break;
+            ret.insert(std::make_tuple(HLSFlowStep_Type::HW_DISCREPANCY_ANALYSIS, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
          }
+         break;
+      }
       case INVALIDATION_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       case PRECEDENCE_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       default:
          THROW_UNREACHABLE("");
    }
    return ret;
 }
 
-generate_hdl::~generate_hdl()
-{
-
-}
+generate_hdl::~generate_hdl() = default;
 
 DesignFlowStep_Status generate_hdl::Exec()
 {
    HDL_managerRef HM = HDL_managerRef(new HDL_manager(HLSMgr, HLSMgr->get_HLS_target()->get_target_device(), parameters));
    std::string file_name = parameters->getOption<std::string>(OPT_top_file);
-   std::unordered_set<structural_objectRef> top_circuits;
+   std::list<structural_objectRef> top_circuits;
    for(const auto top_function : HLSMgr->CGetCallGraphManager()->GetRootFunctions())
    {
-      top_circuits.insert(HLSMgr->get_HLS(top_function)->top->get_circ());
+      top_circuits.push_back(HLSMgr->get_HLS(top_function)->top->get_circ());
    }
    HM->hdl_gen(file_name, top_circuits, false, HLSMgr->hdl_files, HLSMgr->aux_files);
    return DesignFlowStep_Status::SUCCESS;

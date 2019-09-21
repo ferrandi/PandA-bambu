@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file aggregate_data_flow_analysis.cpp
  * @brief Meta analysis step performing aggregate variable; dependence of this step is the actual step performing aggregate data flow analysis
@@ -39,26 +39,25 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "aggregate_data_flow_analysis.hpp"
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
 
-///design_flows include
+/// design_flows include
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 
 #if HAVE_TECHNOLOGY_BUILT
-///design_flows/technology includes
+/// design_flows/technology includes
 #include "technology_flow_step.hpp"
 #include "technology_flow_step_factory.hpp"
 #endif
 
-
-///frontend_flow includes
+/// frontend_flow includes
 #include "frontend_flow_step_factory.hpp"
 #include "function_frontend_flow_step.hpp"
 
@@ -66,28 +65,29 @@
 #include "hls_target.hpp"
 
 #include "Parameter.hpp"
+#include "hash_helper.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 
-AggregateDataFlowAnalysis::AggregateDataFlowAnalysis(const application_managerRef _AppM, const unsigned int _function_index, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   FunctionFrontendFlowStep(_AppM, _function_index, AGGREGATE_DATA_FLOW_ANALYSIS, _design_flow_manager, _parameters)
+AggregateDataFlowAnalysis::AggregateDataFlowAnalysis(const application_managerRef _AppM, const unsigned int _function_index, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_index, AGGREGATE_DATA_FLOW_ANALYSIS, _design_flow_manager, _parameters)
 {
    composed = true;
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-AggregateDataFlowAnalysis::~AggregateDataFlowAnalysis()
-{}
+AggregateDataFlowAnalysis::~AggregateDataFlowAnalysis() = default;
 
 DesignFlowStep_Status AggregateDataFlowAnalysis::InternalExec()
 {
    return DesignFlowStep_Status::EMPTY;
 }
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > AggregateDataFlowAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> AggregateDataFlowAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
 #if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
          if(parameters->getOption<bool>(OPT_memory_profiling))
@@ -116,7 +116,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          }
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       case(PRECEDENCE_RELATIONSHIP):
       {
          break;
@@ -129,33 +129,33 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-void AggregateDataFlowAnalysis::ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type)
+void AggregateDataFlowAnalysis::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
 {
    switch(relationship_type)
    {
       case(PRECEDENCE_RELATIONSHIP):
-         {
-            break;
-         }
+      {
+         break;
+      }
       case DEPENDENCE_RELATIONSHIP:
-         {
+      {
 #if HAVE_TECHNOLOGY_BUILT
-            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const TechnologyFlowStepFactory * technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
-            const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
-            const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
-            const DesignFlowStepRef technology_design_flow_step = technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
-            relationship.insert(technology_design_flow_step);
+         const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const auto* technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
+         const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+         const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
+         const DesignFlowStepRef technology_design_flow_step =
+             technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+         relationship.insert(technology_design_flow_step);
 #endif
-            break;
-         }
+         break;
+      }
       case INVALIDATION_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       default:
          THROW_UNREACHABLE("");
    }
    FunctionFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }
-

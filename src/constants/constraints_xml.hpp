@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (C) 2015-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file constraints_xml.hpp
  * @brief xml nodes used in HLS constraints file
@@ -41,6 +41,6 @@
 #ifndef CONSTRAINTS_XML_HPP
 #define CONSTRAINTS_XML_HPP
 
-///The root node of constraints file
+/// The root node of constraints file
 #define STR_XML_constraints_root "constraints"
 #endif

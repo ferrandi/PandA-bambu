@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file ASICBackendFlow.hpp
  * @brief Wrapper to implement a synthesis tools by Altera
@@ -40,50 +40,47 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef _ASIC_BACKEND_FLOW_HPP_
 #define _ASIC_BACKEND_FLOW_HPP_
 
-///superclass include
+/// superclass include
 #include "BackendFlow.hpp"
 
 class ASICBackendFlow : public BackendFlow
 {
+   /**
+    * Writes the proper flow configuration in the output script
+    */
+   void WriteFlowConfiguration(std::ostream& script) override;
 
-      /**
-       * Writes the proper flow configuration in the output script
-       */
-      void WriteFlowConfiguration(std::ostream& script);
+   /**
+    * Checks the synthesis results and fills the corresponding datastructures
+    */
+   void CheckSynthesisResults() override;
 
-      /**
-       * Checks the synthesis results and fills the corresponding datastructures
-       */
-      void CheckSynthesisResults();
+   /**
+    * Evaluates design variables
+    */
+   void InitDesignParameters() override;
 
-      /**
-       * Evaluates design variables
-       */
-      void InitDesignParameters();
+   /**
+    * Creates the constraint file
+    */
+   void create_sdc(const DesignParametersRef dp);
 
-      /**
-       * Creates the constraint file
-       */
-      void create_sdc(const DesignParametersRef dp);
+ public:
+   /**
+    * Constructor
+    */
+   ASICBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef target);
 
-   public:
-
-      /**
-       * Constructor
-       */
-      ASICBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef target);
-
-      /**
-       * Destructor
-       */
-      virtual ~ASICBackendFlow();
-
+   /**
+    * Destructor
+    */
+   ~ASICBackendFlow() override;
 };
-///Refcount definition for the class
+/// Refcount definition for the class
 typedef refcount<ASICBackendFlow> ASICBackendFlowRef;
 
 #endif

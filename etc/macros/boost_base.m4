@@ -33,7 +33,8 @@ if test "x$want_boost" = "xyes"; then
         WANT_BOOST_VERSION=`expr $boost_lib_version_req_major \* 100000 \+  $boost_lib_version_req_minor \* 100 \+ $boost_lib_version_req_sub_minor`
         AC_MSG_CHECKING(for boostlib >= $boost_lib_version_req)
         succeeded=no
-        BOOST_LIB_DIR=""
+        BOOST_LIB_DIR="."
+        BOOST_DIR="."
 
         dnl first we check the system location for boost libraries
         dnl this location ist chosen if boost libraries are installed with the --layout=system option

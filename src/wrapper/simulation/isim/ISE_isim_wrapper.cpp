@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file ISE_isim_wrapper.cpp
  * @brief Implementation of the wrapper to ISIM
@@ -41,9 +41,9 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Autoheader include
+/// Autoheader include
 #include "config_XILINX_SETTINGS.hpp"
 
 #include "config_HAVE_XILINX.hpp"
@@ -53,35 +53,30 @@
 
 #include "ToolManager.hpp"
 
-#include "utility.hpp"
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
+#include "utility.hpp"
 
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 
 #include <fileIO.hpp>
 #include <polixml.hpp>
+#include <utility>
 #include <xml_dom_parser.hpp>
 #include <xml_helper.hpp>
 
 #include <fstream>
 
-//constructor
-ISE_isim_wrapper::ISE_isim_wrapper(const ParameterConstRef _Param, const std::string& _suffix) :
-   SimulationTool(_Param),
-   suffix(_suffix)
+// constructor
+ISE_isim_wrapper::ISE_isim_wrapper(const ParameterConstRef& _Param, std::string _suffix) : SimulationTool(_Param), suffix(std::move(_suffix))
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the ISIM wrapper...");
-   boost::filesystem::create_directory(ISIM_SUBDIR + suffix + "/" );
-
+   boost::filesystem::create_directory(ISIM_SUBDIR + suffix + "/");
 }
 
-//destructor
-ISE_isim_wrapper::~ISE_isim_wrapper()
-{
-
-}
+// destructor
+ISE_isim_wrapper::~ISE_isim_wrapper() = default;
 
 void ISE_isim_wrapper::CheckExecution()
 {
@@ -101,22 +96,36 @@ std::string ISE_isim_wrapper::create_project_script(const std::string& top_filen
       std::string filename;
       std::string language;
       if(extension == "vhd" || extension == "vhdl" || extension == "VHD" || extension == "VHDL")
+      {
          language = "VHDL";
+      }
       else if(extension == "v" || extension == "V" || extension == "sv")
+      {
          language = "VERILOG";
+      }
       else
-         THROW_ERROR("Extension not recognized! "+extension);
+      {
+         THROW_ERROR("Extension not recognized! " + extension);
+      }
       filename = file_path.string();
       if(filename[0] == '/')
-         prj_file << language << " " << "work" << " " << filename << std::endl;
+      {
+         prj_file << language << " "
+                  << "work"
+                  << " " << filename << std::endl;
+      }
       else
-         prj_file << language << " " << "work" << " " << boost::filesystem::current_path().string() << "/" << filename << std::endl;
+      {
+         prj_file << language << " "
+                  << "work"
+                  << " " << boost::filesystem::current_path().string() << "/" << filename << std::endl;
+      }
    }
    prj_file.close();
    return project_filename;
 }
 
-void ISE_isim_wrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string> & file_list)
+void ISE_isim_wrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list)
 {
    std::string project_file = create_project_script(top_filename, file_list);
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "Project file: " + project_file);
@@ -124,13 +133,17 @@ void ISE_isim_wrapper::GenerateScript(std::ostringstream& script, const std::str
    log_file = ISIM_SUBDIR + suffix + "/" + top_filename + "_isim.log";
 
    script << "#configuration" << std::endl;
-   std::string setupscr = STR(XILINX_SETTINGS);
-   if(setupscr.size() && setupscr != "0")
+   auto setupscr = STR(XILINX_SETTINGS);
+   if(!setupscr.empty() && setupscr != "0")
    {
-      if(boost::algorithm::starts_with(setupscr,"export"))
+      if(boost::algorithm::starts_with(setupscr, "export"))
+      {
          script << setupscr + " >& /dev/null; ";
+      }
       else
+      {
          script << ". " << setupscr << " >& /dev/null;";
+      }
       script << std::endl << std::endl;
    }
 
@@ -139,10 +152,14 @@ void ISE_isim_wrapper::GenerateScript(std::ostringstream& script, const std::str
    script << "#setting up the simulation" << std::endl;
    script << "fuse";
    std::string ise_style;
-   if(debug_level >=DEBUG_LEVEL_VERY_PEDANTIC)
-      ise_style =  std::string(INTSTYLE_ISE);
+   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+   {
+      ise_style = std::string(INTSTYLE_ISE);
+   }
    else
-      ise_style =  std::string(INTSTYLE_SILENT);
+   {
+      ise_style = std::string(INTSTYLE_SILENT);
+   }
    script << " -intstyle " << ise_style;
    script << " -lib simprims_ver";
    script << " -lib unisims_ver";
@@ -155,14 +172,16 @@ void ISE_isim_wrapper::GenerateScript(std::ostringstream& script, const std::str
       script << " -v 1";
    }
    if(!Param->isOption(OPT_assert_debug) || !Param->getOption<bool>(OPT_assert_debug))
+   {
       script << " -nodebug";
+   }
    script << " -o " + exe_filename;
    script << " -prj " + project_file;
    script << " work." + top_filename + "_tb_top";
-   script << " >& " + ISIM_SUBDIR + suffix + "/"  + "fuse.log";
+   script << " >& " + ISIM_SUBDIR + suffix + "/" + "fuse.log";
    script << std::endl << std::endl;
 
-   ///prepare tclbatch script
+   /// prepare tclbatch script
    std::string tclbatch_filename(ISIM_SUBDIR + suffix + "/" + "isim.command");
    std::ofstream tclbatch_file(tclbatch_filename.c_str());
    tclbatch_file << "run all" << std::endl;

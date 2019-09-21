@@ -11,7 +11,7 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (c) 2004-2018 Politecnico di Milano
+ *            Copyright (C) 2004-2019 Politecnico di Milano
  *
  * This file is part of the PandA framework.
  *
@@ -38,16 +38,14 @@
 #ifndef WB4INTERCON_INTERFACE_H
 #define WB4INTERCON_INTERFACE_H
 
-
 #include "WB4_interface.hpp"
-
 
 /**
  * @brief Class generating the top WB4 module.
  */
 class WB4Intercon_interface : public WB4_interface
 {
-  public:
+ public:
    /**
     * Constructor.
     */
@@ -56,7 +54,7 @@ class WB4Intercon_interface : public WB4_interface
    /**
     * Destructor.
     */
-   virtual ~WB4Intercon_interface();
+   ~WB4Intercon_interface() override;
 
    virtual void exec();
 };

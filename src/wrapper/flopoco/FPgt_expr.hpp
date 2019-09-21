@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file FPgt_expr.hpp
  * @brief FPgt_expr module for flopoco.
@@ -38,48 +38,42 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef FPgt_expr_HPP
 #define FPgt_expr_HPP
-#include <vector>
-#include <sstream>
 #include <gmp.h>
-#include <mpfr.h>
 #include <gmpxx.h>
+#include <mpfr.h>
+#include <sstream>
+#include <vector>
 
 #undef DEBUG
 
 #include "Operator.hpp"
 
-
-namespace flopoco{
-
+namespace flopoco
+{
    /** The FPgt_expr class */
    class FPgt_expr : public Operator
    {
-   public:
+    public:
       /**
-		 * The  constructor
-		 * @param[in]		target		the target device
-                 * @param[in]		wER			the with of the exponent in input
-                 * @param[in]		wFR			the with of the fraction in input
-                 */
+       * The  constructor
+       * @param[in]		target		the target device
+       * @param[in]		wER			the with of the exponent in input
+       * @param[in]		wFR			the with of the fraction in input
+       */
       FPgt_expr(Target* target, int wER, int wFR);
 
       /**
-		 *  destructor
-		 */
-      ~FPgt_expr();
+       *  destructor
+       */
+      ~FPgt_expr() override;
 
+      void emulate(TestCase* tc) override;
+      void buildStandardTestCases(TestCaseList* tcl) override;
 
-      void emulate(TestCase * tc);
-      void buildStandardTestCases(TestCaseList* tcl);
-
-
-
-   private:
-
-
+    private:
    };
-}
+} // namespace flopoco
 #endif

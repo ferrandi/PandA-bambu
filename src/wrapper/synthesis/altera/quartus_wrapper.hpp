@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2018 Politecnico di Milano
+ *              Copyright (C) 2016-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file quartus_wrapper.hpp
  * @brief Wrapper to quartus 14.0 and newer
@@ -38,38 +38,36 @@
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef QUARTUS_WRAPPER_HPP
 #define QUARTUS_WRAPPER_HPP
 
-///superclass include
+/// superclass include
 #include "AlteraWrapper.hpp"
 
-#define QUARTUS_SETUP_TOOL_ID     "quartus_setup"
-#define QUARTUS_FLOW_TOOL_ID      "quartus_flow"
-#define QUARTUS_FLOW_TOOL_EXEC    "quartus_sh"
+#define QUARTUS_SETUP_TOOL_ID "quartus_setup"
+#define QUARTUS_FLOW_TOOL_ID "quartus_flow"
+#define QUARTUS_POWER_TOOL_ID "quartus_pow"
+#define QUARTUS_FLOW_TOOL_EXEC "quartus_sh"
 
-class QuartusWrapper: public AlteraWrapper
+class QuartusWrapper : public AlteraWrapper
 {
-   public:
+ public:
+   /**
+    * Constructor
+    * @param Param is the set of parameters
+    * @param output_dir is the directory where to save all the results
+    */
+   QuartusWrapper(const ParameterConstRef& Param, const std::string& _output_dir, const target_deviceRef& _device);
 
-      /**
-       * Constructor
-       * @param Param is the set of parameters
-       * @param output_dir is the directory where to save all the results
-       */
-      QuartusWrapper(const ParameterConstRef Param, const std::string& _output_dir, const target_deviceRef _device);
+   /**
+    * Destructor
+    */
+   ~QuartusWrapper() override;
 
-      /**
-       * Destructor
-       */
-      virtual ~QuartusWrapper();
-
-      /**
-       * Returns the proper command line
-       */
-      std::string get_command_line(const DesignParametersRef& dp) const;
-
+   /**
+    * Returns the proper command line
+    */
+   std::string get_command_line(const DesignParametersRef& dp) const override;
 };
 #endif
-

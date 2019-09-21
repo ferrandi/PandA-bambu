@@ -11,7 +11,7 @@
 #include "Target.hpp"
 #include "Signal.hpp"
 #include "TestCase.hpp"
-#include <float.h>
+#include <cfloat>
 #include <utility>
 #include <vector>
 #include "FlopocoStream.hpp"
@@ -105,7 +105,7 @@ public:
 
 	/** Operator Destructor.
 	 */	
-	virtual ~Operator() {}
+    virtual ~Operator() {}
 
 
  /*****************************************************************************/

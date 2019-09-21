@@ -5,7 +5,7 @@ struct X {
 struct X * __attribute__((malloc))
 my_alloc (void)
 {
-  struct X *p = __builtin_malloc (sizeof (struct X));
+  struct X *p = malloc (sizeof (struct X));
   p->p = &i;
   return p;
 }

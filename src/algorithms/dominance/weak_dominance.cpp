@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file weak_dominance.hpp
  * @brief Class specifying weak dominance calculus.
@@ -41,20 +41,24 @@
  *
  */
 
-///Header include
+/// Header include
 #include "weak_dominance.hpp"
 
-///Dominance include
 #include "Dominance.hpp"
+#include "Parameter.hpp"           // for ParameterConstRef
+#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_NONE
+#include "edge_info.hpp"           // for EdgeInfoRef
+#include "exceptions.hpp"          // for THROW_ASSERT
+#include "string_manipulation.hpp" // for GET_CLASS
+#include <boost/tuple/tuple.hpp>   // for tie
+#include <iterator>                // for front_insert_iterator
+#include <list>                    // for list, _List_iterator
 
-///Utility include
-#include "utility.hpp"
-
-void weak_dominance::calculate_weak_dominance_info(graphs_collection * output, std::unordered_map<vertex, vertex> & i2o, std::unordered_map<vertex, vertex> & o2i)
+void weak_dominance::calculate_weak_dominance_info(graphs_collection* output, std::unordered_map<vertex, vertex>& i2o, std::unordered_map<vertex, vertex>& o2i)
 {
    if(boost::num_vertices(*input) == 0)
       return;
-   //creating maps
+   // creating maps
    THROW_ASSERT(i2o.size() == o2i.size(), "Different map sizes");
    if(i2o.size() == 0)
    {
@@ -71,25 +75,25 @@ void weak_dominance::calculate_weak_dominance_info(graphs_collection * output, s
    boost::topological_sort(*input, std::front_inserter(levels));
    std::unordered_map<vertex, unsigned int> sorted_nodes;
    unsigned int counter = 0;
-   for(std::list<vertex>::iterator it = levels.begin(); it != levels.end(); ++it)
-      sorted_nodes[*it] = ++counter;
+   for(auto& level : levels)
+      sorted_nodes[level] = ++counter;
 
    dominance<graph> dm(*input, start, end, param);
    dm.calculate_dominance_info(dominance<graph>::CDI_POST_DOMINATORS);
    std::unordered_map<vertex, vertex> post_dominators = dm.get_dominator_map();
 
-   //iterate over outgoing edges of the input graph
+   // iterate over outgoing edges of the input graph
    EdgeIterator ei, ei_end;
-   for (boost::tie(ei, ei_end) = boost::edges(*input); ei != ei_end ; ++ei )
+   for(boost::tie(ei, ei_end) = boost::edges(*input); ei != ei_end; ++ei)
    {
       vertex A = boost::source(*ei, *input);
       vertex B = boost::target(*ei, *input);
       InEdgeIterator pd_ei, pd_ei_end;
       {
          vertex current_node = B;
-         while (current_node && current_node != A && current_node != post_dominators[A])
+         while(current_node && current_node != A && current_node != post_dominators[A])
          {
-            if(sorted_nodes[current_node]>sorted_nodes[A])
+            if(sorted_nodes[current_node] > sorted_nodes[A])
                add_edge(i2o[A], i2o[current_node], output);
             else
                break;
@@ -99,16 +103,12 @@ void weak_dominance::calculate_weak_dominance_info(graphs_collection * output, s
    }
 }
 
-weak_dominance::weak_dominance(const graph * _input, vertex _start, vertex _end, const ParameterConstRef _param, int _selector) :
-      input(_input),
-      start(_start),
-      end(_end),
-      selector(_selector),
-      param(_param),
-      debug_level(_param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE))
-{}
+weak_dominance::weak_dominance(const graph* _input, vertex _start, vertex _end, const ParameterConstRef _param, int _selector)
+    : input(_input), start(_start), end(_end), selector(_selector), param(_param), debug_level(_param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE))
+{
+}
 
-void weak_dominance::add_edge(vertex source, vertex target, graphs_collection * output)
+void weak_dominance::add_edge(vertex source, vertex target, graphs_collection* output)
 {
    if(output->ExistsEdge(source, target))
       output->AddSelector(source, target, selector);

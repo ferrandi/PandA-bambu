@@ -6,6 +6,11 @@ return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
+$dir_script/libm-testsClang.sh $@
+return_value=$?
+if test $return_value != 0; then
+   exit $return_value
+fi
 $dir_script/libm-tests_single.sh $@
 return_value=$?
 if test $return_value != 0; then
@@ -127,6 +132,11 @@ if test $return_value != 0; then
    exit $return_value
 fi
 $dir_script/bambu_specific_test3.sh $@
+return_value=$?
+if test $return_value != 0; then
+   exit $return_value
+fi
+$dir_script/bambu_specific_test4.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value

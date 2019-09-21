@@ -46,8 +46,6 @@ namespace flopoco{
 		mpfr_t scale;              /**< 1-2^(wOut-1)*/
 		mpfr_t constPi;
 		mpfr_t kfactor;            /**< */
-		vector<mpfr_t> atani;      /**< */
-
 	};
 
 }

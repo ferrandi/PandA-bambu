@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (C) 2015-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -34,26 +34,32 @@
  *
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  *
-*/
+ */
 #ifndef UNFOLDED_FUNCTION_INFO_HPP
 #define UNFOLDED_FUNCTION_INFO_HPP
 #include "node_info.hpp"
 
-#include "refcount.hpp"
+// include from behavior/
+#include "function_behavior.hpp"
 
-CONSTREF_FORWARD_DECL(FunctionBehavior);
+// include from utility/
+#include "refcount.hpp"
 
 class UnfoldedFunctionInfo : public NodeInfo
 {
-   public:
+ public:
+   const unsigned int f_id;
 
-      const unsigned int f_id;
+   const FunctionBehaviorConstRef behavior;
 
-      FunctionBehaviorConstRef behavior;
+   explicit UnfoldedFunctionInfo(unsigned int _f_id = 0) : f_id(_f_id)
+   {
+   }
+   explicit UnfoldedFunctionInfo(unsigned int _f_id, const FunctionBehaviorConstRef b) : f_id(_f_id), behavior(b)
+   {
+   }
 
-      explicit UnfoldedFunctionInfo(unsigned int _f_id = 0) : f_id(_f_id) {}
-
-      ~UnfoldedFunctionInfo() {}
+   ~UnfoldedFunctionInfo() override = default;
 };
 
 typedef refcount<UnfoldedFunctionInfo> UnfoldedFunctionInfoRef;

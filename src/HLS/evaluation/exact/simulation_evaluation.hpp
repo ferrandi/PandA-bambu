@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,21 +29,21 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file simulation_evaluation.hpp
  * @brief .
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef SIMULATION_EVALUATION_HPP
 #define SIMULATION_EVALUATION_HPP
 
-///superclass include
+/// superclass include
 #include "evaluation_base_step.hpp"
 
-///utility include
+/// utility include
 #include "refcount.hpp"
 
 /**
@@ -52,31 +52,30 @@
  */
 class SimulationEvaluation : public EvaluationBaseStep
 {
-   protected:
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+ protected:
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      bool already_executed;
+   bool already_executed;
 
-   public:
-      /**
-       * Constructor of the class
-       */
-      SimulationEvaluation(const ParameterConstRef Param, const HLS_managerRef hls_mgr, const DesignFlowManagerConstRef design_flow_manager);
+ public:
+   /**
+    * Constructor of the class
+    */
+   SimulationEvaluation(const ParameterConstRef Param, const HLS_managerRef hls_mgr, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Destructor of the class
-       */
-      virtual ~SimulationEvaluation();
+   /**
+    * Destructor of the class
+    */
+   ~SimulationEvaluation() override;
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status InternalExec();
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 };
 #endif
-

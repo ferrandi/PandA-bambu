@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file parse_tree.cpp
  * @brief Implementation of the tree parsing interface function.
@@ -42,44 +42,44 @@
  * @warning This file is still in a work in progress state
  * @warning Last modified by $Author$
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "parse_tree.hpp"
 
-///Parameter include
+/// Parameter include
 #include "Parameter.hpp"
 
-///STD include
-#include <iosfwd>
+/// STD include
 #include <fstream>
+#include <iostream>
 #include <string>
 
-///tree includde
+/// tree include
 #include "tree_manager.hpp"
 
-///Utility include
+/// Utility include
 #include "refcount.hpp"
 
-//exit_code is stored in zebu.cpp
+// exit_code is stored in zebu.cpp
 extern int exit_code;
 
-tree_managerRef ParseTreeFile(const ParameterConstRef Param, const std::string& f)
+tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string& f)
 {
    try
    {
       extern tree_managerRef tree_parseY(const ParameterConstRef Param, std::string fn);
       return tree_parseY(Param, f);
    }
-   catch (const char * msg)
+   catch(const char* msg)
    {
       std::cerr << msg << std::endl;
    }
-   catch (const std::string& msg)
+   catch(const std::string& msg)
    {
       std::cerr << msg << std::endl;
    }
-   catch ( ... )
+   catch(...)
    {
       std::cerr << "unknown exception" << std::endl;
    }

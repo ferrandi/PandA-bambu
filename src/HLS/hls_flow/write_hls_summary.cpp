@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,53 +29,52 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file write_hls_summary.cpp
  * @brief Class to dump hls summary
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "write_hls_summary.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior include
+/// behavior include
 #include "call_graph_manager.hpp"
 
-///HLS include
+/// HLS include
 #include "hls.hpp"
 #include "hls_manager.hpp"
 
-WriteHLSSummary::WriteHLSSummary(const ParameterConstRef _parameters, const HLS_managerRef _hls_mgr, const DesignFlowManagerConstRef _design_flow_manager) :
-   HLS_step(_parameters, _hls_mgr, _design_flow_manager, HLSFlowStep_Type::WRITE_HLS_SUMMARY)
-{}
-
-WriteHLSSummary::~WriteHLSSummary()
-{}
-
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > WriteHLSSummary::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+WriteHLSSummary::WriteHLSSummary(const ParameterConstRef _parameters, const HLS_managerRef _hls_mgr, const DesignFlowManagerConstRef _design_flow_manager) : HLS_step(_parameters, _hls_mgr, _design_flow_manager, HLSFlowStep_Type::WRITE_HLS_SUMMARY)
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ret;
+}
+
+WriteHLSSummary::~WriteHLSSummary() = default;
+
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> WriteHLSSummary::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+{
+   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
-         {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
-            break;
-         }
+      {
+         ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
+         break;
+      }
       case INVALIDATION_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       case PRECEDENCE_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       default:
          THROW_UNREACHABLE("");
    }
@@ -94,7 +93,7 @@ DesignFlowStep_Status WriteHLSSummary::Exec()
       std::string candidate_out_file_name;
       do
       {
-         candidate_out_file_name = out_file_name + "_" + boost::lexical_cast<std::string>(progressive++) + ".xml";
+         candidate_out_file_name = out_file_name + "_" + std::to_string(progressive++) + ".xml";
       } while (boost::filesystem::exists(candidate_out_file_name));
       out_file_name = candidate_out_file_name;
       HLSMgr->xwrite(out_file_name);

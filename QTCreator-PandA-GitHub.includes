@@ -12,6 +12,7 @@ build/src/technology/target_device/IC
 build/src/wrapper/synthesis
 build/src/wrapper/synthesis/altera
 build/src/wrapper/synthesis/lattice
+build/src/wrapper/synthesis/nanoxplore
 build/src/wrapper/synthesis/xilinx
 build/src/design_flows/backend/ToDataFile
 build/src/design_flows/technology
@@ -50,6 +51,13 @@ ext/nodelib/include/nodelib
 ext/sollya
 ext/vflib/include
 ext/vflib/src
+ext/mockturtle/include
+ext/mockturtle/lib/kitty
+ext/mockturtle/lib/fmt
+ext/mockturtle/lib/sparsepp
+ext/mockturtle/lib/ez
+ext/mockturtle/lib/lorina
+ext/mockturtle/lib/rang
 src
 src/algorithms
 src/algorithms/bipartite_matching
@@ -344,6 +352,7 @@ src/wrapper/synthesis/lattice
 src/wrapper/synthesis/nangate
 src/wrapper/synthesis/nangate/design_optimizer
 src/wrapper/synthesis/nangate/library_creator
+src/wrapper/synthesis/nanoxplore
 src/wrapper/synthesis/synopsys
 src/wrapper/synthesis/synopsys/core_tools
 src/wrapper/synthesis/synopsys/design_compiler
@@ -363,3 +372,13 @@ src/wrapper/target_architectures/mppb
 src/wrapper/target_architectures/SimIt
 src/wrapper/target_architectures/tsim
 src/wrapper/treegcc
+etc/clang_plugin
+/usr/lib/llvm-5.0/include
+etc/clang_plugin/llvm
+etc/libbambu/ac_types/gdb
+etc/libbambu/ac_types
+etc/libbambu/ac_types/include
+etc/libbambu/ac_types/pdfdocs
+etc/libbambu/ac_math/include
+etc/libbambu/ac_math/include/ac_math
+src/wrapper/synthesis/nanoxplore

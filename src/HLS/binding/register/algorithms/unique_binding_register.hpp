@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file unique_binding_register.hpp
  * @brief Class specification of unique binding register allocation algorithm
@@ -42,7 +42,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef UNIQUE_BINDING_REGISTER_HPP
 #define UNIQUE_BINDING_REGISTER_HPP
 
@@ -50,24 +50,23 @@
 
 class unique_binding_register : public reg_binding_creator
 {
-   public:
+ public:
+   /**
+    * Constructor of the class.
+    * @param design_flow_manager is the design flow manager
+    */
+   unique_binding_register(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Constructor of the class.
-       * @param design_flow_manager is the design flow manager
-       */
-      unique_binding_register(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   /**
+    * Destructor of the class.
+    */
+   ~unique_binding_register() override;
 
-      /**
-       * Destructor of the class.
-       */
-      ~unique_binding_register();
-
-      /**
-       * Unique binding register allocation algorithm execution.
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status InternalExec();
+   /**
+    * Unique binding register allocation algorithm execution.
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 };
 
 #endif

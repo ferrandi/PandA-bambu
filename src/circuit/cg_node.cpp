@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file cg_node.cpp
  * @brief Node, edge and graph description of the graph associated with a structural description.
@@ -41,9 +41,10 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "cg_node.hpp"
-#include "structural_manager.hpp"
+#include "exceptions.hpp"         // for THROW_ERROR
+#include "structural_objects.hpp" // for structural_object, structural_obje...
 
 void cg_edge_info::print(std::ostream& os) const
 {
@@ -62,24 +63,27 @@ void cg_edge_info::print(std::ostream& os) const
       os << to_port->get_id();
 }
 
-cg_edge_writer::cg_edge_writer(const graph * _g) : g(_g) {}
+cg_edge_writer::cg_edge_writer(const graph* _g) : g(_g)
+{
+}
 
 void cg_edge_writer::operator()(std::ostream& out, const EdgeDescriptor& e) const
 {
-   const cg_edge_info * edge_info = Cget_edge_info<cg_edge_info>(e, *g);
+   const auto* edge_info = Cget_edge_info<cg_edge_info>(e, *g);
    bool is_critical = false;
-   if (edge_info) is_critical = edge_info->is_critical;
-   if (is_critical)
+   if(edge_info)
+      is_critical = edge_info->is_critical;
+   if(is_critical)
       out << "[color=red, ";
-   else if (DATA_SELECTOR & g->GetSelector(e))
+   else if(DATA_SELECTOR & g->GetSelector(e))
       out << "[color=blue, ";
-   else if (CLOCK_SELECTOR & g->GetSelector(e))
+   else if(CLOCK_SELECTOR & g->GetSelector(e))
       out << "[color=yellow, ";
-   else if (CHANNEL_SELECTOR & g->GetSelector(e))
+   else if(CHANNEL_SELECTOR & g->GetSelector(e))
       out << "[color=green, ";
    else
       THROW_ERROR(std::string("InconsistentDataStructure"));
-   if ( edge_info )
+   if(edge_info)
    {
       out << "label=\"";
       edge_info->print(out);
@@ -88,19 +92,22 @@ void cg_edge_writer::operator()(std::ostream& out, const EdgeDescriptor& e) cons
    out << "]";
 }
 
-cg_label_writer::cg_label_writer(const graph *_g) : g(_g) {}
+cg_label_writer::cg_label_writer(const graph* _g) : g(_g)
+{
+}
 
 void cg_label_writer::operator()(std::ostream& out, const vertex& v) const
 {
    bool is_critical = GET_CRITICAL(g, v);
-   if (GET_TYPE(g, v) == TYPE_ENTRY || GET_TYPE(g, v) == TYPE_EXIT)
+   if(GET_TYPE(g, v) == TYPE_ENTRY || GET_TYPE(g, v) == TYPE_EXIT)
    {
       out << "[color=" << (is_critical ? "red" : "blue") << ",shape=Msquare";
    }
    else
    {
       out << "[shape=box";
-      if (is_critical) out << ",color=red";
+      if(is_critical)
+         out << ",color=red";
    }
-   out << ", label=\"" << GET_NAME(g, v) << " \\n" << GET_OPERATION(g, v) << "\"]" ;
+   out << ", label=\"" << GET_NAME(g, v) << " \\n" << GET_OPERATION(g, v) << "\"]";
 }

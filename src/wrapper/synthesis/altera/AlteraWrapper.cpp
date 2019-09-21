@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file AlteraWrapper.cpp
  * @brief Implementation of the wrapper to Altera tools
@@ -40,37 +40,34 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
-///Header include
+ */
+/// Header include
 #include "AlteraWrapper.hpp"
 
-#include "xml_script_command.hpp"
 #include "xml_dom_parser.hpp"
+#include "xml_script_command.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 
 #include "Parameter.hpp"
+#include "constant_strings.hpp"
 #include "fileIO.hpp"
 #include "utility.hpp"
-#include "constant_strings.hpp"
 
 #include <fstream>
 
-AlteraWrapper::AlteraWrapper(const ParameterConstRef _Param, const std::string& _tool_exec, const target_deviceRef _device, const std::string& _output_dir, const std::string& _default_output_dir) :
-   SynthesisTool(_Param, _tool_exec, _device, _output_dir, _default_output_dir)
+AlteraWrapper::AlteraWrapper(const ParameterConstRef& _Param, const std::string& _tool_exec, const target_deviceRef& _device, const std::string& _output_dir, const std::string& _default_output_dir)
+    : SynthesisTool(_Param, _tool_exec, _device, _output_dir, _default_output_dir)
 {
 }
 
-AlteraWrapper::~AlteraWrapper()
-{
-
-}
+AlteraWrapper::~AlteraWrapper() = default;
 
 void AlteraWrapper::generate_synthesis_script(const DesignParametersRef& dp, const std::string& file_name)
 {
    // Export reserved (constant) values to design parameters
-   for (std::vector<xml_set_variable_tRef>::const_iterator it = xml_reserved_vars.begin(); it != xml_reserved_vars.end(); ++it)
+   for(auto it = xml_reserved_vars.begin(); it != xml_reserved_vars.end(); ++it)
    {
       const xml_set_variable_tRef& var = (*it);
       dp->assign(var->name, getStringValue(var, dp), false);
@@ -90,7 +87,10 @@ void AlteraWrapper::generate_synthesis_script(const DesignParametersRef& dp, con
    remove_escaped(script_string);
 
    // Save the generated script
-   if (boost::filesystem::exists(file_name)) boost::filesystem::remove_all(file_name);
+   if(boost::filesystem::exists(file_name))
+   {
+      boost::filesystem::remove_all(file_name);
+   }
    script_name = file_name;
    std::ofstream file_stream(file_name.c_str());
    file_stream << script_string << std::endl;
@@ -105,22 +105,28 @@ std::string AlteraWrapper::getStringValue(const xml_script_node_tRef node, const
       {
          std::string result;
          const xml_set_variable_t* var = GetPointer<xml_set_variable_t>(node);
-         if (var->singleValue)
+         if(var->singleValue)
+         {
             result += *(var->singleValue);
-         else if (var->multiValues.size())
+         }
+         else if(!var->multiValues.empty())
          {
             result += "{";
-            for (std::vector<xml_set_entry_tRef>::const_iterator it = var->multiValues.begin(); it != var->multiValues.end(); ++it)
+            for(auto it = var->multiValues.begin(); it != var->multiValues.end(); ++it)
             {
                const xml_set_entry_tRef e = *it;
-               if (it != var->multiValues.begin())
+               if(it != var->multiValues.begin())
+               {
                   result += " ";
+               }
                result += toString(e, dp);
             }
             result += "}";
          }
          else
+         {
             result += "\"\"";
+         }
          return result;
       }
       case NODE_COMMAND:
@@ -133,7 +139,7 @@ std::string AlteraWrapper::getStringValue(const xml_script_node_tRef node, const
       default:
          THROW_ERROR("Not supported node type: " + STR(node->nodeType));
    }
-   ///this point should never be reached
+   /// this point should never be reached
    return "";
 }
 
@@ -155,20 +161,28 @@ std::string AlteraWrapper::toString(const xml_script_node_tRef node, const Desig
       {
          const xml_parameter_t* par = GetPointer<xml_parameter_t>(node);
          std::string result;
-         if (par->name)
+         if(par->name)
+         {
             result += *(par->name);
-         if (par->name && (par->singleValue || par->multiValues.size()))
+         }
+         if(par->name && (par->singleValue || !par->multiValues.empty()))
+         {
             result += par->separator;
-         if (par->singleValue)
+         }
+         if(par->singleValue)
+         {
             result += *(par->singleValue);
-         else if (par->multiValues.size())
+         }
+         else if(!par->multiValues.empty())
          {
             result += par->curlyBrackets ? "{" : "\"";
-            for (std::vector<xml_set_entry_tRef>::const_iterator it = par->multiValues.begin(); it != par->multiValues.end(); ++it)
+            for(auto it = par->multiValues.begin(); it != par->multiValues.end(); ++it)
             {
                const xml_set_entry_tRef p = *it;
-               if (it != par->multiValues.begin())
+               if(it != par->multiValues.begin())
+               {
                   result += " ";
+               }
                result += toString(p, dp);
             }
             result += par->curlyBrackets ? "}" : "\"";
@@ -180,19 +194,26 @@ std::string AlteraWrapper::toString(const xml_script_node_tRef node, const Desig
          const xml_command_t* comm = GetPointer<xml_command_t>(node);
          // TODO: Evaluate the condition
          std::string result;
-         if (comm->name)
+         if(comm->name)
+         {
             result += *(comm->name);
-         if (comm->name && comm->value)
+         }
+         if(comm->name && comm->value)
+         {
             result += " ";
-         if (comm->value)
+         }
+         if(comm->value)
+         {
             result += *(comm->value);
-         if (comm->parameters.size())
-            for (std::vector<xml_parameter_tRef>::const_iterator it = comm->parameters.begin(); it != comm->parameters.end(); ++it)
+         }
+         if(!comm->parameters.empty())
+         {
+            for(const auto& p : comm->parameters)
             {
-               const xml_parameter_tRef p = *it;
                result += " " + toString(p, dp);
             }
-         if (comm->output)
+         }
+         if(comm->output)
          {
             result += " >> " + *(comm->output);
          }
@@ -203,19 +224,26 @@ std::string AlteraWrapper::toString(const xml_script_node_tRef node, const Desig
          const xml_shell_t* sh = GetPointer<xml_shell_t>(node);
          // TODO: Evaluate the condition
          std::string result = "sh ";
-         if (sh->name)
+         if(sh->name)
+         {
             result += *(sh->name);
-         if (sh->name && sh->value)
+         }
+         if(sh->name && sh->value)
+         {
             result += " ";
-         if (sh->value)
+         }
+         if(sh->value)
+         {
             result += *(sh->value);
-         if (sh->parameters.size())
-            for (std::vector<xml_parameter_tRef>::const_iterator it = sh->parameters.begin(); it != sh->parameters.end(); ++it)
+         }
+         if(!sh->parameters.empty())
+         {
+            for(const auto& p : sh->parameters)
             {
-               const xml_parameter_tRef p = *it;
                result += " " + toString(p, dp);
             }
-         if (sh->output)
+         }
+         if(sh->output)
          {
             result += " >> " + *(sh->output);
          }
@@ -225,15 +253,16 @@ std::string AlteraWrapper::toString(const xml_script_node_tRef node, const Desig
       {
          const xml_ite_block_t* ite = GetPointer<xml_ite_block_t>(node);
          std::string result;
-         bool conditionValue = ite->evaluate_condition(&(ite->condition), dp), first = true;
+         bool conditionValue = xml_ite_block_t::evaluate_condition(&(ite->condition), dp), first = true;
          const std::vector<xml_script_node_tRef>& block = conditionValue ? ite->thenNodes : ite->elseNodes;
-         for (std::vector<xml_script_node_tRef>::const_iterator it = block.begin(); it != block.end(); ++it)
+         for(const auto& n : block)
          {
-            const xml_script_node_tRef n = *it;
-            if (n->checkCondition(dp))
+            if(n->checkCondition(dp))
             {
-               if (!first)
+               if(!first)
+               {
                   result += "\n";
+               }
                first = false;
                result += toString(n, dp);
             }
@@ -245,7 +274,6 @@ std::string AlteraWrapper::toString(const xml_script_node_tRef node, const Desig
       default:
          THROW_ERROR("Not supported node type: " + STR(node->nodeType));
    }
-   ///this point should never be reached
+   /// this point should never be reached
    return "";
 }
-

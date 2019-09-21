@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 
 /**
  * @file custom_map.hpp
@@ -45,55 +45,52 @@
 #ifndef CUSTOM_MAP_HPP
 #define CUSTOM_MAP_HPP
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_UNORDERED.hpp"
 
-///STL include
+/// STL include
 #if HAVE_UNORDERED
 #include <unordered_map>
 #else
 #include <map>
 #endif
-
-///Utility include
-#include <boost/lexical_cast.hpp>
-#include "exceptions.hpp"
+#include <utility> // for pair
 
 #if HAVE_UNORDERED
 template <typename T, typename U>
 class CustomMap : public std::unordered_map<T, U>
 {
-   public:
-      std::pair<typename CustomMap<T, U>::iterator, bool> OverwriteInsert(const typename CustomMap<T,U>::value_type& val)
+ public:
+   std::pair<typename CustomMap<T, U>::iterator, bool> OverwriteInsert(const typename CustomMap<T, U>::value_type& val)
+   {
+      if(this->find(val.first) == this->end())
       {
-         if(this->find(val.first) == this->end())
-         {
-            return std::unordered_map<T, U>::insert(val);
-         }
-         else
-         {
-            this->find(val.first)->second = val.second;
-            return std::pair<typename CustomMap<T, U>::iterator, bool>(this->find(val.first), true);
-         }
+         return std::unordered_map<T, U>::insert(val);
       }
+      else
+      {
+         this->find(val.first)->second = val.second;
+         return std::pair<typename CustomMap<T, U>::iterator, bool>(this->find(val.first), true);
+      }
+   }
 };
 #else
 template <typename T, typename U>
 class CustomMap : public std::map<T, U>
 {
-   public:
-      std::pair<typename CustomMap<T, U>::iterator, bool> OverwriteInsert(const typename CustomMap<T,U>::value_type& val)
+ public:
+   std::pair<typename CustomMap<T, U>::iterator, bool> OverwriteInsert(const typename CustomMap<T, U>::value_type& val)
+   {
+      if(this->find(val.first) == this->end())
       {
-         if(this->find(val.first) == this->end())
-         {
-            return std::map<T, U>::insert(val);
-         }
-         else
-         {
-            this->find(val.first)->second = val.second;
-            return std::pair<typename CustomMap<T, U>::iterator, bool>(this->find(val.first), true);
-         }
+         return std::map<T, U>::insert(val);
       }
+      else
+      {
+         this->find(val.first)->second = val.second;
+         return std::pair<typename CustomMap<T, U>::iterator, bool>(this->find(val.first), true);
+      }
+   }
 };
 #endif
 #endif

@@ -16,7 +16,9 @@ void foo(int x)
   case 0:
     if (0)
     {
+#ifndef __clang__
       link_error();
+#endif
   case 1:
       bar();
     }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (C) 2015-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,21 +29,21 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file basic_blocks_profiling.cpp
  * @brief Analysis step performing a dynamic profiling of basic blocks execution
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
-///Header include
+ */
+/// Header include
 #include "basic_blocks_profiling.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior includes
+/// behavior includes
 #include "application_manager.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
@@ -52,39 +52,47 @@
 /// constants include
 #include "host_profiling_constants.hpp"
 
-///design_flows includes
+/// design_flows includes
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 
-///design_flows/backend/ToC include
+/// design_flows/backend/ToC include
 #include "c_backend_step_factory.hpp"
 
-///design_flows/backend/ToC/progModels include
+/// design_flows/backend/ToC/progModels include
 #include "c_backend.hpp"
 
-///tree include
+/// STD include
+#include <string>
+
+/// STL includes
+#include <set>
+#include <unordered_set>
+#include <utility>
+#include <vector>
+
+/// tree include
 #include "behavioral_helper.hpp"
 
-///utility include
+/// utility include
 #include "fileIO.hpp"
 
-///wrapper/treegcc include
+/// wrapper/treegcc include
 #include "gcc_wrapper.hpp"
+#include "hash_helper.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 
-BasicBlocksProfiling::BasicBlocksProfiling(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   ApplicationFrontendFlowStep(_AppM, BASIC_BLOCKS_PROFILING, _design_flow_manager, _parameters),
-   profiling_source_file(parameters->getOption<std::string>(OPT_output_temporary_directory) + "/host_profiling.c")
+BasicBlocksProfiling::BasicBlocksProfiling(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : ApplicationFrontendFlowStep(_AppM, BASIC_BLOCKS_PROFILING, _design_flow_manager, _parameters), profiling_source_file(parameters->getOption<std::string>(OPT_output_temporary_directory) + "/host_profiling.c")
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-BasicBlocksProfiling::~BasicBlocksProfiling()
-{
-}
+BasicBlocksProfiling::~BasicBlocksProfiling() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > BasicBlocksProfiling::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BasicBlocksProfiling::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    return relationships;
 }
 
@@ -93,7 +101,7 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
    boost::filesystem::path temporary_path(parameters->getOption<std::string>(OPT_output_temporary_directory));
 
    boost::filesystem::path run_name = temporary_path / ("run.tmp");
-   boost::filesystem::path profile_data_name = temporary_path  / STR_CST_host_profiling_data;
+   boost::filesystem::path profile_data_name = temporary_path / STR_CST_host_profiling_data;
 
    const GccWrapperConstRef gcc_wrapper(new GccWrapper(this->parameters, parameters->getOption<GccWrapper_CompilerTarget>(OPT_host_compiler), GccWrapper_OptimizationSet::O1));
    CustomSet<std::string> tp_files;
@@ -106,11 +114,11 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
       change_directory = "cd \"" + parameters->getOption<std::string>(OPT_path) + "\" && ";
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Changing working directory to " + parameters->getOption<std::string>(OPT_path));
    }
-   const auto exec_argvs = parameters->getOption<const CustomSet<std::string> >(OPT_exec_argv);
+   const auto exec_argvs = parameters->getOption<const CustomSet<std::string>>(OPT_exec_argv);
    for(const auto exec_argv : exec_argvs)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Running with parameters: " + exec_argv);
-      //The argument
+      // The argument
       boost::filesystem::remove(profile_data_name);
 
       const auto command = change_directory + "\"" + run_name.string() + "\" " + exec_argv + " ";
@@ -119,27 +127,26 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
       {
          if(errno and not parameters->getOption<bool>(OPT_no_return_zero))
          {
-            THROW_ERROR_CODE(PROFILING_EC, "Error " + boost::lexical_cast<std::string>(errno) +  " during dynamic profiling");
+            THROW_ERROR_CODE(PROFILING_EC, "Error " + boost::lexical_cast<std::string>(errno) + " during dynamic profiling");
          }
       }
 
       std::ifstream profilefile(profile_data_name.string().c_str());
-      if (profilefile.is_open())
+      if(profilefile.is_open())
       {
          std::string line;
          ProfilingInformationRef profiling_information;
          decltype(BBGraphInfo::bb_index_map) bb_index_map;
-         while (! profilefile.eof())
+         while(!profilefile.eof())
          {
-            getline (profilefile,line);
+            getline(profilefile, line);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Read " + line);
-            if (line.size())
+            if(line.size())
             {
-               if (line.find("Function") != std::string::npos)
+               std::vector<std::string> splitted = SplitString(line, " ");
+               THROW_ASSERT(splitted.size() == 2, line);
+               if(line.find("Function") != std::string::npos)
                {
-                  std::vector<std::string> splitted;
-                  boost::algorithm::split(splitted, line, boost::algorithm::is_any_of(" "));
-                  THROW_ASSERT(splitted.size() == 2, line);
                   const auto function_behavior = AppM->CGetFunctionBehavior(boost::lexical_cast<unsigned int>(splitted[1]));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found data of function " + function_behavior->CGetBehavioralHelper()->get_function_name());
                   profiling_information = function_behavior->profiling_information;
@@ -147,9 +154,6 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
                }
                else
                {
-                  std::vector<std::string> splitted;
-                  boost::algorithm::split(splitted, line, boost::algorithm::is_any_of(" "));
-                  THROW_ASSERT(splitted.size() == 2, line);
                   const auto bb_index = boost::lexical_cast<unsigned int>(splitted[0]);
                   if(bb_index_map.find(bb_index) != bb_index_map.end())
                   {
@@ -192,16 +196,16 @@ void BasicBlocksProfiling::Initialize()
    }
 }
 
-void BasicBlocksProfiling::ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type)
+void BasicBlocksProfiling::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
 {
    if(relationship_type == DEPENDENCE_RELATIONSHIP)
    {
       vertex backend_step = design_flow_manager.lock()->GetDesignFlowStep(CBackend::ComputeSignature(CBackend::CB_BBP));
       const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-      const auto design_flow_step = backend_step != NULL_VERTEX ? design_flow_graph->CGetDesignFlowStepInfo(backend_step)->design_flow_step : GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"))->CreateCBackendStep(CBackend::CB_BBP, profiling_source_file, CBackendInformationConstRef());
+      const auto design_flow_step = backend_step != NULL_VERTEX ?
+                                        design_flow_graph->CGetDesignFlowStepInfo(backend_step)->design_flow_step :
+                                        GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"))->CreateCBackendStep(CBackend::CB_BBP, profiling_source_file, CBackendInformationConstRef());
       relationship.insert(design_flow_step);
    }
    ApplicationFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }
-
-

@@ -173,7 +173,7 @@
 #define DELTA1883 CHOOSE(0, 1, 1, 0, 1, 0)	/* tan (pi/4) == 1  */
 #define DELTA1901 CHOOSE(0, 0, 1, 0, 0, 1)	/* tgamma (0.5) == sqrt (pi)  */
 #define DELTA1902 CHOOSE(1, 2, 1, 1, 2, 1)	/* tgamma (-0.5) == -2 sqrt (pi)  */
-#define DELTA1904 CHOOSE(1, 0, 0, 1, 0, 0)	/* tgamma (4) == 6  */
+#define DELTA1904 CHOOSE(1, 0, 1, 1, 0, 1)	/* tgamma (4) == 6  */
 #define DELTA1905 CHOOSE(0, 1, 1, 0, 1, 1)	/* tgamma (0.7) == 1.29805533264755778568117117915281162  */
 #define DELTA1963 CHOOSE(1, 0, 0, 1, 0, 0)	/* y0 (0.125) == -1.38968062514384052915582277745018693  */
 #define DELTA1964 CHOOSE(0, 1, 1, 0, 1, 1)	/* y0 (0.75) == -0.137172769385772397522814379396581855  */

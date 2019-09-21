@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,62 +29,61 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file extract_gimple_cond_op.hpp
  * @brief Analysis step that extract condition from gimple_cond
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef EXTRACT_GIMPLE_COND_OP_HPP
 #define EXTRACT_GIMPLE_COND_OP_HPP
 
-///Superclass include
+/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
-///Utility include
+/// Utility include
 #include "refcount.hpp"
 
 /**
  * Extract cond from gimple_cond
  */
-class ExtractGimpleCondOp: public FunctionFrontendFlowStep
+class ExtractGimpleCondOp : public FunctionFrontendFlowStep
 {
-   private:
-      /// flag used to restart code motion step
-      bool bb_modified;
+ private:
+   /// flag used to restart code motion step
+   bool bb_modified;
 
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      virtual const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor.
-       * @param AppM is the application manager
-       * @param design_flow_manager is the design flow manager
-       * @param function_id is the identifier of the function
-       * @param parameters is the set of input parameters
-       */
-      ExtractGimpleCondOp(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const unsigned int function_id, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor.
+    * @param AppM is the application manager
+    * @param design_flow_manager is the design flow manager
+    * @param function_id is the identifier of the function
+    * @param parameters is the set of input parameters
+    */
+   ExtractGimpleCondOp(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const unsigned int function_id, const ParameterConstRef parameters);
 
-      /**
-       *  Destructor
-       */
-      ~ExtractGimpleCondOp();
+   /**
+    *  Destructor
+    */
+   ~ExtractGimpleCondOp() override;
 
-      /**
-       * Updates the tree to have a more compliant CFG
-       */
-      DesignFlowStep_Status InternalExec();
+   /**
+    * Updates the tree to have a more compliant CFG
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      virtual void Initialize();
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 };
 #endif
-

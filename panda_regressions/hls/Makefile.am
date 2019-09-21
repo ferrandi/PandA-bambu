@@ -1,13 +1,7 @@
 EXTRA_DIST=./libm-tests/libm-test-ulps.h\
 ./libm-tests/conversion.c\
 ./libm-tests/empty.c\
-./libm-tests/gammaf.c\
-./libm-tests/lgammaf.c\
 ./libm-tests/test-double.c\
-./libm-tests/tgamma.c\
-./libm-tests/tgammaf.c\
-./libm-tests/gamma.c\
-./libm-tests/lgamma.c\
 ./libm-tests/COPYING.LIB\
 ./libm-tests/README_LIBM_TESTS.txt\
 ./libm-tests/test-float.c\
@@ -1078,6 +1072,7 @@ gcc_regression_simple/zero-struct-1.c\
 ./gcc5_regression_simple_default.sh \
 ./gcc6_regression_simple_default.sh \
 ./gcc7_regression_simple_default.sh \
+./gcc8_regression_simple_default.sh \
 ./gcc45_regression_simple_ext_pipelined.sh \
 ./gcc46_regression_simple_ext_pipelined.sh \
 ./gcc47_regression_simple_ext_pipelined.sh \
@@ -1086,6 +1081,7 @@ gcc_regression_simple/zero-struct-1.c\
 ./gcc5_regression_simple_ext_pipelined.sh \
 ./gcc6_regression_simple_ext_pipelined.sh \
 ./gcc7_regression_simple_ext_pipelined.sh \
+./gcc8_regression_simple_ext_pipelined.sh \
 ./gcc45_regression_simple_no_expose_globals.sh \
 ./gcc46_regression_simple_no_expose_globals.sh \
 ./gcc47_regression_simple_no_expose_globals.sh \
@@ -1095,6 +1091,7 @@ gcc_regression_simple/zero-struct-1.c\
 ./gcc6_regression_simple_no_expose_globals.sh \
 ./gcc6_regression_simple_no_expose_globals.sh \
 ./gcc7_regression_simple_no_expose_globals.sh \
+./gcc8_regression_simple_no_expose_globals.sh \
 ./gcc_regression_boards.sh \
 ./gcc_regression_versions.sh \
 ./panda_regression_hls_all_gcc.sh \
@@ -1131,6 +1128,39 @@ gcc_regression_simple/zero-struct-1.c\
 ./bambu_specific_test2/ps_constraints.xml \
 ./bambu_specific_test3.sh\
 ./bambu_specific_test3_list\
+./bambu_specific_test4/ac_types1.cpp \
+./bambu_specific_test4/ac_types2.cpp \
+./bambu_specific_test4/ac_types2_valid.cpp \
+./bambu_specific_test4/ac_types2_ack.cpp \
+./bambu_specific_test4/ac_types2_out_ack.cpp \
+./bambu_specific_test4/ac_types3.cpp \
+./bambu_specific_test4/ac_types4.cpp \
+./bambu_specific_test4/ac_types2_in_handshake.cpp \
+./bambu_specific_test4/ac_types2_out_handshake.cpp \
+./bambu_specific_test4/ac_types2_handshake.cpp \
+./bambu_specific_test4/ac_types2_fifo.cpp \
+./bambu_specific_test4/ac_types2_array.cpp \
+./bambu_specific_test4/ac_types2_array_7bits.cpp \
+./bambu_specific_test4/ac_types2_array_32ubits.cpp \
+./bambu_specific_test4/ac_types2_array_64ubits.cpp \
+./bambu_specific_test4/ac_types2_array_128ubits.cpp \
+./bambu_specific_test4/ac_types2_array_multi_function.cpp \
+./bambu_specific_test4/simple_c1.c\
+./bambu_specific_test4/simple_c1_none.c\
+./bambu_specific_test4/simple_c2_none.c\
+./bambu_specific_test4/simple_c3_none.c\
+./bambu_specific_test4/simple_c1_in_valid.c\
+./bambu_specific_test4/simple_c1_in_ack.c\
+./bambu_specific_test4/simple_c1_ack.c\
+./bambu_specific_test4/simple_c3_ovalid.c \
+./bambu_specific_test4/simple_c4_fifo.c \
+./bambu_specific_test4/simple_c4_handshake.c \
+./bambu_specific_test4/simple_c4_array.c \
+./bambu_specific_test4/simple_c4_array_8bits.c \
+./bambu_specific_test4/simple_c4_array_32bits.c \
+./bambu_specific_test4/simple_c4_array_64bits.c \
+./bambu_specific_test4.sh\
+./bambu_specific_test4_list\
 ./function_pointers.sh\
 ./function_pointers_list_bsearch\
 ./function_pointers_list_qsort\
@@ -1173,6 +1203,9 @@ gcc_regression_simple/zero-struct-1.c\
 ./test_libm_logf.sh\
 ./test_libm_expf.sh\
 ./test_libm_sqrtf.sh \
+./test_softfloat_div32.c\
+./test_softfloat_div32.sh\
+./test_libm_powf.sh \
 ./discrepancy.sh \
 ./discrepancy_list\
 ./CHStone_frontend1.sh\
@@ -1181,4 +1214,23 @@ gcc_regression_simple/zero-struct-1.c\
 ./gcc_regression_simple1.sh\
 ./panda_regression_hls_all_gcc1.sh\
 ./panda_regression_hls_no_gcc1.sh\
-./softfloat-tests1.sh
+./softfloat-tests1.sh\
+clang4_regression_simple_default.sh\
+clang4_regression_simple_ext_pipelined.sh\
+clang4_regression_simple_no_expose_globals.sh\
+clang5_regression_simple_default.sh\
+clang5_regression_simple_ext_pipelined.sh\
+clang5_regression_simple_no_expose_globals.sh\
+clang6_regression_simple_default.sh\
+clang6_regression_simple_ext_pipelined.sh\
+clang6_regression_simple_no_expose_globals.sh\
+clang7_regression_simple_default.sh\
+clang7_regression_simple_ext_pipelined.sh\
+clang7_regression_simple_no_expose_globals.sh\
+softfloat-tests-clang4.sh\
+softfloat-tests-clang5.sh\
+softfloat-tests-clang6.sh\
+softfloat-tests-clang7.sh\
+libm-testsClang.sh\
+CHStone_frontend1Clang.sh
+

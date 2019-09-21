@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (C) 2015-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file generic_obj.cpp
  * @brief Base class for all resources into datapath
@@ -37,42 +37,44 @@
  *
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
- * @author Marco Lattuada <marco.lattuada@polimi.it> 
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "generic_obj.hpp"
 
-///utility include
+/// utility include
 #include "exceptions.hpp"
 
-#if ! HAVE_UNORDERED
-GenericObjSorter::GenericObjSorter()
-{}
+#if !HAVE_UNORDERED
+GenericObjSorter::GenericObjSorter() = default;
 
-bool GenericObjSorter::operator()(const generic_objRef x, const generic_objRef y) const
+bool GenericObjSorter::operator()(const generic_objRef& x, const generic_objRef& y) const
 {
    if(x == y)
+   {
       return false;
+   }
    THROW_ASSERT(x->get_string() != y->get_string() or x->get_string().find("CONSTANT") != std::string::npos, x->get_string());
    return x->get_string() < y->get_string();
 }
 
-GenericObjUnsignedIntSorter::GenericObjUnsignedIntSorter()
-{}
+GenericObjUnsignedIntSorter::GenericObjUnsignedIntSorter() = default;
 
-bool GenericObjUnsignedIntSorter::operator()(const std::pair<generic_objRef,int> &x, const std::pair<generic_objRef,int> &y) const
+bool GenericObjUnsignedIntSorter::operator()(const std::pair<generic_objRef, int>& x, const std::pair<generic_objRef, int>& y) const
 {
    if(x.first == y.first)
-      return x.second < y.second; 
+   {
+      return x.second < y.second;
+   }
    THROW_ASSERT(x.first->get_string() != y.first->get_string(), x.first->get_string());
    return x.first->get_string() < y.first->get_string();
 }
 
 #endif
 
-bool generic_obj::operator < (const generic_obj & other) const
+bool generic_obj::operator<(const generic_obj& other) const
 {
    return get_string() < other.get_string();
 }

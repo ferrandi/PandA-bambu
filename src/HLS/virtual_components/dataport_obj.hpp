@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file dataport_obj.hpp
  * @brief Base class for all dataports into datapath
@@ -41,10 +41,12 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef DATAPORT_OBJ_HPP
 #define DATAPORT_OBJ_HPP
+
+#include <utility>
 
 #include "generic_obj.hpp"
 
@@ -53,35 +55,39 @@
  */
 class dataport_obj : public generic_obj
 {
-      ///define the parameter name of the object
-      std::string parameter;
-      
-      /// number of bit
-      unsigned int bitsize;
+   /// define the parameter name of the object
+   std::string parameter;
 
+   /// number of bit
+   unsigned int bitsize;
 
-   public:
+ public:
+   /**
+    * Constructor
+    */
+   dataport_obj(const std::string& _name, unsigned int _bitsize) : generic_obj(DATA_PORT, _name), bitsize(_bitsize)
+   {
+   }
 
-      /**
-       * Constructor
-       */
-      dataport_obj( const std::string&_name, unsigned int _bitsize) : generic_obj(DATA_PORT, _name), bitsize(_bitsize) {}
+   /**
+    * Constructor
+    */
+   dataport_obj(const std::string& _name, std::string _parameter, unsigned int _bitsize) : generic_obj(DATA_PORT, _name), parameter(std::move(_parameter)), bitsize(_bitsize)
+   {
+   }
 
-      /**
-       * Constructor
-       */
-      dataport_obj( const std::string&_name, const std::string& _parameter, unsigned int _bitsize) : generic_obj(DATA_PORT, _name), parameter(_parameter), bitsize(_bitsize) {}
+   /**
+    * Destructor.
+    */
+   ~dataport_obj() override = default;
 
-      /**
-       * Destructor.
-       */
-      ~dataport_obj() {}
-
-      /**
-       * return the maximum bitsize associated with the component
-       */
-      unsigned int get_bitsize() const {return bitsize;}
-
+   /**
+    * return the maximum bitsize associated with the component
+    */
+   unsigned int get_bitsize() const
+   {
+      return bitsize;
+   }
 };
 
 #endif

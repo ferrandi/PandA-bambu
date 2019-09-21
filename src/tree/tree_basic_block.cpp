@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file tree_basic_block.cpp
  * @brief Data structure describing a basic block at tree level.
@@ -40,51 +40,37 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "tree_basic_block.hpp"
 
 #if HAVE_BAMBU_BUILT
-///HLS/scheduling include
+/// HLS/scheduling include
 #include "schedule.hpp"
 #endif
 
-///STL include
-#include <iosfwd>
-
-///tree includes
+/// tree includes
+#include "string_manipulation.hpp" // for STR
 #include "tree_helper.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-
 const unsigned int bloc::ENTRY_BLOCK_ID = 0;
 const unsigned int bloc::EXIT_BLOCK_ID = 1;
 
-bloc::bloc(unsigned int _number) :
-   removed_phi(0),
-   updated_ssa_uses(false),
-   number(_number),
-   loop_id(0),
-   hpl(0),
-   true_edge(0),
-   false_edge(0)
+bloc::bloc(unsigned int _number) : removed_phi(0), updated_ssa_uses(false), number(_number), loop_id(0), hpl(0), true_edge(0), false_edge(0)
 {
-
 }
 
-bloc::~bloc()
-{
+bloc::~bloc() = default;
 
-}
-
-void bloc::visit(tree_node_visitor * const v) const
+void bloc::visit(tree_node_visitor* const v) const
 {
-   unsigned int mask=ALL_VISIT;
+   unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
-   SEQ_VISIT_MEMBER(mask,list_of_phi,tree_node,visit,tree_node_visitor,v);
-   SEQ_VISIT_MEMBER(mask,list_of_stmt,tree_node,visit,tree_node_visitor,v);
+   SEQ_VISIT_MEMBER(mask, list_of_phi, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, list_of_stmt, tree_node, visit, tree_node_visitor, v);
    /// live in and out not visited by design
 }
 
@@ -99,17 +85,17 @@ void bloc::PushFront(const tree_nodeRef statement)
    {
       list_of_stmt.insert(std::next(list_of_stmt.begin()), statement);
    }
-   ///This check is necessary since during parsing of statement list statement has not yet been filled
+   /// This check is necessary since during parsing of statement list statement has not yet been filled
    if(GET_NODE(statement) and GetPointer<gimple_node>(GET_NODE(statement)))
    {
       GetPointer<gimple_node>(GET_NODE(statement))->bb_index = number;
    }
    if(updated_ssa_uses)
    {
-      const auto uses = tree_helper::ComputeSsaUses(statement);
+      const auto& uses = tree_helper::ComputeSsaUses(statement);
       for(const auto& use : uses)
       {
-         for(size_t counter = 0; counter < use.second; counter ++)
+         for(size_t counter = 0; counter < use.second; counter++)
          {
             GetPointer<ssa_name>(GET_NODE(use.first))->AddUseStmt(statement);
          }
@@ -157,7 +143,7 @@ void bloc::PushBack(const tree_nodeRef statement)
          list_of_stmt.push_back(statement);
       }
    }
-   ///This check is necessary since during parsing of statement list statement has not yet been filled
+   /// This check is necessary since during parsing of statement list statement has not yet been filled
    if(GET_NODE(statement) and GetPointer<gimple_node>(GET_NODE(statement)))
    {
       GetPointer<gimple_node>(GET_NODE(statement))->bb_index = number;
@@ -178,10 +164,10 @@ void bloc::PushBack(const tree_nodeRef statement)
    }
    if(updated_ssa_uses)
    {
-      const auto uses = tree_helper::ComputeSsaUses(statement);
+      const auto& uses = tree_helper::ComputeSsaUses(statement);
       for(const auto& use : uses)
       {
-         for(size_t counter = 0; counter < use.second; counter ++)
+         for(size_t counter = 0; counter < use.second; counter++)
          {
             GetPointer<ssa_name>(GET_NODE(use.first))->AddUseStmt(statement);
          }
@@ -214,32 +200,32 @@ void bloc::Replace(const tree_nodeRef old_stmt, const tree_nodeRef new_stmt, con
          THROW_ASSERT(old_ga, "");
          THROW_ASSERT(new_ga, "");
          THROW_ASSERT(not old_ga->memdef or move_virtuals, STR(old_stmt) + " defines virtuals");
-         if (move_virtuals)
+         if(move_virtuals)
          {
-            if (old_ga->memdef)
+            if(old_ga->memdef)
             {
                new_ga->memdef = old_ga->memdef;
                GetPointer<ssa_name>(GET_NODE(new_ga->memdef))->SetDefStmt(new_stmt);
             }
-            if (old_ga->memuse)
+            if(old_ga->memuse)
             {
                new_ga->memuse = old_ga->memuse;
                GetPointer<ssa_name>(GET_NODE(new_ga->memuse))->AddUseStmt(new_stmt);
             }
-            if (old_ga->vdef)
+            if(old_ga->vdef)
             {
                new_ga->vdef = old_ga->vdef;
                GetPointer<ssa_name>(GET_NODE(new_ga->vdef))->SetDefStmt(new_stmt);
             }
-            if (old_ga->vuses.size())
+            if(old_ga->vuses.size())
             {
                new_ga->vuses = old_ga->vuses;
-               for (const auto & v : new_ga->vuses)
+               for(const auto& v : new_ga->vuses)
                {
                   GetPointer<ssa_name>(GET_NODE(v))->AddUseStmt(new_stmt);
                }
             }
-            if (old_ga->vovers.size())
+            if(old_ga->vovers.size())
             {
                new_ga->vovers = old_ga->vovers;
             }
@@ -274,10 +260,10 @@ void bloc::PushBefore(const tree_nodeRef new_stmt, const tree_nodeRef existing_s
    gn->bb_index = number;
    if(updated_ssa_uses)
    {
-      const auto uses = tree_helper::ComputeSsaUses(new_stmt);
+      const auto& uses = tree_helper::ComputeSsaUses(new_stmt);
       for(const auto& use : uses)
       {
-         for(size_t counter = 0; counter < use.second; counter ++)
+         for(size_t counter = 0; counter < use.second; counter++)
          {
             GetPointer<ssa_name>(GET_NODE(use.first))->AddUseStmt(new_stmt);
          }
@@ -322,10 +308,10 @@ void bloc::PushAfter(const tree_nodeRef new_stmt, const tree_nodeRef existing_st
    GetPointer<gimple_node>(GET_NODE(new_stmt))->bb_index = number;
    if(updated_ssa_uses)
    {
-      const auto uses = tree_helper::ComputeSsaUses(new_stmt);
+      const auto& uses = tree_helper::ComputeSsaUses(new_stmt);
       for(const auto& use : uses)
       {
-         for(size_t counter = 0; counter < use.second; counter ++)
+         for(size_t counter = 0; counter < use.second; counter++)
          {
             GetPointer<ssa_name>(GET_NODE(use.first))->AddUseStmt(new_stmt);
          }
@@ -339,17 +325,102 @@ void bloc::PushAfter(const tree_nodeRef new_stmt, const tree_nodeRef existing_st
 #endif
 }
 
+void bloc::ReorderLUTs()
+{
+   TreeNodeSet current_uses;
+   for(auto phi : list_of_phi)
+   {
+      auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
+      current_uses.insert(gp->res);
+   }
+   std::list<tree_nodeRef> list_of_postponed_stmt;
+   auto pos = list_of_stmt.begin();
+   while(pos != list_of_stmt.end())
+   {
+      if(GET_NODE(*pos)->get_kind() == gimple_assign_K)
+      {
+         auto ga = GetPointer<gimple_assign>(GET_NODE(*pos));
+         if(GET_NODE(ga->op0)->get_kind() != ssa_name_K)
+         {
+            ++pos;
+            continue;
+         }
+         auto allDefinedP = [&](tree_nodeRef stmt) -> bool {
+            const auto& uses = tree_helper::ComputeSsaUses(stmt);
+            for(auto u : uses)
+            {
+               if(current_uses.find(u.first) == current_uses.end())
+               {
+                  auto ssa_node = GET_NODE(u.first);
+                  auto ssa = GetPointer<ssa_name>(ssa_node);
+                  if(ssa->virtual_flag || GetPointer<gimple_node>(GET_NODE(ssa->CGetDefStmt()))->bb_index != number)
+                     current_uses.insert(u.first);
+                  else
+                     return false;
+               }
+            }
+            return true;
+         };
+
+         if(not allDefinedP(*pos))
+         {
+            list_of_postponed_stmt.push_back(*pos);
+            const auto next_stmt = std::next(pos);
+            list_of_stmt.erase(pos);
+            pos = next_stmt;
+         }
+         else
+         {
+            current_uses.insert(ga->op0);
+            const auto next_stmt = std::next(pos);
+            bool restart_postponed = false;
+            do
+            {
+               restart_postponed = false;
+               auto posPostponed = list_of_postponed_stmt.begin();
+               while(posPostponed != list_of_postponed_stmt.end())
+               {
+                  if(allDefinedP(*posPostponed))
+                  {
+                     /// add back
+                     list_of_stmt.insert(next_stmt, *posPostponed);
+                     auto gaPostponed = GetPointer<gimple_assign>(GET_NODE(*posPostponed));
+                     current_uses.insert(gaPostponed->op0);
+                     restart_postponed = true;
+#if HAVE_BAMBU_BUILT
+                     if(schedule)
+                     {
+                        schedule->UpdateTime(gaPostponed->index);
+                     }
+#endif
+                     list_of_postponed_stmt.erase(posPostponed);
+                     break;
+                  }
+                  else
+                     ++posPostponed;
+               }
+            } while(restart_postponed);
+            pos = next_stmt;
+         }
+      }
+      else
+      {
+         ++pos;
+      }
+   }
+}
+
 void bloc::AddPhi(const tree_nodeRef phi)
 {
-   ///This check is necessary since during parsing of statement list statement has not yet been filled
+   /// This check is necessary since during parsing of statement list statement has not yet been filled
    if(GET_NODE(phi) and GetPointer<gimple_phi>(GET_NODE(phi)))
       GetPointer<gimple_phi>(GET_NODE(phi))->bb_index = number;
    if(updated_ssa_uses)
    {
-      const auto uses = tree_helper::ComputeSsaUses(phi);
+      const auto& uses = tree_helper::ComputeSsaUses(phi);
       for(const auto& use : uses)
       {
-         for(size_t counter = 0; counter < use.second; counter ++)
+         for(size_t counter = 0; counter < use.second; counter++)
          {
             GetPointer<ssa_name>(GET_NODE(use.first))->AddUseStmt(phi);
          }
@@ -373,12 +444,12 @@ void bloc::AddPhi(const tree_nodeRef phi)
 #endif
 }
 
-const std::list<tree_nodeRef> & bloc::CGetPhiList() const
+const std::list<tree_nodeRef>& bloc::CGetPhiList() const
 {
    return list_of_phi;
 }
 
-const std::list<tree_nodeRef> & bloc::CGetStmtList() const
+const std::list<tree_nodeRef>& bloc::CGetStmtList() const
 {
    return list_of_stmt;
 }
@@ -400,10 +471,10 @@ void bloc::RemoveStmt(const tree_nodeRef statement)
    THROW_ASSERT(original_size != list_of_stmt.size(), "Statement " + statement->ToString() + " not removed from BB" + STR(number));
    if(updated_ssa_uses)
    {
-      const auto uses = tree_helper::ComputeSsaUses(statement);
+      const auto& uses = tree_helper::ComputeSsaUses(statement);
       for(const auto& use : uses)
       {
-         for(size_t counter = 0; counter < use.second; counter ++)
+         for(size_t counter = 0; counter < use.second; counter++)
          {
             GetPointer<ssa_name>(GET_NODE(use.first))->RemoveUse(statement);
          }
@@ -429,10 +500,10 @@ void bloc::RemovePhi(const tree_nodeRef phi)
    THROW_ASSERT(original_size != list_of_phi.size(), "Phi" + phi->ToString() + " not removed");
    if(updated_ssa_uses)
    {
-      const auto uses = tree_helper::ComputeSsaUses(phi);
+      const auto& uses = tree_helper::ComputeSsaUses(phi);
       for(const auto& use : uses)
       {
-         for(size_t counter = 0; counter < use.second; counter ++)
+         for(size_t counter = 0; counter < use.second; counter++)
          {
             GetPointer<ssa_name>(GET_NODE(use.first))->RemoveUse(phi);
          }

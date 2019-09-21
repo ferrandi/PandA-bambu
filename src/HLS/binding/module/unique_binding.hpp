@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file unique_binding.hpp
  * @brief Class to create a unique binding
@@ -37,7 +37,7 @@
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @version $Revision$
  * @date $Date$
-*/
+ */
 
 #ifndef UNIQUE_BINDING_HPP
 #define UNIQUE_BINDING_HPP
@@ -49,25 +49,23 @@
  */
 class unique_binding : public fu_binding_creator
 {
+ public:
+   /**
+    * Constructor
+    * @param design_flow_manager is the design flow manager
+    */
+   unique_binding(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
-   public:
+   /**
+    * Destructor.
+    */
+   ~unique_binding() override;
 
-      /**
-       * Constructor
-       * @param design_flow_manager is the design flow manager
-       */
-      unique_binding(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
-
-      /**
-       * Destructor.
-       */
-      ~unique_binding();
-
-      /**
-       * Performs module binding assigning each operation to a free resource
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status InternalExec();
+   /**
+    * Performs module binding assigning each operation to a free resource
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 };
 
 #endif

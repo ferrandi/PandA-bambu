@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file StateTransitionGraph_constructor.hpp
  * @brief File contanining the structures necessary to manage a graph that will represent a state transition graph
@@ -44,7 +44,6 @@
  *
  */
 
-
 #ifndef STATETRANSITIONGRAPHCONSTR_HPP
 #define STATETRANSITIONGRAPHCONSTR_HPP
 
@@ -56,82 +55,97 @@ CONSTREF_FORWARD_DECL(HLS_manager);
 CONSTREF_FORWARD_DECL(OpGraph);
 REF_FORWARD_DECL(StateTransitionGraph);
 REF_FORWARD_DECL(StateTransitionGraphsCollection);
+enum transition_type : int;
 
 class StateTransitionGraph_constructor
 {
+ private:
+   /// Index of the next state to be created
+   unsigned int state_index;
 
-   private:
-      ///Index of the next state to be created
-      unsigned int state_index;
+   /// The bulk state transition graph
+   const StateTransitionGraphsCollectionRef state_transition_graphs_collection;
 
-      ///The bulk state transition graph
-      const StateTransitionGraphsCollectionRef state_transition_graphs_collection;
+   /// The complete state transition graph
+   const StateTransitionGraphRef state_transition_graph;
 
-      ///The complete state transition graph
-      const StateTransitionGraphRef state_transition_graph;
+   /// The HLSMgr
+   const Wrefcount<const HLS_manager> HLSMgr;
 
-      ///The HLSMgr
-      const Wrefcount<const HLS_manager> HLSMgr;
+   unsigned int funId;
 
-      unsigned int funId;
+ public:
+   /**
+    * Constructor of the class. It creates a new empty graph and it sets reference to hls class
+    * @param state_transition_graphs_collection is the graph to be manipulated
+    * @param HLS is the HLS data structure
+    */
+   StateTransitionGraph_constructor(const StateTransitionGraphsCollectionRef state_transition_graphs_collection, const HLS_managerConstRef HLSMgr, unsigned int funId);
 
-   public:
-      /**
-       * Constructor of the class. It creates a new empty graph and it sets reference to hls class
-       * @param state_transition_graphs_collection is the graph to be manipulated
-       * @param HLS is the HLS data structure
-       */
-      StateTransitionGraph_constructor(const StateTransitionGraphsCollectionRef state_transition_graphs_collection, const HLS_managerConstRef HLSMgr, unsigned int funId);
+   /**
+    * Adds a new state managing the operations given as parameters
+    * @param exec_op is a list of operation vertices that will be executed by the created state
+    * @param start_op is a list of operation vertices that will start to be executed by the created state
+    * @param end_op is a list of operation vertices that will end in the created state
+    * @return the created vertex
+    */
+   vertex create_state(const std::list<vertex>& exec_op, const std::list<vertex>& start_op, const std::list<vertex>& end_op, const std::set<unsigned int>& BB_ids);
 
-      /**
-       * Adds a new state managing the operations given as parameters
-       * @param exec_op is a list of operation vertices that will be executed by the created state
-       * @param start_op is a list of operation vertices that will start to be executed by the created state
-       * @param end_op is a list of operation vertices that will end in the created state
-       * @return the created vertex
-       */
-      vertex create_state(const std::list<vertex> &exec_op, const std::list<vertex> & start_op, const std::list<vertex> &end_op, const std::set<unsigned int> &BB_ids);
+   /**
+    *  create the STG entry vertex
+    */
+   void create_entry_state();
+   /**
+    *  create the STG exit vertex
+    */
+   void create_exit_state();
 
-      /**
-       *  create the STG entry vertex
-       */
-      void create_entry_state();
-      /**
-       *  create the STG exit vertex
-       */
-      void create_exit_state();
+   /**
+    * Creates a connection between two vertices into the graph. You can also specify the edge kind. The method checks
+    * if the two vertices are stored into the graph, if one of them (or both) isn't, an exception is thrown.
+    * @param src is the source vertex (as returned by create_state method)
+    * @param tgt is the target vertex (as returned by create_state method)
+    * @param type is the edge type that it's going to be created (normal, direct edge is default)
+    * @param exec_op is a list of operation vertices that will be executed by the transition
+    * @param end_op is a list of operation vertices that will end in the transition
+    * @return the descriptor of edge here created
+    */
+   EdgeDescriptor connect_state(const vertex& src, const vertex& tgt, int type);
 
-      /**
-       * Creates a connection between two vertices into the graph. You can also specify the edge kind. The method checks
-       * if the two vertices are stored into the graph, if one of them (or both) isn't, an exception is thrown.
-       * @param src is the source vertex (as returned by create_state method)
-       * @param tgt is the target vertex (as returned by create_state method)
-       * @param type is the edge type that it's going to be created (normal, direct edge is default)
-       * @param exec_op is a list of operation vertices that will be executed by the transition
-       * @param end_op is a list of operation vertices that will end in the transition
-       * @return the descriptor of edge here created
-       */
-      EdgeDescriptor connect_state(const vertex& src, const vertex& tgt, int type);
+   /**
+    * Changes the control condition associated to an edge. If no condition is given, previous one is erased and
+    * edge becomes without a true or false control dependence.
+    * @param e is the FSM edge
+    * @param t is the condition type
+    * @param ops is the vertex involved by this condition
+    */
+   void set_condition(const EdgeDescriptor& e, transition_type t, vertex ops);
 
-      /**
-       * Changes the control condition associated to an edge. If no condition is given, previous one is erased and
-       * edge becomes without a true or false control dependence.
-       * @param e is the edge you want to change the control condition
-       * @param cond is the new control condition to be associated to edge (no control dependence condition as default)
-       */
-      void set_condition(const EdgeDescriptor& e, const std::set<std::pair<vertex, unsigned int> >& cond);
+   void set_unbounded_condition(const EdgeDescriptor& e, transition_type t, const std::set<vertex>& ops, vertex ref_state);
 
-      static
-      void add_conditions(const std::set<std::pair<vertex, unsigned int> > & EdgeConditions, std::set<std::pair<vertex, unsigned int> > & Conditions);
+   /**
+    * @brief function setting the condition on edge derived from switch statements
+    * @param e is the FSM edge
+    * @param op is the controlling operations
+    * @param labels are the the switch guards/labels associated with the edge
+    * @param has_default is true when with the edge is associated the default guard/label
+    */
+   void set_switch_condition(const EdgeDescriptor& e, vertex op, const std::set<unsigned>& labels, bool has_default);
 
-      /** Removes the specified edge from the graph.
-       * If the graph does not contain the specified edge, this method throws an exception. */
-      void delete_edge(const vertex& src, const vertex& tgt);
+   /**
+    * @brief copy condition from one edge to another
+    * @param dest is the destination edge of the fsm
+    * @param source is the source edge of the fsm
+    */
+   void copy_condition(const EdgeDescriptor& dest, const EdgeDescriptor& source);
 
-      /** Removes the specified state from the graph.
-       * If the graph does not contain a vertex representing that state, this method throws an exception. */
-      void delete_state(const vertex& src);
+   /** Removes the specified edge from the graph.
+    * If the graph does not contain the specified edge, this method throws an exception. */
+   void delete_edge(const vertex& src, const vertex& tgt);
 
+   /** Removes the specified state from the graph.
+    * If the graph does not contain a vertex representing that state, this method throws an exception. */
+   void delete_state(const vertex& src);
 };
 
 /// refcount definition to StateTransitionGraph_constructor class

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (C) 2015-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,45 +29,43 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file parser_flow_step_factory.cpp
  * @brief Factory for parser flow step
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
-///Header include
+ */
+/// Header include
 #include "parser_flow_step_factory.hpp"
 
-///Autoheader includes
+/// Autoheader includes
 #include "config_HAVE_FROM_AADL_ASN_BUILT.hpp"
 
-///parser include
+/// parser include
 #include "parser_flow_step.hpp"
 
 #if HAVE_FROM_AADL_ASN_BUILT
-///parser/aadl include
+/// parser/aadl include
 #include "aadl_parser.hpp"
 
-///parser/asn include
+/// parser/asn include
 #include "asn_parser.hpp"
 #endif
 
-ParserFlowStepFactory::ParserFlowStepFactory(const DesignFlowManagerConstRef _design_flow_manager, const application_managerRef _AppM, const ParameterConstRef _parameters) :
-   DesignFlowStepFactory(_design_flow_manager, _parameters),
-   AppM(_AppM)
-{}
+ParserFlowStepFactory::ParserFlowStepFactory(const DesignFlowManagerConstRef _design_flow_manager, const application_managerRef _AppM, const ParameterConstRef _parameters) : DesignFlowStepFactory(_design_flow_manager, _parameters), AppM(_AppM)
+{
+}
 
-ParserFlowStepFactory::~ParserFlowStepFactory()
-{}
+ParserFlowStepFactory::~ParserFlowStepFactory() = default;
 
 const std::string ParserFlowStepFactory::GetPrefix() const
 {
    return "Parser";
 }
 
-DesignFlowStepRef ParserFlowStepFactory::CreateFlowStep(const std::string&signature) const
+DesignFlowStepRef ParserFlowStepFactory::CreateFlowStep(const std::string& signature) const
 {
    THROW_ASSERT(signature.find(GetPrefix() + "::") == 0, signature);
    const auto step_to_be_created = signature.substr(GetPrefix().size() + 2);
@@ -77,13 +75,13 @@ DesignFlowStepRef ParserFlowStepFactory::CreateFlowStep(const std::string&signat
    {
 #if HAVE_FROM_AADL_ASN_BUILT
       case ParserFlowStep_Type::AADL:
-         {
-            return DesignFlowStepRef(new AadlParser(design_flow_manager.lock(), file_name, AppM, parameters));
-         }
+      {
+         return DesignFlowStepRef(new AadlParser(design_flow_manager.lock(), file_name, AppM, parameters));
+      }
       case ParserFlowStep_Type::ASN:
-         {
-            return DesignFlowStepRef(new AsnParser(design_flow_manager.lock(), file_name, AppM, parameters));
-         }
+      {
+         return DesignFlowStepRef(new AsnParser(design_flow_manager.lock(), file_name, AppM, parameters));
+      }
 #endif
       default:
          THROW_UNREACHABLE("");

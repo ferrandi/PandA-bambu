@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,33 +29,35 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file virtual_phi_nodes_split.cpp
  * @brief Insert a temporary assignment for each phi use. This code has been derived from the split_phi_nodes.[hc]pp
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "virtual_phi_nodes_split.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior includes
+/// behavior includes
 #include "application_manager.hpp"
 #include "function_behavior.hpp"
 
-///parser/treegcc include
+/// parser/treegcc include
 #include "token_interface.hpp"
 
-///STD include
+/// STD include
 #include <fstream>
 
-///tree include
+/// tree include
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "ext_tree_node.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
@@ -63,28 +65,25 @@
 
 bool virtual_phi_nodes_split::tree_dumped = false;
 
-virtual_phi_nodes_split::virtual_phi_nodes_split(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
-   FunctionFrontendFlowStep(_AppM, _function_id, VIRTUAL_PHI_NODES_SPLIT, _design_flow_manager, _parameters)
+virtual_phi_nodes_split::virtual_phi_nodes_split(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, VIRTUAL_PHI_NODES_SPLIT, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
+virtual_phi_nodes_split::~virtual_phi_nodes_split() = default;
 
-virtual_phi_nodes_split::~virtual_phi_nodes_split()
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> virtual_phi_nodes_split::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-}
-
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > virtual_phi_nodes_split::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
-{
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BLOCK_FIX, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
@@ -116,12 +115,12 @@ DesignFlowStep_Status virtual_phi_nodes_split::InternalExec()
    }
 
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
-   function_decl * fd = GetPointer<function_decl>(temp);
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
-   std::map<unsigned int, blocRef> & list_of_bloc = sl->list_of_bloc;
+   auto* fd = GetPointer<function_decl>(temp);
+   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   std::map<unsigned int, blocRef>& list_of_bloc = sl->list_of_bloc;
 
    std::map<unsigned int, blocRef>::iterator iit, iit_end = list_of_bloc.end();
-   for(iit = list_of_bloc.begin(); iit != iit_end ; ++iit)
+   for(iit = list_of_bloc.begin(); iit != iit_end; ++iit)
    {
       blocRef& bb_block = iit->second;
       for(const auto& phi : bb_block->CGetPhiList())
@@ -145,21 +144,21 @@ DesignFlowStep_Status virtual_phi_nodes_split::InternalExec()
 void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& bb_block, std::map<unsigned int, blocRef>& list_of_bloc, const tree_managerRef TM)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Splitting phi node " + boost::lexical_cast<std::string>(GET_INDEX_NODE(tree_phi)));
-   gimple_phi *phi = GetPointer<gimple_phi>(GET_NODE(tree_phi));
+   auto* phi = GetPointer<gimple_phi>(GET_NODE(tree_phi));
    THROW_ASSERT(phi, "A non-phi node is stored in the phi_list");
-   //std::cout << "Analyzing phi-node: @" << GET_INDEX_NODE(tree_phi) << std::endl;
-   if (phi->virtual_flag)
+   // std::cout << "Analyzing phi-node: @" << GET_INDEX_NODE(tree_phi) << std::endl;
+   if(phi->virtual_flag)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Phi node is virtual so no splitting is performed");
-      return ;
+      return;
    }
    for(const auto& def_edge : phi->CGetDefEdgesList())
    {
       tree_nodeRef def = def_edge.first;
 
-      ///create the new ssa
+      /// create the new ssa
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ssa_IR_schema;
-      ssa_name *ssa_var = GetPointer<ssa_name>(GET_NODE(phi->res));
+      auto* ssa_var = GetPointer<ssa_name>(GET_NODE(phi->res));
       THROW_ASSERT(ssa_var, "unexpected condition " + STR(GET_INDEX_NODE(phi->res)));
       unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(phi->res));
       unsigned int new_ssa_id = TM->new_tree_node_id();
@@ -176,40 +175,41 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
 
       tree_nodeRef res = TM->GetTreeReindex(new_ssa_id);
 
-      ///substitute the def with the new ssa
+      /// substitute the def with the new ssa
       phi->ReplaceDefEdge(TM, def_edge, gimple_phi::DefEdge(res, def_edge.second));
       unsigned int bb_source = def_edge.second;
       blocRef source_bb;
       std::map<unsigned int, blocRef>::iterator it, it_end = list_of_bloc.end();
-      for(it = list_of_bloc.begin(); it != it_end ; ++it)
+      for(it = list_of_bloc.begin(); it != it_end; ++it)
       {
          source_bb = it->second;
-         if (source_bb->number != bb_source) continue;
+         if(source_bb->number != bb_source)
+            continue;
          if(replace.find(std::pair<unsigned int, unsigned int>(bb_source, bb_block->number)) != replace.end())
          {
             bb_source = replace[std::pair<unsigned int, unsigned int>(bb_source, bb_block->number)];
             source_bb = list_of_bloc.find(bb_source)->second;
             phi->ReplaceDefEdge(TM, def_edge, gimple_phi::DefEdge(def_edge.first, bb_source));
          }
-         if (bb_source == bloc::ENTRY_BLOCK_ID)
+         if(bb_source == bloc::ENTRY_BLOCK_ID)
          {
-            //New block has not been created
+            // New block has not been created
             if(!next_entry)
             {
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Predecessor is entry: creating new basic block");
                THROW_ASSERT(source_bb->list_of_succ.size() == 1, "ENTRY BB has more than one successor");
                unsigned int this_bb_index = source_bb->list_of_succ.front();
-               //Creating new basic block
+               // Creating new basic block
                blocRef new_bb = blocRef(new bloc(list_of_bloc.rbegin()->first + 1));
                new_bb->list_of_pred.push_back(bloc::ENTRY_BLOCK_ID);
                new_bb->list_of_succ.push_back(this_bb_index);
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Adding edge from " + boost::lexical_cast<std::string>(bloc::ENTRY_BLOCK_ID) + " to " + boost::lexical_cast<std::string>(this_bb_index));
 
-               //Updating entry
+               // Updating entry
                source_bb->list_of_succ.clear();
                source_bb->list_of_succ.push_back(new_bb->number);
 
-               //Updating this
+               // Updating this
                blocRef this_bb;
                unsigned int index;
                for(index = 0; index < list_of_bloc.size(); index++)
@@ -252,16 +252,8 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
          TM->create_tree_node(gimple_stmt_id, gimple_assign_K, IR_schema);
          tree_nodeRef created_stmt = TM->GetTreeReindex(gimple_stmt_id);
          phi->ReplaceDefEdge(TM, def_edge, gimple_phi::DefEdge(def_edge.first, source_bb->number));
-         if(
-               list_of_stmt.size()
-               and
-               (
-                  GetPointer<gimple_goto>(GET_NODE(list_of_stmt.back())) ||
-                  GetPointer<gimple_while>(GET_NODE(list_of_stmt.back())) ||
-                  GetPointer<gimple_for>(GET_NODE(list_of_stmt.back())) ||
-                  GetPointer<gimple_switch>(GET_NODE(list_of_stmt.back()))
-               )
-           )
+         if(list_of_stmt.size() and
+            (GetPointer<gimple_goto>(GET_NODE(list_of_stmt.back())) || GetPointer<gimple_while>(GET_NODE(list_of_stmt.back())) || GetPointer<gimple_for>(GET_NODE(list_of_stmt.back())) || GetPointer<gimple_switch>(GET_NODE(list_of_stmt.back()))))
          {
             source_bb->PushBack(created_stmt);
             /// update bb_index associated with the statement
@@ -274,17 +266,17 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
             if(true_case)
             {
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "This is true edge");
-               //Creating new basic block
+               // Creating new basic block
                new_bb->list_of_pred.push_back(source_bb->true_edge);
                new_bb->list_of_succ.push_back(bb_block->number);
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created new basic block " + boost::lexical_cast<std::string>(new_bb->number));
 
-               //Updating predecessor
+               // Updating predecessor
                source_bb->list_of_succ.erase(std::find(source_bb->list_of_succ.begin(), source_bb->list_of_succ.end(), bb_block->number));
                source_bb->list_of_succ.push_back(new_bb->number);
                source_bb->true_edge = new_bb->number;
 
-               //Updating this
+               // Updating this
                bb_block->list_of_pred.erase(std::find(bb_block->list_of_pred.begin(), bb_block->list_of_pred.end(), source_bb->number));
                bb_block->list_of_pred.push_back(new_bb->number);
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Adding edge from " + boost::lexical_cast<std::string>(source_bb->number) + " to " + boost::lexical_cast<std::string>(new_bb->number));
@@ -292,28 +284,27 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
             else
             {
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "This is false edge");
-               //Creating new basic block
+               // Creating new basic block
                new_bb->list_of_pred.push_back(source_bb->false_edge);
                new_bb->list_of_succ.push_back(bb_block->number);
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created new basic block " + boost::lexical_cast<std::string>(new_bb->number));
 
-               //Updating predecessor
+               // Updating predecessor
                source_bb->list_of_succ.erase(std::find(source_bb->list_of_succ.begin(), source_bb->list_of_succ.end(), bb_block->number));
                source_bb->list_of_succ.push_back(new_bb->number);
                source_bb->false_edge = new_bb->number;
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Updated predecessor");
 
-               //Updating this
+               // Updating this
                bb_block->list_of_pred.erase(std::find(bb_block->list_of_pred.begin(), bb_block->list_of_pred.end(), source_bb->number));
                bb_block->list_of_pred.push_back(new_bb->number);
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Adding edge from " + boost::lexical_cast<std::string>(source_bb->number) + " to " + boost::lexical_cast<std::string>(new_bb->number));
-
             }
             list_of_bloc[new_bb->number] = new_bb;
             replace[std::pair<unsigned int, unsigned int>(source_bb->number, bb_block->number)] = new_bb->number;
             phi->ReplaceDefEdge(TM, def_edge, gimple_phi::DefEdge(def_edge.first, new_bb->number));
 
-            //Inserting phi
+            // Inserting phi
             new_bb->PushBack(created_stmt);
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Inserted new gimple " + boost::lexical_cast<std::string>(gimple_stmt_id));
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Finished creation of new basic block");
@@ -326,5 +317,5 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
          break;
       }
    }
-   return ;
+   return;
 }

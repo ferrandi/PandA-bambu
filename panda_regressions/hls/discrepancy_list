@@ -4,23 +4,15 @@ gcc_regression_simple/builtins/abs-3.c
 gcc_regression_simple/builtins/complex-builtins-1.c
 gcc_regression_simple/builtins/memchr.c
 gcc_regression_simple/builtins/memcpy-chk_test4.c
-gcc_regression_simple/builtins/memcpy-chk_test5.c
 gcc_regression_simple/builtins/memmove-2.c
 gcc_regression_simple/builtins/memmove-chk_test5.c
-gcc_regression_simple/builtins/memmove-chk_test6.c
-gcc_regression_simple/builtins/mempcpy-chk_test1.c
-gcc_regression_simple/builtins/mempcpy-chk_test3.c
 gcc_regression_simple/builtins/mempcpy-chk_test4.c
-gcc_regression_simple/builtins/mempcpy-chk_test5.c
-gcc_regression_simple/builtins/mempcpy.c
 gcc_regression_simple/builtins/memset.c
 gcc_regression_simple/builtins/printf.c
-gcc_regression_simple/builtins/stpcpy-chk_test2.c
 gcc_regression_simple/builtins/stpcpy-chk_test4.c
 gcc_regression_simple/builtins/strchr.c
 gcc_regression_simple/builtins/strcmp.c
 gcc_regression_simple/builtins/strcpy-2.c
-gcc_regression_simple/builtins/strcpy-chk_test2.c
 gcc_regression_simple/builtins/strcpy-chk_test4.c
 gcc_regression_simple/builtins/strlen-2.c
 gcc_regression_simple/builtins/strlen-3.c
@@ -34,8 +26,6 @@ gcc_regression_simple/builtins/strstr-asm.c
 gcc_regression_simple/builtins/strstr.c
 gcc_regression_simple/ieee/20010114-2.c
 gcc_regression_simple/ieee/20011123-1.c
-gcc_regression_simple/ieee/20030331-1.c
-gcc_regression_simple/ieee/920518-1.c
 gcc_regression_simple/ieee/980619-1.c
 gcc_regression_simple/ieee/builtin-nan-1.c
 gcc_regression_simple/ieee/compare-fp-2.c
@@ -65,7 +55,6 @@ gcc_regression_simple/20000314-3.c
 gcc_regression_simple/20000402-1.c
 gcc_regression_simple/20000403-1.c
 gcc_regression_simple/20000412-1.c
-gcc_regression_simple/20000412-3.c
 gcc_regression_simple/20000412-4.c
 gcc_regression_simple/20000412-5.c
 gcc_regression_simple/20000412-6.c
@@ -76,18 +65,14 @@ gcc_regression_simple/20000511-1.c
 gcc_regression_simple/20000519-2.c
 gcc_regression_simple/20000523-1.c
 gcc_regression_simple/20000528-1.c
-gcc_regression_simple/20000605-1.c
 gcc_regression_simple/20000605-2.c
 gcc_regression_simple/20000605-3.c
 gcc_regression_simple/20000622-1.c
-gcc_regression_simple/20000706-2.c
 gcc_regression_simple/20000706-3.c
 gcc_regression_simple/20000706-4.c
 gcc_regression_simple/20000706-5.c
-gcc_regression_simple/20000707-1.c
 gcc_regression_simple/20000715-1.c
 gcc_regression_simple/20000715-2.c
-gcc_regression_simple/20000717-1.c
 gcc_regression_simple/20000717-2.c
 gcc_regression_simple/20000717-3.c
 gcc_regression_simple/20000717-4.c
@@ -97,7 +82,6 @@ gcc_regression_simple/20000731-2.c
 gcc_regression_simple/20000801-1.c
 gcc_regression_simple/20000801-2.c
 gcc_regression_simple/20000801-3.c
-gcc_regression_simple/20000808-1.c
 gcc_regression_simple/20000818-1.c
 gcc_regression_simple/20000910-1.c
 gcc_regression_simple/20000910-2.c
@@ -117,7 +101,6 @@ gcc_regression_simple/20001112-1.c
 gcc_regression_simple/20001121-1.c
 gcc_regression_simple/20001130-2.c
 gcc_regression_simple/20001203-1.c
-gcc_regression_simple/20001203-2.c
 gcc_regression_simple/20001221-1.c
 gcc_regression_simple/20001228-1.c
 gcc_regression_simple/20010106-1.c
@@ -136,7 +119,6 @@ gcc_regression_simple/20010403-1.c
 gcc_regression_simple/20010409-1.c
 gcc_regression_simple/20010422-1.c
 gcc_regression_simple/20010518-1.c
-gcc_regression_simple/20010518-2.c
 gcc_regression_simple/20010520-1.c
 gcc_regression_simple/20010604-1.c
 gcc_regression_simple/20010605-2.c
@@ -148,7 +130,6 @@ gcc_regression_simple/20010904-2.c
 gcc_regression_simple/20010910-1.c
 gcc_regression_simple/20010915-1.c
 gcc_regression_simple/20010924-1.c
-gcc_regression_simple/20010925-1.c
 gcc_regression_simple/20011019-1.c
 gcc_regression_simple/20011024-1.c
 gcc_regression_simple/20011109-1.c
@@ -177,16 +158,13 @@ gcc_regression_simple/20020226-1.c
 gcc_regression_simple/20020227-1.c
 gcc_regression_simple/20020307-1.c
 gcc_regression_simple/20020314-1.c
-gcc_regression_simple/20020320-1.c
 gcc_regression_simple/20020321-1.c
 gcc_regression_simple/20020328-1.c
 gcc_regression_simple/20020402-1.c
 gcc_regression_simple/20020402-2.c
-gcc_regression_simple/20020402-3.c
 gcc_regression_simple/20020404-1.c
 gcc_regression_simple/20020423-1.c
 gcc_regression_simple/20020503-1.c
-gcc_regression_simple/20020506-1.c
 gcc_regression_simple/20020508-1.c
 gcc_regression_simple/20020508-2.c
 gcc_regression_simple/20020508-3.c
@@ -263,7 +241,6 @@ gcc_regression_simple/20040319-1.c
 gcc_regression_simple/20040331-1.c
 gcc_regression_simple/20040409-1.c
 gcc_regression_simple/20040409-2.c
-gcc_regression_simple/20040409-3.c
 gcc_regression_simple/20040411-1.c
 gcc_regression_simple/20040423-1.c
 gcc_regression_simple/20040625-1.c
@@ -298,7 +275,6 @@ gcc_regression_simple/20050218-1.c
 gcc_regression_simple/20050224-1.c
 gcc_regression_simple/20050410-1.c
 gcc_regression_simple/20050607-1.c
-gcc_regression_simple/20050613-1.c
 gcc_regression_simple/20050826-1.c
 gcc_regression_simple/20050826-2.c
 gcc_regression_simple/20051021-1.c
@@ -312,7 +288,6 @@ gcc_regression_simple/20060110-1.c
 gcc_regression_simple/20060110-2.c
 gcc_regression_simple/20060127-1.c
 gcc_regression_simple/20060412-1.c
-gcc_regression_simple/20060905-1.c
 gcc_regression_simple/20060910-1.c
 gcc_regression_simple/20060929-1.c
 gcc_regression_simple/20060930-1.c
@@ -330,11 +305,8 @@ gcc_regression_simple/20070724-1.c
 gcc_regression_simple/20071011-1.c
 gcc_regression_simple/20071018-1.c
 gcc_regression_simple/20071029-1.c
-gcc_regression_simple/20071030-1.c
-gcc_regression_simple/20071108-1.c
 gcc_regression_simple/20071205-1.c
 gcc_regression_simple/20071216-1.c
-gcc_regression_simple/20071219-1.c
 gcc_regression_simple/20080117-1.c
 gcc_regression_simple/20080222-1.c
 gcc_regression_simple/20080408-1.c
@@ -349,7 +321,6 @@ gcc_regression_simple/20080719-1.c
 gcc_regression_simple/20080813-1.c
 gcc_regression_simple/20081112-1.c
 gcc_regression_simple/20081218-1.c
-gcc_regression_simple/20090113-1.c
 gcc_regression_simple/20090113-2.c
 gcc_regression_simple/20090113-3.c
 gcc_regression_simple/20090207-1.c
@@ -401,7 +372,6 @@ gcc_regression_simple/921104-1.c
 gcc_regression_simple/921110-1.c
 gcc_regression_simple/921113-1.c
 gcc_regression_simple/921123-1.c
-gcc_regression_simple/921123-2.c
 gcc_regression_simple/921124-1.c
 gcc_regression_simple/921202-1.c
 gcc_regression_simple/921202-2.c
@@ -410,7 +380,6 @@ gcc_regression_simple/921208-1.c
 gcc_regression_simple/921208-2.c
 gcc_regression_simple/921218-1.c
 gcc_regression_simple/921218-2.c
-gcc_regression_simple/930106-1.c
 gcc_regression_simple/930111-1.c
 gcc_regression_simple/930123-1.c
 gcc_regression_simple/930406-1.c
@@ -453,7 +422,6 @@ gcc_regression_simple/931228-1.c
 gcc_regression_simple/940115-1.c
 gcc_regression_simple/940122-1.c
 gcc_regression_simple/941014-1.c
-gcc_regression_simple/941014-2.c
 gcc_regression_simple/941015-1.c
 gcc_regression_simple/941021-1.c
 gcc_regression_simple/941025-1.c
@@ -469,7 +437,6 @@ gcc_regression_simple/950511-1.c
 gcc_regression_simple/950512-1.c
 gcc_regression_simple/950605-1.c
 gcc_regression_simple/950607-1.c
-gcc_regression_simple/950607-2.c
 gcc_regression_simple/950612-1.c
 gcc_regression_simple/950621-1.c
 gcc_regression_simple/950704-1.c
@@ -548,7 +515,6 @@ gcc_regression_simple/990524-1.c
 gcc_regression_simple/990527-1.c
 gcc_regression_simple/990531-1.c
 gcc_regression_simple/990604-1.c
-gcc_regression_simple/990628-1.c
 gcc_regression_simple/990804-1.c
 gcc_regression_simple/990811-1.c
 gcc_regression_simple/990826-0.c
@@ -578,7 +544,6 @@ gcc_regression_simple/bf-pack-1.c
 gcc_regression_simple/bf-sign-1.c
 gcc_regression_simple/bitfld-1.c
 gcc_regression_simple/bitfld-2.c
-gcc_regression_simple/bitfld-3.c
 gcc_regression_simple/bitfld-4.c
 gcc_regression_simple/call-trap-1.c
 gcc_regression_simple/cmpdi-1.c
@@ -591,7 +556,6 @@ gcc_regression_simple/compare-3.c
 gcc_regression_simple/complex-1.c
 gcc_regression_simple/complex-4.c
 gcc_regression_simple/complex-7.c
-gcc_regression_simple/conversion.c
 gcc_regression_simple/cvt-1.c
 gcc_regression_simple/dbra-1.c
 gcc_regression_simple/divcmp-1.c
@@ -607,7 +571,6 @@ gcc_regression_simple/enum-1.c
 gcc_regression_simple/enum-2.c
 gcc_regression_simple/enum-3.c
 gcc_regression_simple/extzvsi.c
-gcc_regression_simple/floatunsisf-1.c
 gcc_regression_simple/func-ptr-1.c
 gcc_regression_simple/gofast.c
 gcc_regression_simple/ifcvt-onecmpl-abs-1.c
@@ -623,7 +586,6 @@ gcc_regression_simple/loop-11.c
 gcc_regression_simple/loop-12.c
 gcc_regression_simple/loop-13.c
 gcc_regression_simple/loop-14.c
-gcc_regression_simple/loop-15.c
 gcc_regression_simple/loop-2.c
 gcc_regression_simple/loop-2b.c
 gcc_regression_simple/loop-2c.c
@@ -645,8 +607,6 @@ gcc_regression_simple/lshrdi-1.c
 gcc_regression_simple/mayalias-1.c
 gcc_regression_simple/mayalias-2.c
 gcc_regression_simple/medce-1.c
-gcc_regression_simple/memcpy-1.c
-gcc_regression_simple/memcpy-2.c
 gcc_regression_simple/memset-1.c
 gcc_regression_simple/mod-1.c
 gcc_regression_simple/multdi-1.c
@@ -656,9 +616,7 @@ gcc_regression_simple/packed-1.c
 gcc_regression_simple/packed-2.c
 gcc_regression_simple/pending-4.c
 gcc_regression_simple/pr15262-1.c
-gcc_regression_simple/pr15262-2.c
 gcc_regression_simple/pr15262.c
-gcc_regression_simple/pr15296.c
 gcc_regression_simple/pr16790-1.c
 gcc_regression_simple/pr17078-1.c
 gcc_regression_simple/pr17133.c
@@ -684,7 +642,6 @@ gcc_regression_simple/pr22429.c
 gcc_regression_simple/pr22493-1.c
 gcc_regression_simple/pr22630.c
 gcc_regression_simple/pr23047.c
-gcc_regression_simple/pr23135.c
 gcc_regression_simple/pr23467.c
 gcc_regression_simple/pr23604.c
 gcc_regression_simple/pr23941.c
@@ -696,7 +653,6 @@ gcc_regression_simple/pr25125.c
 gcc_regression_simple/pr25737.c
 gcc_regression_simple/pr27073.c
 gcc_regression_simple/pr27260.c
-gcc_regression_simple/pr27285.c
 gcc_regression_simple/pr27364.c
 gcc_regression_simple/pr27671-1.c
 gcc_regression_simple/pr28289.c
@@ -716,7 +672,6 @@ gcc_regression_simple/pr31169.c
 gcc_regression_simple/pr31448-2.c
 gcc_regression_simple/pr31448.c
 gcc_regression_simple/pr32244-1.c
-gcc_regression_simple/pr32500.c
 gcc_regression_simple/pr33142.c
 gcc_regression_simple/pr33382.c
 gcc_regression_simple/pr33631.c
@@ -741,7 +696,6 @@ gcc_regression_simple/pr35163.c
 gcc_regression_simple/pr35231.c
 gcc_regression_simple/pr35390.c
 gcc_regression_simple/pr35456.c
-gcc_regression_simple/pr35472.c
 gcc_regression_simple/pr35800.c
 gcc_regression_simple/pr36034-1.c
 gcc_regression_simple/pr36034-2.c
@@ -749,7 +703,6 @@ gcc_regression_simple/pr36038.c
 gcc_regression_simple/pr36077.c
 gcc_regression_simple/pr36093.c
 gcc_regression_simple/pr36321.c
-gcc_regression_simple/pr36339.c
 gcc_regression_simple/pr36343.c
 gcc_regression_simple/pr36691.c
 gcc_regression_simple/pr36765.c
@@ -765,21 +718,18 @@ gcc_regression_simple/pr38236.c
 gcc_regression_simple/pr38422.c
 gcc_regression_simple/pr38819.c
 gcc_regression_simple/pr38969.c
-gcc_regression_simple/pr39100.c
 gcc_regression_simple/pr39233.c
 gcc_regression_simple/pr39240.c
 gcc_regression_simple/pr39501.c
 gcc_regression_simple/pr40057.c
 gcc_regression_simple/pr40386.c
 gcc_regression_simple/pr40404.c
-gcc_regression_simple/pr40493.c
 gcc_regression_simple/pr40579.c
 gcc_regression_simple/pr40668.c
 gcc_regression_simple/pr40747.c
 gcc_regression_simple/pr41317.c
 gcc_regression_simple/pr41395-1.c
 gcc_regression_simple/pr41395-2.c
-gcc_regression_simple/pr41463.c
 gcc_regression_simple/pr41750.c
 gcc_regression_simple/pr41917.c
 gcc_regression_simple/pr41919.c
@@ -834,14 +784,12 @@ gcc_regression_simple/pushpop_macro.c
 gcc_regression_simple/scope-1.c
 gcc_regression_simple/shiftdi.c
 gcc_regression_simple/shiftopt-1.c
-gcc_regression_simple/strcpy-1.c
 gcc_regression_simple/strct-pack-1.c
 gcc_regression_simple/strct-pack-2.c
 gcc_regression_simple/strct-pack-3.c
 gcc_regression_simple/strct-pack-4.c
 gcc_regression_simple/string-opt-18.c
 gcc_regression_simple/struct-aliasing-1.c
-gcc_regression_simple/struct-cpy-1.c
 gcc_regression_simple/struct-ini-1.c
 gcc_regression_simple/struct-ini-2.c
 gcc_regression_simple/struct-ini-3.c

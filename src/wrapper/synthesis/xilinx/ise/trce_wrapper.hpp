@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file trce_wrapper.hpp
  * @brief Wrapper to trce by XILINX
@@ -41,16 +41,16 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef _XILINX_TRCE_WRAPPER_HPP_
-#define _XILINX_MAP_WRAPPER_HPP_
+#define _XILINX_TRCE_WRAPPER_HPP_
 
 #include "XilinxWrapper.hpp"
 
-#define TRCE_TOOL_ID         "trce"
+#define TRCE_TOOL_ID "trce"
 
-#define PARAM_trce_tmpdir      "trce_tmpdir"
-#define PARAM_trce_report_pre  "trce_report_pre"
+#define PARAM_trce_tmpdir "trce_tmpdir"
+#define PARAM_trce_report_pre "trce_report_pre"
 #define PARAM_trce_report_post "trce_report_post"
 
 /**
@@ -59,38 +59,35 @@
  */
 class trce_wrapper : public XilinxWrapper
 {
-   protected:
+ protected:
+   /**
+    * Initializes the reserved variables
+    */
+   void init_reserved_vars() override;
 
-      /**
-       * Initializes the reserved variables
-       */
-      void init_reserved_vars();
+   /**
+    * Evaluates the design variables
+    */
+   void EvaluateVariables(const DesignParametersRef dp) override;
 
-      /**
-       * Evaluates the design variables
-       */
-      void EvaluateVariables(const DesignParametersRef dp);
+   /**
+    * Returns the proper command line
+    */
+   std::string get_command_line(const DesignParametersRef& dp) const override;
 
-      /**
-       * Returns the proper command line
-       */
-      std::string get_command_line(const DesignParametersRef& dp) const;
+ public:
+   /**
+    * Constructor
+    * @param Param is the set of parameters
+    */
+   trce_wrapper(const ParameterConstRef& Param, const std::string& _output_dir, const target_deviceRef& _device);
 
-   public:
-
-      /**
-       * Constructor
-       * @param Param is the set of parameters
-       */
-      trce_wrapper(const ParameterConstRef Param, const std::string& _output_dir, const target_deviceRef _device);
-
-      /**
-       * Destructor
-       */
-      virtual ~trce_wrapper();
-
+   /**
+    * Destructor
+    */
+   ~trce_wrapper() override;
 };
-///Refcount definition for the class
+/// Refcount definition for the class
 typedef refcount<trce_wrapper> trce_wrapperRef;
 
 #endif

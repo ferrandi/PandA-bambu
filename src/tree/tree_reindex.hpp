@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file tree_reindex.hpp
  * @brief Class specification of the tree_reindex support class.
@@ -42,7 +42,7 @@
  * @warning This file is still in a work in progress state
  * @warning Last modified by $Author$
  *
-*/
+ */
 #ifndef TREE_REINDEX_HPP
 #define TREE_REINDEX_HPP
 
@@ -54,63 +54,72 @@ Each reference to a tree_node is implemented by this type of tree_node
 */
 class tree_reindex : public tree_node
 {
-   private:
-      friend class tree_manager;
+ private:
+   friend class tree_manager;
 
-       /**
-        * Private construnctor with index initialization
-        * It can be accesses only by tree_manager
-        * @param ind is the value of the index member.
-        * @param tn is the actual reference to the tree_node.
-        * NOTE: this has to be a reference since tree_nodeRef at the moment of the construction of this can not ready
-        */
-       tree_reindex(const unsigned int ind, const tree_nodeRef & tn);
+   /**
+    * Private constructor with index initialization
+    * It can be accesses only by tree_manager
+    * @param ind is the value of the index member.
+    * @param tn is the actual reference to the tree_node.
+    * NOTE: this has to be a reference since tree_nodeRef at the moment of the construction of this can not ready
+    */
+   tree_reindex(const unsigned int ind, const tree_nodeRef& tn);
 
-    public:
-       /**
-        * Represent the actual reference to the tree_node.
-        * NOTE: this has to be a reference since tree_nodeRef at the moment of the construction of this can not ready
-        */
-       const tree_nodeRef & actual_tree_node;
+ public:
+   /**
+    * Represent the actual reference to the tree_node.
+    * NOTE: this has to be a reference since tree_nodeRef at the moment of the construction of this can not ready
+    */
+   const tree_nodeRef& actual_tree_node;
 
-       static bool html;
+   static bool html;
 
-       ~tree_reindex();
+   ~tree_reindex() override;
 
-       /**
-        * function that prints the class tree_reindex.
-        */
-       void print(std::ostream& os) const;
-       /**
-        * Redefinition of get_tree_node_kind_text.
-        */
-       GET_KIND_TEXT(tree_reindex);
+   /**
+    * function that prints the class tree_reindex.
+    */
+   void print(std::ostream& os) const;
+   /**
+    * Redefinition of get_tree_node_kind_text.
+    */
+   GET_KIND_TEXT(tree_reindex)
 
-       /**
-        * Redefinition of get_tree_node_kind.
-        */
-       GET_KIND(tree_reindex);
+   /**
+    * Redefinition of get_tree_node_kind.
+    */
+   GET_KIND(tree_reindex)
 
-       /**
-        * Switch the print function to the html format
-        */
-       static void enable_html() {html = true;}
-       static void enable_raw() {html = false;}
-       /**
-        * virtual function used to traverse the tree_node data structure.
-        * @param v is a reference to the tree_node visitor class
-        */
-       virtual void visit(tree_node_visitor * const v) const;
-       ///visitor enum
-       enum {GETID(tree_node)=0, GETID(actual_tree_node)};
-
+   /**
+    * Switch the print function to the html format
+    */
+   static void enable_html()
+   {
+      html = true;
+   }
+   static void enable_raw()
+   {
+      html = false;
+   }
+   /**
+    * virtual function used to traverse the tree_node data structure.
+    * @param v is a reference to the tree_node visitor class
+    */
+   void visit(tree_node_visitor* const v) const override;
+   /// visitor enum
+   enum
+   {
+      GETID(tree_node) = 0,
+      GETID(actual_tree_node)
+   };
 };
 
-  ///functor used to correctly compare two tree_reindex
-  struct lt_tree_reindex
-  {
-    ///operator() used to compare two tree_reindex
-    bool operator()(const tree_nodeRef &x, const tree_nodeRef &y)const;
-  };
+/// functor used to correctly compare two tree_reindex
+struct lt_tree_reindex
+{
+   /// operator() used to compare two tree_reindex
+   bool operator()(const tree_nodeRef& x, const tree_nodeRef& y) const;
+};
 
 #endif

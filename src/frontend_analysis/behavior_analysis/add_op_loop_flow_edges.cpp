@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file add_op_loop_flow_edges.hpp
  * @brief Analysis step which adds flow edges for scheduling to operation graphs
@@ -40,44 +40,45 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
-///Header include
+ */
+/// Header include
 #include "add_op_loop_flow_edges.hpp"
 
-///Algotithm include
+/// Algorithm include
 #include "loop.hpp"
 #include "loops.hpp"
 
-///Behavior include
+/// Behavior include
+#include "application_manager.hpp"
 #include "basic_block.hpp"
 #include "behavioral_helper.hpp"
-#include "application_manager.hpp"
 #include "function_behavior.hpp"
-#include "operations_graph_constructor.hpp"
 #include "op_graph.hpp"
+#include "operations_graph_constructor.hpp"
 
-///Tree include
+/// Tree include
 #include "tree_basic_block.hpp"
 
-///Parameter include
+/// Parameter include
 #include "Parameter.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "hash_helper.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 
-AddOpLoopFlowEdges::AddOpLoopFlowEdges(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager) :
-   FunctionFrontendFlowStep(_AppM, _function_id, ADD_OP_LOOP_FLOW_EDGES, _design_flow_manager, _parameters)
+AddOpLoopFlowEdges::AddOpLoopFlowEdges(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, ADD_OP_LOOP_FLOW_EDGES, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-AddOpLoopFlowEdges::~AddOpLoopFlowEdges()
-{
-}
+AddOpLoopFlowEdges::~AddOpLoopFlowEdges() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > AddOpLoopFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> AddOpLoopFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OP_CONTROL_DEPENDENCE_COMPUTATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OP_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
@@ -86,8 +87,8 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(AGGREGATE_DATA_FLOW_ANALYSIS, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -117,39 +118,39 @@ void AddOpLoopFlowEdges::Initialize()
 
 DesignFlowStep_Status AddOpLoopFlowEdges::InternalExec()
 {
-   ///The control flow graph of operation
+   /// The control flow graph of operation
    const OpGraphConstRef fcfg = function_behavior->CGetOpGraph(FunctionBehavior::FCFG);
 
-   ///The graph used for the scheduling
+   /// The graph used for the scheduling
    const OpGraphConstRef fflsaodg = function_behavior->CGetOpGraph(FunctionBehavior::FFLSAODG);
 
-   ///The control flow graph of basic blocks
-   const BBGraphRef  fbb = function_behavior->GetBBGraph(FunctionBehavior::FBB);
+   /// The control flow graph of basic blocks
+   const BBGraphRef fbb = function_behavior->GetBBGraph(FunctionBehavior::FBB);
 
-   ///Operations of each loop
-   std::unordered_map<unsigned int, std::unordered_set<vertex> > loop_operations;
+   /// Operations of each loop
+   std::unordered_map<unsigned int, std::unordered_set<vertex>> loop_operations;
 
-   ///The loop structure
-   const std::list<LoopConstRef> & loops = function_behavior->CGetLoops()->GetList();
+   /// The loop structure
+   const std::list<LoopConstRef>& loops = function_behavior->CGetLoops()->GetList();
 
-   ///Adding edges from last operation of header to all operations of the loop
+   /// Adding edges from last operation of header to all operations of the loop
    std::list<LoopConstRef>::const_iterator loop, loop_end = loops.end();
    for(loop = loops.begin(); loop != loop_end; ++loop)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Considering loop " + boost::lexical_cast<std::string>((*loop)->GetId()));
-      if (!(*loop)->IsReducible())
+      if(!(*loop)->IsReducible())
       {
-         THROW_ERROR_CODE(IRREDUCIBLE_LOOPS_EC,"Irreducible loops not yet supported");
+         THROW_ERROR_CODE(IRREDUCIBLE_LOOPS_EC, "Irreducible loops not yet supported");
       }
 
-      ///Operations which belong to the loop
-      const std::unordered_set<vertex> & loop_bb = (*loop)->get_blocks();
+      /// Operations which belong to the loop
+      const std::unordered_set<vertex>& loop_bb = (*loop)->get_blocks();
       std::unordered_set<vertex>::const_iterator it, it_end = loop_bb.end();
       for(it = loop_bb.begin(); it != it_end; ++it)
       {
          const BBNodeInfoConstRef bb_node_info = fbb->CGetBBNodeInfo(*it);
-         ///Skip operation belonging to the header itself
-         const std::list<vertex>  & statements_list = bb_node_info->statements_list;
+         /// Skip operation belonging to the header itself
+         const std::list<vertex>& statements_list = bb_node_info->statements_list;
          std::list<vertex>::const_iterator it2, it2_end = statements_list.end();
          for(it2 = statements_list.begin(); it2 != it2_end; ++it2)
          {
@@ -161,10 +162,10 @@ DesignFlowStep_Status AddOpLoopFlowEdges::InternalExec()
          }
       }
 
-      ///Searching last operation of the header
+      /// Searching last operation of the header
       const vertex header = (*loop)->GetHeader();
       const BBNodeInfoConstRef bb_node_info = fbb->CGetBBNodeInfo(header);
-      const std::list<vertex>  & statements_list = bb_node_info->statements_list;
+      const std::list<vertex>& statements_list = bb_node_info->statements_list;
       THROW_ASSERT(statements_list.size(), "Header of a loop " + boost::lexical_cast<std::string>((*loop)->GetId()) + " is empty");
       const vertex last_statement = *(statements_list.rbegin());
 
@@ -200,19 +201,19 @@ DesignFlowStep_Status AddOpLoopFlowEdges::InternalExec()
       std::deque<vertex> vertices;
       boost::topological_sort(*flsaodg, std::front_inserter(vertices));
    }
-   catch (const char* msg)
+   catch(const char* msg)
    {
       THROW_UNREACHABLE("flsaodg graph of function " + function_name + " is not acyclic");
    }
-   catch (const std::string& msg)
+   catch(const std::string& msg)
    {
       THROW_UNREACHABLE("flsaodg graph of function " + function_name + " is not acyclic");
    }
-   catch (const std::exception& ex)
+   catch(const std::exception& ex)
    {
       THROW_UNREACHABLE("flsaodg graph of function " + function_name + " is not acyclic");
    }
-   catch ( ... )
+   catch(...)
    {
       THROW_UNREACHABLE("flsaodg graph of function " + function_name + " is not acyclic");
    }

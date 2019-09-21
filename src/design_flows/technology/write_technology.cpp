@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,42 +29,43 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file write_technology.cpp
  * @brief Step to writes technology as xml file
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "write_technology.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///constants include
+/// constants include
 #include "technology_xml.hpp"
 
-///polixml include
+/// polixml include
 #include "xml_document.hpp"
 
-///technology include
+/// technology include
 #include "technology_manager.hpp"
 
-///technology/physical_library include
+/// technology/physical_library include
 #include "library_manager.hpp"
 
-///technology/target_device include
+/// technology/target_device include
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "target_device.hpp"
 
-WriteTechnology::WriteTechnology(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::WRITE_TECHNOLOGY, _parameters)
-{}
+WriteTechnology::WriteTechnology(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::WRITE_TECHNOLOGY, _parameters)
+{
+}
 
-WriteTechnology::~WriteTechnology()
-{}
+WriteTechnology::~WriteTechnology() = default;
 
 DesignFlowStep_Status WriteTechnology::Exec()
 {
@@ -86,21 +87,21 @@ DesignFlowStep_Status WriteTechnology::Exec()
          TM->get_library_manager(library)->set_info(library_manager::XML, output_file);
       }
    }
-   catch (const char * msg)
+   catch(const char* msg)
    {
-      PRINT_OUT_MEX(0,0, msg);
+      PRINT_OUT_MEX(0, 0, msg);
    }
-   catch (const std::string& msg)
+   catch(const std::string& msg)
    {
-      PRINT_OUT_MEX(0,0, msg);
+      PRINT_OUT_MEX(0, 0, msg);
    }
-   catch (const std::exception& ex)
+   catch(const std::exception& ex)
    {
-      PRINT_OUT_MEX(0,0, std::string("Exception caught: ") + ex.what());
+      PRINT_OUT_MEX(0, 0, std::string("Exception caught: ") + ex.what());
    }
-   catch ( ... )
+   catch(...)
    {
-      PRINT_OUT_MEX(0,0, std::string("Unknown excetpion"));
+      PRINT_OUT_MEX(0, 0, std::string("Unknown excetpion"));
    }
    return DesignFlowStep_Status::SUCCESS;
 }
@@ -110,15 +111,15 @@ const std::unordered_set<TechnologyFlowStep_Type> WriteTechnology::ComputeTechno
    std::unordered_set<TechnologyFlowStep_Type> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP):
       {
          relationships.insert(TechnologyFlowStep_Type::FIX_CHARACTERIZATION);
          relationships.insert(TechnologyFlowStep_Type::LOAD_DEFAULT_TECHNOLOGY);
@@ -133,6 +134,3 @@ const std::unordered_set<TechnologyFlowStep_Type> WriteTechnology::ComputeTechno
    }
    return relationships;
 }
-
-
-

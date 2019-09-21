@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file extract_patterns.hpp
  * @brief Class extracting patterns extending the GCC IR. An example is the ternary_plus_expr.
@@ -39,7 +39,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef EXTRACT_PATTERNS_HPP
 #define EXTRACT_PATTERNS_HPP
@@ -56,46 +56,40 @@ REF_FORWARD_DECL(tree_manager);
 class statement_list;
 //@}
 
-
 /**
  * @brief Class extracting patterns extending the GCC IR.
  */
 class extract_patterns : public FunctionFrontendFlowStep
 {
+ private:
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   private:
+   /**
+    * look for ternary plus expressions
+    * @param sl is the statement list
+    * @param TM is the tree manager
+    */
+   void ternary_plus_expr_extraction(statement_list* sl, tree_managerRef TM);
 
-      const std::unordered_set< std::pair<FrontendFlowStepType, FunctionRelationship> >
-      ComputeFrontendRelationships (const DesignFlowStep::RelationshipType relationship_type) const;
+ public:
+   /**
+    * Constructor.
+    * @param _Param is the set of the parameters
+    * @param _AppM is the application manager
+    * @param function_id is the identifier of the function
+    * @param design_flow_manager is the design flow manager
+    */
+   extract_patterns(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * look for ternary plus expressions
-       * @param sl is the statement list
-       * @param TM is the tree manager
-       */
-      void ternary_plus_expr_extraction(statement_list* sl, tree_managerRef TM);
-
-   public:
-      /**
-       * Constructor.
-       * @param _Param is the set of the parameters
-       * @param _AppM is the application manager
-       * @param function_id is the identifier of the function
-       * @param design_flow_manager is the design flow manager
-      */
-      extract_patterns (const ParameterConstRef _Param,
-                 const application_managerRef _AppM, unsigned int function_id,
-                 const DesignFlowManagerConstRef design_flow_manager);
-
-      /**
-       *  Destructor
-      */
-      ~extract_patterns ();
-      /**
-       * Extract patterns from the GCC IR.
-       * @return the exit status of this step
-      */
-      DesignFlowStep_Status InternalExec ();
+   /**
+    *  Destructor
+    */
+   ~extract_patterns() override;
+   /**
+    * Extract patterns from the GCC IR.
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 };
 
 #endif /* EXTRACT_PATTERNS_HPP */

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2017-2018 Politecnico di Milano
+ *              Copyright (C) 2017-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file design_flow.hpp
  * @brief This class contains the base representation for design flow
@@ -37,24 +37,21 @@
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
-*/
-
-///Superclass include
+ */
 #include "design_flow.hpp"
+#include "design_flow_manager.hpp" // for DesignFlowStepFactoryConstRef
+#include "exceptions.hpp"          // for THROW_UNREACHABLE
+#include "string_manipulation.hpp" // for STR
 
-///design_flows include
-#include "design_flow_manager.hpp"
+DesignFlow::DesignFlow(const DesignFlowManagerConstRef _design_flow_manager, const DesignFlow_Type _design_flow_type, const ParameterConstRef _parameters) : DesignFlowStep(_design_flow_manager, _parameters), design_flow_type(_design_flow_type)
+{
+}
 
-DesignFlow::DesignFlow(const DesignFlowManagerConstRef _design_flow_manager, const DesignFlow_Type _design_flow_type, const ParameterConstRef _parameters) :
-   DesignFlowStep(_design_flow_manager, _parameters),
-   design_flow_type(_design_flow_type)
-{}
+DesignFlow::~DesignFlow() = default;
 
-DesignFlow::~DesignFlow()
-{}
-
-void DesignFlow::ComputeRelationships(DesignFlowStepSet &, const DesignFlowStep::RelationshipType)
-{}
+void DesignFlow::ComputeRelationships(DesignFlowStepSet&, const DesignFlowStep::RelationshipType)
+{
+}
 
 const std::string DesignFlow::GetSignature() const
 {
@@ -65,7 +62,6 @@ const std::string DesignFlow::GetName() const
 {
    return "DF::" + EnumToKindText(design_flow_type);
 }
-
 
 const std::string DesignFlow::EnumToKindText(const DesignFlow_Type design_flow_type)
 {
@@ -85,7 +81,7 @@ const DesignFlowStepFactoryConstRef DesignFlow::CGetDesignFlowStepFactory() cons
    return design_flow_manager.lock()->CGetDesignFlowStepFactory("DF");
 }
 
-DesignFlow_Type DesignFlow::KindTextToEnum(const std::string&name)
+DesignFlow_Type DesignFlow::KindTextToEnum(const std::string& name)
 {
    if(name == "NonDeterministicFlows")
    {
@@ -107,4 +103,3 @@ std::string DesignFlow::ComputeSignature(const DesignFlow_Type design_flow_type)
 {
    return "DF::" + STR(static_cast<int>(design_flow_type));
 }
-

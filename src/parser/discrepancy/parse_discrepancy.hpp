@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
@@ -42,6 +42,6 @@
 
 REF_FORWARD_DECL(Discrepancy);
 
-void parse_discrepancy (const std::string& c_trace_filename, DiscrepancyRef Discrepancy);
+void parse_discrepancy(const std::string& c_trace_filename, DiscrepancyRef Discrepancy);
 
 #endif

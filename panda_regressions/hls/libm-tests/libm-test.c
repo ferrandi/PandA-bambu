@@ -4754,8 +4754,10 @@ tanh_test (void)
   print_max_error ("tanh", 0, 0);
 }
 
-#if 0
-static void
+#ifndef NO_MAIN
+static
+#endif
+void
 tgamma_test (void)
 {
   errno = 0;
@@ -4763,7 +4765,7 @@ tgamma_test (void)
   if (errno == ENOSYS)
     /* Function not implemented.  */
     return;
-  feclearexcept (FE_ALL_EXCEPT);
+//  feclearexcept (FE_ALL_EXCEPT);
 
   initialize ();
 
@@ -4786,7 +4788,6 @@ tgamma_test (void)
 
   print_max_error ("tgamma", DELTAtgamma, 0);
 }
-#endif
 
 
 #if 0
@@ -5217,9 +5218,7 @@ main (/*int argc, char **argv*/)
   erfc_test ();
   gamma_test ();
   lgamma_test ();
-#if 0
   tgamma_test ();
-#endif
 
   /* Nearest integer functions:  */
   ceil_test ();

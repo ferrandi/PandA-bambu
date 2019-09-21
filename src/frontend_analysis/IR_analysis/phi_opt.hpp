@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file phi_opt.hpp
  * @brief Analysis step that optimize the phis starting from the GCC IR
@@ -39,14 +39,14 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef PHI_OPT_HPP
 #define PHI_OPT_HPP
 
-///Superclass include
+/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
-///Utility include
+/// Utility include
 #include "refcount.hpp"
 
 /**
@@ -85,139 +85,140 @@ enum class PhiOpt_PatternType
  */
 class PhiOpt : public FunctionFrontendFlowStep
 {
-      friend class short_circuit_taf;
-   private:
-      ///The tree manager
-      tree_managerRef TM;
+   friend class short_circuit_taf;
 
-      ///The tree manipulation
-      tree_manipulationConstRef tree_man;
+ private:
+   /// The tree manager
+   tree_managerRef TM;
 
-      ///The basic block graph of the function
-      statement_list * sl;
+   /// The tree manipulation
+   tree_manipulationConstRef tree_man;
 
-      /// flag to check if initial tree has been dumped
-      static bool tree_dumped;
+   /// The basic block graph of the function
+   statement_list* sl{nullptr};
 
-      /// flag used to restart code motion step
-      bool bb_modified;
+   /// flag to check if initial tree has been dumped
+   static bool tree_dumped;
 
-      ///The scheduling solution
-      ScheduleRef schedule;
+   /// flag used to restart code motion step
+   bool bb_modified;
 
-      /**
-       * Identify to which pattern an empty basic block belongs
-       * @param bb_index is the index of the empty basic block
-       * @return the identified pattern
-       */
-      PhiOpt_PatternType IdentifyPattern(const unsigned int bb_index) const;
+   /// The scheduling solution
+   ScheduleRef schedule;
 
-      /**
-       * Remove an empty basic block with multiple input edges
-       */
-      void ApplyDiffNothing(const unsigned int bb_index);
+   /**
+    * Identify to which pattern an empty basic block belongs
+    * @param bb_index is the index of the empty basic block
+    * @return the identified pattern
+    */
+   PhiOpt_PatternType IdentifyPattern(const unsigned int bb_index) const;
 
-      /**
-       * Remove an empty basic block dominated by gimple assign
-       * @param bb_index is the index of the empty basic block
-       */
-      void ApplyGimpleNothing(const unsigned int bb_index);
+   /**
+    * Remove an empty basic block with multiple input edges
+    */
+   void ApplyDiffNothing(const unsigned int bb_index);
 
-      /**
-       * Transform the control flow graph by merging a gimple_phi dominated by a gimple_cond
-       * @param bb_index is the index of the empty basic block
-       */
-      void ApplyIfMerge(const unsigned int bb_index);
+   /**
+    * Remove an empty basic block dominated by gimple assign
+    * @param bb_index is the index of the empty basic block
+    */
+   void ApplyGimpleNothing(const unsigned int bb_index);
 
-      /**
-       * Transform the control flow graph by eliminating an empty basic block dominated by gimple_cond without modifying phi
-       * @param bb_index is the index of the empty basic block
-       */
-      void ApplyIfNothing(const unsigned int bb_index);
+   /**
+    * Transform the control flow graph by merging a gimple_phi dominated by a gimple_cond
+    * @param bb_index is the index of the empty basic block
+    */
+   void ApplyIfMerge(const unsigned int bb_index);
 
-      /**
-       * Transform the control flow graph by removing a gimple_phi dominated by a gimple_cond
-       * @param bb_index is the index of the empty basic block
-       */
-      void ApplyIfRemove(const unsigned int bb_index);
+   /**
+    * Transform the control flow graph by eliminating an empty basic block dominated by gimple_cond without modifying phi
+    * @param bb_index is the index of the empty basic block
+    */
+   void ApplyIfNothing(const unsigned int bb_index);
 
-      /**
-       * Transform the control flow graph by merging a gimple_phi dominated by a gimple_multi_way_if
-       * @param bb_index is the index of the empty basic block
-       */
-      void ApplyMultiMerge(const unsigned int bb_index);
+   /**
+    * Transform the control flow graph by removing a gimple_phi dominated by a gimple_cond
+    * @param bb_index is the index of the empty basic block
+    */
+   void ApplyIfRemove(const unsigned int bb_index);
 
-      /**
-       * Transform the control flow graph by eliminating an empty basic block dominated by gimple_multi_way_if without modifying phi
-       * @param bb_index is the index of the empty basic block
-       */
-      void ApplyMultiNothing(const unsigned int bb_index);
+   /**
+    * Transform the control flow graph by merging a gimple_phi dominated by a gimple_multi_way_if
+    * @param bb_index is the index of the empty basic block
+    */
+   void ApplyMultiMerge(const unsigned int bb_index);
 
-      /**
-       * Transform the control flow graph by removing a gimple_phi dominated by a gimple_multi_way_if
-       * @param bb_index is the index of the empty basic block
-       */
-      void ApplyMultiRemove(const unsigned int bb_index);
+   /**
+    * Transform the control flow graph by eliminating an empty basic block dominated by gimple_multi_way_if without modifying phi
+    * @param bb_index is the index of the empty basic block
+    */
+   void ApplyMultiNothing(const unsigned int bb_index);
 
-      /**
-       * Transform single input phi in assignment
-       */
-      void SinglePhiOptimization(const unsigned int bb_index);
+   /**
+    * Transform the control flow graph by removing a gimple_phi dominated by a gimple_multi_way_if
+    * @param bb_index is the index of the empty basic block
+    */
+   void ApplyMultiRemove(const unsigned int bb_index);
 
-      /**
-       * Remove chains of basic blocks
-       * @param bb_index is the starting basic block index
-       */
-      void ChainOptimization(const unsigned int bb_index);
+   /**
+    * Transform single input phi in assignment
+    */
+   void SinglePhiOptimization(const unsigned int bb_index);
 
-      /**
-       * Remove a basic block composed only of phis my merging with the successor
-       * @param block is the index of the basic block
-       */
-      void MergePhi(const unsigned int bb_index);
+   /**
+    * Remove chains of basic blocks
+    * @param bb_index is the starting basic block index
+    */
+   void ChainOptimization(const unsigned int bb_index);
 
-      /**
-       * Remove a redundant cond expr
-       * @param statement is the statement containing
-       */
-      void RemoveCondExpr(const tree_nodeRef statement);
+   /**
+    * Remove a basic block composed only of phis my merging with the successor
+    * @param block is the index of the basic block
+    */
+   void MergePhi(const unsigned int bb_index);
 
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      virtual const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   /**
+    * Remove a redundant cond expr
+    * @param statement is the statement containing
+    */
+   void RemoveCondExpr(const tree_nodeRef statement);
 
-   public:
-      /**
-       * Constructor.
-       * @param AppM is the application manager
-       * @param function_id is the identifier of the function
-       * @param design_flow_manager is the design flow manager
-       * @param parameters is the set of input parameters
-       */
-      PhiOpt(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      /**
-       *  Destructor
-       */
-      ~PhiOpt();
+ public:
+   /**
+    * Constructor.
+    * @param AppM is the application manager
+    * @param function_id is the identifier of the function
+    * @param design_flow_manager is the design flow manager
+    * @param parameters is the set of input parameters
+    */
+   PhiOpt(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-      /**
-       * Updates the tree to have a more compliant CFG
-       */
-      DesignFlowStep_Status InternalExec();
+   /**
+    *  Destructor
+    */
+   ~PhiOpt() override;
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      virtual void Initialize();
+   /**
+    * Updates the tree to have a more compliant CFG
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /**
-       * Compute the relationships of a step with other steps
-       * @param dependencies is where relationships will be stored
-       * @param relationship_type is the type of relationship to be computed
-       */
-      virtual void ComputeRelationships(DesignFlowStepSet & relationship, const DesignFlowStep::RelationshipType relationship_type);
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
+
+   /**
+    * Compute the relationships of a step with other steps
+    * @param dependencies is where relationships will be stored
+    * @param relationship_type is the type of relationship to be computed
+    */
+   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 };
 #endif

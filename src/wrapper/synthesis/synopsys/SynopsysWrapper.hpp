@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file SynopsysWrapper.hpp
  * @brief Wrapper to synthesis tools by Synopsys
@@ -40,71 +40,68 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef _SYNOPSYS_WRAPPER_HPP_
 #define _SYNOPSYS_WRAPPER_HPP_
 
-///superclass include
+/// superclass include
 #include "SynthesisTool.hpp"
 
 class SynopsysWrapper : public SynthesisTool
 {
-   public:
-
-      ///implemented wrappers
-      typedef enum
-      {
-         UNDEFINED = 0,
+ public:
+   /// implemented wrappers
+   typedef enum
+   {
+      UNDEFINED = 0,
 #if HAVE_EXPERIMENTAL
-         PRIME_TIME,
-         FORMALITY,
-         LIBRARY_COMPILER,
+      PRIME_TIME,
+      FORMALITY,
+      LIBRARY_COMPILER,
 #endif
-         DESIGN_COMPILER
-      } wrapper_t;
+      DESIGN_COMPILER
+   } wrapper_t;
 
-      /**
-       * Constructor
-       * @param Param is the set of parameters
-       * @param tool_exec is the name of the executable
-       * @param output_dir is the directory where to save all the results
-       * @param default_output_dir is the default output directory
-       */
-      SynopsysWrapper(const ParameterConstRef Param, const std::string& tool_exec, const target_deviceRef device, const std::string& output_dir, const std::string& default_output_dir);
+   /**
+    * Constructor
+    * @param Param is the set of parameters
+    * @param tool_exec is the name of the executable
+    * @param output_dir is the directory where to save all the results
+    * @param default_output_dir is the default output directory
+    */
+   SynopsysWrapper(const ParameterConstRef& Param, const std::string& tool_exec, const target_deviceRef& device, const std::string& output_dir, const std::string& default_output_dir);
 
-      /**
-       * Destructor
-       */
-      virtual ~SynopsysWrapper();
+   /**
+    * Destructor
+    */
+   ~SynopsysWrapper() override;
 
-      /**
-       * Creates the proper configuration script
-       */
-      virtual void generate_synthesis_script(const DesignParametersRef& dp, const std::string& file_name);
+   /**
+    * Creates the proper configuration script
+    */
+   void generate_synthesis_script(const DesignParametersRef& dp, const std::string& file_name) override;
 
-      /**
-       * Returns the tool command line
-       */
-      virtual std::string get_command_line(const DesignParametersRef& dp) const;
+   /**
+    * Returns the tool command line
+    */
+   std::string get_command_line(const DesignParametersRef& dp) const override;
 
-      /**
-       * Returns the string-based representation of the XML element
-       */
-      virtual std::string toString(const xml_script_node_tRef node, const DesignParametersRef dp) const;
+   /**
+    * Returns the string-based representation of the XML element
+    */
+   std::string toString(const xml_script_node_tRef node, const DesignParametersRef dp) const override;
 
-      /**
-       * Returns the string-based representation of the XML element
-       */
-      virtual std::string getStringValue(const xml_script_node_tRef node, const DesignParametersRef& dp) const;
+   /**
+    * Returns the string-based representation of the XML element
+    */
+   std::string getStringValue(const xml_script_node_tRef node, const DesignParametersRef& dp) const override;
 
-      /**
-       * Factory method
-       */
-      static
-      SynthesisToolRef CreateWrapper(wrapper_t type, const ParameterConstRef Param, const target_deviceRef _device, const std::string& output_dir);
-
+   /**
+    * Factory method
+    */
+   static SynthesisToolRef CreateWrapper(wrapper_t type, const ParameterConstRef& Param, const target_deviceRef& _device, const std::string& output_dir);
 };
-///Refcount definition for the class
+/// Refcount definition for the class
 typedef refcount<SynopsysWrapper> SynopsysWrapperRef;
 
 #endif

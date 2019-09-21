@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (C) 2015-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,47 +29,46 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file aadl_parser_node.hpp
  * @brief Specification of the data structure associated with a node during aadl parsing
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef AADL_PARSER_NODE_HPP
 #define AADL_PARSER_NODE_HPP
 
-///STD include
+/// STD include
 #include <iosfwd>
 #include <string>
 
-///STL include
+/// STL include
 #include <list>
 
-///utility include
+/// utility include
 #include "custom_map.hpp"
 
 /**
  * Data associated with a node of the aadl parser
-*/
+ */
 struct AadlParserNode
 {
-   ///A string associated with this node
+   /// A string associated with this node
    std::string strg;
 
-   ///A set of property associations
-   CustomMap<std::string , std::string> property_associations;
+   /// A set of property associations
+   CustomMap<std::string, std::string> property_associations;
 
-   ///A list of feature provided by something
-   std::list<std::pair<std::string, CustomMap<std::string, std::string> > > features;
+   /// A list of feature provided by something
+   std::list<std::pair<std::string, CustomMap<std::string, std::string>>> features;
 
    /**
     * Friend definition of the << operator.
     * @param os is the output stream
     * @param to_be_printed is the node to be printed
     */
-   friend std::ostream& operator<<(std::ostream& os, const AadlParserNode & to_be_printed);
+   friend std::ostream& operator<<(std::ostream& os, const AadlParserNode& to_be_printed);
 };
 #endif
-

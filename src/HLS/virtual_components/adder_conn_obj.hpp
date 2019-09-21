@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file adder_conn_obj.hpp
  * @brief Class implementation of the adder connection module.
@@ -41,7 +41,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef ADDER_CONN_OBJ_HPP
 #define ADDER_CONN_OBJ_HPP
 
@@ -53,50 +53,62 @@
  */
 class adder_conn_obj : public generic_obj
 {
-      /// number of bit of in/out ports
-      unsigned int bitsize;
+   /// number of bit of in/out ports
+   unsigned int bitsize;
 
-      /// when true the addition can trim the last bits
-      bool is_aligned_adder_p;
+   /// when true the addition can trim the last bits
+   bool is_aligned_adder_p;
 
-      /// last bits that can be trimmed
-      unsigned int trimmed_bits;
+   /// last bits that can be trimmed
+   unsigned int trimmed_bits;
 
+ public:
+   /**
+    * Constructor
+    */
+   adder_conn_obj(const std::string& _name) : generic_obj(ADDER_CONN_OBJ, _name), bitsize(0), is_aligned_adder_p(false), trimmed_bits(0)
+   {
+   }
 
-   public:
+   /**
+    * Destructor.
+    */
+   ~adder_conn_obj() override = default;
 
-      /**
-       * Constructor
-       */
-      adder_conn_obj(const std::string& _name) : generic_obj(ADDER_CONN_OBJ, _name), bitsize(0), is_aligned_adder_p(false), trimmed_bits(0) {}
+   /**
+    * add a size to the component
+    */
+   void add_bitsize(unsigned int _bitsize)
+   {
+      bitsize = _bitsize > bitsize ? _bitsize : bitsize;
+   }
 
-      /**
-       * Destructor.
-       */
-      ~adder_conn_obj() {}
+   /**
+    * return the maximum bitsize associated with the component
+    */
+   unsigned int get_bitsize() const
+   {
+      return bitsize;
+   }
 
-      /**
-       * add a size to the component
-       */
-      void add_bitsize(unsigned int _bitsize) {bitsize = _bitsize>bitsize?_bitsize:bitsize;}
+   /// set the multiplication as a multiplication to a constant
+   void set_trimmed_bits(unsigned int _trimmed_bits)
+   {
+      is_aligned_adder_p = true;
+      trimmed_bits = _trimmed_bits;
+   }
 
-      /**
-       * return the maximum bitsize associated with the component
-       */
-      unsigned int get_bitsize() const {return bitsize;}
+   /// return the trimmed bits
+   unsigned int get_trimmed_bits() const
+   {
+      return trimmed_bits;
+   }
 
-      /// set the multiplication as a multiplication to a constant
-      void set_trimmed_bits(unsigned int _trimmed_bits)
-      {
-         is_aligned_adder_p = true;
-         trimmed_bits = _trimmed_bits;
-      }
-
-      /// return the trimmed bits
-      unsigned int get_trimmed_bits() const {return trimmed_bits;}
-
-      /// return true in case the addition is aligned
-      bool is_align_adder() const {return is_aligned_adder_p;}
+   /// return true in case the addition is aligned
+   bool is_align_adder() const
+   {
+      return is_aligned_adder_p;
+   }
 };
 
 #endif // ADDER_CONN_OBJ_HPP

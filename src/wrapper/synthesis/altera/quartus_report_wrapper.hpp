@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file quartus_report_wrapper.hpp
  * @brief Wrapper to invoke quartus_report tool by Altera
@@ -40,15 +40,15 @@
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef QUARTUS_REPORT_WRAPPER_HPP
 #define QUARTUS_REPORT_WRAPPER_HPP
 
-///Superclass include
+/// Superclass include
 #include "AlteraWrapper.hpp"
 
-#define QUARTUS_REPORT_TOOL_ID    "quartus_sta"
-#define QUARTUS_REPORT_TOOL_EXEC  "quartus_sta"
+#define QUARTUS_REPORT_TOOL_ID "quartus_sta"
+#define QUARTUS_REPORT_TOOL_EXEC "quartus_sta"
 
 /**
  * @class QuartusReportWrapper
@@ -56,29 +56,27 @@
  */
 class QuartusReportWrapper : public AlteraWrapper
 {
-   protected:
+ protected:
+   /**
+    * Evaluates the design variables
+    */
+   void EvaluateVariables(const DesignParametersRef dp) override;
 
-      /**
-       * Evaluates the design variables
-       */
-      void EvaluateVariables(const DesignParametersRef dp);
+ public:
+   /**
+    * Constructor
+    * @param Param is the set of parameters
+    */
+   QuartusReportWrapper(const ParameterConstRef& Param, const std::string& _output_dir, const target_deviceRef& _device);
 
-   public:
+   /**
+    * Destructor
+    */
+   ~QuartusReportWrapper() override;
 
-      /**
-       * Constructor
-       * @param Param is the set of parameters
-       */
-      QuartusReportWrapper(const ParameterConstRef Param, const std::string& _output_dir, const target_deviceRef _device);
-
-      /**
-       * Destructor
-       */
-      virtual ~QuartusReportWrapper();
-
-      /**
-       * Returns the proper command line
-       */
-      std::string get_command_line(const DesignParametersRef& dp) const;
+   /**
+    * Returns the proper command line
+    */
+   std::string get_command_line(const DesignParametersRef& dp) const override;
 };
 #endif

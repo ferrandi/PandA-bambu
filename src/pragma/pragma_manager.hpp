@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,31 +29,31 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file pragma_manager.hpp
  * @brief Manager for pragma annotations.
  *
- * A object for manage informations about pragma directives in a C/C++ program.
+ * A object for manage information about pragma directives in a C/C++ program.
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef PRAGMA_MANAGER_HPP
 #define PRAGMA_MANAGER_HPP
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "config_HAVE_MAPPING_BUILT.hpp"
 #include "config_HAVE_TASK_GRAPHS_BUILT.hpp"
 
-///graph include
+/// graph include
 #include "graph.hpp"
 
-///STL include
+/// STL include
 #include <unordered_map>
 #include <unordered_set>
 
@@ -81,148 +81,146 @@ REF_FORWARD_DECL(tree_manager);
  */
 class pragma_manager
 {
-   protected:
-      ///The application manager
-      ///NOTE: this is equivalente to a weakrefcount since deleter should be null
-      const application_managerRef application_manager;
+ protected:
+   /// The application manager
+   /// NOTE: this is equivalente to a weakrefcount since deleter should be null
+   const application_managerRef application_manager;
 
-      const tree_managerRef TM;
+   const tree_managerRef TM;
 
-      std::set<std::string> BlackBoxFunctions;
+   std::set<std::string> BlackBoxFunctions;
 
-      std::map<std::string, std::unordered_set<std::string> > FunctionCallPragmas;
+   std::map<std::string, std::unordered_set<std::string>> FunctionCallPragmas;
 
-      ///Function defintion pragmas
-      std::map<std::string, std::list<std::string> > function_definition_pragmas;
+   /// Function defintion pragmas
+   std::map<std::string, std::list<std::string>> function_definition_pragmas;
 
-      std::map<unsigned int, std::string> GenericPragmas;
+   std::map<unsigned int, std::string> GenericPragmas;
 
-      /// Set of input parameters
-      const ParameterConstRef param;
+   /// Set of input parameters
+   const ParameterConstRef param;
 
-      /// The debug level
-      int debug_level;
+   /// The debug level
+   int debug_level;
 
-   public:
-      /**
-       * The possible openmp pragmas
-       * Note that sections has to go before section but after parallel sections otherwise recognition would be wrong
-       */
-      enum OmpPragmaType
-      {
-         OMP_ATOMIC = 0,
-         OMP_BARRIER,
-         OMP_CRITICAL,
-         OMP_DECLARE_SIMD,
-         OMP_FOR,
-         OMP_PARALLEL_FOR,
-         OMP_PARALLEL_SECTIONS,
-         OMP_PARALLEL,
-         OMP_SECTIONS,
-         OMP_SECTION,
-         OMP_SIMD,
-         OMP_TARGET,
-         OMP_TASK,
-         OMP_UNKNOWN
-      };
+ public:
+   /**
+    * The possible openmp pragmas
+    * Note that sections has to go before section but after parallel sections otherwise recognition would be wrong
+    */
+   enum OmpPragmaType
+   {
+      OMP_ATOMIC = 0,
+      OMP_BARRIER,
+      OMP_CRITICAL,
+      OMP_DECLARE_SIMD,
+      OMP_FOR,
+      OMP_PARALLEL_FOR,
+      OMP_PARALLEL_SECTIONS,
+      OMP_PARALLEL,
+      OMP_SECTIONS,
+      OMP_SECTION,
+      OMP_SIMD,
+      OMP_TARGET,
+      OMP_TASK,
+      OMP_UNKNOWN
+   };
 
-      ///The list of omp directive keywords
-      static
-      const std::string omp_directive_keywords[OMP_UNKNOWN];
+   /// The list of omp directive keywords
+   static const std::string omp_directive_keywords[OMP_UNKNOWN];
 
-      /**
-       * Constructor
-       * @param application_manager is the application manager
-       * @param param is the set of the input parameters
-       */
-      pragma_manager(const application_managerRef application_manager, const ParameterConstRef param);
+   /**
+    * Constructor
+    * @param application_manager is the application manager
+    * @param param is the set of the input parameters
+    */
+   pragma_manager(const application_managerRef application_manager, const ParameterConstRef param);
 
-      /**
-       * Destructor
-       */
-      virtual ~pragma_manager();
+   /**
+    * Destructor
+    */
+   virtual ~pragma_manager();
 
-      /**
-       * Check if the datastructure information are compliant with the pragma reference manual
-       * @return true if the datastructure is compliant, false otherwise
-       */
-      bool checkCompliant() const;
+   /**
+    * Check if the datastructure information are compliant with the pragma reference manual
+    * @return true if the datastructure is compliant, false otherwise
+    */
+   bool checkCompliant() const;
 
-      bool isBlackBox(const std::string& name) const;
+   bool isBlackBox(const std::string& name) const;
 
-      /**
-       * Return the pragmas associated with a function definition
-       * @param function_name is the name of the function to be considered
-       */
-      const std::list<std::string> GetFunctionDefinitionPragmas(const std::string& function_name) const;
+   /**
+    * Return the pragmas associated with a function definition
+    * @param function_name is the name of the function to be considered
+    */
+   const std::list<std::string> GetFunctionDefinitionPragmas(const std::string& function_name) const;
 
-      std::unordered_set<std::string> getFunctionCallPragmas(const std::string& Name) const;
+   std::unordered_set<std::string> getFunctionCallPragmas(const std::string& Name) const;
 
-      /**
-       * Add a set of definition pragmas to a function
-       * @param function_name is the name of the function
-       * @param is the set of pragmas to be added
-       */
-      void AddFunctionDefinitionPragmas(const std::string& name, const std::unordered_set<std::string> & pragmas);
+   /**
+    * Add a set of definition pragmas to a function
+    * @param function_name is the name of the function
+    * @param is the set of pragmas to be added
+    */
+   void AddFunctionDefinitionPragmas(const std::string& name, const std::unordered_set<std::string>& pragmas);
 
-      void addFunctionCallPragmas(const std::string& Name, const std::unordered_set<std::string>& Pragmas);
+   void addFunctionCallPragmas(const std::string& Name, const std::unordered_set<std::string>& Pragmas);
 
-      unsigned int addBlackBoxPragma(const std::string&function_name);
+   unsigned int addBlackBoxPragma(const std::string& function_name);
 
-      void setGenericPragma(unsigned int number, const std::string& line);
+   void setGenericPragma(unsigned int number, const std::string& line);
 
-      std::string getGenericPragma(unsigned int number) const;
+   std::string getGenericPragma(unsigned int number) const;
 
-      /**
-       * Create a simd openmp pragma starting from the line containing it
-       * @param line is the string containing the pragma
-       * @return the index of the created pragma node
-       */
-      unsigned int AddOmpSimdPragma(const std::string&line) const;
+   /**
+    * Create a simd openmp pragma starting from the line containing it
+    * @param line is the string containing the pragma
+    * @return the index of the created pragma node
+    */
+   unsigned int AddOmpSimdPragma(const std::string& line) const;
 
-      /**
-       * Check if a omp for pragma is associated with the loop
-       * @param app_man is the application manager
-       * @param function_index is the index of the function
-       * @param bb_vertex is the basic block to which for operation belongs
-       * @return true if there is an associated pragma
-       */
-      bool CheckOmpFor(const application_managerConstRef app_man, const unsigned int function_index, const vertex bb_operation_vertex) const;
+   /**
+    * Check if a omp for pragma is associated with the loop
+    * @param app_man is the application manager
+    * @param function_index is the index of the function
+    * @param bb_vertex is the basic block to which for operation belongs
+    * @return true if there is an associated pragma
+    */
+   bool CheckOmpFor(const application_managerConstRef app_man, const unsigned int function_index, const vertex bb_operation_vertex) const;
 
-      /**
-       * Check if a omp for pragma is associated with the loop; if yes, add the gimple_for
-       * @param function_index is the index of the function
-       * @param bb_vertex is the basic block to which for operation belongs
-       */
-      void CheckAddOmpFor(const unsigned int function_index, const vertex bb_operation_vertex);
+   /**
+    * Check if a omp for pragma is associated with the loop; if yes, add the gimple_for
+    * @param function_index is the index of the function
+    * @param bb_vertex is the basic block to which for operation belongs
+    */
+   void CheckAddOmpFor(const unsigned int function_index, const vertex bb_operation_vertex);
 
-      /**
-       * Check if a omp simd pragma is associated with the loop; if yes, add information to the loop
-       * @param function_index is the index of the function
-       * @param bb_vertex is the basic block to which for operation belongs
-       */
-      void CheckAddOmpSimd(const unsigned int function_index, const vertex bb_operation_vertex);
+   /**
+    * Check if a omp simd pragma is associated with the loop; if yes, add information to the loop
+    * @param function_index is the index of the function
+    * @param bb_vertex is the basic block to which for operation belongs
+    */
+   void CheckAddOmpSimd(const unsigned int function_index, const vertex bb_operation_vertex);
 
-      /**
-       * Get mapping of a function given by the pragma
-       * @param function_name is the name of the function
-       */
-      std::string get_mapping(const std::string& function_name) const;
+   /**
+    * Get mapping of a function given by the pragma
+    * @param function_name is the name of the function
+    */
+   std::string get_mapping(const std::string& function_name) const;
 
-      /**
-       * Returns the identifier corresponding to an openmp directive
-       * @param directive is the string to be considered
-       * @return the corresponding identifier
-       */
-      static
-      OmpPragmaType GetOmpPragmaType(const std::string& directive);
+   /**
+    * Returns the identifier corresponding to an openmp directive
+    * @param directive is the string to be considered
+    * @return the corresponding identifier
+    */
+   static OmpPragmaType GetOmpPragmaType(const std::string& directive);
 
-      /**
-       * Extract clauses associated with a pragma
-       * @param clauses_list is the string containing the clauses
-       * @return the extracted clauses
-       */
-      std::unordered_map<std::string, std::string> ExtractClauses(const std::string& clauses_list) const;
+   /**
+    * Extract clauses associated with a pragma
+    * @param clauses_list is the string containing the clauses
+    * @return the extracted clauses
+    */
+   std::unordered_map<std::string, std::string> ExtractClauses(const std::string& clauses_list) const;
 };
 
 /// Refcount definition for the class

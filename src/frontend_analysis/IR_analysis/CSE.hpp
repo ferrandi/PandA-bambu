@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file CSE.hpp
  * @brief CSE analysis
@@ -39,7 +39,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef CSE_HPP
 #define CSE_HPP
@@ -47,7 +47,7 @@
 #include "function_frontend_flow_step.hpp"
 
 #include <boost/tuple/tuple.hpp>
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
 
 #include "tree_common.hpp"
 
@@ -70,80 +70,72 @@ class statement_list;
 namespace std
 {
    template <>
-      struct hash<enum kind> : public unary_function<enum kind, size_t>
+   struct hash<enum kind> : public unary_function<enum kind, size_t>
+   {
+      size_t operator()(enum kind t) const
       {
-         size_t operator()(enum kind t) const
-         {
-            hash<int> hasher;
-            return hasher(static_cast<int>(t));
-         }
-      };
-}
-
-
+         hash<int> hasher;
+         return hasher(static_cast<int>(t));
+      }
+   };
+} // namespace std
 
 /**
  * @brief CSE analysis
  */
 class CSE : public FunctionFrontendFlowStep
 {
+ private:
+   /// The scheduling solution
+   ScheduleRef schedule;
 
-   private:
+   /// tree manager
+   const tree_managerRef TM;
 
-      ///The scheduling solution
-      ScheduleRef schedule;
+   /// The statement list
+   statement_list* sl;
 
-      /// tree manager
-      const tree_managerRef TM;
+   /// when true PHI_OPT step has to restart
+   bool restart_phi_opt;
 
-      ///The statement list
-      statement_list * sl;
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      /// when true PHI_OPT step has to restart
-      bool restart_phi_opt;
+   /// define the type of the unique table key
+   typedef std::pair<enum kind, std::vector<unsigned int>> CSE_tuple_key_type;
 
+   /// define a map relating variables and columns
+   std::map<vertex, std::unordered_map<CSE_tuple_key_type, tree_nodeRef>> unique_table;
 
-      const std::unordered_set< std::pair<FrontendFlowStepType, FunctionRelationship> >
-      ComputeFrontendRelationships (const DesignFlowStep::RelationshipType relationship_type) const;
+   /// check if the statement has an equivalent in the unique table
+   tree_nodeRef hash_check(tree_nodeRef tn, vertex bb);
 
-      ///define the type of the unique table key
-      typedef std::pair<enum kind, std::vector<unsigned int> > CSE_tuple_key_type;
+   /// check if the gimple assignment is a load, store or a memcpy/memset
+   bool check_loads(const gimple_assign* ga, unsigned int right_part_index, tree_nodeRef right_part);
 
-      ///define a map relating variables and columns
-      std::map<vertex, std::unordered_map<CSE_tuple_key_type, tree_nodeRef>> unique_table;
+ public:
+   /**
+    * Constructor.
+    * @param _Param is the set of the parameters
+    * @param _AppM is the application manager
+    * @param function_id is the identifier of the function
+    * @param design_flow_manager is the design flow manager
+    */
+   CSE(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
-      /// check if the statement has an equivalent in the unique table
-      tree_nodeRef hash_check(tree_nodeRef tn, vertex bb);
+   /**
+    *  Destructor
+    */
+   ~CSE() override;
+   /**
+    * perform CSE analysis
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /// check if the gimple assignment is a load, store or a memcpy/memset
-      bool check_loads(const gimple_assign* ga, unsigned int right_part_index, tree_nodeRef right_part);      
-
-
-   public:
-      /**
-       * Constructor.
-       * @param _Param is the set of the parameters
-       * @param _AppM is the application manager
-       * @param function_id is the identifier of the function
-       * @param design_flow_manager is the design flow manager
-       */
-      CSE (const ParameterConstRef Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
-
-      /**
-       *  Destructor
-       */
-      ~CSE ();
-      /**
-       * perform CSE analysis
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status
-         InternalExec ();
-
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec)
-       */
-      virtual void Initialize();
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec)
+    */
+   void Initialize() override;
 };
 
 #endif /* CSE_HPP */

@@ -35,12 +35,12 @@ namespace flopoco{
 		/**
 		 * FPAdderSinglePath destructor
 		 */
-		~FPAdderSinglePath();
+		~FPAdderSinglePath() override;
 
 
-		void emulate(TestCase * tc);
-		void buildStandardTestCases(TestCaseList* tcl);
-		TestCase* buildRandomTestCase(int i);
+		void emulate(TestCase * tc) override;
+		void buildStandardTestCases(TestCaseList* tcl) override;
+		TestCase* buildRandomTestCase(int i) override;
 
 
 

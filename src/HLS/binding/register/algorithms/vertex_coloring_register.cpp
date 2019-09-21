@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file vertex_coloring_register.cpp
  * @brief Class implementation of a coloring based register allocation algorithm
@@ -38,43 +38,39 @@
  * $Revision$
  * $Date$
  * Last modified by $Author$
- * 
-*/
+ *
+ */
 #include "vertex_coloring_register.hpp"
 
 #include "hls.hpp"
 #include "hls_manager.hpp"
 
-#include "reg_binding.hpp"
 #include "liveness.hpp"
+#include "reg_binding.hpp"
 
 #include "Parameter.hpp"
 #include "dbgPrintHelper.hpp"
 #include "dsatur2_coloring.hpp"
 
-#include <boost/lexical_cast.hpp>
 #include <boost/graph/adjacency_list.hpp>
+#include <boost/lexical_cast.hpp>
 #include <vector>
 
-///HLS/binding/storage_value_insertion includes
+/// HLS/binding/storage_value_insertion includes
 #include "storage_value_information.hpp"
 
-///tree include
+/// tree include
 #include "behavioral_helper.hpp"
 
-///utility include
+/// utility include
 #include "cpu_time.hpp"
 
 vertex_coloring_register::vertex_coloring_register(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
-   : conflict_based_register(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::COLORING_REGISTER_BINDING)
+    : conflict_based_register(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::COLORING_REGISTER_BINDING)
 {
-
 }
 
-vertex_coloring_register::~vertex_coloring_register()
-{
-
-}
+vertex_coloring_register::~vertex_coloring_register() = default;
 
 DesignFlowStep_Status vertex_coloring_register::InternalExec()
 {
@@ -86,14 +82,14 @@ DesignFlowStep_Status vertex_coloring_register::InternalExec()
 
    /// finalize
    HLS->Rreg = reg_bindingRef(new reg_binding(HLS, HLSMgr));
-   const std::list<vertex> & support = HLS->Rliv->get_support();
+   const std::list<vertex>& support = HLS->Rliv->get_support();
 
    const std::list<vertex>::const_iterator vEnd = support.end();
-   for(std::list<vertex>::const_iterator vIt = support.begin(); vIt != vEnd; ++vIt)
+   for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
    {
       const std::set<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
-      std::set<unsigned int>::iterator k_end = live.end();
-      for(std::set<unsigned int>::iterator k = live.begin(); k != k_end; ++k)
+      auto k_end = live.end();
+      for(auto k = live.begin(); k != k_end; ++k)
       {
          unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(*vIt, *k);
          HLS->Rreg->bind(storage_value_index, static_cast<unsigned int>(color[storage_value_index]));
@@ -104,8 +100,10 @@ DesignFlowStep_Status vertex_coloring_register::InternalExec()
    if(output_level == OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "-->Register binding information for function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
-   INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, std::string("---Register allocation algorithm obtains ") + (num_colors == register_lower_bound ? "an optimal" : "a sub-optimal") + " result: " + boost::lexical_cast<std::string>(num_colors) + " registers"+(num_colors == register_lower_bound?"":("(LB:"+STR(register_lower_bound)+")")));
-   if (output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+   INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level,
+                  std::string("---Register allocation algorithm obtains ") + (num_colors == register_lower_bound ? "an optimal" : "a sub-optimal") + " result: " + std::to_string(num_colors) + " registers" +
+                      (num_colors == register_lower_bound ? "" : ("(LB:" + STR(register_lower_bound) + ")")));
+   if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
       HLS->Rreg->print();
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Time to perform register binding: " + print_cpu_time(step_time) + " seconds");

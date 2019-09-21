@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file parm_decl_taken_address_fix.cpp
  *
@@ -44,33 +44,29 @@
 
 class parm_decl_taken_address_fix : public FunctionFrontendFlowStep
 {
-   protected:
+ protected:
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status InternalExec();
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      virtual const
-      std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> >
-      ComputeFrontendRelationships( const DesignFlowStep::RelationshipType relationship_type) const;
+ public:
+   /**
+    * Constructor
+    */
+   parm_decl_taken_address_fix(const ParameterConstRef params, const application_managerRef AM, unsigned int fun_id, const DesignFlowManagerConstRef dfm);
 
-   public :
-
-      /**
-       * Constructor
-       */
-      parm_decl_taken_address_fix(const ParameterConstRef params, const application_managerRef AM,unsigned int fun_id, const DesignFlowManagerConstRef dfm);
-
-      /**
-       * Destructor
-       */
-      ~parm_decl_taken_address_fix();
+   /**
+    * Destructor
+    */
+   ~parm_decl_taken_address_fix() override;
 };
 
 #endif

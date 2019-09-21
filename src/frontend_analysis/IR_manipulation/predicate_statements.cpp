@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2018 Politecnico di Milano
+ *              Copyright (C) 2016-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,62 +29,61 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file predicate_statements.cpp
  * @brief This class contains the methods for setting predicates for instructions which cannot be speculated
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "predicate_statements.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior include
+/// behavior include
 #include "application_manager.hpp"
 #include "function_behavior.hpp"
 
-///parser/treegcc include
+/// parser/treegcc include
 #include "token_interface.hpp"
 
-///tree includes
+/// tree includes
 #include "behavioral_helper.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "ext_tree_node.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-PredicateStatements::PredicateStatements(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   FunctionFrontendFlowStep(_AppM, _function_id, FrontendFlowStepType::PREDICATE_STATEMENTS, _design_flow_manager, _parameters)
+PredicateStatements::PredicateStatements(const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, FrontendFlowStepType::PREDICATE_STATEMENTS, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
+PredicateStatements::~PredicateStatements() = default;
 
-PredicateStatements::~PredicateStatements()
+const std::unordered_set<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>> PredicateStatements::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-}
-
-const std::unordered_set<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship> > PredicateStatements::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
-{
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP):
       {
 #if HAVE_FROM_PRAGMA_BUILT
          relationships.insert(std::make_pair(PRAGMA_ANALYSIS, WHOLE_APPLICATION));
@@ -108,11 +107,6 @@ bool PredicateStatements::HasToBeExecuted() const
 
 DesignFlowStep_Status PredicateStatements::InternalExec()
 {
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(true);
-      WriteBBGraphDot("BB_Before_" + GetName() + ".dot");
-   }
    const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
    const auto TM = AppM->get_tree_manager();
    const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
@@ -135,18 +129,12 @@ DesignFlowStep_Status PredicateStatements::InternalExec()
          else
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Predicating " + STR(stmt));
+            THROW_ASSERT(!ga->predicate, "unexpected condition");
             ga->predicate = true_value;
          }
       }
-   }
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
-   {
-      PrintTreeManager(false);
-      WriteBBGraphDot("BB_After_" + GetName() + ".dot");
    }
 
    bb_modified ? function_behavior->UpdateBBVersion() : 0;
    return bb_modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
-
-

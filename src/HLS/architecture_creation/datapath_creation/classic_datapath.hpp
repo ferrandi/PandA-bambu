@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file classic_datapath.hpp
  * @brief Base class for usual datapath creation.
@@ -42,7 +42,7 @@
  * $Locker:  $
  * $State: Exp $
  *
-*/
+ */
 
 #ifndef CLASSIC_DATAPATH_HPP
 #define CLASSIC_DATAPATH_HPP
@@ -50,37 +50,37 @@
 #include "datapath_creator.hpp"
 REF_FORWARD_DECL(structural_object);
 
-class classic_datapath: public datapath_creator
+class classic_datapath : public datapath_creator
 {
-   protected:
-      /**
-       * Adds the clock and reset ports to the structural description of the circuit
-       * @param clock_sign is the object representing the clock signal
-       * @param reset_sign is the object representing the reset signal
-       */
-      void add_clock_reset(structural_objectRef& clock_sign, structural_objectRef& reset_sign);
+ protected:
+   /**
+    * Adds the clock and reset ports to the structural description of the circuit
+    * @param clock_sign is the object representing the clock signal
+    * @param reset_sign is the object representing the reset signal
+    */
+   void add_clock_reset(structural_objectRef& clock_sign, structural_objectRef& reset_sign);
 
-      /**
-       * Adds the input/output ports of the module
-       */
-      void add_ports();
+   /**
+    * Adds the input/output ports of the module
+    */
+   virtual void add_ports();
 
-   public:
-      /**
-       * Constructor.
-       * @param design_flow_manager is the design flow manager
-       */
-      classic_datapath(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+ public:
+   /**
+    * Constructor.
+    * @param design_flow_manager is the design flow manager
+    */
+   classic_datapath(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::CLASSIC_DATAPATH_CREATOR);
 
-      /**
-       * Destructor.
-       */
-      ~classic_datapath();
+   /**
+    * Destructor.
+    */
+   ~classic_datapath() override;
 
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status InternalExec();
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 };
 #endif

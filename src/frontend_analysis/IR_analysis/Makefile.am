@@ -35,6 +35,7 @@ noinst_HEADERS = \
    call_graph_computation.hpp \
    check_system_type.hpp \
    operations_cfg_computation.hpp \
+   parm2ssa.hpp \
    string_cst_fix.hpp \
    switch_fix.hpp \
    use_counting.hpp \
@@ -48,6 +49,7 @@ lib_IR_analysis_la_SOURCES = \
    call_graph_computation.cpp \
    check_system_type.cpp \
    operations_cfg_computation.cpp \
+   parm2ssa.cpp \
    switch_fix.cpp \
    string_cst_fix.cpp \
    use_counting.cpp \
@@ -68,12 +70,14 @@ if BUILD_BAMBU
      dead_code_elimination.hpp \
      determine_memory_accesses.hpp \
      extract_patterns.hpp \
+     fanout_opt.hpp\
      FixStructsPassedByValue.hpp \
      FunctionCallTypeCleanup.hpp \
      hdl_function_decl_fix.hpp \
      hdl_var_decl_fix.hpp \
      hls_div_cg_ext.hpp \
      HWCallInjection.hpp \
+     interface_infer.hpp \
      ipa_point_to_analysis.hpp\
      IR_lowering.hpp \
      loops_analysis_bambu.hpp \
@@ -95,6 +99,8 @@ if BUILD_BAMBU
      virtual_phi_nodes_split.hpp\
      constant_flop_wrapper.hpp
   lib_IR_analysis_la_SOURCES += \
+     IR_lowering.cpp \
+     IR_lowering_exec.cpp \
      bit_lattice.cpp \
      Bit_Value.cpp \
      Bit_Value_backward.cpp \
@@ -107,15 +113,15 @@ if BUILD_BAMBU
      dead_code_elimination.cpp \
      determine_memory_accesses.cpp \
      extract_patterns.cpp \
+     fanout_opt.cpp\
      FixStructsPassedByValue.cpp \
      FunctionCallTypeCleanup.cpp \
      hdl_function_decl_fix.cpp \
      hdl_var_decl_fix.cpp \
      hls_div_cg_ext.cpp \
      HWCallInjection.cpp \
+     interface_infer.cpp \
      ipa_point_to_analysis.cpp\
-     IR_lowering.cpp \
-     IR_lowering_exec.cpp \
      loops_analysis_bambu.cpp \
      lut_transformation.cpp \
      multi_way_if.cpp \
@@ -135,6 +141,16 @@ if BUILD_BAMBU
      virtual_phi_nodes_split.cpp \
      constant_flop_wrapper.cpp
    lib_IR_analysis_la_CPPFLAGS += \
+      -I$(top_srcdir)/ext/mockturtle/include/\
+      -I$(top_srcdir)/ext/mockturtle/lib/kitty/\
+      -I$(top_srcdir)/ext/mockturtle/lib/fmt/\
+      -I$(top_srcdir)/ext/mockturtle/lib/sparsepp\
+      -I$(top_srcdir)/ext/mockturtle/lib/ez\
+      -I$(top_srcdir)/ext/mockturtle/lib/lorina\
+      -I$(top_srcdir)/ext/mockturtle/lib/rang\
+      -I$(top_srcdir)/ext/mockturtle/lib/percy\
+      -I$(top_srcdir)/ext/mockturtle/lib/abcsat\
+      -I$(top_srcdir)/src/circuit \
       -I$(top_srcdir)/src/design_flows/backend/ToHDL \
       -I$(top_srcdir)/src/design_flows/technology \
       -I$(top_srcdir)/src/HLS \
@@ -143,6 +159,10 @@ if BUILD_BAMBU
       -I$(top_srcdir)/src/intermediate_representations/hls \
       -I$(top_srcdir)/src/technology \
       -I$(top_srcdir)/src/technology/physical_library/models
+if BUILD_MOCKTURTLE
+   lib_IR_analysis_la_LIBADD = \
+      $(top_builddir)/ext/lib_mockturtle.la
+endif
 
 if BUILD_LIB_ILP
    noinst_HEADERS += \
@@ -166,8 +186,12 @@ rtl_weights_symbolic.data: $(top_srcdir)/etc/weight-models/rtl_weights_symbolic.
 
 if BUILD_LIB_FROM_PRAGMA
   noinst_HEADERS += \
+       extract_omp_atomic.hpp \
+       extract_omp_for.hpp \
        pragma_analysis.hpp
   lib_IR_analysis_la_SOURCES += \
+       extract_omp_atomic.cpp \
+       extract_omp_for.cpp \
        pragma_analysis.cpp
   lib_IR_analysis_la_CPPFLAGS += \
      -I$(top_srcdir)/src/parser/pragma \
@@ -176,6 +200,7 @@ endif
 
 
 update_tree_weight.cpp : tree_weights_constant.data tree_weights_symbolic.data
+
 
 #The tab in this rule can't be replaced by blanks
 tree_weights_constant.data: $(top_srcdir)/etc/weight-models/tree_weights_constant.xml

@@ -8,68 +8,77 @@
    Note that this code is NOT intended for testing of accuracy of fp
    conversions.  */
 
-float
+float __attribute__((noinline))
 u2f(u)
      unsigned int u;
 {
   return u;
 }
 
-double
+double __attribute__((noinline))
 u2d(u)
      unsigned int u;
 {
   return u;
 }
 
-long double
+#if 0
+long double __attribute__((noinline))
 u2ld(u)
      unsigned int u;
 {
   return u;
 }
+#endif
 
 float
+#ifdef __llvm__
+ __attribute__((noinline))
+#endif
 s2f(s)
      int s;
 {
   return s;
 }
 
-double
+double __attribute__((noinline))
 s2d(s)
      int s;
 {
   return s;
 }
 
-long double
+#if 0
+long double __attribute__((noinline))
 s2ld(s)
      int s;
 {
   return s;
 }
+#endif
 
-int
+int __attribute__((noinline))
 fnear (float x, float y)
 {
   float t = x - y;
   return t == 0 || x / t > 1000000.0;
 }
 
-int
+int __attribute__((noinline))
 dnear (double x, double y)
 {
   double t = x - y;
   return t == 0 || x / t > 100000000000000.0;
 }
 
-int
+#if 0
+int __attribute__((noinline))
 ldnear (long double x, long double y)
 {
   long double t = x - y;
   return t == 0 || x / t > 100000000000000000000000000000000.0;
 }
+#endif
 
 test_integer_to_float()
 {
@@ -132,46 +141,59 @@ test_integer_to_float()
 
 #if __GNUC__
 float
+#ifdef __llvm__
+__attribute__((noinline))
+#endif
 ull2f(u)
      unsigned long long int u;
 {
   return u;
 }
 
-double
+double 
+#ifdef __llvm__
+__attribute__((noinline))
+#endif
 ull2d(u)
      unsigned long long int u;
 {
   return u;
 }
 
-long double
+#if 0
+long double __attribute__((noinline))
 ull2ld(u)
      unsigned long long int u;
 {
   return u;
 }
+#endif
 
-float
+float 
+#ifdef __llvm__
+__attribute__((noinline))
+#endif
 sll2f(s)
      long long int s;
 {
   return s;
 }
 
-double
+double __attribute__((noinline))
 sll2d(s)
      long long int s;
 {
   return s;
 }
 
-long double
+#if 0
+long double __attribute__((noinline))
 sll2ld(s)
      long long int s;
 {
   return s;
 }
+#endif
 
 test_longlong_integer_to_float()
 {
@@ -244,41 +266,45 @@ test_longlong_integer_to_float()
 }
 #endif
 
-unsigned int
+unsigned int __attribute__((noinline))
 f2u(float f)
 {
   return (unsigned) f;
 }
 
-unsigned int
+unsigned int __attribute__((noinline))
 d2u(double d)
 {
   return (unsigned) d;
 }
 
-unsigned int
+#if 0
+unsigned int __attribute__((noinline))
 ld2u(long double d)
 {
   return (unsigned) d;
 }
+#endif
 
-int
+int __attribute__((noinline))
 f2s(float f)
 {
   return (int) f;
 }
 
-int
+int __attribute__((noinline))
 d2s(double d)
 {
   return (int) d;
 }
 
-int
+#if 0
+int __attribute__((noinline))
 ld2s(long double d)
 {
   return (int) d;
 }
+#endif
 
 test_float_to_integer()
 {
@@ -403,41 +429,45 @@ test_float_to_integer()
 }
 
 #if __GNUC__
-unsigned long long int
+unsigned long long int __attribute__((noinline))
 f2ull(float f)
 {
   return (unsigned long long int) f;
 }
 
-unsigned long long int
+unsigned long long int __attribute__((noinline))
 d2ull(double d)
 {
   return (unsigned long long int) d;
 }
 
-unsigned long long int
+#if 0
+unsigned long long int __attribute__((noinline))
 ld2ull(long double d)
 {
   return (unsigned long long int) d;
 }
+#endif
 
-long long int
+long long int __attribute__((noinline))
 f2sll(float f)
 {
   return (long long int) f;
 }
 
-long long int
+long long int __attribute__((noinline))
 d2sll(double d)
 {
   return (long long int) d;
 }
 
-long long int
+#if 0
+long long int __attribute__((noinline))
 ld2sll(long double d)
 {
   return (long long int) d;
 }
+#endif
 
 test_float_to_longlong_integer()
 {

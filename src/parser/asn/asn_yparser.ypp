@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (C) 2015-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -59,7 +59,8 @@
 
 ///utility include
 #include "refcount.hpp"
-
+#include "string_manipulation.hpp"          // for STR
+#include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_
 
 #define YYLTYPE_IS_TRIVIAL 0
 
@@ -85,7 +86,9 @@ REF_FORWARD_DECL(AsnFlexLexer);
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wredundant-decls"
+#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7) || (defined(__clang__) && __clang_major__ >= 6)
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
 
 /**
 * Class declarations
@@ -234,7 +237,7 @@ element_type_list : element_type {$$ = AsnParserNode(); $$.element_type_list.pus
                   ;
 
 element_type_list_opt : /* empty */ {$$ = AsnParserNode();}
-                      | element_type_list_opt {$$ = $1;}
+                      | element_type_list {$$ = $1;}
                       ;
 
 enumerated_type : ENUMERATED_TOK named_number_list {$$ = AsnParserNode(); $$.asn_type = AsnTypeRef(new EnumeratedAsnType($2.named_number_list));};

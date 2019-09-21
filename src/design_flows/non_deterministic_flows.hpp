@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2017-2018 Politecnico di Milano
+ *              Copyright (C) 2017-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,58 +29,59 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file non_deterministic_flows.hpp
  * @brief Design flow to check different non deterministic flows
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef NON_DETERMINISTIC_FLOWS_HPP
 #define NON_DETERMINISTIC_FLOWS_HPP
 
-///Superclass include
-#include "design_flow.hpp"
+#include "design_flow.hpp"      // for DesignFlow
+#include "design_flow_step.hpp" // for DesignFlowManagerConstRef, DesignFlo...
+#include <cstddef>              // for size_t
+#include <string>               // for string
 
 /**
  * Class to test non deterministic flows
-*/
+ */
 class NonDeterministicFlows : public DesignFlow
 {
-   private:
-      /**
-       * Compute the arg list string of the tool
-       * @param seed is the seed to be passed
-       * @return the argument string
-       */
-      const std::string ComputeArgString(const size_t seed) const;
+ private:
+   /**
+    * Compute the arg list string of the tool
+    * @param seed is the seed to be passed
+    * @return the argument string
+    */
+   const std::string ComputeArgString(const size_t seed) const;
 
-      /**
-       * Execute tool with non deterministic flow
-       * @param seed is the seed to be passed
-       * @return true if the execution was successful, false otherwise
-       */
-      bool ExecuteTool(const size_t seed) const;
+   /**
+    * Execute tool with non deterministic flow
+    * @param seed is the seed to be passed
+    * @return true if the execution was successful, false otherwise
+    */
+   bool ExecuteTool(const size_t seed) const;
 
-   public:
-      /**
-       * Constructor.
-       * @param design_flow_manager is the design flow manager
-       * @param parameters is the set of the parameters
-       */
-      NonDeterministicFlows(const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor.
+    * @param design_flow_manager is the design flow manager
+    * @param parameters is the set of the parameters
+    */
+   NonDeterministicFlows(const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-      /**
-       *  Destructor
-       */
-      ~NonDeterministicFlows();
+   /**
+    *  Destructor
+    */
+   ~NonDeterministicFlows() override;
 
-      /**
-       * Execute the flow
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status Exec();
+   /**
+    * Execute the flow
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status Exec() override;
 };
 #endif
-

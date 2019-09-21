@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file chordal_coloring_register.hpp
  * @brief Class specification of the register allocation algorithms based on chordal algorithm
@@ -39,7 +39,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef CHORDAL_COLORING_REGISTER_HPP
 #define CHORDAL_COLORING_REGISTER_HPP
@@ -51,35 +51,31 @@
  */
 class chordal_coloring_register : public conflict_based_register
 {
+ public:
+   /**
+    * Constructor of the class.
+    * @param design_flow_manager is the design flow manager
+    */
+   chordal_coloring_register(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
-   public:
+   /**
+    * Destructor of the class.
+    */
+   ~chordal_coloring_register() override;
 
-      /**
-       * Constructor of the class.
-       * @param design_flow_manager is the design flow manager
-       */
-      chordal_coloring_register(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   /**
+    * Chordal coloring algorithm algorithm.
+    * Stores the output registers in result_regs and the input storage values in regs.
+    * Stores in result_map the relations between them.
+    * Then it updates high-level synthesis results
+    * All previous result are erased.
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /**
-       * Destructor of the class.
-       */
-      ~chordal_coloring_register();
-
-      /**
-       * Chordal coloring algorithm algorithm.
-       * Stores the output registers in result_regs and the input storage values in regs.
-       * Stores in result_map the relations between them.
-       * Then it updates high-level synthesis results
-       * All previous result are erased.
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status InternalExec();
-
-   private:
-
-      /// compare lexically two vectors
-      bool lex_compare_gt(const std::vector<unsigned int> & v1, const std::vector<unsigned int> & v2) const; 
-
+ private:
+   /// compare lexically two vectors
+   bool lex_compare_gt(const std::vector<unsigned int>& v1, const std::vector<unsigned int>& v2) const;
 };
 
 #endif

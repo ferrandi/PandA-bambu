@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file BackendFlow.cpp
  * @brief This file contains the implementation of the methods for the class defining the backend flow
@@ -39,64 +39,69 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "BackendFlow.hpp"
 
-///Autoheader include
+/// Autoheader include
 #include "config_HAVE_CMOS_BUILT.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
-///wrapper/synthesis/altera includes
+/// wrapper/synthesis/altera includes
 #include "AlteraBackendFlow.hpp"
+#include "quartus_13_wrapper.hpp"
 #include "quartus_wrapper.hpp"
 
-///wrapper/synthesis/xilinx includes
+/// wrapper/synthesis/xilinx includes
 #include "XilinxBackendFlow.hpp"
 #if HAVE_TASTE
 #include "xilinx_taste_backend_flow.hpp"
 #endif
 
-
+#include "HDL_manager.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
-#include "HDL_manager.hpp"
 #include "target_manager.hpp"
 #include "technology_manager.hpp"
 
-///implemented flows
+/// implemented flows
 #include "ASICBackendFlow.hpp"
 #include "LatticeBackendFlow.hpp"
-///target devices
-#include "IC_device.hpp"
+#include "NanoXploreBackendFlow.hpp"
+/// target devices
 #include "FPGA_device.hpp"
+#include "IC_device.hpp"
 
 #include "ToolManager.hpp"
-///supported synthesis steps
+/// supported synthesis steps
 #include "SynthesisTool.hpp"
-//ASIC
+// ASIC
 #include "DesignCompilerWrapper.hpp"
-//Xilinx
-#include "xst_wrapper.hpp"
-#include "ngdbuild_wrapper.hpp"
+// Xilinx
 #include "map_wrapper.hpp"
-#include "trce_wrapper.hpp"
+#include "ngdbuild_wrapper.hpp"
 #include "par_wrapper.hpp"
+#include "trce_wrapper.hpp"
 #include "vivado_flow_wrapper.hpp"
-//Altera
+#include "xst_wrapper.hpp"
+// Altera
+#include "quartus_13_report_wrapper.hpp"
 #include "quartus_report_wrapper.hpp"
-//Lattice
+// Lattice
 #include "lattice_flow_wrapper.hpp"
-//Under development
+// NanoXplore
+#include "nxpython_flow_wrapper.hpp"
+
+// Under development
 #if HAVE_EXPERIMENTAL
-#include "LibraryCompilerWrapper.hpp"
 #include "FormalityWrapper.hpp"
+#include "LibraryCompilerWrapper.hpp"
 #include "PrimeTimeWrapper.hpp"
 #endif
 
-#include "target_device.hpp"
 #include "area_model.hpp"
-#include "time_model.hpp"
+#include "target_device.hpp"
 #include "technology_node.hpp"
+#include "time_model.hpp"
 
 #include "polixml.hpp"
 #include "xml_dom_parser.hpp"
@@ -107,19 +112,21 @@
 #include "boost/filesystem.hpp"
 
 #include <iosfwd>
+#include <utility>
 
 #if HAVE_IPXACT_BUILT
 #include "ip_xact_xml.hpp"
 #endif
 
-#include "cpu_time.hpp"
 #include "Parameter.hpp"
+#include "cpu_time.hpp"
 #include "fileIO.hpp"
 
 #if HAVE_IPXACT_BUILT
 void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_PARAMETER(Param), const std::string& xml_file)
 {
-   if (!boost::filesystem::exists(xml_file)) THROW_ERROR("File \"" + xml_file + "\" does not exist!");
+   if(!boost::filesystem::exists(xml_file))
+      THROW_ERROR("File \"" + xml_file + "\" does not exist!");
 #ifndef NDEBUG
    unsigned int debug_level = Param->getOption<unsigned int>(OPT_debug_level);
 #endif
@@ -128,52 +135,56 @@ void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_
    XMLDomParser parser(xml_file);
    parser.Exec();
 
-   if (parser)
+   if(parser)
    {
-      const xml_element* node = parser.get_document()->get_root_node(); //deleted by DomParser.
+      const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
       const xml_node::node_list list = node->get_children();
-      for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); ++l)
+      for(xml_node::node_list::const_iterator l = list.begin(); l != list.end(); ++l)
       {
          const xml_element* child = GetPointer<xml_element>(*l);
-         if (!child) continue;
+         if(!child)
+            continue;
 
-         if (child->get_name() == STR_XML_ip_xact_design_ref)
+         if(child->get_name() == STR_XML_ip_xact_design_ref)
          {
-            xml_attribute * name = child->get_attribute(STR_XML_ip_xact_name);
-            if (name)
+            xml_attribute* name = child->get_attribute(STR_XML_ip_xact_name);
+            if(name)
             {
                component_name = name->get_value();
                std::string token("design_");
-               if (component_name.find(token) != std::string::npos) component_name = component_name.substr(token.size(), component_name.size());
+               if(component_name.find(token) != std::string::npos)
+                  component_name = component_name.substr(token.size(), component_name.size());
             }
          }
-         if (child->get_name() == STR_XML_ip_xact_generator_chain_configuration)
+         if(child->get_name() == STR_XML_ip_xact_generator_chain_configuration)
          {
             const xml_node::node_list list_gen = child->get_children();
-            for (xml_node::node_list::const_iterator g = list_gen.begin(); g != list_gen.end(); ++g)
+            for(xml_node::node_list::const_iterator g = list_gen.begin(); g != list_gen.end(); ++g)
             {
                const xml_element* child_gen = GetPointer<xml_element>(*g);
-               if (!child_gen) continue;
-               if (child_gen->get_name() == STR_XML_ip_xact_generator_chain_ref)
+               if(!child_gen)
+                  continue;
+               if(child_gen->get_name() == STR_XML_ip_xact_generator_chain_ref)
                {
-                  xml_attribute * name = child_gen->get_attribute(STR_XML_ip_xact_name);
-                  if (name)
+                  xml_attribute* name = child_gen->get_attribute(STR_XML_ip_xact_name);
+                  if(name)
                   {
                      chain_name = name->get_value();
                   }
                }
-               if (child_gen->get_name() == STR_XML_ip_xact_configurable_element_values)
+               if(child_gen->get_name() == STR_XML_ip_xact_configurable_element_values)
                {
                   const xml_node::node_list list_values = child_gen->get_children();
-                  for (xml_node::node_list::const_iterator v = list_values.begin(); v != list_values.end(); ++v)
+                  for(xml_node::node_list::const_iterator v = list_values.begin(); v != list_values.end(); ++v)
                   {
                      const xml_element* child_value = GetPointer<xml_element>(*v);
-                     if (!child_value) continue;
-                     if (child_value->get_name() == STR_XML_ip_xact_configurable_element_value)
+                     if(!child_value)
+                        continue;
+                     if(child_value->get_name() == STR_XML_ip_xact_configurable_element_value)
                      {
                         std::string referenceId = child_value->get_attribute(STR_XML_ip_xact_reference_id)->get_value();
                         std::string value;
-                        if (child_value->get_child_text())
+                        if(child_value->get_child_text())
                         {
                            value = child_value->get_child_text()->get_content();
                         }
@@ -190,45 +201,43 @@ void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_
 }
 #endif
 
-BackendFlow::BackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _manager) :
-   Param(_Param),
-   debug_level(_Param->getOption<int>(OPT_debug_level)),
-   output_level(_Param->getOption<unsigned int>(OPT_output_level)),
-   flow_name(_flow_name),
-   out_dir(Param->getOption<std::string>(OPT_output_directory) + "/" + flow_name),
-   target(_manager),
-   root(nullptr)
+BackendFlow::BackendFlow(const ParameterConstRef _Param, std::string _flow_name, const target_managerRef _manager)
+    : Param(_Param),
+      output_level(_Param->getOption<unsigned int>(OPT_output_level)),
+      flow_name(std::move(_flow_name)),
+      out_dir(Param->getOption<std::string>(OPT_output_directory) + "/" + flow_name),
+      target(_manager),
+      root(nullptr),
+      default_flow_parameters(DesignParametersRef(new DesignParameters))
 {
-   default_flow_parameters = DesignParametersRef(new DesignParameters);
+   debug_level = Param->get_class_debug_level(GET_CLASS(*this));
 
-   if (!boost::filesystem::exists(out_dir)) boost::filesystem::create_directories(out_dir);
+   if(!boost::filesystem::exists(out_dir))
+      boost::filesystem::create_directories(out_dir);
 }
 
-BackendFlow::~BackendFlow()
-{
-
-}
+BackendFlow::~BackendFlow() = default;
 
 BackendFlow::type_t BackendFlow::DetermineBackendFlowType(const target_deviceRef device, const ParameterConstRef
 #if HAVE_TASTE
-   parameters
+                                                                                             parameters
 #endif
 )
 {
 #if HAVE_CMOS_BUILT
-   if (GetPointer<IC_device>(device))
+   if(GetPointer<IC_device>(device))
    {
       return ASIC;
    }
    else
 #endif
-   if (GetPointer<FPGA_device>(device))
+       if(GetPointer<FPGA_device>(device))
    {
-      if (!device->has_parameter("vendor"))
+      if(!device->has_parameter("vendor"))
          THROW_ERROR("FPGA device vendor not specified");
       std::string vendor = device->get_parameter<std::string>("vendor");
       boost::algorithm::to_lower(vendor);
-      if (vendor == "xilinx")
+      if(vendor == "xilinx")
       {
 #if HAVE_TASTE
          if(parameters->isOption(OPT_generate_taste_architecture) and parameters->getOption<bool>(OPT_generate_taste_architecture))
@@ -238,10 +247,12 @@ BackendFlow::type_t BackendFlow::DetermineBackendFlowType(const target_deviceRef
 #endif
          return XILINX_FPGA;
       }
-      else if (vendor == "altera")
+      else if(vendor == "altera")
          return ALTERA_FPGA;
-      else if (vendor == "lattice")
+      else if(vendor == "lattice")
          return LATTICE_FPGA;
+      else if(vendor == "nanoxplore")
+         return NANOXPLORE_FPGA;
       else
          THROW_ERROR("FPGA device vendor \"" + vendor + "\" not supported");
    }
@@ -265,6 +276,8 @@ BackendFlowRef BackendFlow::CreateFlow(const ParameterConstRef Param, const std:
          return BackendFlowRef(new AlteraBackendFlow(Param, flow_name, target));
       case LATTICE_FPGA:
          return BackendFlowRef(new LatticeBackendFlow(Param, flow_name, target));
+      case NANOXPLORE_FPGA:
+         return BackendFlowRef(new NanoXploreBackendFlow(Param, flow_name, target));
       case UNKNOWN:
       default:
          THROW_UNREACHABLE("Backend flow not supported");
@@ -272,51 +285,46 @@ BackendFlowRef BackendFlow::CreateFlow(const ParameterConstRef Param, const std:
    return BackendFlowRef();
 }
 
-std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, const structural_managerRef SM, const std::list<std::string> & hdl_files, const std::list<std::string> & aux_files)
+std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, const structural_managerRef SM, const std::list<std::string>& hdl_files, const std::list<std::string>& aux_files)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Generating synthesis scripts");
-   std::string fu_base_name = fu_name;
+   auto resource_name = "_" + fu_name;
    std::string synthesis_file_list;
    for(const auto& hdl_file : hdl_files)
    {
       synthesis_file_list += hdl_file + ";";
    }
    const structural_objectRef obj = SM->get_circ();
-
    actual_parameters = DesignParametersRef(new DesignParameters);
    actual_parameters->component_name = obj->get_id();
-   if (flow_name.size()) actual_parameters->chain_name = flow_name;
+   if(flow_name.size())
+      actual_parameters->chain_name = flow_name;
 
    for(const auto& aux_file : aux_files)
    {
       synthesis_file_list += aux_file + ";";
    }
-
    actual_parameters->parameter_values[PARAM_HDL_files] = synthesis_file_list;
    const technology_managerRef TM = target->get_technology_manager();
-   std::string library = TM->get_library(fu_name);
+   std::string library = TM->get_library(resource_name);
    bool is_combinational = false;
-   if (library.size())
+   if(library.size())
    {
-      const technology_nodeRef tn = TM->get_fu(fu_name, library);
+      const technology_nodeRef tn = TM->get_fu(resource_name, library);
       actual_parameters->parameter_values[PARAM_clk_period] = STR(GetPointer<functional_unit>(tn)->get_clock_period());
       if(GetPointer<functional_unit>(tn)->logical_type == functional_unit::COMBINATIONAL)
          is_combinational = true;
-      if(GetPointer<functional_unit>(tn)->fu_template_name.size())
-         fu_base_name = GetPointer<functional_unit>(tn)->fu_template_name;
    }
    actual_parameters->parameter_values[PARAM_is_combinational] = STR(is_combinational);
    bool time_constrained = false;
-   if(boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]) != 0.0)
+   if(actual_parameters->parameter_values.find(PARAM_clk_period) != actual_parameters->parameter_values.end() and boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]) != 0.0)
       time_constrained = true;
    actual_parameters->parameter_values[PARAM_time_constrained] = STR(time_constrained);
    if(!time_constrained)
    {
       actual_parameters->parameter_values[PARAM_clk_period] = STR(PARAM_clk_period_default);
    }
-   actual_parameters->parameter_values[PARAM_clk_freq] = STR(1000/boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]));
-
-   actual_parameters->parameter_values[PARAM_fu] = fu_base_name;
+   actual_parameters->parameter_values[PARAM_clk_freq] = STR(1000 / boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]));
 
    InitDesignParameters();
 
@@ -328,9 +336,9 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
 void BackendFlow::ExecuteSynthesis()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Executing synthesis");
-   for (unsigned int i = 0; i < steps.size(); i++)
+   for(auto& step : steps)
    {
-      steps[i]->tool->CheckExecution();
+      step->tool->CheckExecution();
    }
 
    ToolManagerRef tool(new ToolManager(Param));
@@ -356,16 +364,18 @@ time_modelRef BackendFlow::get_timing_results() const
 void BackendFlow::parse_flow(const XMLDomParserRef parser)
 {
    parser->Exec();
-   root = parser->get_document()->get_root_node(); //deleted by DomParser.
+   root = parser->get_document()->get_root_node(); // deleted by DomParser.
 
    const xml_node::node_list list = root->get_children();
-   for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); ++l)
+   for(const auto& l : list)
    {
-      const xml_element* child = GetPointer<xml_element>(*l);
-      if (!child || child->get_name() != "flow") continue;
+      const xml_element* child = GetPointer<xml_element>(l);
+      if(!child || child->get_name() != "flow")
+         continue;
       std::string name;
       LOAD_XVM(name, child);
-      if (name != flow_name) continue;
+      if(name != flow_name)
+         continue;
       xload(child);
    }
 }
@@ -376,18 +386,19 @@ void BackendFlow::xload(const xml_element* node)
    THROW_ASSERT(default_flow_parameters->chain_name == flow_name, "wrong values: " + default_flow_parameters->chain_name + " vs. " + flow_name);
 
    const xml_node::node_list list = node->get_children();
-   for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); ++l)
+   for(const auto& l : list)
    {
-      const xml_element* child = GetPointer<xml_element>(*l);
-      if (!child) continue;
+      const xml_element* child = GetPointer<xml_element>(l);
+      if(!child)
+         continue;
 
-      if (child->get_name() == "config")
+      if(child->get_name() == "config")
       {
          LOAD_XVM(out_dir, child);
       }
 
-      ///list of supported synthesis steps
-      if (child->get_name() == "step")
+      /// list of supported synthesis steps
+      if(child->get_name() == "step")
       {
          BackendStepRef step = BackendStepRef(new BackendStep);
          std::string id;
@@ -395,88 +406,127 @@ void BackendFlow::xload(const xml_element* node)
          step->name = id;
 
          std::string config;
-         if (!CE_XVM(config, child)) THROW_ERROR("Missing configuration for component " + id);
+         if(!CE_XVM(config, child))
+            THROW_ERROR("Missing configuration for component " + id);
          LOAD_XVM(config, child);
          step->config_name = config;
 
          std::string script_name;
-         if (CE_XVM(script_name, child))
+         if(CE_XVM(script_name, child))
          {
             LOAD_XVM(script_name, child);
             step->script_name = config;
          }
 
          SynthesisTool::type_t type = SynthesisTool::UNKNOWN;
-         if (id == DESIGN_COMPILER_TOOL_ID)
+         if(id == DESIGN_COMPILER_TOOL_ID)
          {
             type = SynthesisTool::DESIGN_COMPILER;
-            if (step->script_name.size() == 0) step->script_name = "script.dc";
+            if(step->script_name.size() == 0)
+               step->script_name = "script.dc";
          }
 #if HAVE_EXPERIMENTAL
-         else if (id == LIBRARY_COMPILER_TOOL_ID)
+         else if(id == LIBRARY_COMPILER_TOOL_ID)
          {
             type = SynthesisTool::LIBRARY_COMPILER;
          }
-         else if (id == PRIME_TIME_TOOL_ID)
+         else if(id == PRIME_TIME_TOOL_ID)
          {
             type = SynthesisTool::PRIME_TIME;
-            if (step->script_name.size() == 0) step->script_name = "script.pt";
+            if(step->script_name.size() == 0)
+               step->script_name = "script.pt";
          }
 #endif
-         else if (id == XST_TOOL_ID)
+         else if(id == XST_TOOL_ID)
          {
             type = SynthesisTool::XST;
-            if (step->script_name.size() == 0) step->script_name = "xst.tcl";
+            if(step->script_name.size() == 0)
+               step->script_name = "xst.tcl";
          }
-         else if (id == NGDBUILD_TOOL_ID)
+         else if(id == NGDBUILD_TOOL_ID)
          {
             type = SynthesisTool::NGDBUILD;
          }
-         else if (id == MAP_TOOL_ID)
+         else if(id == MAP_TOOL_ID)
          {
             type = SynthesisTool::MAP;
          }
-         else if (id == TRCE_TOOL_ID)
+         else if(id == TRCE_TOOL_ID)
          {
             type = SynthesisTool::TRCE;
          }
-         else if (id == PAR_TOOL_ID)
+         else if(id == PAR_TOOL_ID)
          {
             type = SynthesisTool::PAR;
          }
-         else if (id == VIVADO_FLOW_TOOL_ID)
+         else if(id == VIVADO_FLOW_TOOL_ID)
          {
             type = SynthesisTool::VIVADO_FLOW;
-            if (step->script_name.size() == 0) step->script_name = "vivado.tcl";
+            if(step->script_name.size() == 0)
+               step->script_name = "vivado.tcl";
          }
-         else if (id == QUARTUS_SETUP_TOOL_ID)
+         else if(id == QUARTUS_SETUP_TOOL_ID)
          {
             type = SynthesisTool::QUARTUS_SETUP;
-            if (step->script_name.size() == 0) step->script_name = "quartus_setup.tcl";
+            if(step->script_name.size() == 0)
+               step->script_name = "quartus_setup.tcl";
          }
-         else if (id == QUARTUS_FLOW_TOOL_ID)
+         else if(id == QUARTUS_13_SETUP_TOOL_ID)
+         {
+            type = SynthesisTool::QUARTUS_13_SETUP;
+            if(step->script_name.size() == 0)
+               step->script_name = "quartus_setup.tcl";
+         }
+         else if(id == QUARTUS_FLOW_TOOL_ID)
          {
             type = SynthesisTool::QUARTUS_FLOW;
-            if (step->script_name.size() == 0) step->script_name = "quartus_flow.tcl";
+            if(step->script_name.size() == 0)
+               step->script_name = "quartus_flow.tcl";
          }
-         else if (id == QUARTUS_REPORT_TOOL_ID)
+         else if(id == QUARTUS_13_FLOW_TOOL_ID)
+         {
+            type = SynthesisTool::QUARTUS_13_FLOW;
+            if(step->script_name.size() == 0)
+               step->script_name = "quartus_flow.tcl";
+         }
+         else if(id == QUARTUS_POWER_TOOL_ID)
+         {
+            type = SynthesisTool::QUARTUS_POW;
+            if(step->script_name.size() == 0)
+               step->script_name = "quartus_pow_arguments";
+         }
+         else if(id == QUARTUS_REPORT_TOOL_ID)
          {
             type = SynthesisTool::QUARTUS_STA;
-            if (step->script_name.size() == 0) step->script_name = "report_sta.tcl";
+            if(step->script_name.size() == 0)
+               step->script_name = "report_sta.tcl";
          }
-         else if (id == LATTICE_FLOW_TOOL_ID)
+         else if(id == QUARTUS_13_REPORT_TOOL_ID)
+         {
+            type = SynthesisTool::QUARTUS_13_STA;
+            if(step->script_name.size() == 0)
+               step->script_name = "report_sta.tcl";
+         }
+         else if(id == LATTICE_FLOW_TOOL_ID)
          {
             type = SynthesisTool::LATTICE_FLOW;
-            if (step->script_name.size() == 0) step->script_name = "project.tcl";
+            if(step->script_name.size() == 0)
+               step->script_name = "project.tcl";
+         }
+         else if(id == NXPYTHON_FLOW_TOOL_ID)
+         {
+            type = SynthesisTool::NXPYTHON_FLOW;
+            if(step->script_name.size() == 0)
+               step->script_name = "script.py";
          }
          else
             THROW_ERROR("Step <" + id + "> is currently not supported");
 
          step->tool = SynthesisTool::create_synthesis_tool(type, Param, flow_name, target->get_target_device());
-         ///update with the actual name of the output directory
+         /// update with the actual name of the output directory
          step->out_dir = step->tool->get_output_directory();
 
-         ///parse the proper script configuration for the tool in the device configuration XML
+         /// parse the proper script configuration for the tool in the device configuration XML
          step->tool->xload(root, step->config_name);
 
          add_backend_step(step);
@@ -491,7 +541,7 @@ std::string BackendFlow::get_flow_name() const
 
 void BackendFlow::add_backend_step(const BackendStepRef& step)
 {
-   ///add the step after all the previous ones
+   /// add the step after all the previous ones
    steps.push_back(step);
 }
 
@@ -504,11 +554,11 @@ std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
    exec_params->component_name = dp->component_name;
    THROW_ASSERT(exec_params->chain_name == dp->chain_name, "Mismatching!! exec = \"" + exec_params->chain_name + "\" vs. dp = \"" + dp->chain_name + "\"");
 
-   for(DesignParameters::map_t::iterator p = dp->parameter_values.begin(); p != dp->parameter_values.end(); ++p)
+   for(auto p = dp->parameter_values.begin(); p != dp->parameter_values.end(); ++p)
    {
       exec_params->parameter_values[p->first] = p->second;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->setting parameter \"" + p->first + "\" to value \"" + p->second + "\"");
-      if (module_undefined_parameters.find(p->first) != module_undefined_parameters.end())
+      if(module_undefined_parameters.find(p->first) != module_undefined_parameters.end())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---removed parameter \"" + p->first + "\" from undefined parameters");
          module_undefined_parameters.erase(p->first);
@@ -516,11 +566,11 @@ std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
    }
 
-   if (module_undefined_parameters.size() > 0)
+   if(module_undefined_parameters.size() > 0)
    {
-      for(std::set<std::string>::iterator p = module_undefined_parameters.begin(); p != module_undefined_parameters.end(); ++p)
+      for(const auto& module_undefined_parameter : module_undefined_parameters)
       {
-         INDENT_DBG_MEX(0,0, "missing definition for parameter " + *p);
+         PRINT_MSG("missing definition for parameter " + module_undefined_parameter);
       }
       THROW_ERROR("Some parameters still need to be defined: " + STR(module_undefined_parameters.size()));
    }
@@ -536,31 +586,30 @@ std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
 
    WriteFlowConfiguration(script);
 
-   for (unsigned int s = 0; s < steps.size(); s++)
+   for(const auto& step : steps)
    {
-      const BackendStepRef& step = steps[s];
       THROW_ASSERT(step->tool, "Tool not valid for step: " + step->name);
       script << "# STEP: " << step->name << std::endl;
 
-      ///output directory
-      if (!boost::filesystem::exists(step->out_dir))
+      /// output directory
+      if(!boost::filesystem::exists(step->out_dir))
          THROW_ERROR("Output directory \"" + step->out_dir + "\" has not been created!");
       boost::filesystem::create_directory(step->out_dir);
 
-      ///script file
+      /// script file
       std::string script_path;
-      if (step->script_name.size())
+      if(step->script_name.size())
          script_path = step->tool->get_output_directory() + "/" + step->script_name;
       step->tool->generate_synthesis_script(exec_params, script_path);
 
       script << step->tool->get_command_line(exec_params) << std::endl;
    }
 
-   //Write the synthesis script
+   // Write the synthesis script
    generated_synthesis_script = std::string("synthesize");
-   if (exec_params->chain_name.size())
-     generated_synthesis_script += std::string("_") + exec_params->chain_name;
-   if (exec_params->component_name.size())
+   if(exec_params->chain_name.size())
+      generated_synthesis_script += std::string("_") + exec_params->chain_name;
+   if(exec_params->component_name.size())
       generated_synthesis_script += std::string("_") + exec_params->component_name;
    generated_synthesis_script += std::string(".sh");
 
@@ -577,7 +626,8 @@ std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
    input_files.push_back(generated_synthesis_script);
    tool->execute(parameters, input_files, output_files, Param->getOption<std::string>(OPT_output_temporary_directory) + "/synthesis_script_generation_output");
 
-   if (debug_level >= DEBUG_LEVEL_PEDANTIC) create_xml_scripts("exported_flow.xml");
+   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
+      create_xml_scripts("exported_flow.xml");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Completed the generation of scripts for module \"" + exec_params->component_name + "\" on chain \"" + exec_params->chain_name + "\"");
 
    return generated_synthesis_script;
@@ -592,22 +642,21 @@ void BackendFlow::set_initial_parameters(const DesignParametersRef& _flow_parame
 void BackendFlow::create_xml_scripts(const std::string& xml_file)
 {
    xml_document doc;
-   doc.set_encoding( "UTF-8" );
-   doc.set_name( "synthesis_tools" );
-   xml_element * out_root = doc.add_child_element( "synthesis_tools" );
+   doc.set_encoding("UTF-8");
+   doc.set_name("synthesis_tools");
+   xml_element* out_root = doc.add_child_element("synthesis_tools");
 
-   for ( unsigned int s = 0; s < steps.size(); s++ )
+   for(const auto& step : steps)
    {
-      const BackendStepRef& step = steps[s];
-      THROW_ASSERT( step->tool, "Tool not valid for step: " + step->name );
-      out_root->add_child_element( step->tool->xwrite() );
+      THROW_ASSERT(step->tool, "Tool not valid for step: " + step->name);
+      out_root->add_child_element(step->tool->xwrite());
    }
 
-   doc.write_to_file_formatted( xml_file );
+   doc.write_to_file_formatted(xml_file);
 }
 
 #if HAVE_IPXACT_BUILT
-BackendFlowRef BackendFlow::xload_generator_chain(const ParameterConstRef , const std::string& )
+BackendFlowRef BackendFlow::xload_generator_chain(const ParameterConstRef, const std::string&)
 {
    NOT_YET_IMPLEMENTED();
 #if 0
@@ -770,5 +819,5 @@ BackendFlowRef BackendFlow::xload_generator_chain(const ParameterConstRef , cons
 
 void BackendFlow::InitDesignParameters()
 {
-   ///nothing to do
+   /// nothing to do
 }

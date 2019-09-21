@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2018 Politecnico di Milano
+ *              Copyright (C) 2016-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,30 +29,30 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file intermediate_representation.cpp
  * @brief Base class for intermediate representation
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
-///Header include
+ */
+/// Header include
 #include "intermediate_representation.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-IntermediateRepresentation::IntermediateRepresentation(const ParameterConstRef _parameters) :
-   parameters(_parameters),
-   debug_level(_parameters->getOption<int>(OPT_debug_level))
-{}
+IntermediateRepresentation::IntermediateRepresentation(const ParameterConstRef& _parameters) : parameters(_parameters), debug_level(_parameters->getOption<int>(OPT_debug_level))
+{
+}
 
-IntermediateRepresentation::~IntermediateRepresentation()
-{}
+IntermediateRepresentation::~IntermediateRepresentation() = default;
 
 void IntermediateRepresentation::Initialize()
-{}
+{
+}
 
 void IntermediateRepresentation::Clear()
-{}
+{
+}

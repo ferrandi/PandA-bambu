@@ -50,7 +50,7 @@ knowledge of the CeCILL-C license and that you accept its terms.
 #define SOLLYA_H
 
 #include <mpfr.h>
-#include <setjmp.h>
+#include <csetjmp>
 
 #ifdef __cplusplus
 extern "C" {

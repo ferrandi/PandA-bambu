@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file data_xml.hpp
  * @brief xml nodes for generic data xml files
@@ -42,11 +42,10 @@
 #ifndef DATA_XML_HPP
 #define DATA_XML_HPP
 
-///The benchmark name attribute
+/// The benchmark name attribute
 #define STR_XML_data_xml_benchmark_name "benchmark_name"
 
-///The attribute containing the value of a node
+/// The attribute containing the value of a node
 #define STR_XML_data_xml_value "value"
 
 #endif
-

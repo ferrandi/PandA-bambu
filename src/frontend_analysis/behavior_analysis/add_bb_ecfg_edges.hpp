@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file add_bb_ecfg_edges.hpp
  * @brief Analysis step which extends basic block cfg
@@ -39,14 +39,14 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef ADD_BB_ECFG_EDGES_HPP
 #define ADD_BB_ECFG_EDGES_HPP
 
-///Superclass include
+/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
-///Utility include
+/// Utility include
 #include "refcount.hpp"
 
 /**
@@ -56,38 +56,37 @@
 REF_FORWARD_DECL(tree_manager);
 //@}
 
-
 /**
  * Class to extend basic block cfg
-*/
+ */
 class AddBbEcfgEdges : public FunctionFrontendFlowStep
 {
-   private:
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+ private:
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor.
-       * @param AppM is the application manager
-       * @param function_id is the node id of the function analyzed.
-       * @param design_flow_manager is the design flow manage
-       * @param parameters is the set of the parameters
-       */
-      AddBbEcfgEdges(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor.
+    * @param AppM is the application manager
+    * @param function_id is the node id of the function analyzed.
+    * @param design_flow_manager is the design flow manage
+    * @param parameters is the set of the parameters
+    */
+   AddBbEcfgEdges(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-      /**
-       *  Destructor
-       */
-      ~AddBbEcfgEdges();
+   /**
+    *  Destructor
+    */
+   ~AddBbEcfgEdges() override;
 
-      /**
-       * Performs the adding of flow edges
-       * @return the exit status of this step
-       */
-      DesignFlowStep_Status InternalExec();
+   /**
+    * Performs the adding of flow edges
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 };
 #endif

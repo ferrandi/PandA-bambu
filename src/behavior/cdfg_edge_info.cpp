@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,23 +29,20 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file cdfg_edge_info.cpp
- * @brief Data stuctures used to represent an edge in operation and basic block graphs.
+ * @brief Data structures used to represent an edge in operation and basic block graphs.
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
  *
-*/
-
-///Header include
+ */
 #include "cdfg_edge_info.hpp"
-
-///Behavior include
 #include "behavioral_helper.hpp"
+#include <utility> // for pair
 
 bool CdfgEdgeInfo::CdgEdgeT() const
 {
@@ -85,7 +82,7 @@ const std::string CdfgEdgeInfo::PrintLabels(const int selector, const Behavioral
    if(labels.find(selector) == labels.end())
       return "";
    std::string ret;
-   const std::set<unsigned int> & labels_to_be_printed = labels.find(selector)->second;
+   const std::set<unsigned int>& labels_to_be_printed = labels.find(selector)->second;
    std::set<unsigned int>::const_iterator label, label_end = labels_to_be_printed.end();
    for(label = labels_to_be_printed.begin(); label != label_end; ++label)
    {
@@ -109,7 +106,6 @@ const std::string CdfgEdgeInfo::PrintLabels(const int selector, const Behavioral
       }
    }
    return ret;
-
 }
 
 void CdfgEdgeInfo::add_nodeID(unsigned int _nodeID, const int type)
@@ -117,12 +113,10 @@ void CdfgEdgeInfo::add_nodeID(unsigned int _nodeID, const int type)
    labels[type].insert(_nodeID);
 }
 
-const std::set<unsigned int> & CdfgEdgeInfo::get_nodeID(const int selector) const
+const std::set<unsigned int>& CdfgEdgeInfo::get_nodeID(const int selector) const
 {
    static std::set<unsigned int> null_set;
    if(labels.find(selector) != labels.end())
       return labels.find(selector)->second;
    return null_set;
 }
-
-

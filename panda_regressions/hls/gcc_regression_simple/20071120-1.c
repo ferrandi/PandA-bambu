@@ -73,7 +73,7 @@ void __attribute__((noinline)) pop_to_parent_deferring_access_checks (void)
 
 int main()
 {
-    deferred_access_stack = __builtin_malloc (sizeof(VEC_deferred_access_gc) + sizeof(deferred_access) * 8);
+    deferred_access_stack = malloc (sizeof(VEC_deferred_access_gc) + sizeof(deferred_access) * 8);
     deferred_access_stack->base.num = 2;
     deferred_access_stack->base.vec[0].deferring_access_checks_kind = 1;
     pop_to_parent_deferring_access_checks ();

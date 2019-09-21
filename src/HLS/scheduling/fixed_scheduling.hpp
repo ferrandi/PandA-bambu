@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,15 +29,15 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file fixed_scheduling.hpp
- * @brief 
+ * @brief
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * $Revision$
  * $Date$ $
- * Last modified by 
+ * Last modified by
  *
  */
 #ifndef FIXED_SCHEDULING_HPP
@@ -47,24 +47,23 @@
 
 class fixed_scheduling : public Scheduling
 {
-   public:
+ public:
+   /**
+    * Constructor
+    * @param design_flow_manager is the design flow manager
+    */
+   fixed_scheduling(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
-      /**
-       * Constructor
-       * @param design_flow_manager is the design flow manager
-       */
-      fixed_scheduling(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   /**
+    * Destructor
+    */
+   ~fixed_scheduling() override;
 
-      /**
-       * Deconstructor
-       */
-      virtual ~fixed_scheduling();
-
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status InternalExec();
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 };
 
 #endif

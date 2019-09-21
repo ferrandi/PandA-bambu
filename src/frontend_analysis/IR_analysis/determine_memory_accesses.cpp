@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file determine_memory_accesses.cpp
  * @brief Class to determine the variable to be stored in memory
@@ -40,51 +40,48 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "determine_memory_accesses.hpp"
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 
-///Behavior include
+/// Behavior include
 #include "application_manager.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
 
-///Parameter include
+/// Parameter include
 #include "Parameter.hpp"
 #include "module_interface.hpp"
 
-///Tree include
+/// Tree include
 #include "behavioral_helper.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "ext_tree_node.hpp"
+#include "op_graph.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "ext_tree_node.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include "op_graph.hpp"
 
-determine_memory_accesses::determine_memory_accesses(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager):
-   FunctionFrontendFlowStep(_AppM, _function_id, DETERMINE_MEMORY_ACCESSES, _design_flow_manager, _parameters),
-   behavioral_helper(function_behavior->CGetBehavioralHelper()),
-   TM(_AppM->get_tree_manager()),
-   already_executed(false)
+determine_memory_accesses::determine_memory_accesses(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, DETERMINE_MEMORY_ACCESSES, _design_flow_manager, _parameters), behavioral_helper(function_behavior->CGetBehavioralHelper()), TM(_AppM->get_tree_manager()), already_executed(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-determine_memory_accesses::~determine_memory_accesses()
-{
-}
+determine_memory_accesses::~determine_memory_accesses() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > determine_memory_accesses::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> determine_memory_accesses::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, CALLED_FUNCTIONS));
 #if HAVE_BAMBU_BUILT
@@ -99,19 +96,21 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          }
          relationships.insert(std::make_pair(CALL_GRAPH_BUILTIN_CALL, SAME_FUNCTION));
          relationships.insert(std::make_pair(PARM_DECL_TAKEN_ADDRESS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(PARM2SSA, WHOLE_APPLICATION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, SAME_FUNCTION));
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(REBUILD_INITIALIZATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(REBUILD_INITIALIZATION2, SAME_FUNCTION));
          break;
       }
       default:
@@ -125,24 +124,24 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 DesignFlowStep_Status determine_memory_accesses::InternalExec()
 {
    tree_nodeRef tn = TM->get_tree_node_const(function_id);
-   function_decl * fd = GetPointer<function_decl>(tn);
-   if (!fd || !fd->body)
+   auto* fd = GetPointer<function_decl>(tn);
+   if(!fd || !fd->body)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Node is not a function or it hasn't a body");
       return DesignFlowStep_Status::UNCHANGED;
    }
 
    /// analyze formal parameters
-   std::vector <tree_nodeRef>::const_iterator formal_it_end = fd->list_of_args.end();
-   for(std::vector <tree_nodeRef>::const_iterator formal_it = fd->list_of_args.begin(); formal_it != formal_it_end; ++formal_it)
+   std::vector<tree_nodeRef>::const_iterator formal_it_end = fd->list_of_args.end();
+   for(std::vector<tree_nodeRef>::const_iterator formal_it = fd->list_of_args.begin(); formal_it != formal_it_end; ++formal_it)
       analyze_node(GET_INDEX_NODE(*formal_it), false, false, false);
 
-   statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement_list");
    std::map<unsigned int, blocRef>::iterator it_bb, it_bb_end = sl->list_of_bloc.end();
-   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end ; ++it_bb)
+   for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end; ++it_bb)
    {
-      if (it_bb->second->number == BB_ENTRY || it_bb->second->number == BB_EXIT)
+      if(it_bb->second->number == BB_ENTRY || it_bb->second->number == BB_EXIT)
          continue;
       for(const auto& phi : it_bb->second->CGetPhiList())
       {
@@ -154,7 +153,7 @@ DesignFlowStep_Status determine_memory_accesses::InternalExec()
       }
    }
 
-   if (debug_level >= DEBUG_LEVEL_PEDANTIC or parameters->getOption<bool>(OPT_print_dot))
+   if(debug_level >= DEBUG_LEVEL_PEDANTIC or parameters->getOption<bool>(OPT_print_dot))
       AppM->CGetCallGraphManager()->CGetCallGraph()->WriteDot("call_graph_memory_analysis.dot");
    already_executed = true;
    return DesignFlowStep_Status::SUCCESS;
@@ -163,12 +162,12 @@ DesignFlowStep_Status determine_memory_accesses::InternalExec()
 void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, bool dynamic_address, bool no_dynamic_address)
 {
    const tree_nodeRef tn = TM->get_tree_node_const(node_id);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing node " + tn->ToString() + " - Dynamic address: " + (dynamic_address ? " true":"false") + " - No dynamic address: " + (no_dynamic_address ? "true":"false"));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing node " + tn->ToString() + " - Dynamic address: " + (dynamic_address ? " true" : "false") + " - No dynamic address: " + (no_dynamic_address ? "true" : "false"));
    std::string function_name = behavioral_helper->get_function_name();
 
    if(GetPointer<gimple_node>(tn))
    {
-      gimple_node* gn = GetPointer<gimple_node>(tn);
+      auto* gn = GetPointer<gimple_node>(tn);
       if(gn->use_set)
       {
          const std::vector<tree_nodeRef>::const_iterator usv_it_end = gn->use_set->variables.end();
@@ -183,10 +182,10 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
    {
       case gimple_assign_K:
       {
-         gimple_assign* gm = GetPointer<gimple_assign>(tn);
+         auto* gm = GetPointer<gimple_assign>(tn);
          if(!gm->init_assignment)
          {
-            //std::cerr << "gimple assign " << node_id << " " << tn << std::endl;
+            // std::cerr << "gimple assign " << node_id << " " << tn << std::endl;
             analyze_node(GET_INDEX_NODE(gm->op0), true, false, false);
             analyze_node(GET_INDEX_NODE(gm->op1), false, false, gm->temporary_address);
 
@@ -200,53 +199,47 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
             bool is_a_vector_bitfield = false;
             if(op1->get_kind() == bit_field_ref_K)
             {
-               bit_field_ref* bfr = GetPointer<bit_field_ref>(op1);
+               auto* bfr = GetPointer<bit_field_ref>(op1);
                if(tree_helper::is_a_vector(TM, GET_INDEX_NODE(bfr->op0)))
                   is_a_vector_bitfield = true;
             }
 
-            bool load_candidate = (op1->get_kind() == bit_field_ref_K && !is_a_vector_bitfield) ||op1->get_kind() == component_ref_K || op1->get_kind() == indirect_ref_K || op1->get_kind() == misaligned_indirect_ref_K || op1->get_kind() == mem_ref_K || op1->get_kind() == array_ref_K || op1->get_kind() == target_mem_ref_K || op1->get_kind() == target_mem_ref461_K;
+            bool load_candidate = (op1->get_kind() == bit_field_ref_K && !is_a_vector_bitfield) || op1->get_kind() == component_ref_K || op1->get_kind() == indirect_ref_K || op1->get_kind() == misaligned_indirect_ref_K || op1->get_kind() == mem_ref_K ||
+                                  op1->get_kind() == array_ref_K || op1->get_kind() == target_mem_ref_K || op1->get_kind() == target_mem_ref461_K;
             if(op1->get_kind() == realpart_expr_K || op1->get_kind() == imagpart_expr_K)
             {
                enum kind code1 = GET_NODE(GetPointer<unary_expr>(op1)->op)->get_kind();
-               if((code1 == bit_field_ref_K && !is_a_vector_bitfield) ||
-                     code1 == component_ref_K || code1 == indirect_ref_K || code1 == bit_field_ref_K ||
-                     code1 == misaligned_indirect_ref_K || code1 == mem_ref_K || code1 == array_ref_K ||
-                     code1 == target_mem_ref_K || code1 == target_mem_ref461_K)
+               if((code1 == bit_field_ref_K && !is_a_vector_bitfield) || code1 == component_ref_K || code1 == indirect_ref_K || code1 == bit_field_ref_K || code1 == misaligned_indirect_ref_K || code1 == mem_ref_K || code1 == array_ref_K ||
+                  code1 == target_mem_ref_K || code1 == target_mem_ref461_K)
                   load_candidate = true;
                if(code1 == var_decl_K && function_behavior->is_variable_mem(GET_INDEX_NODE(GetPointer<unary_expr>(op1)->op)))
                   load_candidate = true;
             }
-            bool store_candidate = op0->get_kind() == bit_field_ref_K || op0->get_kind() == component_ref_K || op0->get_kind() == indirect_ref_K || op0->get_kind() == misaligned_indirect_ref_K || op0->get_kind() == mem_ref_K || op0->get_kind() == array_ref_K || op0->get_kind() == target_mem_ref_K || op0->get_kind() == target_mem_ref461_K;
+            bool store_candidate = op0->get_kind() == bit_field_ref_K || op0->get_kind() == component_ref_K || op0->get_kind() == indirect_ref_K || op0->get_kind() == misaligned_indirect_ref_K || op0->get_kind() == mem_ref_K ||
+                                   op0->get_kind() == array_ref_K || op0->get_kind() == target_mem_ref_K || op0->get_kind() == target_mem_ref461_K;
             if(op0->get_kind() == realpart_expr_K || op0->get_kind() == imagpart_expr_K)
             {
                enum kind code0 = GET_NODE(GetPointer<unary_expr>(op0)->op)->get_kind();
-               if((code0 == bit_field_ref_K) ||
-                     code0 == component_ref_K || code0 == indirect_ref_K || code0 == bit_field_ref_K ||
-                     code0 == misaligned_indirect_ref_K || code0 == mem_ref_K || code0 == array_ref_K ||
-                     code0 == target_mem_ref_K || code0 == target_mem_ref461_K)
+               if((code0 == bit_field_ref_K) || code0 == component_ref_K || code0 == indirect_ref_K || code0 == bit_field_ref_K || code0 == misaligned_indirect_ref_K || code0 == mem_ref_K || code0 == array_ref_K || code0 == target_mem_ref_K ||
+                  code0 == target_mem_ref461_K)
                   store_candidate = true;
                if(code0 == var_decl_K && function_behavior->is_variable_mem(GET_INDEX_NODE(GetPointer<unary_expr>(op0)->op)))
                   store_candidate = true;
             }
             if(!gm->clobber && !gm->init_assignment && op0_type && op1_type &&
-                  ((op0_type->get_kind()== record_type_K && op1_type->get_kind()== record_type_K && op1->get_kind() != view_convert_expr_K) ||
-                   (op0_type->get_kind()== union_type_K && op1_type->get_kind()== union_type_K && op1->get_kind() != view_convert_expr_K) ||
-                   (op0_type->get_kind() == array_type_K) ||
-                   (function_behavior->is_variable_mem(GET_INDEX_NODE(gm->op0)) && function_behavior->is_variable_mem(GET_INDEX_NODE(gm->op1))) ||
-                   (function_behavior->is_variable_mem(GET_INDEX_NODE(gm->op0)) && load_candidate) ||
-                   (store_candidate && function_behavior->is_variable_mem(GET_INDEX_NODE(gm->op1)))
-                   )
-                  )
+               ((op0_type->get_kind() == record_type_K && op1_type->get_kind() == record_type_K && op1->get_kind() != view_convert_expr_K) ||
+                (op0_type->get_kind() == union_type_K && op1_type->get_kind() == union_type_K && op1->get_kind() != view_convert_expr_K) || (op0_type->get_kind() == array_type_K) ||
+                (function_behavior->is_variable_mem(GET_INDEX_NODE(gm->op0)) && function_behavior->is_variable_mem(GET_INDEX_NODE(gm->op1))) || (function_behavior->is_variable_mem(GET_INDEX_NODE(gm->op0)) && load_candidate) ||
+                (store_candidate && function_behavior->is_variable_mem(GET_INDEX_NODE(gm->op1)))))
             {
                if(op0->get_kind() == mem_ref_K)
                {
-                  mem_ref * mr = GetPointer<mem_ref>(op0);
+                  auto* mr = GetPointer<mem_ref>(op0);
                   analyze_node(GET_INDEX_NODE(mr->op0), true, true, false);
                }
                else if(op0->get_kind() == target_mem_ref461_K)
                {
-                  target_mem_ref461 * tmr = GetPointer<target_mem_ref461>(op0);
+                  auto* tmr = GetPointer<target_mem_ref461>(op0);
                   if(tmr->base)
                      analyze_node(GET_INDEX_NODE(tmr->base), true, true, false);
                   else
@@ -257,12 +250,12 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
 
                if(op1->get_kind() == mem_ref_K)
                {
-                  mem_ref * mr = GetPointer<mem_ref>(op1);
+                  auto* mr = GetPointer<mem_ref>(op1);
                   analyze_node(GET_INDEX_NODE(mr->op0), true, true, false);
                }
                else if(op1->get_kind() == target_mem_ref461_K)
                {
-                  target_mem_ref461 * tmr = GetPointer<target_mem_ref461>(op1);
+                  auto* tmr = GetPointer<target_mem_ref461>(op1);
                   if(tmr->base)
                      analyze_node(GET_INDEX_NODE(tmr->base), true, true, false);
                   else
@@ -277,15 +270,18 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                {
                   /// manage temporary addresses
                   unsigned int ref_var = tree_helper::get_base_index(TM, GET_INDEX_NODE(gm->op0));
-                  if (ref_var) analyze_node(ref_var, true, true, false);
+                  if(ref_var)
+                     analyze_node(ref_var, true, true, false);
                }
                else
                {
                   /// manage temporary addresses
                   unsigned int ref_var = tree_helper::get_base_index(TM, GET_INDEX_NODE(gm->op0));
-                  if (ref_var) analyze_node(ref_var, true, true, false);
+                  if(ref_var)
+                     analyze_node(ref_var, true, true, false);
                   ref_var = tree_helper::get_base_index(TM, GET_INDEX_NODE(gm->op1));
-                  if (ref_var) analyze_node(ref_var, false, true, false);
+                  if(ref_var)
+                     analyze_node(ref_var, false, true, false);
                }
             }
          }
@@ -293,15 +289,15 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case CASE_UNARY_EXPRESSION:
       {
-         unary_expr* ue = GetPointer<unary_expr>(tn);
-         if (GetPointer<addr_expr>(tn))
+         auto* ue = GetPointer<unary_expr>(tn);
+         if(GetPointer<addr_expr>(tn))
          {
-            if (GetPointer<var_decl>(GET_NODE(ue->op)))
+            if(GetPointer<var_decl>(GET_NODE(ue->op)))
             {
                bool address_externally_used = false;
-               var_decl *vd = GetPointer<var_decl>(GET_NODE(ue->op));
+               auto* vd = GetPointer<var_decl>(GET_NODE(ue->op));
                function_behavior->add_function_mem(GET_INDEX_NODE(ue->op));
-               if((((!vd->scpe || GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K) && !vd->static_flag) || tree_helper::is_volatile(TM,node_id)))
+               if((((!vd->scpe || GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K) && !vd->static_flag) || tree_helper::is_volatile(TM, node_id)))
                {
                   if(!parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals))
                      address_externally_used = true;
@@ -313,7 +309,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                else
                   function_behavior->add_state_variable(GET_INDEX_NODE(ue->op));
 
-               if((!no_dynamic_address|| address_externally_used))
+               if((!no_dynamic_address || address_externally_used))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable for which the dynamic address is used-1: " + behavioral_helper->PrintVariable(GET_INDEX_NODE(ue->op)));
                   function_behavior->add_dynamic_address(GET_INDEX_NODE(ue->op));
@@ -330,7 +326,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                      analyze_node(GET_INDEX_NODE((GetPointer<var_decl>(GET_NODE(ue->op)))->init), left_p, false, false);
                }
             }
-            else if (GetPointer<parm_decl>(GET_NODE(ue->op)))
+            else if(GetPointer<parm_decl>(GET_NODE(ue->op)))
             {
                function_behavior->add_function_mem(GET_INDEX_NODE(ue->op));
                if(!no_dynamic_address)
@@ -343,7 +339,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                function_behavior->add_parm_decl_copied(GET_INDEX_NODE(ue->op));
                AppM->add_written_object(GET_INDEX_NODE(ue->op));
             }
-            else if (GetPointer<string_cst>(GET_NODE(ue->op)))
+            else if(GetPointer<string_cst>(GET_NODE(ue->op)))
             {
                function_behavior->add_function_mem(GET_INDEX_NODE(ue->op));
                if(!no_dynamic_address)
@@ -353,7 +349,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                   AppM->add_written_object(GET_INDEX_NODE(ue->op));
                }
             }
-            else if (GetPointer<result_decl>(GET_NODE(ue->op)))
+            else if(GetPointer<result_decl>(GET_NODE(ue->op)))
             {
                function_behavior->add_function_mem(GET_INDEX_NODE(ue->op));
                if(!no_dynamic_address)
@@ -364,39 +360,36 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                }
                INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---result_decl variable added to memory: " + behavioral_helper->PrintVariable(GET_INDEX_NODE(ue->op)));
             }
-            else if(GetPointer<component_ref>(GET_NODE(ue->op)) ||
-                    GetPointer<realpart_expr>(GET_NODE(ue->op)) ||
-                    GetPointer<imagpart_expr>(GET_NODE(ue->op)) ||
-                    GetPointer<array_ref>(GET_NODE(ue->op)))
+            else if(GetPointer<component_ref>(GET_NODE(ue->op)) || GetPointer<realpart_expr>(GET_NODE(ue->op)) || GetPointer<imagpart_expr>(GET_NODE(ue->op)) || GetPointer<array_ref>(GET_NODE(ue->op)))
                analyze_node(GET_INDEX_NODE(ue->op), true, !no_dynamic_address, no_dynamic_address);
             else if(GetPointer<function_decl>(GET_NODE(ue->op)))
             {
-                  analyze_node(GET_INDEX_NODE(ue->op), false, !no_dynamic_address, no_dynamic_address);
+               analyze_node(GET_INDEX_NODE(ue->op), false, !no_dynamic_address, no_dynamic_address);
             }
             else if(GetPointer<mem_ref>(GET_NODE(ue->op)))
             {
-               mem_ref* mr = GetPointer<mem_ref>(GET_NODE(ue->op));
+               auto* mr = GetPointer<mem_ref>(GET_NODE(ue->op));
                analyze_node(GET_INDEX_NODE(mr->op0), left_p, !no_dynamic_address, no_dynamic_address);
             }
             else if(GetPointer<target_mem_ref461>(GET_NODE(ue->op)))
             {
-               target_mem_ref461* tmr = GetPointer<target_mem_ref461>(GET_NODE(ue->op));
+               auto* tmr = GetPointer<target_mem_ref461>(GET_NODE(ue->op));
                if(tmr->base)
                   analyze_node(GET_INDEX_NODE(tmr->base), left_p, !no_dynamic_address, no_dynamic_address);
                else
                   analyze_node(GET_INDEX_NODE(ue->op), left_p, !no_dynamic_address, no_dynamic_address);
             }
             else
-               THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "determine_memory_accesses addressing currently not supported: " + GET_NODE(ue->op)->get_kind_text()+" @"+STR(node_id) + " in function " + function_name);
+               THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "determine_memory_accesses addressing currently not supported: " + GET_NODE(ue->op)->get_kind_text() + " @" + STR(node_id) + " in function " + function_name);
          }
          else if(GetPointer<view_convert_expr>(tn))
          {
-            view_convert_expr* vc = GetPointer<view_convert_expr>(tn);
+            auto* vc = GetPointer<view_convert_expr>(tn);
             analyze_node(GET_INDEX_NODE(vc->op), left_p, dynamic_address, no_dynamic_address);
          }
          else if(GetPointer<indirect_ref>(tn))
          {
-            indirect_ref * ir = GetPointer<indirect_ref>(tn);
+            auto* ir = GetPointer<indirect_ref>(tn);
             if(GetPointer<integer_cst>(GET_NODE(ir->op)))
             {
                function_behavior->set_dereference_unknown_addr(true);
@@ -414,11 +407,11 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case CASE_BINARY_EXPRESSION:
       {
-         binary_expr* be = GetPointer<binary_expr>(tn);
-         if (GetPointer<mem_ref>(tn))
+         auto* be = GetPointer<binary_expr>(tn);
+         if(GetPointer<mem_ref>(tn))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---It is a mem ref");
-            mem_ref * mr = GetPointer<mem_ref>(tn);
+            auto* mr = GetPointer<mem_ref>(tn);
             if(GetPointer<integer_cst>(GET_NODE(mr->op0)))
             {
                function_behavior->set_dereference_unknown_addr(true);
@@ -435,8 +428,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                if(ref_var)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Referenced variable is " + TM->get_tree_node_const(ref_var)->ToString());
-                  const bool is_variable_mem = [&] ()
-                  {
+                  const bool is_variable_mem = [&]() {
                      if(function_behavior->is_variable_mem(ref_var))
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Already classified as memory variable");
@@ -464,6 +456,11 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not local");
                         return false;
                      }
+                     if(vd->scpe)
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---local variable of another function");
+                        return true;
+                     }
                      if(tree_helper::is_volatile(TM, ref_var))
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Volatile");
@@ -477,9 +474,9 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                       * anymore. however changing it results in failures during
                       * allocation due to missing complex components in the
                       * technology library.
-                     * This issue should be further investigated.
+                      * This issue should be further investigated.
                       */
-                     if (type_kind == array_type_K or type_kind == complex_type_K or type_kind == record_type_K or type_kind == union_type_K)
+                     if(type_kind == array_type_K or type_kind == complex_type_K or type_kind == record_type_K or type_kind == union_type_K)
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Memory allocated");
                         return true;
@@ -500,19 +497,20 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case gimple_cond_K:
       {
-         gimple_cond* gc = GetPointer<gimple_cond>(tn);
+         auto* gc = GetPointer<gimple_cond>(tn);
          analyze_node(GET_INDEX_NODE(gc->op0), false, false, true);
          break;
       }
       case gimple_switch_K:
       {
-         gimple_switch* se = GetPointer<gimple_switch>(tn);
-         if (se->op0) analyze_node(GET_INDEX_NODE(se->op0), left_p, dynamic_address, no_dynamic_address);
+         auto* se = GetPointer<gimple_switch>(tn);
+         if(se->op0)
+            analyze_node(GET_INDEX_NODE(se->op0), left_p, dynamic_address, no_dynamic_address);
          break;
       }
       case gimple_multi_way_if_K:
       {
-         gimple_multi_way_if* gmwi=GetPointer<gimple_multi_way_if>(tn);
+         auto* gmwi = GetPointer<gimple_multi_way_if>(tn);
          for(auto cond : gmwi->list_of_cond)
             if(cond.first)
                analyze_node(cond.first->index, left_p, dynamic_address, no_dynamic_address);
@@ -520,7 +518,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case gimple_phi_K:
       {
-         gimple_phi * gp = GetPointer<gimple_phi>(tn);
+         auto* gp = GetPointer<gimple_phi>(tn);
          for(const auto& def_edge : gp->CGetDefEdgesList())
          {
             analyze_node(GET_INDEX_NODE(def_edge.first), left_p, dynamic_address, no_dynamic_address);
@@ -529,33 +527,61 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case CASE_TERNARY_EXPRESSION:
       {
-         ternary_expr* te = GetPointer<ternary_expr>(tn);
+         auto* te = GetPointer<ternary_expr>(tn);
          if(GetPointer<component_ref>(tn))
             left_p = true;
-         if (te->op0) analyze_node(GET_INDEX_NODE(te->op0), left_p, dynamic_address, no_dynamic_address);
-         if (te->op1) analyze_node(GET_INDEX_NODE(te->op1), left_p, dynamic_address, no_dynamic_address);
-         if (te->op2) analyze_node(GET_INDEX_NODE(te->op2), left_p, dynamic_address, no_dynamic_address);
+         if(te->op0)
+            analyze_node(GET_INDEX_NODE(te->op0), left_p, dynamic_address, no_dynamic_address);
+         if(te->op1)
+            analyze_node(GET_INDEX_NODE(te->op1), left_p, dynamic_address, no_dynamic_address);
+         if(te->op2)
+            analyze_node(GET_INDEX_NODE(te->op2), left_p, dynamic_address, no_dynamic_address);
          break;
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
-         quaternary_expr* qe = GetPointer<quaternary_expr>(tn);
-         if (qe->op0) analyze_node(GET_INDEX_NODE(qe->op0), left_p, dynamic_address, no_dynamic_address);
-         if (qe->op1) analyze_node(GET_INDEX_NODE(qe->op1), left_p, dynamic_address, no_dynamic_address);
-         if (qe->op2) analyze_node(GET_INDEX_NODE(qe->op2), left_p, dynamic_address, no_dynamic_address);
-         if (qe->op3) analyze_node(GET_INDEX_NODE(qe->op3), left_p, dynamic_address, no_dynamic_address);
+         auto* qe = GetPointer<quaternary_expr>(tn);
+         if(qe->op0)
+            analyze_node(GET_INDEX_NODE(qe->op0), left_p, dynamic_address, no_dynamic_address);
+         if(qe->op1)
+            analyze_node(GET_INDEX_NODE(qe->op1), left_p, dynamic_address, no_dynamic_address);
+         if(qe->op2)
+            analyze_node(GET_INDEX_NODE(qe->op2), left_p, dynamic_address, no_dynamic_address);
+         if(qe->op3)
+            analyze_node(GET_INDEX_NODE(qe->op3), left_p, dynamic_address, no_dynamic_address);
+         break;
+      }
+      case lut_expr_K:
+      {
+         auto* le = GetPointer<lut_expr>(tn);
+         analyze_node(GET_INDEX_NODE(le->op0), left_p, dynamic_address, no_dynamic_address);
+         analyze_node(GET_INDEX_NODE(le->op1), left_p, dynamic_address, no_dynamic_address);
+         if(le->op2)
+            analyze_node(GET_INDEX_NODE(le->op2), left_p, dynamic_address, no_dynamic_address);
+         if(le->op3)
+            analyze_node(GET_INDEX_NODE(le->op3), left_p, dynamic_address, no_dynamic_address);
+         if(le->op4)
+            analyze_node(GET_INDEX_NODE(le->op4), left_p, dynamic_address, no_dynamic_address);
+         if(le->op5)
+            analyze_node(GET_INDEX_NODE(le->op5), left_p, dynamic_address, no_dynamic_address);
+         if(le->op6)
+            analyze_node(GET_INDEX_NODE(le->op6), left_p, dynamic_address, no_dynamic_address);
+         if(le->op7)
+            analyze_node(GET_INDEX_NODE(le->op7), left_p, dynamic_address, no_dynamic_address);
+         if(le->op8)
+            analyze_node(GET_INDEX_NODE(le->op8), left_p, dynamic_address, no_dynamic_address);
          break;
       }
       case gimple_return_K:
       {
-         gimple_return* re = GetPointer<gimple_return>(tn);
-         if (re->op)
+         auto* re = GetPointer<gimple_return>(tn);
+         if(re->op)
          {
             tree_nodeRef res = GET_NODE(re->op);
             tree_nodeRef res_type = tree_helper::get_type_node(res);
-            if(res_type->get_kind() == record_type_K || //records have to be allocated
-               res_type->get_kind() == union_type_K // unions have to be allocated
-               )
+            if(res_type->get_kind() == record_type_K || // records have to be allocated
+               res_type->get_kind() == union_type_K     // unions have to be allocated
+            )
             {
                THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "structs or unions returned by copy are not yet supported: @" + STR(node_id) + " in function " + function_name);
                function_behavior->add_function_mem(node_id);
@@ -569,16 +595,21 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       case call_expr_K:
       case aggr_init_expr_K:
       {
-         call_expr* ce = GetPointer<call_expr>(tn);
-         std::vector<tree_nodeRef> & args = ce->args;
-         addr_expr* ae = GetPointer<addr_expr>(GET_NODE(ce->fn));
+         auto* ce = GetPointer<call_expr>(tn);
+         std::vector<tree_nodeRef>& args = ce->args;
+         auto* ae = GetPointer<addr_expr>(GET_NODE(ce->fn));
 
          // The first parameter of a call_expr can be a ssa_name in
          // case of function pointer usage.  When it happens skip the
-         // following analysys.
-         if (!ae) break;
+         // following analysis.
+         if(!ae)
+            break;
 
-         function_decl* fd = GetPointer<function_decl>(GET_NODE(ae->op));
+         if(AppM->GetFunctionBehavior(GET_INDEX_NODE(ae->op))->get_unaligned_accesses())
+         {
+            function_behavior->set_unaligned_accesses(true);
+         }
+         auto* fd = GetPointer<function_decl>(GET_NODE(ae->op));
          bool is_var_args_p = GetPointer<function_type>(GET_NODE(fd->type))->varargs_flag;
          THROW_ASSERT(fd, "expected a function_decl");
          std::vector<tree_nodeRef>::iterator arg, arg_end = args.end();
@@ -590,31 +621,42 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
          }
          if(!fd->undefined_flag)
          {
-            std::vector <tree_nodeRef>::const_iterator formal_it = fd->list_of_args.begin();
-            std::vector <tree_nodeRef>::const_iterator formal_it_end = fd->list_of_args.end();
+            std::vector<tree_nodeRef>::const_iterator formal_it = fd->list_of_args.begin();
+            std::vector<tree_nodeRef>::const_iterator formal_it_end = fd->list_of_args.end();
             if(!(is_var_args_p || fd->list_of_args.size() == args.size()))
-                  THROW_ERROR("In function " + function_name + " a different number of formal and actual parameters is found when function " + tree_helper::print_function_name(TM, fd) + " is called: " + STR(fd->list_of_args.size()) + " - " +STR(args.size()) + "\n Check the C source code since an actual parameter is passed to a function that does have the associated formal parameter");
+               THROW_ERROR("In function " + function_name + " a different number of formal and actual parameters is found when function " + tree_helper::print_function_name(TM, fd) + " is called: " + STR(fd->list_of_args.size()) + " - " +
+                           STR(args.size()) + "\n Check the C source code since an actual parameter is passed to a function that does have the associated formal parameter");
             for(arg = args.begin(); arg != arg_end && formal_it != formal_it_end; ++arg, ++formal_it)
             {
                unsigned int actual_par_index = GET_INDEX_NODE(*arg);
                unsigned int formal_par_index = GET_INDEX_NODE(*formal_it);
                unsigned int calledFundID = GET_INDEX_NODE(ae->op);
                if(tree_helper::is_a_pointer(TM, actual_par_index) && tree_helper::get_base_index(TM, actual_par_index))
-                  actual_par_index=tree_helper::get_base_index(TM, actual_par_index);
+                  actual_par_index = tree_helper::get_base_index(TM, actual_par_index);
                const FunctionBehaviorRef FBcalled = AppM->GetFunctionBehavior(calledFundID);
                /// check if the actual parameter has been allocated in memory
-               if(function_behavior->is_variable_mem(actual_par_index))
+               if(function_behavior->is_variable_mem(actual_par_index) && AppM->isParmUsed(formal_par_index))
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable for which the dynamic address is used-5: " + behavioral_helper->PrintVariable(actual_par_index));
-                  function_behavior->add_dynamic_address(actual_par_index);
-                  AppM->add_written_object(actual_par_index);
-                  /// if the formal parameter has not been allocated in memory then it has to be initialized
-                  if(!FBcalled->is_variable_mem(formal_par_index) && GET_INDEX_NODE(*arg) == actual_par_index)
+                  auto formal_ssa_index = AppM->getSSAFromParm(formal_par_index);
+                  auto formal_ssa_node = TM->get_tree_node_const(formal_ssa_index);
+                  auto formal_ssa = GetPointer<ssa_name>(formal_ssa_node);
+                  auto is_singleton = formal_ssa->use_set->is_a_singleton() && actual_par_index == formal_ssa->use_set->variables.front()->index;
+                  if(!is_singleton)
                   {
-                     PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  Analyzing node: actual parameter loaded " + STR(actual_par_index));
-                     function_behavior->add_parm_decl_loaded(actual_par_index);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable for which the dynamic address is used-5: " + behavioral_helper->PrintVariable(actual_par_index));
+                     function_behavior->add_dynamic_address(actual_par_index);
+                     AppM->add_written_object(actual_par_index);
+                     /// if the formal parameter has not been allocated in memory then it has to be initialized
+                     if(!FBcalled->is_variable_mem(formal_par_index) && GET_INDEX_NODE(*arg) == actual_par_index)
+                     {
+                        PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  Analyzing node: actual parameter loaded " + STR(actual_par_index));
+                        function_behavior->add_parm_decl_loaded(actual_par_index);
+                     }
                   }
                }
+               else if(!AppM->isParmUsed(formal_par_index))
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter is not used in the function body.");
+
                /// check if the formal parameter has been allocated in memory.
                if(FBcalled->is_variable_mem(formal_par_index))
                {
@@ -630,7 +672,6 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                            FBcalled->add_parm_decl_stored(formal_par_index);
                            FBcalled->add_dynamic_address(formal_par_index);
                            AppM->add_written_object(formal_par_index);
-
                         }
                         break;
                      }
@@ -662,9 +703,9 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                         AppM->add_written_object(formal_par_index);
                         tree_nodeRef arg_op = GET_NODE(*arg);
                         tree_nodeRef arg_op_type = tree_helper::get_type_node(arg_op);
-                        if(arg_op_type->get_kind() == record_type_K || //records have to be allocated
-                           arg_op_type->get_kind() == union_type_K // unions have to be allocated
-                           )
+                        if(arg_op_type->get_kind() == record_type_K || // records have to be allocated
+                           arg_op_type->get_kind() == union_type_K     // unions have to be allocated
+                        )
                            analyze_node(actual_par_index, left_p, true, false);
                         break;
                      }
@@ -737,6 +778,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                      case array_range_ref_K:
                      case target_expr_K:
                      case error_mark_K:
+                     case lut_expr_K:
                      case CASE_BINARY_EXPRESSION:
                      case CASE_CPP_NODES:
                      case CASE_DECL_NODES:
@@ -765,16 +807,17 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case gimple_call_K:
       {
-         gimple_call* ce = GetPointer<gimple_call>(tn);
-         std::vector<tree_nodeRef> & args = ce->args;
-         addr_expr* ae = GetPointer<addr_expr>(GET_NODE(ce->fn));
+         auto* ce = GetPointer<gimple_call>(tn);
+         std::vector<tree_nodeRef>& args = ce->args;
+         auto* ae = GetPointer<addr_expr>(GET_NODE(ce->fn));
          // The first parameter of a call_expr can be a ssa_name in
          // case of function pointer usage.  When it happens skip the
-         // following analysys.
-         if (!ae) break;
+         // following analysis.
+         if(!ae)
+            break;
 
-         function_decl* fd = GetPointer<function_decl>(GET_NODE(ae->op));
-         if (tree_helper::print_function_name(TM, fd) == BUILTIN_WAIT_CALL)
+         auto* fd = GetPointer<function_decl>(GET_NODE(ae->op));
+         if(tree_helper::print_function_name(TM, fd) == BUILTIN_WAIT_CALL)
          {
             function_behavior->add_function_mem(node_id);
             AppM->add_written_object(node_id);
@@ -791,31 +834,41 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
          }
          if(!fd->undefined_flag)
          {
-            std::vector <tree_nodeRef>::const_iterator formal_it = fd->list_of_args.begin();
-            std::vector <tree_nodeRef>::const_iterator formal_it_end = fd->list_of_args.end();
+            std::vector<tree_nodeRef>::const_iterator formal_it = fd->list_of_args.begin();
+            std::vector<tree_nodeRef>::const_iterator formal_it_end = fd->list_of_args.end();
             if(!(is_var_args_p || fd->list_of_args.size() == args.size()))
-               THROW_ERROR("In function " + function_name + " a different number of formal and actual parameters is found when function " + tree_helper::print_function_name(TM, fd) + " is called: " + STR(fd->list_of_args.size()) + " - " +STR(args.size()) + "\n Check the C source code since an actual parameter is passed to a function that does have the associated formal parameter");
+               THROW_ERROR("In function " + function_name + " a different number of formal and actual parameters is found when function " + tree_helper::print_function_name(TM, fd) + " is called: " + STR(fd->list_of_args.size()) + " - " +
+                           STR(args.size()) + "\n Check the C source code since an actual parameter is passed to a function that does have the associated formal parameter");
             for(arg = args.begin(); arg != arg_end && formal_it != formal_it_end; ++arg, ++formal_it)
             {
                unsigned int actual_par_index = GET_INDEX_NODE(*arg);
                unsigned int formal_par_index = GET_INDEX_NODE(*formal_it);
                unsigned int calledFundID = GET_INDEX_NODE(ae->op);
                if(tree_helper::is_a_pointer(TM, actual_par_index) && tree_helper::get_base_index(TM, actual_par_index))
-                  actual_par_index=tree_helper::get_base_index(TM, actual_par_index);
+                  actual_par_index = tree_helper::get_base_index(TM, actual_par_index);
                const FunctionBehaviorRef FBcalled = AppM->GetFunctionBehavior(calledFundID);
                /// check if the actual parameter has been allocated in memory
-               if(function_behavior->is_variable_mem(actual_par_index))
+               if(function_behavior->is_variable_mem(actual_par_index) && AppM->isParmUsed(formal_par_index))
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable for which the dynamic address is used-7: " + behavioral_helper->PrintVariable(actual_par_index));
-                  function_behavior->add_dynamic_address(actual_par_index);
-                  AppM->add_written_object(actual_par_index);
-                  /// if the formal parameter has not been allocated in memory then it has to be initialized
-                  if(!FBcalled->is_variable_mem(formal_par_index) && GET_INDEX_NODE(*arg) == actual_par_index)
+                  auto formal_ssa_index = AppM->getSSAFromParm(formal_par_index);
+                  auto formal_ssa_node = TM->get_tree_node_const(formal_ssa_index);
+                  auto formal_ssa = GetPointer<ssa_name>(formal_ssa_node);
+                  auto is_singleton = formal_ssa->use_set->is_a_singleton() && actual_par_index == formal_ssa->use_set->variables.front()->index;
+                  if(!is_singleton)
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---actual parameter loaded " + STR(actual_par_index));
-                     function_behavior->add_parm_decl_loaded(actual_par_index);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable for which the dynamic address is used-7: " + behavioral_helper->PrintVariable(actual_par_index));
+                     function_behavior->add_dynamic_address(actual_par_index);
+                     AppM->add_written_object(actual_par_index);
+                     /// if the formal parameter has not been allocated in memory then it has to be initialized
+                     if(!FBcalled->is_variable_mem(formal_par_index) && GET_INDEX_NODE(*arg) == actual_par_index)
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---actual parameter loaded " + STR(actual_par_index));
+                        function_behavior->add_parm_decl_loaded(actual_par_index);
+                     }
                   }
                }
+               else if(!AppM->isParmUsed(formal_par_index))
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter is not used in the function body.");
                /// check if the formal parameter has been allocated in memory.
                if(FBcalled->is_variable_mem(formal_par_index))
                {
@@ -861,9 +914,9 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                         AppM->add_written_object(formal_par_index);
                         tree_nodeRef arg_op = GET_NODE(*arg);
                         tree_nodeRef arg_op_type = tree_helper::get_type_node(arg_op);
-                        if(arg_op_type->get_kind() == record_type_K || //records have to be allocated
-                           arg_op_type->get_kind() == union_type_K // unions have to be allocated
-                           )
+                        if(arg_op_type->get_kind() == record_type_K || // records have to be allocated
+                           arg_op_type->get_kind() == union_type_K     // unions have to be allocated
+                        )
                            analyze_node(actual_par_index, left_p, true, false);
                         break;
                      }
@@ -936,6 +989,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                      case array_range_ref_K:
                      case target_expr_K:
                      case error_mark_K:
+                     case lut_expr_K:
                      case CASE_BINARY_EXPRESSION:
                      case CASE_CPP_NODES:
                      case CASE_DECL_NODES:
@@ -949,7 +1003,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                         break;
                      }
                   }
-                 }
+               }
             }
          }
          else
@@ -964,11 +1018,12 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case ssa_name_K:
       {
-         ssa_name* sn = GetPointer<ssa_name>(tn);
-         if(sn->use_set->is_a_singleton())
-         {
-            function_behavior->add_function_mem(GET_INDEX_NODE(sn->use_set->variables.front()));
-         }
+         auto* sn = GetPointer<ssa_name>(tn);
+         if(sn->use_set->is_fully_resolved())
+            for(auto var : sn->use_set->variables)
+            {
+               function_behavior->add_function_mem(GET_INDEX_NODE(var));
+            }
          break;
       }
       case vector_cst_K:
@@ -996,10 +1051,10 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case parm_decl_K:
       {
-         parm_decl *pd = GetPointer<parm_decl>(tn);
-         if(GET_NODE(pd->type)->get_kind() == record_type_K || //records have to be allocated
-            GET_NODE(pd->type)->get_kind() == union_type_K // unions have to be allocated
-            )
+         auto* pd = GetPointer<parm_decl>(tn);
+         if(GET_NODE(pd->type)->get_kind() == record_type_K || // records have to be allocated
+            GET_NODE(pd->type)->get_kind() == union_type_K     // unions have to be allocated
+         )
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable for which the dynamic address is used-9: " + behavioral_helper->PrintVariable(node_id));
             function_behavior->add_function_mem(node_id);
@@ -1015,10 +1070,10 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case result_decl_K:
       {
-         result_decl *rd = GetPointer<result_decl>(tn);
-         if(GET_NODE(rd->type)->get_kind() == record_type_K || //records have to be allocated
-            GET_NODE(rd->type)->get_kind() == union_type_K // unions have to be allocated
-            )
+         auto* rd = GetPointer<result_decl>(tn);
+         if(GET_NODE(rd->type)->get_kind() == record_type_K || // records have to be allocated
+            GET_NODE(rd->type)->get_kind() == union_type_K     // unions have to be allocated
+         )
          {
             THROW_ERROR_CODE(C_EC, "structs or unions returned by copy are not yet supported: @" + STR(node_id) + " in function " + function_name);
             function_behavior->add_function_mem(node_id);
@@ -1029,21 +1084,22 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case tree_list_K:
       {
-         tree_list* tl = GetPointer<tree_list>(tn);
+         auto* tl = GetPointer<tree_list>(tn);
          analyze_node(GET_INDEX_NODE(tl->valu), left_p, dynamic_address, no_dynamic_address);
-         if (tl->chan) analyze_node(GET_INDEX_NODE(tl->chan), left_p, dynamic_address, no_dynamic_address);
+         if(tl->chan)
+            analyze_node(GET_INDEX_NODE(tl->chan), left_p, dynamic_address, no_dynamic_address);
          break;
       }
       case var_decl_K:
       {
-         var_decl *vd = GetPointer<var_decl>(tn);
+         auto* vd = GetPointer<var_decl>(tn);
          if(vd->extern_flag)
             THROW_ERROR_CODE(C_EC, "Extern symbols not yet supported " + behavioral_helper->PrintVariable(node_id));
-         if (!vd->scpe || GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K) //memory has to be allocated in case of global variables
+         if(!vd->scpe || GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K) // memory has to be allocated in case of global variables
          {
             function_behavior->add_function_mem(node_id);
             bool address_externally_used = false;
-            if((!vd->static_flag || tree_helper::is_volatile(TM,node_id)))
+            if((!vd->static_flag || tree_helper::is_volatile(TM, node_id)))
             {
                if(!parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals))
                   address_externally_used = true;
@@ -1052,7 +1108,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Global variable externally accessible found: " + behavioral_helper->PrintVariable(node_id));
             }
             function_behavior->add_state_variable(node_id);
-            if((dynamic_address && !no_dynamic_address)|| address_externally_used)
+            if((dynamic_address && !no_dynamic_address && !vd->addr_not_taken) || address_externally_used || vd->addr_taken)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable for which the dynamic address is used-10: " + behavioral_helper->PrintVariable(node_id));
                function_behavior->add_dynamic_address(node_id);
@@ -1061,30 +1117,29 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
             }
             if(left_p && !vd->readonly_flag)
                AppM->add_written_object(node_id);
-            if (vd->init && !GetPointer<string_cst>(GET_NODE(vd->init))) analyze_node(GET_INDEX_NODE(vd->init), false, false, false);
+            if(vd->init && !GetPointer<string_cst>(GET_NODE(vd->init)))
+               analyze_node(GET_INDEX_NODE(vd->init), false, false, false);
          }
          else
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Local variable");
             THROW_ASSERT(GET_NODE(vd->scpe)->get_kind() != translation_unit_decl_K, "translation_unit_decl not expected a translation unit in this point @" + STR(node_id));
-            if(vd->static_flag || //memory has to be allocated in case of local static variables
-                  tree_helper::is_volatile(TM,node_id) || // volatile vars have to be allocated
-                  GET_NODE(vd->type)->get_kind() == array_type_K || //arrays have to be allocated
-                  /*
-                   * TODO: initially complexes were like structs and so they were allocated
-                   * this should not happen anymore but removing the next line
-                   * caused failures in the allocation due to missing complex
-                   * components in the technology library.
-                   * This issue should be further investigated.
-                   */
-                  GET_NODE(vd->type)->get_kind() == complex_type_K ||
-                  GET_NODE(vd->type)->get_kind() == record_type_K || //records have to be allocated
-                  GET_NODE(vd->type)->get_kind() == union_type_K
-                  )
+            if(vd->static_flag ||                                // memory has to be allocated in case of local static variables
+               tree_helper::is_volatile(TM, node_id) ||          // volatile vars have to be allocated
+               GET_NODE(vd->type)->get_kind() == array_type_K || // arrays have to be allocated
+               /*
+                * TODO: initially complexes were like structs and so they were allocated
+                * this should not happen anymore but removing the next line
+                * caused failures in the allocation due to missing complex
+                * components in the technology library.
+                * This issue should be further investigated.
+                */
+               GET_NODE(vd->type)->get_kind() == complex_type_K || GET_NODE(vd->type)->get_kind() == record_type_K || // records have to be allocated
+               GET_NODE(vd->type)->get_kind() == union_type_K)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---It has to be allocated");
                bool address_externally_used = false;
-               if(tree_helper::is_volatile(TM,node_id))
+               if(tree_helper::is_volatile(TM, node_id))
                {
                   if((!parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals)))
                      address_externally_used = true;
@@ -1096,7 +1151,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                else if(vd->static_flag)
                   function_behavior->add_state_variable(node_id);
                function_behavior->add_function_mem(node_id);
-               if((dynamic_address && !no_dynamic_address) || address_externally_used)
+               if((dynamic_address && !no_dynamic_address && !vd->addr_not_taken) || address_externally_used || vd->addr_taken)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable for which the dynamic address is used-11: " + behavioral_helper->PrintVariable(node_id));
                   function_behavior->add_dynamic_address(node_id);
@@ -1108,27 +1163,30 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
             }
             else
             {
-               //nothing have to be allocated for the variable
+               // nothing have to be allocated for the variable
                // maybe something has to be allocated for its initialization
-               if (vd->init && !GetPointer<string_cst>(GET_NODE(vd->init))) analyze_node(GET_INDEX_NODE(vd->init), left_p, false, false);
+               if(vd->init && !GetPointer<string_cst>(GET_NODE(vd->init)))
+                  analyze_node(GET_INDEX_NODE(vd->init), left_p, false, false);
             }
          }
          break;
       }
       case constructor_K:
       {
-         constructor* con = GetPointer<constructor>(tn);
-         std::vector<std::pair< tree_nodeRef, tree_nodeRef> > &list_of_idx_valu = con->list_of_idx_valu;
-         for(std::vector<std::pair< tree_nodeRef, tree_nodeRef> >::iterator el = list_of_idx_valu.begin(); el != list_of_idx_valu.end(); ++el)
+         auto* con = GetPointer<constructor>(tn);
+         std::vector<std::pair<tree_nodeRef, tree_nodeRef>>& list_of_idx_valu = con->list_of_idx_valu;
+         for(auto el = list_of_idx_valu.begin(); el != list_of_idx_valu.end(); ++el)
          {
-            if (el->first) analyze_node(GET_INDEX_NODE(el->first), left_p, dynamic_address, no_dynamic_address);
-            if (el->second) analyze_node(GET_INDEX_NODE(el->second), left_p, dynamic_address, no_dynamic_address);
+            if(el->first)
+               analyze_node(GET_INDEX_NODE(el->first), left_p, dynamic_address, no_dynamic_address);
+            if(el->second)
+               analyze_node(GET_INDEX_NODE(el->second), left_p, dynamic_address, no_dynamic_address);
          }
          break;
       }
       case gimple_goto_K:
       {
-         gimple_goto* ge = GetPointer<gimple_goto>(tn);
+         auto* ge = GetPointer<gimple_goto>(tn);
          analyze_node(GET_INDEX_NODE(ge->op), left_p, dynamic_address, no_dynamic_address);
          break;
       }
@@ -1141,15 +1199,18 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case target_mem_ref_K:
       {
-         target_mem_ref* tmr = GetPointer<target_mem_ref>(tn);
-         if(tmr->symbol) analyze_node(GET_INDEX_NODE(tmr->symbol), left_p, false, true);
-         if(tmr->base) analyze_node(GET_INDEX_NODE(tmr->base), left_p, false, true);
-         if(tmr->idx) analyze_node(GET_INDEX_NODE(tmr->idx), left_p, false, false);
+         auto* tmr = GetPointer<target_mem_ref>(tn);
+         if(tmr->symbol)
+            analyze_node(GET_INDEX_NODE(tmr->symbol), left_p, false, true);
+         if(tmr->base)
+            analyze_node(GET_INDEX_NODE(tmr->base), left_p, false, true);
+         if(tmr->idx)
+            analyze_node(GET_INDEX_NODE(tmr->idx), left_p, false, false);
          break;
       }
       case target_mem_ref461_K:
       {
-         target_mem_ref461* tmr = GetPointer<target_mem_ref461>(tn);
+         auto* tmr = GetPointer<target_mem_ref461>(tn);
          if(tmr->base)
          {
             tree_nodeRef operand = GET_NODE(tmr->base);
@@ -1161,17 +1222,18 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
             else
                analyze_node(GET_INDEX_NODE(tmr->base), left_p, false, true);
          }
-         if(tmr->idx) analyze_node(GET_INDEX_NODE(tmr->idx), left_p, false, false);
-         if(tmr->idx2) analyze_node(GET_INDEX_NODE(tmr->idx2), left_p, false, false);
+         if(tmr->idx)
+            analyze_node(GET_INDEX_NODE(tmr->idx), left_p, false, false);
+         if(tmr->idx2)
+            analyze_node(GET_INDEX_NODE(tmr->idx2), left_p, false, false);
 
          /// check for unaligned accesses
          if(tmr->base)
          {
             tree_nodeRef type_base = tree_helper::get_type_node(GET_NODE(tmr->base));
-            type_node* t_base_ptr = GetPointer<type_node>(type_base);
+            auto* t_base_ptr = GetPointer<type_node>(type_base);
             if(t_base_ptr->algn != 8)
             {
-
             }
          }
          break;
@@ -1183,9 +1245,11 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
       case gimple_asm_K:
       {
-         gimple_asm *ga = GetPointer<gimple_asm>(tn);
-         if(ga->in) analyze_node(GET_INDEX_NODE(ga->in), false, false, false);
-         if(ga->out) analyze_node(GET_INDEX_NODE(ga->out),  true, false, false);
+         auto* ga = GetPointer<gimple_asm>(tn);
+         if(ga->in)
+            analyze_node(GET_INDEX_NODE(ga->in), false, false, false);
+         if(ga->out)
+            analyze_node(GET_INDEX_NODE(ga->out), true, false, false);
          break;
       }
       case binfo_K:
@@ -1218,7 +1282,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
          THROW_UNREACHABLE("");
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed node " + tn->ToString()); 
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed node " + tn->ToString());
 }
 
 bool determine_memory_accesses::HasToBeExecuted() const

@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file basic_blocks_graph_constructor.cpp
  * @brief This class provides methods to build a basic blocks graph.
@@ -40,21 +40,24 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "basic_blocks_graph_constructor.hpp"
-#include "basic_block.hpp"
-#include "tree_basic_block.hpp"
+#include "basic_block.hpp"         // for BBGraph, BBGraphsCo...
+#include "cdfg_edge_info.hpp"      // for CFG_SELECTOR, CDG_S...
+#include "exceptions.hpp"          // for THROW_ASSERT
+#include "string_manipulation.hpp" // for STR
+#include "tree_basic_block.hpp"    // for bloc, BB_ENTRY, BB_...
+#include <boost/lexical_cast.hpp>  // for lexical_cast
+#include <boost/tuple/tuple.hpp>   // for tie
+#include <cstddef>                 // for size_t
+#include <string>                  // for allocator, operator+
+#include <utility>                 // for pair
 
-BasicBlocksGraphConstructor::BasicBlocksGraphConstructor(const BBGraphsCollectionRef _bg) :
-   bg(_bg),
-   bb_graph(new BBGraph(bg, -1)),
-   bb_index_map(bb_graph->GetBBGraphInfo()->bb_index_map)
-{}
-
-
-BasicBlocksGraphConstructor::~BasicBlocksGraphConstructor()
+BasicBlocksGraphConstructor::BasicBlocksGraphConstructor(const BBGraphsCollectionRef _bg) : bg(_bg), bb_graph(new BBGraph(bg, -1)), bb_index_map(bb_graph->GetBBGraphInfo()->bb_index_map)
 {
 }
+
+BasicBlocksGraphConstructor::~BasicBlocksGraphConstructor() = default;
 
 vertex BasicBlocksGraphConstructor::add_vertex(blocRef info)
 {
@@ -90,7 +93,6 @@ void BasicBlocksGraphConstructor::RemoveEdge(const vertex source, const vertex t
 {
    bg->RemoveSelector(source, target, selector);
 }
-
 
 void BasicBlocksGraphConstructor::RemoveEdge(const EdgeDescriptor edge, int selector)
 {

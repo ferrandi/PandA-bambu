@@ -7,7 +7,7 @@ noinst_LTLIBRARIES = lib_utility.la
 
 
 lib_utility_la_CPPFLAGS = \
-                     -I$(BOOST_DIR)
+                     -I$(BOOST_DIR) $(all_includes)
 
 noinst_HEADERS = \
    augmented_vector.hpp \
@@ -19,14 +19,15 @@ noinst_HEADERS = \
    exceptions.hpp \
    fileIO.hpp \
    gzstream.hpp \
+   hash_helper.hpp \
    indented_output_stream.hpp \
    Lexer_utilities.hpp \
    math_function.hpp \
-   parsing_error.hpp \
    refcount.hpp \
    simple_indent.hpp \
    Statistics.hpp \
    string_manipulation.hpp \
+   strong_typedef.hpp \
    utility.hpp \
    visitor.hpp \
    xml_helper.hpp
@@ -38,6 +39,7 @@ lib_utility_la_SOURCES = \
    math_function.cpp \
    simple_indent.cpp \
    Statistics.cpp \
+   string_manipulation.cpp \
    utility.cpp
 
 lib_utility_la_LIBADD= $(BOOST_DATE_TIME_LIB)

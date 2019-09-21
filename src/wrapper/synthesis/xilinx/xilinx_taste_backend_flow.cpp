@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (C) 2015-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,47 +29,47 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file xilinx_taste_backend_flow.cpp
  * @brief Wrapper to implement a synthesis tools by Xilinx targeting Taste architecture
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "xilinx_taste_backend_flow.hpp"
 
-///Autoheader include
+/// Autoheader include
 #include "config_GRLIB_DIR.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///technology includes
+/// technology includes
 #include "target_manager.hpp"
 #include "technology_manager.hpp"
 
-///utility include
+/// utility include
 #include "fileIO.hpp"
 
-///wrapper/synthesis include
+/// wrapper/synthesis include
 #include "SynthesisTool.hpp"
 
-///wrapper/synthesis/xilinx include
+/// wrapper/synthesis/xilinx include
 #include "XilinxWrapper.hpp"
 
-///wrapper/synthesis/xilinx/ise include
+/// wrapper/synthesis/xilinx/ise include
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "xst_wrapper.hpp"
 
-XilinxTasteBackendFlow::XilinxTasteBackendFlow(const ParameterConstRef _parameters, const std::string& _flow_name, const target_managerRef _manager) :
-   XilinxBackendFlow(_parameters, _flow_name, _manager)
+XilinxTasteBackendFlow::XilinxTasteBackendFlow(const ParameterConstRef& _parameters, const std::string& _flow_name, const target_managerRef& _manager) : XilinxBackendFlow(_parameters, _flow_name, _manager)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&, const structural_managerRef, const std::list<std::string> & hdl_files, const std::list<std::string> & aux_files)
+std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&, const structural_managerRef, const std::list<std::string>& hdl_files, const std::list<std::string>& aux_files)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Generating synthesis scripts");
    std::string synthesis_file_list;
@@ -79,8 +79,10 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&,
    }
    actual_parameters = DesignParametersRef(new DesignParameters);
    actual_parameters->component_name = "TASTE_hardware_architecture";
-   if (flow_name.size())
+   if(!flow_name.empty())
+   {
       actual_parameters->chain_name = flow_name;
+   }
 
    for(const auto& aux_file : aux_files)
    {
@@ -92,19 +94,18 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&,
    actual_parameters->parameter_values[PARAM_is_combinational] = STR(false);
    actual_parameters->parameter_values[PARAM_time_constrained] = STR(true);
 
-
    InitDesignParameters();
 
    const auto ret = CreateScripts(actual_parameters);
 
-   ///Copying GRLIB
+   /// Copying GRLIB
    const auto cp_ret = PandaSystem(Param, "cp -r " GRLIB_DIR " .");
    if(IsError(cp_ret))
    {
       THROW_ERROR("copy of GRLIB returns an error");
    }
 
-   ///Modifying xst project adding grlib files
+   /// Modifying xst project adding grlib files
    if(actual_parameters->parameter_values.find(PARAM_xst_prj_file) != actual_parameters->parameter_values.end())
    {
       const std::string output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
@@ -146,7 +147,6 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&,
       {
          THROW_ERROR("mv to " + xst_prj_file + " failed");
       }
-
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Generated synthesis scripts");
@@ -228,6 +228,12 @@ void XilinxTasteBackendFlow::create_cf(const DesignParametersRef dp, bool xst)
    UCF_file << "NET \"pci_stop\"    LOC = \"AV12\" | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this stopn" << std::endl;
    UCF_file << "NET \"pci_trdy\"    LOC = \"AU10\" | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this trdyn" << std::endl;
    UCF_file.close();
-   if (xst) dp->parameter_values[PARAM_xcf_file] = ucf_filename;
-   else dp->parameter_values[PARAM_ucf_file] = ucf_filename;
+   if(xst)
+   {
+      dp->parameter_values[PARAM_xcf_file] = ucf_filename;
+   }
+   else
+   {
+      dp->parameter_values[PARAM_ucf_file] = ucf_filename;
+   }
 }

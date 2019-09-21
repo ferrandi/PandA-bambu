@@ -332,7 +332,7 @@ namespace flopoco {
 		}
 
 		// Multiplication by 1-bit integer is simple
-		if ((wY == 1))
+        if (wY == 1)
 		{
 			vhdl << tab << "-- How to obfuscate multiplication by 1 bit: first generate a trivial bit vector" << endl;
 			if (signedIO){
@@ -358,7 +358,7 @@ namespace flopoco {
 		}
 
 		// Multiplication by 2-bit integer is one addition, which is delegated to BitHeap compression anyway
-		if ((wY == 2))
+        if (wY == 2)
 		{
 			vhdl << tab << declare(addUID("R0"),wX+2) << " <= (";
 			if (signedIO) 
@@ -901,9 +901,9 @@ namespace flopoco {
 						int maxK=t->wOut; // or, dx+dy + (t==tUU && negate?1:0); 
 						int minK=0;
 						//if(ix == chunksX-1)
-						if ((ix == 0))
+                        if (ix == 0)
 							minK+=padX;
-						if((iy == 0))
+                        if(iy == 0)
 							//maxK-=padY;
 							minK+=padY;
 							

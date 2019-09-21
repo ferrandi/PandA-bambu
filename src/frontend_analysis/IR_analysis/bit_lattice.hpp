@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -40,7 +40,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef _BIT_LATTICE_HPP_
 #define _BIT_LATTICE_HPP_
@@ -55,138 +55,124 @@ REF_FORWARD_DECL(tree_node);
 
 enum class bit_lattice
 {
-   U, ZERO, ONE, X
+   U,
+   ZERO,
+   ONE,
+   X
 };
 
 class BitLatticeManipulator
 {
-   protected:
+ protected:
+   const tree_managerConstRef TM;
 
-      const tree_managerConstRef TM;
+   /**
+    * @brief Map of the current bit-values of each variable.
+    * Map storing the current bit-values of the variables at the end of each iteration of forward_transfer or backward_transfer.
+    */
+   std::unordered_map<unsigned int, std::deque<bit_lattice>> current;
 
-      /**
-       * @brief Map of the current bit-values of each variable.
-       * Map storing the current bit-values of the variables at the end of each iteration of forward_transfer or backward_transfer.
-       */
-      std::unordered_map<unsigned int, std::deque<bit_lattice> > current;
+   /**
+    * @brief Map of the best bit-values of each variable.
+    * Map storing the best bit-values of the variables at the end of all the iterations of forward_transfer or backward_transfer.
+    */
+   std::unordered_map<unsigned int, std::deque<bit_lattice>> best;
 
-      /**
-       * @brief Map of the best bit-values of each variable.
-       * Map storing the best bit-values of the variables at the end of all the iterations of forward_transfer or backward_transfer.
-       */
-      std::unordered_map<unsigned int, std::deque<bit_lattice> > best;
+   /**
+    * @brief Set storing the signed ssa
+    */
+   std::unordered_set<unsigned int> signed_var;
 
-      /**
-       * @brief Set storing the signed ssa
-       */
-      std::unordered_set<unsigned int> signed_var;
+   bit_lattice bit_sup(const bit_lattice a, const bit_lattice b) const;
 
-      bit_lattice bit_sup(const bit_lattice a, const bit_lattice b) const;
+   /**
+    * Computes the sup between two bitstrings
+    * @param a first bitstring variable
+    * @param b second bitstring variable
+    * @param output_uid is the id of the tree node for which the bitvalue is * computed
+    * @return the sup of the two bitstrings.
+    */
 
-      /**
-       * Computes the sup between two bitstrings
-       * @param a first bitstring variable
-       * @param b second bitstring variable
-       * @param output_uid is the id of the tree node for which the bitvalue is * computed
-       * @return the sup of the two bitstrings.
-       */
+   std::deque<bit_lattice> sup(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b, const unsigned int output_uid) const;
 
-      std::deque<bit_lattice> sup(
-            const std::deque<bit_lattice> & a,
-            const std::deque<bit_lattice> & b,
-            const unsigned int output_uid) const;
+   bit_lattice bit_inf(const bit_lattice a, const bit_lattice b) const;
 
-      bit_lattice bit_inf(const bit_lattice a, const bit_lattice b) const;
+   /**
+    * Computes the inf between two bitstrings
+    * @param a first bitstring
+    * @param b second bitstring
+    * @param output_uid is the id of the tree node for which the bitvalue is * computed
+    * @return inf between the two bitstrings
+    */
+   std::deque<bit_lattice> inf(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b, const unsigned int output_uid) const;
 
-      /**
-       * Computes the inf between two bitstrings
-       * @param a first bitstring
-       * @param b second bitstring
-       * @param output_uid is the id of the tree node for which the bitvalue is * computed
-       * @return inf between the two bitstrings
-       */
-      std::deque<bit_lattice> inf(
-            const std::deque<bit_lattice> & a,
-            const std::deque<bit_lattice> & b,
-            const unsigned int output_uid) const;
+   /**
+    * Extends a bitstring
+    * @param bitstring to extend
+    * @param bitstring_is_signed must be true if bitstring is signed
+    * @param final_size desired length of the bitstrign
+    * @return the extended bitstring
+    */
+   std::deque<bit_lattice> sign_extend_bitstring(const std::deque<bit_lattice>& bitstring, bool bitstring_is_signed, size_t final_size) const;
 
-      /**
-       * Extends a bitstring
-       * @param bitstring to extend
-       * @param bitstring_is_signed must be true if bitstring is signed
-       * @param final_size desired length of the bitstrign
-       * @return the extended bitstring
-       */
-      std::deque<bit_lattice> sign_extend_bitstring(
-            const std::deque<bit_lattice> & bitstring,
-            bool bitstring_is_signed,
-            size_t final_size) const;
+   /**
+    * @brief Reduce the size of a bitstring
+    * 	erasing all but one most significant zeros in unsigned bitstring and all
+    * 	but one most significant values in signed bitstrings.
+    * 	@param bitstring bitstring to reduce.
+    * 	@param bitstring_is_signed must be true if bitstring is signed
+    */
+   void sign_reduce_bitstring(std::deque<bit_lattice>& bitstring, bool bitstring_is_signed) const;
 
-      /**
-       * @brief Reduce the size of a bitstring
-       * 	erasing all but one most significant zeros in unsigned bitstring and all
-       * 	but one most significant values in signed bitstrings.
-       * 	@param bitstring bitstring to reduce.
-       * 	@param bitstring_is_signed must be true if bitstring is signed
-       */
-      void sign_reduce_bitstring(
-            std::deque<bit_lattice> & bitstring,
-            bool bitstring_is_signed) const;
+   /**
+    * auxiliary function used to build the bitstring lattice for read-only arrays
+    * @param ctor_tn is the tree reindex or a tree node of the contructor
+    * @param ssa_node_id is the ssa node id of the lattice destination
+    */
+   std::deque<bit_lattice> constructor_bitstring(const tree_nodeRef& ctor_tn, unsigned int ssa_node_id) const;
 
-      /**
-       * auxiliary function used to build the bitstring lattice for read-only arrays
-       * @param ctor_tn is the tree reindex or a tree node of the contructor
-       * @param ssa_node_id is the ssa node id of the lattice destination
-       */
-      std::deque<bit_lattice> constructor_bitstring(
-            const tree_nodeRef ctor_tn,
-            unsigned int ssa_node_id) const;
+   /**
+    * auxiliary function used to build the bitstring lattice for read-only string_cst
+    * @param strcst_tn is a tree reindex or a tree node of the string_cst
+    * @param ssa_node_id is the ssa node id of the lattice destination
+    */
+   std::deque<bit_lattice> string_cst_bitstring(const tree_nodeRef& strcst_tn, unsigned int ssa_node_id) const;
 
-      /**
-       * auxiliary function used to build the bitstring lattice for read-only string_cst
-       * @param strcst_tn is a tree reindex or a tree node of the string_cst
-       * @param ssa_node_id is the ssa node id of the lattice destination
-       */
-      std::deque<bit_lattice> string_cst_bitstring(
-            const tree_nodeRef strcst_tn,
-            unsigned int ssa_node_id) const;
+   /**
+    * Returns true if the type identified by type_id is handled by bitvalue
+    * analysis
+    */
+   bool is_handled_by_bitvalue(unsigned int type_id) const;
 
-      /**
-       * Returns true if the type identified by type_id is handled by bitvalue
-       * analysis
-       */
-      bool is_handled_by_bitvalue(unsigned int type_id) const;
+   /**
+    * Mixes the content of current and best using the sup operation, storing
+    * the result in the best map.
+    * Returns true if the best map was updated, false otherwise.
+    */
+   bool mix();
 
-      /**
-       * Mixes the content of current and best using the sup operation, storing
-       * the result in the best map.
-       * Returns true if the best map was updated, false otherwise.
-       */
-      bool mix();
+   /**
+    * Given a bitstring res, and the id of a tree node ouput_uid, this
+    * functions checks if it is necessary to update the bistring stored in
+    * the current map used by the bitvalue analysis algorithm.
+    */
+   bool update_current(std::deque<bit_lattice> res, unsigned int output_uid);
 
-      /**
-       * Given a bitstring res, and the id of a tree node ouput_uid, this
-       * functions checks if it is necessary to update the bistring stored in
-       * the current map used by the bitvalue analysis algorithm.
-       */
-      bool update_current(std::deque<bit_lattice> res, unsigned int output_uid);
+   /**
+    * Clean up the internal data structures
+    */
+   void clear();
 
-      /**
-       * Clean up the internal data structures
-       */
-      void clear();
+ public:
+   /**
+    * Constructor
+    */
+   explicit BitLatticeManipulator(const tree_managerConstRef& _TM);
 
-   public:
-
-      /**
-       * Constructor
-       */
-      explicit BitLatticeManipulator(const tree_managerConstRef _TM);
-
-      /**
-       * Destructor
-       */
-      ~BitLatticeManipulator();
+   /**
+    * Destructor
+    */
+   ~BitLatticeManipulator();
 };
 
 /**
@@ -203,7 +189,6 @@ std::deque<bit_lattice> create_u_bitstring(size_t lenght);
  */
 std::deque<bit_lattice> create_x_bitstring(unsigned int lenght);
 
-
 /**
  * Creates a bitstring from a constant input
  * @param value_int integer constant
@@ -211,15 +196,12 @@ std::deque<bit_lattice> create_x_bitstring(unsigned int lenght);
  * @param signed_value specified if this bitstring can have negative values
  * @return bitstring generated from the integer constant
  */
-std::deque<bit_lattice> create_bitstring_from_constant(
-      long long int value_int,
-      unsigned int length,
-      bool signed_value);
+std::deque<bit_lattice> create_bitstring_from_constant(long long int value_int, unsigned int length, bool signed_value);
 
 /**
  * Translates a bitstring ( expressed as an std::deque of bit_lattice ) into a string of characters.
  */
-std::string bitstring_to_string(const std::deque<bit_lattice> & bitstring);
+std::string bitstring_to_string(const std::deque<bit_lattice>& bitstring);
 
 /**
  * inverse of bitstring_to_string
@@ -231,5 +213,5 @@ std::deque<bit_lattice> string_to_bitstring(const std::string& s);
  * @param a the bitstring to be checked
  * @return TRUE if the bitstring contains only 1, 0 or X but not U values
  */
-bool bitstring_constant(const std::deque<bit_lattice> & a);
+bool bitstring_constant(const std::deque<bit_lattice>& a);
 #endif

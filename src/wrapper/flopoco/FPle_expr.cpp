@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file FPle_expr.hpp
  * @brief FPle_expr module for flopoco.
@@ -38,9 +38,9 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Autoheader include
+/// Autoheader include
 #include "config_SKIP_WARNING_SECTIONS.hpp"
 
 #if SKIP_WARNING_SECTIONS
@@ -50,91 +50,85 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
 
+#include <cmath>
+#include <cstring>
 #include <iosfwd>
 #include <sstream>
 #include <vector>
-#include <math.h>
-#include <string.h>
 
 #include <cstddef>
 #include <gmp.h>
 
-#include <gmpxx.h>
 #include "utils.hpp"
+#include <gmpxx.h>
 
-#include "FPle_expr.hpp"
 #include "FPAdderSinglePath.hpp"
+#include "FPle_expr.hpp"
 
+#include <cmath>
 #include <cstdlib>
 #include <iomanip>
+#include <list>
+#include <locale>
+#include <map>
 #include <sstream>
 #include <string>
-#include <list>
-#include <map>
 #include <vector>
-#include <math.h>
-#include <locale>
 
-#include <stdio.h>
+#include <cstdio>
 #include <mpfr.h>
 
 #include "flopoco_wrapper.hpp"
 
 using namespace std;
 
-namespace flopoco{
-
+namespace flopoco
+{
    extern vector<Operator*> oplist;
 
 #define DEBUGVHDL 0
 
-
-   FPle_expr::FPle_expr(Target* _target, int wE, int wF) :
-         Operator(_target) {
-
+   FPle_expr::FPle_expr(Target* _target, int wE, int wF) : Operator(_target)
+   {
       ostringstream name;
 
-      name<<"FPle_expr_" <<wE<<"_"<<wF;
+      name << "FPle_expr_" << wE << "_" << wF;
       setName(name.str());
 
       setCopyrightString("Fabrizio Ferrandi (2011-2018)");
 
       /* Set up the IO signals */
 
-      addFPInput ("X", wE,wF);
-      addFPInput ("Y", wE,wF);
-      addOutput ("R", 1);
+      addFPInput("X", wE, wF);
+      addFPInput("Y", wE, wF);
+      addOutput("R", 1);
 
       /*	VHDL code description	*/
       manageCriticalPath(_target->localWireDelay() + _target->lutDelay());
-      vhdl << tab << declare("nX",wE+wF+3) << "  <= X"<< range(wE+wF+2,wE+wF+1) << " & not(X"<< of(wE+wF) << ") & X" << range(wE+wF-1,0) << ";" << endl;
-      FPAdderSinglePath * value_difference = new FPAdderSinglePath(_target, wE, wF, wE, wF, wE, wF);
-      value_difference->changeName(getName()+"value_difference");
+      vhdl << tab << declare("nX", wE + wF + 3) << "  <= X" << range(wE + wF + 2, wE + wF + 1) << " & not(X" << of(wE + wF) << ") & X" << range(wE + wF - 1, 0) << ";" << endl;
+      FPAdderSinglePath* value_difference = new FPAdderSinglePath(_target, wE, wF, wE, wF, wE, wF);
+      value_difference->changeName(getName() + "value_difference");
       oplist.push_back(value_difference);
-      inPortMap  (value_difference, "X", "Y");
-      inPortMap  (value_difference, "Y", "nX");
-      outPortMap (value_difference, "R","valueDiff");
+      inPortMap(value_difference, "X", "Y");
+      inPortMap(value_difference, "Y", "nX");
+      outPortMap(value_difference, "R", "valueDiff");
       vhdl << instance(value_difference, "value_difference");
       syncCycleFromSignal("valueDiff");
       setCriticalPath(value_difference->getOutputDelay("R"));
 
       manageCriticalPath(_target->localWireDelay() + _target->lutDelay());
-      vhdl << tab << "R(0) <=  '1' when (valueDiff" << of(wE+wF) << "='0' or (valueDiff" << range(wE+wF+2,wE+wF+1) << " = \"00\")) else '0';" << endl;
+      vhdl << tab << "R(0) <=  '1' when (valueDiff" << of(wE + wF) << "='0' or (valueDiff" << range(wE + wF + 2, wE + wF + 1) << " = \"00\")) else '0';" << endl;
    }
 
+   FPle_expr::~FPle_expr() = default;
 
-   FPle_expr::~FPle_expr() {
-   }
-
-
-   void FPle_expr::emulate(TestCase * )
+   void FPle_expr::emulate(TestCase*)
    {
       // TODO
    }
 
-
-   void FPle_expr::buildStandardTestCases(TestCaseList* ){
-
+   void FPle_expr::buildStandardTestCases(TestCaseList*)
+   {
    }
 
-}
+} // namespace flopoco

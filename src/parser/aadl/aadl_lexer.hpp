@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (C) 2015-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,18 +29,18 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file aadl_lexer.hpp
  * @brief header file for LEX based lexer for aadl file.
  *
  * @author Lattuada Marco <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef AADL_LEXER_HPP
 #define AADL_LEXER_HPP
 
-#define LN_CONCAT(name)Aadl##name
+#define LN_CONCAT(name) Aadl##name
 
 #define LCLASS_SPECIALIZED
 
@@ -48,45 +48,45 @@
 
 #include <istream>
 
-class AadlFlexLexer :public yyFlexLexer
+class AadlFlexLexer : public yyFlexLexer
 {
-   protected:
-      ///The debug level
-      const int debug_level;
+ protected:
+   /// The debug level
+   const int debug_level;
 
-   public:
-      ///Skip all tokens but end
-      bool skip;
+ public:
+   /// Skip all tokens but end
+   bool skip;
 
-      YYSTYPE *lvalp;
-      int yylex();
+   YYSTYPE* lvalp;
+   int yylex() override;
 
-      /**
-       * Constructor
-       */
-      AadlFlexLexer(const ParameterConstRef parameters, std::istream* argin, std::ostream* argout);
+   /**
+    * Constructor
+    */
+   AadlFlexLexer(const ParameterConstRef parameters, std::istream* argin, std::ostream* argout);
 
-      /**
-       * Destructor
-       */
-      ~AadlFlexLexer();
+   /**
+    * Destructor
+    */
+   ~AadlFlexLexer() override;
 
-      void yyerror(const char * msg)
-      {
-         LexerError(msg);
-      }
+   void yyerror(const char* msg)
+   {
+      LexerError(msg);
+   }
 
-      void LexerError(const char * msg)
-      {
-         std::cout << msg << " at line number |" << lineno() << "|\t" ;
-         std::cout << "text is |" << YYText() << "|" << std::endl ;
-         throw "Parse Error";
-      }
+   void LexerError(const char* msg) override
+   {
+      std::cout << msg << " at line number |" << lineno() << "|\t";
+      std::cout << "text is |" << YYText() << "|" << std::endl;
+      throw "Parse Error";
+   }
 
-      int yywrap()
-      {
-         return 1;
-      }
+   int yywrap() override
+   {
+      return 1;
+   }
 };
 typedef refcount<AadlFlexLexer> AadlFlexLexerRef;
 #endif

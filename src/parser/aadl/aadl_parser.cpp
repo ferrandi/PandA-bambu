@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (C) 2015-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,46 +29,44 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file aadl_parser.cpp
  * @brief Specification of the aadl parsing interface function.
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "aadl_parser.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior include
+/// behavior include
 #include "application_manager.hpp"
 
-///constants include
+/// constants include
 #include "aadl_constants.hpp"
 #include "constants.hpp"
 
-///HLS include
+/// HLS include
 #include "hls_manager.hpp"
 
-///intermediate_representation/aadl
+/// intermediate_representation/aadl
 #include "aadl_information.hpp"
 
-///parser/aadl include
+/// parser/aadl include
 #include "aadl_parser_node.hpp"
 #define YYSTYPE AadlParserNode
 #include "aadl_lexer.hpp"
 
-///utility include
+/// utility include
 #include "fileIO.hpp"
-#include "utility.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 
-
-static
-std::string GetFile(const std::string&directory, const std::string&file)
+static std::string GetFile(const std::string& directory, const std::string& file)
 {
    std::string ret = file;
    ret = ret.at(0) == '"' ? ret.substr(1, ret.size() - 2) : ret;
@@ -92,27 +90,24 @@ std::string GetFile(const std::string&directory, const std::string&file)
    return "";
 }
 
-AadlParserData::AadlParserData(const ParameterConstRef _parameters) :
-   parameters(_parameters),
-   debug_level(_parameters->get_class_debug_level("AadlParser"))
-{}
+AadlParserData::AadlParserData(const ParameterConstRef _parameters) : parameters(_parameters), debug_level(_parameters->get_class_debug_level("AadlParser"))
+{
+}
 
-AadlParser::AadlParser(const DesignFlowManagerConstRef _design_flow_manager, const std::string&_file_name, const application_managerRef _AppM, const ParameterConstRef _parameters) :
-   ParserFlowStep(_design_flow_manager, ParserFlowStep_Type::AADL, _file_name, _parameters),
-   AppM(_AppM)
+AadlParser::AadlParser(const DesignFlowManagerConstRef _design_flow_manager, const std::string& _file_name, const application_managerRef _AppM, const ParameterConstRef _parameters)
+    : ParserFlowStep(_design_flow_manager, ParserFlowStep_Type::AADL, _file_name, _parameters), AppM(_AppM)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-AadlParser::~AadlParser()
-{}
+AadlParser::~AadlParser() = default;
 
 DesignFlowStep_Status AadlParser::Exec()
 {
    fileIO_istreamRef sname = fileIO_istream_open(file_name);
    const auto directory = GetDirectory(file_name);
    if(sname->fail())
-     THROW_ERROR(std::string("FILE does not exist: ") + file_name);
+      THROW_ERROR(std::string("FILE does not exist: ") + file_name);
    const AadlFlexLexerRef lexer(new AadlFlexLexer(parameters, sname.get(), nullptr));
    const AadlParserDataRef data(new AadlParserData(parameters));
    YYParse(data, lexer);
@@ -138,7 +133,7 @@ DesignFlowStep_Status AadlParser::Exec()
                   const auto function_name = feature.second.find("Taste::InterfaceName")->second;
                   const auto without_quota_function_name = function_name.at(0) == '"' ? function_name.substr(1, function_name.size() - 2) : function_name;
                   aadl_information->top_functions_names.push_back(without_quota_function_name);
-                  const_cast<Parameter *>(parameters.get())->setOption(OPT_top_functions_names, top_functions + without_quota_function_name);
+                  const_cast<Parameter*>(parameters.get())->setOption(OPT_top_functions_names, top_functions + without_quota_function_name);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding top function " + without_quota_function_name);
                }
             }
@@ -165,7 +160,7 @@ DesignFlowStep_Status AadlParser::Exec()
    }
    for(const auto& subprogram : data->subprogram_features)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC,debug_level, "-->Analyzing subprogram " + subprogram.first);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing subprogram " + subprogram.first);
       for(const auto& feature : subprogram.second)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing feature " + feature.first);
@@ -185,11 +180,11 @@ DesignFlowStep_Status AadlParser::Exec()
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed feature " + feature.first);
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC,debug_level, "<--Analyzed subprogram " + subprogram.first);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed subprogram " + subprogram.first);
    }
-   if(parameters->getOption<const std::list<std::string> >(OPT_top_functions_names).size() > 1)
+   if(parameters->getOption<const std::list<std::string>>(OPT_top_functions_names).size() > 1)
    {
-      const_cast<Parameter *>(parameters.get())->setOption(OPT_disable_function_proxy, true);
+      const_cast<Parameter*>(parameters.get())->setOption(OPT_disable_function_proxy, true);
    }
    return DesignFlowStep_Status::SUCCESS;
 }

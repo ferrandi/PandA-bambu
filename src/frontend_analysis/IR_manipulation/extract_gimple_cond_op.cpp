@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,66 +29,63 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file extract_gimple_cond_op.cpp
  * @brief Analysis step that extract condition from gimple_cond
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "extract_gimple_cond_op.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior includes
+/// behavior includes
 #include "application_manager.hpp"
 #include "function_behavior.hpp"
 
-///tree includes
+/// tree includes
 #include "tree_basic_block.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-///utility include
-#include "utility.hpp"
+/// utility include
+#include "string_manipulation.hpp" // for GET_CLASS
 
-ExtractGimpleCondOp::ExtractGimpleCondOp(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const unsigned int _function_id, const ParameterConstRef _parameters) :
-   FunctionFrontendFlowStep(_AppM, _function_id, EXTRACT_GIMPLE_COND_OP, _design_flow_manager, _parameters),
-   bb_modified(false)
+ExtractGimpleCondOp::ExtractGimpleCondOp(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const unsigned int _function_id, const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, EXTRACT_GIMPLE_COND_OP, _design_flow_manager, _parameters), bb_modified(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-ExtractGimpleCondOp::~ExtractGimpleCondOp()
-{}
+ExtractGimpleCondOp::~ExtractGimpleCondOp() = default;
 
 void ExtractGimpleCondOp::Initialize()
 {
    bb_modified = false;
 }
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship> > ExtractGimpleCondOp::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>> ExtractGimpleCondOp::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, SAME_FUNCTION));
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
@@ -109,7 +106,7 @@ DesignFlowStep_Status ExtractGimpleCondOp::InternalExec()
    const auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
    for(const auto& block : sl->list_of_bloc)
    {
-      const auto & stmt_list = block.second->CGetStmtList();
+      const auto& stmt_list = block.second->CGetStmtList();
       if(stmt_list.size())
       {
          const auto last_stmt = stmt_list.back();
@@ -117,13 +114,13 @@ DesignFlowStep_Status ExtractGimpleCondOp::InternalExec()
          if(gc and GET_NODE(gc->op0)->get_kind() != ssa_name_K and GetPointer<cst_node>(GET_NODE(gc->op0)) == nullptr)
          {
             auto new_gc_cond = tree_man->ExtractCondition(last_stmt, block.second);
-            ///Temporary removed old gimple cond to remove uses
+            /// Temporary removed old gimple cond to remove uses
             block.second->RemoveStmt(last_stmt);
 
-            ///Update gimple_cond
+            /// Update gimple_cond
             gc->op0 = new_gc_cond;
 
-            ///Readd gimple cond
+            /// Readd gimple cond
             block.second->PushBack(last_stmt);
             bb_modified = true;
          }
@@ -132,5 +129,3 @@ DesignFlowStep_Status ExtractGimpleCondOp::InternalExec()
    bb_modified ? function_behavior->UpdateBBVersion() : 0;
    return bb_modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
-
-

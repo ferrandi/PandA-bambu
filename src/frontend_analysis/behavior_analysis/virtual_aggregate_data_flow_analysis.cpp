@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file virtual_aggregate_data_flow_analysis.cpp
  * @brief Analysis step performing aggregate variable computation on the basis of gcc virtual operands
@@ -39,43 +39,44 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
-///Header include
+ */
+/// Header include
 #include "virtual_aggregate_data_flow_analysis.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///behavior include
+/// behavior include
 #include "function_behavior.hpp"
 #include "op_graph.hpp"
 #include "operations_graph_constructor.hpp"
 
-///tree include
+/// tree include
 #include "behavioral_helper.hpp"
+#include "hash_helper.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 
-VirtualAggregateDataFlowAnalysis::VirtualAggregateDataFlowAnalysis(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const unsigned int _function_index, const ParameterConstRef _parameters) :
-   DataDependenceComputation(_AppM, _function_index, VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS, _design_flow_manager, _parameters)
+VirtualAggregateDataFlowAnalysis::VirtualAggregateDataFlowAnalysis(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const unsigned int _function_index, const ParameterConstRef _parameters)
+    : DataDependenceComputation(_AppM, _function_index, VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-VirtualAggregateDataFlowAnalysis::~VirtualAggregateDataFlowAnalysis()
-{}
+VirtualAggregateDataFlowAnalysis::~VirtualAggregateDataFlowAnalysis() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship> > VirtualAggregateDataFlowAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> VirtualAggregateDataFlowAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > relationships;
+   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BUILD_VIRTUAL_PHI, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OP_REACHABILITY_COMPUTATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(VAR_ANALYSIS, SAME_FUNCTION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       case(PRECEDENCE_RELATIONSHIP):
       {
          break;
@@ -103,4 +104,3 @@ void VirtualAggregateDataFlowAnalysis::Initialize()
       }
    }
 }
-

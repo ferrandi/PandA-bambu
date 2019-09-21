@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,23 +29,24 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file technology_flow_step.cpp
  * @brief Base class for technology flow steps
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "technology_flow_step.hpp"
 
-///design_flows include
+/// design_flows include
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 
-///design_flows/technology include
+/// design_flows/technology include
+#include "string_manipulation.hpp"
 #include "technology_flow_step_factory.hpp"
 
 const std::string TechnologyFlowStep::EnumToName(const TechnologyFlowStep_Type technology_flow_step_type)
@@ -89,7 +90,7 @@ const std::string TechnologyFlowStep::GetName() const
    return "Technology::" + EnumToName(technology_flow_step_type);
 }
 
-void TechnologyFlowStep::ComputeRelationships(DesignFlowStepSet & steps, const DesignFlowStep::RelationshipType relationship_type)
+void TechnologyFlowStep::ComputeRelationships(DesignFlowStepSet& steps, const DesignFlowStep::RelationshipType relationship_type)
 {
    const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
    const auto step_factory = GetPointer<const TechnologyFlowStepFactory>(CGetDesignFlowStepFactory());
@@ -107,12 +108,10 @@ const DesignFlowStepFactoryConstRef TechnologyFlowStep::CGetDesignFlowStepFactor
    return design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology");
 }
 
-TechnologyFlowStep::TechnologyFlowStep(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const TechnologyFlowStep_Type _technology_flow_step_type, const ParameterConstRef _parameters) :
-   DesignFlowStep(_design_flow_manager, _parameters),
-   technology_flow_step_type(_technology_flow_step_type),
-   TM(_TM),
-   target(_target)
-{}
+TechnologyFlowStep::TechnologyFlowStep(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const TechnologyFlowStep_Type _technology_flow_step_type, const ParameterConstRef _parameters)
+    : DesignFlowStep(_design_flow_manager, _parameters), technology_flow_step_type(_technology_flow_step_type), TM(_TM), target(_target)
+{
+}
 
 bool TechnologyFlowStep::HasToBeExecuted() const
 {

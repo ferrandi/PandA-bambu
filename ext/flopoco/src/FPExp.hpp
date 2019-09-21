@@ -39,7 +39,7 @@ namespace flopoco{
 		class magicTable: public DualTable {
 		public:
 			magicTable(Target* target, int sizeExpA_, int sizeExpZPart_, bool storeExpZmZm1_);
-			mpz_class function(int x);
+			mpz_class function(int x) override;
 			int sizeExpA;
 			int sizeExpZPart; /** sometimes e^Z-1, sometimes e^Z-Z-1*/
 			bool storeExpZmZm1;
@@ -49,7 +49,7 @@ namespace flopoco{
 		class ExpYTable: public Table {
 		public:
 			ExpYTable(Target* target, int wIn, int wOut);
-			mpz_class function(int x);
+			mpz_class function(int x) override;
 		};
 
 
@@ -66,14 +66,14 @@ namespace flopoco{
 		    */
 
 		FPExp(Target* target, int wE, int wF, int k, int d, int guardBits=-1, bool fullInput=false, float DSP_threshold=0.7f,  map<string, double> inputDelays = emptyDelayMap);
-		~FPExp();
+		~FPExp() override;
 		
 		// Overloading the virtual functions of Operator
 		// void outputVHDL(std::ostream& o, std::string name);
 		
-		void emulate(TestCase * tc);
-		void buildStandardTestCases(TestCaseList* tcl);
-		TestCase* buildRandomTestCase(int i);
+		void emulate(TestCase * tc) override;
+		void buildStandardTestCases(TestCaseList* tcl) override;
+		TestCase* buildRandomTestCase(int i) override;
 
 	private:
 		int wE; /**< Exponent size */

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2018 Politecnico di Milano
+ *              Copyright (C) 2016-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -50,33 +50,26 @@
 
 class mem_cg_ext : public ApplicationFrontendFlowStep
 {
-   protected:
+ protected:
+   bool already_executed;
 
-      bool already_executed;
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      virtual const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> >
-         ComputeFrontendRelationships(
-            const DesignFlowStep::RelationshipType relationship_type) const;
+ public:
+   mem_cg_ext(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-   public:
+   ~mem_cg_ext() override;
 
-      mem_cg_ext(
-            const application_managerRef AppM,
-            const DesignFlowManagerConstRef design_flow_manager,
-            const ParameterConstRef parameters);
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status Exec() override;
 
-      ~mem_cg_ext();
-
-      /**
-       * Execute the step
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status Exec();
-
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      virtual void Initialize();
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 };
 
 #endif

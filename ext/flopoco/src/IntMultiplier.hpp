@@ -36,7 +36,7 @@ namespace flopoco {
 			int dx, dy, wO;
 			bool negate, signedX, signedY;
 			SmallMultTable(Target* target, int dx, int dy, int wO, bool negate=false, bool signedX=false, bool signedY=false );
-			mpz_class function(int x);
+			mpz_class function(int x) override;
 		};
 
 		/**
@@ -79,15 +79,15 @@ namespace flopoco {
 		/**
 		 *  Destructor
 		 */
-		~IntMultiplier();
+		~IntMultiplier() override;
 
 		/**
 		 * The emulate function.
 		 * @param[in] tc               a test-case
 		 */
-		void emulate ( TestCase* tc );
+		void emulate ( TestCase* tc ) override;
 
-		void buildStandardTestCases(TestCaseList* tcl);
+		void buildStandardTestCases(TestCaseList* tcl) override;
 
 
 

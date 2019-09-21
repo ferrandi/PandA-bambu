@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file load_file_technology.cpp
  * @brief This class loads a technology library from a file specified at command line
@@ -37,33 +37,32 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "load_file_technology.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///technology include
+/// technology include
 #include "parse_technology.hpp"
 
-///utility includes
+/// utility includes
 #include "dbgPrintHelper.hpp"
-#include "utility.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 
-LoadFileTechnology::LoadFileTechnology(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_FILE_TECHNOLOGY, _parameters)
+LoadFileTechnology::LoadFileTechnology(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_FILE_TECHNOLOGY, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-LoadFileTechnology::~LoadFileTechnology()
-{}
+LoadFileTechnology::~LoadFileTechnology() = default;
 
 DesignFlowStep_Status LoadFileTechnology::Exec()
 {
-   const auto tech_files = parameters->getOption<const CustomSet<std::string> >(OPT_technology_file);
+   const auto tech_files = parameters->getOption<const CustomSet<std::string>>(OPT_technology_file);
    for(const auto& tech_file : tech_files)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "---Reading file " + tech_file);
@@ -77,15 +76,15 @@ const std::unordered_set<TechnologyFlowStep_Type> LoadFileTechnology::ComputeTec
    std::unordered_set<TechnologyFlowStep_Type> relationships;
    switch(relationship_type)
    {
-      case(DEPENDENCE_RELATIONSHIP) :
+      case(DEPENDENCE_RELATIONSHIP):
       {
          break;
       }
-      case(INVALIDATION_RELATIONSHIP) :
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP) :
+      case(PRECEDENCE_RELATIONSHIP):
       {
          relationships.insert(TechnologyFlowStep_Type::LOAD_DEFAULT_TECHNOLOGY);
 #if HAVE_CIRCUIT_BUILT
@@ -100,5 +99,3 @@ const std::unordered_set<TechnologyFlowStep_Type> LoadFileTechnology::ComputeTec
    }
    return relationships;
 }
-
-

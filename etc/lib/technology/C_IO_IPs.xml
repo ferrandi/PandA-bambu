@@ -9,7 +9,7 @@
       <circuit>
         <component_o id="OPEN">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2015-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2015-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="OPEN"/>
@@ -93,7 +93,7 @@
       <circuit>
         <component_o id="OPENN">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2015-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2015-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="OPENN"/>
@@ -185,7 +185,7 @@
       <circuit>
         <component_o id="OPENP1N">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2015-2017 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2015-2019 Politecnico di Milano</copyright>
           <authors>Marco Lattuada&lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="OPENP1N"/>
@@ -279,12 +279,97 @@
       </circuit>
     </cell>
     <cell>
+      <name>OPENCS</name>
+      <operation operation_name="open" execution_time="0.0000001" bounded="0"/>
+      <channels_type>MEM_ACC_CS</channels_type>
+      <circuit>
+        <component_o id="OPEN">
+          <parameter name="TAG_MEM_REQ">0</parameter>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2015-2016 Politecnico di Milano</copyright>
+          <authors>Marco Lattuada&lt;marco.lattuada@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="OPENCS"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="var_arg" dir="IN" is_var_args="1">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="sel_open" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="sel___builtin_open" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="INT" size="1" />
+          </port_o>
+          <port_o id="M_Rdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="Min_tag" dir="IN" is_memory="1" is_global="1" is_extern="1" is_tag_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="request_accepted" dir="IN" is_memory="1" is_global="1" is_extern="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_master="1" >
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="Mout_we_ram" dir="OUT" is_memory="1" is_master="1" >
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="Mout_tag_ram" dir="OUT" is_memory="1" is_master="1"  is_tag_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="out1 M_Rdata_ram M_DataRdy Min_tag request_accepted Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram TAG_MEM_REQ" IP_COMPONENT="mem_ctrl_kernel" VERILOG_GENERATOR="open_verilog_generator_CS.cpp"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
       <name>CLOSE</name>
       <operation operation_name="close" bounded="1" cycles="1"/>
       <circuit>
         <component_o id="CLOSE">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2015-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2015-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="CLOSE"/>
@@ -333,7 +418,7 @@ always @(posedge clock) done_port &lt;= start_port;"/>
       <circuit>
         <component_o id="BAMBU_READC">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2015-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2015-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="BAMBU_READC"/>
@@ -382,7 +467,7 @@ always @(posedge clock) done_port &lt;= start_port;"/>
       <circuit>
         <component_o id="BAMBU_READ4C">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2015-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2015-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="BAMBU_READ4C"/>
@@ -443,7 +528,7 @@ always @(posedge clock) done_port &lt;= start_port;"/>
       <circuit>
         <component_o id="BAMBU_WRITEC">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2015-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2015-2019 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="BAMBU_WRITEC"/>

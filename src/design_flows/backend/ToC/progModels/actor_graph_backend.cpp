@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file actor_graph_backend.hpp
  * @brief Abstract class to write an actor graphs
@@ -39,16 +39,15 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "actor_graph_backend.hpp"
 
 ///. includes
 #include "Parameter.hpp"
 
-///utility includes
-#include "utility.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 
 std::string ToString(ActorGraphBackend_Type actor_graph_backend_type)
 {
@@ -72,15 +71,16 @@ std::string ToString(ActorGraphBackend_Type actor_graph_backend_type)
    return "";
 }
 
-ActorGraphBackend::ActorGraphBackend(const PartitioningManagerConstRef _partitioning_manager, const std::unordered_map<ActorGraph_Type, ActorGraphBackendRef> & _actor_graph_backends, const CWriterRef _c_writer, const IndentedOutputStreamRef _indented_output_stream, const ParameterConstRef _parameters, const bool _verbose) :
-   partitioning_manager(_partitioning_manager),
-   actor_graph_backends(_actor_graph_backends),
-   c_writer(_c_writer),
-   indented_output_stream(_indented_output_stream),
-   parameters(_parameters),
-   verbose(_verbose),
-   debug_level(parameters->get_class_debug_level(GET_CLASS(*this)))
-{}
+ActorGraphBackend::ActorGraphBackend(const PartitioningManagerConstRef& _partitioning_manager, const std::unordered_map<ActorGraph_Type, ActorGraphBackendRef>& _actor_graph_backends, const CWriterRef& _c_writer,
+                                     const IndentedOutputStreamRef& _indented_output_stream, const ParameterConstRef& _parameters, const bool _verbose)
+    : partitioning_manager(_partitioning_manager),
+      actor_graph_backends(_actor_graph_backends),
+      c_writer(_c_writer),
+      indented_output_stream(_indented_output_stream),
+      parameters(_parameters),
+      verbose(_verbose),
+      debug_level(parameters->get_class_debug_level(GET_CLASS(*this)))
+{
+}
 
-ActorGraphBackend::~ActorGraphBackend()
-{}
+ActorGraphBackend::~ActorGraphBackend() = default;

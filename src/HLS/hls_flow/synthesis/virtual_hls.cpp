@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file virtual_hls.cpp
  * @brief A brief description of the C++ Source File
@@ -41,100 +41,97 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
-///Autoheader include
+ */
+/// Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
-///header include
+/// header include
 #include "virtual_hls.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///design_flows
+/// design_flows
 #include "design_flow_manager.hpp"
 
-///HLS includes
+/// HLS includes
 #include "hls.hpp"
 #include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
 
-///HLS/binding/module
+/// HLS/binding/module
 #include "cdfc_module_binding.hpp"
 
-///HLS/binding/register/algorithms
+/// HLS/binding/register/algorithms
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "weighted_clique_register.hpp"
 
-virtual_hls::virtual_hls(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager) :
-      HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::VIRTUAL_DESIGN_FLOW)
+virtual_hls::virtual_hls(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
+    : HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::VIRTUAL_DESIGN_FLOW)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
    composed = true;
 }
 
-virtual_hls::~virtual_hls()
-{
+virtual_hls::~virtual_hls() = default;
 
-}
-
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > virtual_hls::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> virtual_hls::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ret;
+   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
+      {
+#if HAVE_FROM_PRAGMA_BUILT
+         if(parameters->getOption<bool>(OPT_parse_pragma))
          {
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
-            if(parameters->getOption<bool>(OPT_parse_pragma))
-            {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            }
-            else
+            ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         }
+         else
 #endif
-            {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            }
-            ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_BIT_VALUE, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            ret.insert(std::make_tuple(HLSFlowStep_Type::EASY_MODULE_BINDING, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::ALLOCATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         }
+         ret.insert(std::make_tuple(HLSFlowStep_Type::EASY_MODULE_BINDING, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
 #if HAVE_ILP_BUILT
-            if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING)
-            {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::LIST_BASED_SCHEDULING, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            }
-            else
+         if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING)
+         {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::LIST_BASED_SCHEDULING, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         }
+         else
 #endif
-            {
-               ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            }
-            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_stg_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         {
+            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         }
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_stg_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
 #if HAVE_EXPERIMENTAL
-            if(parameters->IsParameter("MemoryConflictGraph") and parameters->GetParameter<bool>("MemoryConflictGraph"))
-            {
-               ///MEMORY_CONFLICT_GRAPH
-               ret.insert(std::make_tuple(HLSFlowStep_Type::MEMORY_CONFLICT_GRAPH, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            }
+         if(parameters->IsParameter("MemoryConflictGraph") and parameters->GetParameter<bool>("MemoryConflictGraph"))
+         {
+            /// MEMORY_CONFLICT_GRAPH
+            ret.insert(std::make_tuple(HLSFlowStep_Type::MEMORY_CONFLICT_GRAPH, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         }
 #endif
-            if(HLSMgr->get_HLS(funId))
-            {
-               ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->chaining_algorithm, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-               ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->liveness_algorithm, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            }
-            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_storage_value_insertion_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            if(HLSMgr->get_HLS(funId))
-               ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->module_binding_algorithm, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_datapath_interconnection_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            break;
+         if(HLSMgr->get_HLS(funId))
+         {
+            ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->chaining_algorithm, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->liveness_algorithm, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          }
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_storage_value_insertion_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         if(HLSMgr->get_HLS(funId))
+            ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->module_binding_algorithm, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_datapath_interconnection_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         break;
+      }
       case INVALIDATION_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       case PRECEDENCE_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       default:
          THROW_UNREACHABLE("");
    }

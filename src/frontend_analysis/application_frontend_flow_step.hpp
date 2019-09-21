@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file application_frontend_flow_step.hpp
  * @brief This class contains the base representation for a generic frontend flow step which works on the whole function
@@ -39,70 +39,69 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef APPLICATION_FRONTEND_FLOW_STEP_HPP
 #define APPLICATION_FRONTEND_FLOW_STEP_HPP
 
-///Superclass include
-#include "frontend_flow_step.hpp"
-
-///Utility include
-#include "refcount.hpp"
+#include "design_flow_step.hpp"   // for DesignFlowManagerConstRef, DesignF...
+#include "frontend_flow_step.hpp" // for FrontendFlowStepType, FrontendFlow...
+#include <string>                 // for string
+#include <unordered_set>          // for unordered_set
+#include <utility>                // for pair
 
 class ApplicationFrontendFlowStep : public FrontendFlowStep
 {
-   private:
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      virtual const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const = 0;
+ private:
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override = 0;
 
-   public:
-      /**
-       * Constructor
-       * @param AppM is the application manager
-       * @param frontend_flow_step_type is the type of the step
-       * @param design_flow_manager is the design flow manager
-       * @param _Param is the set of the parameters
-       */
-      ApplicationFrontendFlowStep(const application_managerRef AppM, const FrontendFlowStepType frontend_flow_step_type, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor
+    * @param AppM is the application manager
+    * @param frontend_flow_step_type is the type of the step
+    * @param design_flow_manager is the design flow manager
+    * @param _Param is the set of the parameters
+    */
+   ApplicationFrontendFlowStep(const application_managerRef AppM, const FrontendFlowStepType frontend_flow_step_type, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-      /**
-       * Destructor
-       */
-      virtual ~ApplicationFrontendFlowStep();
+   /**
+    * Destructor
+    */
+   ~ApplicationFrontendFlowStep() override;
 
-      /**
-       * Execute this step
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status Exec() = 0;
+   /**
+    * Execute this step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status Exec() override = 0;
 
-      /**
-       * Return the signature of this step
-       */
-      virtual const std::string GetSignature() const;
+   /**
+    * Return the signature of this step
+    */
+   const std::string GetSignature() const override;
 
-      /**
-       * Return the name of this design step
-       * @return the name of the pass (for debug purpose)
-       */
-      virtual const std::string GetName() const;
+   /**
+    * Return the name of this design step
+    * @return the name of the pass (for debug purpose)
+    */
+   const std::string GetName() const override;
 
-      /**
-       * Compute the signature of a function frontend flow step
-       * @param frontend_flow_step_type is the type of frontend flow
-       * @return the corresponding signature
-       */
-      static
-      const std::string ComputeSignature(const FrontendFlowStepType frontend_flow_step_type);
+   /**
+    * Compute the signature of a function frontend flow step
+    * @param frontend_flow_step_type is the type of frontend flow
+    * @return the corresponding signature
+    */
+   static const std::string ComputeSignature(const FrontendFlowStepType frontend_flow_step_type);
 
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      virtual bool HasToBeExecuted() const;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 };
 #endif

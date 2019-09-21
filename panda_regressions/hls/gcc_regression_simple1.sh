@@ -1,5 +1,5 @@
 #!/bin/bash
-$(dirname $0)/gcc49_regression_simple_ext_pipelined.sh $@
+$(dirname $0)/gcc49_regression_simple_ext_pipelined.sh -c=--reset-type=sync $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value

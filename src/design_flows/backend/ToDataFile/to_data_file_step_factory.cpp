@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (C) 2015-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,21 +29,21 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file to_data_file_step_factory.cpp
  * @brief Factory for to data file step
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 
 #include "to_data_file_step_factory.hpp"
 
-///utility include
+/// utility include
 #include "exceptions.hpp"
 
-///design_flows/ToDataFile include
+/// design_flows/ToDataFile include
 #include "to_data_file_step.hpp"
 #if HAVE_CIRCUIT_BUILT
 #include "generate_fu_list.hpp"
@@ -51,39 +51,40 @@
 
 ToDataFileStepFactory::ToDataFileStepFactory(
 #if HAVE_CIRCUIT_BUILT
-      const target_managerRef _target,
+    const target_managerRef _target,
 #endif
-      const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   DesignFlowStepFactory(_design_flow_manager, _parameters)
+    const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : DesignFlowStepFactory(_design_flow_manager, _parameters)
 #if HAVE_CIRCUIT_BUILT
-   , target(_target)
+      ,
+      target(_target)
 #endif
-{}
+{
+}
 
-ToDataFileStepFactory::~ToDataFileStepFactory()
-{}
+ToDataFileStepFactory::~ToDataFileStepFactory() = default;
 
 const std::string ToDataFileStepFactory::GetPrefix() const
 {
    return "ToDataFile";
 }
 
-const DesignFlowStepRef ToDataFileStepFactory::CreateStep(const std::string&signature) const
+const DesignFlowStepRef ToDataFileStepFactory::CreateStep(const std::string& signature) const
 {
    THROW_ASSERT(signature.compare(0, std::string("ToDataFile::").size(), "ToDataFile::") == 0, "Wrong signature " + signature);
    const auto to_data_file_step_type = ToDataFileStep::NameToEnum(signature.substr(std::string("ToDataFile::").size()));
    switch(to_data_file_step_type)
    {
       case ToDataFileStep_Type::UNKNOWN:
-         {
-            THROW_UNREACHABLE("");
-            break;
-         }
+      {
+         THROW_UNREACHABLE("");
+         break;
+      }
 #if HAVE_CIRCUIT_BUILT
       case ToDataFileStep_Type::GENERATE_FU_LIST:
-         {
-            return DesignFlowStepRef(new GenerateFuList(target, design_flow_manager.lock(), parameters));
-         }
+      {
+         return DesignFlowStepRef(new GenerateFuList(target, design_flow_manager.lock(), parameters));
+      }
 #endif
       default:
          THROW_UNREACHABLE("");
@@ -91,4 +92,3 @@ const DesignFlowStepRef ToDataFileStepFactory::CreateStep(const std::string&sign
    THROW_UNREACHABLE("");
    return DesignFlowStepRef();
 }
-

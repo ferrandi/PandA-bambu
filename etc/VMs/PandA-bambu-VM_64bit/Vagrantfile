@@ -1,104 +1,43 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-# All Vagrant configuration is done below. The "2" in Vagrant.configure
-# configures the configuration version (we support older styles for
-# backwards compatibility). Please don't change it unless you know what
-# you're doing.
 Vagrant.configure(2) do |config|
-  # The most common configuration options are documented and commented below.
-  # For a complete reference, please see the online documentation at
-  # https://docs.vagrantup.com.
-
-  # Every Vagrant development environment requires a box. You can search for
-  # boxes at https://atlas.hashicorp.com/search.
-  config.vm.box = "ubuntu/xenial64"
-
-  # Disable automatic box update checking. If you disable this, then
-  # boxes will only be checked for updates when the user runs
-  # `vagrant box outdated`. This is not recommended.
-  # config.vm.box_check_update = false
-
-  # Create a forwarded port mapping which allows access to a specific port
-  # within the machine from a port on the host machine. In the example below,
-  # accessing "localhost:8080" will access port 80 on the guest machine.
-  # config.vm.network "forwarded_port", guest: 80, host: 8080
-
-  # Create a private network, which allows host-only access to the machine
-  # using a specific IP.
-  # config.vm.network "private_network", ip: "192.168.33.10"
-
-  # Create a public network, which generally matched to bridged network.
-  # Bridged networks make the machine appear as another physical device on
-  # your network.
-  # config.vm.network "public_network"
-
-  # Share an additional folder to the guest VM. The first argument is
-  # the path on the host to the actual folder. The second argument is
-  # the path on the guest to mount the folder. And the optional third
-  # argument is a set of non-required options.
-  # config.vm.synced_folder "../data", "/vagrant_data"
+  config.vm.box = "ubuntu/bionic64"
   config.vm.synced_folder '.', '/vagrant', disabled: true
-
-  # Provider-specific configuration so you can fine-tune various
-  # backing providers for Vagrant. These expose provider-specific options.
-  # Example for VirtualBox:
-  #
-   config.vm.provider "virtualbox" do |vb|
-  #   # Display the VirtualBox GUI when booting the machine
-  #   vb.gui = true
-  #
-  #   # Customize the amount of memory on the VM:
+  config.vm.provider "virtualbox" do |vb|
      vb.memory = "4096"
      vb.customize [ 'modifyvm', :id, '--uartmode1', 'disconnected']
      vb.customize [ 'modifyvm', :id, '--vram', '64']
-     vb.customize "pre-boot", ["storageattach", :id, "--storagectl", "IDE Controller", "--port", "1", "--device", "0", "--type", "dvddrive", "--medium", "emptydrive"]
+     vb.customize "pre-boot", ["storageattach", :id, "--storagectl", "IDE", "--port", "1", "--device", "0", "--type", "dvddrive", "--medium", "emptydrive"]
      vb.name = "PandA-bambu-VM_64bit"
-   end
-  #
-  # View the documentation for the provider you are using for more
-  # information on available options.
-
-  # Define a Vagrant Push strategy for pushing to Atlas. Other push strategies
-  # such as FTP and Heroku are also available. See the documentation at
-  # https://docs.vagrantup.com/v2/push/atlas.html for more information.
-  # config.push.define "atlas" do |push|
-  #   push.app = "YOUR_ATLAS_USERNAME/YOUR_APPLICATION_NAME"
-  # end
-
-  # Enable provisioning with a shell script. Additional provisioners such as
-  # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
-  # documentation for more information about their specific syntax and use.
+  end
   #   apt-get install lubuntu-desktop -y
-   config.vm.provision "shell", inline: <<-SHELL
-     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt xenial-security main restricted universe multiverse' /etc/apt/sources.list
-     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt xenial-backports main restricted universe multiverse' /etc/apt/sources.list
-     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt xenial-updates main restricted universe multiverse' /etc/apt/sources.list
-     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt xenial main restricted universe multiverse' /etc/apt/sources.list
+  config.vm.provision "shell", inline: <<-SHELL
+     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt bionic-security main restricted universe multiverse' /etc/apt/sources.list
+     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt bionic-backports main restricted universe multiverse' /etc/apt/sources.list
+     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt bionic-updates main restricted universe multiverse' /etc/apt/sources.list
+     sed -i '1ideb mirror:\/\/mirrors.ubuntu.com/mirrors.txt bionic main restricted universe multiverse' /etc/apt/sources.list
      apt-get update -y
      apt-get upgrade -y
      apt-get install -y linux-headers-$(uname -r) build-essential dkms
      apt-get install -y virtualbox-guest-x11
-     apt-get install -y autoconf autoconf-archive automake libtool g++ gcc-4.9 g++-4.9 gcc-4.9-plugin-dev gcc-4.9-multilib g++-4.9-multilib gfortran-4.9 gfortran-4.9-multilib libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz xdot verilator make libsuitesparse-dev libglpk-dev
+     apt-get install -y autoconf autoconf-archive automake libtool gcc-7 g++-7 gcc-7-plugin-dev gcc-7-multilib g++-7-multilib gfortran-7 gfortran-7-multilib libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz xdot verilator make libsuitesparse-dev libglpk-dev clang-6.0 libclang-6.0-dev libbdd-dev
      apt-get autoremove -y
-     wget https://www.veripool.org/ftp/verilator-3.900.tgz
-     tar zxvf verilator-3.900.tgz
-     cd verilator-3.900
-     ./configure
-     make && make install && make clean
-     cd ..
      git clone https://github.com/ferrandi/PandA-bambu.git
      cd PandA-bambu
      make -f Makefile.init
      mkdir build
-     cd build && ../configure --prefix=/home/ubuntu/panda --enable-verilator --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast && make && make install && make clean
-     cd ../.. && chown -R ubuntu.ubuntu PandA-bambu
-     chown -R ubuntu.ubuntu panda
+     cd build && ../configure --prefix=/home/ubuntu/panda --enable-verilator --enable-glpk --enable-flopoco  --disable-release --enable-experimental && make -j2 && make install
+     cd ../.. && chown -R ubuntu:ubuntu PandA-bambu
+     mv PandA-bambu /home/ubuntu/
+     cd /home/ubuntu/panda/share/panda/examples/arf && chmod +x bambu.sh && ./bambu.sh && rm -rf hls testbench && echo "Bambu is correctly working!!"
+     cd /home/ubuntu/
+     chown -R ubuntu:ubuntu panda
      apt-get -y install ubuntu-gnome-desktop
      apt-get clean -y
      echo "export PATH=/home/ubuntu/panda/bin:$PATH" >> /home/ubuntu/.bashrc
      echo "ubuntu:password" | chpasswd
      dd if=/dev/zero of=/EMPTY bs=1M
      rm -f /EMPTY
-   SHELL
+  SHELL
 end

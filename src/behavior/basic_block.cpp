@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file basic_block.cpp
  * @brief Class implementation of the basic_block structure.
@@ -42,42 +42,31 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
-
-///Autoheader include
-#include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-
-///Header include
+ */
 #include "basic_block.hpp"
 
-///. include
-#include "Parameter.hpp"
+#include "Parameter.hpp"                         // for OPT_dot_directory
+#include "application_manager.hpp"               // for FunctionBehaviorCon...
+#include "behavioral_helper.hpp"                 // for BehavioralHelper
+#include "behavioral_writer_helper.hpp"          // for BBWriter, BBEdgeWriter
+#include "function_behavior.hpp"                 // for BBGraphsCollectionRef
+#include "graph.hpp"                             // for vertex, EdgeDescriptor
+#include "tree_basic_block.hpp"                  // for bloc, blocRef
+#include <boost/filesystem/operations.hpp>       // for create_directories
+#include <boost/graph/adjacency_list.hpp>        // for adjacency_list, source
+#include <boost/graph/detail/adjacency_list.hpp> // for num_vertices, adj_l...
+#include <boost/graph/detail/edge.hpp>           // for operator!=, operator==
+#include <boost/graph/filtered_graph.hpp>        // for source, target
+#include <boost/iterator/iterator_facade.hpp>    // for operator!=, operator++
+#include <utility>
 
-///behavior includes
-#include "application_manager.hpp"
-#include "behavioral_writer_helper.hpp"
-#include "function_behavior.hpp"
+BBNodeInfo::BBNodeInfo() : loop_id(0), cer(0)
+{
+}
 
-///graph include
-#include "graph.hpp"
-
-///STD include
-#include <fstream>
-
-///tree includes
-#include "behavioral_helper.hpp"
-#include "tree_basic_block.hpp"
-
-BBNodeInfo::BBNodeInfo() :
-   loop_id(0),
-   cer(0)
-{}
-
-BBNodeInfo::BBNodeInfo(blocRef _block) :
-   loop_id(0),
-   cer(0),
-   block(_block)
-{}
+BBNodeInfo::BBNodeInfo(blocRef _block) : loop_id(0), cer(0), block(std::move(_block))
+{
+}
 
 void BBNodeInfo::add_operation_node(const vertex op)
 {
@@ -109,12 +98,12 @@ unsigned int BBNodeInfo::get_bb_index() const
    return block->number;
 }
 
-const std::set<unsigned int> & BBNodeInfo::get_live_in() const
+const std::set<unsigned int>& BBNodeInfo::get_live_in() const
 {
    return block->live_in;
 }
 
-const std::set<unsigned int> & BBNodeInfo::get_live_out() const
+const std::set<unsigned int>& BBNodeInfo::get_live_out() const
 {
    return block->live_out;
 }
@@ -124,14 +113,11 @@ const std::set<unsigned int> & BBNodeInfo::get_live_out() const
    return block->live_out_phi_defs;
 }*/
 
-BBEdgeInfo::BBEdgeInfo() :
-   epp_value(0)
+BBEdgeInfo::BBEdgeInfo() : epp_value(0)
 {
 }
 
-BBEdgeInfo::~BBEdgeInfo()
-{
-}
+BBEdgeInfo::~BBEdgeInfo() = default;
 
 void BBEdgeInfo::set_epp_value(unsigned long long _epp_value)
 {
@@ -143,44 +129,36 @@ unsigned long long BBEdgeInfo::get_epp_value() const
    return epp_value;
 }
 
-BBGraphInfo::BBGraphInfo(const application_managerConstRef _AppM, const unsigned int _function_index) :
-   GraphInfo(),
-   AppM(_AppM),
-   function_index(_function_index),
-   entry_vertex(NULL_VERTEX),
-   exit_vertex(NULL_VERTEX)
+BBGraphInfo::BBGraphInfo(const application_managerConstRef _AppM, const unsigned int _function_index) : GraphInfo(), AppM(_AppM), function_index(_function_index), entry_vertex(NULL_VERTEX), exit_vertex(NULL_VERTEX)
 {
 }
 
-BBGraphsCollection::BBGraphsCollection(const BBGraphInfoRef bb_graph_info, const ParameterConstRef _parameters)  :
-   graphs_collection(RefcountCast<GraphInfo>(bb_graph_info), _parameters)
-{}
-
-BBGraphsCollection::~BBGraphsCollection()
+BBGraphsCollection::BBGraphsCollection(const BBGraphInfoRef bb_graph_info, const ParameterConstRef _parameters) : graphs_collection(RefcountCast<GraphInfo>(bb_graph_info), _parameters)
 {
-
 }
 
-BBGraph::BBGraph(const BBGraphsCollectionRef _g, int _selector) :
-   graph(_g.get(), _selector)
-{}
+BBGraphsCollection::~BBGraphsCollection() = default;
 
-BBGraph::BBGraph(const BBGraphsCollectionRef _g, int _selector, std::unordered_set<vertex>& sub) :
-   graph(_g.get(), _selector, sub)
-{}
+BBGraph::BBGraph(const BBGraphsCollectionRef _g, int _selector) : graph(_g.get(), _selector)
+{
+}
+
+BBGraph::BBGraph(const BBGraphsCollectionRef _g, int _selector, std::unordered_set<vertex>& sub) : graph(_g.get(), _selector, sub)
+{
+}
 
 void BBGraph::WriteDot(const std::string& file_name, const int detail_level) const
 {
-   const std::unordered_set<vertex> annotated;
+   const std::unordered_set<vertex> annotated = std::unordered_set<vertex>();
    WriteDot(file_name, annotated, detail_level);
 }
 
-void BBGraph::WriteDot(const std::string& file_name, const std::unordered_set<vertex> & annotated, const int) const
+void BBGraph::WriteDot(const std::string& file_name, const std::unordered_set<vertex>& annotated, const int) const
 {
    const auto bb_graph_info = CGetBBGraphInfo();
    const auto function_name = bb_graph_info->AppM->CGetFunctionBehavior(bb_graph_info->function_index)->CGetBehavioralHelper()->get_function_name();
    std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + function_name + "/";
-   if (not boost::filesystem::exists(output_directory))
+   if(not boost::filesystem::exists(output_directory))
       boost::filesystem::create_directories(output_directory);
    const std::string full_name = output_directory + file_name;
    const VertexWriterConstRef bb_writer(new BBWriter(this, annotated));
@@ -226,20 +204,19 @@ const std::set<unsigned int> BBEdgeInfo::get_labels(const int selector) const
       return std::set<unsigned int>();
 }
 
-#if ! HAVE_UNORDERED
-BBVertexSorter::BBVertexSorter(const BBGraphConstRef _bb_graph) :
-   bb_graph(_bb_graph)
-{}
+#if !HAVE_UNORDERED
+BBVertexSorter::BBVertexSorter(const BBGraphConstRef _bb_graph) : bb_graph(_bb_graph)
+{
+}
 
 bool BBVertexSorter::operator()(const vertex x, const vertex y) const
 {
    return bb_graph->CGetBBNodeInfo(x)->block->number < bb_graph->CGetBBNodeInfo(y)->block->number;
 }
 
-BBEdgeSorter::BBEdgeSorter(const BBGraphConstRef _bb_graph) :
-   bb_graph(_bb_graph),
-   bb_sorter(_bb_graph)
-{}
+BBEdgeSorter::BBEdgeSorter(const BBGraphConstRef _bb_graph) : bb_graph(_bb_graph), bb_sorter(_bb_graph)
+{
+}
 
 bool BBEdgeSorter::operator()(const EdgeDescriptor x, const EdgeDescriptor y) const
 {

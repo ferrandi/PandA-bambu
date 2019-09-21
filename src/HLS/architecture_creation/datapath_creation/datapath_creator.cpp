@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file datapath.cpp
  * @brief Base class for all datapath creation algorithms.
@@ -40,7 +40,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "datapath_creator.hpp"
 
 #include "hls.hpp"
@@ -49,46 +49,49 @@
 #include "polixml.hpp"
 #include "xml_helper.hpp"
 
-#include "utility.hpp"
 #include "dbgPrintHelper.hpp"
+#include "utility.hpp"
 
 ///. includes
 #include "Parameter.hpp"
 
-datapath_creator::datapath_creator(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type) :
-   HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
-{}
-
-datapath_creator::~datapath_creator()
-{}
-
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > datapath_creator::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+datapath_creator::datapath_creator(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
+    : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> > ret;
+}
+
+datapath_creator::~datapath_creator() = default;
+
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> datapath_creator::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+{
+   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
-         {
-            HLSFlowStep_Type synthesis_flow = HLSFlowStep_Type::VIRTUAL_DESIGN_FLOW;
+      {
+         HLSFlowStep_Type synthesis_flow = HLSFlowStep_Type::VIRTUAL_DESIGN_FLOW;
 #if HAVE_EXPERIMENTAL
-            if (parameters->isOption("explore-mux") && parameters->getOption<bool>("explore-mux"))
-               synthesis_flow = HLSFlowStep_Type::EXPLORE_MUX_DESIGN_FLOW;
-            if (parameters->isOption("explore-fu-reg") && parameters->getOption<bool>("explore-fu-reg"))
-               synthesis_flow = HLSFlowStep_Type::FU_REG_BINDING_DESIGN_FLOW;
+         if(parameters->isOption("explore-mux") && parameters->getOption<bool>("explore-mux"))
+            synthesis_flow = HLSFlowStep_Type::EXPLORE_MUX_DESIGN_FLOW;
+         if(parameters->isOption("explore-fu-reg") && parameters->getOption<bool>("explore-fu-reg"))
+            synthesis_flow = HLSFlowStep_Type::FU_REG_BINDING_DESIGN_FLOW;
 #endif
-            ret.insert(std::make_tuple(synthesis_flow, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            break;
+         ret.insert(std::make_tuple(synthesis_flow, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         if(parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw))
+         {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::CONTROL_FLOW_CHECKER, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          }
+         break;
+      }
       case INVALIDATION_RELATIONSHIP:
-         {
-            break;
-         }
       case PRECEDENCE_RELATIONSHIP:
-         {
-            break;
-         }
+      {
+         break;
+      }
       default:
+      {
          THROW_UNREACHABLE("");
+      }
    }
    return ret;
 }

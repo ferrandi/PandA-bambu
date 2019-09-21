@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file wishbone_interface_tesbench.hpp
  * @brief Class to compute testbenches for high-level synthesis
@@ -40,53 +40,39 @@
  *
  */
 
-///Superclass include
+/// Superclass include
 #include "testbench_generation_base_step.hpp"
 
 class WishboneInterfaceTestbench : public TestbenchGenerationBaseStep
 {
-   protected:
+ protected:
+   void write_wishbone_input_signal_declaration(const tree_managerConstRef TreeM) const;
 
-      void write_wishbone_input_signal_declaration(
-            const tree_managerConstRef TreeM)
-         const;
+   void write_wishbone_callFSM_signal_declaration() const;
 
-      void write_wishbone_callFSM_signal_declaration() const;
+   void write_call(bool hasMultiIrq) const override;
 
-      virtual void write_call(bool hasMultiIrq) const;
+   void write_memory_handler() const override;
 
-      virtual void write_memory_handler() const;
+   void write_interface_handler() const override
+   {
+   }
 
-      virtual void write_signals(
-            const tree_managerConstRef TreeM,
-            bool & withMemory,
-            bool & hasMultiIrq)
-         const;
+   void write_signals(const tree_managerConstRef TreeM, bool& withMemory, bool& hasMultiIrq) const override;
 
-      virtual void write_slave_initializations(bool withMemory)
-         const;
+   void write_slave_initializations(bool withMemory) const override;
 
-      virtual void init_extra_signals(bool withMemory) const;
+   void init_extra_signals(bool withMemory) const override;
 
-      virtual void write_file_reading_operations() const;
+   void write_file_reading_operations() const override;
 
-      void write_wishbone_output_signal_declaration(
-            bool & withMemory,
-            bool & hasMultiIrq)
-         const;
+   void write_wishbone_output_signal_declaration(bool& withMemory, bool& hasMultiIrq) const;
 
-   public:
+ public:
+   WishboneInterfaceTestbench(const ParameterConstRef _Param, const HLS_managerRef _AppM, const DesignFlowManagerConstRef design_flow_manager);
 
-      WishboneInterfaceTestbench(
-            const ParameterConstRef _Param,
-            const HLS_managerRef _AppM,
-            const DesignFlowManagerConstRef design_flow_manager);
-
-      /**
-       * Destructor
-       */
-      virtual ~WishboneInterfaceTestbench();
+   /**
+    * Destructor
+    */
+   ~WishboneInterfaceTestbench() override;
 };
-
-
-

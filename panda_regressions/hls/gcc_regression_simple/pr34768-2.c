@@ -19,7 +19,7 @@ test (int c)
 }
 
 extern void abort (void);
-int main()
+int main(int argc)
 {
   x = 1;
   if (test (1) != 0)

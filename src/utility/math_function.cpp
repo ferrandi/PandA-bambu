@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,11 +29,11 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 
 /**
- * @file math_function.cpp 
- * @brief mathematical utility function not provided by standard libraries 
+ * @file math_function.cpp
+ * @brief mathematical utility function not provided by standard libraries
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * $Revision$
@@ -45,17 +45,14 @@
 #ifndef MATH_FUNCTION_HPP
 #define MATH_FUNCTION_HPP
 
-///Header include
-#include "math_function.hpp"
+#include <cmath>
+#include <cstddef>
 
-///STD include
-#include <vector>
-
-///Utility include
+/// Utility include
 #include "augmented_vector.hpp"
-#include <boost/lexical_cast.hpp>
 #include "exceptions.hpp"
-#include "math.h"
+/// Header include
+#include "math_function.hpp"
 
 long double get_point_line_distance(const AugmentedVector<long double>& point, AugmentedVector<long double>& line_point1, AugmentedVector<long double>& line_point2)
 {

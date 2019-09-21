@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file design_flow_aux_step.cpp
  * @brief Class for describing auxiliary steps in design flow
@@ -39,24 +39,26 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
-
-///Header include
+ */
 #include "design_flow_aux_step.hpp"
 
-AuxDesignFlowStep::AuxDesignFlowStep(const std::string&_name, const AuxDesignFlowStepType _type, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   DesignFlowStep(_design_flow_manager, _parameters),
-   type(_type),
-   name(_name)
-{}
+#include "exceptions.hpp"         // for THROW_UNREACHABLE
+#include <boost/lexical_cast.hpp> // for lexical_cast
+#include <ostream>                // for operator<<, basic_ostream
+#include <utility>
 
-AuxDesignFlowStep::~AuxDesignFlowStep()
-{}
+AuxDesignFlowStep::AuxDesignFlowStep(std::string _name, const AuxDesignFlowStepType _type, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : DesignFlowStep(_design_flow_manager, _parameters), type(_type), name(std::move(_name))
+{
+}
 
-void AuxDesignFlowStep::ComputeRelationships(DesignFlowStepSet &, const DesignFlowStep::RelationshipType)
-{}
+AuxDesignFlowStep::~AuxDesignFlowStep() = default;
 
-const std::string AuxDesignFlowStep::ComputeSignature(const std::string&name, const AuxDesignFlowStepType type)
+void AuxDesignFlowStep::ComputeRelationships(DesignFlowStepSet&, const DesignFlowStep::RelationshipType)
+{
+}
+
+const std::string AuxDesignFlowStep::ComputeSignature(const std::string& name, const AuxDesignFlowStepType type)
 {
    return "AUX::" + boost::lexical_cast<std::string>(type) + "::" + name;
 }
@@ -76,7 +78,7 @@ const std::string AuxDesignFlowStep::GetSignature() const
    return ComputeSignature(name, type);
 }
 
-void AuxDesignFlowStep::WriteDot(std::ostream & out) const
+void AuxDesignFlowStep::WriteDot(std::ostream& out) const
 {
    out << "shape=Msquare, label=\"" << name << "\"";
 }

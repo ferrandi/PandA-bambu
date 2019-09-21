@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file VerilatorWrapper.hpp
  * @brief Wrapper to Verilator simulator
@@ -39,7 +39,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef VERILATOR_WRAPPER_HPP
 #define VERILATOR_WRAPPER_HPP
 
@@ -55,37 +55,35 @@ CONSTREF_FORWARD_DECL(Parameter);
  */
 class VerilatorWrapper : public SimulationTool
 {
-      ///suffix added to the SIM dir
-      std::string suffix;
+   /// suffix added to the SIM dir
+   std::string suffix;
 
-      /**
-       * Generates the proper simulation script
-       */
-      void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string> & file_list);
+   /**
+    * Generates the proper simulation script
+    */
+   void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list) override;
 
-   public:
+ public:
+   /**
+    * Constructor
+    * @param Param is the set of parameters
+    */
+   VerilatorWrapper(const ParameterConstRef& Param, std::string suffix);
 
-      /**
-       * Constructor
-       * @param Param is the set of parameters
-       */
-      VerilatorWrapper(const ParameterConstRef Param, const std::string& suffix);
+   /**
+    * Destructor
+    */
+   ~VerilatorWrapper() override;
 
-      /**
-       * Destructor
-       */
-      ~VerilatorWrapper();
+   /**
+    * Checks if the current specification can be executed or not
+    */
+   void CheckExecution() override;
 
-      /**
-       * Checks if the current specification can be executed or not
-       */
-      virtual void CheckExecution();
-
-      /**
-       * Remove files created during simulation
-       */
-      void Clean() const;
-
+   /**
+    * Remove files created during simulation
+    */
+   void Clean() const override;
 };
 /// Refcount definition for the VerilatorWrapper class
 typedef refcount<VerilatorWrapper> VerilatorWrapperRef;

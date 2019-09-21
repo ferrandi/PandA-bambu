@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file latex_table_constants.hpp
  * @brief default value for latex tables
@@ -43,10 +43,10 @@
 #ifndef LATEX_TABLE_CONSTANTS_HPP
 #define LATEX_TABLE_CONSTANTS_HPP
 
-///The maximum width of a latex column
+/// The maximum width of a latex column
 #define NUM_CST_latex_table_max_column_width 10
 
-///The default precision of the number
+/// The default precision of the number
 #define NUM_CST_latex_table_number_precision 3
 
 #endif

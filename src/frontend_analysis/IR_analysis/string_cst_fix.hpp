@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file string_cst_fix.hpp
  * @brief Pre-analysis step fixing readonly initializations and string_cst references.
@@ -39,18 +39,18 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef STRING_CST_FIX_HPP
 #define STRING_CST_FIX_HPP
 
-///Superclass include
+/// Superclass include
 #include "application_frontend_flow_step.hpp"
 
-///STL include
-#include <unordered_set>
+/// STL include
 #include <unordered_map>
+#include <unordered_set>
 
-///Utility include
+/// Utility include
 #include "refcount.hpp"
 
 /**
@@ -65,53 +65,44 @@ REF_FORWARD_DECL(tree_node);
  * Pre-analysis step. It transforms the raw intermediate representation by removing
  * direct references to string_cst.
  */
-class string_cst_fix: public ApplicationFrontendFlowStep
+class string_cst_fix : public ApplicationFrontendFlowStep
 {
-   protected:
+ protected:
+   /// Already visited address expression (used to avoid infinite recursion)
+   std::unordered_set<unsigned int> already_visited_ae;
 
-      ///Already visited address expression (used to avoid infite recursion)
-      std::unordered_set<unsigned int> already_visited_ae;
+   /// relation between constant string and read-only variable initialized with the string_cst.
+   std::unordered_map<unsigned int, tree_nodeRef> string_cst_map;
 
-      /// relation between constant string and read-only variable initialized with the string_cst.
-      std::unordered_map<unsigned int, tree_nodeRef> string_cst_map;
+   /**
+    * Recursive tree node analysis
+    */
+   void recursive_analysis(tree_nodeRef& tn, const std::string& srcp);
 
-      /**
-       * Return the normalized identifier; in this class it is the identifier itself. Subclasses can specialize it
-       * @param identifier is the identifier to be normalized
-       * @return the normalized identifier
-       */
-      virtual const std::string Normalize(const std::string&identifier) const;
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-      /**
-      * Recursive examinate tree node
-      */
-      void recursive_examinate(tree_nodeRef & tn, const std::string& srcp);
+ public:
+   /**
+    * Constructor.
+    * @param AppM is the application manager
+    * @param design_flow_manager is the design flow manager
+    * @param parameters is the set of input parameters
+    */
+   string_cst_fix(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      virtual const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   /**
+    * Destructor
+    */
+   ~string_cst_fix() override;
 
-   public:
-      /**
-       * Constructor.
-       * @param AppM is the application manager
-       * @param design_flow_manager is the design flow manager
-       * @param parameters is the set of input parameters
-       */
-      string_cst_fix(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
-
-      /**
-       * Destructor
-       */
-      virtual ~string_cst_fix();
-
-      /**
-       * Fixes the var_decl duplication.
-       * @return the exit status of this step
-       */
-      virtual DesignFlowStep_Status Exec();
+   /**
+    * Fixes the var_decl duplication.
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status Exec() override;
 };
 #endif
-

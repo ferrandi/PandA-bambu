@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2017-2018 Politecnico di Milano
+ *              Copyright (C) 2017-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file dry_runevaluation.cpp
  * @brief Class to generate an empty evaluation report
@@ -38,33 +38,33 @@
  *
  */
 
-///Header include
+/// Header include
 #include "dry_run_evaluation.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///constants include
+/// constants include
 #include "bambu_results_xml.hpp"
 
-///HLS includes
+/// HLS includes
 #include "hls.hpp"
 #include "hls_manager.hpp"
 
-///polixml include
+/// polixml include
 #include "xml_document.hpp"
 
-///utility include
+/// utility include
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "xml_helper.hpp"
 
-DryRunEvaluation::DryRunEvaluation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) :
-   EvaluationBaseStep(_parameters, _HLSMgr, 0, _design_flow_manager, HLSFlowStep_Type::DRY_RUN_EVALUATION)
+DryRunEvaluation::DryRunEvaluation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
+    : EvaluationBaseStep(_parameters, _HLSMgr, 0, _design_flow_manager, HLSFlowStep_Type::DRY_RUN_EVALUATION)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-DryRunEvaluation::~DryRunEvaluation()
-{}
+DryRunEvaluation::~DryRunEvaluation() = default;
 
 bool DryRunEvaluation::HasToBeExecuted() const
 {
@@ -83,23 +83,22 @@ DesignFlowStep_Status DryRunEvaluation::InternalExec()
          HLSMgr->evaluations["NUM_EXECUTIONS"] = std::vector<double>(1, 1);
          HLSMgr->evaluations["TOTAL_CYCLES"] = std::vector<double>(1, 0.0);
       }
-      if (objective == "FREQUENCY" or objective == "TIME" or objective == "TOTAL_TIME" or objective == "AREAxTIME")
+      if(objective == "FREQUENCY" or objective == "TIME" or objective == "TOTAL_TIME" or objective == "AREAxTIME")
       {
-         double clock_period = parameters->getOption<double>(OPT_clock_period);
+         auto clock_period = parameters->getOption<double>(OPT_clock_period);
          HLSMgr->evaluations["PERIOD"] = std::vector<double>(1, clock_period);
       }
       if(objective == "TIME")
       {
-         double clock_period = parameters->getOption<double>(OPT_clock_period);
+         auto clock_period = parameters->getOption<double>(OPT_clock_period);
          HLSMgr->evaluations["CYCLES"] = std::vector<double>(1, 0.0);
-         HLSMgr->evaluations["FREQUENCY"] = std::vector<double>(1, 1000/clock_period);
+         HLSMgr->evaluations["FREQUENCY"] = std::vector<double>(1, 1000 / clock_period);
       }
       if(objective == "PERIOD")
       {
-         double clock_period = parameters->getOption<double>(OPT_clock_period);
+         auto clock_period = parameters->getOption<double>(OPT_clock_period);
          HLSMgr->evaluations[objective] = std::vector<double>(1, clock_period);
       }
    }
    return DesignFlowStep_Status::SUCCESS;
 }
-

@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file liberty_model.hpp
  * @brief Class implementation
@@ -39,31 +39,26 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #include "liberty_model.hpp"
 
-#include "timing_group.hpp"
 #include "polixml.hpp"
+#include "timing_group.hpp"
 
-liberty_model::liberty_model(const ParameterConstRef _Param) :
-      time_model(_Param), drive_strength(1), skew(1)
+liberty_model::liberty_model(const ParameterConstRef _Param) : time_model(_Param), drive_strength(1), skew(1)
 {
-
 }
 
-liberty_model::~liberty_model()
-{
-
-}
+liberty_model::~liberty_model() = default;
 
 void liberty_model::xwrite(xml_element* pin_node, const std::string& output_pin)
 {
-   if (timing_groups.find(output_pin) != timing_groups.end())
+   if(timing_groups.find(output_pin) != timing_groups.end())
    {
-      for(std::map<std::set<std::string>, timing_groupRef>::iterator g = timing_groups[output_pin].begin(); g != timing_groups[output_pin].end(); ++g)
+      for(auto& g : timing_groups[output_pin])
       {
-          xml_element* group = pin_node->add_child_element("timing");
-          g->second->xwrite(group, g->first);
+         xml_element* group = pin_node->add_child_element("timing");
+         g.second->xwrite(group, g.first);
       }
    }
 }
@@ -93,7 +88,7 @@ double liberty_model::get_skew_value() const
    return skew;
 }
 
-void liberty_model::set_timing_groups(const std::map<std::string, std::map<std::set<std::string>, timing_groupRef> >& timing_groups_)
+void liberty_model::set_timing_groups(const std::map<std::string, std::map<std::set<std::string>, timing_groupRef>>& timing_groups_)
 {
    timing_groups = timing_groups_;
 }

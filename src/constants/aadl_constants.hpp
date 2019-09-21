@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2018 Politecnico di Milano
+ *              Copyright (C) 2015-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file aadl_constants.hpp
  * @brief constants used in aadl parser
@@ -38,14 +38,14 @@
  *
  */
 
-///The name of the package containing type definition
+/// The name of the package containing type definition
 #define STR_CST_aadl_data_view "DataView::"
 
-///The type of the property storing the direction of a parameter
+/// The type of the property storing the direction of a parameter
 #define STR_CST_aadl_parameter_direction "parameter_direction"
 
-///The name of the property storing the endianess of a parameter
+/// The name of the property storing the endianess of a parameter
 #define STR_CST_aadl_parameter_endianess "Taste::encoding"
 
-///The type of the property storing the type of a parameter
+/// The type of the property storing the type of a parameter
 #define STR_CST_aadl_parameter_type "parameter_type"

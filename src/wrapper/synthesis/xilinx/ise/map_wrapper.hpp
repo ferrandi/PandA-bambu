@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file map_wrapper.hpp
  * @brief Wrapper to map by XILINX
@@ -41,16 +41,16 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef _XILINX_MAP_WRAPPER_HPP_
 #define _XILINX_MAP_WRAPPER_HPP_
 
 #include "XilinxWrapper.hpp"
 
-#define MAP_TOOL_ID    "map"
+#define MAP_TOOL_ID "map"
 
-#define PARAM_map_tmpdir    "map_tmpdir"
-#define PARAM_map_report    "map_report"
+#define PARAM_map_tmpdir "map_tmpdir"
+#define PARAM_map_report "map_report"
 
 /**
  * @class map_wrapper
@@ -58,38 +58,35 @@
  */
 class map_wrapper : public XilinxWrapper
 {
-   protected:
+ protected:
+   /**
+    * Initializes the reserved variables
+    */
+   void init_reserved_vars() override;
 
-      /**
-       * Initializes the reserved variables
-       */
-      void init_reserved_vars();
+   /**
+    * Evaluates the design variables
+    */
+   void EvaluateVariables(const DesignParametersRef dp) override;
 
-      /**
-       * Evaluates the design variables
-       */
-      void EvaluateVariables(const DesignParametersRef dp);
+   /**
+    * Returns the proper command line
+    */
+   std::string get_command_line(const DesignParametersRef& dp) const override;
 
-      /**
-       * Returns the proper command line
-       */
-      std::string get_command_line(const DesignParametersRef& dp) const;
+ public:
+   /**
+    * Constructor
+    * @param Param is the set of parameters
+    */
+   map_wrapper(const ParameterConstRef& Param, const std::string& _output_dir, const target_deviceRef& _device);
 
-   public:
-
-      /**
-       * Constructor
-       * @param Param is the set of parameters
-       */
-      map_wrapper(const ParameterConstRef Param, const std::string& _output_dir, const target_deviceRef _device);
-
-      /**
-       * Destructor
-       */
-      virtual ~map_wrapper();
-
+   /**
+    * Destructor
+    */
+   ~map_wrapper() override;
 };
-///Refcount definition for the class
+/// Refcount definition for the class
 typedef refcount<map_wrapper> map_wrapperRef;
 
 #endif

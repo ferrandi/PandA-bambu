@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file IcarusWrapper.hpp
  * @brief Wrapper to Icarus.
@@ -40,7 +40,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef ICARUSWRAPPER_HPP
 #define ICARUSWRAPPER_HPP
 
@@ -58,44 +58,42 @@ CONSTREF_FORWARD_DECL(Parameter);
  */
 class IcarusWrapper : public SimulationTool
 {
-      ///suffix added to the SIM dir
-      std::string suffix;
+   /// suffix added to the SIM dir
+   std::string suffix;
 
-      /**
-       * Generates the proper simulation script
-       */
-      void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string> & file_list);
+   /**
+    * Generates the proper simulation script
+    */
+   void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list) override;
 
-   public:
+ public:
+   /**
+    * Constructor
+    * @param Param is the set of parameters
+    */
+   IcarusWrapper(const ParameterConstRef& Param, std::string suffix);
 
-      /**
-       * Constructor
-       * @param Param is the set of parameters
-       */
-      IcarusWrapper(const ParameterConstRef Param, const std::string& suffix);
+   /**
+    * Destructor
+    */
+   ~IcarusWrapper() override;
 
-      /**
-       * Destructor
-       */
-      ~IcarusWrapper();
-
-      /**
-       * Checks if the current specification can be executed or not
-       */
-      virtual void CheckExecution();
+   /**
+    * Checks if the current specification can be executed or not
+    */
+   void CheckExecution() override;
 
 #if HAVE_EXPERIMENTAL
-      /**
-       * Compiles the specified verilog to check the execution
-       */
-      unsigned int compile_verilog(const std::string& FileName);
+   /**
+    * Compiles the specified verilog to check the execution
+    */
+   unsigned int compile_verilog(const std::string& FileName);
 
-      /**
-       * Parses a verilog file and converts it into the related XML description
-       */
-      unsigned int convert_to_xml(const std::string& SourceFileName, const std::string& LibraryName, const std::string& TargetFileName);
+   /**
+    * Parses a verilog file and converts it into the related XML description
+    */
+   unsigned int convert_to_xml(const std::string& SourceFileName, const std::string& LibraryName, const std::string& TargetFileName);
 #endif
-
 };
 /// Refcount definition for the IcarusWrapper class
 typedef refcount<IcarusWrapper> IcarusWrapperRef;

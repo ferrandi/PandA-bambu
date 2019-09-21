@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 
 /**
  * @file FPGA_device.hpp
@@ -47,39 +47,34 @@
 
 class FPGA_device : public target_device
 {
+ public:
+   /**
+    * Constructor
+    * @param Param is the reference to the class that contains all the parameters
+    * @param TM is the reference to the class containing all the technology libraries
+    */
+   FPGA_device(const ParameterConstRef& Param, const technology_managerRef& TM);
 
-   public:
+   /**
+    * Destructor
+    */
+   ~FPGA_device() override;
 
-      /**
-       * Constructor
-       * @param Param is the reference to the class that contains all the parameters
-       * @param TM is the reference to the class containing all the technology libraries
-       */
-      FPGA_device(const ParameterConstRef Param, const technology_managerRef TM);
+   /**
+    * Initializes the target device based on the given parameters
+    */
+   void initialize() override;
 
-      /**
-       * Destructor
-       */
-      virtual ~FPGA_device();
+   /**
+    * Method to write an XML node
+    * @param node is the node for writing the information
+    */
+   void xwrite(xml_element* node) override;
 
-      /**
-       * Initializes the target device based on the given parameters
-       */
-      virtual void initialize();
-
-      /**
-       * Method to write an XML node
-       * @param node is the node for writing the information
-       */
-      virtual void xwrite(xml_element* node);
-
-      /**
-       * load all the data for the given FPGA
-       */
-      virtual void load_devices(const target_deviceRef device);
-
+   /**
+    * load all the data for the given FPGA
+    */
+   void load_devices(const target_deviceRef device) override;
 };
 
 #endif
-
-

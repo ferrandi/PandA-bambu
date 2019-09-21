@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,24 +29,24 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file build_virtual_phi.hpp
  * @brief Analysis step building phi of vops
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 #ifndef BUILD_VIRTUAL_PHI_HPP
 #define BUILD_VIRTUAL_PHI_HPP
 
-///Superclass include
+/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
-///tree include
+/// tree include
 #include "tree_node.hpp"
 
-///utility includes
+/// utility includes
 #include "refcount.hpp"
 
 REF_FORWARD_DECL(BBGraph);
@@ -56,57 +56,57 @@ REF_FORWARD_DECL(tree_node);
 
 class BuildVirtualPhi : public FunctionFrontendFlowStep
 {
-   private:
-      ///The tree manager
-      const tree_managerRef TM;
+ private:
+   /// The tree manager
+   const tree_managerRef TM;
 
-      ///the tree manipulation
-      tree_manipulationRef tree_man;
+   /// the tree manipulation
+   tree_manipulationRef tree_man;
 
-      ///The graph of basic blocks
-      BBGraphRef basic_block_graph;
+   /// The graph of basic blocks
+   BBGraphRef basic_block_graph;
 
-      ///Cache of created phi - first key is the used ssa - second key is the basic block where is created
-      TreeNodeMap<CustomMap<vertex, tree_nodeRef> > added_phis;
+   /// Cache of created phi - first key is the used ssa - second key is the basic block where is created
+   TreeNodeMap<CustomMap<vertex, tree_nodeRef>> added_phis;
 
-      ///Cache of reaching defs - first key is the used ssa - second key is the basic block to be considered
-      TreeNodeMap<CustomMap<vertex, tree_nodeRef> > reaching_defs;
+   /// Cache of reaching defs - first key is the used ssa - second key is the basic block to be considered
+   TreeNodeMap<CustomMap<vertex, tree_nodeRef>> reaching_defs;
 
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   public:
-      /**
-       * Constructor.
-       * @param AppM is the application manager
-       * @param function_id is the node id of the function analyzed.
-       * @param design_flow_manager is the design flow manager
-       * @param parameters is the set of input parameters
-       */
-      BuildVirtualPhi(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor.
+    * @param AppM is the application manager
+    * @param function_id is the node id of the function analyzed.
+    * @param design_flow_manager is the design flow manager
+    * @param parameters is the set of input parameters
+    */
+   BuildVirtualPhi(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-      /**
-       *  Destructor
-       */
-      ~BuildVirtualPhi();
+   /**
+    *  Destructor
+    */
+   ~BuildVirtualPhi() override;
 
-      /**
-       * Performs the loops analysis
-       */
-      DesignFlowStep_Status InternalExec();
+   /**
+    * Performs the loops analysis
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-      /**
-       * Initialize the step (i.e., like a constructor, but executed just before exec
-       */
-      virtual void Initialize();
+   /**
+    * Initialize the step (i.e., like a constructor, but executed just before exec
+    */
+   void Initialize() override;
 
-      /**
-       * Check if this step has actually to be executed
-       * @return true if the step has to be executed
-       */
-      virtual bool HasToBeExecuted() const;
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 };
 #endif

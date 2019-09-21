@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file par_wrapper.cpp
  * @brief Implementation of the wrapper to MAP
@@ -41,27 +41,25 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
-///Header include
+ */
+/// Header include
 #include "par_wrapper.hpp"
 
 #include "ToolManager.hpp"
 #include "xml_script_command.hpp"
 
 #include "Parameter.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include <iostream>
 
-//constructor
-par_wrapper::par_wrapper(const ParameterConstRef _Param, const std::string& _output_dir, const target_deviceRef _device) :
-   XilinxWrapper(_Param, PAR_TOOL_ID, _device, _output_dir, "par")
+// constructor
+par_wrapper::par_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir, const target_deviceRef& _device) : XilinxWrapper(_Param, PAR_TOOL_ID, _device, _output_dir, "par")
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the PAR wrapper...");
 }
 
-//destructor
-par_wrapper::~par_wrapper()
-{
-
-}
+// destructor
+par_wrapper::~par_wrapper() = default;
 
 void par_wrapper::init_reserved_vars()
 {
@@ -78,10 +76,9 @@ std::string par_wrapper::get_command_line(const DesignParametersRef& dp) const
 {
    std::ostringstream s;
    s << get_tool_exec();
-   for (std::vector<xml_parameter_tRef>::const_iterator it = xml_tool_options.begin(); it != xml_tool_options.end(); ++it)
+   for(const auto& option : xml_tool_options)
    {
-      const xml_parameter_tRef & option = *it;
-      if (option->checkCondition(dp))
+      if(option->checkCondition(dp))
       {
          std::string value = toString(option, dp);
          replace_parameters(dp, value);

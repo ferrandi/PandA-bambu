@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file hls_instruction_writer.hpp
  * @brief Simple class to print single instruction
@@ -40,36 +40,35 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef HLS_INSTRUCTION_WRITER_HPP
 #define HLS_INSTRUCTION_WRITER_HPP
 
-///Superclass include
+/// Superclass include
 #include "instruction_writer.hpp"
 
-///Utility include
+/// Utility include
 #include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(Parameter);
 
 class HLSInstructionWriter : public InstructionWriter
 {
-   public:
-      /**
-       * Constructor
-       * @param app_man is the application manager
-       * @param indented_output_stream is the output stream on which source code has to be written
-       * @param parameters is the set of input parameters
-       */
-      HLSInstructionWriter(const application_managerConstRef app_man, const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef parameters);
+ public:
+   /**
+    * Constructor
+    * @param app_man is the application manager
+    * @param indented_output_stream is the output stream on which source code has to be written
+    * @param parameters is the set of input parameters
+    */
+   HLSInstructionWriter(const application_managerConstRef app_man, const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef parameters);
 
-      /**
-       * Destructor
-       */
-      virtual ~HLSInstructionWriter();
+   /**
+    * Destructor
+    */
+   ~HLSInstructionWriter() override;
 
-      virtual void declareFunction(const unsigned int function_id);
-
+   void declareFunction(const unsigned int function_id) override;
 };
 #endif

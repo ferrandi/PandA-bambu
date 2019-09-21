@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file ipa_point_to_analysis.hpp
  * @brief Perform an inter-procedural flow sensitive point-to analysis.
@@ -39,15 +39,15 @@
  * $Date$ $
  * Last modified by $Author$
  *
-*/
+ */
 
 #ifndef IPA_POINT_TO_ANALYSIS_HPP
 #define IPA_POINT_TO_ANALYSIS_HPP
 
-///Superclass include
+/// Superclass include
 #include "application_frontend_flow_step.hpp"
 
-///Utility include
+/// Utility include
 #include "refcount.hpp"
 #include <list>
 
@@ -55,39 +55,36 @@ CONSTREF_FORWARD_DECL(tree_manager);
 
 class ipa_point_to_analysis : public ApplicationFrontendFlowStep
 {
-   private:
+ private:
+   /// The tree manager
+   const tree_managerConstRef TM;
 
-      ///The tree manager
-      const tree_managerConstRef TM;
+   /// compute the topological order of the functions called by the top function
+   void compute_function_topological_order(std::list<unsigned int>& sort_list);
 
-      /// compute the topological order of the functions called by the top function
-      void compute_function_topological_order(std::list<unsigned int> &sort_list);
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
+ public:
+   /**
+    * Constructor.
+    * @param AppM is the application manager
+    * @param design_flow_manager is the design flow manager
+    * @param parameters is the set of input parameters
+    */
+   ipa_point_to_analysis(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
-      /**
-       * Return the set of analyses in relationship with this design step
-       * @param relationship_type is the type of relationship to be considered
-       */
-      const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship> > ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   /**
+    *  Destructor
+    */
+   ~ipa_point_to_analysis() override;
 
-   public:
-      /**
-       * Constructor.
-       * @param AppM is the application manager
-       * @param design_flow_manager is the design flow manager
-       * @param parameters is the set of input parameters
-       */
-      ipa_point_to_analysis(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
-
-      /**
-       *  Destructor
-       */
-      ~ipa_point_to_analysis();
-
-      /**
-       * Determines the variables that require a memory access
-       */
-      DesignFlowStep_Status Exec();
-
+   /**
+    * Determines the variables that require a memory access
+    */
+   DesignFlowStep_Status Exec() override;
 };
 #endif

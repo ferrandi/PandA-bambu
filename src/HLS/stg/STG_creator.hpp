@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file STG_creator.hpp
  * @brief Base class for all the STG creation algorithms.
@@ -42,7 +42,7 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 #ifndef _STG_CREATOR_HPP_
 #define _STG_CREATOR_HPP_
 
@@ -54,18 +54,18 @@ REF_FORWARD_DECL(STG_creator);
  */
 class STG_creator : public HLSFunctionStep
 {
-   public:
-      /**
-       * Constructor.
-       */
-      STG_creator(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
+ public:
+   /**
+    * Constructor.
+    */
+   STG_creator(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
 
-      /**
-       * Destructor.
-       */
-      virtual ~STG_creator();
+   /**
+    * Destructor.
+    */
+   ~STG_creator() override;
 };
-///refcount definition of the class
+/// refcount definition of the class
 typedef refcount<STG_creator> STG_creatorRef;
 
 #endif

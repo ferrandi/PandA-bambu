@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2018 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,7 +29,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 /**
  * @file design_flow_step_factory.cpp
  * @brief Pure virtual base class for all the design flow step factory
@@ -39,27 +39,25 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 
-///Header include
+/// Header include
 #include "design_flow_step_factory.hpp"
 
 ///. include
 #include "Parameter.hpp"
 
-///utility include
+/// utility include
 #include "exceptions.hpp"
 
-DesignFlowStepFactory::DesignFlowStepFactory(const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) :
-   design_flow_manager(_design_flow_manager),
-   parameters(_parameters),
-   debug_level(_parameters->getOption<int>(OPT_debug_level))
-{}
+DesignFlowStepFactory::DesignFlowStepFactory(const DesignFlowManagerConstRef& _design_flow_manager, const ParameterConstRef& _parameters)
+    : design_flow_manager(_design_flow_manager), parameters(_parameters), debug_level(_parameters->getOption<int>(OPT_debug_level))
+{
+}
 
-DesignFlowStepFactory::~DesignFlowStepFactory()
-{}
+DesignFlowStepFactory::~DesignFlowStepFactory() = default;
 
-DesignFlowStepRef DesignFlowStepFactory::CreateFlowStep(const std::string &) const
+DesignFlowStepRef DesignFlowStepFactory::CreateFlowStep(const std::string&) const
 {
    THROW_UNREACHABLE("Not yet implemented");
    return DesignFlowStepRef();

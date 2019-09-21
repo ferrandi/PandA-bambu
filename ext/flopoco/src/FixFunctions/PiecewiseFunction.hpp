@@ -6,7 +6,7 @@
 #include <vector>
 #include "HOTBM/Util.hh"
 #include "Function.hpp"
-#include <stdlib.h>
+#include <cstdlib>
 using namespace std;
 
 
