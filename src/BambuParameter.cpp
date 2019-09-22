@@ -810,6 +810,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        operations starting from a C library based implementation:\n"
       << "             SRT4 - use a C-based Sweeney, Robertson, Tocher floating point division with radix 4 (default)\n"
       << "             G    - use a C-based Goldschmidt floating point division.\n"
+      << "             SF   - use a C-based floating point division as describe in soft-fp library (it requires --soft-fp).\n"
       << "    --skip-pipe-parameter=<value>\n"
       << "        Used during the allocation of pipelined units. <value> specifies how\n"
       << "        many pipelined units, compliant with the clock period, will be skipped.\n"
@@ -1931,6 +1932,7 @@ int BambuParameter::Exec()
          case OPT_SOFT_FP:
          {
             setOption(OPT_soft_fp, true);
+            setOption(OPT_hls_fpdiv, "SF");
             break;
          }
          case OPT_HLS_DIV:
@@ -1949,7 +1951,7 @@ int BambuParameter::Exec()
          case OPT_HLS_FPDIV:
          {
             setOption(OPT_hls_fpdiv, "SRT4");
-            if(optarg && std::string(optarg) == "G")
+            if(optarg && (std::string(optarg) == "G" || std::string(optarg) == "SF"))
                setOption(OPT_hls_fpdiv, optarg);
             break;
          }
@@ -3104,6 +3106,8 @@ void BambuParameter::CheckParameters()
    {
       if(isOption(OPT_soft_fp) && getOption<bool>(OPT_soft_fp))
          add_bambu_library("soft-fp");
+      else if(getOption<std::string>(OPT_hls_fpdiv) != "SRT4" && getOption<std::string>(OPT_hls_fpdiv) != "G")
+         THROW_ERROR("--hls-fpdiv=SF requires --soft-fp option");
       else if(isOption(OPT_softfloat_subnormal) && getOption<bool>(OPT_softfloat_subnormal))
          add_bambu_library("softfloat_subnormals");
       else
