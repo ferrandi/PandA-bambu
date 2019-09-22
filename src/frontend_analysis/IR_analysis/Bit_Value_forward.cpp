@@ -1895,7 +1895,10 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          const size_t left_type_size = tree_helper::Size(left_type);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation: " + STR(left_id) + (left_signed ? "S" : "U") + " = " + (op_kind == nop_expr_K ? "cast" : "convert") + " " + STR(right_id) + (right_signed ? "S" : "U"));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, " = op:  " + bitstring_to_string(res) + "(" + STR(right_type_size) + "->" + STR(left_type_size) + ")");
-         if(left_signed != right_signed and res.size() < left_type_size)
+         bool do_not_extend = false;
+         if(left_signed && tree_helper::Size(ga->op0) == 1 && tree_helper::is_bool(TM, right_id))
+            do_not_extend = true;
+         if(left_signed != right_signed and res.size() < left_type_size and !do_not_extend)
             res = sign_extend_bitstring(res, right_signed, left_type_size);
          while(res.size() > left_type_size)
             res.pop_front();
