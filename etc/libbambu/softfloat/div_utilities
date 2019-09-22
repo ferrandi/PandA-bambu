@@ -48,32 +48,32 @@ typedef unsigned int div_USItype __attribute__ ((mode (SI)));
 typedef unsigned int div_UDItype __attribute__ ((mode (DI)));
 /// compute the 64bit multiplication between a and b and return only the 32 most significant bits
 div_USItype __builtin_umulh32(div_USItype a, div_USItype b);
-inline div_USItype __builtin_umulh32(div_USItype a, div_USItype b)
+__FORCE_INLINE div_USItype __builtin_umulh32(div_USItype a, div_USItype b)
 {
   return ((div_UDItype)(div_USItype)(a) * (div_USItype)(b))>>32;
 }
 
 ///compute the 32bit multiplication between a and b and return only the 16 most significant bits
 div_UHItype __builtin_umulh16(div_UHItype a, div_UHItype b);
-inline div_UHItype __builtin_umulh16(div_UHItype a, div_UHItype b)
+__FORCE_INLINE div_UHItype __builtin_umulh16(div_UHItype a, div_UHItype b)
 {
   return ((div_USItype)(div_UHItype)(a) * (div_UHItype)(b))>>16;
 }
 
 div_UHItype __builtin_umulh816(div_UHItype a, div_UHItype b);
-inline div_UHItype __builtin_umulh816(div_UHItype a, div_UHItype b)
+__FORCE_INLINE div_UHItype __builtin_umulh816(div_UHItype a, div_UHItype b)
 {
   return ((div_USItype)(div_UHItype)(a) * (div_UHItype)(b))>>8;
 }
 
 div_USItype __builtin_umulh1632(div_USItype a, div_USItype b);
-inline div_USItype __builtin_umulh1632(div_USItype a, div_USItype b)
+__FORCE_INLINE div_USItype __builtin_umulh1632(div_USItype a, div_USItype b)
 {
   return (((div_UDItype)a) * b)>>16;
 }
 
 div_UDItype __builtin_umulh64(div_UDItype u, div_UDItype v);
-inline div_UDItype __builtin_umulh64(div_UDItype u, div_UDItype v)
+__FORCE_INLINE div_UDItype __builtin_umulh64(div_UDItype u, div_UDItype v)
 {
     register div_USItype u0, v0, k, u1, v1, w1, w2;
     register div_UDItype t, t0, t1;

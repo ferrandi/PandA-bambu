@@ -148,7 +148,7 @@ namespace llvm
                   llvm::errs() << "it becomes internal\n";
 #endif
                   changed = true;
-                  if (auto GO = llvm::dyn_cast<llvm::GlobalObject>(&globalVar))
+                  if(auto GO = llvm::dyn_cast<llvm::GlobalObject>(&globalVar))
                      GO->setComdat(nullptr);
                   globalVar.setVisibility(llvm::GlobalValue::DefaultVisibility);
                   globalVar.setLinkage(llvm::GlobalValue::InternalLinkage);

@@ -746,7 +746,11 @@ namespace RangeAnalysis
             llvm_unreachable("unexpected condition");
          }
       }
-      assert(u.sge(l));
+      if(!u.sge(l))
+      {
+         l = Min;
+         u = Max;
+      }
    }
 
    unsigned Range_base::neededBits(const llvm::APInt& a, const llvm::APInt& b, bool sign)
@@ -4803,10 +4807,9 @@ namespace RangeAnalysis
          // we use the swapped predicate
          ConstantRange tmpT = (variable == Op0) ? ConstantRange::makeSatisfyingICmpRegion(pred, CR) : ConstantRange::makeSatisfyingICmpRegion(swappred, CR);
 
-         assert(!tmpT.isFullSet());
          auto bw = variable->getType()->getPrimitiveSizeInBits();
-         Range TValues = CR2R(tmpT, bw);
-         Range FValues = Range(Range_base::getAnti(TValues));
+         Range TValues = tmpT.isFullSet() ? Range(Regular, bw) : CR2R(tmpT, bw);
+         Range FValues = tmpT.isFullSet() ? Range(Empty, bw) : Range(Range_base::getAnti(TValues));
 
          // Create the interval using the intersection in the branch.
          std::shared_ptr<BasicInterval> BT = std::make_shared<BasicInterval>(TValues);

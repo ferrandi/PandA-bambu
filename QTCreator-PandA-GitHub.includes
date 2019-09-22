@@ -51,6 +51,13 @@ ext/nodelib/include/nodelib
 ext/sollya
 ext/vflib/include
 ext/vflib/src
+ext/mockturtle/include
+ext/mockturtle/lib/kitty
+ext/mockturtle/lib/fmt
+ext/mockturtle/lib/sparsepp
+ext/mockturtle/lib/ez
+ext/mockturtle/lib/lorina
+ext/mockturtle/lib/rang
 src
 src/algorithms
 src/algorithms/bipartite_matching

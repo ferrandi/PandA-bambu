@@ -586,6 +586,8 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn)
          CREATE_TREE_NODE_CASE_BODY(omp_critical_pragma, node_id)
       case gimple_multi_way_if_K:
          CREATE_TREE_NODE_CASE_BODY(gimple_multi_way_if, node_id)
+      case extract_bit_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(extract_bit_expr, node_id)
       case do_stmt_K:
       case if_stmt_K:
       case for_stmt_K:
@@ -1373,6 +1375,20 @@ void tree_node_dup::operator()(const target_expr* obj, unsigned int& mask)
    SET_NODE_ID(clnp, target_expr);
 }
 
+void tree_node_dup::operator()(const lut_expr* obj, unsigned int& mask)
+{
+   THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
+   tree_node_mask::operator()(obj, mask);
+   SET_NODE_ID(op0, lut_expr);
+   SET_NODE_ID(op1, lut_expr);
+   SET_NODE_ID(op2, lut_expr);
+   SET_NODE_ID(op3, lut_expr);
+   SET_NODE_ID(op4, lut_expr);
+   SET_NODE_ID(op5, lut_expr);
+   SET_NODE_ID(op6, lut_expr);
+   SET_NODE_ID(op7, lut_expr);
+   SET_NODE_ID(op8, lut_expr);
+}
 void tree_node_dup::operator()(const template_decl* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");

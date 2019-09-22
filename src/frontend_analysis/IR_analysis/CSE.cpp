@@ -108,7 +108,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(UN_COMPARISON_LOWERING, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COMPLETE_BB_GRAPH, SAME_FUNCTION));
@@ -117,6 +116,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case DEPENDENCE_RELATIONSHIP:
       {
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SIMPLE_CODE_MOTION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, SAME_FUNCTION));
          break;
@@ -169,7 +169,7 @@ bool CSE::check_loads(const gimple_assign* ga, unsigned int right_part_index, tr
 
    bool skip_check = right_part->get_kind() == var_decl_K || right_part->get_kind() == string_cst_K || right_part->get_kind() == constructor_K || (right_part->get_kind() == bit_field_ref_K && !is_a_vector_bitfield) ||
                      right_part->get_kind() == component_ref_K || right_part->get_kind() == indirect_ref_K || right_part->get_kind() == misaligned_indirect_ref_K || right_part->get_kind() == array_ref_K || right_part->get_kind() == target_mem_ref_K ||
-                     right_part->get_kind() == target_mem_ref461_K or right_part->get_kind() == mem_ref_K or right_part->get_kind() == call_expr_K or right_part->get_kind() == aggr_init_expr_K;
+                     right_part->get_kind() == target_mem_ref461_K or right_part->get_kind() == mem_ref_K;
    if(right_part->get_kind() == realpart_expr_K || right_part->get_kind() == imagpart_expr_K)
    {
       enum kind code1 = GET_NODE(GetPointer<unary_expr>(right_part)->op)->get_kind();
@@ -224,14 +224,14 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
       unsigned int bitwidth_values = tree_helper::Size(ga->op0);
       if(GetPointer<binary_expr>(GET_NODE(ga->op1)))
          bitwidth_values = std::max(bitwidth_values, tree_helper::Size(GetPointer<binary_expr>(GET_NODE(ga->op1))->op0));
-      if(parameters->IsParameter("CSE_size") and bitwidth_values < parameters->GetParameter<unsigned int>("CSE_size"))
+      tree_nodeRef right_part = GET_NODE(ga->op1);
+      enum kind op_kind = right_part->get_kind();
+      if(op_kind != extract_bit_expr_K and op_kind != lut_expr_K and parameters->IsParameter("CSE_size") and bitwidth_values < parameters->GetParameter<unsigned int>("CSE_size"))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: too small");
          return tree_nodeRef();
       }
-      tree_nodeRef right_part = GET_NODE(ga->op1);
       unsigned int right_part_index = GET_INDEX_NODE(ga->op1);
-      enum kind op_kind = right_part->get_kind();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Right part type: " + right_part->get_kind_text());
 
       /// check for LOADs, STOREs, MEMSET, MEMCPY, etc. etc.
@@ -245,7 +245,6 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
       /// We add type of right part; load from same address with different types must be considered different
       ins.push_back(tree_helper::CGetType(GET_CONST_NODE(ga->op1))->index);
 
-      THROW_ASSERT(not ga->memdef and not ga->vdef and ga->vovers.empty(), STR(tn));
       if(ga->vuses.size())
       {
          /// If there are virtual uses, not only they must be the same, but also the basic block must be the same
@@ -309,11 +308,61 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
          if(te->op2)
             ins.push_back(GET_INDEX_NODE(te->op2));
       }
+      else if(GetPointer<call_expr>(right_part))
+      {
+         auto* ce = GetPointer<call_expr>(right_part);
+         if(GET_NODE(ce->fn)->get_kind() == addr_expr_K)
+         {
+            const auto addr_node = GET_NODE(ce->fn);
+            const auto* ae = GetPointer<const addr_expr>(addr_node);
+            ins.push_back(GET_INDEX_NODE(ae->op));
+            auto* fd = GetPointer<function_decl>(GET_NODE(ae->op));
+            if(fd->writing_memory || fd->reading_memory || ga->vuses.size())
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: null");
+               return tree_nodeRef();
+            }
+            for(const auto& arg : ce->args)
+            {
+               ins.push_back(GET_INDEX_NODE(arg));
+            }
+         }
+         else
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: null");
+            return tree_nodeRef();
+         }
+      }
+      else if(GetPointer<lut_expr>(right_part))
+      {
+         auto* le = GetPointer<lut_expr>(right_part);
+         ins.push_back(GET_INDEX_NODE(le->op0));
+         ins.push_back(GET_INDEX_NODE(le->op1));
+         if(le->op2)
+            ins.push_back(GET_INDEX_NODE(le->op2));
+         if(le->op3)
+            ins.push_back(GET_INDEX_NODE(le->op3));
+         if(le->op4)
+            ins.push_back(GET_INDEX_NODE(le->op4));
+         if(le->op5)
+            ins.push_back(GET_INDEX_NODE(le->op5));
+         if(le->op6)
+            ins.push_back(GET_INDEX_NODE(le->op6));
+         if(le->op7)
+            ins.push_back(GET_INDEX_NODE(le->op7));
+         if(le->op8)
+            ins.push_back(GET_INDEX_NODE(le->op8));
+      }
       else
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: null");
          return tree_nodeRef();
       }
+
+      THROW_ASSERT(not ga->memdef, STR(tn));
+      THROW_ASSERT(not ga->vdef, STR(tn));
+      THROW_ASSERT(ga->vovers.empty(), STR(tn));
+
 #ifndef NDEBUG
       std::string signature_message = "Signature of " + STR(tn->index) + " is ";
       for(const auto& temp_sign : ins)

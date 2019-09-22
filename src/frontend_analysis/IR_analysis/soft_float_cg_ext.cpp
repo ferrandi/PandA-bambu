@@ -309,6 +309,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                case tree_list_K:
                case tree_vec_K:
                case error_mark_K:
+               case lut_expr_K:
                case CASE_BINARY_EXPRESSION:
                case CASE_CPP_NODES:
                case CASE_CST_NODES:
@@ -369,6 +370,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                case target_mem_ref461_K:
                case tree_list_K:
                case tree_vec_K:
+               case lut_expr_K:
                case CASE_BINARY_EXPRESSION:
                case CASE_CPP_NODES:
                case CASE_CST_NODES:
@@ -467,6 +469,8 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                         fu_suffix = fu_suffix + "SRT4";
                      else if(parameters->getOption<std::string>(OPT_hls_fpdiv) == "G")
                         fu_suffix = fu_suffix + "G";
+                     else if(parameters->getOption<std::string>(OPT_hls_fpdiv) == "SF")
+                        ; // do nothing
                      else
                         THROW_ERROR("FP-Division algorithm not supported:" + parameters->getOption<std::string>(OPT_hls_fpdiv));
                   }
@@ -569,6 +573,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                case vec_extractodd_expr_K:
                case vec_interleavehigh_expr_K:
                case vec_interleavelow_expr_K:
+               case extract_bit_expr_K:
                {
                   add_call = false;
                   break;
@@ -644,6 +649,27 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
             RecursiveExaminate(current_statement, qe->op2);
          if(qe->op3)
             RecursiveExaminate(current_statement, qe->op3);
+         break;
+      }
+      case lut_expr_K:
+      {
+         auto* le = GetPointer<lut_expr>(curr_tn);
+         RecursiveExaminate(current_statement, le->op0);
+         RecursiveExaminate(current_statement, le->op1);
+         if(le->op2)
+            RecursiveExaminate(current_statement, le->op2);
+         if(le->op3)
+            RecursiveExaminate(current_statement, le->op3);
+         if(le->op4)
+            RecursiveExaminate(current_statement, le->op4);
+         if(le->op5)
+            RecursiveExaminate(current_statement, le->op5);
+         if(le->op6)
+            RecursiveExaminate(current_statement, le->op6);
+         if(le->op7)
+            RecursiveExaminate(current_statement, le->op7);
+         if(le->op8)
+            RecursiveExaminate(current_statement, le->op8);
          break;
       }
       case constructor_K:

@@ -148,8 +148,8 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    THROW_ASSERT(datapath_circuit, "Missing datapath circuit");
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating datapath object");
-   std::string parallel_controller_model = "controller_parallel";
-   std::string parallel_controller_name = "controller_parallel";
+   std::string parallel_controller_model = "__controller_parallel";
+   std::string parallel_controller_name = "__controller_parallel";
    std::string par_ctrl_library = HLS->HLS_T->get_technology_manager()->get_library(parallel_controller_model);
    structural_objectRef controller_circuit = SM->add_module_from_technology_library(parallel_controller_name, parallel_controller_model, par_ctrl_library, circuit, HLS->HLS_T->get_technology_manager());
    controller_circuit->set_owner(circuit);
@@ -269,7 +269,7 @@ void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef ci
 
    structural_managerRef Datapath = HLS->datapath;
    structural_objectRef datapath_circuit = Datapath->get_circ();
-   structural_objectRef controller_circuit = circuit->find_member("controller_parallel", component_o_K, circuit);
+   structural_objectRef controller_circuit = circuit->find_member("__controller_parallel", component_o_K, circuit);
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    unsigned int num_slots = HLS->Param->getOption<unsigned int>(OPT_num_threads);
    structural_type_descriptorRef data_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));

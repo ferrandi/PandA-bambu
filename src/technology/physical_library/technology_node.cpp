@@ -139,7 +139,8 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
 
          if(type_name_to_precs[1] != "*")
          {
-            std::vector<std::string> precs = SplitString(type_name_to_precs[1], ",");;
+            std::vector<std::string> precs = SplitString(type_name_to_precs[1], ",");
+            ;
             for(std::vector<std::string>::const_iterator single_prec = precs.begin(); single_prec != precs.end() && *single_prec != ""; ++single_prec)
             {
                auto type_uint = boost::lexical_cast<unsigned int>(*single_prec);

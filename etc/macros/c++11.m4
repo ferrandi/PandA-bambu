@@ -1,3 +1,122 @@
+# AC_COMPILE_STDCXX_17
+AC_DEFUN([AC_COMPILE_STDCXX_17], [
+  AC_CACHE_CHECK(if g++ supports C++17 features without additional flags,
+  ac_cv_cxx_compile_cxx17_native,
+  [AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  AC_TRY_COMPILE([
+  #include <tuple>
+  #include <unordered_map>
+  #include <unordered_set>
+  template <typename T>
+    struct check final
+    {
+      static constexpr T value{ __cplusplus };
+    };
+
+    typedef check<check<bool>> right_angle_brackets;
+
+    int a;
+    decltype(a) b;
+
+    typedef check<int> check_type;
+    check_type c{};
+    check_type&& cr = static_cast<check_type&&>(c);
+
+    static_assert(check_type::value == 201703L, "C++17 compiler");
+    enum class Enum;
+    enum class Enum
+    {
+       ENUM
+    };
+    ],,
+  ac_cv_cxx_compile_cxx17_native=yes, ac_cv_cxx_compile_cxx17_native=no)
+  AC_LANG_RESTORE
+  ])
+
+  AC_CACHE_CHECK(if g++ supports C++17 features with -std=c++17,
+  ac_cv_cxx_compile_cxx17_cxx,
+  [AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  ac_save_CXXFLAGS="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAGS -std=c++17"
+  AC_TRY_COMPILE([
+  #include <tuple>
+  #include <unordered_map>
+  #include <unordered_set>
+  template <typename T>
+    struct check final
+    {
+      static constexpr T value{ __cplusplus };
+    };
+
+    typedef check<check<bool>> right_angle_brackets;
+
+    int a;
+    decltype(a) b;
+
+    typedef check<int> check_type;
+    check_type c{};
+    check_type&& cr = static_cast<check_type&&>(c);
+
+    static_assert(check_type::value == 201703L, "C++17 compiler");
+    enum class Enum;
+    enum class Enum
+    {
+       ENUM
+    };
+    ],,
+  ac_cv_cxx_compile_cxx17_cxx=yes, ac_cv_cxx_compile_cxx17_cxx=no)
+  CXXFLAGS="$ac_save_CXXFLAGS"
+  AC_LANG_RESTORE
+  ])
+
+  AC_CACHE_CHECK(if g++ supports C++17 features with -std=gnu++17,
+  ac_cv_cxx_compile_cxx17_gxx,
+  [AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  ac_save_CXXFLAGS="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAGS -std=gnu++17"
+  AC_TRY_COMPILE([
+  #include <tuple>
+  #include <unordered_map>
+  #include <unordered_set>
+  template <typename T>
+    struct check final
+    {
+      static constexpr T value{ __cplusplus };
+    };
+
+    typedef check<check<bool>> right_angle_brackets;
+
+    int a;
+    decltype(a) b;
+
+    typedef check<int> check_type;
+    check_type c{};
+    check_type&& cr = static_cast<check_type&&>(c);
+
+    static_assert(check_type::value == 201703L, "C++17 compiler");
+    enum class Enum;
+    enum class Enum
+    {
+       ENUM
+    };
+    ],,
+  ac_cv_cxx_compile_cxx17_gxx=yes, ac_cv_cxx_compile_cxx17_gxx=no)
+  CXXFLAGS="$ac_save_CXXFLAGS"
+  AC_LANG_RESTORE
+  STDCXX_17=no
+  ])
+
+  if test "$ac_cv_cxx_compile_cxx17_native" = yes ||
+     test "$ac_cv_cxx_compile_cxx17_cxx" = yes ||
+     test "$ac_cv_cxx_compile_cxx17_gxx" = yes; then
+    AC_DEFINE(HAVE_STDCXX_17,1,[Define if g++ supports C++17 features. ])
+    STDCXX_17=yes
+  fi
+])
+
 # AC_COMPILE_STDCXX_11
 AC_DEFUN([AC_COMPILE_STDCXX_11], [
   AC_CACHE_CHECK(if g++ supports C++11 features without additional flags,

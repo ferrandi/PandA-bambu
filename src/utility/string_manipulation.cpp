@@ -146,7 +146,7 @@ std::string ConvertInBinary(const std::string& C_value, const unsigned int preci
    return trimmed_value;
 }
 
-const std::vector<std::string> SplitString(const std::string & input, const std::string & separators)
+const std::vector<std::string> SplitString(const std::string& input, const std::string& separators)
 {
    std::vector<std::string> ret_value;
 #ifndef __clang_analyzer__

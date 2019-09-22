@@ -79,7 +79,8 @@
 TestbenchMemoryAllocation::TestbenchMemoryAllocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION)
 {
-   flag_cpp = _HLSMgr->get_tree_manager()->is_CPP() && !_parameters->isOption(OPT_pretty_print) && (!_parameters->isOption(OPT_discrepancy) || !_parameters->getOption<bool>(OPT_discrepancy) || !_parameters->isOption(OPT_discrepancy_hw) || !_parameters->getOption<bool>(OPT_discrepancy_hw));
+   flag_cpp = _HLSMgr->get_tree_manager()->is_CPP() && !_parameters->isOption(OPT_pretty_print) &&
+              (!_parameters->isOption(OPT_discrepancy) || !_parameters->getOption<bool>(OPT_discrepancy) || !_parameters->isOption(OPT_discrepancy_hw) || !_parameters->getOption<bool>(OPT_discrepancy_hw));
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 

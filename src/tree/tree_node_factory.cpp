@@ -578,6 +578,8 @@ void tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_no
          CREATE_TREE_NODE_CASE_BODY(widen_mult_expr, node_id)
       case gimple_nop_K:
          CREATE_TREE_NODE_CASE_BODY(gimple_nop, node_id)
+      case extract_bit_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(extract_bit_expr, node_id)
       case assert_expr_K:
       case do_stmt_K:
       case for_stmt_K:
@@ -1287,6 +1289,21 @@ void tree_node_factory::operator()(const target_expr* obj, unsigned int& mask)
    SET_NODE_ID_OPT(TOK_DECL, decl, target_expr);
    SET_NODE_ID_OPT(TOK_INIT, init, target_expr);
    SET_NODE_ID_OPT(TOK_CLNP, clnp, target_expr);
+}
+
+void tree_node_factory::operator()(const lut_expr* obj, unsigned int& mask)
+{
+   THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
+   tree_node_mask::operator()(obj, mask);
+   SET_NODE_ID_OPT(TOK_OP0, op0, lut_expr);
+   SET_NODE_ID_OPT(TOK_OP1, op1, lut_expr);
+   SET_NODE_ID_OPT(TOK_OP2, op2, lut_expr);
+   SET_NODE_ID_OPT(TOK_OP3, op3, lut_expr);
+   SET_NODE_ID_OPT(TOK_OP4, op4, lut_expr);
+   SET_NODE_ID_OPT(TOK_OP5, op5, lut_expr);
+   SET_NODE_ID_OPT(TOK_OP6, op6, lut_expr);
+   SET_NODE_ID_OPT(TOK_OP7, op7, lut_expr);
+   SET_NODE_ID_OPT(TOK_OP8, op8, lut_expr);
 }
 
 void tree_node_factory::operator()(const template_decl* obj, unsigned int& mask)

@@ -1,0 +1,252 @@
+[
+  {
+    "entries": [
+      {
+        "abc cec": 0.0,
+        "benchmark": "adder",
+        "equivalent": true,
+        "runtime": 0.004775
+      },
+      {
+        "abc cec": 0.33,
+        "benchmark": "bar",
+        "equivalent": true,
+        "runtime": 0.012499
+      },
+      {
+        "abc cec": 9.66,
+        "benchmark": "div",
+        "equivalent": true,
+        "runtime": 0.047315
+      },
+      {
+        "abc cec": 25.7,
+        "benchmark": "hyp",
+        "equivalent": true,
+        "runtime": 0.244476
+      },
+      {
+        "abc cec": 9.74,
+        "benchmark": "log2",
+        "equivalent": true,
+        "runtime": 0.03381
+      },
+      {
+        "abc cec": 0.21,
+        "benchmark": "max",
+        "equivalent": true,
+        "runtime": 0.006366
+      },
+      {
+        "abc cec": 6.27,
+        "benchmark": "multiplier",
+        "equivalent": true,
+        "runtime": 0.03418
+      },
+      {
+        "abc cec": 1.97,
+        "benchmark": "sin",
+        "equivalent": true,
+        "runtime": 0.007252
+      },
+      {
+        "abc cec": 5.28,
+        "benchmark": "sqrt",
+        "equivalent": true,
+        "runtime": 0.022121
+      },
+      {
+        "abc cec": 2.9,
+        "benchmark": "square",
+        "equivalent": true,
+        "runtime": 0.023726
+      },
+      {
+        "abc cec": 0.01,
+        "benchmark": "arbiter",
+        "equivalent": true,
+        "runtime": 0.016171
+      },
+      {
+        "abc cec": 0.01,
+        "benchmark": "cavlc",
+        "equivalent": true,
+        "runtime": 0.001653
+      },
+      {
+        "abc cec": 0.01,
+        "benchmark": "ctrl",
+        "equivalent": true,
+        "runtime": 0.001229
+      },
+      {
+        "abc cec": 0.0,
+        "benchmark": "dec",
+        "equivalent": true,
+        "runtime": 0.001423
+      },
+      {
+        "abc cec": 0.02,
+        "benchmark": "i2c",
+        "equivalent": true,
+        "runtime": 0.002754
+      },
+      {
+        "abc cec": 0.01,
+        "benchmark": "int2float",
+        "equivalent": true,
+        "runtime": 0.001243
+      },
+      {
+        "abc cec": 4.46,
+        "benchmark": "mem_ctrl",
+        "equivalent": true,
+        "runtime": 0.053334
+      },
+      {
+        "abc cec": 0.06,
+        "benchmark": "priority",
+        "equivalent": true,
+        "runtime": 0.002573
+      },
+      {
+        "abc cec": 0.01,
+        "benchmark": "router",
+        "equivalent": true,
+        "runtime": 0.001317
+      },
+      {
+        "abc cec": 3.54,
+        "benchmark": "voter",
+        "equivalent": true,
+        "runtime": 0.01432
+      }
+    ],
+    "version": "29b0bce"
+  },
+  {
+    "entries": [
+      {
+        "abc cec": 0.0,
+        "benchmark": "adder",
+        "equivalent": true,
+        "runtime": 0.002185
+      },
+      {
+        "abc cec": 0.33,
+        "benchmark": "bar",
+        "equivalent": true,
+        "runtime": 0.006054
+      },
+      {
+        "abc cec": 9.66,
+        "benchmark": "div",
+        "equivalent": true,
+        "runtime": 0.047581
+      },
+      {
+        "abc cec": 25.7,
+        "benchmark": "hyp",
+        "equivalent": true,
+        "runtime": 0.248725
+      },
+      {
+        "abc cec": 9.74,
+        "benchmark": "log2",
+        "equivalent": true,
+        "runtime": 0.033442
+      },
+      {
+        "abc cec": 0.21,
+        "benchmark": "max",
+        "equivalent": true,
+        "runtime": 0.006885
+      },
+      {
+        "abc cec": 6.27,
+        "benchmark": "multiplier",
+        "equivalent": true,
+        "runtime": 0.03398
+      },
+      {
+        "abc cec": 1.97,
+        "benchmark": "sin",
+        "equivalent": true,
+        "runtime": 0.007005
+      },
+      {
+        "abc cec": 5.28,
+        "benchmark": "sqrt",
+        "equivalent": true,
+        "runtime": 0.022294
+      },
+      {
+        "abc cec": 2.9,
+        "benchmark": "square",
+        "equivalent": true,
+        "runtime": 0.024027
+      },
+      {
+        "abc cec": 0.01,
+        "benchmark": "arbiter",
+        "equivalent": true,
+        "runtime": 0.016019
+      },
+      {
+        "abc cec": 0.01,
+        "benchmark": "cavlc",
+        "equivalent": true,
+        "runtime": 0.001599
+      },
+      {
+        "abc cec": 0.01,
+        "benchmark": "ctrl",
+        "equivalent": true,
+        "runtime": 0.001168
+      },
+      {
+        "abc cec": 0.0,
+        "benchmark": "dec",
+        "equivalent": true,
+        "runtime": 0.001776
+      },
+      {
+        "abc cec": 0.02,
+        "benchmark": "i2c",
+        "equivalent": true,
+        "runtime": 0.004162
+      },
+      {
+        "abc cec": 0.01,
+        "benchmark": "int2float",
+        "equivalent": true,
+        "runtime": 0.004208
+      },
+      {
+        "abc cec": 4.46,
+        "benchmark": "mem_ctrl",
+        "equivalent": true,
+        "runtime": 0.060122
+      },
+      {
+        "abc cec": 0.06,
+        "benchmark": "priority",
+        "equivalent": true,
+        "runtime": 0.00286
+      },
+      {
+        "abc cec": 0.01,
+        "benchmark": "router",
+        "equivalent": true,
+        "runtime": 0.001309
+      },
+      {
+        "abc cec": 3.54,
+        "benchmark": "voter",
+        "equivalent": true,
+        "runtime": 0.015054
+      }
+    ],
+    "version": "70ac8c4"
+  }
+]

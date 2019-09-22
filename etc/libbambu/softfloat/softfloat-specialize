@@ -43,7 +43,7 @@ __int8 __float_detect_tininess = float_tininess_after_rounding;
 | should be simply `__float_exception_flags |= flags;'.
 *----------------------------------------------------------------------------*/
 
-static void __float_raise( __int8 flags )
+static __FORCE_INLINE void __float_raise( __int8 flags )
 {
 #ifndef NO_PARAMETRIC
     __float_exception_flags |= flags;
@@ -68,7 +68,7 @@ typedef struct {
 | otherwise returns 0.
 *----------------------------------------------------------------------------*/
 
-static __flag __float32_is_nan( __float32 a )
+static __FORCE_INLINE __flag __float32_is_nan( __float32 a )
 {
 
     return ( 0xFF000000 < (__bits32) ( a<<1 ) );
@@ -80,7 +80,7 @@ static __flag __float32_is_nan( __float32 a )
 | NaN; otherwise returns 0.
 *----------------------------------------------------------------------------*/
 
-static __flag __float32_is_signaling_nan( __float32 a )
+static __FORCE_INLINE __flag __float32_is_signaling_nan( __float32 a )
 {
 
     return ( ( ( a>>22 ) & 0x1FF ) == 0x1FE ) && ( a & 0x003FFFFF );
@@ -93,7 +93,7 @@ static __flag __float32_is_signaling_nan( __float32 a )
 | exception is raised.
 *----------------------------------------------------------------------------*/
 
-static __commonNaNT __float32ToCommonNaN( __float32 a )
+static __FORCE_INLINE __commonNaNT __float32ToCommonNaN( __float32 a )
 {
     __commonNaNT z;
 
@@ -110,14 +110,14 @@ static __commonNaNT __float32ToCommonNaN( __float32 a )
 | precision floating-point format.
 *----------------------------------------------------------------------------*/
 
-static __float32 __commonNaNToFloat32( __commonNaNT a )
+static __FORCE_INLINE __float32 __commonNaNToFloat32( __commonNaNT a )
 {
 
     return ( ( (__bits32) a.sign )<<31 ) | 0x7FC00000 | ( a.high>>41 );
 
 }
 
-static __float32 __LargerSignificand32( __float32 a, __float32 b )
+static __FORCE_INLINE __float32 __LargerSignificand32( __float32 a, __float32 b )
 {
     if ( (__bits32) ( a<<1 ) < (__bits32) ( b<<1 ) ) return b;
     if ( (__bits32) ( b<<1 ) < (__bits32) ( a<<1 ) ) return a;
@@ -130,7 +130,7 @@ static __float32 __LargerSignificand32( __float32 a, __float32 b )
 | signaling NaN, the invalid exception is raised.
 *----------------------------------------------------------------------------*/
 
-static __float32 __propagateFloat32NaN( __float32 a, __float32 b )
+static __FORCE_INLINE __float32 __propagateFloat32NaN( __float32 a, __float32 b )
 {
 #ifdef NO_SIGNALLING 
     return __float32_default_nan;
@@ -168,7 +168,7 @@ static __float32 __propagateFloat32NaN( __float32 a, __float32 b )
 | otherwise returns 0.
 *----------------------------------------------------------------------------*/
 
-static __flag __float64_is_nan( __float64 a )
+static __FORCE_INLINE __flag __float64_is_nan( __float64 a )
 {
 
     return ( LIT64( 0xFFE0000000000000 ) < (__bits64) ( a<<1 ) );
@@ -180,7 +180,7 @@ static __flag __float64_is_nan( __float64 a )
 | NaN; otherwise returns 0.
 *----------------------------------------------------------------------------*/
 
-static __flag __float64_is_signaling_nan( __float64 a )
+static __FORCE_INLINE __flag __float64_is_signaling_nan( __float64 a )
 {
 
     return
@@ -195,7 +195,7 @@ static __flag __float64_is_signaling_nan( __float64 a )
 | exception is raised.
 *----------------------------------------------------------------------------*/
 
-static __commonNaNT __float64ToCommonNaN( __float64 a )
+static __FORCE_INLINE __commonNaNT __float64ToCommonNaN( __float64 a )
 {
     __commonNaNT z;
 
@@ -212,7 +212,7 @@ static __commonNaNT __float64ToCommonNaN( __float64 a )
 | precision floating-point format.
 *----------------------------------------------------------------------------*/
 
-static __float64 __commonNaNToFloat64( __commonNaNT a )
+static __FORCE_INLINE __float64 __commonNaNToFloat64( __commonNaNT a )
 {
 
     return
@@ -222,7 +222,7 @@ static __float64 __commonNaNToFloat64( __commonNaNT a )
 
 }
 
-static __float64 __LargerSignificand64( __float64 a, __float64 b )
+static __FORCE_INLINE __float64 __LargerSignificand64( __float64 a, __float64 b )
 {
     if ( (__bits64) ( a<<1 ) < (__bits64) ( b<<1 ) ) return b;
     if ( (__bits64) ( b<<1 ) < (__bits64) ( a<<1 ) ) return a;
@@ -235,7 +235,7 @@ static __float64 __LargerSignificand64( __float64 a, __float64 b )
 | signaling NaN, the invalid exception is raised.
 *----------------------------------------------------------------------------*/
 
-static __float64 __propagateFloat64NaN( __float64 a, __float64 b )
+static __FORCE_INLINE __float64 __propagateFloat64NaN( __float64 a, __float64 b )
 {
 #ifdef NO_SIGNALLING 
     return __float64_default_nan;
@@ -278,7 +278,7 @@ static __float64 __propagateFloat64NaN( __float64 a, __float64 b )
 | NaN; otherwise returns 0.
 *----------------------------------------------------------------------------*/
 
-static __flag __floatx80_is_nan( __floatx80 a )
+static __FORCE_INLINE __flag __floatx80_is_nan( __floatx80 a )
 {
 
     return ( ( a.high & 0x7FFF ) == 0x7FFF ) && (__bits64) ( a.low<<1 );
@@ -290,7 +290,7 @@ static __flag __floatx80_is_nan( __floatx80 a )
 | signaling NaN; otherwise returns 0.
 *----------------------------------------------------------------------------*/
 
-static __flag __floatx80_is_signaling_nan( __floatx80 a )
+static __FORCE_INLINE __flag __floatx80_is_signaling_nan( __floatx80 a )
 {
     __bits64 aLow;
 
@@ -308,7 +308,7 @@ static __flag __floatx80_is_signaling_nan( __floatx80 a )
 | invalid exception is raised.
 *----------------------------------------------------------------------------*/
 
-static __commonNaNT __floatx80ToCommonNaN( __floatx80 a )
+static __FORCE_INLINE __commonNaNT __floatx80ToCommonNaN( __floatx80 a )
 {
     __commonNaNT z;
 
@@ -325,7 +325,7 @@ static __commonNaNT __floatx80ToCommonNaN( __floatx80 a )
 | double-precision floating-point format.
 *----------------------------------------------------------------------------*/
 
-static __floatx80 __commonNaNToFloatx80( __commonNaNT a )
+static __FORCE_INLINE __floatx80 __commonNaNToFloatx80( __commonNaNT a )
 {
     __floatx80 z;
 
@@ -335,7 +335,7 @@ static __floatx80 __commonNaNToFloatx80( __commonNaNT a )
 
 }
 
-static __floatx80 __LargerSignificandx80( __floatx80 a, __floatx80 b )
+static __FORCE_INLINE __floatx80 __LargerSignificandx80( __floatx80 a, __floatx80 b )
 {
     if ( a.low < b.low ) return b;
     if ( b.low < a.low ) return a;
@@ -348,7 +348,7 @@ static __floatx80 __LargerSignificandx80( __floatx80 a, __floatx80 b )
 | `b' is a signaling NaN, the invalid exception is raised.
 *----------------------------------------------------------------------------*/
 
-static __floatx80 __propagateFloatx80NaN( __floatx80 a, __floatx80 b )
+static __FORCE_INLINE __floatx80 __propagateFloatx80NaN( __floatx80 a, __floatx80 b )
 {
     __flag aIsNaN, aIsSignalingNaN, bIsNaN, bIsSignalingNaN;
 
@@ -389,7 +389,7 @@ static __floatx80 __propagateFloatx80NaN( __floatx80 a, __floatx80 b )
 | otherwise returns 0.
 *----------------------------------------------------------------------------*/
 
-static __flag __float128_is_nan( __float128 a )
+static __FORCE_INLINE __flag __float128_is_nan( __float128 a )
 {
 
     return
@@ -418,7 +418,7 @@ __flag __float128_is_signaling_nan( __float128 a )
 | exception is raised.
 *----------------------------------------------------------------------------*/
 
-static __commonNaNT __float128ToCommonNaN( __float128 a )
+static __FORCE_INLINE __commonNaNT __float128ToCommonNaN( __float128 a )
 {
     __commonNaNT z;
 
@@ -434,7 +434,7 @@ static __commonNaNT __float128ToCommonNaN( __float128 a )
 | precision floating-point format.
 *----------------------------------------------------------------------------*/
 
-static __float128 __commonNaNToFloat128( __commonNaNT a )
+static __FORCE_INLINE __float128 __commonNaNToFloat128( __commonNaNT a )
 {
     __float128 z;
 
@@ -444,7 +444,7 @@ static __float128 __commonNaNToFloat128( __commonNaNT a )
 
 }
 
-static __float128 __LargerSignificand128( __float128 a, __float128 b )
+static __FORCE_INLINE __float128 __LargerSignificand128( __float128 a, __float128 b )
 {
     if ( __lt128( a.high<<1, a.low, b.high<<1, b.low ) ) return b;
     if ( __lt128( b.high<<1, b.low, a.high<<1, a.low ) ) return a;
@@ -457,7 +457,7 @@ static __float128 __LargerSignificand128( __float128 a, __float128 b )
 | `b' is a signaling NaN, the invalid exception is raised.
 *----------------------------------------------------------------------------*/
 
-static __float128 __propagateFloat128NaN( __float128 a, __float128 b )
+static __FORCE_INLINE __float128 __propagateFloat128NaN( __float128 a, __float128 b )
 {
     __flag aIsNaN, aIsSignalingNaN, bIsNaN, bIsSignalingNaN;
 

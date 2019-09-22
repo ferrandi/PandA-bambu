@@ -171,7 +171,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
             {
                std::vector<std::string> precision_pipe_param_pair = SplitString(*pp_it, ":");
                THROW_ASSERT(precision_pipe_param_pair.size() == 2, "malformed pipe parameter string");
-               std::vector<std::string> pipe_params = SplitString( precision_pipe_param_pair[1], ",");
+               std::vector<std::string> pipe_params = SplitString(precision_pipe_param_pair[1], ",");
                THROW_ASSERT(pipe_params.size() > 0, "malformed pipe parameter string");
                if(precision_pipe_param_pair[0] == "*")
                {
@@ -264,8 +264,8 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
 #endif
               || (NPF->exist_NP_functionality(NP_functionality::VHDL_PROVIDED)) || (NPF->exist_NP_functionality(NP_functionality::SYSTEM_VERILOG_PROVIDED))) ||
             fu_base_name == LUT_GATE_STD || fu_base_name == AND_GATE_STD || fu_base_name == NAND_GATE_STD || fu_base_name == OR_GATE_STD || fu_base_name == NOR_GATE_STD || fu_base_name == XOR_GATE_STD || fu_base_name == XNOR_GATE_STD ||
-            fu_base_name == "split_signal" ||
-            fu_base_name == "FSL_handler"
+            fu_base_name == "split_signal" || fu_base_name == "FSL_handler" ||
+            fu_base_name == "extract_bit_expr_FU"
             //|| fu_base_name != "mult_expr_DSP"
             //|| fu_base_name != "trunc_div_expr_FU"
             //|| fu_base_name != "fp_fix_trunc_expr_FU"

@@ -177,6 +177,7 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
       case CASE_BINARY_EXPRESSION:
       case CASE_TERNARY_EXPRESSION:
       case CASE_QUATERNARY_EXPRESSION:
+      case lut_expr_K:
       case constructor_K:
       case gimple_cond_K:
       case gimple_switch_K:

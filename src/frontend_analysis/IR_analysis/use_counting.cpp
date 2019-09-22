@@ -332,6 +332,27 @@ void use_counting::analyze_node(tree_nodeRef& tn, std::set<tree_nodeRef>& ssa_us
             analyze_node(qe->op3, ssa_uses);
          break;
       }
+      case lut_expr_K:
+      {
+         auto* le = GetPointer<lut_expr>(curr_tn);
+         analyze_node(le->op0, ssa_uses);
+         analyze_node(le->op1, ssa_uses);
+         if(le->op2)
+            analyze_node(le->op2, ssa_uses);
+         if(le->op3)
+            analyze_node(le->op3, ssa_uses);
+         if(le->op4)
+            analyze_node(le->op4, ssa_uses);
+         if(le->op5)
+            analyze_node(le->op5, ssa_uses);
+         if(le->op6)
+            analyze_node(le->op6, ssa_uses);
+         if(le->op7)
+            analyze_node(le->op7, ssa_uses);
+         if(le->op8)
+            analyze_node(le->op8, ssa_uses);
+         break;
+      }
       case constructor_K:
       {
          auto* c = GetPointer<constructor>(curr_tn);
