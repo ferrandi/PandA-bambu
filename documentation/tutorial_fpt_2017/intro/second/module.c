@@ -2,6 +2,12 @@
 #include<stdio.h>
 #include<assert.h>
 
+#ifdef BAMBU_PROFILING
+void __builtin_bambu_time_start();
+void __builtin_bambu_time_stop();
+#endif
+
+
 #define MAX_NUMBER_OF_NODES 255
 
 /* stack data structure */
@@ -300,5 +306,5 @@ int main()
 
     /* Deleting all nodes of tree */
     deltree(root);
-    return 0;
+    return tmp == 0;
 }
