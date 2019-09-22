@@ -2690,7 +2690,7 @@ void BambuParameter::add_experimental_setup_gcc_options(bool kill_printf)
       if(isOption(OPT_gcc_optimizations))
          optimizations = getOption<std::string>(OPT_gcc_optimizations);
       THROW_ASSERT(isOption(OPT_input_file), "Input file not specified");
-      if(getOption<std::string>(OPT_input_file).find(STR_CST_string_separator) == std::string::npos)
+      if(getOption<std::string>(OPT_input_file).find(STR_CST_string_separator) == std::string::npos && !isOption(OPT_top_design_name))
       {
          if(optimizations != "")
             optimizations = optimizations + STR_CST_string_separator;
@@ -2918,8 +2918,17 @@ void BambuParameter::CheckParameters()
       if(not isOption(OPT_gcc_opt_level))
       {
          setOption(OPT_gcc_opt_level, GccWrapper_OptimizationSet::O2);
-         tuning_optimizations += "gcse-after-reload" + STR_CST_string_separator + "ipa-cp-clone" + STR_CST_string_separator + "unswitch-loops" + STR_CST_string_separator + "inline-functions" + STR_CST_string_separator + "no-tree-loop-ivcanon";
+         /// GCC SECTION
          if(false
+#if HAVE_I386_GCC45_COMPILER
+            or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC45
+#endif
+#if HAVE_I386_GCC46_COMPILER
+            or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC46
+#endif
+#if HAVE_I386_GCC47_COMPILER
+            or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC47
+#endif
 #if HAVE_I386_GCC48_COMPILER
             or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC48
 #endif
@@ -2938,20 +2947,61 @@ void BambuParameter::CheckParameters()
 #if HAVE_I386_GCC8_COMPILER
             or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
 #endif
-         )
+            )
          {
-            tuning_optimizations += STR_CST_string_separator + "tree-partial-pre" + STR_CST_string_separator + "disable-tree-bswap";
-         }
-         if(false
+            tuning_optimizations += "inline-functions" + STR_CST_string_separator + "gcse-after-reload" + STR_CST_string_separator + "ipa-cp-clone" + STR_CST_string_separator + "unswitch-loops" + STR_CST_string_separator + "no-tree-loop-ivcanon";
+            if(false
+#if HAVE_I386_GCC48_COMPILER
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC48
+#endif
+#if HAVE_I386_GCC49_COMPILER
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
+#endif
+#if HAVE_I386_GCC5_COMPILER
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
+#endif
+#if HAVE_I386_GCC6_COMPILER
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
+#endif
 #if HAVE_I386_GCC7_COMPILER
-            or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if HAVE_I386_GCC8_COMPILER
-            or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
 #endif
-         )
+               )
+            {
+               tuning_optimizations += STR_CST_string_separator + "tree-partial-pre" + STR_CST_string_separator + "disable-tree-bswap";
+            }
+            if(false
+#if HAVE_I386_GCC7_COMPILER
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+#endif
+#if HAVE_I386_GCC8_COMPILER
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
+#endif
+               )
+            {
+               tuning_optimizations += STR_CST_string_separator + "no-store-merging";
+            }
+         }
+         /// CLANG SECTION
+         else if(false
+#if HAVE_I386_CLANG4_COMPILER
+                 or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+                 or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
+#endif
+#if HAVE_I386_CLANG6_COMPILER
+                 or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG6
+#endif
+#if HAVE_I386_CLANG7_COMPILER
+                 or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG7
+#endif
+                 )
          {
-            tuning_optimizations += STR_CST_string_separator + "no-store-merging";
+            tuning_optimizations += "inline-functions";
          }
       }
       std::string optimizations;
@@ -2964,20 +3014,7 @@ void BambuParameter::CheckParameters()
          optimizations += STR_CST_string_separator;
       }
       optimizations += tuning_optimizations;
-      if(optimizations != ""
-#if HAVE_I386_CLANG4_COMPILER
-         && getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG4
-#endif
-#if HAVE_I386_CLANG5_COMPILER
-         && getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG5
-#endif
-#if HAVE_I386_CLANG6_COMPILER
-         && getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG6
-#endif
-#if HAVE_I386_CLANG7_COMPILER
-         && getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG7
-#endif
-      )
+      if(optimizations != "")
          setOption(OPT_gcc_optimizations, optimizations);
 #if 0
       std::string parameters;
