@@ -364,7 +364,7 @@ namespace clang
                   {
                      if(argType->getTypeClass() == Type::Typedef)
                         ParamTypeName = GetTypeNameCanonical(RemoveTypedef(argType));
-                     if(!argType->isBuiltinType())
+                     if(!argType->isBuiltinType() && !argType->isEnumeralType())
                      {
                         interfaceType = "none";
                      }
@@ -380,7 +380,7 @@ namespace clang
                         {
                            interfaceType = UserDefinedInterfaceType;
                         }
-                        if(argType->isBuiltinType() && interfaceType == "none")
+                        if((argType->isBuiltinType() || argType->isEnumeralType()) && interfaceType == "none")
                         {
                            interfaceType = "default";
                         }
