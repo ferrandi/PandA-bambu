@@ -880,11 +880,10 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       const auto shift_value = static_cast<unsigned long long>(const2->value);
       for(unsigned long long shift_value_it = 0; shift_value_it < shift_value; shift_value_it++)
          res_input1.push_back(bit_lattice::X);
-      while(res_input1.size()>(shift_value+1))
-         res_input1.pop_front();
+      if(tree_helper::is_int(TM, GET_INDEX_NODE(operation->op0)))
+         res_input1.push_front(res_input1.front());
+
       const auto shifted_type_size = tree_helper::Size(tree_helper::CGetType(GET_NODE(operation->op0)));
-      while(res_input1.size() < shifted_type_size)
-         res_input1.push_front(bit_lattice::X);
       while(res_input1.size() > shifted_type_size)
          res_input1.pop_front();
 
