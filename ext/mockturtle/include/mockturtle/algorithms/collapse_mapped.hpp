@@ -194,7 +194,7 @@ public:
     } );
 
     /* outputs */
-    ntk.foreach_po( [&]( auto const& f ) {
+    ntk.foreach_po( [&]( auto const& f, auto index ) {
       if ( ntk.is_complemented( f ) && node_driver_type[f] == driver_type::mixed )
       {
         dest.create_po( opposites[ntk.get_node( f )] );
