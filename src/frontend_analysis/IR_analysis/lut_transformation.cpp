@@ -1612,7 +1612,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 bool lut_transformation::HasToBeExecuted() const
 {
    if(not parameters->getOption<int>(OPT_gcc_openmp_simd) && not parameters->isOption(OPT_context_switch))
-      return true;
+      return FunctionFrontendFlowStep::HasToBeExecuted();
    else
       return false;
 }
