@@ -32,7 +32,7 @@
  */
 /**
  * @file lut_transformation.cpp
- * @brief identify and optmize lut expressions.
+ * @brief identify and optimize lut expressions.
  * @author Marco Speziali
  * @author Davide Toschi
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
