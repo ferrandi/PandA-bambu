@@ -32,7 +32,7 @@
  */
 /**
  * @file lut_transformation.cpp
- * @brief identify and optmize lut expressions.
+ * @brief identify and optimize lut expressions.
  * @author Marco Speziali
  * @author Davide Toschi
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
@@ -1612,7 +1612,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 bool lut_transformation::HasToBeExecuted() const
 {
    if(not parameters->getOption<int>(OPT_gcc_openmp_simd) && not parameters->isOption(OPT_context_switch))
-      return true;
+      return FunctionFrontendFlowStep::HasToBeExecuted();
    else
       return false;
 }

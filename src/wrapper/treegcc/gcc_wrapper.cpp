@@ -2813,7 +2813,11 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
    boost::replace_all(renamed_pluginEMO, ".so", "_opt.so");
    recipe += " -load=" + renamed_pluginEMO;
 #endif
-   if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty())
+   if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1
+#ifndef _WIN32
+      && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
+#endif
+      )
    {
 #ifndef _WIN32
       auto renamed_pluginGC = GepiCanon_plugin_obj;
@@ -2824,13 +2828,13 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
       auto renamed_pluginCSROA = CSROA_plugin_obj;
       boost::replace_all(renamed_pluginCSROA, ".so", "_opt.so");
       recipe += " -load=" + renamed_pluginCSROA;
+#endif
       recipe += " -panda-KN=" + fname;
       if(Param->IsParameter("max-CSROA"))
       {
          auto max_CSROA = Param->GetParameter<int>("max-CSROA");
          recipe += " -csroa-max-transformations=" + STR(max_CSROA);
       }
-#endif
    }
 #if HAVE_I386_CLANG4_COMPILER
    if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG4)
@@ -2846,7 +2850,11 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
                            " "
                            "-domtree "
                            "-mem2reg ";
-         if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty())
+         if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1
+#ifndef _WIN32
+            && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
+#endif
+            )
             complex_recipe += "-" + GepiCanon_plugin_name +
                               "PS "
                               "-" +
@@ -2860,7 +2868,11 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
                               CSROA_plugin_name +
                               "FV "
                               "-ipsccp -globaldce -domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops -loop-simplify -lcssa-verification -lcssa -basicaa -aa -scalar-evolution -loop-unroll -simplifycfg ";
-         if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty())
+         if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1
+#ifndef _WIN32
+            && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
+#endif
+            )
             complex_recipe += "-" + expandMemOps_plugin_name +
                               " "
                               "-" +
@@ -3003,7 +3015,11 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
                            "-lcssa "
                            "-scalar-evolution "
                            "-loop-unroll ";
-         if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty())
+         if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1
+#ifndef _WIN32
+            && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
+#endif
+            )
             complex_recipe += " -" + expandMemOps_plugin_name + " -" + CSROA_plugin_name + "WI ";
          complex_recipe += "-domtree -basicaa -aa -memdep -dse -aa -memoryssa -early-cse-memssa -constprop -ipsccp -globaldce -domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops -loop-simplify -lcssa-verification -lcssa -basicaa -aa "
                            "-scalar-evolution -loop-unroll "
