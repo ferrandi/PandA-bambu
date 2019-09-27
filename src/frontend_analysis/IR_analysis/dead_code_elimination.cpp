@@ -37,21 +37,24 @@
  * @author Andrea Cuoccio <andrea.cuoccio@gmail.com>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
 /// header include
 #include "dead_code_elimination.hpp"
 
-/// STD include
+/// STD includes
 #include <fstream>
-
-/// STL include
-#include <map>
 #include <string>
+
+/// STL includes
+#include <list>
+#include <map>
+#include <queue>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
 #include <vector>
 
 /// design_flows include
@@ -65,6 +68,7 @@
 #include "call_graph_manager.hpp"
 
 /// Tree include
+#include "behavioral_helper.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "ext_tree_node.hpp"
 #include "function_behavior.hpp"
@@ -123,14 +127,33 @@ bool dead_code_elimination::HasToBeExecuted() const
    std::map<unsigned int, unsigned int> cur_bb_ver;
    const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
    std::set<unsigned int> calledSet = AppM->CGetCallGraphManager()->get_called_by(function_id);
-   calledSet.insert(function_id); /// add the function itself
+//   calledSet.insert(function_id); /// add the function itself
    for(const auto i : calledSet)
    {
       const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(i);
       cur_bitvalue_ver[i] = FB->GetBitValueVersion();
       cur_bb_ver[i] = FB->GetBBVersion();
    }
-   return cur_bb_ver != last_bb_ver || cur_bitvalue_ver != last_bitvalue_ver;
+#ifndef NDEBUG
+   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+   {
+      if(last_bitvalue_ver.size() and last_bb_ver.size())
+      {
+         for(const auto called_function : calledSet)
+         {
+            if(cur_bitvalue_ver.at(called_function) != last_bitvalue_ver.at(called_function))
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Different bit version for " + AppM->CGetFunctionBehavior(called_function)->CGetBehavioralHelper()->get_function_name());
+            }
+            if(cur_bb_ver.at(called_function) != last_bb_ver.at(called_function))
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Different BB version for " + AppM->CGetFunctionBehavior(called_function)->CGetBehavioralHelper()->get_function_name());
+            }
+         }
+      }
+   }
+#endif
+   return FunctionFrontendFlowStep::HasToBeExecuted() or cur_bb_ver != last_bb_ver or cur_bitvalue_ver != last_bitvalue_ver;
 }
 
 void dead_code_elimination::kill_uses(const tree_managerRef TM, tree_nodeRef op0) const
@@ -1189,6 +1212,14 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement");
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed BB" + boost::lexical_cast<std::string>(block_it->second->number));
+   }
+   const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
+   std::set<unsigned int> calledSet = AppM->CGetCallGraphManager()->get_called_by(function_id);
+   for(const auto i : calledSet)
+   {
+      const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(i);
+      last_bitvalue_ver[i] = FB->GetBitValueVersion();
+      last_bb_ver[i] = FB->GetBBVersion();
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---write flag " + (fd->writing_memory ? std::string("T") : std::string("F")));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---read flag " + (fd->reading_memory ? std::string("T") : std::string("F")));
