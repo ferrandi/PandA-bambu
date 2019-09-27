@@ -66,10 +66,22 @@
 // HLS/simulation include
 #include "testbench_generation_base_step.hpp"
 
+/// STD include
+#include <string>
+
+/// STL includes
+#include <list>
+#include <map>
+#include <set>
+#include <utility>
+#include <vector>
+
 // technology/physical_library include
 #include "technology_node.hpp"
 
+/// utility include
 #include "copyrights_strings.hpp"
+#include "string_manipulation.hpp"
 
 minimal_interface::minimal_interface(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
     : module_interface(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
@@ -353,7 +365,6 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             unsigned int nbyte_on_memory = (bram_bitsize / 8);
 
             std::string init_v;
-            std::vector<std::string> splitted;
             std::string current_bits;
             unsigned int counter = 0;
             bool is_even = true;
@@ -366,7 +377,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             for(std::list<std::pair<unsigned int, memory_symbolRef>>::const_iterator m = mem_variables.begin(); m != mem_variables.end(); ++m)
             {
                init_v = TestbenchGenerationBaseStep::print_var_init(HLSMgr->get_tree_manager(), m->first, HLSMgr->Rmem);
-               boost::algorithm::split(splitted, init_v, boost::algorithm::is_any_of(","));
+               std::vector<std::string> splitted = SplitString(init_v, ",");
                unsigned int byte_allocated = 0;
                unsigned int actual_byte = tree_helper::size(HLSMgr->get_tree_manager(), m->first) / 8;
                std::vector<std::string> eightbit_string;

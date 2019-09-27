@@ -53,8 +53,16 @@
 #include "technology_node.hpp"
 #include "tree_node.hpp"
 
-/// STD include
+/// behavior include
+#include "call_graph_manager.hpp"
+
+/// STD includes
 #include <cmath>
+#include <string>
+
+/// STL includes
+#include <tuple>
+#include <unordered_set>
 
 /// utility includes
 #include "dbgPrintHelper.hpp"
@@ -99,6 +107,13 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    /// function name to be synthesized
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const std::string function_name = FB->CGetBehavioralHelper()->get_function_name();
+   std::string module_name = function_name;
+   const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
+   bool is_top = top_functions.find(funId) != top_functions.end();
+   if(is_top)
+   {
+      module_name = "_" + function_name;
+   }
 
    /// Test on previuos steps. They checks if datapath and controller have been created. If they didn't,
    /// top circuit cannot be created.
@@ -113,9 +128,9 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Top circuit creation");
 
    /// main circuit type
-   structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor(function_name));
+   structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor(module_name));
    /// setting top circuit component
-   SM->set_top_info(function_name, module_type);
+   SM->set_top_info(module_name, module_type);
    structural_objectRef circuit = SM->get_circ();
    THROW_ASSERT(circuit, "Top circuit is missing");
    // Now the top circuit is created, just as an empty box. <circuit> is a reference to the structural object that
@@ -133,8 +148,8 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    THROW_ASSERT(datapath_circuit, "Missing datapath circuit");
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating datapath object");
-   std::string parallel_controller_model = "controller_parallel";
-   std::string parallel_controller_name = "controller_parallel";
+   std::string parallel_controller_model = "__controller_parallel";
+   std::string parallel_controller_name = "__controller_parallel";
    std::string par_ctrl_library = HLS->HLS_T->get_technology_manager()->get_library(parallel_controller_model);
    structural_objectRef controller_circuit = SM->add_module_from_technology_library(parallel_controller_name, parallel_controller_model, par_ctrl_library, circuit, HLS->HLS_T->get_technology_manager());
    controller_circuit->set_owner(circuit);
@@ -254,7 +269,7 @@ void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef ci
 
    structural_managerRef Datapath = HLS->datapath;
    structural_objectRef datapath_circuit = Datapath->get_circ();
-   structural_objectRef controller_circuit = circuit->find_member("controller_parallel", component_o_K, circuit);
+   structural_objectRef controller_circuit = circuit->find_member("__controller_parallel", component_o_K, circuit);
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    unsigned int num_slots = HLS->Param->getOption<unsigned int>(OPT_num_threads);
    structural_type_descriptorRef data_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));

@@ -429,6 +429,27 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
             recursive_examinate(qe->op3, current_statement);
          break;
       }
+      case lut_expr_K:
+      {
+         auto* le = GetPointer<lut_expr>(curr_tn);
+         recursive_examinate(le->op0, current_statement);
+         recursive_examinate(le->op1, current_statement);
+         if(le->op2)
+            recursive_examinate(le->op2, current_statement);
+         if(le->op3)
+            recursive_examinate(le->op3, current_statement);
+         if(le->op4)
+            recursive_examinate(le->op4, current_statement);
+         if(le->op5)
+            recursive_examinate(le->op5, current_statement);
+         if(le->op6)
+            recursive_examinate(le->op6, current_statement);
+         if(le->op7)
+            recursive_examinate(le->op7, current_statement);
+         if(le->op8)
+            recursive_examinate(le->op8, current_statement);
+         break;
+      }
       case constructor_K:
       {
          const constructor* co = GetPointer<constructor>(curr_tn);

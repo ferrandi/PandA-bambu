@@ -71,7 +71,7 @@
 /// STD include
 #include <string>
 
-///STL includes
+/// STL includes
 #include <list>
 #include <map>
 #include <tuple>
@@ -86,6 +86,7 @@
 
 /// utility includes
 #include "dbgPrintHelper.hpp"
+#include "string_manipulation.hpp"
 #include "utility.hpp"
 
 void TestbenchValuesXMLGeneration::Initialize()
@@ -160,13 +161,16 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
    for(const auto& ma : address)
       mem.push_back(ma.second);
 
+   HLSMgr->RSim->simulationArgSignature.clear();
    const auto function_parameters = behavioral_helper->get_parameters();
-   for(const auto& function_pointer : function_parameters)
+   for(const auto& function_parameter : function_parameters)
    {
+      const auto function_parameter_name = behavioral_helper->PrintVariable(function_parameter);
+      HLSMgr->RSim->simulationArgSignature.push_back(function_parameter_name);
       // if the function has some pointer parameters some memory needs to be
       // reserved for the place where they point to
-      if(behavioral_helper->is_a_pointer(function_pointer) && mem_vars.find(function_pointer) == mem_vars.end())
-         mem.push_back(function_pointer);
+      if(behavioral_helper->is_a_pointer(function_parameter) && mem_vars.find(function_parameter) == mem_vars.end())
+         mem.push_back(function_parameter);
    }
    unsigned int v_idx = 0;
 
@@ -223,8 +227,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
 
          if(is_memory)
          {
-            std::vector<std::string> splitted;
-            boost::algorithm::split(splitted, test_v, boost::algorithm::is_any_of(","));
+            std::vector<std::string> splitted = SplitString(test_v, ",");
             for(const auto element : splitted)
             {
                THROW_ASSERT(element.size() % 8 == 0, element + ": " + STR(element.size()));

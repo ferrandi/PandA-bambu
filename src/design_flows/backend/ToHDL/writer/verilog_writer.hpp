@@ -214,7 +214,8 @@ class verilog_writer : public language_writer
     * @param end if the end iterator of the state table.
     * @param n_states is the number of states.
     */
-   void write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state, const std::string& reset_port, const std::string& start_port, const std::string& clock_port, std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end) override;
+   void write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state, const std::string& reset_port, const std::string& start_port, const std::string& clock_port,
+                                          std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end) override;
 
    /**
     * Write in the proper language the behavioral description of the module described in "Not Parsed" form.

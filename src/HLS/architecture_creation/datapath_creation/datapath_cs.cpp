@@ -88,6 +88,7 @@ void datapath_cs::add_ports()
    }
    if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
    {
+      THROW_ASSERT(!found, "unexpected condition");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding ports for kernel module");
       unsigned int num_slots = static_cast<unsigned int>(ceil(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch))));
       if(!num_slots)
@@ -99,7 +100,7 @@ void datapath_cs::add_ports()
       SM->add_port(STR(DONE_SCHEDULER), port_o::IN, circuit, bool_type);
       SM->add_port(STR(START_PORT_NAME) + "_task", port_o::IN, circuit, bool_type);
       SM->add_port(STR(DONE_REQUEST), port_o::OUT, circuit, bool_type);
-      SM->get_circ()->AddParameter("KERN_NUM", "0");
+      circuit->AddParameter("KERN_NUM", "0");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ended " + GET_CLASS(*this) + "::" + __func__);
 }

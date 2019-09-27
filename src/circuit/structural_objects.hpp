@@ -537,7 +537,7 @@ class structural_object
     * @param name is the name of the parameter
     * @param default_value is the default of the value
     */
-   void AddParameter(const std::string & name, const std::string & default_value);
+   virtual void AddParameter(const std::string& name, const std::string& default_value);
 
    /**
     * Return a unique identifier of the structural object.
@@ -2264,7 +2264,7 @@ class module : public structural_object
     * @param name is the name of the parameter
     * @param default_value is the default of the value
     */
-   virtual void AddParameter(const std::string & name, const std::string & default_value);
+   void AddParameter(const std::string& name, const std::string& default_value) override;
 };
 
 /**

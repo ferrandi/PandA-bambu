@@ -100,8 +100,8 @@
 /// STL includes
 #include <algorithm>
 #include <set>
-#include <vector>
 #include <utility>
+#include <vector>
 
 /// utility include
 #include "string_manipulation.hpp" // for GET_CLASS
@@ -1520,7 +1520,10 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       }
       if(fu_module->ExistsParameter("BUS_PIPELINED"))
       {
-         bool Has_extern_allocated_data = ((HLSMgr->Rmem->get_memory_address() - HLSMgr->base_address) > 0 and parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM and parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::INTERN_UNALIGNED) or (HLSMgr->Rmem->has_unknown_addresses() and HLS->Param->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM and HLS->Param->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
+         bool Has_extern_allocated_data = ((HLSMgr->Rmem->get_memory_address() - HLSMgr->base_address) > 0 and parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM and
+                                           parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::INTERN_UNALIGNED) or
+                                          (HLSMgr->Rmem->has_unknown_addresses() and HLS->Param->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM and
+                                           HLS->Param->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
          if(Has_extern_allocated_data)
          {
             fu_module->SetParameter("BUS_PIPELINED", "0");
@@ -2543,6 +2546,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                      case target_mem_ref461_K:
                      case tree_list_K:
                      case tree_vec_K:
+                     case lut_expr_K:
                      case CASE_BINARY_EXPRESSION:
                      case CASE_CPP_NODES:
                      case CASE_FAKE_NODES:
@@ -2667,6 +2671,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             case void_cst_K:
             case vtable_ref_K:
             case with_cleanup_expr_K:
+            case lut_expr_K:
             case CASE_CPP_NODES:
             case CASE_FAKE_NODES:
             case CASE_GIMPLE_NODES:
@@ -2766,6 +2771,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       case vec_unpack_lo_expr_K:
       case vec_unpack_float_hi_expr_K:
       case vec_unpack_float_lo_expr_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:

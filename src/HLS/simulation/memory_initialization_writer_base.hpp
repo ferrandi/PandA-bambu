@@ -105,7 +105,7 @@ class MemoryInitializationWriterBase : public CInitializationParserFunctor
     * @param parameters is the set of input parameters
     */
    MemoryInitializationWriterBase(const tree_managerConstRef TM, const BehavioralHelperConstRef behavioral_helper, const unsigned long int reserved_mem_bytes, const tree_nodeConstRef function_parameter,
-                              const TestbenchGeneration_MemoryType testbench_generation_memory_type, const ParameterConstRef parameters);
+                                  const TestbenchGeneration_MemoryType testbench_generation_memory_type, const ParameterConstRef parameters);
 
    /**
     * Check that all the necessary information was present in the initialization string

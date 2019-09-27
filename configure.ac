@@ -33,6 +33,8 @@ CFLAGS_EXT=-O2
 CXXFLAGS_EXT=-O2
 CXXFLAGS_EXTFPLL=-O2
 
+# Check if compiler support c++17
+AC_COMPILE_STDCXX_17
 # Check if compiler support c++11
 AC_COMPILE_STDCXX_11
 # Check if compiler support c++0x
@@ -42,6 +44,11 @@ AC_HEXFLOAT
 
 
 ############################### c++0x/11 checking ##############################
+if test "x$ac_cv_cxx_compile_cxx17_native" = xno; then
+   if test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes; then
+      CXXFLAGS+=" --std=c++17 "
+      CXXFLAGS_EXT+=" --std=c++17 "
+   else
 if test "x$ac_cv_cxx_compile_cxx11_native" = xno; then
    if test "x$ac_cv_cxx_compile_cxx11_cxx" = xyes; then
       CXXFLAGS+=" --std=c++11 "
@@ -52,11 +59,14 @@ if test "x$ac_cv_cxx_compile_cxx11_native" = xno; then
             CXXFLAGS+=" --std=c++0x "
             CXXFLAGS_EXT+=" --std=c++0x "
          else
-            AC_MSG_ERROR("Compiler does not support C++11 nor C++0X")
+                  AC_MSG_ERROR("Compiler does not support C++17 nor C++11 nor C++0X")
+               fi
+            fi
          fi
       fi
    fi
 fi
+AM_CONDITIONAL(BUILD_MOCKTURTLE, test "x$ac_cv_cxx_compile_cxx17_native" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes)
 
 AM_PO_SUBDIRS
 
@@ -1485,6 +1495,8 @@ AC_CONFIG_FILES(
                  examples/mm/Makefile
                  examples/mm_float/Makefile
                  examples/omp_simd/Makefile
+                 examples/onnx/Makefile
+                 examples/parallel_queries/Makefile
                  examples/libm/Makefile
                  examples/softfloat/Makefile
                  examples/VGA/Makefile
@@ -2800,6 +2812,8 @@ AM_CONDITIONAL(BUILD_I386_CLANG4_EMPTY_PLUGIN, test "x$build_I386_CLANG4_EMPTY_P
 AM_CONDITIONAL(BUILD_I386_CLANG4_SSA_PLUGIN, test "x$build_I386_CLANG4_SSA_PLUGIN" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANG4_SSA_PLUGINCPP, test "x$build_I386_CLANG4_SSA_PLUGINCPP" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANG4_EXPANDMEMOPS_PLUGIN, test "x$build_I386_CLANG4_EXPANDMEMOPS_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG4_GEPICANON_PLUGIN, test "x$build_I386_CLANG4_GEPICANON_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG4_CSROA_PLUGIN, test "x$build_I386_CLANG4_CSROA_PLUGIN" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANG4_TOPFNAME_PLUGIN, test "x$build_I386_CLANG4_TOPFNAME_PLUGIN" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANG4_ASTANALYZER_PLUGIN, test "x$build_I386_CLANG4_ASTANALYZER_PLUGIN" = xyes)
 
@@ -2808,6 +2822,8 @@ AM_CONDITIONAL(BUILD_I386_CLANG5_EMPTY_PLUGIN, test "x$build_I386_CLANG5_EMPTY_P
 AM_CONDITIONAL(BUILD_I386_CLANG5_SSA_PLUGIN, test "x$build_I386_CLANG5_SSA_PLUGIN" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANG5_SSA_PLUGINCPP, test "x$build_I386_CLANG5_SSA_PLUGINCPP" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANG5_EXPANDMEMOPS_PLUGIN, test "x$build_I386_CLANG5_EXPANDMEMOPS_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG5_GEPICANON_PLUGIN, test "x$build_I386_CLANG5_GEPICANON_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG5_CSROA_PLUGIN, test "x$build_I386_CLANG5_CSROA_PLUGIN" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANG5_TOPFNAME_PLUGIN, test "x$build_I386_CLANG5_TOPFNAME_PLUGIN" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANG5_ASTANALYZER_PLUGIN, test "x$build_I386_CLANG5_ASTANALYZER_PLUGIN" = xyes)
 
@@ -2816,6 +2832,8 @@ AM_CONDITIONAL(BUILD_I386_CLANG6_EMPTY_PLUGIN, test "x$build_I386_CLANG6_EMPTY_P
 AM_CONDITIONAL(BUILD_I386_CLANG6_SSA_PLUGIN, test "x$build_I386_CLANG6_SSA_PLUGIN" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANG6_SSA_PLUGINCPP, test "x$build_I386_CLANG6_SSA_PLUGINCPP" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANG6_EXPANDMEMOPS_PLUGIN, test "x$build_I386_CLANG6_EXPANDMEMOPS_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG6_GEPICANON_PLUGIN, test "x$build_I386_CLANG6_GEPICANON_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG6_CSROA_PLUGIN, test "x$build_I386_CLANG6_CSROA_PLUGIN" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANG6_TOPFNAME_PLUGIN, test "x$build_I386_CLANG6_TOPFNAME_PLUGIN" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANG6_ASTANALYZER_PLUGIN, test "x$build_I386_CLANG6_ASTANALYZER_PLUGIN" = xyes)
 
@@ -2824,6 +2842,8 @@ AM_CONDITIONAL(BUILD_I386_CLANG7_EMPTY_PLUGIN, test "x$build_I386_CLANG7_EMPTY_P
 AM_CONDITIONAL(BUILD_I386_CLANG7_SSA_PLUGIN, test "x$build_I386_CLANG7_SSA_PLUGIN" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANG7_SSA_PLUGINCPP, test "x$build_I386_CLANG7_SSA_PLUGINCPP" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANG7_EXPANDMEMOPS_PLUGIN, test "x$build_I386_CLANG7_EXPANDMEMOPS_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG7_GEPICANON_PLUGIN, test "x$build_I386_CLANG7_GEPICANON_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG7_CSROA_PLUGIN, test "x$build_I386_CLANG7_CSROA_PLUGIN" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANG7_TOPFNAME_PLUGIN, test "x$build_I386_CLANG7_TOPFNAME_PLUGIN" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANG7_ASTANALYZER_PLUGIN, test "x$build_I386_CLANG7_ASTANALYZER_PLUGIN" = xyes)
 
@@ -3045,12 +3065,12 @@ if test "x$panda_WERROR" = xyes; then
    -Wswitch-enum \
    -Wswitch-default \
    -Wundef \
-   "
+   -Wno-error=unknown-pragmas"
    AX_CHECK_COMPILE_FLAG("-Wmissing-include-dirs", CXXFLAGS+=" -Wmissing-include-dirs ",,"-Werror") #it is not doing any real test
    AX_CHECK_COMPILE_FLAG("-Wlogical-op", CXXFLAGS+=" -Wlogical-op ",,"-Werror")
    AX_CHECK_COMPILE_FLAG("-Wunused-local-typedefs", CXXFLAGS+=" -Wunused-local-typedefs ",,"-Werror")
    #Disabled as error because of BOOST_FOREACH
-   AX_CXXFLAGS_GCC_OPTION(-Wzero-as-null-pointer-constant,, CXXFLAGS+=" -Wzero-as-null-pointer-constant -Wno-error=zero-as-null-pointer-constant",)
+   AX_CXXFLAGS_GCC_OPTION(-Wzero-as-null-pointer-constant,, CXXFLAGS+=" -Wzero-as-null-pointer-constant -Wno-error=zero-as-null-pointer-constant ",)
 
    AC_COMPILE_WPEDANTIC
    if test "x$panda_WPEDANTIC" = xyes; then
@@ -3058,6 +3078,8 @@ if test "x$panda_WERROR" = xyes; then
    fi
    AX_CHECK_COMPILE_FLAG("-Wmismatched-tags", CXXFLAGS+=" -Wno-mismatched-tags ",,"-Werror")
    AX_CHECK_COMPILE_FLAG("-Woverlength-strings", CXXFLAGS+=" -Wno-overlength-strings ",,"-Werror")
+   AX_CXXFLAGS_GCC_OPTION(-Wdeprecated-copy,, CXXFLAGS+=" -Wno-deprecated-copy -Wno-error=deprecated-copy ",)
+   AX_CXXFLAGS_GCC_OPTION(-Wunused-but-set-parameter,, CXXFLAGS+=" -Wno-unused-but-set-parameter -Wno-error=unused-but-set-parameter ",)
 else
    CXXFLAGS+=" -w "
 fi

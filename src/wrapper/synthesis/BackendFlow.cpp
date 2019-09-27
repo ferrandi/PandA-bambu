@@ -203,14 +203,14 @@ void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_
 
 BackendFlow::BackendFlow(const ParameterConstRef _Param, std::string _flow_name, const target_managerRef _manager)
     : Param(_Param),
-      debug_level(_Param->getOption<int>(OPT_debug_level)),
       output_level(_Param->getOption<unsigned int>(OPT_output_level)),
       flow_name(std::move(_flow_name)),
       out_dir(Param->getOption<std::string>(OPT_output_directory) + "/" + flow_name),
       target(_manager),
-      root(nullptr)
+      root(nullptr),
+      default_flow_parameters(DesignParametersRef(new DesignParameters))
 {
-   default_flow_parameters = DesignParametersRef(new DesignParameters);
+   debug_level = Param->get_class_debug_level(GET_CLASS(*this));
 
    if(!boost::filesystem::exists(out_dir))
       boost::filesystem::create_directories(out_dir);
@@ -295,7 +295,6 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
       synthesis_file_list += hdl_file + ";";
    }
    const structural_objectRef obj = SM->get_circ();
-
    actual_parameters = DesignParametersRef(new DesignParameters);
    actual_parameters->component_name = obj->get_id();
    if(flow_name.size())
@@ -305,7 +304,6 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
    {
       synthesis_file_list += aux_file + ";";
    }
-
    actual_parameters->parameter_values[PARAM_HDL_files] = synthesis_file_list;
    const technology_managerRef TM = target->get_technology_manager();
    std::string library = TM->get_library(resource_name);
@@ -319,7 +317,7 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
    }
    actual_parameters->parameter_values[PARAM_is_combinational] = STR(is_combinational);
    bool time_constrained = false;
-   if(boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]) != 0.0)
+   if(actual_parameters->parameter_values.find(PARAM_clk_period) != actual_parameters->parameter_values.end() and boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]) != 0.0)
       time_constrained = true;
    actual_parameters->parameter_values[PARAM_time_constrained] = STR(time_constrained);
    if(!time_constrained)

@@ -195,6 +195,7 @@
 #include "cpu_time.hpp"
 #include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
+#include "string_manipulation.hpp"
 #include "utility.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
@@ -292,7 +293,8 @@
 #define OPT_LEVEL_RESET (1 + OPT_RESET)
 #define OPT_DISABLE_REG_INIT_VALUE (1 + OPT_LEVEL_RESET)
 #define OPT_SCHEDULING_MUX_MARGINS (1 + OPT_DISABLE_REG_INIT_VALUE)
-#define OPT_SERIALIZE_MEMORY_ACCESSES (1 + OPT_SCHEDULING_MUX_MARGINS)
+#define OPT_USE_ALUS (1 + OPT_SCHEDULING_MUX_MARGINS)
+#define OPT_SERIALIZE_MEMORY_ACCESSES (1 + OPT_USE_ALUS)
 #define OPT_SILP (1 + OPT_SERIALIZE_MEMORY_ACCESSES)
 #define OPT_SIMULATE (1 + OPT_SILP)
 #define OPT_SKIP_PIPE_PARAMETER (1 + OPT_SIMULATE)
@@ -809,6 +811,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        operations starting from a C library based implementation:\n"
       << "             SRT4 - use a C-based Sweeney, Robertson, Tocher floating point division with radix 4 (default)\n"
       << "             G    - use a C-based Goldschmidt floating point division.\n"
+      << "             SF   - use a C-based floating point division as describe in soft-fp library (it requires --soft-fp).\n"
       << "    --skip-pipe-parameter=<value>\n"
       << "        Used during the allocation of pipelined units. <value> specifies how\n"
       << "        many pipelined units, compliant with the clock period, will be skipped.\n"
@@ -1183,6 +1186,7 @@ int BambuParameter::Exec()
       {"DSP-margin-combinational", required_argument, nullptr, OPT_DSP_MARGIN_COMBINATIONAL},
       {"DSP-margin-pipelined", required_argument, nullptr, OPT_DSP_MARGIN_PIPELINED},
       {"mux-margins", required_argument, nullptr, OPT_SCHEDULING_MUX_MARGINS},
+      {"use-ALUs", no_argument, nullptr, OPT_USE_ALUS},
       {"timing-model", required_argument, nullptr, OPT_TIMING_MODEL},
       {"registered-inputs", required_argument, nullptr, OPT_REGISTERED_INPUTS},
       {"fsm-encoding", required_argument, nullptr, OPT_FSM_ENCODING},
@@ -1508,14 +1512,14 @@ int BambuParameter::Exec()
             else
 #endif
 #if HAVE_COIN_OR
-                if(optarg[0] == 'C')
+            if(optarg[0] == 'C')
             {
                setOption(OPT_ilp_solver, meilp_solver::COIN_OR);
             }
             else
 #endif
 #if HAVE_LP_SOLVE
-                if(optarg[0] == 'L')
+            if(optarg[0] == 'L')
             {
                setOption(OPT_ilp_solver, meilp_solver::LP_SOLVE);
             }
@@ -1941,6 +1945,7 @@ int BambuParameter::Exec()
          case OPT_SOFT_FP:
          {
             setOption(OPT_soft_fp, true);
+            setOption(OPT_hls_fpdiv, "SF");
             break;
          }
          case OPT_HLS_DIV:
@@ -1959,7 +1964,7 @@ int BambuParameter::Exec()
          case OPT_HLS_FPDIV:
          {
             setOption(OPT_hls_fpdiv, "SRT4");
-            if(optarg && std::string(optarg) == "G")
+            if(optarg && (std::string(optarg) == "G" || std::string(optarg) == "SF"))
                setOption(OPT_hls_fpdiv, optarg);
             break;
          }
@@ -1971,6 +1976,11 @@ int BambuParameter::Exec()
          case OPT_SCHEDULING_MUX_MARGINS:
          {
             setOption(OPT_scheduling_mux_margins, optarg);
+            break;
+         }
+         case OPT_USE_ALUS:
+         {
+            setOption(OPT_use_ALUs, true);
             break;
          }
          case OPT_TIMING_MODEL:
@@ -2221,8 +2231,7 @@ int BambuParameter::Exec()
          case OPT_DISCREPANCY_ONLY:
          {
             setOption(OPT_discrepancy, true);
-            std::vector<std::string> splitted;
-            boost::algorithm::split(splitted, optarg, boost::algorithm::is_any_of(" ,"));
+            std::vector<std::string> splitted = SplitString(optarg, " ,");
             std::string discrepancy_functions;
             for(auto& f : splitted)
             {
@@ -2272,9 +2281,8 @@ int BambuParameter::Exec()
          }
          case INPUT_OPT_C_NO_PARSE:
          {
-            std::vector<std::string> Splitted;
+            std::vector<std::string> Splitted = SplitString(optarg, " ,");
             std::string no_parse_files;
-            boost::algorithm::split(Splitted, optarg, boost::algorithm::is_any_of(" ,"));
             for(auto& i : Splitted)
             {
                boost::trim(i);
@@ -2285,9 +2293,8 @@ int BambuParameter::Exec()
          }
          case INPUT_OPT_C_PYTHON_NO_PARSE:
          {
-            std::vector<std::string> Splitted;
+            std::vector<std::string> Splitted = SplitString(optarg, " ,");
             std::string no_parse_c_python_files;
-            boost::algorithm::split(Splitted, optarg, boost::algorithm::is_any_of(" ,"));
             for(auto& i : Splitted)
             {
                boost::trim(i);
@@ -2656,7 +2663,11 @@ int BambuParameter::Exec()
          setOption(OPT_input_format, static_cast<int>(Parameters_FileFormat::FF_AADL));
       }
 #endif
-      else if(file_type == Parameters_FileFormat::FF_C || file_type == Parameters_FileFormat::FF_OBJECTIVEC || file_type == Parameters_FileFormat::FF_CPP || file_type == Parameters_FileFormat::FF_FORTRAN)
+      else if(file_type == Parameters_FileFormat::FF_C || file_type == Parameters_FileFormat::FF_OBJECTIVEC || file_type == Parameters_FileFormat::FF_CPP || file_type == Parameters_FileFormat::FF_FORTRAN
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
+              || file_type == Parameters_FileFormat::FF_LLVM
+#endif
+              )
       {
          const auto input_file = isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
          setOption(OPT_input_file, input_file + argv[optind]);
@@ -2698,7 +2709,7 @@ void BambuParameter::add_experimental_setup_gcc_options(bool kill_printf)
       if(isOption(OPT_gcc_optimizations))
          optimizations = getOption<std::string>(OPT_gcc_optimizations);
       THROW_ASSERT(isOption(OPT_input_file), "Input file not specified");
-      if(getOption<std::string>(OPT_input_file).find(STR_CST_string_separator) == std::string::npos)
+      if(getOption<std::string>(OPT_input_file).find(STR_CST_string_separator) == std::string::npos && !isOption(OPT_top_design_name))
       {
          if(optimizations != "")
             optimizations = optimizations + STR_CST_string_separator;
@@ -2926,8 +2937,17 @@ void BambuParameter::CheckParameters()
       if(not isOption(OPT_gcc_opt_level))
       {
          setOption(OPT_gcc_opt_level, GccWrapper_OptimizationSet::O2);
-         tuning_optimizations += "gcse-after-reload" + STR_CST_string_separator + "ipa-cp-clone" + STR_CST_string_separator + "unswitch-loops" + STR_CST_string_separator + "inline-functions" + STR_CST_string_separator + "no-tree-loop-ivcanon";
+         /// GCC SECTION
          if(false
+#if HAVE_I386_GCC45_COMPILER
+            or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC45
+#endif
+#if HAVE_I386_GCC46_COMPILER
+            or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC46
+#endif
+#if HAVE_I386_GCC47_COMPILER
+            or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC47
+#endif
 #if HAVE_I386_GCC48_COMPILER
             or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC48
 #endif
@@ -2948,6 +2968,28 @@ void BambuParameter::CheckParameters()
 #endif
          )
          {
+            tuning_optimizations += "inline-functions" + STR_CST_string_separator + "gcse-after-reload" + STR_CST_string_separator + "ipa-cp-clone" + STR_CST_string_separator + "unswitch-loops" + STR_CST_string_separator + "no-tree-loop-ivcanon";
+            if(false
+#if HAVE_I386_GCC48_COMPILER
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC48
+#endif
+#if HAVE_I386_GCC49_COMPILER
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
+#endif
+#if HAVE_I386_GCC5_COMPILER
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
+#endif
+#if HAVE_I386_GCC6_COMPILER
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
+#endif
+#if HAVE_I386_GCC7_COMPILER
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+#endif
+#if HAVE_I386_GCC8_COMPILER
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
+#endif
+               )
+            {
             tuning_optimizations += STR_CST_string_separator + "tree-partial-pre" + STR_CST_string_separator + "disable-tree-bswap";
          }
          if(false
@@ -2962,6 +3004,25 @@ void BambuParameter::CheckParameters()
             tuning_optimizations += STR_CST_string_separator + "no-store-merging";
          }
       }
+         /// CLANG SECTION
+         else if(false
+#if HAVE_I386_CLANG4_COMPILER
+                 or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+                 or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
+#endif
+#if HAVE_I386_CLANG6_COMPILER
+                 or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG6
+#endif
+#if HAVE_I386_CLANG7_COMPILER
+                 or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG7
+#endif
+                 )
+         {
+            tuning_optimizations += "inline-functions";
+         }
+      }
       std::string optimizations;
       if(isOption(OPT_gcc_optimizations))
       {
@@ -2972,20 +3033,7 @@ void BambuParameter::CheckParameters()
          optimizations += STR_CST_string_separator;
       }
       optimizations += tuning_optimizations;
-      if(optimizations != ""
-#if HAVE_I386_CLANG4_COMPILER
-         && getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG4
-#endif
-#if HAVE_I386_CLANG5_COMPILER
-         && getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG5
-#endif
-#if HAVE_I386_CLANG6_COMPILER
-         && getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG6
-#endif
-#if HAVE_I386_CLANG7_COMPILER
-         && getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG7
-#endif
-      )
+      if(optimizations != "")
          setOption(OPT_gcc_optimizations, optimizations);
 #if 0
       std::string parameters;
@@ -3075,6 +3123,8 @@ void BambuParameter::CheckParameters()
    {
       if(isOption(OPT_soft_fp) && getOption<bool>(OPT_soft_fp))
          add_bambu_library("soft-fp");
+      else if(getOption<std::string>(OPT_hls_fpdiv) != "SRT4" && getOption<std::string>(OPT_hls_fpdiv) != "G")
+         THROW_ERROR("--hls-fpdiv=SF requires --soft-fp option");
       else if(isOption(OPT_softfloat_subnormal) && getOption<bool>(OPT_softfloat_subnormal))
          add_bambu_library("softfloat_subnormals");
       else
@@ -3113,7 +3163,7 @@ void BambuParameter::CheckParameters()
       }
       else
       {
-      setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION);
+         setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION);
       }
       add_bambu_library("pthread");
    }
@@ -3259,8 +3309,7 @@ void BambuParameter::CheckParameters()
    if(isOption(OPT_file_input_data))
    {
       std::string input_data = getOption<std::string>(OPT_file_input_data);
-      std::vector<std::string> splitted;
-      boost::algorithm::split(splitted, input_data, boost::algorithm::is_any_of(","));
+      std::vector<std::string> splitted = SplitString(input_data, ",");
       size_t i_end = splitted.size();
       for(size_t i = 0; i < i_end; i++)
       {
@@ -3767,6 +3816,7 @@ void BambuParameter::SetDefaults()
 
    panda_parameters["CSE_size"] = "2";
    panda_parameters["PortSwapping"] = "1";
+   //   panda_parameters["enable-CSROA"] = "1";
 }
 
 void BambuParameter::add_bambu_library(std::string lib)

@@ -66,7 +66,7 @@ namespace llvm
             return false;
          if(InFileGE.empty())
             llvm::report_fatal_error("-pandaGE-infile parameter not specified");
-         DumpGimpleRaw gimpleRawWriter(outdir_nameGE, InFileGE, true, nullptr);
+         DumpGimpleRaw gimpleRawWriter(outdir_nameGE, InFileGE, true, nullptr, false);
          const std::string empty;
          auto res = gimpleRawWriter.runOnModule(M, this, empty);
          return res;
