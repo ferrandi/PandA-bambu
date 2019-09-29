@@ -3132,7 +3132,6 @@ void BambuParameter::CheckParameters()
          f = v && !(v & (v - 1));
          if(!f)
             THROW_ERROR("Number of bank must be a power of 2");
-         PRINT_MSG("Passed parameter OPT_context_switch, this means that the following step are already defined and cannot be changed (if passed by command line are ignored). Controller,Datapath, Channel Type, Interface generator and memory dominator\n");
          setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS);
          setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS);
          setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_CS);
