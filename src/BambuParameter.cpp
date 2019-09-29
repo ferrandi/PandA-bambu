@@ -919,9 +919,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                                    --DSP-allocation-coefficient=1.75\n"
       << "                                    --do-not-expose-globals --cprf=0.875\n\n"
       << std::endl;
-#if HAVE_EXPERIMENTAL || HAVE_ILP_BUILT
    os << "  Other options:\n\n";
-#endif
    os << "    --pragma-parse\n"
       << "        Perform source code parsing to extract information about pragmas.\n"
       << "        (default=no).\n\n";
@@ -961,9 +959,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
 #endif
    os << "    --disable-bitvalue-ipa\n"
       << "        Disable inter-procedural bitvalue analysis.\n\n";
-#if HAVE_EXPERIMENTAL || HAVE_ILP_BUILT
    os << std::endl;
-#endif
 
    // Checks and debugging options
    os << "  Debug options:\n\n"
@@ -3146,11 +3142,7 @@ void BambuParameter::CheckParameters()
       }
       else
       {
-#if HAVE_EXPERIMENTAL
          setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION);
-#else
-         THROW_UNREACHABLE("");
-#endif
       }
       add_bambu_library("pthread");
    }
@@ -3795,7 +3787,7 @@ void BambuParameter::SetDefaults()
 #if HAVE_TASTE
    setOption(OPT_generate_taste_architecture, false);
 #endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
    setOption(OPT_num_threads, 4);
 #endif
    setOption(OPT_memory_banks_number, 1);
