@@ -2646,7 +2646,7 @@ int BambuParameter::Exec()
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
               || file_type == Parameters_FileFormat::FF_LLVM
 #endif
-              )
+      )
       {
          const auto input_file = isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
          setOption(OPT_input_file, input_file + argv[optind]);
@@ -2945,7 +2945,7 @@ void BambuParameter::CheckParameters()
 #if HAVE_I386_GCC8_COMPILER
             or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
 #endif
-            )
+         )
          {
             tuning_optimizations += "inline-functions" + STR_CST_string_separator + "gcse-after-reload" + STR_CST_string_separator + "ipa-cp-clone" + STR_CST_string_separator + "unswitch-loops" + STR_CST_string_separator + "no-tree-loop-ivcanon";
             if(false
@@ -2967,7 +2967,7 @@ void BambuParameter::CheckParameters()
 #if HAVE_I386_GCC8_COMPILER
                or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
 #endif
-               )
+            )
             {
                tuning_optimizations += STR_CST_string_separator + "tree-partial-pre" + STR_CST_string_separator + "disable-tree-bswap";
             }
@@ -2978,7 +2978,7 @@ void BambuParameter::CheckParameters()
 #if HAVE_I386_GCC8_COMPILER
                or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
 #endif
-               )
+            )
             {
                tuning_optimizations += STR_CST_string_separator + "no-store-merging";
             }
@@ -2997,7 +2997,7 @@ void BambuParameter::CheckParameters()
 #if HAVE_I386_CLANG7_COMPILER
                  or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG7
 #endif
-                 )
+         )
          {
             tuning_optimizations += "inline-functions";
          }

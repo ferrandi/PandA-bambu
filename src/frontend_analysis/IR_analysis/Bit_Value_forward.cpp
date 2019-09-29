@@ -2172,7 +2172,7 @@ void Bit_Value::forward()
                      }();
                      if(first_phase && !checkRequiredAllDefined)
                      {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--inputs are not all fully analyzed by the forward Bit Value Analysis. Operation  " +GET_NODE(ga->op0)->ToString() + " postponed");
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--inputs are not all fully analyzed by the forward Bit Value Analysis. Operation  " + GET_NODE(ga->op0)->ToString() + " postponed");
                         continue;
                      }
 
@@ -2268,5 +2268,4 @@ void Bit_Value::forward()
       }
       first_phase = !first_phase;
    } while(!first_phase);
-
 }
