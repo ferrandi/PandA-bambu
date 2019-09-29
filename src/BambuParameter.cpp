@@ -1237,9 +1237,7 @@ int BambuParameter::Exec()
       {"num-threads", required_argument, nullptr, OPT_NUM_THREADS},
       {"context_switch", optional_argument, nullptr, OPT_INPUT_CONTEXT_SWITCH},
 #endif
-#if HAVE_EXPERIMENTAL
       {"memory-banks-number", required_argument, nullptr, OPT_MEMORY_BANKS_NUMBER},
-#endif
       {"C-no-parse", required_argument, nullptr, INPUT_OPT_C_NO_PARSE},
       {"C-python-no-parse", required_argument, nullptr, INPUT_OPT_C_PYTHON_NO_PARSE},
       {"accept-nonzero-return", no_argument, nullptr, OPT_ACCEPT_NONZERO_RETURN},
@@ -2115,13 +2113,11 @@ int BambuParameter::Exec()
             setOption(OPT_pretty_print, optarg);
             break;
          }
-#if HAVE_EXPERIMENTAL
          case OPT_PRAGMA_PARSE:
          {
             setOption(OPT_parse_pragma, true);
             break;
          }
-#endif
          case OPT_TESTBENCH:
          {
             setOption(OPT_generate_testbench, true);
@@ -2267,13 +2263,11 @@ int BambuParameter::Exec()
             }
          }
 #endif
-#if HAVE_EXPERIMENTAL
          case OPT_MEMORY_BANKS_NUMBER:
          {
             setOption(OPT_memory_banks_number, std::string(optarg));
             break;
          }
-#endif
          case OPT_ACCEPT_NONZERO_RETURN:
          {
             setOption(OPT_no_return_zero, true);
@@ -3134,7 +3128,7 @@ void BambuParameter::CheckParameters()
    if(isOption(OPT_hls_div) && getOption<std::string>(OPT_hls_div) != "none")
       add_bambu_library("hls-div" + getOption<std::string>(OPT_hls_div));
    add_bambu_library("hls-cdiv");
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
    if(getOption<bool>(OPT_parse_pragma))
    {
       setOption(OPT_disable_function_proxy, true);
