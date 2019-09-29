@@ -1492,7 +1492,7 @@ void Bit_Value::initialize()
                if(def.empty())
                {
                   ssa_use->bit_values.clear();
-                  best[ssa_use_node_id] = create_u_bitstring(tree_helper::Size(use_node));
+                  best[ssa_use_node_id] = create_x_bitstring(tree_helper::Size(use_node));
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "uninitialized ssa id: " + STR(ssa_use_node_id) + " new bitstring: " + bitstring_to_string(best.at(ssa_use_node_id)));
                }
                else if(ssa_use->var != nullptr and ((GET_NODE((*def.begin()))->get_kind() == gimple_nop_K) or ssa_use->volatile_flag))
@@ -1500,7 +1500,7 @@ void Bit_Value::initialize()
                   // the ssa is the first version of something
                   if(parm.find(GET_INDEX_NODE(ssa_use->var)) != parm.end())
                   {
-                     // first version of a paramenter
+                     // first version of a parameter
                      unsigned int parm_id = GET_INDEX_NODE(ssa_use->var);
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, STR(ssa_use_node_id) + " is first version of parameter id: " + STR(parm_id));
                      arguments.insert(ssa_use_node_id);
@@ -1526,7 +1526,7 @@ void Bit_Value::initialize()
                   {
                      // first version of an uninitialized variable
                      ssa_use->bit_values.clear();
-                     best[ssa_use_node_id] = create_u_bitstring(tree_helper::Size(use_node));
+                     best[ssa_use_node_id] = create_x_bitstring(tree_helper::Size(use_node));
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "ssa id: " + STR(ssa_use_node_id) + " is the first version of uninitialized var: " + STR(GET_NODE(ssa_use->var)) + " new bitstring: " + bitstring_to_string(best.at(ssa_use_node_id)));
                   }
                }
@@ -1614,7 +1614,7 @@ void Bit_Value::initialize()
                      if(def.empty())
                      {
                         ssa_use->bit_values.clear();
-                        best[ssa_use_node_id] = create_u_bitstring(tree_helper::Size(use_node));
+                        best[ssa_use_node_id] = create_x_bitstring(tree_helper::Size(use_node));
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "uninitialized ssa id: " + STR(ssa_use_node_id) + " new bitstring: " + bitstring_to_string(best.at(ssa_use_node_id)));
                      }
                      else if(ssa_use->var != nullptr and ((GET_NODE((*def.begin()))->get_kind() == gimple_nop_K) or ssa_use->volatile_flag))
@@ -1622,7 +1622,7 @@ void Bit_Value::initialize()
                         // the ssa is the first version of something
                         if(parm.find(GET_INDEX_NODE(ssa_use->var)) != parm.end())
                         {
-                           // first version of a paramenter
+                           // first version of a parameter
                            unsigned int parm_id = GET_INDEX_NODE(ssa_use->var);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, STR(ssa_use_node_id) + " is first version of parameter id: " + STR(parm_id));
                            arguments.insert(ssa_use_node_id);
@@ -1648,7 +1648,7 @@ void Bit_Value::initialize()
                         {
                            // first version of an uninitialized variable
                            ssa_use->bit_values.clear();
-                           best[ssa_use_node_id] = create_u_bitstring(tree_helper::Size(use_node));
+                           best[ssa_use_node_id] = create_x_bitstring(tree_helper::Size(use_node));
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                           "ssa id: " + STR(ssa_use_node_id) + " is the first version of uninitialized var: " + STR(GET_NODE(ssa_use->var)) + " new bitstring: " + bitstring_to_string(best.at(ssa_use_node_id)));
                         }
@@ -1695,7 +1695,7 @@ DesignFlowStep_Status Bit_Value::InternalExec()
    backward();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Performed initial backward");
    mix();
-   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "best at end of initial backward:");
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "best at the end of initial backward:");
    print_bitstring_map(best);
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "");
    do
@@ -1705,7 +1705,7 @@ DesignFlowStep_Status Bit_Value::InternalExec()
       forward();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Performed forward");
       mix();
-      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "best at end of forward:");
+      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "best at the end of forward:");
       print_bitstring_map(best);
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Performing backward");
@@ -1717,7 +1717,7 @@ DesignFlowStep_Status Bit_Value::InternalExec()
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "");
    } while(restart);
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "best at end of alg:");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "best at the end of alg:");
    print_bitstring_map(best);
    changed = update_IR();
    BitLatticeManipulator::clear();
