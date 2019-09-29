@@ -119,18 +119,19 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 bool dead_code_elimination::HasToBeExecuted() const
 {
-   std::map<unsigned int, unsigned int> cur_bitvalue_ver;
-   std::map<unsigned int, unsigned int> cur_bb_ver;
+   if(FunctionFrontendFlowStep::HasToBeExecuted())
+      return true;
+   std::map<unsigned int, bool> cur_writing_memory;
+   std::map<unsigned int, bool> cur_reading_memory;
    const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
-   std::set<unsigned int> calledSet = AppM->CGetCallGraphManager()->get_called_by(function_id);
-   calledSet.insert(function_id); /// add the function itself
-   for(const auto i : calledSet)
+   for(const auto i : AppM->CGetCallGraphManager()->get_called_by(function_id))
    {
-      const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(i);
-      cur_bitvalue_ver[i] = FB->GetBitValueVersion();
-      cur_bb_ver[i] = FB->GetBBVersion();
+      const tree_nodeRef curr_tn = AppM->get_tree_manager()->GetTreeNode(i);
+      auto* fdCalled = GetPointer<function_decl>(curr_tn);
+      cur_writing_memory[i] = fdCalled->writing_memory;
+      cur_reading_memory[i] = fdCalled->reading_memory;
    }
-   return cur_bb_ver != last_bb_ver || cur_bitvalue_ver != last_bitvalue_ver;
+   return cur_writing_memory != last_writing_memory || cur_reading_memory != last_reading_memory;
 }
 
 void dead_code_elimination::kill_uses(const tree_managerRef TM, tree_nodeRef op0) const
@@ -292,6 +293,8 @@ void dead_code_elimination::add_gimple_nop(gimple_node* gc, const tree_managerRe
 /// single sweep analysis, block by block, from the bottom to up. Each ssa which is used zero times is eliminated and the uses of the variables used in the assignment are recomputed
 /// multi-way and two way IFs simplified when conditions are constants
 /// gimple_call without side effects are removed
+/// store-load pairs checked for simplification
+/// dead stores removed
 DesignFlowStep_Status dead_code_elimination::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
