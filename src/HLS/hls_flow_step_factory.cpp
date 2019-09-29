@@ -139,10 +139,8 @@
 
 /// HLS/function_allocation
 #include "fun_dominator_allocation.hpp"
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
-#include "omp_function_allocation.hpp"
-#endif
 #if HAVE_FROM_PRAGMA_BUILT
+#include "omp_function_allocation.hpp"
 #include "omp_function_allocation_CS.hpp"
 #endif
 
