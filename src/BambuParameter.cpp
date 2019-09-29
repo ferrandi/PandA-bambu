@@ -920,9 +920,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                                    --DSP-allocation-coefficient=1.75\n"
       << "                                    --do-not-expose-globals --cprf=0.875\n\n"
       << std::endl;
-#if HAVE_EXPERIMENTAL || HAVE_ILP_BUILT
    os << "  Other options:\n\n";
-#endif
    os << "    --pragma-parse\n"
       << "        Perform source code parsing to extract information about pragmas.\n"
       << "        (default=no).\n\n";
@@ -962,9 +960,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
 #endif
    os << "    --disable-bitvalue-ipa\n"
       << "        Disable inter-procedural bitvalue analysis.\n\n";
-#if HAVE_EXPERIMENTAL || HAVE_ILP_BUILT
    os << std::endl;
-#endif
 
    // Checks and debugging options
    os << "  Debug options:\n\n"
@@ -1510,14 +1506,14 @@ int BambuParameter::Exec()
             else
 #endif
 #if HAVE_COIN_OR
-            if(optarg[0] == 'C')
+                if(optarg[0] == 'C')
             {
                setOption(OPT_ilp_solver, meilp_solver::COIN_OR);
             }
             else
 #endif
 #if HAVE_LP_SOLVE
-            if(optarg[0] == 'L')
+                if(optarg[0] == 'L')
             {
                setOption(OPT_ilp_solver, meilp_solver::LP_SOLVE);
             }
@@ -2960,7 +2956,7 @@ void BambuParameter::CheckParameters()
 #if HAVE_I386_GCC8_COMPILER
             or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
 #endif
-         )
+            )
          {
             tuning_optimizations += "inline-functions" + STR_CST_string_separator + "gcse-after-reload" + STR_CST_string_separator + "ipa-cp-clone" + STR_CST_string_separator + "unswitch-loops" + STR_CST_string_separator + "no-tree-loop-ivcanon";
             if(false
@@ -2984,20 +2980,20 @@ void BambuParameter::CheckParameters()
 #endif
                )
             {
-            tuning_optimizations += STR_CST_string_separator + "tree-partial-pre" + STR_CST_string_separator + "disable-tree-bswap";
-         }
-         if(false
+               tuning_optimizations += STR_CST_string_separator + "tree-partial-pre" + STR_CST_string_separator + "disable-tree-bswap";
+            }
+            if(false
 #if HAVE_I386_GCC7_COMPILER
-            or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if HAVE_I386_GCC8_COMPILER
-            or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
 #endif
-         )
-         {
-            tuning_optimizations += STR_CST_string_separator + "no-store-merging";
+               )
+            {
+               tuning_optimizations += STR_CST_string_separator + "no-store-merging";
+            }
          }
-      }
          /// CLANG SECTION
          else if(false
 #if HAVE_I386_CLANG4_COMPILER
@@ -3147,7 +3143,6 @@ void BambuParameter::CheckParameters()
          f = v && !(v & (v - 1));
          if(!f)
             THROW_ERROR("Number of bank must be a power of 2");
-         PRINT_MSG("Passed parameter OPT_context_switch, this means that the following step are already defined and cannot be changed (if passed by command line are ignored). Controller,Datapath, Channel Type, Interface generator and memory dominator\n");
          setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS);
          setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS);
          setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_CS);
@@ -3802,7 +3797,7 @@ void BambuParameter::SetDefaults()
 #if HAVE_TASTE
    setOption(OPT_generate_taste_architecture, false);
 #endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
    setOption(OPT_num_threads, 4);
 #endif
    setOption(OPT_memory_banks_number, 1);
