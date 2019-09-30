@@ -125,7 +125,8 @@ DesignFlowStep_Status minimal_interface::InternalExec()
 
    build_wrapper(wrappedObj, interfaceObj, SM_minimal_interface);
 
-   memory::propagate_memory_parameters(HLS->top->get_circ(), SM_minimal_interface);
+   if(!parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals))
+      memory::propagate_memory_parameters(HLS->top->get_circ(), SM_minimal_interface);
    // Generation completed, the new created module substitutes the current top-level one
    HLS->top = SM_minimal_interface;
    return DesignFlowStep_Status::SUCCESS;
