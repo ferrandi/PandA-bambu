@@ -2175,43 +2175,11 @@ void Bit_Value::forward()
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--inputs are not all fully analyzed by the forward Bit Value Analysis. Operation  " + GET_NODE(ga->op0)->ToString() + " postponed");
                         continue;
                      }
-                     auto checkRequiredHasOneX = [&]() -> bool {
-                        std::vector<std::tuple<unsigned int, unsigned int>> vars_read;
-                        tree_helper::get_required_values(TM, vars_read, GET_NODE(stmt), GET_INDEX_NODE(stmt));
-                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---requires " + STR(vars_read.size()) + " values");
-                        for(auto var_pair : vars_read)
-                        {
-                           unsigned int ssa_use_node_id = std::get<0>(var_pair);
-                           if(ssa_use_node_id == 0)
-                              continue;
-                           if(not is_handled_by_bitvalue(ssa_use_node_id))
-                              continue;
-                           tree_nodeRef use_node = TM->get_tree_node_const(ssa_use_node_id);
-                           auto* ssa_use = GetPointer<ssa_name>(use_node);
-
-                           if(ssa_use && current.find(ssa_use_node_id) != current.end())
-                           {
-                              const auto& current_value = current.at(ssa_use_node_id);
-                              if(current_value.size() == 1 && current_value.at(0) == bit_lattice::X)
-                                 return true;
-                           }
-                        }
-                        return false;
-                     }();
 
                      THROW_ASSERT(best.find(output_uid) != best.end(), "unexpected condition");
                      current.insert(std::make_pair(output_uid, best.at(output_uid)));
-                     if(checkRequiredHasOneX)
-                     {
-                        std::deque<bit_lattice> res;
-                        res.push_front(bit_lattice::X);
-                        current_updated = update_current(std::move(res), output_uid) or current_updated;
-                     }
-                     else
-                     {
-                        std::deque<bit_lattice> res = forward_transfer(ga);
-                        current_updated = update_current(std::move(res), output_uid) or current_updated;
-                     }
+                     std::deque<bit_lattice> res = forward_transfer(ga);
+                     current_updated = update_current(std::move(res), output_uid) or current_updated;
                   }
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed " + STR(stmt));
@@ -2244,7 +2212,6 @@ void Bit_Value::forward()
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "res id: " + STR(output_uid));
                   std::deque<bit_lattice> res = create_x_bitstring(1);
                   bool atLeastOne = false;
-                  bool atLeastOneX = false;
                   for(const auto& def_edge : pn->CGetDefEdgesList())
                   {
                      if(def_edge.first->index == pn->res->index)
@@ -2276,16 +2243,8 @@ void Bit_Value::forward()
                      bool is_signed2 = tree_helper::is_int(TM, GET_INDEX_NODE(def_edge.first));
 #endif
                      THROW_ASSERT(is_signed2 == is_signed1, STR(phi));
-                     const auto& current_value = current.at(GET_INDEX_NODE(def_edge.first));
-                     if(current_value.size() == 1 && current_value.at(0) == bit_lattice::X)
-                        atLeastOneX = true;
-                     res = inf(res, current_value, output_uid);
+                     res = inf(res, current.at(GET_INDEX_NODE(def_edge.first)), output_uid);
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---current res: " + bitstring_to_string(res));
-                  }
-                  if(atLeastOneX)
-                  {
-                     res.clear();
-                     res.push_front(bit_lattice::X);
                   }
                   if(atLeastOne)
                   {

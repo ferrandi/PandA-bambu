@@ -1492,7 +1492,7 @@ void Bit_Value::initialize()
                if(def.empty())
                {
                   ssa_use->bit_values.clear();
-                  best[ssa_use_node_id] = create_x_bitstring(tree_helper::Size(use_node));
+                  best[ssa_use_node_id] = create_bitstring_from_constant(0,1,ssa_is_signed);//create_u_bitstring(tree_helper::Size(use_node));
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "uninitialized ssa id: " + STR(ssa_use_node_id) + " new bitstring: " + bitstring_to_string(best.at(ssa_use_node_id)));
                }
                else if(ssa_use->var != nullptr and ((GET_NODE((*def.begin()))->get_kind() == gimple_nop_K) or ssa_use->volatile_flag))
@@ -1526,7 +1526,7 @@ void Bit_Value::initialize()
                   {
                      // first version of an uninitialized variable
                      ssa_use->bit_values.clear();
-                     best[ssa_use_node_id] = create_x_bitstring(tree_helper::Size(use_node));
+                     best[ssa_use_node_id] = create_bitstring_from_constant(0,1,ssa_is_signed);//create_u_bitstring(tree_helper::Size(use_node));
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "ssa id: " + STR(ssa_use_node_id) + " is the first version of uninitialized var: " + STR(GET_NODE(ssa_use->var)) + " new bitstring: " + bitstring_to_string(best.at(ssa_use_node_id)));
                   }
                }
@@ -1614,7 +1614,7 @@ void Bit_Value::initialize()
                      if(def.empty())
                      {
                         ssa_use->bit_values.clear();
-                        best[ssa_use_node_id] = create_x_bitstring(tree_helper::Size(use_node));
+                        best[ssa_use_node_id] = create_bitstring_from_constant(0,1,ssa_is_signed);//create_u_bitstring(tree_helper::Size(use_node));
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "uninitialized ssa id: " + STR(ssa_use_node_id) + " new bitstring: " + bitstring_to_string(best.at(ssa_use_node_id)));
                      }
                      else if(ssa_use->var != nullptr and ((GET_NODE((*def.begin()))->get_kind() == gimple_nop_K) or ssa_use->volatile_flag))
@@ -1648,7 +1648,7 @@ void Bit_Value::initialize()
                         {
                            // first version of an uninitialized variable
                            ssa_use->bit_values.clear();
-                           best[ssa_use_node_id] = create_x_bitstring(tree_helper::Size(use_node));
+                           best[ssa_use_node_id] = create_bitstring_from_constant(0,1,ssa_is_signed);//create_u_bitstring(tree_helper::Size(use_node));
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                           "ssa id: " + STR(ssa_use_node_id) + " is the first version of uninitialized var: " + STR(GET_NODE(ssa_use->var)) + " new bitstring: " + bitstring_to_string(best.at(ssa_use_node_id)));
                         }
