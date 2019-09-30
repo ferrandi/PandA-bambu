@@ -1197,14 +1197,6 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed BB" + boost::lexical_cast<std::string>(block_it->second->number));
    }
-   const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
-   std::set<unsigned int> calledSet = AppM->CGetCallGraphManager()->get_called_by(function_id);
-   for(const auto i : calledSet)
-   {
-      const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(i);
-      last_bitvalue_ver[i] = FB->GetBitValueVersion();
-      last_bb_ver[i] = FB->GetBBVersion();
-   }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---write flag " + (fd->writing_memory ? std::string("T") : std::string("F")));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---read flag " + (fd->reading_memory ? std::string("T") : std::string("F")));
    const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
