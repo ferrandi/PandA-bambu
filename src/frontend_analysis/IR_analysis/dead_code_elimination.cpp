@@ -1195,6 +1195,14 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---write flag " + (fd->writing_memory ? std::string("T") : std::string("F")));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---read flag " + (fd->reading_memory ? std::string("T") : std::string("F")));
+   const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
+   std::set<unsigned int> calledSet = AppM->CGetCallGraphManager()->get_called_by(function_id);
+   for(const auto i : calledSet)
+   {
+      auto* fdCalled = GetPointer<function_decl>(AppM->get_tree_manager()->GetTreeNode(i));
+      last_writing_memory[i] = fdCalled->writing_memory;
+      last_reading_memory[i] = fdCalled->reading_memory;
+   }
    if(modified)
    {
       function_behavior->UpdateBBVersion();
