@@ -136,10 +136,10 @@ void recursive_copy_lowering(llvm::Type* type, std::vector<unsigned long long> g
          gepi_name += "." + std::to_string(idx);
          gepi_value_idxs.push_back(llvm::ConstantInt::get(llvm::IntegerType::get(load_ptr->getContext(), 32), idx));
       }
-      load_ptr->dump();
+      load_ptr->print(llvm::errs());
       for(const auto& v : gepi_value_idxs)
       {
-         v->dump();
+         v->print(llvm::errs());
       }
       llvm::GetElementPtrInst* load_gep_inst = llvm::GetElementPtrInst::Create(nullptr, load_ptr, gepi_value_idxs, gepi_name, load_inst);
       llvm::GetElementPtrInst* store_gep_inst = llvm::GetElementPtrInst::Create(nullptr, store_ptr, gepi_value_idxs, gepi_name, store_inst);
@@ -227,13 +227,13 @@ void lower_chunk_copy(const ChunkCopy& chunk_copy, const llvm::DataLayout& DL)
 {
    llvm::errs() << "INFO: Lowered chunk copy\n";
    llvm::errs() << "          Load bitcast:  ";
-   chunk_copy.load_bitcast_op->dump();
+   chunk_copy.load_bitcast_op->print(llvm::errs());
    llvm::errs() << "          Load inst:     ";
-   chunk_copy.load_inst->dump();
+   chunk_copy.load_inst->print(llvm::errs());
    llvm::errs() << "          Store bitcast: ";
-   chunk_copy.store_bitcast_op->dump();
+   chunk_copy.store_bitcast_op->print(llvm::errs());
    llvm::errs() << "          Store inst:    ";
-   chunk_copy.store_bitcast_op->dump();
+   chunk_copy.store_bitcast_op->print(llvm::errs());
 
    double fitting = (double)DL.getTypeAllocSize(chunk_copy.dest_ty->getPointerElementType()) / (double)DL.getTypeAllocSize(chunk_copy.src_ty->getPointerElementType());
    std::vector<unsigned long long> gepi_idxs = std::vector<unsigned long long>();
@@ -268,13 +268,13 @@ void lower_chunk_init(const ChunkInit& chunk_init)
 {
    llvm::errs() << "INFO: Lowered chunk init\n";
    llvm::errs() << "          Store bitcast: ";
-   chunk_init.store_bitcast_op->dump();
+   chunk_init.store_bitcast_op->print(llvm::errs());
    llvm::errs() << "          Store inst:    ";
-   chunk_init.store_bitcast_op->dump();
+   chunk_init.store_bitcast_op->print(llvm::errs());
    llvm::errs() << "          Stored val:    ";
-   chunk_init.stored_value->dump();
+   chunk_init.stored_value->print(llvm::errs());
    llvm::errs() << "          Stored ptr:    ";
-   chunk_init.stored_ptr->dump();
+   chunk_init.stored_ptr->print(llvm::errs());
 
    const llvm::DataLayout& DL = chunk_init.store_inst->getModule()->getDataLayout();
    unsigned long long lo_bit = 0;
@@ -372,7 +372,7 @@ bool ptr_iterator_simplification(llvm::Function& function)
       {
          llvm::errs() << "INFO: In function " << function.getName().str() << " cannot canonicalize 2op pointer iterator (cannot properly find indvar/init):\n";
          llvm::errs() << "   Phi node: ";
-         phi_node->dump();
+         phi_node->print(llvm::errs());
          continue;
       }
 
@@ -380,7 +380,7 @@ bool ptr_iterator_simplification(llvm::Function& function)
       {
          llvm::errs() << "INFO: In function " << function.getName().str() << " cannot canonicalize 2op pointer iterator (cannot properly find indvar):\n";
          llvm::errs() << "   Phi node: ";
-         phi_node->dump();
+         phi_node->print(llvm::errs());
          ind_var_gepi = nullptr;
          continue;
       }
@@ -415,7 +415,7 @@ bool ptr_iterator_simplification(llvm::Function& function)
       {
          llvm::errs() << "INFO: In function " << function.getName().str() << " cannot canonicalize 2op pointer iterator (cannot properly find cmp/stop):\n";
          llvm::errs() << "   Phi node: ";
-         phi_node->dump();
+         phi_node->print(llvm::errs());
          continue;
       }
 
@@ -462,7 +462,7 @@ bool ptr_iterator_simplification(llvm::Function& function)
       {
          llvm::errs() << "INFO: In function " << function.getName().str() << " cannot canonicalize 2op pointer iterator (cannot properly find init/stop/base):\n";
          llvm::errs() << "   Phi node: ";
-         phi_node->dump();
+         phi_node->print(llvm::errs());
          continue;
       }
 
@@ -470,21 +470,21 @@ bool ptr_iterator_simplification(llvm::Function& function)
       {
          llvm::errs() << "INFO: In function " << function.getName().str() << " Canonicalizing 2op pointer iterator:\n";
          llvm::errs() << "   Phi node: ";
-         phi_node->dump();
+         phi_node->print(llvm::errs());
          llvm::errs() << "     Ind var gepi: ";
-         ind_var_gepi->dump();
+         ind_var_gepi->print(llvm::errs());
          llvm::errs() << "     Cmp inst: ";
-         cmp_inst->dump();
+         cmp_inst->print(llvm::errs());
          llvm::errs() << "     Init ptr: ";
-         init_ptr->dump();
+         init_ptr->print(llvm::errs());
          llvm::errs() << "     Stop ptr: ";
-         stop_ptr->dump();
+         stop_ptr->print(llvm::errs());
          llvm::errs() << "     Base ptr: ";
-         base_ptr->dump();
+         base_ptr->print(llvm::errs());
          llvm::errs() << "     Init val: ";
-         init_val->dump();
+         init_val->print(llvm::errs());
          llvm::errs() << "     Stop val: ";
-         stop_val->dump();
+         stop_val->print(llvm::errs());
          llvm::Value* gepi_index = ind_var_gepi->getOperand(1);
          std::string new_phi_node_name = phi_node->getName().str() + ".phi";
          llvm::PHINode* new_phi_node = llvm::PHINode::Create(gepi_index->getType(), 2, new_phi_node_name, phi_node);
@@ -502,7 +502,7 @@ bool ptr_iterator_simplification(llvm::Function& function)
                new_phi_node->addIncoming(add_inst, phi_node->getIncomingBlock(idx));
 
                llvm::errs() << "   New add: ";
-               add_inst->dump();
+               add_inst->print(llvm::errs());
             }
             else
             {
@@ -511,7 +511,7 @@ bool ptr_iterator_simplification(llvm::Function& function)
          }
 
          llvm::errs() << "   New phi node: ";
-         new_phi_node->dump();
+         new_phi_node->print(llvm::errs());
 
          std::vector<llvm::Value*> idx_vec;
          if(!llvm::isa<llvm::Argument>(init_ptr))
@@ -534,13 +534,13 @@ bool ptr_iterator_simplification(llvm::Function& function)
          ind_var_gepi->eraseFromParent();
 
          llvm::errs() << "   New gepi: ";
-         new_gepi->dump();
+         new_gepi->print(llvm::errs());
 
          cmp_inst->setOperand(0, new_phi_node);
          cmp_inst->setOperand(1, stop_val);
 
          llvm::errs() << "   New cmp: ";
-         cmp_inst->dump();
+         cmp_inst->print(llvm::errs());
 
          ++transformation_count;
       }
@@ -550,7 +550,7 @@ bool ptr_iterator_simplification(llvm::Function& function)
    {
       llvm::errs() << "INFO: Canonicalizing 1op pointer iterator:\n";
       llvm::errs() << "   Phi node: ";
-      phi_node->dump();
+      phi_node->print(llvm::errs());
 
       phi_node->replaceAllUsesWith(phi_node->getIncomingValue(0));
       phi_node->eraseFromParent();

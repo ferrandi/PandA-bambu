@@ -123,37 +123,19 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 bool dead_code_elimination::HasToBeExecuted() const
 {
-   std::map<unsigned int, unsigned int> cur_bitvalue_ver;
-   std::map<unsigned int, unsigned int> cur_bb_ver;
+   if(FunctionFrontendFlowStep::HasToBeExecuted())
+      return true;
+   std::map<unsigned int, bool> cur_writing_memory;
+   std::map<unsigned int, bool> cur_reading_memory;
    const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
-   std::set<unsigned int> calledSet = AppM->CGetCallGraphManager()->get_called_by(function_id);
-//   calledSet.insert(function_id); /// add the function itself
-   for(const auto i : calledSet)
+   for(const auto i : AppM->CGetCallGraphManager()->get_called_by(function_id))
    {
-      const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(i);
-      cur_bitvalue_ver[i] = FB->GetBitValueVersion();
-      cur_bb_ver[i] = FB->GetBBVersion();
+      const tree_nodeRef curr_tn = AppM->get_tree_manager()->GetTreeNode(i);
+      auto* fdCalled = GetPointer<function_decl>(curr_tn);
+      cur_writing_memory[i] = fdCalled->writing_memory;
+      cur_reading_memory[i] = fdCalled->reading_memory;
    }
-#ifndef NDEBUG
-   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
-   {
-      if(last_bitvalue_ver.size() and last_bb_ver.size())
-      {
-         for(const auto called_function : calledSet)
-         {
-            if(cur_bitvalue_ver.at(called_function) != last_bitvalue_ver.at(called_function))
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Different bit version for " + AppM->CGetFunctionBehavior(called_function)->CGetBehavioralHelper()->get_function_name());
-            }
-            if(cur_bb_ver.at(called_function) != last_bb_ver.at(called_function))
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Different BB version for " + AppM->CGetFunctionBehavior(called_function)->CGetBehavioralHelper()->get_function_name());
-            }
-         }
-      }
-   }
-#endif
-   return FunctionFrontendFlowStep::HasToBeExecuted() or cur_bb_ver != last_bb_ver or cur_bitvalue_ver != last_bitvalue_ver;
+   return cur_writing_memory != last_writing_memory || cur_reading_memory != last_reading_memory;
 }
 
 void dead_code_elimination::kill_uses(const tree_managerRef TM, tree_nodeRef op0) const
@@ -315,6 +297,8 @@ void dead_code_elimination::add_gimple_nop(gimple_node* gc, const tree_managerRe
 /// single sweep analysis, block by block, from the bottom to up. Each ssa which is used zero times is eliminated and the uses of the variables used in the assignment are recomputed
 /// multi-way and two way IFs simplified when conditions are constants
 /// gimple_call without side effects are removed
+/// store-load pairs checked for simplification
+/// dead stores removed
 DesignFlowStep_Status dead_code_elimination::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
@@ -1223,6 +1207,14 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---write flag " + (fd->writing_memory ? std::string("T") : std::string("F")));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---read flag " + (fd->reading_memory ? std::string("T") : std::string("F")));
+   const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
+   std::set<unsigned int> calledSet = AppM->CGetCallGraphManager()->get_called_by(function_id);
+   for(const auto i : calledSet)
+   {
+      auto* fdCalled = GetPointer<function_decl>(AppM->get_tree_manager()->GetTreeNode(i));
+      last_writing_memory[i] = fdCalled->writing_memory;
+      last_reading_memory[i] = fdCalled->reading_memory;
+   }
    if(modified)
    {
       function_behavior->UpdateBBVersion();

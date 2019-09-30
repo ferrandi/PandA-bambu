@@ -2817,7 +2817,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
 #ifndef _WIN32
       && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
 #endif
-      )
+   )
    {
 #ifndef _WIN32
       auto renamed_pluginGC = GepiCanon_plugin_obj;
@@ -2854,7 +2854,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
 #ifndef _WIN32
             && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
 #endif
-            )
+         )
             complex_recipe += "-" + GepiCanon_plugin_name +
                               "PS "
                               "-" +
@@ -2872,7 +2872,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
 #ifndef _WIN32
             && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
 #endif
-            )
+         )
             complex_recipe += "-" + expandMemOps_plugin_name +
                               " "
                               "-" +
@@ -3019,7 +3019,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
 #ifndef _WIN32
             && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
 #endif
-            )
+         )
             complex_recipe += " -" + expandMemOps_plugin_name + " -" + CSROA_plugin_name + "WI ";
          complex_recipe += "-domtree -basicaa -aa -memdep -dse -aa -memoryssa -early-cse-memssa -constprop -ipsccp -globaldce -domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops -loop-simplify -lcssa-verification -lcssa -basicaa -aa "
                            "-scalar-evolution -loop-unroll "
