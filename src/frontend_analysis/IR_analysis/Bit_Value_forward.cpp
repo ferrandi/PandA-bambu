@@ -2090,6 +2090,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       const auto* ae = GetPointer<addr_expr>(GET_NODE(ga->op1));
       auto address_size = AppM->get_address_bitsize();
       auto lt0 = lsb_to_zero(ae);
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "address_size: " + STR(address_size) + " lt0: " + STR(lt0));
       if(lt0 && address_size > lt0)
       {
          res = create_u_bitstring(address_size - lt0);
