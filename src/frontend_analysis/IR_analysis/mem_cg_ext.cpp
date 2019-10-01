@@ -36,9 +36,7 @@
  * Created on: July 18, 2016
  *
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
- * $Revision$
- * $Date$
- * Last modified by $Author$
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
 
@@ -66,8 +64,8 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-mem_cg_ext::mem_cg_ext(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : ApplicationFrontendFlowStep(_AppM, MEM_CG_EXT, _design_flow_manager, _parameters), already_executed(false)
+mem_cg_ext::mem_cg_ext(const application_managerRef _AppM, const unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, MEM_CG_EXT, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -106,7 +104,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-DesignFlowStep_Status mem_cg_ext::Exec()
+DesignFlowStep_Status mem_cg_ext::InternalExec()
 {
    const CallGraphManagerRef CGMan = AppM->GetCallGraphManager();
    const CallGraphConstRef cg = CGMan->CGetCallGraph();
@@ -128,6 +126,8 @@ DesignFlowStep_Status mem_cg_ext::Exec()
       for(; ie_it != ie_end; ie_it++)
       {
          const unsigned int caller_id = CGMan->get_function(boost::source(*ie_it, *cg));
+         if(caller_id != function_id)
+            continue;
          const auto tmp_it = reached_body_fun_ids.find(caller_id);
          if(tmp_it == reached_body_fun_ids.cend())
             continue;
@@ -344,7 +344,6 @@ DesignFlowStep_Status mem_cg_ext::Exec()
       AppM->GetFunctionBehavior(i)->UpdateBBVersion();
    }
 
-   already_executed = true;
    if(changed_fu_ids.empty())
       return DesignFlowStep_Status::UNCHANGED;
    else

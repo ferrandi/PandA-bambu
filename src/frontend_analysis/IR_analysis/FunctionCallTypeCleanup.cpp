@@ -324,7 +324,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, CALLED_FUNCTIONS));
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
-         relationships.insert(std::make_pair(MEM_CG_EXT, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(MEM_CG_EXT, SAME_FUNCTION));
          relationships.insert(std::make_pair(REMOVE_CLOBBER_GA, SAME_FUNCTION));
          relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, SAME_FUNCTION));
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));

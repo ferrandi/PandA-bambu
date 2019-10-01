@@ -98,15 +98,12 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, CALLED_FUNCTIONS));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, SAME_FUNCTION));
-         relationships.insert(std::make_pair(MEM_CG_EXT, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(MEM_CG_EXT, SAME_FUNCTION));
          relationships.insert(std::make_pair(PARM_DECL_TAKEN_ADDRESS, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-#if HAVE_ZEBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(ARRAY_REF_FIX, SAME_FUNCTION));
-#endif
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
