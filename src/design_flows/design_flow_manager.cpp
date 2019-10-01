@@ -784,6 +784,7 @@ void DesignFlowManager::Exec()
          {
             VertexIterator v_stat, v_stat_end;
             size_t executed_vertices = 0;
+            static size_t previous_executed_vertices = 0;
             for(boost::tie(v_stat, v_stat_end) = boost::vertices(*design_flow_graph); v_stat != v_stat_end; v_stat++)
             {
                const DesignFlowStepInfoRef local_design_flow_step_info = design_flow_graph->GetDesignFlowStepInfo(*v_stat);
@@ -814,8 +815,13 @@ void DesignFlowManager::Exec()
                      }
                }
             }
+            if(previous_executed_vertices > executed_vertices)
+            {
+               INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "dfm_statistics - number of invalidated vertices by " + step->GetName() + ": " + STR(previous_executed_vertices - executed_vertices));
+            }
             INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "dfm_statistics - number of vertices at the end of iteration " + STR(step_counter) + ": " + STR(executed_vertices) + " / " + STR(final_number_vertices));
             INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "dfm_statistics - number of edges at the end of iteration " + STR(step_counter) + ": " + STR(final_number_edges));
+            previous_executed_vertices = executed_vertices;
          }
       }
    }
@@ -882,7 +888,7 @@ void DesignFlowManager::DeExecute(const vertex starting_vertex, const bool force
 {
    /// Set not executed on the starting vertex
    const DesignFlowStepInfoRef design_flow_step_info = design_flow_graph->GetDesignFlowStepInfo(starting_vertex);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---DeExecuting " + design_flow_step_info->design_flow_step->GetName());
+   INDENT_DBG_MEX(DEBUG_LEVEL_NONE, debug_level, "---DeExecuting " + design_flow_step_info->design_flow_step->GetName());
    switch(design_flow_step_info->status)
    {
       case DesignFlowStep_Status::SUCCESS:
