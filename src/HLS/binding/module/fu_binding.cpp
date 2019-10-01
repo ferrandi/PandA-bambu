@@ -1655,6 +1655,52 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                               curr_LSB = 0;
                         }
                      }
+                     auto op0 = TreeM->get_tree_node_const(op0_tree_var);
+                     auto op1 = TreeM->get_tree_node_const(std::get<0>(vars[1]));
+                     if(op0->get_kind() == ssa_name_K)
+                     {
+                        auto ssa_var0 = GetPointer<ssa_name>(op0);
+                        if(!ssa_var0->bit_values.empty())
+                        {
+                           auto tailZeros = 0u;
+                           const auto lengthBV = ssa_var0->bit_values.size();
+                           while(ssa_var0->bit_values.at(lengthBV-1-tailZeros) == '0')
+                              ++tailZeros;
+                           if(tailZeros<curr_LSB)
+                              curr_LSB = tailZeros;
+                        }
+                        else
+                           curr_LSB = 0;
+                     }
+                     else
+                        curr_LSB = 0;
+                     if(op1->get_kind() == ssa_name_K)
+                     {
+                        auto ssa_var1 = GetPointer<ssa_name>(op1);
+                        if(!ssa_var1->bit_values.empty())
+                        {
+                           auto tailZeros = 0u;
+                           const auto lengthBV = ssa_var1->bit_values.size();
+                           while(ssa_var1->bit_values.at(lengthBV-1-tailZeros) == '0')
+                              ++tailZeros;
+                           if(tailZeros<curr_LSB)
+                              curr_LSB = tailZeros;
+                        }
+                        else
+                           curr_LSB = 0;
+                     }
+                     else if(op1->get_kind() == integer_cst_K)
+                     {
+                        const integer_cst* int_const = GetPointer<integer_cst>(op1);
+                        unsigned long long int offset_value = static_cast<unsigned long long int>(int_const->value);
+                        auto tailZeros = 0u;
+                        while((offset_value & (1<<tailZeros))==0)
+                           ++tailZeros;
+                        if(tailZeros<curr_LSB)
+                           curr_LSB = tailZeros;
+                     }
+                     else
+                        curr_LSB = 0;
                      if(fu_module->ExistsParameter("LSB_PARAMETER"))
                      {
                         int lsb_parameter = boost::lexical_cast<int>(fu_module->GetParameter("LSB_PARAMETER"));
