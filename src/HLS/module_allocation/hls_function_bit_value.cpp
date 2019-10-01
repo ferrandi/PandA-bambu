@@ -31,17 +31,14 @@
  *
  */
 /**
- * @file hls_bit_value.cpp
+ * @file hls_function_bit_value.cpp
  * @brief Wrapper for bit value analysis in the HLS context
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
-#include "hls_bit_value.hpp"
+#include "hls_function_bit_value.hpp"
 
 #include "behavioral_helper.hpp"
 #include "exceptions.hpp"
@@ -76,20 +73,20 @@
 #include "hls_flow_step_factory.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-hls_bit_value::hls_bit_value(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned _funId, const DesignFlowManagerConstRef _design_flow_manager)
-    : HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::HLS_BIT_VALUE, HLSFlowStepSpecializationConstRef())
+HLSFunctionBitValue::HLSFunctionBitValue(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned _funId, const DesignFlowManagerConstRef _design_flow_manager)
+    : HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::HLS_FUNCTION_BIT_VALUE, HLSFlowStepSpecializationConstRef())
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-hls_bit_value::~hls_bit_value() = default;
+HLSFunctionBitValue::~HLSFunctionBitValue() = default;
 
-void hls_bit_value::Initialize()
+void HLSFunctionBitValue::Initialize()
 {
    HLSFunctionStep::Initialize();
 }
 
-void hls_bit_value::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
+void HLSFunctionBitValue::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
 {
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    if(GetStatus() == DesignFlowStep_Status::SUCCESS)
@@ -119,7 +116,7 @@ void hls_bit_value::ComputeRelationships(DesignFlowStepSet& relationship, const 
    HLSFunctionStep::ComputeRelationships(relationship, relationship_type);
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> hls_bit_value::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> HLSFunctionBitValue::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
@@ -144,7 +141,7 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    return ret;
 }
 
-DesignFlowStep_Status hls_bit_value::InternalExec()
+DesignFlowStep_Status HLSFunctionBitValue::InternalExec()
 {
    unsigned int curr_address_bitsize = HLSMgr->get_address_bitsize();
    unsigned int default_address_bitsize = parameters->isOption(OPT_addr_bus_bitsize) ? parameters->getOption<unsigned int>(OPT_addr_bus_bitsize) : 32;

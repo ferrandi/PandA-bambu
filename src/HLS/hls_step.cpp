@@ -137,8 +137,8 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
 #endif
       case HLSFlowStep_Type::BB_STG_CREATOR:
          return "BBStgCreator";
-      case HLSFlowStep_Type::HLS_BIT_VALUE:
-         return "HLSBitValue";
+      case HLSFlowStep_Type::HLS_FUNCTION_BIT_VALUE:
+         return "HLSFunctionBitValue";
       case HLSFlowStep_Type::CDFC_MODULE_BINDING:
          return "CdfcModuleBinding";
       case HLSFlowStep_Type::CALL_GRAPH_UNFOLDING:

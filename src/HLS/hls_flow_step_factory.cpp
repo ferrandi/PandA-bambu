@@ -219,7 +219,7 @@
 /// HLS/module_allocation includes
 #include "add_library.hpp"
 #include "allocation.hpp"
-#include "hls_bit_value.hpp"
+#include "hls_function_bit_value.hpp"
 #if HAVE_FROM_PRAGMA_BUILT
 #include "omp_allocation.hpp"
 #endif
@@ -324,9 +324,9 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
          design_flow_step = DesignFlowStepRef(new BB_based_stg(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
-      case HLSFlowStep_Type::HLS_BIT_VALUE:
+      case HLSFlowStep_Type::HLS_FUNCTION_BIT_VALUE:
       {
-         design_flow_step = DesignFlowStepRef(new hls_bit_value(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step = DesignFlowStepRef(new HLSFunctionBitValue(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::CALL_GRAPH_UNFOLDING:
@@ -911,7 +911,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
          case HLSFlowStep_Type::AXI4LITE_INTERFACE_GENERATION:
 #endif
          case HLSFlowStep_Type::BB_STG_CREATOR:
-         case HLSFlowStep_Type::HLS_BIT_VALUE:
+         case HLSFlowStep_Type::HLS_FUNCTION_BIT_VALUE:
          case HLSFlowStep_Type::CDFC_MODULE_BINDING:
 #if HAVE_EXPERIMENTAL
          case HLSFlowStep_Type::CHAINING_BASED_LIVENESS:

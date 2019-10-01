@@ -35,41 +35,37 @@
  * @brief Proxy class calling the bit value analysis just before the hls_bit_value step taking into account the results of the memory hls_bit_value
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
-#ifndef HLS_BIT_VALUE_HPP
-#define HLS_BIT_VALUE_HPP
+#ifndef HLS_FUNCTION_BIT_VALUE_HPP
+#define HLS_FUNCTION_BIT_VALUE_HPP
 
 /// superclass include
 #include "application_manager.hpp"
 #include "hls_function_step.hpp"
 #include "refcount.hpp"
-/**
- * @name forward declarations
- */
-//@{
-REF_FORWARD_DECL(hls_bit_value);
-//@}
 
 #include "graph.hpp"
 #include "utility.hpp"
 
+/// STD includes
 #include <cmath>
-#include <map>
 #include <string>
+
+/// STL include
+#include <map>
+#include <tuple>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "hls_manager.hpp"
 
 /**
- * @class hls_bit_value
+ * @class HLSFunctionBitValue
  * This class work as a proxy of the front end step performing the bit value analysis
  */
-class hls_bit_value : public HLSFunctionStep
+class HLSFunctionBitValue : public HLSFunctionStep
 {
    void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
    /**
@@ -87,12 +83,12 @@ class hls_bit_value : public HLSFunctionStep
     * Constructor.
     * @param design_flow_manager is the design flow manager
     */
-   hls_bit_value(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   HLSFunctionBitValue(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor.
     */
-   ~hls_bit_value() override;
+   ~HLSFunctionBitValue() override;
    //@}
 
    /**
