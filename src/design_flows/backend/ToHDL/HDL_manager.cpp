@@ -697,7 +697,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
                auto* mod_inst = GetPointer<module>(obj);
                bool first_port_analyzed = false;
                /// First output and then input. Some backend could have benefits from this ordering.
-               /// Some customizations are possible, like direct translation of gates into built-in statements.
+               /// Some customization are possible, like direct translation of gates into built-in statements.
                if(writer->has_output_prefix())
                {
                   if(mod_inst->get_out_port_size())

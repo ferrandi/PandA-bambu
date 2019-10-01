@@ -350,7 +350,7 @@ class klut_network_ext : public mockturtle::klut_network
     */
    signal create_lut(std::vector<signal> s, uint64_t f)
    {
-      if(f==static_cast<uint64_t>(-1LL))
+      if(f == static_cast<uint64_t>(-1LL))
          return this->create_not(this->get_constant(false));
       kitty::dynamic_truth_table tt(static_cast<int>(s.size()));
       std::stringstream resHex;

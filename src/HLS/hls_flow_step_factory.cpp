@@ -139,10 +139,8 @@
 
 /// HLS/function_allocation
 #include "fun_dominator_allocation.hpp"
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
-#include "omp_function_allocation.hpp"
-#endif
 #if HAVE_FROM_PRAGMA_BUILT
+#include "omp_function_allocation.hpp"
 #include "omp_function_allocation_CS.hpp"
 #endif
 
@@ -654,7 +652,7 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
          break;
       }
 #endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION:
       {
          design_flow_step = DesignFlowStepRef(new OmpFunctionAllocation(parameters, HLS_mgr, design_flow_manager.lock()));
@@ -992,7 +990,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
 #if HAVE_FROM_PRAGMA_BUILT
          case HLSFlowStep_Type::OMP_FOR_WRAPPER_CS_SYNTHESIS_FLOW:
 #endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
          case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION:
 #endif
 #if HAVE_FROM_PRAGMA_BUILT
