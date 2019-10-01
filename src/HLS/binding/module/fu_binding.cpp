@@ -1694,7 +1694,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                         const integer_cst* int_const = GetPointer<integer_cst>(op1);
                         unsigned long long int offset_value = static_cast<unsigned long long int>(int_const->value);
                         auto tailZeros = 0u;
-                        while((offset_value & (1<<tailZeros))==0)
+                        while((offset_value & (1ULL<<tailZeros))==0)
                            ++tailZeros;
                         if(tailZeros<curr_LSB)
                            curr_LSB = tailZeros;
