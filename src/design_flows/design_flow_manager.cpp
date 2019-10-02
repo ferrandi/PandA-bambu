@@ -618,10 +618,12 @@ void DesignFlowManager::Exec()
          INDENT_OUT_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Skipping execution of " + step->GetName());
          design_flow_step_info->status = DesignFlowStep_Status::UNCHANGED;
          skipped_passes++;
+#ifndef NDEBUG
          if(parameters->IsParameter("profile_steps"))
          {
             skipped_executions[next]++;
          }
+#endif
       }
       long after_time;
       START_TIME(after_time);
