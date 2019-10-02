@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,42 +31,25 @@
  *
  */
 /**
- * @file hls_function_bit_value.hpp
- * @brief Proxy class calling the bit value analysis just before the hls_bit_value step taking into account the results of the memory hls_bit_value
+ * @file hls_bit_value.hpp
+ * @brief Composed step to describe HLSFunction on all functions
  *
- * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-#ifndef HLS_FUNCTION_BIT_VALUE_HPP
-#define HLS_FUNCTION_BIT_VALUE_HPP
+#ifndef HLS_BIT_VALUE_HPP
+#define HLS_BIT_VALUE_HPP
 
 /// superclass include
-#include "application_manager.hpp"
-#include "hls_function_step.hpp"
-#include "refcount.hpp"
-
-#include "graph.hpp"
-#include "utility.hpp"
-
-/// STD includes
-#include <cmath>
-#include <string>
-
-/// STL include
-#include <map>
-#include <tuple>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
-
-#include "hls_manager.hpp"
+#include "hls_step.hpp"
 
 /**
- * @class HLSFunctionBitValue
- * This class work as a proxy of the front end step performing the bit value analysis
+ * @class HLSBitValue
+ * This class works as an aggregator of HLSFunctionBitValue
  */
-class HLSFunctionBitValue : public HLSFunctionStep
+class HLSBitValue : public HLS_step
 {
+   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
@@ -82,23 +65,24 @@ class HLSFunctionBitValue : public HLSFunctionStep
     * Constructor.
     * @param design_flow_manager is the design flow manager
     */
-   HLSFunctionBitValue(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   HLSBitValue(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor.
     */
-   ~HLSFunctionBitValue() override;
+   ~HLSBitValue() override;
    //@}
 
    /**
     * Execute the step
     * @return the exit status of this step
     */
-   DesignFlowStep_Status InternalExec() override;
+   DesignFlowStep_Status Exec() override;
 
    /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
     */
-   void Initialize() override;
+   bool HasToBeExecuted() const override;
 };
 #endif

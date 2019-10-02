@@ -86,36 +86,6 @@ void HLSFunctionBitValue::Initialize()
    HLSFunctionStep::Initialize();
 }
 
-void HLSFunctionBitValue::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
-{
-   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
-   if(GetStatus() == DesignFlowStep_Status::SUCCESS)
-   {
-      if(relationship_type == INVALIDATION_RELATIONSHIP)
-      {
-         if(parameters->isOption(OPT_bitvalue_ipa) and parameters->getOption<bool>(OPT_bitvalue_ipa))
-         {
-            vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE_IPA));
-            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const DesignFlowStepRef design_flow_step = frontend_step != NULL_VERTEX ?
-                                                           design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step :
-                                                           GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateApplicationFrontendFlowStep(FrontendFlowStepType::BIT_VALUE_IPA);
-            relationship.insert(design_flow_step);
-         }
-         else
-         {
-            vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE_OPT, funId));
-            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const DesignFlowStepRef design_flow_step = frontend_step != NULL_VERTEX ?
-                                                           design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step :
-                                                           GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE_OPT, funId);
-            relationship.insert(design_flow_step);
-         }
-      }
-   }
-   HLSFunctionStep::ComputeRelationships(relationship, relationship_type);
-}
-
 const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> HLSFunctionBitValue::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;

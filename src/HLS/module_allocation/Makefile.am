@@ -36,6 +36,7 @@ noinst_HEADERS = \
    add_library.hpp \
    allocation.hpp \
    allocation_information.hpp \
+   hls_bit_value.hpp \
    hls_function_bit_value.hpp \
    omp_allocation.hpp
 
@@ -43,6 +44,7 @@ lib_allocation_la_SOURCES = \
    add_library.cpp \
    allocation.cpp \
    allocation_information.cpp \
+   hls_bit_value.cpp \
    hls_function_bit_value.cpp \
    omp_allocation.cpp
 
