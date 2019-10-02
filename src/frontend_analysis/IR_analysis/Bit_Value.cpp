@@ -80,6 +80,15 @@
 #include <fstream>
 #include <string>
 
+/// STL includes
+#include <deque>
+#include <map>
+#include <tuple>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
+
 /// tree include
 #include "behavioral_helper.hpp"
 #include "tree_basic_block.hpp"
@@ -877,7 +886,7 @@ unsigned int Bit_Value::lsb_to_zero(const addr_expr* ae) const
 }
 
 Bit_Value::Bit_Value(const ParameterConstRef params, const application_managerRef AM, unsigned int f_id, const DesignFlowManagerConstRef dfm)
-    : FunctionFrontendFlowStep(AM, f_id, BIT_VALUE, dfm, params), BitLatticeManipulator(AM->get_tree_manager()), not_frontend(false)
+    : FunctionFrontendFlowStep(AM, f_id, BIT_VALUE, dfm, params), BitLatticeManipulator(AM->get_tree_manager(), parameters->get_class_debug_level(GET_CLASS(*this))), not_frontend(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -1492,7 +1501,7 @@ void Bit_Value::initialize()
                if(def.empty())
                {
                   ssa_use->bit_values.clear();
-                  best[ssa_use_node_id] = create_bitstring_from_constant(0,1,ssa_is_signed);//create_u_bitstring(tree_helper::Size(use_node));
+                  best[ssa_use_node_id] = create_bitstring_from_constant(0, 1, ssa_is_signed);//create_u_bitstring(tree_helper::Size(use_node));
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "uninitialized ssa id: " + STR(ssa_use_node_id) + " new bitstring: " + bitstring_to_string(best.at(ssa_use_node_id)));
                }
                else if(ssa_use->var != nullptr and ((GET_NODE((*def.begin()))->get_kind() == gimple_nop_K) or ssa_use->volatile_flag))
@@ -1526,7 +1535,7 @@ void Bit_Value::initialize()
                   {
                      // first version of an uninitialized variable
                      ssa_use->bit_values.clear();
-                     best[ssa_use_node_id] = create_bitstring_from_constant(0,1,ssa_is_signed);//create_u_bitstring(tree_helper::Size(use_node));
+                     best[ssa_use_node_id] = create_bitstring_from_constant(0, 1, ssa_is_signed);//create_u_bitstring(tree_helper::Size(use_node));
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "ssa id: " + STR(ssa_use_node_id) + " is the first version of uninitialized var: " + STR(GET_NODE(ssa_use->var)) + " new bitstring: " + bitstring_to_string(best.at(ssa_use_node_id)));
                   }
                }
@@ -1614,7 +1623,7 @@ void Bit_Value::initialize()
                      if(def.empty())
                      {
                         ssa_use->bit_values.clear();
-                        best[ssa_use_node_id] = create_bitstring_from_constant(0,1,ssa_is_signed);//create_u_bitstring(tree_helper::Size(use_node));
+                        best[ssa_use_node_id] = create_bitstring_from_constant(0, 1, ssa_is_signed);//create_u_bitstring(tree_helper::Size(use_node));
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "uninitialized ssa id: " + STR(ssa_use_node_id) + " new bitstring: " + bitstring_to_string(best.at(ssa_use_node_id)));
                      }
                      else if(ssa_use->var != nullptr and ((GET_NODE((*def.begin()))->get_kind() == gimple_nop_K) or ssa_use->volatile_flag))
@@ -1648,7 +1657,7 @@ void Bit_Value::initialize()
                         {
                            // first version of an uninitialized variable
                            ssa_use->bit_values.clear();
-                           best[ssa_use_node_id] = create_bitstring_from_constant(0,1,ssa_is_signed);//create_u_bitstring(tree_helper::Size(use_node));
+                           best[ssa_use_node_id] = create_bitstring_from_constant(0, 1, ssa_is_signed);//create_u_bitstring(tree_helper::Size(use_node));
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                           "ssa id: " + STR(ssa_use_node_id) + " is the first version of uninitialized var: " + STR(GET_NODE(ssa_use->var)) + " new bitstring: " + bitstring_to_string(best.at(ssa_use_node_id)));
                         }

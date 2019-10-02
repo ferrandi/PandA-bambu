@@ -121,7 +121,7 @@ DesignFlowManager::DesignFlowManager(const ParameterConstRef _parameters)
    null_deleter nullDel;
    design_flow_graph_info->entry = design_flow_graphs_collection->AddDesignFlowStep(DesignFlowStepRef(new AuxDesignFlowStep("Entry", DESIGN_FLOW_ENTRY, DesignFlowManagerConstRef(this, nullDel), parameters)), false);
 #ifndef NDEBUG
-   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC or parameters->IsParameter("profile_steps"))
    {
       step_names[design_flow_graph_info->entry] = "Entry";
    }
@@ -130,7 +130,7 @@ DesignFlowManager::DesignFlowManager(const ParameterConstRef _parameters)
    entry_info->status = DesignFlowStep_Status::EMPTY;
    design_flow_graph_info->exit = design_flow_graphs_collection->AddDesignFlowStep(DesignFlowStepRef(new AuxDesignFlowStep("Exit", DESIGN_FLOW_EXIT, DesignFlowManagerConstRef(this, nullDel), parameters)), false);
 #ifndef NDEBUG
-   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC or parameters->IsParameter("profile_steps"))
    {
       step_names[design_flow_graph_info->exit] = "Exit";
    }
@@ -216,7 +216,7 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet& steps, cons
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---This step does not exist");
          step_vertex = design_flow_graphs_collection->AddDesignFlowStep(design_flow_step, unnecessary);
 #ifndef NDEBUG
-         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC or parameters->IsParameter("profile_steps"))
          {
             step_names[step_vertex] = design_flow_step->GetName();
          }
@@ -594,6 +594,20 @@ void DesignFlowManager::Exec()
              ""
 #endif
              ;
+#ifndef NDEBUG
+         if(parameters->IsParameter("profile_steps"))
+         {
+            accumulated_execution_time[next] += step_execution_time;
+            if(design_flow_step_info->status == DesignFlowStep_Status::SUCCESS)
+            {
+               success_executions[next]++;
+            }
+            else if(design_flow_step_info->status == DesignFlowStep_Status::UNCHANGED)
+            {
+               unchanged_executions[next]++;
+            }
+         }
+#endif
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "<--Ended execution of " + step->GetName() + " in " + print_cpu_time(step_execution_time) + " seconds" + memory_usage);
 #ifndef NDEBUG
          THROW_ASSERT(indentation_before == indentation, "Not closed indentation");
@@ -604,6 +618,12 @@ void DesignFlowManager::Exec()
          INDENT_OUT_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Skipping execution of " + step->GetName());
          design_flow_step_info->status = DesignFlowStep_Status::UNCHANGED;
          skipped_passes++;
+#ifndef NDEBUG
+         if(parameters->IsParameter("profile_steps"))
+         {
+            skipped_executions[next]++;
+         }
+#endif
       }
       long after_time;
       START_TIME(after_time);
@@ -762,42 +782,48 @@ void DesignFlowManager::Exec()
          {
             graph_changes++;
          }
-         VertexIterator v_stat, v_stat_end;
-         size_t executed_vertices = 0;
-         for(boost::tie(v_stat, v_stat_end) = boost::vertices(*design_flow_graph); v_stat != v_stat_end; v_stat++)
+         if(parameters->GetParameter<size_t>("dfm_statistics") > 1)
          {
-            const DesignFlowStepInfoRef local_design_flow_step_info = design_flow_graph->GetDesignFlowStepInfo(*v_stat);
-            switch(local_design_flow_step_info->status)
+            VertexIterator v_stat, v_stat_end;
+            size_t executed_vertices = 0;
+            static size_t previous_executed_vertices = 0;
+            for(boost::tie(v_stat, v_stat_end) = boost::vertices(*design_flow_graph); v_stat != v_stat_end; v_stat++)
             {
-               case DesignFlowStep_Status::ABORTED:
-               case DesignFlowStep_Status::EMPTY:
-               case DesignFlowStep_Status::SUCCESS:
-               case DesignFlowStep_Status::UNCHANGED:
-               case DesignFlowStep_Status::SKIPPED:
+               const DesignFlowStepInfoRef local_design_flow_step_info = design_flow_graph->GetDesignFlowStepInfo(*v_stat);
+               switch(local_design_flow_step_info->status)
                {
-                  executed_vertices++;
-                  break;
-               }
-               case DesignFlowStep_Status::UNNECESSARY:
-               case DesignFlowStep_Status::UNEXECUTED:
-               {
-                  break;
-               }
-               case DesignFlowStep_Status::NONEXISTENT:
-               {
-                  THROW_UNREACHABLE("Step with nonexitent status");
-                  break;
-               }
-               default:
-               {
-                  THROW_UNREACHABLE("");
+                  case DesignFlowStep_Status::ABORTED:
+                  case DesignFlowStep_Status::EMPTY:
+                  case DesignFlowStep_Status::SUCCESS:
+                  case DesignFlowStep_Status::UNCHANGED:
+                  case DesignFlowStep_Status::SKIPPED:
+                     {
+                        executed_vertices++;
+                        break;
+                     }
+                  case DesignFlowStep_Status::UNNECESSARY:
+                  case DesignFlowStep_Status::UNEXECUTED:
+                     {
+                        break;
+                     }
+                  case DesignFlowStep_Status::NONEXISTENT:
+                     {
+                        THROW_UNREACHABLE("Step with nonexitent status");
+                        break;
+                     }
+                  default:
+                     {
+                        THROW_UNREACHABLE("");
+                     }
                }
             }
-         }
-         if(parameters->IsParameter("dfm_statistics"))
-         {
+            if(previous_executed_vertices > executed_vertices)
+            {
+               INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "dfm_statistics - number of invalidated vertices by " + step->GetName() + ": " + STR(previous_executed_vertices - executed_vertices));
+            }
             INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "dfm_statistics - number of vertices at the end of iteration " + STR(step_counter) + ": " + STR(executed_vertices) + " / " + STR(final_number_vertices));
             INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "dfm_statistics - number of edges at the end of iteration " + STR(step_counter) + ": " + STR(final_number_edges));
+            previous_executed_vertices = executed_vertices;
          }
       }
    }
@@ -829,6 +855,17 @@ void DesignFlowManager::Exec()
       INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "dfm_statistics - number of graph changes: " + STR(graph_changes));
       INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "dfm_statistics - design flow manager time: " + print_cpu_time(design_flow_manager_time) + " seconds");
    }
+#ifndef NDEBUG
+   if(parameters->IsParameter("profile_steps"))
+   {
+      INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "-->Steps execution statistics");
+      for(const auto step : accumulated_execution_time)
+      {
+         INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "---" + step_names.at(step.first) + ": " + print_cpu_time(step.second) + " seconds - Successes: " + STR(success_executions[step.first]) + " - Unchanged: " + STR(unchanged_executions[step.first]) + " - Skipped: " + STR(skipped_executions[step.first]));
+      }
+      INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "<--");
+   }
+#endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Total number of iterations: " + STR(step_counter));
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ended execution of design flow");
 }
@@ -853,7 +890,7 @@ void DesignFlowManager::DeExecute(const vertex starting_vertex, const bool force
 {
    /// Set not executed on the starting vertex
    const DesignFlowStepInfoRef design_flow_step_info = design_flow_graph->GetDesignFlowStepInfo(starting_vertex);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---DeExecuting " + design_flow_step_info->design_flow_step->GetName());
+   INDENT_DBG_MEX(DEBUG_LEVEL_NONE, debug_level, "---DeExecuting " + design_flow_step_info->design_flow_step->GetName());
    switch(design_flow_step_info->status)
    {
       case DesignFlowStep_Status::SUCCESS:

@@ -36,9 +36,7 @@
  * Created on: July 18, 2016
  *
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
- * $Revision$
- * $Date$
- * Last modified by $Author$
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
 
@@ -46,17 +44,15 @@
 #define MEM_CG_EXT_HPP
 
 // include superclass header
-#include "application_frontend_flow_step.hpp"
+#include "function_frontend_flow_step.hpp"
 
-class mem_cg_ext : public ApplicationFrontendFlowStep
+class mem_cg_ext : public FunctionFrontendFlowStep
 {
  protected:
-   bool already_executed;
-
    const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
-   mem_cg_ext(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   mem_cg_ext(const application_managerRef AppM, const unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    ~mem_cg_ext() override;
 
@@ -64,7 +60,7 @@ class mem_cg_ext : public ApplicationFrontendFlowStep
     * Execute the step
     * @return the exit status of this step
     */
-   DesignFlowStep_Status Exec() override;
+   DesignFlowStep_Status InternalExec() override;
 
    /**
     * Initialize the step (i.e., like a constructor, but executed just before exec

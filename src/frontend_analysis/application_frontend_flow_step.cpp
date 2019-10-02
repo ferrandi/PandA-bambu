@@ -183,6 +183,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_BAMBU_BUILT
       case LUT_TRANSFORMATION:
 #endif
+      case MEM_CG_EXT:
       case MEMORY_DATA_FLOW_ANALYSIS:
 #if HAVE_BAMBU_BUILT
       case MULTI_WAY_IF:
@@ -324,7 +325,6 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_BAMBU_BUILT
       case(IPA_POINT_TO_ANALYSIS):
 #endif
-      case MEM_CG_EXT:
       case PARM2SSA:
 #if HAVE_ZEBU_BUILT
       case POINTED_DATA_EVALUATION:

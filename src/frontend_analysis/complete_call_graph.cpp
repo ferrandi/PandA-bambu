@@ -72,7 +72,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 #if HAVE_BAMBU_BUILT
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(CALL_GRAPH_BUILTIN_CALL, ALL_FUNCTIONS));
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(DETERMINE_MEMORY_ACCESSES, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(MEM_CG_EXT, WHOLE_APPLICATION));
+         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(MEM_CG_EXT, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(UN_COMPARISON_LOWERING, ALL_FUNCTIONS));
          if(parameters->isOption(OPT_soft_float) and parameters->getOption<bool>(OPT_soft_float))
          {
