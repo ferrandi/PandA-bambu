@@ -357,36 +357,36 @@ wire [BITSIZE_data_in-1:0] data_ram ;
 assign full = (status_cnt > (RAM_DEPTH-1));
 assign empty = (status_cnt == 0);
 
-always @ (posedge clock or posedge reset)
+always @ (posedge clock 1RESET_EDGE)
 begin : WRITE_POINTER
-  if (reset) begin
+  if (1RESET_VALUE) begin
     wr_pointer &lt;= 0;
   end else if (wr_cs &amp;&amp; wr_en ) begin
     wr_pointer &lt;= wr_pointer + 1;
   end
 end
 
-always @ (posedge clock or posedge reset)
+always @ (posedge clock 1RESET_EDGE)
 begin : READ_POINTER
-  if (reset) begin
+  if (1RESET_VALUE) begin
     rd_pointer &lt;= 0;
   end else if (rd_cs &amp;&amp; rd_en ) begin
     rd_pointer &lt;= rd_pointer + 1;
   end
 end
 
-always  @ (posedge clock or posedge reset)
+always  @ (posedge clock 1RESET_EDGE)
 begin : READ_DATA
-  if (reset) begin
+  if (1RESET_VALUE) begin
     data_out &lt;= 0;
   end else if (rd_cs &amp;&amp; rd_en ) begin
     data_out &lt;= data_ram;
   end
 end
 
-always @ (posedge clock or posedge reset)
+always @ (posedge clock 1RESET_EDGE)
 begin : STATUS_COUNTER
-  if (reset) begin
+  if (1RESET_VALUE) begin
     status_cnt &lt;= 0;
   end else if ((rd_cs &amp;&amp; rd_en) &amp;&amp; !(wr_cs &amp;&amp; wr_en) 
                 &amp;&amp; (status_cnt != 0)) begin
@@ -2045,18 +2045,32 @@ genvar i;
 generate
 for(i=0; i&lt;NUM_CHANNEL; i=i+1)  //or a x ingressi
 begin : memory_ctrl_parallel_loop0
-  assign OUT_Mout_oe_ram[(i+1)*BITSIZE_Mout_oe_ram-1:i*BITSIZE_Mout_oe_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_oe_ram-1] : {BITSIZE_Mout_oe_ram{1'b0}};
-  assign OUT_Mout_we_ram[(i+1)*BITSIZE_Mout_we_ram-1:i*BITSIZE_Mout_we_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] : {BITSIZE_Mout_we_ram{1'b0}};
-  assign OUT_Mout_addr_ram[(i+1)*BITSIZE_Mout_addr_ram-1:i*BITSIZE_Mout_addr_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] : {BITSIZE_Mout_addr_ram{1'b0}};
-  assign OUT_Mout_data_ram_size[(i+1)*BITSIZE_Mout_data_ram_size-1:i*BITSIZE_Mout_data_ram_size]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] : {BITSIZE_Mout_data_ram_size{1'b0}};
-  assign OUT_Mout_Wdata_ram[(i+1)*BITSIZE_Mout_Wdata_ram-1:i*BITSIZE_Mout_Wdata_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] : {BITSIZE_Mout_Wdata_ram{1'b0}};
-  assign OUT_Mout_tag_ram[(i+1)*BITSIZE_Mout_tag_ram-1:i*BITSIZE_Mout_tag_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? {1'b1,data_in[SIZE_TOT_IN*i+BITSIZE_Mout_tag_ram + BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-2:SIZE_TOT_IN*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram]} : {BITSIZE_Mout_tag_ram{1'b0}};   //every data out has 1 as first bit of tag
+  if(i &lt; NUM_ACC)
+  begin
+    assign OUT_Mout_oe_ram[(i+1)*BITSIZE_Mout_oe_ram-1:i*BITSIZE_Mout_oe_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_oe_ram-1] : {BITSIZE_Mout_oe_ram{1'b0}};
+    assign OUT_Mout_we_ram[(i+1)*BITSIZE_Mout_we_ram-1:i*BITSIZE_Mout_we_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1] : {BITSIZE_Mout_we_ram{1'b0}};
+    assign OUT_Mout_addr_ram[(i+1)*BITSIZE_Mout_addr_ram-1:i*BITSIZE_Mout_addr_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] : {BITSIZE_Mout_addr_ram{1'b0}};
+    assign OUT_Mout_data_ram_size[(i+1)*BITSIZE_Mout_data_ram_size-1:i*BITSIZE_Mout_data_ram_size]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] : {BITSIZE_Mout_data_ram_size{1'b0}};
+    assign OUT_Mout_Wdata_ram[(i+1)*BITSIZE_Mout_Wdata_ram-1:i*BITSIZE_Mout_Wdata_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? data_in[SIZE_TOT_IN*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-1:SIZE_TOT_IN*i+BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram] : {BITSIZE_Mout_Wdata_ram{1'b0}};
+    assign OUT_Mout_tag_ram[(i+1)*BITSIZE_Mout_tag_ram-1:i*BITSIZE_Mout_tag_ram]=(|fifo_wait_notempty[(i+1)*RATIO-1:i*RATIO])? {1'b1,data_in[SIZE_TOT_IN*i+BITSIZE_Mout_tag_ram + BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram-2:SIZE_TOT_IN*i+BITSIZE_Mout_Wdata_ram + BITSIZE_Mout_data_ram_size + BITSIZE_Mout_addr_ram + BITSIZE_Mout_we_ram + BITSIZE_Mout_oe_ram]} : {BITSIZE_Mout_tag_ram{1'b0}};   //every data out has 1 as first bit of tag
+  end
+  else
+  begin
+    assign OUT_Mout_oe_ram[(i+1)*BITSIZE_Mout_oe_ram-1:i*BITSIZE_Mout_oe_ram]= {BITSIZE_Mout_oe_ram{1'b0}};
+    assign OUT_Mout_we_ram[(i+1)*BITSIZE_Mout_we_ram-1:i*BITSIZE_Mout_we_ram]= {BITSIZE_Mout_we_ram{1'b0}};
+    assign OUT_Mout_addr_ram[(i+1)*BITSIZE_Mout_addr_ram-1:i*BITSIZE_Mout_addr_ram]= {BITSIZE_Mout_addr_ram{1'b0}};
+    assign OUT_Mout_data_ram_size[(i+1)*BITSIZE_Mout_data_ram_size-1:i*BITSIZE_Mout_data_ram_size]= {BITSIZE_Mout_data_ram_size{1'b0}};
+    assign OUT_Mout_Wdata_ram[(i+1)*BITSIZE_Mout_Wdata_ram-1:i*BITSIZE_Mout_Wdata_ram]= {BITSIZE_Mout_Wdata_ram{1'b0}};
+    assign OUT_Mout_tag_ram[(i+1)*BITSIZE_Mout_tag_ram-1:i*BITSIZE_Mout_tag_ram]= {BITSIZE_Mout_tag_ram{1'b0}};
+  end
 
-  //arbiter for decide which data go to memory
-  PT_RR_FU #(.BITSIZE_ops(1), .PORTSIZE_ops(RATIO), .BITSIZE_rops(1), .PORTSIZE_rops(RATIO)) RR_fifo_in_0(.ops(selector_mux_fifo_in[RATIO*(i+1)-1:RATIO*i]), .ENABLE(1'b1), .clock(clock), .reset(!reset), .rops(fifo_wait_notempty[RATIO*(i+1)-1:RATIO*i]));
-
-  //BIND in of IN_fifo_in       //MUX with n in
-  mux_pw_2 #(.BITSIZE_selector(RATIO), .BITSIZE_data(SIZE_TOT_IN*RATIO), .BITSIZE_out(SIZE_TOT_IN)) mux_in (.selector(selector_mux_fifo_in[RATIO*(i+1)-1:RATIO*i]), .data(data_in_mem_par[SIZE_TOT_IN*((i+1)*RATIO)-1:SIZE_TOT_IN*(i*RATIO)]), .out(data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]));
+  if(i &lt; NUM_ACC)
+  begin
+    //arbiter for decide which data go to memory
+    PT_RR_FU #(.BITSIZE_ops(1), .PORTSIZE_ops(RATIO), .BITSIZE_rops(1), .PORTSIZE_rops(RATIO)) RR_fifo_in_0(.ops(selector_mux_fifo_in[RATIO*(i+1)-1:RATIO*i]), .ENABLE(1'b1), .clock(clock), .reset(!reset), .rops(fifo_wait_notempty[RATIO*(i+1)-1:RATIO*i]));
+   //BIND in of IN_fifo_in       //MUX with n in
+   mux_pw_2 #(.BITSIZE_selector(RATIO), .BITSIZE_data(SIZE_TOT_IN*RATIO), .BITSIZE_out(SIZE_TOT_IN)) mux_in (.selector(selector_mux_fifo_in[RATIO*(i+1)-1:RATIO*i]), .data(data_in_mem_par[SIZE_TOT_IN*((i+1)*RATIO)-1:SIZE_TOT_IN*(i*RATIO)]), .out(data_in[SIZE_TOT_IN*(i+1)-1:SIZE_TOT_IN*i]));
+  end
 end
 endgenerate
 
@@ -2356,17 +2370,17 @@ reg selector_MUX_2_reg_0_0_0_0;
 reg selector_IN_UNBOUNDED_parallel_18797_18995;
 reg [PORTSIZE_start_port_accelerator-1:0]            worker_status;          // To CallDispatcher_i0 of CallDispatcher.v
 
-wire [31:0] out_MUX_2_reg_0_0_0_0;
+wire [BITSIZE_LoopIteration-1:0] out_MUX_2_reg_0_0_0_0;
 wire out_const_0;
 wire out_const_1;
-wire [31:0]   out_conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32;
+wire [BITSIZE_LoopIteration-1:0]   out_conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32;
 wire out_read_cond_FU_5_i0_fu_parallel_18797_19050;
-wire [31:0] out_reg_0_reg_0;
-wire [31:0] out_reg_1_reg_1;
+wire [BITSIZE_LoopIteration-1:0] out_reg_0_reg_0;
+wire [BITSIZE_LoopIteration-1:0] out_reg_1_reg_1;
 wire [0:0] out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0;
 wire out_ui_ne_expr_FU_32_32_32_7_i0_fu_parallel_18797_19732;
-wire [31:0] out_ui_plus_expr_FU_32_0_32_8_i0_fu_parallel_18797_18996;
-wire [31:0]          fifo_data_out;          // From fifo_i0 of fifo.v
+wire [BITSIZE_LoopIteration-1:0] out_ui_plus_expr_FU_32_0_32_8_i0_fu_parallel_18797_18996;
+wire [BITSIZE_LoopIteration-1:0]          fifo_data_out;          // From fifo_i0 of fifo.v
 wire fifo_empty;             // From fifo_i0 of fifo.v
 wire fifo_full;              // keep name fifo_full
 wire completed;              // added
@@ -2376,7 +2390,6 @@ wire fifo_rd_en;             // From CallDispatcher_i0 of CallDispatcher.v
 wire [31:0] DoneCounter_value;      // From DoneCounter of Counter.v
 wire [31:0] StartCounter_value;     // From StartCounter of Counter.v
 wire [31:0] number_req_tasks;
-wire [31:0]          request;    // From CallDispatcher_i0 of CallDispatcher.v
 wire [PORTSIZE_start_port_accelerator-1:0] selected_worker;        // From CallDispatcher_i0 of CallDispatcher.v
 reg reset_counter;
 reg next_reset_counter;
@@ -2480,7 +2493,7 @@ begin
   endcase
 end
 
-ui_ne_expr_FU #(.BITSIZE_in1(32), .BITSIZE_in2(32), .BITSIZE_out1(1)) fu_parallel_18797_19732(
+ui_ne_expr_FU #(.BITSIZE_in1(BITSIZE_LoopIteration), .BITSIZE_in2(BITSIZE_LoopIteration), .BITSIZE_out1(1)) fu_parallel_18797_19732(
 .out1(out_ui_ne_expr_FU_32_32_32_7_i0_fu_parallel_18797_19732),
 .in1(out_reg_0_reg_0),
 .in2(LoopIteration));
@@ -2489,14 +2502,14 @@ read_cond_FU #(.BITSIZE_in1(1)) fu_parallel_18797_19050(
 .out1(out_read_cond_FU_5_i0_fu_parallel_18797_19050),
 .in1(out_ui_ne_expr_FU_32_32_32_7_i0_fu_parallel_18797_19732));
 
-register_SE #(.BITSIZE_in1(32), .BITSIZE_out1(32)) reg_0 (
+register_SE #(.BITSIZE_in1(BITSIZE_LoopIteration), .BITSIZE_out1(BITSIZE_LoopIteration)) reg_0 (
 .out1(out_reg_0_reg_0),
 .clock(clock),
 .reset(reset),
 .in1(out_MUX_2_reg_0_0_0_0),
 .wenable(wrenable_reg_0));
 
-fifo #(.BITSIZE_data_in(32), .BITSIZE_data_out(32), .ADDR_WIDTH(10)) fifo_i0
+fifo #(.BITSIZE_data_in(BITSIZE_LoopIteration), .BITSIZE_data_out(BITSIZE_LoopIteration), .ADDR_WIDTH(10)) fifo_i0
  (/*AUTOINST*/
   // Outputs
   .full                             (fifo_full),             // Templated
@@ -2504,14 +2517,14 @@ fifo #(.BITSIZE_data_in(32), .BITSIZE_data_out(32), .ADDR_WIDTH(10)) fifo_i0
   .data_out                         (fifo_data_out),   // Templated
   // Inputs
   .clock                              (clock),                 // Templated
-  .reset                              (!reset),                // Templated
+  .reset                              (reset),                // Templated
   .wr_cs                            (selector_IN_UNBOUNDED_parallel_18797_18995),            // Templated
   .rd_cs                            (fifo_rd_cs),            // Templated
   .rd_en                            (fifo_rd_en),            // Templated
   .wr_en                            (selector_IN_UNBOUNDED_parallel_18797_18995),            // Templated
   .data_in                          (out_reg_0_reg_0));               // Templated
 
-CallDispatcher #(.BITSIZE_fifo_data_out(32), .BITSIZE_worker_status(PORTSIZE_start_port_accelerator), .BITSIZE_request(32), .BITSIZE_selected_worker(PORTSIZE_start_port_accelerator)) CallDispatcher_i0
+CallDispatcher #(.BITSIZE_fifo_data_out(BITSIZE_LoopIteration), .BITSIZE_worker_status(PORTSIZE_start_port_accelerator), .BITSIZE_request(BITSIZE_request), .BITSIZE_selected_worker(PORTSIZE_start_port_accelerator)) CallDispatcher_i0
  (/*AUTOINST*/
   // Outputs
   .fifo_rd_cs                       (fifo_rd_cs),
@@ -2553,7 +2566,7 @@ Counter #(.BITSIZE_value(32), .BITSIZE_driver_lines(PORTSIZE_start_port_accelera
 .reset (reset_counter),         // Templated
 .driver_lines (selected_worker)); // Templated
 
-MUX_GATE #(.BITSIZE_in1(32), .BITSIZE_in2(32), .BITSIZE_out1(32)) MUX_2_reg_0_0_0_0 (.out1(out_MUX_2_reg_0_0_0_0), .sel(selector_MUX_2_reg_0_0_0_0), .in1(out_reg_1_reg_1), .in2(out_conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32));
+MUX_GATE #(.BITSIZE_in1(BITSIZE_LoopIteration), .BITSIZE_in2(BITSIZE_LoopIteration), .BITSIZE_out1(BITSIZE_LoopIteration)) MUX_2_reg_0_0_0_0 (.out1(out_MUX_2_reg_0_0_0_0), .sel(selector_MUX_2_reg_0_0_0_0), .in1(out_reg_1_reg_1), .in2(out_conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32));
 
 always @(posedge clock or negedge reset)
   if (!reset)
@@ -2567,13 +2580,13 @@ assign completed = fifo_empty &amp; (StartCounter_value == DoneCounter_value) &a
 
 assign task_pool_end = (number_req_tasks == StartCounter_value) &amp; (| StartCounter_value) &amp; (| number_req_tasks);
 
-register_SE #(.BITSIZE_in1(32), .BITSIZE_out1(32)) reg_1 (
+register_SE #(.BITSIZE_in1(BITSIZE_LoopIteration), .BITSIZE_out1(BITSIZE_LoopIteration)) reg_1 (
 .out1(out_reg_1_reg_1),
 .clock(clock), .reset(reset),
 .in1(out_ui_plus_expr_FU_32_0_32_8_i0_fu_parallel_18797_18996),
 .wenable(wrenable_reg_1));
 
-UUdata_converter_FU #(.BITSIZE_in1(1), .BITSIZE_out1(32)) conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32 (.out1(out_conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32), .in1(out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0));
+UUdata_converter_FU #(.BITSIZE_in1(1), .BITSIZE_out1(BITSIZE_LoopIteration)) conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32 (.out1(out_conv_out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0_1_32), .in1(out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0));
 
 ASSIGN_UNSIGNED_FU #(.BITSIZE_in1(1), .BITSIZE_out1(1)) ASSIGN_UNSIGNED_FU_u_assign_0 (.out1(out_u_assign_conn_obj_0_ASSIGN_UNSIGNED_FU_u_assign_0), .in1(out_const_0));
 
@@ -2606,7 +2619,7 @@ generate
   end
 endgenerate
 
-ui_plus_expr_FU #(.BITSIZE_in1(32), .BITSIZE_in2(1), .BITSIZE_out1(32)) fu_parallel_18797_18996(
+ui_plus_expr_FU #(.BITSIZE_in1(BITSIZE_LoopIteration), .BITSIZE_in2(1), .BITSIZE_out1(BITSIZE_LoopIteration)) fu_parallel_18797_18996(
 .out1(out_ui_plus_expr_FU_32_0_32_8_i0_fu_parallel_18797_18996),
 .in1(out_reg_0_reg_0), .in2(out_const_1));
 

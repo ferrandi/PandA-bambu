@@ -275,8 +275,8 @@
 #define OPT_MIN_INHERITANCE (1 + OPT_MEMORY_BANKS_NUMBER)
 #define OPT_MOSA_FLOW (1 + OPT_MIN_INHERITANCE)
 #define OPT_NO_MIXED_DESIGN (1 + OPT_MOSA_FLOW)
-#define OPT_NUM_THREADS (1 + OPT_NO_MIXED_DESIGN)
-#define OPT_PARALLEL_CONTROLLER (1 + OPT_NUM_THREADS)
+#define OPT_NUM_ACCELERATORS (1 + OPT_NO_MIXED_DESIGN)
+#define OPT_PARALLEL_CONTROLLER (1 + OPT_NUM_ACCELERATORS)
 #define OPT_PERIOD_CLOCK (1 + OPT_PARALLEL_CONTROLLER)
 #define OPT_CLOCK_NAME (1 + OPT_PERIOD_CLOCK)
 #define OPT_RESET_NAME (1 + OPT_CLOCK_NAME)
@@ -925,8 +925,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Perform source code parsing to extract information about pragmas.\n"
       << "        (default=no).\n\n";
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-   os << "    --num-threads\n"
-      << "        Set the number of threads in parallel sections (default=4).\n\n";
+   os << "    --num-accelerators\n"
+      << "        Set the number of physical accelerator instantiated in parallel sections. It must be a power of two (default=4).\n\n";
 #endif
 #if HAVE_EXPERIMENTAL
    os << "    --xml-config <file>\n"
@@ -1230,7 +1230,7 @@ int BambuParameter::Exec()
       {"discrepancy-only", required_argument, nullptr, OPT_DISCREPANCY_ONLY},
       {"discrepancy-permissive-ptrs", no_argument, nullptr, OPT_DISCREPANCY_PERMISSIVE_PTRS},
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-      {"num-threads", required_argument, nullptr, OPT_NUM_THREADS},
+      {"num-accelerators", required_argument, nullptr, OPT_NUM_ACCELERATORS},
       {"context_switch", optional_argument, nullptr, OPT_INPUT_CONTEXT_SWITCH},
 #endif
       {"memory-banks-number", required_argument, nullptr, OPT_MEMORY_BANKS_NUMBER},
@@ -2240,9 +2240,13 @@ int BambuParameter::Exec()
             break;
          }
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-         case OPT_NUM_THREADS:
+         case OPT_NUM_ACCELERATORS:
          {
-            setOption(OPT_num_threads, std::string(optarg));
+            auto num_acc = boost::lexical_cast<unsigned>(std::string(optarg));
+            if((num_acc != 0) && ((num_acc & (num_acc - 1)) == 0))
+               setOption(OPT_num_accelerators, std::string(optarg));
+            else
+               THROW_ERROR("Currently the number of physical accelerator has to be a power of two");;
             break;
          }
          case OPT_INPUT_CONTEXT_SWITCH:
@@ -3798,7 +3802,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_generate_taste_architecture, false);
 #endif
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-   setOption(OPT_num_threads, 4);
+   setOption(OPT_num_accelerators, 4);
 #endif
    setOption(OPT_memory_banks_number, 1);
    setOption(OPT_find_max_cfg_transformations, false);

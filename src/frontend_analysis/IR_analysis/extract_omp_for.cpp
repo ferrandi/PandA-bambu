@@ -224,7 +224,7 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
             }
             auto fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
             function_behavior->UpdateBBVersion();
-            fd->omp_for_wrapper = parameters->getOption<size_t>(OPT_num_threads);
+            fd->omp_for_wrapper = parameters->getOption<size_t>(OPT_num_accelerators);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped loop " + STR(loop->GetId()));
             break;
          }
@@ -322,7 +322,7 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
             }
             auto fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
             function_behavior->UpdateBBVersion();
-            fd->omp_for_wrapper = parameters->getOption<size_t>(OPT_num_threads);
+            fd->omp_for_wrapper = parameters->getOption<size_t>(OPT_num_accelerators);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped loop " + STR(loop->GetId()));
             break;
          }

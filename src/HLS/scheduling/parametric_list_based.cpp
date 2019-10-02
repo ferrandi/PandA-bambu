@@ -356,12 +356,12 @@ void parametric_list_based::CheckSchedulabilityConditions(const vertex& current_
    if(cannotBeChained1)
       return;
    asyncCond = (current_starting_time > (EPSILON + current_cycle_starting_time)) and (GET_TYPE(flow_graph, current_vertex) & TYPE_LOAD) and HLS->allocation_information->is_one_cycle_direct_access_memory_unit(fu_type) and
-               (!HLS->allocation_information->is_readonly_memory_unit(fu_type) || (!HLS->Param->isOption(OPT_rom_duplication) || !HLS->Param->getOption<bool>(OPT_rom_duplication))) and
+               (!HLS->allocation_information->is_readonly_memory_unit(fu_type) || (!HLS->Param->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication))) and
                ((HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(fu_type) ? HLS->allocation_information->get_memory_var(fu_type) : HLS->allocation_information->get_proxy_memory_var(fu_type))) >
                 HLS->allocation_information->get_number_channels(fu_type));
    if(asyncCond)
       return;
-   cannotBeChained2 = (current_starting_time > (current_cycle_starting_time)) && !HLS->Param->getOption<bool>(OPT_chaining);
+   cannotBeChained2 = (current_starting_time > (current_cycle_starting_time)) && !parameters->getOption<bool>(OPT_chaining);
    if(cannotBeChained2)
       return;
    MultiCond0 = (!is_pipelined && n_cycles > 0 && current_starting_time > (current_cycle_starting_time)) && current_ending_time - (n_cycles - 1) * clock_cycle + setup_hold_time + phi_extra_time + scheduling_mux_margins > current_cycle_ending_time;
@@ -399,7 +399,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
 
    double clock_period_resource_fraction = HLS->HLS_C->get_clock_period_resource_fraction();
 
-   double scheduling_mux_margins = HLS->Param->getOption<double>(OPT_scheduling_mux_margins) * HLS->allocation_information->mux_time_unit(32);
+   double scheduling_mux_margins = parameters->getOption<double>(OPT_scheduling_mux_margins) * HLS->allocation_information->mux_time_unit(32);
 
    /// The clock cycle
    clock_cycle = clock_period_resource_fraction * HLS->HLS_C->get_clock_period();
@@ -999,7 +999,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                            cstep_vuses_ARRAYs = 1;
                         else
                         {
-                           cstep_vuses_others = 1 + ((HLS->Param->getOption<std::string>(OPT_memory_controller_type) != "D00" && HLS->Param->getOption<std::string>(OPT_memory_controller_type) != "D10") ? 1 : 0);
+                           cstep_vuses_others = 1 + ((parameters->getOption<std::string>(OPT_memory_controller_type) != "D00" && parameters->getOption<std::string>(OPT_memory_controller_type) != "D10") ? 1 : 0);
                         }
                      }
                   }
@@ -1164,7 +1164,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
       ++current_cycle;
    }
 
-   if(HLS->Param->isOption(OPT_post_rescheduling) && HLS->Param->getOption<bool>(OPT_post_rescheduling))
+   if(HLS->Param->isOption(OPT_post_rescheduling) && parameters->getOption<bool>(OPT_post_rescheduling))
    {
       /// update starting and ending time of operations
       /// by running them as late as possible
@@ -1213,7 +1213,7 @@ void parametric_list_based::compute_starting_ending_time_asap(const vertex v, co
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing starting and ending time " + GET_NAME(flow_graph, v));
    current_starting_time = from_strongtype_cast<double>(cs) * clock_cycle;
    bool is_load_store = GET_TYPE(flow_graph, v) & (TYPE_LOAD | TYPE_STORE);
-   bool no_chaining_of_load_and_store = HLS->Param->getOption<bool>(OPT_do_not_chain_memories) && (check_LOAD_chaining(v, cs, schedule) || is_load_store);
+   bool no_chaining_of_load_and_store = parameters->getOption<bool>(OPT_do_not_chain_memories) && (check_LOAD_chaining(v, cs, schedule) || is_load_store);
    cannot_be_chained = is_load_store && check_non_direct_operation_chaining(v, fu_type, cs, schedule, res_binding);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "                  Initial value of cannot_be_chained=" + (cannot_be_chained ? std::string("T") : std::string("F")));
    InEdgeIterator ei, ei_end;
@@ -1224,10 +1224,10 @@ void parametric_list_based::compute_starting_ending_time_asap(const vertex v, co
       unsigned int from_fu_type = res_binding->get_assign(from_vertex);
       const auto cs_prev = schedule->get_cstep(from_vertex).second;
       const double fsm_correction = [&]() -> double {
-         if(HLS->Param->getOption<double>(OPT_scheduling_mux_margins) != 0.0)
+         if(parameters->getOption<double>(OPT_scheduling_mux_margins) != 0.0)
             return HLS->allocation_information->EstimateControllerDelay();
          if(cs == cs_prev && HLS->allocation_information->is_one_cycle_direct_access_memory_unit(from_fu_type) &&
-            (!HLS->allocation_information->is_readonly_memory_unit(from_fu_type) || (!HLS->Param->isOption(OPT_rom_duplication) || !HLS->Param->getOption<bool>(OPT_rom_duplication))) &&
+            (!HLS->allocation_information->is_readonly_memory_unit(from_fu_type) || (!HLS->Param->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication))) &&
             HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(from_fu_type) ? HLS->allocation_information->get_memory_var(from_fu_type) : HLS->allocation_information->get_proxy_memory_var(from_fu_type)) >
                 HLS->allocation_information->get_number_channels(from_fu_type))
             return HLS->allocation_information->EstimateControllerDelay();
@@ -1278,7 +1278,7 @@ void parametric_list_based::compute_exec_stage_time(const unsigned int fu_type, 
    /// check for PHIs attached to the output. They may require one or more muxes.
    phi_extra_time = HLS->allocation_information->GetConnectionTime(flow_graph_with_feedbacks->CGetOpNodeInfo(v)->GetNodeId(), 0, AbsControlStep(bb_index, cs));
 
-   double scheduling_mux_margins = HLS->Param->getOption<double>(OPT_scheduling_mux_margins) * HLS->allocation_information->mux_time_unit(32);
+   double scheduling_mux_margins = parameters->getOption<double>(OPT_scheduling_mux_margins) * HLS->allocation_information->mux_time_unit(32);
 
    /// corrections for the memory controllers
    unsigned int n_cycles = std::max(1u, HLS->allocation_information->get_cycles(fu_type, v, flow_graph));
@@ -1336,7 +1336,7 @@ void parametric_list_based::compute_starting_ending_time_alap(vertex v, const un
    InEdgeIterator ei, ei_end;
    current_starting_time = from_strongtype_cast<double>(cs) * clock_cycle;
    bool is_load_store = (GET_TYPE(flow_graph, v) & (TYPE_STORE | TYPE_LOAD));
-   bool no_chaining_of_load_and_store = HLS->Param->getOption<bool>(OPT_do_not_chain_memories) && (check_LOAD_chaining(v, cs, schedule) || is_load_store);
+   bool no_chaining_of_load_and_store = parameters->getOption<bool>(OPT_do_not_chain_memories) && (check_LOAD_chaining(v, cs, schedule) || is_load_store);
    cannot_be_chained = is_load_store && check_non_direct_operation_chaining(v, fu_type, cs, schedule, res_binding);
    bool is_operation_unbounded_and_registered = !HLS->allocation_information->is_operation_bounded(flow_graph, v, fu_type) && HLS->allocation_information->is_operation_PI_registered(flow_graph, v, fu_type);
    for(boost::tie(ei, ei_end) = boost::in_edges(v, *flow_graph); ei != ei_end; ei++)
@@ -1345,10 +1345,10 @@ void parametric_list_based::compute_starting_ending_time_alap(vertex v, const un
       unsigned int from_fu_type = res_binding->get_assign(from_vertex);
       const auto cs_prev = schedule->get_cstep(from_vertex).second;
       const double fsm_correction = [&]() -> double {
-         if(HLS->Param->getOption<double>(OPT_scheduling_mux_margins) != 0.0)
+         if(parameters->getOption<double>(OPT_scheduling_mux_margins) != 0.0)
             return HLS->allocation_information->EstimateControllerDelay();
          if(cs == cs_prev && HLS->allocation_information->is_one_cycle_direct_access_memory_unit(from_fu_type) &&
-            (!HLS->allocation_information->is_readonly_memory_unit(from_fu_type) || (!HLS->Param->isOption(OPT_rom_duplication) || !HLS->Param->getOption<bool>(OPT_rom_duplication))) &&
+            (!HLS->allocation_information->is_readonly_memory_unit(from_fu_type) || (!HLS->Param->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication))) &&
             HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(from_fu_type) ? HLS->allocation_information->get_memory_var(from_fu_type) : HLS->allocation_information->get_proxy_memory_var(from_fu_type)) >
                 HLS->allocation_information->get_number_channels(from_fu_type))
             return HLS->allocation_information->EstimateControllerDelay();
@@ -1828,7 +1828,7 @@ void parametric_list_based::do_balanced_scheduling(std::deque<vertex>& sub_level
                compute_starting_ending_time_alap(candidate_v, fu_type, time, candidate_starting_time, max_ending_time, candidate_op_execution_time, candidate_stage_period, n_cycles, cannot_be_chained, res_binding, schedule, phi_extra_time, setup_hold_time,
                                                  local_connection_map);
 
-               if((candidate_starting_time > (from_strongtype_cast<double>(time) * clock_cycle)) && !HLS->Param->getOption<bool>(OPT_chaining))
+               if((candidate_starting_time > (from_strongtype_cast<double>(time) * clock_cycle)) && !parameters->getOption<bool>(OPT_chaining))
                   continue; /// Chaining is possible but not allowed
 
                if((candidate_starting_time > (from_strongtype_cast<double>(time) * clock_cycle)) && cannot_be_chained)
@@ -2081,7 +2081,7 @@ void parametric_list_based::do_balanced_scheduling1(std::deque<vertex>& sub_leve
                   continue; /// no room for fu_type at time time
                }
 
-               if((candidate_starting_time > time_clock_cycle_starting) && !HLS->Param->getOption<bool>(OPT_chaining))
+               if((candidate_starting_time > time_clock_cycle_starting) && !parameters->getOption<bool>(OPT_chaining))
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "   Chaining is possible but not allowed");
                   continue; /// Chaining is possible but not allowed
@@ -2284,7 +2284,7 @@ bool parametric_list_based::check_non_direct_operation_chaining(vertex current_v
 {
    bool v_is_indirect = REMOVE_DIRECT_TO_INDIRECT && HLS->allocation_information->is_indirect_access_memory_unit(v_fu_type);
    bool v_is_one_cycle_direct_access = (HLS->allocation_information->is_one_cycle_direct_access_memory_unit(v_fu_type) &&
-                                        (!HLS->allocation_information->is_readonly_memory_unit(v_fu_type) || (!HLS->Param->isOption(OPT_rom_duplication) || !HLS->Param->getOption<bool>(OPT_rom_duplication)))) &&
+                                        (!HLS->allocation_information->is_readonly_memory_unit(v_fu_type) || (!HLS->Param->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))) &&
                                        HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(v_fu_type) ? HLS->allocation_information->get_memory_var(v_fu_type) : HLS->allocation_information->get_proxy_memory_var(v_fu_type)) >
                                            HLS->allocation_information->get_number_channels(v_fu_type);
 
