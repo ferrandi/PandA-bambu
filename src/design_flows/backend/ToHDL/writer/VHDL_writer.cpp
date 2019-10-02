@@ -761,25 +761,25 @@ void VHDL_writer::write_io_signal_post_fix(const structural_objectRef& port, con
 
 void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing module parametrization of " + cir->get_path());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing module generics of " + cir->get_path());
    THROW_ASSERT(cir->get_kind() == component_o_K || cir->get_kind() == channel_o_K, "Expected a component or a channel got something of different");
    auto* mod = GetPointer<module>(cir);
    /// writing memory-related parameters
-#if 0
-   if (mod->is_parameter(MEMORY_PARAMETER))
+
+   bool first_it = true;
+   if (mod->ExistsParameter(MEMORY_PARAMETER))
    {
-      bool first_it = true;
-      std::string memory_str = mod->get_parameter(MEMORY_PARAMETER);
+      std::string memory_str = mod->GetParameter(MEMORY_PARAMETER);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Memory parameters are " + memory_str);
       std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found " + STR(mem_tag.size()) + " parameters");
-      for(unsigned int i = 0; i < mem_tag.size(); i++)
+      for(const auto& i : mem_tag)
       {
-         std::vector<std::string> mem_add = convert_string_to_vector<std::string>(mem_tag[i], "=");
+         std::vector<std::string> mem_add = convert_string_to_vector<std::string>(i, "=");
          THROW_ASSERT(mem_add.size() == 2, "malformed address");
          if(first_it)
          {
-            indented_output_stream->Append(" #(");
+            indented_output_stream->Append(" generic map(");
             first_it = false;
          }
          else
@@ -787,17 +787,20 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
             indented_output_stream->Append(", ");
          }
          std::string name = mem_add[0];
-         indented_output_stream->Append("." + name + "(" + name + ")");
+         std::string value;
+         if(mod->get_owner() && GetPointer<module>(mod->get_owner()) && GetPointer<module>(mod->get_owner())->ExistsParameter(MEMORY_PARAMETER))
+            value = name;
+         else
+            value = mem_add[1];
+         indented_output_stream->Append(name + "=>(" + value + ")");
       }
    }
-#endif
 
    const NP_functionalityRef& np = mod->get_NP_functionality();
    if(np)
    {
       std::vector<std::pair<std::string, structural_objectRef>> library_parameters;
       mod->get_NP_library_parameters(cir, library_parameters);
-      bool first_it = true;
       if(library_parameters.size())
          indented_output_stream->Append(" generic map(");
 
@@ -958,10 +961,10 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
             }
          }
       }
-      if(!first_it)
-         indented_output_stream->Append(")");
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written module parametrization of " + cir->get_path());
+   if(!first_it)
+      indented_output_stream->Append(")");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written module generics of " + cir->get_path());
 }
 
 void VHDL_writer::write_tail(const structural_objectRef&)

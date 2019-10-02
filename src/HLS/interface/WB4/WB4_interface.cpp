@@ -113,7 +113,8 @@ DesignFlowStep_Status WB4_interface::InternalExec()
 
    build_WB4_complete_logic(SM_wb4_interface, wrappedObj, interfaceObj);
 
-   memory::propagate_memory_parameters(HLS->top->get_circ(), SM_wb4_interface);
+   if(!parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals))
+      memory::propagate_memory_parameters(HLS->top->get_circ(), SM_wb4_interface);
 
    // Generation completed
    HLS->top = SM_wb4_interface;
