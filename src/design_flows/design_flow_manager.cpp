@@ -196,12 +196,14 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet& steps, cons
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---This step already exist but was unnecessary. Now it becomes necessary");
             }
+#if 0
             else if(design_flow_step_info->status == DesignFlowStep_Status::SKIPPED)
             {
                /// The step already exists and it is already necessary; nothing to do
                design_flow_step_info->status = DesignFlowStep_Status::UNEXECUTED;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---This step already exist (skipped)");
             }
+#endif
             else
             {
                THROW_ASSERT(design_flow_step_info->status != DesignFlowStep_Status::SKIPPED, "Switching to necessary " + design_flow_step_info->design_flow_step->GetName() + " which has already skipped");
@@ -455,11 +457,15 @@ void DesignFlowManager::Exec()
 
       /// Now check if next is actually ready
       /// First of all check if there are new dependence to add
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Recomputing dependences");
       DesignFlowStepSet pre_dependence_steps, pre_precedence_steps;
       step->ComputeRelationships(pre_dependence_steps, DesignFlowStep::DEPENDENCE_RELATIONSHIP);
       RecursivelyAddSteps(pre_dependence_steps, design_flow_step_info->status == DesignFlowStep_Status::UNNECESSARY);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Recomputed dependences");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Recompuring precedences");
       step->ComputeRelationships(pre_precedence_steps, DesignFlowStep::PRECEDENCE_RELATIONSHIP);
       RecursivelyAddSteps(pre_precedence_steps, true);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Recomputed precedences");
       bool current_ready = true;
       DesignFlowStepSet::const_iterator pre_dependence_step, pre_dependence_step_end = pre_dependence_steps.end();
       for(pre_dependence_step = pre_dependence_steps.begin(); pre_dependence_step != pre_dependence_step_end; ++pre_dependence_step)

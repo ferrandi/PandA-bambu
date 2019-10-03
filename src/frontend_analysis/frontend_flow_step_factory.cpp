@@ -1060,12 +1060,10 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       {
          return DesignFlowStepRef(new call_expr_fix(AppM, function_id, design_flow_manager.lock(), parameters));
       }
-#if HAVE_BAMBU_BUILT
       case CALL_GRAPH_BUILTIN_CALL:
       {
          return DesignFlowStepRef(new CallGraphBuiltinCall(AppM, function_id, design_flow_manager.lock(), parameters));
       }
-#endif
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
       case CHECK_CRITICAL_SESSION:
       {
