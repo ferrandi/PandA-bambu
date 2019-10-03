@@ -443,7 +443,7 @@ bool BitLatticeManipulator::mix()
          {
             b.second = sup_lattice;
             updated = true;
-            INDENT_DBG_MEX(DEBUG_LEVEL_NONE, bl_debug_level, "Changes in " + STR(b.first) + " Cur is " + bitstring_to_string(cur_lattice) + " Best is " + bitstring_to_string(best_lattice) + " Sup is " + bitstring_to_string(sup_lattice));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, bl_debug_level, "Changes in " + STR(b.first) + " Cur is " + bitstring_to_string(cur_lattice) + " Best is " + bitstring_to_string(best_lattice) + " Sup is " + bitstring_to_string(sup_lattice));
          }
       }
    }
