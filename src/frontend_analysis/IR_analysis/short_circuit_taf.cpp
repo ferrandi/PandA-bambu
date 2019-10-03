@@ -60,6 +60,12 @@
 /// Parameter include
 #include "Parameter.hpp"
 
+/// design flow manager include
+#include "design_flow_manager.hpp"
+
+/// HLS includes
+#include "hls_manager.hpp"
+
 /// parser/treegcc include
 #include "token_interface.hpp"
 
@@ -68,6 +74,12 @@
 
 /// STL include
 #include <unordered_set>
+#include <utility>
+#include <vector>
+
+/// design_flows/technology includes
+#include "technology_flow_step.hpp"
+#include "technology_flow_step_factory.hpp"
 
 /// tree includes
 #include "behavioral_helper.hpp"
@@ -79,9 +91,8 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-/// design_flow_manager include
+/// utility includes
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
-#include "design_flow_manager.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
 short_circuit_taf::short_circuit_taf(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
@@ -109,6 +120,15 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          }
 #endif
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
+         /// We can check if single_write_memory is true only after technology was loaded
+         const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+         if(design_flow_manager.lock()->GetStatus(technology_flow_signature) == DesignFlowStep_Status::EMPTY)
+         {
+            if(GetPointer<const HLS_manager>(AppM) and not GetPointer<const HLS_manager>(AppM)->IsSingleWriteMemory())
+            {
+               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
+            }
+         }
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -138,7 +158,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case(PRECEDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(REMOVE_CLOBBER_GA, SAME_FUNCTION));
-         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
          relationships.insert(std::make_pair(INTERFACE_INFER, SAME_FUNCTION));
          break;
       }

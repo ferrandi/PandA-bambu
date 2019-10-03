@@ -53,10 +53,8 @@
 #include "design_flow_manager.hpp"
 
 /// design_flows/technology includes
-#if HAVE_BAMBU_BUILT
 #include "technology_flow_step.hpp"
 #include "technology_flow_step_factory.hpp"
-#endif
 
 /// Parameter include
 #include "Parameter.hpp"
@@ -93,7 +91,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-#if HAVE_BAMBU_BUILT
          /// We can check if single_write_memory is true only after technology was loaded
          const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          if(design_flow_manager.lock()->GetStatus(technology_flow_signature) == DesignFlowStep_Status::EMPTY)
@@ -103,9 +100,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
                relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
             }
          }
-#else
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
-#endif
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
