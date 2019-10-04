@@ -294,8 +294,7 @@
 #define OPT_DISABLE_REG_INIT_VALUE (1 + OPT_LEVEL_RESET)
 #define OPT_SCHEDULING_MUX_MARGINS (1 + OPT_DISABLE_REG_INIT_VALUE)
 #define OPT_USE_ALUS (1 + OPT_SCHEDULING_MUX_MARGINS)
-#define OPT_SDC_SCHEDULING (1 + OPT_USE_ALUS)
-#define OPT_SERIALIZE_MEMORY_ACCESSES (1 + OPT_SDC_SCHEDULING)
+#define OPT_SERIALIZE_MEMORY_ACCESSES (1 + OPT_USE_ALUS)
 #define OPT_SILP (1 + OPT_SERIALIZE_MEMORY_ACCESSES)
 #define OPT_SIMULATE (1 + OPT_SILP)
 #define OPT_SKIP_PIPE_PARAMETER (1 + OPT_SIMULATE)
@@ -451,9 +450,11 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Perform scheduling by using the scheduling and allocation with ILP\n"
       << "        formulation. Default: off.\n\n"
 #endif
-      << "    --speculative-sdc-scheduling\n"
+      << "    --speculative-sdc-scheduling,-s\n"
       << "        Perform scheduling by using speculative sdc.\n\n"
 #endif
+      << "    --pipelining,-p\n"
+      << "        Perform functional pipelining starting from the top function.\n\n"
       << "    --fixed-scheduling=<file>\n"
       << "        Provide scheduling as an XML file.\n\n"
       << "    --no-chaining\n"
@@ -919,9 +920,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                                    --DSP-allocation-coefficient=1.75\n"
       << "                                    --do-not-expose-globals --cprf=0.875\n\n"
       << std::endl;
-#if HAVE_EXPERIMENTAL || HAVE_ILP_BUILT
    os << "  Other options:\n\n";
-#endif
    os << "    --pragma-parse\n"
       << "        Perform source code parsing to extract information about pragmas.\n"
       << "        (default=no).\n\n";
@@ -961,9 +960,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
 #endif
    os << "    --disable-bitvalue-ipa\n"
       << "        Disable inter-procedural bitvalue analysis.\n\n";
-#if HAVE_EXPERIMENTAL || HAVE_ILP_BUILT
    os << std::endl;
-#endif
 
    // Checks and debugging options
    os << "  Debug options:\n\n"
@@ -1010,6 +1007,9 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "           name is in the list passed as argument.\n\n"
       << "    --discrepancy-permissive-ptrs\n"
       << "           Do not trigger hard errors on pointer variables.\n\n"
+      << "    --discrepancy-hw\n"
+      << "           Hardware Discrepancy Analysis.\n\n"
+
 #if HAVE_MODELSIM
       << "    --assert-debug\n"
       << "        Enable assertion debugging performed by Modelsim.\n\n"
@@ -1049,7 +1049,7 @@ int BambuParameter::Exec()
    // Bambu short option. An option character in this string can be followed by a colon (`:') to indicate that it
    // takes a required argument. If an option character is followed by two colons (`::'), its argument is optional;
    // this is a GNU extension.
-   const char* const short_options = COMMON_SHORT_OPTIONS_STRING "o:t:u:H:SC::b:w:" GCC_SHORT_OPTIONS_STRING;
+   const char* const short_options = COMMON_SHORT_OPTIONS_STRING "o:t:u:H:sSC::b:w:p" GCC_SHORT_OPTIONS_STRING;
 
    const struct option long_options[] = {
       COMMON_LONG_OPTIONS,
@@ -1096,8 +1096,9 @@ int BambuParameter::Exec()
       /// Scheduling options
       {FIXED_SCHEDULING_OPT, required_argument, nullptr, OPT_FIXED_SCHED},
 #if HAVE_ILP_BUILT
-      {"speculative-sdc-scheduling", no_argument, nullptr, OPT_SDC_SCHEDULING},
+      {"speculative-sdc-scheduling", no_argument, nullptr, 's'},
 #endif
+      {"pipelining", no_argument, nullptr, 'p'},
       {"serialize-memory-accesses", no_argument, nullptr, OPT_SERIALIZE_MEMORY_ACCESSES},
       {PAR_LIST_BASED_OPT, optional_argument, nullptr, OPT_LIST_BASED}, // no short option
       {"post-rescheduling", no_argument, nullptr, OPT_POST_RESCHEDULING},
@@ -1224,6 +1225,7 @@ int BambuParameter::Exec()
       {"disable-bitvalue-ipa", no_argument, nullptr, OPT_DISABLE_BITVALUE_IPA},
       {"discrepancy", no_argument, nullptr, OPT_DISCREPANCY},
       {"discrepancy-force-uninitialized", no_argument, nullptr, OPT_DISCREPANCY_FORCE},
+      {"discrepancy-hw", no_argument, nullptr, OPT_DISCREPANCY_HW},
       {"discrepancy-no-load-pointers", no_argument, nullptr, OPT_DISCREPANCY_NO_LOAD_POINTERS},
       {"discrepancy-only", required_argument, nullptr, OPT_DISCREPANCY_ONLY},
       {"discrepancy-permissive-ptrs", no_argument, nullptr, OPT_DISCREPANCY_PERMISSIVE_PTRS},
@@ -1888,7 +1890,7 @@ int BambuParameter::Exec()
             break;
          }
 #if HAVE_ILP_BUILT
-         case OPT_SDC_SCHEDULING:
+         case 's':
          {
             if(scheduling_set_p and getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) != HLSFlowStep_Type::SDC_SCHEDULING)
                THROW_ERROR("BadParameters: only one scheduler can be specified");
@@ -1902,6 +1904,11 @@ int BambuParameter::Exec()
             break;
          }
 #endif
+         case 'p':
+         {
+            setOption(OPT_pipelining, true);
+            break;
+         }
          case OPT_SERIALIZE_MEMORY_ACCESSES:
          {
             setOption(OPT_gcc_serialize_memory_accesses, true);
@@ -3136,7 +3143,6 @@ void BambuParameter::CheckParameters()
          f = v && !(v & (v - 1));
          if(!f)
             THROW_ERROR("Number of bank must be a power of 2");
-         PRINT_MSG("Passed parameter OPT_context_switch, this means that the following step are already defined and cannot be changed (if passed by command line are ignored). Controller,Datapath, Channel Type, Interface generator and memory dominator\n");
          setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS);
          setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS);
          setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_CS);
@@ -3146,11 +3152,7 @@ void BambuParameter::CheckParameters()
       }
       else
       {
-#if HAVE_EXPERIMENTAL
          setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION);
-#else
-         THROW_UNREACHABLE("");
-#endif
       }
       add_bambu_library("pthread");
    }
@@ -3795,7 +3797,7 @@ void BambuParameter::SetDefaults()
 #if HAVE_TASTE
    setOption(OPT_generate_taste_architecture, false);
 #endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
    setOption(OPT_num_threads, 4);
 #endif
    setOption(OPT_memory_banks_number, 1);

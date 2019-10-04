@@ -310,14 +310,15 @@ def CollectResults(directory):
                 local_args = local_args + " " + args.spider_style + " " + table
             else:
                 local_args = local_args + " " + os.path.join(os.path.dirname(spider), args.spider_style) + " " + table
-            logging.info("   Creating tex " + spider + " " + local_args)
-#            logging.info("   Executing " + spider)
+#            logging.info("   Creating tex " + spider + " " + local_args)
+            logging.info("   Creating tex " + spider)
             local_command = [spider]
             local_command.extend(shlex.split(local_args))
             return_value = subprocess.call(local_command)
         if len(input_files) > 0 and csv != None:
             local_args = input_files + " " + csv
-            logging.info("   Creating csv " + spider + " " + local_args)
+#            logging.info("   Creating csv " + spider + " " + local_args)
+            logging.info("   Creating csv " + spider)
             local_command = [spider]
             local_command.extend(shlex.split(local_args))
             return_value = subprocess.call(local_command)

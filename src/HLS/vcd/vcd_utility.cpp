@@ -635,7 +635,6 @@ bool vcd_utility::detect_mismatch_element(const vcd_trace_head& t, const uint64_
 bool vcd_utility::detect_mismatch_simple(const vcd_trace_head& t, const uint64_t c_context, const std::string& c_val, const unsigned int el_idx, const std::string::size_type first_c_bit, const std::string::size_type c_size)
 {
    unsigned int base_index = 0; // this is set when an address mismatch is detected
-
    const bool resized = c_val.length() != c_size;
    const std::string& resized_c_val = resized ? c_val.substr(first_c_bit, c_size) : c_val;
 
@@ -964,9 +963,11 @@ bool vcd_utility::detect_regular_mismatch(const vcd_trace_head& t, const std::st
    else // is an integer
    {
       std::string bitvalue = GetPointer<const ssa_name>(GET_NODE(TM->CGetTreeReindex(t.op_info.ssa_name_node_id)))->bit_values;
-      const auto first_not_x_pos = bitvalue.find_first_not_of("xX");
+      auto first_not_x_pos = bitvalue.find_first_not_of("xX");
       if(first_not_x_pos == std::string::npos)
          return false;
+      if(bitvalue.size() < vcd_val.size())
+         first_not_x_pos += vcd_val.size() - bitvalue.size();
       const std::string vcd_trimmed_val = vcd_val.substr(first_not_x_pos);
       const std::string& longer = (vcd_trimmed_val.length() <= c_val.length()) ? c_val : vcd_trimmed_val;
       const std::string& shorter = (vcd_trimmed_val.length() <= c_val.length()) ? vcd_trimmed_val : c_val;

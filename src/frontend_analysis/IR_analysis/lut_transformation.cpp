@@ -32,7 +32,7 @@
  */
 /**
  * @file lut_transformation.cpp
- * @brief identify and optmize lut expressions.
+ * @brief identify and optimize lut expressions.
  * @author Marco Speziali
  * @author Davide Toschi
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
@@ -350,7 +350,7 @@ class klut_network_ext : public mockturtle::klut_network
     */
    signal create_lut(std::vector<signal> s, uint64_t f)
    {
-      if(f==static_cast<uint64_t>(-1LL))
+      if(f == static_cast<uint64_t>(-1LL))
          return this->create_not(this->get_constant(false));
       kitty::dynamic_truth_table tt(static_cast<int>(s.size()));
       std::stringstream resHex;
@@ -1612,7 +1612,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 bool lut_transformation::HasToBeExecuted() const
 {
    if(not parameters->getOption<int>(OPT_gcc_openmp_simd) && not parameters->isOption(OPT_context_switch))
-      return true;
+      return FunctionFrontendFlowStep::HasToBeExecuted();
    else
       return false;
 }

@@ -5473,7 +5473,7 @@ bool BehavioralHelper::IsOmpBodyLoop() const
 }
 #endif
 
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
 bool BehavioralHelper::IsOmpAtomic() const
 {
    const auto fd = GetPointer<const function_decl>(TM->get_tree_node_const(function_index));

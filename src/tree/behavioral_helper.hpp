@@ -694,7 +694,7 @@ class BehavioralHelper
    bool IsOmpBodyLoop() const;
 #endif
 
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
    /**
     * Return true if the function is an omp atomic instruction
     */

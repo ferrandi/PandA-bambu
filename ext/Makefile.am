@@ -325,7 +325,7 @@ lib_mockturtle_la_CPPFLAGS = \
       -I$(top_srcdir)/ext/mockturtle/lib/abcsat/\
       -DLIN64 -DABC_NAMESPACE=pabc -DABC_NO_USE_READLINE
 endif
-CXXFLAGS = -Wno-error=undef -Wno-unknown-pragmas -Wno-sign-conversion -Wno-conversion -Wno-shadow -Wno-switch-enum -Wno-unused-parameter -Wno-old-style-cast -Wno-cast-qual -Wno-zero-as-null-pointer-constant -Wno-non-virtual-dtor -Wno-pedantic -Wno-parentheses -Wno-switch-default -Wno-ctor-dtor-privacy -Wno-overloaded-virtual -Wno-sign-promo 
+CXXFLAGS = -Wno-error=undef -Wno-unknown-pragmas -Wno-sign-conversion -Wno-conversion -Wno-shadow -Wno-switch-enum -Wno-unused-parameter -Wno-old-style-cast -Wno-cast-qual -Wno-zero-as-null-pointer-constant -Wno-non-virtual-dtor -Wno-pedantic -Wno-parentheses -Wno-switch-default -Wno-ctor-dtor-privacy -Wno-overloaded-virtual -Wno-sign-promo -fpermissive
 
 #define FMT_HEADER_ONLY 1
 
