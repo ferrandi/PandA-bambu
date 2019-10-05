@@ -362,6 +362,9 @@ class klut_network_ext : public mockturtle::klut_network
          while(nchar > res0.size())
             res0 = "0" + res0;
       }
+      while(res0.size() > ((1u << s.size()) / 4))
+         res0 = res0.substr(1);
+
       kitty::create_from_hex_string(tt, res0);
       return create_node(s, tt);
    }
