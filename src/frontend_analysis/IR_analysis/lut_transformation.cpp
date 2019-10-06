@@ -358,10 +358,11 @@ class klut_network_ext : public mockturtle::klut_network
       std::string res0 = resHex.str();
       if(tt.num_vars() > 1)
       {
-         auto nchar = (1u << s.size()) / 4;
-         while(nchar > res0.size())
+         while((res0.size() << 2) < tt.num_bits())
             res0 = "0" + res0;
       }
+      while((res0.size() << 2) > tt.num_bits())
+         res0 = res0.substr(1);
       kitty::create_from_hex_string(tt, res0);
       return create_node(s, tt);
    }
