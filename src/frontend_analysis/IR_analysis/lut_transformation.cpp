@@ -361,7 +361,7 @@ class klut_network_ext : public mockturtle::klut_network
          while((res0.size() << 2) < tt.num_bits())
             res0 = "0" + res0;
       }
-      while((res0.size() << 2) > tt.num_bits())
+      while((res0.size() << 2) > tt.num_bits() && tt.num_vars() > 1)
          res0 = res0.substr(1);
 
       kitty::create_from_hex_string(tt, res0);
