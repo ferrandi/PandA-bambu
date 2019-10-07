@@ -89,7 +89,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
          relationships.insert(std::make_pair(PRAGMA_ANALYSIS, WHOLE_APPLICATION));
 #endif
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
-         relationships.insert(std::make_pair(MEM_CG_EXT, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(MEM_CG_EXT, SAME_FUNCTION));
          break;
       }
       default:

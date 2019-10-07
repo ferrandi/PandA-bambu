@@ -103,6 +103,8 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 #if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(SDC_CODE_MOTION, SAME_FUNCTION));
 #endif
+         /// Following precedence is to reduce invalidation; BIT_VALUE_OPT of called can invalidate DEAD_CODE_ELIMINATION of called and so this
+         relationships.insert(std::make_pair(BIT_VALUE_OPT, CALLED_FUNCTIONS));
          break;
       }
       case DEPENDENCE_RELATIONSHIP:
