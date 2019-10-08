@@ -1232,5 +1232,6 @@ softfloat-tests-clang5.sh\
 softfloat-tests-clang6.sh\
 softfloat-tests-clang7.sh\
 libm-testsClang.sh\
-CHStone_frontend1Clang.sh
+CHStone_frontend1Clang.sh\
+gcc49_regression_simple_no_expose_globals_pretty_print.sh
 
