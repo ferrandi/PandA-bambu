@@ -128,6 +128,7 @@ int EucalyptusParameter::Exec()
       {"target-datafile", required_argument, nullptr, INPUT_OPT_TARGET_DATAFILE},
       {"target-device", required_argument, nullptr, 0},
       {"target-scriptfile", required_argument, nullptr, INPUT_OPT_TARGET_SCRIPTFILE},
+      {"writer", required_argument, nullptr, 'w'},
       {nullptr, 0, nullptr, 0}
    };
 
@@ -162,6 +163,21 @@ int EucalyptusParameter::Exec()
          case INPUT_OPT_TARGET_SCRIPTFILE:
          {
             setOption(OPT_target_device_script, optarg);
+            break;
+         }
+         /// output options
+         case 'w':
+         {
+            if(std::string(optarg) == "V")
+               setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
+#if HAVE_EXPERIMENTAL
+            else if(std::string(optarg) == "S")
+               setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::SYSTEMC));
+#endif
+            else if(std::string(optarg) == "H")
+               setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VHDL));
+            else
+               throw "BadParameters: backend language not correctly specified";
             break;
          }
          case 0:
