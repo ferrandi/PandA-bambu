@@ -486,7 +486,7 @@ parser.add_argument('-c', "--commonargs", help="A set of arguments to be passed 
 parser.add_argument("--table", help="Print the results in tex format", default="results.tex")
 parser.add_argument("--csv", help="Print the results in csv format")
 parser.add_argument("--tool", help="The tool to be tested", default="bambu")
-parser.add_argument("--ulimit", help="The ulimit options", default="-f 8388608 -v 10485760 -s 16384")
+parser.add_argument("--ulimit", help="The ulimit options", default="-f 8388608 -v 16777216 -s 16384")
 parser.add_argument("--stop", help="Stop the execution on first error (default=false)", default=False, action="store_true")
 parser.add_argument("--returnfail", help="Return FAILURE in case at least one test fails (default=false)", default=False, action="store_true")
 parser.add_argument("--mail", help="Send a mail with the result")
