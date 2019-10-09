@@ -2509,7 +2509,7 @@ register_SE #(.BITSIZE_in1(BITSIZE_LoopIteration), .BITSIZE_out1(BITSIZE_LoopIte
 .in1(out_MUX_2_reg_0_0_0_0),
 .wenable(wrenable_reg_0));
 
-fifo #(.BITSIZE_data_in(BITSIZE_LoopIteration), .BITSIZE_data_out(BITSIZE_LoopIteration), .ADDR_WIDTH(10)) fifo_i0
+fifo #(.BITSIZE_data_in(BITSIZE_LoopIteration), .BITSIZE_data_out(BITSIZE_LoopIteration), .ADDR_WIDTH(1)) fifo_i0
  (/*AUTOINST*/
   // Outputs
   .full                             (fifo_full),             // Templated

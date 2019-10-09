@@ -52,6 +52,7 @@
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 #include "tree_node.hpp"
+#include "tree_helper.hpp"
 
 /// behavior include
 #include "call_graph_manager.hpp"
@@ -154,7 +155,7 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    std::string par_ctrl_library = HLS->HLS_T->get_technology_manager()->get_library(parallel_controller_model);
    structural_objectRef controller_circuit = SM->add_module_from_technology_library(parallel_controller_name, parallel_controller_model, par_ctrl_library, circuit, HLS->HLS_T->get_technology_manager());
    controller_circuit->set_owner(circuit);
-   auto loopBW = connect_loop_iter(circuit);
+   auto loopBW = BW_loop_iter(circuit);
    resize_controller_parallel(controller_circuit, loopBW);
    THROW_ASSERT(controller_circuit, "Missing controller circuit");
 
@@ -247,7 +248,41 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-unsigned top_entity_parallel_cs::connect_loop_iter(const structural_objectRef circuit)
+unsigned top_entity_parallel_cs::BW_loop_iter(const structural_objectRef circuit)
+{
+   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
+   structural_objectRef controller_circuit = circuit->find_member("__controller_parallel", component_o_K, circuit);
+
+   long long int n = 0;
+   const auto listLoops = FB->CGetLoops()->GetList();
+   for(auto loop : listLoops)
+   {
+      if(loop->GetId() != 0)
+      {
+         n = loop->upper_bound;
+      }
+   }
+   if(n != 0)
+   {
+      auto loopBW = 1+static_cast<unsigned>(ceil_log2(static_cast<unsigned long long int>(n)));
+      return loopBW;
+   }
+   else
+   {
+      for(auto loop : listLoops)
+      {
+         if(loop->GetId() != 0)
+         {
+            THROW_ASSERT(loop->upper_bound_tn, "unexpected condition");
+            return tree_helper::Size(loop->upper_bound_tn);
+         }
+      }
+   }
+   THROW_ERROR("unexpected condition");
+   return 0;
+}
+
+void top_entity_parallel_cs::connect_loop_iter(const structural_objectRef circuit, unsigned loopBW)
 {
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
@@ -264,14 +299,14 @@ unsigned top_entity_parallel_cs::connect_loop_iter(const structural_objectRef ci
    }
    if(n != 0)
    {
-      auto loopBW = 1+static_cast<unsigned>(ceil_log2(static_cast<unsigned long long int>(n)));
       structural_objectRef constant(new constant_o(parameters->getOption<int>(OPT_debug_level), circuit, STR(n)));
       structural_type_descriptorRef constant_type = structural_type_descriptorRef(new structural_type_descriptor("bool", loopBW));
       constant->set_type(constant_type);
       GetPointer<module>(SM->get_circ())->add_internal_object(constant);
       structural_objectRef controller_Loop_Iter = controller_circuit->find_member("LoopIteration", port_o_K, controller_circuit);
+      THROW_ASSERT(controller_Loop_Iter, "unexpected condition");
       SM->add_connection(constant, controller_Loop_Iter);
-      return loopBW;
+      return;
    }
    else
    {
@@ -282,13 +317,13 @@ unsigned top_entity_parallel_cs::connect_loop_iter(const structural_objectRef ci
             std::string name_Loop_Upper_Bound = BH->PrintVariable(loop->upper_bound_tn->index);
             structural_objectRef port_Loop_Iter = circuit->find_member(name_Loop_Upper_Bound, port_o_K, circuit);
             structural_objectRef controller_Loop_Iter = controller_circuit->find_member("LoopIteration", port_o_K, controller_circuit);
+            THROW_ASSERT(controller_Loop_Iter, "unexpected condition");
             SM->add_connection(port_Loop_Iter, controller_Loop_Iter);
-            return STD_GET_SIZE(port_Loop_Iter->get_typeRef());
+            return;
          }
       }
    }
    THROW_ERROR("unexpected condition");
-   return 0;
 }
 
 void top_entity_parallel_cs::resize_controller_parallel(structural_objectRef controller_circuit, unsigned loopBW)
@@ -346,5 +381,7 @@ void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef ci
    structural_objectRef request_sign = SM->add_sign("request_signal", circuit, data_type);
    SM->add_connection(controller_request, request_sign);
    SM->add_connection(request_sign, datapath_request);
+
+   connect_loop_iter(circuit, loopBW);
 
 }

@@ -58,7 +58,8 @@ class top_entity_parallel_cs : public top_entity
     */
    virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
 
-   unsigned connect_loop_iter(const structural_objectRef circuit);
+   unsigned BW_loop_iter(const structural_objectRef circuit);
+   void connect_loop_iter(const structural_objectRef circuit, unsigned loopBW);
    /**
     * @brief resize_controller_parallel
     * @param controller_circuit
