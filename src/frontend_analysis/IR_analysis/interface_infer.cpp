@@ -463,7 +463,7 @@ void interface_infer::create_Read_function(tree_nodeRef refStmt, const std::stri
    AppM->GetCallGraphManager()->AddFunctionAndCallPoint(GET_INDEX_NODE(gn->scpe), GET_INDEX_NODE(function_decl_node), new_assignment->index, FB, FunctionEdgeInfo::CallType::direct_call);
 }
 
-void interface_infer::create_Write_function(const std::string& argName_string, tree_nodeRef origStmt, const std::string& fdName, tree_nodeRef argSSANode, tree_nodeRef writeValue, tree_nodeRef aType, tree_nodeRef writeType,
+void interface_infer::create_Write_function(const std::string& argName_string, tree_nodeRef origStmt, const std::string& fdName, tree_nodeRef writeValue, tree_nodeRef aType, tree_nodeRef writeType,
                                             const tree_manipulationRef tree_man, const tree_managerRef TM, bool commonRWSignature)
 {
    THROW_ASSERT(origStmt, "expected a ref statement");
@@ -490,7 +490,12 @@ void interface_infer::create_Write_function(const std::string& argName_string, t
       argsT.push_back(boolean_type);
    }
    argsT.push_back(bit_size_type);
-   argsT.push_back(writeType);
+   if(tree_helper::is_int(TM, GET_INDEX_NODE(writeValue)))
+   {
+      argsT.push_back(tree_man->CreateUnsigned(tree_helper::CGetType(GET_NODE(writeValue))));
+   }
+   else
+      argsT.push_back(writeType);
    argsT.push_back(aType);
    const std::string srcp = fd->include_name + ":" + STR(fd->line_number) + ":" + STR(fd->column_number);
    auto function_decl_node = tree_man->create_function_decl(fdName, fd->scpe, argsT, tree_man->create_void_type(), srcp, false);
@@ -503,21 +508,22 @@ void interface_infer::create_Write_function(const std::string& argName_string, t
       args.push_back(sel_value);
    }
    args.push_back(size_value);
-   args.push_back(writeValue);
-   if(origStmt)
+   if(tree_helper::is_int(TM, GET_INDEX_NODE(writeValue)))
    {
-      THROW_ASSERT(GET_NODE(origStmt)->get_kind() == gimple_assign_K, "unexpected condition");
-      auto ga = GetPointer<gimple_assign>(GET_NODE(origStmt));
-      THROW_ASSERT(GET_NODE(ga->op0)->get_kind() == mem_ref_K, "unexpected condition");
-      auto mr = GetPointer<mem_ref>(GET_NODE(ga->op0));
-      args.push_back(mr->op0);
+      const auto ga_nop = tree_man->CreateNopExpr(writeValue, tree_man->CreateUnsigned(tree_helper::CGetType(GET_NODE(writeValue))), tree_nodeRef(), tree_nodeRef());
+      sl->list_of_bloc[destBB]->PushBefore(ga_nop, origStmt);
+      args.push_back(GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0);
    }
    else
-      args.push_back(argSSANode);
+      args.push_back(writeValue);
+   THROW_ASSERT(GET_NODE(origStmt)->get_kind() == gimple_assign_K, "unexpected condition");
+   auto ga = GetPointer<gimple_assign>(GET_NODE(origStmt));
+   THROW_ASSERT(GET_NODE(ga->op0)->get_kind() == mem_ref_K, "unexpected condition");
+   auto mr = GetPointer<mem_ref>(GET_NODE(ga->op0));
+   args.push_back(mr->op0);
 
    auto new_writecall = tree_man->create_gimple_call(function_decl_node, args, srcp, destBB);
 
-   THROW_ASSERT(origStmt, "unexpected condition");
    sl->list_of_bloc[destBB]->PushBefore(new_writecall, origStmt);
    GetPointer<HLS_manager>(AppM)->design_interface_stores[fname][destBB][argName_string].push_back(GET_INDEX_NODE(new_writecall));
    addGimpleNOPxVirtual(origStmt, TM);
@@ -1337,7 +1343,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               isDiffSize = true;
                            std::string instanceFname = fdName + STR(IdIndex);
                            operationsW.push_back(instanceFname);
-                           create_Write_function(argName_string, ws, instanceFname, argSSANode, ws_ga->op1, aType, GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM, commonRWSignature);
+                           create_Write_function(argName_string, ws, instanceFname, ws_ga->op1, aType, GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM, commonRWSignature);
                            ++IdIndex;
                         }
                         create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, isDiffSize, fname, n_resources, alignment);
@@ -1379,7 +1385,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               isDiffSize = true;
                            std::string instanceFname = fdName + STR(IdIndex);
                            operationsW.push_back(instanceFname);
-                           create_Write_function(argName_string, ws, instanceFname, argSSANode, ws_ga->op1, aType, GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM, commonRWSignature);
+                           create_Write_function(argName_string, ws, instanceFname, ws_ga->op1, aType, GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM, commonRWSignature);
                            ++IdIndex;
                         }
                         create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, isDiffSize, fname, n_resources, alignment);
@@ -1406,7 +1412,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               isDiffSize = true;
                            std::string instanceFname = fdName + STR(IdIndex);
                            operationsW.push_back(instanceFname);
-                           create_Write_function(argName_string, ws, instanceFname, argSSANode, ws_ga->op1, aType, GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM, commonRWSignature);
+                           create_Write_function(argName_string, ws, instanceFname, ws_ga->op1, aType, GetPointer<mem_ref>(GET_NODE(ws_ga->op0))->type, tree_man, TM, commonRWSignature);
                            ++IdIndex;
                         }
                         create_resource(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, isDiffSize, fname, n_resources, alignment);
