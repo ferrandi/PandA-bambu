@@ -896,7 +896,7 @@ void DesignFlowManager::DeExecute(const vertex starting_vertex, const bool force
 {
    /// Set not executed on the starting vertex
    const DesignFlowStepInfoRef design_flow_step_info = design_flow_graph->GetDesignFlowStepInfo(starting_vertex);
-   INDENT_DBG_MEX(DEBUG_LEVEL_NONE, debug_level, "---DeExecuting " + design_flow_step_info->design_flow_step->GetName());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---DeExecuting " + design_flow_step_info->design_flow_step->GetName());
    switch(design_flow_step_info->status)
    {
       case DesignFlowStep_Status::SUCCESS:

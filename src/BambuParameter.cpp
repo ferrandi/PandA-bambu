@@ -3815,6 +3815,7 @@ void BambuParameter::SetDefaults()
    panda_parameters["CSE_size"] = "2";
    panda_parameters["PortSwapping"] = "1";
    //   panda_parameters["enable-CSROA"] = "1";
+   panda_parameters["MAX_LUT_INT_SIZE"] = "8";
 }
 
 void BambuParameter::add_bambu_library(std::string lib)

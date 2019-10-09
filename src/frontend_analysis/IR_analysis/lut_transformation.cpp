@@ -69,7 +69,6 @@
 #define ABC_NO_USE_READLINE
 #pragma endregion
 
-#define MAX_LUT_INT_SIZE 0
 
 #define FMT_HEADER_ONLY 1
 #ifndef __APPLE__
@@ -182,7 +181,7 @@ bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int m
    auto type_id1 = b1->index;
    if(tree_helper::is_real(TM, type_id1) || tree_helper::is_a_complex(TM, type_id1) || tree_helper::is_a_vector(TM, type_id1) || tree_helper::is_a_struct(TM, type_id1))
       return false;
-   return (tree_helper::Size(GET_NODE((be)->op0)) <= max && tree_helper::Size(GET_NODE((be)->op1)) <= max) || GET_CONST_NODE(be->op0)->get_kind() == integer_cst_K || GET_CONST_NODE(be->op1)->get_kind() == integer_cst_K;
+   return (tree_helper::Size(GET_NODE((be)->op0)) <= max && tree_helper::Size(GET_NODE((be)->op1)) <= max);
 }
 #define CHECK_COND_EXPR_SIZE(ce) (tree_helper::Size(GET_NODE((ce)->op1)) == 1 && tree_helper::Size(GET_NODE((ce)->op2)) == 1)
 #define CHECK_NOT_EXPR_SIZE(ne) (tree_helper::Size(GET_NODE((ne)->op)) == 1)
@@ -197,7 +196,7 @@ bool lut_transformation::cannotBeLUT(tree_nodeRef op) const
    return not(GetPointer<lut_expr>(op_node) || (GetPointer<truth_not_expr>(op_node) && CHECK_NOT_EXPR_SIZE(GetPointer<truth_not_expr>(op_node))) || (GetPointer<bit_not_expr>(op_node) && CHECK_NOT_EXPR_SIZE(GetPointer<bit_not_expr>(op_node))) ||
               (GetPointer<cond_expr>(op_node) && CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(op_node))) ||
               (VECT_CONTAINS(lutBooleanExpressibleOperations, code) && GetPointer<binary_expr>(op_node) && CHECK_BIN_EXPR_BOOL_SIZE(GetPointer<binary_expr>(op_node))) ||
-              (VECT_CONTAINS(lutIntegerExpressibleOperations, code) && GetPointer<binary_expr>(op_node) && CHECK_BIN_EXPR_INT_SIZE(GetPointer<binary_expr>(op_node), MAX_LUT_INT_SIZE)));
+              (VECT_CONTAINS(lutIntegerExpressibleOperations, code) && GetPointer<binary_expr>(op_node) && CHECK_BIN_EXPR_INT_SIZE(GetPointer<binary_expr>(op_node), parameters->GetParameter<unsigned int>("MAX_LUT_INT_SIZE"))));
 }
 
 #pragma endregion
@@ -1190,7 +1189,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          modified = true;
          continue;
       }
-      if(VECT_CONTAINS(lutIntegerExpressibleOperations, code1) && CHECK_BIN_EXPR_INT_SIZE(binaryExpression, MAX_LUT_INT_SIZE))
+      if(VECT_CONTAINS(lutIntegerExpressibleOperations, code1) && CHECK_BIN_EXPR_INT_SIZE(binaryExpression, parameters->GetParameter<unsigned int>("MAX_LUT_INT_SIZE")))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Integer operands");
 
