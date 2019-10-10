@@ -235,6 +235,10 @@
 #include "host_profiling.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
+#include "eSSA.hpp"
+#include "Range_Analysis.hpp"
+#endif
+#if HAVE_BAMBU_BUILT
 #include "rebuild_initializations.hpp"
 #endif
 #if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
@@ -398,6 +402,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #endif
       case DOM_POST_DOM_COMPUTATION:
 #if HAVE_BAMBU_BUILT
+      case ESSA:
       case(FANOUT_OPT):
       case MULTIPLE_ENTRY_IF_REDUCTION:
 #endif
@@ -605,6 +610,9 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #if HAVE_FROM_PRAGMA_BUILT
       case(PRAGMA_SUBSTITUTION):
 #endif
+#if HAVE_BAMBU_BUILT
+      case RANGE_ANALYSIS:
+#endif
 #if HAVE_ZEBU_BUILT
       case(SOURCE_CODE_STATISTICS):
 #endif
@@ -722,6 +730,12 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
          return DesignFlowStepRef(new PragmaSubstitution(AppM, design_flow_manager.lock(), parameters));
       }
 #endif
+#if HAVE_BAMBU_BUILT
+      case RANGE_ANALYSIS:
+      {
+            return DesignFlowStepRef(new Range_Analysis(AppM, design_flow_manager.lock(), parameters));
+      }
+#endif
 #if HAVE_ZEBU_BUILT
       case(SIZEOF_SUBSTITUTION):
       {
@@ -796,6 +810,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
 #endif
       case DOM_POST_DOM_COMPUTATION:
 #if HAVE_BAMBU_BUILT
+      case ESSA:
       case(FANOUT_OPT):
       case MULTIPLE_ENTRY_IF_REDUCTION:
 #endif
@@ -1132,6 +1147,10 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
          return DesignFlowStepRef(new dom_post_dom_computation(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #if HAVE_BAMBU_BUILT
+      case(ESSA):
+      {
+            return DesignFlowStepRef(new eSSA(parameters, AppM, function_id, design_flow_manager.lock()));
+      }
       case(FANOUT_OPT):
       {
          return DesignFlowStepRef(new fanout_opt(parameters, AppM, function_id, design_flow_manager.lock()));
@@ -1564,6 +1583,9 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
 #endif
 #if HAVE_FROM_PRAGMA_BUILT
       case(PRAGMA_SUBSTITUTION):
+#endif
+#if HAVE_BAMBU_BUILT
+      case RANGE_ANALYSIS:
 #endif
 #if HAVE_ZEBU_BUILT
       case(SIZEOF_SUBSTITUTION):

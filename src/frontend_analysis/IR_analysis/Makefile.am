@@ -97,7 +97,9 @@ if BUILD_BAMBU
      soft_float_cg_ext.hpp \
      vectorize.hpp \
      virtual_phi_nodes_split.hpp\
-     constant_flop_wrapper.hpp
+     constant_flop_wrapper.hpp \
+     eSSA.hpp \
+     Range_Analysis.hpp
   lib_IR_analysis_la_SOURCES += \
      IR_lowering.cpp \
      IR_lowering_exec.cpp \
@@ -139,7 +141,9 @@ if BUILD_BAMBU
      soft_float_cg_ext.cpp \
      vectorize.cpp \
      virtual_phi_nodes_split.cpp \
-     constant_flop_wrapper.cpp
+     constant_flop_wrapper.cpp \
+     eSSA.cpp \
+     Range_Analysis.cpp
    lib_IR_analysis_la_CPPFLAGS += \
       -I$(top_srcdir)/ext/mockturtle/include/\
       -I$(top_srcdir)/ext/mockturtle/lib/kitty/\

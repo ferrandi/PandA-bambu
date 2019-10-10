@@ -255,6 +255,10 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case(DYNAMIC_VAR_COMPUTATION):
          return "DynamicVarComputation";
 #endif
+#if HAVE_BAMBU_BUILT
+      case ESSA:
+         return "eSSA";
+#endif
 #if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
       case(EXTENDED_PDG_COMPUTATION):
          return "ExtendedPdgComputation";
@@ -410,6 +414,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "ProbabilityPath";
 #endif
 #if HAVE_BAMBU_BUILT
+       case RANGE_ANALYSIS:
+         return "RangeAnalysis";
       case(REBUILD_INITIALIZATION):
          return "RebuildInitialization";
       case(REBUILD_INITIALIZATION2):
