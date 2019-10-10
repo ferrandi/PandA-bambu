@@ -564,7 +564,15 @@ void RTLCharacterization::add_input_register(structural_objectRef port_in, const
                                              structural_objectRef e_port, structural_managerRef SM)
 {
    structural_objectRef r_signal;
-   structural_objectRef reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME, register_library, circuit, TM);
+   structural_objectRef reg_mod;
+   if(port_in->get_typeRef()->type == structural_type_descriptor::INT)
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_INT, register_library, circuit, TM);
+   else if(port_in->get_typeRef()->type == structural_type_descriptor::UINT)
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_UINT, register_library, circuit, TM);
+   else if(port_in->get_typeRef()->type == structural_type_descriptor::REAL)
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_REAL, register_library, circuit, TM);
+   else
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME, register_library, circuit, TM);
    GetPointer<module>(reg_mod)->get_in_port(2)->type_resize(GET_TYPE_SIZE(port_in));
    GetPointer<module>(reg_mod)->get_out_port(0)->type_resize(GET_TYPE_SIZE(port_in));
 
@@ -588,7 +596,15 @@ void RTLCharacterization::add_output_register(structural_managerRef SM, structur
                                               structural_objectRef clock_port, const std::string& register_library)
 {
    structural_objectRef r_signal;
-   structural_objectRef reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME, register_library, circuit, TM);
+   structural_objectRef reg_mod;
+   if(port_out->get_typeRef()->type == structural_type_descriptor::INT)
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_INT, register_library, circuit, TM);
+   else if(port_out->get_typeRef()->type == structural_type_descriptor::UINT)
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_UINT, register_library, circuit, TM);
+   else if(port_out->get_typeRef()->type == structural_type_descriptor::REAL)
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_REAL, register_library, circuit, TM);
+   else
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME, register_library, circuit, TM);
    GetPointer<module>(reg_mod)->get_in_port(2)->type_resize(GET_TYPE_SIZE(port_out));
    GetPointer<module>(reg_mod)->get_out_port(0)->type_resize(GET_TYPE_SIZE(port_out));
 
