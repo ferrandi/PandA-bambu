@@ -708,7 +708,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
       SM->set_top_info(fu_name + "_wrapper", module_type);
       structural_objectRef circuit = SM->get_circ();
       THROW_ASSERT(circuit, "Top circuit is missing");
-      structural_objectRef template_circuit = SM->add_module_from_technology_library(fu_base_name, fu_base_name, LM->get_library_name(), circuit, TM);
+      structural_objectRef template_circuit = SM->add_module_from_technology_library(fu_base_name + "_inst0", fu_base_name, LM->get_library_name(), circuit, TM);
 
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " - Generating HDL of functional unit " + fu_name);
       auto* spec_module = GetPointer<module>(template_circuit);
