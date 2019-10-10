@@ -2373,11 +2373,29 @@ begin
           <NP_functionality LIBRARY="register_AR_NORETIME in1 out1" VERILOG_PROVIDED="
 (* dont_retime *)(* keep = &quot;true&quot; *)(* syn_keep=1 *)(* DONT_TOUCH = &quot;true&quot; *) reg [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
 assign out1 = reg_out1;
-always @(posedge clock)
+always @(posedge clock 1RESET_EDGE)
   if (1RESET_VALUE)
     reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
   else
-    reg_out1 &lt;= in1;"/>
+    reg_out1 &lt;= in1;" VHDL_PROVIDED="
+signal reg_out1 : std_logic_vector(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
+attribute dont_retime : boolean;
+attribute dont_retime of reg_out1 : signal is true;
+attribute syn_keep: boolean;
+attribute syn_keep of reg_out1: signal is true;
+attribute DONT_TOUCH : boolean;
+attribute DONT_TOUCH of reg_out1 : signal is true;
+begin
+  out1 &lt;= reg_out1;
+  process(clock,reset)
+  begin
+    if(1RESET_VALUE) then
+      reg_out1 &lt;= (others =&gt; &apos;0&apos;);
+    elsif(clock&apos;event and clock = &apos;1&apos;) then
+      reg_out1 &lt;= in1;
+    end if;
+  end process;
+"/>
         </component_o>
       </circuit>
     </cell>
@@ -2409,7 +2427,25 @@ always @(posedge clock)
   if (1RESET_VALUE)
     reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
   else
-    reg_out1 &lt;= in1;"/>
+    reg_out1 &lt;= in1;" VHDL_PROVIDED="
+signal reg_out1 : signed(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
+attribute dont_retime : boolean;
+attribute dont_retime of reg_out1 : signal is true;
+attribute syn_keep: boolean;
+attribute syn_keep of reg_out1: signal is true;
+attribute DONT_TOUCH : boolean;
+attribute DONT_TOUCH of reg_out1 : signal is true;
+begin
+  out1 &lt;= reg_out1;
+  process(clock,reset)
+  begin
+    if(1RESET_VALUE) then
+      reg_out1 &lt;= (others =&gt; &apos;0&apos;);
+    elsif(clock&apos;event and clock = &apos;1&apos;) then
+      reg_out1 &lt;= in1;
+    end if;
+  end process;
+"/>
         </component_o>
       </circuit>
     </cell>
@@ -2441,7 +2477,25 @@ always @(posedge clock)
   if (1RESET_VALUE)
     reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
   else
-    reg_out1 &lt;= in1;"/>
+    reg_out1 &lt;= in1;" VHDL_PROVIDED="
+signal reg_out1 : unsigned(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
+attribute dont_retime : boolean;
+attribute dont_retime of reg_out1 : signal is true;
+attribute syn_keep: boolean;
+attribute syn_keep of reg_out1: signal is true;
+attribute DONT_TOUCH : boolean;
+attribute DONT_TOUCH of reg_out1 : signal is true;
+begin
+  out1 &lt;= reg_out1;
+  process(clock,reset)
+  begin
+    if(1RESET_VALUE) then
+      reg_out1 &lt;= (others =&gt; &apos;0&apos;);
+    elsif(clock&apos;event and clock = &apos;1&apos;) then
+      reg_out1 &lt;= in1;
+    end if;
+  end process;
+"/>
         </component_o>
       </circuit>
     </cell>
@@ -2473,7 +2527,25 @@ always @(posedge clock)
   if (1RESET_VALUE)
     reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
   else
-    reg_out1 &lt;= in1;"/>
+    reg_out1 &lt;= in1;" VHDL_PROVIDED="
+signal reg_out1 : std_logic_vector(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
+attribute dont_retime : boolean;
+attribute dont_retime of reg_out1 : signal is true;
+attribute syn_keep: boolean;
+attribute syn_keep of reg_out1: signal is true;
+attribute DONT_TOUCH : boolean;
+attribute DONT_TOUCH of reg_out1 : signal is true;
+begin
+  out1 &lt;= reg_out1;
+  process(clock,reset)
+  begin
+    if(1RESET_VALUE) then
+      reg_out1 &lt;= (others =&gt; &apos;0&apos;);
+    elsif(clock&apos;event and clock = &apos;1&apos;) then
+      reg_out1 &lt;= in1;
+    end if;
+  end process;
+"/>
         </component_o>
       </circuit>
     </cell>
