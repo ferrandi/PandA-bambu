@@ -114,7 +114,7 @@ int EucalyptusParameter::Exec()
    // Short option. An option character in this string can be followed by a colon (`:') to indicate that it
    // takes a required argument. If an option character is followed by two colons (`::'), its argument is optional;
    // this is a GNU extension.
-   const char* const short_options = COMMON_SHORT_OPTIONS_STRING;
+   const char* const short_options = COMMON_SHORT_OPTIONS_STRING "w:";
 
    const struct option long_options[] = {
       COMMON_LONG_OPTIONS,
