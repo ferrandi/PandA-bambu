@@ -373,7 +373,7 @@ void memory_allocation::finalize_memory_allocation()
                const tree_nodeRef var_tn = TreeM->get_tree_node_const(var);
                auto* vd = GetPointer<var_decl>(var_tn);
                if(vd && (((!vd->scpe || GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K) && !vd->static_flag) || tree_helper::is_volatile(TreeM, var) || call_graph_manager->ExistsAddressedFunction()))
-                  has_intern_shared_data = true; /// an external component can access the var possibly (global and volative vars)
+                  has_intern_shared_data = true; /// an external component can access the var possibly (global and volatile vars)
             }
             unsigned int value_bitsize;
             if(GET_TYPE(g, *v) & TYPE_STORE)

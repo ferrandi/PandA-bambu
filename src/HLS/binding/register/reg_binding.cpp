@@ -85,9 +85,9 @@ reg_bindingRef reg_binding::create_reg_binding(const hlsRef& HLS, const HLS_mana
    {
       auto omp_functions = GetPointer<OmpFunctions>(HLSMgr_->Rfuns);
       bool found = false;
-      if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
+      if(HLSMgr_->is_reading_writing_function(HLS->functionId) && omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
          found = true;
-      if(omp_functions->parallelized_functions.find(HLS->functionId) != omp_functions->parallelized_functions.end())
+      if(HLSMgr_->is_reading_writing_function(HLS->functionId) && omp_functions->parallelized_functions.find(HLS->functionId) != omp_functions->parallelized_functions.end())
          found = true;
       if(omp_functions->atomic_functions.find(HLS->functionId) != omp_functions->atomic_functions.end())
          found = true;

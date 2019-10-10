@@ -1,7 +1,7 @@
 #!/bin/bash
 script=$(readlink -e $0)
 root_dir=$(dirname $script)
-ARGS="--channels-type=MEM_ACC_11 --memory-allocation-policy=NO_BRAM --mem-delay-read=20 --mem-delay-write=20 -DBAMBU_PROFILING  -fno-inline -fno-inline-functions --std=c99 -v4 --compiler=I386_GCC49 --evaluation --no-iob --device-name=xc7vx690t,-3,ffg1930,VVD -v3 --print-dot --panda-parameter=simple-benchmark-name=1 --clock-period=3.3 "
+ARGS="--channels-type=MEM_ACC_11 --memory-allocation-policy=NO_BRAM --mem-delay-read=20 --mem-delay-write=20 -DBAMBU_PROFILING  -fno-inline -fno-inline-functions -v4 --compiler=I386_GCC49 --evaluation --no-iob --device-name=xc7vx690t,-3,ffg1930,VVD -v3 --print-dot --panda-parameter=simple-benchmark-name=1 --clock-period=3.3 "
 
 NAME=$(basename $0 .sh)
 DIRNAME=${root_dir##*/}
