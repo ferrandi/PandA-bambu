@@ -854,7 +854,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
          }
       }
 
-      structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 1));
+      structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
       one_port = SM->add_constant(fu_name + "_constant_" + STR(1), circuit, bool_type, STR(1));
       std::string register_library = TM->get_library(register_AR_NORETIME);
       structural_objectRef clock_port, reset_port;
