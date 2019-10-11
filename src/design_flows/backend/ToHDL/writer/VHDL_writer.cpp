@@ -787,7 +787,11 @@ void VHDL_writer::write_port_binding(const structural_objectRef& port, const str
    }
    else
    {
-      THROW_ASSERT(GetPointer<port_o>(port)->get_port_direction() == port_o::IN,
+      THROW_ASSERT(GetPointer<port_o>(port)->get_port_direction() == port_o::IN or
+                       ((port->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL and object_bounded->get_typeRef()->type == structural_type_descriptor::VECTOR_UINT) or
+                        (port->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL and object_bounded->get_typeRef()->type == structural_type_descriptor::VECTOR_INT) or
+                        (port->get_typeRef()->type == structural_type_descriptor::VECTOR_INT and object_bounded->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL) or
+                        (port->get_typeRef()->type == structural_type_descriptor::VECTOR_UINT and object_bounded->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)),
                    "Needed a conversion on output port binding " + port->get_path() + " => " + object_bounded->get_path() + " - Types are " + port->get_typeRef()->get_name() + " vs. " + object_bounded->get_typeRef()->get_name());
       if(port->get_typeRef()->type == structural_type_descriptor::BOOL and object_bounded->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL and object_bounded->get_typeRef()->size == 1)
       {
