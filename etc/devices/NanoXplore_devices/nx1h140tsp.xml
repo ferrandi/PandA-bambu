@@ -4360,7 +4360,7 @@
         <template name="exact_div_expr_FU" parameter="0 1 1 0"/>
         <characterizing_constant_value>21845</characterizing_constant_value>
         <characterization_timestamp>2019-10-10T21:18:47</characterization_timestamp>
-        <operation operation_name="exact_div_expr" supported_types="INT:1" pipe_parameters="0" execution_time="-0.97999999999999998"/>
+        <operation operation_name="exact_div_expr" supported_types="INT:1" pipe_parameters="0" execution_time="1.7550000000000001"/>
       </cell>
       <cell>
         <name>exact_div_expr_FU_0_32_32_0</name>
@@ -8189,7 +8189,7 @@
         <template name="ge_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2019-10-10T22:20:57</characterization_timestamp>
-        <operation operation_name="ge_expr" supported_types="INT:1" execution_time="-0.97999999999999998"/>
+        <operation operation_name="ge_expr" supported_types="INT:1" execution_time="1.7550000000000001"/>
       </cell>
       <cell>
         <name>ge_expr_FU_1_1_1</name>
@@ -8275,7 +8275,7 @@
         <template name="gt_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2019-10-10T22:23:34</characterization_timestamp>
-        <operation operation_name="gt_expr" supported_types="INT:1" execution_time="-0.97999999999999998"/>
+        <operation operation_name="gt_expr" supported_types="INT:1" execution_time="1.7550000000000001"/>
       </cell>
       <cell>
         <name>gt_expr_FU_0_32_32</name>
@@ -8428,7 +8428,7 @@
         <template name="le_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2019-10-10T22:29:05</characterization_timestamp>
-        <operation operation_name="le_expr" supported_types="INT:1" execution_time="-0.97999999999999998"/>
+        <operation operation_name="le_expr" supported_types="INT:1" execution_time="1.7550000000000001"/>
       </cell>
       <cell>
         <name>le_expr_FU_0_32_32</name>
@@ -8777,7 +8777,7 @@
         <template name="lt_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2019-10-10T22:39:37</characterization_timestamp>
-        <operation operation_name="lt_expr" supported_types="INT:1" execution_time="-0.97999999999999998"/>
+        <operation operation_name="lt_expr" supported_types="INT:1" execution_time="1.7550000000000001"/>
       </cell>
       <cell>
         <name>lt_expr_FU_1_1_1</name>
@@ -9016,7 +9016,7 @@
         <template name="min_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2019-10-10T22:45:36</characterization_timestamp>
-        <operation operation_name="min_expr" commutative="1" supported_types="INT:1" execution_time="-0.97999999999999998"/>
+        <operation operation_name="min_expr" commutative="1" supported_types="INT:1" execution_time="1.7550000000000001"/>
       </cell>
       <cell>
         <name>min_expr_FU_0_32_32</name>
@@ -9075,7 +9075,7 @@
         <template name="min_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2019-10-10T22:45:36</characterization_timestamp>
-        <operation operation_name="min_expr" commutative="1" supported_types="INT:1" execution_time="-0.97999999999999998"/>
+        <operation operation_name="min_expr" commutative="1" supported_types="INT:1" execution_time="1.7550000000000001"/>
       </cell>
       <cell>
         <name>min_expr_FU_1_1_1</name>
@@ -10651,7 +10651,7 @@
         <template name="rshift_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>62</characterizing_constant_value>
         <characterization_timestamp>2019-10-10T23:10:22</characterization_timestamp>
-        <operation operation_name="rshift_expr" supported_types="INT:1" execution_time="-0.97999999999999998"/>
+        <operation operation_name="rshift_expr" supported_types="INT:1" execution_time="1.7550000000000001"/>
       </cell>
       <cell>
         <name>rshift_expr_FU_0_32_32</name>
@@ -11968,7 +11968,7 @@
         <template name="trunc_div_expr_FU" parameter="0 1 1 0"/>
         <characterizing_constant_value>21845</characterizing_constant_value>
         <characterization_timestamp>2019-10-10T23:43:09</characterization_timestamp>
-        <operation operation_name="trunc_div_expr" supported_types="INT:1" pipe_parameters="0" execution_time="-0.97999999999999998"/>
+        <operation operation_name="trunc_div_expr" supported_types="INT:1" pipe_parameters="0" execution_time="1.7550000000000001"/>
       </cell>
       <cell>
         <name>trunc_div_expr_FU_0_32_32_0</name>
@@ -15213,7 +15213,7 @@
         <template name="truth_or_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2019-10-11T00:03:26</characterization_timestamp>
-        <operation operation_name="truth_or_expr" commutative="1" execution_time="-0.97999999999999998"/>
+        <operation operation_name="truth_or_expr" commutative="1" execution_time="1.7550000000000001"/>
       </cell>
       <cell>
         <name>truth_or_expr_FU_0_32_32</name>
@@ -15272,7 +15272,7 @@
         <template name="truth_or_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2019-10-11T00:03:26</characterization_timestamp>
-        <operation operation_name="truth_or_expr" commutative="1" execution_time="-0.97999999999999998"/>
+        <operation operation_name="truth_or_expr" commutative="1" execution_time="1.7550000000000001"/>
       </cell>
       <cell>
         <name>truth_or_expr_FU_1_1_1</name>
@@ -15358,7 +15358,7 @@
         <template name="truth_orif_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2019-10-11T00:05:36</characterization_timestamp>
-        <operation operation_name="truth_orif_expr" commutative="1" execution_time="-0.97999999999999998"/>
+        <operation operation_name="truth_orif_expr" commutative="1" execution_time="1.7550000000000001"/>
       </cell>
       <cell>
         <name>truth_orif_expr_FU_0_32_32</name>
@@ -15417,7 +15417,7 @@
         <template name="truth_orif_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2019-10-11T00:05:36</characterization_timestamp>
-        <operation operation_name="truth_orif_expr" commutative="1" execution_time="-0.97999999999999998"/>
+        <operation operation_name="truth_orif_expr" commutative="1" execution_time="1.7550000000000001"/>
       </cell>
       <cell>
         <name>truth_orif_expr_FU_1_1_1</name>
@@ -17696,7 +17696,7 @@
         <template name="ui_ge_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2019-10-11T00:37:54</characterization_timestamp>
-        <operation operation_name="ge_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="-0.97999999999999998"/>
+        <operation operation_name="ge_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.7550000000000001"/>
       </cell>
       <cell>
         <name>ui_ge_expr_FU_0_32_32</name>
@@ -17900,7 +17900,7 @@
         <template name="ui_gt_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2019-10-11T00:43:29</characterization_timestamp>
-        <operation operation_name="gt_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="-0.97999999999999998"/>
+        <operation operation_name="gt_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.7550000000000001"/>
       </cell>
       <cell>
         <name>ui_gt_expr_FU_1_1_1</name>
@@ -18045,7 +18045,7 @@
         <template name="ui_le_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2019-10-11T00:47:17</characterization_timestamp>
-        <operation operation_name="le_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="-0.97999999999999998"/>
+        <operation operation_name="le_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.7550000000000001"/>
       </cell>
       <cell>
         <name>ui_le_expr_FU_1_1_1</name>
@@ -18421,7 +18421,7 @@
         <template name="ui_lt_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2019-10-11T00:55:03</characterization_timestamp>
-        <operation operation_name="lt_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="-0.97999999999999998"/>
+        <operation operation_name="lt_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.7550000000000001"/>
       </cell>
       <cell>
         <name>ui_lt_expr_FU_0_32_32</name>
@@ -18566,7 +18566,7 @@
         <template name="ui_max_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2019-10-11T00:58:43</characterization_timestamp>
-        <operation operation_name="max_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="-0.97999999999999998"/>
+        <operation operation_name="max_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.7550000000000001"/>
       </cell>
       <cell>
         <name>ui_max_expr_FU_0_32_32</name>
@@ -18625,7 +18625,7 @@
         <template name="ui_max_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2019-10-11T00:58:43</characterization_timestamp>
-        <operation operation_name="max_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="-0.97999999999999998"/>
+        <operation operation_name="max_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.7550000000000001"/>
       </cell>
       <cell>
         <name>ui_max_expr_FU_1_1_1</name>
@@ -20322,7 +20322,7 @@
         <template name="ui_rrotate_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>62</characterizing_constant_value>
         <characterization_timestamp>2019-10-11T01:21:47</characterization_timestamp>
-        <operation operation_name="rrotate_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="-0.97999999999999998"/>
+        <operation operation_name="rrotate_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.7550000000000001"/>
       </cell>
       <cell>
         <name>ui_rrotate_expr_FU_0_32_32</name>
@@ -21758,7 +21758,7 @@
         <template name="ui_trunc_div_expr_FU" parameter="0 1 1 0"/>
         <characterizing_constant_value>21845</characterizing_constant_value>
         <characterization_timestamp>2019-10-11T01:51:48</characterization_timestamp>
-        <operation operation_name="trunc_div_expr" supported_types="UINT:1|VECTOR_BOOL:1" pipe_parameters="0" execution_time="-0.97999999999999998"/>
+        <operation operation_name="trunc_div_expr" supported_types="UINT:1|VECTOR_BOOL:1" pipe_parameters="0" execution_time="1.7550000000000001"/>
       </cell>
       <cell>
         <name>ui_trunc_div_expr_FU_0_32_32_0</name>
@@ -23160,7 +23160,7 @@
         <template name="ui_trunc_mod_expr_FU" parameter="1 0 1 0"/>
         <characterizing_constant_value>21845</characterizing_constant_value>
         <characterization_timestamp>2019-10-11T03:32:57</characterization_timestamp>
-        <operation operation_name="trunc_mod_expr" supported_types="UINT:1|VECTOR_BOOL:1" pipe_parameters="0" execution_time="-0.97999999999999998"/>
+        <operation operation_name="trunc_mod_expr" supported_types="UINT:1|VECTOR_BOOL:1" pipe_parameters="0" execution_time="1.7550000000000001"/>
       </cell>
       <cell>
         <name>ui_trunc_mod_expr_FU_1_1_1_0</name>
