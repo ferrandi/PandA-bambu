@@ -102,7 +102,7 @@
       <cmd name="        trimmed=trimmed[trimmed.index('|')+1:]"/>
       <cmd name="        trimmed=trimmed[trimmed.index('|')+1:]"/>
       <cmd name="        trimmed=trimmed.lstrip()"/>
-      <cmd name="        trimmed=trimmed[:trimmed.index('n')] if 'n' in trimmed else '1'"/>
+      <cmd name="        trimmed=trimmed[:trimmed.index('n')] if 'n' in trimmed else '-1.735'"/>
       <cmd name="        design_slack=trimmed.replace(',', '.')"/>
       <cmd name="fr.close()"/>
       <cmd name="fw = open(dir + '/${__nxpython_report__}', &quot;w&quot;)"/>
