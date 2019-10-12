@@ -52,8 +52,8 @@
 class CInitializationParserFunctor
 {
  protected:
-    /// The debug level
-    int debug_level;
+   /// The debug level
+   int debug_level;
 
  public:
    /**

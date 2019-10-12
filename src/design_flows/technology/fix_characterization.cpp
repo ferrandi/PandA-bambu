@@ -312,7 +312,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
                if(single_fu->fu_template_parameters.find(" 0") != std::string::npos or (single_fu->fu_template_parameters.size() >= 2 and single_fu->fu_template_parameters.substr(0, 2) == "0 "))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fixing " + single_fu->get_name());
-               std::vector<std::string> template_parameters = SplitString(single_fu->fu_template_parameters, " ");
+                  std::vector<std::string> template_parameters = SplitString(single_fu->fu_template_parameters, " ");
                   const auto output_size = boost::lexical_cast<size_t>(template_parameters.back());
                   std::string cell_name = template_name;
                   for(const auto& template_parameter : template_parameters)

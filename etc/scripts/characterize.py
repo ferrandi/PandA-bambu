@@ -312,7 +312,7 @@ device_files = []
 for device in args.devices.split(","):
     vendor_dirs_root = os.path.join(abs_panda, "devices")
     device_file = ""
-    for vendor_dir in ["Altera_devices", "Lattice_devices", "Xilinx_devices"]:
+    for vendor_dir in ["Altera_devices", "Lattice_devices", "Xilinx_devices", "NanoXplore_devices"]:
         if os.path.exists(os.path.join(vendor_dirs_root, vendor_dir, device + "-seed.xml")):
             device_file = os.path.join(vendor_dirs_root, vendor_dir, device + "-seed.xml")
     if device_file == "":

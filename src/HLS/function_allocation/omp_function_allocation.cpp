@@ -63,6 +63,7 @@
 #include "tree_manager.hpp"
 
 /// utility include
+#include "dbgPrintHelper.hpp"
 #include "utility.hpp"
 
 OmpFunctionAllocation::OmpFunctionAllocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)

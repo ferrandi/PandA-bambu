@@ -275,8 +275,8 @@
 #define OPT_MIN_INHERITANCE (1 + OPT_MEMORY_BANKS_NUMBER)
 #define OPT_MOSA_FLOW (1 + OPT_MIN_INHERITANCE)
 #define OPT_NO_MIXED_DESIGN (1 + OPT_MOSA_FLOW)
-#define OPT_NUM_THREADS (1 + OPT_NO_MIXED_DESIGN)
-#define OPT_PARALLEL_CONTROLLER (1 + OPT_NUM_THREADS)
+#define OPT_NUM_ACCELERATORS (1 + OPT_NO_MIXED_DESIGN)
+#define OPT_PARALLEL_CONTROLLER (1 + OPT_NUM_ACCELERATORS)
 #define OPT_PERIOD_CLOCK (1 + OPT_PARALLEL_CONTROLLER)
 #define OPT_CLOCK_NAME (1 + OPT_PERIOD_CLOCK)
 #define OPT_RESET_NAME (1 + OPT_CLOCK_NAME)
@@ -293,8 +293,8 @@
 #define OPT_LEVEL_RESET (1 + OPT_RESET)
 #define OPT_DISABLE_REG_INIT_VALUE (1 + OPT_LEVEL_RESET)
 #define OPT_SCHEDULING_MUX_MARGINS (1 + OPT_DISABLE_REG_INIT_VALUE)
-#define OPT_SDC_SCHEDULING (1 + OPT_SCHEDULING_MUX_MARGINS)
-#define OPT_SERIALIZE_MEMORY_ACCESSES (1 + OPT_SDC_SCHEDULING)
+#define OPT_USE_ALUS (1 + OPT_SCHEDULING_MUX_MARGINS)
+#define OPT_SERIALIZE_MEMORY_ACCESSES (1 + OPT_USE_ALUS)
 #define OPT_SILP (1 + OPT_SERIALIZE_MEMORY_ACCESSES)
 #define OPT_SIMULATE (1 + OPT_SILP)
 #define OPT_SKIP_PIPE_PARAMETER (1 + OPT_SIMULATE)
@@ -450,9 +450,11 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Perform scheduling by using the scheduling and allocation with ILP\n"
       << "        formulation. Default: off.\n\n"
 #endif
-      << "    --speculative-sdc-scheduling\n"
+      << "    --speculative-sdc-scheduling,-s\n"
       << "        Perform scheduling by using speculative sdc.\n\n"
 #endif
+      << "    --pipelining,-p\n"
+      << "        Perform functional pipelining starting from the top function.\n\n"
       << "    --fixed-scheduling=<file>\n"
       << "        Provide scheduling as an XML file.\n\n"
       << "    --no-chaining\n"
@@ -809,6 +811,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        operations starting from a C library based implementation:\n"
       << "             SRT4 - use a C-based Sweeney, Robertson, Tocher floating point division with radix 4 (default)\n"
       << "             G    - use a C-based Goldschmidt floating point division.\n"
+      << "             SF   - use a C-based floating point division as describe in soft-fp library (it requires --soft-fp).\n"
       << "    --skip-pipe-parameter=<value>\n"
       << "        Used during the allocation of pipelined units. <value> specifies how\n"
       << "        many pipelined units, compliant with the clock period, will be skipped.\n"
@@ -917,15 +920,13 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                                    --DSP-allocation-coefficient=1.75\n"
       << "                                    --do-not-expose-globals --cprf=0.875\n\n"
       << std::endl;
-#if HAVE_EXPERIMENTAL || HAVE_ILP_BUILT
    os << "  Other options:\n\n";
-#endif
    os << "    --pragma-parse\n"
       << "        Perform source code parsing to extract information about pragmas.\n"
       << "        (default=no).\n\n";
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-   os << "    --num-threads\n"
-      << "        Set the number of threads in parallel sections (default=4).\n\n";
+   os << "    --num-accelerators\n"
+      << "        Set the number of physical accelerator instantiated in parallel sections. It must be a power of two (default=4).\n\n";
 #endif
 #if HAVE_EXPERIMENTAL
    os << "    --xml-config <file>\n"
@@ -959,9 +960,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
 #endif
    os << "    --disable-bitvalue-ipa\n"
       << "        Disable inter-procedural bitvalue analysis.\n\n";
-#if HAVE_EXPERIMENTAL || HAVE_ILP_BUILT
    os << std::endl;
-#endif
 
    // Checks and debugging options
    os << "  Debug options:\n\n"
@@ -1008,6 +1007,9 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "           name is in the list passed as argument.\n\n"
       << "    --discrepancy-permissive-ptrs\n"
       << "           Do not trigger hard errors on pointer variables.\n\n"
+      << "    --discrepancy-hw\n"
+      << "           Hardware Discrepancy Analysis.\n\n"
+
 #if HAVE_MODELSIM
       << "    --assert-debug\n"
       << "        Enable assertion debugging performed by Modelsim.\n\n"
@@ -1047,7 +1049,7 @@ int BambuParameter::Exec()
    // Bambu short option. An option character in this string can be followed by a colon (`:') to indicate that it
    // takes a required argument. If an option character is followed by two colons (`::'), its argument is optional;
    // this is a GNU extension.
-   const char* const short_options = COMMON_SHORT_OPTIONS_STRING "o:t:u:H:SC::b:w:" GCC_SHORT_OPTIONS_STRING;
+   const char* const short_options = COMMON_SHORT_OPTIONS_STRING "o:t:u:H:sSC::b:w:p" GCC_SHORT_OPTIONS_STRING;
 
    const struct option long_options[] = {
       COMMON_LONG_OPTIONS,
@@ -1094,8 +1096,9 @@ int BambuParameter::Exec()
       /// Scheduling options
       {FIXED_SCHEDULING_OPT, required_argument, nullptr, OPT_FIXED_SCHED},
 #if HAVE_ILP_BUILT
-      {"speculative-sdc-scheduling", no_argument, nullptr, OPT_SDC_SCHEDULING},
+      {"speculative-sdc-scheduling", no_argument, nullptr, 's'},
 #endif
+      {"pipelining", no_argument, nullptr, 'p'},
       {"serialize-memory-accesses", no_argument, nullptr, OPT_SERIALIZE_MEMORY_ACCESSES},
       {PAR_LIST_BASED_OPT, optional_argument, nullptr, OPT_LIST_BASED}, // no short option
       {"post-rescheduling", no_argument, nullptr, OPT_POST_RESCHEDULING},
@@ -1179,6 +1182,7 @@ int BambuParameter::Exec()
       {"DSP-margin-combinational", required_argument, nullptr, OPT_DSP_MARGIN_COMBINATIONAL},
       {"DSP-margin-pipelined", required_argument, nullptr, OPT_DSP_MARGIN_PIPELINED},
       {"mux-margins", required_argument, nullptr, OPT_SCHEDULING_MUX_MARGINS},
+      {"use-ALUs", no_argument, nullptr, OPT_USE_ALUS},
       {"timing-model", required_argument, nullptr, OPT_TIMING_MODEL},
       {"registered-inputs", required_argument, nullptr, OPT_REGISTERED_INPUTS},
       {"fsm-encoding", required_argument, nullptr, OPT_FSM_ENCODING},
@@ -1218,14 +1222,15 @@ int BambuParameter::Exec()
       {"mem-delay-read", required_argument, nullptr, OPT_MEM_DELAY_READ},
       {"mem-delay-write", required_argument, nullptr, OPT_MEM_DELAY_WRITE},
       {"host-profiling", no_argument, nullptr, OPT_HOST_PROFILING},
-      {"bitvalue-ipa", no_argument, nullptr, OPT_DISABLE_BITVALUE_IPA},
+      {"disable-bitvalue-ipa", no_argument, nullptr, OPT_DISABLE_BITVALUE_IPA},
       {"discrepancy", no_argument, nullptr, OPT_DISCREPANCY},
       {"discrepancy-force-uninitialized", no_argument, nullptr, OPT_DISCREPANCY_FORCE},
+      {"discrepancy-hw", no_argument, nullptr, OPT_DISCREPANCY_HW},
       {"discrepancy-no-load-pointers", no_argument, nullptr, OPT_DISCREPANCY_NO_LOAD_POINTERS},
       {"discrepancy-only", required_argument, nullptr, OPT_DISCREPANCY_ONLY},
       {"discrepancy-permissive-ptrs", no_argument, nullptr, OPT_DISCREPANCY_PERMISSIVE_PTRS},
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-      {"num-threads", required_argument, nullptr, OPT_NUM_THREADS},
+      {"num-accelerators", required_argument, nullptr, OPT_NUM_ACCELERATORS},
       {"context_switch", optional_argument, nullptr, OPT_INPUT_CONTEXT_SWITCH},
 #endif
       {"memory-banks-number", required_argument, nullptr, OPT_MEMORY_BANKS_NUMBER},
@@ -1501,14 +1506,14 @@ int BambuParameter::Exec()
             else
 #endif
 #if HAVE_COIN_OR
-            if(optarg[0] == 'C')
+                if(optarg[0] == 'C')
             {
                setOption(OPT_ilp_solver, meilp_solver::COIN_OR);
             }
             else
 #endif
 #if HAVE_LP_SOLVE
-            if(optarg[0] == 'L')
+                if(optarg[0] == 'L')
             {
                setOption(OPT_ilp_solver, meilp_solver::LP_SOLVE);
             }
@@ -1885,7 +1890,7 @@ int BambuParameter::Exec()
             break;
          }
 #if HAVE_ILP_BUILT
-         case OPT_SDC_SCHEDULING:
+         case 's':
          {
             if(scheduling_set_p and getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) != HLSFlowStep_Type::SDC_SCHEDULING)
                THROW_ERROR("BadParameters: only one scheduler can be specified");
@@ -1899,6 +1904,11 @@ int BambuParameter::Exec()
             break;
          }
 #endif
+         case 'p':
+         {
+            setOption(OPT_pipelining, true);
+            break;
+         }
          case OPT_SERIALIZE_MEMORY_ACCESSES:
          {
             setOption(OPT_gcc_serialize_memory_accesses, true);
@@ -1929,6 +1939,7 @@ int BambuParameter::Exec()
          case OPT_SOFT_FP:
          {
             setOption(OPT_soft_fp, true);
+            setOption(OPT_hls_fpdiv, "SF");
             break;
          }
          case OPT_HLS_DIV:
@@ -1947,7 +1958,7 @@ int BambuParameter::Exec()
          case OPT_HLS_FPDIV:
          {
             setOption(OPT_hls_fpdiv, "SRT4");
-            if(optarg && std::string(optarg) == "G")
+            if(optarg && (std::string(optarg) == "G" || std::string(optarg) == "SF"))
                setOption(OPT_hls_fpdiv, optarg);
             break;
          }
@@ -1959,6 +1970,11 @@ int BambuParameter::Exec()
          case OPT_SCHEDULING_MUX_MARGINS:
          {
             setOption(OPT_scheduling_mux_margins, optarg);
+            break;
+         }
+         case OPT_USE_ALUS:
+         {
+            setOption(OPT_use_ALUs, true);
             break;
          }
          case OPT_TIMING_MODEL:
@@ -2224,9 +2240,13 @@ int BambuParameter::Exec()
             break;
          }
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-         case OPT_NUM_THREADS:
+         case OPT_NUM_ACCELERATORS:
          {
-            setOption(OPT_num_threads, std::string(optarg));
+            auto num_acc = boost::lexical_cast<unsigned>(std::string(optarg));
+            if((num_acc != 0) && ((num_acc & (num_acc - 1)) == 0))
+               setOption(OPT_num_accelerators, std::string(optarg));
+            else
+               THROW_ERROR("Currently the number of physical accelerator has to be a power of two");;
             break;
          }
          case OPT_INPUT_CONTEXT_SWITCH:
@@ -2683,7 +2703,7 @@ void BambuParameter::add_experimental_setup_gcc_options(bool kill_printf)
       if(isOption(OPT_gcc_optimizations))
          optimizations = getOption<std::string>(OPT_gcc_optimizations);
       THROW_ASSERT(isOption(OPT_input_file), "Input file not specified");
-      if(getOption<std::string>(OPT_input_file).find(STR_CST_string_separator) == std::string::npos)
+      if(getOption<std::string>(OPT_input_file).find(STR_CST_string_separator) == std::string::npos && !isOption(OPT_top_design_name))
       {
          if(optimizations != "")
             optimizations = optimizations + STR_CST_string_separator;
@@ -2850,10 +2870,8 @@ void BambuParameter::CheckParameters()
 
    if(getOption<bool>(OPT_do_not_expose_globals))
    {
-      if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::NONE)
+      if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::NONE && (!isOption(OPT_interface_type) || getOption<HLSFlowStep_Type>(OPT_interface_type) != HLSFlowStep_Type::WB4_INTERFACE_GENERATION))
          setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::ALL_BRAM);
-      else if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM && getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::INTERN_UNALIGNED)
-         THROW_ERROR("BadParameters: --do-not-expose-globals implies --memory-allocation-policy=ALL_BRAM or --memory-allocation-policy=INTERN_UNALIGNED");
    }
    tree_helper::debug_level = get_class_debug_level("tree_helper");
 
@@ -2911,8 +2929,17 @@ void BambuParameter::CheckParameters()
       if(not isOption(OPT_gcc_opt_level))
       {
          setOption(OPT_gcc_opt_level, GccWrapper_OptimizationSet::O2);
-         tuning_optimizations += "gcse-after-reload" + STR_CST_string_separator + "ipa-cp-clone" + STR_CST_string_separator + "unswitch-loops" + STR_CST_string_separator + "inline-functions" + STR_CST_string_separator + "no-tree-loop-ivcanon";
+         /// GCC SECTION
          if(false
+#if HAVE_I386_GCC45_COMPILER
+            or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC45
+#endif
+#if HAVE_I386_GCC46_COMPILER
+            or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC46
+#endif
+#if HAVE_I386_GCC47_COMPILER
+            or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC47
+#endif
 #if HAVE_I386_GCC48_COMPILER
             or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC48
 #endif
@@ -2931,20 +2958,61 @@ void BambuParameter::CheckParameters()
 #if HAVE_I386_GCC8_COMPILER
             or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
 #endif
-         )
+            )
          {
-            tuning_optimizations += STR_CST_string_separator + "tree-partial-pre" + STR_CST_string_separator + "disable-tree-bswap";
-         }
-         if(false
+            tuning_optimizations += "inline-functions" + STR_CST_string_separator + "gcse-after-reload" + STR_CST_string_separator + "ipa-cp-clone" + STR_CST_string_separator + "unswitch-loops" + STR_CST_string_separator + "no-tree-loop-ivcanon";
+            if(false
+#if HAVE_I386_GCC48_COMPILER
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC48
+#endif
+#if HAVE_I386_GCC49_COMPILER
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC49
+#endif
+#if HAVE_I386_GCC5_COMPILER
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC5
+#endif
+#if HAVE_I386_GCC6_COMPILER
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC6
+#endif
 #if HAVE_I386_GCC7_COMPILER
-            or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if HAVE_I386_GCC8_COMPILER
-            or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
 #endif
-         )
+               )
+            {
+               tuning_optimizations += STR_CST_string_separator + "tree-partial-pre" + STR_CST_string_separator + "disable-tree-bswap";
+            }
+            if(false
+#if HAVE_I386_GCC7_COMPILER
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC7
+#endif
+#if HAVE_I386_GCC8_COMPILER
+               or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
+#endif
+               )
+            {
+               tuning_optimizations += STR_CST_string_separator + "no-store-merging";
+            }
+         }
+         /// CLANG SECTION
+         else if(false
+#if HAVE_I386_CLANG4_COMPILER
+                 or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4
+#endif
+#if HAVE_I386_CLANG5_COMPILER
+                 or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5
+#endif
+#if HAVE_I386_CLANG6_COMPILER
+                 or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG6
+#endif
+#if HAVE_I386_CLANG7_COMPILER
+                 or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG7
+#endif
+                 )
          {
-            tuning_optimizations += STR_CST_string_separator + "no-store-merging";
+            tuning_optimizations += "inline-functions";
          }
       }
       std::string optimizations;
@@ -2957,20 +3025,7 @@ void BambuParameter::CheckParameters()
          optimizations += STR_CST_string_separator;
       }
       optimizations += tuning_optimizations;
-      if(optimizations != ""
-#if HAVE_I386_CLANG4_COMPILER
-         && getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG4
-#endif
-#if HAVE_I386_CLANG5_COMPILER
-         && getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG5
-#endif
-#if HAVE_I386_CLANG6_COMPILER
-         && getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG6
-#endif
-#if HAVE_I386_CLANG7_COMPILER
-         && getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG7
-#endif
-      )
+      if(optimizations != "")
          setOption(OPT_gcc_optimizations, optimizations);
 #if 0
       std::string parameters;
@@ -3060,6 +3115,8 @@ void BambuParameter::CheckParameters()
    {
       if(isOption(OPT_soft_fp) && getOption<bool>(OPT_soft_fp))
          add_bambu_library("soft-fp");
+      else if(getOption<std::string>(OPT_hls_fpdiv) != "SRT4" && getOption<std::string>(OPT_hls_fpdiv) != "G")
+         THROW_ERROR("--hls-fpdiv=SF requires --soft-fp option");
       else if(isOption(OPT_softfloat_subnormal) && getOption<bool>(OPT_softfloat_subnormal))
          add_bambu_library("softfloat_subnormals");
       else
@@ -3088,7 +3145,6 @@ void BambuParameter::CheckParameters()
          f = v && !(v & (v - 1));
          if(!f)
             THROW_ERROR("Number of bank must be a power of 2");
-         PRINT_MSG("Passed parameter OPT_context_switch, this means that the following step are already defined and cannot be changed (if passed by command line are ignored). Controller,Datapath, Channel Type, Interface generator and memory dominator\n");
          setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS);
          setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS);
          setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_CS);
@@ -3098,11 +3154,7 @@ void BambuParameter::CheckParameters()
       }
       else
       {
-#if HAVE_EXPERIMENTAL
          setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION);
-#else
-         THROW_UNREACHABLE("");
-#endif
       }
       add_bambu_library("pthread");
    }
@@ -3159,8 +3211,15 @@ void BambuParameter::CheckParameters()
    if(getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN and isOption(OPT_interface_type) and getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
       THROW_ERROR("Wishbone 4 interface does not yet support multi-channel architectures (MEM_ACC_NN)");
 
+   if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::ALL_BRAM and isOption(OPT_interface_type) and getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
+      THROW_ERROR("Wishbone 4 interface does not yet support --memory-allocation-policy=ALL_BRAM");
+
+   if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::EXT_PIPELINED_BRAM and isOption(OPT_interface_type) and getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
+      THROW_ERROR("Wishbone 4 interface does not yet support --memory-allocation-policy=EXT_PIPELINED_BRAM");
+
    if(isOption(OPT_interface_type) and getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION and (isOption(OPT_clock_name) or isOption(OPT_reset_name) or isOption(OPT_start_name) or isOption(OPT_done_name)))
       THROW_ERROR("Wishbone 4 interface does not allow the renaming of the control signals");
+
    if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::INTERN_UNALIGNED && !getOption<bool>(OPT_do_not_expose_globals))
       THROW_ERROR("--memory-allocation-policy=INTERN_UNALIGNED implies --do-not-expose-globals");
    if(not getOption<bool>(OPT_gcc_include_sysdir))
@@ -3747,14 +3806,16 @@ void BambuParameter::SetDefaults()
 #if HAVE_TASTE
    setOption(OPT_generate_taste_architecture, false);
 #endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-   setOption(OPT_num_threads, 4);
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+   setOption(OPT_num_accelerators, 4);
 #endif
    setOption(OPT_memory_banks_number, 1);
    setOption(OPT_find_max_cfg_transformations, false);
 
    panda_parameters["CSE_size"] = "2";
    panda_parameters["PortSwapping"] = "1";
+   //   panda_parameters["enable-CSROA"] = "1";
+   panda_parameters["MAX_LUT_INT_SIZE"] = "8";
 }
 
 void BambuParameter::add_bambu_library(std::string lib)

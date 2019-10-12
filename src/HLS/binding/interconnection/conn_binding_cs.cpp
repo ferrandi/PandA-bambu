@@ -146,15 +146,11 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
       if(found != std::string::npos)
       {
          SM->add_connection(port_i, GetPointer<port_o>(port_in_or)->get_port(0));
-         addedLoad = true;
-         std::cerr << "added addedLoad\n";
       }
       found = port_name.find("STORE");
       if(found != std::string::npos)
       {
          SM->add_connection(port_i, GetPointer<port_o>(port_in_or)->get_port(1));
-         addedStore = true;
-         std::cerr << "added addedStore\n";
       }
    }
 
@@ -182,7 +178,6 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
          structural_objectRef startMemOp = GetPointer<port_o>(portStart)->find_bounded_object();
          THROW_ASSERT(startMemOp != NULL, "No start port for mem_ctrl_found");
          SM->add_connection(startMemOp, GetPointer<port_o>(port_in_and)->get_port(1));
-         andStartMemOp_required = true;
          break;
       }
    }

@@ -49,6 +49,7 @@
 #include "config_HAVE_UNORDERED.hpp"
 
 #include "refcount.hpp"
+#include <string>
 #include <utility>
 
 /**

@@ -538,6 +538,13 @@ void function_decl_refs::operator()(const target_expr* obj, unsigned int& mask)
    }
 }
 
+void function_decl_refs::operator()(const lut_expr* obj, unsigned int& mask)
+{
+   if(visited.find(obj->index) != visited.end())
+   {
+      mask = NO_VISIT;
+   }
+}
 void function_decl_refs::operator()(const template_decl* obj, unsigned int& mask)
 {
    if(visited.find(obj->index) != visited.end())

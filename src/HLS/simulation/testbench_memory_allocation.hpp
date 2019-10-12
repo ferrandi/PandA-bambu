@@ -39,8 +39,8 @@
 class TestbenchMemoryAllocation : public HLS_step
 {
  protected:
-    ///True if the input code is c++
-    bool flag_cpp;
+   /// True if the input code is c++
+   bool flag_cpp;
 
  public:
    /**

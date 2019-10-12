@@ -83,6 +83,7 @@
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
+#include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_node_dup.hpp"
 #include "tree_reindex.hpp"
@@ -204,8 +205,18 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
                                                                       bb_index
 #endif
                                                                   ,
-                                                                  gimple_assign* ga, bool& zero_delay, const tree_managerRef TM)
+                                                                  tree_nodeRef tn, bool& zero_delay, const tree_managerRef TM)
 {
+   if(AppM->CGetFunctionBehavior(function_id)->is_pipelining_enabled())
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Yes because we aim to full pipelining");
+      return FunctionFrontendFlowStep_Movable::MOVABLE;
+   }
+   if(tn->get_kind() == gimple_nop_K)
+      return FunctionFrontendFlowStep_Movable::MOVABLE;
+
+   gimple_assign* ga = GetPointer<gimple_assign>(tn);
+
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking if " + STR(ga->index) + " - " + ga->ToString() + " can be moved in BB" + STR(bb_index));
    tree_nodeRef left = GET_NODE(ga->op0);
    if(!GetPointer<ssa_name>(left))
@@ -367,16 +378,13 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       }
       case bit_ior_concat_expr_K:
       {
-         if(conservative)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No");
-            return FunctionFrontendFlowStep_Movable::UNMOVABLE;
-         }
-         else
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes");
-            return FunctionFrontendFlowStep_Movable::MOVABLE;
-         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes");
+         return FunctionFrontendFlowStep_Movable::MOVABLE;
+      }
+      case extract_bit_expr_K:
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes");
+         return FunctionFrontendFlowStep_Movable::MOVABLE;
       }
       case ge_expr_K:
       case gt_expr_K:
@@ -619,6 +627,14 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
    std::map<unsigned int, blocRef>& list_of_bloc = sl->list_of_bloc;
    std::map<unsigned int, blocRef>::iterator it3, it3_end = list_of_bloc.end();
 
+   const auto BVP_computation_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BUILD_VIRTUAL_PHI, function_id);
+   const auto BVP_computation_vertex = design_flow_manager.lock()->GetDesignFlowStep(BVP_computation_signature);
+   const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+   const auto BVP_computation_step = design_flow_graph->CGetDesignFlowStepInfo(BVP_computation_vertex)->design_flow_step;
+   auto BVP_executed = GetPointer<const FunctionFrontendFlowStep>(BVP_computation_step)->CGetBBVersion() != 0;
+
+   bool isFunctionPipelined = BVP_executed ? AppM->CGetFunctionBehavior(function_id)->is_pipelining_enabled() : false;
+
    /// store the GCC BB graph ala boost::graph
    auto bb_graph_info = BBGraphInfoRef(new BBGraphInfo(AppM, function_id));
    BBGraphsCollectionRef GCC_bb_graphs_collection(new BBGraphsCollection(bb_graph_info, parameters));
@@ -749,6 +765,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
 #else
    const CustomSet<vertex> to_be_parallelized = CustomSet<vertex>();
 #endif
+   const tree_manipulationConstRef tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters));
 
    for(const auto bb_vertex : bb_sorted_vertices)
    {
@@ -783,7 +800,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written BB_simple_code_motion_" + STR(counter) + ".dot");
             counter++;
          }
-         const auto list_of_stmt = list_of_bloc[curr_bb]->CGetStmtList();
+         const auto& list_of_stmt = list_of_bloc[curr_bb]->CGetStmtList();
          std::list<tree_nodeRef> to_be_removed;
          std::set<unsigned int> zero_delay_stmts;
          std::list<tree_nodeRef> to_be_added_back;
@@ -797,14 +814,14 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             auto* gn = GetPointer<gimple_node>(tn);
 
             THROW_ASSERT(gn, "unexpected condition");
-            if(not parallel_bb and (/*gn->vuses.size() or */ gn->vdef)) /// load can be loop pipelined
+            if(not isFunctionPipelined and not parallel_bb and gn->vdef) /// load can be loop pipelined/predicated
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of memory access");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of memory store");
                continue;
             }
 
             /// only gimple_assign are considered for code motion
-            if(!GetPointer<gimple_assign>(tn))
+            if(!GetPointer<gimple_assign>(tn) && not GetPointer<gimple_nop>(tn))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because " + tn->get_kind_text());
                continue;
@@ -833,14 +850,23 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             for(auto ssu_it = stmt_ssa_uses.begin(); ssu_it != ssu_it_end; ++ssu_it)
             {
                ssa_name* sn = *ssu_it;
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---for variable " + sn->ToString());
                for(auto const& def_stmt : sn->CGetDefStmts())
                {
                   auto* def_gn = GetPointer<gimple_node>(GET_NODE(def_stmt));
                   THROW_ASSERT(def_gn->get_kind() == gimple_nop_K or def_gn->index, sn->ToString() + " is defined in entry");
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding BB" + STR(def_gn->bb_index) + " because of " + def_gn->ToString());
-                  THROW_ASSERT(def_gn->get_kind() == gimple_nop_K or (def_gn->get_kind() == gimple_assign_K and GetPointer<const gimple_assign>(GET_NODE(def_stmt))->clobber) or def_gn->bb_index,
+                  THROW_ASSERT(def_gn->get_kind() == gimple_nop_K or (def_gn->get_kind() == gimple_assign_K and GetPointer<const gimple_assign>(GET_NODE(def_stmt))->clobber) or def_gn->bb_index or sn->virtual_flag,
                                "Definition " + def_gn->ToString() + " of " + sn->ToString() + " is in BB" + STR(def_gn->bb_index));
-                  BB_def.insert(def_gn->bb_index);
+                  if(statement == list_of_stmt.begin() && list_of_bloc[curr_bb]->list_of_pred.size() == 1 && def_gn->bb_index == curr_bb)
+                  {
+                     /// allow to move first statements later overwritten in the same BB
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---  no constraint because is the first one");
+                  }
+                  else
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---  Adding BB" + STR(def_gn->bb_index) + " because of " + def_gn->ToString());
+                     BB_def.insert(def_gn->bb_index);
+                  }
                }
             }
             /// skip the statement in case it uses ssa variables defined in the current BB
@@ -855,7 +881,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                }
                /// check if current statement can be loop pipelined
                bool zero_delay = true;
-               if(can_be_pipelined && (gn->vuses.size() || CheckMovable(curr_bb, GetPointer<gimple_assign>(tn), zero_delay, TM) == FunctionFrontendFlowStep_Movable::MOVABLE))
+               if(can_be_pipelined && (gn->vuses.size() || CheckMovable(curr_bb, tn, zero_delay, TM) == FunctionFrontendFlowStep_Movable::MOVABLE))
                {
                   THROW_ASSERT(bb_dominator_map.find(bb_vertex) != bb_dominator_map.end(), "unexpected condition");
 #if HAVE_EXPERIMENTAL
@@ -886,43 +912,76 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because uses ssa defined in the same block");
                continue;
             }
-            if(gn->vuses.size() and not parallel_bb)
+            if((gn->vuses.size() || (GetPointer<gimple_assign>(tn) and GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K))
+               // and (not schedule)
+               and not isFunctionPipelined and not parallel_bb)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of vuses");
                continue; /// load cannot be code moved
             }
             /// find in which BB can be moved
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking where it can be moved");
-            vertex dom_bb = bb_vertex;
             unsigned int dest_bb_index = curr_bb;
             unsigned int prev_dest_bb_index = curr_bb;
-            if(bb_dominator_map.find(dom_bb) != bb_dominator_map.end())
+            if(gn->vdef || gn->vuses.size() || (tn->get_kind() == gimple_assign_K && GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K))
             {
-               dom_bb = bb_dominator_map.find(dom_bb)->second;
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Considering its dominator BB" + STR(direct_vertex_map[dom_bb]));
-               unsigned int dom_bb_index = direct_vertex_map[dom_bb];
-               while(dom_bb_index != bloc::ENTRY_BLOCK_ID)
+               if(list_of_bloc[curr_bb]->list_of_pred.size() == 1 && *list_of_bloc[curr_bb]->list_of_pred.begin() != bloc::ENTRY_BLOCK_ID &&
+                  ((tn->get_kind() == gimple_assign_K && (GET_NODE(GetPointer<gimple_assign>(tn)->op0)->get_kind() == mem_ref_K || GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K)) || tn->get_kind() == gimple_nop_K) &&
+                  list_of_bloc[*list_of_bloc[curr_bb]->list_of_pred.begin()]->loop_id == list_of_bloc[curr_bb]->loop_id)
                {
-                  if(list_of_bloc[curr_bb]->loop_id >= list_of_bloc[dom_bb_index]->loop_id)
-                  {
-                     prev_dest_bb_index = dest_bb_index;
-                     dest_bb_index = dom_bb_index;
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Going up one level. Considering now BB" + STR(dest_bb_index));
-                  }
-                  if(BB_def.find(dom_bb_index) != BB_def.end())
-                  {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---It contains the definition of one ssa used in moving statement");
-                     break;
-                  }
-                  if(bb_dominator_map.find(dom_bb) == bb_dominator_map.end())
-                  {
-                     break;
-                  }
+                  dest_bb_index = *list_of_bloc[curr_bb]->list_of_pred.begin();
+               }
+               else
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because is not a store/load or because we do not know the condition under which the store/load is done");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+                  continue;
+               }
+            }
+            else
+            {
+               vertex dom_bb = bb_vertex;
+               if(bb_dominator_map.find(dom_bb) != bb_dominator_map.end())
+               {
                   dom_bb = bb_dominator_map.find(dom_bb)->second;
-                  dom_bb_index = direct_vertex_map[dom_bb];
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Considering its dominator BB" + STR(direct_vertex_map[dom_bb]));
+                  unsigned int dom_bb_index = direct_vertex_map[dom_bb];
+                  while(dom_bb_index != bloc::ENTRY_BLOCK_ID)
+                  {
+                     unsigned loop_idU = list_of_bloc[dom_bb_index]->loop_id;
+                     unsigned loop_idC = list_of_bloc[curr_bb]->loop_id;
+                     if(loop_idC >= loop_idU)
+                     {
+                        prev_dest_bb_index = dest_bb_index;
+                        dest_bb_index = dom_bb_index;
+                        bool internLoopDep = false;
+                        for(auto BBdef : BB_def)
+                           if(list_of_bloc[BBdef]->loop_id > loop_idU && list_of_bloc[BBdef]->loop_id <= loop_idC)
+                              internLoopDep = true;
+                        if(internLoopDep)
+                        {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---the statement depends on values defined at inner level than dest BB" + STR(dest_bb_index));
+                           dest_bb_index = curr_bb;
+                           break;
+                        }
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Going up one level. Considering now BB" + STR(dest_bb_index));
+                     }
+                     if(BB_def.find(dom_bb_index) != BB_def.end())
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---It contains the definition of one SSA used by the statement to be moved");
+                        break;
+                     }
+                     if(bb_dominator_map.find(dom_bb) == bb_dominator_map.end())
+                     {
+                        break;
+                     }
+                     dom_bb = bb_dominator_map.find(dom_bb)->second;
+                     dom_bb_index = direct_vertex_map[dom_bb];
+                  }
                }
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+
             /// check the result of the dominator tree analysis
             if(dest_bb_index == curr_bb)
             {
@@ -956,10 +1015,10 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                }
             }
             bool zero_delay = true;
-            auto check_movable = CheckMovable(dest_bb_index, GetPointer<gimple_assign>(tn), zero_delay, TM);
+            auto check_movable = CheckMovable(dest_bb_index, tn, zero_delay, TM);
             if((check_movable == FunctionFrontendFlowStep_Movable::TIMING) and is_controlling_condition_constant)
                check_movable = FunctionFrontendFlowStep_Movable::MOVABLE;
-            if(not parallel_bb and check_movable == FunctionFrontendFlowStep_Movable::UNMOVABLE)
+            if(not isFunctionPipelined and not parallel_bb and check_movable == FunctionFrontendFlowStep_Movable::UNMOVABLE)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because cannot be moved");
                continue;
@@ -967,7 +1026,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
 #ifndef NDEBUG
             if(not AppM->ApplyNewTransformation())
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because reached limit of cfg transformations");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because reached limit of CFG transformations");
                continue;
             }
 #endif
@@ -1010,6 +1069,127 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             AppM->RegisterTransformation(GetName(), *statement);
 #endif
 
+            /// add predication in case is required
+            if(tn->get_kind() == gimple_assign_K && (GET_NODE(GetPointer<gimple_assign>(tn)->op0)->get_kind() == mem_ref_K || GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K))
+            {
+               if(list_of_bloc[dest_bb_index]->CGetStmtList().empty())
+               {
+                  /// it may happen: two consecutive BBs without conditional jump
+               }
+               else
+               {
+                  const auto& lastStmt = *(list_of_bloc[dest_bb_index]->CGetStmtList().rbegin());
+                  auto lastStmtNode = GET_NODE(lastStmt);
+                  auto ga = GetPointer<gimple_assign>(tn);
+                  if(lastStmtNode->get_kind() == gimple_cond_K)
+                  {
+                     if(ga->predicate && GET_NODE(ga->predicate)->get_kind() == integer_cst_K)
+                     {
+                        auto ic = GetPointer<integer_cst>(GET_NODE(ga->predicate));
+                        auto cond = tree_helper::get_integer_cst_value(ic);
+                        if(cond != 0)
+                        {
+                           if(list_of_bloc[dest_bb_index]->true_edge == curr_bb)
+                              TM->ReplaceTreeNode(*statement, ga->predicate, GetPointer<gimple_cond>(lastStmtNode)->op0);
+                           else
+                           {
+                              /// create a negated condition
+                              auto not_cond = tree_man->CreateNotExpr(GetPointer<gimple_cond>(lastStmtNode)->op0, list_of_bloc[dest_bb_index]);
+                              TM->ReplaceTreeNode(*statement, ga->predicate, not_cond);
+                           }
+                        }
+                     }
+                     else
+                     {
+                        if(list_of_bloc[dest_bb_index]->true_edge == curr_bb)
+                        {
+                           auto and_cond = tree_man->CreateAndExpr(GetPointer<gimple_cond>(lastStmtNode)->op0, ga->predicate, list_of_bloc[dest_bb_index]);
+                           TM->ReplaceTreeNode(*statement, ga->predicate, and_cond);
+                        }
+                        else
+                        {
+                           auto not_cond = tree_man->CreateNotExpr(GetPointer<gimple_cond>(lastStmtNode)->op0, list_of_bloc[dest_bb_index]);
+                           auto and_cond = tree_man->CreateAndExpr(not_cond, ga->predicate, list_of_bloc[dest_bb_index]);
+                           TM->ReplaceTreeNode(*statement, ga->predicate, and_cond);
+                        }
+                     }
+                  }
+                  else if(lastStmtNode->get_kind() == gimple_multi_way_if_K)
+                  {
+                     auto gmwi = GetPointer<gimple_multi_way_if>(lastStmtNode);
+                     bool found_condition = false;
+                     for(auto gmwicond : gmwi->list_of_cond)
+                     {
+                        if(gmwicond.second == curr_bb)
+                        {
+                           found_condition = true;
+                           if(!gmwicond.first)
+                           {
+                              /// compute default condition
+                              auto firstCond = true;
+                              tree_nodeRef Cur;
+                              for(auto gmwicond0 : gmwi->list_of_cond)
+                              {
+                                 if(gmwicond0.first)
+                                 {
+                                    if(firstCond)
+                                    {
+                                       Cur = gmwicond0.first;
+                                       firstCond = false;
+                                    }
+                                    else
+                                       Cur = tree_man->CreateOrExpr(Cur, gmwicond0.first, list_of_bloc[dest_bb_index]);
+                                 }
+                              }
+                              Cur = tree_man->CreateNotExpr(Cur, list_of_bloc[dest_bb_index]);
+                              if(ga->predicate && GET_NODE(ga->predicate)->get_kind() == integer_cst_K)
+                              {
+                                 auto ic = GetPointer<integer_cst>(GET_NODE(ga->predicate));
+                                 auto cond = tree_helper::get_integer_cst_value(ic);
+                                 if(cond != 0)
+                                 {
+                                    TM->ReplaceTreeNode(*statement, ga->predicate, Cur);
+                                 }
+                              }
+                              else
+                              {
+                                 auto and_cond = tree_man->CreateAndExpr(Cur, ga->predicate, list_of_bloc[dest_bb_index]);
+                                 TM->ReplaceTreeNode(*statement, ga->predicate, and_cond);
+                              }
+                           }
+                           else
+                           {
+                              if(ga->predicate && GET_NODE(ga->predicate)->get_kind() == integer_cst_K)
+                              {
+                                 auto ic = GetPointer<integer_cst>(GET_NODE(ga->predicate));
+                                 auto cond = tree_helper::get_integer_cst_value(ic);
+                                 if(cond != 0)
+                                 {
+                                    TM->ReplaceTreeNode(*statement, ga->predicate, gmwicond.first);
+                                 }
+                              }
+                              else
+                              {
+                                 auto and_cond = tree_man->CreateAndExpr(gmwicond.first, ga->predicate, list_of_bloc[dest_bb_index]);
+                                 TM->ReplaceTreeNode(*statement, ga->predicate, and_cond);
+                              }
+                           }
+                           break;
+                        }
+                     }
+                     if(!found_condition)
+                        THROW_ERROR("node not supported: " + lastStmtNode->get_kind_text() + " " + lastStmtNode->ToString());
+                  }
+                  else if(list_of_bloc[dest_bb_index]->list_of_succ.size() == 1 && list_of_bloc[dest_bb_index]->loop_id == list_of_bloc[curr_bb]->loop_id)
+                  {
+                     /// it may happen: two consecutive BBs without conditional jump
+                  }
+                  else
+                  {
+                     THROW_ERROR("node not supported: " + lastStmtNode->get_kind_text() + " " + lastStmtNode->ToString());
+                  }
+               }
+            }
             const auto temp_statement = *statement;
             /// Going one step step forward to avoid invalidation of the pointer
             auto tmp_it = statement;
@@ -1045,6 +1225,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written BB_simple_code_motion_" + STR(counter) + ".dot");
             counter++;
          }
+         if(restart_bb_code_motion)
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Restart Analyzing BB" + STR(curr_bb) + (parallel_bb ? "(Parallel)" : ""));
       } while(restart_bb_code_motion);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(curr_bb));
    }

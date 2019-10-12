@@ -124,6 +124,9 @@ hlsRef HLS_manager::create_HLS(const HLS_managerRef HLSMgr, unsigned int functio
       /// creates the new HLS data structure associated with the function
       const std::string function_name = tree_helper::name_function(HLSMgr->get_tree_manager(), functionId);
       HLS_constraintsRef HLS_C = HLS_constraintsRef(new HLS_constraints(HLSMgr->get_parameter(), function_name));
+      for(auto globalRC : HLSMgr->global_resource_constraints)
+         if(HLS_C->get_number_fu(globalRC.first.first, globalRC.first.second) == INFINITE_UINT)
+            HLS_C->set_number_fu(globalRC.first.first, globalRC.first.second, globalRC.second);
       HLSMgr->hlsMap[functionId] = hlsRef(new hls(HLSMgr->get_parameter(), functionId, Operations, HLSMgr->get_HLS_target(), HLS_C));
       if(HLSMgr->design_interface_constraints.find(functionId) != HLSMgr->design_interface_constraints.end())
       {
@@ -265,6 +268,14 @@ bool HLS_manager::is_register_compatible(unsigned int var) const
    return tree_helper::is_ssa_name(TM, var) and not tree_helper::is_virtual(TM, var) and // virtual ssa_name is not considered
           not tree_helper::is_parameter(TM, var) and                                     // parameters have been already stored in a register by the calling function
           not Rmem->has_base_address(var);                                               // ssa_name allocated in memory
+}
+
+bool HLS_manager::is_reading_writing_function(unsigned funID) const
+{
+   auto fun_node = TM->get_tree_node_const(funID);
+   auto fd = GetPointer<function_decl>(fun_node);
+   THROW_ASSERT(fd, "unexpected condition");
+   return fd->reading_memory || fd->writing_memory;
 }
 
 bool HLS_manager::IsSingleWriteMemory() const

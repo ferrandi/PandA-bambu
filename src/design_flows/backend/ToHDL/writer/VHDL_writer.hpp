@@ -100,6 +100,13 @@ struct VHDL_writer : public language_writer
    std::string type_converter_size(const structural_objectRef& cir) override;
 
    /**
+    * return the slice in case of a port owned by a port vector
+    * @param port is the port
+    * @return a string in case of a port owned by a port vector
+    */
+   std::string may_slice_string(const structural_objectRef& cir);
+
+   /**
     * Write used library.
     * @param cir is the component for which the library declarations are written.
     */
@@ -201,7 +208,8 @@ struct VHDL_writer : public language_writer
     * @param end if the end iterator of the state table.
     * @param n_states is the number of states.
     */
-   void write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state, const std::string& reset_port, const std::string& start_port, const std::string& clock_port, std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end) override;
+   void write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state, const std::string& reset_port, const std::string& start_port, const std::string& clock_port,
+                                          std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end) override;
 
    /**
     * Write in the proper language the behavioral description of the module described in "Not Parsed" form.

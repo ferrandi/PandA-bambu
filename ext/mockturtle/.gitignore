@@ -1,0 +1,10 @@
+build/
+build-*/
+.vscode/
+examples/
+
+**/*~
+**/.DS_Store
+
+docs/_build
+docs/doxyxml

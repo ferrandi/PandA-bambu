@@ -1,18 +1,18 @@
-%Generated at 2019-09-18 18:04:05.816554 with bambu Version: PandA 0.9.6-dev - Revision 283bb75d54a0c2092384c66f4e8245e2c8f1f8c4-bambu-onnx with arguments --simulator=VERILATOR
+%Generated at 2019-10-09 17:53:19.168535 with bambu Version: PandA 0.9.6-dev - Revision 069d550f1c1971aa5bcb67eb8e76fa40c37169be-FixingCS with arguments --simulator=VERILATOR
 \begin{tabular}{|l|c|c|c|c|c|c|c|c|c|c|}
 \hline
-Benchmark           & Cycles    & Period                 & Slack     & Fmax       & Wall-clock             & LUTs     & Slices   & BRAMB18 & DSP48s & HLS Time(s) \\
+Benchmark           & Cycles     & Period                 & Slack     & Fmax       & Wall-clock             & LUTs     & Slices   & BRAMB18 & DSP48s & HLS Time(s) \\
 \hline
-MLP\_parallel       & $ 36926 $ & $ 4.364 \cdot 10^{0} $ & $ -1.06 $ & $ 229.15 $ & $ 1.611 \cdot 10^{2} $ & $ 2865 $ & $ 1195 $ & $ 0   $ & $ 7  $ & $ 36.82   $ \\
-dense\_64\_parallel & $ 11043 $ & $ 4.959 \cdot 10^{0} $ & $ -1.66 $ & $ 201.65 $ & $ 5.476 \cdot 10^{1} $ & $ 2297 $ & $ 999  $ & $ 0   $ & $ 10 $ & $ 15.02   $ \\
-dense\_8\_parallel  & $ 1523  $ & $ 4.757 \cdot 10^{0} $ & $ -1.46 $ & $ 210.22 $ & $ 7.245 \cdot 10^{0} $ & $ 2299 $ & $ 1026 $ & $ 0   $ & $ 10 $ & $ 14.63   $ \\
+MLP\_parallel       & $ 773419 $ & $ 4.863 \cdot 10^{0} $ & $ -1.56 $ & $ 205.63 $ & $ 3.761 \cdot 10^{3} $ & $ 3671 $ & $ 1574 $ & $ 0   $ & $ 9  $ & $ 12.80   $ \\
+dense\_64\_parallel & $ 9891   $ & $ 4.014 \cdot 10^{0} $ & $ -0.71 $ & $ 249.13 $ & $ 3.970 \cdot 10^{1} $ & $ 1123 $ & $ 499  $ & $ 0   $ & $ 2  $ & $ 3.57    $ \\
+dense\_8\_parallel  & $ 1379   $ & $ 4.281 \cdot 10^{0} $ & $ -0.98 $ & $ 233.59 $ & $ 5.903 \cdot 10^{0} $ & $ 1117 $ & $ 474  $ & $ 0   $ & $ 2  $ & $ 3.57    $ \\
 \hline
-Average             & $       $ & $ 4.693 \cdot 10^{0} $ & $ -1.39 $ & $ 213.67 $ & $                    $ & $      $ & $      $ & $     $ & $    $ & $         $ \\
+Average             & $        $ & $ 4.386 \cdot 10^{0} $ & $ -1.09 $ & $ 229.45 $ & $                    $ & $      $ & $      $ & $     $ & $    $ & $         $ \\
 \hline
-Overall             & $ 49492 $ & $                    $ & $       $ & $        $ & $ 2.232 \cdot 10^{2} $ & $ 7461 $ & $ 3220 $ & $ 0   $ & $ 27 $ & $ 66.47   $ \\
+Overall             & $ 784689 $ & $                    $ & $       $ & $        $ & $ 3.807 \cdot 10^{3} $ & $ 5911 $ & $ 2547 $ & $ 0   $ & $ 13 $ & $ 19.94   $ \\
 \hline
 \end{tabular}
 %Benchmarks:
 %04_dense_a/04_dense_a.parallel.c --benchmark-name=dense_8_parallel -IBENCHMARKS_ROOT/common/ --top-fname=fused_nn_dense_add_wrapper --top-rtldesign-name=fused_nn_dense_add --generate-tb=BENCHMARKS_ROOT/04_dense_a/test.xml
 %05_dense_b/05_dense_b.parallel.c --benchmark-name=dense_64_parallel -IBENCHMARKS_ROOT/common/ --top-fname=fused_nn_dense_add_wrapper --top-rtldesign-name=fused_nn_dense_add --generate-tb=BENCHMARKS_ROOT/05_dense_b/test.xml
-%e1_mlp/e1_mlp.parallel.c --benchmark-name=MLP_parallel -IBENCHMARKS_ROOT/common/ --top-fname=mlp_wrapper --top-rtldesign-name=fused_nn_softmax --generate-tb=BENCHMARKS_ROOT/e1_mlp/test.xml -lm
+%e1_mlp/e1_mlp.parallel.c --benchmark-name=MLP_parallel -IBENCHMARKS_ROOT/common/ --top-fname=mlp_wrapper --top-rtldesign-name=mlp --generate-tb=BENCHMARKS_ROOT/e1_mlp/test.xml -lm

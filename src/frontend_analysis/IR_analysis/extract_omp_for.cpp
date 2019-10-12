@@ -59,8 +59,8 @@
 #include "design_flow_manager.hpp"
 
 /// STL include
-#include <utility>
 #include <unordered_set>
+#include <utility>
 
 /// tree includes
 #include "behavioral_helper.hpp"
@@ -224,7 +224,7 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
             }
             auto fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
             function_behavior->UpdateBBVersion();
-            fd->omp_for_wrapper = parameters->getOption<size_t>(OPT_num_threads);
+            fd->omp_for_wrapper = parameters->getOption<size_t>(OPT_num_accelerators);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped loop " + STR(loop->GetId()));
             break;
          }
@@ -241,8 +241,7 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(bb_node_info->block->number));
             const auto list_of_stmt = bb_node_info->block->CGetStmtList();
             const auto first_node = list_of_stmt.front();
-            const auto second_node = [&] () -> tree_nodeRef
-            {
+            const auto second_node = [&]() -> tree_nodeRef {
                if(list_of_stmt.size() == 1)
                {
                   const auto header_node_info = basic_block_graph->CGetBBNodeInfo(loop->GetHeader());
@@ -323,7 +322,7 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
             }
             auto fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
             function_behavior->UpdateBBVersion();
-            fd->omp_for_wrapper = parameters->getOption<size_t>(OPT_num_threads);
+            fd->omp_for_wrapper = parameters->getOption<size_t>(OPT_num_accelerators);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped loop " + STR(loop->GetId()));
             break;
          }

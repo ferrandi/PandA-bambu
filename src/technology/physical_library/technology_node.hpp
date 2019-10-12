@@ -191,6 +191,10 @@ enum class TargetDevice_Type;
 #define VIEW_CONVERT_STD_UINT "ui_view_convert_expr_FU"
 #define VIEW_CONVERT_STD_REAL "fp_view_convert_expr_FU"
 
+#define EXTRACT_BIT_EXPR_SIGNED_STD "extract_bit_expr_FU"
+#define EXTRACT_BIT_EXPR_UNSIGNED_STD "ui_extract_bit_expr_FU"
+#define LUT_EXPR_STD "lut_expr_FU"
+
 // For distributed controller
 #define CE_STD "CE_FU"
 #define CE_FSM "CE_FSM"
@@ -219,8 +223,11 @@ enum class TargetDevice_Type;
 /// flipflop with asynchronous reset
 #define flipflop_AR "flipflop_AR"
 
-/// register with asynchronous reset
+/// register with asynchronous reset no retime
 #define register_AR_NORETIME "register_AR_NORETIME"
+#define register_AR_NORETIME_INT "register_AR_NORETIME_INT"
+#define register_AR_NORETIME_UINT "register_AR_NORETIME_UINT"
+#define register_AR_NORETIME_REAL "register_AR_NORETIME_REAL"
 /// register with synchronous enable
 #define register_SE "register_SE"
 /// register with synchronous reset and synchronous enable

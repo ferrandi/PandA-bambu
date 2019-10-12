@@ -249,9 +249,9 @@ class tree_helper
     * @param index is the index of the pointer object
     */
    static
-   /// FIXME: to be remove after substitution with GetPointedType/CGetPointedType
-   unsigned int
-   get_pointed_type(const tree_managerConstRef TM, const unsigned int index);
+       /// FIXME: to be remove after substitution with GetPointedType/CGetPointedType
+       unsigned int
+       get_pointed_type(const tree_managerConstRef TM, const unsigned int index);
 
    /**
     * Return the pointed type of a pointer object

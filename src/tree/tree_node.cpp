@@ -712,6 +712,7 @@ function_decl::function_decl(unsigned int i)
       virt_flag(false),
       reverse_restrict_flag(false),
       writing_memory(false),
+      reading_memory(false),
 #if HAVE_FROM_PRAGMA_BUILT
       omp_for_wrapper(0),
       omp_body_loop(false),
@@ -1294,6 +1295,22 @@ void target_expr::visit(tree_node_visitor* const v) const
    VISIT_MEMBER(mask, decl, visit(v));
    VISIT_MEMBER(mask, init, visit(v));
    VISIT_MEMBER(mask, clnp, visit(v));
+}
+
+void lut_expr::visit(tree_node_visitor* const v) const
+{
+   unsigned int mask = ALL_VISIT;
+   (*v)(this, mask);
+   VISIT_SC(mask, expr_node, visit(v));
+   VISIT_MEMBER(mask, op0, visit(v));
+   VISIT_MEMBER(mask, op1, visit(v));
+   VISIT_MEMBER(mask, op2, visit(v));
+   VISIT_MEMBER(mask, op3, visit(v));
+   VISIT_MEMBER(mask, op4, visit(v));
+   VISIT_MEMBER(mask, op5, visit(v));
+   VISIT_MEMBER(mask, op6, visit(v));
+   VISIT_MEMBER(mask, op7, visit(v));
+   VISIT_MEMBER(mask, op8, visit(v));
 }
 
 void template_decl::visit(tree_node_visitor* const v) const

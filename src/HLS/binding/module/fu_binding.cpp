@@ -100,8 +100,8 @@
 /// STL includes
 #include <algorithm>
 #include <set>
-#include <vector>
 #include <utility>
+#include <vector>
 
 /// utility include
 #include "string_manipulation.hpp" // for GET_CLASS
@@ -534,7 +534,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          if(HLS->registered_inputs && in_chain == start_port)
          {
             technology_nodeRef delay_unit;
-            std::string synch_reset = HLS->Param->getOption<std::string>(OPT_sync_reset);
+            std::string synch_reset = parameters->getOption<std::string>(OPT_sync_reset);
             if(synch_reset == "sync")
                delay_unit = HLS->HLS_T->get_technology_manager()->get_fu(flipflop_SR, LIBRARY_STD);
             else
@@ -571,8 +571,8 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
          structural_objectRef curr_gate;
          bool is_multiport;
-         size_t max_n_ports = HLS->Param->isOption(OPT_channels_number) ? HLS->Param->getOption<unsigned int>(OPT_channels_number) : 0;
-         if(HLS->Param->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN)
+         size_t max_n_ports = HLS->Param->isOption(OPT_channels_number) ? parameters->getOption<unsigned int>(OPT_channels_number) : 0;
+         if(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN)
          {
             const technology_nodeRef fu_lib_unit = HLS->HLS_T->get_technology_manager()->get_fu(MEMSTORE_STDN, LIBRARY_STD_FU);
             THROW_ASSERT(fu_lib_unit, "functional unit not available: check the library given. Component: " + std::string(MEMSTORE_STDN));
@@ -625,7 +625,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          if(HLS->registered_inputs && in_chain == start_port)
          {
             technology_nodeRef delay_unit;
-            std::string synch_reset = HLS->Param->getOption<std::string>(OPT_sync_reset);
+            std::string synch_reset = parameters->getOption<std::string>(OPT_sync_reset);
             if(synch_reset == "sync")
                delay_unit = HLS->HLS_T->get_technology_manager()->get_fu(flipflop_SR, LIBRARY_STD);
             else
@@ -743,7 +743,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          std::string memory_type = GetPointer<functional_unit>(fu_lib_unit)->memory_type;
          std::string channels_type = GetPointer<functional_unit>(fu_lib_unit)->channels_type;
          specialize_memory_unit(HLSMgr, HLS, curr_gate, var, base_address, rangesize, false, memory_type == MEMORY_TYPE_SYNCHRONOUS_UNALIGNED && (channels_type == CHANNELS_TYPE_MEM_ACC_N1 || channels_type == CHANNELS_TYPE_MEM_ACC_NN),
-                                HLS->Param->isOption(OPT_sparse_memory) && HLS->Param->getOption<bool>(OPT_sparse_memory),
+                                HLS->Param->isOption(OPT_sparse_memory) && parameters->getOption<bool>(OPT_sparse_memory),
                                 memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS || memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS_BUS || memory_type == MEMORY_TYPE_ASYNCHRONOUS);
          check_parametrization(curr_gate);
          mem_obj[fu_type_id] = curr_gate;
@@ -1520,7 +1520,10 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       }
       if(fu_module->ExistsParameter("BUS_PIPELINED"))
       {
-         bool Has_extern_allocated_data = ((HLSMgr->Rmem->get_memory_address() - HLSMgr->base_address) > 0 and parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM and parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::INTERN_UNALIGNED) or (HLSMgr->Rmem->has_unknown_addresses() and HLS->Param->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM and HLS->Param->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
+         bool Has_extern_allocated_data = ((HLSMgr->Rmem->get_memory_address() - HLSMgr->base_address) > 0 and parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM and
+                                           parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::INTERN_UNALIGNED) or
+                                          (HLSMgr->Rmem->has_unknown_addresses() and parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM and
+                                           parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
          if(Has_extern_allocated_data)
          {
             fu_module->SetParameter("BUS_PIPELINED", "0");
@@ -1652,6 +1655,55 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                               curr_LSB = 0;
                         }
                      }
+                     auto op0 = TreeM->get_tree_node_const(op0_tree_var);
+                     auto op1 = TreeM->get_tree_node_const(std::get<0>(vars[1]));
+                     if(op0->get_kind() == ssa_name_K)
+                     {
+                        auto ssa_var0 = GetPointer<ssa_name>(op0);
+                        if(!ssa_var0->bit_values.empty())
+                        {
+                           auto tailZeros = 0u;
+                           const auto lengthBV = ssa_var0->bit_values.size();
+                           while(lengthBV > tailZeros && ssa_var0->bit_values.at(lengthBV-1-tailZeros) == '0')
+                              ++tailZeros;
+                           if(tailZeros<curr_LSB)
+                              curr_LSB = tailZeros;
+                        }
+                        else
+                           curr_LSB = 0;
+                     }
+                     else
+                        curr_LSB = 0;
+                     if(op1->get_kind() == ssa_name_K)
+                     {
+                        auto ssa_var1 = GetPointer<ssa_name>(op1);
+                        if(!ssa_var1->bit_values.empty())
+                        {
+                           auto tailZeros = 0u;
+                           const auto lengthBV = ssa_var1->bit_values.size();
+                           while(lengthBV > tailZeros && ssa_var1->bit_values.at(lengthBV-1-tailZeros) == '0')
+                              ++tailZeros;
+                           if(tailZeros<curr_LSB)
+                              curr_LSB = tailZeros;
+                        }
+                        else
+                           curr_LSB = 0;
+                     }
+                     else if(op1->get_kind() == integer_cst_K)
+                     {
+                        const integer_cst* int_const = GetPointer<integer_cst>(op1);
+                        unsigned long long int offset_value = static_cast<unsigned long long int>(int_const->value);
+                        if(offset_value)
+                        {
+                           auto tailZeros = 0u;
+                           while((offset_value & (1ULL<<tailZeros))==0)
+                              ++tailZeros;
+                           if(tailZeros<curr_LSB)
+                              curr_LSB = tailZeros;
+                        }
+                     }
+                     else
+                        curr_LSB = 0;
                      if(fu_module->ExistsParameter("LSB_PARAMETER"))
                      {
                         int lsb_parameter = boost::lexical_cast<int>(fu_module->GetParameter("LSB_PARAMETER"));
@@ -2543,6 +2595,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                      case target_mem_ref461_K:
                      case tree_list_K:
                      case tree_vec_K:
+                     case lut_expr_K:
                      case CASE_BINARY_EXPRESSION:
                      case CASE_CPP_NODES:
                      case CASE_FAKE_NODES:
@@ -2667,6 +2720,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             case void_cst_K:
             case vtable_ref_K:
             case with_cleanup_expr_K:
+            case lut_expr_K:
             case CASE_CPP_NODES:
             case CASE_FAKE_NODES:
             case CASE_GIMPLE_NODES:
@@ -2766,6 +2820,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       case vec_unpack_lo_expr_K:
       case vec_unpack_float_hi_expr_K:
       case vec_unpack_float_lo_expr_K:
+      case lut_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:

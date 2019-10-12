@@ -115,7 +115,8 @@ TestbenchGenerationBaseStep::TestbenchGenerationBaseStep(const ParameterConstRef
 {
    if(!boost::filesystem::exists(output_directory))
       boost::filesystem::create_directories(output_directory);
-   flag_cpp = _HLSMgr->get_tree_manager()->is_CPP() && !_parameters->isOption(OPT_pretty_print) && (!_parameters->isOption(OPT_discrepancy) || !_parameters->getOption<bool>(OPT_discrepancy) || !_parameters->isOption(OPT_discrepancy_hw) || !_parameters->getOption<bool>(OPT_discrepancy_hw));
+   flag_cpp = _HLSMgr->get_tree_manager()->is_CPP() && !_parameters->isOption(OPT_pretty_print) &&
+              (!_parameters->isOption(OPT_discrepancy) || !_parameters->getOption<bool>(OPT_discrepancy) || !_parameters->isOption(OPT_discrepancy_hw) || !_parameters->getOption<bool>(OPT_discrepancy_hw));
 }
 
 TestbenchGenerationBaseStep::~TestbenchGenerationBaseStep() = default;
@@ -758,7 +759,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   {
                      if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
                      {
-                        writer->write("$display(\"" + nonescaped_name + " = %d _bambu_testbench_mem_[" + nonescaped_name + " + %d - base_addr] = %d  expected = %d \\n\", _bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_] == " + output_name + ", _i_, _bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_], " + output_name + ");\n");
+                        writer->write("$display(\"" + nonescaped_name + " = %d _bambu_testbench_mem_[" + nonescaped_name + " + %d - base_addr] = %d  expected = %d \\n\", _bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_] == " + output_name +
+                                      ", _i_, _bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_], " + output_name + ");\n");
                      }
                      writer->write("if (_bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_] !== " + output_name + ")\n");
                   }
@@ -1243,7 +1245,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   {
                      if(output_level > OUTPUT_LEVEL_MINIMUM)
                      {
-                        writer->write("$display(\"comparison = %d _bambu_testbench_mem_[" + nonescaped_name + " + %d - base_addr] = %d  expected = %d \\n\", _bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_] == " + output_name + ", _i_, _bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_], " + output_name + ");\n");
+                        writer->write("$display(\"comparison = %d _bambu_testbench_mem_[" + nonescaped_name + " + %d - base_addr] = %d  expected = %d \\n\", _bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_] == " + output_name +
+                                      ", _i_, _bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_], " + output_name + ");\n");
                      }
                      writer->write("if (_bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_] !== " + output_name + ")\n");
                   }
@@ -1661,8 +1664,8 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
       if(writeP)
          writer->write("\n");
    }
-   writer->write("reg signed [7:0] _bambu_testbench_mem_ [0:MEMSIZE-1];\n\n");
-   writer->write("reg signed [7:0] _bambu_databyte_;\n\n");
+   writer->write("reg [7:0] _bambu_testbench_mem_ [0:MEMSIZE-1];\n\n");
+   writer->write("reg [7:0] _bambu_databyte_;\n\n");
    writer->write("reg [3:0] __state, __next_state;\n");
    writer->write("reg start_results_comparison;\n");
    writer->write("reg next_start_port;\n");

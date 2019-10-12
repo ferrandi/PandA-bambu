@@ -50,6 +50,7 @@
 #include "llvm/Analysis/InstructionSimplify.h"
 #include "llvm/Analysis/LoopPass.h"
 #include "llvm/Analysis/ValueTracking.h"
+#include "llvm/IR/Attributes.h"
 #include "llvm/IR/CFG.h"
 #include "llvm/IR/ConstantRange.h"
 #include "llvm/IR/Constants.h"
@@ -95,6 +96,8 @@
 
 #include "llvm/RangeAnalysis.hpp"
 #include "llvm/eSSA.hpp"
+
+#include "CustomScalarReplacementOfAggregatesPass.hpp"
 
 #include <cxxabi.h>
 #include <iomanip>
@@ -245,8 +248,9 @@ namespace llvm
       return declname;
    }
 
-   DumpGimpleRaw::DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool _onlyGlobals, std::map<std::string, std::vector<std::string>>* _fun2params)
-       : outdir_name(_outdir_name),
+   DumpGimpleRaw::DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool _onlyGlobals, std::map<std::string, std::vector<std::string>>* _fun2params, bool early)
+       : earlyAnalysis(early),
+         outdir_name(_outdir_name),
          InFile(_InFile),
          filename(create_file_name_string(_outdir_name, _InFile)),
 #if __clang_major__ >= 7
@@ -2255,7 +2259,18 @@ namespace llvm
       else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL))
       {
          const alloca_var* av = reinterpret_cast<const alloca_var*>(t);
-         return std::max(8u, 8 * av->alloc_inst->getAlignment());
+         auto algn = av->alloc_inst->getAlignment();
+         if(algn == 0)
+         {
+            auto arraySize = av->alloc_inst->getArraySize();
+            if(isa<llvm::ConstantInt>(arraySize) && cast<llvm::ConstantInt>(arraySize)->getZExtValue() == 1)
+            {
+               auto allocType = av->alloc_inst->getAllocatedType();
+               auto typeSize = allocType->isSized() ? DL->getTypeAllocSizeInBits(allocType) : 8ULL;
+               algn = typeSize/8ULL;
+            }
+         }
+         return std::max(8u, 8 * algn);
       }
       else
          return TYPE_ALIGN(TREE_TYPE(t));
@@ -4891,7 +4906,7 @@ namespace llvm
    {
       if(!isVolatile)
       {
-         if(SrcAlign==DestAlign && DestAlign==Length->getZExtValue() && DestAlign<=8)
+         if(SrcAlign == DestAlign && DestAlign == Length->getZExtValue() && DestAlign <= 8)
          {
 #if PRINT_DBG_MSG
             llvm::errs() << "memcpy can be optimized\n";
@@ -4968,7 +4983,7 @@ namespace llvm
          srcIsGlobal = true;
          do_unrolling = do_unrolling && (dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0))->isConstant() || (LoopEndCount <= PEEL_THRESHOLD));
       }
-      else if(LoopEndCount==1)
+      else if(LoopEndCount == 1)
          do_unrolling = true;
       if(do_unrolling && !SrcIsVolatile && !DstIsVolatile && (srcIsAlloca || srcIsGlobal) && llvm::dyn_cast<llvm::BitCastInst>(DstAddr) && PeelCandidate)
       {
@@ -5991,15 +6006,15 @@ namespace llvm
                   I->eraseFromParent();
             if(!deadList.empty())
             {
-               const llvm::TargetTransformInfo& TTI = modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
+               //               const llvm::TargetTransformInfo& TTI = modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
                for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
                   llvm::SimplifyInstructionsInBlock(&*BBIt++, &TLI);
-               for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
-#if __clang_major__ >= 6
-                  llvm::simplifyCFG(&*BBIt++, TTI, 1);
-#else
-                  llvm::SimplifyCFG(&*BBIt++, TTI, 1);
-#endif
+               //               for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
+               //#if __clang_major__ >= 6
+               //                  llvm::simplifyCFG(&*BBIt++, TTI, 1);
+               //#else
+               //                  llvm::SimplifyCFG(&*BBIt++, TTI, 1);
+               //#endif
                llvm::removeUnreachableBlocks(F);
             }
          }
@@ -6287,14 +6302,15 @@ namespace llvm
       modulePass = _modulePass;
       moduleContext = &M.getContext();
       TopFunctionName = _TopFunctionName;
-      buildMetaDataMap(M);
-      auto res = lowerMemIntrinsics(M);
+      if(!earlyAnalysis)
+         buildMetaDataMap(M);
+      auto res = !earlyAnalysis && lowerMemIntrinsics(M);
 
-      res = res | RebuildConstants(M);
-      res = res | lowerIntrinsics(M);
+      res = res | (!earlyAnalysis && RebuildConstants(M));
+      res = res | (!earlyAnalysis && lowerIntrinsics(M));
       compute_eSSA(M);
 #if HAVE_LIBBDD
-      if(!onlyGlobals)
+      if(!earlyAnalysis && !onlyGlobals)
       {
          std::string starting_function = TopFunctionName;
          if(starting_function == "")
@@ -6326,7 +6342,7 @@ namespace llvm
       assert(!llvm::verifyModule(M, &llvm::errs()));
 #endif
 
-      if(!onlyGlobals)
+      if(!earlyAnalysis && !onlyGlobals)
       {
          for(const auto& fun : M.getFunctionList())
          {
@@ -6337,14 +6353,17 @@ namespace llvm
          }
       }
 
-      for(const auto& globalVar : M.getGlobalList())
+      if(!earlyAnalysis)
       {
+         for(const auto& globalVar : M.getGlobalList())
+         {
 #if PRINT_DBG_MSG
-         llvm::errs() << "Found global name: " << globalVar.getName() << "|" << ValueTyNames[globalVar.getValueID()] << "\n";
+            llvm::errs() << "Found global name: " << globalVar.getName() << "|" << ValueTyNames[globalVar.getValueID()] << "\n";
 #endif
-         SerializeGimpleGlobalTreeNode(assignCodeAuto(&globalVar));
+            SerializeGimpleGlobalTreeNode(assignCodeAuto(&globalVar));
+         }
       }
-      if(!onlyGlobals)
+      if(!earlyAnalysis && !onlyGlobals)
       {
          for(const auto& fun : M.getFunctionList())
          {
@@ -6376,6 +6395,7 @@ namespace llvm
          RA->printRanges(M, llvm::errs());
          delete RA;
       }
+      //M.print(llvm::errs(), nullptr);
       return res;
    }
 } // namespace llvm

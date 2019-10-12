@@ -64,14 +64,9 @@
 #include "exceptions.hpp"
 #include "utility.hpp"
 
-MemoryInitializationWriterBase::MemoryInitializationWriterBase(const tree_managerConstRef _TM, const BehavioralHelperConstRef _behavioral_helper, const unsigned long int _reserved_mem_bytes,
-                                                       const tree_nodeConstRef _function_parameter, const TestbenchGeneration_MemoryType _testbench_generation_memory_type, const ParameterConstRef)
-    : TM(_TM),
-      behavioral_helper(_behavioral_helper),
-      reserved_mem_bytes(_reserved_mem_bytes),
-      written_bytes(0),
-      function_parameter(_function_parameter),
-      testbench_generation_memory_type(_testbench_generation_memory_type)
+MemoryInitializationWriterBase::MemoryInitializationWriterBase(const tree_managerConstRef _TM, const BehavioralHelperConstRef _behavioral_helper, const unsigned long int _reserved_mem_bytes, const tree_nodeConstRef _function_parameter,
+                                                               const TestbenchGeneration_MemoryType _testbench_generation_memory_type, const ParameterConstRef)
+    : TM(_TM), behavioral_helper(_behavioral_helper), reserved_mem_bytes(_reserved_mem_bytes), written_bytes(0), function_parameter(_function_parameter), testbench_generation_memory_type(_testbench_generation_memory_type)
 {
    const auto parameter_type = GetPointer<const type_node>(function_parameter) ? function_parameter : TM->CGetTreeNode(tree_helper::get_type_index(TM, function_parameter->index));
    status.push_back(std::pair<const tree_nodeConstRef, size_t>(parameter_type, 0));
@@ -151,6 +146,7 @@ void MemoryInitializationWriterBase::GoUp()
       case target_mem_ref461_K:
       case tree_list_K:
       case tree_vec_K:
+      case lut_expr_K:
       case CASE_CPP_NODES:
       case CASE_BINARY_EXPRESSION:
       case CASE_CST_NODES:

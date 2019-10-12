@@ -146,7 +146,7 @@ end process;"/>
           <NP_functionality LIBRARY="ASSIGN_VEC_UNSIGNED_FU in1 out1" VERILOG_PROVIDED="generate\ngenvar o1;\n  for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)\n  begin  : vec_expr\n    assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1];\n  end\nendgenerate" VHDL_PROVIDED="begin\nprocess(in1)
 begin
    for index in 0 to NUM_ELEM_out1-1 loop
-       out1((index+1)*BITSIZE_out1-1 downto index*BITSIZE_out1) &lt;= std_logic_vector(resize(unsigned(in1((index+1)*BITSIZE_in1-1 downto index*BITSIZE_in1), BITSIZE_out1)));
+       out1((index+1)*BITSIZE_out1-1 downto index*BITSIZE_out1) &lt;= std_logic_vector(resize(unsigned(in1((index+1)*BITSIZE_in1-1 downto index*BITSIZE_in1)), BITSIZE_out1));
    end loop;
 end process;"/>
         </component_o>
@@ -1534,9 +1534,9 @@ assign out1 = (in1 &gt;&gt; (in2[marg2_bitsize-1:0]))|(in1 &lt;&lt;(PRECISION-(i
         </component_o>
       </circuit>
     </template>
-    <template>
+    <cell>
       <name>lut_expr_FU</name>
-      <operation operation_name="lut_expr"  supported_types="UINT:1,2,3,4,5,6" />
+      <operation operation_name="lut_expr" />
       <circuit>
         <component_o id="lut_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
@@ -1549,47 +1549,153 @@ assign out1 = (in1 &gt;&gt; (in2[marg2_bitsize-1:0]))|(in1 &lt;&lt;(PRECISION-(i
             <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="in4" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="in5" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="in6" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="in7" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="in8" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="in9" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
             <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="lut_expr_FU in1 in2 out1" VERILOG_PROVIDED="
-reg[BITSIZE_in1-1:0] cleaned_in1;
+          <NP_functionality LIBRARY="lut_expr_FU in1 out1" VERILOG_PROVIDED="
+reg[7:0] cleaned_in0;
+wire [7:0] in0;
+wire[BITSIZE_in1-1:0] shifted_s;
+
+assign in0 = {in9, in8, in7, in6, in5, in4, in3, in2};
 generate
 genvar i0;
-for (i0=0; i0&lt;BITSIZE_in1; i0=i0+1)
+for (i0=0; i0&lt;8; i0=i0+1)
 begin : L0
       always @(*)
       begin
-         if (in1[i0] == 1'b1)
-            cleaned_in1[i0] = 1'b1;
+         if (in0[i0] == 1'b1)
+            cleaned_in0[i0] = 1'b1;
          else
-            cleaned_in1[i0] = 1'b0;
+            cleaned_in0[i0] = 1'b0;
       end
   end
 endgenerate
-wire[BITSIZE_in2-1:0] shifted_s;
-assign shifted_s = in2&gt;&gt;cleaned_in1;
+assign shifted_s = in1 &gt;&gt; cleaned_in0;
 assign out1[0] = shifted_s[0];
 generate
  if(BITSIZE_out1 &gt; 1)
    assign out1[BITSIZE_out1-1:1] = 0;
 endgenerate
 " VHDL_PROVIDED=
-"  signal shifted_s : unsigned(in2&apos;range) := (others =&gt; &apos;0&apos;);
+"  signal in0 : std_logic_vector(7 downto 0);
+  signal shifted_s : unsigned(in1&apos;range) := (others =&gt; &apos;0&apos;);
 begin
+  in0(0) &lt;= in2;
+  in0(1) &lt;= in3;
+  in0(2) &lt;= in4;
+  in0(3) &lt;= in5;
+  in0(4) &lt;= in6;
+  in0(5) &lt;= in7;
+  in0(6) &lt;= in8;
+  in0(7) &lt;= in9;
   out1 &lt;= std_logic_vector(resize(to_unsigned(1, BITSIZE_out1), BITSIZE_out1)) when (shifted_s(0) = &apos;1&apos;) else (others =&gt; &apos;0&apos;);
-  process(in1, in2)
+  process(in0, in1)
   begin
-    shifted_s &lt;= shift_right(unsigned(in2), to_integer(unsigned(in1)));
+    shifted_s &lt;= shift_right(unsigned(in1), to_integer(unsigned(in0)));
   end process;
 "/>
         </component_o>
       </circuit>
-    </template>
+    </cell>
+    <cell>
+      <name>extract_bit_expr_FU</name>
+      <operation operation_name="extract_bit_expr"  supported_types="INT:*" />
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+      <circuit>
+        <component_o id="extract_bit_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2019 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="extract_bit_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="extract_bit_expr_FU in1 in2" VERILOG_PROVIDED="assign out1 = (in1 &gt;&gt;&gt; in2)&amp;1;" VHDL_PROVIDED=
+"begin
+  process(in1, in2)
+  begin
+    out1 &lt;= shift_right(in1, to_integer(unsigned(in2)))(0);
+  end process;
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>ui_extract_bit_expr_FU</name>
+      <operation operation_name="extract_bit_expr"  supported_types="UINT:*|VECTOR_BOOL:*" />
+      <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
+      <circuit>
+        <component_o id="ui_extract_bit_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2019 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_extract_bit_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_extract_bit_expr_FU in1 in2" VERILOG_PROVIDED="assign out1 = (in1 &gt;&gt; in2)&amp;1;" VHDL_PROVIDED=
+"begin
+  process(in1, in2)
+  begin
+    out1 &lt;= shift_right(unsigned(in1), to_integer(unsigned(in2)))(0);
+  end process;
+"/>
+        </component_o>
+      </circuit>
+    </cell>
     <template>
       <name>ui_negate_expr_FU</name>
       <operation operation_name="negate_expr"  supported_types="UINT:*|VECTOR_BOOL:*" />
@@ -2787,6 +2893,8 @@ assign xdenom = in2;"/>
       <operation operation_name="ternary_pm_expr" supported_types="INT:*"/>
       <operation operation_name="ternary_mp_expr" supported_types="INT:*"/>
       <operation operation_name="ternary_mm_expr" supported_types="INT:*"/>
+      <operation operation_name="plus_expr" supported_types="INT:*"/>
+      <operation operation_name="minus_expr" supported_types="INT:*"/>
       <circuit>
         <component_o id="ternary_alu_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
@@ -2822,11 +2930,165 @@ assign xdenom = in2;"/>
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
           </port_o>
+          <port_o id="sel_plus_expr" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="sel_minus_expr" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
             <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="ternary_alu_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="wire [1:0] in1_tail;\nwire [1:0] in2_tail;\nwire [1:0] in3_tail;\nwire [1:0] alu_decode;\nwire signed [BITSIZE_in1+1:0] ext_in1;\nwire signed [BITSIZE_in2+1:0] ext_in2;\nwire signed [BITSIZE_in3+1:0] ext_in3;\nwire signed [2*(BITSIZE_out1+2)-1:0] cs_vector;\nwire signed [BITSIZE_out1+1:0] c_vector;\nwire signed [BITSIZE_out1+1:0] s_vector;\nfunction [1:0] c5to2;\n  input [4:0] value;\nbegin\n  case (value)\n    /* plus plus */\n    5&apos;b00000 : c5to2 = 2&apos;b00;\n    5&apos;b00001 : c5to2 = 2&apos;b01;\n    5&apos;b00010 : c5to2 = 2&apos;b01;\n    5&apos;b00011 : c5to2 = 2&apos;b10;\n    5&apos;b00100 : c5to2 = 2&apos;b01;\n    5&apos;b00101 : c5to2 = 2&apos;b10;\n    5&apos;b00110 : c5to2 = 2&apos;b10;\n    5&apos;b00111 : c5to2 = 2&apos;b11;\n    /* plus minus */\n    5&apos;b01000 : c5to2 = 2&apos;b01;\n    5&apos;b01001 : c5to2 = 2&apos;b00;\n    5&apos;b01010 : c5to2 = 2&apos;b10;\n    5&apos;b01011 : c5to2 = 2&apos;b01;\n    5&apos;b01100 : c5to2 = 2&apos;b10;\n    5&apos;b01101 : c5to2 = 2&apos;b01;\n    5&apos;b01110 : c5to2 = 2&apos;b11;\n    5&apos;b01111 : c5to2 = 2&apos;b10;\n    /* minus plus */\n    5&apos;b10000 : c5to2 = 2&apos;b01;\n    5&apos;b10001 : c5to2 = 2&apos;b10;\n    5&apos;b10010 : c5to2 = 2&apos;b00;\n    5&apos;b10011 : c5to2 = 2&apos;b01;\n    5&apos;b10100 : c5to2 = 2&apos;b10;\n    5&apos;b10101 : c5to2 = 2&apos;b11;\n    5&apos;b10110 : c5to2 = 2&apos;b01;\n    5&apos;b10111 : c5to2 = 2&apos;b10;\n    /* minus minus */\n    5&apos;b11000 : c5to2 = 2&apos;b10;\n    5&apos;b11001 : c5to2 = 2&apos;b01;\n    5&apos;b11010 : c5to2 = 2&apos;b01;\n    5&apos;b11011 : c5to2 = 2&apos;b00;\n    5&apos;b11100 : c5to2 = 2&apos;b11;\n    5&apos;b11101 : c5to2 = 2&apos;b10;\n    5&apos;b11110 : c5to2 = 2&apos;b10;\n    5&apos;b11111 : c5to2 = 2&apos;b01;\n    default  : c5to2 = 2&apos;bxx;\n  endcase\nend\nendfunction\nfunction [1:0] alu_decode_fun;\n  input [3:0] value;\nbegin\n  case (value)\n    4&apos;b0001 : alu_decode_fun = 2&apos;b00;/*sel_ternary_plus_expr*/\n    4&apos;b0010 : alu_decode_fun = 2&apos;b01;/*sel_ternary_pm_expr*/\n    4&apos;b0100 : alu_decode_fun = 2&apos;b10;/*sel_ternary_mp_expr*/\n    4&apos;b1000 : alu_decode_fun = 2&apos;b11;/*sel_ternary_mm_expr*/\n    default : alu_decode_fun = 2&apos;bxx;\n  endcase\nend\nendfunction\nfunction [1:0] in1_tail_fun;\n  input [3:0] value;\nbegin\n  case (value)\n    4&apos;b0001 : in1_tail_fun = 2&apos;b00;/*sel_ternary_plus_expr*/\n    4&apos;b0010 : in1_tail_fun = 2&apos;b00;/*sel_ternary_pm_expr*/\n    4&apos;b0100 : in1_tail_fun = 2&apos;b00;/*sel_ternary_mp_expr*/\n    4&apos;b1000 : in1_tail_fun = 2&apos;b11;/*sel_ternary_mm_expr*/\n    default : in1_tail_fun = 2&apos;bxx;\n  endcase\nend\nendfunction\nfunction [1:0] in2_tail_fun;\n  input [3:0] value;\nbegin\n  case (value)\n    4&apos;b0001 : in2_tail_fun = 2&apos;b00;/*sel_ternary_plus_expr*/\n    4&apos;b0010 : in2_tail_fun = 2&apos;b10;/*sel_ternary_pm_expr*/\n    4&apos;b0100 : in2_tail_fun = 2&apos;b01;/*sel_ternary_mp_expr*/\n    4&apos;b1000 : in2_tail_fun = 2&apos;b00;/*sel_ternary_mm_expr*/\n    default : in2_tail_fun = 2&apos;bxx;\n  endcase\nend\nendfunction\nfunction [1:0] in3_tail_fun;\n  input [3:0] value;\nbegin\n  case (value)\n    4&apos;b0001 : in3_tail_fun = 2&apos;b00;/*sel_ternary_plus_expr*/\n    4&apos;b0010 : in3_tail_fun = 2&apos;b01;/*sel_ternary_pm_expr*/\n    4&apos;b0100 : in3_tail_fun = 2&apos;b10;/*sel_ternary_mp_expr*/\n    4&apos;b1000 : in3_tail_fun = 2&apos;b00;/*sel_ternary_mm_expr*/\n    default : in3_tail_fun = 2&apos;bxx;\n  endcase\nend\nendfunction\n\n// 0001 a + b + c a=00 b=00 c=00\n// 0010 a + b - c a=00 b=10 c=01\n// 0100 a - b + c a=00 b=01 c=10\n// 1000 a - b - c a=11 b=00 c=00\nassign alu_decode = alu_decode_fun({sel_ternary_mm_expr,sel_ternary_mp_expr,sel_ternary_pm_expr,sel_ternary_plus_expr});\nassign in1_tail = in1_tail_fun({sel_ternary_mm_expr,sel_ternary_mp_expr,sel_ternary_pm_expr,sel_ternary_plus_expr});\nassign in2_tail = in2_tail_fun({sel_ternary_mm_expr,sel_ternary_mp_expr,sel_ternary_pm_expr,sel_ternary_plus_expr});\nassign in3_tail = in3_tail_fun({sel_ternary_mm_expr,sel_ternary_mp_expr,sel_ternary_pm_expr,sel_ternary_plus_expr});\nassign ext_in1 = {in1, in1_tail};\nassign ext_in2 = {in2, in2_tail};\nassign ext_in3 = {in3, in3_tail};\n\ngenerate\ngenvar index_cs;\nfor (index_cs=0; index_cs&lt;(BITSIZE_out1+2); index_cs=index_cs+1)\n  begin : cs_loop\n    if(index_cs&lt;(BITSIZE_in1+2) &amp;&amp; index_cs&lt;(BITSIZE_in2+2) &amp;&amp; index_cs&lt;(BITSIZE_in3+2))\n      assign {cs_vector[2*index_cs+1],cs_vector[2*index_cs]} = c5to2({alu_decode,ext_in1[index_cs],ext_in2[index_cs],ext_in3[index_cs]});\n    else if(index_cs&lt;(BITSIZE_in2+2) &amp;&amp; index_cs&lt;(BITSIZE_in3+2))\n      assign {cs_vector[2*index_cs+1],cs_vector[2*index_cs]} = c5to2({alu_decode,ext_in1[BITSIZE_in1+1],ext_in2[index_cs],ext_in3[index_cs]});\n    else if(index_cs&lt;(BITSIZE_in3+2))\n      assign {cs_vector[2*index_cs+1],cs_vector[2*index_cs]} = c5to2({alu_decode,ext_in1[BITSIZE_in1+1],ext_in2[BITSIZE_in2+1],ext_in3[index_cs]});\n    else\n      assign {cs_vector[2*index_cs+1],cs_vector[2*index_cs]} = c5to2({alu_decode,ext_in1[BITSIZE_in1+1],ext_in2[BITSIZE_in2+1],ext_in3[BITSIZE_in3+1]});\n  end\nendgenerate\n\nassign c_vector[0] = 1&apos;b0;\ngenerate\ngenvar index_c;\nfor (index_c=0; index_c&lt;BITSIZE_out1+1; index_c=index_c+1)\n  begin : c_loop\n    assign c_vector[index_c+1] = cs_vector[2*index_c+1];\n  end\nendgenerate\n\ngenerate\ngenvar index_s;\nfor (index_s=0; index_s&lt;BITSIZE_out1+2; index_s=index_s+1)\n  begin : s_loop\n    assign s_vector[index_s] = cs_vector[2*index_s];\n  end\nendgenerate\nassign out1 = (c_vector+s_vector)&gt;&gt;2;\n"/>
+          <NP_functionality LIBRARY="ternary_alu_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="wire [1:0] in1_tail;
+wire [1:0] in2_tail;
+wire [1:0] in3_tail;
+wire [1:0] alu_decode;
+wire signed [BITSIZE_in1+1:0] ext_in10;
+wire signed [BITSIZE_in2+1:0] ext_in20;
+wire signed [BITSIZE_in3+1:0] ext_in30;
+wire signed [BITSIZE_out1+1:0] ext_in1;
+wire signed [BITSIZE_out1+1:0] ext_in2;
+wire signed [BITSIZE_out1+1:0] ext_in3;
+wire signed [2*(BITSIZE_out1+2)-1:0] cs_vector;
+wire signed [BITSIZE_out1+1:0] c_vector;
+wire signed [BITSIZE_out1+1:0] s_vector;
+function [1:0] c5to2;
+  input [4:0] value;
+begin
+  case (value)
+    /* plus plus */
+    5&apos;b00000 : c5to2 = 2&apos;b00;
+    5&apos;b00001 : c5to2 = 2&apos;b01;
+    5&apos;b00010 : c5to2 = 2&apos;b01;
+    5&apos;b00011 : c5to2 = 2&apos;b10;
+    5&apos;b00100 : c5to2 = 2&apos;b01;
+    5&apos;b00101 : c5to2 = 2&apos;b10;
+    5&apos;b00110 : c5to2 = 2&apos;b10;
+    5&apos;b00111 : c5to2 = 2&apos;b11;
+    /* plus minus */
+    5&apos;b01000 : c5to2 = 2&apos;b01;
+    5&apos;b01001 : c5to2 = 2&apos;b00;
+    5&apos;b01010 : c5to2 = 2&apos;b10;
+    5&apos;b01011 : c5to2 = 2&apos;b01;
+    5&apos;b01100 : c5to2 = 2&apos;b10;
+    5&apos;b01101 : c5to2 = 2&apos;b01;
+    5&apos;b01110 : c5to2 = 2&apos;b11;
+    5&apos;b01111 : c5to2 = 2&apos;b10;
+    /* minus plus */
+    5&apos;b10000 : c5to2 = 2&apos;b01;
+    5&apos;b10001 : c5to2 = 2&apos;b10;
+    5&apos;b10010 : c5to2 = 2&apos;b00;
+    5&apos;b10011 : c5to2 = 2&apos;b01;
+    5&apos;b10100 : c5to2 = 2&apos;b10;
+    5&apos;b10101 : c5to2 = 2&apos;b11;
+    5&apos;b10110 : c5to2 = 2&apos;b01;
+    5&apos;b10111 : c5to2 = 2&apos;b10;
+    /* minus minus */
+    5&apos;b11000 : c5to2 = 2&apos;b10;
+    5&apos;b11001 : c5to2 = 2&apos;b01;
+    5&apos;b11010 : c5to2 = 2&apos;b01;
+    5&apos;b11011 : c5to2 = 2&apos;b00;
+    5&apos;b11100 : c5to2 = 2&apos;b11;
+    5&apos;b11101 : c5to2 = 2&apos;b10;
+    5&apos;b11110 : c5to2 = 2&apos;b10;
+    5&apos;b11111 : c5to2 = 2&apos;b01;
+    default  : c5to2 = 2&apos;bxx;
+  endcase
+end
+endfunction
+function [1:0] alu_decode_fun;
+  input [3:0] value;
+begin
+  case (value)
+    4&apos;b0001 : alu_decode_fun = 2&apos;b00;/*sel_ternary_plus_expr||sel_plus_expr*/
+    4&apos;b0010 : alu_decode_fun = 2&apos;b01;/*sel_ternary_pm_expr*/
+    4&apos;b0100 : alu_decode_fun = 2&apos;b10;/*sel_ternary_mp_expr*/
+    4&apos;b1000 : alu_decode_fun = 2&apos;b11;/*sel_ternary_mm_expr*/
+    default : alu_decode_fun = 2&apos;bxx;
+  endcase
+end
+endfunction
+function [1:0] in1_tail_fun;
+  input [3:0] value;
+begin
+  case (value)
+    4&apos;b0001 : in1_tail_fun = 2&apos;b00;/*sel_ternary_plus_expr||sel_plus_expr*/
+    4&apos;b0010 : in1_tail_fun = 2&apos;b00;/*sel_ternary_pm_expr*/
+    4&apos;b0100 : in1_tail_fun = 2&apos;b00;/*sel_ternary_mp_expr||sel_minus_expr*/
+    4&apos;b1000 : in1_tail_fun = 2&apos;b11;/*sel_ternary_mm_expr*/
+    default : in1_tail_fun = 2&apos;bxx;
+  endcase
+end
+endfunction
+function [1:0] in2_tail_fun;
+  input [3:0] value;
+begin
+  case (value)
+    4&apos;b0001 : in2_tail_fun = 2&apos;b00;/*sel_ternary_plus_expr||sel_plus_expr*/
+    4&apos;b0010 : in2_tail_fun = 2&apos;b10;/*sel_ternary_pm_expr*/
+    4&apos;b0100 : in2_tail_fun = 2&apos;b01;/*sel_ternary_mp_expr||sel_minus_expr*/
+    4&apos;b1000 : in2_tail_fun = 2&apos;b00;/*sel_ternary_mm_expr*/
+    default : in2_tail_fun = 2&apos;bxx;
+  endcase
+end
+endfunction
+function [1:0] in3_tail_fun;
+  input [3:0] value;
+begin
+  case (value)
+    4&apos;b0001 : in3_tail_fun = 2&apos;b00;/*sel_ternary_plus_expr||sel_plus_expr*/
+    4&apos;b0010 : in3_tail_fun = 2&apos;b01;/*sel_ternary_pm_expr*/
+    4&apos;b0100 : in3_tail_fun = 2&apos;b10;/*sel_ternary_mp_expr||sel_minus_expr*/
+    4&apos;b1000 : in3_tail_fun = 2&apos;b00;/*sel_ternary_mm_expr*/
+    default : in3_tail_fun = 2&apos;bxx;
+  endcase
+end
+endfunction
+
+// 0001 a + b + c a=00 b=00 c=00
+// 0010 a + b - c a=00 b=10 c=01
+// 0100 a - b + c a=00 b=01 c=10
+// 1000 a - b - c a=11 b=00 c=00
+assign alu_decode = alu_decode_fun({sel_ternary_mm_expr,sel_ternary_mp_expr||sel_minus_expr,sel_ternary_pm_expr,sel_ternary_plus_expr||sel_plus_expr});
+assign in1_tail = in1_tail_fun({sel_ternary_mm_expr,sel_ternary_mp_expr||sel_minus_expr,sel_ternary_pm_expr,sel_ternary_plus_expr||sel_plus_expr});
+assign in2_tail = in2_tail_fun({sel_ternary_mm_expr,sel_ternary_mp_expr||sel_minus_expr,sel_ternary_pm_expr,sel_ternary_plus_expr||sel_plus_expr});
+assign in3_tail = in3_tail_fun({sel_ternary_mm_expr,sel_ternary_mp_expr||sel_minus_expr,sel_ternary_pm_expr,sel_ternary_plus_expr||sel_plus_expr});
+assign ext_in10 = {in1, in1_tail};
+assign ext_in20 = {in2, in2_tail};
+assign ext_in30 = {in3, in3_tail};
+assign ext_in1 = ext_in10;
+assign ext_in2 = ext_in20;
+assign ext_in3 = ext_in30;
+
+generate
+genvar index_cs;
+for (index_cs=0; index_cs&lt;(BITSIZE_out1+2); index_cs=index_cs+1)
+  begin : cs_loop
+    assign {cs_vector[2*index_cs+1],cs_vector[2*index_cs]} = c5to2({alu_decode,ext_in1[index_cs],ext_in2[index_cs],ext_in3[index_cs]});
+  end
+endgenerate
+
+assign c_vector[0] = 1&apos;b0;
+generate
+genvar index_c;
+for (index_c=0; index_c&lt;BITSIZE_out1+1; index_c=index_c+1)
+  begin : c_loop
+    assign c_vector[index_c+1] = cs_vector[2*index_c+1];
+  end
+endgenerate
+
+generate
+genvar index_s;
+for (index_s=0; index_s&lt;BITSIZE_out1+2; index_s=index_s+1)
+  begin : s_loop
+    assign s_vector[index_s] = cs_vector[2*index_s];
+  end
+endgenerate
+assign out1 = (c_vector+s_vector)&gt;&gt;2;
+"/>
         </component_o>
       </circuit>
     </template>
@@ -2836,6 +3098,8 @@ assign xdenom = in2;"/>
       <operation operation_name="ternary_pm_expr" supported_types="UINT:*|VECTOR_BOOL:*"/>
       <operation operation_name="ternary_mp_expr" supported_types="UINT:*|VECTOR_BOOL:*"/>
       <operation operation_name="ternary_mm_expr" supported_types="UINT:*|VECTOR_BOOL:*"/>
+      <operation operation_name="plus_expr" supported_types="UINT:*|VECTOR_BOOL:*"/>
+      <operation operation_name="minus_expr" supported_types="UINT:*|VECTOR_BOOL:*"/>
       <circuit>
         <component_o id="ui_ternary_alu_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
@@ -2871,11 +3135,158 @@ assign xdenom = in2;"/>
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
           </port_o>
+          <port_o id="sel_plus_expr" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="sel_minus_expr" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+            <connected_objects/>
+          </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
             <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="ui_ternary_alu_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="wire [1:0] in1_tail;\nwire [1:0] in2_tail;\nwire [1:0] in3_tail;\nwire [1:0] alu_decode;\nwire [BITSIZE_in1+2:0] ext_in1;\nwire [BITSIZE_in2+2:0] ext_in2;\nwire [BITSIZE_in3+2:0] ext_in3;\nwire [2*(BITSIZE_out1+2)-1:0] cs_vector;\nwire [BITSIZE_out1+1:0] c_vector;\nwire [BITSIZE_out1+1:0] s_vector;\nfunction [1:0] c5to2;\n  input [4:0] value;\nbegin\n  case (value)\n    /* plus plus */\n    5&apos;b00000 : c5to2 = 2&apos;b00;\n    5&apos;b00001 : c5to2 = 2&apos;b01;\n    5&apos;b00010 : c5to2 = 2&apos;b01;\n    5&apos;b00011 : c5to2 = 2&apos;b10;\n    5&apos;b00100 : c5to2 = 2&apos;b01;\n    5&apos;b00101 : c5to2 = 2&apos;b10;\n    5&apos;b00110 : c5to2 = 2&apos;b10;\n    5&apos;b00111 : c5to2 = 2&apos;b11;\n    /* plus minus */\n    5&apos;b01000 : c5to2 = 2&apos;b01;\n    5&apos;b01001 : c5to2 = 2&apos;b00;\n    5&apos;b01010 : c5to2 = 2&apos;b10;\n    5&apos;b01011 : c5to2 = 2&apos;b01;\n    5&apos;b01100 : c5to2 = 2&apos;b10;\n    5&apos;b01101 : c5to2 = 2&apos;b01;\n    5&apos;b01110 : c5to2 = 2&apos;b11;\n    5&apos;b01111 : c5to2 = 2&apos;b10;\n    /* minus plus */\n    5&apos;b10000 : c5to2 = 2&apos;b01;\n    5&apos;b10001 : c5to2 = 2&apos;b10;\n    5&apos;b10010 : c5to2 = 2&apos;b00;\n    5&apos;b10011 : c5to2 = 2&apos;b01;\n    5&apos;b10100 : c5to2 = 2&apos;b10;\n    5&apos;b10101 : c5to2 = 2&apos;b11;\n    5&apos;b10110 : c5to2 = 2&apos;b01;\n    5&apos;b10111 : c5to2 = 2&apos;b10;\n    /* minus minus */\n    5&apos;b11000 : c5to2 = 2&apos;b10;\n    5&apos;b11001 : c5to2 = 2&apos;b01;\n    5&apos;b11010 : c5to2 = 2&apos;b01;\n    5&apos;b11011 : c5to2 = 2&apos;b00;\n    5&apos;b11100 : c5to2 = 2&apos;b11;\n    5&apos;b11101 : c5to2 = 2&apos;b10;\n    5&apos;b11110 : c5to2 = 2&apos;b10;\n    5&apos;b11111 : c5to2 = 2&apos;b01;\n    default  : c5to2 = 2&apos;bxx;\n  endcase\nend\nendfunction\nfunction [1:0] alu_decode_fun;\n  input [3:0] value;\nbegin\n  case (value)\n    4&apos;b0001 : alu_decode_fun = 2&apos;b00;/*sel_ternary_plus_expr*/\n    4&apos;b0010 : alu_decode_fun = 2&apos;b01;/*sel_ternary_pm_expr*/\n    4&apos;b0100 : alu_decode_fun = 2&apos;b10;/*sel_ternary_mp_expr*/\n    4&apos;b1000 : alu_decode_fun = 2&apos;b11;/*sel_ternary_mm_expr*/\n    default : alu_decode_fun = 2&apos;bxx;\n  endcase\nend\nendfunction\nfunction [1:0] in1_tail_fun;\n  input [3:0] value;\nbegin\n  case (value)\n    4&apos;b0001 : in1_tail_fun = 2&apos;b00;/*sel_ternary_plus_expr*/\n    4&apos;b0010 : in1_tail_fun = 2&apos;b00;/*sel_ternary_pm_expr*/\n    4&apos;b0100 : in1_tail_fun = 2&apos;b00;/*sel_ternary_mp_expr*/\n    4&apos;b1000 : in1_tail_fun = 2&apos;b11;/*sel_ternary_mm_expr*/\n    default : in1_tail_fun = 2&apos;bxx;\n  endcase\nend\nendfunction\nfunction [1:0] in2_tail_fun;\n  input [3:0] value;\nbegin\n  case (value)\n    4&apos;b0001 : in2_tail_fun = 2&apos;b00;/*sel_ternary_plus_expr*/\n    4&apos;b0010 : in2_tail_fun = 2&apos;b10;/*sel_ternary_pm_expr*/\n    4&apos;b0100 : in2_tail_fun = 2&apos;b01;/*sel_ternary_mp_expr*/\n    4&apos;b1000 : in2_tail_fun = 2&apos;b00;/*sel_ternary_mm_expr*/\n    default : in2_tail_fun = 2&apos;bxx;\n  endcase\nend\nendfunction\nfunction [1:0] in3_tail_fun;\n  input [3:0] value;\nbegin\n  case (value)\n    4&apos;b0001 : in3_tail_fun = 2&apos;b00;/*sel_ternary_plus_expr*/\n    4&apos;b0010 : in3_tail_fun = 2&apos;b01;/*sel_ternary_pm_expr*/\n    4&apos;b0100 : in3_tail_fun = 2&apos;b10;/*sel_ternary_mp_expr*/\n    4&apos;b1000 : in3_tail_fun = 2&apos;b00;/*sel_ternary_mm_expr*/\n    default : in3_tail_fun = 2&apos;bxx;\n  endcase\nend\nendfunction\n\n// 0001 a + b + c a=00 b=00 c=00\n// 0010 a + b - c a=00 b=10 c=01\n// 0100 a - b + c a=00 b=01 c=10\n// 1000 a - b - c a=11 b=00 c=00\nassign alu_decode = alu_decode_fun({sel_ternary_mm_expr,sel_ternary_mp_expr,sel_ternary_pm_expr,sel_ternary_plus_expr});\nassign in1_tail = in1_tail_fun({sel_ternary_mm_expr,sel_ternary_mp_expr,sel_ternary_pm_expr,sel_ternary_plus_expr});\nassign in2_tail = in2_tail_fun({sel_ternary_mm_expr,sel_ternary_mp_expr,sel_ternary_pm_expr,sel_ternary_plus_expr});\nassign in3_tail = in3_tail_fun({sel_ternary_mm_expr,sel_ternary_mp_expr,sel_ternary_pm_expr,sel_ternary_plus_expr});\nassign ext_in1 = {1&apos;b0, in1, in1_tail};\nassign ext_in2 = {1&apos;b0, in2, in2_tail};\nassign ext_in3 = {1&apos;b0, in3, in3_tail};\n\ngenerate\ngenvar index_cs;\nfor (index_cs=0; index_cs&lt;(BITSIZE_out1+2); index_cs=index_cs+1)\n  begin : cs_loop\n    if(index_cs&lt;(BITSIZE_in1+3) &amp;&amp; index_cs&lt;(BITSIZE_in2+3) &amp;&amp; index_cs&lt;(BITSIZE_in3+3))\n      assign {cs_vector[2*index_cs+1],cs_vector[2*index_cs]} = c5to2({alu_decode,ext_in1[index_cs],ext_in2[index_cs],ext_in3[index_cs]});\n    else if(index_cs&lt;(BITSIZE_in2+3) &amp;&amp; index_cs&lt;(BITSIZE_in3+3))\n      assign {cs_vector[2*index_cs+1],cs_vector[2*index_cs]} = c5to2({alu_decode,ext_in1[BITSIZE_in1+2],ext_in2[index_cs],ext_in3[index_cs]});\n    else if(index_cs&lt;(BITSIZE_in3+3))\n      assign {cs_vector[2*index_cs+1],cs_vector[2*index_cs]} = c5to2({alu_decode,ext_in1[BITSIZE_in1+2],ext_in2[BITSIZE_in2+2],ext_in3[index_cs]});\n    else\n      assign {cs_vector[2*index_cs+1],cs_vector[2*index_cs]} = c5to2({alu_decode,ext_in1[BITSIZE_in1+2],ext_in2[BITSIZE_in2+2],ext_in3[BITSIZE_in3+2]});\n  end\nendgenerate\n\nassign c_vector[0] = 1&apos;b0;\ngenerate\ngenvar index_c;\nfor (index_c=0; index_c&lt;BITSIZE_out1+1; index_c=index_c+1)\n  begin : c_loop\n    assign c_vector[index_c+1] = cs_vector[2*index_c+1];\n  end\nendgenerate\n\ngenerate\ngenvar index_s;\nfor (index_s=0; index_s&lt;BITSIZE_out1+2; index_s=index_s+1)\n  begin : s_loop\n    assign s_vector[index_s] = cs_vector[2*index_s];\n  end\nendgenerate\nassign out1 = (c_vector+s_vector)&gt;&gt;2;"/>
+          <NP_functionality LIBRARY="ui_ternary_alu_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="wire [1:0] in1_tail;
+wire [1:0] in2_tail;
+wire [1:0] in3_tail;
+wire [1:0] alu_decode;
+wire [BITSIZE_out1+2:0] ext_in1;
+wire [BITSIZE_out1+2:0] ext_in2;
+wire [BITSIZE_out1+2:0] ext_in3;
+wire [2*(BITSIZE_out1+2)-1:0] cs_vector;
+wire [BITSIZE_out1+1:0] c_vector;
+wire [BITSIZE_out1+1:0] s_vector;
+function [1:0] c5to2;
+  input [4:0] value;
+begin
+  case (value)
+    /* plus plus */
+    5&apos;b00000 : c5to2 = 2&apos;b00;
+    5&apos;b00001 : c5to2 = 2&apos;b01;
+    5&apos;b00010 : c5to2 = 2&apos;b01;
+    5&apos;b00011 : c5to2 = 2&apos;b10;
+    5&apos;b00100 : c5to2 = 2&apos;b01;
+    5&apos;b00101 : c5to2 = 2&apos;b10;
+    5&apos;b00110 : c5to2 = 2&apos;b10;
+    5&apos;b00111 : c5to2 = 2&apos;b11;
+    /* plus minus */
+    5&apos;b01000 : c5to2 = 2&apos;b01;
+    5&apos;b01001 : c5to2 = 2&apos;b00;
+    5&apos;b01010 : c5to2 = 2&apos;b10;
+    5&apos;b01011 : c5to2 = 2&apos;b01;
+    5&apos;b01100 : c5to2 = 2&apos;b10;
+    5&apos;b01101 : c5to2 = 2&apos;b01;
+    5&apos;b01110 : c5to2 = 2&apos;b11;
+    5&apos;b01111 : c5to2 = 2&apos;b10;
+    /* minus plus */
+    5&apos;b10000 : c5to2 = 2&apos;b01;
+    5&apos;b10001 : c5to2 = 2&apos;b10;
+    5&apos;b10010 : c5to2 = 2&apos;b00;
+    5&apos;b10011 : c5to2 = 2&apos;b01;
+    5&apos;b10100 : c5to2 = 2&apos;b10;
+    5&apos;b10101 : c5to2 = 2&apos;b11;
+    5&apos;b10110 : c5to2 = 2&apos;b01;
+    5&apos;b10111 : c5to2 = 2&apos;b10;
+    /* minus minus */
+    5&apos;b11000 : c5to2 = 2&apos;b10;
+    5&apos;b11001 : c5to2 = 2&apos;b01;
+    5&apos;b11010 : c5to2 = 2&apos;b01;
+    5&apos;b11011 : c5to2 = 2&apos;b00;
+    5&apos;b11100 : c5to2 = 2&apos;b11;
+    5&apos;b11101 : c5to2 = 2&apos;b10;
+    5&apos;b11110 : c5to2 = 2&apos;b10;
+    5&apos;b11111 : c5to2 = 2&apos;b01;
+    default  : c5to2 = 2&apos;bxx;
+  endcase
+end
+endfunction
+function [1:0] alu_decode_fun;
+  input [3:0] value;
+begin
+  case (value)
+    4&apos;b0001 : alu_decode_fun = 2&apos;b00;/*sel_ternary_plus_expr||sel_plus_expr*/
+    4&apos;b0010 : alu_decode_fun = 2&apos;b01;/*sel_ternary_pm_expr*/
+    4&apos;b0100 : alu_decode_fun = 2&apos;b10;/*sel_ternary_mp_expr*/
+    4&apos;b1000 : alu_decode_fun = 2&apos;b11;/*sel_ternary_mm_expr*/
+    default : alu_decode_fun = 2&apos;bxx;
+  endcase
+end
+endfunction
+function [1:0] in1_tail_fun;
+  input [3:0] value;
+begin
+  case (value)
+    4&apos;b0001 : in1_tail_fun = 2&apos;b00;/*sel_ternary_plus_expr||sel_plus_expr*/
+    4&apos;b0010 : in1_tail_fun = 2&apos;b00;/*sel_ternary_pm_expr*/
+    4&apos;b0100 : in1_tail_fun = 2&apos;b00;/*sel_ternary_mp_expr||sel_minus_expr*/
+    4&apos;b1000 : in1_tail_fun = 2&apos;b11;/*sel_ternary_mm_expr*/
+    default : in1_tail_fun = 2&apos;bxx;
+  endcase
+end
+endfunction
+function [1:0] in2_tail_fun;
+  input [3:0] value;
+begin
+  case (value)
+    4&apos;b0001 : in2_tail_fun = 2&apos;b00;/*sel_ternary_plus_expr||sel_plus_expr*/
+    4&apos;b0010 : in2_tail_fun = 2&apos;b10;/*sel_ternary_pm_expr*/
+    4&apos;b0100 : in2_tail_fun = 2&apos;b01;/*sel_ternary_mp_expr||sel_minus_expr*/
+    4&apos;b1000 : in2_tail_fun = 2&apos;b00;/*sel_ternary_mm_expr*/
+    default : in2_tail_fun = 2&apos;bxx;
+  endcase
+end
+endfunction
+function [1:0] in3_tail_fun;
+  input [3:0] value;
+begin
+  case (value)
+    4&apos;b0001 : in3_tail_fun = 2&apos;b00;/*sel_ternary_plus_expr||sel_plus_expr*/
+    4&apos;b0010 : in3_tail_fun = 2&apos;b01;/*sel_ternary_pm_expr*/
+    4&apos;b0100 : in3_tail_fun = 2&apos;b10;/*sel_ternary_mp_expr||sel_minus_expr*/
+    4&apos;b1000 : in3_tail_fun = 2&apos;b00;/*sel_ternary_mm_expr*/
+    default : in3_tail_fun = 2&apos;bxx;
+  endcase
+end
+endfunction
+
+// 0001 a + b + c a=00 b=00 c=00
+// 0010 a + b - c a=00 b=10 c=01
+// 0100 a - b + c a=00 b=01 c=10
+// 1000 a - b - c a=11 b=00 c=00
+assign alu_decode = alu_decode_fun({sel_ternary_mm_expr,sel_ternary_mp_expr||sel_minus_expr,sel_ternary_pm_expr,sel_ternary_plus_expr||sel_plus_expr});
+assign in1_tail = in1_tail_fun({sel_ternary_mm_expr,sel_ternary_mp_expr||sel_minus_expr,sel_ternary_pm_expr,sel_ternary_plus_expr||sel_plus_expr});
+assign in2_tail = in2_tail_fun({sel_ternary_mm_expr,sel_ternary_mp_expr||sel_minus_expr,sel_ternary_pm_expr,sel_ternary_plus_expr||sel_plus_expr});
+assign in3_tail = in3_tail_fun({sel_ternary_mm_expr,sel_ternary_mp_expr||sel_minus_expr,sel_ternary_pm_expr,sel_ternary_plus_expr||sel_plus_expr});
+assign ext_in1 = {1&apos;b0, in1, in1_tail};
+assign ext_in2 = {1&apos;b0, in2, in2_tail};
+assign ext_in3 = {1&apos;b0, in3, in3_tail};
+
+generate
+genvar index_cs;
+for (index_cs=0; index_cs&lt;(BITSIZE_out1+2); index_cs=index_cs+1)
+  begin : cs_loop
+    assign {cs_vector[2*index_cs+1],cs_vector[2*index_cs]} = c5to2({alu_decode,ext_in1[index_cs],ext_in2[index_cs],ext_in3[index_cs]});
+  end
+endgenerate
+
+assign c_vector[0] = 1&apos;b0;
+generate
+genvar index_c;
+for (index_c=0; index_c&lt;BITSIZE_out1+1; index_c=index_c+1)
+  begin : c_loop
+    assign c_vector[index_c+1] = cs_vector[2*index_c+1];
+  end
+endgenerate
+
+generate
+genvar index_s;
+for (index_s=0; index_s&lt;BITSIZE_out1+2; index_s=index_s+1)
+  begin : s_loop
+    assign s_vector[index_s] = cs_vector[2*index_s];
+  end
+endgenerate
+assign out1 = (c_vector+s_vector)&gt;&gt;2;"/>
         </component_o>
       </circuit>
     </template>

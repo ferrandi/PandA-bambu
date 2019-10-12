@@ -73,8 +73,8 @@
 
 /// STL include
 #include <tuple>
-#include <utility>
 #include <unordered_set>
+#include <utility>
 
 /// tree/ include
 #include "behavioral_helper.hpp"
@@ -153,6 +153,8 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
          std::string param = behavioral_helper->PrintVariable(function_parameter);
 
          long long int value = (rand() % 20);
+         if(behavioral_helper->is_bool(function_parameter))
+            value = value % 2;
          node->set_attribute(param, boost::lexical_cast<std::string>(value));
       }
 

@@ -42,6 +42,7 @@
 
 // include from utility/
 #include "refcount.hpp"
+#include <string>
 
 enum discrepancy_type_mask
 {

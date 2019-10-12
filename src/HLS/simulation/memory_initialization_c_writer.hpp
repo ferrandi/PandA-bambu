@@ -57,8 +57,8 @@ REF_FORWARD_DECL(IndentedOutputStream);
 class MemoryInitializationCWriter : public MemoryInitializationWriterBase
 {
  protected:
-    /// The stream where C code has to be written
-    const IndentedOutputStreamRef indented_output_stream;
+   /// The stream where C code has to be written
+   const IndentedOutputStreamRef indented_output_stream;
 
  public:
    /**
@@ -71,7 +71,8 @@ class MemoryInitializationCWriter : public MemoryInitializationWriterBase
     * @param testbench_generation_memory_type is the type of initialization being printed
     * @param parameters is the set of input parameters
     */
-   MemoryInitializationCWriter(const IndentedOutputStreamRef indented_output_stream, const tree_managerConstRef TM, const BehavioralHelperConstRef behavioral_helper, const unsigned long int reserved_mem_bytes, const tree_nodeConstRef function_parameter, const TestbenchGeneration_MemoryType testbench_generation_memory_type, const ParameterConstRef parameters);
+   MemoryInitializationCWriter(const IndentedOutputStreamRef indented_output_stream, const tree_managerConstRef TM, const BehavioralHelperConstRef behavioral_helper, const unsigned long int reserved_mem_bytes, const tree_nodeConstRef function_parameter,
+                               const TestbenchGeneration_MemoryType testbench_generation_memory_type, const ParameterConstRef parameters);
 
    /**
     * Process an element
