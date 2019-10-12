@@ -66,8 +66,7 @@
 
 MemoryInitializationWriter::MemoryInitializationWriter(std::ofstream& _output_stream, const tree_managerConstRef _TM, const BehavioralHelperConstRef _behavioral_helper, const unsigned long int _reserved_mem_bytes,
                                                        const tree_nodeConstRef _function_parameter, const TestbenchGeneration_MemoryType _testbench_generation_memory_type, const ParameterConstRef _parameters)
-    : MemoryInitializationWriterBase(_TM, _behavioral_helper, _reserved_mem_bytes, _function_parameter, _testbench_generation_memory_type, _parameters),
-      output_stream(_output_stream)
+    : MemoryInitializationWriterBase(_TM, _behavioral_helper, _reserved_mem_bytes, _function_parameter, _testbench_generation_memory_type, _parameters), output_stream(_output_stream)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -125,6 +124,7 @@ void MemoryInitializationWriter::Process(const std::string& content)
       case target_mem_ref461_K:
       case tree_list_K:
       case tree_vec_K:
+      case lut_expr_K:
       case CASE_CPP_NODES:
       case CASE_BINARY_EXPRESSION:
       case CASE_CST_NODES:
@@ -188,6 +188,7 @@ void MemoryInitializationWriter::Process(const std::string& content)
       case target_mem_ref461_K:
       case tree_list_K:
       case tree_vec_K:
+      case lut_expr_K:
       case CASE_CPP_NODES:
       case CASE_BINARY_EXPRESSION:
       case CASE_CST_NODES:
@@ -239,4 +240,3 @@ void MemoryInitializationWriter::Process(const std::string& content)
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written " + content + " (" + STR(binary_value.size() / 8) + " bytes) in binary form to initialize memory");
 }
-

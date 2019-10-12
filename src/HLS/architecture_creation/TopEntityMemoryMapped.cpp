@@ -239,7 +239,7 @@ void TopEntityMemoryMapped::insertMemoryMappedRegister(structural_managerRef SM_
    const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
 
    structural_objectRef controlSignal = interfaceObj->find_member("ControlSignal", signal_o_K, interfaceObj);
-   bool multi_channel_bus = HLS->Param->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN;
+   bool multi_channel_bus = parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN;
 
    for(const auto& function_parameter : function_parameters)
    {
@@ -251,7 +251,7 @@ void TopEntityMemoryMapped::insertMemoryMappedRegister(structural_managerRef SM_
       std::string component_name = multi_channel_bus ? MEMORY_MAPPED_REGISTERN_FU : MEMORY_MAPPED_REGISTER_FU;
       structural_objectRef memoryMappedRegister = SM_mm->add_module_from_technology_library("mm_register_" + signalName, component_name, HLS->HLS_T->get_technology_manager()->get_library(component_name), interfaceObj, HLS->HLS_T->get_technology_manager());
       if(multi_channel_bus)
-         resizing_IO(GetPointer<module>(memoryMappedRegister), HLS->Param->getOption<unsigned int>(OPT_channels_number));
+         resizing_IO(GetPointer<module>(memoryMappedRegister), parameters->getOption<unsigned int>(OPT_channels_number));
       GetPointer<module>(memoryMappedRegister)->SetParameter("ALLOCATED_ADDRESS", HLSMgr->Rmem->get_symbol(function_parameter.first, HLS->functionId)->get_symbol_name());
       setBusSizes(memoryMappedRegister, HLSMgr);
 
@@ -301,7 +301,7 @@ void TopEntityMemoryMapped::insertMemoryMappedRegister(structural_managerRef SM_
    structural_objectRef returnRegister =
        SM_mm->add_module_from_technology_library("mm_register_" + STR(RETURN_PORT_NAME), component_name, HLS->HLS_T->get_technology_manager()->get_library(component_name), interfaceObj, HLS->HLS_T->get_technology_manager());
    if(multi_channel_bus)
-      resizing_IO(GetPointer<module>(returnRegister), HLS->Param->getOption<unsigned int>(OPT_channels_number));
+      resizing_IO(GetPointer<module>(returnRegister), parameters->getOption<unsigned int>(OPT_channels_number));
    GetPointer<module>(returnRegister)->SetParameter("ALLOCATED_ADDRESS", HLSMgr->Rmem->get_symbol(returnType, HLS->functionId)->get_symbol_name());
    setBusSizes(returnRegister, HLSMgr);
    connectClockAndReset(SM_mm, interfaceObj, returnRegister);
@@ -356,11 +356,11 @@ void TopEntityMemoryMapped::insertStartDoneLogic(structural_managerRef SM_mm, st
 
    if(HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction())
    {
-      bool multi_channel_bus = HLS->Param->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN;
+      bool multi_channel_bus = parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN;
       std::string component_name = multi_channel_bus ? NOTYFY_CALLER_MINIMALN_FU : NOTYFY_CALLER_MINIMAL_FU;
       structural_objectRef notifyCaller = SM_mm->add_module_from_technology_library("notifyCaller", component_name, HLS->HLS_T->get_technology_manager()->get_library(component_name), interfaceObj, HLS->HLS_T->get_technology_manager());
       if(multi_channel_bus)
-         resizing_IO(GetPointer<module>(notifyCaller), HLS->Param->getOption<unsigned int>(OPT_channels_number));
+         resizing_IO(GetPointer<module>(notifyCaller), parameters->getOption<unsigned int>(OPT_channels_number));
       setBusSizes(notifyCaller, HLSMgr);
       connectClockAndReset(SM_mm, interfaceObj, notifyCaller);
       HLS->Rfu->manage_module_ports(HLSMgr, HLS, SM_mm, notifyCaller, 0);
@@ -378,14 +378,14 @@ void TopEntityMemoryMapped::insertStartDoneLogic(structural_managerRef SM_mm, st
 
 void TopEntityMemoryMapped::insertStatusRegister(structural_managerRef SM_mm, structural_objectRef wrappedObj)
 {
-   bool multi_channel_bus = HLS->Param->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN;
+   bool multi_channel_bus = parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN;
    structural_objectRef interfaceObj = SM_mm->get_circ();
    if(HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction())
    {
       std::string component_name = multi_channel_bus ? STATUS_REGISTERN_FU : STATUS_REGISTER_FU;
       structural_objectRef statusRegister = SM_mm->add_module_from_technology_library("StatusRegister", component_name, HLS->HLS_T->get_technology_manager()->get_library(component_name), interfaceObj, HLS->HLS_T->get_technology_manager());
       if(multi_channel_bus)
-         resizing_IO(GetPointer<module>(statusRegister), HLS->Param->getOption<unsigned int>(OPT_channels_number));
+         resizing_IO(GetPointer<module>(statusRegister), parameters->getOption<unsigned int>(OPT_channels_number));
       GetPointer<module>(statusRegister)->SetParameter("ALLOCATED_ADDRESS", HLSMgr->Rmem->get_symbol(HLS->functionId, HLS->functionId)->get_symbol_name());
       setBusSizes(statusRegister, HLSMgr);
       connectClockAndReset(SM_mm, interfaceObj, statusRegister);
@@ -421,7 +421,7 @@ void TopEntityMemoryMapped::insertStatusRegister(structural_managerRef SM_mm, st
       std::string component_name = multi_channel_bus ? STATUS_REGISTER_NO_NOTIFIEDN_FU : STATUS_REGISTER_NO_NOTIFIED_FU;
       structural_objectRef statusRegister = SM_mm->add_module_from_technology_library("StatusRegister", component_name, HLS->HLS_T->get_technology_manager()->get_library(component_name), interfaceObj, HLS->HLS_T->get_technology_manager());
       if(multi_channel_bus)
-         resizing_IO(GetPointer<module>(statusRegister), HLS->Param->getOption<unsigned int>(OPT_channels_number));
+         resizing_IO(GetPointer<module>(statusRegister), parameters->getOption<unsigned int>(OPT_channels_number));
       GetPointer<module>(statusRegister)->SetParameter("ALLOCATED_ADDRESS", HLSMgr->Rmem->get_symbol(HLS->functionId, HLS->functionId)->get_symbol_name());
       setBusSizes(statusRegister, HLSMgr);
       connectClockAndReset(SM_mm, interfaceObj, statusRegister);

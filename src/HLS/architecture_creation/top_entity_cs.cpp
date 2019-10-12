@@ -64,6 +64,7 @@
 /// utility includes
 #include "dbgPrintHelper.hpp"
 #include "utility.hpp"
+#include "math_function.hpp"
 
 top_entity_cs::top_entity_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
     : top_entity(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
@@ -117,10 +118,10 @@ void top_entity_cs::add_context_switch_port()
    structural_objectRef datapath_suspension = datapath_circuit->find_member(STR(SUSPENSION), port_o_K, datapath_circuit);
    SM->add_connection(datapath_suspension, suspension_obj);
 
-   unsigned int num_slots = static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
+   int num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
    if(!num_slots)
       num_slots = 1;
-   structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
+   structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", static_cast<unsigned>(num_slots)));
    structural_objectRef selector_obj = SM->add_port(STR(SELECTOR_REGISTER_FILE), port_o::IN, circuit, port_type);
    structural_objectRef datapath_selector = datapath_circuit->find_member(STR(SELECTOR_REGISTER_FILE), port_o_K, datapath_circuit);
    SM->add_connection(datapath_selector, selector_obj);
@@ -138,12 +139,12 @@ void top_entity_cs::add_context_switch_port_kernel()
    structural_objectRef controller_circuit = Controller->get_circ();
    structural_objectRef circuit = SM->get_circ();
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
-   unsigned int num_slots = static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
+   int num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
    if(!num_slots)
       num_slots = 1;
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding selector register file connection");
-   structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
+   structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", static_cast<unsigned>(num_slots)));
    structural_objectRef datapath_selector = datapath_circuit->find_member(STR(SELECTOR_REGISTER_FILE), port_o_K, datapath_circuit);
    auto selector_regFile_sign = circuit->find_member(STR(SELECTOR_REGISTER_FILE) + "_signal", signal_o_K, circuit);
    if(not selector_regFile_sign)
@@ -188,8 +189,7 @@ void top_entity_cs::add_input_register(structural_objectRef port_in, const std::
    auto register_library = TM->get_library("register_file");
    auto register_file_module = SM->add_module_from_technology_library(port_prefix + "_REG", "register_file", register_library, circuit, TM);
    unsigned int cs_number = HLS->Param->getOption<unsigned int>(OPT_context_switch);
-   GetPointer<module>(register_file_module)->SetParameter("BITSIZE_MEM", STR(cs_number));
-
+   GetPointer<module>(register_file_module)->SetParameter("n_elements", STR(cs_number));
    /// Resizing input port
    GetPointer<module>(register_file_module)->get_in_port(1)->type_resize(GET_TYPE_SIZE(port_in));
 
@@ -209,11 +209,13 @@ void top_entity_cs::add_input_register(structural_objectRef port_in, const std::
    auto controller_circuit = HLS->controller->get_circ();
    auto register_file_selector_port = controller_circuit->find_member(SELECTOR_REGISTER_FILE, port_o_K, controller_circuit);
    auto rf_register_file_selector_port = GetPointer<module>(register_file_module)->get_in_port(3);
+   int sel_bits = ceil_log2(cs_number);
+   rf_register_file_selector_port->type_resize(static_cast<unsigned>(sel_bits));
+
    auto register_file_selector_signal = circuit->find_member(SELECTOR_REGISTER_FILE "_signal", signal_o_K, circuit);
    if(not register_file_selector_signal)
    {
       register_file_selector_signal = SM->add_sign(STR(SELECTOR_REGISTER_FILE) + "_signal", circuit, register_file_selector_port->get_typeRef());
-      SM->add_connection(register_file_selector_port, register_file_selector_signal);
    }
    SM->add_connection(register_file_selector_signal, rf_register_file_selector_port);
 

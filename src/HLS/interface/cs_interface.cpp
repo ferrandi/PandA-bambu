@@ -55,6 +55,7 @@
 
 /// utility include
 #include "dbgPrintHelper.hpp"
+#include "math_function.hpp"
 
 cs_interface::cs_interface(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
     : module_interface(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
@@ -145,7 +146,7 @@ void cs_interface::instantiate_component_parallel(const structural_managerRef SM
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Start to instantiate memory_ctrl_top");
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    std::string memory_ctrl_model;
-   if(HLS->Param->getOption<unsigned int>(OPT_channels_number) != 1)
+   if(parameters->getOption<unsigned int>(OPT_channels_number) != 1)
       memory_ctrl_model = "memory_ctrl";
    else
       memory_ctrl_model = "memory_ctrl_sigle_input";
@@ -167,11 +168,11 @@ void cs_interface::instantiate_component_parallel(const structural_managerRef SM
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting setting parameter memory_ctrl_top!");
    GetPointer<module>(mem_ctrl_mod)->SetParameter("NUM_CHANNEL", STR(parameters->getOption<unsigned int>(OPT_channels_number)));
    GetPointer<module>(mem_ctrl_mod)->SetParameter("NUM_BANK", STR(parameters->getOption<unsigned int>(OPT_memory_banks_number)));
-   unsigned int addr_task = static_cast<unsigned int>(log2(parameters->getOption<unsigned int>(OPT_context_switch)));
+   int addr_task = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
    if(!addr_task)
       addr_task = 1;
    GetPointer<module>(mem_ctrl_mod)->SetParameter("ADDR_TASKS", STR(addr_task));
-   unsigned int addr_kern = static_cast<unsigned int>(log2(parameters->getOption<unsigned int>(OPT_num_threads)));
+   int addr_kern = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
    if(!addr_kern)
       addr_kern = 1;
    GetPointer<module>(mem_ctrl_mod)->SetParameter("ADDR_ACC", STR(addr_kern));
@@ -182,8 +183,8 @@ void cs_interface::instantiate_component_parallel(const structural_managerRef SM
 
 void cs_interface::resize_memory_ctrl_ports(structural_objectRef mem_ctrl_mod)
 {
-   unsigned int memory_channel = HLS->Param->getOption<unsigned int>(OPT_channels_number);
-   unsigned int num_banks = HLS->Param->getOption<unsigned int>(OPT_memory_banks_number);
+   unsigned int memory_channel = parameters->getOption<unsigned int>(OPT_channels_number);
+   unsigned int num_banks = parameters->getOption<unsigned int>(OPT_memory_banks_number);
    for(unsigned int j = 0; j < GetPointer<module>(mem_ctrl_mod)->get_in_port_size(); j++) // resize input port
    {
       structural_objectRef port_i = GetPointer<module>(mem_ctrl_mod)->get_in_port(j);
@@ -233,7 +234,7 @@ void cs_interface::manage_extern_global_port_top(const structural_managerRef SM,
 {
    structural_objectRef cir_port;
    structural_objectRef memory_ctrl_port;
-   unsigned int num_channel = HLS->Param->getOption<unsigned int>(OPT_channels_number);
+   unsigned int num_channel = parameters->getOption<unsigned int>(OPT_channels_number);
    structural_objectRef memory_ctrl = circuit->find_member("memory_ctrl_top", component_o_K, circuit);
    THROW_ASSERT(memory_ctrl, "NULL, memmory_ctrl");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Connecting memory_port of memory_ctrl");

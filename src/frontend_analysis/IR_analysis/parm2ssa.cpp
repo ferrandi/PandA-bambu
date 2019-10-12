@@ -91,7 +91,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(MEM_CG_EXT, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -265,6 +265,27 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp)
             recursive_analysis(qe->op2, srcp);
          if(qe->op3)
             recursive_analysis(qe->op3, srcp);
+         break;
+      }
+      case lut_expr_K:
+      {
+         auto* le = GetPointer<lut_expr>(curr_tn);
+         recursive_analysis(le->op0, srcp);
+         recursive_analysis(le->op1, srcp);
+         if(le->op2)
+            recursive_analysis(le->op2, srcp);
+         if(le->op3)
+            recursive_analysis(le->op3, srcp);
+         if(le->op4)
+            recursive_analysis(le->op4, srcp);
+         if(le->op5)
+            recursive_analysis(le->op5, srcp);
+         if(le->op6)
+            recursive_analysis(le->op6, srcp);
+         if(le->op7)
+            recursive_analysis(le->op7, srcp);
+         if(le->op8)
+            recursive_analysis(le->op8, srcp);
          break;
       }
       case constructor_K:

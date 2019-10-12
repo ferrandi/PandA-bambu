@@ -128,6 +128,9 @@ class HLS_manager : public application_manager
    /// store the constraints on resources added to manage the I/O interfaces: function_id->library_name->resource_function_name->number of resources
    std::map<unsigned, std::map<std::string, std::map<std::string, unsigned int>>> design_interface_constraints;
 
+   /// global resource constraints
+   std::map<std::pair<std::string, std::string>, unsigned> global_resource_constraints;
+
    /**
     * Constructor.
     */
@@ -179,6 +182,13 @@ class HLS_manager : public application_manager
     * @return true in case var is register compatible
     */
    bool is_register_compatible(unsigned int var) const;
+
+   /**
+    * @brief is_reading_writing_function
+    * @param funID is the function identifier
+    * @return true in case the function performs at least a load or a store
+    */
+   bool is_reading_writing_function(unsigned funID) const;
 
    /**
     * Returns all the implementations resulting from the synthesis

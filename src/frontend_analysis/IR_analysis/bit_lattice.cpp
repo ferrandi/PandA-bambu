@@ -36,23 +36,35 @@
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
- * $Revision$
- * $Date$
- * Last modified by $Author$
- *
  */
 
+/// Header include
 #include "bit_lattice.hpp"
 
-// includes from src/tree/
+/// . include
+#include "Parameter.hpp"
+
+/// STD include
+#include <string>
+
+/// STL includes
+#include <algorithm>
+#include <vector>
+
+/// tree includes
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
+/// utility includes
+#include "dbgPrintHelper.hpp"
 #include "string_manipulation.hpp"
+#include "utility.hpp"
 
-BitLatticeManipulator::BitLatticeManipulator(const tree_managerConstRef& _TM) : TM(_TM)
+BitLatticeManipulator::BitLatticeManipulator(const tree_managerConstRef _TM, const int _bl_debug_level) :
+   TM(_TM),
+   bl_debug_level(_bl_debug_level)
 {
 }
 
@@ -431,6 +443,7 @@ bool BitLatticeManipulator::mix()
          {
             b.second = sup_lattice;
             updated = true;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, bl_debug_level, "Changes in " + STR(b.first) + " Cur is " + bitstring_to_string(cur_lattice) + " Best is " + bitstring_to_string(best_lattice) + " Sup is " + bitstring_to_string(sup_lattice));
          }
       }
    }

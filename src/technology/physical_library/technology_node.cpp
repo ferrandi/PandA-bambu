@@ -86,6 +86,9 @@
 #include <set>
 #include <utility>
 
+/// utility include
+#include "string_manipulation.hpp"
+
 simple_indent technology_node::PP('[', ']', 3);
 
 technology_node::technology_node() = default;
@@ -120,16 +123,14 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
    {
       std::string supported_types_string;
       LOAD_XVFM(supported_types_string, Enode, supported_types);
-      std::vector<std::string> types;
-      boost::algorithm::split(types, supported_types_string, boost::algorithm::is_any_of("|"));
+      std::vector<std::string> types = SplitString(supported_types_string, "|");
       for(std::vector<std::string>::const_iterator type = types.begin(); type != types.end(); ++type)
       {
          if(*type == "")
             THROW_ERROR("wrong XML syntax for supported_types attribute: null type description in \"" + supported_types_string + "\" [" + operation_name + "]");
          std::string type_name;
          std::vector<unsigned int> type_precs;
-         std::vector<std::string> type_name_to_precs;
-         boost::algorithm::split(type_name_to_precs, *type, boost::algorithm::is_any_of(":"));
+         std::vector<std::string> type_name_to_precs = SplitString(*type, ":");
          if(type_name_to_precs.size() != 2)
             THROW_ERROR("wrong XML syntax for supported_types attribute around \":\" \"" + *type + "\" [" + operation_name + "]");
          type_name = type_name_to_precs[0];
@@ -138,8 +139,8 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
 
          if(type_name_to_precs[1] != "*")
          {
-            std::vector<std::string> precs;
-            boost::algorithm::split(precs, type_name_to_precs[1], boost::algorithm::is_any_of(","));
+            std::vector<std::string> precs = SplitString(type_name_to_precs[1], ",");
+            ;
             for(std::vector<std::string>::const_iterator single_prec = precs.begin(); single_prec != precs.end() && *single_prec != ""; ++single_prec)
             {
                auto type_uint = boost::lexical_cast<unsigned int>(*single_prec);
@@ -425,8 +426,7 @@ void functional_unit::gload(const std::string& definition, const std::string& fu
 #endif
 )
 {
-   std::list<std::string> splitted;
-   boost::algorithm::split(splitted, definition, boost::algorithm::is_any_of(" ;\t"));
+   std::list<std::string> splitted = SplitString(definition, " ;\t");
 
 #if HAVE_CIRCUIT_BUILT
    std::set<std::string> inputs;

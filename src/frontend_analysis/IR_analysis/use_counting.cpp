@@ -36,9 +36,6 @@
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
@@ -56,16 +53,18 @@
 #include "design_flow_manager.hpp"
 
 /// design_flows/technology includes
-#if HAVE_BAMBU_BUILT
 #include "technology_flow_step.hpp"
 #include "technology_flow_step_factory.hpp"
-#endif
 
 /// Parameter include
 #include "Parameter.hpp"
 
 /// HLS includes
 #include "hls_manager.hpp"
+
+/// STL includes
+#include <unordered_set>
+#include <utility>
 
 /// tree include
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
@@ -92,7 +91,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-#if HAVE_BAMBU_BUILT
          /// We can check if single_write_memory is true only after technology was loaded
          const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          if(design_flow_manager.lock()->GetStatus(technology_flow_signature) == DesignFlowStep_Status::EMPTY)
@@ -102,9 +100,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
                relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
             }
          }
-#else
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
-#endif
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -113,25 +108,13 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-#if HAVE_BAMBU_BUILT
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REMOVE_CLOBBER_GA, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(HWCALL_INJECTION, SAME_FUNCTION));
-#endif
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SWITCH_FIX, SAME_FUNCTION));
-#if HAVE_BAMBU_BUILT
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REBUILD_INITIALIZATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REBUILD_INITIALIZATION2, SAME_FUNCTION));
-#endif
-#if HAVE_ZEBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(ARRAY_REF_FIX, SAME_FUNCTION));
-#endif
-#if HAVE_BAMBU_BUILT
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COMPUTE_IMPLICIT_CALLS, SAME_FUNCTION));
-#endif
-#if HAVE_ZEBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SPLIT_PHINODES, SAME_FUNCTION));
-#endif
          break;
       }
       default:
@@ -330,6 +313,27 @@ void use_counting::analyze_node(tree_nodeRef& tn, std::set<tree_nodeRef>& ssa_us
             analyze_node(qe->op2, ssa_uses);
          if(qe->op3)
             analyze_node(qe->op3, ssa_uses);
+         break;
+      }
+      case lut_expr_K:
+      {
+         auto* le = GetPointer<lut_expr>(curr_tn);
+         analyze_node(le->op0, ssa_uses);
+         analyze_node(le->op1, ssa_uses);
+         if(le->op2)
+            analyze_node(le->op2, ssa_uses);
+         if(le->op3)
+            analyze_node(le->op3, ssa_uses);
+         if(le->op4)
+            analyze_node(le->op4, ssa_uses);
+         if(le->op5)
+            analyze_node(le->op5, ssa_uses);
+         if(le->op6)
+            analyze_node(le->op6, ssa_uses);
+         if(le->op7)
+            analyze_node(le->op7, ssa_uses);
+         if(le->op8)
+            analyze_node(le->op8, ssa_uses);
          break;
       }
       case constructor_K:

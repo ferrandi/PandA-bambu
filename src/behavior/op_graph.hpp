@@ -241,6 +241,16 @@ UINT_STRONG_TYPEDEF(MemoryAddress);
 #define ASSERT_EXPR "assert_expr"
 
 /**
+ * constant string identifying the operation performed by an extract_bit_expr.
+ */
+#define EXTRACT_BIT_EXPR "extract_bit_expr"
+
+/**
+ * constant string identifying the operation performed by an extract_bit_expr.
+ */
+#define LUT_EXPR "lut_expr"
+
+/**
  * constant string identifying the operation performed by a READ_COND.
  */
 #define READ_COND "READ_COND"

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,44 +32,22 @@
  */
 /**
  * @file hls_bit_value.hpp
- * @brief Proxy class calling the bit value analysis just before the hls_bit_value step taking into account the results of the memory hls_bit_value
+ * @brief Composed step to describe HLSFunction on all functions
  *
- * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
 #ifndef HLS_BIT_VALUE_HPP
 #define HLS_BIT_VALUE_HPP
 
 /// superclass include
-#include "application_manager.hpp"
-#include "hls_function_step.hpp"
-#include "refcount.hpp"
-/**
- * @name forward declarations
- */
-//@{
-REF_FORWARD_DECL(hls_bit_value);
-//@}
-
-#include "graph.hpp"
-#include "utility.hpp"
-
-#include <cmath>
-#include <map>
-#include <string>
-#include <unordered_map>
-#include <vector>
-
-#include "hls_manager.hpp"
+#include "hls_step.hpp"
 
 /**
- * @class hls_bit_value
- * This class work as a proxy of the front end step performing the bit value analysis
+ * @class HLSBitValue
+ * This class works as an aggregator of HLSFunctionBitValue
  */
-class hls_bit_value : public HLSFunctionStep
+class HLSBitValue : public HLS_step
 {
    void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
    /**
@@ -87,23 +65,24 @@ class hls_bit_value : public HLSFunctionStep
     * Constructor.
     * @param design_flow_manager is the design flow manager
     */
-   hls_bit_value(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   HLSBitValue(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor.
     */
-   ~hls_bit_value() override;
+   ~HLSBitValue() override;
    //@}
 
    /**
     * Execute the step
     * @return the exit status of this step
     */
-   DesignFlowStep_Status InternalExec() override;
+   DesignFlowStep_Status Exec() override;
 
    /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
     */
-   void Initialize() override;
+   bool HasToBeExecuted() const override;
 };
 #endif

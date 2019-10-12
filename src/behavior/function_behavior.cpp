@@ -170,6 +170,7 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       has_globals(false),
       has_undefined_function_receiveing_pointers(false),
       state_variables(),
+      pipelining_enabled(_parameters->isOption(OPT_pipelining) && _parameters->getOption<bool>(OPT_pipelining)),
       bb_reachability(),
       feedback_bb_reachability(),
       ogc(new operations_graph_constructor(op_graphs_collection)),

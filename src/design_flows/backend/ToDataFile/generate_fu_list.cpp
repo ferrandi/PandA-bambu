@@ -43,9 +43,6 @@
 ///. include
 #include "Parameter.hpp"
 
-/// boost include
-#include <boost/algorithm/string/split.hpp>
-
 /// circuit includes
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
@@ -58,14 +55,22 @@
 #include "technology_flow_step.hpp"
 #include "technology_flow_step_factory.hpp"
 
+/// STD include
+#include <string>
+
+/// STL include
+#include <vector>
+
 /// technology include
 #include "technology_manager.hpp"
 
 /// technology/physical_library includes
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_VERY_PEDANTIC
 #include "library_manager.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
 #include "technology_node.hpp"
+
+/// utility include
+#include "string_manipulation.hpp"
 
 GenerateFuList::GenerateFuList(const target_managerRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
     : DesignFlowStep(_design_flow_manager, _parameters), ToDataFileStep(_design_flow_manager, ToDataFileStep_Type::GENERATE_FU_LIST, _parameters), FunctionalUnitStep(_target, _design_flow_manager, _parameters)
@@ -73,9 +78,8 @@ GenerateFuList::GenerateFuList(const target_managerRef _target, const DesignFlow
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
    if(parameters->getOption<std::string>(OPT_component_name) != "all")
    {
-      std::vector<std::string> splitted;
       std::string to_be_splitted(parameters->getOption<std::string>(OPT_component_name));
-      boost::algorithm::split(splitted, to_be_splitted, boost::algorithm::is_any_of(","));
+      const auto splitted = SplitString(to_be_splitted, ",");
       for(const auto& component_to_be_characterized : splitted)
       {
          components_to_be_characterized.insert(component_to_be_characterized);

@@ -163,8 +163,7 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
       {
          if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_BIT_VALUE, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_BIT_VALUE, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::CALLED_FUNCTIONS));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_BIT_VALUE, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
          }
          ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::CALLED_FUNCTIONS));
          ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
@@ -944,15 +943,17 @@ bool allocation::check_templated_units(double clock_period, node_kind_prec_infoR
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "- fu_template_parameters: \"" + fu_template_parameters + "\"");
    std::string pipeline_id =
        get_compliant_pipelined_unit(clock_period, curr_op->pipe_parameters, current_fu, curr_op->get_name(), library->get_library_name(), template_suffix, node_info->input_prec.size() > 1 ? node_info->input_prec[1] : node_info->input_prec[0]);
-   if(pipeline_id != "")
-      required_prec += " " + pipeline_id;
-   // if the computed parameters is different from what was used to build this specialization skip it.
-   if(required_prec != fu_template_parameters)
+   if(not curr_op->pipe_parameters.empty())
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + required_prec + " vs. " + fu_template_parameters);
-      return true;
+      if(pipeline_id != "")
+         required_prec += " " + pipeline_id;
+      // if the computed parameters is different from what was used to build this specialization skip it.
+      if(required_prec != fu_template_parameters)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + required_prec + " vs. " + fu_template_parameters);
+         return true;
+      }
    }
-
    if(pipeline_id == "")
    {
       if(curr_op->time_m->get_cycles() == 0 && allocation_information->time_m_execution_time(curr_op) > clock_period)
@@ -1241,10 +1242,10 @@ DesignFlowStep_Status allocation::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Operation " + current_op + " named " + GET_NAME(g, *v) + " mapped onto " + current_fu->get_name() + ", found in library " + TM->get_library(current_op) + " in position " + STR(gimple_return_current_id));
       }
-      // Artificial FUs
+      // direct mapping FUs
       else if(ASSIGN == current_op || ASSERT_EXPR == current_op || ADDR_EXPR == current_op || READ_COND == current_op || MULTI_READ_COND == current_op || NOP_EXPR == current_op || CONVERT_EXPR == current_op || SWITCH_COND == current_op ||
               GIMPLE_LABEL == current_op || GIMPLE_GOTO == current_op || GIMPLE_PRAGMA == current_op || ENTRY == current_op || EXIT == current_op || NOP == current_op || GIMPLE_PHI == current_op || GIMPLE_NOP == current_op ||
-              VIEW_CONVERT_EXPR == current_op)
+              VIEW_CONVERT_EXPR == current_op || EXTRACT_BIT_EXPR == current_op || LUT_EXPR == current_op)
       {
          unsigned int current_size = allocation_information->get_number_fu_types();
          if(current_op == ASSIGN)
@@ -1289,6 +1290,21 @@ DesignFlowStep_Status allocation::InternalExec()
             else
                current_fu = get_fu(ASSERT_EXPR_UNSIGNED_STD);
          }
+         else if(current_op == EXTRACT_BIT_EXPR)
+         {
+            unsigned int modify_tree_index = g->CGetOpNodeInfo(*v)->GetNodeId();
+            tree_nodeRef modify_node = TreeM->get_tree_node_const(modify_tree_index);
+            auto* gms = GetPointer<gimple_assign>(modify_node);
+            auto ebe = GetPointer<extract_bit_expr>(GET_NODE(gms->op1));
+            ;
+            bool intOP0 = tree_helper::is_int(TreeM, GET_INDEX_NODE(ebe->op0));
+            if(intOP0)
+               current_fu = get_fu(EXTRACT_BIT_EXPR_SIGNED_STD);
+            else
+               current_fu = get_fu(EXTRACT_BIT_EXPR_UNSIGNED_STD);
+         }
+         else if(current_op == LUT_EXPR)
+            current_fu = get_fu(LUT_EXPR_STD);
          else if(current_op == ADDR_EXPR)
             current_fu = get_fu(ADDR_EXPR_STD);
          else if(current_op == NOP_EXPR)
@@ -1597,7 +1613,8 @@ DesignFlowStep_Status allocation::InternalExec()
             continue;
          }
 
-         const auto tech_constrain_it = GetPointer<functional_unit>(current_fu)->fu_template_name != "" ? tech_vec.find(ENCODE_FU_LIB(GetPointer<functional_unit>(current_fu)->fu_template_name, lib_name)) : tech_vec.find(ENCODE_FU_LIB(current_fu->get_name(), lib_name));
+         const auto tech_constrain_it =
+             GetPointer<functional_unit>(current_fu)->fu_template_name != "" ? tech_vec.find(ENCODE_FU_LIB(GetPointer<functional_unit>(current_fu)->fu_template_name, lib_name)) : tech_vec.find(ENCODE_FU_LIB(current_fu->get_name(), lib_name));
 
          if(tech_constrain_it != tech_vec.end() && tech_constrain_it->second == 0)
          {
@@ -1988,13 +2005,11 @@ std::string allocation::get_compliant_pipelined_unit(double clock, const std::st
    THROW_ASSERT(fun_temp_operation, "operation not present in the template description");
    auto* template_op = GetPointer<operation>(fun_temp_operation);
    std::string temp_pipe_parameters = template_op->pipe_parameters;
-   std::vector<std::string> parameters_split;
-   boost::algorithm::split(parameters_split, temp_pipe_parameters, boost::algorithm::is_any_of("|"));
+   std::vector<std::string> parameters_split = SplitString(temp_pipe_parameters, "|");
    THROW_ASSERT(parameters_split.size() > 0, "unexpected pipe_parameter format");
    for(auto& el_indx : parameters_split)
    {
-      std::vector<std::string> parameters_pairs;
-      boost::algorithm::split(parameters_pairs, el_indx, boost::algorithm::is_any_of(":"));
+      std::vector<std::string> parameters_pairs = SplitString(el_indx, ":");
       if(parameters_pairs[0] == "*")
       {
          temp_pipe_parameters = parameters_pairs[1];
@@ -2012,10 +2027,9 @@ std::string allocation::get_compliant_pipelined_unit(double clock, const std::st
       }
    }
    THROW_ASSERT(temp_pipe_parameters != "", "expected some pipe_parameters for the the template operation");
-   std::vector<std::string> pipe_parameters;
    std::string fastest_pipe_parameter = "0";
    double fastest_stage_period = std::numeric_limits<double>::max();
-   boost::algorithm::split(pipe_parameters, temp_pipe_parameters, boost::algorithm::is_any_of(","));
+   std::vector<std::string> pipe_parameters = SplitString(temp_pipe_parameters, ",");
    const std::vector<std::string>::const_iterator st_end = pipe_parameters.end();
    std::vector<std::string>::const_iterator st_next;
    unsigned int skip_pipe_parameter = 0;

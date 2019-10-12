@@ -226,11 +226,12 @@ DesignFlowStep_Status top_entity::InternalExec()
    if(datapath_start)
       SM->add_connection(sync_datapath_controller, controller_start);
    structural_objectRef done_signal_out;
-   if(HLS->registered_done_port and (parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR or parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR))
+   if(HLS->registered_done_port and
+      (parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR or parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR))
    {
       const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
       std::string delay_unit;
-      std::string synch_reset = HLS->Param->getOption<std::string>(OPT_sync_reset);
+      std::string synch_reset = parameters->getOption<std::string>(OPT_sync_reset);
       if(synch_reset == "sync")
          delay_unit = flipflop_SR;
       else
@@ -300,7 +301,8 @@ DesignFlowStep_Status top_entity::InternalExec()
    this->add_command_signals(circuit);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tCommand ports added!");
 
-   memory::propagate_memory_parameters(HLS->datapath->get_circ(), HLS->top);
+   if(!is_top || !parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals))
+      memory::propagate_memory_parameters(HLS->datapath->get_circ(), HLS->top);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Circuit created without errors!");
    return DesignFlowStep_Status::SUCCESS;

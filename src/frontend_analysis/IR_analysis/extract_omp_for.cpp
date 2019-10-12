@@ -35,6 +35,7 @@
  * @brief Analysis step extracting openmp for
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
 
@@ -58,7 +59,8 @@
 #include "design_flow_manager.hpp"
 
 /// STL include
-#include "utility.hpp"
+#include <unordered_set>
+#include <utility>
 
 /// tree includes
 #include "behavioral_helper.hpp"
@@ -144,31 +146,30 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
       }
       std::unordered_set<vertex> basic_blocks;
       loop->get_recursively_bb(basic_blocks);
-      THROW_ASSERT(basic_blocks.size() >= 2, "Unexpected pattern");
-      if(basic_blocks.size() == 2)
+      THROW_ASSERT(basic_blocks.size() >= 1, "Unexpected pattern");
+      if(basic_blocks.size() == 1)
       {
          for(const auto basic_block : basic_blocks)
          {
-            if(basic_block == loop->GetHeader())
-            {
-               continue;
-            }
             const auto bb_node_info = basic_block_graph->CGetBBNodeInfo(basic_block);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(bb_node_info->block->number));
             if(bb_node_info->block->CGetStmtList().size() == 1)
             {
                THROW_ERROR("BB" + STR(bb_node_info->block->number) + " has only one statement");
             }
-            else if(bb_node_info->block->CGetStmtList().size() == 2)
+            else
             {
                const auto list_of_stmt = bb_node_info->block->CGetStmtList();
+               THROW_ASSERT(list_of_stmt.size() >= 2, "Unexpected pattern");
                const auto first_node = list_of_stmt.front();
                const auto call = GetPointer<const gimple_call>(GET_NODE(first_node));
                if(not call)
                {
                   THROW_ERROR("First operation of loop body is " + first_node->ToString());
                }
-               const auto second_node = list_of_stmt.back();
+               auto stmt_it = list_of_stmt.begin();
+               ++stmt_it;
+               const auto second_node = *stmt_it;
                const auto ga = GetPointer<const gimple_assign>(GET_NODE(second_node));
                if(not ga)
                {
@@ -179,7 +180,7 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
                {
                   THROW_ERROR("Second operation of loop body is " + second_node->ToString());
                }
-               const auto induction_variable = GetPointer<const ssa_name>(GET_NODE(pe->op0));
+               const auto induction_variable = GetPointer<const ssa_name>(GET_NODE(ga->op0));
                THROW_ASSERT(loop->main_iv, "");
                if(not induction_variable or induction_variable->index != loop->main_iv)
                {
@@ -196,10 +197,6 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
                   THROW_ERROR("First operation of loop body is " + first_node->ToString());
                }
                called_function->omp_body_loop = true;
-            }
-            else
-            {
-               THROW_ERROR("Pattern not supported");
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(bb_node_info->block->number));
          }
@@ -227,7 +224,105 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
             }
             auto fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
             function_behavior->UpdateBBVersion();
-            fd->omp_for_wrapper = parameters->getOption<size_t>(OPT_num_threads);
+            fd->omp_for_wrapper = parameters->getOption<size_t>(OPT_num_accelerators);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped loop " + STR(loop->GetId()));
+            break;
+         }
+      }
+      if(basic_blocks.size() == 2)
+      {
+         for(const auto basic_block : basic_blocks)
+         {
+            if(basic_block == loop->GetHeader())
+            {
+               continue;
+            }
+            const auto bb_node_info = basic_block_graph->CGetBBNodeInfo(basic_block);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(bb_node_info->block->number));
+            const auto list_of_stmt = bb_node_info->block->CGetStmtList();
+            const auto first_node = list_of_stmt.front();
+            const auto second_node = [&]() -> tree_nodeRef {
+               if(list_of_stmt.size() == 1)
+               {
+                  const auto header_node_info = basic_block_graph->CGetBBNodeInfo(loop->GetHeader());
+                  const auto header_list_of_stmt = header_node_info->block->CGetStmtList();
+                  if(header_list_of_stmt.size() != 3)
+                  {
+                     THROW_ERROR("Unexpected pattern in header. Number of operations is " + STR(header_list_of_stmt.size()));
+                  }
+                  auto stmt_it = header_list_of_stmt.begin();
+                  stmt_it++;
+                  return *stmt_it;
+               }
+               else if(list_of_stmt.size() == 2)
+               {
+                  return list_of_stmt.back();
+               }
+               else
+               {
+                  THROW_ERROR("Pattern not supported");
+                  return tree_nodeRef();
+               }
+            }();
+            const auto call = GetPointer<const gimple_call>(GET_NODE(first_node));
+            if(not call)
+            {
+               THROW_ERROR("First operation of loop body is " + first_node->ToString());
+            }
+            const auto ga = GetPointer<const gimple_assign>(GET_NODE(second_node));
+            if(not ga)
+            {
+               THROW_ERROR("Second operation of loop body is " + second_node->ToString());
+            }
+            const auto pe = GetPointer<const plus_expr>(GET_NODE(ga->op1));
+            if(not pe)
+            {
+               THROW_ERROR("Second operation of loop body is " + second_node->ToString());
+            }
+            const auto induction_variable = GetPointer<const ssa_name>(GET_NODE(pe->op0));
+            THROW_ASSERT(loop->main_iv, "");
+            if(not induction_variable or induction_variable->index != loop->main_iv)
+            {
+               THROW_ERROR("Induction variable is " + TM->get_tree_node_const(loop->main_iv)->ToString() + " - Second operation of loop body is " + second_node->ToString());
+            }
+            const auto call_op = GetPointer<const addr_expr>(GET_NODE(call->fn));
+            if(not call_op)
+            {
+               THROW_ERROR("First operation of loop body is " + first_node->ToString());
+            }
+            auto called_function = GetPointer<function_decl>(GET_NODE(call_op->op));
+            if(not called_function)
+            {
+               THROW_ERROR("First operation of loop body is " + first_node->ToString());
+            }
+            called_function->omp_body_loop = true;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(bb_node_info->block->number));
+         }
+         if(loops->GetList().size() == 2)
+         {
+            VertexIterator basic_block, basic_block_end;
+            for(boost::tie(basic_block, basic_block_end) = boost::vertices(*basic_block_graph); basic_block != basic_block_end; basic_block++)
+            {
+               const auto basic_block_info = basic_block_graph->CGetBBNodeInfo(*basic_block);
+               if(*basic_block == basic_block_graph_info->entry_vertex or *basic_block == basic_block_graph_info->exit_vertex)
+                  continue;
+               if(basic_block_info->loop_id)
+                  continue;
+               if(not basic_block_info->block->CGetStmtList().size())
+                  continue;
+               for(const auto statement : basic_block_info->block->CGetStmtList())
+               {
+                  const auto gr = GetPointer<const gimple_return>(GET_NODE(statement));
+                  if(gr and not gr->op)
+                  {
+                     continue;
+                  }
+                  THROW_ERROR(statement->ToString());
+               }
+            }
+            auto fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
+            function_behavior->UpdateBBVersion();
+            fd->omp_for_wrapper = parameters->getOption<size_t>(OPT_num_accelerators);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped loop " + STR(loop->GetId()));
             break;
          }

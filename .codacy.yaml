@@ -1,6 +1,6 @@
 exclude_paths:
-  - documentation/**
-  - etc/**
-  - ext/**
-  - panda_regressions/**
-  - examples/**
+  - 'documentation/**'
+  - 'etc/**'
+  - 'ext/**'
+  - 'panda_regressions/**'
+  - 'examples/**'

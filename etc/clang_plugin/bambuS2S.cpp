@@ -164,7 +164,7 @@ struct fd_user : public clang::ast_matchers::MatchFinder::MatchCallback
 
       // Try to load the file buffer.
       bool InvalidTemp = false;
-      StringRef File = SM.getBufferData(LocInfo.first, &InvalidTemp);
+      llvm::StringRef File = SM.getBufferData(LocInfo.first, &InvalidTemp);
       if(InvalidTemp)
          return clang::None;
 

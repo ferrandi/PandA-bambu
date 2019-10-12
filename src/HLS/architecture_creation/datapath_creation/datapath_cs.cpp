@@ -52,11 +52,12 @@
 /// utility include
 #include "dbgPrintHelper.hpp"
 #include "utility.hpp"
+#include "math_function.hpp"
 
 datapath_cs::datapath_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
     : classic_datapath(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
-   debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
+   debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 datapath_cs::~datapath_cs()
@@ -78,21 +79,22 @@ void datapath_cs::add_ports()
    if(found) // function with selector
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding ports selector and suspension");
-      unsigned int num_slots = static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
+      int num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
       if(!num_slots)
          num_slots = 1;
-      structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
+      structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", static_cast<unsigned>(num_slots)));
       SM->add_port(STR(SELECTOR_REGISTER_FILE), port_o::IN, circuit, port_type);
       structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
       SM->add_port(STR(SUSPENSION), port_o::OUT, circuit, bool_type);
    }
    if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
    {
+      THROW_ASSERT(!found, "unexpected condition");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding ports for kernel module");
-      unsigned int num_slots = static_cast<unsigned int>(ceil(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch))));
+      int num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
       if(!num_slots)
          num_slots = 1;
-      structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
+      structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", static_cast<unsigned>(num_slots)));
       structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
       SM->add_port(STR(SELECTOR_REGISTER_FILE), port_o::OUT, circuit, port_type);
       SM->add_port(STR(TASKS_POOL_END), port_o::IN, circuit, bool_type);

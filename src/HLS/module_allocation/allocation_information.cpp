@@ -73,6 +73,13 @@
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
 
+/// STL includes
+#include <algorithm>
+#include <map>
+#include <set>
+#include <tuple>
+#include <unordered_map>
+
 const std::pair<const CustomMap<unsigned int, std::unordered_map<unsigned int, double>>&, const CustomMap<unsigned int, std::unordered_map<unsigned int, double>>&>
 AllocationInformation::InitializeMuxDB(const AllocationInformationConstRef allocation_information)
 {
@@ -96,15 +103,13 @@ AllocationInformation::InitializeMuxDB(const AllocationInformationConstRef alloc
       mux_precisions.push_back(16);
       mux_precisions.push_back(32);
       mux_precisions.push_back(64);
-      std::vector<std::string> parameters_split;
-      boost::algorithm::split(parameters_split, temp_portsize_parameters, boost::algorithm::is_any_of("|"));
+      std::vector<std::string> parameters_split = SplitString(temp_portsize_parameters, "|");
       THROW_ASSERT(parameters_split.size() > 0, "unexpected portsize_parameter format");
       for(auto module_prec : mux_precisions)
       {
          for(auto& el_indx : parameters_split)
          {
-            std::vector<std::string> parameters_pairs;
-            boost::algorithm::split(parameters_pairs, el_indx, boost::algorithm::is_any_of(":"));
+            std::vector<std::string> parameters_pairs = SplitString(el_indx, ":");
             if(parameters_pairs[0] == "*")
             {
                temp_portsize_parameters = parameters_pairs[1];
@@ -117,8 +122,7 @@ AllocationInformation::InitializeMuxDB(const AllocationInformationConstRef alloc
             }
          }
          THROW_ASSERT(temp_portsize_parameters != "", "expected some portsize0_parameters for the the template operation");
-         std::vector<std::string> portsize_parameters;
-         boost::algorithm::split(portsize_parameters, temp_portsize_parameters, boost::algorithm::is_any_of(","));
+         std::vector<std::string> portsize_parameters = SplitString(temp_portsize_parameters, ",");
          for(auto n_inputs : portsize_parameters)
          {
             const technology_nodeRef fu_cur_obj =
@@ -198,10 +202,8 @@ const std::tuple<const std::vector<unsigned int>&, const std::vector<unsigned in
          THROW_ASSERT(hls_target->get_target_device()->has_parameter("DSPs_y_sizes"), "device description is not complete");
          std::string DSPs_x_sizes = hls_target->get_target_device()->get_parameter<std::string>("DSPs_x_sizes");
          std::string DSPs_y_sizes = hls_target->get_target_device()->get_parameter<std::string>("DSPs_y_sizes");
-         std::vector<std::string> DSPs_x_sizes_vec;
-         std::vector<std::string> DSPs_y_sizes_vec;
-         boost::algorithm::split(DSPs_x_sizes_vec, DSPs_x_sizes, boost::algorithm::is_any_of(","));
-         boost::algorithm::split(DSPs_y_sizes_vec, DSPs_y_sizes, boost::algorithm::is_any_of(","));
+         std::vector<std::string> DSPs_x_sizes_vec = SplitString(DSPs_x_sizes, ",");
+         std::vector<std::string> DSPs_y_sizes_vec = SplitString(DSPs_y_sizes, ",");
          size_t n_elements = DSPs_x_sizes_vec.size();
          DSP_x_db.resize(n_elements);
          DSP_y_db.resize(n_elements);
@@ -569,6 +571,18 @@ double AllocationInformation::GetStatementArea(const unsigned int statement_inde
          auto op_area = new_stmt_fu->area_m->get_area_value();
          return op_area;
       }
+      if(ga and GET_NODE(ga->op1)->get_kind() == truth_xor_expr_K)
+      {
+         const auto data_bitsize = tree_helper::Size(ga->op0);
+         const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+         const auto fu = "truth_xor_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec);
+         ;
+         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu(fu, LIBRARY_STD_FU);
+         THROW_ASSERT(new_stmt_temp, "Functional unit " + fu + " not found");
+         const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
+         auto op_area = new_stmt_fu->area_m->get_area_value();
+         return op_area;
+      }
       if(ga and GET_NODE(ga->op1)->get_kind() == truth_not_expr_K)
       {
          const auto data_bitsize = tree_helper::Size(ga->op0);
@@ -726,11 +740,11 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index) const
    {
       const auto right = GET_NODE(ga->op1);
       /// currently all the operations introduced after the allocation has been performed are bounded
-      THROW_ASSERT(GetPointer<cst_node>(right) or right->get_kind() == vec_cond_expr_K or right->get_kind() == nop_expr_K or right->get_kind() == lut_expr_K or right->get_kind() == lshift_expr_K or right->get_kind() == rshift_expr_K or
-                       right->get_kind() == bit_xor_expr_K or right->get_kind() == bit_not_expr_K or right->get_kind() == bit_ior_concat_expr_K or right->get_kind() == bit_ior_expr_K or right->get_kind() == bit_and_expr_K or
-                       right->get_kind() == convert_expr_K or right->get_kind() == truth_and_expr_K or right->get_kind() == truth_or_expr_K or right->get_kind() == truth_not_expr_K or right->get_kind() == cond_expr_K or
-                       right->get_kind() == ternary_plus_expr_K or right->get_kind() == ternary_mp_expr_K or right->get_kind() == ternary_pm_expr_K or right->get_kind() == ternary_mm_expr_K or right->get_kind() == ssa_name_K or
-                       right->get_kind() == widen_mult_expr_K or right->get_kind() == mult_expr_K,
+      THROW_ASSERT(GetPointer<cst_node>(right) or right->get_kind() == vec_cond_expr_K or right->get_kind() == nop_expr_K or right->get_kind() == lut_expr_K or right->get_kind() == extract_bit_expr_K or right->get_kind() == lshift_expr_K or
+                       right->get_kind() == rshift_expr_K or right->get_kind() == bit_xor_expr_K or right->get_kind() == bit_not_expr_K or right->get_kind() == bit_ior_concat_expr_K or right->get_kind() == bit_ior_expr_K or
+                       right->get_kind() == bit_and_expr_K or right->get_kind() == convert_expr_K or right->get_kind() == truth_and_expr_K or right->get_kind() == truth_or_expr_K or right->get_kind() == truth_xor_expr_K or
+                       right->get_kind() == truth_not_expr_K or right->get_kind() == cond_expr_K or right->get_kind() == ternary_plus_expr_K or right->get_kind() == ternary_mp_expr_K or right->get_kind() == ternary_pm_expr_K or
+                       right->get_kind() == ternary_mm_expr_K or right->get_kind() == ssa_name_K or right->get_kind() == widen_mult_expr_K or right->get_kind() == mult_expr_K,
                    "Unexpected right part: " + right->get_kind_text());
       return true;
    }
@@ -1101,7 +1115,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       if(current_op == "cond_expr" || current_op == "vec_cond_expr") /// no constant characterization for cond expr
          is_second_constant = true;
       if(id == 0 || ((tree_helper::is_constant(TreeM, id) || tree_helper::is_concat_bit_ior_expr(TreeM, g->CGetOpNodeInfo(node)->GetNodeId())) && !is_constrained && !is_second_constant && vars_read.size() != 1 && current_op != "mult_expr" &&
-                     current_op != "widen_mult_expr" && (index == 1 || current_op != "lut_expr")))
+                     current_op != "widen_mult_expr" && (index == 1 || current_op != "lut_expr" || current_op != "extract_bit_expr")))
       {
          info->input_prec.push_back(0);
          info->real_input_nelem.push_back(0);
@@ -1213,35 +1227,19 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       THROW_UNREACHABLE("not supported type: " + STR(type_index) + " - " + TreeM->get_tree_node_const(type_index)->ToString());
    }
 
-   if(current_op != "lut_expr")
+   const auto max_size_in_true = std::max(max_size_in, *std::max_element(info->input_prec.begin(), info->input_prec.end()));
+   for(const auto n_elements : info->base128_input_nelem)
    {
-      const auto max_size_in_true = std::max(max_size_in, *std::max_element(info->input_prec.begin(), info->input_prec.end()));
-      for(const auto n_elements : info->base128_input_nelem)
+      if(n_elements and (min_n_elements == 0 or (n_elements < min_n_elements)))
       {
-         if(n_elements and (min_n_elements == 0 or (n_elements < min_n_elements)))
-         {
-            min_n_elements = n_elements;
-         }
+         min_n_elements = n_elements;
       }
-      /// Now we need to normalize the size to be compliant with the technology library assumptions
-      if(is_cond_expr_bool_test)
-         info->is_single_bool_test_cond_expr = true;
-      // if(tree_helper::is_simple_pointer_plus_test(TreeM, g->CGetOpNodeInfo(node)->GetNodeId())) info->is_simple_pointer_plus_expr = true;
-      max_size_in = resize_to_1_8_16_32_64_128_256_512(max_size_in_true);
    }
-   else
-   {
-      min_n_elements = *(info->base128_input_nelem.begin());
-      max_size_in = *(info->input_prec.begin());
-#if HAVE_PRAGMA_BUILT
-      if(max_size_in > HLS_T->get_target_device()->get_parameter<unsigned int>("max_lut_size"))
-      {
-         /// Vectorization breaks bit value so that size of lut input is too conservative
-         THROW_ASSERT(parameters->getOption<int>(OPT_gcc_openmp_simd), "Lut input wrong size");
-         max_size_in = HLS_T->get_target_device()->get_parameter<unsigned int>("max_lut_size");
-      }
-#endif
-   }
+   /// Now we need to normalize the size to be compliant with the technology library assumptions
+   if(is_cond_expr_bool_test)
+      info->is_single_bool_test_cond_expr = true;
+   // if(tree_helper::is_simple_pointer_plus_test(TreeM, g->CGetOpNodeInfo(node)->GetNodeId())) info->is_simple_pointer_plus_expr = true;
+   max_size_in = resize_to_1_8_16_32_64_128_256_512(max_size_in_true);
    /// DSPs based components have to be managed in a different way
    if(current_op == "widen_mult_expr" || current_op == "mult_expr")
    {
@@ -1620,10 +1618,10 @@ unsigned int AllocationInformation::GetCycleLatency(const unsigned int operation
       if(ga)
       {
          const auto right = GET_NODE(ga->op1);
-         if(right->get_kind() == truth_and_expr_K or right->get_kind() == truth_or_expr_K or right->get_kind() == truth_not_expr_K or right->get_kind() == cond_expr_K or right->get_kind() == vec_cond_expr_K or right->get_kind() == ternary_plus_expr_K or
-            right->get_kind() == ternary_mp_expr_K or right->get_kind() == ternary_pm_expr_K or right->get_kind() == ternary_mm_expr_K or right->get_kind() == ssa_name_K or right->get_kind() == integer_cst_K or right->get_kind() == rshift_expr_K or
-            right->get_kind() == lshift_expr_K or right->get_kind() == plus_expr_K or right->get_kind() == minus_expr_K or right->get_kind() == bit_and_expr_K or right->get_kind() == bit_ior_concat_expr_K or right->get_kind() == lut_expr_K or
-            right->get_kind() == convert_expr_K or right->get_kind() == nop_expr_K)
+         if(right->get_kind() == truth_and_expr_K or right->get_kind() == truth_or_expr_K or right->get_kind() == truth_xor_expr_K or right->get_kind() == truth_not_expr_K or right->get_kind() == cond_expr_K or right->get_kind() == vec_cond_expr_K or
+            right->get_kind() == ternary_plus_expr_K or right->get_kind() == ternary_mp_expr_K or right->get_kind() == ternary_pm_expr_K or right->get_kind() == ternary_mm_expr_K or right->get_kind() == ssa_name_K or right->get_kind() == integer_cst_K or
+            right->get_kind() == rshift_expr_K or right->get_kind() == lshift_expr_K or right->get_kind() == plus_expr_K or right->get_kind() == minus_expr_K or right->get_kind() == bit_and_expr_K or right->get_kind() == bit_ior_concat_expr_K or
+            right->get_kind() == lut_expr_K or right->get_kind() == extract_bit_expr_K or right->get_kind() == convert_expr_K or right->get_kind() == nop_expr_K)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latency of not allocated fu is 1");
             return 1;
@@ -1800,6 +1798,23 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
          return std::pair<double, double>(op_execution_time, 0.0);
       }
+      if(ga and GET_NODE(ga->op1)->get_kind() == truth_xor_expr_K)
+      {
+         const auto data_bitsize = tree_helper::Size(ga->op0);
+         const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+         const auto fu = "truth_xor_expr_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec);
+         ;
+         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu(fu, LIBRARY_STD_FU);
+         THROW_ASSERT(new_stmt_temp, "Functional unit " + fu + " not found");
+         const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
+         const auto new_stmt_op_temp = new_stmt_fu->get_operation("truth_xor_expr");
+         const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
+         auto op_execution_time = time_m_execution_time(new_stmt_op);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uncorrected execution time is " + STR(op_execution_time));
+         op_execution_time = op_execution_time - get_setup_hold_time();
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is " + STR(op_execution_time) + ",0.0");
+         return std::pair<double, double>(op_execution_time, 0.0);
+      }
       if(ga and GET_NODE(ga->op1)->get_kind() == truth_not_expr_K)
       {
          const auto data_bitsize = tree_helper::Size(ga->op0);
@@ -1960,10 +1975,8 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
       if(ga and GET_NODE(ga->op1)->get_kind() == lut_expr_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operation is a lut_expr");
-         const auto lut = GetPointer<const lut_expr>(GET_NODE(ga->op1));
-         const auto fu_prec = tree_helper::Size(lut->op0);
-         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("lut_expr_FU_" + STR(fu_prec) + "_0_" + STR(fu_prec), LIBRARY_STD_FU);
-         THROW_ASSERT(new_stmt_temp, "Functional unit not found: lut_expr_FU_" + STR(fu_prec) + "_0_" + STR(fu_prec));
+         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu("lut_expr_FU", LIBRARY_STD_FU);
+         THROW_ASSERT(new_stmt_temp, "Functional unit not found: lut_expr_FU");
          const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
          const auto new_stmt_op_temp = new_stmt_fu->get_operation("lut_expr");
          const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
@@ -1974,6 +1987,11 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
          return std::pair<double, double>(op_execution_time, 0.0);
       }
       if(ga and GET_NODE(ga->op1)->get_kind() == bit_ior_concat_expr_K)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
+         return std::pair<double, double>(0, 0.0);
+      }
+      if(ga and GET_NODE(ga->op1)->get_kind() == extract_bit_expr_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
          return std::pair<double, double>(0, 0.0);
@@ -2243,12 +2261,12 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       std::string library = HLS_T->get_technology_manager()->get_library(component_name);
       technology_nodeRef f_unit_alias = HLS_T->get_technology_manager()->get_fu(component_name, library);
       THROW_ASSERT(f_unit_alias, "Library miss component: " + component_name);
-      functional_unit * fu_alias= GetPointer<functional_unit>(f_unit_alias);
-      technology_nodeRef op_alias_node =fu_alias->get_operation(operation_name);
+      functional_unit * fu_alias = GetPointer<functional_unit>(f_unit_alias);
+      technology_nodeRef op_alias_node = fu_alias->get_operation(operation_name);
       operation * op_alias = op_alias_node ? GetPointer<operation>(op_alias_node) : GetPointer<operation>(fu_alias->get_operations().front());
       double alias_exec_time = op_alias->time_m->get_initiation_time() != 0u ? time_m_stage_period(op_alias) : time_m_execution_time(op_alias);
-      functional_unit * fu_cur= GetPointer<functional_unit>(current_fu);
-      technology_nodeRef op_cur_node =fu_cur->get_operation(operation_name);
+      functional_unit * fu_cur = GetPointer<functional_unit>(current_fu);
+      technology_nodeRef op_cur_node = fu_cur->get_operation(operation_name);
       operation * op_cur = GetPointer<operation>(op_cur_node);
       double cur_exec_time = op_cur->time_m->get_initiation_time() != 0u ? time_m_stage_period(op_cur) : time_m_execution_time(op_cur);
       res_value += cur_exec_time - alias_exec_time;
@@ -2718,7 +2736,7 @@ CustomSet<unsigned int> AllocationInformation::ComputeRoots(const unsigned int s
             }
          }
          if(be and (be->get_kind() == gt_expr_K or be->get_kind() == ge_expr_K or be->get_kind() == lt_expr_K or be->get_kind() == le_expr_K or be->get_kind() == eq_expr_K or be->get_kind() == ne_expr_K or be->get_kind() == truth_and_expr_K or
-                    be->get_kind() == truth_or_expr_K))
+                    be->get_kind() == truth_or_expr_K or be->get_kind() == truth_xor_expr_K))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Defined in a comparison");
             if(already_analyzed_ssas.find(be->op0->index) == already_analyzed_ssas.end())
@@ -2809,7 +2827,7 @@ CustomSet<unsigned int> AllocationInformation::ComputeDrivenCondExpr(const unsig
                }
             }
             if(be and (be->get_kind() == gt_expr_K or be->get_kind() == ge_expr_K or be->get_kind() == lt_expr_K or be->get_kind() == le_expr_K or be->get_kind() == eq_expr_K or be->get_kind() == ne_expr_K or be->get_kind() == truth_and_expr_K or
-                       be->get_kind() == truth_or_expr_K))
+                       be->get_kind() == truth_or_expr_K or be->get_kind() == truth_xor_expr_K))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Used in a comparison");
                if(already_analyzed_ssas.find(current_use_ga->op0->index) == already_analyzed_ssas.end())
@@ -3126,7 +3144,7 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
       if(is_second_plus_minus)
       {
           const auto fu_type = GetFuType(second_operation);
-          if(get_prec(fu_type)>32)
+          if(get_prec(fu_type) > 32)
           {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing connection time " + STR(first_operation) + "-->" + STR(second_operation));
             auto ret = get_setup_hold_time()/3;
@@ -3357,7 +3375,9 @@ void AllocationInformation::Initialize()
    connection_offset = parameters->IsParameter("ConnectionOffset") ? parameters->GetParameter<double>("ConnectionOffset") :
                                                                      parameters->IsParameter("RelativeConnectionOffset") ?
                                                                      parameters->GetParameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
-                                                                     HLS_T->get_target_device()->has_parameter("connection_offset") ? HLS_T->get_target_device()->get_parameter<double>("connection_offset") : NUM_CST_allocation_default_connection_offset;
+                                                                     HLS_T->get_target_device()->has_parameter("RelativeConnectionOffset") ?
+                                                                     HLS_T->get_target_device()->get_parameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
+                                                                     HLS_T->get_target_device()->has_parameter("ConnectionOffset") ? HLS_T->get_target_device()->get_parameter<double>("ConnectionOffset") : NUM_CST_allocation_default_connection_offset;
 
    output_DSP_connection_time = parameters->IsParameter("OutputDSPConnectionRatio") ?
                                     parameters->GetParameter<double>("OutputDSPConnectionRatio") * get_setup_hold_time() :

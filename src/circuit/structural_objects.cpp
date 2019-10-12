@@ -37,9 +37,6 @@
  * @author Matteo Barbati <mbarbati@gmail.com>
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #include "structural_objects.hpp"
@@ -50,43 +47,38 @@
 #include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_RELEASE.hpp"
 
-#include "HDL_manager.hpp"                           // for structur...
-#include "NP_functionality.hpp"                      // for NP_funct...
-#include <algorithm>                                 // for find, min
-#include <boost/algorithm/string/classification.hpp> // for is_any_of
-#include <boost/algorithm/string/replace.hpp>        // for replace_all
-#include <boost/algorithm/string/split.hpp>          // for split
-#include <boost/iterator/iterator_facade.hpp>        // for operator!=
-#include <boost/iterator/iterator_traits.hpp>        // for iterator...
-#include <boost/lexical_cast.hpp>                    // for lexical_...
-#include <climits>                                   // for UINT_MAX
-#include <iostream>                                  // for cout
-#include <list>                                      // for _List_co...
-#include <memory>                                    // for allocato...
-#include <set>                                       // for set, set...
+#include "HDL_manager.hpp"                    // for structur...
+#include "NP_functionality.hpp"               // for NP_funct...
+#include <algorithm>                          // for find, min
+#include <boost/algorithm/string/replace.hpp> // for replace_all
+#include <boost/iterator/iterator_facade.hpp> // for operator!=
+#include <boost/iterator/iterator_traits.hpp> // for iterator...
+#include <boost/lexical_cast.hpp>             // for lexical_...
+#include <climits>                            // for UINT_MAX
+#include <iostream>                           // for cout
+#include <list>                               // for _List_co...
+#include <memory>                             // for allocato...
+#include <set>                                // for set, set...
 #include <utility>
 #if HAVE_BAMBU_BUILT
 #include "behavioral_helper.hpp" // for Behavior...
 #endif
-#include "dbgPrintHelper.hpp"      // for DEBUG_LE...
-#include "exceptions.hpp"          // for THROW_AS...
-#include "library_manager.hpp"     // for attribute
-#include "simple_indent.hpp"       // for simple_i...
-#include "string_manipulation.hpp" // for STR
-#include "structural_manager.hpp"  // for structur...
-#include "technology_manager.hpp"  // for technolo...
-#include "technology_node.hpp"     // for function...
-#include "utility.hpp"             // for GET_CLAS...
-#include "xml_attribute.hpp"       // for attribut...
-#include "xml_element.hpp"         // for xml_element
-#include "xml_helper.hpp"          // for CE_XVM
-#include "xml_node.hpp"            // for xml_node...
-#include "xml_text_node.hpp"       // for xml_text...
+#include "dbgPrintHelper.hpp"     // for DEBUG_LE...
+#include "exceptions.hpp"         // for THROW_AS...
+#include "library_manager.hpp"    // for attribute
+#include "simple_indent.hpp"      // for simple_i...
+#include "structural_manager.hpp" // for structur...
+#include "technology_manager.hpp" // for technolo...
+#include "technology_node.hpp"    // for function...
+#include "utility.hpp"            // for GET_CLAS...
+#include "xml_attribute.hpp"      // for attribut...
+#include "xml_element.hpp"        // for xml_element
+#include "xml_helper.hpp"         // for CE_XVM
+#include "xml_node.hpp"           // for xml_node...
+#include "xml_text_node.hpp"      // for xml_text...
 
-#if HAVE_TUCANO_BUILT
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#endif
+/// utility include
+#include "string_manipulation.hpp"
 
 #if HAVE_EXPERIMENTAL
 #include "layout_model.hpp"
@@ -730,7 +722,7 @@ std::string structural_object::GetParameter(std::string name) const
    return default_parameters.at(name);
 }
 
-void structural_object::AddParameter(const std::string & name, const std::string & default_value)
+void structural_object::AddParameter(const std::string& name, const std::string& default_value)
 {
    THROW_ASSERT(default_parameters.find(name) == default_parameters.end() or default_parameters.at(name) == default_value, "Parameter " + name + " already added. Old default: " + default_parameters.at(name) + " New default: " + default_value);
    default_parameters[name] = default_value;
@@ -1274,13 +1266,13 @@ structural_objectRef port_o::find_bounded_object(const structural_objectConstRef
 
    if(port_count > 1)
    {
-      for(unsigned int i = 0; i < connected_objects.size(); i++)
-         if(connected_objects[i].lock()->get_owner() == _owner->get_owner())
-         {
-            res = connected_objects[i].lock();
-         }
+      INDENT_DBG_MEX(0, 0, "Too many bindings to " + get_path());
+      for(const auto connected_object : connected_objects)
+      {
+         INDENT_DBG_MEX(0, 0, "---" + connected_object.lock()->get_path());
+      }
+      THROW_UNREACHABLE("");
    }
-   THROW_ASSERT(port_count == 1, "Too many bindings to " + get_owner()->get_path() + HIERARCHY_SEPARATOR + get_id() + " of type " + get_owner()->get_typeRef()->id_type + " res " + res->get_path());
    return res;
 }
 
@@ -3629,8 +3621,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
             continue;
          std::string connected_path = conn;
          connected_path = connected_path.substr(scope.size() + 1, connected_path.size());
-         std::vector<std::string> elements;
-         boost::algorithm::split(elements, connected_path, boost::algorithm::is_any_of(HIERARCHY_SEPARATOR));
+         std::vector<std::string> elements = SplitString(connected_path, HIERARCHY_SEPARATOR);
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "     * Connected to " + connected_path << ": " << elements.size());
          structural_objectRef connnected_object;
          if(elements.size() == 1)
@@ -3982,7 +3973,7 @@ void module::change_port_direction(structural_objectRef port, port_o::port_direc
    GetPointer<port_o>(port)->set_port_direction(pdir);
 }
 
-void module::AddParameter(const std::string & name, const std::string & default_value)
+void module::AddParameter(const std::string& name, const std::string& default_value)
 {
    if(name != MEMORY_PARAMETER)
    {
@@ -4464,8 +4455,7 @@ std::string structural_object::get_equation(const structural_objectRef out_obj, 
             /*if (GetPointer<module>(strobj)->get_out_port_size() > 1)
                THROW_ERROR("Multi-out module not supported");
             */
-            std::vector<std::string> tokens;
-            boost::algorithm::split(tokens, tmp, boost::algorithm::is_any_of(";"));
+            std::vector<std::string> tokens = SplitString(tmp, ";");
             for(unsigned int i = 0; i < tokens.size(); i++)
             {
                if(boost::algorithm::starts_with(tokens[i], out_obj->get_id()))
@@ -4569,8 +4559,7 @@ std::string structural_object::get_equation(const structural_objectRef out_obj, 
                std::string tmp = NPF->get_NP_functionality(NP_functionality::EQUATION);
                if (GetPointer<module>(strobj)->get_out_port_size() > 1)
                   THROW_ERROR("Multi-out module not supported");
-               std::vector<std::string> tokens;
-               boost::algorithm::split(tokens, tmp, boost::algorithm::is_any_of(";"));
+               std::vector<std::string> tokens = SplitString(tmp, ";");
                for(unsigned int i = 0; i < tokens.size(); i++)
                {
                   if (tokens[i].find(GetPointer<module>(strobj)->get_out_port(0)->get_id()) == 0)

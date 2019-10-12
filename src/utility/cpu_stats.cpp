@@ -44,8 +44,9 @@
 #include "cpu_stats.hpp"
 #include "string_manipulation.hpp"
 #ifdef _WIN32
-#include <psapi.h>
 #include <windows.h>
+
+#include <psapi.h>
 #include <winsock2.h>
 #else
 #include <sys/resource.h>
@@ -53,6 +54,7 @@
 #endif
 #include <unistd.h>
 #pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 
 std::string PrintVirtualDataMemoryUsage()
 {

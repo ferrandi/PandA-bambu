@@ -41,6 +41,10 @@
 /// Header include
 #include "string_manipulation.hpp"
 
+/// Boost includes
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/split.hpp>
+
 /// utility include
 #include "exceptions.hpp"
 
@@ -125,8 +129,12 @@ std::string ConvertInBinary(const std::string& C_value, const unsigned int preci
       auto ull_value = static_cast<unsigned long long int>(ll_value);
       trimmed_value = "";
       if(precision <= 64)
+      {
          for(unsigned int ind = 0; ind < precision; ind++)
+         {
             trimmed_value = trimmed_value + (((1LLU << (precision - ind - 1)) & ull_value) ? '1' : '0');
+         }
+      }
       else
       {
          for(unsigned int ind = 0; ind < (precision - 64); ind++)
@@ -136,4 +144,13 @@ std::string ConvertInBinary(const std::string& C_value, const unsigned int preci
       }
    }
    return trimmed_value;
+}
+
+const std::vector<std::string> SplitString(const std::string& input, const std::string& separators)
+{
+   std::vector<std::string> ret_value;
+#ifndef __clang_analyzer__
+   boost::algorithm::split(ret_value, input, boost::algorithm::is_any_of(separators));
+#endif
+   return ret_value;
 }

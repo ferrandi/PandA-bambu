@@ -8,11 +8,14 @@
       <speed_grade value="std"/>
       <BRAM_bitsize_min value="8"/>
       <BRAM_bitsize_max value="128"/>
-      <DSPs_x_sizes value="19"/>
+      <DSPs_x_sizes value="18"/>
       <DSPs_y_sizes value="24"/>
       <DSPs_rx_sizes value="16"/>
       <DSPs_ry_sizes value="16"/>
       <max_lut_size value="4"/>
+      <RelativeConnectionOffset value="3"/>
+      <OutputDSPConnectionRatio value="7"/>
+      <OutputCarryConnectionRatio value="7"/>
    </device>
    <technology>
     <library>

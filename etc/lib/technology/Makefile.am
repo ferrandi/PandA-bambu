@@ -9,6 +9,7 @@ EXTRA_DIST = \
   C_IO_IPs.xml \
   C_MEM_IPs.xml \
   constraints_STD.xml \
+  constraints_STD_ALUs.xml \
   C_PROFILING_IPs.xml \
   C_STD_IPs.xml \
   C_VEC_IPs.xml \
