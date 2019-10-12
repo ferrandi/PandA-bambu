@@ -18,7 +18,7 @@
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ASSIGN_SINGLE_UNSIGNED_FU" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin\n  out1 &lt;= resize(in1, BITSIZE_out1);"/>
+          <NP_functionality LIBRARY="ASSIGN_SINGLE_UNSIGNED_FU" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin\n  out1 &lt;= in1;"/>
         </component_o>
       </circuit>
     </cell>
@@ -532,6 +532,7 @@ VHDL_PROVIDED=
   end generate cond;
   cond2: if(PIPE_PARAMETER = 0) generate
     signal frem : signed(BITSIZE_out1-1 downto 0);
+  begin
     frem &lt;= UMOD(xnum, xdenom);
     out1 &lt;= -frem when (in1(BITSIZE_in1-1) /= &apos;0&apos;) else frem;
   end generate cond2;
