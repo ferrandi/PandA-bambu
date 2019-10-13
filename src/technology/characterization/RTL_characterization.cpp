@@ -703,9 +703,11 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
 #endif
       structural_managerRef SM = structural_managerRef(new structural_manager(parameters));
       /// main circuit type
-      structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor(fu_name + "_wrapper"));
+      auto top_wrapper_name = "top" + fu_name + "_wrapper";
+      boost::replace_all(top_wrapper_name, "__", "");
+      structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor(top_wrapper_name));
       /// setting top circuit component
-      SM->set_top_info(fu_name + "_wrapper", module_type);
+      SM->set_top_info(top_wrapper_name, module_type);
       structural_objectRef circuit = SM->get_circ();
       THROW_ASSERT(circuit, "Top circuit is missing");
       structural_objectRef template_circuit = SM->add_module_from_technology_library(fu_base_name + "_inst0", fu_base_name, LM->get_library_name(), circuit, TM);
