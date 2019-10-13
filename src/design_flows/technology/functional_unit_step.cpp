@@ -256,7 +256,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
          bool is_xilinx = vendor == "xilinx";
          bool is_lattice = vendor == "lattice";
          bool is_altera = vendor == "altera";
-         bool is_nanoxplore = vendor == "NanoXplore";
+         bool is_nanoxplore = vendor == "nanoxplore";
 #endif
 
          if(!(NPF->exist_NP_functionality(NP_functionality::VERILOG_PROVIDED)
