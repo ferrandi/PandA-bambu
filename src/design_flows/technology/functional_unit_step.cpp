@@ -256,11 +256,12 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
          bool is_xilinx = vendor == "xilinx";
          bool is_lattice = vendor == "lattice";
          bool is_altera = vendor == "altera";
+         bool is_nanoxplore = vendor == "NanoXplore";
 #endif
 
          if(!(NPF->exist_NP_functionality(NP_functionality::VERILOG_PROVIDED)
 #if HAVE_FLOPOCO
-              || (NPF->exist_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) && (is_xilinx || is_altera || is_lattice))
+              || (NPF->exist_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) && (is_xilinx || is_altera || is_lattice || is_nanoxplore))
 #endif
               || (NPF->exist_NP_functionality(NP_functionality::VHDL_PROVIDED)) || (NPF->exist_NP_functionality(NP_functionality::SYSTEM_VERILOG_PROVIDED))) ||
             fu_base_name == LUT_GATE_STD || fu_base_name == AND_GATE_STD || fu_base_name == NAND_GATE_STD || fu_base_name == OR_GATE_STD || fu_base_name == NOR_GATE_STD || fu_base_name == XOR_GATE_STD || fu_base_name == XNOR_GATE_STD ||
