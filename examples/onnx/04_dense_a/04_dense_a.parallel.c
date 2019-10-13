@@ -12,7 +12,7 @@ TVMArray a2[1];
 TVMArray a3[1];
 
 __attribute__((noinline))
-void kernel(int32_t y_outer_x_outer_fused, float *compute, float* placeholder, float* placeholder1, float* placeholder2, float* T_add)
+void kernel(int32_t y_outer_x_outer_fused, float *compute, float* placeholder, float* placeholder1)
 {
     float compute1[1];
     compute1[0] = 0.000000e+00f;
@@ -22,13 +22,13 @@ void kernel(int32_t y_outer_x_outer_fused, float *compute, float* placeholder, f
 }
 
 __attribute__((noinline))
-void parallel(float *compute, float* placeholder, float* placeholder1, float* placeholder2, float* T_add)
+void parallel1(float *compute, float* placeholder, float* placeholder1)
 {
   int32_t y_outer_x_outer_fused;
   #pragma omp parallel for
   for (y_outer_x_outer_fused = 0; y_outer_x_outer_fused < 8; ++y_outer_x_outer_fused) 
   {
-    kernel(y_outer_x_outer_fused, compute, placeholder, placeholder1, placeholder2, T_add);
+    kernel(y_outer_x_outer_fused, compute, placeholder, placeholder1);
   }
 }
 
@@ -50,7 +50,7 @@ int32_t fused_nn_dense_add( void* args,  void* arg_type_ids, int32_t num_args)
   float* T_add = (float*)(((TVMArray*)arg3)[0].data);
   
   float compute[8];
-  parallel(compute, placeholder, placeholder1, placeholder2, T_add);
+  parallel1(compute, placeholder, placeholder1);
   int32_t ax1;
   for (ax1 = 0; ax1 < 8; ++ax1) {
     T_add[ax1] = (compute[ax1] + placeholder2[ax1]);
