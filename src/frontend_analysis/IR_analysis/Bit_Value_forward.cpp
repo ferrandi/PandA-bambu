@@ -270,115 +270,118 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       else
          return res;
 
-      size_t arg_size_max = std::max({arg1_bitstring.size(), arg2_bitstring.size(), arg3_bitstring.size()});
-      if(arg1_bitstring.size() < arg_size_max)
-         arg1_bitstring = sign_extend_bitstring(arg1_bitstring, tree_helper::is_int(TM, arg1_uid), arg_size_max);
-      if(arg2_bitstring.size() < arg_size_max)
-         arg2_bitstring = sign_extend_bitstring(arg2_bitstring, tree_helper::is_int(TM, arg2_uid), arg_size_max);
-      if(arg3_bitstring.size() < arg_size_max)
-         arg3_bitstring = sign_extend_bitstring(arg3_bitstring, tree_helper::is_int(TM, arg3_uid), arg_size_max);
+      auto ternary_adders = [&] {
+         size_t arg_size_max = std::max({arg1_bitstring.size(), arg2_bitstring.size(), arg3_bitstring.size()});
+         if(arg1_bitstring.size() < arg_size_max)
+            arg1_bitstring = sign_extend_bitstring(arg1_bitstring, tree_helper::is_int(TM, arg1_uid), arg_size_max);
+         if(arg2_bitstring.size() < arg_size_max)
+            arg2_bitstring = sign_extend_bitstring(arg2_bitstring, tree_helper::is_int(TM, arg2_uid), arg_size_max);
+         if(arg3_bitstring.size() < arg_size_max)
+            arg3_bitstring = sign_extend_bitstring(arg3_bitstring, tree_helper::is_int(TM, arg3_uid), arg_size_max);
 
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                     "forward_transfer, operation: " + STR(output_uid) + " = " + STR(arg1_uid) + (op_kind == ternary_plus_expr_K || op_kind == ternary_pm_expr_K ? " + " : " - ") + STR(arg2_uid) +
-                         (op_kind == ternary_plus_expr_K || op_kind == ternary_mp_expr_K ? " +" : " - ") + STR(arg3_uid));
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + (op_kind == ternary_plus_expr_K || op_kind == ternary_pm_expr_K ? " + " : " - "));
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + (op_kind == ternary_plus_expr_K || op_kind == ternary_mp_expr_K ? " +" : " - "));
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg3_bitstring) + " =");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "forward_transfer, operation: " + STR(output_uid) + " = " + STR(arg1_uid) + (op_kind == ternary_plus_expr_K || op_kind == ternary_pm_expr_K ? " + " : " - ") + STR(arg2_uid) +
+                            (op_kind == ternary_plus_expr_K || op_kind == ternary_mp_expr_K ? " +" : " - ") + STR(arg3_uid));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + (op_kind == ternary_plus_expr_K || op_kind == ternary_pm_expr_K ? " + " : " - "));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + (op_kind == ternary_plus_expr_K || op_kind == ternary_mp_expr_K ? " +" : " - "));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg3_bitstring) + " =");
 
-      auto arg1_it = arg1_bitstring.crbegin();
-      auto arg2_it = arg2_bitstring.crbegin();
-      const auto arg1_end = arg1_bitstring.crend();
-      const auto arg2_end = arg2_bitstring.crend();
-      bit_lattice carry1 = bit_lattice::ZERO;
-      std::deque<bit_lattice> res_int;
-      unsigned int max_bitsize = tree_helper::Size(GET_NODE(ga->op0));
+         auto arg1_it = arg1_bitstring.crbegin();
+         auto arg2_it = arg2_bitstring.crbegin();
+         const auto arg1_end = arg1_bitstring.crend();
+         const auto arg2_end = arg2_bitstring.crend();
+         bit_lattice carry1 = bit_lattice::ZERO;
+         std::deque<bit_lattice> res_int;
+         unsigned int max_bitsize = tree_helper::Size(GET_NODE(ga->op0));
 
-      for(unsigned bit_index = 0; bit_index < max_bitsize and arg1_it != arg1_end and arg2_it != arg2_end; arg1_it++, arg2_it++, bit_index++)
-      {
-         if(op_kind == ternary_plus_expr_K or op_kind == ternary_pm_expr_K)
-         {
-            res_int.push_front(plus_expr_map.at(*arg1_it).at(*arg2_it).at(carry1).back());
-            carry1 = plus_expr_map.at(*arg1_it).at(*arg2_it).at(carry1).front();
-         }
-         else
-         {
-            res_int.push_front(minus_expr_map.at(*arg1_it).at(*arg2_it).at(carry1).back());
-            carry1 = minus_expr_map.at(*arg1_it).at(*arg2_it).at(carry1).front();
-         }
-      }
-
-      if(tree_helper::is_int(TM, output_uid) and res_int.size() < max_bitsize)
-      {
-         if(op_kind == ternary_plus_expr_K or op_kind == ternary_pm_expr_K)
-            res_int.push_front(plus_expr_map.at(arg1_bitstring.front()).at(arg2_bitstring.front()).at(carry1).back());
-         else
-            res_int.push_front(minus_expr_map.at(arg1_bitstring.front()).at(arg2_bitstring.front()).at(carry1).back());
-      }
-      else if(not tree_helper::is_int(TM, output_uid))
-      {
-         while(res_int.size() < max_bitsize)
+         for(unsigned bit_index = 0; bit_index < max_bitsize and arg1_it != arg1_end and arg2_it != arg2_end; arg1_it++, arg2_it++, bit_index++)
          {
             if(op_kind == ternary_plus_expr_K or op_kind == ternary_pm_expr_K)
             {
-               res_int.push_front(plus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).back());
-               carry1 = plus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).front();
+               res_int.push_front(plus_expr_map.at(*arg1_it).at(*arg2_it).at(carry1).back());
+               carry1 = plus_expr_map.at(*arg1_it).at(*arg2_it).at(carry1).front();
             }
             else
             {
-               res_int.push_front(minus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).back());
-               carry1 = minus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).front();
+               res_int.push_front(minus_expr_map.at(*arg1_it).at(*arg2_it).at(carry1).back());
+               carry1 = minus_expr_map.at(*arg1_it).at(*arg2_it).at(carry1).front();
             }
          }
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(res_int) + ":res_int:");
 
-      if(res_int.size() > arg3_bitstring.size())
-      {
-         arg3_bitstring = sign_extend_bitstring(arg3_bitstring, tree_helper::is_int(TM, arg3_uid), res_int.size());
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg3_bitstring) + ":arg3_bitstring:");
-      auto arg3_it = arg3_bitstring.crbegin();
-      auto res_int_it = res_int.crbegin();
-      const auto arg3_end = arg3_bitstring.crend();
-      const auto res_int_end = res_int.crend();
-      carry1 = bit_lattice::ZERO;
-      for(unsigned bit_index = 0; bit_index < max_bitsize and arg3_it != arg3_end and res_int_it != res_int_end; arg3_it++, res_int_it++, bit_index++)
-      {
-         if(op_kind == ternary_plus_expr_K or op_kind == ternary_mp_expr_K)
+         if(tree_helper::is_int(TM, output_uid) and res_int.size() < max_bitsize)
          {
-            res.push_front(plus_expr_map.at(*res_int_it).at(*arg3_it).at(carry1).back());
-            carry1 = plus_expr_map.at(*res_int_it).at(*arg3_it).at(carry1).front();
+            if(op_kind == ternary_plus_expr_K or op_kind == ternary_pm_expr_K)
+               res_int.push_front(plus_expr_map.at(arg1_bitstring.front()).at(arg2_bitstring.front()).at(carry1).back());
+            else
+               res_int.push_front(minus_expr_map.at(arg1_bitstring.front()).at(arg2_bitstring.front()).at(carry1).back());
          }
-         else
+         else if(not tree_helper::is_int(TM, output_uid))
          {
-            res.push_front(minus_expr_map.at(*res_int_it).at(*arg3_it).at(carry1).back());
-            carry1 = minus_expr_map.at(*res_int_it).at(*arg3_it).at(carry1).front();
+            while(res_int.size() < max_bitsize)
+            {
+               if(op_kind == ternary_plus_expr_K or op_kind == ternary_pm_expr_K)
+               {
+                  res_int.push_front(plus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).back());
+                  carry1 = plus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).front();
+               }
+               else
+               {
+                  res_int.push_front(minus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).back());
+                  carry1 = minus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).front();
+               }
+            }
          }
-      }
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(res_int) + ":res_int:");
 
-      if(tree_helper::is_int(TM, output_uid) and res.size() < max_bitsize)
-      {
-         if(op_kind == ternary_plus_expr_K or op_kind == ternary_mp_expr_K)
-            res.push_front(plus_expr_map.at(res_int.front()).at(arg3_bitstring.front()).at(carry1).back());
-         else
-            res.push_front(minus_expr_map.at(res_int.front()).at(arg3_bitstring.front()).at(carry1).back());
-      }
-      else if(not tree_helper::is_int(TM, output_uid))
-      {
-         while(res.size() < max_bitsize)
+         if(res_int.size() > arg3_bitstring.size())
+         {
+            arg3_bitstring = sign_extend_bitstring(arg3_bitstring, tree_helper::is_int(TM, arg3_uid), res_int.size());
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg3_bitstring) + ":arg3_bitstring:");
+         auto arg3_it = arg3_bitstring.crbegin();
+         auto res_int_it = res_int.crbegin();
+         const auto arg3_end = arg3_bitstring.crend();
+         const auto res_int_end = res_int.crend();
+         carry1 = bit_lattice::ZERO;
+         for(unsigned bit_index = 0; bit_index < max_bitsize and arg3_it != arg3_end and res_int_it != res_int_end; arg3_it++, res_int_it++, bit_index++)
          {
             if(op_kind == ternary_plus_expr_K or op_kind == ternary_mp_expr_K)
             {
-               res.push_front(plus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).back());
-               carry1 = plus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).front();
+               res.push_front(plus_expr_map.at(*res_int_it).at(*arg3_it).at(carry1).back());
+               carry1 = plus_expr_map.at(*res_int_it).at(*arg3_it).at(carry1).front();
             }
             else
             {
-               res.push_front(minus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).back());
-               carry1 = minus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).front();
+               res.push_front(minus_expr_map.at(*res_int_it).at(*arg3_it).at(carry1).back());
+               carry1 = minus_expr_map.at(*res_int_it).at(*arg3_it).at(carry1).front();
             }
          }
-      }
+
+         if(tree_helper::is_int(TM, output_uid) and res.size() < max_bitsize)
+         {
+            if(op_kind == ternary_plus_expr_K or op_kind == ternary_mp_expr_K)
+               res.push_front(plus_expr_map.at(res_int.front()).at(arg3_bitstring.front()).at(carry1).back());
+            else
+               res.push_front(minus_expr_map.at(res_int.front()).at(arg3_bitstring.front()).at(carry1).back());
+         }
+         else if(not tree_helper::is_int(TM, output_uid))
+         {
+            while(res.size() < max_bitsize)
+            {
+               if(op_kind == ternary_plus_expr_K or op_kind == ternary_mp_expr_K)
+               {
+                  res.push_front(plus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).back());
+                  carry1 = plus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).front();
+               }
+               else
+               {
+                  res.push_front(minus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).back());
+                  carry1 = minus_expr_map.at(bit_lattice::ZERO).at(bit_lattice::ZERO).at(carry1).front();
+               }
+            }
+         }
+      };
+      ternary_adders();
    }
 #endif
 #if 1
