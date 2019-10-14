@@ -242,7 +242,7 @@ namespace eSSAInfo
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
          " <-- eSSA: branch statement in block " << BranchBB->number << " has condition of type " << condition->get_kind_text());
 
-      // TODO: check if condition is a compare instrution or an and/or instruction
+      // TODO: check if condition is a compare instruction or an and/or instruction
       if(auto* bin = GetPointer<binary_expr>(condition))
       {
          if(isCompare(bin))
