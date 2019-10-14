@@ -100,6 +100,13 @@ struct VHDL_writer : public language_writer
    std::string type_converter_size(const structural_objectRef& cir) override;
 
    /**
+    * return the slice in case of a port owned by a port vector
+    * @param port is the port
+    * @return a string in case of a port owned by a port vector
+    */
+   std::string may_slice_string(const structural_objectRef& cir);
+
+   /**
     * Write used library.
     * @param cir is the component for which the library declarations are written.
     */

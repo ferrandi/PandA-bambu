@@ -37,21 +37,24 @@
  * @author Andrea Cuoccio <andrea.cuoccio@gmail.com>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
 /// header include
 #include "dead_code_elimination.hpp"
 
-/// STD include
+/// STD includes
 #include <fstream>
-
-/// STL include
-#include <map>
 #include <string>
+
+/// STL includes
+#include <list>
+#include <map>
+#include <queue>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
 #include <vector>
 
 /// design_flows include
@@ -65,6 +68,7 @@
 #include "call_graph_manager.hpp"
 
 /// Tree include
+#include "behavioral_helper.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "ext_tree_node.hpp"
 #include "function_behavior.hpp"
@@ -94,15 +98,12 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, CALLED_FUNCTIONS));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, SAME_FUNCTION));
-         relationships.insert(std::make_pair(MEM_CG_EXT, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(MEM_CG_EXT, SAME_FUNCTION));
          relationships.insert(std::make_pair(PARM_DECL_TAKEN_ADDRESS, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-#if HAVE_ZEBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(ARRAY_REF_FIX, SAME_FUNCTION));
-#endif
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -119,18 +120,19 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 bool dead_code_elimination::HasToBeExecuted() const
 {
-   std::map<unsigned int, unsigned int> cur_bitvalue_ver;
-   std::map<unsigned int, unsigned int> cur_bb_ver;
+   if(FunctionFrontendFlowStep::HasToBeExecuted())
+      return true;
+   std::map<unsigned int, bool> cur_writing_memory;
+   std::map<unsigned int, bool> cur_reading_memory;
    const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
-   std::set<unsigned int> calledSet = AppM->CGetCallGraphManager()->get_called_by(function_id);
-   calledSet.insert(function_id); /// add the function itself
-   for(const auto i : calledSet)
+   for(const auto i : AppM->CGetCallGraphManager()->get_called_by(function_id))
    {
-      const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(i);
-      cur_bitvalue_ver[i] = FB->GetBitValueVersion();
-      cur_bb_ver[i] = FB->GetBBVersion();
+      const tree_nodeRef curr_tn = AppM->get_tree_manager()->GetTreeNode(i);
+      auto* fdCalled = GetPointer<function_decl>(curr_tn);
+      cur_writing_memory[i] = fdCalled->writing_memory;
+      cur_reading_memory[i] = fdCalled->reading_memory;
    }
-   return cur_bb_ver != last_bb_ver || cur_bitvalue_ver != last_bitvalue_ver;
+   return cur_writing_memory != last_writing_memory || cur_reading_memory != last_reading_memory;
 }
 
 void dead_code_elimination::kill_uses(const tree_managerRef TM, tree_nodeRef op0) const
@@ -292,6 +294,8 @@ void dead_code_elimination::add_gimple_nop(gimple_node* gc, const tree_managerRe
 /// single sweep analysis, block by block, from the bottom to up. Each ssa which is used zero times is eliminated and the uses of the variables used in the assignment are recomputed
 /// multi-way and two way IFs simplified when conditions are constants
 /// gimple_call without side effects are removed
+/// store-load pairs checked for simplification
+/// dead stores removed
 DesignFlowStep_Status dead_code_elimination::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
@@ -1192,6 +1196,14 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---write flag " + (fd->writing_memory ? std::string("T") : std::string("F")));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---read flag " + (fd->reading_memory ? std::string("T") : std::string("F")));
+   const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
+   std::set<unsigned int> calledSet = AppM->CGetCallGraphManager()->get_called_by(function_id);
+   for(const auto i : calledSet)
+   {
+      auto* fdCalled = GetPointer<function_decl>(AppM->get_tree_manager()->GetTreeNode(i));
+      last_writing_memory[i] = fdCalled->writing_memory;
+      last_reading_memory[i] = fdCalled->reading_memory;
+   }
    if(modified)
    {
       function_behavior->UpdateBBVersion();

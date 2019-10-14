@@ -24,7 +24,7 @@
       <cmd name="project.setTopCellName('${__top_id__}')"/>
       <cmd name="project.addFiles('${__VHDL_library__}', [${__nxpython_sources_macro_list__}])" condition="${__has_VHDL_library__}"/>
       <cmd name="project.addFiles([${__nxpython_sources_macro_list__}])" condition="!${__has_VHDL_library__}"/>
-      <cmd name="project.setOptions({'ManageAsynchronousReadPort': 'Yes', 'ManageUnconnectedOutputs': 'Ground', 'ManageUnconnectedSignals': 'Ground','DefaultRAMMapping': 'RAM'})"/>
+      <cmd name="project.setOptions({'ManageAsynchronousReadPort': 'Yes', 'ManageUnconnectedOutputs': 'Ground', 'ManageUnconnectedSignals': 'Ground','DefaultRAMMapping': 'RAM', 'MaxRegisterCount': '12500'})"/>
       <cmd name="project.createClock('getClockNet(${__clk_name__})', '${__clk_name__}', int(math.floor(float(${__clk_period__}) * float(1000))))"/>
       <cmd name="from ${__backend_script_extensions__} import ${__backend_script_extensions__}" condition="${__has_script_extensions__}"/>
       <cmd name="if path.exists(dir + '/pads.py'):"/>
@@ -102,7 +102,7 @@
       <cmd name="        trimmed=trimmed[trimmed.index('|')+1:]"/>
       <cmd name="        trimmed=trimmed[trimmed.index('|')+1:]"/>
       <cmd name="        trimmed=trimmed.lstrip()"/>
-      <cmd name="        trimmed=trimmed[:trimmed.index('n')]  if 'n' in trimmed else '1'"/>
+      <cmd name="        trimmed=trimmed[:trimmed.index('n')] if 'n' in trimmed else '-1.735'"/>
       <cmd name="        design_slack=trimmed.replace(',', '.')"/>
       <cmd name="fr.close()"/>
       <cmd name="fw = open(dir + '/${__nxpython_report__}', &quot;w&quot;)"/>

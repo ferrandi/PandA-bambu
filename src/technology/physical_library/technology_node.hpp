@@ -223,8 +223,11 @@ enum class TargetDevice_Type;
 /// flipflop with asynchronous reset
 #define flipflop_AR "flipflop_AR"
 
-/// register with asynchronous reset
+/// register with asynchronous reset no retime
 #define register_AR_NORETIME "register_AR_NORETIME"
+#define register_AR_NORETIME_INT "register_AR_NORETIME_INT"
+#define register_AR_NORETIME_UINT "register_AR_NORETIME_UINT"
+#define register_AR_NORETIME_REAL "register_AR_NORETIME_REAL"
 /// register with synchronous enable
 #define register_SE "register_SE"
 /// register with synchronous reset and synchronous enable

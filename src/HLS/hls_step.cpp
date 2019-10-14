@@ -137,8 +137,6 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
 #endif
       case HLSFlowStep_Type::BB_STG_CREATOR:
          return "BBStgCreator";
-      case HLSFlowStep_Type::HLS_BIT_VALUE:
-         return "HLSBitValue";
       case HLSFlowStep_Type::CDFC_MODULE_BINDING:
          return "CdfcModuleBinding";
       case HLSFlowStep_Type::CALL_GRAPH_UNFOLDING:
@@ -232,6 +230,10 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
       case HLSFlowStep_Type::GENERATE_TASTE_SYNTHESIS_SCRIPT:
          return "GenerateTasteSynthesisScript";
 #endif
+      case HLSFlowStep_Type::HLS_BIT_VALUE:
+         return "HLSBitValue";
+      case HLSFlowStep_Type::HLS_FUNCTION_BIT_VALUE:
+         return "HLSFunctionBitValue";
       case HLSFlowStep_Type::HLS_SYNTHESIS_FLOW:
          return "HLSFlow";
 #if HAVE_ILP_BUILT && HAVE_EXPERIMENTAL
@@ -286,7 +288,7 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
       case HLSFlowStep_Type::OMP_FOR_WRAPPER_CS_SYNTHESIS_FLOW:
          return "OmpForWrapperCSSynthesisFlow";
 #endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
       case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION:
          return "OmpFunctionAllocation";
 #endif

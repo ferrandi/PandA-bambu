@@ -58,7 +58,9 @@
 #include "token_interface.hpp"
 
 /// tree includes
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "design_flow_graph.hpp"
+#include "design_flow_manager.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
@@ -66,6 +68,37 @@
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+
+void BuildVirtualPhi::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
+{
+   switch(relationship_type)
+   {
+      case(PRECEDENCE_RELATIONSHIP):
+      {
+         break;
+      }
+      case DEPENDENCE_RELATIONSHIP:
+      {
+         break;
+      }
+      case INVALIDATION_RELATIONSHIP:
+      {
+         if(design_flow_manager.lock()->GetStatus(GetSignature()) == DesignFlowStep_Status::SUCCESS && AppM->CGetFunctionBehavior(function_id)->is_pipelining_enabled())
+         {
+            const std::string step_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::SIMPLE_CODE_MOTION, function_id);
+            vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);
+            THROW_ASSERT(frontend_step != NULL_VERTEX, "step " + step_signature + " is not present");
+            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+            const DesignFlowStepRef design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+            relationship.insert(design_flow_step);
+         }
+         break;
+      }
+      default:
+         THROW_UNREACHABLE("");
+   }
+   FunctionFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
+}
 
 const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BuildVirtualPhi::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

@@ -442,7 +442,7 @@ void verilog_writer::write_module_declaration(const structural_objectRef& cir)
    auto* mod = GetPointer<module>(cir);
    THROW_ASSERT(mod, "Expected a module got something of different");
    indented_output_stream->Append("`timescale 1ns / 1ps\n");
-   if(HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)) == register_AR_NORETIME)
+   if(HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)) == register_AR_NORETIME || GET_TYPE_NAME(cir) == register_AR_NORETIME_INT || GET_TYPE_NAME(cir) == register_AR_NORETIME_UINT || GET_TYPE_NAME(cir) == register_AR_NORETIME_REAL)
    {
       indented_output_stream->Append("(* keep_hierarchy = \"yes\" *) ");
    }
@@ -457,7 +457,7 @@ void verilog_writer::write_module_declaration(const structural_objectRef& cir)
          first_obj = true;
       indented_output_stream->Append(HDL_manager::convert_to_identifier(this, mod->get_positional_port(i)->get_id()));
    }
-   if(HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)) == register_AR_NORETIME)
+   if(HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)) == register_AR_NORETIME || GET_TYPE_NAME(cir) == register_AR_NORETIME_INT || GET_TYPE_NAME(cir) == register_AR_NORETIME_UINT || GET_TYPE_NAME(cir) == register_AR_NORETIME_REAL)
       indented_output_stream->Append(")/* synthesis syn_hier = \"hard\"*/;\n");
    else
       indented_output_stream->Append(");\n");
@@ -887,7 +887,7 @@ void verilog_writer::write_io_signal_post_fix(const structural_objectRef& port, 
 
 void verilog_writer::write_module_parametrization(const structural_objectRef& cir)
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing module parametrization of " + cir->get_path());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing module generics of " + cir->get_path());
    THROW_ASSERT(cir->get_kind() == component_o_K || cir->get_kind() == channel_o_K, "Expected a component or a channel got something of different");
    auto* mod = GetPointer<module>(cir);
    bool first_it = true;
@@ -913,8 +913,14 @@ void verilog_writer::write_module_parametrization(const structural_objectRef& ci
             indented_output_stream->Append(", ");
          }
          std::string name = mem_add[0];
+         std::string value;
+         if(mod->get_owner() && GetPointer<module>(mod->get_owner()) && GetPointer<module>(mod->get_owner())->ExistsParameter(MEMORY_PARAMETER))
+            value = name;
+         else
+            value = mem_add[1];
+
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Writing ." + name + "(" + name + ")");
-         indented_output_stream->Append("." + name + "(" + name + ")");
+         indented_output_stream->Append("." + name + "(" + value + ")");
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--written memory parameters");
    }
@@ -924,7 +930,7 @@ void verilog_writer::write_module_parametrization(const structural_objectRef& ci
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing np parameters");
       std::vector<std::pair<std::string, structural_objectRef>> library_parameters;
       mod->get_NP_library_parameters(cir, library_parameters);
-      for(auto const library_parameter : library_parameters)
+      for(const auto& library_parameter : library_parameters)
       {
          if(first_it)
          {
@@ -992,7 +998,7 @@ void verilog_writer::write_module_parametrization(const structural_objectRef& ci
 
    if(!first_it)
       indented_output_stream->Append(")");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written module parametrization of " + cir->get_path());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written module generics of " + cir->get_path());
 }
 
 void verilog_writer::write_tail(const structural_objectRef&)

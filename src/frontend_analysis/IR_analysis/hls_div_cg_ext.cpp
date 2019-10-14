@@ -107,7 +107,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(MEM_CG_EXT, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(MEM_CG_EXT, SAME_FUNCTION));
          break;
       }
       case DEPENDENCE_RELATIONSHIP:
@@ -124,7 +124,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             case DesignFlowStep_Status::SUCCESS:
             {
-               relationships.insert(std::make_pair(MEM_CG_EXT, WHOLE_APPLICATION));
+               relationships.insert(std::make_pair(MEM_CG_EXT, SAME_FUNCTION));
                break;
             }
             case DesignFlowStep_Status::SKIPPED:

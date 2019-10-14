@@ -7,5 +7,5 @@
 --benchmark-name=maxpool_8 12_maxp_a/12_maxp_a.scalarized.ll 12_maxp_a/12_maxp_a.wrapper.c -IBENCHMARKS_ROOT/common/ --top-fname=fused_nn_max_pool2d_wrapper --top-rtldesign-name=fused_nn_max_pool2d --generate-tb=BENCHMARKS_ROOT/12_maxp_a/test.xml 
 --benchmark-name=maxpool_32 13_maxp_b/13_maxp_b.scalarized.ll 13_maxp_b/13_maxp_b.wrapper.c -IBENCHMARKS_ROOT/common/ --top-fname=fused_nn_max_pool2d_wrapper --top-rtldesign-name=fused_nn_max_pool2d --generate-tb=BENCHMARKS_ROOT/13_maxp_b/test.xml 
 --benchmark-name=activations 15_thxprlsg/15_thxprlsg.scalarized.ll 15_thxprlsg/15_thxprlsg.wrapper.c -IBENCHMARKS_ROOT/common/ --top-fname=fused_activations_wrapper --top-rtldesign-name=fused_tanh_exp_nn_relu_sigmoid --generate-tb=BENCHMARKS_ROOT/15_thxprlsg/test.xml -lm
---benchmark-name=MLP e1_mlp/e1_mlp.parallel.c -IBENCHMARKS_ROOT/common/ --top-fname=mlp_wrapper --top-rtldesign-name=fused_nn_softmax --generate-tb=BENCHMARKS_ROOT/e1_mlp/test.xml -lm 
+--benchmark-name=MLP e1_mlp/e1_mlp.parallel.c -IBENCHMARKS_ROOT/common/ --top-fname=mlp_wrapper --top-rtldesign-name=mlp --generate-tb=BENCHMARKS_ROOT/e1_mlp/test.xml -lm 
 

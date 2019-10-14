@@ -71,9 +71,9 @@ class gimple_node;
 class dead_code_elimination : public FunctionFrontendFlowStep
 {
  private:
-   std::map<unsigned int, unsigned int> last_bitvalue_ver;
+   std::map<unsigned int, bool> last_writing_memory;
 
-   std::map<unsigned int, unsigned int> last_bb_ver;
+   std::map<unsigned int, bool> last_reading_memory;
 
    /**
     * Return the set of analyses in relationship with this design step

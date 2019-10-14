@@ -78,4 +78,5 @@ TESTS = \
    constrained_synth_xilinx_vx690t_vvd.sh \
    unconstrained_synth_xilinx_vx690t_vvd.sh \
    constrained_synth_xilinx_artix7_vvd.sh \
-   unconstrained_synth_xilinx_artix7_vvd.sh 
+   unconstrained_synth_xilinx_artix7_vvd.sh \
+   bambu_nanoxplore.sh

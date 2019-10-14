@@ -8,6 +8,7 @@ EXTRA_DIST = \
   C_HLS_IPs.xml \
   C_IO_IPs.xml \
   C_MEM_IPs.xml \
+  C_PC_IPs.xml \
   constraints_STD.xml \
   constraints_STD_ALUs.xml \
   C_PROFILING_IPs.xml \

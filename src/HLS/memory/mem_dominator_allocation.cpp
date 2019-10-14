@@ -272,8 +272,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
          }
          if(GET_TYPE(g, *v) & (TYPE_LOAD | TYPE_STORE))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing statement " + GET_NAME(g, *v));
             const tree_nodeRef curr_tn = TreeM->get_tree_node_const(g->CGetOpNodeInfo(*v)->GetNodeId());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing statement " + GET_NAME(g, *v) + ": " + STR(curr_tn));
             auto* me = GetPointer<gimple_assign>(curr_tn);
             THROW_ASSERT(me, "only gimple_assign's are allowed as memory operations");
             unsigned int expr_index;
@@ -317,8 +317,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             }
             for(auto var : res_set)
             {
-               assert(var);
-               THROW_ASSERT(function_behavior->is_variable_mem(var), "unexpected condition");
+               THROW_ASSERT(var, "");
+               THROW_ASSERT(function_behavior->is_variable_mem(var), "unexpected condition: " + STR(TreeM->CGetTreeNode(var)) + " is not a memory variable");
                if(HLSMgr->Rmem->has_sds_var(var) && !HLSMgr->Rmem->is_sds_var(var))
                   continue;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable is " + STR(var));
