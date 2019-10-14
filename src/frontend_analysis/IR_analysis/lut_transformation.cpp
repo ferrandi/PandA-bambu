@@ -69,7 +69,6 @@
 #define ABC_NO_USE_READLINE
 #pragma endregion
 
-
 #define FMT_HEADER_ONLY 1
 #ifndef __APPLE__
 #define __APPLE__ 0

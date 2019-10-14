@@ -235,7 +235,7 @@ void fu_binding_cs::set_atomic_memory_parameter(const hlsRef HLS)
          if(!addr_acc)
             addr_acc = 1;
          int bit_atomic = addr_tasks + addr_acc;
-         if(bit_atomic>=64)
+         if(bit_atomic >= 64)
             THROW_ERROR("too large tag value for TAG_MEM_REQ");
          tag_num = 1ULL << bit_atomic;
          curr_gate->SetParameter("TAG_MEM_REQ", STR(tag_num));

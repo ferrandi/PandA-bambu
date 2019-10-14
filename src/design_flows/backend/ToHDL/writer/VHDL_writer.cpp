@@ -295,7 +295,6 @@ std::string VHDL_writer::type_converter_size(const structural_objectRef& cir)
    return "";
 }
 
-
 std::string VHDL_writer::may_slice_string(const structural_objectRef& cir)
 {
    structural_type_descriptorRef Type = cir->get_typeRef();
@@ -372,8 +371,8 @@ std::string VHDL_writer::may_slice_string(const structural_objectRef& cir)
             if(Owner->get_kind() == port_vector_o_K)
             {
                unsigned int lsb = GetPointer<port_o>(Owner)->get_lsb();
-               return "(((" + boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_id()) + "+1)*" + (BITSIZE_PREFIX + port_name) + "*" + (NUM_ELEM_PREFIX + port_name) + ")+(" + boost::lexical_cast<std::string>(static_cast<int>(lsb) - 1) + ") downto (" +
-                      boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_id()) + "*" + (BITSIZE_PREFIX + port_name) + "*" + (NUM_ELEM_PREFIX + port_name) + ")+" + boost::lexical_cast<std::string>(lsb) + ")";
+               return "(((" + boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_id()) + "+1)*" + (BITSIZE_PREFIX + port_name) + "*" + (NUM_ELEM_PREFIX + port_name) + ")+(" + boost::lexical_cast<std::string>(static_cast<int>(lsb) - 1) +
+                      ") downto (" + boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_id()) + "*" + (BITSIZE_PREFIX + port_name) + "*" + (NUM_ELEM_PREFIX + port_name) + ")+" + boost::lexical_cast<std::string>(lsb) + ")";
             }
             else
                return "";
@@ -405,7 +404,6 @@ std::string VHDL_writer::may_slice_string(const structural_objectRef& cir)
    }
    return "";
 }
-
 
 void VHDL_writer::write_library_declaration(const structural_objectRef& cir)
 {
@@ -787,11 +785,10 @@ void VHDL_writer::write_port_binding(const structural_objectRef& port, const str
    }
    else
    {
-      THROW_ASSERT(GetPointer<port_o>(port)->get_port_direction() == port_o::IN or
-                       ((port->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL and object_bounded->get_typeRef()->type == structural_type_descriptor::VECTOR_UINT) or
-                        (port->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL and object_bounded->get_typeRef()->type == structural_type_descriptor::VECTOR_INT) or
-                        (port->get_typeRef()->type == structural_type_descriptor::VECTOR_INT and object_bounded->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL) or
-                        (port->get_typeRef()->type == structural_type_descriptor::VECTOR_UINT and object_bounded->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)),
+      THROW_ASSERT(GetPointer<port_o>(port)->get_port_direction() == port_o::IN or ((port->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL and object_bounded->get_typeRef()->type == structural_type_descriptor::VECTOR_UINT) or
+                                                                                    (port->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL and object_bounded->get_typeRef()->type == structural_type_descriptor::VECTOR_INT) or
+                                                                                    (port->get_typeRef()->type == structural_type_descriptor::VECTOR_INT and object_bounded->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL) or
+                                                                                    (port->get_typeRef()->type == structural_type_descriptor::VECTOR_UINT and object_bounded->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)),
                    "Needed a conversion on output port binding " + port->get_path() + " => " + object_bounded->get_path() + " - Types are " + port->get_typeRef()->get_name() + " vs. " + object_bounded->get_typeRef()->get_name());
       if(port->get_typeRef()->type == structural_type_descriptor::BOOL and object_bounded->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL and object_bounded->get_typeRef()->size == 1)
       {
@@ -875,45 +872,45 @@ void VHDL_writer::write_io_signal_post_fix(const structural_objectRef& port, con
       indented_output_stream->Append(port_string + " <= " + signal_string + ";\n");
    }
 
-//   const auto left = GetPointer<port_o>(port)->get_port_direction() == port_o::IN ? sig : port;
-//   const auto right = GetPointer<port_o>(port)->get_port_direction() == port_o::IN ? port : sig;
-//   const auto left_string = HDL_manager::convert_to_identifier(this, left->get_id());
-//   const auto right_string = HDL_manager::convert_to_identifier(this, right->get_id());
-//   indented_output_stream->Append(left_string + " <= ");
-//   if(left->get_typeRef()->type == right->get_typeRef()->type)
-//   {
-//      indented_output_stream->Append(right_string + ";\n");
-//   }
-//   /// This part fix the assignment between std_logic_vector of size 1 and std_logic
-//   else if(left->get_typeRef()->type == structural_type_descriptor::BOOL and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
-//   {
-//      THROW_ASSERT(sig->get_typeRef()->size == 1, "Unexpected pattern");
-//      indented_output_stream->Append(right_string + "(0);\n");
-//   }
-//   else if(left->get_owner() and left->get_owner()->get_kind() == port_vector_o_K)
-//   {
-//      indented_output_stream->Append(right_string + "(" + left->get_id() + ");\n");
-//   }
-//   else if(left->get_typeRef()->type == structural_type_descriptor::INT and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
-//   {
-//      indented_output_stream->Append("signed(" + right_string + ");\n");
-//   }
-//   else if(left->get_typeRef()->type == structural_type_descriptor::UINT and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
-//   {
-//      indented_output_stream->Append("unsigned(" + right_string + ");\n");
-//   }
-//   else if(left->get_typeRef()->type == structural_type_descriptor::REAL and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
-//   {
-//      indented_output_stream->Append(right_string + ";\n");
-//   }
-//   else if(left->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL and right->get_typeRef()->type == structural_type_descriptor::UINT)
-//   {
-//      indented_output_stream->Append("std_logic_vector(" + right_string + ");\n");
-//   }
-//   else
-//   {
-//      THROW_UNREACHABLE(left_string + "(" + left->get_typeRef()->get_name() + ") <= " + right_string + "(" + right->get_typeRef()->get_name() + ")");
-//   }
+   //   const auto left = GetPointer<port_o>(port)->get_port_direction() == port_o::IN ? sig : port;
+   //   const auto right = GetPointer<port_o>(port)->get_port_direction() == port_o::IN ? port : sig;
+   //   const auto left_string = HDL_manager::convert_to_identifier(this, left->get_id());
+   //   const auto right_string = HDL_manager::convert_to_identifier(this, right->get_id());
+   //   indented_output_stream->Append(left_string + " <= ");
+   //   if(left->get_typeRef()->type == right->get_typeRef()->type)
+   //   {
+   //      indented_output_stream->Append(right_string + ";\n");
+   //   }
+   //   /// This part fix the assignment between std_logic_vector of size 1 and std_logic
+   //   else if(left->get_typeRef()->type == structural_type_descriptor::BOOL and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
+   //   {
+   //      THROW_ASSERT(sig->get_typeRef()->size == 1, "Unexpected pattern");
+   //      indented_output_stream->Append(right_string + "(0);\n");
+   //   }
+   //   else if(left->get_owner() and left->get_owner()->get_kind() == port_vector_o_K)
+   //   {
+   //      indented_output_stream->Append(right_string + "(" + left->get_id() + ");\n");
+   //   }
+   //   else if(left->get_typeRef()->type == structural_type_descriptor::INT and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
+   //   {
+   //      indented_output_stream->Append("signed(" + right_string + ");\n");
+   //   }
+   //   else if(left->get_typeRef()->type == structural_type_descriptor::UINT and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
+   //   {
+   //      indented_output_stream->Append("unsigned(" + right_string + ");\n");
+   //   }
+   //   else if(left->get_typeRef()->type == structural_type_descriptor::REAL and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
+   //   {
+   //      indented_output_stream->Append(right_string + ";\n");
+   //   }
+   //   else if(left->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL and right->get_typeRef()->type == structural_type_descriptor::UINT)
+   //   {
+   //      indented_output_stream->Append("std_logic_vector(" + right_string + ");\n");
+   //   }
+   //   else
+   //   {
+   //      THROW_UNREACHABLE(left_string + "(" + left->get_typeRef()->get_name() + ") <= " + right_string + "(" + right->get_typeRef()->get_name() + ")");
+   //   }
 }
 
 void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
@@ -924,7 +921,7 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
    /// writing memory-related parameters
 
    bool first_it = true;
-   if (mod->ExistsParameter(MEMORY_PARAMETER))
+   if(mod->ExistsParameter(MEMORY_PARAMETER))
    {
       std::string memory_str = mod->GetParameter(MEMORY_PARAMETER);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Memory parameters are " + memory_str);

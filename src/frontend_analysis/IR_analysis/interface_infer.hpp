@@ -74,8 +74,8 @@ class interface_infer : public FunctionFrontendFlowStep
 
    void create_Read_function(tree_nodeRef refStmt, const std::string& argName_string, tree_nodeRef origStmt, unsigned int destBB, const std::string& fdName, tree_nodeRef argSSANode, tree_nodeRef aType, tree_nodeRef readType,
                              const std::list<tree_nodeRef>& usedStmt_defs, const tree_manipulationRef tree_man, const tree_managerRef TM, bool commonRWSignature);
-   void create_Write_function(const std::string& argName_string, tree_nodeRef origStmt, const std::string& fdName, tree_nodeRef writeValue, tree_nodeRef aType, tree_nodeRef writeType, const tree_manipulationRef tree_man,
-                              const tree_managerRef TM, bool commonRWSignature);
+   void create_Write_function(const std::string& argName_string, tree_nodeRef origStmt, const std::string& fdName, tree_nodeRef writeValue, tree_nodeRef aType, tree_nodeRef writeType, const tree_manipulationRef tree_man, const tree_managerRef TM,
+                              bool commonRWSignature);
 
    void create_resource_Read_simple(const std::vector<std::string>& operations, const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool IO_port, unsigned n_resources);
    void create_resource_Write_simple(const std::vector<std::string>& operations, const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool IO_port, bool isDiffSize, unsigned n_resources);

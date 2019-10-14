@@ -463,8 +463,8 @@ void interface_infer::create_Read_function(tree_nodeRef refStmt, const std::stri
    AppM->GetCallGraphManager()->AddFunctionAndCallPoint(GET_INDEX_NODE(gn->scpe), GET_INDEX_NODE(function_decl_node), new_assignment->index, FB, FunctionEdgeInfo::CallType::direct_call);
 }
 
-void interface_infer::create_Write_function(const std::string& argName_string, tree_nodeRef origStmt, const std::string& fdName, tree_nodeRef writeValue, tree_nodeRef aType, tree_nodeRef writeType,
-                                            const tree_manipulationRef tree_man, const tree_managerRef TM, bool commonRWSignature)
+void interface_infer::create_Write_function(const std::string& argName_string, tree_nodeRef origStmt, const std::string& fdName, tree_nodeRef writeValue, tree_nodeRef aType, tree_nodeRef writeType, const tree_manipulationRef tree_man,
+                                            const tree_managerRef TM, bool commonRWSignature)
 {
    THROW_ASSERT(origStmt, "expected a ref statement");
    auto gn = GetPointer<gimple_node>(GET_NODE(origStmt));

@@ -41,11 +41,11 @@
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
+#include "math_function.hpp"
 #include "omp_functions.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
-#include "math_function.hpp"
 
 /// STD include
 #include <string>

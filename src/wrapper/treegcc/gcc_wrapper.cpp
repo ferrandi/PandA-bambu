@@ -2814,8 +2814,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
    recipe += " -load=" + renamed_pluginEMO;
 #endif
 #ifndef _WIN32
-   if(!GepiCanon_plugin_obj.empty()
-      )
+   if(!GepiCanon_plugin_obj.empty())
    {
       auto renamed_pluginGC = GepiCanon_plugin_obj;
       boost::replace_all(renamed_pluginGC, ".so", "_opt.so");
@@ -3089,16 +3088,16 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
       const auto opt_level = optimization_level == GccWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
       recipe += " -" + expandMemOps_plugin_name;
-/*
-      recipe += " -" + GepiCanon_plugin_name +
-                "PS "
-                "-" +
-                GepiCanon_plugin_name +
-                "COL "
-                "-" +
-                GepiCanon_plugin_name +
-                "BVR ";
-*/
+      /*
+            recipe += " -" + GepiCanon_plugin_name +
+                      "PS "
+                      "-" +
+                      GepiCanon_plugin_name +
+                      "COL "
+                      "-" +
+                      GepiCanon_plugin_name +
+                      "BVR ";
+      */
       recipe += " -loop-unroll -simplifycfg ";
    }
    else

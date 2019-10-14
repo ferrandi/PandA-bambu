@@ -1664,9 +1664,9 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                         {
                            auto tailZeros = 0u;
                            const auto lengthBV = ssa_var0->bit_values.size();
-                           while(lengthBV > tailZeros && ssa_var0->bit_values.at(lengthBV-1-tailZeros) == '0')
+                           while(lengthBV > tailZeros && ssa_var0->bit_values.at(lengthBV - 1 - tailZeros) == '0')
                               ++tailZeros;
-                           if(tailZeros<curr_LSB)
+                           if(tailZeros < curr_LSB)
                               curr_LSB = tailZeros;
                         }
                         else
@@ -1681,9 +1681,9 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                         {
                            auto tailZeros = 0u;
                            const auto lengthBV = ssa_var1->bit_values.size();
-                           while(lengthBV > tailZeros && ssa_var1->bit_values.at(lengthBV-1-tailZeros) == '0')
+                           while(lengthBV > tailZeros && ssa_var1->bit_values.at(lengthBV - 1 - tailZeros) == '0')
                               ++tailZeros;
-                           if(tailZeros<curr_LSB)
+                           if(tailZeros < curr_LSB)
                               curr_LSB = tailZeros;
                         }
                         else
@@ -1696,9 +1696,9 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                         if(offset_value)
                         {
                            auto tailZeros = 0u;
-                           while((offset_value & (1ULL<<tailZeros))==0)
+                           while((offset_value & (1ULL << tailZeros)) == 0)
                               ++tailZeros;
-                           if(tailZeros<curr_LSB)
+                           if(tailZeros < curr_LSB)
                               curr_LSB = tailZeros;
                         }
                      }
