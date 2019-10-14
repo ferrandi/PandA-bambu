@@ -43,7 +43,7 @@ CLANG7_LIBSD=$(CLANG_LIBS) -lclangCrossTU -lclangToolingInclusions
 
 ###### clang 4.0
 if BUILD_I386_CLANG4_EMPTY_PLUGIN
-all: $(I386_CLANG4_EMPTY_PLUGIN) bambuS2S-4
+all: $(I386_CLANG4_EMPTY_PLUGIN)
 endif
 
 if BUILD_I386_CLANG4_SSA_PLUGIN
@@ -452,7 +452,7 @@ bambuS2S-4: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
 
 ###### clang 5.0
 if BUILD_I386_CLANG5_EMPTY_PLUGIN
-all: $(I386_CLANG5_EMPTY_PLUGIN) bambuS2S-5
+all: $(I386_CLANG5_EMPTY_PLUGIN)
 endif
 
 if BUILD_I386_CLANG5_SSA_PLUGIN
@@ -850,7 +850,7 @@ bambuS2S-5: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
 
 ###### clang 6.0
 if BUILD_I386_CLANG6_EMPTY_PLUGIN
-all: $(I386_CLANG6_EMPTY_PLUGIN) bambuS2S-6
+all: $(I386_CLANG6_EMPTY_PLUGIN)
 endif
 
 if BUILD_I386_CLANG6_SSA_PLUGIN
