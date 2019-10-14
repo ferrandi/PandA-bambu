@@ -1245,7 +1245,7 @@ bambuS2S-6: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
 
 ###### clang 7.0
 if BUILD_I386_CLANG7_EMPTY_PLUGIN
-all: $(I386_CLANG7_EMPTY_PLUGIN) bambuS2S-7
+all: $(I386_CLANG7_EMPTY_PLUGIN)
 endif
 
 if BUILD_I386_CLANG7_SSA_PLUGIN
