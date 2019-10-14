@@ -2089,6 +2089,8 @@ src/frontend_analysis/IR_analysis/IR_lowering.hpp
 src/frontend_analysis/IR_analysis/IR_lowering_exec.cpp
 src/frontend_analysis/IR_analysis/NI_SSA_liveness.cpp
 src/frontend_analysis/IR_analysis/NI_SSA_liveness.hpp
+src/frontend_analysis/IR_analysis/Range_Analysis.cpp
+src/frontend_analysis/IR_analysis/Range_Analysis.hpp
 src/frontend_analysis/IR_analysis/basic_blocks_cfg_computation.cpp
 src/frontend_analysis/IR_analysis/basic_blocks_cfg_computation.hpp
 src/frontend_analysis/IR_analysis/bit_lattice.cpp
@@ -2111,6 +2113,8 @@ src/frontend_analysis/IR_analysis/dead_code_elimination.cpp
 src/frontend_analysis/IR_analysis/dead_code_elimination.hpp
 src/frontend_analysis/IR_analysis/determine_memory_accesses.cpp
 src/frontend_analysis/IR_analysis/determine_memory_accesses.hpp
+src/frontend_analysis/IR_analysis/eSSA.cpp
+src/frontend_analysis/IR_analysis/eSSA.hpp
 src/frontend_analysis/IR_analysis/extract_omp_atomic.cpp
 src/frontend_analysis/IR_analysis/extract_omp_atomic.hpp
 src/frontend_analysis/IR_analysis/extract_omp_for.cpp

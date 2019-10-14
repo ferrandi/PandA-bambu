@@ -86,11 +86,6 @@ public:
     */
    void Initialize() override;
 
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
 
 };
 

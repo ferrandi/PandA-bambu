@@ -51,6 +51,8 @@
 #include "basic_block.hpp"
 #include "function_behavior.hpp"
 
+#include "Dominance.hpp"
+
 /// design_flows include
 #include "design_flow_manager.hpp"
 
@@ -270,8 +272,8 @@ namespace eSSAInfo
    }
 
    void renameUses(std::set<tree_nodeRef>& OpSet, 
-      std::map<tree_nodeRef, unsigned int>& ValueInfoNums, std::vector<eSSAInfo::ValueInfo>& ValueInfos, 
-      std::set<std::pair<blocRef, blocRef>>& EdgeUsesOnly, 
+      std::map<tree_nodeRef, unsigned int>& /*ValueInfoNums*/, std::vector<eSSAInfo::ValueInfo>& /*ValueInfos*/,
+      std::set<std::pair<blocRef, blocRef>>& /*EdgeUsesOnly*/,
       int debug_level)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " <--eSSA rename uses: time to rename");
@@ -285,10 +287,13 @@ namespace eSSAInfo
 
       // TODO: sort OpsToRename using dominator tree
 
+      /*
+        commented since there is an unused variable
       for(auto& Op : OpsToRename)
       {
          // TODO: do stuff about Op
       }
+*/
    }
 }
 
@@ -312,7 +317,6 @@ eSSA::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relati
       }
       case DEPENDENCE_RELATIONSHIP:
       {
-         // relationships.insert(std::make_pair(DOM_POST_DOM_COMPUTATION, SAME_FUNCTION)); // Generates runtime error
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
          break;
@@ -329,11 +333,57 @@ eSSA::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relati
 
 DesignFlowStep_Status eSSA::InternalExec()
 {
-   const auto FB = AppM->CGetFunctionBehavior(function_id);
-   const auto DT = FB->CGetBBGraph(FunctionBehavior::DOM_TREE);
-   const auto DTBBGI = DT->CGetBBGraphInfo();
-   std::list<boost::graph_traits<graphs_collection>::vertex_descriptor> DTNs;
-   DT->TopologicalSort(DTNs);
+   auto TM = AppM->get_tree_manager();
+   tree_nodeRef temp = TM->get_tree_node_const(function_id);
+   auto* fd = GetPointer<function_decl>(temp);
+   auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   /// store the GCC BB graph ala boost::graph
+   BBGraphsCollectionRef GCC_bb_graphs_collection(new BBGraphsCollection(BBGraphInfoRef(new BBGraphInfo(AppM, function_id)), parameters));
+   BBGraphRef GCC_bb_graph(new BBGraph(GCC_bb_graphs_collection, CFG_SELECTOR));
+   std::unordered_map<unsigned int, vertex> inverse_vertex_map;
+   /// add vertices
+   for(auto block : sl->list_of_bloc)
+   {
+      inverse_vertex_map[block.first] = GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)));
+   }
+   /// add edges
+   for(auto curr_bb_pair : sl->list_of_bloc)
+   {
+      unsigned int curr_bb = curr_bb_pair.first;
+      std::vector<unsigned int>::const_iterator lop_it_end = sl->list_of_bloc[curr_bb]->list_of_pred.end();
+      for(std::vector<unsigned int>::const_iterator lop_it = sl->list_of_bloc[curr_bb]->list_of_pred.begin(); lop_it != lop_it_end; ++lop_it)
+      {
+         THROW_ASSERT(inverse_vertex_map.find(*lop_it) != inverse_vertex_map.end(), "BB" + STR(*lop_it) + " (successor of BB" + STR(curr_bb) + ") does not exist");
+         GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[*lop_it], inverse_vertex_map[curr_bb], CFG_SELECTOR);
+      }
+      std::vector<unsigned int>::const_iterator los_it_end = sl->list_of_bloc[curr_bb]->list_of_succ.end();
+      for(std::vector<unsigned int>::const_iterator los_it = sl->list_of_bloc[curr_bb]->list_of_succ.begin(); los_it != los_it_end; ++los_it)
+      {
+         if(*los_it == bloc::EXIT_BLOCK_ID)
+            GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[curr_bb], inverse_vertex_map[*los_it], CFG_SELECTOR);
+      }
+      if(sl->list_of_bloc[curr_bb]->list_of_succ.empty())
+         GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[curr_bb], inverse_vertex_map[bloc::EXIT_BLOCK_ID], CFG_SELECTOR);
+   }
+   /// add a connection between entry and exit thus avoiding problems with non terminating code
+   GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[bloc::ENTRY_BLOCK_ID], inverse_vertex_map[bloc::EXIT_BLOCK_ID], CFG_SELECTOR);
+
+   refcount<dominance<BBGraph>> bb_dominators;
+   bb_dominators = refcount<dominance<BBGraph>>(new dominance<BBGraph>(*GCC_bb_graph, inverse_vertex_map[bloc::ENTRY_BLOCK_ID], inverse_vertex_map[bloc::EXIT_BLOCK_ID], parameters));
+   bb_dominators->calculate_dominance_info(dominance<BBGraph>::CDI_DOMINATORS);
+   const std::unordered_map<vertex, vertex>& bb_dominator_map = bb_dominators->get_dominator_map();
+
+   BBGraphRef DT(new BBGraph(GCC_bb_graphs_collection, D_SELECTOR));
+   for(auto it : bb_dominator_map)
+   {
+      if(it.first != inverse_vertex_map[bloc::ENTRY_BLOCK_ID])
+      {
+         GCC_bb_graphs_collection->AddEdge(it.second, it.first, D_SELECTOR);
+      }
+   }
+
+   std::deque<vertex> DTNs;
+   boost::topological_sort(*DT, std::front_inserter(DTNs));
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
          " <-- eSSA: Dominator tree has " << DTNs.size() << " BB");
@@ -397,9 +447,4 @@ DesignFlowStep_Status eSSA::InternalExec()
 
 void eSSA::Initialize()
 {
-}
-
-bool eSSA::HasToBeExecuted() const
-{
-   return true;
 }
