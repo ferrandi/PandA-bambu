@@ -1664,8 +1664,8 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
       if(writeP)
          writer->write("\n");
    }
-   writer->write("reg signed [7:0] _bambu_testbench_mem_ [0:MEMSIZE-1];\n\n");
-   writer->write("reg signed [7:0] _bambu_databyte_;\n\n");
+   writer->write("reg [7:0] _bambu_testbench_mem_ [0:MEMSIZE-1];\n\n");
+   writer->write("reg [7:0] _bambu_databyte_;\n\n");
    writer->write("reg [3:0] __state, __next_state;\n");
    writer->write("reg start_results_comparison;\n");
    writer->write("reg next_start_port;\n");

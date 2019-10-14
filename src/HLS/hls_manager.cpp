@@ -270,6 +270,14 @@ bool HLS_manager::is_register_compatible(unsigned int var) const
           not Rmem->has_base_address(var);                                               // ssa_name allocated in memory
 }
 
+bool HLS_manager::is_reading_writing_function(unsigned funID) const
+{
+   auto fun_node = TM->get_tree_node_const(funID);
+   auto fd = GetPointer<function_decl>(fun_node);
+   THROW_ASSERT(fd, "unexpected condition");
+   return fd->reading_memory || fd->writing_memory;
+}
+
 bool HLS_manager::IsSingleWriteMemory() const
 {
    if(Param->getOption<bool>(OPT_gcc_serialize_memory_accesses))

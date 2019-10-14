@@ -1651,8 +1651,14 @@ src/HLS/architecture_creation/datapath_creation/classic_datapath.cpp
 src/HLS/architecture_creation/datapath_creation/classic_datapath.hpp
 src/HLS/architecture_creation/datapath_creation/datapath_creator.cpp
 src/HLS/architecture_creation/datapath_creation/datapath_creator.hpp
+src/HLS/architecture_creation/datapath_creation/datapath_cs.cpp
+src/HLS/architecture_creation/datapath_creation/datapath_cs.hpp
+src/HLS/architecture_creation/datapath_creation/datapath_parallel_cs.cpp
+src/HLS/architecture_creation/datapath_creation/datapath_parallel_cs.hpp
 src/HLS/architecture_creation/top_entity.cpp
 src/HLS/architecture_creation/top_entity.hpp
+src/HLS/architecture_creation/top_entity_cs.cpp
+src/HLS/architecture_creation/top_entity_cs.hpp
 src/HLS/architecture_creation/top_entity_parallel_cs.cpp
 src/HLS/architecture_creation/top_entity_parallel_cs.hpp
 src/HLS/backend/generate_hdl.cpp
@@ -1688,7 +1694,11 @@ src/HLS/binding/module/fu_binding.cpp
 src/HLS/binding/module/fu_binding.hpp
 src/HLS/binding/module/fu_binding_creator.cpp
 src/HLS/binding/module/fu_binding_creator.hpp
+src/HLS/binding/module/fu_binding_cs.cpp
+src/HLS/binding/module/fu_binding_cs.hpp
 src/HLS/binding/module/module_binding_check.hpp
+src/HLS/binding/module/parallel_memory_fu_binding.cpp
+src/HLS/binding/module/parallel_memory_fu_binding.hpp
 src/HLS/binding/module/unique_binding.cpp
 src/HLS/binding/module/unique_binding.hpp
 src/HLS/binding/register/Variable.hpp
@@ -1776,6 +1786,8 @@ src/HLS/interface/WB4/WB4Intercon_interface.cpp
 src/HLS/interface/WB4/WB4Intercon_interface.hpp
 src/HLS/interface/WB4/WB4_interface.cpp
 src/HLS/interface/WB4/WB4_interface.hpp
+src/HLS/interface/cs_interface.cpp
+src/HLS/interface/cs_interface.hpp
 src/HLS/interface/minimal/minimal_interface.cpp
 src/HLS/interface/minimal/minimal_interface.hpp
 src/HLS/interface/module_interface.cpp
@@ -1790,6 +1802,8 @@ src/HLS/liveness/liveness_computer.cpp
 src/HLS/liveness/liveness_computer.hpp
 src/HLS/memory/mem_dominator_allocation.cpp
 src/HLS/memory/mem_dominator_allocation.hpp
+src/HLS/memory/mem_dominator_allocation_cs.cpp
+src/HLS/memory/mem_dominator_allocation_cs.hpp
 src/HLS/memory/mem_xml_allocation.cpp
 src/HLS/memory/mem_xml_allocation.hpp
 src/HLS/memory/memory.cpp

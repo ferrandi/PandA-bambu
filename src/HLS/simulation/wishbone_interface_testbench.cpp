@@ -566,7 +566,7 @@ void WishboneInterfaceTestbench::write_signals(const tree_managerConstRef TreeM,
          if(tree_helper::is_a_pointer(TreeM, var))
          {
             unsigned int pt_type_index = tree_helper::get_pointed_type(TreeM, tree_helper::get_type_index(TreeM, var));
-            /// FIXME: real numbers at the moment have to be considered diffently because of computation of ulp; c++ code is still managed in the old way
+            /// FIXME: real numbers at the moment have to be considered differently because of computation of ulp; c++ code is still managed in the old way
             if(tree_helper::is_real(TreeM, pt_type_index) or flag_cpp)
             {
                writer->write("reg [" + STR(expectedVariableBitSize - 1) + ":0] ex_" + variableName + ";\n");

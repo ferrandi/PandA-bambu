@@ -442,7 +442,7 @@ void verilog_writer::write_module_declaration(const structural_objectRef& cir)
    auto* mod = GetPointer<module>(cir);
    THROW_ASSERT(mod, "Expected a module got something of different");
    indented_output_stream->Append("`timescale 1ns / 1ps\n");
-   if(HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)) == register_AR_NORETIME)
+   if(HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)) == register_AR_NORETIME || GET_TYPE_NAME(cir) == register_AR_NORETIME_INT || GET_TYPE_NAME(cir) == register_AR_NORETIME_UINT || GET_TYPE_NAME(cir) == register_AR_NORETIME_REAL)
    {
       indented_output_stream->Append("(* keep_hierarchy = \"yes\" *) ");
    }
@@ -457,7 +457,7 @@ void verilog_writer::write_module_declaration(const structural_objectRef& cir)
          first_obj = true;
       indented_output_stream->Append(HDL_manager::convert_to_identifier(this, mod->get_positional_port(i)->get_id()));
    }
-   if(HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)) == register_AR_NORETIME)
+   if(HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)) == register_AR_NORETIME || GET_TYPE_NAME(cir) == register_AR_NORETIME_INT || GET_TYPE_NAME(cir) == register_AR_NORETIME_UINT || GET_TYPE_NAME(cir) == register_AR_NORETIME_REAL)
       indented_output_stream->Append(")/* synthesis syn_hier = \"hard\"*/;\n");
    else
       indented_output_stream->Append(");\n");

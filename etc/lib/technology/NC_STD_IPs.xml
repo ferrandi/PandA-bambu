@@ -2373,11 +2373,179 @@ begin
           <NP_functionality LIBRARY="register_AR_NORETIME in1 out1" VERILOG_PROVIDED="
 (* dont_retime *)(* keep = &quot;true&quot; *)(* syn_keep=1 *)(* DONT_TOUCH = &quot;true&quot; *) reg [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
 assign out1 = reg_out1;
+always @(posedge clock 1RESET_EDGE)
+  if (1RESET_VALUE)
+    reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
+  else
+    reg_out1 &lt;= in1;" VHDL_PROVIDED="
+signal reg_out1 : std_logic_vector(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
+attribute dont_retime : boolean;
+attribute dont_retime of reg_out1 : signal is true;
+attribute syn_keep: boolean;
+attribute syn_keep of reg_out1: signal is true;
+attribute DONT_TOUCH : boolean;
+attribute DONT_TOUCH of reg_out1 : signal is true;
+begin
+  out1 &lt;= reg_out1;
+  process(clock,reset)
+  begin
+    if(1RESET_VALUE) then
+      reg_out1 &lt;= (others =&gt; &apos;0&apos;);
+    elsif(clock&apos;event and clock = &apos;1&apos;) then
+      reg_out1 &lt;= in1;
+    end if;
+  end process;
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>register_AR_NORETIME_INT</name>
+      <circuit>
+        <component_o id="register_AR_NORETIME_INT">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2019 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="register_AR_NORETIME_INT"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="INT" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="register_AR_NORETIME_INT in1 out1" VERILOG_PROVIDED="
+(* dont_retime *)(* keep = &quot;true&quot; *)(* syn_keep=1 *)(* DONT_TOUCH = &quot;true&quot; *) reg signed [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
+assign out1 = reg_out1;
 always @(posedge clock)
   if (1RESET_VALUE)
     reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
   else
-    reg_out1 &lt;= in1;"/>
+    reg_out1 &lt;= in1;" VHDL_PROVIDED="
+signal reg_out1 : signed(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
+attribute dont_retime : boolean;
+attribute dont_retime of reg_out1 : signal is true;
+attribute syn_keep: boolean;
+attribute syn_keep of reg_out1: signal is true;
+attribute DONT_TOUCH : boolean;
+attribute DONT_TOUCH of reg_out1 : signal is true;
+begin
+  out1 &lt;= reg_out1;
+  process(clock,reset)
+  begin
+    if(1RESET_VALUE) then
+      reg_out1 &lt;= (others =&gt; &apos;0&apos;);
+    elsif(clock&apos;event and clock = &apos;1&apos;) then
+      reg_out1 &lt;= in1;
+    end if;
+  end process;
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>register_AR_NORETIME_UINT</name>
+      <circuit>
+        <component_o id="register_AR_NORETIME_UINT">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2019 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="register_AR_NORETIME_UINT"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="register_AR_NORETIME_UINT in1 out1" VERILOG_PROVIDED="
+(* dont_retime *)(* keep = &quot;true&quot; *)(* syn_keep=1 *)(* DONT_TOUCH = &quot;true&quot; *) reg [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
+assign out1 = reg_out1;
+always @(posedge clock)
+  if (1RESET_VALUE)
+    reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
+  else
+    reg_out1 &lt;= in1;" VHDL_PROVIDED="
+signal reg_out1 : unsigned(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
+attribute dont_retime : boolean;
+attribute dont_retime of reg_out1 : signal is true;
+attribute syn_keep: boolean;
+attribute syn_keep of reg_out1: signal is true;
+attribute DONT_TOUCH : boolean;
+attribute DONT_TOUCH of reg_out1 : signal is true;
+begin
+  out1 &lt;= reg_out1;
+  process(clock,reset)
+  begin
+    if(1RESET_VALUE) then
+      reg_out1 &lt;= (others =&gt; &apos;0&apos;);
+    elsif(clock&apos;event and clock = &apos;1&apos;) then
+      reg_out1 &lt;= in1;
+    end if;
+  end process;
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>register_AR_NORETIME_REAL</name>
+      <circuit>
+        <component_o id="register_AR_NORETIME_REAL">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2019 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="register_AR_NORETIME_REAL"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="REAL" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="REAL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="register_AR_NORETIME_REAL in1 out1" VERILOG_PROVIDED="
+(* dont_retime *)(* keep = &quot;true&quot; *)(* syn_keep=1 *)(* DONT_TOUCH = &quot;true&quot; *) reg [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
+assign out1 = reg_out1;
+always @(posedge clock)
+  if (1RESET_VALUE)
+    reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
+  else
+    reg_out1 &lt;= in1;" VHDL_PROVIDED="
+signal reg_out1 : std_logic_vector(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
+attribute dont_retime : boolean;
+attribute dont_retime of reg_out1 : signal is true;
+attribute syn_keep: boolean;
+attribute syn_keep of reg_out1: signal is true;
+attribute DONT_TOUCH : boolean;
+attribute DONT_TOUCH of reg_out1 : signal is true;
+begin
+  out1 &lt;= reg_out1;
+  process(clock,reset)
+  begin
+    if(1RESET_VALUE) then
+      reg_out1 &lt;= (others =&gt; &apos;0&apos;);
+    elsif(clock&apos;event and clock = &apos;1&apos;) then
+      reg_out1 &lt;= in1;
+    end if;
+  end process;
+"/>
         </component_o>
       </circuit>
     </cell>
