@@ -295,6 +295,118 @@ std::string VHDL_writer::type_converter_size(const structural_objectRef& cir)
    return "";
 }
 
+
+std::string VHDL_writer::may_slice_string(const structural_objectRef& cir)
+{
+   structural_type_descriptorRef Type = cir->get_typeRef();
+   const structural_objectRef Owner = cir->get_owner();
+   auto* mod = GetPointer<module>(Owner);
+   std::string port_name = cir->get_id();
+   bool specialization_string = false;
+   if(mod)
+   {
+      const NP_functionalityRef& np = mod->get_NP_functionality();
+      if(np)
+      {
+         std::vector<std::pair<std::string, structural_objectRef>> library_parameters;
+         mod->get_NP_library_parameters(Owner, library_parameters);
+         for(const auto& library_parameter : library_parameters)
+            if(port_name == library_parameter.first)
+               specialization_string = true;
+      }
+   }
+   switch(Type->type)
+   {
+      case structural_type_descriptor::BOOL:
+      {
+         if(Owner->get_kind() == port_vector_o_K)
+         {
+            return "(" + GetPointer<port_o>(cir)->get_id() + ")";
+         }
+         else
+            return "";
+      }
+      case structural_type_descriptor::USER:
+      {
+         Type->print(std::cerr);
+         THROW_ERROR("USER type not yet supported");
+         break;
+      }
+      case structural_type_descriptor::INT:
+      case structural_type_descriptor::UINT:
+      case structural_type_descriptor::REAL:
+      case structural_type_descriptor::VECTOR_BOOL:
+      {
+         if(specialization_string)
+         {
+            if(Owner->get_kind() == port_vector_o_K)
+            {
+               unsigned int lsb = GetPointer<port_o>(Owner)->get_lsb();
+               return "(((" + boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_id()) + "+1)*" + (BITSIZE_PREFIX + port_name) + ")+(" + boost::lexical_cast<std::string>(static_cast<int>(lsb) - 1) + ") downto (" +
+                      boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_id()) + "*" + (BITSIZE_PREFIX + port_name) + ")+" + boost::lexical_cast<std::string>(lsb) + ")";
+            }
+            else
+               return "";
+         }
+         else
+         {
+            if(Owner->get_kind() == port_vector_o_K)
+            {
+               structural_type_descriptorRef Type_fp = cir->get_typeRef();
+               unsigned int size_fp = Type_fp->vector_size > 0 ? Type_fp->size * Type_fp->vector_size : Type_fp->size;
+               unsigned int lsb = GetPointer<port_o>(Owner)->get_lsb();
+               return "(" + boost::lexical_cast<std::string>((1 + boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) + static_cast<int>(lsb) - 1) + " downto " +
+                      boost::lexical_cast<std::string>((boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) + static_cast<int>(lsb)) + ")";
+            }
+            else
+               return "";
+         }
+         break;
+      }
+      case structural_type_descriptor::VECTOR_UINT:
+      case structural_type_descriptor::VECTOR_INT:
+      case structural_type_descriptor::VECTOR_REAL:
+      {
+         if(specialization_string)
+         {
+            if(Owner->get_kind() == port_vector_o_K)
+            {
+               unsigned int lsb = GetPointer<port_o>(Owner)->get_lsb();
+               return "(((" + boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_id()) + "+1)*" + (BITSIZE_PREFIX + port_name) + "*" + (NUM_ELEM_PREFIX + port_name) + ")+(" + boost::lexical_cast<std::string>(static_cast<int>(lsb) - 1) + ") downto (" +
+                      boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_id()) + "*" + (BITSIZE_PREFIX + port_name) + "*" + (NUM_ELEM_PREFIX + port_name) + ")+" + boost::lexical_cast<std::string>(lsb) + ")";
+            }
+            else
+               return "";
+         }
+         else
+         {
+            if(Owner->get_kind() == port_vector_o_K)
+            {
+               structural_type_descriptorRef Type_fp = cir->get_typeRef();
+               unsigned int size_fp = Type_fp->vector_size > 0 ? Type_fp->size * Type_fp->vector_size : Type_fp->size;
+               unsigned int lsb = GetPointer<port_o>(Owner)->get_lsb();
+               return "(" + boost::lexical_cast<std::string>((1 + boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) + static_cast<int>(lsb) - 1) + " downto " +
+                      boost::lexical_cast<std::string>((boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) + static_cast<int>(lsb)) + ")";
+            }
+            else
+               return "";
+         }
+         break;
+      }
+      case structural_type_descriptor::OTHER:
+      case structural_type_descriptor::VECTOR_USER:
+      {
+         THROW_ERROR("VECTOR_USER type not yet supported");
+         break;
+      }
+      case structural_type_descriptor::UNKNOWN:
+      default:
+         THROW_ERROR("Not initialized type");
+   }
+   return "";
+}
+
+
 void VHDL_writer::write_library_declaration(const structural_objectRef& cir)
 {
    THROW_ASSERT(cir->get_kind() == component_o_K || cir->get_kind() == channel_o_K, "Expected a component or a channel got something of different");
@@ -675,7 +787,11 @@ void VHDL_writer::write_port_binding(const structural_objectRef& port, const str
    }
    else
    {
-      THROW_ASSERT(GetPointer<port_o>(port)->get_port_direction() == port_o::IN,
+      THROW_ASSERT(GetPointer<port_o>(port)->get_port_direction() == port_o::IN or
+                       ((port->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL and object_bounded->get_typeRef()->type == structural_type_descriptor::VECTOR_UINT) or
+                        (port->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL and object_bounded->get_typeRef()->type == structural_type_descriptor::VECTOR_INT) or
+                        (port->get_typeRef()->type == structural_type_descriptor::VECTOR_INT and object_bounded->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL) or
+                        (port->get_typeRef()->type == structural_type_descriptor::VECTOR_UINT and object_bounded->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)),
                    "Needed a conversion on output port binding " + port->get_path() + " => " + object_bounded->get_path() + " - Types are " + port->get_typeRef()->get_name() + " vs. " + object_bounded->get_typeRef()->get_name());
       if(port->get_typeRef()->type == structural_type_descriptor::BOOL and object_bounded->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL and object_bounded->get_typeRef()->size == 1)
       {
@@ -718,45 +834,86 @@ void VHDL_writer::write_io_signal_post_fix(const structural_objectRef& port, con
    THROW_ASSERT(port && port->get_kind() == port_o_K, "Expected a port got something of different");
    THROW_ASSERT(port->get_owner(), "Expected a port with an owner");
    THROW_ASSERT(sig && sig->get_kind() == signal_o_K, "Expected a signal got something of different");
-   const auto left = GetPointer<port_o>(port)->get_port_direction() == port_o::IN ? sig : port;
-   const auto right = GetPointer<port_o>(port)->get_port_direction() == port_o::IN ? port : sig;
-   const auto left_string = HDL_manager::convert_to_identifier(this, left->get_id());
-   const auto right_string = HDL_manager::convert_to_identifier(this, right->get_id());
-   indented_output_stream->Append(left_string + " <= ");
-   if(left->get_typeRef()->type == right->get_typeRef()->type)
+   std::string port_string;
+   std::string signal_string;
+   if(sig->get_kind() == constant_o_K)
    {
-      indented_output_stream->Append(right_string + ";\n");
+      auto* con = GetPointer<constant_o>(sig);
+      std::string trimmed_value = "";
+      auto long_value = boost::lexical_cast<unsigned long long int>(con->get_value());
+      for(unsigned int ind = 0; ind < GET_TYPE_SIZE(con); ind++)
+         trimmed_value = trimmed_value + (((1LLU << (GET_TYPE_SIZE(con) - ind - 1)) & long_value) ? '1' : '0');
+      signal_string = "\"" + trimmed_value + "\"";
    }
-   /// This part fix the assignment between std_logic_vector of size 1 and std_logic
-   else if(left->get_typeRef()->type == structural_type_descriptor::BOOL and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
+   else if(sig->get_kind() == signal_o_K)
    {
-      THROW_ASSERT(sig->get_typeRef()->size == 1, "Unexpected pattern");
-      indented_output_stream->Append(right_string + "(0);\n");
+      if(sig->get_owner()->get_kind() == signal_vector_o_K)
+         signal_string = HDL_manager::convert_to_identifier(this, sig->get_owner()->get_id()) + may_slice_string(port);
+      else
+         signal_string = HDL_manager::convert_to_identifier(this, sig->get_id());
    }
-   else if(left->get_owner() and left->get_owner()->get_kind() == port_vector_o_K)
-   {
-      indented_output_stream->Append(right_string + "(" + left->get_id() + ");\n");
-   }
-   else if(left->get_typeRef()->type == structural_type_descriptor::INT and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
-   {
-      indented_output_stream->Append("signed(" + right_string + ");\n");
-   }
-   else if(left->get_typeRef()->type == structural_type_descriptor::UINT and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
-   {
-      indented_output_stream->Append("unsigned(" + right_string + ");\n");
-   }
-   else if(left->get_typeRef()->type == structural_type_descriptor::REAL and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
-   {
-      indented_output_stream->Append(right_string + ";\n");
-   }
-   else if(left->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL and right->get_typeRef()->type == structural_type_descriptor::UINT)
-   {
-      indented_output_stream->Append("std_logic_vector(" + right_string + ");\n");
-   }
+   if(port->get_owner()->get_kind() == port_vector_o_K)
+      port_string = HDL_manager::convert_to_identifier(this, port->get_owner()->get_id()) + may_slice_string(port);
    else
+      port_string = HDL_manager::convert_to_identifier(this, port->get_id());
+
+   if(GetPointer<port_o>(port)->get_port_direction() == port_o::IN)
+      std::swap(port_string, signal_string);
+
+   if(port_string != signal_string)
    {
-      THROW_UNREACHABLE(left_string + "(" + left->get_typeRef()->get_name() + ") <= " + right_string + "(" + right->get_typeRef()->get_name() + ")");
+      const auto left = GetPointer<port_o>(port)->get_port_direction() == port_o::IN ? sig : port;
+      const auto right = GetPointer<port_o>(port)->get_port_direction() == port_o::IN ? port : sig;
+      if(left->get_typeRef()->type == structural_type_descriptor::UINT and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
+         signal_string = "unsigned(" + signal_string + ")";
+      else if(left->get_typeRef()->type == structural_type_descriptor::INT and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
+         signal_string = "signed(" + signal_string + ")";
+      else if(left->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL and right->get_typeRef()->type == structural_type_descriptor::UINT)
+         signal_string = "std_logic_vector(" + signal_string + ")";
+      else if(left->get_typeRef()->type == structural_type_descriptor::BOOL and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
+         signal_string = "" + signal_string + "(0)";
+      indented_output_stream->Append(port_string + " <= " + signal_string + ";\n");
    }
+
+//   const auto left = GetPointer<port_o>(port)->get_port_direction() == port_o::IN ? sig : port;
+//   const auto right = GetPointer<port_o>(port)->get_port_direction() == port_o::IN ? port : sig;
+//   const auto left_string = HDL_manager::convert_to_identifier(this, left->get_id());
+//   const auto right_string = HDL_manager::convert_to_identifier(this, right->get_id());
+//   indented_output_stream->Append(left_string + " <= ");
+//   if(left->get_typeRef()->type == right->get_typeRef()->type)
+//   {
+//      indented_output_stream->Append(right_string + ";\n");
+//   }
+//   /// This part fix the assignment between std_logic_vector of size 1 and std_logic
+//   else if(left->get_typeRef()->type == structural_type_descriptor::BOOL and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
+//   {
+//      THROW_ASSERT(sig->get_typeRef()->size == 1, "Unexpected pattern");
+//      indented_output_stream->Append(right_string + "(0);\n");
+//   }
+//   else if(left->get_owner() and left->get_owner()->get_kind() == port_vector_o_K)
+//   {
+//      indented_output_stream->Append(right_string + "(" + left->get_id() + ");\n");
+//   }
+//   else if(left->get_typeRef()->type == structural_type_descriptor::INT and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
+//   {
+//      indented_output_stream->Append("signed(" + right_string + ");\n");
+//   }
+//   else if(left->get_typeRef()->type == structural_type_descriptor::UINT and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
+//   {
+//      indented_output_stream->Append("unsigned(" + right_string + ");\n");
+//   }
+//   else if(left->get_typeRef()->type == structural_type_descriptor::REAL and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
+//   {
+//      indented_output_stream->Append(right_string + ";\n");
+//   }
+//   else if(left->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL and right->get_typeRef()->type == structural_type_descriptor::UINT)
+//   {
+//      indented_output_stream->Append("std_logic_vector(" + right_string + ");\n");
+//   }
+//   else
+//   {
+//      THROW_UNREACHABLE(left_string + "(" + left->get_typeRef()->get_name() + ") <= " + right_string + "(" + right->get_typeRef()->get_name() + ")");
+//   }
 }
 
 void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
