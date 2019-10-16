@@ -345,6 +345,9 @@ class FunctionBehavior
    const ParallelRegionsGraphRef prg;
 #endif
 
+   /// Anti + Data flow graph on aggregates
+   const OpGraphRef agg_virtualg;
+
 #if HAVE_HOST_PROFILING_BUILT
    /// Profiling information about this function
    const ProfilingInformationRef profiling_information;
@@ -455,6 +458,7 @@ class FunctionBehavior
 #if HAVE_EXPERIMENTAL
       RPDG, /**< Reduced Program Dependence graph */
 #endif
+      AGG_VIRTUALG /**< Anti + Data flow graph dependence between aggregates */
    };
 
    /**

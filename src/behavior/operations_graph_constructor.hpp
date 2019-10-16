@@ -120,6 +120,11 @@ class operations_graph_constructor
    void RemoveSelector(const EdgeDescriptor edge, const int selector);
 
    /**
+    * Remove all redundant edges
+    */
+   void CompressEdges();
+
+   /**
     * Remove all vertices and edges
     */
    void Clear();

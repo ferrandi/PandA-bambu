@@ -732,7 +732,7 @@ class OpGraphsCollection : public graphs_collection
 
  public:
    /**
-    * Empty Constructro
+    * Empty Constructror
     * @param info is the info associated with the graph
     * @param parameters is the set of input parameters
     */

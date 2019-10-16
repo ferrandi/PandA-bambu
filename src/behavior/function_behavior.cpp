@@ -148,6 +148,7 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       prg_bulk(new ParallelRegionsGraphsCollection(_parameters)),
       prg(new ParallelRegionsGraph(prg_bulk, ParallelRegionsEdgeInfo::EDGE_CONTROL | ParallelRegionsEdgeInfo::EDGE_DATA)),
 #endif
+      agg_virtualg(new OpGraph(op_graphs_collection, DFG_AGG_SELECTOR | ADG_AGG_SELECTOR)),
 #if HAVE_HOST_PROFILING_BUILT
       profiling_information(ProfilingInformationRef(new ProfilingInformation(bb))),
 #endif
@@ -250,6 +251,8 @@ OpGraphRef FunctionBehavior::GetOpGraph(FunctionBehavior::graph_type gt)
       case RPDG:
          return rpdg;
 #endif
+      case AGG_VIRTUALG:
+         return agg_virtualg;
       default:
          THROW_UNREACHABLE("Not supported graph type");
    }
@@ -310,6 +313,8 @@ const OpGraphConstRef FunctionBehavior::CGetOpGraph(FunctionBehavior::graph_type
       case RPDG:
          return rpdg;
 #endif
+      case AGG_VIRTUALG:
+         return agg_virtualg;
       default:
          THROW_UNREACHABLE("Not supported graph type");
    }
@@ -406,6 +411,8 @@ const OpGraphConstRef FunctionBehavior::CGetOpGraph(FunctionBehavior::graph_type
       case RPDG:
          return OpGraphRef(new OpGraph(op_graphs_collection, SAODG_SELECTOR & RPDG_SELECTOR, subset));
 #endif
+      case AGG_VIRTUALG:
+         return OpGraphRef(new OpGraph(op_graphs_collection, DFG_AGG_SELECTOR | ADG_AGG_SELECTOR, subset));
       default:
          THROW_UNREACHABLE("");
    }

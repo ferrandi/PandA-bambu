@@ -355,7 +355,7 @@ struct graphs_collection : public boost_graphs_collection
    /**
     * Add an edge to this graph
     * FIXME: this should be pure virtual
-    * @param souce is the source of the edge to be added
+    * @param source is the source of the edge to be added
     * @param target is the target of the edge to be added
     * @param selector is the selector to be set on the edge
     * @param info is the info to be associated with the edge
@@ -406,6 +406,21 @@ struct graphs_collection : public boost_graphs_collection
       bool inserted;
       boost::tie(edge, inserted) = boost::edge(source, target, *this);
       return inserted;
+   }
+
+   inline void CompressEdges()
+   {
+      std::deque<boost::graph_traits<graphs_collection>::edge_descriptor> toBeRemoved;
+      boost::graph_traits<graphs_collection>::edge_iterator ei0, ei0_end;
+      for(boost::tie(ei0, ei0_end) = boost::edges(*this); ei0 != ei0_end; ++ei0)
+      {
+         if((*this)[*ei0].selector == 0)
+         {
+            toBeRemoved.push_back(*ei0);
+         }
+      }
+      for(auto e0 : toBeRemoved)
+         boost::remove_edge(e0, *this);
    }
 };
 

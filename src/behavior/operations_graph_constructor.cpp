@@ -102,6 +102,11 @@ void operations_graph_constructor::RemoveSelector(const EdgeDescriptor edge, con
    og->RemoveSelector(edge, selector);
 }
 
+void operations_graph_constructor::CompressEdges()
+{
+   og->CompressEdges();
+}
+
 void operations_graph_constructor::add_edge_info(const vertex src, const vertex tgt, const int selector, unsigned int NodeID)
 {
    EdgeDescriptor e;
