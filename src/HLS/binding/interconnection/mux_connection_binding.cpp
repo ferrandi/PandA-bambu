@@ -90,8 +90,6 @@
 #include "direct_conn.hpp"
 #include "mux_conn.hpp"
 
-#include "Vertex.hpp"
-
 #include "tree_reindex.hpp"
 
 #include "Parameter.hpp"
