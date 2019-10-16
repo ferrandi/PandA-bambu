@@ -989,12 +989,16 @@ void interface_infer::addGimpleNOPxVirtual(tree_nodeRef origStmt, const tree_man
       sn->AddUseStmt(gimple_nop_Node);
    }
    for(auto vOver : origGN->vovers)
-      newGN->AddVover(vOver);
+   {
+      if(writeVdef.find(GET_INDEX_NODE(vOver)) == writeVdef.end())
+         newGN->AddVover(vOver);
+   }
    if(origGN->vdef)
    {
       auto snDef = GetPointer<ssa_name>(GET_NODE(origGN->vdef));
       newGN->vdef = origGN->vdef;
       snDef->SetDefStmt(gimple_nop_Node);
+      writeVdef.insert(GET_INDEX_NODE(origGN->vdef));
    }
    sl->list_of_bloc[origGN->bb_index]->PushBefore(gimple_nop_Node, origStmt);
    sl->list_of_bloc[origGN->bb_index]->RemoveStmt(origStmt);
@@ -1008,6 +1012,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
       bool is_top = top_functions.find(function_id) != top_functions.end();
       if(is_top)
       {
+         writeVdef.clear();
          auto HLSMgr = GetPointer<HLS_manager>(AppM);
          /// load xml interface specification file
          for(auto source_file : AppM->input_files)

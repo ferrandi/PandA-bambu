@@ -55,10 +55,13 @@ class parm_decl;
 class ssa_name;
 
 #include <list>
+#include <set>
 
 class interface_infer : public FunctionFrontendFlowStep
 {
  private:
+
+   std::set<unsigned> writeVdef;
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
