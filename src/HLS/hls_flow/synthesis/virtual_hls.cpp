@@ -61,6 +61,7 @@
 
 /// HLS/binding/module
 #include "cdfc_module_binding.hpp"
+#include "unique_binding.hpp"
 
 /// HLS/binding/register/algorithms
 #include "string_manipulation.hpp" // for GET_CLASS
@@ -127,8 +128,9 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
             ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->liveness_algorithm, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          }
          ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_storage_value_insertion_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-         if(HLSMgr->get_HLS(funId))
-            ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->module_binding_algorithm, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         //if(HLSMgr->get_HLS(funId))
+         // Qua potrebbe inserirsi cdfc
+//          ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->module_binding_algorithm, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          // TOOD: struttura condizionale provvisoria
          if(true)
          {
