@@ -85,7 +85,7 @@ DesignFlowStep_Status DataDependenceComputation::InternalExec()
    )
    {
       auto res = Computedependencies<unsigned int>(DFG_AGG_SELECTOR, FB_DFG_AGG_SELECTOR, ADG_AGG_SELECTOR, FB_ADG_AGG_SELECTOR);
-      do_dependence_reduction();
+///      do_dependence_reduction();
       return res;
    }
 #if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
@@ -160,7 +160,7 @@ void DataDependenceComputation::do_dependence_reduction()
          if(is_root.at(posIndex))
          {
             ordered_dfs(posIndex, avg, pos, rev_pos, vis, keep);
-            for(unsigned posIndex0 = posIndex+1; posIndex0 < n_stmts; ++posIndex0)
+            for(unsigned posIndex0 = 0; posIndex0 < n_stmts; ++posIndex0)
                if(vis.at(posIndex0))
                   vis[posIndex0]=false;
          }
