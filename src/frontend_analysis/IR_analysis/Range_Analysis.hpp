@@ -48,6 +48,10 @@
 #include <iostream>
 
 #include "application_frontend_flow_step.hpp"
+#include "tree_common.hpp"
+#include "refcount.hpp"   // for REF_FORWARD_DECL
+
+REF_FORWARD_DECL(tree_node);
 
 namespace RangeAnalysis
 {
@@ -179,10 +183,15 @@ namespace RangeAnalysis
       Range intersectWith(const Range& other) const;
       Range unionWith(const Range& other) const;
       Range BestRange(const Range& UR, const Range& SR, unsigned bw) const;
+
+      static Range makeSatisfyingCmpRegion(kind pred, const Range& Other);
    };
 
    class Range_Analysis : public ApplicationFrontendFlowStep
    {
+   private: 
+      std::map<tree_nodeRef, Range> ranges;
+
    protected:
 
       const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
@@ -229,6 +238,7 @@ namespace RangeAnalysis
       unsigned getMaxBitWidth(unsigned int F);
       unsigned getMaxBitWidth();
       static void updateConstantIntegers(unsigned maxBitWidth);
+      void finalizeRangeAnalysis(void* CG);
 
    };
 
