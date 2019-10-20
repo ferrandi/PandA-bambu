@@ -163,7 +163,7 @@ class parametric_list_based : public Scheduling
    vertex entry_vertex;
 
    /// The starting time given the scheduling (used for chaining)
-   vertex2obj<double> starting_time;
+   vertex2float starting_time;
 
    /// The ending time given the scheduling (used for chaining)
    OpVertexMap<double> ending_time;
