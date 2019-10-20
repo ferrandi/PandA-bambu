@@ -140,7 +140,6 @@ void DataDependenceComputation::do_dependence_reduction()
       const auto bb_node_info = bb_fcfg->CGetBBNodeInfo(*basic_block);
       std::unordered_map<vertex, unsigned> pos;
       std::vector<vertex> rev_pos;
-      std::vector<bool> is_root;
       unsigned posIndex=0;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(bb_node_info->get_bb_index()));
       for(const auto statement : bb_node_info->statements_list)
@@ -149,29 +148,16 @@ void DataDependenceComputation::do_dependence_reduction()
          pos[statement] = posIndex;
          ++posIndex;
          rev_pos.push_back(statement);
-         InEdgeIterator ei, ei_end;
-         boost::tie(ei, ei_end) = boost::in_edges(statement, *avg);
-         bool isRootP=true;
-         for(; ei != ei_end; ++ei)
-         {
-            auto src = boost::source(*ei, *avg);
-            if(std::find(bb_node_info->statements_list.begin(), bb_node_info->statements_list.end(), src) != bb_node_info->statements_list.end())
-            {
-               isRootP = false;
-               break;
-            }
-         }
-         is_root.push_back(isRootP);
       }
       std::vector<bool> vis(posIndex, false);
       const auto n_stmts = bb_node_info->statements_list.size();
       std::unordered_set<std::pair<unsigned, unsigned>> keep;
       for(posIndex = 0; posIndex < n_stmts; ++posIndex)
       {
-         if(is_root.at(posIndex))
+         if(!vis.at(posIndex))
          {
             ordered_dfs(posIndex, avg, pos, rev_pos, vis, keep);
-            for(unsigned posIndex0 = 0; posIndex0 < n_stmts; ++posIndex0)
+            for(unsigned posIndex0 = posIndex+1; posIndex0 < n_stmts; ++posIndex0)
                if(vis.at(posIndex0))
                   vis[posIndex0]=false;
          }
