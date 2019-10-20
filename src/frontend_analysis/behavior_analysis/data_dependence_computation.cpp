@@ -85,7 +85,7 @@ DesignFlowStep_Status DataDependenceComputation::InternalExec()
    )
    {
       auto res = Computedependencies<unsigned int>(DFG_AGG_SELECTOR, FB_DFG_AGG_SELECTOR, ADG_AGG_SELECTOR, FB_ADG_AGG_SELECTOR);
-///      do_dependence_reduction();
+      do_dependence_reduction();
       return res;
    }
 #if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
@@ -145,12 +145,23 @@ void DataDependenceComputation::do_dependence_reduction()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(bb_node_info->get_bb_index()));
       for(const auto statement : bb_node_info->statements_list)
       {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing operation " + GET_NAME(avg, statement));
          pos[statement] = posIndex;
          ++posIndex;
          rev_pos.push_back(statement);
          InEdgeIterator ei, ei_end;
          boost::tie(ei, ei_end) = boost::in_edges(statement, *avg);
-         is_root.push_back(ei == ei_end);
+         bool isRootP=true;
+         for(; ei != ei_end; ++ei)
+         {
+            auto src = boost::source(*ei, *avg);
+            if(std::find(bb_node_info->statements_list.begin(), bb_node_info->statements_list.end(), src) != bb_node_info->statements_list.end())
+            {
+               isRootP = false;
+               break;
+            }
+         }
+         is_root.push_back(isRootP);
       }
       std::vector<bool> vis(posIndex, false);
       const auto n_stmts = bb_node_info->statements_list.size();
