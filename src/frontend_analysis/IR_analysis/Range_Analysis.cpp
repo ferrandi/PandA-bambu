@@ -58,6 +58,7 @@
 
 /// stl
 #include <map>
+#include <sstream>
 #include <vector>
 
 /// Tree includes
@@ -75,7 +76,7 @@ namespace RangeAnalysis
 {
    using namespace boost::multiprecision;
 
-   using eValue = std::pair<const tree_nodeRef, const tree_nodeRef>;
+   using eValue = std::pair<tree_nodeRef, tree_nodeRef>;
    using UAPInt = uint128_t;
 
    namespace 
@@ -89,6 +90,10 @@ namespace RangeAnalysis
       // ========================================================================== //
 
       APInt Min, Max;
+
+      // Used to print pseudo-edges in the Constraint Graph dot
+      std::string pestring;
+      std::stringstream pseudoEdgesString(pestring);
 
       APInt getMaxValue(unsigned bitwidth)
       {
@@ -2967,6 +2972,12 @@ namespace RangeAnalysis
       this->getRange().print(OS);
    }
 
+   std::ostream& operator<<(std::ostream& OS, const BasicInterval* BI)
+   {
+      BI->print(OS);
+      return OS;
+   }
+
    // ========================================================================== //
    // SymbInterval
    // ========================================================================== //
@@ -4304,6 +4315,723 @@ namespace RangeAnalysis
       OS << quot << "\n";
    }
 
+   // ========================================================================== //
+   // ControlDep
+   // ========================================================================== //
+   /// Specific type of BasicOp used in Nuutila's strongly connected
+   /// components algorithm.
+   class ControlDep : public BasicOp
+   {
+    private:
+      VarNode* source;
+      Range eval() override;
+
+    public:
+      ControlDep(VarNode* sink, VarNode* source);
+      ~ControlDep() override;
+      ControlDep(const ControlDep&) = delete;
+      ControlDep(ControlDep&&) = delete;
+      ControlDep& operator=(const ControlDep&) = delete;
+      ControlDep& operator=(ControlDep&&) = delete;
+
+      // Methods for RTTI
+      OperationId getValueId() const override
+      {
+         return OperationId::ControlDepId;
+      }
+      static bool classof(ControlDep const* /*unused*/)
+      {
+         return true;
+      }
+      static bool classof(BasicOp const* BO)
+      {
+         return BO->getValueId() == OperationId::ControlDepId;
+      }
+
+      /// Returns the source of the operation.
+      VarNode* getSource() const
+      {
+         return source;
+      }
+
+      void print(std::ostream& OS) const override;
+   };
+
+   ControlDep::ControlDep(VarNode* sink, VarNode* source) : BasicOp(std::make_shared<BasicInterval>(), sink, nullptr), source(source)
+   {
+   }
+
+   ControlDep::~ControlDep() = default;
+
+   Range ControlDep::eval()
+   {
+      return Range(Regular, MAX_BIT_INT);
+   }
+
+   void ControlDep::print(std::ostream& /*OS*/) const
+   {
+   }
+
+   // ========================================================================== //
+   // Nuutila
+   // ========================================================================== //
+   // The VarNodes type.
+   using VarNodes = std::map<eValue, VarNode*>;
+
+   // A map from variables to the operations where these variables are used.
+   using UseMap = std::map<eValue, std::set<BasicOp*>>;
+
+   // A map from variables to the operations where these
+   // variables are present as bounds
+   using SymbMap = std::map<eValue, std::set<BasicOp*>>;
+
+   class Nuutila
+   {
+    public:
+      VarNodes* variables;
+      int index;
+      std::map<eValue, int> dfs;
+      std::map<eValue, eValue> root;
+      std::set<eValue> inComponent;
+      std::map<eValue, std::set<VarNode*>*> components;
+      std::deque<eValue> worklist;
+      #ifdef SCC_DEBUG
+      bool checkWorklist();
+      bool checkComponents();
+      bool checkTopologicalSort(UseMap* useMap);
+      bool hasEdge(std::set<VarNode*>* componentFrom, std::set<VarNode*, 32>* componentTo, UseMap* useMap);
+      #endif
+    public:
+      Nuutila(VarNodes* varNodes, UseMap* useMap, SymbMap* symbMap);
+      ~Nuutila();
+      Nuutila(const Nuutila&) = delete;
+      Nuutila(Nuutila&&) = delete;
+      Nuutila& operator=(const Nuutila&) = delete;
+      Nuutila& operator=(Nuutila&&) = delete;
+
+      void addControlDependenceEdges(SymbMap* symbMap, UseMap* useMap, VarNodes* vars);
+      void delControlDependenceEdges(UseMap* useMap);
+      void visit(eValue V, std::stack<eValue>& stack, UseMap* useMap);
+      using iterator = std::deque<eValue>::reverse_iterator;
+      iterator begin()
+      {
+         return worklist.rbegin();
+      }
+      iterator end()
+      {
+         return worklist.rend();
+      }
+   };
+
+   /*
+    *	Finds the strongly connected components in the constraint graph formed
+    * by Variables and UseMap. The class receives the map of futures to insert
+    * the control dependence edges in the constraint graph. These edges are removed
+    * after the class is done computing the SCCs.
+    */
+   Nuutila::Nuutila(VarNodes* varNodes, UseMap* useMap, SymbMap* symbMap)
+   {
+      // Copy structures
+      this->variables = varNodes;
+      this->index = 0;
+
+      // Iterate over all varnodes of the constraint graph
+      for(auto vit = varNodes->begin(), vend = varNodes->end(); vit != vend; ++vit)
+      {
+         // Initialize DFS control variable for each Value in the graph
+         auto V = vit->first;
+         dfs[V] = -1;
+      }
+      addControlDependenceEdges(symbMap, useMap, varNodes);
+      // Iterate again over all varnodes of the constraint graph
+      for(auto vit = varNodes->begin(), vend = varNodes->end(); vit != vend; ++vit)
+      {
+         auto V = vit->first;
+         // If the Value has not been visited yet, call visit for him
+         if(dfs[V] < 0)
+         {
+            std::stack<eValue> pilha;
+            visit(V, pilha, useMap);
+         }
+      }
+      delControlDependenceEdges(useMap);
+
+      #ifdef SCC_DEBUG
+      ASSERT(checkWorklist(), "an inconsistency in SCC worklist have been found");
+      ASSERT(checkComponents(), "a component has been used more than once");
+      ASSERT(checkTopologicalSort(useMap), "topological sort is incorrect");
+      #endif
+   }
+
+   Nuutila::~Nuutila()
+   {
+      for(auto mit = components.begin(), mend = components.end(); mit != mend; ++mit)
+      {
+         delete mit->second;
+      }
+   }
+
+   /*
+    *	Adds the edges that ensure that we solve a future before fixing its
+    *  interval. I have created a new class: ControlDep edges, to represent
+    *  the control dependencies. In this way, in order to delete these edges,
+    *  one just need to go over the map of uses removing every instance of the
+    *  ControlDep class.
+    */
+   void Nuutila::addControlDependenceEdges(SymbMap* symbMap, UseMap* useMap, VarNodes* vars)
+   {
+      for(auto sit = symbMap->begin(), send = symbMap->end(); sit != send; ++sit)
+      {
+         for(auto opit = sit->second.begin(), opend = sit->second.end(); opit != opend; ++opit)
+         {
+            auto source_value = vars->find(sit->first);
+            VarNode* source = source_value->second;
+            BasicOp* cdedge = new ControlDep((*opit)->getSink(), source);
+            (*useMap)[sit->first].insert(cdedge);
+         }
+      }
+   }
+
+   /*
+    *	Removes the control dependence edges from the constraint graph.
+    */
+   void Nuutila::delControlDependenceEdges(UseMap* useMap)
+   {
+      for(auto it = useMap->begin(), end = useMap->end(); it != end; ++it)
+      {
+         std::deque<ControlDep*> ops;
+         for(auto sit : it->second)
+         {
+            ControlDep* op = nullptr;
+            if((op = reinterpret_cast<ControlDep*>(sit)) != nullptr)
+            {
+               ops.push_back(op);
+            }
+         }
+
+         for(ControlDep* op : ops)
+         {
+            // Add pseudo edge to the string
+            const auto V = op->getSource()->getValue();
+            if(const auto* C = GetPointer<integer_cst>(V.first))
+            {
+               pseudoEdgesString << " " << C->value << " -> ";
+            }
+            else
+            {
+               pseudoEdgesString << " " << '"';
+               if(V.second)
+               {
+                  printVarName(V.second, pseudoEdgesString);
+               }
+               else
+               {
+                  printVarName(V.first, pseudoEdgesString);
+               }
+               pseudoEdgesString << '"' << " -> ";
+            }
+            const auto VS = op->getSink()->getValue();
+            pseudoEdgesString << '"';
+            if(VS.second)
+            {
+               printVarName(VS.second, pseudoEdgesString);
+            }
+            else
+            {
+               printVarName(VS.first, pseudoEdgesString);
+            }
+            pseudoEdgesString << '"';
+            pseudoEdgesString << " [style=dashed]\n";
+            // Remove pseudo edge from the map
+            it->second.erase(op);
+         }
+      }
+   }
+
+   /*
+    *	Finds SCCs using Nuutila's algorithm. This algorithm is divided in
+    *  two parts. The first calls the recursive visit procedure on every node
+    *  in the constraint graph. The second phase revisits these nodes,
+    *  grouping them in components.
+    */
+   void Nuutila::visit(eValue V, std::stack<eValue>& stack, UseMap* useMap)
+   {
+      dfs[V] = index;
+      ++index;
+      root[V] = V;
+
+      // Visit every node defined in an instruction that uses V
+      for(auto sit = (*useMap)[V].begin(), send = (*useMap)[V].end(); sit != send; ++sit)
+      {
+         auto op = *sit;
+         auto name = op->getSink()->getValue();
+         if(dfs[name] < 0)
+         {
+            visit(name, stack, useMap);
+         }
+         if((!static_cast<bool>(inComponent.count(name))) && (dfs[root[V]] >= dfs[root[name]]))
+         {
+            root[V] = root[name];
+         }
+      }
+
+      // The second phase of the algorithm assigns components to stacked nodes
+      if(root[V] == V)
+      {
+         // Neither the worklist nor the map of components is part of Nuutila's
+         // original algorithm. We are using these data structures to get a
+         // topological ordering of the SCCs without having to go over the root
+         // list once more.
+         worklist.push_back(V);
+         auto SCC = new std::set<VarNode*>;
+         SCC->insert((*variables)[V]);
+         inComponent.insert(V);
+         while(!stack.empty() && (dfs[stack.top()] > dfs[V]))
+         {
+            auto node = stack.top();
+            stack.pop();
+            inComponent.insert(node);
+            SCC->insert((*variables)[node]);
+         }
+         components[V] = SCC;
+      }
+      else
+      {
+         stack.push(V);
+      }
+   }
+
+#ifdef SCC_DEBUG
+   bool Nuutila::checkWorklist()
+   {
+      bool consistent = true;
+      for(auto nit = this->begin(), nend = this->end(); nit != nend; ++nit)
+      {
+         auto v = *nit;
+         for(auto nit2 = this->begin(), nend2 = this->end(); nit2 != nend2; ++nit2)
+         {
+            auto v2 = *nit2;
+            if(v == v2 && nit != nit2)
+            {
+               errs() << "[Nuutila::checkWorklist] Duplicated entry in worklist\n";
+               v.first->dump();
+               consistent = false;
+            }
+         }
+      }
+      return consistent;
+   }
+
+   bool Nuutila::checkComponents()
+   {
+      bool isConsistent = true;
+      for(auto nit = this->begin(), nend = this->end(); nit != nend; ++nit)
+      {
+         auto component = this->components[*nit];
+         for(auto nit2 = this->begin(), nend2 = this->end(); nit2 != nend2; ++nit2)
+         {
+            auto component2 = this->components[*nit2];
+            if(component == component2 && nit != nit2)
+            {
+               errs() << "[Nuutila::checkComponent] Component [" << component << ", " << component->size() << "]\n";
+               isConsistent = false;
+            }
+         }
+      }
+      return isConsistent;
+   }
+
+   /**
+    * Check if a component has an edge to another component
+    */
+   bool Nuutila::hasEdge(std::set<VarNode*>* componentFrom, std::set<VarNode*>* componentTo, UseMap* useMap)
+   {
+      for(auto vit = componentFrom->begin(), vend = componentFrom->end(); vit != vend; ++vit)
+      {
+         const auto source = (*vit)->getValue();
+         for(auto sit = (*useMap)[source].begin(), send = (*useMap)[source].end(); sit != send; ++sit)
+         {
+            BasicOp* op = *sit;
+            if(componentTo->count(op->getSink()) != 0)
+               return true;
+         }
+      }
+      return false;
+   }
+
+   bool Nuutila::checkTopologicalSort(UseMap* useMap)
+   {
+      bool isConsistent = true;
+      std::map<std::set<VarNode*>*, bool> visited;
+      for(auto nit = this->begin(), nend = this->end(); nit != nend; ++nit)
+      {
+         auto component = this->components[*nit];
+         visited[component] = false;
+      }
+
+      for(auto nit = this->begin(), nend = this->end(); nit != nend; ++nit)
+      {
+         auto component = this->components[*nit];
+         if(!visited[component])
+         {
+            visited[component] = true;
+            // check if this component points to another component that has already
+            // been visited
+            for(auto nit2 = this->begin(), nend2 = this->end(); nit2 != nend2; ++nit2)
+            {
+               auto component2 = this->components[*nit2];
+               if(nit != nit2 && visited[component2] && hasEdge(component, component2, useMap))
+                  isConsistent = false;
+            }
+         }
+         else
+            llvm::errs() << "[Nuutila::checkTopologicalSort] Component visited more than once time\n";
+      }
+      return isConsistent;
+   }
+
+#endif
+
+   // ========================================================================== //
+   // Meet
+   // ========================================================================== //
+   class Meet
+   {
+   private:
+      static APInt getFirstGreaterFromVector(const std::vector<APInt>& constantvector, const APInt& val);
+      static APInt getFirstLessFromVector(const std::vector<APInt>& constantvector, const APInt& val);
+
+   public:
+      static bool widen(BasicOp* op, const std::vector<APInt>* constantvector);
+      static bool narrow(BasicOp* op, const std::vector<APInt>* constantvector);
+      static bool crop(BasicOp* op, const std::vector<APInt>* constantvector);
+      static bool growth(BasicOp* op, const std::vector<APInt>* constantvector);
+      static bool fixed(BasicOp* op);
+   };
+
+   /*
+    * Get the first constant from vector greater than val
+    */
+   APInt Meet::getFirstGreaterFromVector(const std::vector<APInt>& constantvector, const APInt& val)
+   {
+      for(const auto& vapint : constantvector)
+      {
+         if(vapint >= val)
+         {
+            return vapint;
+         }
+      }
+      return Max;
+   }
+
+   /*
+    * Get the first constant from vector less than val
+    */
+   APInt Meet::getFirstLessFromVector(const std::vector<APInt>& constantvector, const APInt& val)
+   {
+      for(auto vit = constantvector.rbegin(), vend = constantvector.rend(); vit != vend; ++vit)
+      {
+         const auto& vapint = *vit;
+         if(vapint <= val)
+         {
+            return vapint;
+         }
+      }
+      return Min;
+   }
+
+   bool Meet::fixed(BasicOp* op)
+   {
+      const auto oldInterval = op->getSink()->getRange();
+      Range newInterval = op->eval();
+
+      op->getSink()->setRange(newInterval);
+      #ifdef LOG_TRANSACTIONS
+      if(op->getInstruction())
+      {
+         auto instID = GET_NODE(op->getInstruction())->index;
+         PRINT_MSG("FIXED::%" << instID << ": " << oldInterval << " -> " << newInterval);
+      }
+      else
+      {
+         PRINT_MSG("FIXED::%artificial phi : " << oldInterval << " -> " << newInterval);
+      }
+      #endif
+      return oldInterval != newInterval;
+   }
+
+   /// This is the meet operator of the growth analysis. The growth analysis
+   /// will change the bounds of each variable, if necessary. Initially, each
+   /// variable is bound to either the undefined interval, e.g. [., .], or to
+   /// a constant interval, e.g., [3, 15]. After this analysis runs, there will
+   /// be no undefined interval. Each variable will be either bound to a
+   /// constant interval, or to [-, c], or to [c, +], or to [-, +].
+   bool Meet::widen(BasicOp* op, const std::vector<APInt>* constantvector)
+   {
+      THROW_ASSERT(constantvector, "Invalid pointer to constant vector");
+      const auto oldInterval = op->getSink()->getRange();
+      Range newInterval = op->eval();
+
+      unsigned bw = oldInterval.getBitWidth();
+      if(oldInterval.isUnknown() || oldInterval.isEmpty() || oldInterval.isAnti() || newInterval.isEmpty() || newInterval.isAnti())
+      {
+         if(oldInterval.isAnti() && newInterval.isAnti() && newInterval != oldInterval)
+         {
+            auto oldAnti = Range::getAnti(oldInterval);
+            auto newAnti = Range::getAnti(newInterval);
+            const APInt oldLower = oldAnti.getLower();
+            const APInt oldUpper = oldAnti.getUpper();
+            const APInt newLower = newAnti.getLower();
+            const APInt newUpper = newAnti.getUpper();
+            APInt nlconstant = getFirstGreaterFromVector(*constantvector, newLower);
+            APInt nuconstant = getFirstLessFromVector(*constantvector, newUpper);
+
+            if((newLower > oldLower) && (newUpper < oldUpper))
+            {
+               op->getSink()->setRange(Range(Anti, bw, nlconstant, nuconstant));
+            }
+            else
+            {
+               if(newLower > oldLower)
+               {
+                  op->getSink()->setRange(Range(Anti, bw, nlconstant, oldUpper));
+               }
+               else if(newUpper < oldUpper)
+               {
+                  op->getSink()->setRange(Range(Anti, bw, oldLower, nuconstant));
+               }
+            }
+         }
+         else
+         {
+            op->getSink()->setRange(newInterval);
+         }
+      }
+      else
+      {
+         const APInt& oldLower = oldInterval.getLower();
+         const APInt& oldUpper = oldInterval.getUpper();
+         const APInt& newLower = newInterval.getLower();
+         const APInt& newUpper = newInterval.getUpper();
+
+         // Jump-set
+         APInt nlconstant = getFirstLessFromVector(*constantvector, newLower);
+         APInt nuconstant = getFirstGreaterFromVector(*constantvector, newUpper);
+         if((newLower < oldLower) && (newUpper > oldUpper))
+         {
+            op->getSink()->setRange(Range(Regular, bw, nlconstant, nuconstant));
+         }
+         else
+         {
+            if(newLower < oldLower)
+            {
+               op->getSink()->setRange(Range(Regular, bw, nlconstant, oldUpper));
+            }
+            else if(newUpper > oldUpper)
+            {
+               op->getSink()->setRange(Range(Regular, bw, oldLower, nuconstant));
+            }
+         }
+      }
+      const auto& sinkInterval = op->getSink()->getRange();
+
+      #ifdef LOG_TRANSACTIONS
+      if(op->getInstruction())
+      {
+         auto instID = GET_NODE(op->getInstruction())->index;
+         PRINT_MSG("WIDEN::%" << instID << ": " << oldInterval << " -> " << newInterval << " -> " << sinkInterval);
+      }
+      else
+      {
+         PRINT_MSG("WIDEN::%artificial phi : " << oldInterval << " -> " << newInterval << " -> " << sinkInterval);
+      }
+      #endif
+
+      return oldInterval != sinkInterval;
+   }
+
+   bool Meet::growth(BasicOp* op, const std::vector<APInt>* /*constantvector*/)
+   {
+      const auto oldInterval = op->getSink()->getRange();
+      Range newInterval = op->eval();
+      if(oldInterval.isUnknown() || oldInterval.isEmpty() || oldInterval.isAnti() || newInterval.isEmpty() || newInterval.isAnti())
+      {
+         op->getSink()->setRange(newInterval);
+      }
+      else
+      {
+         unsigned bw = oldInterval.getBitWidth();
+         const APInt& oldLower = oldInterval.getLower();
+         const APInt& oldUpper = oldInterval.getUpper();
+         const APInt& newLower = newInterval.getLower();
+         const APInt& newUpper = newInterval.getUpper();
+         if(newLower < oldLower)
+         {
+            if(newUpper > oldUpper)
+            {
+               op->getSink()->setRange(Range(Regular, bw));
+            }
+            else
+            {
+               op->getSink()->setRange(Range(Regular, bw, Min, oldUpper));
+            }
+         }
+         else if(newUpper > oldUpper)
+         {
+            op->getSink()->setRange(Range(Regular, bw, oldLower, Max));
+         }
+      }
+      const auto& sinkInterval = op->getSink()->getRange();
+      #ifdef LOG_TRANSACTIONS
+      if(op->getInstruction())
+      {
+         auto instID = GET_NODE(op->getInstruction())->index;
+         PRINT_MSG("GROWTH::%" << instID << ": " << oldInterval << " -> " << sinkInterval);
+      }
+      else
+      {
+         PRINT_MSG("GROWTH::%artificial phi : " << oldInterval << " -> " << sinkInterval);
+      }
+      #endif
+      return oldInterval != sinkInterval;
+   }
+
+   /// This is the meet operator of the cropping analysis. Whereas the growth
+   /// analysis expands the bounds of each variable, regardless of intersections
+   /// in the constraint graph, the cropping analysis shrinks these bounds back
+   /// to ranges that respect the intersections.
+   bool Meet::narrow(BasicOp* op, const std::vector<APInt>* constantvector)
+   {
+      const auto oldInterval = op->getSink()->getRange();
+      Range newInterval = op->eval();
+      unsigned bw = oldInterval.getBitWidth();
+
+      if(oldInterval.isAnti() || newInterval.isAnti() || oldInterval.isEmpty() || newInterval.isEmpty())
+      {
+         if(oldInterval.isAnti() && newInterval.isAnti() && newInterval != oldInterval)
+         {
+            auto oldAnti = Range::getAnti(oldInterval);
+            auto newAnti = Range::getAnti(newInterval);
+            const APInt& oLower = oldAnti.getLower();
+            const APInt& oUpper = oldAnti.getUpper();
+            const APInt& nLower = newAnti.getLower();
+            const APInt& nUpper = newAnti.getUpper();
+            APInt nlconstant = getFirstGreaterFromVector(*constantvector, nLower);
+            APInt nuconstant = getFirstLessFromVector(*constantvector, nUpper);
+            THROW_ASSERT(oLower != Min, "");
+            const APInt& smin = std::max(oLower, nlconstant);
+            if(oLower != smin)
+            {
+               op->getSink()->setRange(Range(Anti, bw, smin, oUpper));
+            }
+            THROW_ASSERT(oUpper != Max, "");
+            const APInt& smax = std::min(oUpper, nuconstant);
+            if(oUpper != smax)
+            {
+               auto sinkRange = op->getSink()->getRange();
+               if(sinkRange.isAnti())
+               {
+                  auto sinkAnti = Range::getAnti(sinkRange);
+                  op->getSink()->setRange(Range(Anti, bw, sinkAnti.getLower(), smax));
+               }
+               else
+               {
+                  op->getSink()->setRange(Range(Anti, bw, sinkRange.getLower(), smax));
+               }
+            }
+         }
+         else
+         {
+            op->getSink()->setRange(newInterval);
+         }
+      }
+      else
+      {
+         const APInt oLower = oldInterval.getLower();
+         const APInt oUpper = oldInterval.getUpper();
+         const APInt nLower = newInterval.getLower();
+         const APInt nUpper = newInterval.getUpper();
+         if((oLower == Min) && (nLower == Min))
+         {
+            op->getSink()->setRange(Range(Regular, bw, nLower, oUpper));
+         }
+         else
+         {
+            const APInt& smin = std::min(oLower, nLower);
+            if(oLower != smin)
+            {
+               op->getSink()->setRange(Range(Regular, bw, smin, oUpper));
+            }
+         }
+         if(!op->getSink()->getRange().isAnti())
+         {
+            if((oUpper == Max) && (nUpper == Max))
+            {
+               op->getSink()->setRange(Range(Regular, bw, op->getSink()->getRange().getLower(), nUpper));
+            }
+            else
+            {
+               const APInt& smax = std::max(oUpper, nUpper);
+               if(oUpper != smax)
+               {
+                  op->getSink()->setRange(Range(Regular, bw, op->getSink()->getRange().getLower(), smax));
+               }
+            }
+         }
+      }
+      const auto& sinkInterval = op->getSink()->getRange();
+      #ifdef LOG_TRANSACTIONS
+      if(op->getInstruction())
+      {
+         auto instID = GET_NODE(op->getInstruction())->index;
+         PRINT_MSG("NARROW::%" << instID << ": " << oldInterval << " -> " << sinkInterval);
+      }
+      else
+      {
+         PRINT_MSG("NARROW::%artificial phi : " << oldInterval << " -> " << sinkInterval);
+      }
+      #endif
+      return oldInterval != sinkInterval;
+   }
+
+   bool Meet::crop(BasicOp* op, const std::vector<APInt>* /*constantvector*/)
+   {
+      const auto oldInterval = op->getSink()->getRange();
+      Range newInterval = op->eval();
+
+      if(oldInterval.isAnti() || newInterval.isAnti() || oldInterval.isEmpty() || newInterval.isEmpty())
+      {
+         op->getSink()->setRange(newInterval);
+      }
+      else
+      {
+         unsigned bw = oldInterval.getBitWidth();
+         char abstractState = op->getSink()->getAbstractState();
+         if((abstractState == '-' || abstractState == '?') && (newInterval.getLower() > oldInterval.getLower()))
+         {
+            op->getSink()->setRange(Range(Regular, bw, newInterval.getLower(), oldInterval.getUpper()));
+         }
+
+         if((abstractState == '+' || abstractState == '?') && (newInterval.getUpper() < oldInterval.getUpper()))
+         {
+            op->getSink()->setRange(Range(Regular, bw, oldInterval.getLower(), newInterval.getUpper()));
+         }
+      }
+      const auto& sinkInterval = op->getSink()->getRange();
+      #ifdef LOG_TRANSACTIONS
+      if(op->getInstruction())
+      {
+         auto instID = GET_NODE(op->getInstruction())->index);
+         PRINT_MSG("CROP::%" << instID << ": " << oldInterval << " -> " << sinkInterval);
+      }
+      else
+      {
+         PRINT_MSG("CROP::%artificial phi : " << oldInterval << " -> " << sinkInterval);
+      }
+      #endif
+      return oldInterval != sinkInterval;
+   }
+
    /// This class is used to store the intersections that we get in the branches.
    /// I decided to write it because I think it is better to have an object
    /// to store these information than create a lot of maps
@@ -4412,18 +5140,8 @@ namespace RangeAnalysis
    // ========================================================================== //
    // ConstraintGraph
    // ========================================================================== //
-   // The VarNodes type.
-   using VarNodes = std::map<eValue, VarNode*>;
-
    // The Operations type.
    using GenOprs = std::set<BasicOp*>;
-
-   // A map from variables to the operations where these variables are used.
-   using UseMap = std::map<eValue, std::set<BasicOp*>>;
-
-   // A map from variables to the operations where these
-   // variables are present as bounds
-   using SymbMap = std::map<eValue, std::set<BasicOp*>>;
 
    // A map from varnodes to the operation in which this variable is defined
    using DefMap = std::map<eValue, BasicOp*>;
@@ -4439,6 +5157,68 @@ namespace RangeAnalysis
       VarNodes vars;
       // The operations of the source program and the nodes which represent them.
       GenOprs oprs;
+
+      // Perform the widening and narrowing operations
+      void update(const UseMap& compUseMap, std::set<eValue>& actv, bool (*meet)(BasicOp* op, const std::vector<APInt>* constantvector))
+      {
+         while(!actv.empty())
+         {
+            const auto V = *actv.begin();
+            actv.erase(V);
+            //         llvm::errs() << "-> update: ";
+            //         V.first->print(llvm::errs());
+            //         llvm::errs() << "\n";
+
+            // The use list.
+            const auto& L = compUseMap.find(V)->second;
+
+            for(BasicOp* op : L)
+            {
+               //            llvm::errs() << "  > ";
+               //            op->getSink()->print(llvm::errs());
+               //            llvm::errs() <<  "\n";
+               if(meet(op, &constantvector))
+               {
+                  // I want to use it as a set, but I also want
+                  // keep an order or insertions and removals.
+                  auto val = op->getSink()->getValue();
+                  actv.insert(val);
+               }
+            }
+         }
+      }
+      
+      void update(unsigned nIterations, const UseMap& compUseMap, std::set<eValue>& actv)
+      {
+         std::list<eValue> queue(actv.begin(), actv.end());
+         actv.clear();
+         while(!queue.empty())
+         {
+            const auto V = queue.front();
+            queue.pop_front();
+            // The use list.
+            const auto& L = compUseMap.find(V)->second;
+            for(auto op : L)
+            {
+               if(nIterations == 0)
+               {
+                  return;
+               }
+               --nIterations;
+               if(Meet::fixed(op))
+               {
+                  auto next = op->getSink()->getValue();
+                  if(std::find(queue.begin(), queue.end(), next) == queue.end())
+                  {
+                     queue.push_back(next);
+                  }
+               }
+            }
+         }
+      }
+
+      virtual void preUpdate(const UseMap& compUseMap, std::set<eValue>& entryPoints) = 0;
+      virtual void posUpdate(const UseMap& compUseMap, std::set<eValue>& activeVars, const std::set<VarNode*>* component) = 0;
 
    private:
       int debug_level;
@@ -4684,6 +5464,99 @@ namespace RangeAnalysis
          addVarNode(I, nullptr);
       }
 
+      void addSigmaOp(tree_nodeRef I, blocRef BB, application_managerRef AppM)
+      {
+         const auto* phi = GetPointer<gimple_phi>(GET_NODE(I));
+         THROW_ASSERT(phi, "");
+         THROW_ASSERT(phi->CGetDefEdgesList().size() == 1U, "");
+
+         // Create the sink.
+         VarNode* sink = addVarNode(I, nullptr);
+         std::shared_ptr<BasicInterval> BItv;
+         SigmaOp* sigmaOp = nullptr;
+
+         //const BasicBlock* thisbb = Sigma->getParent();
+         for(const auto [operand, edge_index] : phi->CGetDefEdgesList())
+         {
+            VarNode* source = addVarNode(operand, nullptr);
+
+            // Create the operation (two cases from: branch or switch)
+            auto vbmit = this->valuesBranchMap.find(operand);
+
+            // Branch case
+            if(vbmit != this->valuesBranchMap.end())
+            {
+               const ValueBranchMap& VBM = vbmit->second;
+               if(BB == VBM.getBBTrue())
+               {
+                  BItv = VBM.getItvT();
+               }
+               else
+               {
+                  if(BB == VBM.getBBFalse())
+                  {
+                     BItv = VBM.getItvF();
+                  }
+               }
+            }
+            else
+            {
+               // Switch case
+               auto vsmit = this->valuesSwitchMap.find(operand);
+
+               if(vsmit == this->valuesSwitchMap.end())
+               {
+                  continue;
+               }
+
+               const ValueSwitchMap& VSM = vsmit->second;
+               // Find out which case are we dealing with
+               for(unsigned idx = 0, e = VSM.getNumOfCases(); idx < e; ++idx)
+               {
+                  const blocRef bb = VSM.getBB(idx);
+                  if(bb == BB)
+                  {
+                     BItv = VSM.getItv(idx);
+                     break;
+                  }
+               }
+            }
+
+            if(BItv == nullptr)
+            {
+               sigmaOp = new SigmaOp(std::make_shared<BasicInterval>(getGIMPLE_range(reinterpret_cast<const gimple_node*>(phi), AppM)), sink, I, source, nullptr, phi->get_kind());
+            }
+            else
+            {
+               //            llvm::errs() << "Add SigmaOp: ";
+               //            BItv->print(llvm::errs());
+               //            llvm::errs()<<"\n";
+               //            BItv->getRange().print(llvm::errs());
+               //            llvm::errs()<<"\n";
+               VarNode* SymbSrc = nullptr;
+               if(auto symb = std::dynamic_pointer_cast<SymbInterval>(BItv))
+               {
+                  auto bound = symb->getBound();
+                  SymbSrc = addVarNode(bound.first, bound.second);
+               }
+               sigmaOp = new SigmaOp(BItv, sink, I, source, SymbSrc, phi->get_kind());
+               if(SymbSrc)
+               {
+                  this->useMap.find(SymbSrc->getValue())->second.insert(sigmaOp);
+               }
+            }
+
+            // Insert the operation in the graph.
+            this->oprs.insert(sigmaOp);
+
+            // Insert this definition in defmap
+            this->defMap[sink->getValue()] = sigmaOp;
+
+            // Inserts the sources of the operation in the use map list.
+            this->useMap.find(source->getValue())->second.insert(sigmaOp);
+         }
+      }
+
       /// Adds an UnaryOp in the graph.
       void addUnaryOp(tree_nodeRef I, application_managerRef AppM)
       {
@@ -4714,6 +5587,10 @@ namespace RangeAnalysis
          }
          std::shared_ptr<BasicInterval> BI = std::make_shared<BasicInterval>(getGIMPLE_range(reinterpret_cast<const gimple_node*>(assign), AppM));
          UnaryOp* UOp = new UnaryOp(BI, sink, I, source, un_op->get_kind());
+
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
+            " <--RA constraint graph: added UnaryOp for " << un_op->get_kind_text() << " with range " << BI);
+
          this->oprs.insert(UOp);
          // Insert this definition in defmap
          this->defMap[sink->getValue()] = UOp;
@@ -4741,6 +5618,9 @@ namespace RangeAnalysis
          // Create the operation using the intersect to constrain sink's interval.
          std::shared_ptr<BasicInterval> BI = std::make_shared<BasicInterval>(getGIMPLE_range(reinterpret_cast<const gimple_node*>(assign), AppM));
          BinaryOp* BOp = new BinaryOp(BI, sink, I, source1, source2, bin_op->get_kind());
+
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
+            " <--RA constraint graph: added BinaryOp for " << bin_op->get_kind_text() << " with range " << BI);
 
          // Insert the operation in the graph.
          this->oprs.insert(BOp);
@@ -4793,6 +5673,9 @@ namespace RangeAnalysis
          std::shared_ptr<BasicInterval> BI = std::make_shared<BasicInterval>(getGIMPLE_range(reinterpret_cast<const gimple_node*>(phi), AppM));
          PhiOp* phiOp = new PhiOp(BI, sink, I);
 
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
+            " <--RA constraint graph: added PhiOp with range " << BI << " and " << phi->CGetDefEdgesList().size() << " sources");
+
          // Insert the operation in the graph.
          this->oprs.insert(phiOp);
 
@@ -4809,7 +5692,7 @@ namespace RangeAnalysis
          }
       }
 
-      void buildOperations(tree_nodeRef I_node, const application_managerRef AppM, int debug_level)
+      void buildOperations(tree_nodeRef I_node, blocRef BB, const application_managerRef AppM)
       {
          auto* I = GetPointer<gimple_node>(GET_NODE(I_node));
          THROW_ASSERT(I, "");
@@ -4860,7 +5743,7 @@ namespace RangeAnalysis
             {
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
                   " <--RA constraint graph: analyzing sigma instruction");
-               // TODO: handle sigma operation
+               return addSigmaOp(I_node, BB, AppM);
             }
             else
             {
@@ -4873,9 +5756,171 @@ namespace RangeAnalysis
          THROW_UNREACHABLE("Unhandled operation (" + I->get_kind_text() + ")");
       }
 
+      /*
+       *	This method builds a map that binds each variable label to the
+       * operations
+       * where this variable is used.
+       */
+      UseMap buildUseMap(const std::set<VarNode*>& component)
+      {
+         UseMap compUseMap;
+         for(auto vit = component.begin(), vend = component.end(); vit != vend; ++vit)
+         {
+            const VarNode* var = *vit;
+            const auto V = var->getValue();
+            // Get the component's use list for V (it does not exist until we try to get it)
+            auto& list = compUseMap[V];
+            // Get the use list of the variable in component
+            auto p = this->useMap.find(V);
+            // For each operation in the list, verify if its sink is in the component
+            for(BasicOp* opit : p->second)
+            {
+               VarNode* sink = opit->getSink();
+               // If it is, add op to the component's use map
+               if(component.count(sink) != 0)
+               {
+                  list.insert(opit);
+               }
+            }
+         }
+         return compUseMap;
+      }
+
+      /*
+       * This method builds a map of variables to the lists of operations where
+       * these variables are used as futures. Its C++ type should be something like
+       * map<VarNode, List<Operation>>.
+       */
       void buildSymbolicIntersectMap()
       {
+         // Creates the symbolic intervals map
+         symbMap = SymbMap();
 
+         // Iterate over the operations set
+         for(BasicOp* op : oprs)
+         {
+            // If the operation is unary and its interval is symbolic
+            auto* uop = reinterpret_cast<UnaryOp*>(op);
+            if((uop != nullptr) && SymbInterval::classof(uop->getIntersect().get()))
+            {
+               auto symbi = std::dynamic_pointer_cast<SymbInterval>(uop->getIntersect());
+               const auto V = symbi->getBound();
+               auto p = symbMap.find(V);
+               if(p != symbMap.end())
+               {
+                  p->second.insert(uop);
+               }
+               else
+               {
+                  std::set<BasicOp*> l;
+                  l.insert(uop);
+                  symbMap.insert(std::make_pair(V, l));
+               }
+            }
+         }
+      }
+
+      /*
+       * This method evaluates once each operation that uses a variable in
+       * component, so that the next SCCs after component will have entry
+       * points to kick start the range analysis algorithm.
+       */
+      void propagateToNextSCC(const std::set<VarNode*>& component)
+      {
+         for(auto var : component)
+         {
+            const auto V = var->getValue();
+            auto p = this->useMap.find(V);
+            for(BasicOp* op : p->second)
+            {
+               /// VarNodes belonging to the current SCC must not be evaluated otherwise we break the fixed point previously computed
+               if(component.find(op->getSink()) != component.end())
+               {
+                  continue;
+               }
+               auto* sigmaop = reinterpret_cast<SigmaOp*>(op);
+               op->getSink()->setRange(op->eval());
+               if((sigmaop != nullptr) && sigmaop->getIntersect()->getRange().isUnknown())
+               {
+                  sigmaop->markUnresolved();
+               }
+            }
+         }
+      }
+
+      void generateEntryPoints(const std::set<VarNode*>& component, std::set<eValue>& entryPoints)
+      {
+         // Iterate over the varnodes in the component
+         for(VarNode* varNode : component)
+         {
+            const auto V = varNode->getValue();
+
+            // TODO: check V.first is the gimple_phi tree_nodeRef when building SigmaOp calling addSigmaOp in buildOperations
+            if(GetPointer<gimple_phi>(GET_NODE(V.first)) && GetPointer<gimple_phi>(GET_NODE(V.first))->CGetDefEdgesList().size() == 1)
+            {
+               auto dit = this->defMap.find(V);
+               if(dit != this->defMap.end())
+               {
+                  BasicOp* bop = dit->second;
+                  auto* defop = reinterpret_cast<SigmaOp*>(bop);
+
+                  if((defop != nullptr) && defop->isUnresolved())
+                  {
+                     defop->getSink()->setRange(bop->eval());
+                     defop->markResolved();
+                  }
+               }
+            }
+            if(!varNode->getRange().isUnknown())
+            {
+               entryPoints.insert(V);
+            }
+         }
+      }
+
+      void fixIntersects(const std::set<VarNode*>& component)
+      {
+         // Iterate again over the varnodes in the component
+         for(VarNode* varNode : component)
+         {
+            fixIntersectsSC(varNode);
+         }
+      }
+
+      void fixIntersectsSC(VarNode* varNode)
+      {
+         const auto V = varNode->getValue();
+         auto sit = symbMap.find(V);
+         if(sit != symbMap.end())
+         {
+            //         llvm::errs() << "fix intersects:\n";
+            //         varNode->print(llvm::errs());
+            //         llvm::errs() << "\n";
+            for(BasicOp* op : sit->second)
+            {
+               //            llvm::errs() << "op intersects:\n";
+               //            op->print(llvm::errs());
+               //            llvm::errs() << "\n";
+               op->fixIntersects(varNode);
+               //            llvm::errs() << "sink:";
+               //            op->getSink()->print(llvm::errs());
+               //            llvm::errs() << "\n";
+            }
+         }
+      }
+
+      void generateActivesVars(const std::set<VarNode*>& component, std::set<eValue>& activeVars)
+      {
+         for(VarNode* varNode : component)
+         {
+            const auto V = varNode->getValue();
+            const auto* CI = GetPointer<integer_cst>(GET_NODE(V.first));
+            if(CI != nullptr)
+            {
+               continue;
+            }
+            activeVars.insert(V);
+         }
       }
 
    public:
@@ -4949,7 +5994,7 @@ namespace RangeAnalysis
                      continue;
                   }
                   
-                  buildOperations(stmt, AppM, debug_level);
+                  buildOperations(stmt, bb, AppM);
                }
             }
          }
@@ -4970,9 +6015,121 @@ namespace RangeAnalysis
       {
          buildSymbolicIntersectMap();
 
-         // TODO: find SCCs
+         // List of SCCs
+         Nuutila sccList(&vars, &useMap, &symbMap);
+         
+         for(auto nit = sccList.begin(), nend = sccList.end(); nit != nend; ++nit)
+         {
+            auto& component = *sccList.components[*nit];
+            #ifdef SCC_DEBUG
+            --numberOfSCCs;
+            #endif
 
-         // TODO: solve each SSC and propagate results
+            #ifdef DEBUG_RA
+            llvm::errs() << "Components:\n";
+            for(auto var : component)
+            {
+               llvm::errs() << "  ";
+               var->print(llvm::errs());
+               llvm::errs() << "\n";
+            }
+            llvm::errs() << "-----------\n";
+            #endif
+            if(component.size() == 1)
+            {
+               //++numAloneSCCs;
+               VarNode* var = *component.begin();
+               fixIntersectsSC(var);
+               if(this->defMap.find(var->getValue()) != this->defMap.end())
+               {
+                  BasicOp* op = this->defMap.find(var->getValue())->second;
+                  var->setRange(op->eval());
+               }
+               if(var->getRange().isUnknown())
+               {
+                  var->setRange(Range(Regular, var->getBitWidth()));
+               }
+            }
+            else
+            {
+               //if(component.size() > sizeMaxSCC)
+               //{
+               //   sizeMaxSCC = component.size();
+               //}
+
+               UseMap compUseMap = buildUseMap(component);
+
+               // Get the entry points of the SCC
+               std::set<eValue> entryPoints;
+
+                #ifdef JUMPSET
+               // Create vector of constants inside component
+               // Comment this line below to deactivate jump-set
+               buildConstantVector(component, compUseMap);
+               #endif
+               #ifdef DEBUG_RA
+               for(auto cnst : constantvector)
+                  llvm::errs() << " " << cnst;
+               if(!constantvector.empty())
+                  llvm::errs() << "\n";
+               #endif
+               generateEntryPoints(component, entryPoints);
+               // iterate a fixed number of time before widening
+               update(component.size() * 16, compUseMap, entryPoints);
+               #ifdef DEBUG_RA
+               if(func != nullptr)
+               {
+                  printToFile(*func, "/tmp/" + func->getName().str() + "cgfixed.dot");
+               }
+               #endif
+
+               generateEntryPoints(component, entryPoints);
+               //            llvm::errs() << "entryPoints:\n";
+               //            for(auto el : entryPoints)
+               //            {
+               //               llvm::errs() << " ->";
+               //               el.first->print(llvm::errs());
+               //               llvm::errs() << "\n";
+               //            }
+               // First iterate till fix point
+               preUpdate(compUseMap, entryPoints);
+               //            llvm::errs() << "fixIntersects\n";
+               fixIntersects(component);
+               //            llvm::errs() << "--\n";
+
+               #ifdef DEBUG_RA
+               if(func != nullptr)
+               {
+                  printToFile(*func, "/tmp/" + func->getName().str() + "cgfixintersect.dot");
+               }
+               #endif
+
+               for(VarNode* varNode : component)
+               {
+                  if(varNode->getRange().isUnknown())
+                  {
+                     //llvm::errs() << "initialize unknown: ";
+                     //varNode->getValue().first->print(llvm::errs());
+                     //llvm::errs() << "\n";
+                     // llvm_unreachable("unexpected condition");
+                     varNode->setRange(Range(Regular, varNode->getBitWidth(), Min, Max));
+                  }
+               }
+
+               #ifdef DEBUG_RA
+               if(func != nullptr)
+               {
+                  printToFile(*func, "/tmp/" + func->getName().str() + "cgint.dot");
+               }
+               #endif
+
+               // Second iterate till fix point
+               std::set<eValue> activeVars;
+               generateActivesVars(component, activeVars);
+               posUpdate(compUseMap, activeVars, &component);
+            }
+            propagateToNextSCC(component);
+         }
       }
 
       Range getRange(eValue v)
@@ -5003,7 +6160,96 @@ namespace RangeAnalysis
       }
    };
 
-   static void MatchParametersAndReturnValues(unsigned int function_id, application_managerRef AppM, RangeAnalysis::ConstraintGraph& CG, int debug_level)
+   // ========================================================================== //
+   // Cousot
+   // ========================================================================== //
+   class Cousot : public ConstraintGraph
+   {
+    private:
+      void preUpdate(const UseMap& compUseMap, std::set<eValue>& entryPoints) override
+      {
+         update(compUseMap, entryPoints, Meet::widen);
+      }
+
+      void posUpdate(const UseMap& compUseMap, std::set<eValue>& entryPoints, const std::set<VarNode*>* component) override
+      {
+         update(compUseMap, entryPoints, Meet::narrow);
+      }
+
+    public:
+      Cousot(int _debug_level) : ConstraintGraph(_debug_level) {}
+   };
+
+   // ========================================================================== //
+   // CropDFS
+   // ========================================================================== //
+   class CropDFS : public ConstraintGraph
+   {
+    private:
+      void preUpdate(const UseMap& compUseMap, std::set<eValue>& entryPoints) override
+      {
+         update(compUseMap, entryPoints, Meet::growth);
+      }
+
+      void posUpdate(const UseMap& compUseMap, std::set<eValue>& activeVars, const std::set<VarNode*>* component) override
+      {
+         storeAbstractStates(*component);
+         auto obgn = oprs.begin(), oend = oprs.end();
+         for(; obgn != oend; ++obgn)
+         {
+            BasicOp* op = *obgn;
+            if(component->count(op->getSink()) != 0u)
+            {
+               crop(compUseMap, op);
+            }
+         }
+      }
+
+      void storeAbstractStates(const std::set<VarNode*>& component)
+      {
+         for(auto varNode : component)
+         {
+            varNode->storeAbstractState();
+         }
+      }
+
+      void crop(const UseMap& compUseMap, BasicOp* op)
+      {
+         std::set<BasicOp*> activeOps;
+         std::set<const VarNode*> visitedOps;
+
+         // init the activeOps only with the op received
+         activeOps.insert(op);
+
+         while(!activeOps.empty())
+         {
+            BasicOp* V = *activeOps.begin();
+            activeOps.erase(V);
+            const VarNode* sink = V->getSink();
+
+            // if the sink has been visited go to the next activeOps
+            if(visitedOps.count(sink) != 0u)
+            {
+               continue;
+            }
+
+            Meet::crop(V, nullptr);
+            visitedOps.insert(sink);
+
+            // The use list.of sink
+            const auto& L = compUseMap.find(sink->getValue())->second;
+            for(BasicOp* op : L)
+            {
+               activeOps.insert(op);
+            }
+         }
+      }
+
+    public:
+      CropDFS(int _debug_level) : ConstraintGraph(_debug_level) {}
+   };
+
+   static void MatchParametersAndReturnValues(unsigned int function_id, application_managerRef AppM, RangeAnalysis::ConstraintGraph* CG, int debug_level)
    {
       const auto TM = AppM->get_tree_manager();
       auto* FD = GetPointer<function_decl>(TM->GetTreeNode(function_id));
@@ -5071,24 +6317,24 @@ namespace RangeAnalysis
 
       for(size_t i = 0, e = parameters.size(); i < e; ++i)
       {
-         VarNode* sink = CG.addVarNode(parameters[i].first, nullptr);
+         VarNode* sink = CG->addVarNode(parameters[i].first, nullptr);
          sink->setRange(Range(Regular, sink->getBitWidth(), Min, Max));
          matchers[i] = new PhiOp(std::make_shared<BasicInterval>(), sink, nullptr);
          // Insert the operation in the graph.
-         CG.getOprs()->insert(matchers[i]);
+         CG->getOprs()->insert(matchers[i]);
          // Insert this definition in defmap
-         (*CG.getDefMap())[sink->getValue()] = matchers[i];
+         (*CG->getDefMap())[sink->getValue()] = matchers[i];
       }
 
       std::vector<VarNode*> returnVars;
 
       for(auto returnValue : returnValues)
       {
-         VarNode* from = CG.addVarNode(returnValue, nullptr);
+         VarNode* from = CG->addVarNode(returnValue, nullptr);
          returnVars.push_back(from);
       }
 
-      // TODO: for each use of the function match formal and real parameters
+      // TODO: for each use of the function match formal and real parameters for caller instruction
    }
 
    // ========================================================================== //
@@ -5137,22 +6383,27 @@ namespace RangeAnalysis
    DesignFlowStep_Status Range_Analysis::Exec()
    {
       /// Build Constraint graph on every function
-      RangeAnalysis::ConstraintGraph CG(debug_level);
+      RangeAnalysis::ConstraintGraph* CG = new Cousot(debug_level);
 
       MAX_BIT_INT = getMaxBitWidth();
       updateConstantIntegers(MAX_BIT_INT);
 
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
+         " <--RA: maximum bitwidth is " << MAX_BIT_INT << " bits");
+
       const auto functions = AppM->get_functions_with_body();
       for(unsigned int f : functions)
       {
-         CG.buildGraph(f, AppM);
+         CG->buildGraph(f, AppM);
          MatchParametersAndReturnValues(f, AppM, CG, debug_level);
       }
-      CG.buildVarNodes();
+      CG->buildVarNodes();
 
-      CG.findIntervals();
+      CG->findIntervals();
 
-      finalizeRangeAnalysis(&CG);
+      finalizeRangeAnalysis(CG);
+
+      delete CG;
       
       return DesignFlowStep_Status::UNCHANGED;
    }
@@ -5179,8 +6430,14 @@ namespace RangeAnalysis
                auto* I = GetPointer<gimple_node>(GET_NODE(stmt));
 
                THROW_ASSERT(I != nullptr, "Instruction should be valid");
+
+               InstBitSize = getGIMPLE_BW(I);
+               if(InstBitSize > max)   // TODO: check that instruction is about integer types
+               {
+                  max = InstBitSize;
+               }
                
-               // TODO: get maximum bitwidth of I operands, maybe getGIMPLE_range(stmt).getBitWidth()
+               // TODO: check instruction operands dimension and update max if necessary
             }
          }
       }
@@ -5216,35 +6473,35 @@ namespace RangeAnalysis
       Max = getSignedMaxValue(maxBitWidth);
    }
 
-   void Range_Analysis::finalizeRangeAnalysis(void* /*CGp*/)
+   void Range_Analysis::finalizeRangeAnalysis(void* CGp)
    {
-      //ConstraintGraph* CG = reinterpret_cast<ConstraintGraph*>(CGp);
-      //
-      //const auto TM = AppM->get_tree_manager();
-      //
-      //const auto functions = AppM->get_functions_with_body();
-      //for(unsigned int f : functions)
-      //{
-      //   auto* FD = GetPointer<function_decl>(TM->get_tree_node_const(f));
-      //   auto* SL = GetPointer<statement_list>(GET_NODE(FD->body));
-      //
-      //   for(const auto& [bb_id, bb] : SL->list_of_bloc)
-      //   {
-      //      const auto& stmt_list = bb->CGetStmtList();
-      //      if(stmt_list.size())
-      //      {
-      //         for(auto& stmt : stmt_list)
-      //         {
-      //            auto* I = GetPointer<gimple_node>(GET_NODE(stmt));
-      //
-      //            // TODO: check instruction is not void type
-      //
-      //            // TODO: better adapt following operation to consider the variable associated
-      //            //       with the statement and not the statement itself
-      //            //ranges.insert(std::make_pair(I, CG->getRange(std::make_pair(stmt, nullptr))));
-      //         }
-      //      }
-      //   }
-      //}
+      ConstraintGraph* CG = reinterpret_cast<ConstraintGraph*>(CGp);
+      
+      const auto TM = AppM->get_tree_manager();
+      
+      const auto functions = AppM->get_functions_with_body();
+      for(unsigned int f : functions)
+      {
+         auto* FD = GetPointer<function_decl>(TM->get_tree_node_const(f));
+         auto* SL = GetPointer<statement_list>(GET_NODE(FD->body));
+      
+         for(const auto& [bb_id, bb] : SL->list_of_bloc)
+         {
+            const auto& stmt_list = bb->CGetStmtList();
+            if(stmt_list.size())
+            {
+               for(auto& stmt : stmt_list)
+               {
+                  auto* I = GetPointer<gimple_node>(GET_NODE(stmt));
+      
+                  // TODO: check instruction is not void type
+      
+                  // TODO: maybe adapt following operation to consider the variable associated
+                  //       with the statement and not the statement itself
+                  ranges.insert(std::make_pair(I, CG->getRange(std::make_pair(stmt, nullptr))));
+               }
+            }
+         }
+      }
    }
 }
