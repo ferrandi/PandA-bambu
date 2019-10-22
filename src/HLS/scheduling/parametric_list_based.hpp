@@ -159,9 +159,6 @@ class parametric_list_based : public Scheduling
    /// The dependence graph with feedbacks
    OpGraphConstRef flow_graph_with_feedbacks;
 
-   /// Entry vertex
-   vertex entry_vertex;
-
    /// The starting time given the scheduling (used for chaining)
    vertex2float starting_time;
 
@@ -212,12 +209,10 @@ class parametric_list_based : public Scheduling
    /**
     * Update the resource map
     * @param used_resources_fu is the resource map.
-    * @param current_vertex is the vertex for which an update is required.
-    * @param current_starting_time is the starting time of the operation of current_vertex
     * @param fu_type is the functional unit type on which operation is scheduled
     * @return true if the assignment is feasible
     */
-   bool BB_update_resources_use(unsigned int& used_resources, const vertex& current_vertex, const double& current_starting_time, const unsigned int fu_type) const;
+   bool BB_update_resources_use(unsigned int& used_resources, const unsigned int fu_type) const;
 
    /**
     * Adds the vertex v to the priority queues
