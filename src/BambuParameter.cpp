@@ -200,6 +200,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <getopt.h>
+#include "treegcc_constants.hpp"
 
 /// Wrapper include
 #include "gcc_wrapper.hpp"
@@ -2924,7 +2925,7 @@ void BambuParameter::CheckParameters()
          setOption(OPT_distram_threshold, 256);
       add_experimental_setup_gcc_options(!flag_cpp);
    }
-   else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-BALANCED" or getOption<std::string>(OPT_experimental_setup) == "BAMBU-BALANCED-MP")
+   else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-BALANCED" or getOption<std::string>(OPT_experimental_setup) == "BAMBU-BALANCED-MP" or getOption<std::string>(OPT_experimental_setup) == "BAMBU-TASTE")
    {
       std::string tuning_optimizations;
       if(not isOption(OPT_gcc_opt_level))
@@ -3046,6 +3047,21 @@ void BambuParameter::CheckParameters()
       if(not isOption(OPT_distram_threshold))
          setOption(OPT_distram_threshold, 256);
       add_experimental_setup_gcc_options(!flag_cpp);
+      if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-TASTE")
+      {
+         const auto source_files = getOption<const CustomSet<std::string>>(OPT_input_file);
+         if(source_files.size()>1 && isOption(OPT_input_format) && getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C)
+         {
+            auto concat_filename = boost::filesystem::path(getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_concat_c_file)).string()).string();
+            std::ofstream filestream(concat_filename.c_str());
+            for(const auto& source_file : source_files)
+            {
+               filestream << "#include \"../" << source_file << "\"\n";
+            }
+            filestream.close();
+            setOption(OPT_input_file, concat_filename);
+         }
+      }
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-PERFORMANCE-MP")
    {
