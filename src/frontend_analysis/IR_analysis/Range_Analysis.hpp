@@ -187,6 +187,8 @@ namespace RangeAnalysis
       static Range makeSatisfyingCmpRegion(kind pred, const Range& Other);
    };
 
+   static std::ostream& operator<<(std::ostream& OS, const Range& R);
+
    class Range_Analysis : public ApplicationFrontendFlowStep
    {
    private: 

@@ -72,6 +72,14 @@
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "string_manipulation.hpp" // for GET_CLASS
 
+#define RA_JUMPSET
+
+#define DEBUG_RANGE_OP
+#define DEBUG_BASICOP_EVAL
+#define DEBUG_CGRAPH
+#define DEBUG_RA
+#define SCC_DEBUG
+
 namespace RangeAnalysis
 {
    using namespace boost::multiprecision;
@@ -81,7 +89,7 @@ namespace RangeAnalysis
 
    namespace 
    {
-      // The number of bits needed to store the largest variable of the function (llvm::APInt).
+      // The number of bits needed to store the largest variable of the function (APInt).
       unsigned MAX_BIT_INT = 0;
       unsigned POINTER_BITSIZE = 32;
 
@@ -116,6 +124,12 @@ namespace RangeAnalysis
       }
 
       inline APInt ap_trunc(APInt x, unsigned bitwidth)
+      {
+         bitwidth = (1 << bitwidth) - 1;
+         return x & bitwidth;
+      }
+
+      inline UAPInt ap_trunc(UAPInt x, unsigned bitwidth)
       {
          bitwidth = (1 << bitwidth) - 1;
          return x & bitwidth;
@@ -359,12 +373,16 @@ namespace RangeAnalysis
          THROW_UNREACHABLE("Unhandled predicate (" + boost::lexical_cast<std::string>(op) + ")");
       }
 
-      bool isCompare(struct binary_expr* condition)
+      bool isCompare(kind c_type)
       {
-         auto c_type = condition->get_kind();
          return c_type == eq_expr_K || c_type == ne_expr_K || c_type == ltgt_expr_K || c_type == uneq_expr_K
             || c_type == gt_expr_K || c_type == lt_expr_K || c_type == ge_expr_K || c_type == le_expr_K 
             || c_type == unlt_expr_K || c_type == ungt_expr_K || c_type == unle_expr_K || c_type == unge_expr_K;
+      }
+
+      bool isCompare(struct binary_expr* condition)
+      {
+         return isCompare(condition->get_kind());
       }
 
       tree_nodeRef branchOpRecurse(tree_nodeRef op)
@@ -545,23 +563,10 @@ namespace RangeAnalysis
       unsigned LoadStoreOperationBW(tree_nodeRef V, tree_nodeRef GV)
       {
          const auto _V = GET_NODE(V);
-         // TODO: check for load/store instructions (gimple_assign with mem_ref as right/left operand)
-         //if(auto* ST = dyn_cast<StoreInst>(V))
-         //{
-         //   return ST->getValueOperand()->getType()->isPointerTy() ? POINTER_BITSIZE : ST->getValueOperand()->getType()->getPrimitiveSizeInBits();
-         //}
-         //if(dyn_cast<LoadInst>(V))
-         //{
-         //   return V->getType()->isPointerTy() ? POINTER_BITSIZE : V->getType()->getPrimitiveSizeInBits();
-         //}
          if(GV)
          {
             return ObjectBW(GV);
          }
-         //if(V->getType()->isPointerTy())
-         //{
-         //   return POINTER_BITSIZE;
-         //}
          if(auto* param = GetPointer<parm_decl>(_V))
          {
             auto* size = GetPointer<integer_cst>(GET_NODE(param->size));
@@ -588,24 +593,11 @@ namespace RangeAnalysis
          //   return IV->getInsertedValueOperand()->getType()->isPointerTy() ? POINTER_BITSIZE : IV->getInsertedValueOperand()->getType()->getPrimitiveSizeInBits();
          //}
 
-         //V->getType()->print(llvm::errs());
-         //llvm::errs() << "\n";
-         //if(V->getType()->isVectorTy())
-         //{
-         //   llvm::errs() << "Is a vector type\n";
-         //}
-         //if(V->getType()->isStructTy())
-         //{
-         //   llvm::errs() << "Is a struct type\n";
-         //}
-         //
-         //V->print(llvm::errs());
-         //llvm::errs() << "\n";
-         //if(GV)
-         //{
-         //   GV->print(llvm::errs());
-         //   llvm::errs() << "\n";
-         //}
+         PRINT_MSG(V->get_kind_text() << std::endl << V->ToString());
+         if(GV)
+         {
+            PRINT_MSG(GV->ToString());
+         }
          THROW_UNREACHABLE("Unhandled type (" + _V->get_kind_text() + ")");
       }
    }
@@ -1209,12 +1201,9 @@ namespace RangeAnalysis
       {
          return other;
       }
-      //      llvm::errs() << "this:";
-      //      this->print(llvm::errs());
-      //      llvm::errs() << "\n";
-      //      llvm::errs() << "other:";
-      //      other.print(llvm::errs());
-      //      llvm::errs() << "\n";
+      #ifdef DEBUG_RANGE_OP
+      PRINT_MSG("this: " << *this << std::endl << "other: " << other);
+      #endif
       UAPInt a(getUnsignedMin());
       UAPInt b(getUnsignedMax());
       UAPInt c(other.getUnsignedMin());
@@ -1353,7 +1342,6 @@ namespace RangeAnalysis
          }
       }
       return Range(Regular, getBitWidth(), *min, *max);
-      ;
    }
 
    Range Range::urem(const Range& other) const
@@ -1385,12 +1373,9 @@ namespace RangeAnalysis
       {
          c = 1;
       }
-      //      llvm::errs() << "this-urem:";
-      //      this->print(llvm::errs());
-      //      llvm::errs() << "\n";
-      //      llvm::errs() << "other-urem:";
-      //      other.print(llvm::errs());
-      //      llvm::errs() << "\n";
+      #ifdef DEBUG_RANGE_OP
+      PRINT_MSG("this-urem: " << *this << std::endl << "other-urem: " << other);
+      #endif
 
       APInt candidates[8];
 
@@ -1418,9 +1403,9 @@ namespace RangeAnalysis
          }
       }
       auto res = Range(Regular, getBitWidth(), *min, *max);
-      //      llvm::errs() << "res-urem:";
-      //      res.print(llvm::errs());
-      //      llvm::errs() << "\n";
+      #ifdef DEBUG_RANGE_OP
+      PRINT_MSG("res-urem: " << res << std::endl);
+      #endif
       return res;
    }
 
@@ -1457,13 +1442,9 @@ namespace RangeAnalysis
       {
          c = 1;
       }
-
-      //      llvm::errs() << "this-rem:";
-      //      this->print(llvm::errs());
-      //      llvm::errs() << "\n";
-      //      llvm::errs() << "other-rem:";
-      //      other.print(llvm::errs());
-      //      llvm::errs() << "\n";
+      #ifdef DEBUG_RANGE_OP
+      PRINT_MSG("this-rem: " << *this << std::endl << "other-rem: " << other);
+      #endif
 
       APInt candidates[4];
       candidates[0] = Min;
@@ -1501,9 +1482,9 @@ namespace RangeAnalysis
          }
       }
       auto res = Range(Regular, getBitWidth(), *min, *max);
-      //      llvm::errs() << "res-rem:";
-      //      res.print(llvm::errs());
-      //      llvm::errs() << "\n";
+      #ifdef DEBUG_RANGE_OP
+      PRINT_MSG("res-rem: " << res << std::endl);
+      #endif
 
       return res;
    }
@@ -1524,13 +1505,9 @@ namespace RangeAnalysis
       {
          return Range(Regular, bw);
       }
-
-      //      llvm::errs() << "this-shl:";
-      //      this->print(llvm::errs());
-      //      llvm::errs() << "\n";
-      //      llvm::errs() << "other-shl:";
-      //      other.print(llvm::errs());
-      //      llvm::errs() << "\n";
+      #ifdef DEBUG_RANGE_OP
+      PRINT_MSG("this-shl: " << *this << std::endl << "other-shl: " << other);
+      #endif
 
       const APInt& a = this->getLower();
       const APInt& b = this->getUpper();
@@ -1715,12 +1692,9 @@ namespace RangeAnalysis
     */
    Range Range::And(const Range& other) const
    {
-      //      llvm::errs() << "And-a: ";
-      //      this->print(llvm::errs());
-      //      llvm::errs() << "\n";
-      //      llvm::errs() << "And-b: ";
-      //      other.print(llvm::errs());
-      //      llvm::errs() << "\n";
+      #ifdef DEBUG_RANGE_OP
+      PRINT_MSG("And-a: " << *this << std::endl << "And-b: " << other);
+      #endif
       if(isEmpty() || isUnknown())
       {
          return *this;
@@ -1749,9 +1723,9 @@ namespace RangeAnalysis
       APInt invLower = ~invres.getUpper();
       APInt invUpper = ~invres.getLower();
       auto res = Range(Regular, bw, invLower, invUpper);
-      //      llvm::errs() << "And-res: ";
-      //      res.print(llvm::errs());
-      //      llvm::errs() << "\n";
+      #ifdef DEBUG_RANGE_OP
+      PRINT_MSG("And-res: " << res << std::endl);
+      #endif
       return res;
    }
 
@@ -1877,12 +1851,9 @@ namespace RangeAnalysis
     */
    Range Range::Or(const Range& other) const
    {
-      //      llvm::errs() << "Or-a: ";
-      //      this->print(llvm::errs());
-      //      llvm::errs() << "\n";
-      //      llvm::errs() << "Or-b: ";
-      //      other.print(llvm::errs());
-      //      llvm::errs() << "\n";
+      #ifdef DEBUG_RANGE_OP
+      PRINT_MSG("Or-a: " << *this << std::endl << "Or-b: " << other);
+      #endif
       if(isEmpty() || isUnknown())
       {
          return *this;
@@ -1915,7 +1886,9 @@ namespace RangeAnalysis
 
       APInt l = Min, u = Max;
 
-      // llvm::errs() << "switchval " << (unsigned)switchval << "\n";
+      #ifdef DEBUG_RANGE_OP
+      PRINT_MSG("switchval " << (unsigned)switchval << std::endl);
+      #endif
 
       switch(switchval)
       {
@@ -1965,20 +1938,17 @@ namespace RangeAnalysis
          return Range(Regular, getBitWidth());
       }
       auto res = Range(Regular, getBitWidth(), l, u);
-      //      llvm::errs() << "Or-res: ";
-      //      res.print(llvm::errs());
-      //      llvm::errs() << "\n";
+      #ifdef DEBUG_RANGE_OP
+      PRINT_MSG("Or-res: " << res << std::endl);
+      #endif
       return res;
    }
 
    Range Range::Xor(const Range& other) const
    {
-      //      llvm::errs() << "Xor-a: ";
-      //      this->print(llvm::errs());
-      //      llvm::errs() << "\n";
-      //      llvm::errs() << "Xor-b: ";
-      //      other.print(llvm::errs());
-      //      llvm::errs() << "\n";
+      #ifdef DEBUG_RANGE_OP
+      PRINT_MSG("Xor-a: " << *this << std::endl << "Xor-b: " << other);
+      #endif
       if(isEmpty() || isUnknown())
       {
          return *this;
@@ -2000,17 +1970,17 @@ namespace RangeAnalysis
          APInt l = minXOR(a, b, c, d);
          APInt u = maxXOR(a, b, c, d);
          auto res = Range(Regular, getBitWidth(), l, u);
-         //         llvm::errs() << "Xor-res: ";
-         //         res.print(llvm::errs());
-         //         llvm::errs() << "\n";
-         //         return res;
+         #ifdef DEBUG_RANGE_OP
+         PRINT_MSG("Xor-res: " << res << std::endl);
+         #endif
+         return res;
       }
       else if((c == -1) && (d == -1) && (a >= 0) && (b >= 0))
       {
          auto res = other.sub(*this);
-         //         llvm::errs() << "Xor-res-1: ";
-         //         res.print(llvm::errs());
-         //         llvm::errs() << "\n";
+         #ifdef DEBUG_RANGE_OP
+         PRINT_MSG("Xor-res: " << res << std::endl);
+         #endif
          return res;
       }
       return Range(Regular, getBitWidth());
@@ -2403,12 +2373,9 @@ namespace RangeAnalysis
       {
          return other;
       }
-      //      llvm::errs() << "intersectWith-a: ";
-      //      this->print(llvm::errs());
-      //      llvm::errs() << "\n";
-      //      llvm::errs() << "intersectWith-b: ";
-      //      other.print(llvm::errs());
-      //      llvm::errs() << "\n";
+      #ifdef DEBUG_RANGE_OP
+      PRINT_MSG("intersectWith-a: " << *this << std::endl << "intersectWith-b: " << other);
+      #endif
 
       if(!this->isAnti() && !other.isAnti())
       {
@@ -3379,34 +3346,36 @@ namespace RangeAnalysis
    {
       THROW_ASSERT(sources.size() > 0, "");
       Range result = this->getSource(0)->getRange();
-      //      getSink()->print(llvm::errs());
-      //      llvm::errs() << "\n";
+      #ifdef DEBUG_BASICOP_EVAL
+      PRINT_MSG(getSink());
+      #endif
       // Iterate over the sources of the phiop
       for(const VarNode* varNode : sources)
       {
-         //         llvm::errs() << " ->";
-         //         varNode->getRange().print(llvm::errs());
-         //         llvm::errs() << "\n";
+         #ifdef DEBUG_BASICOP_EVAL
+         PRINT_MSG(" ->" << varNode->getRange());
+         #endif
          result = result.unionWith(varNode->getRange());
       }
-      //      llvm::errs() << "=";
-      //      result.print(llvm::errs());
-      //      llvm::errs() << "\n";
+      #ifdef DEBUG_BASICOP_EVAL
+      PRINT_MSG("=" << result);
+      #endif
       bool test = this->getIntersect()->getRange().isMaxRange();
       if(!test)
       {
          Range aux = this->getIntersect()->getRange();
-         //         llvm::errs() << " aux= ";
-         //         aux.print(llvm::errs());
+         #ifdef DEBUG_BASICOP_EVAL
+         PRINT_MSG(" aux=" << aux);
+         #endif
          Range intersect = result.intersectWith(aux);
          if(!intersect.isEmpty())
          {
             result = intersect;
          }
       }
-      //      llvm::errs() << " res= ";
-      //      result.print(llvm::errs());
-      //      llvm::errs() << "\n";
+      #ifdef DEBUG_BASICOP_EVAL
+      PRINT_MSG(" res=" << result);
+      #endif
       return result;
    }
 
@@ -3526,9 +3495,9 @@ namespace RangeAnalysis
 
       if(oprnd.isRegular() || oprnd.isAnti())
       {
-         //         getSink()->getValue().first->print(llvm::errs());
-         //         llvm::errs()<< "\n";
-         //         oprnd.print(llvm::errs());
+         #ifdef DEBUG_BASICOP_EVAL
+         PRINT_MSG(getSink()->getValue().first->ToString() << std::endl << oprnd);
+         #endif
          // TODO: update with useful operations
          switch(this->getOpcode())
          {
@@ -3552,9 +3521,9 @@ namespace RangeAnalysis
                result = oprnd;
                break;
          }
-         //         llvm::errs()<< "=";
-         //         result.print(llvm::errs());
-         //         llvm::errs()<< "\n";
+         #ifdef DEBUG_BASICOP_EVAL
+         PRINT_MSG("=" << result);
+         #endif
       }
       else if(oprnd.isEmpty())
       {
@@ -3570,9 +3539,9 @@ namespace RangeAnalysis
          {
             result = intersect;
          }
-         //         llvm::errs() << "intersection: ";
-         //         result.print(llvm::errs());
-         //         llvm::errs() << "\n";
+         #ifdef DEBUG_BASICOP_EVAL
+         PRINT_MSG("intersection: " << result);
+         #endif
       }
       return result;
    }
@@ -3717,14 +3686,13 @@ namespace RangeAnalysis
    Range SigmaOp::eval()
    {
       Range result = this->getSource()->getRange();
-      //      llvm::errs() << "SigmaOp: ";
-      //      getSink()->print(llvm::errs());
-      //      llvm::errs()<<" src=";
-      //      result.print(llvm::errs());
+      #ifdef DEBUG_BASICOP_EVAL
+      PRINT_MSG("SigmaOp: " << getSink() << " src=" << result);
+      #endif
       Range aux = this->getIntersect()->getRange();
-      //      llvm::errs() << " aux = ";
-      //      aux.print(llvm::errs());
-      //      llvm::errs()<<"\n";
+      #ifdef DEBUG_BASICOP_EVAL
+      PRINT_MSG(" aux=" << aux);
+      #endif
       if(!aux.isUnknown())
       {
          Range intersect = result.intersectWith(aux);
@@ -3733,9 +3701,9 @@ namespace RangeAnalysis
             result = intersect;
          }
       }
-      //      llvm::errs() << " = ";
-      //      result.print(llvm::errs());
-      //      llvm::errs()<<"\n";
+      #ifdef DEBUG_BASICOP_EVAL
+      PRINT_MSG(" = " << result);
+      #endif
       return result;
    }
 
@@ -3884,11 +3852,9 @@ namespace RangeAnalysis
       // only evaluate if all operands are Regular
       if((op1.isRegular() || op1.isAnti()) && (op2.isRegular() || op2.isAnti()))
       {
-         //         getSink()->getValue().first->print(llvm::errs());
-         //         llvm::errs()<< "\n";
-         //         op1.print(llvm::errs());
-         //         llvm::errs()<< ",";
-         //         op2.print(llvm::errs());
+         #ifdef DEBUG_BASICOP_EVAL
+         PRINT_MSG(getSink()->getValue().first->ToString() << std::endl << op1 << "," << op2);
+         #endif
          THROW_ASSERT(op1.getBitWidth() == bw, "");
          THROW_ASSERT(op2.getBitWidth() == bw, "");
          switch(this->getOpcode())
@@ -3974,16 +3940,16 @@ namespace RangeAnalysis
                THROW_UNREACHABLE("Unhandled binary operation (" + tree_node::GetString(this->getOpcode()) + ")");
                break;
          }
-         //         llvm::errs()<< "=";
-         //         result.print(llvm::errs());
-         //         llvm::errs()<< "\n";
+         #ifdef DEBUG_BASICOP_EVAL
+         PRINT_MSG("=" << result);
+         #endif
          bool test = this->getIntersect()->getRange().isMaxRange();
          if(!test)
          {
             Range aux = this->getIntersect()->getRange();
-            //            llvm::errs()<< "  aux=";
-            //            aux.print(llvm::errs());
-            //            llvm::errs()<< "\n";
+            #ifdef DEBUG_BASICOP_EVAL
+            PRINT_MSG("  aux=" << aux);
+            #endif
             Range intersect = result.intersectWith(aux);
             if(!intersect.isEmpty())
             {
@@ -4145,13 +4111,9 @@ namespace RangeAnalysis
       // only evaluate if all operands are Regular
       if((op1.isRegular() || op1.isAnti()) && (op2.isRegular() || op2.isAnti()) && (op3.isRegular() || op3.isAnti()))
       {
-         //         getSink()->getValue().first->print(llvm::errs());
-         //         llvm::errs()<< "\n";
-         //         op1.print(llvm::errs());
-         //         llvm::errs()<< "?";
-         //         op2.print(llvm::errs());
-         //         llvm::errs()<< ":";
-         //         op3.print(llvm::errs());
+         #ifdef DEBUG_BASICOP_EVAL
+         PRINT_MSG(getSink()->getValue().first->ToString() << std::endl << op1 << "?" << op2 << ":" << op3);
+         #endif
          switch(this->getOpcode())
          {
             case cond_expr_K:
@@ -4212,9 +4174,9 @@ namespace RangeAnalysis
             default:
                break;
          }
-         //         llvm::errs()<< "=";
-         //         result.print(llvm::errs());
-         //         llvm::errs()<< "\n";
+         #ifdef DEBUG_BASICOP_EVAL
+         PRINT_MSG("=" << result);
+         #endif
          bool test = this->getIntersect()->getRange().isMaxRange();
          if(!test)
          {
@@ -4399,7 +4361,7 @@ namespace RangeAnalysis
       bool checkWorklist();
       bool checkComponents();
       bool checkTopologicalSort(UseMap* useMap);
-      bool hasEdge(std::set<VarNode*>* componentFrom, std::set<VarNode*, 32>* componentTo, UseMap* useMap);
+      bool hasEdge(std::set<VarNode*>* componentFrom, std::set<VarNode*>* componentTo, UseMap* useMap);
       #endif
     public:
       Nuutila(VarNodes* varNodes, UseMap* useMap, SymbMap* symbMap);
@@ -4457,9 +4419,9 @@ namespace RangeAnalysis
       delControlDependenceEdges(useMap);
 
       #ifdef SCC_DEBUG
-      ASSERT(checkWorklist(), "an inconsistency in SCC worklist have been found");
-      ASSERT(checkComponents(), "a component has been used more than once");
-      ASSERT(checkTopologicalSort(useMap), "topological sort is incorrect");
+      THROW_ASSERT(checkWorklist(), "an inconsistency in SCC worklist have been found");
+      THROW_ASSERT(checkComponents(), "a component has been used more than once");
+      THROW_ASSERT(checkTopologicalSort(useMap), "topological sort is incorrect");
       #endif
    }
 
@@ -4613,8 +4575,7 @@ namespace RangeAnalysis
             auto v2 = *nit2;
             if(v == v2 && nit != nit2)
             {
-               errs() << "[Nuutila::checkWorklist] Duplicated entry in worklist\n";
-               v.first->dump();
+               PRINT_MSG("[Nuutila::checkWorklist] Duplicated entry in worklist" << std::endl << v.first->ToString());
                consistent = false;
             }
          }
@@ -4633,7 +4594,7 @@ namespace RangeAnalysis
             auto component2 = this->components[*nit2];
             if(component == component2 && nit != nit2)
             {
-               errs() << "[Nuutila::checkComponent] Component [" << component << ", " << component->size() << "]\n";
+               PRINT_MSG("[Nuutila::checkComponent] Component [" << component << ", " << component->size() << "]");
                isConsistent = false;
             }
          }
@@ -4685,7 +4646,9 @@ namespace RangeAnalysis
             }
          }
          else
-            llvm::errs() << "[Nuutila::checkTopologicalSort] Component visited more than once time\n";
+         {
+            PRINT_MSG("[Nuutila::checkTopologicalSort] Component visited more than once time");
+         }
       }
       return isConsistent;
    }
@@ -5165,18 +5128,18 @@ namespace RangeAnalysis
          {
             const auto V = *actv.begin();
             actv.erase(V);
-            //         llvm::errs() << "-> update: ";
-            //         V.first->print(llvm::errs());
-            //         llvm::errs() << "\n";
+            #ifdef DEBUG_CGRAPH
+            PRINT_MSG("-> update: " << V.first->ToString());
+            #endif
 
             // The use list.
             const auto& L = compUseMap.find(V)->second;
 
             for(BasicOp* op : L)
             {
-               //            llvm::errs() << "  > ";
-               //            op->getSink()->print(llvm::errs());
-               //            llvm::errs() <<  "\n";
+               #ifdef DEBUG_CGRAPH
+               PRINT_MSG("  > " << op->getSink());
+               #endif
                if(meet(op, &constantvector))
                {
                   // I want to use it as a set, but I also want
@@ -5528,11 +5491,9 @@ namespace RangeAnalysis
             }
             else
             {
-               //            llvm::errs() << "Add SigmaOp: ";
-               //            BItv->print(llvm::errs());
-               //            llvm::errs()<<"\n";
-               //            BItv->getRange().print(llvm::errs());
-               //            llvm::errs()<<"\n";
+               #ifdef DEBUG_CGRAPH
+               PRINT_MSG("Add SigmaOp: " << BItv << std::endl << BItv->getRange());
+               #endif
                VarNode* SymbSrc = nullptr;
                if(auto symb = std::dynamic_pointer_cast<SymbInterval>(BItv))
                {
@@ -5787,6 +5748,231 @@ namespace RangeAnalysis
       }
 
       /*
+       * Used to insert constant in the right position
+       */
+      void insertConstantIntoVector(APInt constantval)
+      {
+         constantvector.push_back(constantval);
+      }
+
+      /*
+       * Create a vector containing all constants related to the component
+       * They include:
+       *   - Constants inside component
+       *   - Constants that are source of an edge to an entry point
+       *   - Constants from intersections generated by sigmas
+       */
+      void buildConstantVector(const std::set<VarNode*>& component, const UseMap& compusemap)
+      {
+         // Remove all elements from the vector
+         constantvector.clear();
+
+         // Get constants inside component (TODO: may not be necessary, since
+         // components with more than 1 node may
+         // never have a constant inside them)
+         for(VarNode* varNode : component)
+         {
+            const auto V = varNode->getValue();
+            const integer_cst* ci = nullptr;
+
+            if((ci = GetPointer<integer_cst>(GET_NODE(V.first))) != nullptr)
+            {
+               insertConstantIntoVector(ci->value);
+            }
+         }
+
+         // Get constants that are sources of operations whose sink belong to the
+         // component
+         for(VarNode* varNode : component)
+         {
+            const auto V = varNode->getValue();
+            auto dfit = defMap.find(V);
+            if(dfit == defMap.end())
+            {
+               continue;
+            }
+
+            // Handle BinaryOp case
+            const BinaryOp* bop = reinterpret_cast<BinaryOp*>(dfit->second);
+            const PhiOp* pop = reinterpret_cast<PhiOp*>(dfit->second);
+            if(bop != nullptr)
+            {
+               const VarNode* source1 = bop->getSource1();
+               const auto sourceval1 = source1->getValue();
+               const VarNode* source2 = bop->getSource2();
+               const auto sourceval2 = source2->getValue();
+
+               const integer_cst *const1, *const2;
+               auto opcode = bop->getOpcode();
+
+               if((const1 = GetPointer<integer_cst>(GET_NODE(sourceval1.first))) != nullptr)
+               {
+                  const auto& cnstVal = const1->value;
+                  if(isCompare(opcode))
+                  {
+                     auto pred = opcode;
+                     if(pred == eq_expr_K || pred == ne_expr_K)
+                     {
+                        insertConstantIntoVector(cnstVal);
+                        insertConstantIntoVector(cnstVal - 1);
+                        insertConstantIntoVector(cnstVal + 1);
+                     }
+                     else if(pred == gt_expr_K || pred == le_expr_K)
+                     {
+                        insertConstantIntoVector(cnstVal);
+                        insertConstantIntoVector(cnstVal + 1);
+                     }
+                     else if(pred == ge_expr_K || pred == lt_expr_K)
+                     {
+                        insertConstantIntoVector(cnstVal);
+                        insertConstantIntoVector(cnstVal - 1);
+                     }
+                     else if(pred == ungt_expr_K || pred == unle_expr_K)
+                     {
+                        auto bw = source1->getBitWidth();
+                        auto cnstValU = ap_trunc(UAPInt(const1->value), bw);
+                        insertConstantIntoVector(cnstValU);
+                        insertConstantIntoVector(cnstValU + 1);
+                     }
+                     else if(pred == unge_expr_K || pred == unlt_expr_K)
+                     {
+                        auto bw = source1->getBitWidth();
+                        auto cnstValU = ap_trunc(UAPInt(const1->value), bw);
+                        insertConstantIntoVector(cnstValU);
+                        insertConstantIntoVector(cnstValU - 1);
+                     }
+                     else
+                     {
+                        THROW_UNREACHABLE("unexpected condition (" + tree_node::GetString(opcode) + ")");
+                     }
+                  }
+                  else
+                  {
+                     insertConstantIntoVector(cnstVal);
+                  }
+               }
+               if((const2 = GetPointer<integer_cst>(GET_NODE(sourceval2.first))) != nullptr)
+               {
+                  const auto& cnstVal = const2->value;
+                  if(isCompare(opcode))
+                  {
+                     auto pred = opcode;
+                     if(pred == eq_expr_K || pred == ne_expr_K)
+                     {
+                        insertConstantIntoVector(cnstVal);
+                        insertConstantIntoVector(cnstVal - 1);
+                        insertConstantIntoVector(cnstVal + 1);
+                     }
+                     else if(pred == gt_expr_K || pred == le_expr_K)
+                     {
+                        insertConstantIntoVector(cnstVal);
+                        insertConstantIntoVector(cnstVal + 1);
+                     }
+                     else if(pred == ge_expr_K || pred == lt_expr_K)
+                     {
+                        insertConstantIntoVector(cnstVal);
+                        insertConstantIntoVector(cnstVal - 1);
+                     }
+                     else if(pred == ungt_expr_K || pred == unle_expr_K)
+                     {
+                        auto bw = source2->getBitWidth();
+                        auto cnstValU = ap_trunc(UAPInt(const2->value), bw);
+                        insertConstantIntoVector(cnstValU);
+                        insertConstantIntoVector(cnstValU + 1);
+                     }
+                     else if(pred == unge_expr_K || pred == unlt_expr_K)
+                     {
+                        auto bw = source2->getBitWidth();
+                        auto cnstValU = ap_trunc(UAPInt(const2->value), bw);
+                        insertConstantIntoVector(cnstValU);
+                        insertConstantIntoVector(cnstValU - 1);
+                     }
+                     else
+                     {
+                        THROW_UNREACHABLE("unexpected condition (" + tree_node::GetString(opcode) + ")");
+                     }
+                  }
+                  else
+                  {
+                     insertConstantIntoVector(cnstVal);
+                  }
+               }
+            }
+            // Handle PhiOp case
+            else if(pop != nullptr)
+            {
+               for(unsigned i = 0, e = pop->getNumSources(); i < e; ++i)
+               {
+                  const VarNode* source = pop->getSource(i);
+                  const auto sourceval = source->getValue();
+                  const integer_cst* consti;
+                  if((consti = GetPointer<integer_cst>(GET_NODE(sourceval.first))) != nullptr)
+                  {
+                     insertConstantIntoVector(consti->value);
+                  }
+               }
+            }
+         }
+
+         // Get constants used in intersections
+         for(auto& pair : compusemap)
+         {
+            for(BasicOp* op : pair.second)
+            {
+               const SigmaOp* sigma = reinterpret_cast<SigmaOp*>(op);
+               // Symbolic intervals are discarded, as they don't have fixed values yet
+               if(sigma == nullptr || SymbInterval::classof(sigma->getIntersect().get()))
+               {
+                  continue;
+               }
+               Range rintersect = op->getIntersect()->getRange();
+               if(rintersect.isAnti())
+               {
+                  auto anti = Range(Range_base::getAnti(rintersect));
+                  const APInt lb = anti.getLower();
+                  const APInt ub = anti.getUpper();
+                  if((lb != Min) && (lb != Max))
+                  {
+                     insertConstantIntoVector(lb - 1);
+                     insertConstantIntoVector(lb);
+                  }
+                  if((ub != Min) && (ub != Max))
+                  {
+                     insertConstantIntoVector(ub);
+                     insertConstantIntoVector(ub + 1);
+                  }
+               }
+               else
+               {
+                  const APInt& lb = rintersect.getLower();
+                  const APInt& ub = rintersect.getUpper();
+                  if((lb != Min) && (lb != Max))
+                  {
+                     insertConstantIntoVector(lb - 1);
+                     insertConstantIntoVector(lb);
+                  }
+                  if((ub != Min) && (ub != Max))
+                  {
+                     insertConstantIntoVector(ub);
+                     insertConstantIntoVector(ub + 1);
+                  }
+               }
+            }
+         }
+
+         // Sort vector in ascending order and remove duplicates
+         std::sort(constantvector.begin(), constantvector.end(), [](const APInt& i1, const APInt& i2) { return i1 < i2; });
+
+         // std::unique doesn't remove duplicate elements, only
+         // move them to the end
+         // This is why erase is necessary. To remove these duplicates
+         // that will be now at the end.
+         auto last = std::unique(constantvector.begin(), constantvector.end());
+
+         constantvector.erase(last, constantvector.end());
+      }
+
+      /*
        * This method builds a map of variables to the lists of operations where
        * these variables are used as futures. Its C++ type should be something like
        * map<VarNode, List<Operation>>.
@@ -5893,18 +6079,18 @@ namespace RangeAnalysis
          auto sit = symbMap.find(V);
          if(sit != symbMap.end())
          {
-            //         llvm::errs() << "fix intersects:\n";
-            //         varNode->print(llvm::errs());
-            //         llvm::errs() << "\n";
+            #ifdef DEBUG_CGRAPH
+            PRINT_MSG("fix intesects:" << std::endl << varNode);
+            #endif
             for(BasicOp* op : sit->second)
             {
-               //            llvm::errs() << "op intersects:\n";
-               //            op->print(llvm::errs());
-               //            llvm::errs() << "\n";
+               #ifdef DEBUG_CGRAPH
+               PRINT_MSG("op intersects:" << std::endl << op);
+               #endif
                op->fixIntersects(varNode);
-               //            llvm::errs() << "sink:";
-               //            op->getSink()->print(llvm::errs());
-               //            llvm::errs() << "\n";
+               #ifdef DEBUG_CGRAPH
+               PRINT_MSG("sink:" << op);
+               #endif
             }
          }
       }
@@ -6021,23 +6207,17 @@ namespace RangeAnalysis
          for(auto nit = sccList.begin(), nend = sccList.end(); nit != nend; ++nit)
          {
             auto& component = *sccList.components[*nit];
-            #ifdef SCC_DEBUG
-            --numberOfSCCs;
-            #endif
 
             #ifdef DEBUG_RA
-            llvm::errs() << "Components:\n";
+            PRINT_MSG("Components:");
             for(auto var : component)
             {
-               llvm::errs() << "  ";
-               var->print(llvm::errs());
-               llvm::errs() << "\n";
+               PRINT_MSG("  " << var);
             }
-            llvm::errs() << "-----------\n";
+            PRINT_MSG("-----------");
             #endif
             if(component.size() == 1)
             {
-               //++numAloneSCCs;
                VarNode* var = *component.begin();
                fixIntersectsSC(var);
                if(this->defMap.find(var->getValue()) != this->defMap.end())
@@ -6052,75 +6232,78 @@ namespace RangeAnalysis
             }
             else
             {
-               //if(component.size() > sizeMaxSCC)
-               //{
-               //   sizeMaxSCC = component.size();
-               //}
-
                UseMap compUseMap = buildUseMap(component);
 
                // Get the entry points of the SCC
                std::set<eValue> entryPoints;
 
-                #ifdef JUMPSET
+                #ifdef RA_JUMPSET
                // Create vector of constants inside component
                // Comment this line below to deactivate jump-set
                buildConstantVector(component, compUseMap);
                #endif
                #ifdef DEBUG_RA
                for(auto cnst : constantvector)
-                  llvm::errs() << " " << cnst;
+               {
+                  PRINT_MSG(" " << cnst);
+               }
                if(!constantvector.empty())
-                  llvm::errs() << "\n";
+               {
+                  PRINT_MSG("");
+               }
                #endif
                generateEntryPoints(component, entryPoints);
                // iterate a fixed number of time before widening
                update(component.size() * 16, compUseMap, entryPoints);
                #ifdef DEBUG_RA
-               if(func != nullptr)
-               {
-                  printToFile(*func, "/tmp/" + func->getName().str() + "cgfixed.dot");
-               }
+               //if(func != nullptr)
+               //{
+               //   printToFile(*func, "/tmp/" + func->getName().str() + "cgfixed.dot");
+               //}
                #endif
 
                generateEntryPoints(component, entryPoints);
-               //            llvm::errs() << "entryPoints:\n";
-               //            for(auto el : entryPoints)
-               //            {
-               //               llvm::errs() << " ->";
-               //               el.first->print(llvm::errs());
-               //               llvm::errs() << "\n";
-               //            }
+               #ifdef DEBUG_RA
+               PRINT_MSG("entryPoints:");
+               for(auto el : entryPoints)
+               {
+                  PRINT_MSG(el.first->ToString());
+               }
+               #endif
                // First iterate till fix point
                preUpdate(compUseMap, entryPoints);
-               //            llvm::errs() << "fixIntersects\n";
+               #ifdef DEBUG_RA
+               PRINT_MSG("fixIntersects");
+               #endif
                fixIntersects(component);
-               //            llvm::errs() << "--\n";
+               #ifdef DEBUG_RA
+               PRINT_MSG("--");
+               #endif
 
                #ifdef DEBUG_RA
-               if(func != nullptr)
-               {
-                  printToFile(*func, "/tmp/" + func->getName().str() + "cgfixintersect.dot");
-               }
+               //if(func != nullptr)
+               //{
+               //   printToFile(*func, "/tmp/" + func->getName().str() + "cgfixintersect.dot");
+               //}
                #endif
 
                for(VarNode* varNode : component)
                {
                   if(varNode->getRange().isUnknown())
                   {
-                     //llvm::errs() << "initialize unknown: ";
-                     //varNode->getValue().first->print(llvm::errs());
-                     //llvm::errs() << "\n";
-                     // llvm_unreachable("unexpected condition");
+                     #ifdef DEBUG_RA
+                     PRINT_MSG("initialize unknown: " << varNode->getValue().first->ToString());
+                     #endif
+                     // THROW_UNREACHABLE("unexpected condition");
                      varNode->setRange(Range(Regular, varNode->getBitWidth(), Min, Max));
                   }
                }
 
                #ifdef DEBUG_RA
-               if(func != nullptr)
-               {
-                  printToFile(*func, "/tmp/" + func->getName().str() + "cgint.dot");
-               }
+               //if(func != nullptr)
+               //{
+               //   printToFile(*func, "/tmp/" + func->getName().str() + "cgint.dot");
+               //}
                #endif
 
                // Second iterate till fix point
