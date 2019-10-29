@@ -46,19 +46,19 @@
 #ifndef TREE_MANAGER_HPP
 #define TREE_MANAGER_HPP
 
-/// STL include
-#include "custom_map.hpp" // for CustomMap
-#include "hash_helper.hpp"
-#include <deque>
-#include <iosfwd>
-#include <map>
-#include <string> // for string
-#include <unordered_map>
-#include <unordered_set>
-#include <utility> // for pair
+#include "config_HAVE_UNORDERED.hpp"
 
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "hash_helper.hpp"
 /// utility include
 #include "refcount.hpp"
+
+/// STL include
+#include <deque>
+#include <iosfwd>
+#include <string>  // for string
+#include <utility> // for pair
 
 /**
  * @name forward declarations
@@ -81,16 +81,19 @@ class tree_manager
 {
  private:
    /// map between string and corresponding enum kinds
-   std::unordered_map<std::string, enum kind> string_to_kind;
+   CustomUnorderedMap<std::string, enum kind> string_to_kind;
 
    /// cache for tree_manager::find
-   std::unordered_map<std::string, unsigned int> find_cache;
+   CustomUnorderedMapUnstable<std::string, unsigned int> find_cache;
 
    /**
     * Variable containing set of tree_nodes.
     */
-   CustomMap<unsigned int, tree_nodeRef> tree_nodes;
-
+#if HAVE_UNORDERED
+   UnorderedMapStd<unsigned int, tree_nodeRef> tree_nodes;
+#else
+   OrderedMapStd<unsigned int, tree_nodeRef> tree_nodes;
+#endif
    /**
     * Variable containing set of function_declaration with their index node
     */
@@ -100,7 +103,7 @@ class tree_manager
    std::deque<tree_nodeRef> stack;
 
    /// set of already examined addr_expr used to avoid circular recursion
-   std::unordered_set<tree_nodeRef> already_visited;
+   CustomUnorderedSet<tree_nodeRef> already_visited;
 
    /// the number of parallel loops
    unsigned int n_pl;
@@ -124,15 +127,15 @@ class tree_manager
    unsigned int last_node_id;
 
    /// this table stores all identifier_nodes with their nodeID.
-   std::unordered_map<std::string, unsigned int> identifiers_unique_table;
+   CustomUnorderedMapUnstable<std::string, unsigned int> identifiers_unique_table;
 
-   std::unordered_map<std::pair<long long int, unsigned int>, tree_nodeRef> unique_integer_cst_map;
+   CustomUnorderedMap<std::pair<long long int, unsigned int>, tree_nodeRef> unique_integer_cst_map;
 
    /// Set of parameters
    const ParameterConstRef Param;
 
    /// Map containing temporary information for ssa_name uses deletion
-   std::unordered_map<ssa_name*, tree_nodeRef> uses_erase_temp;
+   CustomUnorderedMap<ssa_name*, tree_nodeRef> uses_erase_temp;
 
    /// Next version number for ssa variables
    unsigned int next_vers;
@@ -149,12 +152,12 @@ class tree_manager
     * @param node_id is the index of the tree node
     * @return true if symbol has not to be inserted into symbol table
     */
-   bool check_for_decl(const tree_nodeRef& tn, const tree_managerRef& TM, std::string& symbol_name, std::string& symbol_scope, unsigned int node_id, const std::unordered_map<unsigned int, std::string>& global_type_unql_symbol_table);
+   bool check_for_decl(const tree_nodeRef& tn, const tree_managerRef& TM, std::string& symbol_name, std::string& symbol_scope, unsigned int node_id, const CustomUnorderedMap<unsigned int, std::string>& global_type_unql_symbol_table);
 
    /**
     * check for type and return true if not suitable for symbol table or otherwise its symbol_name and symbol_scope.
     */
-   bool check_for_type(const tree_nodeRef& tn, const tree_managerRef& TM, std::string& symbol_name, std::string& symbol_scope, const std::unordered_map<std::string, unsigned int>& global_type_symbol_table, unsigned int node_id);
+   bool check_for_type(const tree_nodeRef& tn, const tree_managerRef& TM, std::string& symbol_name, std::string& symbol_scope, const CustomUnorderedMapUnstable<std::string, unsigned int>& global_type_symbol_table, unsigned int node_id);
 
    /**
     * Erase the information about variable usage (remove stmt from use_stmts attribute) in ssa variables recursively contained in node tn.
@@ -295,7 +298,7 @@ class tree_manager
     * Returns all the functions in the tree_manager
     * @return all the functions
     */
-   const std::unordered_set<unsigned int> GetAllFunctions() const;
+   const CustomUnorderedSet<unsigned int> GetAllFunctions() const;
 
    /**
     * Determine the index node of "sc_main" function in tree_node vector
@@ -350,7 +353,7 @@ class tree_manager
     * @param tn is the top tree node of the tree to be collapsed
     * @param removed_nodes is the set of nodes removed during collapsing
     */
-   void collapse_into(const unsigned int& funID, std::unordered_map<unsigned int, unsigned int>& stmt_to_bloc, const tree_nodeRef& tn, std::unordered_set<unsigned int>& removed_nodes);
+   void collapse_into(const unsigned int& funID, CustomUnorderedMapUnstable<unsigned int, unsigned int>& stmt_to_bloc, const tree_nodeRef& tn, CustomUnorderedSet<unsigned int>& removed_nodes);
 
    /// increment the number a parallel loop
    void add_parallel_loop();

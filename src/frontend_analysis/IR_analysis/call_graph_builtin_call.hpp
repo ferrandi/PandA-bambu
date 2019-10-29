@@ -39,7 +39,7 @@
 
 #include "function_frontend_flow_step.hpp"
 
-#include <unordered_set>
+#include "custom_set.hpp"
 
 #include "refcount.hpp"
 
@@ -49,7 +49,7 @@ REF_FORWARD_DECL(tree_node);
 class CallGraphBuiltinCall : public FunctionFrontendFlowStep
 {
  private:
-   typedef std::map<std::string, std::set<unsigned int>> TypeDeclarationMap;
+   typedef std::map<std::string, CustomOrderedSet<unsigned int>> TypeDeclarationMap;
    bool modified;
 
    /**
@@ -65,7 +65,7 @@ class CallGraphBuiltinCall : public FunctionFrontendFlowStep
    /// @brief State relationship with other design step
    ///
    /// @param RT Type of the relationship to be considered
-   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(DesignFlowStep::RelationshipType RT) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(DesignFlowStep::RelationshipType RT) const override;
 
  public:
    /// @brief Ctor.

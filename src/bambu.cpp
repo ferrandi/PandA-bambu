@@ -275,7 +275,7 @@ int main(int argc, char* argv[])
          const DesignFlowStepFactoryConstRef ag_frontend_flow_step_factory(new ActorGraphFlowStepFactory(HLSMgr, design_flow_manager, parameters));
          design_flow_manager->RegisterFactory(ag_frontend_flow_step_factory);
          DesignFlowStepSet design_flow_steps;
-         std::set<unsigned int> input_functions = HLSMgr->get_functions_with_body();
+         CustomOrderedSet<unsigned int> input_functions = HLSMgr->get_functions_with_body();
          for(const auto input_fun_id : input_functions)
          {
             const DesignFlowStepRef design_flow_step = GetPointer<const ActorGraphFlowStepFactory>(ag_frontend_flow_step_factory)->CreateActorGraphStep(ACTOR_GRAPHS_CREATOR, input_fun_id);

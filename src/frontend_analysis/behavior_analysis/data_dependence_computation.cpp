@@ -49,20 +49,20 @@
 
 /// behavior include
 #include "application_manager.hpp"
+#include "basic_block.hpp"
 #include "function_behavior.hpp"
 #include "op_graph.hpp"
 #include "operations_graph_constructor.hpp"
-#include "basic_block.hpp"
 
 /// tree include
 #include "behavioral_helper.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
 
-#include <unordered_set>
-#include <unordered_map>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 DataDependenceComputation::DataDependenceComputation(const application_managerRef _AppM, unsigned int _function_id, const FrontendFlowStepType _frontend_flow_step_type, const DesignFlowManagerConstRef _design_flow_manager,
                                                      const ParameterConstRef _parameters)
@@ -101,10 +101,10 @@ DesignFlowStep_Status DataDependenceComputation::InternalExec()
    return DesignFlowStep_Status::ABORTED;
 }
 
-static void ordered_dfs(unsigned u, const OpGraphConstRef avg, std::unordered_map<vertex, unsigned> &pos, std::vector<vertex> &rev_pos, std::vector<bool> &vis, std::unordered_set<std::pair<unsigned, unsigned>> & keep)
+static void ordered_dfs(unsigned u, const OpGraphConstRef avg, CustomUnorderedMap<vertex, unsigned>& pos, std::vector<vertex>& rev_pos, std::vector<bool>& vis, CustomUnorderedSet<std::pair<unsigned, unsigned>>& keep)
 {
    vis[u] = true;
-   std::set<unsigned> to;
+   CustomOrderedSet<unsigned> to;
    OutEdgeIterator ei, ei_end;
    auto statement = rev_pos.at(u);
    for(boost::tie(ei, ei_end) = boost::out_edges(statement, *avg); ei != ei_end; ei++)
@@ -113,7 +113,7 @@ static void ordered_dfs(unsigned u, const OpGraphConstRef avg, std::unordered_ma
       if(pos.find(vi) != pos.end())
          to.insert(pos.find(vi)->second);
    }
-   for(auto dest: to)
+   for(auto dest : to)
    {
       if(!vis[dest])
       {
@@ -138,9 +138,9 @@ void DataDependenceComputation::do_dependence_reduction()
    for(boost::tie(basic_block, basic_block_end) = boost::vertices(*bb_fcfg); basic_block != basic_block_end; basic_block++)
    {
       const auto bb_node_info = bb_fcfg->CGetBBNodeInfo(*basic_block);
-      std::unordered_map<vertex, unsigned> pos;
+      CustomUnorderedMap<vertex, unsigned> pos;
       std::vector<vertex> rev_pos;
-      unsigned posIndex=0;
+      unsigned posIndex = 0;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(bb_node_info->get_bb_index()));
       for(const auto statement : bb_node_info->statements_list)
       {
@@ -151,15 +151,15 @@ void DataDependenceComputation::do_dependence_reduction()
       }
       std::vector<bool> vis(posIndex, false);
       const auto n_stmts = bb_node_info->statements_list.size();
-      std::unordered_set<std::pair<unsigned, unsigned>> keep;
+      CustomUnorderedSet<std::pair<unsigned, unsigned>> keep;
       for(posIndex = 0; posIndex < n_stmts; ++posIndex)
       {
          if(!vis.at(posIndex))
          {
             ordered_dfs(posIndex, avg, pos, rev_pos, vis, keep);
-            for(unsigned posIndex0 = posIndex+1; posIndex0 < n_stmts; ++posIndex0)
+            for(unsigned posIndex0 = posIndex + 1; posIndex0 < n_stmts; ++posIndex0)
                if(vis.at(posIndex0))
-                  vis[posIndex0]=false;
+                  vis[posIndex0] = false;
          }
       }
       for(const auto statement : bb_node_info->statements_list)
@@ -179,14 +179,13 @@ void DataDependenceComputation::do_dependence_reduction()
                }
             }
          }
-         for(auto e0: to_be_removed)
+         for(auto e0 : to_be_removed)
          {
             function_behavior->ogc->RemoveSelector(e0, DFG_AGG_SELECTOR);
             function_behavior->ogc->RemoveSelector(e0, ADG_AGG_SELECTOR);
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed " + STR(bb_node_info->get_bb_index()));
-
    }
    function_behavior->ogc->CompressEdges();
    if(parameters->getOption<bool>(OPT_print_dot))
@@ -209,7 +208,7 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
    const std::string function_name = behavioral_helper->get_function_name();
 #endif
    // Maps between a variable and its definitions
-   std::map<type, std::set<vertex>> defs, overs;
+   std::map<type, CustomOrderedSet<vertex>> defs, overs;
    VertexIterator vi, vi_end;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing definitions");
    for(boost::tie(vi, vi_end) = boost::vertices(*cfg); vi != vi_end; vi++)

@@ -87,7 +87,7 @@ DesignFlowStep_Status vertex_coloring_register::InternalExec()
    const std::list<vertex>::const_iterator vEnd = support.end();
    for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
    {
-      const std::set<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
+      const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
       auto k_end = live.end();
       for(auto k = live.begin(); k != k_end; ++k)
       {

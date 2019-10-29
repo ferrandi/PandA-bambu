@@ -42,13 +42,13 @@
  */
 #include "design_flow_graph.hpp"
 #include "Parameter.hpp"                      // for OPT_dot_directory
+#include "custom_map.hpp"                     // for _Rb_tree_const_iter...
 #include "design_flow_step.hpp"               // for DesignFlowStep_Status
 #include "exceptions.hpp"                     // for THROW_UNREACHABLE
 #include <boost/filesystem/operations.hpp>    // for create_directories
 #include <boost/graph/adjacency_list.hpp>     // for adjacency_list, source
 #include <boost/graph/filtered_graph.hpp>     // for source, target
 #include <boost/iterator/iterator_facade.hpp> // for operator!=, operator++
-#include <map>                                // for _Rb_tree_const_iter...
 #include <ostream>                            // for operator<<, ostream
 #include <utility>                            // for pair
 
@@ -117,7 +117,7 @@ void DesignFlowGraph::WriteDot(const std::string& file_name, const int) const
 }
 
 #ifndef NDEBUG
-void DesignFlowGraph::WriteDot(const std::string& file_name, const CustomMap<size_t, CustomMap<vertex, DesignFlowStep_Status>>& vertex_history, const CustomMap<size_t, std::unordered_map<EdgeDescriptor, int>>& edge_history,
+void DesignFlowGraph::WriteDot(const std::string& file_name, const CustomMap<size_t, CustomMap<vertex, DesignFlowStep_Status>>& vertex_history, const CustomMap<size_t, CustomUnorderedMapStable<EdgeDescriptor, int>>& edge_history,
                                const CustomMap<vertex, std::string>& vertex_names, const size_t writing_step_counter) const
 {
    const std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory) + "/design_flow/";
@@ -255,7 +255,7 @@ void DesignFlowStepWriter::operator()(std::ostream& out, const vertex& v) const
    out << "]";
 }
 
-DesignFlowEdgeWriter::DesignFlowEdgeWriter(const DesignFlowGraph* design_flow_graph, const CustomMap<vertex, DesignFlowStep_Status>& _vertex_history, const std::unordered_map<EdgeDescriptor, int>& _edge_history, const int _detail_level)
+DesignFlowEdgeWriter::DesignFlowEdgeWriter(const DesignFlowGraph* design_flow_graph, const CustomMap<vertex, DesignFlowStep_Status>& _vertex_history, const CustomUnorderedMapStable<EdgeDescriptor, int> &_edge_history, const int _detail_level)
     : EdgeWriter(design_flow_graph, _detail_level), vertex_history(_vertex_history), edge_history(_edge_history)
 {
 }

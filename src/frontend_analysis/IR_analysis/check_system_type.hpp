@@ -50,8 +50,8 @@
 #include "function_frontend_flow_step.hpp"
 
 /// STD include
-#include <unordered_map>
-#include <unordered_set>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <vector>
 
 /// Utility include
@@ -75,33 +75,33 @@ class CheckSystemType : public FunctionFrontendFlowStep
    const tree_managerRef TM;
 
    /// Already visited tree node (used to avoid infinite recursion)
-   std::unordered_set<unsigned int> already_visited;
+   CustomUnorderedSet<unsigned int> already_visited;
 
    /// Contains the list of the folders containining the system header files
    static std::vector<std::string> systemIncPath;
 
    /// Associates to each system header file its full path
-   static std::unordered_map<std::string, std::string> inclNameToPath;
+   static CustomUnorderedMapUnstable<std::string, std::string> inclNameToPath;
 
    /// Associates a function to its original name
-   static std::unordered_map<std::string, std::string> rename_function;
+   static CustomUnorderedMapUnstable<std::string, std::string> rename_function;
 
    /// Associates a type to its original name
-   static std::unordered_map<std::string, std::string> rename_types;
+   static CustomUnorderedMapUnstable<std::string, std::string> rename_types;
 
    /// The set of functions which have to be considered library_system
-   static std::unordered_set<std::string> library_system_functions;
+   static CustomUnorderedSet<std::string> library_system_functions;
 
    /// The set of headers which contains function which have to be considered library_system
-   static std::unordered_set<std::string> library_system_includes;
+   static CustomUnorderedSet<std::string> library_system_includes;
 
 #if HAVE_LEON3
    /// The set of system function not supported by bcc
-   static std::unordered_set<std::string> not_supported_leon3_functions;
+   static CustomUnorderedSet<std::string> not_supported_leon3_functions;
 #endif
 
    /// Map undefined library function to corresponding header
-   static std::unordered_map<std::string, std::string> undefined_library_function_include;
+   static CustomUnorderedMapUnstable<std::string, std::string> undefined_library_function_include;
 
    /// Already executed
    bool already_executed;
@@ -141,7 +141,7 @@ class CheckSystemType : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**

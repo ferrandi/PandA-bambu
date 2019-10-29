@@ -63,11 +63,8 @@
 #include <iosfwd>                       // for ostream
 #include <limits>                       // for numeric_limits
 #include <list>                         // for list
-#include <map>                          // for map
 #include <set>                          // for set
 #include <string>                       // for string
-#include <unordered_map>                // for unordered_map
-#include <unordered_set>                // for unordered_set
 
 /// utility includes
 #include "custom_map.hpp"
@@ -381,7 +378,7 @@ struct OpNodeInfo : public TypedNodeInfo
    tree_nodeRef node;
 
    /// Store the index of called functions
-   std::unordered_set<unsigned int> called;
+   CustomUnorderedSet<unsigned int> called;
 
    /// Store the index of the basic block which this operation vertex belongs to
    unsigned int bb_index;
@@ -605,7 +602,7 @@ typedef refcount<const OpGraphInfo> OpGraphInfoConstRef;
 /**
  * A set of operation vertices
  */
-class OpVertexSet : public std::unordered_set<vertex>
+class OpVertexSet : public CustomUnorderedSet<vertex>
 {
  public:
    /**
@@ -618,18 +615,18 @@ class OpVertexSet : public std::unordered_set<vertex>
  * Map from operation vertices to value
  */
 template <typename value>
-class OpVertexMap : public std::unordered_map<vertex, value>
+class OpVertexMap : public CustomUnorderedMap<vertex, value>
 {
  public:
    /**
     * Constructor
     */
-   explicit OpVertexMap(const OpGraphConstRef) : std::unordered_map<vertex, value>()
+   explicit OpVertexMap(const OpGraphConstRef) : CustomUnorderedMap<vertex, value>()
    {
    }
 };
 
-class OpEdgeSet : public std::unordered_set<EdgeDescriptor>
+class OpEdgeSet : public CustomUnorderedSet<EdgeDescriptor>
 {
  public:
    /**
@@ -807,7 +804,7 @@ struct OpGraph : public graph
     * @param selector is the selector used to filter the bulk graph.
     * @param sub is the set of vertices on which the graph is filtered.
     */
-   OpGraph(const OpGraphsCollectionRef g, int selector, const std::unordered_set<boost::graph_traits<OpGraphsCollection>::vertex_descriptor>& sub);
+   OpGraph(const OpGraphsCollectionRef g, int selector, const CustomUnorderedSet<boost::graph_traits<OpGraphsCollection>::vertex_descriptor>& sub);
 
    /**
     * Destructor
@@ -897,7 +894,7 @@ struct OpGraph : public graph
     * @param toCheck is the set of vertices to be considered as taarget
     * @param edgeType is the type of edges to be considered
     */
-   std::unordered_map<vertex, OpVertexSet> GetSrcVertices(const OpVertexSet& toCheck, int edgeType) const;
+   CustomUnorderedMap<vertex, OpVertexSet> GetSrcVertices(const OpVertexSet& toCheck, int edgeType) const;
 
    /**
     * Return the vertices belonging to the graph

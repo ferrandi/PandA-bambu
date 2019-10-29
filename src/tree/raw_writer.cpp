@@ -49,12 +49,12 @@
 /// Header include
 #include "raw_writer.hpp"
 
-#include <cstddef>       // for size_t
-#include <list>          // for list, list<>::co...
-#include <map>           // for map, map<>::cons...
-#include <unordered_set> // for unordered_set<>:...
-#include <utility>       // for pair
-#include <vector>        // for vector, vector<>...
+#include "custom_map.hpp" // for map, map<>::cons...
+#include "custom_set.hpp" // for unordered_set<>:...
+#include <cstddef>        // for size_t
+#include <list>           // for list, list<>::co...
+#include <utility>        // for pair
+#include <vector>         // for vector, vector<>...
 
 #include "exceptions.hpp" // for THROW_ERROR
 
@@ -1226,7 +1226,7 @@ void raw_writer::operator()(const var_decl* obj, unsigned int& mask)
       WRITE_NFIELD(os, STOK(TOK_BIT_VALUES), obj->bit_values);
    }
    write_when_not_null(STOK(TOK_SMT_ANN), obj->smt_ann);
-   std::unordered_set<tree_nodeRef>::const_iterator var, var_end;
+   CustomUnorderedSet<tree_nodeRef>::const_iterator var, var_end;
    var_end = obj->defs.end();
    for(var = obj->defs.begin(); var != var_end; ++var)
    {

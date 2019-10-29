@@ -57,6 +57,13 @@ struct null_deleter
 };
 
 #if !defined(USE_REFCOUNT_POINTERS) && BOOST_VERSION >= 103300
+#if __cplusplus > 199711L
+#include <memory>
+#define refcount std::shared_ptr
+#define Wrefcount std::weak_ptr
+#define RefcountCast std::dynamic_pointer_cast
+
+#else
 #include <boost/smart_ptr/shared_ptr.hpp> // for shared_ptr
 #include <boost/smart_ptr/weak_ptr.hpp>   // for weak_ptr
 #include <cstddef>                        // for size_t
@@ -64,7 +71,7 @@ struct null_deleter
 #define refcount boost::shared_ptr
 #define Wrefcount boost::weak_ptr
 #define RefcountCast boost::dynamic_pointer_cast
-
+#endif
 #else
 template <class T>
 class Wrefcount;
@@ -233,18 +240,21 @@ inline T* GetPointer(const refcount<U>& t)
 }
 
 #include <functional>
-
+#if !defined(USE_REFCOUNT_POINTERS) && BOOST_VERSION >= 103300 && __cplusplus > 199711L
+#else
 namespace std
 {
    template <typename T>
-   struct hash<boost::shared_ptr<T>> : public std::unary_function<refcount<T>, std::size_t>
+   struct hash<refcount<T>> : public std::unary_function<refcount<T>, std::size_t>
    {
       std::size_t operator()(const refcount<T>& val) const
       {
-         return reinterpret_cast<std::size_t>(val.get());
+         std::hash<const void*> hasher;
+         return hasher(val.get());
       }
    };
 } // namespace std
+#endif
 
 /**
  * The key comparison function for refcount

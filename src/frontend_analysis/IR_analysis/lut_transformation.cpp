@@ -736,7 +736,7 @@ static T ConvertHexToNumber(const std::string& hex0)
 static std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_network& klut)
 {
    std::vector<klut_network_node> luts;
-   std::map<mockturtle::klut_network::node, std::set<unsigned>> po_set;
+   std::map<mockturtle::klut_network::node, CustomOrderedSet<unsigned>> po_set;
 
    mockturtle::topo_view ntk_topo{klut};
 
@@ -1576,9 +1576,9 @@ DesignFlowStep_Status lut_transformation::InternalExec()
    return DesignFlowStep_Status::UNCHANGED;
 }
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> lut_transformation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> lut_transformation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):

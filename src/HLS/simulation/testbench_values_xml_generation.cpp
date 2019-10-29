@@ -72,8 +72,9 @@
 #include <string>
 
 /// STL includes
+#include "custom_map.hpp"
+#include <iostream>
 #include <list>
-#include <map>
 #include <tuple>
 #include <unordered_set>
 #include <vector>
@@ -105,9 +106,9 @@ TestbenchValuesXMLGeneration::~TestbenchValuesXMLGeneration()
 {
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> TestbenchValuesXMLGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> TestbenchValuesXMLGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -138,7 +139,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
    if(!boost::filesystem::exists(output_directory))
       boost::filesystem::create_directories(output_directory);
    std::string output_file_name = output_directory + STR(STR_CST_testbench_generation_basename) + ".txt";
-   std::ofstream output_stream = std::ofstream(output_file_name.c_str(), std::ios::out);
+   std::ofstream output_stream(output_file_name.c_str(), std::ios::out);
    CInitializationParserRef c_initialization_parser = CInitializationParserRef(new CInitializationParser(parameters));
 
    /// print base address

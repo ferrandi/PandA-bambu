@@ -39,8 +39,8 @@
 
 #include "top_entity.hpp"
 
+#include "custom_set.hpp"
 #include <list>
-#include <set>
 #include <string>
 class module;
 
@@ -98,7 +98,7 @@ class TopEntityMemoryMapped : public top_entity
    void forwardPorts(structural_managerRef SM, structural_objectRef wrappedObj);
 
    std::list<std::string> ParametersName;
-   std::set<structural_objectRef> AddedComponents;
+   CustomOrderedSet<structural_objectRef> AddedComponents;
    bool needMemoryMappedRegisters{false};
 
    /// true when the module is a root function

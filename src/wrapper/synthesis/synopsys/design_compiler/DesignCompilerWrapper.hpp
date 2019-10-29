@@ -48,9 +48,6 @@
 #include <string>
 
 /// STL include
-#include <map>
-#include <set>
-#include <unordered_set>
 #include <vector>
 
 /// Autoheader includes
@@ -73,8 +70,8 @@ REF_FORWARD_DECL(xml_script_node_t);
 REF_FORWARD_DECL(area_model);
 REF_FORWARD_DECL(time_model);
 
-#include <map>
-#include <set>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <string>
 #include <vector>
 

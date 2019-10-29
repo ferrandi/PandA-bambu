@@ -52,8 +52,8 @@
 #include "graph.hpp"
 
 /// STL include
-#include <map>
-#include <set>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 /// Utility include
 #include "refcount.hpp"
@@ -66,12 +66,11 @@ class xml_element;
  * Map storing path profiling information
  */
 #if HAVE_UNORDERED
-#include <unordered_map>
-class PathProfilingInformation : public std::unordered_map<unsigned int, std::map<std::set<unsigned int>, long double>>
+class PathProfilingInformation : public CustomUnorderedMap<unsigned int, std::map<CustomOrderedSet<unsigned int>, long double>>
 {
 };
 #else
-class PathProfilingInformation : public std::map<unsigned int, std::map<std::set<unsigned int>, long double>>
+class PathProfilingInformation : public std::map<unsigned int, std::map<CustomOrderedSet<unsigned int>, long double>>
 {
 };
 #endif
@@ -80,7 +79,7 @@ class PathProfilingInformation : public std::map<unsigned int, std::map<std::set
  * Map storing number of executions of each basic block
  */
 #if HAVE_UNORDERED
-class BBExecutions : public std::unordered_map<vertex, unsigned long long int>
+class BBExecutions : public CustomUnorderedMap<vertex, unsigned long long int>
 {
  public:
    /**
@@ -105,7 +104,7 @@ class BBExecutions : public std::map<vertex, unsigned long long int, BBVertexSor
  * Map storing number of executions of each basic block edge
  */
 #if HAVE_UNORDERED
-class BBEdgeExecutions : public std::unordered_map<EdgeDescriptor, unsigned long long int>
+class BBEdgeExecutions : public CustomUnorderedMap<EdgeDescriptor, unsigned long long int>
 {
  public:
    /**
@@ -130,7 +129,7 @@ class BBEdgeExecutions : public std::map<EdgeDescriptor, unsigned long long int,
  * Map storing number of average iterations
  */
 #if HAVE_UNORDERED
-class AvgIterations : public std::unordered_map<unsigned int, long double>
+class AvgIterations : public CustomUnorderedMap<unsigned int, long double>
 {
 };
 #else
@@ -143,7 +142,7 @@ class AvgIterations : public std::map<unsigned int, long double>
  * Map storing number of abs/max iterations
  */
 #if HAVE_UNORDERED
-class Iterations : public std::unordered_map<unsigned int, unsigned long long int>
+class Iterations : public CustomUnorderedMap<unsigned int, unsigned long long int>
 {
 };
 #else

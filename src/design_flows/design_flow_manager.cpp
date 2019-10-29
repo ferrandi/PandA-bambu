@@ -58,9 +58,10 @@
 #include <random> // for uniform_int_distrib...
 #endif
 #endif
-#include "Parameter.hpp"                // for Parameter, OPT_test...
-#include "cpu_stats.hpp"                // for PrintVirtualDataMem...
-#include "cpu_time.hpp"                 // for START_TIME, STOP_TIME
+#include "Parameter.hpp" // for Parameter, OPT_test...
+#include "cpu_stats.hpp" // for PrintVirtualDataMem...
+#include "cpu_time.hpp"  // for START_TIME, STOP_TIME
+#include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"           // for DEBUG_LEVEL_VERY_PE...
 #include "design_flow_aux_step.hpp"     // for AuxDesignFlowStep
 #include "design_flow_graph.hpp"        // for DesignFlowGraph
@@ -743,7 +744,7 @@ void DesignFlowManager::Exec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked new ready steps");
-      std::set<EdgeDescriptor> to_be_removeds;
+      CustomOrderedSet<EdgeDescriptor> to_be_removeds;
       InEdgeIterator ie, ie_end;
       for(boost::tie(ie, ie_end) = boost::in_edges(design_flow_graph->CGetDesignFlowGraphInfo()->exit, *design_flow_graph); ie != ie_end; ie++)
       {

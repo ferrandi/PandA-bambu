@@ -46,8 +46,8 @@
 
 #include "function_frontend_flow_step.hpp"
 
+#include "custom_map.hpp"
 #include <boost/tuple/tuple.hpp>
-#include <unordered_map>
 
 #include "tree_common.hpp"
 
@@ -64,6 +64,8 @@ class gimple_assign;
 class statement_list;
 //@}
 
+#if NO_ABSEIL_HASH
+
 /**
  * Definition of hash function for InstrumentInstructionWriter::InstrumentationType
  */
@@ -79,6 +81,7 @@ namespace std
       }
    };
 } // namespace std
+#endif
 
 /**
  * @brief CSE analysis
@@ -98,13 +101,13 @@ class CSE : public FunctionFrontendFlowStep
    /// when true PHI_OPT step has to restart
    bool restart_phi_opt;
 
-   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /// define the type of the unique table key
    typedef std::pair<enum kind, std::vector<unsigned int>> CSE_tuple_key_type;
 
    /// define a map relating variables and columns
-   std::map<vertex, std::unordered_map<CSE_tuple_key_type, tree_nodeRef>> unique_table;
+   std::map<vertex, CustomUnorderedMapStable<CSE_tuple_key_type, tree_nodeRef>> unique_table;
 
    /// check if the statement has an equivalent in the unique table
    tree_nodeRef hash_check(tree_nodeRef tn, vertex bb);

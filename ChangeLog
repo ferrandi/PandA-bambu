@@ -48,9 +48,11 @@ New features introduced:
 - Extented the VHDL support to other bambu library components.
 - If it is supported, the compiler used to compile the PandA framework uses the c++17 standard (-std=c++17), otherwise, it uses c++11 standard.
 - Integrated Mockturtle library from EPFL (https://github.com/lsils/mockturtle) to simplify LUT-based expressions.
-- Added examples parallel_queries from ICCAD15 and ICCAD16 papers.
+- Integrated Abseil C++ libraries (https://abseil.io/)
+- Added examples of parallel_queries from ICCAD15 and ICCAD16 papers.
 - Added PNNL19 tutorial material.
 - Added PACT19 tutorial material.
+- Improved makefile parallelization.
 
 This release includes also a set of fixes:
     on COND_EXPR_RESTRUCTURING step

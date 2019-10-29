@@ -44,9 +44,6 @@
 /// Autoheader includes
 #include "config_HAVE_FLOPOCO.hpp"
 
-/// boost include
-#include <boost/date_time/posix_time/posix_time.hpp>
-
 /// circuit include
 #include "structural_objects.hpp"
 

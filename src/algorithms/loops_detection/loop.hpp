@@ -102,14 +102,13 @@
 #ifndef LOOP_HPP
 #define LOOP_HPP
 
-#include "graph.hpp"     // for vertex
-#include "refcount.hpp"  // for REF_FORWARD_DECL
-#include <cstddef>       // for size_t
-#include <list>          // for list, list<>::co...
-#include <map>           // for map
-#include <set>           // for set, _Rb_tree_co...
-#include <unordered_set> // for unordered_set
-#include <utility>       // for pair
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "graph.hpp"    // for vertex
+#include "refcount.hpp" // for REF_FORWARD_DECL
+#include <cstddef>      // for size_t
+#include <list>         // for list, list<>::co...
+#include <utility>      // for pair
 
 /**
  * @name Constants identifying the type of the loops
@@ -168,16 +167,16 @@ class Loop
    refcount<Loop> parent_loop;
 
    /// Child loops
-   std::set<LoopConstRef> children;
+   CustomOrderedSet<LoopConstRef> children;
 
    /// Blocks which belong to this loop
-   std::unordered_set<vertex> blocks;
+   CustomUnorderedSet<vertex> blocks;
 
    /// exit blocks for this loop
    std::list<vertex> exits;
 
    /// landing_pads for this loop
-   std::unordered_set<vertex> landing_pads;
+   CustomUnorderedSet<vertex> landing_pads;
 
    ///???
    vertex primary_landing_pad_block;
@@ -186,19 +185,19 @@ class Loop
    vertex header_block;
 
    /// in case the loop is irreducible the loop has multiple entries while for reducible loops the entry is just one
-   std::set<vertex> alternative_entries;
+   CustomOrderedSet<vertex> alternative_entries;
 
    /// the id of the loop
    unsigned int loop_id;
 
    /// Map storing the association between an exit basic block and the corresponding landing pads
-   std::map<vertex, std::unordered_set<vertex>> exit_landing_association;
+   std::map<vertex, CustomUnorderedSet<vertex>> exit_landing_association;
 
    /// used to label irreducible loops
    static unsigned int curr_unused_irreducible_id;
 
    /// set of vertex pairs describing a spanning tree back edge for the loop
-   std::set<std::pair<vertex, vertex>> sp_back_edges;
+   CustomOrderedSet<std::pair<vertex, vertex>> sp_back_edges;
 
  public:
    /// Nesting depth of this loop
@@ -284,7 +283,7 @@ class Loop
    vertex GetHeader() const;
 
    /// return the alternative entries of a loop
-   std::set<vertex> get_entries() const
+   CustomOrderedSet<vertex> get_entries() const
    {
       return alternative_entries;
    }
@@ -317,7 +316,7 @@ class Loop
     * returns the blocks
     * @return the blocks
     */
-   const std::unordered_set<vertex>& get_blocks() const;
+   const CustomUnorderedSet<vertex>& get_blocks() const;
 
    // Info on the exit blocks
    size_t num_exits() const;
@@ -331,7 +330,7 @@ class Loop
     * Return the landing pads of the loops
     * @param the basic block landing pads of the loop
     */
-   const std::unordered_set<vertex> GetLandingPadBlocks() const;
+   const CustomUnorderedSet<vertex> GetLandingPadBlocks() const;
 
    // Return the primary landing pad if it exists, NULL otherwise
    // The primary landing pad is the one that is the unique successor
@@ -353,13 +352,13 @@ class Loop
    /**
     * Returns the children of this loop in the loop forest
     */
-   const std::set<LoopConstRef>& GetChildren() const;
+   const CustomOrderedSet<LoopConstRef>& GetChildren() const;
 
    /**
     * Returns the basic blocks which belong to this loop and to loop nested in this loop
     * @param ret is the returned set of basic block of this loop and of its children
     */
-   void get_recursively_bb(std::unordered_set<vertex>& ret) const;
+   void get_recursively_bb(CustomUnorderedSet<vertex>& ret) const;
 
    /**
     * Returns the operation which belongs to this loop or to a nested loop
@@ -372,7 +371,7 @@ class Loop
     * Returns the map exit_landing_association
     * @return the map exit_landing_association
     */
-   const std::map<vertex, std::unordered_set<vertex>>& get_exit_landing_association() const;
+   const std::map<vertex, CustomUnorderedSet<vertex>>& get_exit_landing_association() const;
 
    /// add a spanning tree back edge
    void add_sp_back_edge(vertex vs, vertex vd)
@@ -389,7 +388,7 @@ class Loop
    }
 
    /// return the list of spanning tree back edges
-   std::set<std::pair<vertex, vertex>> get_sp_back_edges() const
+   CustomOrderedSet<std::pair<vertex, vertex>> get_sp_back_edges() const
    {
       return sp_back_edges;
    }

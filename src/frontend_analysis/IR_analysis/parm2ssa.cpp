@@ -58,7 +58,7 @@
 #include <fstream>
 
 /// STL include
-#include <map>
+#include "custom_map.hpp"
 #include <string>
 
 /// Tree include
@@ -83,9 +83,9 @@ parm2ssa::parm2ssa(const application_managerRef _AppM, const DesignFlowManagerCo
 
 parm2ssa::~parm2ssa() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> parm2ssa::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> parm2ssa::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -114,7 +114,7 @@ DesignFlowStep_Status parm2ssa::Exec()
 {
    const CallGraphManagerConstRef CG = AppM->CGetCallGraphManager();
    const tree_managerRef TM = AppM->get_tree_manager();
-   std::set<unsigned int> reached_body_fun_ids = CG->GetReachedBodyFunctions();
+   CustomOrderedSet<unsigned int> reached_body_fun_ids = CG->GetReachedBodyFunctions();
    AppM->clearParm2SSA();
 
    for(unsigned int function_id : reached_body_fun_ids)

@@ -48,7 +48,6 @@
 #define PARAMETRIC_LIST_BASED_HPP
 
 #include <iosfwd>
-#include <map>
 #include <set>
 #include <vector>
 
@@ -60,7 +59,6 @@
 #include "refcount.hpp"
 #include "rehashed_heap.hpp"
 #include "scheduling.hpp"
-#include <unordered_map>
 
 /**
  * @name forward declarations
@@ -169,7 +167,7 @@ class parametric_list_based : public Scheduling
    double clock_cycle;
 
    /// memoization table used for connection estimation
-   std::unordered_map<std::pair<vertex, unsigned int>, bool> is_complex;
+   CustomUnorderedMapUnstable<std::pair<vertex, unsigned int>, bool> is_complex;
 
    /// Number of executions
    size_t executions_number;
@@ -277,7 +275,7 @@ class parametric_list_based : public Scheduling
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**

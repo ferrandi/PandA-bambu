@@ -58,15 +58,12 @@
 
 /// STD include
 #include <cmath>
-#include <string>
-
-/// STL includes
 #include <list>
-#include <set>
+#include <string>
 #include <tuple>
-#include <unordered_set>
 
 /// utility includes
+#include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
 #include "math_function.hpp"
 #include "utility.hpp"
@@ -83,9 +80,9 @@ datapath_parallel_cs::~datapath_parallel_cs()
 {
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> datapath_parallel_cs::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> datapath_parallel_cs::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -139,7 +136,7 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
 
    instantiate_component_parallel(clock, reset);
 
-   std::set<structural_objectRef> memory_modules;
+   CustomOrderedSet<structural_objectRef> memory_modules;
    const structural_managerRef& SM = this->HLS->datapath;
    const structural_objectRef circuit = SM->get_circ();
    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
@@ -360,7 +357,7 @@ void datapath_parallel_cs::resize_dimension_bus_port(unsigned int vector_size, s
    GetPointer<port_o>(port)->add_n_ports(vector_size, port);
 }
 
-void datapath_parallel_cs::manage_extern_global_port_parallel(const structural_managerRef SM, const std::set<structural_objectRef>& memory_modules, const structural_objectRef circuit)
+void datapath_parallel_cs::manage_extern_global_port_parallel(const structural_managerRef SM, const CustomOrderedSet<structural_objectRef>& memory_modules, const structural_objectRef circuit)
 {
    structural_objectRef cir_port;
    structural_objectRef mem_paral_port;

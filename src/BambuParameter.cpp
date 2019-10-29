@@ -196,11 +196,11 @@
 #include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
 #include "string_manipulation.hpp"
+#include "treegcc_constants.hpp"
 #include "utility.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <getopt.h>
-#include "treegcc_constants.hpp"
 
 /// Wrapper include
 #include "gcc_wrapper.hpp"
@@ -3050,7 +3050,7 @@ void BambuParameter::CheckParameters()
       if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-TASTE")
       {
          const auto source_files = getOption<const CustomSet<std::string>>(OPT_input_file);
-         if(source_files.size()>1 && isOption(OPT_input_format) && getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C)
+         if(source_files.size() > 1 && isOption(OPT_input_format) && getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C)
          {
             auto concat_filename = boost::filesystem::path(getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_concat_c_file)).string()).string();
             std::ofstream filestream(concat_filename.c_str());

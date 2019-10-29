@@ -44,8 +44,8 @@
 #ifndef VERTEX_HPP
 #define VERTEX_HPP
 
+#include "custom_map.hpp"
 #include <iosfwd>
-#include <unordered_map>
 
 #include "graph.hpp"
 #include "typed_node_info.hpp"
@@ -56,7 +56,7 @@
  * Class managing map of the vertexes on a generic object.
  */
 template <class data_obj>
-struct vertex2obj : public std::unordered_map<vertex, data_obj>
+struct vertex2obj : public CustomUnorderedMapUnstable<vertex, data_obj>
 {
    /**
     * Constructor.

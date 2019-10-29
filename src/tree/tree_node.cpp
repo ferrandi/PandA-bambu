@@ -1497,7 +1497,7 @@ bool TreeNodeSorter::operator()(const tree_nodeRef& x, const tree_nodeRef& y) co
 
 TreeNodeConstSorter::TreeNodeConstSorter() = default;
 
-TreeNodeSet::TreeNodeSet() : std::set<tree_nodeRef, TreeNodeSorter>(TreeNodeSorter())
+TreeNodeSet::TreeNodeSet() : OrderedSetStd<tree_nodeRef, TreeNodeSorter>()
 {
 }
 
@@ -1506,7 +1506,7 @@ bool TreeNodeConstSorter::operator()(const tree_nodeConstRef& x, const tree_node
    return x->index < y->index;
 }
 
-TreeNodeConstSet::TreeNodeConstSet() : std::set<tree_nodeConstRef, TreeNodeConstSorter>(TreeNodeConstSorter())
+TreeNodeConstSet::TreeNodeConstSet() : OrderedSetStd<tree_nodeConstRef, TreeNodeConstSorter>()
 {
 }
 #endif

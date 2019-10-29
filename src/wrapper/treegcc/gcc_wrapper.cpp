@@ -520,7 +520,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Compiled file");
 }
 
-void GccWrapper::FillTreeManager(const tree_managerRef TM, CustomMap<std::string, std::string>& source_files)
+void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string, std::string>& source_files)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Invoking GCC");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");

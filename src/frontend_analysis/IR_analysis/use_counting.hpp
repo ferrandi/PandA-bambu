@@ -57,9 +57,9 @@ REF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_node);
 //@}
 
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <list>
-#include <map>
-#include <set>
 #include <string>
 #include <vector>
 
@@ -77,13 +77,13 @@ class use_counting : public FunctionFrontendFlowStep
     *@param tn is the tree_node to be analyzed
     *@param ssa_uses is the vector containing the ssa_nodes "used" by the tree_node tn
     */
-   void analyze_node(tree_nodeRef& tn, std::set<tree_nodeRef>& ssa_uses);
+   void analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>& ssa_uses);
 
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * Compute the relationships of a step with other steps

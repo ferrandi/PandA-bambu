@@ -1,0 +1,47 @@
+noinst_LTLIBRARIES += lib_utility.la
+lib_utility_la_CPPFLAGS = \
+                     -I$(BOOST_DIR) $(all_includes)
+noinst_HEADERS += \
+   utility/augmented_vector.hpp \
+   utility/cpu_stats.hpp \
+   utility/cpu_time.hpp \
+   utility/custom_map.hpp \
+   utility/custom_set.hpp \
+   utility/dbgPrintHelper.hpp \
+   utility/exceptions.hpp \
+   utility/fileIO.hpp \
+   utility/gzstream.hpp \
+   utility/hash_helper.hpp \
+   utility/indented_output_stream.hpp \
+   utility/Lexer_utilities.hpp \
+   utility/math_function.hpp \
+   utility/refcount.hpp \
+   utility/simple_indent.hpp \
+   utility/Statistics.hpp \
+   utility/string_manipulation.hpp \
+   utility/strong_typedef.hpp \
+   utility/utility.hpp \
+   utility/visitor.hpp \
+   utility/xml_helper.hpp
+lib_utility_la_SOURCES = \
+   utility/cpu_stats.cpp \
+   utility/exceptions.cpp \
+   utility/indented_output_stream.cpp \
+   utility/math_function.cpp \
+   utility/simple_indent.cpp \
+   utility/Statistics.cpp \
+   utility/string_manipulation.cpp \
+   utility/utility.cpp
+
+lib_utility_la_LIBADD = 
+if MINGW64
+   lib_utility_la_LIBADD += -lws2_32 -lpsapi
+endif
+
+if BUILD_LIB_PROBABILITY_DISTRIBUTION
+  SUBDIRS += utility/probability_distribution
+  DIST_SUBDIRS += utility/probability_distribution
+  lib_utility_la_CPPFLAGS += -I$(top_srcdir)/src/utility/probability_distribution
+  lib_utility_la_LIBADD += $(top_builddir)/src/utility/probability_distribution/lib_ProbabilityDistribution.la
+endif
+

@@ -71,9 +71,9 @@ REF_FORWARD_DECL(language_writer);
 #include <string>
 
 /// STL include
-#include <map>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <tuple>
-#include <unordered_set>
 #include <vector>
 
 /**
@@ -207,7 +207,7 @@ class TestbenchGenerationBaseStep : public HLS_step
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * Constructor.

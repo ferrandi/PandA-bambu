@@ -325,10 +325,10 @@ FrontendFlowStepFactory::FrontendFlowStepFactory(const application_managerRef _A
 
 FrontendFlowStepFactory::~FrontendFlowStepFactory() = default;
 
-const DesignFlowStepSet FrontendFlowStepFactory::GenerateFrontendSteps(const std::unordered_set<FrontendFlowStepType>& frontend_flow_step_types) const
+const DesignFlowStepSet FrontendFlowStepFactory::GenerateFrontendSteps(const CustomUnorderedSet<FrontendFlowStepType>& frontend_flow_step_types) const
 {
    DesignFlowStepSet frontend_flow_steps;
-   std::unordered_set<FrontendFlowStepType>::const_iterator frontend_flow_step_type, frontend_flow_step_type_end = frontend_flow_step_types.end();
+   CustomUnorderedSet<FrontendFlowStepType>::const_iterator frontend_flow_step_type, frontend_flow_step_type_end = frontend_flow_step_types.end();
    for(frontend_flow_step_type = frontend_flow_step_types.begin(); frontend_flow_step_type != frontend_flow_step_type_end; ++frontend_flow_step_type)
    {
       frontend_flow_steps.insert(GenerateFrontendStep(*frontend_flow_step_type));

@@ -90,7 +90,7 @@ const std::map<std::string, std::string> verilog_writer::builtin_to_verilog_keyw
     {AND_GATE_STD, "and"}, {NAND_GATE_STD, "nand"}, {OR_GATE_STD, "or"}, {NOR_GATE_STD, "nor"}, {XOR_GATE_STD, "xor"}, {XNOR_GATE_STD, "xnor"}, {NOT_GATE_STD, "not"}, {DFF_GATE_STD, "dff"}, {BUFF_GATE_STD, "buf"},
 };
 
-const std::set<std::string> verilog_writer::keywords = {
+const char* verilog_writer::tokenNames[] = {
     "abs", "abstol", "access", "acos", "acosh", "always", "analog", "and", "asin", "asinh", "assign", "atan", "atan2", "atanh", "automatic", "begin", "bool", "buf", "bufif0", "bufif1", "case", "casex", "casez", "ceil", "cell", "cmos", "config",
     "continuous", "cos", "cosh", "ddt_nature", "deassign", "default", "defparam", "design", "disable", "discipline", "discrete", "domain", "edge", "else", "end", "endcase", "endconfig", "enddiscipline", "endfunction", "endgenerate", "endmodule",
     "endnature", "endprimitive", "endspecify", "endtable", "endtask", "event", "exclude", "exp", "floor", "flow", "for", "force", "forever", "fork", "from", "function", "generate", "genvar", "ground", "highz0", "highz1", "hypot", "idt_nature", "if",
@@ -1640,6 +1640,8 @@ void verilog_writer::write_module_parametrization_decl(const structural_objectRe
 verilog_writer::verilog_writer(const ParameterConstRef _parameters) : language_writer(STD_OPENING_CHAR, STD_CLOSING_CHAR, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
+   for(auto& tokenName : tokenNames)
+      keywords.insert(tokenName);
 }
 
 verilog_writer::~verilog_writer() = default;

@@ -55,7 +55,6 @@
 #include <boost/lexical_cast.hpp> // for lexical_cast
 #include <boost/tuple/tuple.hpp>  // for tie
 #include <list>                   // for list
-#include <unordered_set>          // for unordered_set
 #include <utility>                // for pair
 
 operations_graph_constructor::operations_graph_constructor(OpGraphsCollectionRef _og) : og(std::move(_og)), op_graph(new OpGraph(og, -1))

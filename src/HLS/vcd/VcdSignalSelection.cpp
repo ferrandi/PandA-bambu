@@ -109,9 +109,9 @@ bool VcdSignalSelection::IsAddressType(const unsigned int type_index) const
    return tree_helper::is_a_pointer(TM, type_index) or tree_helper::is_an_array(TM, type_index) or (tree_helper::is_a_vector(TM, type_index) and tree_helper::is_a_pointer(TM, tree_helper::GetElements(TM, type_index)));
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> VcdSignalSelection::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> VcdSignalSelection::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -134,7 +134,7 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    return ret;
 }
 
-void VcdSignalSelection::SelectInitialAddrParam(const std::set<unsigned int>& reached_body_fun_ids, std::unordered_map<unsigned int, TreeNodeSet>& address_parameters)
+void VcdSignalSelection::SelectInitialAddrParam(const CustomOrderedSet<unsigned int>& reached_body_fun_ids, CustomUnorderedMap<unsigned int, TreeNodeSet>& address_parameters)
 {
    for(const unsigned int fun_id : reached_body_fun_ids)
    {
@@ -151,7 +151,7 @@ void VcdSignalSelection::SelectInitialAddrParam(const std::set<unsigned int>& re
    return;
 }
 
-void VcdSignalSelection::InitialSsaIsAddress(const tree_nodeConstRef& tn, const std::unordered_set<unsigned int>& addr_fun_ids, const std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& call_id_to_called_id)
+void VcdSignalSelection::InitialSsaIsAddress(const tree_nodeConstRef& tn, const CustomUnorderedSet<unsigned int>& addr_fun_ids, const CustomUnorderedMap<unsigned int, CustomUnorderedSet<unsigned int>>& call_id_to_called_id)
 {
    THROW_ASSERT(tn->get_kind() == gimple_assign_K, tn->ToString() + " is of kind " + tree_node::GetString(tn->get_kind()));
    const auto* g_as_node = GetPointer<const gimple_assign>(tn);
@@ -245,7 +245,7 @@ void VcdSignalSelection::InitialPhiResIsAddress(const tree_nodeConstRef& tn)
    }
 }
 
-void VcdSignalSelection::SelectInitialSsa(const std::set<unsigned int>& reached_body_fun_ids, const std::unordered_set<unsigned int>& addr_fun_ids, const std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& call_id_to_called_id)
+void VcdSignalSelection::SelectInitialSsa(const CustomOrderedSet<unsigned int>& reached_body_fun_ids, const CustomUnorderedSet<unsigned int>& addr_fun_ids, const CustomUnorderedMap<unsigned int, CustomUnorderedSet<unsigned int>>& call_id_to_called_id)
 {
    for(const auto fid : reached_body_fun_ids)
    {
@@ -332,11 +332,11 @@ void VcdSignalSelection::SingleStepPropagateParamToSsa(const TreeNodeMap<size_t>
    return;
 }
 
-void VcdSignalSelection::PropagateAddrParamToSsa(const std::unordered_map<unsigned int, TreeNodeSet>& address_parameters, const std::set<unsigned int>& reached_body_fun_ids)
+void VcdSignalSelection::PropagateAddrParamToSsa(const CustomUnorderedMap<unsigned int, TreeNodeSet>& address_parameters, const CustomOrderedSet<unsigned int>& reached_body_fun_ids)
 {
    for(const auto fid : reached_body_fun_ids)
    {
-      const std::unordered_map<unsigned int, TreeNodeSet>::const_iterator addrp_it = address_parameters.find(fid);
+      const CustomUnorderedMap<unsigned int, TreeNodeSet>::const_iterator addrp_it = address_parameters.find(fid);
       bool has_addr_param = (addrp_it != address_parameters.end());
       if(not has_addr_param)
          continue;
@@ -435,18 +435,18 @@ void VcdSignalSelection::PropagateAddrSsa()
    size_t previous_address_ssa_size;
    do
    {
-      previous_address_ssa_size = Discr->address_ssa.size();
+      previous_address_ssa_size = static_cast<size_t>(Discr->address_ssa.size());
       for(const auto& addr : Discr->address_ssa)
       {
          THROW_ASSERT(addr->get_kind() == ssa_name_K, addr->ToString() + " is of kind " + tree_node::GetString(addr->get_kind()));
          for(const auto& stmt_using_ssa : GetPointer<const ssa_name>(addr)->CGetUseStmts())
             SingleStepPropagateAddrSsa(stmt_using_ssa.first);
       }
-   } while(previous_address_ssa_size != Discr->address_ssa.size());
+   } while(previous_address_ssa_size != static_cast<size_t>(Discr->address_ssa.size()));
    return;
 }
 
-void VcdSignalSelection::DetectInvalidReturns(const std::set<unsigned int>& reached_body_functions, std::unordered_set<unsigned int>& addr_fun_ids)
+void VcdSignalSelection::DetectInvalidReturns(const CustomOrderedSet<unsigned int>& reached_body_functions, CustomUnorderedSet<unsigned int>& addr_fun_ids)
 {
    for(const unsigned int i : reached_body_functions)
    {
@@ -475,7 +475,7 @@ void VcdSignalSelection::DetectInvalidReturns(const std::set<unsigned int>& reac
    }
 }
 
-void VcdSignalSelection::InProcedurePropagateAddr(const std::unordered_map<unsigned int, TreeNodeSet>& address_parameters, const std::set<unsigned int>& reached_body_functions, std::unordered_set<unsigned int>& addr_fun_ids)
+void VcdSignalSelection::InProcedurePropagateAddr(const CustomUnorderedMap<unsigned int, TreeNodeSet>& address_parameters, const CustomOrderedSet<unsigned int>& reached_body_functions, CustomUnorderedSet<unsigned int>& addr_fun_ids)
 {
    PropagateAddrParamToSsa(address_parameters, reached_body_functions);
    PropagateAddrSsa();
@@ -483,8 +483,8 @@ void VcdSignalSelection::InProcedurePropagateAddr(const std::unordered_map<unsig
    return;
 }
 
-void VcdSignalSelection::CrossPropagateAddrSsa(std::unordered_map<unsigned int, TreeNodeSet>& address_parameters, const std::set<unsigned int>& reached_body_functions, const std::unordered_set<unsigned int>& addr_fun_ids,
-                                               const std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& fu_id_to_call_ids, const std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& call_id_to_called_id)
+void VcdSignalSelection::CrossPropagateAddrSsa(CustomUnorderedMap<unsigned int, TreeNodeSet>& address_parameters, const CustomOrderedSet<unsigned int>& reached_body_functions, const CustomUnorderedSet<unsigned int>& addr_fun_ids,
+                                               const CustomUnorderedMap<unsigned int, CustomUnorderedSet<unsigned int>>& fu_id_to_call_ids, const CustomUnorderedMap<unsigned int, CustomUnorderedSet<unsigned int>>& call_id_to_called_id)
 {
    for(const unsigned int caller_fun_id : reached_body_functions)
    {
@@ -663,7 +663,7 @@ void VcdSignalSelection::CrossPropagateAddrSsa(std::unordered_map<unsigned int, 
    return;
 }
 
-void VcdSignalSelection::SelectAddrSsa(const std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& fu_id_to_call_ids, const std::unordered_map<unsigned int, std::unordered_set<unsigned int>>& call_id_to_called_id)
+void VcdSignalSelection::SelectAddrSsa(const CustomUnorderedMap<unsigned int, CustomUnorderedSet<unsigned int>>& fu_id_to_call_ids, const CustomUnorderedMap<unsigned int, CustomUnorderedSet<unsigned int>>& call_id_to_called_id)
 {
    const CallGraphManagerConstRef CGMan = HLSMgr->CGetCallGraphManager();
    const CallGraphConstRef cg = CGMan->CGetCallGraph();
@@ -671,8 +671,8 @@ void VcdSignalSelection::SelectAddrSsa(const std::unordered_map<unsigned int, st
    /*
     * initialize the set of fun_ids representing an address
     */
-   std::unordered_set<unsigned int> addr_fun_ids;
-   std::set<unsigned int> reached_body_fun_ids = CGMan->GetReachedBodyFunctions();
+   CustomUnorderedSet<unsigned int> addr_fun_ids;
+   CustomOrderedSet<unsigned int> reached_body_fun_ids = CGMan->GetReachedBodyFunctions();
    for(unsigned int f_id : reached_body_fun_ids)
    {
       const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(f_id);
@@ -685,7 +685,7 @@ void VcdSignalSelection::SelectAddrSsa(const std::unordered_map<unsigned int, st
    /*
     * initialize the parameters representing addresses for every reached functions.
     */
-   std::unordered_map<unsigned int, TreeNodeSet> address_parameters;
+   CustomUnorderedMap<unsigned int, TreeNodeSet> address_parameters;
    SelectInitialAddrParam(reached_body_fun_ids, address_parameters);
    /*
     * get the initial ssa_name representing addresses for every function.
@@ -706,7 +706,7 @@ void VcdSignalSelection::SelectAddrSsa(const std::unordered_map<unsigned int, st
    size_t previous_address_ssa_n;
    do
    {
-      previous_address_ssa_n = Discr->address_ssa.size();
+      previous_address_ssa_n = static_cast<size_t>(Discr->address_ssa.size());
       /*
        * now we have to propagate addresses across the functional units. this is
        * necessary because we can have for example a function taking an integer
@@ -718,14 +718,14 @@ void VcdSignalSelection::SelectAddrSsa(const std::unordered_map<unsigned int, st
        * then we have to propagate again internally to the procedures
        */
       InProcedurePropagateAddr(address_parameters, reached_body_fun_ids, addr_fun_ids);
-   } while(previous_address_ssa_n != Discr->address_ssa.size());
+   } while(previous_address_ssa_n != static_cast<size_t>(Discr->address_ssa.size()));
    return;
 }
 
-void VcdSignalSelection::SelectInternalSignals(std::unordered_map<unsigned int, std::unordered_set<std::string>>& fun_id_to_sig_names) const
+void VcdSignalSelection::SelectInternalSignals(CustomUnorderedMap<unsigned int, CustomUnorderedSet<std::string>>& fun_id_to_sig_names) const
 {
    const auto ssa_to_skip_end = Discr->ssa_to_skip.cend();
-   std::set<unsigned int> fun_with_body = HLSMgr->CGetCallGraphManager()->GetReachedBodyFunctions();
+   CustomOrderedSet<unsigned int> fun_with_body = HLSMgr->CGetCallGraphManager()->GetReachedBodyFunctions();
    for(const unsigned int f_id : fun_with_body)
    {
       const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(f_id);
@@ -827,7 +827,7 @@ DesignFlowStep_Status VcdSignalSelection::Exec()
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--Selected discrepancy variables");
    /* Calculate the internal signal names for every function */
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Selecting internal signals in functions");
-   std::unordered_map<unsigned int, std::unordered_set<std::string>> fun_ids_to_local_sig_names;
+   CustomUnorderedMap<unsigned int, CustomUnorderedSet<std::string>> fun_ids_to_local_sig_names;
    SelectInternalSignals(fun_ids_to_local_sig_names);
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--Selected internal signals in functions");
    // helper strings

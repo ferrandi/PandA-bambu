@@ -46,7 +46,7 @@
 
 #include "area_model.hpp"
 
-#include <map>
+#include "custom_map.hpp"
 #include <vector>
 
 /// Utility include

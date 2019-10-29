@@ -66,19 +66,16 @@
 #include "parse_discrepancy.hpp"
 
 /// STD include
-#include <limits>
-#include <string>
-
-/// STL include
 #include <algorithm>
+#include <limits>
 #include <list>
-#include <map>
-#include <set>
+#include <string>
 #include <tuple>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
+
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 // include from tree/
 #include "behavioral_helper.hpp"
@@ -87,6 +84,7 @@
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 
+#include <boost/algorithm/string/case_conv.hpp>
 #include <boost/tokenizer.hpp>
 
 /// MAX metadata bit size
@@ -103,9 +101,9 @@ HWDiscrepancyAnalysis::HWDiscrepancyAnalysis(const ParameterConstRef _parameters
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> HWDiscrepancyAnalysis::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> HWDiscrepancyAnalysis::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -162,11 +160,11 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
    }
 #endif
    // untangle control flow traces
-   std::unordered_map<std::string, std::list<size_t>> scope_to_epp_trace;
-   std::unordered_map<std::string, std::list<std::pair<size_t, size_t>>> scope_to_best_epp_trace_with_metadata;
-   std::unordered_map<std::string, std::list<unsigned int>> scope_to_state_trace;
-   std::unordered_map<std::string, unsigned int> scope_to_function_id;
-   std::unordered_map<std::string, size_t> scope_to_best_metadata_bits;
+   CustomUnorderedMap<std::string, std::list<size_t>> scope_to_epp_trace;
+   CustomUnorderedMap<std::string, std::list<std::pair<size_t, size_t>>> scope_to_best_epp_trace_with_metadata;
+   CustomUnorderedMap<std::string, std::list<unsigned int>> scope_to_state_trace;
+   CustomUnorderedMapUnstable<std::string, unsigned int> scope_to_function_id;
+   CustomUnorderedMap<std::string, size_t> scope_to_best_metadata_bits;
    std::vector<size_t> tot_memory_usage_per_bits = std::vector<size_t>(MAX_METADATA_BITSIZE, 0);
    size_t min_memory_usage = 0;
    size_t total_state_of_the_art_memory_usage = 0;
@@ -276,7 +274,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                bool end_of_bb_execution = false;
                takes_feedback_edge = false;
                vertex next_state = nullptr;
-               EdgeDescriptor taken_edge;
+               EdgeDescriptor taken_edge(NULL_VERTEX, NULL_VERTEX, nullptr);
                // look for the next state belonging to the same bb, without following a feedback edge
                BOOST_FOREACH(const EdgeDescriptor e, boost::out_edges(current_state, *stg))
                {
@@ -616,7 +614,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
    }
 #endif
 
-   const std::set<unsigned int> root_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
+   const CustomOrderedSet<unsigned int> root_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(root_functions.size() == 1, "more than one root function is not supported");
    unsigned int top_function = *(root_functions.begin());
    structural_objectRef top_module = HLSMgr->get_HLS(top_function)->top->get_circ();
@@ -735,3 +733,6 @@ bool HWDiscrepancyAnalysis::HasToBeExecuted() const
 {
    return true;
 }
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+#pragma GCC diagnostic pop
+#endif

@@ -48,13 +48,13 @@
 
 #include "config_HAVE_BAMBU_BUILT.hpp"
 
-#include <cstddef>       // for size_t
-#include <list>          // for list
-#include <set>           // for set
-#include <string>        // for string
-#include <tuple>         // for tuple
-#include <unordered_set> // for unordered_set
-#include <vector>        // for vector
+#include "custom_set.hpp" // for set
+#include "custom_set.hpp" // for unordered_set
+#include <cstddef>        // for size_t
+#include <list>           // for list
+#include <string>         // for string
+#include <tuple>          // for tuple
+#include <vector>         // for vector
 
 /// Utility include
 #include "refcount.hpp"
@@ -103,7 +103,7 @@ class tree_helper
     * @param before is true if we are computing types which must be declared before index
     * @return the types to be declared
     */
-   static const std::unordered_set<unsigned int> RecursiveGetTypesToBeDeclared(const tree_managerConstRef TM, const unsigned int index, const bool recursive, const bool without_transformation, const bool before);
+   static const CustomUnorderedSet<unsigned int> RecursiveGetTypesToBeDeclared(const tree_managerConstRef TM, const unsigned int index, const bool recursive, const bool without_transformation, const bool before);
 
    /**
     * recursively compute the references to the ssa_name variables used in a statement
@@ -184,7 +184,7 @@ class tree_helper
     * @param t is a tree node (usually a function declaration).
     * @param list_of_variable list of used variables.
     */
-   static void get_used_variables(bool first_level_only, const tree_nodeRef t, std::unordered_set<unsigned int>& list_of_variable);
+   static void get_used_variables(bool first_level_only, const tree_nodeRef t, CustomUnorderedSet<unsigned int>& list_of_variable);
 
    /**
     * Look for inheritance of a class
@@ -208,7 +208,7 @@ class tree_helper
     * @param without_transformation specifies if we are not restructuring the code
     * @return the types to be declared
     */
-   static const std::unordered_set<unsigned int> GetTypesToBeDeclaredBefore(const tree_managerConstRef TM, const unsigned int index, const bool without_transformation);
+   static const CustomUnorderedSet<unsigned int> GetTypesToBeDeclaredBefore(const tree_managerConstRef TM, const unsigned int index, const bool without_transformation);
 
    /**
     * Return the types to be declared after declaring index type
@@ -217,7 +217,7 @@ class tree_helper
     * @param without_transformation specifies if we are not restructuring the code
     * @return the types to be declared
     */
-   static const std::unordered_set<unsigned int> GetTypesToBeDeclaredAfter(const tree_managerConstRef TM, const unsigned int index, const bool without_transformation);
+   static const CustomUnorderedSet<unsigned int> GetTypesToBeDeclaredAfter(const tree_managerConstRef TM, const unsigned int index, const bool without_transformation);
 
    /**
     * Return the treenode index of the type of index
@@ -489,7 +489,7 @@ class tree_helper
     */
    static unsigned int get_base_index(const tree_managerConstRef& TM, const unsigned int index);
 
-   static bool is_fully_resolved(const tree_managerConstRef& TM, const unsigned int index, std::set<unsigned int>& res_set);
+   static bool is_fully_resolved(const tree_managerConstRef& TM, const unsigned int index, CustomOrderedSet<unsigned int>& res_set);
 
    /**
     * return the prefix given a qualifier
@@ -838,7 +838,7 @@ class tree_helper
     * @param tn is the statement
     * @param ssa_uses is the collection of ssa_name tn uses
     */
-   static void compute_ssa_uses_rec_ptr(const tree_nodeRef& tn, std::set<ssa_name*>& ssa_uses);
+   static void compute_ssa_uses_rec_ptr(const tree_nodeRef& tn, CustomOrderedSet<ssa_name*>& ssa_uses);
 
    /**
     * recursively compute the references to the ssa_name variables used in a statement
@@ -881,7 +881,7 @@ class tree_helper
     * @param fun_mem_data is the set of memory variables of the function
     * @return true if tn operation is a store
     */
-   static bool IsStore(const tree_managerConstRef& TM, const tree_nodeConstRef& tn, const std::set<unsigned int>& fun_mem_data);
+   static bool IsStore(const tree_managerConstRef& TM, const tree_nodeConstRef& tn, const CustomOrderedSet<unsigned int>& fun_mem_data);
 
    /**
     * Return true if the tree node is a gimple_assign reading something which will be allocated in memory
@@ -890,7 +890,7 @@ class tree_helper
     * @param fun_mem_data is the set of memory variables of the function
     * @return true if tn operation is a load
     */
-   static bool IsLoad(const tree_managerConstRef& TM, const tree_nodeConstRef& tn, const std::set<unsigned int>& fun_mem_data);
+   static bool IsLoad(const tree_managerConstRef& TM, const tree_nodeConstRef& tn, const CustomOrderedSet<unsigned int>& fun_mem_data);
 
    /// Constructor
    tree_helper();
@@ -904,19 +904,19 @@ class FunctionExpander
 {
  private:
    /// Set of functions which don't need serialization
-   std::set<std::string> no_serialize;
+   CustomOrderedSet<std::string> no_serialize;
 
    /// Set of functions which need only internal serialization
-   std::set<std::string> internal_serialize;
+   CustomOrderedSet<std::string> internal_serialize;
 
    /// Set of not opaque functions
-   std::set<std::string> transparent;
+   CustomOrderedSet<std::string> transparent;
 
    /// Set of headers file containg standard and system types
-   std::set<std::string> headers;
+   CustomOrderedSet<std::string> headers;
 
    /// Set of types which are in c system library
-   std::set<tree_nodeRef> lib_types;
+   CustomOrderedSet<tree_nodeRef> lib_types;
 
  public:
    /**

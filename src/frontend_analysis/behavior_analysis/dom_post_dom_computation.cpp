@@ -65,9 +65,9 @@
 #include "behavioral_helper.hpp"
 
 /// utility include
+#include "custom_map.hpp"
 #include "hash_helper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
-#include <unordered_map>
 
 dom_post_dom_computation::dom_post_dom_computation(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, DOM_POST_DOM_COMPUTATION, _design_flow_manager, _parameters), bb_cfg_computation_bb_version(0)
@@ -77,9 +77,9 @@ dom_post_dom_computation::dom_post_dom_computation(const ParameterConstRef _para
 
 dom_post_dom_computation::~dom_post_dom_computation() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> dom_post_dom_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> dom_post_dom_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -124,7 +124,7 @@ DesignFlowStep_Status dom_post_dom_computation::InternalExec()
    const vertex bbexit = fbb->CGetBBGraphInfo()->exit_vertex;
    function_behavior->dominators = new dominance<BBGraph>(*fbb, bbentry, bbexit, parameters);
    function_behavior->dominators->calculate_dominance_info(dominance<BBGraph>::CDI_DOMINATORS);
-   std::unordered_map<vertex, vertex> dominator_map = function_behavior->dominators->get_dominator_map();
+   CustomUnorderedMap<vertex, vertex> dominator_map = function_behavior->dominators->get_dominator_map();
    for(auto& it : dominator_map)
    {
       if(it.first != bbentry)
@@ -141,7 +141,7 @@ DesignFlowStep_Status dom_post_dom_computation::InternalExec()
    THROW_ASSERT(!function_behavior->post_dominators, "Post dominators yet built");
    function_behavior->post_dominators = new dominance<BBGraph>(*fbb, bbentry, bbexit, parameters);
    function_behavior->post_dominators->calculate_dominance_info(dominance<BBGraph>::CDI_POST_DOMINATORS);
-   std::unordered_map<vertex, vertex> post_dominator_map = function_behavior->post_dominators->get_dominator_map();
+   CustomUnorderedMap<vertex, vertex> post_dominator_map = function_behavior->post_dominators->get_dominator_map();
    for(auto& it : post_dominator_map)
    {
       if(it.first != bbexit)

@@ -59,7 +59,7 @@
 #include <graph.hpp>
 
 /// STL includes
-#include <set>
+#include "custom_set.hpp"
 
 /// Utility includes
 #include "refcount.hpp"
@@ -102,7 +102,7 @@ struct StateInfo : public NodeInfo
    std::list<vertex> onfly_operations;
 
    /// set of BB ids associated with the state
-   std::set<unsigned int> BB_ids;
+   CustomOrderedSet<unsigned int> BB_ids;
 
    /// flag to check if the state is dummy or not
    bool is_dummy;
@@ -123,10 +123,10 @@ struct StateInfo : public NodeInfo
    bool all_paths;
 
    /// set of ssa vars defined in the state by the moved operations
-   std::set<unsigned int> moved_op_def_set;
+   CustomOrderedSet<unsigned int> moved_op_def_set;
 
    /// set of ssa vars used in the state by the moved operations
-   std::set<unsigned int> moved_op_use_set;
+   CustomOrderedSet<unsigned int> moved_op_use_set;
 
    /// set of moved operations in execution
    std::list<vertex> moved_exec_op;
@@ -173,9 +173,9 @@ class TransitionInfo : public EdgeInfo
    OpGraphConstRef op_function_graph;
 
    transition_type t{DONTCARE_COND};
-   std::set<vertex> ops;
+   CustomOrderedSet<vertex> ops;
    bool has_default{false};
-   std::set<unsigned> labels;
+   CustomOrderedSet<unsigned> labels;
    vertex ref_state{NULL_VERTEX};
    /// the edge increment computed by Efficient Path Profiling
    size_t epp_increment{0};
@@ -202,12 +202,12 @@ class TransitionInfo : public EdgeInfo
    {
       return t;
    }
-   const std::set<vertex>& get_operations() const
+   const CustomOrderedSet<vertex>& get_operations() const
    {
       return ops;
    }
    vertex get_operation() const;
-   const std::set<unsigned>& get_labels() const
+   const CustomOrderedSet<unsigned>& get_labels() const
    {
       return labels;
    }
@@ -330,7 +330,7 @@ struct StateTransitionGraph : public graph
     * @param selector is the selector used to filter the bulk graph.
     * @param sub is the set of vertices on which the graph is filtered.
     */
-   StateTransitionGraph(const StateTransitionGraphsCollectionRef state_transition_graphs_collection, int selector, std::unordered_set<vertex>& sub);
+   StateTransitionGraph(const StateTransitionGraphsCollectionRef state_transition_graphs_collection, int selector, CustomUnorderedSet<vertex>& sub);
 
    /**
     * Destructor

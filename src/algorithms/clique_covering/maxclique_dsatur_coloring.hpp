@@ -65,11 +65,10 @@
 #include <algorithm>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <cassert>
-#include <set>
 #include <vector>
 
+#include "custom_set.hpp"
 #include <boost/graph/filtered_graph.hpp>
-#include <unordered_set>
 
 /**
  * This algorithm is to find coloring of a graph
@@ -487,7 +486,7 @@ namespace boost
       if(num_node == 0)
          return 0;
       size_type lb = 0, val;
-      typedef std::unordered_set<Vertex> SET_container;
+      typedef CustomUnorderedSet<Vertex> SET_container;
       maxclique_dsatur_coloring_helper<VertexListGraph, ColorMap, size_type, SET_container> MDCH(G, color, num_node, lb);
 
       // size_type best_clique=0;

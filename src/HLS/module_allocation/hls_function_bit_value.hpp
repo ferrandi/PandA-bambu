@@ -41,25 +41,12 @@
 #define HLS_FUNCTION_BIT_VALUE_HPP
 
 /// superclass include
-#include "application_manager.hpp"
 #include "hls_function_step.hpp"
-#include "refcount.hpp"
-
-#include "graph.hpp"
-#include "utility.hpp"
+#include "hls_manager.hpp"
 
 /// STD includes
-#include <cmath>
-#include <string>
-
-/// STL include
-#include <map>
+#include "custom_map.hpp"
 #include <tuple>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
-
-#include "hls_manager.hpp"
 
 /**
  * @class HLSFunctionBitValue
@@ -71,7 +58,7 @@ class HLSFunctionBitValue : public HLSFunctionStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**

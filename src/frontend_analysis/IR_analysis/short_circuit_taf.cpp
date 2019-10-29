@@ -73,7 +73,7 @@
 #include <fstream>
 
 /// STL include
-#include <unordered_set>
+#include "custom_set.hpp"
 #include <utility>
 #include <vector>
 
@@ -103,9 +103,9 @@ short_circuit_taf::short_circuit_taf(const ParameterConstRef _parameters, const 
 
 short_circuit_taf::~short_circuit_taf() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> short_circuit_taf::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> short_circuit_taf::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -195,7 +195,7 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
    std::map<unsigned int, blocRef>::iterator it, it_end = list_of_bloc.end();
 
    /// compute merging candidates
-   std::unordered_set<unsigned int> merging_candidates;
+   CustomUnorderedSet<unsigned int> merging_candidates;
    for(it = list_of_bloc.begin(); it != it_end; ++it)
    {
       if(it->first == bloc::ENTRY_BLOCK_ID || it->first == bloc::EXIT_BLOCK_ID)
@@ -243,8 +243,8 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
    do
    {
       mergeable_pair_found = false;
-      std::unordered_set<unsigned int>::const_iterator it_mc_end = merging_candidates.end();
-      for(std::unordered_set<unsigned int>::const_iterator it_mc = merging_candidates.begin(); !mergeable_pair_found && it_mc != it_mc_end; ++it_mc)
+      CustomUnorderedSet<unsigned int>::const_iterator it_mc_end = merging_candidates.end();
+      for(CustomUnorderedSet<unsigned int>::const_iterator it_mc = merging_candidates.begin(); !mergeable_pair_found && it_mc != it_mc_end; ++it_mc)
       {
          merging_candidate = *it_mc;
          mergeable_pair_found = check_merging_candidate(bb1, bb2, merging_candidate, bb1_true, bb2_true, list_of_bloc);

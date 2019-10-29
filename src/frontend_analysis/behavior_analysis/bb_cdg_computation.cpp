@@ -60,9 +60,9 @@ BBCdgComputation::BBCdgComputation(const ParameterConstRef _Param, const applica
 
 BBCdgComputation::~BBCdgComputation() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BBCdgComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BBCdgComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -126,7 +126,7 @@ DesignFlowStep_Status BBCdgComputation::InternalExec()
          if(bb_sorted[current_node] > bb_sorted[A])
          {
             function_behavior->bbgc->AddEdge(A, current_node, CDG_SELECTOR);
-            std::set<unsigned int> labels = bb->CGetBBEdgeInfo(*ei)->get_labels(CFG_SELECTOR);
+            CustomOrderedSet<unsigned int> labels = bb->CGetBBEdgeInfo(*ei)->get_labels(CFG_SELECTOR);
             if(labels.size())
             {
                auto it_end = labels.end();
@@ -150,7 +150,7 @@ DesignFlowStep_Status BBCdgComputation::InternalExec()
    unsigned int cer_counter = 0;
    // Map control equivalent region codification to control equivalent index;
    // The codification is the set of pair predecessor-edge label in the cdg_computation
-   std::map<std::set<std::pair<vertex, std::set<unsigned int>>>, unsigned int> cdg_to_index;
+   std::map<CustomOrderedSet<std::pair<vertex, CustomOrderedSet<unsigned int>>>, unsigned int> cdg_to_index;
 
    const std::deque<vertex>& topological_sorted_nodes = function_behavior->get_bb_levels();
    std::deque<vertex>::const_iterator it, it_end;
@@ -162,11 +162,11 @@ DesignFlowStep_Status BBCdgComputation::InternalExec()
       if(boost::in_degree(*it, *cdg_bb) > 0)
       {
          // codification of this basic block
-         std::set<std::pair<vertex, std::set<unsigned int>>> this_cod;
+         CustomOrderedSet<std::pair<vertex, CustomOrderedSet<unsigned int>>> this_cod;
          InEdgeIterator eii, eii_end;
          for(boost::tie(eii, eii_end) = boost::in_edges(*it, *cdg_bb); eii != eii_end; eii++)
          {
-            this_cod.insert(std::pair<vertex, std::set<unsigned int>>(boost::source(*eii, *cdg_bb), cdg_bb->CGetBBEdgeInfo(*eii)->get_labels(CDG_SELECTOR)));
+            this_cod.insert(std::pair<vertex, CustomOrderedSet<unsigned int>>(boost::source(*eii, *cdg_bb), cdg_bb->CGetBBEdgeInfo(*eii)->get_labels(CDG_SELECTOR)));
          }
          if(cdg_to_index.find(this_cod) == cdg_to_index.end())
          {

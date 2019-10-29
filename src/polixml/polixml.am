@@ -1,0 +1,7 @@
+noinst_LTLIBRARIES += lib_polixml.la
+noinst_HEADERS += polixml/xml_att_decl_node.hpp polixml/xml_attribute.hpp polixml/xml_comment_node.hpp polixml/xml_document.hpp polixml/xml_element.hpp polixml/xml_node.hpp polixml/xml_text_node.hpp polixml/polixml.hpp
+lib_polixml_la_SOURCES = polixml/xml_node.cpp
+lib_polixml_la_CPPFLAGS = \
+   -I$(top_srcdir)/src/utility \
+   -I$(BOOST_DIR) $(all_includes)
+

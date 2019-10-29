@@ -60,7 +60,7 @@
 #include "memory_symbol.hpp"
 
 /// STL include
-#include <map>
+#include "custom_map.hpp"
 
 /// technology include
 #include "technology_manager.hpp"

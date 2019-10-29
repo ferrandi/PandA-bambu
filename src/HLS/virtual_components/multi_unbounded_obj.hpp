@@ -44,10 +44,10 @@
 #ifndef MULTI_UNBOUNDED_OBJ_HPP
 #define MULTI_UNBOUNDED_OBJ_HPP
 
+#include "custom_set.hpp"
 #include "generic_obj.hpp"
 #include "graph.hpp"
 #include "refcount.hpp"
-#include <set>
 
 /**
  * class modeling a register object
@@ -55,14 +55,14 @@
 class multi_unbounded_obj : public generic_obj
 {
    vertex fsm_state;
-   std::set<vertex> ops;
+   CustomOrderedSet<vertex> ops;
 
  public:
    /**
     * This is the constructor of the multi_unbounded_obj class, with a given id
     * @param _name is the name of the multi_unbounded_obj
     */
-   explicit multi_unbounded_obj(vertex _fsm_state, const std::set<vertex>& _ops, const std::string& _name) : generic_obj(MULTI_UNBOUNDED_OBJ, _name), fsm_state(_fsm_state), ops(_ops)
+   explicit multi_unbounded_obj(vertex _fsm_state, const CustomOrderedSet<vertex>& _ops, const std::string& _name) : generic_obj(MULTI_UNBOUNDED_OBJ, _name), fsm_state(_fsm_state), ops(_ops)
    {
    }
 
@@ -79,7 +79,7 @@ class multi_unbounded_obj : public generic_obj
       return fsm_state;
    }
 
-   const std::set<vertex>& get_ops()
+   const CustomOrderedSet<vertex>& get_ops()
    {
       return ops;
    }

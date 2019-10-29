@@ -38,7 +38,7 @@
 #ifndef DISCREPANCY_INFO_HPP
 #define DISCREPANCY_INFO_HPP
 
-#include <set>
+#include "custom_set.hpp"
 
 // include from utility/
 #include "refcount.hpp"
@@ -89,9 +89,9 @@ class DiscrepancyOpInfo
    unsigned int vec_base_bitsize;
    enum discrepancy_type_mask type;
    bool is_bounded_op;
-   std::set<unsigned int> start_states;
-   std::set<unsigned int> exec_states;
-   std::set<unsigned int> end_states;
+   CustomOrderedSet<unsigned int> start_states;
+   CustomOrderedSet<unsigned int> exec_states;
+   CustomOrderedSet<unsigned int> end_states;
    std::string ssa_name;
 };
 

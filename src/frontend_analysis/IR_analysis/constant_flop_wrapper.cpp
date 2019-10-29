@@ -40,7 +40,7 @@
  */
 
 /// header include
-#include <constant_flop_wrapper.hpp>
+#include "constant_flop_wrapper.hpp"
 
 /// design_flows include
 #include "design_flow_graph.hpp"
@@ -69,9 +69,8 @@
 #include <fstream>
 
 /// STL include
-#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <algorithm>
-#include <map>
 #include <set>
 #include <string>
 
@@ -95,7 +94,7 @@
 
 static std::set<std::string> functions = {"__float32_addif", "__float32_subif", "__float32_mulif", "__float32_divif", "__float64_addif", "__float64_subif", "__float64_mulif", "__float64_divif"};
 
-std::set<std::string> constant_flop_wrapper::operations;
+CustomOrderedSet<std::string> constant_flop_wrapper::operations;
 
 constant_flop_wrapper::constant_flop_wrapper(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, CONSTANT_FLOP_WRAPPER, _design_flow_manager, _parameters), TreeM(_AppM->get_tree_manager()), tree_man(new tree_manipulation(TreeM, parameters))
@@ -105,9 +104,9 @@ constant_flop_wrapper::constant_flop_wrapper(const ParameterConstRef _parameters
 
 constant_flop_wrapper::~constant_flop_wrapper() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> constant_flop_wrapper::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> constant_flop_wrapper::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -339,7 +338,7 @@ void constant_flop_wrapper::SoftFloatWriter(CustomSet<std::pair<std::string, tre
    if(generate_source_code)
    {
       AppM->input_files.insert(std::pair<std::string, std::string>(full_path.string(), full_path.string()));
-      CustomMap<std::string, std::string> input_file_operations;
+      std::map<std::string, std::string> input_file_operations;
       input_file_operations.insert(std::pair<std::string, std::string>(full_path.string(), full_path.string()));
       const GccWrapper_CompilerTarget compiler_target = parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
       const GccWrapper_OptimizationSet optimization_set = GccWrapper_OptimizationSet::OSF;

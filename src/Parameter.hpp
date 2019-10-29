@@ -69,8 +69,6 @@
 
 /// STL include
 #include <list>
-#include <map>
-#include <unordered_set>
 #include <vector>
 
 /// Utility include
@@ -357,7 +355,7 @@ class Parameter
    std::map<enum enum_option, std::string> option_name;
 
    /// Classes to be debugged
-   std::unordered_set<std::string> debug_classes;
+   CustomUnorderedSet<std::string> debug_classes;
 
    /// debug level
    int debug_level;
@@ -747,7 +745,7 @@ GccWrapper_CompilerTarget Parameter::getOption(const enum enum_option name) cons
 
 #if HAVE_CODE_ESTIMATION_BUILT
 template <>
-std::unordered_set<ActorGraphEstimator_Algorithm> Parameter::getOption(const enum enum_option name) const;
+CustomUnorderedSet<ActorGraphEstimator_Algorithm> Parameter::getOption(const enum enum_option name) const;
 
 template <>
 ActorGraphEstimator_Algorithm Parameter::getOption(const enum enum_option name) const;

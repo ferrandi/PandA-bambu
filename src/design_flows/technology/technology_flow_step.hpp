@@ -68,6 +68,8 @@ enum class TechnologyFlowStep_Type
    WRITE_TECHNOLOGY
 };
 
+#if NO_ABSEIL_HASH
+
 /**
  * Definition of hash function for TechnologyFlowStep_Type
  */
@@ -83,6 +85,7 @@ namespace std
       }
    };
 } // namespace std
+#endif
 
 class TechnologyFlowStep : public DesignFlowStep
 {
@@ -100,7 +103,7 @@ class TechnologyFlowStep : public DesignFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const std::unordered_set<TechnologyFlowStep_Type> ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const = 0;
+   virtual const CustomUnorderedSet<TechnologyFlowStep_Type> ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const = 0;
 
  public:
    /**

@@ -66,6 +66,7 @@
 #include "string_manipulation.hpp" // for STR
 #include <boost/lexical_cast.hpp>
 #include <iostream>
+#include <set>
 
 /// built in type without parameter
 ///"sc_in_resolved" is not a template and inherits from sc_in<sc_dt::sc_logic>
@@ -752,9 +753,15 @@ std::string tree_helper::name_type(const tree_managerConstRef tm, int unsigned i
          {
             retn = name_type(tm, GET_INDEX_NODE(tl->valu));
          }
-         if(tl->chan)
+         std::list<tree_list*> tl_list;
+         while(tl->chan)
          {
-            retn += "," + name_type(tm, GET_INDEX_NODE(tl->chan));
+            tl = GetPointer<tree_list>(GET_NODE(tl->chan));
+            tl_list.push_back(tl);
+         }
+         for(auto valu : tl_list)
+         {
+            retn += "," + name_type(tm, GET_INDEX_NODE(valu->valu));
          }
          return retn;
       }
@@ -1027,7 +1034,7 @@ std::tuple<std::string, unsigned int, unsigned int> tree_helper::get_definition(
    return std::tuple<std::string, unsigned int, unsigned int>(include_name, line_number, column_number);
 }
 
-void tree_helper::get_used_variables(bool first_level_only, const tree_nodeRef tRI, std::unordered_set<unsigned int>& list_of_variable)
+void tree_helper::get_used_variables(bool first_level_only, const tree_nodeRef tRI, CustomUnorderedSet<unsigned int>& list_of_variable)
 {
    if(!tRI)
    {
@@ -1291,17 +1298,23 @@ void tree_helper::get_used_variables(bool first_level_only, const tree_nodeRef t
       case tree_list_K:
       {
          auto* tl = GetPointer<tree_list>(t);
-         if(tl->purp)
+         std::list<tree_list*> tl_list;
+         auto tl_current = tl;
+         do
          {
-            get_used_variables(first_level_only, tl->purp, list_of_variable);
-         }
-         if(tl->valu)
+            tl_list.push_back(tl_current);
+            tl_current = tl->chan ? GetPointer<tree_list>(GET_NODE(tl->chan)) : nullptr;
+         } while(tl_current);
+         for(auto tl_current0: tl_list)
          {
-            get_used_variables(first_level_only, tl->valu, list_of_variable);
-         }
-         if(tl->chan)
-         {
-            get_used_variables(first_level_only, tl->chan, list_of_variable);
+            if(tl_current0->purp)
+            {
+               get_used_variables(first_level_only, tl_current0->purp, list_of_variable);
+            }
+            if(tl_current0->valu)
+            {
+               get_used_variables(first_level_only, tl_current0->valu, list_of_variable);
+            }
          }
          break;
       }
@@ -1472,20 +1485,20 @@ bool tree_helper::IsInLibbambu(const tree_managerConstRef TM, const unsigned int
 }
 #endif
 
-const std::unordered_set<unsigned int> tree_helper::GetTypesToBeDeclaredBefore(const tree_managerConstRef TM, const unsigned int index, const bool without_transformation)
+const CustomUnorderedSet<unsigned int> tree_helper::GetTypesToBeDeclaredBefore(const tree_managerConstRef TM, const unsigned int index, const bool without_transformation)
 {
    return RecursiveGetTypesToBeDeclared(TM, index, false, without_transformation, true);
 }
 
-const std::unordered_set<unsigned int> tree_helper::GetTypesToBeDeclaredAfter(const tree_managerConstRef TM, const unsigned int index, const bool without_transformation)
+const CustomUnorderedSet<unsigned int> tree_helper::GetTypesToBeDeclaredAfter(const tree_managerConstRef TM, const unsigned int index, const bool without_transformation)
 {
    return RecursiveGetTypesToBeDeclared(TM, index, false, without_transformation, false);
 }
 
-const std::unordered_set<unsigned int> tree_helper::RecursiveGetTypesToBeDeclared(const tree_managerConstRef TM, const unsigned int index, const bool recursion, const bool without_transformation, const bool before)
+const CustomUnorderedSet<unsigned int> tree_helper::RecursiveGetTypesToBeDeclared(const tree_managerConstRef TM, const unsigned int index, const bool recursion, const bool without_transformation, const bool before)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, STR("-->Getting types to be declared ") + (before ? "before" : "after") + " (" + STR(index) + ") " + STR(TM->CGetTreeNode(index)));
-   std::unordered_set<unsigned int> returned_types;
+   CustomUnorderedSet<unsigned int> returned_types;
    const tree_nodeRef type = TM->get_tree_node_const(index);
    switch(type->get_kind())
    {
@@ -1572,7 +1585,7 @@ const std::unordered_set<unsigned int> tree_helper::RecursiveGetTypesToBeDeclare
                   {
                      if(not is_a_pointer(TM, field_type->index) or not pointer_to_unnamed_structure)
                      {
-                        const std::unordered_set<unsigned int> local_types = RecursiveGetTypesToBeDeclared(TM, field_type->index, true, without_transformation, true);
+                        const CustomUnorderedSet<unsigned int> local_types = RecursiveGetTypesToBeDeclared(TM, field_type->index, true, without_transformation, true);
                         returned_types.insert(local_types.begin(), local_types.end());
                      }
                   }
@@ -1581,7 +1594,7 @@ const std::unordered_set<unsigned int> tree_helper::RecursiveGetTypesToBeDeclare
                      if(pointer_to_unnamed_structure)
                      {
                         /// Here true is correct
-                        const std::unordered_set<unsigned int> local_types = RecursiveGetTypesToBeDeclared(TM, field_type->index, true, without_transformation, true);
+                        const CustomUnorderedSet<unsigned int> local_types = RecursiveGetTypesToBeDeclared(TM, field_type->index, true, without_transformation, true);
                         returned_types.insert(local_types.begin(), local_types.end());
                      }
                   }
@@ -1642,7 +1655,7 @@ const std::unordered_set<unsigned int> tree_helper::RecursiveGetTypesToBeDeclare
                   {
                      if(not is_a_pointer(TM, field_type->index) or not pointer_to_unnamed_structure)
                      {
-                        const std::unordered_set<unsigned int> local_types = RecursiveGetTypesToBeDeclared(TM, field_type->index, true, without_transformation, true);
+                        const CustomUnorderedSet<unsigned int> local_types = RecursiveGetTypesToBeDeclared(TM, field_type->index, true, without_transformation, true);
                         returned_types.insert(local_types.begin(), local_types.end());
                      }
                   }
@@ -1651,7 +1664,7 @@ const std::unordered_set<unsigned int> tree_helper::RecursiveGetTypesToBeDeclare
                      if(pointer_to_unnamed_structure)
                      {
                         /// Here true is correct
-                        const std::unordered_set<unsigned int> local_types = RecursiveGetTypesToBeDeclared(TM, field_type->index, true, without_transformation, true);
+                        const CustomUnorderedSet<unsigned int> local_types = RecursiveGetTypesToBeDeclared(TM, field_type->index, true, without_transformation, true);
                         returned_types.insert(local_types.begin(), local_types.end());
                      }
                   }
@@ -1714,7 +1727,7 @@ const std::unordered_set<unsigned int> tree_helper::RecursiveGetTypesToBeDeclare
             const tree_nodeRef return_type = GetFunctionReturnType(TM->get_tree_node_const(index));
             if(return_type)
             {
-               const std::unordered_set<unsigned int> return_types = RecursiveGetTypesToBeDeclared(TM, return_type->index, true, without_transformation, true);
+               const CustomUnorderedSet<unsigned int> return_types = RecursiveGetTypesToBeDeclared(TM, return_type->index, true, without_transformation, true);
                returned_types.insert(return_types.begin(), return_types.end());
             }
             std::list<unsigned int> parameters;
@@ -1722,7 +1735,7 @@ const std::unordered_set<unsigned int> tree_helper::RecursiveGetTypesToBeDeclare
             std::list<unsigned int>::const_iterator parameter, parameter_end = parameters.end();
             for(parameter = parameters.begin(); parameter != parameter_end; ++parameter)
             {
-               const std::unordered_set<unsigned int> local_types = RecursiveGetTypesToBeDeclared(TM, *parameter, true, without_transformation, true);
+               const CustomUnorderedSet<unsigned int> local_types = RecursiveGetTypesToBeDeclared(TM, *parameter, true, without_transformation, true);
                returned_types.insert(local_types.begin(), local_types.end());
             }
          }
@@ -2652,7 +2665,7 @@ bool tree_helper::is_a_complex(const tree_managerConstRef& TM, const unsigned in
    return Type->get_kind() == complex_type_K;
 }
 
-// static void getBuiltinFieldTypes(const tree_nodeConstRef& type, std::list<tree_nodeConstRef> &listOfTypes, std::unordered_set<unsigned int> &already_visited)
+// static void getBuiltinFieldTypes(const tree_nodeConstRef& type, std::list<tree_nodeConstRef> &listOfTypes, CustomUnorderedSet<unsigned int> &already_visited)
 //{
 //   if(already_visited.find(type->index) != already_visited.end())
 //      return;
@@ -2708,7 +2721,7 @@ bool tree_helper::is_a_complex(const tree_managerConstRef& TM, const unsigned in
 // static bool same_size_fields(const tree_nodeConstRef& t)
 //{
 //   std::list<tree_nodeConstRef> listOfTypes;
-//   std::unordered_set<unsigned int> already_visited;
+//   CustomUnorderedSet<unsigned int> already_visited;
 //   getBuiltinFieldTypes(t, listOfTypes, already_visited);
 //   auto sizeFlds = 0u;
 //   for(auto fldType : listOfTypes)
@@ -4136,7 +4149,7 @@ unsigned int tree_helper::get_base_index(const tree_managerConstRef& TM, const u
    return 0;
 }
 
-bool tree_helper::is_fully_resolved(const tree_managerConstRef& TM, const unsigned int index, std::set<unsigned int>& res_set)
+bool tree_helper::is_fully_resolved(const tree_managerConstRef& TM, const unsigned int index, CustomOrderedSet<unsigned int>& res_set)
 {
    THROW_ASSERT(index > 0, "expected positive non zero numbers");
    tree_nodeRef node = TM->get_tree_node_const(index);
@@ -6119,16 +6132,17 @@ std::string tree_helper::print_type(const tree_managerConstRef& TM, unsigned int
          THROW_ASSERT(var == 0, "Received something of unexpected");
          auto* lnode = GetPointer<tree_list>(node_type);
          res += print_type(TM, GET_INDEX_NODE(lnode->valu), global, print_qualifiers);
-         /// tree_list are use for parameters declaration: in that case void_type has to be removed from the last type parameter
-         if(lnode->chan)
+         /// tree_list are used for parameters declaration: in that case void_type has to be removed from the last type parameter
+         std::list<tree_nodeRef> prmtrs;
+         while(lnode->chan)
          {
             auto* lnode_next = GetPointer<tree_list>(GET_NODE(lnode->chan));
-            THROW_ASSERT(lnode_next, "tree_list expected");
             if(!GetPointer<void_type>(GET_NODE(lnode_next->valu)))
-            {
-               res += "," + print_type(TM, GET_INDEX_NODE(lnode->chan), global, print_qualifiers);
-            }
+               prmtrs.push_back(lnode_next->valu);
+            lnode = lnode_next;
          }
+         for(auto valu : prmtrs)
+            res += "," + print_type(TM, GET_INDEX_NODE(valu), global, print_qualifiers);
          break;
       }
       case template_type_parm_K:
@@ -7646,7 +7660,7 @@ unsigned int tree_helper::get_multi_way_if_pos(const tree_managerConstRef& TM, u
    return pos;
 }
 
-void tree_helper::compute_ssa_uses_rec_ptr(const tree_nodeRef& curr_tn, std::set<ssa_name*>& ssa_uses)
+void tree_helper::compute_ssa_uses_rec_ptr(const tree_nodeRef& curr_tn, CustomOrderedSet<ssa_name*>& ssa_uses)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->compute_ssa_uses_rec_ptr " + curr_tn->ToString());
    auto* gn = GetPointer<gimple_node>(curr_tn);
@@ -7852,17 +7866,23 @@ void tree_helper::compute_ssa_uses_rec_ptr(const tree_nodeRef& curr_tn, std::set
       case tree_list_K:
       {
          auto* tl = GetPointer<tree_list>(curr_tn);
-         if(tl->purp)
+         std::list<tree_list*> tl_list;
+         auto tl_current = tl;
+         do
          {
-            compute_ssa_uses_rec_ptr(tl->purp, ssa_uses);
-         }
-         if(tl->valu)
+            tl_list.push_back(tl_current);
+            tl_current = tl->chan ? GetPointer<tree_list>(GET_NODE(tl->chan)) : nullptr;
+         } while(tl_current);
+         for(auto tl_current0: tl_list)
          {
-            compute_ssa_uses_rec_ptr(tl->valu, ssa_uses);
-         }
-         if(tl->chan)
-         {
-            compute_ssa_uses_rec_ptr(tl->chan, ssa_uses);
+            if(tl_current0->purp)
+            {
+               compute_ssa_uses_rec_ptr(tl_current0->purp, ssa_uses);
+            }
+            if(tl_current0->valu)
+            {
+               compute_ssa_uses_rec_ptr(tl_current0->valu, ssa_uses);
+            }
          }
          break;
       }
@@ -8189,17 +8209,23 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef tn, TreeNodeMap<size_t>& ssa
       case tree_list_K:
       {
          auto* tl = GetPointer<tree_list>(curr_tn);
-         if(tl->purp)
+         std::list<tree_list*> tl_list;
+         auto tl_current = tl;
+         do
          {
-            ComputeSsaUses(tl->purp, ssa_uses);
-         }
-         if(tl->valu)
+            tl_list.push_back(tl_current);
+            tl_current = tl->chan ? GetPointer<tree_list>(GET_NODE(tl->chan)) : nullptr;
+         } while(tl_current);
+         for(auto tl_current0: tl_list)
          {
-            ComputeSsaUses(tl->valu, ssa_uses);
-         }
-         if(tl->chan)
-         {
-            ComputeSsaUses(tl->chan, ssa_uses);
+            if(tl_current0->purp)
+            {
+               ComputeSsaUses(tl_current0->purp, ssa_uses);
+            }
+            if(tl_current0->valu)
+            {
+               ComputeSsaUses(tl_current0->valu, ssa_uses);
+            }
          }
          break;
       }
@@ -8721,11 +8747,15 @@ void tree_helper::get_required_values(const tree_managerConstRef& TM, std::vecto
       case tree_list_K:
       {
          auto* tl = GetPointer<tree_list>(tn);
-         required.emplace_back(GET_INDEX_NODE(tl->valu), 0);
-         if(tl->chan)
+         std::list<tree_list*> tl_list;
+         auto tl_current = tl;
+         do
          {
-            get_required_values(TM, required, GET_NODE(tl->chan), GET_INDEX_NODE(tl->chan));
-         }
+            tl_list.push_back(tl_current);
+            tl_current = tl->chan ? GetPointer<tree_list>(GET_NODE(tl->chan)) : nullptr;
+         } while(tl_current);
+         for(auto tl_current0: tl_list)
+            required.emplace_back(GET_INDEX_NODE(tl_current0->valu), 0);
          break;
       }
       case component_ref_K:
@@ -8903,7 +8933,7 @@ std::string tree_helper::get_asm_string(const tree_managerConstRef& TM, const un
    return gasm->str;
 }
 
-bool tree_helper::IsStore(const tree_managerConstRef& TM, const tree_nodeConstRef& tn, const std::set<unsigned int>& fun_mem_data)
+bool tree_helper::IsStore(const tree_managerConstRef& TM, const tree_nodeConstRef& tn, const CustomOrderedSet<unsigned int>& fun_mem_data)
 {
    if(tn->get_kind() == tree_reindex_K)
    {
@@ -8950,7 +8980,7 @@ bool tree_helper::IsStore(const tree_managerConstRef& TM, const tree_nodeConstRe
    return store_candidate;
 }
 
-bool tree_helper::IsLoad(const tree_managerConstRef& TM, const tree_nodeConstRef& tn, const std::set<unsigned int>& fun_mem_data)
+bool tree_helper::IsLoad(const tree_managerConstRef& TM, const tree_nodeConstRef& tn, const CustomOrderedSet<unsigned int>& fun_mem_data)
 {
    if(tn->get_kind() == tree_reindex_K)
    {

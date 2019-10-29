@@ -166,7 +166,7 @@ class ScheduleWriter : public GraphWriter
    {
       os << "//Scheduling solution\n";
       os << "splines=polyline;\n";
-      std::map<ControlStep, std::unordered_set<vertex>> inverse_relation;
+      std::map<ControlStep, CustomUnorderedSet<vertex>> inverse_relation;
       VertexIterator v, v_end;
       for(boost::tie(v, v_end) = boost::vertices(*printing_graph); v != v_end; v++)
       {
@@ -202,14 +202,20 @@ void Schedule::WriteDot(const std::string& file_name) const
 void Schedule::set_execution(const vertex& op, ControlStep c_step)
 {
    const auto operation_index = op_graph->CGetOpNodeInfo(op)->GetNodeId();
-   op_starting_cycle.OverwriteInsert(CustomMap<unsigned int, ControlStep>::value_type(operation_index, c_step));
+   if(op_starting_cycle.find(operation_index) == op_starting_cycle.end())
+      op_starting_cycle.emplace(operation_index, c_step);
+   else
+      op_starting_cycle.at(operation_index) = c_step;
    starting_cycles_to_ops[c_step].insert(operation_index);
 }
 
 void Schedule::set_execution_end(const vertex& op, ControlStep c_step_end)
 {
    const auto operation_index = op_graph->CGetOpNodeInfo(op)->GetNodeId();
-   op_ending_cycle.OverwriteInsert(std::pair<unsigned int, ControlStep>(operation_index, c_step_end));
+   if(op_ending_cycle.find(operation_index) == op_ending_cycle.end())
+      op_ending_cycle.emplace(operation_index, c_step_end);
+   else
+      op_ending_cycle.at(operation_index) = c_step_end;
 }
 
 bool Schedule::is_scheduled(const vertex& op) const
@@ -284,7 +290,7 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
    const auto current_starting_time = starting_times[operation_index];
    const auto current_ending_time = starting_times[operation_index];
 
-   std::set<ssa_name*> rhs_ssa_uses;
+   CustomOrderedSet<ssa_name*> rhs_ssa_uses;
    const auto tn = TM->get_tree_node_const(operation_index);
    const auto gn = GetPointer<const gimple_node>(tn);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing ending time of new statement " + STR(gn->index) + ": " + gn->ToString());
@@ -432,8 +438,16 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
       /// Remove the old scheduling
       if(is_scheduled(operation_index))
          starting_cycles_to_ops[op_starting_cycle.at(operation_index)].erase(operation_index);
-      op_starting_cycle.OverwriteInsert(std::make_pair(operation_index, ControlStep(static_cast<unsigned int>(floor(starting_times[operation_index] / clock_period)))));
-      op_ending_cycle.OverwriteInsert(std::make_pair(operation_index, ControlStep(static_cast<unsigned int>(floor(ending_times[operation_index] / clock_period)))));
+      auto valS = ControlStep(static_cast<unsigned int>(floor(starting_times[operation_index] / clock_period)));
+      if(op_starting_cycle.find(operation_index) == op_starting_cycle.end())
+         op_starting_cycle.emplace(operation_index, valS);
+      else
+         op_starting_cycle.at(operation_index) = valS;
+      auto valE = ControlStep(static_cast<unsigned int>(floor(ending_times[operation_index] / clock_period)));
+      if(op_ending_cycle.find(operation_index) == op_ending_cycle.end())
+         op_ending_cycle.emplace(operation_index, valE);
+      else
+         op_ending_cycle.at(operation_index) = valE;
    }
    if(allocation_information->IsVariableExecutionTime(operation_index) and updated_time)
    {
@@ -515,7 +529,7 @@ FunctionFrontendFlowStep_Movable Schedule::CanBeMoved(const unsigned int stateme
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Latency: " + STR(latency));
 
    double new_ending_time = 0.0;
-   std::set<ssa_name*> rhs_ssa_uses;
+   CustomOrderedSet<ssa_name*> rhs_ssa_uses;
    tree_helper::compute_ssa_uses_rec_ptr(ga->op1, rhs_ssa_uses);
    for(const auto ssa_use : rhs_ssa_uses)
    {
@@ -1016,7 +1030,7 @@ CustomSet<unsigned int> Schedule::ComputeCriticalPath(const StateInfoConstRef st
       const auto stmt_tn = TM->get_tree_node_const(last);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Processing " + stmt_tn->ToString());
       const auto gn = GetPointer<const gimple_node>(stmt_tn);
-      std::set<ssa_name*> rhs_ssa_uses;
+      CustomOrderedSet<ssa_name*> rhs_ssa_uses;
       if(gn->get_kind() == gimple_assign_K)
       {
          tree_helper::compute_ssa_uses_rec_ptr(GetPointer<const gimple_assign>(stmt_tn)->op1, rhs_ssa_uses);

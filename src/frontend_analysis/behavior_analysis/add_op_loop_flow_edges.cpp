@@ -73,9 +73,9 @@ AddOpLoopFlowEdges::AddOpLoopFlowEdges(const ParameterConstRef _parameters, cons
 
 AddOpLoopFlowEdges::~AddOpLoopFlowEdges() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> AddOpLoopFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> AddOpLoopFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -128,7 +128,7 @@ DesignFlowStep_Status AddOpLoopFlowEdges::InternalExec()
    const BBGraphRef fbb = function_behavior->GetBBGraph(FunctionBehavior::FBB);
 
    /// Operations of each loop
-   std::unordered_map<unsigned int, std::unordered_set<vertex>> loop_operations;
+   CustomUnorderedMap<unsigned int, CustomUnorderedSet<vertex>> loop_operations;
 
    /// The loop structure
    const std::list<LoopConstRef>& loops = function_behavior->CGetLoops()->GetList();
@@ -144,8 +144,8 @@ DesignFlowStep_Status AddOpLoopFlowEdges::InternalExec()
       }
 
       /// Operations which belong to the loop
-      const std::unordered_set<vertex>& loop_bb = (*loop)->get_blocks();
-      std::unordered_set<vertex>::const_iterator it, it_end = loop_bb.end();
+      const CustomUnorderedSet<vertex>& loop_bb = (*loop)->get_blocks();
+      CustomUnorderedSet<vertex>::const_iterator it, it_end = loop_bb.end();
       for(it = loop_bb.begin(); it != it_end; ++it)
       {
          const BBNodeInfoConstRef bb_node_info = fbb->CGetBBNodeInfo(*it);
@@ -171,7 +171,7 @@ DesignFlowStep_Status AddOpLoopFlowEdges::InternalExec()
 
       /// add a flow edge from the last operation of the header and the operations of the loop
       /// useful only for the speculation graph
-      std::unordered_set<vertex>::const_iterator it3, it3_end = loop_operations[(*loop)->GetId()].end();
+      CustomUnorderedSet<vertex>::const_iterator it3, it3_end = loop_operations[(*loop)->GetId()].end();
       for(it3 = loop_operations[(*loop)->GetId()].begin(); it3 != it3_end; ++it3)
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Adding flow edge from " + GET_NAME(fcfg, last_statement) + " to " + GET_NAME(fcfg, *it3));

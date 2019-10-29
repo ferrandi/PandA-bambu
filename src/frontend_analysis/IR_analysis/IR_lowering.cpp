@@ -51,6 +51,7 @@
 
 #include "Parameter.hpp"                    // for Parameter
 #include "application_manager.hpp"          // for application_manager, app...
+#include "custom_map.hpp"                   // for unordered_map, operator!=
 #include "dbgPrintHelper.hpp"               // for DEBUG_LEVEL_VERY_PEDANTIC
 #include "design_flow_graph.hpp"            // for DesignFlowGraph, DesignF...
 #include "design_flow_manager.hpp"          // for DesignFlowManager, Desig...
@@ -78,8 +79,7 @@
 #include <cmath>     // for ceil
 #include <cstddef>   // for size_t
 #include <limits>
-#include <unordered_map> // for unordered_map, operator!=
-#include <vector>        // for vector
+#include <vector> // for vector
 
 IR_lowering::IR_lowering(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, IR_LOWERING, _design_flow_manager, Param)
@@ -87,9 +87,9 @@ IR_lowering::IR_lowering(const ParameterConstRef Param, const application_manage
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> IR_lowering::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> IR_lowering::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -228,7 +228,7 @@ struct algorithm
    lower "cost".  If "cost"s are tied, the lower latency is cheaper.  */
 #define CHEAPER_MULT_COST(X, Y) ((X).cost < (Y).cost || ((X).cost == (Y).cost && (X).latency < (Y).latency))
 
-static std::unordered_map<std::pair<unsigned int, unsigned long long>, std::pair<enum alg_code, struct mult_cost>> alg_hash;
+static CustomUnorderedMap<std::pair<unsigned int, unsigned long long>, std::pair<enum alg_code, struct mult_cost>> alg_hash;
 
 /** Compute and return the best algorithm for multiplying by T.
    The algorithm must cost less than cost_limit

@@ -115,7 +115,7 @@ DesignFlowStep_Status OmpFunctionAllocation::Exec()
       omp_functions->locking_functions.insert(call_graph_manager->get_function(boost::source(*ie, *call_graph)));
    }
    auto current_locks_allocation_candidates = omp_functions->locking_functions;
-   std::set<unsigned int> reached_body_functions = call_graph_manager->GetReachedBodyFunctions();
+   CustomOrderedSet<unsigned int> reached_body_functions = call_graph_manager->GetReachedBodyFunctions();
    for(const auto function : boost::adaptors::reverse(sorted_functions))
    {
       const auto function_id = call_graph_manager->get_function(function);

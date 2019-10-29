@@ -66,8 +66,8 @@
 #include "Parameter.hpp"
 
 /// STL include
-#include <set>
-#include <unordered_map>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <vector>
 
 /// Utility include
@@ -147,7 +147,7 @@ class dom_info
     * Blocks with bits set here have a fake edge to EXIT. These are used
     * to turn a DFS forest into a proper tree.
     */
-   std::set<TBB> fake_exit_edge;
+   CustomOrderedSet<TBB> fake_exit_edge;
 
    /// index of the last basic block
    const unsigned long int last_basic_block;
@@ -563,7 +563,7 @@ class dom_info
     * fill the dominator map after its computation
     * @param dom_map is the dominator map.
     */
-   void fill_dom_map(std::unordered_map<Vertex, Vertex>& dom_map)
+   void fill_dom_map(CustomUnorderedMap<Vertex, Vertex>& dom_map)
    {
       Vertex_iterator vi, vi_end;
       dom_map[en_block] = en_block;
@@ -635,7 +635,7 @@ class dominance
    const Vertex ex_block;
 
    /// After the algorithm is done, dom[x] contains the immediate dominator of x.
-   std::unordered_map<Vertex, Vertex> dom;
+   CustomUnorderedMap<Vertex, Vertex> dom;
 
    /// The set of input parameters
    const ParameterConstRef param;
@@ -715,9 +715,9 @@ class dominance
     * vertices dominated by it (all the dominator relationiships, not
     * only the direct one are considered).
     */
-   const std::unordered_map<Vertex, std::set<Vertex>> getAllDominated() const
+   const CustomUnorderedMap<Vertex, CustomOrderedSet<Vertex>> getAllDominated() const
    {
-      typename std::unordered_map<Vertex, std::set<Vertex>> dominated;
+      CustomUnorderedMap<Vertex, CustomOrderedSet<Vertex>> dominated;
       // These are the immediate dominated nodes
       auto dom_it_end = dom.end();
       for(auto dom_it = dom.begin(); dom_it != dom_it_end; ++dom_it)
@@ -734,7 +734,7 @@ class dominance
          // for(domBeg = this->dom.begin(), domEnd = this->dom.end(); domBeg != domEnd; domBeg++)
          for(auto dom_it = dom.begin(); dom_it != dom_it_end; ++dom_it)
          {
-            typedef typename std::unordered_map<Vertex, std::set<Vertex>>::iterator mSetIter;
+            typedef typename CustomUnorderedMap<Vertex, CustomOrderedSet<Vertex>>::iterator mSetIter;
             mSetIter mSetBeg, mSetEnd;
             for(mSetBeg = dominated.begin(), mSetEnd = dominated.end(); mSetBeg != mSetEnd; ++mSetBeg)
             {
@@ -753,7 +753,7 @@ class dominance
    /**
     * Return the dominators tree as a map between Vertex and its immediate dominator
     */
-   const std::unordered_map<Vertex, Vertex>& get_dominator_map() const
+   const CustomUnorderedMap<Vertex, Vertex>& get_dominator_map() const
    {
       return dom;
    }

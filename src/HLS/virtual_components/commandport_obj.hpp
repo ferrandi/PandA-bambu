@@ -101,7 +101,7 @@ class commandport_obj : public generic_obj
 
    bool is_a_phi_write_enable;
 
-   std::set<transition> activations;
+   CustomOrderedSet<transition> activations;
 
    /// structural_object associated with the element inside the controller
    structural_objectRef controller_SM;
@@ -146,7 +146,7 @@ class commandport_obj : public generic_obj
       return mode;
    }
 
-   const std::set<transition>& get_activations() const
+   const CustomOrderedSet<transition>& get_activations() const
    {
       return activations;
    }

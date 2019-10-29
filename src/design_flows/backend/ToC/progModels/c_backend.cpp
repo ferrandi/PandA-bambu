@@ -93,10 +93,10 @@
 #include <string>
 
 /// STL include
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <deque>
 #include <list>
-#include <map>
-#include <set>
 #include <utility>
 #include <vector>
 
@@ -112,9 +112,8 @@
 #include "indented_output_stream.hpp"
 #include "refcount.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
+#include "utility.hpp"
 #include <boost/config.hpp>
-#include <boost/date_time.hpp>
-#include <boost/date_time/posix_time/ptime.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/graph_utility.hpp>
@@ -149,8 +148,7 @@ DesignFlowStep_Status CBackend::Exec()
    indented_output_stream->Append("/*\n");
    indented_output_stream->Append(" * Politecnico di Milano\n");
    indented_output_stream->Append(std::string(" * Code created using ") + PACKAGE_NAME + " - " + parameters->PrintVersion());
-   boost::posix_time::ptime current_time = boost::posix_time::second_clock::local_time();
-   indented_output_stream->Append(" - Date " + boost::posix_time::to_simple_string(current_time));
+   indented_output_stream->Append(" - Date " + TimeStamp::GetCurrentTimeStamp());
    indented_output_stream->Append("\n");
    if(parameters->isOption(OPT_cat_args))
       indented_output_stream->Append(" * " + parameters->getOption<std::string>(OPT_program_name) + " executed with: " + parameters->getOption<std::string>(OPT_cat_args) + "\n");
@@ -207,7 +205,7 @@ void CBackend::WriteGlobalDeclarations()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written external function prototype: " + BH->get_function_name());
    }
 
-   std::set<unsigned int> functions = functions_to_be_defined;
+   CustomOrderedSet<unsigned int> functions = functions_to_be_defined;
    for(const auto it : functions)
    {
       const BehavioralHelperConstRef BH = AppM->CGetFunctionBehavior(it)->CGetBehavioralHelper();
@@ -252,7 +250,7 @@ void CBackend::writeImplementations()
 
 void CBackend::writeIncludes()
 {
-   std::set<std::string> includes_to_write;
+   CustomOrderedSet<std::string> includes_to_write;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing includes for external functions");
    for(const auto f_id : functions_to_be_defined)
    {
@@ -261,7 +259,7 @@ void CBackend::writeIncludes()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing includes for " + BH->get_function_name());
       AnalyzeInclude(f_id, BH, includes_to_write);
 
-      std::unordered_set<unsigned int> decl_nodes;
+      CustomUnorderedSet<unsigned int> decl_nodes;
       const CustomSet<unsigned int>& tmp_vars = writer->GetLocalVariables(f_id);
       decl_nodes.insert(tmp_vars.begin(), tmp_vars.end());
       const std::list<unsigned int>& funParams = BH->get_parameters();
@@ -285,7 +283,7 @@ void CBackend::writeIncludes()
          if(index != ENTRY_ID and index != EXIT_ID)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing includes for operation" + STR(*v));
-            std::unordered_set<unsigned int> types;
+            CustomUnorderedSet<unsigned int> types;
             BH->get_typecast(index, types);
             for(const auto type_id : types)
             {
@@ -309,7 +307,7 @@ void CBackend::writeIncludes()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written includes");
 }
 
-void CBackend::AnalyzeInclude(unsigned int index, const BehavioralHelperConstRef BH, std::set<std::string>& includes_to_write)
+void CBackend::AnalyzeInclude(unsigned int index, const BehavioralHelperConstRef BH, CustomOrderedSet<std::string>& includes_to_write)
 {
    if(already_visited.find(index) != already_visited.end())
    {
@@ -346,7 +344,7 @@ void CBackend::AnalyzeInclude(unsigned int index, const BehavioralHelperConstRef
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed");
 }
 
-void CBackend::compute_variables(const OpGraphConstRef inGraph, const std::unordered_set<unsigned int>& gblVariables, std::list<unsigned int>& funParams, std::unordered_set<unsigned int>& vars)
+void CBackend::compute_variables(const OpGraphConstRef inGraph, const CustomUnorderedSet<unsigned int>& gblVariables, std::list<unsigned int>& funParams, CustomUnorderedSet<unsigned int>& vars)
 {
    // I simply have to go over all the vertices and get the used variables;
    // the variables which have to be declared are all those variables but
@@ -359,7 +357,7 @@ void CBackend::compute_variables(const OpGraphConstRef inGraph, const std::unord
    }
 
    // I have to take out the variables global to the whole program and the function parameters
-   std::unordered_set<unsigned int>::const_iterator it, it_end = gblVariables.end();
+   CustomUnorderedSet<unsigned int>::const_iterator it, it_end = gblVariables.end();
    for(it = gblVariables.begin(); it != it_end; ++it)
    {
       vars.erase(*it);
@@ -442,7 +440,7 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships, const Desi
          {
             case CB_SEQUENTIAL:
             {
-               std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> frontend_relationships;
+               CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> frontend_relationships;
                frontend_relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(BAMBU_FRONTEND_FLOW, FrontendFlowStep::WHOLE_APPLICATION));
                FrontendFlowStep::CreateSteps(design_flow_manager.lock(), frontend_relationships, AppM, relationships);
                break;
@@ -450,7 +448,7 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships, const Desi
 #if HAVE_HOST_PROFILING_BUILT
             case(CB_BBP):
             {
-               std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> frontend_relationships;
+               CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> frontend_relationships;
                frontend_relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(BASIC_BLOCKS_CFG_COMPUTATION, FrontendFlowStep::ALL_FUNCTIONS));
                frontend_relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(DEAD_CODE_ELIMINATION, FrontendFlowStep::ALL_FUNCTIONS));
                frontend_relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(LOOP_COMPUTATION, FrontendFlowStep::ALL_FUNCTIONS));
@@ -550,7 +548,7 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships, const Desi
 #endif
             {
 #if HAVE_BAMBU_BUILT
-               std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> frontend_relationships;
+               CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> frontend_relationships;
                frontend_relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(FrontendFlowStepType::MULTIPLE_ENTRY_IF_REDUCTION, FrontendFlowStep::ALL_FUNCTIONS));
                FrontendFlowStep::CreateSteps(design_flow_manager.lock(), frontend_relationships, AppM, relationships);
                if(c_backend_type == CB_SEQUENTIAL)

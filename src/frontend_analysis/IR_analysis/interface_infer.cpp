@@ -96,9 +96,9 @@
 #define EPSILON 0.000000001
 #define ENCODE_FDNAME(argName_string, MODE, interfaceType) (argName_string + STR_CST_interface_parameter_keyword + (MODE) + interfaceType)
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> interface_infer::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> interface_infer::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -186,7 +186,7 @@ void interface_infer::Computepar2ssa(statement_list* sl, std::map<unsigned, unsi
    }
 }
 
-void interface_infer::classifyArgRecurse(std::set<unsigned>& Visited, ssa_name* argSSA, unsigned int destBB, statement_list* sl, bool& canBeMovedToBB2, bool& isRead, bool& isWrite, bool& unkwown_pattern, std::list<tree_nodeRef>& writeStmt,
+void interface_infer::classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, ssa_name* argSSA, unsigned int destBB, statement_list* sl, bool& canBeMovedToBB2, bool& isRead, bool& isWrite, bool& unkwown_pattern, std::list<tree_nodeRef>& writeStmt,
                                          std::list<tree_nodeRef>& readStmt)
 {
    tree_nodeRef readType;
@@ -374,7 +374,7 @@ void interface_infer::classifyArg(statement_list* sl, tree_nodeRef argSSANode, b
    THROW_ASSERT(destBB != bloc::ENTRY_BLOCK_ID, "unexpected condition");
    auto argSSA = GetPointer<ssa_name>(GET_NODE(argSSANode));
    THROW_ASSERT(argSSA, "unexpected condition");
-   std::set<unsigned> Visited;
+   CustomOrderedSet<unsigned> Visited;
    classifyArgRecurse(Visited, argSSA, destBB, sl, canBeMovedToBB2, isRead, isWrite, unkwown_pattern, writeStmt, readStmt);
 }
 

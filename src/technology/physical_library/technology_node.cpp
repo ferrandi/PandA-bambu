@@ -81,9 +81,9 @@
 #include <boost/lexical_cast.hpp>
 
 /// STL include
+#include "custom_set.hpp"
 #include <algorithm>
 #include <list>
-#include <set>
 #include <utility>
 
 /// utility include
@@ -429,7 +429,7 @@ void functional_unit::gload(const std::string& definition, const std::string& fu
    std::list<std::string> splitted = SplitString(definition, " ;\t");
 
 #if HAVE_CIRCUIT_BUILT
-   std::set<std::string> inputs;
+   CustomOrderedSet<std::string> inputs;
    std::string output;
 #endif
    // std::map<std::string, std::map<std::string, TimingModelRef> > pin_models;
@@ -490,7 +490,7 @@ void functional_unit::gload(const std::string& definition, const std::string& fu
             new_port->set_id(output);
             new_port->set_type(bool_type);
             mobj->add_out_port(new_port);
-            for(std::set<std::string>::iterator i = inputs.begin(); i != inputs.end(); ++i)
+            for(CustomOrderedSet<std::string>::iterator i = inputs.begin(); i != inputs.end(); ++i)
             {
                if(i->find("CONST") != std::string::npos)
                   continue;
@@ -525,7 +525,7 @@ void functional_unit::gload(const std::string& definition, const std::string& fu
             //analyzing the pin name or the wildcard *
             if (*s == "*")
             {
-               for(std::set<std::string>::iterator i = inputs.begin(); i != inputs.end(); i++)
+               for(CustomOrderedSet<std::string>::iterator i = inputs.begin(); i != inputs.end(); i++)
                {
                   pin_models[*i][output] = TimingModel::create_model(TimingModel::GENLIB_LIBRARY, Param);
                }
@@ -1006,7 +1006,7 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
             for(unsigned int l = 0; l < GetPointer<module>(CM->get_circ())->get_out_port_size(); l++)
             {
                std::string output_name = GetPointer<module>(CM->get_circ())->get_out_port(l)->get_id();
-               std::set<std::string> inputs;
+               CustomOrderedSet<std::string> inputs;
                for(unsigned int m = 0; m < GetPointer<module>(CM->get_circ())->get_in_port_size(); m++)
                {
                   inputs.insert(GetPointer<module>(CM->get_circ())->get_in_port(m)->get_id());

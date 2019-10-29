@@ -230,7 +230,7 @@ static void buildCircuit(structural_managerRef SM, structural_objectRef wrappedO
    if(wrappedObj->find_member(WB_CYCOM_PORT_NAME, port_o_K, wrappedObj))
       masters.push_back(wrappedObj);
 
-   const std::set<unsigned int> additionalTops = HLSMgr->CGetCallGraphManager()->GetAddressedFunctions();
+   const CustomOrderedSet<unsigned int> additionalTops = HLSMgr->CGetCallGraphManager()->GetAddressedFunctions();
    for(unsigned int itr : additionalTops)
    {
       std::string functionName = tree_helper::name_function(TM, itr);

@@ -60,22 +60,6 @@ enum class ToDataFileStep_Type
 #endif
 };
 
-/**
- * Definition of hash function for ToDataFileStep_Type
- */
-namespace std
-{
-   template <>
-   struct hash<ToDataFileStep_Type> : public unary_function<ToDataFileStep_Type, size_t>
-   {
-      size_t operator()(ToDataFileStep_Type design_flow_step) const
-      {
-         hash<int> hasher;
-         return hasher(static_cast<int>(design_flow_step));
-      }
-   };
-} // namespace std
-
 class ToDataFileStep : public virtual DesignFlowStep
 {
  protected:

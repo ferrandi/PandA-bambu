@@ -54,7 +54,7 @@
 #include <iterator>                // for front_insert_iterator
 #include <list>                    // for list, _List_iterator
 
-void weak_dominance::calculate_weak_dominance_info(graphs_collection* output, std::unordered_map<vertex, vertex>& i2o, std::unordered_map<vertex, vertex>& o2i)
+void weak_dominance::calculate_weak_dominance_info(graphs_collection* output, CustomUnorderedMap<vertex, vertex>& i2o, CustomUnorderedMap<vertex, vertex>& o2i)
 {
    if(boost::num_vertices(*input) == 0)
       return;
@@ -73,14 +73,14 @@ void weak_dominance::calculate_weak_dominance_info(graphs_collection* output, st
 
    std::list<vertex> levels;
    boost::topological_sort(*input, std::front_inserter(levels));
-   std::unordered_map<vertex, unsigned int> sorted_nodes;
+   CustomUnorderedMap<vertex, unsigned int> sorted_nodes;
    unsigned int counter = 0;
    for(auto& level : levels)
       sorted_nodes[level] = ++counter;
 
    dominance<graph> dm(*input, start, end, param);
    dm.calculate_dominance_info(dominance<graph>::CDI_POST_DOMINATORS);
-   std::unordered_map<vertex, vertex> post_dominators = dm.get_dominator_map();
+   CustomUnorderedMap<vertex, vertex> post_dominators = dm.get_dominator_map();
 
    // iterate over outgoing edges of the input graph
    EdgeIterator ei, ei_end;

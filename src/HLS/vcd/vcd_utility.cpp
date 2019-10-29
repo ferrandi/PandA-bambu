@@ -99,6 +99,7 @@
 
 // external include
 #include "string_manipulation.hpp" // for GET_CLASS
+#include <boost/algorithm/string/case_conv.hpp>
 #include <cfloat>
 #include <fstream>
 #include <utility>
@@ -140,9 +141,9 @@ vcd_utility::vcd_utility(const ParameterConstRef _parameters, const HLS_managerR
    THROW_ASSERT(HLSMgr->RDiscr, "Discr data structure is not correctly initialized");
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> vcd_utility::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> vcd_utility::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -894,8 +895,8 @@ bool vcd_utility::detect_address_mismatch(const DiscrepancyOpInfo& op_info, cons
       {
          base_index = 0;
          const uint64_t c_addr = static_cast<unsigned int>(std::stoull(c_val.c_str(), nullptr, 2));
-         std::unordered_map<uint64_t, unsigned int> addr2base_index;
-         std::set<uint64_t> addrSet;
+         CustomUnorderedMap<uint64_t, unsigned int> addr2base_index;
+         CustomOrderedSet<uint64_t> addrSet;
          for(const auto& addr : Discr->c_addr_map.at(c_context))
          {
             addr2base_index[addr.second] = addr.first;

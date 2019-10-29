@@ -43,35 +43,17 @@
 /// header include
 #include "dead_code_elimination.hpp"
 
-/// STD includes
-#include <fstream>
-#include <string>
-
-/// STL includes
-#include <list>
-#include <map>
-#include <queue>
-#include <set>
-#include <unordered_map>
-#include <unordered_set>
-#include <utility>
-#include <vector>
-
-/// design_flows include
+#include "application_manager.hpp"
+#include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-
-#include "application_manager.hpp"
-#include "hls_manager.hpp"
-
-// includes from behavior
-#include "call_graph_manager.hpp"
-
-/// Tree include
-#include "behavioral_helper.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "ext_tree_node.hpp"
 #include "function_behavior.hpp"
+#include "hls_manager.hpp"
 #include "math_function.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "token_interface.hpp"
@@ -81,6 +63,14 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
+/// STD includes
+#include <fstream>
+#include <list>
+#include <queue>
+#include <string>
+#include <utility>
+#include <vector>
+
 dead_code_elimination::dead_code_elimination(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, DEAD_CODE_ELIMINATION, _design_flow_manager, _parameters)
 {
@@ -89,9 +79,9 @@ dead_code_elimination::dead_code_elimination(const ParameterConstRef _parameters
 
 dead_code_elimination::~dead_code_elimination() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> dead_code_elimination::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> dead_code_elimination::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -315,8 +305,8 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
    {
       restart_analysis = false;
       bool do_reachability = false;
-      std::unordered_map<unsigned, std::set<unsigned>> vdefvover_map;
-      // std::unordered_set<unsigned> vdefvover_map;
+      CustomUnorderedMap<unsigned, CustomOrderedSet<unsigned>> vdefvover_map;
+      // CustomUnorderedSet<unsigned> vdefvover_map;
       for(block_it = blocks.begin(); block_it != block_it_end; ++block_it)
       {
          const auto& stmt_list = block_it->second->CGetStmtList();
@@ -745,14 +735,14 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   const CallGraphManagerRef cg_man = AppM->GetCallGraphManager();
                   const vertex fun_cg_vertex = cg_man->GetVertex(function_id);
                   const CallGraphConstRef cg = cg_man->CGetCallGraph();
-                  std::set<EdgeDescriptor> to_remove;
+                  CustomOrderedSet<EdgeDescriptor> to_remove;
                   OutEdgeIterator oei, oei_end;
                   boost::tie(oei, oei_end) = boost::out_edges(fun_cg_vertex, *cg);
                   const unsigned int call_id = GET_INDEX_NODE(curr_el);
                   for(; oei != oei_end; oei++)
                   {
-                     const std::set<unsigned int>& direct_calls = cg->CGetFunctionEdgeInfo(*oei)->direct_call_points;
-                     const std::set<unsigned int>::iterator call_it = direct_calls.find(call_id);
+                     const CustomOrderedSet<unsigned int>& direct_calls = cg->CGetFunctionEdgeInfo(*oei)->direct_call_points;
+                     auto call_it = direct_calls.find(call_id);
                      if(call_it != direct_calls.end())
                      {
                         to_remove.insert(*oei);
@@ -823,7 +813,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
       while(do_reachability)
       {
          do_reachability = false;
-         std::set<unsigned> BB_reached;
+         CustomOrderedSet<unsigned> BB_reached;
          std::queue<unsigned> to_be_processed;
          to_be_processed.push(bloc::ENTRY_BLOCK_ID);
          BB_reached.insert(bloc::ENTRY_BLOCK_ID);
@@ -841,7 +831,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                }
             }
          }
-         std::set<unsigned> bb_to_remove;
+         CustomOrderedSet<unsigned> bb_to_remove;
          for(auto bb_pair : blocks)
          {
             if(BB_reached.find(bb_pair.first) == BB_reached.end())
@@ -926,14 +916,14 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                         const CallGraphManagerRef cg_man = AppM->GetCallGraphManager();
                         const vertex fun_cg_vertex = cg_man->GetVertex(function_id);
                         const CallGraphConstRef cg = cg_man->CGetCallGraph();
-                        std::set<EdgeDescriptor> to_remove;
+                        CustomOrderedSet<EdgeDescriptor> to_remove;
                         OutEdgeIterator oei, oei_end;
                         boost::tie(oei, oei_end) = boost::out_edges(fun_cg_vertex, *cg);
                         const unsigned int call_id = GET_INDEX_NODE(curr_el);
                         for(; oei != oei_end; oei++)
                         {
-                           const std::set<unsigned int>& direct_calls = cg->CGetFunctionEdgeInfo(*oei)->direct_call_points;
-                           const std::set<unsigned int>::iterator call_it = direct_calls.find(call_id);
+                           const CustomOrderedSet<unsigned int>& direct_calls = cg->CGetFunctionEdgeInfo(*oei)->direct_call_points;
+                           auto call_it = direct_calls.find(call_id);
                            if(call_it != direct_calls.end())
                            {
                               to_remove.insert(*oei);
@@ -1197,7 +1187,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---write flag " + (fd->writing_memory ? std::string("T") : std::string("F")));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---read flag " + (fd->reading_memory ? std::string("T") : std::string("F")));
    const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
-   std::set<unsigned int> calledSet = AppM->CGetCallGraphManager()->get_called_by(function_id);
+   CustomOrderedSet<unsigned int> calledSet = AppM->CGetCallGraphManager()->get_called_by(function_id);
    for(const auto i : calledSet)
    {
       auto* fdCalled = GetPointer<function_decl>(AppM->get_tree_manager()->GetTreeNode(i));

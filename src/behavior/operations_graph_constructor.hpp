@@ -46,8 +46,8 @@
 
 /// Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
-#include <map>    // for map
-#include <string> // for string
+#include "custom_map.hpp" // for map
+#include <string>         // for string
 
 #include "graph.hpp"
 #include "refcount.hpp"

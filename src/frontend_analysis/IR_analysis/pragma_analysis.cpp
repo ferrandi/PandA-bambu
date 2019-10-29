@@ -58,7 +58,7 @@
 #include "PragmaParser.hpp"
 
 /// STL include
-#include <map>
+#include "custom_map.hpp"
 #include <string>
 
 /// Tree include
@@ -86,9 +86,9 @@ PragmaAnalysis::PragmaAnalysis(const application_managerRef _AppM, const DesignF
 
 PragmaAnalysis::~PragmaAnalysis() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> PragmaAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> PragmaAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -460,7 +460,7 @@ DesignFlowStep_Status PragmaAnalysis::Exec()
    const tree_managerRef TM = AppM->get_tree_manager();
    const pragma_managerRef PM = AppM->get_pragma_manager();
 
-   const std::unordered_set<unsigned int>& functions = TM->GetAllFunctions();
+   const CustomUnorderedSet<unsigned int>& functions = TM->GetAllFunctions();
    for(const auto function : functions)
    {
       const tree_nodeRef curr_tn = TM->get_tree_node_const(function);

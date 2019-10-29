@@ -335,7 +335,7 @@ const BehavioralHelperConstRef FunctionBehavior::CGetBehavioralHelper() const
 const OpGraphConstRef FunctionBehavior::CGetOpGraph(FunctionBehavior::graph_type gt, const OpVertexSet& statements) const
 {
    /// This "transformation" is necessary because of graph constructor
-   std::unordered_set<vertex> subset;
+   CustomUnorderedSet<vertex> subset;
    subset.insert(statements.begin(), statements.end());
    switch(gt)
    {
@@ -606,34 +606,34 @@ void FunctionBehavior::add_parm_decl_stored(unsigned int node_id)
    dynamic_address.insert(node_id);
 }
 
-const std::set<unsigned int>& FunctionBehavior::get_function_mem() const
+const CustomOrderedSet<unsigned int>& FunctionBehavior::get_function_mem() const
 {
    return mem_nodeID;
 }
 
-const std::set<unsigned int>& FunctionBehavior::get_dynamic_address() const
+const CustomOrderedSet<unsigned int>& FunctionBehavior::get_dynamic_address() const
 {
    return dynamic_address;
 }
 
-const std::set<unsigned int>& FunctionBehavior::get_parm_decl_copied() const
+const CustomOrderedSet<unsigned int>& FunctionBehavior::get_parm_decl_copied() const
 {
    return parm_decl_copied;
 }
 
-const std::set<unsigned int>& FunctionBehavior::get_parm_decl_loaded() const
+const CustomOrderedSet<unsigned int>& FunctionBehavior::get_parm_decl_loaded() const
 {
    return parm_decl_loaded;
 }
 
-const std::set<unsigned int>& FunctionBehavior::get_parm_decl_stored() const
+const CustomOrderedSet<unsigned int>& FunctionBehavior::get_parm_decl_stored() const
 {
    return parm_decl_stored;
 }
 
-std::set<unsigned int> FunctionBehavior::get_local_variables(const application_managerConstRef AppM) const
+CustomOrderedSet<unsigned int> FunctionBehavior::get_local_variables(const application_managerConstRef AppM) const
 {
-   std::set<unsigned int> vars;
+   CustomOrderedSet<unsigned int> vars;
    // I simply have to go over all the vertices and get the used variables;
    // the variables which have to be declared are all those variables but
    // the globals ones
@@ -696,7 +696,7 @@ bool FunctionBehavior::CheckBBFeedbackReachability(const vertex first_basic_bloc
 
 bool FunctionBehavior::CheckReachability(const vertex first_operation, const vertex second_operation) const
 {
-   const std::unordered_map<unsigned int, vertex>& bb_index_map = bb->CGetBBGraphInfo()->bb_index_map;
+   const CustomUnorderedMap<unsigned int, vertex>& bb_index_map = bb->CGetBBGraphInfo()->bb_index_map;
    const unsigned int first_bb_index = cfg->CGetOpNodeInfo(first_operation)->bb_index;
    const unsigned int second_bb_index = cfg->CGetOpNodeInfo(second_operation)->bb_index;
    const vertex first_bb_vertex = bb_index_map.find(first_bb_index)->second;
@@ -720,7 +720,7 @@ bool FunctionBehavior::CheckReachability(const vertex first_operation, const ver
 
 bool FunctionBehavior::CheckFeedbackReachability(const vertex first_operation, const vertex second_operation) const
 {
-   const std::unordered_map<unsigned int, vertex>& bb_index_map = bb->CGetBBGraphInfo()->bb_index_map;
+   const CustomUnorderedMap<unsigned int, vertex>& bb_index_map = bb->CGetBBGraphInfo()->bb_index_map;
    const unsigned int first_bb_index = cfg->CGetOpNodeInfo(first_operation)->bb_index;
    const unsigned int second_bb_index = cfg->CGetOpNodeInfo(second_operation)->bb_index;
    const vertex first_bb_vertex = bb_index_map.find(first_bb_index)->second;

@@ -74,12 +74,11 @@
 #include <string>
 
 /// STL include
-#include <set>
 #include <string>
-#include <unordered_map>
 
 /// Utility include
 #include "custom_map.hpp"
+#include "custom_set.hpp"
 #include "exceptions.hpp"
 #include "fileIO.hpp"
 #include "utility.hpp"
@@ -130,11 +129,11 @@ Translator::LatexColumnFormat::LatexColumnFormat()
 {
 }
 
-std::unordered_map<std::string, Translator::LatexColumnFormat::TextFormat> Translator::LatexColumnFormat::string_to_TF;
+CustomUnorderedMap<std::string, Translator::LatexColumnFormat::TextFormat> Translator::LatexColumnFormat::string_to_TF;
 
-std::unordered_map<std::string, Translator::LatexColumnFormat::ComparisonOperator> Translator::LatexColumnFormat::string_to_CO;
+CustomUnorderedMap<std::string, Translator::LatexColumnFormat::ComparisonOperator> Translator::LatexColumnFormat::string_to_CO;
 
-std::unordered_map<std::string, Translator::LatexColumnFormat::TotalFormat> Translator::LatexColumnFormat::string_to_TOF;
+CustomUnorderedMap<std::string, Translator::LatexColumnFormat::TotalFormat> Translator::LatexColumnFormat::string_to_TOF;
 
 Translator::LatexColumnFormat::TextFormat Translator::LatexColumnFormat::LatexColumnFormat::get_TF(const std::string& string)
 {
@@ -193,22 +192,22 @@ Translator::Translator(const ParameterConstRef _Param) : Param(_Param), debug_le
 }
 
 #if HAVE_RTL_BUILT
-void Translator::Translate(const std::unordered_map<std::string, long double> input, std::map<enum rtl_kind, std::map<enum mode_kind, long double>>& output) const
+void Translator::Translate(const CustomUnorderedMap<std::string, long double> input, std::map<enum rtl_kind, std::map<enum mode_kind, long double>>& output) const
 {
-   std::set<mode_kind> int_type, float_type;
+   CustomOrderedSet<mode_kind> int_type, float_type;
 
    rtl_node::get_int_modes(int_type);
    rtl_node::get_float_modes(float_type);
 
-   std::set<mode_kind>::const_iterator it2, it2_end;
+   CustomOrderedSet<mode_kind>::const_iterator it2, it2_end;
 
-   std::unordered_map<std::string, long double> normalization;
+   CustomUnorderedMap<std::string, long double> normalization;
    if(Param->isOption("normalize_file"))
    {
       get_normalization(normalization);
    }
 
-   std::unordered_map<std::string, long double>::const_iterator it, it_end = input.end();
+   CustomUnorderedMap<std::string, long double>::const_iterator it, it_end = input.end();
 
    long double base = 0.0;
    for(it = input.begin(); it != it_end; ++it)
@@ -523,9 +522,10 @@ void Translator::write_to_xml(const std::map<enum rtl_kind, std::map<enum mode_k
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Ended writing to xml");
 }
 
-void Translator::write_to_csv(const std::map<std::string, std::set<std::string>>& tags, const std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double>>>& results, const std::string& file_name) const
+void Translator::write_to_csv(const std::map<std::string, CustomOrderedSet<std::string>>& tags, const CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>& results,
+                              const std::string& file_name) const
 {
-   std::unordered_set<std::string> skipping;
+   CustomUnorderedSet<std::string> skipping;
    BOOST_PP_SEQ_FOR_EACH(SKIPPING_MACRO, BOOST_PP_EMPTY, SKIPPED_COLUMN);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Translating " + STR(results.size()));
@@ -533,17 +533,17 @@ void Translator::write_to_csv(const std::map<std::string, std::set<std::string>>
    THROW_ASSERT(out, "Error in opening output file " + file_name);
    out << "Benchmark ";
 
-   std::unordered_map<std::string, long double> normalization;
+   CustomUnorderedMap<std::string, long double> normalization;
    if(Param->isOption(OPT_normalization_file))
    {
       get_normalization(normalization);
    }
 
-   std::map<std::string, std::set<std::string>>::const_iterator it2, it2_end = tags.end();
+   std::map<std::string, CustomOrderedSet<std::string>>::const_iterator it2, it2_end = tags.end();
    for(it2 = tags.begin(); it2 != it2_end; ++it2)
    {
-      const std::set<std::string>& cat_tags = it2->second;
-      std::set<std::string>::const_iterator it4, it4_end = cat_tags.end();
+      const CustomOrderedSet<std::string>& cat_tags = it2->second;
+      CustomOrderedSet<std::string>::const_iterator it4, it4_end = cat_tags.end();
       for(it4 = cat_tags.begin(); it4 != it4_end; ++it4)
       {
          if(skipping.find(*it4) == skipping.end())
@@ -553,22 +553,22 @@ void Translator::write_to_csv(const std::map<std::string, std::set<std::string>>
       out << ", " << it2->first << "_is_main";
    }
    out << std::endl;
-   std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double>>>::const_iterator it, it_end = results.end();
+   CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>::const_iterator it, it_end = results.end();
    for(it = results.begin(); it != it_end; ++it)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "   Analyzing line " + it->first);
       out << it->first;
-      std::map<std::string, std::set<std::string>>::const_iterator tag, tag_end = tags.end();
+      std::map<std::string, CustomOrderedSet<std::string>>::const_iterator tag, tag_end = tags.end();
       for(tag = tags.begin(); tag != tag_end; ++tag)
       {
          long double operations = 0.0;
-         const std::unordered_map<std::string, std::unordered_map<std::string, long double>>& bench_counters = it->second;
+         const auto& bench_counters = it->second;
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      Category " + tag->first);
          if(bench_counters.find(tag->first) != bench_counters.end())
          {
-            const std::set<std::string>& cat_tags = tag->second;
-            const std::unordered_map<std::string, long double>& cat_counters = bench_counters.find(tag->first)->second;
-            std::set<std::string>::const_iterator it4, it4_end = cat_tags.end();
+            const CustomOrderedSet<std::string>& cat_tags = tag->second;
+            const CustomUnorderedMap<std::string, long double>& cat_counters = bench_counters.find(tag->first)->second;
+            CustomOrderedSet<std::string>::const_iterator it4, it4_end = cat_tags.end();
             for(it4 = cat_tags.begin(); it4 != it4_end; ++it4)
             {
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "         Tag " + *it4);
@@ -626,7 +626,7 @@ void Translator::write_to_csv(const std::map<std::string, CustomMap<std::string,
 {
    std::ofstream out(file_name.c_str());
    THROW_ASSERT(out, "Error in opening output file " + file_name);
-   std::set<std::string> column_labels;
+   CustomOrderedSet<std::string> column_labels;
    for(const auto row : results)
    {
       for(const auto column : row.second)
@@ -652,24 +652,25 @@ void Translator::write_to_csv(const std::map<std::string, CustomMap<std::string,
    }
 }
 
-void Translator::write_to_pa(const std::map<std::string, std::set<std::string>>& tags, const std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double>>>& results, const std::string& file_name) const
+void Translator::write_to_pa(const std::map<std::string, CustomOrderedSet<std::string>>& tags, const CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>& results,
+                             const std::string& file_name) const
 {
    std::ofstream out(file_name.c_str());
    THROW_ASSERT(out, "Error in opening output file " + file_name);
-   std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double>>>::const_iterator it, it_end = results.end();
+   CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>::const_iterator it, it_end = results.end();
    for(it = results.begin(); it != it_end; ++it)
    {
       out << "#Benchmark " << it->first << "# ";
-      std::map<std::string, std::set<std::string>>::const_iterator it2, it2_end = tags.end();
+      std::map<std::string, CustomOrderedSet<std::string>>::const_iterator it2, it2_end = tags.end();
       for(it2 = tags.begin(); it2 != it2_end; ++it2)
       {
          out << "#" << it2->first << "# ";
-         const std::unordered_map<std::string, std::unordered_map<std::string, long double>>& bench_counters = it->second;
+         const auto& bench_counters = it->second;
          if(bench_counters.find(it2->first) != bench_counters.end())
          {
-            const std::set<std::string>& cat_tags = it2->second;
-            const std::unordered_map<std::string, long double>& cat_counters = bench_counters.find(it2->first)->second;
-            std::set<std::string>::const_iterator it4, it4_end = cat_tags.end();
+            const auto& cat_tags = it2->second;
+            const auto& cat_counters = bench_counters.find(it2->first)->second;
+            CustomOrderedSet<std::string>::const_iterator it4, it4_end = cat_tags.end();
             for(it4 = cat_tags.begin(); it4 != it4_end; ++it4)
             {
                out << "#" << *it4 << "# ";
@@ -714,7 +715,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
    size_t max_column_width = NUM_CST_latex_table_max_column_width;
 
    /// The bold cells
-   std::map<std::string, std::unordered_map<std::string, bool>> bold_cells;
+   std::map<std::string, CustomUnorderedMapStable<std::string, bool>> bold_cells;
 
    /// The bambu version
    std::string bambu_version;
@@ -834,7 +835,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
    read_column_formats(parser, latex_column_formats, max_column_width);
 
    // The width of the column in the data section
-   std::unordered_map<std::string, size_t> data_width;
+   CustomUnorderedMap<std::string, size_t> data_width;
 
    std::ofstream out(file_name.c_str());
 
@@ -930,8 +931,8 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking cell " + line.first);
             bool bold = true;
-            const std::unordered_set<std::string> columns_to_be_compared = column.compared_columns;
-            std::unordered_set<std::string>::const_iterator column_to_be_compared, column_to_be_compared_end = columns_to_be_compared.end();
+            const CustomUnorderedSet<std::string> columns_to_be_compared = column.compared_columns;
+            CustomUnorderedSet<std::string>::const_iterator column_to_be_compared, column_to_be_compared_end = columns_to_be_compared.end();
             for(column_to_be_compared = columns_to_be_compared.begin(); column_to_be_compared != column_to_be_compared_end; ++column_to_be_compared)
             {
                if(not LatexColumnFormat::Compare(boost::lexical_cast<long double>(line.second[column.source_name]), column.comparison_operator, boost::lexical_cast<long double>(line.second[*column_to_be_compared])))
@@ -1015,14 +1016,14 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
             auto& current_line = line.second;
             if(current_line.find(column.source_name) != current_line.end())
             {
-               std::string& value = current_line.find(column.source_name)->second;
-               value = get_exponential_notation(value);
+               const auto value = current_line.find(column.source_name)->second;
+               current_line[column.source_name] = get_exponential_notation(value);
             }
          }
          if(totals.find(column.source_name) != totals.end())
          {
-            std::string& value = totals.find(column.source_name)->second;
-            value = get_exponential_notation(value);
+            const auto value = totals.find(column.source_name)->second;
+            totals[column.source_name] = get_exponential_notation(value);
          }
       }
    }
@@ -1030,8 +1031,8 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
 
    for(auto const& bold_line : bold_cells)
    {
-      const std::unordered_map<std::string, bool> current_bold_line = bold_line.second;
-      std::unordered_map<std::string, bool>::const_iterator bold_cell, bold_cell_end = current_bold_line.end();
+      const auto& current_bold_line = bold_line.second;
+      CustomUnorderedMapStable<std::string, bool>::const_iterator bold_cell, bold_cell_end = current_bold_line.end();
       for(bold_cell = current_bold_line.begin(); bold_cell != bold_cell_end; ++bold_cell)
       {
          std::string before_bold = results[bold_line.first][bold_cell->first];
@@ -1149,7 +1150,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Printed line for benchmark " + line.first);
    }
 
-   std::set<LatexColumnFormat::TotalFormat> totals_to_be_written;
+   CustomOrderedSet<LatexColumnFormat::TotalFormat> totals_to_be_written;
 
    /// Checking if we have to print average line
    for(const auto& latex_column_format : latex_column_formats)
@@ -1244,25 +1245,25 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
    }
 }
 
-void Translator::merge_pa(const std::map<std::string, std::set<std::string>>& tags, const std::unordered_map<std::string, std::set<std::string>>& keys,
-                          const std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double>>>& input_data,
-                          const std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double>>>& merge_data,
-                          std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double>>>& output_data) const
+void Translator::merge_pa(const std::map<std::string, CustomOrderedSet<std::string>>& tags, const CustomUnorderedMap<std::string, CustomOrderedSet<std::string>>& keys,
+                          const CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>& input_data,
+                          const CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>& merge_data,
+                          CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>& output_data) const
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting merging");
    output_data = input_data;
-   std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double>>>::const_iterator it, it_end = input_data.end();
+   CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>::const_iterator it, it_end = input_data.end();
    for(it = input_data.begin(); it != it_end; ++it)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Considering input " + it->first);
-      const std::unordered_map<std::string, std::unordered_map<std::string, long double>>& cat = it->second;
-      std::unordered_map<std::string, std::unordered_map<std::string, long double>>::const_iterator it2, it2_end = cat.end();
+      const auto& cat = it->second;
+      CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>::const_iterator it2, it2_end = cat.end();
       for(it2 = cat.begin(); it2 != it2_end; ++it2)
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Considering category " + it2->first);
          if(tags.find(it2->first) != tags.end())
          {
-            std::set<std::string>::const_iterator it3, it3_end = tags.find(it2->first)->second.end();
+            CustomOrderedSet<std::string>::const_iterator it3, it3_end = tags.find(it2->first)->second.end();
             for(it3 = tags.find(it2->first)->second.begin(); it3 != it3_end; ++it3)
             {
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Considering tag " + *it3);
@@ -1271,10 +1272,10 @@ void Translator::merge_pa(const std::map<std::string, std::set<std::string>>& ta
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Considering key category " + it2->first);
                   if(merge_data.find(it->first) != merge_data.end())
                   {
-                     const std::unordered_map<std::string, std::unordered_map<std::string, long double>>& benchmark_merge_data = merge_data.find(it->first)->second;
+                     const auto& benchmark_merge_data = merge_data.find(it->first)->second;
                      if(benchmark_merge_data.find(it2->first) != benchmark_merge_data.end())
                      {
-                        const std::unordered_map<std::string, long double>& cat_merge_data = benchmark_merge_data.find(it2->first)->second;
+                        const auto& cat_merge_data = benchmark_merge_data.find(it2->first)->second;
                         if(cat_merge_data.find(*it3) != cat_merge_data.end())
                         {
                            output_data[it->first][it2->first][*it3] = cat_merge_data.find(*it3)->second;
@@ -1290,7 +1291,7 @@ void Translator::merge_pa(const std::map<std::string, std::set<std::string>>& ta
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Ended merging");
 }
 
-void Translator::get_normalization(std::unordered_map<std::string, long double>& normalization) const
+void Translator::get_normalization(CustomUnorderedMap<std::string, long double>& normalization) const
 {
    try
    {

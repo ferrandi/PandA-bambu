@@ -106,9 +106,9 @@ void Scheduling::Initialize()
    }
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> Scheduling::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> Scheduling::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -155,7 +155,7 @@ unsigned int Scheduling::compute_b_tag_size(const OpGraphConstRef cdg, vertex co
    return 0;
 }
 
-unsigned int Scheduling::compute_b_tag(const EdgeDescriptor& e, const OpGraphConstRef cdg, std::set<unsigned int>::const_iterator& switch_it, std::set<unsigned int>::const_iterator& switch_it_end) const
+unsigned int Scheduling::compute_b_tag(const EdgeDescriptor& e, const OpGraphConstRef cdg, CustomOrderedSet<unsigned int>::const_iterator& switch_it, CustomOrderedSet<unsigned int>::const_iterator& switch_it_end) const
 {
    vertex controlling_vertex = boost::source(e, *cdg);
    if(GET_TYPE(cdg.get(), controlling_vertex) & TYPE_ENTRY)
@@ -169,7 +169,7 @@ unsigned int Scheduling::compute_b_tag(const EdgeDescriptor& e, const OpGraphCon
    }
    else if(GET_TYPE(cdg, controlling_vertex) & TYPE_SWITCH)
    {
-      const std::set<unsigned int>& switch_set = EDGE_GET_NODEID(cdg.get(), e, CDG_SELECTOR);
+      const CustomOrderedSet<unsigned int>& switch_set = EDGE_GET_NODEID(cdg.get(), e, CDG_SELECTOR);
       switch_it = switch_set.begin();
       switch_it_end = switch_set.end();
       return 2;
@@ -191,13 +191,13 @@ unsigned int Scheduling::b_tag_normalize(vertex controlling_vertex, unsigned int
 void Scheduling::init_switch_maps(vertex controlling_vertex, const OpGraphConstRef cdg)
 {
    unsigned int curr_b_tag = 0;
-   switch_normalizing_map.insert(std::pair<vertex, std::unordered_map<unsigned int, unsigned int>>(controlling_vertex, std::unordered_map<unsigned int, unsigned int>()));
+   switch_normalizing_map.insert(std::pair<vertex, CustomUnorderedMapUnstable<unsigned int, unsigned int>>(controlling_vertex, CustomUnorderedMapUnstable<unsigned int, unsigned int>()));
    auto snp_it = switch_normalizing_map.find(controlling_vertex);
    OutEdgeIterator eo, eo_end;
    for(boost::tie(eo, eo_end) = boost::out_edges(controlling_vertex, *cdg); eo != eo_end; eo++)
    {
-      const std::set<unsigned int>& switch_set = EDGE_GET_NODEID(cdg, *eo, CDG_SELECTOR);
-      const std::set<unsigned int>::const_iterator switch_it_end = switch_set.end();
+      const CustomOrderedSet<unsigned int>& switch_set = EDGE_GET_NODEID(cdg, *eo, CDG_SELECTOR);
+      const CustomOrderedSet<unsigned int>::const_iterator switch_it_end = switch_set.end();
       for(auto switch_it = switch_set.begin(); switch_it != switch_it_end; ++switch_it)
          if(snp_it->second.find(*switch_it) == snp_it->second.end())
             snp_it->second[*switch_it] = curr_b_tag++;

@@ -82,12 +82,12 @@
 
 /// STL includes
 #include <deque>
-#include <map>
 #include <tuple>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
+
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 /// tree include
 #include "behavioral_helper.hpp"
@@ -893,9 +893,9 @@ Bit_Value::Bit_Value(const ParameterConstRef params, const application_managerRe
 
 Bit_Value::~Bit_Value() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> Bit_Value::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> Bit_Value::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(PRECEDENCE_RELATIONSHIP):
@@ -923,7 +923,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 }
 
 // prints the content of a bitstring map
-void Bit_Value::print_bitstring_map(const std::unordered_map<unsigned int, std::deque<bit_lattice>>&
+void Bit_Value::print_bitstring_map(const CustomUnorderedMap<unsigned int, std::deque<bit_lattice>>&
 #ifndef NDEBUG
                                         map
 #endif
@@ -1057,7 +1057,7 @@ void Bit_Value::initialize()
     * loop on the list of arguments and extract the bitvalue strings that have
     * been initialized by the IPA, if any
     */
-   std::unordered_map<unsigned int, std::deque<bit_lattice>> parm;
+   CustomUnorderedMap<unsigned int, std::deque<bit_lattice>> parm;
    for(const auto& parm_decl_node : fd->list_of_args)
    {
       unsigned int p_decl_id = GET_INDEX_NODE(parm_decl_node);

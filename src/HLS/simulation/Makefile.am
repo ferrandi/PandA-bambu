@@ -87,7 +87,4 @@ BUILT_SOURCES = c_initialization_yparser.h c_initialization_flex_lexer.cpp c_ini
 endif
 CLEANFILES = $(BUILT_SOURCES) *.output
 
-#DOCUMENTATION STUFF
-
-#do not touch the following line
 

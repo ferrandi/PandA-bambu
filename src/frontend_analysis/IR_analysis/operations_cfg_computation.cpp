@@ -89,9 +89,9 @@ operations_cfg_computation::operations_cfg_computation(const ParameterConstRef _
 
 operations_cfg_computation::~operations_cfg_computation() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> operations_cfg_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> operations_cfg_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -503,7 +503,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
          tree_nodeRef op1 = GET_NODE(me->op1);
          tree_nodeRef op0_type = tree_helper::get_type_node(op0);
          tree_nodeRef op1_type = tree_helper::get_type_node(op1);
-         const std::set<unsigned int>& fun_mem_data = function_behavior->get_function_mem();
+         const CustomOrderedSet<unsigned int>& fun_mem_data = function_behavior->get_function_mem();
 
          const bool load_candidate = tree_helper::IsLoad(TM, curr_tn, fun_mem_data);
          const bool store_candidate = tree_helper::IsStore(TM, curr_tn, fun_mem_data);

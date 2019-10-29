@@ -44,7 +44,6 @@
 /// utility include
 #include "custom_map.hpp"
 #include "utility.hpp"
-#include <unordered_map>
 
 REF_FORWARD_DECL(bloc);
 CONSTREF_FORWARD_DECL(Loop);
@@ -69,10 +68,10 @@ class Vectorize : public FunctionFrontendFlowStep
 {
  private:
    /// Map between scalar tree node and vector tree node
-   std::unordered_map<unsigned int, unsigned int> scalar_to_vector;
+   CustomUnorderedMapUnstable<unsigned int, unsigned int> scalar_to_vector;
 
    /// Map between scalar tree node and versioned scalar tree node
-   std::unordered_map<unsigned int, std::unordered_map<size_t, unsigned int>> scalar_to_scalar;
+   CustomUnorderedMap<unsigned int, CustomUnorderedMap<size_t, unsigned int>> scalar_to_scalar;
 
    /// The tree manager
    const tree_managerRef TM;
@@ -167,7 +166,7 @@ class Vectorize : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**

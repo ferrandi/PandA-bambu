@@ -67,7 +67,7 @@
 #include <fstream>
 
 /// STL include
-#include <map>
+#include "custom_map.hpp"
 #include <string>
 
 /// Tree include
@@ -100,9 +100,9 @@ void hls_div_cg_ext::Initialize()
 
 hls_div_cg_ext::~hls_div_cg_ext() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> hls_div_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> hls_div_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(PRECEDENCE_RELATIONSHIP):
@@ -392,7 +392,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                   }
                   TreeM->ReplaceTreeNode(current_statement, current_tree_node, callExpr);
 
-                  const std::set<unsigned int> called_by_set = AppM->CGetCallGraphManager()->get_called_by(function_id);
+                  const CustomOrderedSet<unsigned int> called_by_set = AppM->CGetCallGraphManager()->get_called_by(function_id);
                   if(called_by_set.find(called_function_id) == called_by_set.end())
                   {
                      changed_call_graph = true;

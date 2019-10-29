@@ -1,0 +1,494 @@
+
+noinst_LTLIBRARIES += lib_behavior_analysis.la
+lib_behavior_analysis_la_LIBADD =
+lib_behavior_analysis_la_CPPFLAGS = \
+   -I$(top_srcdir)/src \
+   -I$(top_srcdir)/src/algorithms/dominance \
+   -I$(top_srcdir)/src/algorithms/loops_detection \
+   -I$(top_srcdir)/src/behavior \
+   -I$(top_srcdir)/src/design_flows \
+   -I$(top_srcdir)/src/design_flows/backend/ToC \
+   -I$(top_srcdir)/src/design_flows/backend/ToC/progModels \
+   -I$(top_srcdir)/src/design_flows/backend/ToC/source_code_writers \
+   -I$(top_srcdir)/src/frontend_analysis \
+   -I$(top_srcdir)/src/graph \
+   -I$(top_srcdir)/src/parser/polixml \
+   -I$(top_srcdir)/src/polixml\
+   -I$(top_srcdir)/src/technology \
+   -I$(top_srcdir)/src/technology/target_device \
+   -I$(top_srcdir)/src/tree \
+   -I$(top_srcdir)/src/utility \
+   -I$(top_srcdir)/src/HLS \
+   -I$(BOOST_DIR) $(all_includes)
+
+noinst_HEADERS += \
+   frontend_analysis/behavior_analysis/add_bb_ecfg_edges.hpp \
+   frontend_analysis/behavior_analysis/add_op_exit_flow_edges.hpp \
+   frontend_analysis/behavior_analysis/add_op_loop_flow_edges.hpp \
+   frontend_analysis/behavior_analysis/aggregate_data_flow_analysis.hpp \
+   frontend_analysis/behavior_analysis/bb_cdg_computation.hpp \
+   frontend_analysis/behavior_analysis/bb_feedback_edges_computation.hpp \
+   frontend_analysis/behavior_analysis/bb_order_computation.hpp \
+   frontend_analysis/behavior_analysis/bb_reachability_computation.hpp \
+   frontend_analysis/behavior_analysis/data_dependence_computation.hpp \
+   frontend_analysis/behavior_analysis/dom_post_dom_computation.hpp \
+   frontend_analysis/behavior_analysis/loops_computation.hpp \
+   frontend_analysis/behavior_analysis/memory_data_flow_analysis.hpp \
+   frontend_analysis/behavior_analysis/op_cdg_computation.hpp \
+   frontend_analysis/behavior_analysis/op_feedback_edges_computation.hpp \
+   frontend_analysis/behavior_analysis/op_order_computation.hpp \
+   frontend_analysis/behavior_analysis/op_reachability_computation.hpp \
+   frontend_analysis/behavior_analysis/scalar_ssa_data_dependence_computation.hpp \
+   frontend_analysis/behavior_analysis/virtual_aggregate_data_flow_analysis.hpp
+
+
+lib_behavior_analysis_la_SOURCES = \
+   frontend_analysis/behavior_analysis/add_bb_ecfg_edges.cpp \
+   frontend_analysis/behavior_analysis/add_op_exit_flow_edges.cpp \
+   frontend_analysis/behavior_analysis/add_op_loop_flow_edges.cpp \
+   frontend_analysis/behavior_analysis/aggregate_data_flow_analysis.cpp \
+   frontend_analysis/behavior_analysis/bb_cdg_computation.cpp \
+   frontend_analysis/behavior_analysis/bb_feedback_edges_computation.cpp \
+   frontend_analysis/behavior_analysis/bb_order_computation.cpp \
+   frontend_analysis/behavior_analysis/bb_reachability_computation.cpp \
+   frontend_analysis/behavior_analysis/data_dependence_computation.cpp \
+   frontend_analysis/behavior_analysis/dom_post_dom_computation.cpp \
+   frontend_analysis/behavior_analysis/loops_computation.cpp \
+   frontend_analysis/behavior_analysis/memory_data_flow_analysis.cpp \
+   frontend_analysis/behavior_analysis/op_cdg_computation.cpp \
+   frontend_analysis/behavior_analysis/op_feedback_edges_computation.cpp \
+   frontend_analysis/behavior_analysis/op_order_computation.cpp \
+   frontend_analysis/behavior_analysis/op_reachability_computation.cpp \
+   frontend_analysis/behavior_analysis/scalar_ssa_data_dependence_computation.cpp \
+   frontend_analysis/behavior_analysis/virtual_aggregate_data_flow_analysis.cpp
+
+if BUILD_BAMBU
+   noinst_HEADERS += \
+      frontend_analysis/behavior_analysis/AddArtificialCallFlowEdges.hpp \
+      frontend_analysis/behavior_analysis/add_op_phi_flow_edges.hpp
+   lib_behavior_analysis_la_SOURCES += \
+      frontend_analysis/behavior_analysis/AddArtificialCallFlowEdges.cpp \
+      frontend_analysis/behavior_analysis/add_op_phi_flow_edges.cpp
+   lib_behavior_analysis_la_CPPFLAGS += \
+      -I$(top_srcdir)/src/design_flows/technology
+endif
+
+if BUILD_LIB_HOST_PROFILING
+   lib_behavior_analysis_la_CPPFLAGS += \
+      -I$(top_srcdir)/src/constants \
+      -I$(top_srcdir)/src/wrapper/treegcc
+
+   noinst_HEADERS += \
+      frontend_analysis/behavior_analysis/basic_blocks_profiling.hpp \
+      frontend_analysis/behavior_analysis/host_profiling.hpp
+
+   lib_behavior_analysis_la_SOURCES += \
+      frontend_analysis/behavior_analysis/basic_blocks_profiling.cpp \
+      frontend_analysis/behavior_analysis/host_profiling.cpp
+endif
+
+noinst_LTLIBRARIES += lib_IR_analysis.la
+
+lib_IR_analysis_la_CPPFLAGS = \
+   -I$(top_srcdir)/src\
+   -I$(top_srcdir)/src/algorithms/dominance \
+   -I$(top_srcdir)/src/algorithms/loops_detection \
+   -I$(top_srcdir)/src/algorithms/graph_helpers \
+   -I$(top_srcdir)/src/behavior \
+   -I$(top_srcdir)/src/constants \
+   -I$(top_srcdir)/src/design_flows \
+   -I$(top_srcdir)/src/frontend_analysis \
+   -I$(top_srcdir)/src/frontend_analysis/behavior_analysis \
+   -I$(top_srcdir)/src/parser/discrepancy \
+   -I$(top_srcdir)/src/parser/polixml \
+   -I$(top_srcdir)/src/parser/treegcc \
+   -I$(top_srcdir)/src/graph \
+   -I$(top_srcdir)/src/polixml\
+   -I$(top_srcdir)/src/technology/physical_library \
+   -I$(top_srcdir)/src/technology/target_device \
+   -I$(top_srcdir)/src/tree \
+   -I$(top_srcdir)/src/utility \
+   -I$(top_srcdir)/src/wrapper/treegcc \
+   -I$(top_srcdir)/src/HLS \
+   -I$(top_srcdir)/src/HLS/interface \
+   -I$(top_srcdir)/src/HLS/memory \
+   -I$(top_srcdir)/src/HLS/vcd \
+   -I$(BOOST_DIR) $(all_includes)
+
+noinst_HEADERS += \
+   frontend_analysis/IR_analysis/basic_blocks_cfg_computation.hpp \
+   frontend_analysis/IR_analysis/block_fix.hpp \
+   frontend_analysis/IR_analysis/call_expr_fix.hpp \
+   frontend_analysis/IR_analysis/call_graph_computation.hpp \
+   frontend_analysis/IR_analysis/check_system_type.hpp \
+   frontend_analysis/IR_analysis/operations_cfg_computation.hpp \
+   frontend_analysis/IR_analysis/parm2ssa.hpp \
+   frontend_analysis/IR_analysis/string_cst_fix.hpp \
+   frontend_analysis/IR_analysis/switch_fix.hpp \
+   frontend_analysis/IR_analysis/use_counting.hpp \
+   frontend_analysis/IR_analysis/var_computation.hpp \
+   frontend_analysis/IR_analysis/var_decl_fix.hpp
+
+lib_IR_analysis_la_SOURCES = \
+   frontend_analysis/IR_analysis/basic_blocks_cfg_computation.cpp \
+   frontend_analysis/IR_analysis/block_fix.cpp \
+   frontend_analysis/IR_analysis/call_expr_fix.cpp \
+   frontend_analysis/IR_analysis/call_graph_computation.cpp \
+   frontend_analysis/IR_analysis/check_system_type.cpp \
+   frontend_analysis/IR_analysis/operations_cfg_computation.cpp \
+   frontend_analysis/IR_analysis/parm2ssa.cpp \
+   frontend_analysis/IR_analysis/switch_fix.cpp \
+   frontend_analysis/IR_analysis/string_cst_fix.cpp \
+   frontend_analysis/IR_analysis/use_counting.cpp \
+   frontend_analysis/IR_analysis/var_computation.cpp \
+   frontend_analysis/IR_analysis/var_decl_fix.cpp
+
+BUILT_SOURCES =
+
+if BUILD_BAMBU
+  noinst_HEADERS += \
+     frontend_analysis/IR_analysis/bit_lattice.hpp \
+     frontend_analysis/IR_analysis/Bit_Value.hpp \
+     frontend_analysis/IR_analysis/Bit_Value_opt.hpp \
+     frontend_analysis/IR_analysis/BitValueIPA.hpp \
+     frontend_analysis/IR_analysis/call_graph_builtin_call.hpp \
+     frontend_analysis/IR_analysis/compute_implicit_calls.hpp \
+     frontend_analysis/IR_analysis/CSE.hpp \
+     frontend_analysis/IR_analysis/dead_code_elimination.hpp \
+     frontend_analysis/IR_analysis/determine_memory_accesses.hpp \
+     frontend_analysis/IR_analysis/extract_patterns.hpp \
+     frontend_analysis/IR_analysis/fanout_opt.hpp\
+     frontend_analysis/IR_analysis/FixStructsPassedByValue.hpp \
+     frontend_analysis/IR_analysis/FunctionCallTypeCleanup.hpp \
+     frontend_analysis/IR_analysis/hdl_function_decl_fix.hpp \
+     frontend_analysis/IR_analysis/hdl_var_decl_fix.hpp \
+     frontend_analysis/IR_analysis/hls_div_cg_ext.hpp \
+     frontend_analysis/IR_analysis/HWCallInjection.hpp \
+     frontend_analysis/IR_analysis/interface_infer.hpp \
+     frontend_analysis/IR_analysis/ipa_point_to_analysis.hpp\
+     frontend_analysis/IR_analysis/IR_lowering.hpp \
+     frontend_analysis/IR_analysis/loops_analysis_bambu.hpp \
+     frontend_analysis/IR_analysis/lut_transformation.hpp \
+     frontend_analysis/IR_analysis/multi_way_if.hpp \
+     frontend_analysis/IR_analysis/multiple_entry_if_reduction.hpp \
+     frontend_analysis/IR_analysis/mem_cg_ext.hpp \
+     frontend_analysis/IR_analysis/NI_SSA_liveness.hpp \
+     frontend_analysis/IR_analysis/phi_opt.hpp \
+     frontend_analysis/IR_analysis/parm_decl_taken_address_fix.hpp \
+     frontend_analysis/IR_analysis/rebuild_initializations.hpp \
+     frontend_analysis/IR_analysis/remove_clobber_ga.hpp \
+     frontend_analysis/IR_analysis/remove_ending_if.hpp \
+     frontend_analysis/IR_analysis/split_return.hpp \
+     frontend_analysis/IR_analysis/short_circuit_taf.hpp \
+     frontend_analysis/IR_analysis/simple_code_motion.hpp \
+     frontend_analysis/IR_analysis/soft_float_cg_ext.hpp \
+     frontend_analysis/IR_analysis/vectorize.hpp \
+     frontend_analysis/IR_analysis/virtual_phi_nodes_split.hpp\
+     frontend_analysis/IR_analysis/constant_flop_wrapper.hpp
+  lib_IR_analysis_la_SOURCES += \
+     frontend_analysis/IR_analysis/IR_lowering.cpp \
+     frontend_analysis/IR_analysis/IR_lowering_exec.cpp \
+     frontend_analysis/IR_analysis/bit_lattice.cpp \
+     frontend_analysis/IR_analysis/Bit_Value.cpp \
+     frontend_analysis/IR_analysis/Bit_Value_backward.cpp \
+     frontend_analysis/IR_analysis/Bit_Value_forward.cpp \
+     frontend_analysis/IR_analysis/Bit_Value_opt.cpp \
+     frontend_analysis/IR_analysis/BitValueIPA.cpp \
+     frontend_analysis/IR_analysis/call_graph_builtin_call.cpp \
+     frontend_analysis/IR_analysis/compute_implicit_calls.cpp \
+     frontend_analysis/IR_analysis/CSE.cpp \
+     frontend_analysis/IR_analysis/dead_code_elimination.cpp \
+     frontend_analysis/IR_analysis/determine_memory_accesses.cpp \
+     frontend_analysis/IR_analysis/extract_patterns.cpp \
+     frontend_analysis/IR_analysis/fanout_opt.cpp\
+     frontend_analysis/IR_analysis/FixStructsPassedByValue.cpp \
+     frontend_analysis/IR_analysis/FunctionCallTypeCleanup.cpp \
+     frontend_analysis/IR_analysis/hdl_function_decl_fix.cpp \
+     frontend_analysis/IR_analysis/hdl_var_decl_fix.cpp \
+     frontend_analysis/IR_analysis/hls_div_cg_ext.cpp \
+     frontend_analysis/IR_analysis/HWCallInjection.cpp \
+     frontend_analysis/IR_analysis/interface_infer.cpp \
+     frontend_analysis/IR_analysis/ipa_point_to_analysis.cpp\
+     frontend_analysis/IR_analysis/loops_analysis_bambu.cpp \
+     frontend_analysis/IR_analysis/lut_transformation.cpp \
+     frontend_analysis/IR_analysis/multi_way_if.cpp \
+     frontend_analysis/IR_analysis/multiple_entry_if_reduction.cpp \
+     frontend_analysis/IR_analysis/mem_cg_ext.cpp \
+     frontend_analysis/IR_analysis/NI_SSA_liveness.cpp \
+     frontend_analysis/IR_analysis/phi_opt.cpp \
+     frontend_analysis/IR_analysis/parm_decl_taken_address_fix.cpp \
+     frontend_analysis/IR_analysis/rebuild_initializations.cpp \
+     frontend_analysis/IR_analysis/remove_clobber_ga.cpp \
+     frontend_analysis/IR_analysis/remove_ending_if.cpp \
+     frontend_analysis/IR_analysis/split_return.cpp \
+     frontend_analysis/IR_analysis/short_circuit_taf.cpp \
+     frontend_analysis/IR_analysis/simple_code_motion.cpp \
+     frontend_analysis/IR_analysis/soft_float_cg_ext.cpp \
+     frontend_analysis/IR_analysis/vectorize.cpp \
+     frontend_analysis/IR_analysis/virtual_phi_nodes_split.cpp \
+     frontend_analysis/IR_analysis/constant_flop_wrapper.cpp
+   lib_IR_analysis_la_CPPFLAGS += \
+      -I$(top_srcdir)/ext/mockturtle/include/\
+      -I$(top_srcdir)/ext/mockturtle/lib/kitty/\
+      -I$(top_srcdir)/ext/mockturtle/lib/fmt/\
+      -I$(top_srcdir)/ext/mockturtle/lib/sparsepp\
+      -I$(top_srcdir)/ext/mockturtle/lib/ez\
+      -I$(top_srcdir)/ext/mockturtle/lib/lorina\
+      -I$(top_srcdir)/ext/mockturtle/lib/rang\
+      -I$(top_srcdir)/ext/mockturtle/lib/percy\
+      -I$(top_srcdir)/ext/mockturtle/lib/abcsat\
+      -I$(top_srcdir)/src/circuit \
+      -I$(top_srcdir)/src/design_flows/backend/ToHDL \
+      -I$(top_srcdir)/src/design_flows/technology \
+      -I$(top_srcdir)/src/frontend_analysis/IR_analysis\
+      -I$(top_srcdir)/src/HLS \
+      -I$(top_srcdir)/src/HLS/scheduling \
+      -I$(top_srcdir)/src/intermediate_representations \
+      -I$(top_srcdir)/src/intermediate_representations/hls \
+      -I$(top_srcdir)/src/technology \
+      -I$(top_srcdir)/src/technology/physical_library/models
+if BUILD_MOCKTURTLE
+   lib_IR_analysis_la_LIBADD = \
+      $(top_builddir)/ext/lib_mockturtle.la
+endif
+
+if BUILD_LIB_ILP
+   noinst_HEADERS += \
+      frontend_analysis/IR_analysis/update_schedule.hpp
+   lib_IR_analysis_la_SOURCES += \
+      frontend_analysis/IR_analysis/update_schedule.cpp
+   lib_IR_analysis_la_CPPFLAGS += \
+         -I$(top_srcdir)/src/HLS/module_allocation
+endif
+
+endif
+
+frontend_analysis/IR_analysis/update_rtl_weights.cpp : frontend_analysis/IR_analysis/rtl_weights_constant.data frontend_analysis/IR_analysis/rtl_weights_symbolic.data
+
+#The tab in this rule can't be replaced by blanks
+frontend_analysis/IR_analysis/rtl_weights_constant.data: $(top_srcdir)/etc/weight-models/rtl_weights_constant.xml
+	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/weight-models/rtl_weights_constant.xml frontend_analysis/IR_analysis/rtl_weights_constant.data
+
+frontend_analysis/IR_analysis/rtl_weights_symbolic.data: $(top_srcdir)/etc/weight-models/rtl_weights_symbolic.xml
+	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/weight-models/rtl_weights_symbolic.xml frontend_analysis/IR_analysis/rtl_weights_symbolic.data
+
+if BUILD_LIB_FROM_PRAGMA
+  noinst_HEADERS += \
+       frontend_analysis/IR_analysis/extract_omp_atomic.hpp \
+       frontend_analysis/IR_analysis/extract_omp_for.hpp \
+       frontend_analysis/IR_analysis/pragma_analysis.hpp
+  lib_IR_analysis_la_SOURCES += \
+       frontend_analysis/IR_analysis/extract_omp_atomic.cpp \
+       frontend_analysis/IR_analysis/extract_omp_for.cpp \
+       frontend_analysis/IR_analysis/pragma_analysis.cpp
+  lib_IR_analysis_la_CPPFLAGS += \
+     -I$(top_srcdir)/src/parser/pragma \
+     -I$(top_srcdir)/src/pragma
+endif
+
+
+frontend_analysis/IR_analysis/update_tree_weight.cpp : frontend_analysis/IR_analysis/tree_weights_constant.data frontend_analysis/IR_analysis/tree_weights_symbolic.data
+
+
+#The tab in this rule can't be replaced by blanks
+frontend_analysis/IR_analysis/tree_weights_constant.data: $(top_srcdir)/etc/weight-models/tree_weights_constant.xml
+	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/weight-models/tree_weights_constant.xml frontend_analysis/IR_analysis/tree_weights_constant.data
+
+frontend_analysis/IR_analysis/tree_weights_symbolic.data: $(top_srcdir)/etc/weight-models/tree_weights_symbolic.xml
+	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/weight-models/tree_weights_symbolic.xml frontend_analysis/IR_analysis/tree_weights_symbolic.data
+
+CLEANFILES = $(BUILT_SOURCES)
+
+noinst_LTLIBRARIES += lib_IR_manipulation.la
+
+lib_IR_manipulation_la_CPPFLAGS = \
+   -I$(top_srcdir)/src \
+   -I$(top_srcdir)/src/algorithms/dominance \
+   -I$(top_srcdir)/src/algorithms/loops_detection \
+   -I$(top_srcdir)/src/behavior \
+   -I$(top_srcdir)/src/constants \
+   -I$(top_srcdir)/src/design_flows \
+   -I$(top_srcdir)/src/frontend_analysis \
+   -I$(top_srcdir)/src/graph \
+   -I$(top_srcdir)/src/parser/treegcc \
+   -I$(top_srcdir)/src/rtl \
+   -I$(top_srcdir)/src/tree \
+   -I$(top_srcdir)/src/utility \
+   -I$(top_srcdir)/src/utility/probability_distribution \
+   -I$(top_srcdir)/src/wrapper/treegcc \
+   -I$(BOOST_DIR) $(all_includes)
+
+if BUILD_LIB_FROM_PRAGMA
+  lib_IR_manipulation_la_CPPFLAGS += \
+   -I$(top_srcdir)/src/pragma
+if BUILD_LIB_CODESIGN
+if BUILD_LIB_PARTITIONING
+if BUILD_LIB_GRAPH_PARTITIONING
+  lib_IR_manipulation_la_CPPFLAGS += \
+   -I$(top_srcdir)/src/design_flows/codesign/partitioning/graph_partitioning
+endif
+endif
+endif
+endif
+
+noinst_HEADERS += \
+   frontend_analysis/IR_manipulation/build_virtual_phi.hpp \
+   frontend_analysis/IR_manipulation/clean_virtual_phi.hpp \
+   frontend_analysis/IR_manipulation/create_tree_manager.hpp
+
+lib_IR_manipulation_la_SOURCES = \
+   frontend_analysis/IR_manipulation/build_virtual_phi.cpp \
+   frontend_analysis/IR_manipulation/clean_virtual_phi.cpp \
+   frontend_analysis/IR_manipulation/create_tree_manager.cpp
+
+if BUILD_BAMBU
+   noinst_HEADERS += \
+      frontend_analysis/IR_manipulation/cond_expr_restructuring.hpp \
+      frontend_analysis/IR_manipulation/commutative_expr_restructuring.hpp \
+      frontend_analysis/IR_manipulation/extract_gimple_cond_op.hpp \
+      frontend_analysis/IR_manipulation/predicate_statements.hpp \
+      frontend_analysis/IR_manipulation/serialize_mutual_exclusions.hpp \
+      frontend_analysis/IR_manipulation/un_comparison_lowering.hpp
+   lib_IR_manipulation_la_SOURCES += \
+      frontend_analysis/IR_manipulation/cond_expr_restructuring.cpp \
+      frontend_analysis/IR_manipulation/commutative_expr_restructuring.cpp \
+      frontend_analysis/IR_manipulation/extract_gimple_cond_op.cpp \
+      frontend_analysis/IR_manipulation/predicate_statements.cpp \
+      frontend_analysis/IR_manipulation/serialize_mutual_exclusions.cpp \
+      frontend_analysis/IR_manipulation/un_comparison_lowering.cpp
+   lib_IR_manipulation_la_CPPFLAGS += \
+      -I$(top_srcdir)/src/intermediate_representations \
+      -I$(top_srcdir)/src/intermediate_representations/hls
+if BUILD_LIB_FROM_AADL_ASN
+   lib_IR_manipulation_la_CPPFLAGS += \
+      -I$(top_srcdir)/src/parser
+endif
+if BUILD_LIB_ILP
+  lib_IR_manipulation_la_CPPFLAGS += \
+   -I$(top_srcdir)/src/HLS/ \
+   -I$(top_srcdir)/src/HLS/binding/module \
+   -I$(top_srcdir)/src/HLS/module_allocation \
+   -I$(top_srcdir)/src/HLS/scheduling
+
+
+if BUILD_LIB_ILP
+   noinst_HEADERS += \
+      frontend_analysis/IR_manipulation/sdc_code_motion.hpp
+   lib_IR_manipulation_la_SOURCES += \
+      frontend_analysis/IR_manipulation/sdc_code_motion.cpp
+  lib_IR_manipulation_la_CPPFLAGS += \
+   -I$(top_srcdir)/src/frontend_analysis/IR_analysis \
+   -I$(top_srcdir)/src/HLS \
+   -I$(top_srcdir)/src/HLS/module_allocation \
+   -I$(top_srcdir)/src/HLS/scheduling
+endif
+endif
+endif
+
+noinst_LTLIBRARIES += lib_frontend_analysis.la
+noinst_HEADERS += \
+   frontend_analysis/application_frontend_flow_step.hpp \
+   frontend_analysis/complete_bb_graph.hpp \
+   frontend_analysis/complete_call_graph.hpp \
+   frontend_analysis/frontend_flow_step_factory.hpp \
+   frontend_analysis/frontend_flow_step.hpp \
+   frontend_analysis/function_frontend_flow_step.hpp \
+   frontend_analysis/symbolic_application_frontend_flow_step.hpp
+
+lib_frontend_analysis_la_CPPFLAGS = \
+   -I$(top_srcdir)/src \
+   -I$(top_srcdir)/src/behavior \
+   -I$(top_srcdir)/src/design_flows \
+   -I$(top_srcdir)/src/frontend_analysis \
+   -I$(top_srcdir)/src/frontend_analysis/behavior_analysis \
+   -I$(top_srcdir)/src/frontend_analysis/IR_analysis \
+   -I$(top_srcdir)/src/frontend_analysis/IR_manipulation \
+   -I$(top_srcdir)/src/frontend_analysis/source_code_manipulation \
+   -I$(top_srcdir)/src/graph \
+   -I$(top_srcdir)/src/tree \
+   -I$(top_srcdir)/src/utility \
+   -I$(BOOST_DIR) $(all_includes)
+
+lib_frontend_analysis_la_SOURCES = \
+   frontend_analysis/application_frontend_flow_step.cpp \
+   frontend_analysis/complete_bb_graph.cpp \
+   frontend_analysis/complete_call_graph.cpp \
+   frontend_analysis/frontend_flow_step_factory.cpp \
+   frontend_analysis/frontend_flow_step.cpp \
+   frontend_analysis/function_frontend_flow_step.cpp \
+   frontend_analysis/symbolic_application_frontend_flow_step.cpp
+
+lib_frontend_analysis_la_LIBADD = lib_behavior_analysis.la lib_IR_analysis.la lib_IR_manipulation.la
+
+if BUILD_BAMBU
+   lib_frontend_analysis_la_SOURCES += \
+      frontend_analysis/bambu_frontend_flow.cpp
+   noinst_HEADERS += \
+      frontend_analysis/bambu_frontend_flow.hpp
+   lib_frontend_analysis_la_CPPFLAGS += \
+      -I$(top_srcdir)/src/design_flows/backend/ToHDL \
+      -I$(top_srcdir)/src/HLS \
+      -I$(top_srcdir)/src/HLS/module_allocation \
+      -I$(top_srcdir)/src/technology \
+      -I$(top_srcdir)/src/technology/target_device
+endif
+
+if BUILD_BAMBU
+   lib_frontend_analysis_la_CPPFLAGS += \
+      -I$(top_srcdir)/src/constants
+   noinst_HEADERS += \
+      frontend_analysis/find_max_cfg_transformations.hpp
+   lib_frontend_analysis_la_SOURCES += \
+      frontend_analysis/find_max_cfg_transformations.cpp
+endif
+
+if BUILD_LIB_CODE_ESTIMATION
+   lib_frontend_analysis_la_CPPFLAGS += \
+      -I$(top_srcdir)/src/utility/probability_distribution
+endif
+
+if BUILD_LIB_RTL
+   lib_frontend_analysis_la_CPPFLAGS += \
+      -I$(top_srcdir)/src/rtl
+endif
+
+if BUILD_SOURCE_CODE_MANIPULATION
+noinst_LTLIBRARIES += lib_source_code_manipulation.la
+
+lib_source_code_manipulation_la_CPPFLAGS = \
+   -I$(top_srcdir)/src \
+   -I$(top_srcdir)/src/algorithms/dominance \
+   -I$(top_srcdir)/src/behavior \
+   -I$(top_srcdir)/src/constants \
+   -I$(top_srcdir)/src/design_flows \
+   -I$(top_srcdir)/src/frontend_analysis \
+   -I$(top_srcdir)/src/graph \
+   -I$(top_srcdir)/src/parser/pragma \
+   -I$(top_srcdir)/src/utility \
+   -I$(BOOST_DIR) $(all_includes)
+
+lib_source_code_manipulation_la_SOURCES =
+
+if BUILD_LIB_FROM_PRAGMA
+noinst_HEADERS += \
+   frontend_analysis/source_code_manipulation/pragma_substitution.hpp
+
+lib_source_code_manipulation_la_SOURCES += \
+   frontend_analysis/source_code_manipulation/pragma_substitution.cpp
+endif
+
+if BUILD_TASTE
+lib_source_code_manipulation_la_CPPFLAGS += \
+   -I$(top_srcdir)/src/HLS \
+   -I$(top_srcdir)/src/intermediate_representations/aadl_asn \
+   -I$(top_srcdir)/src/tree
+noinst_HEADERS += \
+   frontend_analysis/source_code_manipulation/create_address_translation.hpp
+lib_source_code_manipulation_la_SOURCES += \
+   frontend_analysis/source_code_manipulation/create_address_translation.cpp
+endif
+
+   lib_frontend_analysis_la_LIBADD += lib_source_code_manipulation.la
+endif
+
+
