@@ -1,5 +1,6 @@
 #this file is src/parser/Makefile.am
 METASOURCES = AUTO
+AM_CPPFLAGS = $(all_includes) -I$(BOOST_DIR) -I$(ABSEIL_DIR)
 
 SUBDIRS =
 DIST_SUBDIRS =
@@ -24,7 +25,7 @@ lib_parser_la_CPPFLAGS = \
    -I$(top_srcdir)/src/design_flows \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/utility \
-    -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 
 if BUILD_LIB_FROM_AADL_ASN
   SUBDIRS += aadl asn

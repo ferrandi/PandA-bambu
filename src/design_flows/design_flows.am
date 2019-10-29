@@ -7,7 +7,7 @@ lib_design_flows_la_CPPFLAGS = \
    -I$(top_srcdir)/src/constants \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 
 if BUILD_LIB_BACKEND
   noinst_LTLIBRARIES += lib_backend.la 
@@ -31,7 +31,7 @@ if BUILD_LIB_TO_C
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
   noinst_HEADERS += \
     design_flows/backend/ToC/progModels/actor_graph_backend.hpp
   lib_progModel_la_SOURCES = \
@@ -74,8 +74,8 @@ endif
    -I$(top_srcdir)/src/parser/discrepancy \
    -I$(top_srcdir)/src/technology/physical_library/ \
    -I$(top_srcdir)/src/technology/physical_library/models/ \
-   -I$(top_srcdir)/src/technology/target_device/ \
-   -I$(BOOST_DIR) $(all_includes)
+   -I$(top_srcdir)/src/technology/target_device \
+   $(AM_CPPFLAGS)
   noinst_HEADERS += design_flows/backend/ToC/source_code_writers/c_writer.hpp design_flows/backend/ToC/source_code_writers/instruction_writer.hpp
   lib_source_code_writers_la_SOURCES = design_flows/backend/ToC/source_code_writers/c_writer.cpp design_flows/backend/ToC/source_code_writers/instruction_writer.cpp
 
@@ -123,7 +123,7 @@ endif
    -I$(top_srcdir)/src/design_flows/backend/ToC/source_code_writers \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
   lib_ToC_la_SOURCES = \
    design_flows/backend/ToC/c_backend_information.cpp \
    design_flows/backend/ToC/c_backend_step_factory.cpp
@@ -170,8 +170,7 @@ if BUILD_LIB_TO_HDL
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/HLS/stg \
-   -I$(BOOST_DIR) \
-   $(all_includes)
+   $(AM_CPPFLAGS)
   noinst_HEADERS += design_flows/backend/ToHDL/writer/verilog_writer.hpp design_flows/backend/ToHDL/writer/sv_writer.hpp design_flows/backend/ToHDL/writer/VHDL_writer.hpp
   lib_HDL_writers_la_SOURCES = design_flows/backend/ToHDL/writer/verilog_writer.cpp design_flows/backend/ToHDL/writer/sv_writer.cpp design_flows/backend/ToHDL/writer/VHDL_writer.cpp
 
@@ -190,7 +189,7 @@ if BUILD_LIB_TO_HDL
                         -I$(top_srcdir)/src/technology/target_device \
                         -I$(top_srcdir)/src/technology/target_device/FPGA \
                         -I$(top_srcdir)/src/utility \
-                        -I$(BOOST_DIR) $(all_includes)
+                        $(AM_CPPFLAGS)
 if BUILD_FLOPOCO
   lib_ToHDL_la_CPPFLAGS += -I$(top_srcdir)/src/wrapper/flopoco
 endif
@@ -217,7 +216,7 @@ if BUILD_LIB_TO_DATAFILE
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/utility/probability_distribution \
    -I$(top_builddir)/src/design_flows/backend/ToDataFile \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 
 if BUILD_LIB_HLS
   lib_ToDataFile_la_CPPFLAGS += \
@@ -319,7 +318,7 @@ endif
    -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/utility \
    -I$(top_builddir)/src/design_flows/technology \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 design_flows/technology/load_default_technology.cpp : design_flows/technology/C_COMPLEX_IPs.data design_flows/technology/C_FP_IPs.data design_flows/technology/C_HLS_IPs.data design_flows/technology/C_IO_IPs.data design_flows/technology/C_MEM_IPs.data \
     design_flows/technology/C_PROFILING_IPs.data design_flows/technology/CS_COMPONENT.data design_flows/technology/C_STD_IPs.data design_flows/technology/C_VEC_IPs.data design_flows/technology/NC_HLS_IPs.data design_flows/technology/NC_MEM_IPs.data design_flows/technology/NC_PC_IPs.data\
     design_flows/technology/NC_SF_IPs.data design_flows/technology/NC_STD_IPs.data design_flows/technology/NC_VEC_IPs.data design_flows/technology/NC_wishbone_IPs.data

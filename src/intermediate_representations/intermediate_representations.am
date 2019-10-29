@@ -8,7 +8,7 @@ lib_intermediate_representations_la_LIBADD =
 lib_intermediate_representations_la_CPPFLAGS = \
     -I$(top_srcdir)/src/ \
     -I$(top_srcdir)/src/utility \
-    -I$(BOOST_DIR) $(all_includes)
+    $(AM_CPPFLAGS)
 
 if BUILD_LIB_ACTOR_GRAPHS
    SUBDIRS += intermediate_representations/actor_graphs
@@ -20,7 +20,7 @@ if BUILD_LIB_FROM_AADL_ASN
   noinst_LTLIBRARIES += lib_aadl_asn.la
   lib_aadl_asn_la_CPPFLAGS = \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
   noinst_HEADERS += \
    intermediate_representations/aadl_asn/aadl_information.hpp \
    intermediate_representations/aadl_asn/asn_type.hpp
@@ -43,7 +43,7 @@ if BUILD_LIB_HLS
     -I$(top_srcdir)/src/HLS \
     -I$(top_srcdir)/src/intermediate_representations \
     -I$(top_srcdir)/src/utility \
-    -I$(BOOST_DIR) $(all_includes)
+    $(AM_CPPFLAGS)
   lib_hls_la_SOURCES = \
    intermediate_representations/hls/hls_function_ir.cpp \
    intermediate_representations/hls/hls_ir.cpp

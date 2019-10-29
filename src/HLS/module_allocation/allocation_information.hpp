@@ -327,7 +327,8 @@ class AllocationInformation : public HLSFunctionIR
     * @param allocation_information is a reference to an instance of this class
     * @return the pair mux_timing_db, mux_area_db
     */
-   static const std::pair<const CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>>&, const CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>>&> InitializeMuxDB(const AllocationInformationConstRef allocation_information);
+   static const std::pair<const CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>>&, const CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>>&>
+   InitializeMuxDB(const AllocationInformationConstRef allocation_information);
 
    /**
     * Compute the values for the initialization of the DSP characteristics database

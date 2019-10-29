@@ -1,6 +1,6 @@
 # Makefile for flopoco/src
-SUBDIRS = 
-DIST_SUBDIRS =
+AUTOMAKE_OPTIONS = subdir-objects
+METASOURCES = AUTO
 
 EXTRA_DIST = \
              absl/algorithm/algorithm_test.cc absl/algorithm/BUILD.bazel absl/algorithm/CMakeLists.txt absl/algorithm/container_test.cc absl/algorithm/equal_benchmark.cc \

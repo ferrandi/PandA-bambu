@@ -19,7 +19,7 @@ lib_behavior_analysis_la_CPPFLAGS = \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/HLS \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 
 noinst_HEADERS += \
    frontend_analysis/behavior_analysis/add_bb_ecfg_edges.hpp \
@@ -113,7 +113,7 @@ lib_IR_analysis_la_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS/interface \
    -I$(top_srcdir)/src/HLS/memory \
    -I$(top_srcdir)/src/HLS/vcd \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 
 noinst_HEADERS += \
    frontend_analysis/IR_analysis/basic_blocks_cfg_computation.hpp \
@@ -316,7 +316,7 @@ lib_IR_manipulation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/utility/probability_distribution \
    -I$(top_srcdir)/src/wrapper/treegcc \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 
 if BUILD_LIB_FROM_PRAGMA
   lib_IR_manipulation_la_CPPFLAGS += \
@@ -407,7 +407,7 @@ lib_frontend_analysis_la_CPPFLAGS = \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 
 lib_frontend_analysis_la_SOURCES = \
    frontend_analysis/application_frontend_flow_step.cpp \
@@ -465,7 +465,7 @@ lib_source_code_manipulation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/parser/pragma \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 
 lib_source_code_manipulation_la_SOURCES =
 

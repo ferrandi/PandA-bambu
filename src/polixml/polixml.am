@@ -3,5 +3,5 @@ noinst_HEADERS += polixml/xml_att_decl_node.hpp polixml/xml_attribute.hpp polixm
 lib_polixml_la_SOURCES = polixml/xml_node.cpp
 lib_polixml_la_CPPFLAGS = \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 

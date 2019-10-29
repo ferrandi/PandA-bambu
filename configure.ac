@@ -1311,7 +1311,6 @@ if test "x$panda_USE_ABSEIL" = xyes; then
    AC_DEFINE(HAVE_ABSEIL, 1, "Define if abseil is used")
    ABSEIL_DIR="$TOPSRCDIR/ext/abseil-cpp"
    ABSEIL_OBJDIR="ext/abseil-cpp"
-   CXXFLAGS+=" -I$ABSEIL_DIR "
 fi
 AM_CONDITIONAL(BUILD_ABSEIL, test "x$panda_USE_ABSEIL" = xyes)
 AC_SUBST(ABSEIL_DIR)

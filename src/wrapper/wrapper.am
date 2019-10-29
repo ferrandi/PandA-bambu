@@ -5,7 +5,7 @@ lib_wrapper_la_CPPFLAGS = \
     -I$(top_srcdir)/src \
     -I$(top_srcdir)/src/constants \
     -I$(top_srcdir)/src/utility \
-    -I$(BOOST_DIR) $(all_includes)
+    $(AM_CPPFLAGS)
 
 lib_wrapper_la_SOURCES = wrapper/ToolManager.cpp
 lib_wrapper_la_LIBADD =
@@ -24,7 +24,7 @@ if BUILD_LIB_FROM_C
     -I$(top_srcdir)/src/polixml \
     -I$(top_srcdir)/src/tree \
     -I$(top_srcdir)/src/utility \
-    -I$(BOOST_DIR) $(all_includes)
+    $(AM_CPPFLAGS)
 if BUILD_LIB_RTL
     lib_treegccwrapper_la_CPPFLAGS += -I$(top_srcdir)/src/rtl\
       -I$(top_srcdir)/src/parser/rtlgcc
@@ -52,7 +52,7 @@ if BUILD_SIMULATION
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper/simulation \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
   lib_verilatorwrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
   noinst_HEADERS += wrapper/simulation/verilator/VerilatorWrapper.hpp
   lib_verilatorwrapper_la_SOURCES = wrapper/simulation/verilator/VerilatorWrapper.cpp
@@ -67,7 +67,7 @@ if BUILD_SIMULATION
     -I$(top_srcdir)/src/utility \
     -I$(top_srcdir)/src/wrapper \
     -I$(top_srcdir)/src/wrapper/simulation \
-    -I$(BOOST_DIR) $(all_includes) 
+    $(AM_CPPFLAGS)
   lib_isimwrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
   noinst_HEADERS += wrapper/simulation/isim/ISE_isim_wrapper.hpp
   lib_isimwrapper_la_SOURCES = wrapper/simulation/isim/ISE_isim_wrapper.cpp
@@ -82,7 +82,7 @@ if BUILD_SIMULATION
     -I$(top_srcdir)/src/utility \
     -I$(top_srcdir)/src/wrapper \
     -I$(top_srcdir)/src/wrapper/simulation \
-    -I$(BOOST_DIR) $(all_includes)
+    $(AM_CPPFLAGS)
   lib_xsimwrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
   noinst_HEADERS += wrapper/simulation/xsim/VIVADO_xsim_wrapper.hpp
   lib_xsimwrapper_la_SOURCES = wrapper/simulation/xsim/VIVADO_xsim_wrapper.cpp
@@ -95,7 +95,7 @@ if BUILD_SIMULATION
     -I$(top_srcdir)/src/wrapper/simulation \
     -I$(top_srcdir)/src/design_flows/backend/ToHDL \
     -I$(top_srcdir)/src/utility \
-    -I$(BOOST_DIR) $(all_includes)
+    $(AM_CPPFLAGS)
   lib_modelsimwrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
   noinst_HEADERS += wrapper/simulation/modelsim/modelsimWrapper.hpp
   lib_modelsimwrapper_la_SOURCES = wrapper/simulation/modelsim/modelsimWrapper.cpp
@@ -110,7 +110,7 @@ if BUILD_SIMULATION
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper/simulation \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
   lib_icaruswrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
   noinst_HEADERS += wrapper/simulation/icarus/IcarusWrapper.hpp
   lib_icaruswrapper_la_SOURCES = wrapper/simulation/icarus/IcarusWrapper.cpp 
@@ -127,7 +127,7 @@ if BUILD_SIMULATION
    -I$(top_srcdir)/src/wrapper/simulation/isim \
    -I$(top_srcdir)/src/wrapper/simulation/xsim \
    -I$(top_srcdir)/src/wrapper/simulation/verilator \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
   noinst_HEADERS += wrapper/simulation/SimulationTool.hpp
   lib_simulation_la_SOURCES = wrapper/simulation/SimulationTool.cpp
   lib_simulation_la_LIBADD = \
@@ -171,7 +171,7 @@ if BUILD_SYNTHESIS
     -I$(top_srcdir)/src/wrapper/simulation/modelsim \
     -I$(top_srcdir)/src/wrapper/synthesis \
     -I$(top_builddir)/src/wrapper/synthesis/nanoxplore \
-    -I$(BOOST_DIR) $(all_includes)
+    $(AM_CPPFLAGS)
   lib_NanoXplorewrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
 wrapper/synthesis/nanoxplore/NanoXploreBackendFlow.cpp : wrapper/synthesis/nanoxplore/NG-medium.data wrapper/synthesis/nanoxplore/NG-large.data
 #The tab in this rule can't be replaced by blanks
@@ -213,7 +213,7 @@ lib_Alterawrapper_la_CPPFLAGS = \
     -I$(top_srcdir)/src/wrapper/simulation/modelsim \
     -I$(top_srcdir)/src/wrapper/synthesis \
     -I$(top_builddir)/src/wrapper/synthesis/altera \
-    -I$(BOOST_DIR) $(all_includes)
+    $(AM_CPPFLAGS)
 
 lib_Alterawrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
 
@@ -270,7 +270,7 @@ lib_xilinx_ise_la_CPPFLAGS = \
     -I$(top_srcdir)/src/wrapper/synthesis/xilinx \
     -I$(top_srcdir)/src/wrapper/simulation/modelsim \
     -I$(top_builddir)/src/wrapper/synthesis/xilinx \
-    -I$(BOOST_DIR) $(all_includes)
+    $(AM_CPPFLAGS)
 lib_xilinx_ise_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
 noinst_HEADERS += wrapper/synthesis/xilinx/ise/xst_wrapper.hpp \
                  wrapper/synthesis/xilinx/ise/ngdbuild_wrapper.hpp \
@@ -306,7 +306,7 @@ lib_Xilinxwrapper_la_CPPFLAGS = \
    -I$(top_srcdir)/src/wrapper/synthesis/xilinx \
    -I$(top_srcdir)/src/wrapper/synthesis/xilinx/ise \
    -I$(top_builddir)/src/wrapper/synthesis/xilinx \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 
 lib_Xilinxwrapper_la_LIBADD = lib_xilinx_ise.la 
 
@@ -380,7 +380,7 @@ endif
     -I$(top_srcdir)/src/wrapper/simulation/modelsim \
     -I$(top_srcdir)/src/wrapper/synthesis \
     -I$(top_builddir)/src/wrapper/synthesis/lattice \
-    -I$(BOOST_DIR) $(all_includes)
+    $(AM_CPPFLAGS)
   lib_Latticewrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
 
 wrapper/synthesis/lattice/LatticeBackendFlow.cpp : wrapper/synthesis/lattice/LatticeECP3.data
@@ -412,7 +412,7 @@ wrapper/synthesis/lattice/LatticeECP3.data: $(top_srcdir)/etc/devices/Lattice_de
                  -I$(top_srcdir)/src/wrapper/synthesis \
                  -I$(top_srcdir)/src/wrapper/synthesis/synopsys \
                  -I$(top_srcdir)/src/utility \
-                 -I$(BOOST_DIR) $(all_includes)
+                 $(AM_CPPFLAGS)
   noinst_HEADERS += wrapper/synthesis/synopsys/design_compiler/DesignCompilerWrapper.hpp
   lib_designcompiler_la_SOURCES = wrapper/synthesis/synopsys/design_compiler/DesignCompilerWrapper.cpp
 
@@ -429,7 +429,7 @@ endif
                                  -I$(top_srcdir)/src/wrapper/synthesis \
                                  -I$(top_srcdir)/src/wrapper/synthesis/synopsys \
                                  -I$(top_srcdir)/src/wrapper/synthesis/synopsys/design_compiler \
-                                 -I$(BOOST_DIR) $(all_includes)
+                                 $(AM_CPPFLAGS)
 
   lib_Synopsyswrapper_la_LIBADD = lib_designcompiler.la
   noinst_HEADERS += wrapper/synthesis/synopsys/SynopsysWrapper.hpp
@@ -465,7 +465,7 @@ endif
                  -I$(top_srcdir)/src/technology \
                  -I$(top_srcdir)/src/technology/physical_library \
                  -I$(top_srcdir)/src/utility \
-                 -I$(BOOST_DIR) $(all_includes)
+                 $(AM_CPPFLAGS)
   noinst_HEADERS += wrapper/synthesis/xml_script_command.hpp \
                  wrapper/synthesis/DesignParameters.hpp \
                  wrapper/synthesis/BackendFlow.hpp \
@@ -502,9 +502,9 @@ lib_flopocowrapper_la_CPPFLAGS = \
     -I$(top_srcdir)/src/utility \
     -I$(top_srcdir)/src/technology/physical_library \
     -I$(top_srcdir)/src/technology/target_device \
-    -I$(FLOPOCO_OBJDIR)/ \
-    -I$(FLOPOCO_DIR)/src/ \
-    -I$(BOOST_DIR) $(all_includes)
+    -I$(FLOPOCO_OBJDIR) \
+    -I$(FLOPOCO_DIR)/src \
+    $(AM_CPPFLAGS)
   lib_wrapper_la_LIBADD += lib_flopocowrapper.la
 endif
 

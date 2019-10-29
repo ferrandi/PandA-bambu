@@ -1,6 +1,6 @@
 #this file is src/HLS/Makefile.am
 METASOURCES = AUTO
-AUTOMAKE_OPTIONS = subdir-objects
+AM_CPPFLAGS = $(all_includes) -I$(BOOST_DIR) -I$(ABSEIL_DIR)
 noinst_LTLIBRARIES =
 noinst_HEADERS =
 PRJ_DOC =
@@ -37,7 +37,7 @@ lib_controller_creation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 noinst_HEADERS += \
    architecture_creation/controller_creation/controller_creator_base_step.hpp \
    architecture_creation/controller_creation/control_flow_checker.hpp \
@@ -77,7 +77,7 @@ lib_datapath_creation_la_CPPFLAGS =  \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/HLS/function_allocation \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 
 noinst_HEADERS += architecture_creation/datapath_creation/datapath_creator.hpp architecture_creation/datapath_creation/classic_datapath.hpp architecture_creation/datapath_creation/datapath_cs.hpp architecture_creation/datapath_creation/datapath_parallel_cs.hpp
 lib_datapath_creation_la_SOURCES = architecture_creation/datapath_creation/datapath_creator.cpp architecture_creation/datapath_creation/classic_datapath.cpp architecture_creation/datapath_creation/datapath_cs.cpp architecture_creation/datapath_creation/datapath_parallel_cs.cpp
@@ -114,7 +114,7 @@ lib_architecture_creation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 
 lib_architecture_creation_la_LIBADD = lib_datapath_creation.la lib_controller_creation.la
 
@@ -138,7 +138,7 @@ lib_hls_backend_la_CPPFLAGS = \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper/synthesis \
    -I$(top_srcdir)/src/wrapper/simulation \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 
 noinst_HEADERS += backend/generate_hdl.hpp
 lib_hls_backend_la_SOURCES = backend/generate_hdl.cpp
@@ -186,7 +186,7 @@ lib_register_algorithms_la_CPPFLAGS = \
    -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+    $(AM_CPPFLAGS)
 noinst_HEADERS += binding/register/algorithms/conflict_based_register.hpp binding/register/algorithms/vertex_coloring_register.hpp \
                  binding/register/algorithms/compatibility_based_register.hpp \
                  binding/register/algorithms/chordal_coloring_register.hpp binding/register/algorithms/network_flow.hpp binding/register/algorithms/unique_binding_register.hpp binding/register/algorithms/weighted_clique_register.hpp
@@ -219,7 +219,7 @@ lib_registerbinding_la_CPPFLAGS = \
     -I$(top_srcdir)/src/tree \
     -I$(top_srcdir)/src/utility \
     -I$(top_srcdir)/src/HLS/function_allocation \
-    -I$(BOOST_DIR) $(all_includes)
+    $(AM_CPPFLAGS)
 noinst_HEADERS += binding/register/reg_binding.hpp binding/register/reg_binding_creator.hpp binding/register/Variable.hpp binding/register/reg_binding_cs.hpp
 lib_registerbinding_la_SOURCES = binding/register/reg_binding.cpp binding/register/reg_binding_creator.cpp binding/register/reg_binding_cs.cpp
 lib_registerbinding_la_LIBADD = lib_register_algorithms.la
@@ -258,7 +258,8 @@ lib_interconnectionbinding_la_CPPFLAGS = \
    -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/wrapper/flopoco \
-   -I$(top_srcdir)/src/utility -I$(BOOST_DIR) $(all_includes)
+   -I$(top_srcdir)/src/utility \
+   $(AM_CPPFLAGS)
 noinst_HEADERS += binding/interconnection/conn_binding_creator.hpp binding/interconnection/connection_obj.hpp \
                   binding/interconnection/conn_binding.hpp binding/interconnection/port_swapping.hpp binding/interconnection/mux_connection_binding.hpp\
                   binding/interconnection/direct_conn.hpp binding/interconnection/mux_conn.hpp binding/interconnection/conn_binding_cs.hpp \
@@ -302,7 +303,7 @@ lib_modulebinding_la_CPPFLAGS = \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper/flopoco \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 noinst_HEADERS += binding/module/fu_binding.hpp binding/module/fu_binding_creator.hpp binding/module/easy_module_binding.hpp binding/module/unique_binding.hpp \
                   binding/module/cdfc_module_binding.hpp binding/module/module_binding_check.hpp binding/module/fu_binding_cs.hpp binding/module/parallel_memory_fu_binding.hpp
 lib_modulebinding_la_SOURCES = binding/module/fu_binding.cpp binding/module/fu_binding_creator.cpp binding/module/easy_module_binding.cpp binding/module/unique_binding.cpp \
@@ -322,7 +323,7 @@ lib_storage_value_insertion_la_CPPFLAGS = \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 noinst_HEADERS += binding/storage_value_insertion/storage_value_information.hpp binding/storage_value_insertion/storage_value_insertion.hpp binding/storage_value_insertion/values_scheme.hpp
 lib_storage_value_insertion_la_SOURCES = binding/storage_value_insertion/storage_value_information.cpp binding/storage_value_insertion/storage_value_insertion.cpp binding/storage_value_insertion/values_scheme.cpp
 
@@ -347,7 +348,7 @@ lib_hls_chaining_la_CPPFLAGS = \
    -I$(top_srcdir)/src/intermediate_representations \
    -I$(top_srcdir)/src/intermediate_representations/hls \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 
 noinst_HEADERS +=  chaining/chaining.hpp chaining/sched_based_chaining_computation.hpp chaining/chaining_information.hpp
 lib_hls_chaining_la_SOURCES = chaining/chaining.cpp chaining/sched_based_chaining_computation.cpp chaining/chaining_information.cpp
@@ -380,7 +381,7 @@ lib_exact_evaluation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/wrapper/simulation/modelsim \
    -I$(top_srcdir)/src/wrapper/synthesis/ \
    -I$(top_srcdir)/src/wrapper/treegcc \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 lib_exact_evaluation_la_SOURCES=
 if BUILD_LIB_RTL
    lib_exact_evaluation_la_CPPFLAGS += \
@@ -425,7 +426,7 @@ lib_evaluation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/wrapper/simulation \
    -I$(top_srcdir)/src/wrapper/simulation/modelsim \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 noinst_HEADERS += evaluation/evaluation.hpp evaluation/evaluation_base_step.hpp evaluation/dry_run_evaluation.hpp
 lib_evaluation_la_SOURCES = evaluation/evaluation.cpp evaluation/evaluation_base_step.cpp evaluation/dry_run_evaluation.cpp
 lib_evaluation_la_LIBADD = lib_exact_evaluation.la
@@ -447,15 +448,15 @@ lib_function_allocation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/technology  \
    -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/target_device/ \
-   -I$(BOOST_DIR) $(all_includes)
+   -I$(top_srcdir)/src/technology/target_device \
+   $(AM_CPPFLAGS)
 noinst_HEADERS += function_allocation/function_allocation.hpp function_allocation/fun_dominator_allocation.hpp function_allocation/functions.hpp
 lib_function_allocation_la_SOURCES = \
    function_allocation/function_allocation.cpp function_allocation/fun_dominator_allocation.cpp function_allocation/functions.cpp
 
 if BUILD_LIB_FROM_PRAGMA
    lib_function_allocation_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/design_flows/codesign
+      -I$(top_srcdir)/src/design_flows/codesign 
    noinst_HEADERS += \
       function_allocation/omp_function_allocation_CS.hpp \
       function_allocation/omp_function_allocation.hpp \
@@ -504,7 +505,7 @@ lib_hls_synthesis_la_CPPFLAGS = \
    -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/wrapper/synthesis \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 noinst_HEADERS += hls_flow/synthesis/standard_hls.hpp hls_flow/synthesis/virtual_hls.hpp hls_flow/synthesis/hls_synthesis_flow.hpp
 lib_hls_synthesis_la_SOURCES = hls_flow/synthesis/standard_hls.cpp hls_flow/synthesis/virtual_hls.cpp hls_flow/synthesis/hls_synthesis_flow.cpp
 if BUILD_LIB_FROM_PRAGMA
@@ -564,7 +565,7 @@ lib_hls_flow_la_CPPFLAGS = \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper/synthesis \
    -I$(top_srcdir)/src/wrapper/synthesis/xilinx/ise \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 noinst_HEADERS += \
    hls_flow/initialize_hls.hpp \
    hls_flow/classical_synthesis_flow.hpp \
@@ -617,7 +618,7 @@ lib_interface_la_CPPFLAGS = \
     -I$(top_srcdir)/src/technology/target_device \
     -I$(top_srcdir)/src/tree \
     -I$(top_srcdir)/src/utility \
-    -I$(BOOST_DIR) $(all_includes)
+    $(AM_CPPFLAGS)
 noinst_HEADERS += interface/module_interface.hpp \
                  interface/minimal/minimal_interface.hpp \
                  interface/WB4/WB4_interface.hpp \
@@ -656,7 +657,7 @@ lib_liveness_la_CPPFLAGS =  \
                           -I$(top_srcdir)/src/tree \
                           -I$(top_srcdir)/src/technology \
                           -I$(top_srcdir)/src/utility \
-                          -I$(BOOST_DIR) $(all_includes)
+                          $(AM_CPPFLAGS)
 noinst_HEADERS += liveness/liveness.hpp liveness/liveness_computer.hpp liveness/FSM_NI_SSA_liveness.hpp
 lib_liveness_la_SOURCES = liveness/liveness.cpp liveness/liveness_computer.cpp liveness/FSM_NI_SSA_liveness.cpp
 
@@ -688,8 +689,8 @@ lib_HLS_memory_la_CPPFLAGS = \
    -I$(top_srcdir)/src/technology  \
    -I$(top_srcdir)/src/technology/physical_library \
    -I$(top_srcdir)/src/technology/target_device  \
-   -I$(top_srcdir)/src/utility  \
-   -I$(BOOST_DIR) $(all_includes)
+   -I$(top_srcdir)/src/utility \
+   $(AM_CPPFLAGS)
 noinst_HEADERS += \
    memory/memory_allocation.hpp \
    memory/memory_symbol.hpp \
@@ -735,7 +736,7 @@ lib_allocation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility  \
    -I$(top_srcdir)/src/wrapper/flopoco \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 
 noinst_HEADERS += \
    module_allocation/add_library.hpp \
@@ -787,7 +788,7 @@ lib_module_generator_la_CPPFLAGS = \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper/flopoco \
    -I$(top_srcdir)/src/wrapper/treegcc \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 noinst_HEADERS += module_generator/moduleGenerator.hpp
 lib_module_generator_la_SOURCES = module_generator/moduleGenerator.cpp
 
@@ -819,7 +820,7 @@ lib_scheduling_la_CPPFLAGS = \
    -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 if BUILD_COIN_OR
 lib_scheduling_la_CPPFLAGS += \
                              -DHAVE_CONFIG_H \
@@ -890,7 +891,7 @@ lib_stg_la_CPPFLAGS = \
    -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 noinst_HEADERS += stg/state_transition_graph.hpp stg/state_transition_graph_manager.hpp stg/StateTransitionGraph_constructor.hpp stg/STG_creator.hpp stg/BB_based_stg.hpp
 lib_stg_la_SOURCES = stg/state_transition_graph.cpp stg/state_transition_graph_manager.cpp stg/StateTransitionGraph_constructor.cpp stg/STG_creator.cpp stg/BB_based_stg.cpp
 
@@ -901,7 +902,7 @@ lib_virtual_components_la_CPPFLAGS =  -I$(top_srcdir)/src \
                              -I$(top_srcdir)/src/graph \
                              -I$(top_srcdir)/src/circuit \
                              -I$(top_srcdir)/src/utility \
-                             -I$(BOOST_DIR) $(all_includes)
+                             $(AM_CPPFLAGS)
 noinst_HEADERS += virtual_components/generic_obj.hpp \
                  virtual_components/funit_obj.hpp \
                  virtual_components/register_obj.hpp \
@@ -970,7 +971,7 @@ lib_HLS_la_CPPFLAGS = \
    -I$(top_srcdir)/src/wrapper/synthesis \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR)  $(all_includes)
+   $(AM_CPPFLAGS)
 
 noinst_HEADERS += \
    hls.hpp \
@@ -1045,7 +1046,7 @@ lib_vcd_la_CPPFLAGS = \
    -I$(top_srcdir)/src/design_flows/backend/ToC/progModels \
    -I$(top_srcdir)/src/design_flows/backend/ToC \
    -I$(top_srcdir)/src/frontend_analysis \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 noinst_HEADERS += \
    vcd/CallGraphUnfolding.hpp \
    vcd/CallSitesCollectorVisitor.hpp \

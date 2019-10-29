@@ -6,7 +6,7 @@ lib_graph_la_CPPFLAGS = \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/tree \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 lib_graph_la_SOURCES = \
    graph/graph.cpp \
    graph/node_info.cpp \

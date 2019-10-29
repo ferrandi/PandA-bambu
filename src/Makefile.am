@@ -1,7 +1,6 @@
-#this file is src/Makefile.am
 METASOURCES = AUTO
-
-AM_CPPFLAGS = $(all_includes) -I$(BOOST_DIR)
+AUTOMAKE_OPTIONS = subdir-objects
+AM_CPPFLAGS = $(all_includes) -I$(BOOST_DIR) -I$(ABSEIL_DIR)
 AM_LDFLAGS += $(BOOST_LDFLAGS)
 
 # main list of binary produced

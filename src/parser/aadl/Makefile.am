@@ -1,5 +1,7 @@
 #this file is src/parser/aadl/Makefile.am
 noinst_LTLIBRARIES = lib_aadlparser.la
+AM_CPPFLAGS = $(all_includes) -I$(BOOST_DIR) -I$(ABSEIL_DIR)
+METASOURCES = AUTO
 
 lib_aadlparser_la_CPPFLAGS = \
    -I$(top_srcdir)/src/ \
@@ -11,10 +13,8 @@ lib_aadlparser_la_CPPFLAGS = \
    -I$(top_srcdir)/src/intermediate_representations/aadl_asn \
    -I$(top_srcdir)/src/parser \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR)\
-   $(all_includes)
+   $(AM_CPPFLAGS)
 
-METASOURCES = AUTO
 AM_LFLAGS = -L -B -+  -olex.yy.c
 
 noinst_HEADERS = aadl_parser.hpp aadl_lexer.hpp aadl_parser_node.hpp

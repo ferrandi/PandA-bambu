@@ -11,7 +11,7 @@ if BUILD_LIB_CLIQUECOVER
    -I$(top_srcdir)/src/algorithms/bipartite_matching \
    -I$(top_srcdir)/src/algorithms/clique_covering \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 if BUILD_TRNG
   lib_clique_covering_la_CPPFLAGS += -I$(top_builddir)/ext/trng-4.17
 endif
@@ -31,7 +31,7 @@ if BUILD_LIB_DOMINANCE
    -I$(top_srcdir)/src/algorithms/dominance \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
   lib_dominance_la_SOURCES = algorithms/dominance/weak_dominance.cpp
   PRJ_DOC += algorithms/dominance/Dominance.doc 
   lib_algorithms_la_LIBADD += lib_dominance.la
@@ -48,7 +48,7 @@ if BUILD_LIB_LOOPS
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
   lib_loops_detection_la_SOURCES = algorithms/loops_detection/loops.cpp algorithms/loops_detection/loop.cpp
   lib_algorithms_la_LIBADD += lib_loops_detection.la
 endif

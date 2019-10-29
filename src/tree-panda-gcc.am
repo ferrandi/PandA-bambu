@@ -22,7 +22,7 @@ tree_panda_gcc_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS/interface \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/wrapper/treegcc \
-    $(AM_CPPFLAGS)
+   $(AM_CPPFLAGS)
 
 if BUILD_LIB_CODE_ESTIMATION
    tree_panda_gcc_CPPFLAGS += \

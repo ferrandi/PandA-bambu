@@ -255,7 +255,7 @@ void DesignFlowStepWriter::operator()(std::ostream& out, const vertex& v) const
    out << "]";
 }
 
-DesignFlowEdgeWriter::DesignFlowEdgeWriter(const DesignFlowGraph* design_flow_graph, const CustomMap<vertex, DesignFlowStep_Status>& _vertex_history, const CustomUnorderedMapStable<EdgeDescriptor, int> &_edge_history, const int _detail_level)
+DesignFlowEdgeWriter::DesignFlowEdgeWriter(const DesignFlowGraph* design_flow_graph, const CustomMap<vertex, DesignFlowStep_Status>& _vertex_history, const CustomUnorderedMapStable<EdgeDescriptor, int>& _edge_history, const int _detail_level)
     : EdgeWriter(design_flow_graph, _detail_level), vertex_history(_vertex_history), edge_history(_edge_history)
 {
 }

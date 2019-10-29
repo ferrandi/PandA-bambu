@@ -1,7 +1,9 @@
 noinst_LTLIBRARIES += lib_ilp.la
-lib_ilp_la_CPPFLAGS = -I$(top_srcdir)/src/utility -I$(BOOST_DIR) $(all_includes)
+lib_ilp_la_CPPFLAGS = -I$(top_srcdir)/src/utility \
+                      $(AM_CPPFLAGS)
 
-lib_ilp_cbc_la_CPPFLAGS=-I$(top_srcdir)/src/utility -I$(BOOST_DIR) $(all_includes)
+lib_ilp_cbc_la_CPPFLAGS =-I$(top_srcdir)/src/utility \
+                        $(AM_CPPFLAGS)
 if BUILD_COIN_OR
    noinst_LTLIBRARIES += lib_ilp_cbc.la 
    lib_ilp_cbc_la_CPPFLAGS += -DHAVE_CONFIG_H \

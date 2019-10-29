@@ -14,7 +14,7 @@ lib_technology_la_CPPFLAGS = \
    -I$(top_srcdir)/src/technology/physical_library/models/area \
    -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 
 noinst_HEADERS += technology/technology_manager.hpp technology/target_manager.hpp technology/parse_technology.hpp
 
@@ -38,7 +38,7 @@ if BUILD_LIB_TARGET
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/parser/polixml \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
   noinst_HEADERS += technology/target_technology/FPGA/FPGA_technology.hpp
   lib_target_technology_FPGA_la_SOURCES = technology/target_technology/FPGA/FPGA_technology.cpp
 
@@ -55,7 +55,7 @@ if BUILD_LIB_TARGET
    -I$(top_srcdir)/src/technology/target_technology \
    -I$(top_srcdir)/src/technology/target_technology/FPGA \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
   noinst_HEADERS += technology/target_technology/target_technology.hpp
   lib_target_technology_la_SOURCES = technology/target_technology/target_technology.cpp
   lib_target_technology_la_LIBADD = lib_target_technology_FPGA.la
@@ -71,7 +71,7 @@ if BUILD_LIB_CMOS
    -I$(top_srcdir)/src/technology \
    -I$(top_srcdir)/src/technology/target_technology \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
   noinst_HEADERS += technology/target_technology/CMOS/CMOS_technology.hpp
   lib_target_technology_CMOS_la_SOURCES = technology/target_technology/CMOS/CMOS_technology.cpp
   lib_target_technology_la_CPPFLAGS += \
@@ -93,7 +93,7 @@ endif
    -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/utility \
    -I$(top_builddir)/src/technology/target_device/FPGA \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
   noinst_HEADERS += technology/target_device/FPGA/FPGA_device.hpp
   lib_FPGA_device_la_SOURCES = technology/target_device/FPGA/FPGA_device.cpp
   BUILT_SOURCES=technology/target_device/FPGA/xc4vlx100-10ff1513.data technology/target_device/FPGA/xc5vlx110t-1ff1136.data technology/target_device/FPGA/xc5vlx330t-2ff1738.data technology/target_device/FPGA/xc5vlx50-3ff1153.data technology/target_device/FPGA/xc6vlx240t-1ff1156.data technology/target_device/FPGA/xc7vx330t-1ffg1157.data technology/target_device/FPGA/xc7z020-1clg484.data \
@@ -192,7 +192,7 @@ technology/target_device/FPGA/nx1h140tsp.data: $(top_srcdir)/etc/devices/NanoXpl
    -I$(top_srcdir)/src/technology/target_device/FPGA \
    -I$(top_srcdir)/src/technology/target_technology \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
   noinst_HEADERS += technology/target_device/target_device.hpp
   lib_target_device_la_SOURCES = technology/target_device/target_device.cpp
   lib_target_device_la_LIBADD = lib_FPGA_device.la
@@ -213,8 +213,8 @@ if BUILD_LIB_CMOS
    -I$(top_srcdir)/src/technology/target_technology/CMOS \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper/synthesis \
-   -I$(top_builddir)/src/technology/target_device/IC\
-   -I$(BOOST_DIR) $(all_includes)
+   -I$(top_builddir)/src/technology/target_device/IC \
+   $(AM_CPPFLAGS)
   noinst_HEADERS += technology/target_device/IC/IC_device.hpp
   lib_IC_device_la_SOURCES = technology/target_device/IC/IC_device.cpp
   lib_target_device_la_CPPFLAGS += \
@@ -252,7 +252,7 @@ if BUILD_LIB_PHYSICAL_LIBRARY
    -I$(top_srcdir)/src/technology/target_technology/FPGA \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
   noinst_HEADERS += technology/physical_library/technology_node.hpp technology/physical_library/library_manager.hpp technology/physical_library/technology_wishbone.hpp
   lib_physical_library_la_SOURCES = technology/physical_library/technology_node.cpp technology/physical_library/library_manager.cpp
   lib_physical_library_la_LIBADD =
@@ -266,7 +266,7 @@ if BUILD_LIB_PHYSICAL_LIBRARY_MODELS
     -I$(top_srcdir)/src/technology/physical_library \
     -I$(top_srcdir)/src/technology/physical_library/models \
     -I$(top_srcdir)/src/utility \
-    -I$(BOOST_DIR) $(all_includes)
+    $(AM_CPPFLAGS)
   noinst_HEADERS += technology/physical_library/models/area/clb_model.hpp
   lib_area_models_la_SOURCES = technology/physical_library/models/area/clb_model.cpp
 
@@ -286,7 +286,7 @@ endif
    -I$(top_srcdir)/src/technology/physical_library/models \
    -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
   noinst_HEADERS += technology/physical_library/models/time/LUT_model.hpp
   lib_time_models_la_SOURCES = technology/physical_library/models/time/LUT_model.cpp
 
@@ -309,7 +309,7 @@ endif
    -I$(top_srcdir)/src/technology/physical_library/models/time \
    -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
   noinst_HEADERS += technology/physical_library/models/area_model.hpp technology/physical_library/models/time_model.hpp
   lib_models_la_SOURCES = technology/physical_library/models/area_model.cpp technology/physical_library/models/time_model.cpp
   lib_models_la_LIBADD = lib_area_models.la lib_time_models.la
@@ -362,7 +362,7 @@ if BUILD_LIB_LIBRARY_CHARACTERIZATION
    -I$(top_srcdir)/src/wrapper/synthesis\
    -I$(top_srcdir)/src/wrapper/synthesis/xilinx \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 
 if BUILD_FLOPOCO
   lib_characterization_la_CPPFLAGS += -I$(top_srcdir)/src/wrapper/flopoco

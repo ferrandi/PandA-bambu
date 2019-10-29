@@ -1,6 +1,6 @@
 noinst_LTLIBRARIES += lib_utility.la
-lib_utility_la_CPPFLAGS = \
-                     -I$(BOOST_DIR) $(all_includes)
+lib_utility_la_CPPFLAGS =  \
+   $(AM_CPPFLAGS)
 noinst_HEADERS += \
    utility/augmented_vector.hpp \
    utility/cpu_stats.hpp \

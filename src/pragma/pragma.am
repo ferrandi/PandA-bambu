@@ -12,7 +12,7 @@ libpragma_la_CPPFLAGS = \
    -I$(top_srcdir)/src/parser/treegcc \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 
 if BUILD_LIB_CODESIGN
 if BUILD_LIB_MAPPING

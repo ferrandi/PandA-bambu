@@ -194,8 +194,8 @@ using CustomSet = CustomOrderedSet<T>;
 #endif
 
 #include "absl/container/btree_set.h"
-#include "absl/container/node_hash_set.h"
 #include "absl/container/flat_hash_set.h"
+#include "absl/container/node_hash_set.h"
 #include "absl/hash/hash.h"
 #include <set>
 
