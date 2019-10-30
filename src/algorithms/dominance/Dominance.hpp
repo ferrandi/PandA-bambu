@@ -753,7 +753,7 @@ class dominance
    /**
     * Return the dominators tree as a map between Vertex and its immediate dominator
     */
-   const CustomUnorderedMap<Vertex, Vertex>& get_dominator_map() const
+   const CustomUnorderedMapStable<Vertex, Vertex>& get_dominator_map() const
    {
       return dom;
    }

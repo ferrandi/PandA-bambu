@@ -246,7 +246,8 @@ class Translator
     * @param data is the data to be written
     * @param file_name is the name of the file where data will be written
     */
-   void write_to_csv(const std::map<std::string, CustomOrderedSet<std::string>>& tags, const CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMap<std::string, long double>>>& results, const std::string& file_name) const;
+   void write_to_csv(const std::map<std::string, CustomOrderedSet<std::string>>& tags, const CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>& results,
+                     const std::string& file_name) const;
 
    /**
     * Write text data in csv format

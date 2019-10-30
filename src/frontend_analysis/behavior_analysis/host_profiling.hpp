@@ -107,7 +107,7 @@ class HostProfiling : public ApplicationFrontendFlowStep
     * @param loop_instances is how many times each loop is executed
     * @param Parameters is the set of input parameters
     */
-   static void normalize(const application_managerRef app_man, const CustomUnorderedMap<unsigned int, CustomUnorderedMap<unsigned int, long long unsigned int>>& loop_instances, const ParameterConstRef parameters);
+   static void normalize(const application_managerRef app_man, const CustomUnorderedMap<unsigned int, CustomUnorderedMapStable<unsigned int, long long unsigned int>>& loop_instances, const ParameterConstRef parameters);
 };
 
 #endif

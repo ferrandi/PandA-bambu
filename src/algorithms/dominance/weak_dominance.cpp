@@ -80,7 +80,7 @@ void weak_dominance::calculate_weak_dominance_info(graphs_collection* output, Cu
 
    dominance<graph> dm(*input, start, end, param);
    dm.calculate_dominance_info(dominance<graph>::CDI_POST_DOMINATORS);
-   CustomUnorderedMap<vertex, vertex> post_dominators = dm.get_dominator_map();
+   const auto& post_dominators = dm.get_dominator_map();
 
    // iterate over outgoing edges of the input graph
    EdgeIterator ei, ei_end;
@@ -91,13 +91,13 @@ void weak_dominance::calculate_weak_dominance_info(graphs_collection* output, Cu
       InEdgeIterator pd_ei, pd_ei_end;
       {
          vertex current_node = B;
-         while(current_node && current_node != A && current_node != post_dominators[A])
+         while(current_node && current_node != A && current_node != post_dominators.at(A))
          {
             if(sorted_nodes[current_node] > sorted_nodes[A])
                add_edge(i2o[A], i2o[current_node], output);
             else
                break;
-            current_node = post_dominators[current_node];
+            current_node = post_dominators.at(current_node);
          }
       }
    }

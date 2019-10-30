@@ -191,7 +191,7 @@ struct Discrepancy
     * the context, the secondary key is the variable id, the mapped value is
     * the base address
     */
-   CustomUnorderedMap<uint64_t, CustomUnorderedMap<unsigned int, uint64_t>> c_addr_map;
+   CustomUnorderedMap<uint64_t, CustomUnorderedMapStable<unsigned int, uint64_t>> c_addr_map;
 
    /**
     * Maps every call context in the discrepancy trace to the corresponding

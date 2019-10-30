@@ -174,7 +174,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    const CallGraphConstRef cg = CG->CGetCallGraph();
    CustomMap<unsigned int, refcount<dominance<graph>>> cg_dominators;
    CustomMap<unsigned int, CustomUnorderedSet<vertex>> reachable_vertices;
-   CustomMap<unsigned int, CustomUnorderedMap<vertex, vertex>> cg_dominator_map;
+   CustomMap<unsigned int, CustomUnorderedMapStable<vertex, vertex>> cg_dominator_map;
    auto top_functions = CG->GetRootFunctions();
    for(const auto top_function : top_functions)
    {

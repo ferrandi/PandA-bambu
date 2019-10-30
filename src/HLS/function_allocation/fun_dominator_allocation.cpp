@@ -228,7 +228,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
    /// we do not need the exit vertex since the post-dominator graph is not used
    cg_dominators = refcount<dominance<graph>>(new dominance<graph>(*subgraph, top_vertex, NULL_VERTEX, parameters));
    cg_dominators->calculate_dominance_info(dominance<graph>::CDI_DOMINATORS);
-   const CustomUnorderedMap<vertex, vertex>& cg_dominator_map = cg_dominators->get_dominator_map();
+   const auto& cg_dominator_map = cg_dominators->get_dominator_map();
    std::map<std::string, CustomOrderedSet<vertex>> fun_dom_map;
    std::map<std::string, CustomOrderedSet<unsigned int>> where_used;
    std::map<std::string, bool> indirectlyCalled;

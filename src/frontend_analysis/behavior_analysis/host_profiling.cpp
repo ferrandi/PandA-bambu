@@ -132,7 +132,7 @@ DesignFlowStep_Status HostProfiling::Exec()
    return DesignFlowStep_Status::EMPTY;
 }
 
-void HostProfiling::normalize(const application_managerRef AppM, const CustomUnorderedMap<unsigned int, CustomUnorderedMap<unsigned int, unsigned long long>>& loop_instances, const ParameterConstRef parameters)
+void HostProfiling::normalize(const application_managerRef AppM, const CustomUnorderedMap<unsigned int, CustomUnorderedMapStable<unsigned int, unsigned long long>>& loop_instances, const ParameterConstRef parameters)
 {
 #ifndef NDEBUG
    const int debug_level = parameters->get_class_debug_level("HostProfiling");

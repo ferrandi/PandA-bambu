@@ -71,7 +71,7 @@ class Vectorize : public FunctionFrontendFlowStep
    CustomUnorderedMapUnstable<unsigned int, unsigned int> scalar_to_vector;
 
    /// Map between scalar tree node and versioned scalar tree node
-   CustomUnorderedMap<unsigned int, CustomUnorderedMap<size_t, unsigned int>> scalar_to_scalar;
+   CustomUnorderedMap<unsigned int, CustomUnorderedMapStable<size_t, unsigned int>> scalar_to_scalar;
 
    /// The tree manager
    const tree_managerRef TM;

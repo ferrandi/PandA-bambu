@@ -105,7 +105,7 @@ class vcd_parser
     * the secondary key is the name of the signal.
     * the value type is std::list of sig_variation representing the waveform
     */
-   typedef CustomUnorderedMap<std::string, CustomUnorderedMap<std::string, std::list<sig_variation>>> vcd_trace_t;
+   typedef CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, std::list<sig_variation>>> vcd_trace_t;
 
    /**
     * parses a file selecting only a predefined set of signals.

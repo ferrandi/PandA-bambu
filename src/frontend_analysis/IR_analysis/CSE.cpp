@@ -431,7 +431,7 @@ DesignFlowStep_Status CSE::InternalExec()
    refcount<dominance<BBGraph>> bb_dominators;
    bb_dominators = refcount<dominance<BBGraph>>(new dominance<BBGraph>(*GCC_bb_graph, inverse_vertex_map[bloc::ENTRY_BLOCK_ID], inverse_vertex_map[bloc::EXIT_BLOCK_ID], parameters));
    bb_dominators->calculate_dominance_info(dominance<BBGraph>::CDI_DOMINATORS);
-   const CustomUnorderedMap<vertex, vertex>& bb_dominator_map = bb_dominators->get_dominator_map();
+   const auto& bb_dominator_map = bb_dominators->get_dominator_map();
 
    BBGraphRef bb_domGraph(new BBGraph(GCC_bb_graphs_collection, D_SELECTOR));
    for(auto it : bb_dominator_map)
