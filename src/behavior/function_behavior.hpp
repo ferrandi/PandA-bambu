@@ -479,10 +479,10 @@ class FunctionBehavior
    };
 
    /// Mutual exclusion between basic blocks (based on control flow graph with flow edges)
-   CustomUnorderedMap<vertex, CustomUnorderedSet<vertex>> bb_reachability;
+   CustomUnorderedMapStable<vertex, CustomUnorderedSet<vertex>> bb_reachability;
 
    /// Reachability between basic blocks based on control flow graph with feedback
-   CustomUnorderedMap<vertex, CustomUnorderedSet<vertex>> feedback_bb_reachability;
+   CustomUnorderedMapStable<vertex, CustomUnorderedSet<vertex>> feedback_bb_reachability;
 
    /// reference to the operations graph constructor
    const operations_graph_constructorRef ogc;

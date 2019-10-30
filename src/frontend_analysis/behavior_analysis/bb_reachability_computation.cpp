@@ -115,8 +115,8 @@ DesignFlowStep_Status BBReachabilityComputation::InternalExec()
    const BBGraphConstRef ecfg = function_behavior->CGetBBGraph(FunctionBehavior::EBB);
 
    /// The reachability among basic blocks
-   CustomUnorderedMap<vertex, CustomUnorderedSet<vertex>>& bb_reachability = function_behavior->bb_reachability;
-   CustomUnorderedMap<vertex, CustomUnorderedSet<vertex>>& feedback_bb_reachability = function_behavior->feedback_bb_reachability;
+   auto& bb_reachability = function_behavior->bb_reachability;
+   auto& feedback_bb_reachability = function_behavior->feedback_bb_reachability;
 
    std::deque<vertex> container;
    boost::topological_sort(*ecfg, std::back_inserter(container));

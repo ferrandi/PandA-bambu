@@ -211,14 +211,14 @@ void Loops::DetectLoops()
 
    /// Retrieve dominator tree and dominance relation
    const dominance<BBGraph>* dom = FB->dominators;
-   const CustomUnorderedMap<vertex, CustomOrderedSet<vertex>> full_dom = dom->getAllDominated();
+   const auto full_dom = dom->getAllDominated();
 
    /// Create the DJ graph. This is done in two steps:
    /// 1) build the dominator tree
    /// 2) add the "J" edges
 
    /// Add J edges (and detect CJ ones)
-   /// D dges are already there since we use boost filtered graphs
+   /// D edges are already there since we use boost filtered graphs
    CustomUnorderedSet<vertex_pair> cj_edges;
    CustomUnorderedSet<vertex_pair> bj_edges;
    EdgeIterator ei, ei_end;
@@ -239,8 +239,7 @@ void Loops::DetectLoops()
          }
          else
          {
-            const CustomUnorderedMap<vertex, CustomOrderedSet<vertex>>::const_iterator dom_set_iter = full_dom.find(target);
-            const CustomOrderedSet<vertex> dom_set = (*dom_set_iter).second;
+            const CustomOrderedSet<vertex>& dom_set = full_dom.find(target)->second;
             if(dom_set.find(source) != dom_set.end())
             {
                /// This is a BJ edge, and we mark it as such

@@ -446,7 +446,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #if HAVE_ZEBU_BUILT
       case LOOPS_ANALYSIS_ZEBU:
 #endif
-      case LOOPS_IDENTIFICATION:
+      case LOOPS_COMPUTATION:
 #if HAVE_ZEBU_BUILT
       case LOOPS_REBUILDING:
 #endif
@@ -840,7 +840,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
 #if HAVE_ZEBU_BUILT
       case LOOPS_ANALYSIS_ZEBU:
 #endif
-      case LOOPS_IDENTIFICATION:
+      case LOOPS_COMPUTATION:
 #if HAVE_ZEBU_BUILT
       case LOOPS_REBUILDING:
 #endif
@@ -1244,7 +1244,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
          return DesignFlowStepRef(new LoopsAnalysisZebu(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #endif
-      case LOOPS_IDENTIFICATION:
+      case LOOPS_COMPUTATION:
       {
          return DesignFlowStepRef(new loops_computation(parameters, AppM, function_id, design_flow_manager.lock()));
       }

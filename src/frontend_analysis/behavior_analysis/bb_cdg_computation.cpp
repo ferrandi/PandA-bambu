@@ -126,7 +126,7 @@ DesignFlowStep_Status BBCdgComputation::InternalExec()
          if(bb_sorted[current_node] > bb_sorted[A])
          {
             function_behavior->bbgc->AddEdge(A, current_node, CDG_SELECTOR);
-            CustomOrderedSet<unsigned int> labels = bb->CGetBBEdgeInfo(*ei)->get_labels(CFG_SELECTOR);
+            const auto& labels = bb->CGetBBEdgeInfo(*ei)->get_labels(CFG_SELECTOR);
             if(labels.size())
             {
                auto it_end = labels.end();
@@ -166,7 +166,7 @@ DesignFlowStep_Status BBCdgComputation::InternalExec()
          InEdgeIterator eii, eii_end;
          for(boost::tie(eii, eii_end) = boost::in_edges(*it, *cdg_bb); eii != eii_end; eii++)
          {
-            this_cod.insert(std::pair<vertex, CustomOrderedSet<unsigned int>>(boost::source(*eii, *cdg_bb), cdg_bb->CGetBBEdgeInfo(*eii)->get_labels(CDG_SELECTOR)));
+            this_cod.emplace(std::pair<vertex, CustomOrderedSet<unsigned int>>(boost::source(*eii, *cdg_bb), cdg_bb->CGetBBEdgeInfo(*eii)->get_labels(CDG_SELECTOR)));
          }
          if(cdg_to_index.find(this_cod) == cdg_to_index.end())
          {

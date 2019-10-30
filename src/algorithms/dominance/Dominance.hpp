@@ -563,7 +563,7 @@ class dom_info
     * fill the dominator map after its computation
     * @param dom_map is the dominator map.
     */
-   void fill_dom_map(CustomUnorderedMap<Vertex, Vertex>& dom_map)
+   void fill_dom_map(CustomUnorderedMapStable<Vertex, Vertex>& dom_map)
    {
       Vertex_iterator vi, vi_end;
       dom_map[en_block] = en_block;
@@ -635,7 +635,7 @@ class dominance
    const Vertex ex_block;
 
    /// After the algorithm is done, dom[x] contains the immediate dominator of x.
-   CustomUnorderedMap<Vertex, Vertex> dom;
+   CustomUnorderedMapStable<Vertex, Vertex> dom;
 
    /// The set of input parameters
    const ParameterConstRef param;
@@ -712,12 +712,12 @@ class dominance
 
    /**
     * Returns a map containing, for each Vertex, a set formed by all the
-    * vertices dominated by it (all the dominator relationiships, not
+    * vertices dominated by it (all the dominator relationships, not
     * only the direct one are considered).
     */
-   const CustomUnorderedMap<Vertex, CustomOrderedSet<Vertex>> getAllDominated() const
+   const CustomUnorderedMapStable<Vertex, CustomOrderedSet<Vertex>> getAllDominated() const
    {
-      CustomUnorderedMap<Vertex, CustomOrderedSet<Vertex>> dominated;
+      CustomUnorderedMapStable<Vertex, CustomOrderedSet<Vertex>> dominated;
       // These are the immediate dominated nodes
       auto dom_it_end = dom.end();
       for(auto dom_it = dom.begin(); dom_it != dom_it_end; ++dom_it)
@@ -734,7 +734,7 @@ class dominance
          // for(domBeg = this->dom.begin(), domEnd = this->dom.end(); domBeg != domEnd; domBeg++)
          for(auto dom_it = dom.begin(); dom_it != dom_it_end; ++dom_it)
          {
-            typedef typename CustomUnorderedMap<Vertex, CustomOrderedSet<Vertex>>::iterator mSetIter;
+            typedef typename CustomUnorderedMapStable<Vertex, CustomOrderedSet<Vertex>>::iterator mSetIter;
             mSetIter mSetBeg, mSetEnd;
             for(mSetBeg = dominated.begin(), mSetEnd = dominated.end(); mSetBeg != mSetEnd; ++mSetBeg)
             {

@@ -170,7 +170,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
    size_t total_state_of_the_art_memory_usage = 0;
    size_t total_state_of_the_art_fixed_memory_usage = 0;
    size_t total_state_of_the_art_opt_memory_usage = 0;
-   for(auto& f : Discr->c_control_flow_trace)
+   for(const auto& f : Discr->c_control_flow_trace)
    {
       const auto f_id = f.first;
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Untangling software control flow trace of function: " + STR(f_id) + " " + HLSMgr->CGetFunctionBehavior(f_id)->CGetBehavioralHelper()->get_function_name());

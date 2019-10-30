@@ -78,7 +78,7 @@ class VcdSignalSelection : public HLS_step
     * \param[in] addr_fun_ids List of ids of the reached functions that return an address value
     * \param[in] call_id_to_called_id Map the id of a call to the id of the called function
     */
-   void InitialSsaIsAddress(const tree_nodeConstRef& tn, const CustomUnorderedSet<unsigned int>& addr_fun_ids, const CustomUnorderedMap<unsigned int, CustomUnorderedSet<unsigned int>>& call_id_to_called_id);
+   void InitialSsaIsAddress(const tree_nodeConstRef& tn, const CustomUnorderedSet<unsigned int>& addr_fun_ids, const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& call_id_to_called_id);
 
    /**
     * Determines if the tree_node tn assigns an ssa_name representing an
@@ -94,7 +94,7 @@ class VcdSignalSelection : public HLS_step
     * \param[in] addr_fun_ids List of ids of the reached functions that return an address value
     * \param[in] call_id_to_called_id Map the id of a call to the id of the called function
     */
-   void SelectInitialSsa(const CustomOrderedSet<unsigned int>& reached_body_fun_ids, const CustomUnorderedSet<unsigned int>& addr_fun_ids, const CustomUnorderedMap<unsigned int, CustomUnorderedSet<unsigned int>>& call_id_to_called_id);
+   void SelectInitialSsa(const CustomOrderedSet<unsigned int>& reached_body_fun_ids, const CustomUnorderedSet<unsigned int>& addr_fun_ids, const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& call_id_to_called_id);
 
    /**
     * Single step used in the loop of PropagateAddrParamToSsa()
@@ -153,7 +153,7 @@ class VcdSignalSelection : public HLS_step
     * \param[in] call_id_to_called_id  Maps the id of a call operation to the id of the called function
     */
    void CrossPropagateAddrSsa(CustomUnorderedMap<unsigned int, TreeNodeSet>& address_parameters, const CustomOrderedSet<unsigned int>& reached_body_functions, const CustomUnorderedSet<unsigned int>& addr_fun_ids,
-                              const CustomUnorderedMap<unsigned int, CustomUnorderedSet<unsigned int>>& fu_id_to_call_ids, const CustomUnorderedMap<unsigned int, CustomUnorderedSet<unsigned int>>& call_id_to_called_id);
+                              const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& fu_id_to_call_ids, const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& call_id_to_called_id);
 
    /**
     * Compute the ssa representing address values. They must be manipulated
@@ -161,14 +161,14 @@ class VcdSignalSelection : public HLS_step
     * \param[in] fu_id_to_call_ids  Maps a function id to the set of ids of operations where it calls other functions
     * \param[in] call_id_to_called_id  Maps the id of a call operation to the id of the called function
     */
-   void SelectAddrSsa(const CustomUnorderedMap<unsigned int, CustomUnorderedSet<unsigned int>>& fu_id_to_call_ids, const CustomUnorderedMap<unsigned int, CustomUnorderedSet<unsigned int>>& call_id_to_called_id);
+   void SelectAddrSsa(const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& fu_id_to_call_ids, const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& call_id_to_called_id);
 
    /**
     * Checks if type_index represents an address type
     */
    bool IsAddressType(const unsigned int type_index) const;
 
-   void SelectInternalSignals(CustomUnorderedMap<unsigned int, CustomUnorderedSet<std::string>>& fun_id_to_sig_names) const;
+   void SelectInternalSignals(CustomUnorderedMap<unsigned int, UnorderedSetStdStable<std::string>>& fun_id_to_sig_names) const;
 
  public:
    /**

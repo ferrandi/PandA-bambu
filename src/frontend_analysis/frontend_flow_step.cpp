@@ -339,8 +339,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case(LOOPS_ANALYSIS_ZEBU):
          return "LoopsAnalysisZebu";
 #endif
-      case(LOOPS_IDENTIFICATION):
-         return "LoopsIdentification";
+      case(LOOPS_COMPUTATION):
+         return "LoopsComputation";
 #if HAVE_ZEBU_BUILT
       case(LOOPS_REBUILDING):
          return "LoopsRebuilding";

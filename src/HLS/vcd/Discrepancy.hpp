@@ -62,9 +62,9 @@ REF_FORWARD_DECL(structural_manager);
 struct CallSitesInfo
 {
    /// Maps every function to the calls it performs
-   CustomUnorderedMap<unsigned int, CustomUnorderedSet<unsigned int>> fu_id_to_call_ids;
+   CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>> fu_id_to_call_ids;
    /// Maps every id of a call site to the id of the called function
-   CustomUnorderedMap<unsigned int, CustomUnorderedSet<unsigned int>> call_id_to_called_id;
+   CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>> call_id_to_called_id;
    /// Set of indirect calls
    CustomUnorderedSet<unsigned int> indirect_calls;
    /// Set of taken addresses
@@ -80,14 +80,14 @@ struct HWDiscrepancyInfo
     * Maps every function ID to a set of states that must always be checked
     * by the hardware discrepancy control flow checker.
     */
-   CustomUnorderedMap<unsigned int, CustomUnorderedSet<unsigned int>> fu_id_to_states_to_check;
+   CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>> fu_id_to_states_to_check;
 
    /**
     * Maps every function ID to a set of states that must be checked
     * by the hardware discrepancy control flow checker if the execution flow
     * comes from a feedback_edges
     */
-   CustomUnorderedMap<unsigned int, CustomUnorderedSet<unsigned int>> fu_id_to_feedback_states_to_check;
+   CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>> fu_id_to_feedback_states_to_check;
 
    /**
     * Maps every function ID to a set EdgeDescriptors. Each edge
@@ -95,7 +95,7 @@ struct HWDiscrepancyInfo
     * These edges are StateTransition edges of the StateTransitionGraph of
     * the associated function.
     */
-   CustomUnorderedMap<unsigned int, CustomUnorderedSet<EdgeDescriptor>> fu_id_to_reset_edges;
+   CustomUnorderedMap<unsigned int, UnorderedSetStdStable<EdgeDescriptor>> fu_id_to_reset_edges;
 
    /**
     * Maps every function ID to the bitsize of the epp trace that is
@@ -139,7 +139,7 @@ struct Discrepancy
     * A map to store the vcd signals to be dumped. The key is the scope, and
     * the mapped set contains all the signals to be dumped for that scope
     */
-   CustomUnorderedMap<std::string, CustomUnorderedSet<std::string>> selected_vcd_signals;
+   CustomUnorderedMapStable<std::string, UnorderedSetStdStable<std::string>> selected_vcd_signals;
 
    /**
     * A map to store the name of the output signal of every operation.

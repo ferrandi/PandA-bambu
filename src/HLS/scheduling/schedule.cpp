@@ -166,7 +166,7 @@ class ScheduleWriter : public GraphWriter
    {
       os << "//Scheduling solution\n";
       os << "splines=polyline;\n";
-      std::map<ControlStep, CustomUnorderedSet<vertex>> inverse_relation;
+      std::map<ControlStep, UnorderedSetStdStable<vertex>> inverse_relation;
       VertexIterator v, v_end;
       for(boost::tie(v, v_end) = boost::vertices(*printing_graph); v != v_end; v++)
       {

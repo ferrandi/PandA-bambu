@@ -128,7 +128,7 @@ DesignFlowStep_Status AddOpLoopFlowEdges::InternalExec()
    const BBGraphRef fbb = function_behavior->GetBBGraph(FunctionBehavior::FBB);
 
    /// Operations of each loop
-   CustomUnorderedMap<unsigned int, CustomUnorderedSet<vertex>> loop_operations;
+   CustomUnorderedMap<unsigned int, UnorderedSetStdStable<vertex>> loop_operations;
 
    /// The loop structure
    const std::list<LoopConstRef>& loops = function_behavior->CGetLoops()->GetList();
@@ -171,15 +171,15 @@ DesignFlowStep_Status AddOpLoopFlowEdges::InternalExec()
 
       /// add a flow edge from the last operation of the header and the operations of the loop
       /// useful only for the speculation graph
-      CustomUnorderedSet<vertex>::const_iterator it3, it3_end = loop_operations[(*loop)->GetId()].end();
-      for(it3 = loop_operations[(*loop)->GetId()].begin(); it3 != it3_end; ++it3)
+      auto it3_end = loop_operations[(*loop)->GetId()].end();
+      for(auto it3 = loop_operations[(*loop)->GetId()].begin(); it3 != it3_end; ++it3)
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Adding flow edge from " + GET_NAME(fcfg, last_statement) + " to " + GET_NAME(fcfg, *it3));
          function_behavior->ogc->AddEdge(last_statement, *it3, FLG_SELECTOR);
       }
       /// add a feedback flow edge from the operations of the loop to the first statement of the header
       const vertex first_statement = *(statements_list.begin());
-      for(it3 = loop_operations[(*loop)->GetId()].begin(); it3 != it3_end; ++it3)
+      for(auto it3 = loop_operations[(*loop)->GetId()].begin(); it3 != it3_end; ++it3)
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Adding a feedback flow edge from " + GET_NAME(fcfg, *it3) + " to " + GET_NAME(fcfg, first_statement));
          function_behavior->ogc->AddEdge(*it3, first_statement, FB_FLG_SELECTOR);

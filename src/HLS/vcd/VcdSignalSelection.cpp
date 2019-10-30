@@ -151,7 +151,7 @@ void VcdSignalSelection::SelectInitialAddrParam(const CustomOrderedSet<unsigned 
    return;
 }
 
-void VcdSignalSelection::InitialSsaIsAddress(const tree_nodeConstRef& tn, const CustomUnorderedSet<unsigned int>& addr_fun_ids, const CustomUnorderedMap<unsigned int, CustomUnorderedSet<unsigned int>>& call_id_to_called_id)
+void VcdSignalSelection::InitialSsaIsAddress(const tree_nodeConstRef& tn, const CustomUnorderedSet<unsigned int>& addr_fun_ids, const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& call_id_to_called_id)
 {
    THROW_ASSERT(tn->get_kind() == gimple_assign_K, tn->ToString() + " is of kind " + tree_node::GetString(tn->get_kind()));
    const auto* g_as_node = GetPointer<const gimple_assign>(tn);
@@ -245,7 +245,7 @@ void VcdSignalSelection::InitialPhiResIsAddress(const tree_nodeConstRef& tn)
    }
 }
 
-void VcdSignalSelection::SelectInitialSsa(const CustomOrderedSet<unsigned int>& reached_body_fun_ids, const CustomUnorderedSet<unsigned int>& addr_fun_ids, const CustomUnorderedMap<unsigned int, CustomUnorderedSet<unsigned int>>& call_id_to_called_id)
+void VcdSignalSelection::SelectInitialSsa(const CustomOrderedSet<unsigned int>& reached_body_fun_ids, const CustomUnorderedSet<unsigned int>& addr_fun_ids, const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& call_id_to_called_id)
 {
    for(const auto fid : reached_body_fun_ids)
    {
@@ -484,7 +484,7 @@ void VcdSignalSelection::InProcedurePropagateAddr(const CustomUnorderedMap<unsig
 }
 
 void VcdSignalSelection::CrossPropagateAddrSsa(CustomUnorderedMap<unsigned int, TreeNodeSet>& address_parameters, const CustomOrderedSet<unsigned int>& reached_body_functions, const CustomUnorderedSet<unsigned int>& addr_fun_ids,
-                                               const CustomUnorderedMap<unsigned int, CustomUnorderedSet<unsigned int>>& fu_id_to_call_ids, const CustomUnorderedMap<unsigned int, CustomUnorderedSet<unsigned int>>& call_id_to_called_id)
+                                               const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& fu_id_to_call_ids, const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& call_id_to_called_id)
 {
    for(const unsigned int caller_fun_id : reached_body_functions)
    {
@@ -663,7 +663,7 @@ void VcdSignalSelection::CrossPropagateAddrSsa(CustomUnorderedMap<unsigned int, 
    return;
 }
 
-void VcdSignalSelection::SelectAddrSsa(const CustomUnorderedMap<unsigned int, CustomUnorderedSet<unsigned int>>& fu_id_to_call_ids, const CustomUnorderedMap<unsigned int, CustomUnorderedSet<unsigned int>>& call_id_to_called_id)
+void VcdSignalSelection::SelectAddrSsa(const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& fu_id_to_call_ids, const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& call_id_to_called_id)
 {
    const CallGraphManagerConstRef CGMan = HLSMgr->CGetCallGraphManager();
    const CallGraphConstRef cg = CGMan->CGetCallGraph();
@@ -722,7 +722,7 @@ void VcdSignalSelection::SelectAddrSsa(const CustomUnorderedMap<unsigned int, Cu
    return;
 }
 
-void VcdSignalSelection::SelectInternalSignals(CustomUnorderedMap<unsigned int, CustomUnorderedSet<std::string>>& fun_id_to_sig_names) const
+void VcdSignalSelection::SelectInternalSignals(CustomUnorderedMap<unsigned int, UnorderedSetStdStable<std::string>>& fun_id_to_sig_names) const
 {
    const auto ssa_to_skip_end = Discr->ssa_to_skip.cend();
    CustomOrderedSet<unsigned int> fun_with_body = HLSMgr->CGetCallGraphManager()->GetReachedBodyFunctions();
@@ -827,7 +827,7 @@ DesignFlowStep_Status VcdSignalSelection::Exec()
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--Selected discrepancy variables");
    /* Calculate the internal signal names for every function */
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Selecting internal signals in functions");
-   CustomUnorderedMap<unsigned int, CustomUnorderedSet<std::string>> fun_ids_to_local_sig_names;
+   CustomUnorderedMap<unsigned int, UnorderedSetStdStable<std::string>> fun_ids_to_local_sig_names;
    SelectInternalSignals(fun_ids_to_local_sig_names);
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--Selected internal signals in functions");
    // helper strings

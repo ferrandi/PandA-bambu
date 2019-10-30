@@ -176,7 +176,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_ZEBU_BUILT
       case LOOPS_ANALYSIS_ZEBU:
 #endif
-      case LOOPS_IDENTIFICATION:
+      case LOOPS_COMPUTATION:
 #if HAVE_ZEBU_BUILT
       case LOOPS_REBUILDING:
 #endif

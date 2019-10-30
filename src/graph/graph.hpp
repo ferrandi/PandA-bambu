@@ -876,7 +876,7 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
     * @param strongly_connected_components is where the set of vertices which compose the different strongly connected components will be stored;
     * key is the index of the strongly connected component
     */
-   void GetStronglyConnectedComponents(std::map<size_t, CustomUnorderedSet<boost::graph_traits<graphs_collection>::vertex_descriptor>>& strongly_connected_components) const
+   void GetStronglyConnectedComponents(std::map<size_t, UnorderedSetStdStable<boost::graph_traits<graphs_collection>::vertex_descriptor>>& strongly_connected_components) const
    {
       std::map<boost::graph_traits<graphs_collection>::vertex_descriptor, size_t> temp_vertex_to_component;
       boost::associative_property_map<std::map<boost::graph_traits<graphs_collection>::vertex_descriptor, size_t>> vertex_to_component(temp_vertex_to_component);

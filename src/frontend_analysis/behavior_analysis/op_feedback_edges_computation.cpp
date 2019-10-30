@@ -81,7 +81,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OPERATIONS_CFG_COMPUTATION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LOOPS_IDENTIFICATION, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LOOPS_COMPUTATION, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
