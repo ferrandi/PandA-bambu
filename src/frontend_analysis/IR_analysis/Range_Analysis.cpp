@@ -446,7 +446,57 @@ namespace RangeAnalysis
       {
          switch(GET_NODE(stmt)->get_kind())
          {
-            case gimple_assign_K:   // TODO: refine check looking for supported operations only (add, sub, mul, ...)
+            case gimple_assign_K:
+            {
+               auto* ga = GetPointer<gimple_assign>(GET_NODE(stmt));
+               // This is a store instruction
+               if(GET_NODE(ga->op0)->get_kind() == mem_ref_K)
+               {
+                  return true;
+               }
+               switch(GET_NODE(ga->op1)->get_kind())
+               {
+                  /// unary_expr cases
+                  //    case Instruction::Trunc:
+                  //    case Instruction::ZExt:
+                  //    case Instruction::SExt:
+                  //    case Instruction::FPToSI:
+                  //    case Instruction::FPToUI:
+                  case mem_ref_K:
+
+                  /// binary_expr cases
+                  case plus_expr_K:
+                  case minus_expr_K:
+                  case mult_expr_K:
+                  //    case Instruction::UDiv:
+                  //    case Instruction::URem:
+                  case trunc_div_expr_K:
+                  case trunc_mod_expr_K:
+                  case lshift_expr_K:
+                  //    case Instruction::LShr:
+                  case rshift_expr_K:
+                  case truth_and_expr_K:
+                  case truth_or_expr_K:
+                  case truth_xor_expr_K:
+                  case eq_expr_K:
+                  case ne_expr_K:
+                  case unge_expr_K:
+                  case ungt_expr_K:
+                  case unlt_expr_K:
+                  case unle_expr_K:
+                  case gt_expr_K:
+                  case ge_expr_K:
+                  case lt_expr_K:
+                  case le_expr_K:
+
+                  /// ternary_expr case
+                  case cond_expr_K:
+                     return true;
+
+                  default:
+                     return false;
+               }
+            }
             case gimple_phi_K:
                return true;
 
@@ -5405,7 +5455,7 @@ namespace RangeAnalysis
             const auto terminator = GET_NODE(stmt_list.back());
 
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-               " <--RA constraint graph: BB " << bb->number << " has terminator type " << terminator->get_kind_text());
+               " <--RA constraint graph: BB" << bb->number << " has terminator type " << terminator->get_kind_text());
 
             if(auto* br = GetPointer<gimple_cond>(terminator))
             {
@@ -6158,8 +6208,6 @@ namespace RangeAnalysis
 
          buildValueMaps(SL->list_of_bloc, AppM);
 
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " <--RA constraint graph: value map built");
-
          for(const auto& [bb_id, bb] : SL->list_of_bloc)
          {
             const auto& stmt_list = bb->CGetStmtList();
@@ -6169,14 +6217,12 @@ namespace RangeAnalysis
                {
                   const auto _I = GET_NODE(stmt);
 
-                  THROW_ASSERT(_I, "Instruction not valid");
-
                   // TODO: check that instruction deals with integers only
 
                   if(!isValidInstruction(stmt))
                   {
                      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-                        " <--RA constraint graph: skipping " << _I->get_kind_text() << "...");
+                        " <--RA constraint graph: skipping " << _I->get_kind_text() << " " << _I->ToString());
                      continue;
                   }
                   
@@ -6462,7 +6508,7 @@ namespace RangeAnalysis
       }
 
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-         " <--RA return values match: function " << FN->strg << " has " << i << " arguments");
+         " <--RA return values match: function " << FN->strg << " has " << i << " argument" << (i > 1 ? "s" : ""));
 
       // Check if the function returns a supported value type. If not, no return
       // value matching is done
@@ -6494,7 +6540,7 @@ namespace RangeAnalysis
       }
 
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " <--RA return values match: function " 
-         << FN->strg << (noReturn ? " has no" : " has explicit") << " return statements");
+         << FN->strg << (noReturn ? " has no" : " has explicit") << " return statement" << (returnValues.size() > 1 ? "s" : ""));
 
       std::vector<PhiOp*> matchers(parameters.size(), nullptr);
 
