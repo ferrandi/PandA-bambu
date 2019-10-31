@@ -48,7 +48,6 @@ EXTRA_DIST += \
    %D%/mm/not-optimized/tb.c\
    %D%/mm/not-optimized/test.xml\
    %D%/mm/not-optimized/module.c\
-   %D%/Makefile.am\
    %D%/dfmul\
    %D%/dfmul/optimized\
    %D%/dfmul/optimized/softfloat.h\

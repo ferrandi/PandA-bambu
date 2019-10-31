@@ -1,4 +1,5 @@
-EXTRA_DIST = 
+AUTOMAKE_OPTIONS = subdir-objects
+EXTRA_DIST = example.sh
 TESTS =
 include $(top_srcdir)/examples/fortran/fortran.am
 include $(top_srcdir)/examples/cpp_examples/cpp_examples.am
@@ -32,7 +33,6 @@ include $(top_srcdir)/examples/discrepancy-parallel/discrepancy-parallel.am
 include $(top_srcdir)/examples/parallel_queries/parallel_queries.am
 include $(top_srcdir)/examples/onnx/onnx.am
 
-EXTRA_DIST = example.sh
 
 examples_dir = $(pkgdatadir)/examples
 examples_arf_dir = $(examples_dir)/arf

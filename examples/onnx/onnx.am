@@ -58,7 +58,6 @@ EXTRA_DIST += %D%/05_dense_b/05_dense_b.cc\
 %D%/09_conv2d_a/bambu.sequential.sh\
 %D%/09_conv2d_a/09_conv2d_a.cc\
 %D%/09_conv2d_a/09_conv2d_a.ll\
-%D%/Makefile.am\
 %D%/latex_format_bambu_results_altera_synth.xml\
 %D%/01_vecmul_a/scalarize.sh\
 %D%/01_vecmul_a/test.xml\

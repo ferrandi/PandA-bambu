@@ -1,5 +1,4 @@
 EXTRA_DIST += \
-%D%/Makefile.am\
 %D%/blackscholes/reduced/main.c\
 %D%/blackscholes/reduced/fixedptc.c\
 %D%/blackscholes/reduced/fixedptc.h\

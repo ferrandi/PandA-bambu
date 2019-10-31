@@ -7,7 +7,6 @@ EXTRA_DIST += \
 %D%/backprop/backprop/net.c\
 %D%/backprop/backprop/hls.tcl\
 %D%/backprop/backprop/net.h\
-%D%/Makefile.am\
 %D%/machsuite_bench_list\
 %D%/fft/strided/fft.h\
 %D%/fft/strided/input.data\
