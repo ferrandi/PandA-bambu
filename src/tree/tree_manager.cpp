@@ -495,14 +495,14 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
             {
                break;
             }
+            if(!gm)
+            {
+               THROW_ERROR("unexpected statement " + sn->CGetDefStmt()->ToString());
+            }
             if(gm->memdef)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---The gimple assignment where ssa name is defined has virtual def");
                break;
-            }
-            if(!gm)
-            {
-               THROW_ERROR("unexpected statement " + sn->CGetDefStmt()->ToString());
             }
             /// If there is a conversion to a not built-in type, type has to be declared; but if no variable survives, type will be not declared by the backend
             null_deleter null_del;
