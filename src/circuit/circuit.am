@@ -47,5 +47,5 @@ lib_structuralIO_la_CPPFLAGS = \
 
 lib_structuralIO_la_SOURCES = circuit/structuralIO.cpp
 
-PRJ_DOC += circuit.doc
+PRJ_DOC += circuit/circuit.doc
 

@@ -1299,12 +1299,11 @@ void tree_helper::get_used_variables(bool first_level_only, const tree_nodeRef t
       {
          auto* tl = GetPointer<tree_list>(t);
          std::list<tree_list*> tl_list;
-         auto tl_current = tl;
          do
          {
-            tl_list.push_back(tl_current);
-            tl_current = tl->chan ? GetPointer<tree_list>(GET_NODE(tl->chan)) : nullptr;
-         } while(tl_current);
+            tl_list.push_back(tl);
+            tl = tl->chan ? GetPointer<tree_list>(GET_NODE(tl->chan)) : nullptr;
+         } while(tl);
          for(auto tl_current0 : tl_list)
          {
             if(tl_current0->purp)
@@ -6136,10 +6135,9 @@ std::string tree_helper::print_type(const tree_managerConstRef& TM, unsigned int
          std::list<tree_nodeRef> prmtrs;
          while(lnode->chan)
          {
-            auto* lnode_next = GetPointer<tree_list>(GET_NODE(lnode->chan));
-            if(!GetPointer<void_type>(GET_NODE(lnode_next->valu)))
-               prmtrs.push_back(lnode_next->valu);
-            lnode = lnode_next;
+            lnode = GetPointer<tree_list>(GET_NODE(lnode->chan));
+            if(!GetPointer<void_type>(GET_NODE(lnode->valu)))
+               prmtrs.push_back(lnode->valu);
          }
          for(auto valu : prmtrs)
             res += "," + print_type(TM, GET_INDEX_NODE(valu), global, print_qualifiers);
@@ -7867,12 +7865,11 @@ void tree_helper::compute_ssa_uses_rec_ptr(const tree_nodeRef& curr_tn, CustomOr
       {
          auto* tl = GetPointer<tree_list>(curr_tn);
          std::list<tree_list*> tl_list;
-         auto tl_current = tl;
          do
          {
-            tl_list.push_back(tl_current);
-            tl_current = tl->chan ? GetPointer<tree_list>(GET_NODE(tl->chan)) : nullptr;
-         } while(tl_current);
+            tl_list.push_back(tl);
+            tl = tl->chan ? GetPointer<tree_list>(GET_NODE(tl->chan)) : nullptr;
+         } while(tl);
          for(auto tl_current0 : tl_list)
          {
             if(tl_current0->purp)
@@ -8210,12 +8207,11 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef tn, TreeNodeMap<size_t>& ssa
       {
          auto* tl = GetPointer<tree_list>(curr_tn);
          std::list<tree_list*> tl_list;
-         auto tl_current = tl;
          do
          {
-            tl_list.push_back(tl_current);
-            tl_current = tl->chan ? GetPointer<tree_list>(GET_NODE(tl->chan)) : nullptr;
-         } while(tl_current);
+            tl_list.push_back(tl);
+            tl = tl->chan ? GetPointer<tree_list>(GET_NODE(tl->chan)) : nullptr;
+         } while(tl);
          for(auto tl_current0 : tl_list)
          {
             if(tl_current0->purp)
@@ -8748,12 +8744,11 @@ void tree_helper::get_required_values(const tree_managerConstRef& TM, std::vecto
       {
          auto* tl = GetPointer<tree_list>(tn);
          std::list<tree_list*> tl_list;
-         auto tl_current = tl;
          do
          {
-            tl_list.push_back(tl_current);
-            tl_current = tl->chan ? GetPointer<tree_list>(GET_NODE(tl->chan)) : nullptr;
-         } while(tl_current);
+            tl_list.push_back(tl);
+            tl = tl->chan ? GetPointer<tree_list>(GET_NODE(tl->chan)) : nullptr;
+         } while(tl);
          for(auto tl_current0 : tl_list)
             required.emplace_back(GET_INDEX_NODE(tl_current0->valu), 0);
          break;

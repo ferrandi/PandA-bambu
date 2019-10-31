@@ -62,5 +62,5 @@ if USE_SOURCE_CODE_STATISTICS_XML
       -I$(top_srcdir)/src/constants
 endif
 
-PRJ_DOC += behavior.doc
+PRJ_DOC += behavior/behavior.doc
 

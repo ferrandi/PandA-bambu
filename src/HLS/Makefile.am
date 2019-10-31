@@ -266,7 +266,6 @@ noinst_HEADERS += binding/interconnection/conn_binding_creator.hpp binding/inter
                   binding/interconnection/parallel_memory_conn_binding.hpp
 lib_interconnectionbinding_la_SOURCES = binding/interconnection/conn_binding_creator.cpp binding/interconnection/conn_binding.cpp binding/interconnection/port_swapping.cpp\
                                         binding/interconnection/mux_connection_binding.cpp binding/interconnection/conn_binding_cs.cpp binding/interconnection/parallel_memory_conn_binding.cpp
-PRJ_DOC += binding/interconnection/mux_connection_binding.doc
 
 noinst_LTLIBRARIES += lib_modulebinding.la
 lib_modulebinding_la_CPPFLAGS = \

@@ -2,6 +2,8 @@ noinst_LTLIBRARIES += lib_algorithms.la
 lib_algorithms_la_LIBADD = 
 lib_algorithms_la_SOURCES =
 
+noinst_HEADERS += algorithms/graph_helpers/cyclic_topological_sort.hpp
+
 if BUILD_LIB_CLIQUECOVER
   noinst_HEADERS += algorithms/bipartite_matching/bipartite_matching.hpp
 

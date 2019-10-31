@@ -59,7 +59,6 @@ dist-hook:
 	rm $(distdir)/etc/macros/ltversion.m4
 	rm $(distdir)/ext/abseil-cpp/aclocal.m4
 	rm $(distdir)/ext/abseil-cpp/configure
-	rm $(distdir)/ext/abseil-cpp/m4/ltversion.m4
 	rm $(distdir)/ext/flopoco/aclocal.m4
 	rm $(distdir)/ext/flopoco/configure
 	rm $(distdir)/ext/flopoco/m4/ltversion.m4
@@ -94,6 +93,7 @@ dist-hook:
 	$(distdir)/src/parser/aadl/aadl_lexer.cpp $(distdir)/src/parser/aadl/aadl_yparser.hpp $(distdir)/src/parser/aadl/aadl_yparser.h $(distdir)/src/parser/aadl/aadl_yparser.cpp \
 	$(distdir)/src/parser/asn/asn_lexer.cpp $(distdir)/src/parser/asn/asn_yparser.hpp $(distdir)/src/parser/asn/asn_yparser.h $(distdir)/src/parser/asn/asn_yparser.cpp \
 	$(distdir)/src/parser/discrepancy/discrepancyLexer.cpp $(distdir)/src/parser/discrepancy/discrepancyParser.hpp $(distdir)/src/parser/discrepancy/discrepancyParser.h $(distdir)/src/parser/discrepancy/discrepancyParser.cpp; \
+	$(distdir)/src/HLS/simulation/c_initialization_yparser.hpp $(distdir)/src/HLS/simulation/c_initialization_flex_lexer.cpp $(distdir)/src/HLS/simulation/c_initialization_yparser.cpp; \
 	do\
 	   if test -f $$file; then\
 	      rm $$file;\

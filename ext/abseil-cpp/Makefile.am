@@ -65,8 +65,8 @@ noinst_HEADERS = \
           absl/base/internal/scoped_set_env.h \
           absl/container/btree_map.h absl/container/btree_set.h absl/container/internal/btree.h absl/container/internal/btree_container.h absl/container/internal/compressed_tuple.h absl/container/fixed_array.h absl/container/internal/inlined_vector.h absl/container/inlined_vector.h absl/container/internal/counting_allocator.h \
           absl/container/flat_hash_map.h absl/container/flat_hash_set.h absl/container/node_hash_map.h absl/container/node_hash_set.h absl/container/internal/container_memory.h absl/container/internal/hash_function_defaults.h \
-          absl/container/internal/hash_policy_traits.h absl/container/internal/hashtablez_sampler.h absl/container/internal/hashtable_debug.h absl/container/internal/hashtable_debug_hooks.h absl/container/internal/have_sse.h \
-          absl/container/internal/node_hash_policy.h absl/container/internal/raw_hash_map.h absl/container/internal/raw_hash_set.h absl/container/internal/tracked.h \
+          absl/container/internal/hash_policy_traits.h absl/container/internal/hashtablez_sampler.h absl/container/internal/hashtable_debug.h absl/container/internal/hashtable_debug_hooks.h absl/container/internal/have_sse.h absl/container/internal/common.h\
+          absl/container/internal/node_hash_policy.h absl/container/internal/raw_hash_map.h absl/container/internal/raw_hash_set.h absl/container/internal/layout.h absl/container/internal/tracked.h \
           absl/debugging/stacktrace.h absl/debugging/symbolize.h absl/debugging/internal/symbolize.h absl/debugging/symbolize_elf.inc absl/debugging/symbolize_unimplemented.inc absl/debugging/symbolize_win32.inc \
           absl/debugging/internal/examine_stack.h absl/debugging/failure_signal_handler.h absl/debugging/internal/address_is_readable.h absl/debugging/internal/elf_mem_image.h absl/debugging/internal/stacktrace_aarch64-inl.inc \
           absl/debugging/internal/stacktrace_arm-inl.inc absl/debugging/internal/stacktrace_config.h absl/debugging/internal/stacktrace_generic-inl.inc absl/debugging/internal/stacktrace_powerpc-inl.inc \
@@ -74,7 +74,7 @@ noinst_HEADERS = \
           absl/debugging/internal/demangle.h absl/debugging/leak_check.h absl/debugging/internal/stack_consumption.h \
           absl/flags/internal/path_util.h absl/flags/internal/program_name.h absl/flags/config.h absl/flags/usage_config.h absl/flags/marshalling.h absl/flags/internal/commandlineflag.h absl/flags/internal/registry.h \
           absl/flags/internal/type_erased.h absl/flags/declare.h absl/flags/flag.h absl/flags/internal/flag.h absl/flags/internal/usage.h absl/flags/usage.h absl/flags/internal/parse.h absl/flags/parse.h \
-          absl/hash/internal/hash.h absl/hash/internal/spy_hash_state.h absl/hash/internal/city.h \
+          absl/hash/hash.h absl/hash/internal/hash.h absl/hash/internal/spy_hash_state.h absl/hash/internal/city.h \
           absl/memory/memory.h absl/meta/type_traits.h \
           absl/numeric/int128.h absl/numeric/int128_have_intrinsic.inc absl/numeric/int128_no_intrinsic.inc \
           absl/random/random.h absl/random/bernoulli_distribution.h absl/random/beta_distribution.h absl/random/discrete_distribution.h absl/random/distribution_format_traits.h absl/random/distributions.h \
@@ -97,7 +97,7 @@ noinst_HEADERS = \
           absl/time/internal/cctz/include/cctz/civil_time_detail.h absl/time/internal/cctz/include/cctz/time_zone.h absl/time/internal/cctz/include/cctz/zone_info_source.h absl/time/internal/cctz/src/time_zone_fixed.h \
           absl/time/internal/cctz/src/time_zone_if.h absl/time/internal/cctz/src/time_zone_impl.h absl/time/internal/cctz/src/time_zone_info.h absl/time/internal/cctz/src/time_zone_libc.h \
           absl/time/internal/cctz/src/time_zone_posix.h absl/time/internal/cctz/src/tzfile.h \
-          absl/types/any.h absl/types/bad_any_cast.h absl/types/bad_any_cast.h absl/types/internal/span.h absl/types/optional.h absl/types/internal/optional.h absl/types/bad_optional_access.h \
+          absl/types/any.h absl/types/bad_any_cast.h absl/types/bad_any_cast.h absl/types/internal/span.h absl/types/optional.h absl/types/span.h absl/types/internal/optional.h absl/types/bad_optional_access.h \
           absl/types/bad_variant_access.h absl/types/variant.h absl/types/internal/variant.h absl/types/compare.h\
           absl/utility/utility.h
 
