@@ -13,7 +13,7 @@ So, the bambu.sh will first simulate and then synthesize the C based description
 
 Note that, this example shows another nice feature of the HLS framework. The file module.c contains the C specification of the factorial function in its recursive form.
 bambu is not actually able to synthesize recursive functions but GCC is able to automatically translate it in its non-recursive form once -O2 option is passed. To understand what exactly 
-has been synthesized please check the a.c in the sim or synth directory created by bambu.sh.
+has been synthesized please check the a.c in the add_device_simple_sim or add_device_simple_synth directory created by bambu.sh.
 This example shows how to add a new device very similar to one of the already available XML characterizations. In case the device is not very similar to one of the already characterized devices, the user should check and accordingly add the characterization scripts. Example of characterization scripts based on eucalyptus tool are available in etc/devices.
 Note that, eucalyptus is automatically built once a RTL synthesis backend is configured.
 
