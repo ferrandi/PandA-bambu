@@ -1494,46 +1494,6 @@ AC_CONFIG_FILES(
                  panda_regressions/Makefile
                  panda_regressions/hls/Makefile
                  examples/Makefile
-                 examples/add_device_simple/Makefile
-                 examples/arf/Makefile
-                 examples/arf_res_sharing/Makefile
-                 examples/cpp_examples/Makefile
-                 examples/crc/Makefile
-                 examples/crc_yosys/Makefile
-                 examples/fft_example/Makefile
-                 examples/CHStone/Makefile
-                 examples/crypto_designs/Makefile
-                 examples/discrepancy-parallel/Makefile
-                 examples/fortran/Makefile
-                 examples/function_pointers/Makefile
-                 examples/function_pointers/bsearch_glibc/Makefile
-                 examples/function_pointers/bsearch_musl/Makefile
-                 examples/function_pointers/bsearch_newlib/Makefile
-                 examples/function_pointers/bsearch_uclibc/Makefile
-                 examples/function_pointers/filtering_pipeline/Makefile
-                 examples/function_pointers/qsort_glibc/Makefile
-                 examples/function_pointers/qsort_musl/Makefile
-                 examples/function_pointers/qsort_uclibc/Makefile
-                 examples/function_pointers/simple_raytrace/Makefile
-                 examples/hls_study/Makefile
-                 examples/MachSuite/Makefile
-                 examples/mm/Makefile
-                 examples/mm_float/Makefile
-                 examples/omp_simd/Makefile
-                 examples/onnx/Makefile
-                 examples/parallel_queries/Makefile
-                 examples/libm/Makefile
-                 examples/softfloat/Makefile
-                 examples/VGA/Makefile
-                 examples/VGA_Nexys4/Makefile
-                 examples/file_simulate/Makefile
-                 examples/IP_integration/Makefile
-                 examples/simple_asm/Makefile
-                 examples/python-bindings/Makefile
-                 examples/led_example/Makefile
-                 examples/pong/Makefile
-                 examples/breakout/Makefile
-                 examples/taste/Makefile
                  documentation/Makefile
                  documentation/img/Makefile
                  src/Makefile
