@@ -46,6 +46,7 @@
 #include "application_frontend_flow_step.hpp" // for ApplicationFrontendFlo...
 #include "application_manager.hpp"            // for application_manager
 #include "call_graph_manager.hpp"             // for application_managerCon...
+#include "custom_set.hpp"                     // for set
 #include "design_flow_graph.hpp"              // for DesignFlowGraph, Desig...
 #include "design_flow_manager.hpp"            // for DesignFlowManager, Des...
 #include "exceptions.hpp"                     // for THROW_UNREACHABLE
@@ -56,7 +57,6 @@
 #include "string_manipulation.hpp"            // for STR GET_CLASS
 #include "tree_manager.hpp"                   // for tree_managerConstRef
 #include <iosfwd>                             // for ofstream
-#include <set>                                // for set
 
 FrontendFlowStep::FrontendFlowStep(const application_managerRef _AppM, const FrontendFlowStepType _frontend_flow_step_type, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
     : DesignFlowStep(_design_flow_manager, _parameters), AppM(_AppM), frontend_flow_step_type(_frontend_flow_step_type), print_counter(0)
@@ -66,12 +66,12 @@ FrontendFlowStep::FrontendFlowStep(const application_managerRef _AppM, const Fro
 
 FrontendFlowStep::~FrontendFlowStep() = default;
 
-void FrontendFlowStep::CreateSteps(const DesignFlowManagerConstRef design_flow_manager, const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>>& frontend_relationships, const application_managerConstRef application_manager,
+void FrontendFlowStep::CreateSteps(const DesignFlowManagerConstRef design_flow_manager, const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>& frontend_relationships, const application_managerConstRef application_manager,
                                    DesignFlowStepSet& relationships)
 {
    const DesignFlowGraphConstRef design_flow_graph = design_flow_manager->CGetDesignFlowGraph();
    const auto* frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager->CGetDesignFlowStepFactory("Frontend"));
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>>::const_iterator frontend_relationship, frontend_relationship_end = frontend_relationships.end();
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>::const_iterator frontend_relationship, frontend_relationship_end = frontend_relationships.end();
    for(frontend_relationship = frontend_relationships.begin(); frontend_relationship != frontend_relationship_end; ++frontend_relationship)
    {
       switch(frontend_relationship->second)
@@ -124,7 +124,7 @@ void FrontendFlowStep::CreateSteps(const DesignFlowManagerConstRef design_flow_m
 
 void FrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relationships, const DesignFlowStep::RelationshipType relationship_type)
 {
-   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> frontend_relationships = ComputeFrontendRelationships(relationship_type);
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> frontend_relationships = ComputeFrontendRelationships(relationship_type);
    CreateSteps(design_flow_manager.lock(), frontend_relationships, AppM, relationships);
 }
 
@@ -339,8 +339,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case(LOOPS_ANALYSIS_ZEBU):
          return "LoopsAnalysisZebu";
 #endif
-      case(LOOPS_IDENTIFICATION):
-         return "LoopsIdentification";
+      case(LOOPS_COMPUTATION):
+         return "LoopsComputation";
 #if HAVE_ZEBU_BUILT
       case(LOOPS_REBUILDING):
          return "LoopsRebuilding";

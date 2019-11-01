@@ -92,11 +92,11 @@ Evaluation::Evaluation(const ParameterConstRef _parameters, const HLS_managerRef
 
 Evaluation::~Evaluation() = default;
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> Evaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> Evaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    std::string objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
    std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -400,8 +400,7 @@ DesignFlowStep_Status Evaluation::Exec()
 
    const std::string bambu_args = parameters->getOption<std::string>(OPT_cat_args);
    const std::string bambu_version = parameters->PrintVersion();
-   boost::posix_time::ptime local_time = boost::posix_time::second_clock::local_time();
-   const std::string current_time = boost::posix_time::to_simple_string(local_time);
+   const std::string current_time = TimeStamp::GetCurrentTimeStamp();
    WRITE_XNVM2(STR_XML_bambu_results_bambu_args, bambu_args, nodeRoot);
    WRITE_XNVM2(STR_XML_bambu_results_bambu_version, bambu_version, nodeRoot);
    WRITE_XNVM2(STR_XML_bambu_results_timestamp, current_time, nodeRoot);

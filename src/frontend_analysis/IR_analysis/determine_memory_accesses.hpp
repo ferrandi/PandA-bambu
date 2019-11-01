@@ -49,8 +49,8 @@
 #include "function_frontend_flow_step.hpp"
 
 /// STL include
+#include "custom_map.hpp"
 #include <list>
-#include <map>
 
 /// Utility include
 #include "refcount.hpp"
@@ -68,7 +68,7 @@ class determine_memory_accesses : public FunctionFrontendFlowStep
    const tree_managerConstRef TM;
 
    /// Already visited address expression (used to avoid infinite recursion)
-   std::unordered_set<unsigned int> already_visited_ae;
+   CustomUnorderedSet<unsigned int> already_visited_ae;
 
    /// True if already executed
    bool already_executed;
@@ -82,7 +82,7 @@ class determine_memory_accesses : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**

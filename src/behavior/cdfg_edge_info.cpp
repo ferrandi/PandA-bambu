@@ -82,8 +82,8 @@ const std::string CdfgEdgeInfo::PrintLabels(const int selector, const Behavioral
    if(labels.find(selector) == labels.end())
       return "";
    std::string ret;
-   const std::set<unsigned int>& labels_to_be_printed = labels.find(selector)->second;
-   std::set<unsigned int>::const_iterator label, label_end = labels_to_be_printed.end();
+   const CustomOrderedSet<unsigned int>& labels_to_be_printed = labels.find(selector)->second;
+   CustomOrderedSet<unsigned int>::const_iterator label, label_end = labels_to_be_printed.end();
    for(label = labels_to_be_printed.begin(); label != label_end; ++label)
    {
       if(label != labels_to_be_printed.begin())
@@ -113,9 +113,9 @@ void CdfgEdgeInfo::add_nodeID(unsigned int _nodeID, const int type)
    labels[type].insert(_nodeID);
 }
 
-const std::set<unsigned int>& CdfgEdgeInfo::get_nodeID(const int selector) const
+const CustomOrderedSet<unsigned int>& CdfgEdgeInfo::get_nodeID(const int selector) const
 {
-   static std::set<unsigned int> null_set;
+   static CustomOrderedSet<unsigned int> null_set;
    if(labels.find(selector) != labels.end())
       return labels.find(selector)->second;
    return null_set;

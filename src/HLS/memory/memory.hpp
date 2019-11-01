@@ -46,8 +46,8 @@
 #include <string>
 
 /// STL includes
-#include <map>
-#include <set>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 #include "refcount.hpp"
 /**
@@ -76,12 +76,12 @@ class memory
    std::map<unsigned int, std::map<unsigned int, memory_symbolRef>> internal;
 
    /// set of variable proxies accessed by a function
-   std::map<unsigned int, std::set<unsigned int>> internal_variable_proxy;
+   std::map<unsigned int, CustomOrderedSet<unsigned int>> internal_variable_proxy;
 
    /// is the set of proxied variables
-   std::set<unsigned int> proxied_variables;
+   CustomOrderedSet<unsigned int> proxied_variables;
 
-   std::set<unsigned int> read_only_vars;
+   CustomOrderedSet<unsigned int> read_only_vars;
 
    /// set of all the internal variables
    std::map<unsigned int, memory_symbolRef> in_vars;
@@ -97,22 +97,22 @@ class memory
    std::map<unsigned int, memory_symbolRef> callSites;
 
    /// store the objects that does not need to be attached to the bus
-   std::set<unsigned int> private_memories;
+   CustomOrderedSet<unsigned int> private_memories;
 
    /// store if a given variable is accessed always with the same data_size or not
    std::map<unsigned int, unsigned int> same_data_size_accesses;
 
    /// ssa_names assigned to a given memory variable
-   std::map<unsigned int, std::set<unsigned int>> source_values;
+   std::map<unsigned int, CustomOrderedSet<unsigned int>> source_values;
 
    /// parm_decl that has to be copied from the caller
-   std::set<unsigned int> parm_decl_copied;
+   CustomOrderedSet<unsigned int> parm_decl_copied;
 
    /// parm_decl storage has to be initialized from the formal parameter
-   std::set<unsigned int> parm_decl_stored;
+   CustomOrderedSet<unsigned int> parm_decl_stored;
 
    /// actual parameter that has to be loaded from a stored value
-   std::set<unsigned int> actual_parm_loaded;
+   CustomOrderedSet<unsigned int> actual_parm_loaded;
 
    /// it represents the next address that is available for internal allocation
    unsigned int next_base_address;
@@ -187,7 +187,7 @@ class memory
    std::map<unsigned int, size_t> maximum_loads;
 
    /// define for each variable the number of loads whenever it is possible
-   std::set<unsigned int> need_bus;
+   CustomOrderedSet<unsigned int> need_bus;
 
    /// true when packed vars are used
    bool packed_vars;
@@ -257,7 +257,7 @@ class memory
     * @param funID_scope is the function id
     * @return the set of variables proxied in funID_scope
     */
-   const std::set<unsigned int>& get_proxied_internal_variables(unsigned int funID_scope) const;
+   const CustomOrderedSet<unsigned int>& get_proxied_internal_variables(unsigned int funID_scope) const;
 
    /**
     * check if the function has proxied variables
@@ -316,7 +316,7 @@ class memory
     * @param var is the memory variable
     * @return the set of values associated with var
     */
-   const std::set<unsigned int>& get_source_values(unsigned int var)
+   const CustomOrderedSet<unsigned int>& get_source_values(unsigned int var)
    {
       return source_values[var];
    }

@@ -80,9 +80,9 @@ port_swapping::port_swapping(const ParameterConstRef _Param, const HLS_managerRe
 
 port_swapping::~port_swapping() = default;
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> port_swapping::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> port_swapping::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -206,7 +206,7 @@ int port_swapping::vertex_distance(std::vector<PSE>& spt_edges, PSVertex root, P
    return distance;
 }
 
-port_swapping::PSVertex port_swapping::find_max_degree(std::set<std::pair<PSVertex, unsigned int>>& dSet)
+port_swapping::PSVertex port_swapping::find_max_degree(CustomOrderedSet<std::pair<PSVertex, unsigned int>>& dSet)
 {
    long unsigned int max = 0;
    PSVertex v = 0;
@@ -219,7 +219,7 @@ port_swapping::PSVertex port_swapping::find_max_degree(std::set<std::pair<PSVert
    return v;
 }
 
-void port_swapping::update_degree(PSGraph g2, std::set<std::pair<PSVertex, unsigned int>>& dSet)
+void port_swapping::update_degree(PSGraph g2, CustomOrderedSet<std::pair<PSVertex, unsigned int>>& dSet)
 {
    auto g2_vertices = boost::vertices(g2);
    for(auto iterator = g2_vertices.first; iterator != g2_vertices.second; ++iterator)
@@ -320,8 +320,8 @@ void port_swapping::port_swapping_algorithm(PSGraph g, std::vector<PSMultiStart>
    for(auto e : odd_co_tree_edges)
       add_edge(e.first, e.second, g2);
 
-   std::set<std::pair<PSVertex, unsigned int>> degree_set;
-   std::set<PSVertex> cover_set;
+   CustomOrderedSet<std::pair<PSVertex, unsigned int>> degree_set;
+   CustomOrderedSet<PSVertex> cover_set;
    auto g2_vertices = boost::vertices(g2);
    update_degree(g2, degree_set);
 
@@ -480,8 +480,8 @@ DesignFlowStep_Status port_swapping::InternalExec()
             else
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Read: " + behavioral_helper->PrintVariable(tree_var));
-               const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(fu_operation);
-               const std::set<vertex>::const_iterator rs_it_end = running_states.end();
+               const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(fu_operation);
+               const CustomOrderedSet<vertex>::const_iterator rs_it_end = running_states.end();
                for(auto rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
                {
                   vertex state = *rs_it;
@@ -493,7 +493,7 @@ DesignFlowStep_Status port_swapping::InternalExec()
                   else
                   {
                      vertex def_op = HLS->Rliv->get_op_where_defined(tree_var);
-                     const std::set<vertex>& def_op_ending_states = HLS->Rliv->get_state_where_end(def_op);
+                     const CustomOrderedSet<vertex>& def_op_ending_states = HLS->Rliv->get_state_where_end(def_op);
                      if((GET_TYPE(data, def_op) & TYPE_PHI) == 0)
                      {
                         if(def_op_ending_states.find(state) != def_op_ending_states.end())

@@ -53,8 +53,8 @@
 #include <string>
 
 /// STL include
-#include <map>
-#include <set>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 /// utility include
 #include "dbgPrintHelper.hpp"
@@ -235,7 +235,7 @@ void fu_binding_cs::set_atomic_memory_parameter(const hlsRef HLS)
          if(!addr_acc)
             addr_acc = 1;
          int bit_atomic = addr_tasks + addr_acc;
-         if(bit_atomic>=64)
+         if(bit_atomic >= 64)
             THROW_ERROR("too large tag value for TAG_MEM_REQ");
          tag_num = 1ULL << bit_atomic;
          curr_gate->SetParameter("TAG_MEM_REQ", STR(tag_num));
@@ -243,7 +243,8 @@ void fu_binding_cs::set_atomic_memory_parameter(const hlsRef HLS)
    }
 }
 
-void fu_binding_cs::manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const std::set<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id)
+void fu_binding_cs::manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const CustomOrderedSet<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS,
+                                                         unsigned int& _unique_id)
 {
    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
    if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
@@ -258,9 +259,9 @@ void fu_binding_cs::manage_memory_ports_parallel_chained(const HLS_managerRef HL
       fu_binding::manage_memory_ports_parallel_chained(HLSMgr, SM, memory_modules, circuit, HLS, unique_id);
 }
 
-void fu_binding_cs::manage_memory_port_kernel(const structural_managerRef SM, const std::set<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id)
+void fu_binding_cs::manage_memory_port_kernel(const structural_managerRef SM, const CustomOrderedSet<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id)
 {
-   std::map<structural_objectRef, std::set<structural_objectRef>> primary_outs;
+   std::map<structural_objectRef, CustomOrderedSet<structural_objectRef>> primary_outs;
    structural_objectRef cir_port;
    structural_objectRef sche_port;
    structural_objectRef scheduler = circuit->find_member("scheduler_kernel", component_o_K, circuit);
@@ -346,9 +347,9 @@ void fu_binding_cs::manage_memory_port_kernel(const structural_managerRef SM, co
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected memory_port of scheduler");
 }
 
-void fu_binding_cs::manage_memory_port_hierarchical(const structural_managerRef SM, const std::set<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id)
+void fu_binding_cs::manage_memory_port_hierarchical(const structural_managerRef SM, const CustomOrderedSet<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id)
 {
-   std::map<structural_objectRef, std::set<structural_objectRef>> primary_outs;
+   std::map<structural_objectRef, CustomOrderedSet<structural_objectRef>> primary_outs;
    structural_objectRef cir_port;
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Start merging, splitting for hierarchical");
    for(const auto memory_module : memory_modules)

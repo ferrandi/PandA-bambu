@@ -57,20 +57,14 @@
 #include "Parameter.hpp"
 #include "dbgPrintHelper.hpp"
 
-#include <iosfwd>
-#include <string>
-
 /// HLS include
 #include "hls.hpp"
 
 /// HLS/allocation_information include
 #include "allocation_information.hpp"
 
-/// STL include
-#include <map>
-#include <set>
-#include <tuple>
-#include <unordered_set>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 /// tree include
 #include "behavioral_helper.hpp"
@@ -80,6 +74,11 @@
 /// utility include
 #include "cpu_time.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
+
+#include "custom_set.hpp"
+#include <iosfwd>
+#include <string>
+#include <tuple>
 
 easy_module_binding::easy_module_binding(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
     : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::EASY_MODULE_BINDING)
@@ -105,9 +104,9 @@ void easy_module_binding::Initialize()
    }
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> easy_module_binding::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> easy_module_binding::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -165,7 +164,7 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Easy binding information for function " + FB->CGetBehavioralHelper()->get_function_name() + ":");
    /// check easy binding and compute the list of vertices for which a sharing is possible
-   std::set<vertex> easy_bound_vertices;
+   CustomOrderedSet<vertex> easy_bound_vertices;
    for(const auto op : sdg->CGetOperations())
    {
       if(fu.get_index(op) != INFINITE_UINT)

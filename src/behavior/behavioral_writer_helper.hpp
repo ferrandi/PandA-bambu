@@ -52,15 +52,12 @@
 /// Graph include
 #include "graph.hpp"
 
-/// STD include
-#include <ostream>
-
-/// STL include
-#include <unordered_set>
-
 /// utility include
 #include "custom_set.hpp"
 #include "refcount.hpp"
+
+/// STD include
+#include <ostream>
 
 /**
  * @name forward declarations
@@ -159,7 +156,7 @@ class BBWriter : public VertexWriter
    const BehavioralHelperConstRef helper;
 
    /// The set of vertices to be annotated
-   std::unordered_set<vertex> annotated;
+   CustomUnorderedSet<vertex> annotated;
 
 #if HAVE_HLS_BUILT
    /// The scheduling solution
@@ -172,7 +169,7 @@ class BBWriter : public VertexWriter
     * @param g is the graph to be printed
     * @param annotated is the set of the vertices to be annotated
     */
-   BBWriter(const BBGraph* g, std::unordered_set<vertex> annotated = std::unordered_set<vertex>());
+   BBWriter(const BBGraph* g, CustomUnorderedSet<vertex> annotated = CustomUnorderedSet<vertex>());
 
    /**
     * Operator used to print the label of a vertex

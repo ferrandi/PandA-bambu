@@ -103,7 +103,7 @@ class StateTransitionGraphManager
    };
 
    // helper method to retrieve states
-   std::set<vertex> get_states(const vertex& op, StateTypes statetypes) const;
+   CustomOrderedSet<vertex> get_states(const vertex& op, StateTypes statetypes) const;
 
    /// HLS data-structure
    hlsRef HLS;
@@ -127,9 +127,9 @@ class StateTransitionGraphManager
    ~StateTransitionGraphManager();
 
    /* States retrievers */
-   std::set<vertex> get_execution_states(const vertex& op) const;
-   std::set<vertex> get_ending_states(const vertex& op) const;
-   std::set<vertex> get_starting_states(const vertex& op) const;
+   CustomOrderedSet<vertex> get_execution_states(const vertex& op) const;
+   CustomOrderedSet<vertex> get_ending_states(const vertex& op) const;
+   CustomOrderedSet<vertex> get_starting_states(const vertex& op) const;
 
    /// compute the minimum and maximum number of cycles when possible
    void compute_min_max();
@@ -194,7 +194,7 @@ class StateTransitionGraphManager
     */
    unsigned int get_number_of_states() const;
 
-   void add_multi_unbounded_obj(vertex s, const std::set<vertex>& ops);
+   void add_multi_unbounded_obj(vertex s, const CustomOrderedSet<vertex>& ops);
 
    void specialise_mu(structural_objectRef& mu_mod, generic_objRef mu) const;
 

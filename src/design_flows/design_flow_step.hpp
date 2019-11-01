@@ -59,8 +59,8 @@ CONSTREF_FORWARD_DECL(Parameter);
  * A set of design flow step
  */
 #if HAVE_UNORDERED
-#include <unordered_set>
-class DesignFlowStepSet : public std::unordered_set<DesignFlowStepRef>
+#include "custom_set.hpp"
+class DesignFlowStepSet : public CustomUnorderedSet<DesignFlowStepRef>
 {
 };
 #else

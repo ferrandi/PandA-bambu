@@ -150,7 +150,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
    const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::DFG);
 
    /// Map between basic block node index and vertices
-   std::unordered_map<unsigned int, vertex> bb_index_map;
+   CustomUnorderedMap<unsigned int, vertex> bb_index_map;
    BOOST_FOREACH(vertex v, boost::vertices(*fbb))
    {
       bb_index_map[fbb->CGetBBNodeInfo(v)->get_bb_index()] = v;
@@ -367,7 +367,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Computing live in");
    vertex entry_state = HLS->STG->get_entry_state();
    prev_state = entry_state;
-   std::set<vertex> state_to_skip;
+   CustomOrderedSet<vertex> state_to_skip;
    for(const auto& osl : boost::adaptors::reverse(reverse_order_state_list))
    {
       const StateInfoConstRef state_info = astg->CGetStateInfo(osl);
@@ -512,7 +512,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                {
                   vertex src_state = boost::source(ie, *stg);
                   const StateInfoConstRef source_state_info = stg->CGetStateInfo(src_state);
-                  const std::set<unsigned int>& BB_ids = source_state_info->BB_ids;
+                  const CustomOrderedSet<unsigned int>& BB_ids = source_state_info->BB_ids;
                   if(BB_ids.find(bb_index) != BB_ids.end())
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Adding state in " + source_state_info->name + " " + FB->CGetBehavioralHelper()->PrintVariable(tree_var) + " in state " + state_info->name);

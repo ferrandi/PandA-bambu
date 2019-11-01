@@ -29,17 +29,17 @@ eucalyptus_CPPFLAGS = \
  $(AM_CPPFLAGS)
 
 lib_eucalyptus_la_LIBADD += \
-   $(top_builddir)/src/circuit/lib_circuit.la \
-   $(top_builddir)/src/design_flows/lib_design_flows.la \
-   $(top_builddir)/src/design_flows/backend/lib_backend.la \
-   $(top_builddir)/src/graph/lib_graph.la \
+   lib_circuit.la \
+   lib_design_flows.la \
+   lib_backend.la \
+   lib_graph.la \
    $(top_builddir)/src/parser/lib_parser.la \
    $(top_builddir)/src/parser/polixml/lib_xml_dom_parser.la \
-   $(top_builddir)/src/polixml/lib_polixml.la \
-   $(top_builddir)/src/technology/lib_technology.la \
-   $(top_builddir)/src/utility/lib_utility.la \
-   $(top_builddir)/src/wrapper/lib_wrapper.la \
-   $(BOOST_DATE_TIME_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_SYSTEM_LIB)
+   lib_polixml.la \
+   lib_technology.la \
+   lib_utility.la \
+   lib_wrapper.la \
+   $(BOOST_FILESYSTEM_LIB) $(BOOST_SYSTEM_LIB)
 
 if BUILD_LIB_CODE_ESTIMATION
    eucalyptus_CPPFLAGS += \
@@ -53,8 +53,7 @@ if BUILD_LIB_CODE_ESTIMATION
 endif
 
 if BUILD_LIB_ALGORITHMS
-   lib_eucalyptus_la_LIBADD += \
-      $(top_builddir)/src/algorithms/lib_algorithms.la
+   lib_eucalyptus_la_LIBADD += lib_algorithms.la
 endif
 
 if BUILD_LIB_ARCH
@@ -63,8 +62,7 @@ if BUILD_LIB_ARCH
 endif
 
 if BUILD_LIB_BEHAVIOR
-   lib_eucalyptus_la_LIBADD += \
-      $(top_builddir)/src/behavior/lib_behavior.la
+   lib_eucalyptus_la_LIBADD += lib_behavior.la
 endif
 
 if BUILD_LIB_HLS
@@ -73,13 +71,11 @@ if BUILD_LIB_HLS
 endif
 
 if BUILD_LIB_INTERMEDIATE_REPRESENTATIONS
-   lib_eucalyptus_la_LIBADD += \
-      $(top_builddir)/src/intermediate_representations/lib_intermediate_representations.la
+   lib_eucalyptus_la_LIBADD += lib_intermediate_representations.la
 endif
 
 if BUILD_LIB_FROM_PRAGMA
-   lib_eucalyptus_la_LIBADD += \
-      $(top_builddir)/src/pragma/libpragma.la
+   lib_eucalyptus_la_LIBADD += libpragma.la
 endif
 
 if BUILD_LIB_RTL
@@ -88,13 +84,11 @@ if BUILD_LIB_RTL
 endif
 
 if BUILD_LIB_TREE
-   lib_eucalyptus_la_LIBADD += \
-      $(top_builddir)/src/tree/lib_tree.la
+   lib_eucalyptus_la_LIBADD += lib_tree.la
 endif
 
 if BUILD_LIB_TREE_MANIPULATION
-   lib_eucalyptus_la_LIBADD += \
-      $(top_builddir)/src/tree/lib_tree_manipulation.la
+   lib_eucalyptus_la_LIBADD += lib_tree_manipulation.la
 endif
 
 if BUILD_FLOPOCO
@@ -103,6 +97,8 @@ if BUILD_FLOPOCO
       $(top_builddir)/ext/sollya/libsollya.la
 endif
 
-eucalyptus_LDADD = lib_eucalyptus.la
+lib_eucalyptus_la_LIBADD += $(top_builddir)/ext/abseil-cpp/libabseil.la
+
+eucalyptus_LDADD = lib_eucalyptus.la @PTHREAD_HACK@
 
 PRJ_DOC += eucalyptus.doc

@@ -72,9 +72,9 @@ mem_cg_ext::mem_cg_ext(const application_managerRef _AppM, const unsigned int _f
 
 mem_cg_ext::~mem_cg_ext() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> mem_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> mem_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -114,7 +114,7 @@ DesignFlowStep_Status mem_cg_ext::InternalExec()
    const CallGraphConstRef cg = CGMan->CGetCallGraph();
    const tree_managerRef TM = AppM->get_tree_manager();
    const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
-   std::set<unsigned int> changed_fu_ids;
+   CustomOrderedSet<unsigned int> changed_fu_ids;
    const auto reached_body_fun_ids = CGMan->GetReachedBodyFunctions();
    for(unsigned int fu_id : reached_body_fun_ids)
    {

@@ -54,22 +54,15 @@
 /// Graph include
 #include "graph.hpp"
 
-/// STL include
 #include <deque>
 #include <list>
-#include <map>
-#include <set>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
-/// Utility include
+#include "custom_map.hpp"
 #include "custom_set.hpp"
+
+/// Utility include
 #include "refcount.hpp"
-#include <fstream>
-#include <iosfwd>
-#include <ostream>
-#include <string>
 
 CONSTREF_FORWARD_DECL(application_manager);
 CONSTREF_FORWARD_DECL(BBGraph);
@@ -147,13 +140,13 @@ class CWriter
    /// renaming table used by phi node destruction procedure
    std::map<vertex, std::map<unsigned int, std::string>> renaming_table;
 
-   std::set<vertex> bb_frontier;
-   std::set<vertex> bb_analyzed;
+   CustomOrderedSet<vertex> bb_frontier;
+   CustomOrderedSet<vertex> bb_analyzed;
    std::map<unsigned int, std::string> basic_blocks_labels;
-   std::set<vertex> goto_list;
+   CustomOrderedSet<vertex> goto_list;
    var_pp_functorConstRef local_rec_variableFunctor;
    FunctionBehaviorConstRef local_rec_function_behavior;
-   std::set<vertex> local_rec_instructions;
+   CustomOrderedSet<vertex> local_rec_instructions;
    const dominance<BBGraph>* dominators;
    const dominance<BBGraph>* post_dominators;
    BBGraphConstRef local_rec_bb_fcfgGraph;
@@ -198,7 +191,7 @@ class CWriter
    void compute_phi_nodes(const FunctionBehaviorConstRef function_behavior, const OpVertexSet& instructions, var_pp_functorConstRef variableFunctor);
 
    std::vector<std::string> additionalIncludes;
-   std::set<std::string> writtenIncludes;
+   CustomOrderedSet<std::string> writtenIncludes;
 
    /**
     * Compute the copy assignments needed by the phi nodes destruction
@@ -331,7 +324,7 @@ class CWriter
     * @param bb_start is the first basic block to be printed
     * @param bb_end is the set of first basic block not to be printed
     */
-   virtual void writeRoutineInstructions(const unsigned int function_index, const OpVertexSet& instructions, var_pp_functorConstRef variableFunctor, vertex bb_start = NULL_VERTEX, std::set<vertex> bb_end = std::set<vertex>());
+   virtual void writeRoutineInstructions(const unsigned int function_index, const OpVertexSet& instructions, var_pp_functorConstRef variableFunctor, vertex bb_start = NULL_VERTEX, CustomOrderedSet<vertex> bb_end = CustomOrderedSet<vertex>());
 
    /**
     * Writes the declaration of the function whose id in the tree is funId

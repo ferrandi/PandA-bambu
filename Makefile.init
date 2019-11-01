@@ -93,6 +93,7 @@ distclean :
 	if test -f ext/config.h.in; then rm ext/config.h.in; fi;
 	if test -f ext/config.h.in~; then rm ext/config.h.in~; fi;
 	if test -f ext/configure; then rm ext/configure; fi;
+	if test -f ext/abseil-cpp/configure; then rm ext/abseil-cpp/configure; fi;
 	if test -f ext/cudd/config.h.in; then rm ext/cudd/config.h.in; fi;
 	if test -f ext/cudd/config.h.in~; then rm ext/cudd/config.h.in~; fi;
 	if test -f ext/cudd/configure; then rm ext/cudd/configure; fi;

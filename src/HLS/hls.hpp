@@ -46,9 +46,9 @@
 #ifndef HLS_HPP
 #define HLS_HPP
 
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <iosfwd>
-#include <map>
-#include <set>
 #include <string>
 
 #include "graph.hpp"

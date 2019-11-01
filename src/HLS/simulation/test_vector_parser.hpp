@@ -39,7 +39,7 @@
 #ifndef TEST_VECTOR_PARSER_HPP
 #define TEST_VECTOR_PARSER_HPP
 
-#include <map>
+#include "custom_map.hpp"
 #include <string>
 #include <vector>
 
@@ -97,7 +97,7 @@ class TestVectorParser : public HLS_step
    /**
     * Compute the HLS relationships of this step
     */
-   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * Check if this step has actually to be executed

@@ -71,7 +71,7 @@ class connection_obj
    element_t type;
 
    /// Set of variables that cross the connection
-   std::set<data_transfer> live_variable;
+   CustomOrderedSet<data_transfer> live_variable;
 
  public:
    /**
@@ -79,7 +79,7 @@ class connection_obj
     * @param _type is the type of the interconnection
     * @param _live_variable is the set of variables crossing the connection
     */
-   connection_obj(element_t _type, std::set<data_transfer> _live_variable) : type(_type), live_variable(std::move(_live_variable))
+   connection_obj(element_t _type, CustomOrderedSet<data_transfer> _live_variable) : type(_type), live_variable(std::move(_live_variable))
    {
    }
 
@@ -100,7 +100,7 @@ class connection_obj
     * Gets the temporary set
     * @return the set of temporary that could cross the connection
     */
-   const std::set<data_transfer>& get_variables() const
+   const CustomOrderedSet<data_transfer>& get_variables() const
    {
       return live_variable;
    }

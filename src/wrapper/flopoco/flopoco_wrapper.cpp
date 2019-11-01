@@ -70,8 +70,8 @@
 #include <iosfwd>
 
 /// STL include
-#include <unordered_map>
-#include <unordered_set>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <vector>
 
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
@@ -507,7 +507,7 @@ void flopoco_wrapper::outputWrapVHDL(const std::string& FU_name_stored, std::ost
    PP(os, "entity " + FU_name_stored + " is\n");
    PP.indent();
    PP(os, "generic(");
-   std::unordered_map<std::string, std::pair<unsigned int, unsigned int>>::const_iterator FU_to_prec_it = FU_to_prec.find(FU_name_stored);
+   CustomUnorderedMap<std::string, std::pair<unsigned int, unsigned int>>::const_iterator FU_to_prec_it = FU_to_prec.find(FU_name_stored);
    // Write input port(s) generics
    const std::vector<std::string> p_in = get_ports(WRAPPED_PREFIX + FU_name_stored, 0, port_in, false);
    for(const auto& p_in_it : p_in)
@@ -599,7 +599,7 @@ void flopoco_wrapper::outputPortMap(const std::string& FU_name_stored, std::ostr
       p_out_wrap_out = get_ports(OUT_WRAP_PREFIX + FU_name_stored, 0, port_out, false);
    }
 
-   std::unordered_map<std::string, std::pair<unsigned int, unsigned int>>::const_iterator FU_to_prec_it = FU_to_prec.find(FU_name_stored);
+   CustomUnorderedMap<std::string, std::pair<unsigned int, unsigned int>>::const_iterator FU_to_prec_it = FU_to_prec.find(FU_name_stored);
    unsigned int n_bits_in /*, n_bits_out*/;
    unsigned int prec_in /*, prec_out*/;
    prec_in = FU_to_prec_it->second.first;
@@ -694,7 +694,7 @@ void flopoco_wrapper::outputSignals(const std::string& FU_name_stored, std::ostr
    std::string Signals = "";
    const std::vector<std::string> p_in = get_ports(WRAPPED_PREFIX + FU_name_stored, 0, port_in, false);
    const std::vector<std::string> p_out = get_ports(WRAPPED_PREFIX + FU_name_stored, 0, port_out, false);
-   std::unordered_map<std::string, std::pair<unsigned int, unsigned int>>::const_iterator FU_to_prec_it = FU_to_prec.find(FU_name_stored);
+   CustomUnorderedMap<std::string, std::pair<unsigned int, unsigned int>>::const_iterator FU_to_prec_it = FU_to_prec.find(FU_name_stored);
    unsigned int n_bits_in, n_bits_out;
    unsigned int prec_in, prec_out;
    prec_in = FU_to_prec_it->second.first;
@@ -743,7 +743,7 @@ void flopoco_wrapper::outputPortDeclaration(const std::string& FU_prefix, const 
    int in_offset, out_offset;
    unsigned int n_bits_in, n_bits_out;
    unsigned int prec_in, prec_out;
-   std::unordered_map<std::string, std::pair<unsigned int, unsigned int>>::const_iterator FU_to_prec_it = FU_to_prec.find(FU_name_stored);
+   CustomUnorderedMap<std::string, std::pair<unsigned int, unsigned int>>::const_iterator FU_to_prec_it = FU_to_prec.find(FU_name_stored);
    in_offset = out_offset = -1;
    n_bits_in = n_bits_out = 0;
    prec_in = FU_to_prec_it->second.first;

@@ -52,13 +52,11 @@
 #include "graph.hpp"
 
 /// STD include
+#include <list>
 #include <string>
 
-/// STL includes
-#include <list>
-#include <map>
-#include <set>
-#include <unordered_map>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 /// utility include
 #include "refcount.hpp"
@@ -84,16 +82,16 @@ class liveness
    const ParameterConstRef Param;
 
    /// This is the map from each vertex to the set of variables live at the input of vertex.
-   std::map<vertex, std::set<unsigned int>> live_in;
+   std::map<vertex, CustomOrderedSet<unsigned int>> live_in;
 
    /// This is the map from each vertex to the set of variables live at the output of vertex.
-   std::map<vertex, std::set<unsigned int>> live_out;
+   std::map<vertex, CustomOrderedSet<unsigned int>> live_out;
 
    /// null vertex string
    const std::string null_vertex_string;
 
    /// used to return a reference to an empty set
-   const std::set<unsigned int> empty_set;
+   const CustomOrderedSet<unsigned int> empty_set;
 
    /// vertex over which the live in/out is computed
    std::list<vertex> support_set;
@@ -102,28 +100,28 @@ class liveness
    std::map<unsigned int, vertex> var_op_definition;
 
    /// store where an operation is terminating its execution
-   std::map<vertex, std::set<vertex>> ending_operations;
+   std::map<vertex, CustomOrderedSet<vertex>> ending_operations;
 
    /// store where an operation run and need its input
-   std::map<vertex, std::set<vertex>> running_operations;
+   std::map<vertex, CustomOrderedSet<vertex>> running_operations;
 
    /// store where a variable comes from given a support state and an operation
-   std::map<vertex, std::map<vertex, std::map<unsigned int, std::set<vertex>>>> state_in_definitions;
+   std::map<vertex, std::map<vertex, std::map<unsigned int, CustomOrderedSet<vertex>>>> state_in_definitions;
 
    /// store along which transitions the variable has to be stored
-   std::map<vertex, std::map<vertex, std::map<unsigned int, std::set<vertex>>>> state_out_definitions;
+   std::map<vertex, std::map<vertex, std::map<unsigned int, CustomOrderedSet<vertex>>>> state_out_definitions;
 
    /// store the name of each state
    std::map<vertex, std::string> names;
 
 #if HAVE_EXPERIMENTAL
-   std::map<vertex, std::set<vertex>> in_conflict_ops;
-   std::map<vertex, std::set<vertex>> compatible_ops;
+   std::map<vertex, CustomOrderedSet<vertex>> in_conflict_ops;
+   std::map<vertex, CustomOrderedSet<vertex>> compatible_ops;
 #endif
    hlsRef HLS;
    const HLS_managerRef HLSMgr;
 
-   std::set<vertex> dummy_states;
+   CustomOrderedSet<vertex> dummy_states;
 
  public:
    /**
@@ -150,7 +148,7 @@ class liveness
     * @param v is the vertex
     * @param live_set the set of ids of live variables
     */
-   void set_live_in(const vertex& v, const std::set<unsigned int>& live_set);
+   void set_live_in(const vertex& v, const CustomOrderedSet<unsigned int>& live_set);
 
    /**
     * Store the variables alive at the input of the given vertex
@@ -158,7 +156,7 @@ class liveness
     * @param first is the first iterator of a set to be merged in the live in
     * @param last is the last iterator of a set to be merged in the live in
     */
-   void set_live_in(const vertex& v, const std::set<unsigned int>::const_iterator first, const std::set<unsigned int>::const_iterator last);
+   void set_live_in(const vertex& v, const CustomOrderedSet<unsigned int>::const_iterator first, const CustomOrderedSet<unsigned int>::const_iterator last);
 
    /**
     * erase a variable from the live in
@@ -172,7 +170,7 @@ class liveness
     * @param v is the vertex
     * @param vars is a set containing the identifiers of the variables
     */
-   void set_live_out(const vertex& v, const std::set<unsigned int>& vars);
+   void set_live_out(const vertex& v, const CustomOrderedSet<unsigned int>& vars);
 
    /**
     * Store a variable alive at the output of the given vertex
@@ -187,7 +185,7 @@ class liveness
     * @param first is the first iterator of a set to be merged in the live out
     * @param last is the last iterator of a set to be merged in the live out
     */
-   void set_live_out(const vertex& v, const std::set<unsigned int>::const_iterator first, const std::set<unsigned int>::const_iterator last);
+   void set_live_out(const vertex& v, const CustomOrderedSet<unsigned int>::const_iterator first, const CustomOrderedSet<unsigned int>::const_iterator last);
 
    /**
     * erase a variable from the live out
@@ -201,14 +199,14 @@ class liveness
     * @param v is the vertex
     * @return a set containing the identifiers of the variables
     */
-   const std::set<unsigned int>& get_live_in(const vertex& v) const;
+   const CustomOrderedSet<unsigned int>& get_live_in(const vertex& v) const;
 
    /**
     * Get the set of variables live at the output of a vertex
     * @param v is the vertex
     * @return a set containing the identifiers of the variables
     */
-   const std::set<unsigned int>& get_live_out(const vertex& v) const;
+   const CustomOrderedSet<unsigned int>& get_live_out(const vertex& v) const;
 
    /// map a chained vertex with one of the starting operation
    std::map<vertex, vertex> start_op;
@@ -254,7 +252,7 @@ class liveness
     * @param op is the operation that uses the variable
     * @param var is the variable
     */
-   const std::set<vertex>& get_state_in(vertex state, vertex op, unsigned int var) const;
+   const CustomOrderedSet<vertex>& get_state_in(vertex state, vertex op, unsigned int var) const;
 
    /**
     * return true in case the variable for a given op and a given state has a state in
@@ -278,7 +276,7 @@ class liveness
     * @param op is the operation that defines the variable
     * @param var is the variable
     */
-   const std::set<vertex>& get_state_out(vertex state, vertex op, unsigned int var) const;
+   const CustomOrderedSet<vertex>& get_state_out(vertex state, vertex op, unsigned int var) const;
 
    /**
     * return true in case the variable for a given op and a given state has a state out
@@ -300,7 +298,7 @@ class liveness
     * return in which support vertex the operation is ending
     * @param op is the operation
     */
-   const std::set<vertex>& get_state_where_end(vertex op) const;
+   const CustomOrderedSet<vertex>& get_state_where_end(vertex op) const;
 
    /**
     * add an ending state for a given operation
@@ -316,7 +314,7 @@ class liveness
     * return in which support vertex the operation is running
     * @param op is the operation
     */
-   const std::set<vertex>& get_state_where_run(vertex op) const;
+   const CustomOrderedSet<vertex>& get_state_where_run(vertex op) const;
 
    /**
     * add a running state for a given operation

@@ -47,8 +47,8 @@
 #include <string>
 
 /// STL includes
+#include "custom_set.hpp"
 #include <tuple>
-#include <unordered_set>
 
 CONSTREF_FORWARD_DECL(DesignFlowManager);
 CONSTREF_FORWARD_DECL(Parameter);
@@ -60,7 +60,7 @@ class CTestbenchExecution : public HLS_step
 
    const std::string testbench_basename;
 
-   virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   virtual const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
 
  public:
    /**

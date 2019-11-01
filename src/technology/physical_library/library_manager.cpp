@@ -598,7 +598,7 @@ void library_manager::set_dont_use(const std::string& _name)
    dont_use.insert(_name);
 }
 
-std::set<std::string> library_manager::get_dont_use_cells() const
+CustomOrderedSet<std::string> library_manager::get_dont_use_cells() const
 {
    return dont_use;
 }

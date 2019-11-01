@@ -49,9 +49,9 @@
 #include <iosfwd>
 
 /// STL include
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <list>
-#include <map>
-#include <unordered_set>
 
 /// Utility include
 #include "dbgPrintHelper.hpp"
@@ -121,7 +121,7 @@ class PragmaParser
 
    std::list<std::string> FloatingPragmas;
 
-   std::unordered_set<std::string> FunctionPragmas;
+   CustomUnorderedSet<std::string> FunctionPragmas;
 
    std::map<unsigned int, std::list<std::string>> OpenPragmas;
 

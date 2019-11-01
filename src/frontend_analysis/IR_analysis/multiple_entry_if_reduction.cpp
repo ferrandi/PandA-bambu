@@ -92,11 +92,10 @@
 #include <string>
 
 /// STL includes
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <list>
-#include <map>
 #include <set>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 
 /// Tree include
@@ -138,9 +137,9 @@ void MultipleEntryIfReduction::Initialize()
 
 MultipleEntryIfReduction::~MultipleEntryIfReduction() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> MultipleEntryIfReduction::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> MultipleEntryIfReduction::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(PRECEDENCE_RELATIONSHIP):
@@ -390,7 +389,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Fixed phis");
-      CustomMap<unsigned int, std::unordered_map<unsigned int, unsigned int>> remaps;
+      CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, unsigned int>> remaps;
       CustomMap<unsigned int, tree_node_dupRef> tree_node_dups;
       for(const auto& copy : copy_ids)
       {
@@ -619,7 +618,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Phi has to be added in header of loop " + STR(current_loop->GetId()));
 
             /// Set of basic blocks belonging to the loop
-            std::unordered_set<vertex> loop_basic_blocks;
+            CustomUnorderedSet<vertex> loop_basic_blocks;
             loops->CGetLoop(loop_id)->get_recursively_bb(loop_basic_blocks);
             /// Check if there a use of the ssa in the header; if not basic blocks after uses can be removed
             if(use_bbs.find(loops->CGetLoop(loop_id)->GetHeader()) == use_bbs.end())

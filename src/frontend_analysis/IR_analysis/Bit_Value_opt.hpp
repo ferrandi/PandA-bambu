@@ -73,7 +73,7 @@ class Bit_Value_opt : public FunctionFrontendFlowStep
    /// True if dead code must be restarted
    bool restart_dead_code;
 
-   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * do bit value based optimization such as:

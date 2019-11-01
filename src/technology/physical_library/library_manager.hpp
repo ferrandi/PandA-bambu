@@ -68,10 +68,9 @@ enum class TargetDevice_Type;
 class xml_element;
 //@}
 
-#include <map>
-#include <set>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 struct attribute
@@ -179,7 +178,7 @@ class library_manager
     */
    void set_default_attributes();
 
-   std::set<std::string> dont_use;
+   CustomOrderedSet<std::string> dont_use;
 
  public:
    /**
@@ -214,7 +213,7 @@ class library_manager
    /**
     * Return the cells not to be used for the synthesis
     */
-   std::set<std::string> get_dont_use_cells() const;
+   CustomOrderedSet<std::string> get_dont_use_cells() const;
 
    size_t get_dont_use_num() const;
 

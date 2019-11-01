@@ -1,0 +1,32 @@
+EXTRA_DIST += %D%/mcml/fixedptc.h \
+%D%/mcml/fixedptc.c \
+%D%/mcml/tiny_fixed.h \
+%D%/mcml/tiny_fixed.c\
+%D%/blackscholes/main.c \
+%D%/blackscholes/fixedptc.h \
+%D%/blackscholes/fixedptc.c \
+%D%/blackscholes/black_scholes.h \
+%D%/blackscholes/black_scholes.c \
+%D%/los/los.c \
+%D%/los/los.h \
+%D%/mandelbrot/mandelbrot.c \
+%D%/tests.sh \
+%D%/hash/hash.c \
+%D%/hash/hash.h \
+%D%/dfdiv/milieu.h \
+%D%/dfdiv/dfdiv.c \
+%D%/dfdiv/softfloat-macros \
+%D%/dfdiv/softfloat.c \
+%D%/dfdiv/SPARC-GCC.h \
+%D%/dfdiv/softfloat.h \
+%D%/dfdiv/softfloat-specialize \
+%D%/dfsin/dfsin.c \
+%D%/dfsin/milieu.h \
+%D%/dfsin/softfloat-macros \
+%D%/dfsin/softfloat.c \
+%D%/dfsin/SPARC-GCC.h \
+%D%/dfsin/softfloat.h \
+%D%/dfsin/softfloat-specialize \
+%D%/test_list
+
+

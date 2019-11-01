@@ -59,7 +59,7 @@ CONSTREF_FORWARD_DECL(OpGraph);
 REF_FORWARD_DECL(Parameter);
 //@}
 
-#include <unordered_map>
+#include "custom_map.hpp"
 #include <vector>
 
 class values_scheme : public storage_value_insertion

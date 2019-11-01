@@ -1,0 +1,30 @@
+EXTRA_DIST+= \
+   %D%/Keccak.c \
+   %D%/keccak_CycloneII_10ns.sh \
+   %D%/keccak_CycloneII_5ns.sh \
+   %D%/keccak_ECP3_9ns.sh \
+   %D%/keccak_V5_4ns.sh \
+   %D%/keccak_V7_2ns.sh \
+   %D%/test.xml \
+   %D%/multi.sh \
+   %D%/multi-keccak/autogen.sh \
+   %D%/multi-keccak/configure.ac \
+   %D%/multi-keccak/Makefile.am \
+   %D%/multi-keccak/test.xml \
+   %D%/multi-keccak/include/Keccak.h \
+   %D%/multi-keccak/include/Makefile.am \
+   %D%/multi-keccak/src/keccak_coproc.c \
+   %D%/multi-keccak/src/Makefile.am \
+   %D%/multi-keccak/src/chi/chi.c \
+   %D%/multi-keccak/src/chi/Makefile.am \
+   %D%/multi-keccak/src/iota/iota.c \
+   %D%/multi-keccak/src/iota/Makefile.am \
+   %D%/multi-keccak/src/pi/Makefile.am \
+   %D%/multi-keccak/src/pi/pi.c \
+   %D%/multi-keccak/src/rho/Makefile.am \
+   %D%/multi-keccak/src/rho/rho.c \
+   %D%/multi-keccak/src/theta/Makefile.am \
+   %D%/multi-keccak/src/theta/theta.c\
+   %D%/README.txt
+
+TESTS+=%D%/multi.sh %D%/keccak_CycloneII_10ns.sh %D%/keccak_CycloneII_5ns.sh %D%/keccak_ECP3_9ns.sh %D%/keccak_V5_4ns.sh %D%/keccak_V7_2ns.sh

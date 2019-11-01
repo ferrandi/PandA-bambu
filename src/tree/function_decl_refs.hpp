@@ -43,7 +43,7 @@
 #ifndef function_decl_refs_HPP
 #define function_decl_refs_HPP
 
-#include <unordered_set> // for unordered_set
+#include "custom_set.hpp" // for unordered_set
 
 /// Tree include
 #include "tree_node.hpp"
@@ -63,7 +63,7 @@ REF_FORWARD_DECL(function_decl_refs);
 struct function_decl_refs : public tree_node_visitor
 {
    /// default constructor
-   explicit function_decl_refs(std::unordered_set<unsigned int>& _function_decl_set) : function_decl_set(_function_decl_set)
+   explicit function_decl_refs(CustomUnorderedSet<unsigned int>& _function_decl_set) : function_decl_set(_function_decl_set)
    {
    }
 
@@ -73,10 +73,10 @@ struct function_decl_refs : public tree_node_visitor
 
  private:
    /// set of types used in type casting
-   std::unordered_set<unsigned int>& function_decl_set;
+   CustomUnorderedSet<unsigned int>& function_decl_set;
 
    /// already visited
-   std::unordered_set<unsigned int> visited;
+   CustomUnorderedSet<unsigned int> visited;
 };
 
 #endif

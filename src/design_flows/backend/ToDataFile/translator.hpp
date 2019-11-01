@@ -54,19 +54,12 @@
 /// STD include
 #include <ios>
 #include <list>
-#include <map>
-#include <set>
 #include <string>
-#include <unordered_map>
 #include <vector>
-
-/// STL include
-#include <map>
-#include <unordered_map>
-#include <unordered_set>
 
 /// Utility include
 #include "custom_map.hpp"
+#include "custom_set.hpp"
 #include "refcount.hpp"
 #include <boost/preprocessor/facilities/empty.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
@@ -128,13 +121,13 @@ class Translator
 
     private:
       /// Map string->enum for text format
-      static std::unordered_map<std::string, TextFormat> string_to_TF;
+      static CustomUnorderedMap<std::string, TextFormat> string_to_TF;
 
       /// Map string->enum for comparison operator
-      static std::unordered_map<std::string, ComparisonOperator> string_to_CO;
+      static CustomUnorderedMap<std::string, ComparisonOperator> string_to_CO;
 
       /// Map string->enum for total format
-      static std::unordered_map<std::string, TotalFormat> string_to_TOF;
+      static CustomUnorderedMap<std::string, TotalFormat> string_to_TOF;
 
     public:
       /// The name of the column
@@ -156,7 +149,7 @@ class Translator
       std::streamsize precision;
 
       /// The columns with which this has to be compared
-      std::unordered_set<std::string> compared_columns;
+      CustomUnorderedSet<std::string> compared_columns;
 
       /// The operator of the comparison
       ComparisonOperator comparison_operator;
@@ -201,7 +194,7 @@ class Translator
     * Read normalization file
     * @param normalization is where normalize data will be stored
     */
-   void get_normalization(std::unordered_map<std::string, long double>& normalization) const;
+   void get_normalization(CustomUnorderedMap<std::string, long double>& normalization) const;
 
    /**
     * Return a number in latex exponential notation
@@ -237,7 +230,7 @@ class Translator
     * @param input is the data
     * @param output is where the data will be stored
     */
-   void Translate(std::unordered_map<std::string, long double> input, std::map<enum rtl_kind, std::map<enum mode_kind, long double>>& output) const;
+   void Translate(CustomUnorderedMap<std::string, long double> input, std::map<enum rtl_kind, std::map<enum mode_kind, long double>>& output) const;
 
    /**
     * Write rtl data to xml
@@ -253,7 +246,8 @@ class Translator
     * @param data is the data to be written
     * @param file_name is the name of the file where data will be written
     */
-   void write_to_csv(const std::map<std::string, std::set<std::string>>& tags, const std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double>>>& results, const std::string& file_name) const;
+   void write_to_csv(const std::map<std::string, CustomOrderedSet<std::string>>& tags, const CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>& results,
+                     const std::string& file_name) const;
 
    /**
     * Write text data in csv format
@@ -268,7 +262,8 @@ class Translator
     * @param data is the data to be written
     * @param file_name is the name of the file where data will be written
     */
-   void write_to_pa(const std::map<std::string, std::set<std::string>>& tags, const std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double>>>& results, const std::string& file_name) const;
+   void write_to_pa(const std::map<std::string, CustomOrderedSet<std::string>>& tags, const CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>& results,
+                    const std::string& file_name) const;
 
    /**
     * Write data in latex table format
@@ -285,10 +280,10 @@ class Translator
     * @param merge_data are the data to be merged with the first profiling analysis
     * @param output_data is where data will be stored
     */
-   void merge_pa(const std::map<std::string, std::set<std::string>>& tags, const std::unordered_map<std::string, std::set<std::string>>& keys,
-                 const std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double>>>& input_data,
-                 const std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double>>>& merge_data,
-                 std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, long double>>>& output_data) const;
+   void merge_pa(const std::map<std::string, CustomOrderedSet<std::string>>& tags, const CustomUnorderedMap<std::string, CustomOrderedSet<std::string>>& keys,
+                 const CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>& input_data,
+                 const CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>& merge_data,
+                 CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>& output_data) const;
 
    /**
     * Collapse columns of data considering super classes and remove selected rows
@@ -296,7 +291,7 @@ class Translator
     * @param column_names are the names of the column
     * @param Param is the set of input parameters
     */
-   static void AggregateAndClean(std::map<std::string, std::map<std::string, long double>>& data, std::set<std::string>& column_names, const ParameterConstRef param);
+   static void AggregateAndClean(std::map<std::string, std::map<std::string, long double>>& data, CustomOrderedSet<std::string>& column_names, const ParameterConstRef param);
 };
 
 typedef refcount<const Translator> TranslatorConstRef;

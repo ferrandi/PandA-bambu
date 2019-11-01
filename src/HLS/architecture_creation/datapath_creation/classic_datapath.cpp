@@ -82,8 +82,8 @@
 #include <string>
 
 /// STL includes
+#include "custom_map.hpp"
 #include <list>
-#include <map>
 
 /// technology/physical_library include
 #include "technology_node.hpp"

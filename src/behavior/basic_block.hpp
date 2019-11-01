@@ -61,12 +61,11 @@
 #include <cstddef>            // for size_t
 #include <functional>         // for binary_function
 #include <list>               // for list
-#include <map>                // for map, _Rb_tree_co...
-#include <set>                // for set
 #include <string>             // for string
-#include <unordered_map>      // for unordered_map
-#include <unordered_set>      // for unordered_set
 #include <utility>            // for pair
+
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 /**
  * @name forward declarations
@@ -164,12 +163,12 @@ struct BBNodeInfo : public NodeInfo
    /**
     * Returns the live in of the basic block
     */
-   const std::set<unsigned int>& get_live_in() const;
+   const CustomOrderedSet<unsigned int>& get_live_in() const;
 
    /**
     * Returns the live in of the basic block
     */
-   const std::set<unsigned int>& get_live_out() const;
+   const CustomOrderedSet<unsigned int>& get_live_out() const;
 };
 /// refcount definition of the class
 typedef refcount<BBNodeInfo> BBNodeInfoRef;
@@ -226,7 +225,7 @@ struct BBEdgeInfo : public CdfgEdgeInfo
    /**
     * Return the labels associated with a selector
     */
-   const std::set<unsigned int> get_labels(const int selector) const;
+   const CustomOrderedSet<unsigned int> get_labels(const int selector) const;
 
    /**
     * Function that sets the epp_edge associated with the edge
@@ -253,7 +252,7 @@ struct BBGraphInfo : public GraphInfo
    /// The index of the function
    const unsigned int function_index;
 
-   std::unordered_map<unsigned int, vertex> bb_index_map;
+   CustomUnorderedMap<unsigned int, vertex> bb_index_map;
 
    /// Index identifying the entry basic block.
    vertex entry_vertex;
@@ -334,12 +333,12 @@ struct BBGraph : public graph
     * @param selector is the selector used to filter the bulk graph.
     * @param sub is the set of vertices on which the graph is filtered.
     */
-   BBGraph(const BBGraphsCollectionRef bb_graphs_collection, int selector, std::unordered_set<vertex>& sub);
+   BBGraph(const BBGraphsCollectionRef bb_graphs_collection, int selector, CustomUnorderedSet<vertex>& sub);
 
    /**
     * Destructor
     */
-   ~BBGraph() override = default;
+   virtual ~BBGraph() override = default;
 
    /**
     * Writes this graph in dot format
@@ -354,7 +353,7 @@ struct BBGraph : public graph
     * @param detail_level is the detail level of the printed graph
     * @param annotated is the set of the vertices to be annotated
     */
-   void WriteDot(const std::string& file_name, const std::unordered_set<vertex>& annotated, const int detail_level = 0) const;
+   void WriteDot(const std::string& file_name, const CustomUnorderedSet<vertex>& annotated, const int detail_level = 0) const;
 
    /**
     * Returns the number of basic blocks contained into the graph

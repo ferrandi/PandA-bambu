@@ -51,9 +51,9 @@
 #include <ostream>
 
 /// STL include
+#include "custom_set.hpp"
 #include <deque>
 #include <list>
-#include <unordered_set>
 
 /// Utility include
 #include "exceptions.hpp"
@@ -355,7 +355,7 @@ struct graphs_collection : public boost_graphs_collection
    /**
     * Add an edge to this graph
     * FIXME: this should be pure virtual
-    * @param souce is the source of the edge to be added
+    * @param source is the source of the edge to be added
     * @param target is the target of the edge to be added
     * @param selector is the selector to be set on the edge
     * @param info is the info to be associated with the edge
@@ -406,6 +406,21 @@ struct graphs_collection : public boost_graphs_collection
       bool inserted;
       boost::tie(edge, inserted) = boost::edge(source, target, *this);
       return inserted;
+   }
+
+   inline void CompressEdges()
+   {
+      std::deque<boost::graph_traits<graphs_collection>::edge_descriptor> toBeRemoved;
+      boost::graph_traits<graphs_collection>::edge_iterator ei0, ei0_end;
+      for(boost::tie(ei0, ei0_end) = boost::edges(*this); ei0 != ei0_end; ++ei0)
+      {
+         if((*this)[*ei0].selector == 0)
+         {
+            toBeRemoved.push_back(*ei0);
+         }
+      }
+      for(auto e0 : toBeRemoved)
+         boost::remove_edge(e0, *this);
    }
 };
 
@@ -591,7 +606,7 @@ struct SelectVertex
    bool all;
 
    /// The set of vertices to be considered
-   std::unordered_set<typename boost::graph_traits<Graph>::vertex_descriptor> subset;
+   CustomUnorderedSet<typename boost::graph_traits<Graph>::vertex_descriptor> subset;
 
  public:
    /**
@@ -605,7 +620,7 @@ struct SelectVertex
     * Constructor
     * @param _subset is the set of vertices to be considered
     */
-   explicit SelectVertex(std::unordered_set<typename boost::graph_traits<Graph>::vertex_descriptor> _subset) : all(false), subset(std::move(_subset))
+   explicit SelectVertex(CustomUnorderedSet<typename boost::graph_traits<Graph>::vertex_descriptor> _subset) : all(false), subset(std::move(_subset))
    {
    }
 
@@ -639,7 +654,7 @@ struct SelectEdge
    Graph* g;
 
    /// The vertices of subgraph
-   std::unordered_set<typename boost::graph_traits<Graph>::vertex_descriptor> subgraph_vertices;
+   CustomUnorderedSet<typename boost::graph_traits<Graph>::vertex_descriptor> subgraph_vertices;
 
  public:
    /**
@@ -664,7 +679,7 @@ struct SelectEdge
     * @param _g is the graph
     * @param _subgraph_vertices is the set of vertices of the filtered graph
     */
-   SelectEdge(const int _selector, Graph* _g, std::unordered_set<typename boost::graph_traits<Graph>::vertex_descriptor> _subgraph_vertices) : selector(_selector), g(_g), subgraph_vertices(std::move(_subgraph_vertices))
+   SelectEdge(const int _selector, Graph* _g, CustomUnorderedSet<typename boost::graph_traits<Graph>::vertex_descriptor> _subgraph_vertices) : selector(_selector), g(_g), subgraph_vertices(std::move(_subgraph_vertices))
    {
    }
 
@@ -799,7 +814,7 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
     * @param _selector is the selector used to filter the bulk graph.
     * @param vertices is the set of vertexes on which the graph is filtered.
     */
-   graph(graphs_collection* g, const int _selector, const std::unordered_set<boost::graph_traits<graphs_collection>::vertex_descriptor>& vertices)
+   graph(graphs_collection* g, const int _selector, const CustomUnorderedSet<boost::graph_traits<graphs_collection>::vertex_descriptor>& vertices)
        : boost::filtered_graph<boost_graphs_collection, SelectEdge<boost_graphs_collection>, SelectVertex<boost_graphs_collection>>(*g, SelectEdge<boost_graphs_collection>(_selector, g, vertices), SelectVertex<boost_graphs_collection>(vertices)),
          collection(g),
          selector(_selector)
@@ -861,7 +876,7 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
     * @param strongly_connected_components is where the set of vertices which compose the different strongly connected components will be stored;
     * key is the index of the strongly connected component
     */
-   void GetStronglyConnectedComponents(std::map<size_t, std::unordered_set<boost::graph_traits<graphs_collection>::vertex_descriptor>>& strongly_connected_components) const
+   void GetStronglyConnectedComponents(std::map<size_t, UnorderedSetStdStable<boost::graph_traits<graphs_collection>::vertex_descriptor>>& strongly_connected_components) const
    {
       std::map<boost::graph_traits<graphs_collection>::vertex_descriptor, size_t> temp_vertex_to_component;
       boost::associative_property_map<std::map<boost::graph_traits<graphs_collection>::vertex_descriptor, size_t>> vertex_to_component(temp_vertex_to_component);
@@ -906,7 +921,7 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
    bool IsReachable(const boost::graph_traits<graphs_collection>::vertex_descriptor x, const boost::graph_traits<graphs_collection>::vertex_descriptor y) const
    {
       std::list<boost::graph_traits<graphs_collection>::vertex_descriptor> running_vertices;
-      std::unordered_set<boost::graph_traits<graphs_collection>::vertex_descriptor> encountered_vertices;
+      CustomUnorderedSet<boost::graph_traits<graphs_collection>::vertex_descriptor> encountered_vertices;
       running_vertices.push_back(x);
       encountered_vertices.insert(x);
       while(not running_vertices.empty())
@@ -1094,7 +1109,7 @@ struct ugraph : public boost::filtered_graph<undirected_boost_graphs_collection,
     * @param _selector is the selector used to filter the bulk graph.
     * @param vertices is the set of vertexes on which the graph is filtered.
     */
-   ugraph(undirected_graphs_collection* g, const int _selector, const std::unordered_set<boost::graph_traits<undirected_boost_graphs_collection>::vertex_descriptor>& vertices)
+   ugraph(undirected_graphs_collection* g, const int _selector, const CustomUnorderedSet<boost::graph_traits<undirected_boost_graphs_collection>::vertex_descriptor>& vertices)
        : boost::filtered_graph<undirected_boost_graphs_collection, SelectEdge<undirected_boost_graphs_collection>, SelectVertex<undirected_boost_graphs_collection>>(*g, SelectEdge<undirected_boost_graphs_collection>(_selector, g, vertices),
                                                                                                                                                                      SelectVertex<undirected_boost_graphs_collection>(vertices)),
          collection(g),
@@ -1211,6 +1226,11 @@ namespace std
    };
 } // namespace std
 
+template <typename H>
+H AbslHashValue(H h, const EdgeDescriptor& m)
+{
+   return H::combine(std::move(h), m.m_source, m.m_target);
+}
 /// vertex definition.
 typedef boost::graph_traits<ugraph>::vertex_descriptor uvertex;
 /// null vertex definition

@@ -45,7 +45,9 @@
 /// Superclass
 #include "functional_unit_step.hpp"
 
+#include "custom_set.hpp"
 #include "refcount.hpp"
+#include <vector>
 
 /**
  * @name forward declarations
@@ -67,10 +69,6 @@ REF_FORWARD_DECL(time_model);
 class xml_element;
 class module;
 //@}
-
-#include "custom_set.hpp"
-#include <set>
-#include <vector>
 
 class RTLCharacterization : public FunctionalUnitStep
 {
@@ -121,7 +119,7 @@ class RTLCharacterization : public FunctionalUnitStep
    void xwrite_characterization(const target_deviceRef device, xml_element* nodeRoot);
 
    /// set of units completed with success
-   std::set<std::string> completed;
+   CustomOrderedSet<std::string> completed;
 
    /**
     * Fix the execution time by removing set/hold/pad timings

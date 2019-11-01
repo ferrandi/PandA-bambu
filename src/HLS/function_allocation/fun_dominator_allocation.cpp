@@ -179,7 +179,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
    if(parameters->isOption(OPT_disable_function_proxy) and parameters->getOption<bool>(OPT_disable_function_proxy))
       return DesignFlowStep_Status::UNCHANGED;
 
-   std::set<unsigned int> reached_fu_ids;
+   CustomOrderedSet<unsigned int> reached_fu_ids;
    for(const auto f_id : root_functions)
       for(const auto reached_f_id : CG->GetReachedBodyFunctionsFrom(f_id))
          reached_fu_ids.insert(reached_f_id);
@@ -219,7 +219,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
    const auto top_fun_id = *(root_functions.begin());
    vertex top_vertex = CG->GetVertex(top_fun_id);
 
-   std::unordered_set<vertex> vertex_subset;
+   CustomUnorderedSet<vertex> vertex_subset;
    for(const auto& funID : reached_fu_ids)
       vertex_subset.insert(CG->GetVertex(funID));
 
@@ -228,9 +228,9 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
    /// we do not need the exit vertex since the post-dominator graph is not used
    cg_dominators = refcount<dominance<graph>>(new dominance<graph>(*subgraph, top_vertex, NULL_VERTEX, parameters));
    cg_dominators->calculate_dominance_info(dominance<graph>::CDI_DOMINATORS);
-   const std::unordered_map<vertex, vertex>& cg_dominator_map = cg_dominators->get_dominator_map();
-   std::map<std::string, std::set<vertex>> fun_dom_map;
-   std::map<std::string, std::set<unsigned int>> where_used;
+   const auto& cg_dominator_map = cg_dominators->get_dominator_map();
+   std::map<std::string, CustomOrderedSet<vertex>> fun_dom_map;
+   std::map<std::string, CustomOrderedSet<unsigned int>> where_used;
    std::map<std::string, bool> indirectlyCalled;
    const HLS_constraintsRef HLS_C = HLS_constraintsRef(new HLS_constraints(HLSMgr->get_parameter(), ""));
 

@@ -49,6 +49,7 @@
 
 #include "HDL_manager.hpp"                    // for structur...
 #include "NP_functionality.hpp"               // for NP_funct...
+#include "custom_set.hpp"                     // for set, set...
 #include <algorithm>                          // for find, min
 #include <boost/algorithm/string/replace.hpp> // for replace_all
 #include <boost/iterator/iterator_facade.hpp> // for operator!=
@@ -58,7 +59,6 @@
 #include <iostream>                           // for cout
 #include <list>                               // for _List_co...
 #include <memory>                             // for allocato...
-#include <set>                                // for set, set...
 #include <utility>
 #if HAVE_BAMBU_BUILT
 #include "behavioral_helper.hpp" // for Behavior...
@@ -987,7 +987,7 @@ structural_objectRef port_o::get_connected_signal() const
 
 void port_o::substitute_connection(structural_objectRef old_conn, structural_objectRef new_conn)
 {
-   std::set<std::vector<Wrefcount<structural_object>>::iterator> removed;
+   CustomOrderedSet<std::vector<Wrefcount<structural_object>>::iterator> removed;
    bool existing = false;
    for(auto del = connected_objects.begin(); del != connected_objects.end();)
    {
@@ -4417,8 +4417,8 @@ void port_o::fix_port_properties(structural_objectRef port_i, structural_objectR
 }
 
 #if HAVE_KOALA_BUILT
-std::string structural_object::get_equation(const structural_objectRef out_obj, const technology_managerConstRef TM, std::set<structural_objectRef>& analyzed, const std::set<structural_objectRef>& input_ports,
-                                            const std::set<structural_objectRef>& output_ports) const
+std::string structural_object::get_equation(const structural_objectRef out_obj, const technology_managerConstRef TM, CustomOrderedSet<structural_objectRef>& analyzed, const CustomOrderedSet<structural_objectRef>& input_ports,
+                                            const CustomOrderedSet<structural_objectRef>& output_ports) const
 {
    analyzed.insert(out_obj);
 
@@ -4467,7 +4467,7 @@ std::string structural_object::get_equation(const structural_objectRef out_obj, 
                const structural_objectRef inobj = GetPointer<module>(owner)->get_in_port(p);
                std::string In = inobj->get_equation(inobj, TM, analyzed, input_ports, output_ports);
                bool in_port = false;
-               for(std::set<structural_objectRef>::iterator k = input_ports.begin(); k != input_ports.end() and !in_port; ++k)
+               for(CustomOrderedSet<structural_objectRef>::iterator k = input_ports.begin(); k != input_ports.end() and !in_port; ++k)
                   if((*k)->get_id() == In)
                      in_port = true;
                if(!in_port)

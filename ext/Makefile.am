@@ -224,8 +224,8 @@ mockturtle/test/properties/mccost.cpp\
 mockturtle/test/views/names_view.cpp
 
 
-SUBDIRS =
-DIST_SUBDIRS =
+SUBDIRS = abseil-cpp
+DIST_SUBDIRS = abseil-cpp
 
 if BUILD_ABC
    noinst_SCRIPTS =create_abc

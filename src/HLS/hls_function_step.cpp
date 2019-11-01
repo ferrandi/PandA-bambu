@@ -77,7 +77,7 @@ HLSFunctionStep::~HLSFunctionStep() = default;
 bool HLSFunctionStep::HasToBeExecuted() const
 {
    CallGraphManagerConstRef CGMan = HLSMgr->CGetCallGraphManager();
-   std::set<unsigned int> funcs = CGMan->GetReachedBodyFunctions();
+   CustomOrderedSet<unsigned int> funcs = CGMan->GetReachedBodyFunctions();
    if(funId and funcs.find(funId) == funcs.end())
       return false;
    if(bb_version == 0 or bb_version != HLSMgr->GetFunctionBehavior(funId)->GetBBVersion())
@@ -138,7 +138,7 @@ void HLSFunctionStep::ComputeRelationships(DesignFlowStepSet& design_flow_step_s
    const HLS_targetRef HLS_T = HLSMgr->get_HLS_target();
    const technology_managerRef TM = HLS_T->get_technology_manager();
 
-   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> steps_to_be_created = ComputeHLSRelationships(relationship_type);
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> steps_to_be_created = ComputeHLSRelationships(relationship_type);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Computed steps to be created");
    for(auto const step_to_be_created : steps_to_be_created)
    {

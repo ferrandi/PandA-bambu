@@ -62,11 +62,11 @@
 #include "tree_basic_block.hpp"
 
 /// STL includes
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "hash_helper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
-#include <unordered_map>
-#include <unordered_set>
 
 BBReachabilityComputation::BBReachabilityComputation(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, BB_REACHABILITY_COMPUTATION, _design_flow_manager, _Param)
@@ -85,9 +85,9 @@ void BBReachabilityComputation::Initialize()
    }
 }
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BBReachabilityComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BBReachabilityComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -115,8 +115,8 @@ DesignFlowStep_Status BBReachabilityComputation::InternalExec()
    const BBGraphConstRef ecfg = function_behavior->CGetBBGraph(FunctionBehavior::EBB);
 
    /// The reachability among basic blocks
-   std::unordered_map<vertex, std::unordered_set<vertex>>& bb_reachability = function_behavior->bb_reachability;
-   std::unordered_map<vertex, std::unordered_set<vertex>>& feedback_bb_reachability = function_behavior->feedback_bb_reachability;
+   auto& bb_reachability = function_behavior->bb_reachability;
+   auto& feedback_bb_reachability = function_behavior->feedback_bb_reachability;
 
    std::deque<vertex> container;
    boost::topological_sort(*ecfg, std::back_inserter(container));
@@ -138,13 +138,13 @@ DesignFlowStep_Status BBReachabilityComputation::InternalExec()
 
    /// Get first level loops
    const LoopConstRef zero_loop = function_behavior->CGetLoops()->CGetLoop(0);
-   const std::set<LoopConstRef>& first_level_loops = zero_loop->GetChildren();
-   std::set<LoopConstRef>::const_iterator first_level_loop, first_level_loop_end = first_level_loops.end();
+   const CustomOrderedSet<LoopConstRef>& first_level_loops = zero_loop->GetChildren();
+   CustomOrderedSet<LoopConstRef>::const_iterator first_level_loop, first_level_loop_end = first_level_loops.end();
    for(first_level_loop = first_level_loops.begin(); first_level_loop != first_level_loop_end; ++first_level_loop)
    {
-      std::unordered_set<vertex> loop_blocks;
+      CustomUnorderedSet<vertex> loop_blocks;
       (*first_level_loop)->get_recursively_bb(loop_blocks);
-      std::unordered_set<vertex>::const_iterator loop_block, loop_block_end = loop_blocks.end();
+      CustomUnorderedSet<vertex>::const_iterator loop_block, loop_block_end = loop_blocks.end();
       for(loop_block = loop_blocks.begin(); loop_block != loop_block_end; ++loop_block)
       {
          feedback_bb_reachability[*loop_block].insert(loop_blocks.begin(), loop_blocks.end());

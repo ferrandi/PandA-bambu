@@ -122,7 +122,7 @@ class AadlInformation
    };
 
    /// For each function the list of parameters
-   CustomMap<std::string, std::list<AadlParameter>> function_parameters;
+   std::map<std::string, std::list<AadlParameter>> function_parameters;
 
    /// The top functions in the order in which they are specified in the aadl file
    std::list<std::string> top_functions_names;

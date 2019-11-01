@@ -76,10 +76,10 @@ bool network_flow::successive_shortest_path_algorithm()
    network_flow_graph_type::vertex_iterator vi, vi_end;
    network_flow_graph_type::edge_iterator ei, ei_end;
 
-   std::set<network_flow_graph_type::vertex_descriptor> E, D;
-   std::set<network_flow_graph_type::vertex_descriptor>::iterator EDi;
+   OrderedSetStd<network_flow_graph_type::vertex_descriptor> E, D;
+   OrderedSetStd<network_flow_graph_type::vertex_descriptor>::iterator EDi;
 
-   std::set<vertex_pair>::iterator inserted_edges_iterator;
+   CustomOrderedSet<vertex_pair>::iterator inserted_edges_iterator;
 
    if(boost::num_vertices(network_flow_graph) == 0)
    {

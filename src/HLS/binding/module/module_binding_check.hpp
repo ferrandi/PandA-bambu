@@ -48,22 +48,20 @@
 #include <boost/property_map/property_map.hpp>
 
 /// STD include
-#include <limits>
-
-/// STL includes
 #include <algorithm>
-#include <map>
-#include <set>
-#include <unordered_map>
+#include <limits>
 #include <utility>
 #include <vector>
+
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 class fu_binding;
 class module_register_binding_spec
 {
  private:
-   typedef std::unordered_map<unsigned int, std::size_t> tree_index_rank_t;
-   typedef std::unordered_map<unsigned int, unsigned int> tree_index_parent_t;
+   typedef CustomUnorderedMap<unsigned int, std::size_t> tree_index_rank_t;
+   typedef CustomUnorderedMapUnstable<unsigned int, unsigned int> tree_index_parent_t;
    typedef boost::associative_property_map<tree_index_rank_t> tree_index_rank_map_t;
    typedef boost::associative_property_map<tree_index_parent_t> tree_index_parent_map_t;
    typedef boost::disjoint_sets<tree_index_rank_map_t, tree_index_parent_map_t> tree_index_dsets_t;
@@ -88,7 +86,7 @@ struct module_binding_check : public check_clique<vertex_type>
    /**
     * slack associated with the Op
     */
-   std::unordered_map<C_vertex, double> opSlacks;
+   CustomUnorderedMap<C_vertex, double> opSlacks;
 
    /**
     * the set of input to every port of every clique.
@@ -96,7 +94,7 @@ struct module_binding_check : public check_clique<vertex_type>
     * that are needed at port port_index by the clique represented by
     * the node vertex
     */
-   std::unordered_map<C_vertex, std::vector<std::set<unsigned int>>> input_variables;
+   CustomUnorderedMap<C_vertex, std::vector<CustomOrderedSet<unsigned int>>> input_variables;
 
    /// resource precision
    unsigned int fu_prec;
@@ -114,10 +112,10 @@ struct module_binding_check : public check_clique<vertex_type>
    const HLS_managerRef HLSMgr;
 
    /// reference to the vertex slack
-   const std::unordered_map<vertex, double>& slack_time;
+   const CustomUnorderedMap<vertex, double>& slack_time;
 
    /// reference to the vertex starting time
-   const std::unordered_map<vertex, double>& starting_time;
+   const CustomUnorderedMap<vertex, double>& starting_time;
 
    /// controller delay
    double controller_delay;
@@ -127,15 +125,15 @@ struct module_binding_check : public check_clique<vertex_type>
     Each element of the vertex is a set containing only the identifier of the variable that
     is required by the given operation on that port
     */
-   std::vector<std::set<unsigned int>> getOperationVariablesAtPort(vertex& operationVertex) const
+   std::vector<CustomOrderedSet<unsigned int>> getOperationVariablesAtPort(vertex& operationVertex) const
    {
-      std::vector<std::set<unsigned int>> variableVector;
+      std::vector<CustomOrderedSet<unsigned int>> variableVector;
 
       std::vector<HLS_manager::io_binding_type> vars_read = HLSMgr->get_required_values(HLS->functionId, operationVertex);
       for(auto& port_index : vars_read)
       {
          unsigned int tree_var = std::get<0>(port_index);
-         std::set<unsigned int> variablesAtPort;
+         CustomOrderedSet<unsigned int> variablesAtPort;
          if(tree_var != 0)
             variablesAtPort.insert(tree_var);
          variableVector.push_back(variablesAtPort);
@@ -166,7 +164,7 @@ struct module_binding_check : public check_clique<vertex_type>
    //-----------------------------------------------------------------------------------------------
    // methods
 
-   module_binding_check(unsigned int _fu_prec, double _area_resource, const hlsRef _HLS, const HLS_managerRef _HLSMgr, const std::unordered_map<vertex, double>& _slack_time, const std::unordered_map<vertex, double>& _starting_time,
+   module_binding_check(unsigned int _fu_prec, double _area_resource, const hlsRef _HLS, const HLS_managerRef _HLSMgr, const CustomUnorderedMap<vertex, double>& _slack_time, const CustomUnorderedMap<vertex, double>& _starting_time,
                         double _controller_delay, module_register_binding_spec& _tree_index_dsets)
        : fu_prec(_fu_prec), area_resource(_area_resource), tree_index_dsets(_tree_index_dsets), HLS(_HLS), HLSMgr(_HLSMgr), slack_time(_slack_time), starting_time(_starting_time), controller_delay(_controller_delay), is_disabled_slack_based_binding(false)
    {
@@ -204,8 +202,8 @@ struct module_binding_check : public check_clique<vertex_type>
          input_variables[tempVertex] = getOperationVariablesAtPort(Ruv2v[tempVertex]);
       }
 
-      std::set<unsigned int> tree_index_set;
-      std::unordered_map<std::pair<unsigned int, unsigned int>, unsigned int> tree_var_resource_relation;
+      CustomOrderedSet<unsigned int> tree_index_set;
+      CustomUnorderedMap<std::pair<unsigned int, unsigned int>, unsigned int> tree_var_resource_relation;
       for(auto input_var : input_variables)
       {
          for(auto vars : input_var.second)
@@ -257,7 +255,7 @@ struct module_binding_check : public check_clique<vertex_type>
          for(auto vars : input_var.second)
          {
             if(vars.size() > 1)
-               n_muxes += vars.size() - 1;
+               n_muxes += static_cast<size_t>(vars.size()) - 1;
          }
       return n_muxes;
    }
@@ -269,8 +267,8 @@ struct module_binding_check : public check_clique<vertex_type>
       //  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 11, "prima di definizione di port number");
       size_t port_number = input_variables[child].size();
       //  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 11, "definita port number");
-      std::vector<std::set<unsigned int>>& input_at_port = input_variables[rep];
-      std::vector<std::set<unsigned int>>& input_at_child = input_variables[child];
+      std::vector<CustomOrderedSet<unsigned int>>& input_at_port = input_variables[rep];
+      std::vector<CustomOrderedSet<unsigned int>>& input_at_child = input_variables[child];
       for(size_t i = 0; i < port_number; i++)
       {
          //  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 11, "considero nuova porta");
@@ -298,8 +296,8 @@ struct module_binding_check : public check_clique<vertex_type>
       THROW_ASSERT(input_variables.find(rep) != input_variables.end(), "unexpected case");
 
       size_t port_number = input_variables[rep].size();
-      std::set<unsigned int> port_inputs;
-      std::set<unsigned int> port_inputs_rep, port_inputs_other;
+      CustomOrderedSet<unsigned int> port_inputs;
+      CustomOrderedSet<unsigned int> port_inputs_rep, port_inputs_other;
       double total_area_muxes_rep = 0, total_area_muxes_other = 0, total_area_muxes = 0;
 
       for(decltype(port_number) i = 0; i < port_number; i++)
@@ -316,7 +314,7 @@ struct module_binding_check : public check_clique<vertex_type>
             port_inputs.insert(temp_var);
             port_inputs_other.insert(temp_var);
          }
-         size_t n_mux_inputs = port_inputs.size();
+         size_t n_mux_inputs = static_cast<size_t>(port_inputs.size());
 
          total_area_muxes += HLS->allocation_information->estimate_muxNto1_area(fu_prec, static_cast<unsigned int>(n_mux_inputs));
          total_area_muxes_rep += HLS->allocation_information->estimate_muxNto1_area(fu_prec, static_cast<unsigned int>(port_inputs_rep.size()));
@@ -343,7 +341,7 @@ struct module_binding_check : public check_clique<vertex_type>
    bool check_no_mux_needed(C_vertex& rep, C_vertex& other) override
    {
       size_t port_number = input_variables[other].size();
-      std::set<size_t> port_inputs;
+      CustomOrderedSet<size_t> port_inputs;
 
       for(decltype(port_number) i = 0; i < port_number; i++)
       {
@@ -370,7 +368,7 @@ struct module_binding_check : public check_clique<vertex_type>
 template <typename vertex_type>
 struct module_binding_check_no_filter : public module_binding_check<vertex_type>
 {
-   module_binding_check_no_filter(unsigned int _fu_prec, double _area_resource, const hlsRef _HLS, const HLS_managerRef _HLSMgr, const std::unordered_map<vertex, double>& _slack_time, const std::unordered_map<vertex, double>& _starting_time,
+   module_binding_check_no_filter(unsigned int _fu_prec, double _area_resource, const hlsRef _HLS, const HLS_managerRef _HLSMgr, const CustomUnorderedMap<vertex, double>& _slack_time, const CustomUnorderedMap<vertex, double>& _starting_time,
                                   double _controller_delay, module_register_binding_spec& _tree_index_dsets)
        : module_binding_check<vertex_type>(_fu_prec, _area_resource, _HLS, _HLSMgr, _slack_time, _starting_time, _controller_delay, _tree_index_dsets)
    {

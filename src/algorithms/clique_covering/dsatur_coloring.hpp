@@ -56,12 +56,12 @@
 #else
 #include <boost/property_map.hpp>
 #endif
+#include "custom_set.hpp"
 #include <algorithm>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/visitors.hpp>
 #include <boost/limits.hpp>
 #include <boost/tuple/tuple.hpp>
-#include <unordered_set>
 #include <vector>
 
 /**
@@ -137,7 +137,7 @@ namespace boost
       std::vector<dsatur_d_list<size_type>*> satur_to_list;
       std::vector<size_type> vertex_to_satur;
       typename std::vector<dsatur_d_list<size_type>*> vertex_to_iter;
-      std::vector<std::unordered_set<size_type>> color_set;
+      std::vector<CustomUnorderedSet<size_type>> color_set;
       const VertexListGraph& G;
       ColorMap& CM;
 

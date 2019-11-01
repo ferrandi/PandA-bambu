@@ -74,9 +74,9 @@ remove_clobber_ga::remove_clobber_ga(const application_managerRef _AppM, unsigne
 
 remove_clobber_ga::~remove_clobber_ga() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>> remove_clobber_ga::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>> remove_clobber_ga::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -102,7 +102,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
    std::map<unsigned int, tree_nodeRef> var_substitution_table;
-   std::map<unsigned int, std::set<tree_nodeRef>> stmt_to_be_removed;
+   std::map<unsigned int, CustomOrderedSet<tree_nodeRef>> stmt_to_be_removed;
 
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
    auto* fd = GetPointer<function_decl>(temp);
@@ -174,7 +174,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
    }
 
    /// now remove the clobber gimple_assign
-   const std::map<unsigned int, std::set<tree_nodeRef>>::iterator stbr_it_end = stmt_to_be_removed.end();
+   const std::map<unsigned int, CustomOrderedSet<tree_nodeRef>>::iterator stbr_it_end = stmt_to_be_removed.end();
    for(auto stbr_it = stmt_to_be_removed.begin(); stbr_it != stbr_it_end; ++stbr_it)
    {
       unsigned int curr_bb = stbr_it->first;

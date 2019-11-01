@@ -127,7 +127,7 @@ class SDCSorter : std::binary_function<vertex, vertex, bool>
    CustomMap<vertex, CustomSet<vertex>> reachability_map;
 
    /// The index basic block map
-   const std::unordered_map<unsigned int, vertex>& bb_index_map;
+   const CustomUnorderedMap<unsigned int, vertex>& bb_index_map;
 
    /// For each operation its level
    CustomMap<vertex, size_t> op_levels;
@@ -190,14 +190,14 @@ class SDCSorter : std::binary_function<vertex, vertex, bool>
          {
             for(const auto& asap_cluster : alap_cluster.second)
             {
-               std::set<vertex, op_vertex_order_by_map> to_process = std::set<vertex, op_vertex_order_by_map>(op_vertex_order_by_map(function_behavior->get_map_levels(), op_graph.get()));
+               auto to_process = std::set<vertex, op_vertex_order_by_map>(op_vertex_order_by_map(function_behavior->get_map_levels(), op_graph.get()));
                for(const auto cluster_op : asap_cluster.second)
                {
                   to_process.insert(cluster_op);
                }
                for(const auto cluster_op : to_process)
                {
-                  op_levels[cluster_op] = op_levels.size();
+                  op_levels[cluster_op] = static_cast<size_t>(op_levels.size());
                }
             }
          }
@@ -500,9 +500,9 @@ void SDCScheduling::ComputeRelationships(DesignFlowStepSet& relationship, const 
    Scheduling::ComputeRelationships(relationship, relationship_type);
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> SDCScheduling::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> SDCScheduling::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret = Scheduling::ComputeHLSRelationships(relationship_type);
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret = Scheduling::ComputeHLSRelationships(relationship_type);
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -697,7 +697,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
       CustomMap<vertex, OpVertexSet> loop_pipelined_operations;
 
       /// For each basic block, for each functional unit fu, the list of the last n operations executed (n is the number of resource of type fu) - Value is a set since there can be different paths reaching current basic block
-      CustomMap<vertex, CustomMap<unsigned int, std::set<std::list<vertex>>>> constrained_operations_sequences;
+      CustomMap<vertex, CustomMap<unsigned int, CustomOrderedSet<std::list<vertex>>>> constrained_operations_sequences;
       for(const auto basic_block : loop_bbs)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding sorting constraints for BB" + STR(basic_block_graph->CGetBBNodeInfo(basic_block)->block->number));
@@ -710,8 +710,8 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering source BB" + STR(basic_block_graph->CGetBBNodeInfo(source)->block->number));
             if(loop_bbs.find(source) != loop_bbs.end())
             {
-               loop_unbounded_operations.find(basic_block)->second.insert(loop_unbounded_operations.find(source)->second.begin(), loop_unbounded_operations.find(source)->second.end());
-               loop_pipelined_operations.find(basic_block)->second.insert(loop_pipelined_operations.find(source)->second.begin(), loop_pipelined_operations.find(source)->second.end());
+               loop_unbounded_operations.at(basic_block).insert(loop_unbounded_operations.find(source)->second.begin(), loop_unbounded_operations.find(source)->second.end());
+               loop_pipelined_operations.at(basic_block).insert(loop_pipelined_operations.find(source)->second.begin(), loop_pipelined_operations.find(source)->second.end());
                for(const auto& fu_type : constrained_operations_sequences[source])
                {
                   constrained_operations_sequences[basic_block][fu_type.first].insert(fu_type.second.begin(), fu_type.second.end());
@@ -749,7 +749,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
             if(not allocation_information->is_operation_bounded(op_graph, operation, allocation_information->GetFuType(operation)))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding constraints for unbounded operations");
-               for(const auto other_unbounded_operation : loop_unbounded_operations.find(basic_block)->second)
+               for(const auto other_unbounded_operation : loop_unbounded_operations.at(basic_block))
                {
                   std::map<int, double> coeffs;
                   const bool other_before = sdc_sorter(other_unbounded_operation, operation);
@@ -839,8 +839,8 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
 #endif
                   }
                }
-               loop_unbounded_operations.find(basic_block)->second.insert(operation);
-               for(const auto loop_pipelined_operation : loop_pipelined_operations.find(basic_block)->second)
+               loop_unbounded_operations.at(basic_block).insert(operation);
+               for(const auto loop_pipelined_operation : loop_pipelined_operations.at(basic_block))
                {
                   std::map<int, double> coeffs;
                   const bool pipelined_before = sdc_sorter(loop_pipelined_operation, operation);
@@ -934,8 +934,8 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
             }
             if(allocation_information->GetCycleLatency(operation) > 1)
             {
-               loop_pipelined_operations.find(basic_block)->second.insert(operation);
-               for(const auto loop_unbounded_operation : loop_unbounded_operations.find(basic_block)->second)
+               loop_pipelined_operations.at(basic_block).insert(operation);
+               for(const auto loop_unbounded_operation : loop_unbounded_operations.at(basic_block))
                {
                   std::map<int, double> coeffs;
                   const bool unbounded_before = sdc_sorter(loop_unbounded_operation, operation);
@@ -1035,7 +1035,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                const auto& old_sequences = constrained_operations_sequences[basic_block][fu_type];
                if(old_sequences.size())
                {
-                  std::set<std::list<vertex>> new_sequences;
+                  CustomOrderedSet<std::list<vertex>> new_sequences;
                   for(auto old_sequence : old_sequences)
                   {
                      if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)

@@ -80,7 +80,7 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 
 /// STL include
-#include <map>
+#include "custom_map.hpp"
 
 const unsigned int technology_manager::XML = 1 << 0;
 #if HAVE_FROM_LIBERTY
@@ -223,7 +223,7 @@ void technology_manager::xload(const xml_element* node, const target_deviceRef d
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Loading xml technology");
    std::map<unsigned int, std::string> info;
-   std::set<library_managerRef> temp_libraries;
+   CustomOrderedSet<library_managerRef> temp_libraries;
 
    const xml_node::node_list list = node->get_children();
    for(const auto& iter : list)
@@ -349,10 +349,10 @@ void technology_manager::gload(const std::string& file_name, const fileIO_istrea
 }
 #endif
 
-void technology_manager::xwrite(xml_element* rootnode, TargetDevice_Type dv_type, const std::set<std::string>& _libraries)
+void technology_manager::xwrite(xml_element* rootnode, TargetDevice_Type dv_type, const CustomOrderedSet<std::string>& _libraries)
 {
    /// Set of libraries sorted by name
-   std::set<std::string> sorted_libraries;
+   CustomOrderedSet<std::string> sorted_libraries;
    for(const auto& library : library_map)
    {
       sorted_libraries.insert(library.first);
@@ -372,7 +372,7 @@ void technology_manager::xwrite(xml_element* rootnode, TargetDevice_Type dv_type
 }
 
 #if HAVE_FROM_LIBERTY
-void technology_manager::lib_write(const std::string& filename, TargetDevice_Type dv_type, const std::set<std::string>& local_libraries)
+void technology_manager::lib_write(const std::string& filename, TargetDevice_Type dv_type, const CustomOrderedSet<std::string>& local_libraries)
 {
    unsigned int output_level = Param->getOption<unsigned int>(OPT_output_level);
    try
@@ -385,7 +385,7 @@ void technology_manager::lib_write(const std::string& filename, TargetDevice_Typ
       xml2lib("__library__.xml", filename, output_level, debug_level);
       if(debug_level < DEBUG_LEVEL_PEDANTIC)
          boost::filesystem::remove("__library__.xml");
-      for(std::set<std::string>::const_iterator l = local_libraries.begin(); l != local_libraries.end(); ++l)
+      for(CustomOrderedSet<std::string>::const_iterator l = local_libraries.begin(); l != local_libraries.end(); ++l)
       {
          if(!is_library_manager(*l))
             continue;
@@ -413,7 +413,7 @@ void technology_manager::lib_write(const std::string& filename, TargetDevice_Typ
 #endif
 
 #if HAVE_EXPERIMENTAL
-void technology_manager::lef_write(const std::string& filename, TargetDevice_Type dv_type, const std::set<std::string>& _libraries)
+void technology_manager::lef_write(const std::string& filename, TargetDevice_Type dv_type, const CustomOrderedSet<std::string>& _libraries)
 {
    unsigned int output_level = Param->getOption<unsigned int>(OPT_output_level);
    try
@@ -425,7 +425,7 @@ void technology_manager::lef_write(const std::string& filename, TargetDevice_Typ
 
       xml2lef("__library__.xml", filename, output_level, debug_level);
       boost::filesystem::remove("__library__.xml");
-      for(std::set<std::string>::const_iterator l = _libraries.begin(); l != _libraries.end(); ++l)
+      for(CustomOrderedSet<std::string>::const_iterator l = _libraries.begin(); l != _libraries.end(); ++l)
       {
          if(!is_library_manager(*l))
             continue;

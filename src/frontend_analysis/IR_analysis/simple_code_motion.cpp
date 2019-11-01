@@ -135,9 +135,9 @@ void simple_code_motion::Initialize()
 #endif
 }
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>> simple_code_motion::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>> simple_code_motion::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -240,7 +240,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because it is an assignment");
       return FunctionFrontendFlowStep_Movable::MOVABLE;
    }
-   std::set<ssa_name*> rhs_ssa_uses;
+   CustomOrderedSet<ssa_name*> rhs_ssa_uses;
    tree_helper::compute_ssa_uses_rec_ptr(ga->op1, rhs_ssa_uses);
    tree_nodeRef right = GET_NODE(ga->op1);
 
@@ -639,8 +639,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
    auto bb_graph_info = BBGraphInfoRef(new BBGraphInfo(AppM, function_id));
    BBGraphsCollectionRef GCC_bb_graphs_collection(new BBGraphsCollection(bb_graph_info, parameters));
    BBGraphRef GCC_bb_graph(new BBGraph(GCC_bb_graphs_collection, CFG_SELECTOR));
-   std::unordered_map<vertex, unsigned int> direct_vertex_map;
-   std::unordered_map<unsigned int, vertex> inverse_vertex_map;
+   CustomUnorderedMap<vertex, unsigned int> direct_vertex_map;
+   CustomUnorderedMap<unsigned int, vertex> inverse_vertex_map;
    /// add vertices
    for(auto block : list_of_bloc)
    {
@@ -685,7 +685,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
    refcount<dominance<BBGraph>> bb_dominators;
    bb_dominators = refcount<dominance<BBGraph>>(new dominance<BBGraph>(*GCC_bb_graph, inverse_vertex_map[bloc::ENTRY_BLOCK_ID], inverse_vertex_map[bloc::EXIT_BLOCK_ID], parameters));
    bb_dominators->calculate_dominance_info(dominance<BBGraph>::CDI_DOMINATORS);
-   std::unordered_map<vertex, vertex> bb_dominator_map = bb_dominators->get_dominator_map();
+   const auto& bb_dominator_map = bb_dominators->get_dominator_map();
 
    /// If we are performing simd transformation, look for simd pragma
    // cppcheck-suppress uninitvar
@@ -802,7 +802,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
          }
          const auto& list_of_stmt = list_of_bloc[curr_bb]->CGetStmtList();
          std::list<tree_nodeRef> to_be_removed;
-         std::set<unsigned int> zero_delay_stmts;
+         CustomOrderedSet<unsigned int> zero_delay_stmts;
          std::list<tree_nodeRef> to_be_added_back;
          std::list<tree_nodeRef> to_be_added_front;
          /// We must use pointer since we are erasing elements in the list
@@ -828,13 +828,13 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             }
 
             /// compute the SSA variables used by stmt
-            std::set<ssa_name*> stmt_ssa_uses;
+            CustomOrderedSet<ssa_name*> stmt_ssa_uses;
             tree_helper::compute_ssa_uses_rec_ptr(*statement, stmt_ssa_uses);
             for(auto vo : gn->vovers)
                tree_helper::compute_ssa_uses_rec_ptr(vo, stmt_ssa_uses);
 
             /// compute BB where the SSA variables are defined
-            std::set<unsigned int> BB_def;
+            CustomOrderedSet<unsigned int> BB_def;
             /// check for anti-dependencies
             for(auto stmt0 = list_of_stmt.begin(); stmt0 != list_of_stmt.end() && *stmt0 != *statement && gn->vdef; stmt0++)
             {
@@ -846,7 +846,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                }
             }
 
-            const std::set<ssa_name*>::const_iterator ssu_it_end = stmt_ssa_uses.end();
+            const CustomOrderedSet<ssa_name*>::const_iterator ssu_it_end = stmt_ssa_uses.end();
             for(auto ssu_it = stmt_ssa_uses.begin(); ssu_it != ssu_it_end; ++ssu_it)
             {
                ssa_name* sn = *ssu_it;

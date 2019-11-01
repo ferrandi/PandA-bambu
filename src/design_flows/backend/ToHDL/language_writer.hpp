@@ -48,17 +48,15 @@
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_C_BUILT.hpp"
 
-#include <list>
-#include <set>
-#include <string>
-#include <vector>
-
+/// utility include
+#include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
 #include "refcount.hpp"
 #include "simple_indent.hpp"
 
-/// utility include
-#include "custom_set.hpp"
+#include <list>
+#include <string>
+#include <vector>
 
 /**
  * @name Forward declarations.
@@ -107,10 +105,10 @@ class language_writer
    const IndentedOutputStreamRef indented_output_stream;
 
    /// list of library imported (e.g., includes).
-   std::set<std::string> list_of_lib;
+   CustomOrderedSet<std::string> list_of_lib;
 
    /// list of customized gates
-   std::set<std::string> list_of_customized_gates;
+   CustomOrderedSet<std::string> list_of_customized_gates;
 
    /// the set of input parameters
    const ParameterConstRef parameters;

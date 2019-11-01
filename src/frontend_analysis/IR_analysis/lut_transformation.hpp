@@ -45,11 +45,11 @@
 #include "function_frontend_flow_step.hpp"
 
 /// STD include
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <algorithm>
 #include <cmath>
 #include <list>
-#include <map>
-#include <set>
 #include <string>
 #include <vector>
 /// Utility include
@@ -126,7 +126,7 @@ class lut_transformation : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**

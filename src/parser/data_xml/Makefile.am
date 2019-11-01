@@ -1,5 +1,7 @@
 #this file is src/parser/data_xml_/Makefile.am
 noinst_LTLIBRARIES = lib_data_xml_parser.la
+AM_CPPFLAGS = $(all_includes) -I$(BOOST_DIR) -I$(ABSEIL_DIR)
+METASOURCES = AUTO
 
 lib_data_xml_parser_la_CPPFLAGS = \
    -I$(top_srcdir)/src/ \
@@ -10,10 +12,7 @@ lib_data_xml_parser_la_CPPFLAGS = \
    -I$(top_srcdir)/src/rtl \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR)\
-   $(all_includes)
-
-METASOURCES = AUTO
+   $(AM_CPPFLAGS)
 
 noinst_HEADERS = data_xml_parser.hpp
 

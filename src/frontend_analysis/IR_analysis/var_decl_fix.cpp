@@ -62,7 +62,7 @@
 #include <fstream>
 
 /// STL include
-#include <map>
+#include "custom_map.hpp"
 #include <string>
 
 /// Tree include
@@ -87,9 +87,9 @@ VarDeclFix::VarDeclFix(const application_managerRef _AppM, unsigned int _functio
 
 VarDeclFix::~VarDeclFix() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> VarDeclFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> VarDeclFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):

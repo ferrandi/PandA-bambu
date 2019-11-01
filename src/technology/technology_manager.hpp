@@ -55,8 +55,8 @@
 #include <string>
 
 /// STL include
-#include <set>
-#include <unordered_map>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <vector>
 
 /// utility include
@@ -131,7 +131,7 @@ class technology_manager
    //@}
 
    /// definition of the type for identifying the libraries
-   typedef std::unordered_map<std::string, library_managerRef> library_map_type;
+   typedef CustomUnorderedMap<std::string, library_managerRef> library_map_type;
 
  private:
    /// class containing all the parameters
@@ -333,20 +333,20 @@ class technology_manager
     * add library elements operation node to an xml tree.
     * @param rootnode is the root node at which the xml representation of the operation is attached.
     */
-   void xwrite(xml_element* rootnode, TargetDevice_Type dv_type, const std::set<std::string>& libraries = std::set<std::string>());
+   void xwrite(xml_element* rootnode, TargetDevice_Type dv_type, const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
 
 #if HAVE_FROM_LIBERTY
    /**
     * Write the technology libraries in the liberty format
     */
-   void lib_write(const std::string& filename, TargetDevice_Type dv_type, const std::set<std::string>& libraries = std::set<std::string>());
+   void lib_write(const std::string& filename, TargetDevice_Type dv_type, const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
 #endif
 
 #if HAVE_EXPERIMENTAL
    /**
     *
     */
-   void lef_write(const std::string& filename, TargetDevice_Type dv_type, const std::set<std::string>& libraries = std::set<std::string>());
+   void lef_write(const std::string& filename, TargetDevice_Type dv_type, const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
    //@}
 #endif
 

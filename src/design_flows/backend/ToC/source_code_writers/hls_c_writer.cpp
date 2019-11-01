@@ -78,9 +78,9 @@
 #include <string>
 
 /// STL include
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <list>
-#include <map>
-#include <set>
 #include <vector>
 
 /// technology/physical_library include
@@ -140,7 +140,7 @@ void HLSCWriter::WriteHeader()
       auto& DesignInterfaceInclude = hls_c_backend_information->HLSMgr->design_interface_typenameinclude;
       if(DesignInterfaceInclude.find(fname) != DesignInterfaceInclude.end())
       {
-         std::set<std::string> includes;
+         CustomOrderedSet<std::string> includes;
          const auto& DesignInterfaceArgsInclude = DesignInterfaceInclude.find(fname)->second;
          for(auto argInclude : DesignInterfaceArgsInclude)
             includes.insert(argInclude.second);

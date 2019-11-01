@@ -59,7 +59,9 @@
 /// Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
-#include <algorithm> // for binary_search, sort
+#include "custom_map.hpp" // for map
+#include "custom_set.hpp" // for set
+#include <algorithm>      // for binary_search, sort
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/graphviz.hpp>
@@ -68,16 +70,13 @@
 #include <boost/pending/disjoint_sets.hpp>
 #include <boost/tuple/tuple.hpp> // for tie
 #include <boost/version.hpp>
-#include <cstddef>       // for size_t
-#include <iterator>      // for inserter, reverse_...
-#include <limits>        // for numeric_limits
-#include <map>           // for map, map<>::const_...
-#include <ostream>       // for operator<<, ostream
-#include <set>           // for set, _Rb_tree_cons...
-#include <string>        // for string, operator+
-#include <unordered_set> // for unordered_set, uno...
-#include <utility>       // for pair, swap
-#include <vector>        // for vector, allocator
+#include <cstddef>  // for size_t
+#include <iterator> // for inserter, reverse_...
+#include <limits>   // for numeric_limits
+#include <ostream>  // for operator<<, ostream
+#include <string>   // for string, operator+
+#include <utility>  // for pair, swap
+#include <vector>   // for vector, allocator
 
 /// matrix includes
 #if BOOST_VERSION >= 106400
@@ -94,6 +93,21 @@
 #endif
 #include "clique_covering_graph.hpp"
 #include "string_manipulation.hpp"
+
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#else
+#pragma GCC diagnostic warning "-Wsign-compare"
+#pragma GCC diagnostic warning "-Wsign-conversion"
+#endif
+
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wsign-compare"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#endif
 
 template <typename vertex_type>
 struct check_clique;
@@ -214,7 +228,7 @@ class clique_covering
     * @param i is the i-th clique into graph
     * @return set of elements into clique
     */
-   virtual std::set<VertexType> get_clique(unsigned int i) = 0;
+   virtual CustomOrderedSet<VertexType> get_clique(unsigned int i) = 0;
 
    /**
     * Writes a dotty representation of the actual graph
@@ -318,9 +332,9 @@ class TTT_maximal_weighted_clique
    typedef typename boost::graph_traits<Graph>::out_edge_iterator edge_iterator;
 
    /// set of vertices of the current clique
-   std::unordered_set<vertex> Q;
+   CustomUnorderedSet<vertex> Q;
    /// set of vertices of the maximum clique found so far
-   std::set<vertex> Q_max;
+   CustomOrderedSet<vertex> Q_max;
    /// weight of Q
    int W_Q;
    /// weight of Q_max
@@ -329,12 +343,12 @@ class TTT_maximal_weighted_clique
    std::map<C_vertex, std::string>& names;
 
    /// return the vertex of subg with the maximum intersection with cand
-   vertex get_max_weighted_adiacent_intersection(const std::unordered_set<vertex>& subg, const std::unordered_set<vertex>& cand, const Graph& g)
+   vertex get_max_weighted_adiacent_intersection(const CustomUnorderedSet<vertex>& subg, const CustomUnorderedSet<vertex>& cand, const Graph& g)
    {
       vertex result = boost::graph_traits<Graph>::null_vertex();
       THROW_ASSERT(!subg.empty(), "at least one element should belong to subg");
       int max_weighted_intersection = -1;
-      const typename std::unordered_set<vertex>::const_iterator it_end = subg.end();
+      const typename CustomUnorderedSet<vertex>::const_iterator it_end = subg.end();
       for(auto it = subg.begin(); it != it_end; ++it)
       {
          int weight_intersection = 0;
@@ -356,13 +370,13 @@ class TTT_maximal_weighted_clique
    }
 
    /// return the vertex of ext having the maximum edge weight with respect to the graph g
-   vertex get_max_weight_vertex(std::unordered_set<vertex>& ext, const Graph& g)
+   vertex get_max_weight_vertex(CustomUnorderedSet<vertex>& ext, const Graph& g)
    {
       vertex result = boost::graph_traits<Graph>::null_vertex();
       int max_weight = -1;
       THROW_ASSERT(!ext.empty(), "at least one element should belong to ext");
-      const typename std::unordered_set<vertex>::const_iterator it_end = ext.end();
-      for(typename std::unordered_set<vertex>::const_iterator it = ext.begin(); it != it_end; ++it)
+      const typename CustomUnorderedSet<vertex>::const_iterator it_end = ext.end();
+      for(typename CustomUnorderedSet<vertex>::const_iterator it = ext.begin(); it != it_end; ++it)
       {
          int cur_weight = 0;
          edge_iterator ei, ei_end;
@@ -382,7 +396,7 @@ class TTT_maximal_weighted_clique
    }
 
    /// compute the delta of the weight by adding q_vertex to the clique
-   int compute_delta_weight(vertex q_vertex, std::unordered_set<vertex> Q_set, const Graph& g)
+   int compute_delta_weight(vertex q_vertex, CustomUnorderedSet<vertex> Q_set, const Graph& g)
    {
       int result = 0;
       edge_iterator ei, ei_end;
@@ -394,7 +408,7 @@ class TTT_maximal_weighted_clique
    }
 
    /// recursive procedure expand defined in first cited paper
-   void expand(std::unordered_set<vertex>& subg, std::unordered_set<vertex>& cand, const Graph& g, int upper_bound)
+   void expand(CustomUnorderedSet<vertex>& subg, CustomUnorderedSet<vertex>& cand, const Graph& g, int upper_bound)
    {
       if(subg.empty() && Q.size() >= Q_max.size())
       {
@@ -415,14 +429,12 @@ class TTT_maximal_weighted_clique
       // vertex u =get_max_adiacent_intersection(subg, cand, g);
       /// get adjacent vertices of u
       adjacency_iterator vi, vi_end;
-      std::pair<adjacency_iterator, adjacency_iterator> p;
-      p = boost::adjacent_vertices(u, g);
-      vi = p.first;
-      vi_end = p.second;
+      boost::tie(vi, vi_end) = boost::adjacent_vertices(u, g);
       /// set of vertices adjacent to u
-      std::unordered_set<vertex> gamma_u(vi, vi_end);
+      CustomUnorderedSet<vertex> gamma_u;
+      gamma_u.insert(vi, vi_end);
       /// compute EXT_u = CAND - gamma_u
-      std::unordered_set<vertex> EXT_u;
+      CustomUnorderedSet<vertex> EXT_u;
       unordered_set_difference(cand.begin(), cand.end(), gamma_u, std::inserter(EXT_u, EXT_u.end()));
       while(!EXT_u.empty())
       {
@@ -435,10 +447,11 @@ class TTT_maximal_weighted_clique
          int delta = compute_delta_weight(q, Q, g);
          W_Q += delta;
          boost::tie(vi, vi_end) = boost::adjacent_vertices(q, g);
-         std::unordered_set<vertex> gamma_q(vi, vi_end);
-         std::unordered_set<vertex> subg_q;
+         CustomUnorderedSet<vertex> gamma_q;
+         gamma_q.insert(vi, vi_end);
+         CustomUnorderedSet<vertex> subg_q;
          unordered_set_intersection(subg.begin(), subg.end(), gamma_q, std::inserter(subg_q, subg_q.end()));
-         std::unordered_set<vertex> cand_q;
+         CustomUnorderedSet<vertex> cand_q;
          unordered_set_intersection(cand.begin(), cand.end(), gamma_q, std::inserter(cand_q, cand_q.end()));
          expand(subg_q, cand_q, g, upper_bound);
          if(upper_bound <= W_Q_max)
@@ -453,14 +466,14 @@ class TTT_maximal_weighted_clique
 
  public:
    /// return the weighted maximal clique of a graph g
-   const std::set<vertex> get_weighted_maximal_cliques(const Graph& g, int upper_bound)
+   const CustomOrderedSet<vertex> get_weighted_maximal_cliques(const Graph& g, int upper_bound)
    {
       Q.clear();
       Q_max.clear();
       W_Q = 0;
       W_Q_max = std::numeric_limits<int>::min();
-      std::unordered_set<vertex> subg;
-      std::unordered_set<vertex> cand;
+      CustomUnorderedSet<vertex> subg;
+      CustomUnorderedSet<vertex> cand;
       vertex_iterator vi, vi_end;
       boost::tie(vi, vi_end) = boost::vertices(g);
       subg.insert(vi, vi_end);
@@ -495,9 +508,9 @@ class TTT_maximal_weighted_clique_fast
    typedef typename boost::graph_traits<Graph>::out_edge_iterator edge_iterator;
 
    /// set of vertices of the current clique
-   std::unordered_set<vertex> Q;
+   CustomUnorderedSet<vertex> Q;
    /// set of vertices of the maximum clique found so far
-   std::set<vertex> Q_max;
+   CustomOrderedSet<vertex> Q_max;
    /// weight of Q
    int W_Q;
    /// weight of Q_max
@@ -506,12 +519,12 @@ class TTT_maximal_weighted_clique_fast
    std::map<C_vertex, std::string>& names;
 
    /// return the vertex of subg with the maximum intersection with cand
-   vertex get_max_weighted_adiacent_intersection(const std::unordered_set<vertex>& subg, const std::unordered_set<vertex>& cand, const Graph& g)
+   vertex get_max_weighted_adiacent_intersection(const CustomUnorderedSet<vertex>& subg, const CustomUnorderedSet<vertex>& cand, const Graph& g)
    {
       vertex result = boost::graph_traits<Graph>::null_vertex();
       THROW_ASSERT(!subg.empty(), "at least one element should belong to subg");
       int max_weighted_intersection = -1;
-      const typename std::unordered_set<vertex>::const_iterator it_end = subg.end();
+      const typename CustomUnorderedSet<vertex>::const_iterator it_end = subg.end();
       for(auto it = subg.begin(); it != it_end; ++it)
       {
          int weight_intersection = 0;
@@ -533,13 +546,13 @@ class TTT_maximal_weighted_clique_fast
    }
 
    /// return the vertex of ext having the maximum degree with respect to the graph g
-   vertex get_max_weight_vertex(std::unordered_set<vertex>& ext, const Graph& g)
+   vertex get_max_weight_vertex(CustomUnorderedSet<vertex>& ext, const Graph& g)
    {
       vertex result = boost::graph_traits<Graph>::null_vertex();
       int max_weight = -1;
       THROW_ASSERT(!ext.empty(), "at least one element should belong to ext");
-      const typename std::unordered_set<vertex>::const_iterator it_end = ext.end();
-      for(typename std::unordered_set<vertex>::const_iterator it = ext.begin(); it != it_end; ++it)
+      const typename CustomUnorderedSet<vertex>::const_iterator it_end = ext.end();
+      for(typename CustomUnorderedSet<vertex>::const_iterator it = ext.begin(); it != it_end; ++it)
       {
          int cur_weight = 0;
          edge_iterator ei, ei_end;
@@ -559,7 +572,7 @@ class TTT_maximal_weighted_clique_fast
    }
 
    /// compute the delta of the weight by adding q_vertex to the clique
-   int compute_delta_weight(vertex q_vertex, std::unordered_set<vertex> Q_set, const Graph& g)
+   int compute_delta_weight(vertex q_vertex, CustomUnorderedSet<vertex> Q_set, const Graph& g)
    {
       int result = 0;
       edge_iterator ei, ei_end;
@@ -571,7 +584,7 @@ class TTT_maximal_weighted_clique_fast
    }
 
    /// recursive procedure expand defined in first cited paper
-   void expand(std::unordered_set<vertex>& subg, std::unordered_set<vertex>& cand, const Graph& g)
+   void expand(CustomUnorderedSet<vertex>& subg, CustomUnorderedSet<vertex>& cand, const Graph& g)
    {
       if(subg.empty() && Q.size() >= Q_max.size())
       {
@@ -592,14 +605,12 @@ class TTT_maximal_weighted_clique_fast
       // vertex u =get_max_adiacent_intersection(subg, cand, g);
       /// get adjacent vertices of u
       adjacency_iterator vi, vi_end;
-      std::pair<adjacency_iterator, adjacency_iterator> p;
-      p = boost::adjacent_vertices(u, g);
-      vi = p.first;
-      vi_end = p.second;
+      boost::tie(vi, vi_end) = boost::adjacent_vertices(u, g);
       /// set of vertices adjacent to u
-      std::unordered_set<vertex> gamma_u(vi, vi_end);
+      CustomUnorderedSet<vertex> gamma_u;
+      gamma_u.insert(vi, vi_end);
       /// compute EXT_u = CAND - gamma_u
-      std::unordered_set<vertex> EXT_u;
+      CustomUnorderedSet<vertex> EXT_u;
       unordered_set_difference(cand.begin(), cand.end(), gamma_u, std::inserter(EXT_u, EXT_u.end()));
       while(!EXT_u.empty())
       {
@@ -613,10 +624,11 @@ class TTT_maximal_weighted_clique_fast
          W_Q += delta;
          // std::cerr << "W_Q=" << W_Q << std::endl;
          boost::tie(vi, vi_end) = boost::adjacent_vertices(q, g);
-         std::unordered_set<vertex> gamma_q(vi, vi_end);
-         std::unordered_set<vertex> subg_q;
+         CustomUnorderedSet<vertex> gamma_q;
+         gamma_q.insert(vi, vi_end);
+         CustomUnorderedSet<vertex> subg_q;
          unordered_set_intersection(subg.begin(), subg.end(), gamma_q, std::inserter(subg_q, subg_q.end()));
-         std::unordered_set<vertex> cand_q;
+         CustomUnorderedSet<vertex> cand_q;
          unordered_set_intersection(cand.begin(), cand.end(), gamma_q, std::inserter(cand_q, cand_q.end()));
          expand(subg_q, cand_q, g);
          // std::cerr << "W_Q_max=" << W_Q_max << std::endl;
@@ -632,14 +644,14 @@ class TTT_maximal_weighted_clique_fast
 
  public:
    /// return the weighted maximal clique of a graph g
-   const std::set<vertex> get_weighted_maximal_cliques(const Graph& g)
+   const CustomOrderedSet<vertex> get_weighted_maximal_cliques(const Graph& g)
    {
       Q.clear();
       Q_max.clear();
       W_Q = 0;
       W_Q_max = std::numeric_limits<int>::min();
-      std::unordered_set<vertex> subg;
-      std::unordered_set<vertex> cand;
+      CustomUnorderedSet<vertex> subg;
+      CustomUnorderedSet<vertex> cand;
       vertex_iterator vi, vi_end;
       boost::tie(vi, vi_end) = boost::vertices(g);
       subg.insert(vi, vi_end);
@@ -659,7 +671,7 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
    /// bulk undirected graph
    boost_cc_compatibility_graph clique_covering_graph_bulk;
    /// set of maximal clique computed
-   std::vector<std::set<C_vertex>> cliques;
+   std::vector<CustomOrderedSet<C_vertex>> cliques;
    /// map between vertex_type and C_vertex
    std::map<vertex_type, C_vertex> v2uv;
    /// edge selector to select all edges of the compatibility graph
@@ -713,10 +725,10 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
       return cliques.size();
    }
 
-   std::set<vertex_type> get_clique(unsigned int i) override
+   CustomOrderedSet<vertex_type> get_clique(unsigned int i) override
    {
-      std::set<vertex_type> result;
-      std::set<C_vertex>& cur_clique = cliques[i];
+      CustomOrderedSet<vertex_type> result;
+      CustomOrderedSet<C_vertex>& cur_clique = cliques[i];
       auto it_end = cur_clique.end();
       for(auto it = cur_clique.begin(); it != it_end; ++it)
       {
@@ -726,7 +738,7 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
       return result;
    }
 
-   virtual void do_clique_covering(const cc_compatibility_graphRef filteredCG, boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, std::unordered_set<C_vertex>&, const std::unordered_set<C_vertex>&, const filter_clique<vertex_type>&)
+   virtual void do_clique_covering(const cc_compatibility_graphRef filteredCG, boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, CustomUnorderedSet<C_vertex>&, const CustomUnorderedSet<C_vertex>&, const filter_clique<vertex_type>&)
    {
       typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> conflict_graph;
       typedef boost::graph_traits<conflict_graph>::vertices_size_type cg_vertices_size_type;
@@ -788,7 +800,7 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
    }
 
    /// build partitions
-   void build_partitions(std::unordered_set<C_vertex>& support, boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, std::map<C_vertex, std::set<C_vertex>>& current_partitions)
+   void build_partitions(CustomUnorderedSet<C_vertex>& support, boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, std::map<C_vertex, CustomOrderedSet<C_vertex>>& current_partitions)
    {
       auto it_end = support.end();
       for(auto it = support.begin(); it != it_end;)
@@ -800,7 +812,7 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
          {
             if(current_partitions.find(rep) == current_partitions.end())
             {
-               std::set<C_vertex> singularity;
+               CustomOrderedSet<C_vertex> singularity;
                singularity.insert(cur);
                current_partitions[rep] = singularity;
             }
@@ -811,7 +823,7 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
          {
             if(current_partitions.find(rep) == current_partitions.end())
             {
-               std::set<C_vertex> null_set;
+               CustomOrderedSet<C_vertex> null_set;
                current_partitions[rep] = null_set;
             }
          }
@@ -828,8 +840,8 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
       pred_pmap_type pred_pmap = boost::make_iterator_property_map(pred_map.begin(), cindex_pmap, pred_map[0]);
       boost::disjoint_sets<rank_pmap_type, pred_pmap_type> ds(rank_pmap, pred_pmap);
       typedef boost::graph_traits<boost_cc_compatibility_graph>::vertex_iterator u_vertex_iterator;
-      std::unordered_set<C_vertex> support;
-      std::unordered_set<C_vertex> all_vertices;
+      CustomUnorderedSet<C_vertex> support;
+      CustomUnorderedSet<C_vertex> all_vertices;
 
       boost::initialize_incremental_components(clique_covering_graph_bulk, ds);
 
@@ -842,7 +854,7 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
       cc_compatibility_graphRef completeCG = cc_compatibility_graphRef(new cc_compatibility_graph(clique_covering_graph_bulk, cc_compatibility_graph_edge_selector<boost_cc_compatibility_graph>(COMPATIBILITY_ALL_EDGES, &clique_covering_graph_bulk),
                                                                                                   cc_compatibility_graph_vertex_selector<boost_cc_compatibility_graph>(&support)));
 
-      std::map<C_vertex, std::set<C_vertex>> current_partitions;
+      std::map<C_vertex, CustomOrderedSet<C_vertex>> current_partitions;
       if(all_edges)
       {
          do_clique_covering(completeCG, ds, support, all_vertices, fc);
@@ -868,7 +880,7 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
                for(auto cp_it = current_partitions.begin(); cp_it != cp_it_end; ++cp_it)
                {
                   C_vertex rep = cp_it->first;
-                  std::set<C_vertex>& current_cliques = cp_it->second;
+                  CustomOrderedSet<C_vertex>& current_cliques = cp_it->second;
                   auto c_it_end = current_cliques.end();
                   for(auto c_it = current_cliques.begin(); c_it != c_it_end;)
                   {
@@ -940,8 +952,8 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
 
       build_partitions(support, ds, current_partitions);
       /// and then fill the cliques
-      std::map<C_vertex, std::set<C_vertex>>::const_iterator cp_it_end = current_partitions.end();
-      for(std::map<C_vertex, std::set<C_vertex>>::const_iterator cp_it = current_partitions.begin(); cp_it != cp_it_end; ++cp_it)
+      std::map<C_vertex, CustomOrderedSet<C_vertex>>::const_iterator cp_it_end = current_partitions.end();
+      for(std::map<C_vertex, CustomOrderedSet<C_vertex>>::const_iterator cp_it = current_partitions.begin(); cp_it != cp_it_end; ++cp_it)
       {
          cliques.push_back(cp_it->second);
          cliques.back().insert(cp_it->first);
@@ -985,15 +997,15 @@ class TTT_based_clique_covering_fast : public coloring_based_clique_covering<ver
    {
    }
 
-   void do_clique_covering(const cc_compatibility_graphRef CG, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, std::unordered_set<C_vertex>& support, const std::unordered_set<C_vertex>& all_vertices,
+   void do_clique_covering(const cc_compatibility_graphRef CG, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, CustomUnorderedSet<C_vertex>& support, const CustomUnorderedSet<C_vertex>& all_vertices,
                            const filter_clique<vertex_type>& fc) override
    {
       TTT_maximal_weighted_clique_fast<cc_compatibility_graph> MWC(coloring_based_clique_covering<vertex_type>::names);
       // std::cerr << "Looking for a maximum weighted clique in a set of " << support.size() << std::endl;
-      std::unordered_set<C_vertex> support_copy(support.begin(), support.end());
+      CustomUnorderedSet<C_vertex> support_copy(support);
       while(!support.empty())
       {
-         std::set<C_vertex> curr_clique = MWC.get_weighted_maximal_cliques(*CG);
+         CustomOrderedSet<C_vertex> curr_clique = MWC.get_weighted_maximal_cliques(*CG);
          // std::cerr << "Found one of size " << curr_clique.size() << std::endl;
 
          /// do some filtering
@@ -1003,8 +1015,8 @@ class TTT_based_clique_covering_fast : public coloring_based_clique_covering<ver
          {
             if(curr_clique.size() > 1)
             {
-               std::set<C_vertex> curr_expandend_clique;
-               const std::unordered_set<C_vertex>::const_iterator av_it_end = all_vertices.end();
+               CustomOrderedSet<C_vertex> curr_expandend_clique;
+               const CustomUnorderedSet<C_vertex>::const_iterator av_it_end = all_vertices.end();
                for(auto av_it = all_vertices.begin(); av_it != av_it_end; ++av_it)
                {
                   C_vertex rep = ds.find_set(*av_it);
@@ -1025,9 +1037,9 @@ class TTT_based_clique_covering_fast : public coloring_based_clique_covering<ver
 
          // std::cerr << "Found one of size " << curr_clique.size() << std::endl;
          C_vertex first = *curr_clique.begin();
-         const std::set<C_vertex>::const_iterator cc_it_end = curr_clique.end();
-         const std::set<C_vertex>::const_iterator first_cc_it = curr_clique.begin();
-         std::set<C_vertex>::const_iterator cc_it = first_cc_it;
+         const CustomOrderedSet<C_vertex>::const_iterator cc_it_end = curr_clique.end();
+         const CustomOrderedSet<C_vertex>::const_iterator first_cc_it = curr_clique.begin();
+         CustomOrderedSet<C_vertex>::const_iterator cc_it = first_cc_it;
          do
          {
             C_vertex curr_vertex = *cc_it;
@@ -1063,16 +1075,16 @@ class TTT_based_clique_covering : public coloring_based_clique_covering<vertex_t
    {
    }
 
-   void do_clique_covering(const cc_compatibility_graphRef CG, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, std::unordered_set<C_vertex>& support, const std::unordered_set<C_vertex>& all_vertices,
+   void do_clique_covering(const cc_compatibility_graphRef CG, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, CustomUnorderedSet<C_vertex>& support, const CustomUnorderedSet<C_vertex>& all_vertices,
                            const filter_clique<vertex_type>& fc) override
    {
       TTT_maximal_weighted_clique<cc_compatibility_graph> MWC(coloring_based_clique_covering<vertex_type>::names);
-      std::unordered_set<C_vertex> support_copy(support.begin(), support.end());
+      CustomUnorderedSet<C_vertex> support_copy(support);
       int upper_bound = std::numeric_limits<int>::max();
       while(!support.empty())
       {
          // std::cerr << "Looking for a maximum weighted clique on a graph with " << support.size() << " vertices" << std::endl;
-         std::set<C_vertex> curr_clique = MWC.get_weighted_maximal_cliques(*CG, upper_bound);
+         CustomOrderedSet<C_vertex> curr_clique = MWC.get_weighted_maximal_cliques(*CG, upper_bound);
          /// update the upper bound with the last weight
          upper_bound = MWC.get_last_W_Q_max();
 
@@ -1083,8 +1095,8 @@ class TTT_based_clique_covering : public coloring_based_clique_covering<vertex_t
          {
             if(curr_clique.size() > 1)
             {
-               std::set<C_vertex> curr_expandend_clique;
-               const std::unordered_set<C_vertex>::const_iterator av_it_end = all_vertices.end();
+               CustomOrderedSet<C_vertex> curr_expandend_clique;
+               const CustomUnorderedSet<C_vertex>::const_iterator av_it_end = all_vertices.end();
                for(auto av_it = all_vertices.begin(); av_it != av_it_end; ++av_it)
                {
                   C_vertex rep = ds.find_set(*av_it);
@@ -1104,9 +1116,9 @@ class TTT_based_clique_covering : public coloring_based_clique_covering<vertex_t
 
          // std::cerr << "Found one of size " << curr_clique.size() << std::endl;
          C_vertex first = *curr_clique.begin();
-         const std::set<C_vertex>::const_iterator cc_it_end = curr_clique.end();
-         const std::set<C_vertex>::const_iterator first_cc_it = curr_clique.begin();
-         std::set<C_vertex>::const_iterator cc_it = first_cc_it;
+         const CustomOrderedSet<C_vertex>::const_iterator cc_it_end = curr_clique.end();
+         const CustomOrderedSet<C_vertex>::const_iterator first_cc_it = curr_clique.begin();
+         CustomOrderedSet<C_vertex>::const_iterator cc_it = first_cc_it;
          do
          {
             C_vertex curr_vertex = *cc_it;
@@ -1138,11 +1150,11 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
 {
    typedef boost::graph_traits<cc_compatibility_graph>::edge_descriptor edge_descriptor;
 
-   bool is_non_compliant(C_vertex src, C_vertex tgt, const cc_compatibility_graph& subgraph, const std::unordered_set<C_vertex>& all_vertices, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, const filter_clique<vertex_type>& fc)
+   bool is_non_compliant(C_vertex src, C_vertex tgt, const cc_compatibility_graph& subgraph, const CustomUnorderedSet<C_vertex>& all_vertices, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, const filter_clique<vertex_type>& fc)
    {
       C_vertex vertex_to_be_removed;
-      std::set<C_vertex> curr_expandend_clique;
-      const std::unordered_set<C_vertex>::const_iterator av_it_end = all_vertices.end();
+      CustomOrderedSet<C_vertex> curr_expandend_clique;
+      const CustomUnorderedSet<C_vertex>::const_iterator av_it_end = all_vertices.end();
       for(auto av_it = all_vertices.begin(); av_it != av_it_end; ++av_it)
       {
          C_vertex rep = ds.find_set(*av_it);
@@ -1152,7 +1164,7 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
       return fc.select_candidate_to_remove(curr_expandend_clique, vertex_to_be_removed, coloring_based_clique_covering<vertex_type>::uv2v, subgraph);
    }
 
-   bool select_edge_start(C_vertex source, C_vertex& tgt, const cc_compatibility_graph& subgraph, const std::unordered_set<C_vertex>& all_vertices, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, const filter_clique<vertex_type>& fc)
+   bool select_edge_start(C_vertex source, C_vertex& tgt, const cc_compatibility_graph& subgraph, const CustomUnorderedSet<C_vertex>& all_vertices, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, const filter_clique<vertex_type>& fc)
    {
       size_t h_max_neighbors = 0;
       size_t h_min_del_edges = std::numeric_limits<size_t>::max();
@@ -1167,7 +1179,7 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
          size_t h_neighbors = 0, h_del_edges = 0;
          C_outEdgeIterator sei, sei_end, tei, tei_end;
          size_t src_out_degree = 0, tgt_out_degree = 0;
-         std::unordered_set<C_vertex> src_neighbors, tgt_neighbors, common_neighbors;
+         CustomUnorderedSet<C_vertex> src_neighbors, tgt_neighbors, common_neighbors;
 
          for(boost::tie(sei, sei_end) = boost::out_edges(source, subgraph); sei != sei_end; ++sei)
          {
@@ -1193,7 +1205,7 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
       return !first_iter;
    }
    /// Compute the heuristics and return the best matching edge
-   bool select_edge(C_vertex& src, C_vertex& tgt, const cc_compatibility_graph& subgraph, const std::unordered_set<C_vertex>& all_vertices, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, const filter_clique<vertex_type>& fc)
+   bool select_edge(C_vertex& src, C_vertex& tgt, const cc_compatibility_graph& subgraph, const CustomUnorderedSet<C_vertex>& all_vertices, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, const filter_clique<vertex_type>& fc)
    {
       size_t h_max_neighbors = 0;
       size_t h_min_del_edges = std::numeric_limits<size_t>::max();
@@ -1210,7 +1222,7 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
          size_t h_neighbors = 0, h_del_edges = 0;
          C_outEdgeIterator sei, sei_end, tei, tei_end;
          size_t src_out_degree = 0, tgt_out_degree = 0;
-         std::unordered_set<C_vertex> src_neighbors, tgt_neighbors, common_neighbors;
+         CustomUnorderedSet<C_vertex> src_neighbors, tgt_neighbors, common_neighbors;
 
          for(boost::tie(sei, sei_end) = boost::out_edges(source, subgraph); sei != sei_end; ++sei)
          {
@@ -1243,10 +1255,10 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
    {
    }
 
-   void do_clique_covering(const cc_compatibility_graphRef CG, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, std::unordered_set<C_vertex>& support, const std::unordered_set<C_vertex>& all_vertices,
+   void do_clique_covering(const cc_compatibility_graphRef CG, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, CustomUnorderedSet<C_vertex>& support, const CustomUnorderedSet<C_vertex>& all_vertices,
                            const filter_clique<vertex_type>& fc) override
    {
-      std::unordered_set<C_vertex> support_copy(support.begin(), support.end());
+      CustomUnorderedSet<C_vertex> support_copy(support);
 
       while(support.size() > 1)
       {
@@ -1259,13 +1271,15 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
 
          size_t cluster_size = 1;
          std::map<edge_descriptor, int> removed_edges;
-         std::unordered_set<C_vertex>::iterator current;
+         CustomUnorderedSet<C_vertex>::iterator current;
 
          do
          {
             /// remove non conformant edges
-            std::set<C_vertex> neighbors_src(boost::adjacent_vertices(src, *CG).first, adjacent_vertices(src, *CG).second);
-            std::set<C_vertex> neighbors_tgt(boost::adjacent_vertices(tgt, *CG).first, adjacent_vertices(tgt, *CG).second);
+            CustomOrderedSet<C_vertex> neighbors_src;
+            neighbors_src.insert(boost::adjacent_vertices(src, *CG).first, adjacent_vertices(src, *CG).second);
+            CustomOrderedSet<C_vertex> neighbors_tgt;
+            neighbors_tgt.insert(boost::adjacent_vertices(tgt, *CG).first, adjacent_vertices(tgt, *CG).second);
             C_outEdgeIterator sei, sei_end;
             for(boost::tie(sei, sei_end) = boost::out_edges(src, *CG); sei != sei_end; ++sei)
             {
@@ -1334,7 +1348,7 @@ class RTS_based_clique_covering : public TS_based_clique_covering<vertex_type>
 {
    typedef boost::graph_traits<cc_compatibility_graph>::edge_descriptor edge_descriptor;
 
-   size_t compute_cost(std::vector<std::set<C_vertex>>& curr_cliques, const filter_clique<vertex_type>& fc)
+   size_t compute_cost(std::vector<CustomOrderedSet<C_vertex>>& curr_cliques, const filter_clique<vertex_type>& fc)
    {
       size_t total_cost = 0;
       for(auto clique_val : curr_cliques)
@@ -1350,7 +1364,7 @@ class RTS_based_clique_covering : public TS_based_clique_covering<vertex_type>
 
    void exec(const filter_clique<vertex_type>& fc)
    {
-      std::vector<std::set<C_vertex>> best_cliques;
+      std::vector<CustomOrderedSet<C_vertex>> best_cliques;
       size_t best_cost = std::numeric_limits<size_t>::max();
       size_t iterations = std::min(boost::num_vertices(coloring_based_clique_covering<vertex_type>::clique_covering_graph_bulk), 10ul);
       // std::cerr << "N iterations " << iterations << std::endl;
@@ -1422,7 +1436,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
    /// bulk undirected graph
    boost_cc_compatibility_graph clique_covering_graph_bulk;
    /// set of maximal clique computed
-   std::vector<std::unordered_set<C_vertex>> cliques;
+   std::vector<CustomUnorderedSet<C_vertex>> cliques;
    /// map between vertex_type and C_vertex
    std::map<vertex_type, C_vertex> v2uv;
    /// map between C_vertex and vertex_type
@@ -1460,20 +1474,20 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
          auto p_it = partitions.find(c);
          if(p_it == partitions.end())
          {
-            std::set<boost::graph_traits<boost_cc_compatibility_graph>::vertex_descriptor> singularity;
+            CustomOrderedSet<boost::graph_traits<boost_cc_compatibility_graph>::vertex_descriptor> singularity;
             singularity.insert(*ui);
             partitions[c] = singularity;
          }
          else
          {
             p_it->second.insert(*ui);
-            max_size = std::max(max_size, p_it->second.size());
+            max_size = std::max(max_size, static_cast<size_t>(p_it->second.size()));
          }
       }
       return max_size;
    }
 
-   std::map<size_t, std::set<boost::graph_traits<boost_cc_compatibility_graph>::vertex_descriptor>> partitions;
+   std::map<size_t, CustomOrderedSet<boost::graph_traits<boost_cc_compatibility_graph>::vertex_descriptor>> partitions;
 
    size_t num_cols;
 
@@ -1514,12 +1528,12 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
       return cliques.size();
    }
 
-   std::set<vertex_type> get_clique(unsigned int i) override
+   CustomOrderedSet<vertex_type> get_clique(unsigned int i) override
    {
-      std::set<vertex_type> result;
-      std::unordered_set<C_vertex>& cur_clique = cliques[i];
-      std::unordered_set<C_vertex>::const_iterator it_end = cur_clique.end();
-      for(std::unordered_set<C_vertex>::const_iterator it = cur_clique.begin(); it != it_end; ++it)
+      CustomOrderedSet<vertex_type> result;
+      CustomUnorderedSet<C_vertex>& cur_clique = cliques[i];
+      CustomUnorderedSet<C_vertex>::const_iterator it_end = cur_clique.end();
+      for(CustomUnorderedSet<C_vertex>::const_iterator it = cur_clique.begin(); it != it_end; ++it)
       {
          THROW_ASSERT(uv2v.find(*it) != uv2v.end(), "vertex not added");
          result.insert(uv2v.find(*it)->second);
@@ -1535,7 +1549,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
       for(unsigned int i = 0; i < final_num_cols; ++i)
          cost_matrix(final_num_cols, i) = 0;
       cost_matrix(num_rows, final_num_cols) = BIG_NUMBER;
-      std::unordered_set<C_vertex> empty;
+      CustomUnorderedSet<C_vertex> empty;
       cliques.push_back(empty);
       ++final_num_cols;
    }
@@ -1554,7 +1568,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
       /// initializes the cliques with empty sets
       for(unsigned int i = 0; i < num_cols; ++i)
       {
-         std::unordered_set<C_vertex> empty;
+         CustomUnorderedSet<C_vertex> empty;
          cliques.push_back(empty);
       }
       size_t offset = partitions.size();
@@ -1606,7 +1620,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                   else
                   {
                      /// check if *v_it fit in the clique given the filtering predicate
-                     std::set<C_vertex> candidate_clique;
+                     CustomOrderedSet<C_vertex> candidate_clique;
                      candidate_clique.insert(cliques[y].begin(), cliques[y].end());
                      candidate_clique.insert(*v_it);
                      C_vertex vertex_to_be_removed;
@@ -1661,7 +1675,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                   if(cliques[s].find(boost::target(*ei, clique_covering_graph_bulk)) != cliques[s].end())
                      ++compatibles;
                /// check if *v_it fit in the clique given the filtering predicate
-               std::set<C_vertex> candidate_clique;
+               CustomOrderedSet<C_vertex> candidate_clique;
                candidate_clique.insert(cliques[s].begin(), cliques[s].end());
                candidate_clique.insert(*v_it);
                C_vertex vertex_to_be_removed;
@@ -1704,7 +1718,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
       THROW_ASSERT(v2uv.find(v) != v2uv.end(), "vertex not added");
       C_vertex C_v = v2uv.find(v)->second;
       partitions[id].insert(C_v);
-      num_cols = std::max(partitions[id].size(), num_cols);
+      num_cols = std::max(static_cast<size_t>(partitions[id].size()), num_cols);
    }
 
    void suggest_min_resources(size_t n_resources) override
@@ -1737,7 +1751,7 @@ class randomized_clique_covering : public clique_covering<vertex_type>
    /// Variables used to describe the solution found
    size_t number_of_cliques;
 
-   std::vector<std::set<vertex_type>> cliques;
+   std::vector<CustomOrderedSet<vertex_type>> cliques;
 
    /// map between vertex_type and C_vertex
    std::map<vertex_type, C_vertex> Rv2uv;
@@ -1821,7 +1835,7 @@ class randomized_clique_covering : public clique_covering<vertex_type>
     * @param i is the i-th clique into graph
     * @return set of elements into clique
     */
-   std::set<vertex_type> get_clique(unsigned int i)
+   CustomOrderedSet<vertex_type> get_clique(unsigned int i)
    {
       return cliques[i];
    }
@@ -1886,7 +1900,7 @@ class randomized_clique_covering : public clique_covering<vertex_type>
 
       BOOST_FOREACH(RVertexIndex current_index, components)
       {
-         std::set<vertex_type> operations_in_clique;
+         CustomOrderedSet<vertex_type> operations_in_clique;
 
          BOOST_FOREACH(RVertexIndex child_index, components[current_index])
          {
@@ -1939,5 +1953,13 @@ refcount<clique_covering<VertexType>> clique_covering<VertexType>::create_solver
    }
    return refcount<clique_covering<VertexType>>();
 }
+
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+#pragma GCC diagnostic pop
+#endif
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 #endif // TTT_BASED_CLIQUE_COVERING_HPP

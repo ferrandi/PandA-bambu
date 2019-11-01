@@ -51,8 +51,8 @@
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
-#include "tree_node.hpp"
 #include "tree_helper.hpp"
+#include "tree_node.hpp"
 
 /// behavior include
 #include "call_graph_manager.hpp"
@@ -62,13 +62,13 @@
 #include <string>
 
 /// STL includes
+#include "custom_set.hpp"
 #include <tuple>
-#include <unordered_set>
 
 /// utility includes
 #include "dbgPrintHelper.hpp"
-#include "utility.hpp"
 #include "math_function.hpp"
+#include "utility.hpp"
 
 top_entity_parallel_cs::top_entity_parallel_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
     : top_entity(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
@@ -80,9 +80,9 @@ top_entity_parallel_cs::~top_entity_parallel_cs()
 {
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> top_entity_parallel_cs::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> top_entity_parallel_cs::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -264,7 +264,7 @@ unsigned top_entity_parallel_cs::BW_loop_iter(const structural_objectRef circuit
    }
    if(n != 0)
    {
-      auto loopBW = 1+static_cast<unsigned>(ceil_log2(static_cast<unsigned long long int>(n)));
+      auto loopBW = 1 + static_cast<unsigned>(ceil_log2(static_cast<unsigned long long int>(n)));
       return loopBW;
    }
    else
@@ -344,7 +344,6 @@ void top_entity_parallel_cs::resize_controller_parallel(structural_objectRef con
 
 void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef circuit, unsigned loopBW)
 {
-
    structural_managerRef Datapath = HLS->datapath;
    structural_objectRef datapath_circuit = Datapath->get_circ();
    structural_objectRef controller_circuit = circuit->find_member("__controller_parallel", component_o_K, circuit);
@@ -383,5 +382,4 @@ void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef ci
    SM->add_connection(request_sign, datapath_request);
 
    connect_loop_iter(circuit, loopBW);
-
 }

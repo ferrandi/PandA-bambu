@@ -44,7 +44,6 @@
 #ifndef DESIGN_FLOW_GRAPH_HPP
 #define DESIGN_FLOW_GRAPH_HPP
 
-#include "custom_map.hpp" // for CustomMap
 #include "edge_info.hpp"  // for EdgeInfo, EdgeIn...
 #include "graph.hpp"      // for vertex, EdgeDesc...
 #include "graph_info.hpp" // for GraphInfo
@@ -53,7 +52,8 @@
 #include <cstddef>        // for size_t
 #include <iosfwd>         // for ostream
 #include <string>         // for string
-#include <unordered_map>  // for unordered_map
+
+#include "custom_map.hpp" // for unordered_map
 
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(DesignFlowGraphsCollection);
@@ -110,7 +110,7 @@ class DesignFlowGraphsCollection : public graphs_collection
 {
  protected:
    /// Map a signature of a step to the corresponding vertex
-   std::unordered_map<std::string, vertex> signature_to_vertex;
+   CustomUnorderedMap<std::string, vertex> signature_to_vertex;
 
  public:
    /**
@@ -245,7 +245,7 @@ class DesignFlowGraph : public graph
     * @param edge_history tells which edges are present in each iteration
     * @param vertex_names is the name of each vertex (name of old vertices could be not more computable)
     */
-   void WriteDot(const std::string& file_name, const CustomMap<size_t, CustomMap<vertex, DesignFlowStep_Status>>& vertex_history, const CustomMap<size_t, std::unordered_map<EdgeDescriptor, int>>& edge_history,
+   void WriteDot(const std::string& file_name, const CustomMap<size_t, CustomMap<vertex, DesignFlowStep_Status>>& vertex_history, const CustomMap<size_t, CustomUnorderedMapStable<EdgeDescriptor, int>>& edge_history,
                  const CustomMap<vertex, std::string>& vertex_names, const size_t writing_step_counter) const;
 #endif
 };
@@ -297,7 +297,7 @@ class DesignFlowEdgeWriter : public EdgeWriter
    const CustomMap<vertex, DesignFlowStep_Status>& vertex_history;
 
    /// Edges which have to be printed (empty means all)
-   const std::unordered_map<EdgeDescriptor, int>& edge_history;
+   const CustomUnorderedMapStable<EdgeDescriptor, int>& edge_history;
 
  public:
    /**
@@ -308,7 +308,7 @@ class DesignFlowEdgeWriter : public EdgeWriter
     * @param detail_level is the detail level
     */
    DesignFlowEdgeWriter(const DesignFlowGraph* design_flow_graph, const CustomMap<vertex, DesignFlowStep_Status>& vertex_history = CustomMap<vertex, DesignFlowStep_Status>(),
-                        const std::unordered_map<EdgeDescriptor, int>& edge_history = std::unordered_map<EdgeDescriptor, int>(), const int detail_level = 0);
+                        const CustomUnorderedMapStable<EdgeDescriptor, int>& edge_history = CustomUnorderedMapStable<EdgeDescriptor, int>(), const int detail_level = 0);
 
    /**
     * Functor actually called by the boost library to perform the writing

@@ -46,7 +46,7 @@
 #include "refcount.hpp"
 class xml_element;
 
-#include <set>
+#include "custom_set.hpp"
 #include <string>
 
 struct timing_group
@@ -56,7 +56,7 @@ struct timing_group
 
    timing_group();
 
-   void xwrite(xml_element* pin_node, const std::set<std::string>& input_set);
+   void xwrite(xml_element* pin_node, const CustomOrderedSet<std::string>& input_set);
 };
 typedef refcount<timing_group> timing_groupRef;
 

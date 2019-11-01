@@ -53,12 +53,12 @@
 #else
 #include <boost/property_map.hpp>
 #endif
+#include "custom_set.hpp"
 #include <algorithm>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/visitors.hpp>
 #include <boost/limits.hpp>
 #include <boost/tuple/tuple.hpp>
-#include <unordered_set>
 #include <vector>
 
 /**

@@ -62,19 +62,18 @@ if BUILD_LIB_TECHNOLOGY
 endif
 
 lib_spider_la_LIBADD += \
-      $(top_builddir)/src/design_flows/lib_design_flows.la \
-      $(top_builddir)/src/design_flows/backend/lib_backend.la \
-      $(top_builddir)/src/graph/lib_graph.la \
+      lib_design_flows.la \
+      lib_backend.la \
+      lib_graph.la \
       $(top_builddir)/src/parser/lib_parser.la \
-      $(top_builddir)/src/polixml/lib_polixml.la \
+      lib_polixml.la \
       $(top_builddir)/src/parser/polixml/lib_xml_dom_parser.la \
-      $(top_builddir)/src/utility/lib_utility.la \
+      lib_utility.la \
       $(BOOST_REGEX_LIB) \
-      $(GSL_LIBS) $(BOOST_FILESYSTEM_LIB) $(BOOST_SYSTEM_LIB) $(BOOST_DATE_TIME_LIB)
+      $(GSL_LIBS) $(BOOST_FILESYSTEM_LIB) $(BOOST_SYSTEM_LIB)
 
 if BUILD_LIB_ALGORITHMS
-   lib_spider_la_LIBADD += \
-      $(top_builddir)/src/algorithms/lib_algorithms.la
+   lib_spider_la_LIBADD += lib_algorithms.la
 endif
 
 if BUILD_LIB_ARCH
@@ -83,13 +82,11 @@ if BUILD_LIB_ARCH
 endif
 
 if BUILD_LIB_BEHAVIOR
-   lib_spider_la_LIBADD += \
-      $(top_builddir)/src/behavior/lib_behavior.la
+   lib_spider_la_LIBADD += lib_behavior.la
 endif
 
 if BUILD_LIB_CIRCUIT
-   lib_spider_la_LIBADD += \
-      $(top_builddir)/src/circuit/lib_circuit.la
+   lib_spider_la_LIBADD += lib_circuit.la
 endif
 
 if BUILD_LIB_FROM_BOOLEAN
@@ -97,13 +94,11 @@ if BUILD_LIB_FROM_BOOLEAN
       $(top_builddir)/src/parser/boolean/lib_boolean_parser.la
 endif
 if BUILD_LIB_FROM_C
-   lib_spider_la_LIBADD += \
-      $(top_builddir)/src/tree/lib_tree_manipulation.la
+   lib_spider_la_LIBADD += lib_tree_manipulation.la
 endif
 
 if BUILD_LIB_FROM_PRAGMA
-   lib_spider_la_LIBADD += \
-      $(top_builddir)/src/pragma/libpragma.la
+   lib_spider_la_LIBADD += libpragma.la
 endif
 
 if BUILD_LIB_HLS
@@ -112,8 +107,7 @@ if BUILD_LIB_HLS
 endif
 
 if BUILD_LIB_INTERMEDIATE_REPRESENTATIONS
-   lib_spider_la_LIBADD += \
-      $(top_builddir)/src/intermediate_representations/lib_intermediate_representations.la
+   lib_spider_la_LIBADD += lib_intermediate_representations.la
 endif
 
 if BUILD_LIB_RTL
@@ -122,18 +116,15 @@ if BUILD_LIB_RTL
 endif
 
 if BUILD_LIB_TECHNOLOGY
-   lib_spider_la_LIBADD += \
-      $(top_builddir)/src/technology/lib_technology.la
+   lib_spider_la_LIBADD += lib_technology.la
 endif
 
 if BUILD_LIB_TREE
-   lib_spider_la_LIBADD += \
-      $(top_builddir)/src/tree/lib_tree.la
+   lib_spider_la_LIBADD += lib_tree.la
 endif
 
 if BUILD_LIB_WRAPPER
-   lib_spider_la_LIBADD += \
-      $(top_builddir)/src/wrapper/lib_wrapper.la
+   lib_spider_la_LIBADD += lib_wrapper.la
 endif
 
 if BUILD_R
@@ -141,7 +132,9 @@ if BUILD_R
      $(RLOCALPACKAGEDIR)/RInside/lib/libRInside.a  -lR
 endif
 
-spider_LDADD = lib_spider.la
+lib_spider_la_LIBADD += $(top_builddir)/ext/abseil-cpp/libabseil.la
+
+spider_LDADD = lib_spider.la @PTHREAD_HACK@
 if BUILD_R
    spider_LDADD += \
      $(RLOCALPACKAGEDIR)/RInside/lib/libRInside.a  -lR

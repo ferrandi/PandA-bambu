@@ -76,3 +76,5 @@ config.h.in~
 obj/
 *swp
 *orig
+
+panda_dist/

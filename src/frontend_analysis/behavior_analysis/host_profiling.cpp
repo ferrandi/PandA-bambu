@@ -68,7 +68,7 @@
 #include <unistd.h>
 
 /// STL include
-#include <unordered_map>
+#include "custom_map.hpp"
 
 /// Utility include
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
@@ -93,9 +93,9 @@ HostProfiling::HostProfiling(const application_managerRef _AppM, const DesignFlo
 
 HostProfiling::~HostProfiling() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> HostProfiling::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> HostProfiling::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -132,7 +132,7 @@ DesignFlowStep_Status HostProfiling::Exec()
    return DesignFlowStep_Status::EMPTY;
 }
 
-void HostProfiling::normalize(const application_managerRef AppM, const std::unordered_map<unsigned int, std::unordered_map<unsigned int, unsigned long long>>& loop_instances, const ParameterConstRef parameters)
+void HostProfiling::normalize(const application_managerRef AppM, const CustomUnorderedMap<unsigned int, CustomUnorderedMapStable<unsigned int, unsigned long long>>& loop_instances, const ParameterConstRef parameters)
 {
 #ifndef NDEBUG
    const int debug_level = parameters->get_class_debug_level("HostProfiling");

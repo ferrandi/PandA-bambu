@@ -87,10 +87,10 @@
 #include "allocation_information.hpp"
 
 /// STL includes
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <deque>
 #include <list>
-#include <map>
-#include <set>
 #include <utility>
 #include <vector>
 
@@ -181,7 +181,7 @@ void fsm_controller::create_state_machine(std::string& parse)
    const auto& selectors = HLS->Rconn->GetSelectors();
 
    std::map<vertex, std::vector<long long int>> present_state;
-   std::set<unsigned int> unbounded_ports;
+   CustomOrderedSet<unsigned int> unbounded_ports;
 
    /// analysis for each state to compute the default output
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Computation of default output of each state");
@@ -204,7 +204,7 @@ void fsm_controller::create_state_machine(std::string& parse)
          for(const auto& s : selectors.at(conn_binding::IN))
          {
 #ifndef NDEBUG
-            std::map<vertex, std::set<vertex>> activations_check;
+            std::map<vertex, CustomOrderedSet<vertex>> activations_check;
 #endif
             const auto& activations = GetPointer<commandport_obj>(s.second)->get_activations();
             for(const auto& a : activations)
@@ -245,7 +245,7 @@ void fsm_controller::create_state_machine(std::string& parse)
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
 #endif
 
-      std::set<generic_objRef> active_fu;
+      CustomOrderedSet<generic_objRef> active_fu;
       const tree_managerRef TreeM = HLSMgr->get_tree_manager();
 
       const auto& operations = astg->CGetStateInfo(v)->executing_operations;

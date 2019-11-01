@@ -53,6 +53,7 @@
 #include "string_manipulation.hpp" // for STR GET_CLASS
 #include "tree_manager.hpp"
 #include <cstring>  // for strlen, size_t
+#include <fstream>  // for operator<<, basic_o...
 #include <iostream> // for operator<<, basic_o...
 #include <list>     // for list
 #include <vector>   // for vector, allocator
@@ -341,7 +342,7 @@ unsigned int tree_manager::find(enum kind tree_node_type, const std::map<TreeVoc
    return 0;
 }
 
-void tree_manager::collapse_into(const unsigned int& funID, std::unordered_map<unsigned int, unsigned int>& stmt_to_bloc, const tree_nodeRef& tn, std::unordered_set<unsigned int>& removed_nodes)
+void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUnstable<unsigned int, unsigned int>& stmt_to_bloc, const tree_nodeRef& tn, CustomUnorderedSet<unsigned int>& removed_nodes)
 {
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    const unsigned int tree_node_index = GET_INDEX_NODE(tn);
@@ -494,6 +495,10 @@ void tree_manager::collapse_into(const unsigned int& funID, std::unordered_map<u
             {
                break;
             }
+            if(!gm)
+            {
+               THROW_ERROR("unexpected statement " + sn->CGetDefStmt()->ToString());
+            }
             if(gm->memdef)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---The gimple assignment where ssa name is defined has virtual def");
@@ -609,7 +614,7 @@ void tree_manager::collapse_into(const unsigned int& funID, std::unordered_map<u
                if(curr_block == def_block)
                {
                   // Group the uses of ssa variables on the basis of the basic block they belong to
-                  std::unordered_map<unsigned int, std::vector<tree_nodeRef>> copy_bloc_to_stmt;
+                  CustomUnorderedMap<unsigned int, std::vector<tree_nodeRef>> copy_bloc_to_stmt;
                   for(auto const use : sn->CGetUseStmts())
                   {
                      THROW_ASSERT(stmt_to_bloc.find(use.first->index) != stmt_to_bloc.end(), STR(use.first->index) + " is not in stmt_to_bloc");
@@ -619,7 +624,7 @@ void tree_manager::collapse_into(const unsigned int& funID, std::unordered_map<u
                   }
 
                   // Copy the definition statement into each block the ssa variable is used in
-                  std::unordered_map<unsigned int, std::vector<tree_nodeRef>>::iterator copy_block_it;
+                  CustomUnorderedMap<unsigned int, std::vector<tree_nodeRef>>::iterator copy_block_it;
                   for(copy_block_it = copy_bloc_to_stmt.begin(); copy_block_it != copy_bloc_to_stmt.end(); ++copy_block_it)
                   {
                      const blocRef copy_block = list_of_bloc.find(copy_block_it->first)->second;
@@ -1229,13 +1234,13 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
       case tree_list_K:
       {
          auto* tl = GetPointer<tree_list>(curr_tn);
-         if(tl->valu)
+         while(tl)
          {
-            RecursiveReplaceTreeNode(tl->valu, old_node, new_node, stmt, false);
-         }
-         if(tl->chan)
-         {
-            RecursiveReplaceTreeNode(tl->chan, old_node, new_node, stmt, false);
+            if(tl->valu)
+            {
+               RecursiveReplaceTreeNode(tl->valu, old_node, new_node, stmt, false);
+            }
+            tl = tl->chan ? GetPointer<tree_list>(GET_NODE(tl->chan)) : nullptr;
          }
          break;
       }
@@ -1713,19 +1718,19 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
    /// declaration with type_node local to a function are not considered
    /// the key of the declaration symbol table is structured as "name--scope"
    /// the value of the declaration symbol table is the nodeID of the tree_node in the tree_manager
-   std::unordered_map<std::string, unsigned int> global_decl_symbol_table;
+   CustomUnorderedMapUnstable<std::string, unsigned int> global_decl_symbol_table;
 
    /// a type_node without name is not added to the symbol table
    /// a type_node local to a function_decl is not added to the symbol table
    /// the key of the type symbol table is structured as "name"
    /// the value of the type symbol table is the nodeID of the tree_node in the tree_manager
-   std::unordered_map<std::string, unsigned int> global_type_symbol_table;
+   CustomUnorderedMapUnstable<std::string, unsigned int> global_type_symbol_table;
 
    /// this table is used to give a name to unqualified record or union
-   std::unordered_map<unsigned int, std::string> global_type_unql_symbol_table;
+   CustomUnorderedMap<unsigned int, std::string> global_type_unql_symbol_table;
    /// global static variable and function become global so we need some sort of uniquification
-   std::unordered_set<std::string> static_symbol_table;
-   std::unordered_set<std::string> static_function_header_symbol_table;
+   CustomUnorderedSet<std::string> static_symbol_table;
+   CustomUnorderedSet<std::string> static_function_header_symbol_table;
    null_deleter nullDel;
    tree_managerRef TM_this(this, nullDel);
    if(debug_level >= DEBUG_LEVEL_PEDANTIC)
@@ -1869,22 +1874,22 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Built table for this tree_manager");
    /// source static function declaration
    /// used to correctly rename declaration and definition of a function
-   std::unordered_map<std::string, std::string> source_static_symbol_table;
+   CustomUnorderedMapUnstable<std::string, std::string> source_static_symbol_table;
    /// the key is the old index while the values is the new index
-   std::unordered_map<unsigned int, unsigned int> remap;
+   CustomUnorderedMapUnstable<unsigned int, unsigned int> remap;
 
    /// At the moment the reverse of remap; it is filled only with function_decl without body
-   std::unordered_map<unsigned int, unsigned int> reverse_remap;
+   CustomUnorderedMapUnstable<unsigned int, unsigned int> reverse_remap;
 
    /// For each static function in source_tree_manager the index of the tree node (in source_tree_manager) of its forward declaration
-   std::unordered_map<std::string, unsigned int> static_forward_declaration_functions;
+   CustomUnorderedMapUnstable<std::string, unsigned int> static_forward_declaration_functions;
 
    /// For each static function in TM?source the index of the tree node (in source_tree_manager) of its implementation
-   std::unordered_map<std::string, unsigned int> static_implementation_functions;
+   CustomUnorderedMapUnstable<std::string, unsigned int> static_implementation_functions;
 
    /// set of nodes that will be added to the current tree manager (this)
-   std::unordered_set<unsigned int> not_yet_remapped;
-   std::unordered_set<unsigned int> to_be_visited;
+   CustomUnorderedSet<unsigned int> not_yet_remapped;
+   CustomUnorderedSet<unsigned int> to_be_visited;
    tree_node_index_factory TNIF(remap, tree_managerRef(this, null_deleter()));
 
    /// FIXME: during one of the analysis of the tree nodes of source_tree_manager, new nodes can be inserted;
@@ -2079,7 +2084,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
          /// check for static
          if((GetPointer<function_decl>(tn) and GetPointer<function_decl>(tn)->static_flag) or (GetPointer<var_decl>(tn) and (GetPointer<var_decl>(tn)->static_flag or GetPointer<var_decl>(tn)->static_static_flag)))
          {
-            /// Management of forward delcaration of static function
+            /// Management of forward declaration of static function
             if(GetPointer<function_decl>(tn))
             {
                /// Implementation node
@@ -2271,7 +2276,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
 }
 
 bool tree_manager::check_for_decl(const tree_nodeRef& tn, const tree_managerRef& TM_this, std::string& symbol_name, std::string& symbol_scope, unsigned int ASSERT_PARAMETER(node_id),
-                                  const std::unordered_map<unsigned int, std::string>& global_type_unql_symbol_table)
+                                  const CustomUnorderedMap<unsigned int, std::string>& global_type_unql_symbol_table)
 {
    THROW_ASSERT(GetPointer<decl_node>(tn), "Node should be a declaration node");
    const decl_node* dn = GetPointer<decl_node>(tn);
@@ -2405,13 +2410,14 @@ bool tree_manager::check_for_decl(const tree_nodeRef& tn, const tree_managerRef&
    return false;
 }
 
-bool tree_manager::check_for_type(const tree_nodeRef& tn, const tree_managerRef& TM, std::string& symbol_name, std::string& symbol_scope, const std::unordered_map<std::string, unsigned int>& global_type_symbol_table, unsigned int DEBUG_PARAMETER(node_id))
+bool tree_manager::check_for_type(const tree_nodeRef& tn, const tree_managerRef& TM, std::string& symbol_name, std::string& symbol_scope, const CustomUnorderedMapUnstable<std::string, unsigned int>& global_type_symbol_table,
+                                  unsigned int DEBUG_PARAMETER(node_id))
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Checking for type " + STR(node_id));
    auto* type = GetPointer<type_node>(tn);
    symbol_name = symbol_scope = "";
    if(!type || !type->name)
-   { /// integer_type and real_type have some duplications
+   { /// integer_type and real_type have some duplication
       return true;
    }
    if(type->scpe and ((GET_NODE(type->scpe)->get_kind() == function_decl_K)))
@@ -2487,9 +2493,9 @@ void tree_manager::add_identifier_node(unsigned int nodeID, const bool& ASSERT_P
    identifiers_unique_table[STOK(TOK_OPERATOR)] = nodeID;
 }
 
-const std::unordered_set<unsigned int> tree_manager::GetAllFunctions() const
+const CustomUnorderedSet<unsigned int> tree_manager::GetAllFunctions() const
 {
-   std::unordered_set<unsigned int> functions;
+   CustomUnorderedSet<unsigned int> functions;
    std::map<unsigned int, tree_nodeRef>::const_iterator beg, end;
    for(beg = function_decl_nodes.begin(), end = function_decl_nodes.end(); beg != end; ++beg)
    {

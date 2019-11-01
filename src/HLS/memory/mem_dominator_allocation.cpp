@@ -71,10 +71,10 @@
 /// STL includes
 #include <algorithm>
 #include <list>
-#include <map>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
+
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 /// technology include
 #include "technology_node.hpp"
@@ -98,7 +98,7 @@ mem_dominator_allocation::~mem_dominator_allocation() = default;
 
 static void buildAllocationOrderRecursively(const HLS_managerRef HLSMgr, std::vector<unsigned int>& List, unsigned int topFunction)
 {
-   const std::set<unsigned int> calledSet = HLSMgr->CGetCallGraphManager()->get_called_by(topFunction);
+   const CustomOrderedSet<unsigned int> calledSet = HLSMgr->CGetCallGraphManager()->get_called_by(topFunction);
    List.push_back(topFunction);
    for(unsigned int Itr : calledSet)
    {
@@ -113,7 +113,7 @@ void mem_dominator_allocation::Initialize()
 {
 }
 
-std::vector<unsigned int> mem_dominator_allocation::getFunctionAllocationOrder(std::set<unsigned int> top_functions)
+std::vector<unsigned int> mem_dominator_allocation::getFunctionAllocationOrder(CustomOrderedSet<unsigned int> top_functions)
 {
    std::vector<unsigned int> functionAllocationOrder;
    for(const auto top_function : top_functions)
@@ -122,7 +122,7 @@ std::vector<unsigned int> mem_dominator_allocation::getFunctionAllocationOrder(s
    }
 
    const CallGraphManagerConstRef CG = HLSMgr->CGetCallGraphManager();
-   const std::set<unsigned int> additional_tops = CG->GetAddressedFunctions();
+   const CustomOrderedSet<unsigned int> additional_tops = CG->GetAddressedFunctions();
    for(auto const additional_top : additional_tops)
    {
       buildAllocationOrderRecursively(HLSMgr, functionAllocationOrder, additional_top);
@@ -173,13 +173,13 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    /// the analysis has to be performed only on the reachable functions
    const CallGraphConstRef cg = CG->CGetCallGraph();
    CustomMap<unsigned int, refcount<dominance<graph>>> cg_dominators;
-   CustomMap<unsigned int, std::unordered_set<vertex>> reachable_vertices;
-   CustomMap<unsigned int, std::unordered_map<vertex, vertex>> cg_dominator_map;
+   OrderedMapStd<unsigned int, CustomUnorderedSet<vertex>> reachable_vertices;
+   CustomMap<unsigned int, CustomUnorderedMapStable<vertex, vertex>> cg_dominator_map;
    auto top_functions = CG->GetRootFunctions();
    for(const auto top_function : top_functions)
    {
       vertex top_vertex = CG->GetVertex(top_function);
-      std::set<unsigned int> temp = CG->GetReachedBodyFunctionsFrom(top_function);
+      CustomOrderedSet<unsigned int> temp = CG->GetReachedBodyFunctionsFrom(top_function);
       for(const auto temp_int : temp)
       {
          reachable_vertices[top_function].insert(CG->GetVertex(temp_int));
@@ -191,10 +191,10 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
       cg_dominator_map[top_function] = cg_dominators[top_function]->get_dominator_map();
    }
 
-   std::map<unsigned, std::map<unsigned int, std::set<vertex>>> var_referring_vertex_map;
-   std::map<unsigned, std::map<unsigned int, std::set<vertex>>> var_load_vertex_map;
-   std::map<unsigned int, std::set<vertex>> var_map;
-   std::map<unsigned int, std::set<unsigned int>> where_used;
+   std::map<unsigned, std::map<unsigned int, CustomOrderedSet<vertex>>> var_referring_vertex_map;
+   std::map<unsigned, std::map<unsigned int, CustomOrderedSet<vertex>>> var_load_vertex_map;
+   std::map<unsigned int, CustomOrderedSet<vertex>> var_map;
+   std::map<unsigned int, CustomOrderedSet<unsigned int>> where_used;
    bool all_pointers_resolved = true;
    bool unaligned_access_p = parameters->isOption(OPT_unaligned_access) && parameters->getOption<bool>(OPT_unaligned_access);
    bool assume_aligned_access_p = parameters->isOption(OPT_aligned_access) && parameters->getOption<bool>(OPT_aligned_access);
@@ -243,7 +243,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
          vert_dominator.insert(current_vertex);
       }
 
-      const std::set<unsigned int>& function_mem = function_behavior->get_function_mem();
+      const CustomOrderedSet<unsigned int>& function_mem = function_behavior->get_function_mem();
       for(unsigned int v : function_mem)
       {
          if(function_behavior->is_a_state_variable(v))
@@ -277,7 +277,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             auto* me = GetPointer<gimple_assign>(curr_tn);
             THROW_ASSERT(me, "only gimple_assign's are allowed as memory operations");
             unsigned int expr_index;
-            std::set<unsigned int> res_set;
+            CustomOrderedSet<unsigned int> res_set;
 
             if(GET_TYPE(g, *v) & TYPE_STORE)
             {
@@ -515,7 +515,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                {
                   expr_index = GET_INDEX_NODE(me->op1);
                }
-               std::set<unsigned int> used_set;
+               CustomOrderedSet<unsigned int> used_set;
                bool resolved = tree_helper::is_fully_resolved(TreeM, expr_index, used_set);
                if(!resolved)
                {
@@ -588,8 +588,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    // THROW_ASSERT(num_instances.find(top_vertex)->second == 1, "something of wrong happened");
 
    /// find the common dominator and decide where to allocate
-   const std::map<unsigned int, std::set<vertex>>::const_iterator it_end = var_map.end();
-   for(std::map<unsigned int, std::set<vertex>>::const_iterator it = var_map.begin(); it != it_end; ++it)
+   const std::map<unsigned int, CustomOrderedSet<vertex>>::const_iterator it_end = var_map.end();
+   for(std::map<unsigned int, CustomOrderedSet<vertex>>::const_iterator it = var_map.begin(); it != it_end; ++it)
    {
       bool multiple_top_call_graph = false;
       unsigned int funID = 0;
@@ -992,7 +992,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Number of functions in which is used: " + STR(var_referring_vertex_map.find(var_index)->second.size()));
             size_t max_references = 0;
             for(auto fun_vertex_set : var_referring_vertex_map.find(var_index)->second)
-               max_references = max_references > fun_vertex_set.second.size() ? max_references : fun_vertex_set.second.size();
+               max_references = max_references > static_cast<size_t>(fun_vertex_set.second.size()) ? max_references : static_cast<size_t>(fun_vertex_set.second.size());
             HLSMgr->Rmem->set_maximum_references(var_index, max_references);
             INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Maximum number of references per function: " + STR(max_references));
          }
@@ -1000,7 +1000,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
          {
             size_t max_loads = 0;
             for(auto fun_vertex_set : var_load_vertex_map.find(var_index)->second)
-               max_loads = max_loads > fun_vertex_set.second.size() ? max_loads : fun_vertex_set.second.size();
+               max_loads = max_loads > static_cast<size_t>(fun_vertex_set.second.size()) ? max_loads : static_cast<size_t>(fun_vertex_set.second.size());
             HLSMgr->Rmem->set_maximum_loads(var_index, max_loads);
             INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Maximum number of loads per function: " + STR(max_loads));
          }

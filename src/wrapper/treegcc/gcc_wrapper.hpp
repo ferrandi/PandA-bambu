@@ -71,9 +71,6 @@
 
 /// STD include
 #include <iosfwd>
-#include <map>
-#include <set>
-#include <unordered_map>
 #include <vector>
 
 /// utility include
@@ -372,7 +369,7 @@ class GccWrapper
     * @param TM is where tree_manager will be stored
     * @param source_files are the source files to be compiled; key is the original source code file, value is the transformed source code file
     */
-   void FillTreeManager(const tree_managerRef TM, CustomMap<std::string, std::string>& input_files);
+   void FillTreeManager(const tree_managerRef TM, std::map<std::string, std::string>& input_files);
 
    /**
     * Return the list of gcc system include

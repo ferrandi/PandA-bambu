@@ -89,7 +89,7 @@ void StateTransitionGraph_constructor::create_exit_state()
    state_transition_graph->GetStateTransitionGraphInfo()->exit_node = newVertex;
 }
 
-vertex StateTransitionGraph_constructor::create_state(const std::list<vertex>& exec_op, const std::list<vertex>& start_op, const std::list<vertex>& end_op, const std::set<unsigned int>& BB_ids)
+vertex StateTransitionGraph_constructor::create_state(const std::list<vertex>& exec_op, const std::list<vertex>& start_op, const std::list<vertex>& end_op, const CustomOrderedSet<unsigned int>& BB_ids)
 {
    vertex newVertex = state_transition_graphs_collection->AddVertex(NodeInfoRef(new StateInfo()));
    const StateInfoRef state_info = state_transition_graph->GetStateInfo(newVertex);
@@ -140,14 +140,14 @@ void StateTransitionGraph_constructor::set_condition(const EdgeDescriptor& e, tr
    state_transition_graph->GetTransitionInfo(e)->ops.insert(op);
 }
 
-void StateTransitionGraph_constructor::set_unbounded_condition(const EdgeDescriptor& e, transition_type t, const std::set<vertex>& ops, vertex ref_state)
+void StateTransitionGraph_constructor::set_unbounded_condition(const EdgeDescriptor& e, transition_type t, const CustomOrderedSet<vertex>& ops, vertex ref_state)
 {
    state_transition_graph->GetTransitionInfo(e)->t = t;
    state_transition_graph->GetTransitionInfo(e)->ops = ops;
    state_transition_graph->GetTransitionInfo(e)->ref_state = ref_state;
 }
 
-void StateTransitionGraph_constructor::set_switch_condition(const EdgeDescriptor& e, vertex op, const std::set<unsigned>& labels, bool has_default)
+void StateTransitionGraph_constructor::set_switch_condition(const EdgeDescriptor& e, vertex op, const CustomOrderedSet<unsigned>& labels, bool has_default)
 {
    state_transition_graph->GetTransitionInfo(e)->t = CASE_COND;
    state_transition_graph->GetTransitionInfo(e)->ops.insert(op);
