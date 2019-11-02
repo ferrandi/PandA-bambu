@@ -486,6 +486,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
          }
       }
    }
+
    THROW_ASSERT(ready_vertices.size(), "At least one vertex is expected");
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Number of vertices: " + STR(ready_vertices.size()));
 
@@ -735,9 +736,9 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                }
                if((GET_TYPE(flow_graph, current_vertex) & (TYPE_IF | TYPE_RET | TYPE_SWITCH | TYPE_MULTIIF | TYPE_GOTO)) && ((schedule->num_scheduled() - already_sch) != operations_number - 1))
                {
-                  if(black_list.find(fu_type) == black_list.end())
-                     black_list.emplace(fu_type, OpVertexSet(flow_graph));
-                  black_list.at(fu_type).insert(current_vertex);
+                  if(postponed_resources.find(fu_type) == postponed_resources.end())
+                     postponed_resources.emplace(fu_type, OpVertexSet(flow_graph));
+                  postponed_resources.at(fu_type).insert(current_vertex);
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "            Scheduling of Control Vertex " + GET_NAME(flow_graph, current_vertex) + " postponed ");
                   continue;
                }
@@ -821,7 +822,11 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                else if(has_read_cond_with_non_direct_operations)
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  READ_COND or MULTI_READ_COND cannot be chained with non-direct operations -> starting time " + boost::lexical_cast<std::string>(current_starting_time) + " ending
-               time: " + boost::lexical_cast<std::string>(current_ending_time)); auto insertResult = black_list.insert(std::make_pair(fu_type, OpVertexSet(flow_graph))); insertResult.first->second.insert(current_vertex); continue;
+                                time: " + boost::lexical_cast<std::string>(current_ending_time));
+                  if(black_list.find(fu_type) == black_list.end())
+                     black_list.emplace(fu_type, OpVertexSet(flow_graph));
+                  black_list.at(fu_type).insert(current_vertex);
+                  continue;
                }*/
                else if(asyncCond)
                {
@@ -835,7 +840,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                /*else if((current_starting_time > (current_cycle_starting_time)) && (GET_TYPE(flow_graph, current_v) & TYPE_STORE) && HLS->allocation_information->is_indirect_access_memory_unit(fu_type))
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  Chaining with a store is not possible -> starting time " + boost::lexical_cast<std::string>(current_starting_time) + " ending time: " +
-                  boost::lexical_cast<std::string>(current_ending_time));
+                                boost::lexical_cast<std::string>(current_ending_time));
                   if(black_list.find(fu_type) == black_list.end())
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   black_list.at(fu_type).insert(current_vertex);
@@ -844,7 +849,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                else if((current_starting_time > (current_cycle_starting_time)) && (GET_TYPE(flow_graph, current_vertex) & TYPE_LOAD) && HLS->allocation_information->is_indirect_access_memory_unit(fu_type))
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  Chaining with a load is not possible -> starting time " + boost::lexical_cast<std::string>(current_starting_time) + " ending time: " +
-                  boost::lexical_cast<std::string>(current_ending_time));
+                                boost::lexical_cast<std::string>(current_ending_time));
                   if(black_list.find(fu_type) == black_list.end())
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   black_list.at(fu_type).insert(current_vertex);
@@ -984,9 +989,9 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                   //                  std::cerr<< "Restarted\n";
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "                  Interface operation restarted " + GET_NAME(flow_graph, current_vertex) + " mapped on " + HLS->allocation_information->get_fu_name(fu_type).first + "at cstep " + STR(current_cycle));
-                  auto val = OpVertexSet(flow_graph);
-                  val.insert(current_vertex);
-                  restarted_resources.emplace(fu_type, val);
+                  if(restarted_resources.find(fu_type) == restarted_resources.end())
+                     restarted_resources.emplace(fu_type, OpVertexSet(flow_graph));
+                  restarted_resources.at(fu_type).insert(current_vertex);
                   continue;
                }
 
