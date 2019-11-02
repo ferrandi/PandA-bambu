@@ -1875,7 +1875,7 @@ dnl check gcc with plugin support enabled and plugins
 dnl
 AC_DEFUN([AC_CHECK_GCC8_I386_VERSION],[
     AC_ARG_WITH(gcc8,
-    [  --with-gcc8=executable-path path where the GCC 7 is installed ],
+    [  --with-gcc8=executable-path path where the GCC 8 is installed ],
     [
        ac_gcc8="$withval"
     ])
