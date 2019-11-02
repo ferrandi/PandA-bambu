@@ -2773,6 +2773,9 @@ case "${host_os}" in
   darwin*)
       PTHREAD_HACK=" -XCClinker '-Wl,-force-load,-lpthread' "
       ;;
+  mingw*)
+      PTHREAD_HACK=" -limagehlp -lshlwapi -XCClinker '-Wl,--allow-multiple-definition -Wl,-Bstatic -lpthread -Wl,-Bdynamic' "
+      ;;
   *)
       PTHREAD_HACK=" -XCClinker '-Wl,--whole-archive -lpthread -Wl,--no-whole-archive' "
       ;;
