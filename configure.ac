@@ -433,7 +433,7 @@ if test "x$panda_USE_BAMBU" = xyes; then
   AS_VERSION_COMPARE($MIN_GCC_VERSION, [4.5.0], [MIN_GCC_VERSION=4.5.0],,)
   AS_VERSION_COMPARE($MAX_GCC_VERSION, [9.0.0],,,[MAX_GCC_VERSION=9.0.0])
   AS_VERSION_COMPARE($MIN_CLANG_VERSION, [4.0.0], [MIN_CLANG_VERSION=4.0.0],,)
-  AS_VERSION_COMPARE($MAX_CLANG_VERSION, [8.0.0],,,[MAX_CLANG_VERSION=8.0.0])
+  AS_VERSION_COMPARE($MAX_CLANG_VERSION, [9.0.0],,,[MAX_CLANG_VERSION=9.0.0])
   panda_USE_LIB_HLS=yes;
   panda_USE_LIB_HOST_PROFILING=yes;
   panda_USE_LIB_TECHNOLOGY=yes;
@@ -2772,6 +2772,9 @@ fi
 case "${host_os}" in
   darwin*)
       PTHREAD_HACK=" -XCClinker '-Wl,-force-load,-lpthread' "
+      ;;
+  mingw*)
+      PTHREAD_HACK=" -limagehlp -lshlwapi -XCClinker '-Wl,--allow-multiple-definition -Wl,-Bstatic -lpthread -Wl,-Bdynamic' "
       ;;
   *)
       PTHREAD_HACK=" -XCClinker '-Wl,--whole-archive -lpthread -Wl,--no-whole-archive' "

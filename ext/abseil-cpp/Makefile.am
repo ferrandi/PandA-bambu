@@ -57,6 +57,7 @@ EXTRA_DIST = \
 
 noinst_HEADERS = \
           absl/algorithm/algorithm.h absl/algorithm/container.h\
+          absl/base/options.h \
           absl/base/internal/atomic_hook.h absl/base/log_severity.h absl/base/internal/scheduling_mode.h absl/base/internal/spinlock_wait.h absl/base/internal/spinlock_akaros.inc absl/base/internal/spinlock_linux.inc absl/base/internal/spinlock_posix.inc absl/base/internal/spinlock_win32.inc \
           absl/base/config.h absl/base/policy_checks.h absl/base/dynamic_annotations.h absl/base/attributes.h absl/base/const_init.h absl/base/macros.h absl/base/optimization.h absl/base/port.h absl/base/thread_annotations.h absl/base/internal/thread_annotations.h \
           absl/base/internal/direct_mmap.h absl/base/internal/low_level_alloc.h absl/base/internal/hide_ptr.h absl/base/internal/identity.h absl/base/internal/inline_variable.h absl/base/internal/invoke.h \
