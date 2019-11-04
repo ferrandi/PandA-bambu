@@ -152,6 +152,7 @@ namespace RangeAnalysis
       bool isMaxRange() const;
       bool isConstant() const;
       void print(std::ostream& OS) const;
+      std::string ToString() const;
       Range add(const Range& other) const;
       Range sub(const Range& other) const;
       Range mul(const Range& other) const;
@@ -229,6 +230,8 @@ namespace RangeAnalysis
        * @return true if the step has to be executed
        */
       bool HasToBeExecuted() const override;
+
+      Range getRange(const tree_nodeRef ssa_name) const;
 
       /** Gets the maximum bit width of the operands in the instructions of the
        * function. This function is necessary because the class APInt only
