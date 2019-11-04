@@ -48,6 +48,7 @@
 
 /// HLS/binding/storage_value_information includes
 #include "storage_value_information.hpp"
+#include "storage_value_information_pipeline.hpp"
 
 /// HLS/liveness include
 #include "liveness.hpp"
@@ -69,7 +70,10 @@ values_scheme::~values_scheme() = default;
 void values_scheme::Initialize()
 {
    HLSFunctionStep::Initialize();
-   HLS->storage_value_information = StorageValueInformationRef(new StorageValueInformation(HLSMgr, funId));
+   if(true)
+      HLS->storage_value_information = StorageValueInformationPipelineRef(new StorageValueInformationPipeline(HLSMgr, funId));
+   else
+      HLS->storage_value_information = StorageValueInformationRef(new StorageValueInformation(HLSMgr, funId));
    HLS->storage_value_information->Initialize();
 }
 
@@ -89,9 +93,9 @@ DesignFlowStep_Status values_scheme::InternalExec()
       const std::set<unsigned int>::const_iterator k_end = live.end();
       for(auto k = live.begin(); k != k_end; ++k)
       {
-         if(HLS->storage_value_information->storage_index_map.find(*k) == HLS->storage_value_information->storage_index_map.end())
+         if(HLS->storage_value_information->is_a_storage_value(*vIt, *k))
          {
-            HLS->storage_value_information->storage_index_map[*k] = i;
+            HLS->storage_value_information->set_storage_value_index(*vIt, *k, i);
             HLS->storage_value_information->variable_index_vect.push_back(*k);
             i++;
          }

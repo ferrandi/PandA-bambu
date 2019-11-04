@@ -462,7 +462,7 @@ void DesignFlowManager::Exec()
       step->ComputeRelationships(pre_dependence_steps, DesignFlowStep::DEPENDENCE_RELATIONSHIP);
       RecursivelyAddSteps(pre_dependence_steps, design_flow_step_info->status == DesignFlowStep_Status::UNNECESSARY);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Recomputed dependences");
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Recompuring precedences");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Recomputing precedences");
       step->ComputeRelationships(pre_precedence_steps, DesignFlowStep::PRECEDENCE_RELATIONSHIP);
       RecursivelyAddSteps(pre_precedence_steps, true);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Recomputed precedences");

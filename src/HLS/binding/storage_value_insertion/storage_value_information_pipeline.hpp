@@ -32,77 +32,35 @@
  */
 /**
  * @file storage_value_information.hpp
- * @brief This package is used to define the storage value scheme adopted by the register allocation algorithms.
+ * @brief This package is used to define the storage value scheme adopted when register replication for pipelining is required.
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-#ifndef STORAGE_VALUE_INFORMATION_HPP
-#define STORAGE_VALUE_INFORMATION_HPP
+#ifndef STORAGE_VALUE_INFORMATION_PIPELINE_HPP
+#define STORAGE_VALUE_INFORMATION_PIPELINE_HPP
 
-/// graph include
-#include "graph.hpp"
+#include "storage_value_information.hpp"
 
-/// STD include
-#include <unordered_map>
-
-/// utility include
-#include "refcount.hpp"
-
-class fu_binding;
-CONSTREF_FORWARD_DECL(HLS_manager);
-CONSTREF_FORWARD_DECL(OpGraph);
-
-class StorageValueInformation
+class StorageValueInformationPipeline : public StorageValueInformation
 {
  protected:
    friend class values_scheme;
    friend class values_scheme_pipeline;
 
-   /// current number of storage values
-   unsigned int number_of_storage_values;
-
    /// put into relation variables/values with storage values
-   std::unordered_map<unsigned int, unsigned int> storage_index_map;
-
-   /// put into relation storage value index with variables
-   std::vector<unsigned int> variable_index_vect;
-
-   /// relation between var written and operations
-   std::unordered_map<unsigned int, vertex> vw2vertex;
-
-   /// The HLS manager
-   const HLS_managerConstRef HLS_mgr;
-
-   /// The index of the function
-   const unsigned int function_id;
-
-   /// operation graph used to compute the affinity between storage values
-   OpGraphConstRef data;
-
-   /// functional unit assignments
-   Wrefcount<const fu_binding> fu;
+   std::map<std::pair<vertex, unsigned int>, unsigned int> storage_index_map;
 
  public:
    /**
     * Constructor
     */
-   StorageValueInformation(const HLS_managerConstRef HLS_mgr, const unsigned int function_id);
+   StorageValueInformationPipeline(const HLS_managerConstRef HLS_mgr, const unsigned int function_id);
 
    /**
     * Destructor
     */
-   ~StorageValueInformation();
-
-   /**
-    * Initialize the step (i.e., like a constructor)
-    */
-   void Initialize();
-
-   /**
-    * Returns the number of storage values inserted
-    */
-   unsigned int get_number_of_storage_values() const;
+   ~StorageValueInformationPipeline();
 
    /**
     * return true in case a storage value exist for the pair vertex variable
@@ -136,6 +94,7 @@ class StorageValueInformation
     * @param sv is the assigned storage value*/
    void set_storage_value_index(vertex curr_state, unsigned int variable, unsigned int sv);
 
+
    /**
     * return the in case the storage values have compatible size
     * @param storage_value_index1 is the first storage value
@@ -143,5 +102,5 @@ class StorageValueInformation
     */
    bool are_value_bitsize_compatible(unsigned int storage_value_index1, unsigned int storage_value_index2) const;
 };
-typedef refcount<StorageValueInformation> StorageValueInformationRef;
+typedef refcount<StorageValueInformationPipeline> StorageValueInformationPipelineRef;
 #endif

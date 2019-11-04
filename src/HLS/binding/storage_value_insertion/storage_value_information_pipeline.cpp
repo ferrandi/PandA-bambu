@@ -32,14 +32,14 @@
  */
 /**
  * @file storage_value_information.cpp
- * @brief This package is used to define the storage value scheme adopted by the register allocation algorithms.
+ * @brief This package is used to define the storage value scheme adopted when register replication for pipelining is required.
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
 /// Header include
-#include "storage_value_information.hpp"
+#include "storage_value_information_pipeline.hpp"
 
 /// Autoheader include
 #include "config_HAVE_ASSERTS.hpp"
@@ -60,82 +60,30 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 
-StorageValueInformation::StorageValueInformation(const HLS_managerConstRef _HLS_mgr, const unsigned int _function_id) : number_of_storage_values(0), HLS_mgr(_HLS_mgr), function_id(_function_id)
+StorageValueInformationPipeline::StorageValueInformationPipeline(const HLS_managerConstRef _HLS_mgr, const unsigned int _function_id) : StorageValueInformation::StorageValueInformation(_HLS_mgr, _function_id)
 {
 }
 
-StorageValueInformation::~StorageValueInformation() = default;
+StorageValueInformationPipeline::~StorageValueInformationPipeline() = default;
 
-void StorageValueInformation::Initialize()
+bool StorageValueInformationPipeline::is_a_storage_value(vertex state, unsigned int var_index) const
 {
-   const hlsRef HLS = HLS_mgr->get_HLS(function_id);
-   const FunctionBehaviorConstRef FB = HLS_mgr->CGetFunctionBehavior(function_id);
-   data = FB->CGetOpGraph(FunctionBehavior::DFG);
-   fu = HLS->Rfu;
-   const tree_managerRef TreeM = HLS_mgr->get_tree_manager();
-
-   /// initialize the vw2vertex relation
-   VertexIterator ki, ki_end;
-   for(boost::tie(ki, ki_end) = boost::vertices(*data); ki != ki_end; ++ki)
-   {
-      const CustomSet<unsigned int>& scalar_defs = data->CGetOpNodeInfo(*ki)->GetVariables(FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
-      if(not scalar_defs.empty())
-      {
-         auto it_end = scalar_defs.end();
-#if HAVE_ASSERTS
-         size_t counter = 0;
-#endif
-         for(auto it = scalar_defs.begin(); it != it_end; ++it)
-         {
-            if(tree_helper::is_ssa_name(TreeM, *it) && !tree_helper::is_virtual(TreeM, *it) && !tree_helper::is_parameter(TreeM, *it))
-            {
-               HLS->storage_value_information->vw2vertex[*it] = *ki;
-#if HAVE_ASSERTS
-               ++counter;
-#endif
-            }
-         }
-#if HAVE_ASSERTS
-         if(counter > 1 and not(GET_TYPE(data, *ki) & TYPE_ENTRY))
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_NONE, 0, GET_NAME(data, *ki) + " defines:");
-            for(const auto scalar_def : scalar_defs)
-            {
-               if(tree_helper::is_ssa_name(TreeM, scalar_def) and not tree_helper::is_virtual(TreeM, scalar_def) and not tree_helper::is_parameter(TreeM, scalar_def))
-               {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_NONE, 0, STR(TreeM->CGetTreeNode(scalar_def)));
-               }
-            }
-            THROW_UNREACHABLE("More than one definition");
-         }
-#endif
-      }
-   }
+   return storage_index_map.find(std::make_pair(state, var_index)) != storage_index_map.end();
 }
 
-unsigned int StorageValueInformation::get_number_of_storage_values() const
+unsigned int StorageValueInformationPipeline::get_storage_value_index(vertex state, unsigned int var_index) const
 {
-   return number_of_storage_values;
+   THROW_ASSERT(storage_index_map.find(std::make_pair(state, var_index)) != storage_index_map.end(), "the storage value is missing -- pipe getsvindex");
+   return storage_index_map.find(std::make_pair(state, var_index))->second;
 }
 
-bool StorageValueInformation::is_a_storage_value(vertex, unsigned int var_index) const
+unsigned int StorageValueInformationPipeline::get_variable_index(unsigned int storage_value_index) const
 {
-   return storage_index_map.find(var_index) != storage_index_map.end();
-}
-
-unsigned int StorageValueInformation::get_storage_value_index(vertex, unsigned int var_index) const
-{
-   THROW_ASSERT(storage_index_map.find(var_index) != storage_index_map.end(), "the storage value is missing -- original getsvindex");
-   return storage_index_map.find(var_index)->second;
-}
-
-unsigned int StorageValueInformation::get_variable_index(unsigned int storage_value_index) const
-{
-   THROW_ASSERT(variable_index_vect.size() > storage_value_index, "the storage value is missing -- original getvarindex");
+   THROW_ASSERT(variable_index_vect.size() > storage_value_index, "the storage value is missing -- pipe getvarindex");
    return variable_index_vect[storage_value_index];
 }
 
-int StorageValueInformation::get_compatibility_weight(unsigned int storage_value_index1, unsigned int storage_value_index2) const
+int StorageValueInformationPipeline::get_compatibility_weight(unsigned int storage_value_index1, unsigned int storage_value_index2) const
 {
    unsigned int var1 = get_variable_index(storage_value_index1);
    unsigned int var2 = get_variable_index(storage_value_index2);
@@ -314,12 +262,12 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
    return 1;
 }
 
-void StorageValueInformation::set_storage_value_index(vertex, unsigned int variable, unsigned int sv)
+void StorageValueInformationPipeline::set_storage_value_index(vertex state, unsigned int variable, unsigned int sv)
 {
-   storage_index_map[variable] = sv;
+   storage_index_map[std::make_pair(state, variable)] = sv;
 }
 
-bool StorageValueInformation::are_value_bitsize_compatible(unsigned int storage_value_index1, unsigned int storage_value_index2) const
+bool StorageValueInformationPipeline::are_value_bitsize_compatible(unsigned int storage_value_index1, unsigned int storage_value_index2) const
 {
    auto var1 = get_variable_index(storage_value_index1);
    auto var2 = get_variable_index(storage_value_index2);

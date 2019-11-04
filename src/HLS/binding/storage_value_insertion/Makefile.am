@@ -17,9 +17,9 @@ lib_storage_value_insertion_la_CPPFLAGS = \
 
 METASOURCES = AUTO
 
-noinst_HEADERS = storage_value_information.hpp storage_value_insertion.hpp values_scheme.hpp
+noinst_HEADERS = storage_value_information.hpp storage_value_information_pipeline.hpp storage_value_insertion.hpp values_scheme.hpp 
 
-lib_storage_value_insertion_la_SOURCES = storage_value_information.cpp storage_value_insertion.cpp values_scheme.cpp
+lib_storage_value_insertion_la_SOURCES = storage_value_information.cpp storage_value_information_pipeline.cpp storage_value_insertion.cpp values_scheme.cpp 
 
 #DOCUMENTATION STUFF
 
