@@ -125,10 +125,8 @@
 #include <iosfwd>
 #include <string>
 
-/// STL includes
-#include <map>
-#include <set>
-#include <unordered_map>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 #if HAVE_TECHNOLOGY_BUILT
 /// technology include
@@ -298,7 +296,7 @@ int main(int argc, char* argv[])
                case(Parameters_FileFormat::FF_XML):
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Input: XML - Output: XML");
-                  std::unordered_map<std::string, long double> results;
+                  CustomUnorderedMap<std::string, long double> results;
                   std::map<enum rtl_kind, std::map<enum mode_kind, long double>> output;
                   const auto input_files = parameters->getOption<const CustomSet<std::string>>(OPT_input_file);
                   if(input_files.size() != 1)
@@ -410,7 +408,7 @@ int main(int argc, char* argv[])
             /// Generate features
             std::map<std::string, std::map<std::string, long double>> data, preprocessed_data;
             FeaturesExtractorRef features_extractor(new FeaturesExtractor(parameters));
-            std::set<std::string> column_names;
+            CustomOrderedSet<std::string> column_names;
             features_extractor->ExtractAreaFeatures(TM, data, column_names);
             /*
                const CellAreaPreprocessingConstRef preprocessing(new CellAreaPreprocessing(parameters));
@@ -590,7 +588,7 @@ int main(int argc, char* argv[])
                const auto input_files = parameters->getOption<const CustomSet<std::string>>(OPT_input_file);
                const PreprocessingConstRef performance_estimation_preprocessing(new PerformanceEstimationPreprocessing(sequences_splitted[sequence_number], parameters));
                std::map<std::string, std::map<std::string, long double>> data, filtered_data, preprocessed_data;
-               std::set<std::string> column_names;
+               CustomOrderedSet<std::string> column_names;
                performance_estimation_preprocessing->ReadData(input_files, data, column_names);
                const PreprocessingConstRef cell_selection(new CellSelection(parameters));
                cell_selection->Exec(data, filtered_data, column_names, STR_CST_cycles);
@@ -612,8 +610,8 @@ int main(int argc, char* argv[])
                   }
                   long double max_error = 0.0;
                   std::string benchmark_to_be_removed;
-                  const std::unordered_map<std::string, long double>& training_errors = results->training_errors;
-                  std::unordered_map<std::string, long double>::const_iterator training_error, training_error_end = training_errors.end();
+                  const CustomUnorderedMap<std::string, long double>& training_errors = results->training_errors;
+                  CustomUnorderedMap<std::string, long double>::const_iterator training_error, training_error_end = training_errors.end();
                   for(training_error = training_errors.begin(); training_error != training_error_end; ++training_error)
                   {
                      long double current_training_error = training_error->second;

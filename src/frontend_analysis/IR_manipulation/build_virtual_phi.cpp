@@ -69,6 +69,8 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
+#include <set>
+
 void BuildVirtualPhi::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
 {
    switch(relationship_type)
@@ -100,9 +102,9 @@ void BuildVirtualPhi::ComputeRelationships(DesignFlowStepSet& relationship, cons
    FunctionFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BuildVirtualPhi::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BuildVirtualPhi::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -375,7 +377,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created volatile ssa _" + STR(ssa_vers));
 
       /// Set of basic blocks belonging to the loop
-      std::unordered_set<vertex> loop_basic_blocks;
+      CustomUnorderedSet<vertex> loop_basic_blocks;
       loops->CGetLoop(loop_id)->get_recursively_bb(loop_basic_blocks);
 
       /// Set of basic blocks to be analyzed
@@ -428,7 +430,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       }
       else
       {
-         std::unordered_set<vertex> loop_bbs;
+         CustomUnorderedSet<vertex> loop_bbs;
          loops->CGetLoop(loop_id)->get_recursively_bb(loop_bbs);
          for(const auto& loop_bb : loop_bbs)
          {
@@ -460,6 +462,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Single entry BB");
             boost::tie(ie, ie_end) = boost::in_edges(current, *basic_block_graph);
             const auto source = boost::source(*ie, *basic_block_graph);
+            THROW_ASSERT(reaching_defs.at(virtual_ssa_definition.first).find(source) != reaching_defs.at(virtual_ssa_definition.first).end(), "unexpected condition");
             reaching_defs[virtual_ssa_definition.first][current] = reaching_defs[virtual_ssa_definition.first][source];
          }
          else

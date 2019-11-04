@@ -1,5 +1,7 @@
 #this file is src/parser/treegcc/Makefile.am
 noinst_LTLIBRARIES = lib_treegccparser.la
+AM_CPPFLAGS = $(all_includes) -I$(BOOST_DIR) -I$(ABSEIL_DIR)
+METASOURCES = AUTO
 
 lib_treegccparser_la_CPPFLAGS = \
    -I$(top_srcdir)/src \
@@ -8,7 +10,7 @@ lib_treegccparser_la_CPPFLAGS = \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper/treegcc \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 
 if BUILD_LIB_CODE_ESTIMATION
    lib_treegccparser_la_CPPFLAGS += \
@@ -25,7 +27,6 @@ if BUILD_LIB_RTL
       -I$(top_srcdir)/src/rtl
 endif
 
-METASOURCES = AUTO
 AM_YFLAGS = -d -l --report=state,lookahead,itemset
 AM_LFLAGS = -L -B -+  -olex.yy.c
 

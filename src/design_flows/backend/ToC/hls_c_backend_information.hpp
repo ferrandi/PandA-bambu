@@ -45,7 +45,7 @@
 #include "c_backend_information.hpp"
 
 /// STL include
-#include <map>
+#include "custom_map.hpp"
 #include <string>
 #include <vector>
 

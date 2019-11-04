@@ -196,6 +196,7 @@
 #include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
 #include "string_manipulation.hpp"
+#include "treegcc_constants.hpp"
 #include "utility.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
@@ -882,6 +883,17 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                                    -fno-tree-loop-ivcanon\n"
       << "                                    --distram-threshold=256\n"
       << "             BAMBU-BALANCED-MP    - (default) this setup implies:\n"
+      << "                                    -O2  -D'printf(fmt, ...)='\n"
+      << "                                    --channels-type=MEM_ACC_NN\n"
+      << "                                    --memory-allocation-policy=ALL_BRAM\n"
+      << "                                    -fgcse-after-reload  -fipa-cp-clone\n"
+      << "                                    -ftree-partial-pre  -funswitch-loops\n"
+      << "                                    -finline-functions  -fdisable-tree-bswap\n"
+      << "                                    --param max-inline-insns-auto=25\n"
+      << "                                    -fno-tree-loop-ivcanon\n"
+      << "                                    --distram-threshold=256\n"
+      << "             BAMBU-TASTE          - this setup concatenate the input files and"
+      << "                                    passes these options to the compiler:"
       << "                                    -O2  -D'printf(fmt, ...)='\n"
       << "                                    --channels-type=MEM_ACC_NN\n"
       << "                                    --memory-allocation-policy=ALL_BRAM\n"
@@ -2246,7 +2258,8 @@ int BambuParameter::Exec()
             if((num_acc != 0) && ((num_acc & (num_acc - 1)) == 0))
                setOption(OPT_num_accelerators, std::string(optarg));
             else
-               THROW_ERROR("Currently the number of physical accelerator has to be a power of two");;
+               THROW_ERROR("Currently the number of physical accelerator has to be a power of two");
+            ;
             break;
          }
          case OPT_INPUT_CONTEXT_SWITCH:
@@ -2661,7 +2674,7 @@ int BambuParameter::Exec()
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
               || file_type == Parameters_FileFormat::FF_LLVM
 #endif
-              )
+      )
       {
          const auto input_file = isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
          setOption(OPT_input_file, input_file + argv[optind]);
@@ -2923,7 +2936,7 @@ void BambuParameter::CheckParameters()
          setOption(OPT_distram_threshold, 256);
       add_experimental_setup_gcc_options(!flag_cpp);
    }
-   else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-BALANCED" or getOption<std::string>(OPT_experimental_setup) == "BAMBU-BALANCED-MP")
+   else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-BALANCED" or getOption<std::string>(OPT_experimental_setup) == "BAMBU-BALANCED-MP" or getOption<std::string>(OPT_experimental_setup) == "BAMBU-TASTE")
    {
       std::string tuning_optimizations;
       if(not isOption(OPT_gcc_opt_level))
@@ -2958,7 +2971,7 @@ void BambuParameter::CheckParameters()
 #if HAVE_I386_GCC8_COMPILER
             or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
 #endif
-            )
+         )
          {
             tuning_optimizations += "inline-functions" + STR_CST_string_separator + "gcse-after-reload" + STR_CST_string_separator + "ipa-cp-clone" + STR_CST_string_separator + "unswitch-loops" + STR_CST_string_separator + "no-tree-loop-ivcanon";
             if(false
@@ -2980,7 +2993,7 @@ void BambuParameter::CheckParameters()
 #if HAVE_I386_GCC8_COMPILER
                or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
 #endif
-               )
+            )
             {
                tuning_optimizations += STR_CST_string_separator + "tree-partial-pre" + STR_CST_string_separator + "disable-tree-bswap";
             }
@@ -2991,7 +3004,7 @@ void BambuParameter::CheckParameters()
 #if HAVE_I386_GCC8_COMPILER
                or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC8
 #endif
-               )
+            )
             {
                tuning_optimizations += STR_CST_string_separator + "no-store-merging";
             }
@@ -3010,7 +3023,7 @@ void BambuParameter::CheckParameters()
 #if HAVE_I386_CLANG7_COMPILER
                  or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG7
 #endif
-                 )
+         )
          {
             tuning_optimizations += "inline-functions";
          }
@@ -3045,6 +3058,21 @@ void BambuParameter::CheckParameters()
       if(not isOption(OPT_distram_threshold))
          setOption(OPT_distram_threshold, 256);
       add_experimental_setup_gcc_options(!flag_cpp);
+      if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-TASTE")
+      {
+         const auto source_files = getOption<const CustomSet<std::string>>(OPT_input_file);
+         if(source_files.size() > 1 && isOption(OPT_input_format) && getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C)
+         {
+            auto concat_filename = boost::filesystem::path(getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_concat_c_file)).string()).string();
+            std::ofstream filestream(concat_filename.c_str());
+            for(const auto& source_file : source_files)
+            {
+               filestream << "#include \"../" << source_file << "\"\n";
+            }
+            filestream.close();
+            setOption(OPT_input_file, concat_filename);
+         }
+      }
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-PERFORMANCE-MP")
    {

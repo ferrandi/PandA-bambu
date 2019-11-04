@@ -1,14 +1,15 @@
 #this file is src/parser/polixml/Makefile.am
 noinst_LTLIBRARIES = lib_xml_dom_parser.la
+AM_CPPFLAGS = $(all_includes) -I$(BOOST_DIR) -I$(ABSEIL_DIR)
+METASOURCES = AUTO
 
 lib_xml_dom_parser_la_CPPFLAGS = \
    -I$(top_srcdir)/src/ \
    -I$(top_srcdir)/src/constants \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 
-METASOURCES = AUTO
 AM_YFLAGS = -d -l --report=state,lookahead,itemset
 AM_LFLAGS = -L -B -+  -olex.yy.c
 

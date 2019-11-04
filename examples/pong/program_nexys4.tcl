@@ -1,5 +1,5 @@
 #create the bitstream
-open_checkpoint synth/HLS_output/Synthesis/vivado_flow/post_route.dcp
+open_checkpoint pong_synth/HLS_output/Synthesis/vivado_flow/post_route.dcp
 write_bitstream -force final_bistream.bit
 #program the NEXYS4
 open_hw

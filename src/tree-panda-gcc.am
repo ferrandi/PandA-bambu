@@ -22,7 +22,7 @@ tree_panda_gcc_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS/interface \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/wrapper/treegcc \
-    $(AM_CPPFLAGS)
+   $(AM_CPPFLAGS)
 
 if BUILD_LIB_CODE_ESTIMATION
    tree_panda_gcc_CPPFLAGS += \
@@ -31,18 +31,18 @@ if BUILD_LIB_CODE_ESTIMATION
 endif
 
 lib_treepandagcc_la_LIBADD += \
-   $(top_builddir)/src/algorithms/lib_algorithms.la \
-   $(top_builddir)/src/behavior/lib_behavior.la \
-   $(top_builddir)/src/design_flows/backend/lib_backend.la \
-   $(top_builddir)/src/graph/lib_graph.la \
+   lib_algorithms.la \
+   lib_behavior.la \
+   lib_backend.la \
+   lib_graph.la \
    $(top_builddir)/src/parser/lib_parser.la \
    $(top_builddir)/src/parser/polixml/lib_xml_dom_parser.la \
-   $(top_builddir)/src/polixml/lib_polixml.la \
-   $(top_builddir)/src/tree/lib_tree.la \
-   $(top_builddir)/src/tree/lib_tree_manipulation.la \
-   $(top_builddir)/src/utility/lib_utility.la \
-   $(top_builddir)/src/wrapper/lib_wrapper.la \
-   $(BOOST_FILESYSTEM_LIB) $(BOOST_SYSTEM_LIB) $(BOOST_DATE_TIME_LIB)
+   lib_polixml.la \
+   lib_tree.la \
+   lib_tree_manipulation.la \
+   lib_utility.la \
+   lib_wrapper.la \
+   $(BOOST_FILESYSTEM_LIB) $(BOOST_SYSTEM_LIB)
 
 if BUILD_LIB_ARCH
    lib_treepandagcc_la_LIBADD += \
@@ -50,19 +50,17 @@ if BUILD_LIB_ARCH
 endif
 
 if BUILD_LIB_CIRCUIT
-   lib_treepandagcc_la_LIBADD += \
-      $(top_builddir)/src/circuit/lib_circuit.la
+   lib_treepandagcc_la_LIBADD += lib_circuit.la
 endif
 
 if BUILD_LIB_CODE_ESTIMATION
    lib_treepandagcc_la_LIBADD += \
-      $(top_builddir)/src/utility/probability_distribution/lib_ProbabilityDistribution.la \
-      $(top_builddir)/src/design_flows/codesign/lib_codesign.la
+      lib_ProbabilityDistribution.la \
+      lib_codesign.la
 endif
 
 if BUILD_LIB_FROM_PRAGMA
-   lib_treepandagcc_la_LIBADD += \
-      $(top_builddir)/src/pragma/libpragma.la \
+   lib_treepandagcc_la_LIBADD += libpragma.la \
       $(BOOST_REGEX_LIB)
 endif
 
@@ -72,8 +70,7 @@ if BUILD_LIB_HLS
 endif
 
 if BUILD_LIB_INTERMEDIATE_REPRESENTATIONS
-   lib_treepandagcc_la_LIBADD += \
-      $(top_builddir)/src/intermediate_representations/lib_intermediate_representations.la
+   lib_treepandagcc_la_LIBADD += lib_intermediate_representations.la
 endif
 
 if BUILD_LIB_RTL
@@ -82,8 +79,9 @@ if BUILD_LIB_RTL
 endif
 
 if BUILD_LIB_TECHNOLOGY
-   lib_treepandagcc_la_LIBADD += \
-      $(top_builddir)/src/technology/lib_technology.la
+   lib_treepandagcc_la_LIBADD += lib_technology.la
 endif
 
-tree_panda_gcc_LDADD = lib_treepandagcc.la 
+lib_treepandagcc_la_LIBADD += $(top_builddir)/ext/abseil-cpp/libabseil.la
+
+tree_panda_gcc_LDADD = lib_treepandagcc.la  @PTHREAD_HACK@

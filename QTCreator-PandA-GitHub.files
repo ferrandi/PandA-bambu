@@ -1766,6 +1766,10 @@ src/HLS/hls_flow/initialize_hls.cpp
 src/HLS/hls_flow/initialize_hls.hpp
 src/HLS/hls_flow/synthesis/hls_synthesis_flow.cpp
 src/HLS/hls_flow/synthesis/hls_synthesis_flow.hpp
+src/HLS/hls_flow/synthesis/omp_body_loop_synthesis_flow.cpp
+src/HLS/hls_flow/synthesis/omp_body_loop_synthesis_flow.hpp
+src/HLS/hls_flow/synthesis/omp_for_wrapper_cs_synthesis_flow.cpp
+src/HLS/hls_flow/synthesis/omp_for_wrapper_cs_synthesis_flow.hpp
 src/HLS/hls_flow/synthesis/standard_hls.cpp
 src/HLS/hls_flow/synthesis/standard_hls.hpp
 src/HLS/hls_flow/synthesis/virtual_hls.cpp
@@ -1820,6 +1824,10 @@ src/HLS/module_allocation/allocation_information.cpp
 src/HLS/module_allocation/allocation_information.hpp
 src/HLS/module_allocation/hls_bit_value.cpp
 src/HLS/module_allocation/hls_bit_value.hpp
+src/HLS/module_allocation/hls_function_bit_value.cpp
+src/HLS/module_allocation/hls_function_bit_value.hpp
+src/HLS/module_allocation/omp_allocation.cpp
+src/HLS/module_allocation/omp_allocation.hpp
 src/HLS/module_generator/moduleGenerator.cpp
 src/HLS/module_generator/moduleGenerator.hpp
 src/HLS/scheduling/ASLAP.cpp
@@ -1858,6 +1866,10 @@ src/HLS/simulation/testbench_generation_base_step.cpp
 src/HLS/simulation/testbench_generation_base_step.hpp
 src/HLS/simulation/testbench_memory_allocation.cpp
 src/HLS/simulation/testbench_memory_allocation.hpp
+src/HLS/simulation/testbench_values_c_generation.cpp
+src/HLS/simulation/testbench_values_c_generation.hpp
+src/HLS/simulation/testbench_values_xml_generation.cpp
+src/HLS/simulation/testbench_values_xml_generation.hpp
 src/HLS/simulation/wishbone_interface_testbench.cpp
 src/HLS/simulation/wishbone_interface_testbench.hpp
 src/HLS/stg/BB_based_stg.cpp
@@ -2258,6 +2270,8 @@ src/frontend_analysis/complete_bb_graph.hpp
 src/frontend_analysis/complete_call_graph.cpp
 src/frontend_analysis/complete_call_graph.hpp
 src/frontend_analysis/find_max_cfg_transformations.cpp
+src/frontend_analysis/find_max_cfg_transformations.cpp
+src/frontend_analysis/find_max_cfg_transformations.hpp
 src/frontend_analysis/find_max_cfg_transformations.hpp
 src/frontend_analysis/frontend_flow_step.cpp
 src/frontend_analysis/frontend_flow_step.hpp

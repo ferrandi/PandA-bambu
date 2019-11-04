@@ -79,21 +79,21 @@
 
 std::vector<std::string> CheckSystemType::systemIncPath;
 
-std::unordered_map<std::string, std::string> CheckSystemType::inclNameToPath;
+CustomUnorderedMapUnstable<std::string, std::string> CheckSystemType::inclNameToPath;
 
-std::unordered_map<std::string, std::string> CheckSystemType::rename_function;
+CustomUnorderedMapUnstable<std::string, std::string> CheckSystemType::rename_function;
 
-std::unordered_map<std::string, std::string> CheckSystemType::rename_types;
+CustomUnorderedMapUnstable<std::string, std::string> CheckSystemType::rename_types;
 
-std::unordered_set<std::string> CheckSystemType::library_system_functions;
+CustomUnorderedSet<std::string> CheckSystemType::library_system_functions;
 
-std::unordered_set<std::string> CheckSystemType::library_system_includes;
+CustomUnorderedSet<std::string> CheckSystemType::library_system_includes;
 
 #if HAVE_LEON3
-std::unordered_set<std::string> CheckSystemType::not_supported_leon3_functions;
+CustomUnorderedSet<std::string> CheckSystemType::not_supported_leon3_functions;
 #endif
 
-std::unordered_map<std::string, std::string> CheckSystemType::undefined_library_function_include;
+CustomUnorderedMapUnstable<std::string, std::string> CheckSystemType::undefined_library_function_include;
 
 CheckSystemType::CheckSystemType(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, CHECK_SYSTEM_TYPE, _design_flow_manager, _parameters), behavioral_helper(AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()), TM(AppM->get_tree_manager()), already_executed(false)
@@ -105,9 +105,9 @@ CheckSystemType::CheckSystemType(const ParameterConstRef _parameters, const appl
 
 CheckSystemType::~CheckSystemType() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> CheckSystemType::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> CheckSystemType::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(PRECEDENCE_RELATIONSHIP):

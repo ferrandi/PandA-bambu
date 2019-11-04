@@ -60,7 +60,7 @@
 #include <string>
 
 /// STL include
-#include <unordered_map>
+#include "custom_map.hpp"
 
 /// utility include
 #include "refcount.hpp"
@@ -271,7 +271,7 @@ class HLS_step : public DesignFlowStep
 {
  protected:
    /// Map hls step name to enum
-   static std::unordered_map<std::string, HLSFlowStep_Type> command_line_name_to_enum;
+   static CustomUnorderedMap<std::string, HLSFlowStep_Type> command_line_name_to_enum;
 
    /// information about all the HLS synthesis
    const HLS_managerRef HLSMgr;
@@ -286,7 +286,7 @@ class HLS_step : public DesignFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   virtual const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
 
  public:
    /**

@@ -46,19 +46,19 @@
 
 #include "refcount.hpp"
 
-#include <map>
-#include <set>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 class functions
 {
    /// set of function proxies called by a function
-   std::map<unsigned int, std::set<std::string>> shared_function_proxy;
+   std::map<unsigned int, CustomOrderedSet<std::string>> shared_function_proxy;
 
    /// define where the proxied functions are mapped
    std::map<std::string, unsigned int> proxied_functions;
 
    /// map where shared functions are allocated
-   std::map<unsigned int, std::set<std::string>> shared_functions;
+   std::map<unsigned int, CustomOrderedSet<std::string>> shared_functions;
 
  public:
    /**
@@ -83,7 +83,7 @@ class functions
     * @param funID_scope is the function where the shared functions have been allocated
     * @return the set of shared functions allocated in funID_scope
     */
-   const std::set<std::string>& get_shared_functions(unsigned int funID_scope) const;
+   const CustomOrderedSet<std::string>& get_shared_functions(unsigned int funID_scope) const;
 
    /**
     * return true in case there are shared functions allocated in a given function.
@@ -112,7 +112,7 @@ class functions
     * @param funID_scope is the function id
     * @return the set of functions proxied in funID_scope
     */
-   const std::set<std::string>& get_proxied_shared_functions(unsigned int funID_scope) const;
+   const CustomOrderedSet<std::string>& get_proxied_shared_functions(unsigned int funID_scope) const;
 
    /**
     * check if the function has proxied shared functions

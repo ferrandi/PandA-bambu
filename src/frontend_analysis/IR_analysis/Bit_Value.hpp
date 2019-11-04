@@ -110,18 +110,18 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
     * that statement. This relationship is created only for direct calls,
     * because for indirect calls there is not a one-to-one relationship
     */
-   std::unordered_map<unsigned int, unsigned int> direct_call_id_to_called_id;
+   CustomUnorderedMapUnstable<unsigned int, unsigned int> direct_call_id_to_called_id;
 
    /**
     * Contains the input parameters of the function that's being analyzed.
     */
-   std::unordered_set<unsigned int> arguments;
+   CustomUnorderedSet<unsigned int> arguments;
 
    /**
     * Debugging function used to print the contents of the current and best maps.
     * @param map map to be printed
     */
-   void print_bitstring_map(const std::unordered_map<unsigned int, std::deque<bit_lattice>>& map) const;
+   void print_bitstring_map(const CustomUnorderedMap<unsigned int, std::deque<bit_lattice>>& map) const;
 
    unsigned int pointer_resizing(unsigned int output_id) const;
 
@@ -215,7 +215,7 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
     */
    std::deque<bit_lattice> backward_compute_result_from_uses(const ssa_name& ssa, const statement_list& sl, unsigned int bb_loop_id) const;
 
-   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**

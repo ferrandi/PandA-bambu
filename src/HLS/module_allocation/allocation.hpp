@@ -175,9 +175,9 @@ class allocation : public HLSFunctionStep
    void BuildProxyFunction(functional_unit* orig_fu);
 
    void add_tech_constraint(technology_nodeRef cur_fu, unsigned int tech_constrain_value, unsigned int pos, bool proxy_constrained);
-   void add_resource_to_fu_list(std::string channels_type, const OpGraphConstRef g, technology_nodeRef current_fu, std::set<vertex> vertex_analysed, node_kind_prec_infoRef node_info, unsigned int current_id, std::set<vertex>::const_iterator vert,
-                                const std::vector<std::string>& libraries, bool isMemory, std::string bambu_provided_resource, operation* curr_op, std::string specialized_fuName, bool predicate_2, std::string current_op,
-                                HLS_manager::io_binding_type constant_id, bool varargs_fu, unsigned int l, std::string memory_ctrl_type, std::map<std::string, technology_nodeRef> new_fu, unsigned int tech_constrain_value);
+   void add_resource_to_fu_list(std::string channels_type, const OpGraphConstRef g, technology_nodeRef current_fu, CustomOrderedSet<vertex> vertex_analysed, node_kind_prec_infoRef node_info, unsigned int current_id,
+                                CustomOrderedSet<vertex>::const_iterator vert, const std::vector<std::string>& libraries, bool isMemory, std::string bambu_provided_resource, operation* curr_op, std::string specialized_fuName, bool predicate_2,
+                                std::string current_op, HLS_manager::io_binding_type constant_id, bool varargs_fu, unsigned int l, std::string memory_ctrl_type, std::map<std::string, technology_nodeRef> new_fu, unsigned int tech_constrain_value);
    bool check_templated_units(double clock_period, node_kind_prec_infoRef node_info, const library_managerRef library, technology_nodeRef current_fu, operation* curr_op);
    bool check_for_memory_compliancy(bool Has_extern_allocated_data, technology_nodeRef current_fu, const std::string& memory_ctrl_type, std::string channels_type);
    bool check_type_and_precision(operation* curr_op, node_kind_prec_infoRef node_info);
@@ -195,7 +195,7 @@ class allocation : public HLSFunctionStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**

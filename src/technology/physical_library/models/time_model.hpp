@@ -52,7 +52,7 @@
 #endif
 #include <boost/math/distributions.hpp>
 
-#include <map>
+#include "custom_map.hpp"
 #include <string>
 #include <vector>
 

@@ -51,11 +51,11 @@
 #include "xml_helper.hpp"
 
 /// STD include
+#include "custom_set.hpp"
 #include <boost/graph/incremental_components.hpp>
 #include <boost/graph/properties.hpp>
 #include <boost/pending/disjoint_sets.hpp>
 #include <boost/property_map/property_map.hpp>
-#include <set>
 
 /// HLS/chaining
 #include "chaining_information.hpp"
@@ -65,9 +65,9 @@ chaining::chaining(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
 {
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> chaining::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> chaining::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:

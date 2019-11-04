@@ -44,9 +44,9 @@
 #ifndef WEAK_DOMINANCE_HPP
 #define WEAK_DOMINANCE_HPP
 
+#include "custom_map.hpp"
 #include "graph.hpp"
 #include "refcount.hpp"
-#include <unordered_map>
 
 CONSTREF_FORWARD_DECL(Parameter);
 
@@ -106,6 +106,6 @@ class weak_dominance
     * @param i2o is the map from input vertex to output vertex
     * @param o2i is the map from output vertex to input vertex
     */
-   void calculate_weak_dominance_info(graphs_collection* output, std::unordered_map<vertex, vertex>& i2o, std::unordered_map<vertex, vertex>& o2i);
+   void calculate_weak_dominance_info(graphs_collection* output, CustomUnorderedMap<vertex, vertex>& i2o, CustomUnorderedMap<vertex, vertex>& o2i);
 };
 #endif

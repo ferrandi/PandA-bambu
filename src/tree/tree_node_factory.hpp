@@ -43,8 +43,8 @@
 #ifndef TREE_NODE_FACTORY_HPP
 #define TREE_NODE_FACTORY_HPP
 
+#include "custom_map.hpp"      // for map
 #include "token_interface.hpp" // for TreeVocabula...
-#include <map>                 // for map
 #include <string>              // for string
 
 /// Tree include

@@ -57,11 +57,11 @@
 #include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_HAVE_ZEBU_BUILT.hpp"
 
-#include <cstddef>       // for size_t
-#include <string>        // for string
-#include <typeindex>     // for hash
-#include <unordered_set> // for unordered_set
-#include <utility>       // for pair
+#include "custom_set.hpp" // for unordered_set
+#include <cstddef>        // for size_t
+#include <string>         // for string
+#include <typeindex>      // for hash
+#include <utility>        // for pair
 
 #include "design_flow_step.hpp" // for DesignFlowStep
 #include "refcount.hpp"         // for REF_FORWARD_DECL
@@ -224,7 +224,7 @@ typedef enum
 #if HAVE_ZEBU_BUILT
    LOOPS_ANALYSIS_ZEBU,
 #endif
-   LOOPS_IDENTIFICATION,
+   LOOPS_COMPUTATION,
 #if HAVE_ZEBU_BUILT
    LOOPS_REBUILDING,
 #endif
@@ -351,6 +351,8 @@ typedef enum
 #endif
 } FrontendFlowStepType;
 
+#if NO_ABSEIL_HASH
+
 /**
  * Definition of hash function for FunctionFrontendAnalysisType
  */
@@ -366,7 +368,7 @@ namespace std
       }
    };
 } // namespace std
-
+#endif
 class FrontendFlowStep : public DesignFlowStep
 {
  public:
@@ -394,7 +396,7 @@ class FrontendFlowStep : public DesignFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const = 0;
+   virtual const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const = 0;
 
  public:
    /**
@@ -425,7 +427,7 @@ class FrontendFlowStep : public DesignFlowStep
     * @param application_manager is the application manager
     * @param relationships is the output of the function
     */
-   static void CreateSteps(const DesignFlowManagerConstRef design_flow_manager, const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>>& frontend_relationships, const application_managerConstRef application_manager,
+   static void CreateSteps(const DesignFlowManagerConstRef design_flow_manager, const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>& frontend_relationships, const application_managerConstRef application_manager,
                            DesignFlowStepSet& relationships);
 
    /**
@@ -462,6 +464,8 @@ class FrontendFlowStep : public DesignFlowStep
    void PrintFinalIR() const override;
 };
 
+#if NO_ABSEIL_HASH
+
 /**
  * Definition of hash function for FrontendFlowStep::FunctionRelationship
  */
@@ -477,5 +481,5 @@ namespace std
       }
    };
 } // namespace std
-
+#endif
 #endif

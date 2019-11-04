@@ -98,8 +98,8 @@
 #include <string>
 
 /// STL includes
+#include "custom_set.hpp"
 #include <algorithm>
-#include <set>
 #include <utility>
 #include <vector>
 
@@ -169,10 +169,10 @@ void fu_binding::bind(const vertex& v, unsigned int unit, unsigned int index)
       update_allocation(unit, index + 1);
 }
 
-std::set<vertex> fu_binding::get_operations(unsigned int unit, unsigned int index) const
+CustomOrderedSet<vertex> fu_binding::get_operations(unsigned int unit, unsigned int index) const
 {
    if(operations.find(std::make_pair(unit, index)) == operations.end())
-      return std::set<vertex>();
+      return CustomOrderedSet<vertex>();
    return operations.find(std::make_pair(unit, index))->second;
 }
 
@@ -194,9 +194,9 @@ bool fu_binding::is_assigned(const unsigned int statement_index) const
    return op_binding.find(statement_index) != op_binding.end();
 }
 
-std::set<unsigned int> fu_binding::get_allocation_list() const
+CustomOrderedSet<unsigned int> fu_binding::get_allocation_list() const
 {
-   std::set<unsigned int> allocation_list;
+   CustomOrderedSet<unsigned int> allocation_list;
    for(const auto alloc : allocation_map)
    {
       if(alloc.second > 0)
@@ -235,7 +235,7 @@ unsigned int fu_binding::get_index(vertex const& v) const
    return GetPointer<funit_obj>(op_binding.find(statement_index)->second)->get_index();
 }
 
-structural_objectRef fu_binding::add_gate(const HLS_managerRef HLSMgr, const hlsRef HLS, const technology_nodeRef fu, const std::string& name, const std::set<vertex>& ops, structural_objectRef clock_port, structural_objectRef reset_port)
+structural_objectRef fu_binding::add_gate(const HLS_managerRef HLSMgr, const hlsRef HLS, const technology_nodeRef fu, const std::string& name, const CustomOrderedSet<vertex>& ops, structural_objectRef clock_port, structural_objectRef reset_port)
 {
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
    const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::CFG);
@@ -279,18 +279,18 @@ structural_objectRef fu_binding::add_gate(const HLS_managerRef HLSMgr, const hls
    return curr_gate;
 }
 
-void fu_binding::kill_proxy_memory_units(std::map<unsigned int, unsigned int>& memory_units, structural_objectRef curr_gate, std::map<unsigned int, std::set<structural_objectRef>>& var_call_sites_rel,
+void fu_binding::kill_proxy_memory_units(std::map<unsigned int, unsigned int>& memory_units, structural_objectRef curr_gate, std::map<unsigned int, CustomOrderedSet<structural_objectRef>>& var_call_sites_rel,
                                          std::map<unsigned int, unsigned int>& reverse_memory_units)
 {
    /// compute the set of killing vars
-   std::set<unsigned int> killing_vars;
+   CustomOrderedSet<unsigned int> killing_vars;
    const std::map<unsigned int, unsigned int>::const_iterator it_mu_end = memory_units.end();
    for(std::map<unsigned int, unsigned int>::const_iterator it_mu = memory_units.begin(); it_mu != it_mu_end; ++it_mu)
    {
       killing_vars.insert(it_mu->second);
       reverse_memory_units[it_mu->second] = it_mu->first;
    }
-   const std::set<unsigned int>::const_iterator kv_it_end = killing_vars.end();
+   const CustomOrderedSet<unsigned int>::const_iterator kv_it_end = killing_vars.end();
    for(auto kv_it = killing_vars.begin(); kv_it != kv_it_end; ++kv_it)
    {
       structural_objectRef port_proxy_in1 = curr_gate->find_member("proxy_in1_" + STR(*kv_it), port_o_K, curr_gate);
@@ -312,18 +312,18 @@ void fu_binding::kill_proxy_memory_units(std::map<unsigned int, unsigned int>& m
    }
 }
 
-void fu_binding::kill_proxy_function_units(std::map<unsigned int, std::string>& wrapped_units, structural_objectRef curr_gate, std::map<std::string, std::set<structural_objectRef>>& fun_call_sites_rel,
+void fu_binding::kill_proxy_function_units(std::map<unsigned int, std::string>& wrapped_units, structural_objectRef curr_gate, std::map<std::string, CustomOrderedSet<structural_objectRef>>& fun_call_sites_rel,
                                            std::map<std::string, unsigned int>& reverse_wrapped_units)
 {
    /// compute the set of killing functions
-   std::set<std::string> killing_funs;
+   CustomOrderedSet<std::string> killing_funs;
    const std::map<unsigned int, std::string>::const_iterator it_mu_end = wrapped_units.end();
    for(std::map<unsigned int, std::string>::const_iterator it_mu = wrapped_units.begin(); it_mu != it_mu_end; ++it_mu)
    {
       killing_funs.insert(it_mu->second);
       reverse_wrapped_units[it_mu->second] = it_mu->first;
    }
-   const std::set<std::string>::const_iterator kf_it_end = killing_funs.end();
+   const CustomOrderedSet<std::string>::const_iterator kf_it_end = killing_funs.end();
    for(auto kf_it = killing_funs.begin(); kf_it != kf_it_end; ++kf_it)
    {
       std::string fun_name = *kf_it;
@@ -361,11 +361,11 @@ void fu_binding::kill_proxy_function_units(std::map<unsigned int, std::string>& 
    }
 }
 
-void fu_binding::manage_killing_memory_proxies(std::map<unsigned int, structural_objectRef>& mem_obj, std::map<unsigned int, unsigned int>& reverse_memory_units, std::map<unsigned int, std::set<structural_objectRef>>& var_call_sites_rel,
+void fu_binding::manage_killing_memory_proxies(std::map<unsigned int, structural_objectRef>& mem_obj, std::map<unsigned int, unsigned int>& reverse_memory_units, std::map<unsigned int, CustomOrderedSet<structural_objectRef>>& var_call_sites_rel,
                                                const structural_managerRef SM, const hlsRef HLS, unsigned int& _unique_id)
 {
    const structural_objectRef circuit = SM->get_circ();
-   const std::map<unsigned int, std::set<structural_objectRef>>::iterator vcsr_it_end = var_call_sites_rel.end();
+   const std::map<unsigned int, CustomOrderedSet<structural_objectRef>>::iterator vcsr_it_end = var_call_sites_rel.end();
    for(auto vcsr_it = var_call_sites_rel.begin(); vcsr_it != vcsr_it_end; ++vcsr_it)
    {
       unsigned int var = vcsr_it->first;
@@ -376,8 +376,8 @@ void fu_binding::manage_killing_memory_proxies(std::map<unsigned int, structural
       structural_objectRef storage_port_proxy_out1 = storage_fu_unit->find_member("proxy_out1", port_o_K, storage_fu_unit);
       THROW_ASSERT(storage_port_proxy_out1, "missing proxy_out1 port");
       structural_objectRef storage_port_proxy_out1_sign;
-      const std::set<structural_objectRef>::iterator proxied_unit_it_end = vcsr_it->second.end();
-      std::map<structural_objectRef, std::set<structural_objectRef>> to_be_merged;
+      const CustomOrderedSet<structural_objectRef>::iterator proxied_unit_it_end = vcsr_it->second.end();
+      std::map<structural_objectRef, CustomOrderedSet<structural_objectRef>> to_be_merged;
       structural_objectRef port_in1 = storage_fu_unit->find_member("proxy_in1", port_o_K, storage_fu_unit);
       THROW_ASSERT(port_in1, "missing port proxy_in1");
       structural_objectRef port_in2 = storage_fu_unit->find_member("proxy_in2", port_o_K, storage_fu_unit);
@@ -419,11 +419,11 @@ void fu_binding::manage_killing_memory_proxies(std::map<unsigned int, structural
    }
 }
 
-void fu_binding::manage_killing_function_proxies(std::map<unsigned int, structural_objectRef>& fun_obj, std::map<std::string, unsigned int>& reverse_function_units, std::map<std::string, std::set<structural_objectRef>>& fun_call_sites_rel,
+void fu_binding::manage_killing_function_proxies(std::map<unsigned int, structural_objectRef>& fun_obj, std::map<std::string, unsigned int>& reverse_function_units, std::map<std::string, CustomOrderedSet<structural_objectRef>>& fun_call_sites_rel,
                                                  const structural_managerRef SM, const hlsRef HLS, unsigned int& _unique_id)
 {
    const structural_objectRef circuit = SM->get_circ();
-   const std::map<std::string, std::set<structural_objectRef>>::iterator fcsr_it_end = fun_call_sites_rel.end();
+   const std::map<std::string, CustomOrderedSet<structural_objectRef>>::iterator fcsr_it_end = fun_call_sites_rel.end();
    for(auto fcsr_it = fun_call_sites_rel.begin(); fcsr_it != fcsr_it_end; ++fcsr_it)
    {
       std::string fun = fcsr_it->first;
@@ -431,8 +431,8 @@ void fu_binding::manage_killing_function_proxies(std::map<unsigned int, structur
       unsigned int wrapped_fu_unit_id = reverse_function_units.find(fun)->second;
       THROW_ASSERT(fun_obj.find(wrapped_fu_unit_id) != fun_obj.end(), "wrapped_fu_unit not found");
       structural_objectRef wrapped_fu_unit = fun_obj.find(wrapped_fu_unit_id)->second;
-      std::map<structural_objectRef, std::set<structural_objectRef>> to_be_merged;
-      const std::set<structural_objectRef>::iterator proxied_unit_it_end = fcsr_it->second.end();
+      std::map<structural_objectRef, CustomOrderedSet<structural_objectRef>> to_be_merged;
+      const CustomOrderedSet<structural_objectRef>::iterator proxied_unit_it_end = fcsr_it->second.end();
 
       auto inPortSize = static_cast<unsigned int>(GetPointer<module>(wrapped_fu_unit)->get_in_port_size());
       for(unsigned int currentPort = 0; currentPort < inPortSize; ++currentPort)
@@ -491,7 +491,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
 
    const structural_objectRef circuit = SM->get_circ();
 
-   std::set<structural_objectRef> memory_modules;
+   CustomOrderedSet<structural_objectRef> memory_modules;
 
    /// add the MEMCPY_STD component when parameters has to be copied into the local store
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
@@ -508,7 +508,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Managing parameter copy: " + STR(function_parameter));
          const technology_nodeRef fu_lib_unit = HLS->HLS_T->get_technology_manager()->get_fu(MEMCPY_STD, WORK_LIBRARY);
          THROW_ASSERT(fu_lib_unit, "functional unit not available: check the library given. Component: " + std::string(MEMCPY_STD));
-         structural_objectRef curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, "parameter_manager_" + STR(function_parameter), std::set<vertex>(), clock_port, reset_port);
+         structural_objectRef curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, "parameter_manager_" + STR(function_parameter), CustomOrderedSet<vertex>(), clock_port, reset_port);
          conn_binding::direction_type direction = conn_binding::IN;
          generic_objRef port_obj = HLS->Rconn->get_port(function_parameter, direction);
          structural_objectRef in_par = port_obj->get_out_sign();
@@ -540,7 +540,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             else
                delay_unit = HLS->HLS_T->get_technology_manager()->get_fu(flipflop_AR, LIBRARY_STD);
             THROW_ASSERT(delay_unit, "");
-            structural_objectRef delay_gate = add_gate(HLSMgr, HLS, delay_unit, "start_delayed_" + STR(function_parameter), std::set<vertex>(), clock_port, reset_port);
+            structural_objectRef delay_gate = add_gate(HLSMgr, HLS, delay_unit, "start_delayed_" + STR(function_parameter), CustomOrderedSet<vertex>(), clock_port, reset_port);
             structural_objectRef sign = SM->add_sign(START_PORT_NAME + STR("_") + STR(sign_id), circuit, start_obj->get_typeRef());
             ++sign_id;
             SM->add_connection(sign, in_chain);
@@ -576,14 +576,14 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          {
             const technology_nodeRef fu_lib_unit = HLS->HLS_T->get_technology_manager()->get_fu(MEMSTORE_STDN, LIBRARY_STD_FU);
             THROW_ASSERT(fu_lib_unit, "functional unit not available: check the library given. Component: " + std::string(MEMSTORE_STDN));
-            curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, "parameter_manager_" + STR(function_parameter), std::set<vertex>(), clock_port, reset_port);
+            curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, "parameter_manager_" + STR(function_parameter), CustomOrderedSet<vertex>(), clock_port, reset_port);
             is_multiport = true;
          }
          else
          {
             const technology_nodeRef fu_lib_unit = HLS->HLS_T->get_technology_manager()->get_fu(MEMSTORE_STD, LIBRARY_STD_FU);
             THROW_ASSERT(fu_lib_unit, "functional unit not available: check the library given. Component: " + std::string(MEMSTORE_STD));
-            curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, "parameter_manager_" + STR(function_parameter), std::set<vertex>(), clock_port, reset_port);
+            curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, "parameter_manager_" + STR(function_parameter), CustomOrderedSet<vertex>(), clock_port, reset_port);
             is_multiport = false;
          }
          conn_binding::direction_type direction = conn_binding::IN;
@@ -630,7 +630,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
                delay_unit = HLS->HLS_T->get_technology_manager()->get_fu(flipflop_SR, LIBRARY_STD);
             else
                delay_unit = HLS->HLS_T->get_technology_manager()->get_fu(flipflop_AR, LIBRARY_STD);
-            structural_objectRef delay_gate = add_gate(HLSMgr, HLS, delay_unit, "start_delayed_" + STR(function_parameter), std::set<vertex>(), clock_port, reset_port);
+            structural_objectRef delay_gate = add_gate(HLSMgr, HLS, delay_unit, "start_delayed_" + STR(function_parameter), CustomOrderedSet<vertex>(), clock_port, reset_port);
             structural_objectRef sign = SM->add_sign(START_PORT_NAME + STR("_") + STR(sign_id), circuit, start_obj->get_typeRef());
             ++sign_id;
             SM->add_connection(sign, in_chain);
@@ -734,11 +734,11 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       unsigned int n_iterations = std::max(1u, total_allocated);
       for(unsigned int num = 0; num < n_iterations; num = num + n_channels)
       {
-         std::set<vertex> operations_set;
+         CustomOrderedSet<vertex> operations_set;
          for(unsigned int channel_index = 0; channel_index < n_channels && (num + channel_index < total_allocated); ++channel_index)
             operations_set.insert(operations[std::make_pair(fu_type_id, num + channel_index)].begin(), operations[std::make_pair(fu_type_id, num + channel_index)].end());
          has_resource_sharing_p = has_resource_sharing_p || (operations_set.size() > 1);
-         structural_objectRef curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, name + "_" + STR(num / n_channels), std::set<vertex>(), clock_port, reset_port);
+         structural_objectRef curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, name + "_" + STR(num / n_channels), CustomOrderedSet<vertex>(), clock_port, reset_port);
          specialise_fu(HLSMgr, HLS, curr_gate, fu_type_id, operations_set, var);
          std::string memory_type = GetPointer<functional_unit>(fu_lib_unit)->memory_type;
          std::string channels_type = GetPointer<functional_unit>(fu_lib_unit)->channels_type;
@@ -762,8 +762,8 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
 
    std::map<unsigned int, unsigned int> reverse_memory_units;
    std::map<std::string, unsigned int> reverse_function_units;
-   std::map<unsigned int, std::set<structural_objectRef>> var_call_sites_rel;
-   std::map<std::string, std::set<structural_objectRef>> fun_call_sites_rel;
+   std::map<unsigned int, CustomOrderedSet<structural_objectRef>> var_call_sites_rel;
+   std::map<std::string, CustomOrderedSet<structural_objectRef>> fun_call_sites_rel;
    std::map<unsigned int, structural_objectRef> fun_obj;
    std::map<unsigned int, std::string> wrapped_units = allocation_information->get_proxy_wrapped_units();
    for(auto wu = wrapped_units.begin(); wu != wrapped_units.end(); ++wu)
@@ -772,9 +772,9 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       std::string fun_unit_name = allocation_information->get_fu_name(wu->first).first;
       const technology_nodeRef fu_lib_unit = allocation_information->get_fu(wu->first);
       THROW_ASSERT(fu_lib_unit, "functional unit not available: check the library given. Component: " + fun_unit_name);
-      structural_objectRef curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, wu->second + "_instance", std::set<vertex>(), clock_port, reset_port);
+      structural_objectRef curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, wu->second + "_instance", CustomOrderedSet<vertex>(), clock_port, reset_port);
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Wrapped Unit: " + allocation_information->get_string_name(wu->first));
-      const std::set<vertex>& mapped_operations = get_operations(wu->first, 0);
+      const CustomOrderedSet<vertex>& mapped_operations = get_operations(wu->first, 0);
       specialise_fu(HLSMgr, HLS, curr_gate, wu->first, mapped_operations, 0);
       check_parametrization(curr_gate);
       fun_obj[wu->first] = curr_gate;
@@ -790,12 +790,12 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    const std::map<unsigned int, unsigned int>& proxy_memory_units = allocation_information->get_proxy_memory_units();
    const std::map<unsigned int, std::string>& proxy_function_units = allocation_information->get_proxy_function_units();
 
-   std::set<std::pair<structural_objectRef, unsigned int>> proxy_memory_units_to_be_renamed_back;
-   std::set<std::pair<structural_objectRef, std::string>> proxy_function_units_to_be_renamed_back;
+   CustomOrderedSet<std::pair<structural_objectRef, unsigned int>> proxy_memory_units_to_be_renamed_back;
+   CustomOrderedSet<std::pair<structural_objectRef, std::string>> proxy_function_units_to_be_renamed_back;
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Specializing functional units");
 
-   std::set<unsigned int> fu_list = this->get_allocation_list();
+   CustomOrderedSet<unsigned int> fu_list = this->get_allocation_list();
    for(unsigned int i : fu_list)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Functional Unit: " + allocation_information->get_string_name(i));
@@ -833,7 +833,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             unsigned int n_channels = allocation_information->get_number_channels(i);
             generic_objRef true_module_obj = get(i, (num / n_channels) * n_channels);
             curr_gate = true_module_obj->get_structural_obj();
-            const std::set<vertex>& mapped_operations = get_operations(i, num);
+            const CustomOrderedSet<vertex>& mapped_operations = get_operations(i, num);
             has_resource_sharing_p = has_resource_sharing_p || (mapped_operations.size() > 1);
             const unsigned int ar_var = allocation_information->is_proxy_memory_unit(i) ? allocation_information->get_proxy_memory_var(i) : 0;
             specialise_fu(HLSMgr, HLS, curr_gate, i, mapped_operations, ar_var);
@@ -843,9 +843,9 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          {
             const technology_nodeRef fu_lib_unit = allocation_information->get_fu(i);
             THROW_ASSERT(fu_lib_unit, "functional unit not available: check the library given. Component: " + allocation_information->get_fu_name(i).first);
-            curr_gate =
-                add_gate(HLSMgr, HLS, fu_lib_unit, name, allocation_information->is_direct_proxy_memory_unit(i) or allocation_information->is_indirect_access_memory_unit(i) ? std::set<vertex>() : operations[std::make_pair(i, num)], clock_port, reset_port);
-            const std::set<vertex>& mapped_operations = get_operations(i, num);
+            curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, name, allocation_information->is_direct_proxy_memory_unit(i) or allocation_information->is_indirect_access_memory_unit(i) ? CustomOrderedSet<vertex>() : operations[std::make_pair(i, num)],
+                                 clock_port, reset_port);
+            const CustomOrderedSet<vertex>& mapped_operations = get_operations(i, num);
             has_resource_sharing_p = has_resource_sharing_p || (mapped_operations.size() > 1);
             std::string current_op;
             const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::CFG);
@@ -854,7 +854,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             if(current_op == BUILTIN_WAIT_CALL)
             {
                has_resource_sharing_p = true;
-               const std::set<vertex>& callSite = operations[std::make_pair(i, num)];
+               const CustomOrderedSet<vertex>& callSite = operations[std::make_pair(i, num)];
                THROW_ASSERT(callSite.size() == 1, STR(BUILTIN_WAIT_CALL) + " component has more than one vertex mapped on it");
                const vertex site = *callSite.begin();
                unsigned int vertex_node_id = data->CGetOpNodeInfo(site)->GetNodeId();
@@ -937,7 +937,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    const auto top_function_ids = cg_man->GetRootFunctions();
    if(top_function_ids.find(HLS->functionId) != top_function_ids.end() and cg_man->ExistsAddressedFunction())
    {
-      std::set<unsigned int> addressed_functions = cg_man->GetAddressedFunctions();
+      CustomOrderedSet<unsigned int> addressed_functions = cg_man->GetAddressedFunctions();
 
       structural_objectRef constBitZero = SM->add_module_from_technology_library("constBitZero", CONSTANT_STD, LIBRARY_STD, circuit, HLS->HLS_T->get_technology_manager());
       structural_objectRef signBitZero = SM->add_sign("bitZero", circuit, circuit->find_member(CLOCK_PORT_NAME, port_o_K, circuit)->get_typeRef());
@@ -957,7 +957,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Considering additional top: " + FUName + "@" + STR(Itr));
          if(HLSMgr->Rfuns->has_proxied_shared_functions(Itr))
          {
-            std::set<std::string> proxied_shared_functions = HLSMgr->Rfuns->get_proxied_shared_functions(Itr);
+            CustomOrderedSet<std::string> proxied_shared_functions = HLSMgr->Rfuns->get_proxied_shared_functions(Itr);
             for(auto name : proxied_shared_functions)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---  proxied shared function: " + name);
@@ -1104,7 +1104,7 @@ bool fu_binding::manage_module_ports(const HLS_managerRef HLSMgr, const hlsRef H
    return added_memory_element;
 }
 
-void fu_binding::manage_memory_ports_chained(const structural_managerRef SM, const std::set<structural_objectRef>& memory_modules, const structural_objectRef circuit)
+void fu_binding::manage_memory_ports_chained(const structural_managerRef SM, const CustomOrderedSet<structural_objectRef>& memory_modules, const structural_objectRef circuit)
 {
    std::map<std::string, structural_objectRef> from_ports;
    std::map<std::string, structural_objectRef> primary_outs;
@@ -1177,14 +1177,14 @@ void fu_binding::manage_memory_ports_chained(const structural_managerRef SM, con
    }
 }
 
-void fu_binding::join_merge_split(const structural_managerRef SM, const hlsRef HLS, std::map<structural_objectRef, std::set<structural_objectRef>>& primary_outs, const structural_objectRef circuit, unsigned int& _unique_id)
+void fu_binding::join_merge_split(const structural_managerRef SM, const hlsRef HLS, std::map<structural_objectRef, CustomOrderedSet<structural_objectRef>>& primary_outs, const structural_objectRef circuit, unsigned int& _unique_id)
 {
    std::string js_name = "join_signal";
    std::string js_library = HLS->HLS_T->get_technology_manager()->get_library(js_name);
    std::string ss_name = "split_signal";
    std::string ss_library = HLS->HLS_T->get_technology_manager()->get_library(ss_name);
-   std::map<structural_objectRef, std::set<structural_objectRef>>::const_iterator po_end = primary_outs.end();
-   for(std::map<structural_objectRef, std::set<structural_objectRef>>::const_iterator po = primary_outs.begin(); po != po_end; ++po)
+   std::map<structural_objectRef, CustomOrderedSet<structural_objectRef>>::const_iterator po_end = primary_outs.end();
+   for(std::map<structural_objectRef, CustomOrderedSet<structural_objectRef>>::const_iterator po = primary_outs.begin(); po != po_end; ++po)
    {
       std::string bus_merger_res_name = "bus_merger";
       std::string bus_merger_inst_name = bus_merger_res_name + po->first->get_id() + STR(_unique_id) + "_";
@@ -1288,9 +1288,9 @@ void fu_binding::join_merge_split(const structural_managerRef SM, const hlsRef H
    }
 }
 
-void fu_binding::manage_memory_ports_parallel_chained(const HLS_managerRef, const structural_managerRef SM, const std::set<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id)
+void fu_binding::manage_memory_ports_parallel_chained(const HLS_managerRef, const structural_managerRef SM, const CustomOrderedSet<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id)
 {
-   std::map<structural_objectRef, std::set<structural_objectRef>> primary_outs;
+   std::map<structural_objectRef, CustomOrderedSet<structural_objectRef>> primary_outs;
    structural_objectRef cir_port;
    for(const auto& memory_module : memory_modules)
    {
@@ -1416,7 +1416,7 @@ void fu_binding::manage_extern_global_port(const HLS_managerRef, const hlsRef, c
 }
 
 tree_nodeRef getFunctionType(tree_nodeRef exp);
-void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int fu, const std::set<vertex>& mapped_operations, unsigned int ar)
+void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int fu, const CustomOrderedSet<vertex>& mapped_operations, unsigned int ar)
 {
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
    unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
@@ -1664,9 +1664,9 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                         {
                            auto tailZeros = 0u;
                            const auto lengthBV = ssa_var0->bit_values.size();
-                           while(lengthBV > tailZeros && ssa_var0->bit_values.at(lengthBV-1-tailZeros) == '0')
+                           while(lengthBV > tailZeros && ssa_var0->bit_values.at(lengthBV - 1 - tailZeros) == '0')
                               ++tailZeros;
-                           if(tailZeros<curr_LSB)
+                           if(tailZeros < curr_LSB)
                               curr_LSB = tailZeros;
                         }
                         else
@@ -1681,9 +1681,9 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                         {
                            auto tailZeros = 0u;
                            const auto lengthBV = ssa_var1->bit_values.size();
-                           while(lengthBV > tailZeros && ssa_var1->bit_values.at(lengthBV-1-tailZeros) == '0')
+                           while(lengthBV > tailZeros && ssa_var1->bit_values.at(lengthBV - 1 - tailZeros) == '0')
                               ++tailZeros;
-                           if(tailZeros<curr_LSB)
+                           if(tailZeros < curr_LSB)
                               curr_LSB = tailZeros;
                         }
                         else
@@ -1696,9 +1696,9 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                         if(offset_value)
                         {
                            auto tailZeros = 0u;
-                           while((offset_value & (1ULL<<tailZeros))==0)
+                           while((offset_value & (1ULL << tailZeros)) == 0)
                               ++tailZeros;
-                           if(tailZeros<curr_LSB)
+                           if(tailZeros < curr_LSB)
                               curr_LSB = tailZeros;
                         }
                      }

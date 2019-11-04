@@ -97,7 +97,7 @@ bool priority_dynamic_mobility::update()
       return false;
 }
 
-priority_fixed::priority_fixed(const std::unordered_map<vertex, int>& priority_value)
+priority_fixed::priority_fixed(const CustomUnorderedMapUnstable<vertex, int>& priority_value)
 {
    auto it_end = priority_value.end();
    for(auto it = priority_value.begin(); it != it_end; ++it)

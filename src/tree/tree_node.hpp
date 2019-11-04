@@ -54,19 +54,17 @@
 #include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_HAVE_UNORDERED.hpp"
 
-#include <cstddef>       // for size_t
-#include <functional>    // for binary_function
-#include <iosfwd>        // for ostream
-#include <list>          // for list
-#include <map>           // for map
-#include <memory>        // for allocator_traits...
-#include <set>           // for set
-#include <string>        // for string
-#include <unordered_set> // for unordered_set
-#include <utility>       // for pair
-#include <vector>        // for vector
+#include <cstddef>    // for size_t
+#include <functional> // for binary_function
+#include <iosfwd>     // for ostream
+#include <list>       // for list
+#include <memory>     // for allocator_traits...
+#include <string>     // for string
+#include <utility>    // for pair
+#include <vector>     // for vector
 
-#include "custom_map.hpp"  // for CustomMap
+#include "custom_map.hpp" // for CustomMap
+#include "custom_set.hpp"
 #include "exceptions.hpp"  // for throw_error
 #include "refcount.hpp"    // for GetPointer, refc...
 #include "tree_common.hpp" // for GET_KIND, BINARY...
@@ -242,7 +240,7 @@ struct TreeNodeConstEqualTo : public std::binary_function<tree_nodeConstRef, tre
    bool operator()(const tree_nodeConstRef x, const tree_nodeConstRef y) const;
 };
 
-class TreeNodeConstSet : public std::unordered_set<tree_nodeConstRef, TreeNodeConstHash, TreeNodeConstEqualTo>
+class TreeNodeConstSet : public CustomUnorderedSet<tree_nodeConstRef, TreeNodeConstHash, TreeNodeConstEqualTo>
 {
 };
 #else
@@ -263,7 +261,7 @@ class TreeNodeConstSorter : std::binary_function<tree_nodeConstRef, tree_nodeCon
    bool operator()(const tree_nodeConstRef& x, const tree_nodeConstRef& y) const;
 };
 
-class TreeNodeConstSet : public std::set<tree_nodeConstRef, TreeNodeConstSorter>
+class TreeNodeConstSet : public OrderedSetStd<tree_nodeConstRef, TreeNodeConstSorter>
 {
  public:
    /**
@@ -286,7 +284,7 @@ struct TreeNodeHash : public std::unary_function<tree_nodeRef, size_t>
    }
 };
 
-class TreeNodeSet : public std::unordered_set<tree_nodeRef, TreeNodeHash, TreeNodeConstEqualTo>
+class TreeNodeSet : public UnorderedSetStd<tree_nodeRef, TreeNodeHash, TreeNodeConstEqualTo>
 {
 };
 #else
@@ -307,7 +305,7 @@ class TreeNodeSorter : std::binary_function<tree_nodeRef, tree_nodeRef, bool>
    bool operator()(const tree_nodeRef& x, const tree_nodeRef& y) const;
 };
 
-class TreeNodeSet : public std::set<tree_nodeRef, TreeNodeSorter>
+class TreeNodeSet : public OrderedSetStd<tree_nodeRef, TreeNodeSorter>
 {
  public:
    /**
@@ -321,15 +319,14 @@ class TreeNodeSet : public std::set<tree_nodeRef, TreeNodeSorter>
  * A map with key tree_nodeRef
  */
 #if HAVE_UNORDERED
-#include <unordered_map>
 template <typename value>
-class TreeNodeMap : public std::unordered_map<tree_nodeRef, value, TreeNodeHash, TreeNodeConstEqualTo>
+class TreeNodeMap : public UnorderedMapStd<tree_nodeRef, value, TreeNodeHash, TreeNodeConstEqualTo>
 {
 };
 #else
 /// FIXME: add third template to custom map
 template <typename value>
-class TreeNodeMap : public std::map<tree_nodeRef, value, TreeNodeSorter>
+class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
 {
 };
 #endif
@@ -756,7 +753,7 @@ struct WeightedNode : public tree_node
 struct attr
 {
    /// list of TOKEN, represented as int, associated to the tree_node
-   std::set<TreeVocabularyTokenTypes_TokenEnum> list_attr;
+   CustomOrderedSet<TreeVocabularyTokenTypes_TokenEnum> list_attr;
 
    /**
     * Destructor
@@ -5721,13 +5718,13 @@ struct var_decl : public decl_node, public attr
    const PointToInformationRef point_to_information;
 
    /// The set of gimple node which writes this variable
-   std::unordered_set<tree_nodeRef> defs;
+   CustomUnorderedSet<tree_nodeRef> defs;
 
    /// The set of gimple node which read this variable
-   std::unordered_set<tree_nodeRef> uses;
+   CustomUnorderedSet<tree_nodeRef> uses;
 
    /// The set of gimple node which addresses this variable
-   std::unordered_set<tree_nodeRef> addressings;
+   CustomUnorderedSet<tree_nodeRef> addressings;
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(var_decl)

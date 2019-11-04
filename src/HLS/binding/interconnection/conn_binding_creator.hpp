@@ -52,7 +52,7 @@
 REF_FORWARD_DECL(conn_binding_creator);
 REF_FORWARD_DECL(generic_obj);
 
-#include <map>
+#include "custom_map.hpp"
 
 /**
  * @defgroup interconnect Interconnection allocation and binding
@@ -85,7 +85,7 @@ class conn_binding_creator : public HLSFunctionStep
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**

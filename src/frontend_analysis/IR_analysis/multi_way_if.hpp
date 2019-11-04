@@ -61,10 +61,10 @@ REF_FORWARD_DECL(tree_node);
 /// STL include
 #include <deque>
 #include <list>
-#include <map>
-#include <set>
 #include <string>
-#include <unordered_map>
+
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 /**
  * Structure the original short circuit
@@ -130,7 +130,7 @@ class multi_way_if : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**

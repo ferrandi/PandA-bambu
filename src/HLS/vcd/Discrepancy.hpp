@@ -53,22 +53,22 @@
 // includes from utility/
 #include "refcount.hpp"
 
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 
 REF_FORWARD_DECL(structural_manager);
 
 struct CallSitesInfo
 {
    /// Maps every function to the calls it performs
-   std::unordered_map<unsigned int, std::unordered_set<unsigned int>> fu_id_to_call_ids;
+   CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>> fu_id_to_call_ids;
    /// Maps every id of a call site to the id of the called function
-   std::unordered_map<unsigned int, std::unordered_set<unsigned int>> call_id_to_called_id;
+   CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>> call_id_to_called_id;
    /// Set of indirect calls
-   std::unordered_set<unsigned int> indirect_calls;
+   CustomUnorderedSet<unsigned int> indirect_calls;
    /// Set of taken addresses
-   std::unordered_set<unsigned int> taken_addresses;
+   CustomUnorderedSet<unsigned int> taken_addresses;
 };
 
 typedef refcount<CallSitesInfo> CallSitesInfoRef;
@@ -80,14 +80,14 @@ struct HWDiscrepancyInfo
     * Maps every function ID to a set of states that must always be checked
     * by the hardware discrepancy control flow checker.
     */
-   std::unordered_map<unsigned int, std::unordered_set<unsigned int>> fu_id_to_states_to_check;
+   CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>> fu_id_to_states_to_check;
 
    /**
     * Maps every function ID to a set of states that must be checked
     * by the hardware discrepancy control flow checker if the execution flow
     * comes from a feedback_edges
     */
-   std::unordered_map<unsigned int, std::unordered_set<unsigned int>> fu_id_to_feedback_states_to_check;
+   CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>> fu_id_to_feedback_states_to_check;
 
    /**
     * Maps every function ID to a set EdgeDescriptors. Each edge
@@ -95,7 +95,7 @@ struct HWDiscrepancyInfo
     * These edges are StateTransition edges of the StateTransitionGraph of
     * the associated function.
     */
-   std::unordered_map<unsigned int, std::unordered_set<EdgeDescriptor>> fu_id_to_reset_edges;
+   CustomUnorderedMap<unsigned int, UnorderedSetStdStable<EdgeDescriptor>> fu_id_to_reset_edges;
 
    /**
     * Maps every function ID to the bitsize of the epp trace that is
@@ -104,9 +104,9 @@ struct HWDiscrepancyInfo
     * the epp edge increments are always the same and this bitsize is the
     * number of bits necessary to represent them
     */
-   std::unordered_map<unsigned int, size_t> fu_id_to_epp_trace_bitsize;
+   CustomUnorderedMap<unsigned int, size_t> fu_id_to_epp_trace_bitsize;
 
-   std::unordered_map<unsigned int, size_t> fu_id_to_max_epp_path_val;
+   CustomUnorderedMap<unsigned int, size_t> fu_id_to_max_epp_path_val;
 
    /**
     * This set contains the ids of functions for which the control flow
@@ -115,7 +115,7 @@ struct HWDiscrepancyInfo
     * or loops, the control flow cannot diverge during its execution, so it
     * is not necessary to check it with control flow discrepancy analysis.
     */
-   std::unordered_set<unsigned int> fu_id_control_flow_skip;
+   CustomUnorderedSet<unsigned int> fu_id_control_flow_skip;
 };
 
 typedef refcount<HWDiscrepancyInfo> HWDiscrepancyInfoRef;
@@ -139,19 +139,19 @@ struct Discrepancy
     * A map to store the vcd signals to be dumped. The key is the scope, and
     * the mapped set contains all the signals to be dumped for that scope
     */
-   std::unordered_map<std::string, std::unordered_set<std::string>> selected_vcd_signals;
+   CustomUnorderedMapStable<std::string, UnorderedSetStdStable<std::string>> selected_vcd_signals;
 
    /**
     * A map to store the name of the output signal of every operation.
     * The key is the operation id, the mapped value is the signal name
     */
-   std::unordered_map<unsigned int, std::string> opid_to_outsignal;
+   CustomUnorderedMap<unsigned int, std::string> opid_to_outsignal;
 
    /// Map every vertex of the UnfoldedCallGraph to a scope in HW
-   std::unordered_map<UnfoldedVertexDescriptor, std::string> unfolded_v_to_scope;
+   CustomUnorderedMap<UnfoldedVertexDescriptor, std::string> unfolded_v_to_scope;
 
    /// Map every fun_id to the set of HW scopes of the functional modules
-   std::unordered_map<unsigned int, std::set<std::string>> f_id_to_scope;
+   CustomUnorderedMap<unsigned int, CustomOrderedSet<std::string>> f_id_to_scope;
 
    /**
     * Set of tree nodes representing the ssa_name to be skipped in discrepancy analysis
@@ -184,20 +184,20 @@ struct Discrepancy
     * call context id, the mapped value is a list of BB identifiers traversed
     * during the execution of the call in that context.
     */
-   std::unordered_map<unsigned int, std::map<uint64_t, std::list<unsigned int>>> c_control_flow_trace;
+   CustomUnorderedMap<unsigned int, std::map<uint64_t, std::list<unsigned int>>> c_control_flow_trace;
 
    /**
     * Address map used for address discrepancy analysis. The primary key is
     * the context, the secondary key is the variable id, the mapped value is
     * the base address
     */
-   std::unordered_map<uint64_t, std::unordered_map<unsigned int, uint64_t>> c_addr_map;
+   CustomUnorderedMap<uint64_t, CustomUnorderedMapStable<unsigned int, uint64_t>> c_addr_map;
 
    /**
     * Maps every call context in the discrepancy trace to the corresponding
     * scope in the generated HW.
     */
-   std::unordered_map<uint64_t, std::string> context_to_scope;
+   CustomUnorderedMap<uint64_t, std::string> context_to_scope;
 
    /// name of the file that contains the c trace to parse
    std::string c_trace_filename;

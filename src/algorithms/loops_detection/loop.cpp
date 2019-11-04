@@ -153,7 +153,7 @@ size_t Loop::num_blocks() const
    return blocks.size();
 }
 
-const std::unordered_set<vertex>& Loop::get_blocks() const
+const CustomUnorderedSet<vertex>& Loop::get_blocks() const
 {
    return blocks;
 }
@@ -178,14 +178,14 @@ size_t Loop::num_landing_pads() const
    return landing_pads.size();
 }
 
-const std::unordered_set<vertex> Loop::GetLandingPadBlocks() const
+const CustomUnorderedSet<vertex> Loop::GetLandingPadBlocks() const
 {
    return landing_pads;
 }
 
 vertex Loop::primary_landing_pad() const
 {
-   std::unordered_set<vertex>::const_iterator lp_iter, lp_end = landing_pads.end();
+   CustomUnorderedSet<vertex>::const_iterator lp_iter, lp_end = landing_pads.end();
    vertex candidate = NULL_VERTEX;
    bool first = true;
    for(lp_iter = landing_pads.begin(); lp_iter != lp_end; ++lp_iter)
@@ -242,10 +242,10 @@ void Loop::ComputeLandingPadExits()
    exits.clear();
    landing_pads.clear();
 
-   std::unordered_set<vertex> belonging;
+   CustomUnorderedSet<vertex> belonging;
    get_recursively_bb(belonging);
 
-   std::unordered_set<vertex>::iterator source, source_end;
+   CustomUnorderedSet<vertex>::iterator source, source_end;
    source_end = belonging.end();
    for(source = belonging.begin(); source != source_end; ++source)
    {
@@ -279,10 +279,10 @@ void Loop::AddChild(LoopRef child)
    children.insert(child);
 }
 
-void Loop::get_recursively_bb(std::unordered_set<vertex>& ret) const
+void Loop::get_recursively_bb(CustomUnorderedSet<vertex>& ret) const
 {
    ret.insert(blocks.begin(), blocks.end());
-   std::set<LoopConstRef>::const_iterator child, child_end = children.end();
+   CustomOrderedSet<LoopConstRef>::const_iterator child, child_end = children.end();
    for(child = children.begin(); child != child_end; ++child)
       (*child)->get_recursively_bb(ret);
 }
@@ -291,9 +291,9 @@ OpVertexSet Loop::GetRecursivelyOps(const OpGraphConstRef op_graph) const
 {
    THROW_ASSERT(boost::num_vertices(*op_graph), "Operation graph not yet built");
    OpVertexSet ret(op_graph);
-   std::unordered_set<vertex> bb_vertices;
+   CustomUnorderedSet<vertex> bb_vertices;
    get_recursively_bb(bb_vertices);
-   std::unordered_set<vertex>::const_iterator it, it_end = bb_vertices.end();
+   CustomUnorderedSet<vertex>::const_iterator it, it_end = bb_vertices.end();
    for(it = bb_vertices.begin(); it != it_end; ++it)
    {
       const BBNodeInfoConstRef bb_node_info = g->CGetBBNodeInfo(*it);
@@ -302,12 +302,12 @@ OpVertexSet Loop::GetRecursivelyOps(const OpGraphConstRef op_graph) const
    return ret;
 }
 
-const std::map<vertex, std::unordered_set<vertex>>& Loop::get_exit_landing_association() const
+const std::map<vertex, CustomUnorderedSet<vertex>>& Loop::get_exit_landing_association() const
 {
    return exit_landing_association;
 }
 
-const std::set<LoopConstRef>& Loop::GetChildren() const
+const CustomOrderedSet<LoopConstRef>& Loop::GetChildren() const
 {
    return children;
 }

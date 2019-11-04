@@ -63,7 +63,7 @@
 #include "hls_manager.hpp"
 
 /// STL includes
-#include <unordered_set>
+#include "custom_set.hpp"
 #include <utility>
 
 /// tree include
@@ -84,9 +84,9 @@ use_counting::use_counting(const ParameterConstRef _parameters, const applicatio
 
 use_counting::~use_counting() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> use_counting::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> use_counting::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -169,7 +169,7 @@ DesignFlowStep_Status use_counting::InternalExec()
       for(auto statement_node : it->second->CGetStmtList())
       {
          /// [breadshe] This set contains the ssa_name nodes "used" by the statement
-         std::set<tree_nodeRef> ssa_uses;
+         CustomOrderedSet<tree_nodeRef> ssa_uses;
          analyze_node(statement_node, ssa_uses);
          /// [breadshe] Add current statement to the use_stmts corresponding to the ssa_name nodes contained in ssa_uses
          for(const auto& ssa_use : ssa_uses)
@@ -180,7 +180,7 @@ DesignFlowStep_Status use_counting::InternalExec()
       }
       for(auto phi_node : it->second->CGetPhiList())
       {
-         std::set<tree_nodeRef> ssa_uses;
+         CustomOrderedSet<tree_nodeRef> ssa_uses;
          analyze_node(phi_node, ssa_uses);
          for(const auto& ssa_use : ssa_uses)
          {
@@ -196,7 +196,7 @@ DesignFlowStep_Status use_counting::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-void use_counting::analyze_node(tree_nodeRef& tn, std::set<tree_nodeRef>& ssa_uses)
+void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>& ssa_uses)
 {
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing node " + tn->ToString());
@@ -375,12 +375,14 @@ void use_counting::analyze_node(tree_nodeRef& tn, std::set<tree_nodeRef>& ssa_us
       case tree_list_K:
       {
          auto* tl = GetPointer<tree_list>(curr_tn);
-         if(tl->purp)
-            analyze_node(tl->purp, ssa_uses);
-         if(tl->valu)
-            analyze_node(tl->valu, ssa_uses);
-         if(tl->chan)
-            analyze_node(tl->chan, ssa_uses);
+         while(tl)
+         {
+            if(tl->purp)
+               analyze_node(tl->purp, ssa_uses);
+            if(tl->valu)
+               analyze_node(tl->valu, ssa_uses);
+            tl = tl->chan ? GetPointer<tree_list>(GET_NODE(tl->chan)) : nullptr;
+         }
          break;
       }
       case gimple_multi_way_if_K:

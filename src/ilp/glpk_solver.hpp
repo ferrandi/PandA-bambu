@@ -46,9 +46,9 @@
 #ifndef GLPK_SOLVER_HPP
 #define GLPK_SOLVER_HPP
 
+#include "custom_map.hpp"
+#include "meilp_solver.hpp"
 #include <iosfwd>
-#include <map>
-#include <meilp_solver.hpp>
 #include <string>
 
 #include "config_HAVE_GLPK.hpp"

@@ -181,7 +181,7 @@ void memory::add_internal_variable_proxy(unsigned int funID_scope, unsigned int 
    proxied_variables.insert(var);
 }
 
-const std::set<unsigned int>& memory::get_proxied_internal_variables(unsigned int funID_scope) const
+const CustomOrderedSet<unsigned int>& memory::get_proxied_internal_variables(unsigned int funID_scope) const
 {
    THROW_ASSERT(has_proxied_internal_variables(funID_scope), "No proxy variables for " + STR(funID_scope));
    return internal_variable_proxy.find(funID_scope)->second;
@@ -455,7 +455,7 @@ unsigned int memory::get_first_address(unsigned int funId) const
 
 unsigned int memory::get_last_address(unsigned int funId, const application_managerRef AppMgr) const
 {
-   const std::set<unsigned int> calledSet = AppMgr->CGetCallGraphManager()->get_called_by(funId);
+   const CustomOrderedSet<unsigned int> calledSet = AppMgr->CGetCallGraphManager()->get_called_by(funId);
    const std::map<unsigned int, memory_symbolRef>& internalVars = (internal.find(funId)->second);
    unsigned int maxAddress = 0;
    for(const auto& internalVar : internalVars)

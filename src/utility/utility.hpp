@@ -34,7 +34,6 @@
  * @file utility.hpp
  * @brief This file collects some utility functions and macros.
  *
- *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * @author Christian Pilato <pilato@elet.polimi.it>
@@ -46,8 +45,6 @@
 #include "config_HAVE_ASSERTS.hpp"
 
 #include <boost/concept/usage.hpp>
-#include <boost/date_time.hpp>
-#include <boost/date_time/posix_time/ptime.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/lexical_cast.hpp>
 #include <cstdlib>
@@ -249,17 +246,13 @@ void ShuffleVector(typename std::vector<T>& shuffle, const unsigned int seed)
 }
 
 /// The type used for timestamp
-struct TimeStamp : public boost::posix_time::ptime
+struct TimeStamp
 {
+   std::string timestamp;
    /**
     * Empty constructor: timestamp is set to 01-01-1970 00.00
     */
    TimeStamp();
-
-   /**
-    * Super class constructor
-    */
-   explicit TimeStamp(boost::posix_time::ptime timestamp);
 
    /**
     * Constructor from string
@@ -270,7 +263,7 @@ struct TimeStamp : public boost::posix_time::ptime
    /**
     * Return a timestamp of the current time
     */
-   static TimeStamp GetCurrentTimeStamp();
+   static std::string GetCurrentTimeStamp();
 
    /**
     * Friend definition of the << operator.
@@ -278,5 +271,7 @@ struct TimeStamp : public boost::posix_time::ptime
     * @param timestamp is the timestamp to be printed
     */
    friend std::ostream& operator<<(std::ostream& os, const TimeStamp& timestamp);
+
+   friend bool operator<=(const TimeStamp& timestamp1, const TimeStamp& timestamp2);
 };
 #endif

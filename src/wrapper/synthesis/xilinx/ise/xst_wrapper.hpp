@@ -55,7 +55,7 @@ REF_FORWARD_DECL(area_model);
 REF_FORWARD_DECL(time_model);
 class xml_element;
 
-#include <map>
+#include "custom_map.hpp"
 #include <string>
 #include <vector>
 

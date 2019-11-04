@@ -62,9 +62,9 @@ OpCdgComputation::OpCdgComputation(const ParameterConstRef _Param, const applica
 
 OpCdgComputation::~OpCdgComputation() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> OpCdgComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> OpCdgComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):

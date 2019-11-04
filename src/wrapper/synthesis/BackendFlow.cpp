@@ -122,6 +122,8 @@
 #include "cpu_time.hpp"
 #include "fileIO.hpp"
 
+#include <boost/algorithm/string/case_conv.hpp>
+
 #if HAVE_IPXACT_BUILT
 void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_PARAMETER(Param), const std::string& xml_file)
 {
@@ -549,7 +551,7 @@ std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->creating scripts for module \"" + dp->component_name + "\" on chain \"" + dp->chain_name + "\"");
 
-   std::set<std::string> module_undefined_parameters = undefined_parameters;
+   CustomOrderedSet<std::string> module_undefined_parameters = undefined_parameters;
    DesignParametersRef exec_params = default_flow_parameters->clone();
    exec_params->component_name = dp->component_name;
    THROW_ASSERT(exec_params->chain_name == dp->chain_name, "Mismatching!! exec = \"" + exec_params->chain_name + "\" vs. dp = \"" + dp->chain_name + "\"");
@@ -633,7 +635,7 @@ std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
    return generated_synthesis_script;
 }
 
-void BackendFlow::set_initial_parameters(const DesignParametersRef& _flow_parameters, const std::set<std::string>& _undefined_parameters)
+void BackendFlow::set_initial_parameters(const DesignParametersRef& _flow_parameters, const CustomOrderedSet<std::string>& _undefined_parameters)
 {
    default_flow_parameters = _flow_parameters;
    undefined_parameters = _undefined_parameters;
@@ -668,7 +670,7 @@ BackendFlowRef BackendFlow::xload_generator_chain(const ParameterConstRef, const
    std::string chain_name;
 
    DesignParametersRef params(new DesignParameters);
-   std::set<std::string> undefined_parameters;
+   CustomOrderedSet<std::string> undefined_parameters;
 
    if (!boost::filesystem::exists(xml_file)) THROW_ERROR("File \"" + xml_file + "\" does not exist!");
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->parsing of generator_chain " + xml_file);

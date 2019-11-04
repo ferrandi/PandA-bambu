@@ -62,9 +62,7 @@
 #include "string_manipulation.hpp"
 #include "utility.hpp"
 
-BitLatticeManipulator::BitLatticeManipulator(const tree_managerConstRef _TM, const int _bl_debug_level) :
-   TM(_TM),
-   bl_debug_level(_bl_debug_level)
+BitLatticeManipulator::BitLatticeManipulator(const tree_managerConstRef _TM, const int _bl_debug_level) : TM(_TM), bl_debug_level(_bl_debug_level)
 {
 }
 

@@ -268,7 +268,7 @@
 #include <string>
 
 /// STL includes
-#include <unordered_set>
+#include "custom_set.hpp"
 #include <utility>
 
 /// tree include
@@ -862,7 +862,7 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
    return design_flow_step;
 }
 
-const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unordered_set<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>>& hls_flow_steps) const
+const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const CustomUnorderedSet<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>>& hls_flow_steps) const
 {
    const CallGraphManagerConstRef call_graph_manager = HLS_mgr->CGetCallGraphManager();
    DesignFlowStepSet ret;
@@ -1050,7 +1050,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
 
 const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>& hls_flow_step) const
 {
-   std::unordered_set<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>> hls_flow_steps;
+   CustomUnorderedSet<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>> hls_flow_steps;
    hls_flow_steps.insert(hls_flow_step);
    return CreateHLSFlowSteps(hls_flow_steps);
 }

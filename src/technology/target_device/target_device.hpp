@@ -56,7 +56,7 @@ REF_FORWARD_DECL(technology_manager);
 REF_FORWARD_DECL(BackendFlow);
 class xml_element;
 
-#include <map>
+#include "custom_map.hpp"
 
 #include "exceptions.hpp"
 

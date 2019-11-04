@@ -75,16 +75,16 @@ LoopsAnalysisBambu::LoopsAnalysisBambu(const ParameterConstRef _parameters, cons
 
 LoopsAnalysisBambu::~LoopsAnalysisBambu() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> LoopsAnalysisBambu::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> LoopsAnalysisBambu::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DOM_POST_DOM_COMPUTATION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LOOPS_IDENTIFICATION, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LOOPS_COMPUTATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
          const auto is_simd = [&]() -> bool {
             const auto sl = GetPointer<const statement_list>(GET_NODE(GetPointer<const function_decl>(AppM->get_tree_manager()->CGetTreeNode(function_id))->body));

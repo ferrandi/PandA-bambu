@@ -46,8 +46,8 @@
 #ifndef TOKEN_INTEFACE_HPP
 #define TOKEN_INTEFACE_HPP
 
+#include "custom_map.hpp"
 #include <cstring>
-#include <map>
 #include <string>
 
 enum class TreeVocabularyTokenTypes_TokenEnum

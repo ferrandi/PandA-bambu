@@ -42,8 +42,8 @@
  */
 #ifndef NP_FUNCTIONALITY_HPP
 #define NP_FUNCTIONALITY_HPP
+#include "custom_map.hpp"
 #include "refcount.hpp"
-#include <map>
 #include <ostream>
 #include <string>
 #include <vector>

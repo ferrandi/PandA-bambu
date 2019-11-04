@@ -49,6 +49,7 @@
 #include "custom_set.hpp"
 #include "hash_helper.hpp"
 #include "utility.hpp"
+#include <set>
 
 CONSTREF_FORWARD_DECL(AllocationInformation);
 class bb_vertex_order_by_map;
@@ -149,7 +150,7 @@ class SDCScheduling : public Scheduling
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /// Result of SPECULATIVE_LOOP: the list of movement to be performed (first element is the operation, second element is the old basic block, third element is the new basic block)

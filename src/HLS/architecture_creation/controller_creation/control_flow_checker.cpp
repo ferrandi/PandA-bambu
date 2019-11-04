@@ -56,14 +56,12 @@
 #include "state_transition_graph_manager.hpp"
 
 /// STD include
-#include <string>
-
-/// STL include
 #include <algorithm>
-#include <map>
-#include <set>
+#include <string>
 #include <tuple>
-#include <unordered_set>
+
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 // include from  tree/
 #include "behavioral_helper.hpp"
@@ -72,6 +70,7 @@
 #include "Parameter.hpp"
 #include "copyrights_strings.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
+#include <boost/algorithm/string/case_conv.hpp>
 
 ControlFlowChecker::ControlFlowChecker(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
     : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::CONTROL_FLOW_CHECKER)
@@ -83,9 +82,9 @@ ControlFlowChecker::~ControlFlowChecker()
 {
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ControlFlowChecker::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ControlFlowChecker::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -386,7 +385,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
              epp_val_string(0) + ";\n\n";
 
    std::map<unsigned int, std::map<unsigned int, size_t>> present_to_next_to_increment;
-   std::map<unsigned int, std::map<size_t, std::set<unsigned int>>> next_to_resetval_to_present;
+   std::map<unsigned int, std::map<size_t, CustomOrderedSet<unsigned int>>> next_to_resetval_to_present;
    {
       const auto& astg = STG->CGetAstg();
       BOOST_FOREACH(EdgeDescriptor e, boost::edges(*astg))

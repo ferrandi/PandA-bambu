@@ -158,12 +158,27 @@
 #include "gcc_wrapper.hpp"
 
 /// Boost include
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/range/adaptor/reversed.hpp>
 
 #if HAVE_UNORDERED
-/// std::unordered_set cannot be used because of hash function
-class TreeNodesPairSet : public std::set<std::pair<tree_nodeRef, tree_nodeRef>>
+#include <boost/functional/hash/hash.hpp>
+
+/// Hash function for std::pair<tree_nodeRef, tree_nodeRef>
+namespace std
+{
+   template <>
+   struct hash<std::pair<tree_nodeRef, tree_nodeRef>> : public std::unary_function<std::pair<tree_nodeRef, tree_nodeRef>, std::size_t>
+   {
+      std::size_t operator()(const std::pair<tree_nodeRef, tree_nodeRef>& val) const
+      {
+         std::size_t hash_value = 0;
+         boost::hash_combine(hash_value, val.first);
+         boost::hash_combine(hash_value, val.second);
+         return hash_value;
+      }
+   };
+} // namespace std
+class TreeNodesPairSet : public CustomUnorderedSet<std::pair<tree_nodeRef, tree_nodeRef>>
 {
 };
 #else
@@ -188,7 +203,7 @@ class TreeNodesPairSorter : public std::binary_function<std::pair<tree_nodeRef, 
       }
    }
 };
-class TreeNodesPairSet : public std::set<std::pair<tree_nodeRef, tree_nodeRef>, TreeNodesPairSorter>
+class TreeNodesPairSet : public OrderedSetStd<std::pair<tree_nodeRef, tree_nodeRef>, TreeNodesPairSorter>
 {
 };
 #endif
@@ -316,10 +331,10 @@ void CWriter::declare_cast_types(unsigned int funId, CustomSet<std::string>& loc
       const unsigned int index = inGraph->CGetOpNodeInfo(*v)->GetNodeId();
       if(index != ENTRY_ID and index != EXIT_ID)
       {
-         std::unordered_set<unsigned int> types;
+         CustomUnorderedSet<unsigned int> types;
          behavioral_helper->get_typecast(index, types);
-         std::unordered_set<unsigned int>::const_iterator t_it_end = types.end();
-         for(std::unordered_set<unsigned int>::const_iterator t_it = types.begin(); t_it != t_it_end; ++t_it)
+         CustomUnorderedSet<unsigned int>::const_iterator t_it_end = types.end();
+         for(CustomUnorderedSet<unsigned int>::const_iterator t_it = types.begin(); t_it != t_it_end; ++t_it)
          {
             DeclareType(*t_it, behavioral_helper, locally_declared_types);
          }
@@ -394,7 +409,7 @@ void CWriter::WriteGlobalDeclarations()
    instrWriter->write_declarations();
 
    /// Writing declarations of global variables
-   std::set<unsigned int> functions = AppM->get_functions_with_body();
+   CustomOrderedSet<unsigned int> functions = AppM->get_functions_with_body();
    THROW_ASSERT(functions.size() > 0, "at least one function is expected");
    unsigned int first_fun = *functions.begin();
    const BehavioralHelperConstRef behavioral_helper = AppM->CGetFunctionBehavior(first_fun)->CGetBehavioralHelper();
@@ -425,8 +440,8 @@ void CWriter::DeclareFunctionTypes(const unsigned int funId)
    // In case the function parameters are of a non built_in type I have
    // to declare their type
 
-   const std::unordered_set<unsigned int> parameter_types = behavioral_helper->GetParameterTypes();
-   std::unordered_set<unsigned int>::const_iterator parameter_type, parameter_type_end = parameter_types.end();
+   const CustomUnorderedSet<unsigned int> parameter_types = behavioral_helper->GetParameterTypes();
+   CustomUnorderedSet<unsigned int>::const_iterator parameter_type, parameter_type_end = parameter_types.end();
    for(parameter_type = parameter_types.begin(); parameter_type != parameter_type_end; ++parameter_type)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Parameter type " + STR(*parameter_type));
@@ -904,8 +919,8 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
                const unsigned int bb_number_next_bb = next_bb_node_info->block->number;
 #endif
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Examining successor " + STR(bb_number_next_bb));
-               std::set<unsigned int>::const_iterator eIdBeg, eIdEnd;
-               std::set<unsigned int> Set = local_rec_bb_fcfgGraph->CGetBBEdgeInfo(*oE)->get_labels(CFG_SELECTOR);
+               CustomOrderedSet<unsigned int>::const_iterator eIdBeg, eIdEnd;
+               CustomOrderedSet<unsigned int> Set = local_rec_bb_fcfgGraph->CGetBBEdgeInfo(*oE)->get_labels(CFG_SELECTOR);
                for(eIdBeg = Set.begin(), eIdEnd = Set.end(); eIdBeg != eIdEnd; ++eIdBeg)
                {
                   if(*eIdBeg == default_COND)
@@ -1116,7 +1131,7 @@ void CWriter::compute_phi_nodes(const FunctionBehaviorConstRef function_behavior
    }
 }
 
-void CWriter::writeRoutineInstructions(const unsigned int function_index, const OpVertexSet& instructions, var_pp_functorConstRef variableFunctor, vertex bb_start, std::set<vertex> bb_end)
+void CWriter::writeRoutineInstructions(const unsigned int function_index, const OpVertexSet& instructions, var_pp_functorConstRef variableFunctor, vertex bb_start, CustomOrderedSet<vertex> bb_end)
 {
    bb_label_counter++;
    const FunctionBehaviorConstRef function_behavior = AppM->CGetFunctionBehavior(function_index);
@@ -1141,7 +1156,7 @@ void CWriter::writeRoutineInstructions(const unsigned int function_index, const 
    basic_blocks_labels.clear();
    VertexIterator vi, vi_end;
    vertex bbentry;
-   std::set<vertex> bb_exit;
+   CustomOrderedSet<vertex> bb_exit;
 
    if(!bb_start)
       bbentry = bb_fcfgGraph->CGetBBGraphInfo()->entry_vertex;
@@ -1206,7 +1221,7 @@ void CWriter::writeRoutineInstructions(const unsigned int function_index, const 
          }
       }
    }
-   std::set<vertex> not_yet_considered;
+   CustomOrderedSet<vertex> not_yet_considered;
    std::set_difference(goto_list.begin(), goto_list.end(),     /*first set*/
                        bb_analyzed.begin(), bb_analyzed.end(), /*second set*/
                        std::inserter(not_yet_considered, not_yet_considered.begin()) /*result*/);
@@ -1256,7 +1271,7 @@ void CWriter::DeclareType(unsigned int varType, const BehavioralHelperConstRef b
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Type has not to be declared since it is declared in included " + decl);
          return;
       }
-      const std::unordered_set<unsigned int> types_to_be_declared_before = tree_helper::GetTypesToBeDeclaredBefore(TM, real_var_type, without_transformation);
+      const CustomUnorderedSet<unsigned int> types_to_be_declared_before = tree_helper::GetTypesToBeDeclaredBefore(TM, real_var_type, without_transformation);
       for(const auto type_to_be_declared : types_to_be_declared_before)
       {
          DeclareType(type_to_be_declared, behavioral_helper, locally_declared_types);
@@ -1269,7 +1284,7 @@ void CWriter::DeclareType(unsigned int varType, const BehavioralHelperConstRef b
          }
          indented_output_stream->Append(behavioral_helper->print_type_declaration(real_var_type) + ";\n");
       }
-      const std::unordered_set<unsigned int> types_to_be_declared_after = tree_helper::GetTypesToBeDeclaredAfter(TM, real_var_type, without_transformation);
+      const CustomUnorderedSet<unsigned int> types_to_be_declared_after = tree_helper::GetTypesToBeDeclaredAfter(TM, real_var_type, without_transformation);
       for(const auto type_to_be_declared : types_to_be_declared_after)
       {
          DeclareType(type_to_be_declared, behavioral_helper, locally_declared_types);
@@ -1285,8 +1300,8 @@ void CWriter::DeclareVariable(unsigned int curVar, CustomSet<unsigned int>& alre
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Declaring variable (" + STR(curVar) + ") " + behavioral_helper->PrintVariable(curVar));
    already_declared_variables.insert(curVar);
 
-   std::unordered_set<unsigned int> initVars;
-   std::unordered_set<unsigned int>::const_iterator initVarsIter, initVarsIterEnd;
+   CustomUnorderedSet<unsigned int> initVars;
+   CustomUnorderedSet<unsigned int>::const_iterator initVarsIter, initVarsIterEnd;
    if(behavioral_helper->GetInit(curVar, initVars))
    {
       for(initVarsIter = initVars.begin(), initVarsIterEnd = initVars.end(); initVarsIter != initVarsIterEnd; ++initVarsIter)
@@ -1403,7 +1418,7 @@ void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const
 
    TreeNodesPairSet copy_set, worklist;
    std::map<unsigned int, unsigned int> map;
-   std::set<unsigned int> used_by_another;
+   CustomOrderedSet<unsigned int> used_by_another;
    std::map<unsigned int, unsigned int> bb_dest_definition;
    OutEdgeIterator oi, oend;
    for(boost::tie(oi, oend) = boost::out_edges(b, *bb_fcfgGraph); oi != oend; ++oi)

@@ -50,7 +50,7 @@
 #include "graph.hpp"
 
 /// STL include
-#include <map>
+#include "custom_map.hpp"
 
 /// technology/target_device include
 #include "target_device.hpp"

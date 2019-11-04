@@ -60,7 +60,7 @@
 /**
  * Function which splits a string into tokens
  * @param input is the string to be split
- * @param seperators is the set of characters to be used to compute the tokens
+ * @param separators is the set of characters to be used to compute the tokens
  * @return the identified tokens
  */
 const std::vector<std::string> SplitString(const std::string& input, const std::string& separators);

@@ -1,0 +1,66 @@
+noinst_LTLIBRARIES += lib_behavior.la
+
+lib_behavior_la_CPPFLAGS = \
+   -I$(top_srcdir)/src \
+   -I$(top_srcdir)/src/algorithms/dominance \
+   -I$(top_srcdir)/src/algorithms/loops_detection \
+   -I$(top_srcdir)/src/behavior \
+   -I$(top_srcdir)/src/constants \
+   -I$(top_srcdir)/src/graph \
+   -I$(top_srcdir)/src/parser/polixml \
+   -I$(top_srcdir)/src/polixml \
+   -I$(top_srcdir)/src/tree \
+   -I$(top_srcdir)/src/utility \
+   -I$(top_srcdir)/src/wrapper/treegcc \
+   $(AM_CPPFLAGS)
+
+noinst_HEADERS += \
+   behavior/application_manager.hpp \
+   behavior/call_graph.hpp behavior/call_graph_manager.hpp behavior/function_behavior.hpp behavior/basic_block.hpp \
+   behavior/behavioral_writer_helper.hpp behavior/basic_blocks_graph_constructor.hpp behavior/level_constructor.hpp behavior/operations_graph_constructor.hpp \
+   behavior/op_graph.hpp behavior/cdfg_edge_info.hpp
+
+lib_behavior_la_SOURCES = \
+   behavior/application_manager.cpp \
+   behavior/call_graph.cpp behavior/call_graph_manager.cpp behavior/function_behavior.cpp behavior/basic_block.cpp \
+   behavior/behavioral_writer_helper.cpp behavior/basic_blocks_graph_constructor.cpp behavior/level_constructor.cpp behavior/operations_graph_constructor.cpp \
+   behavior/op_graph.cpp behavior/cdfg_edge_info.cpp
+
+if BUILD_BAMBU
+   lib_behavior_la_CPPFLAGS += \
+      -I$(top_srcdir)/src/HLS \
+      -I$(top_srcdir)/src/HLS/module_allocation \
+      -I$(top_srcdir)/src/HLS/scheduling \
+      -I$(top_srcdir)/src/HLS/vcd \
+      -I$(top_srcdir)/src/intermediate_representations \
+      -I$(top_srcdir)/src/intermediate_representations/hls \
+      -I$(top_srcdir)/src/parser/discrepancy
+endif
+
+if BUILD_LIB_CODE_ESTIMATION
+   lib_behavior_la_CPPFLAGS += \
+      -I$(top_srcdir)/src/design_flows/codesign/estimation
+endif
+
+if BUILD_LIB_HOST_PROFILING
+   lib_behavior_la_SOURCES += behavior/profiling_information.cpp
+   noinst_HEADERS += behavior/profiling_information.hpp
+endif
+
+if BUILD_LIB_MAPPING
+   lib_behavior_la_CPPFLAGS += \
+      -I$(top_srcdir)/src/machine
+endif
+
+if BUILD_LIB_PRAGMA
+   lib_behavior_la_CPPFLAGS += \
+      -I$(top_srcdir)/src/pragma
+endif
+
+if USE_SOURCE_CODE_STATISTICS_XML
+   lib_behavior_la_CPPFLAGS += \
+      -I$(top_srcdir)/src/constants
+endif
+
+PRJ_DOC += behavior/behavior.doc
+

@@ -59,10 +59,10 @@
 #include <string>
 
 /// STL includes
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <list>
-#include <map>
 #include <tuple>
-#include <unordered_set>
 #include <vector>
 
 /// tree include
@@ -250,9 +250,9 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
    return;
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> TestbenchMemoryAllocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> TestbenchMemoryAllocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:

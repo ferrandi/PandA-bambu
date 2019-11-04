@@ -1,0 +1,19 @@
+EXTRA_DIST +=\
+   %D%/spec.c\
+   %D%/bambu_altera.sh\
+   %D%/bambu_altera_N1.sh\
+   %D%/bambu_altera_NN.sh\
+   %D%/bambu_lattice.sh\
+   %D%/bambu_lattice_N1.sh\
+   %D%/bambu_lattice_NN.sh\
+   %D%/bambu_xilinx.sh\
+   %D%/bambu_xilinx_N1.sh\
+   %D%/bambu_xilinx_NN.sh\
+   %D%/bambu_yosys.sh\
+   %D%/bambu_yosys_N1.sh\
+   %D%/bambu_yosys_NN.sh\
+   %D%/test_icrc.xml\
+   %D%/test.xml\
+   %D%/README.txt
+
+

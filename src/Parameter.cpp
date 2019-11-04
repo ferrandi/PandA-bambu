@@ -1727,9 +1727,9 @@ Parameters_FileFormat Parameter::getOption(const enum enum_option name) const
 
 #if HAVE_CODE_ESTIMATION_BUILT
 template <>
-std::unordered_set<ActorGraphEstimator_Algorithm> Parameter::getOption(const enum enum_option name) const
+CustomUnorderedSet<ActorGraphEstimator_Algorithm> Parameter::getOption(const enum enum_option name) const
 {
-   std::unordered_set<ActorGraphEstimator_Algorithm> return_value;
+   CustomUnorderedSet<ActorGraphEstimator_Algorithm> return_value;
    const std::string temp = getOption<std::string>(name);
 
    std::vector<std::string> splitted = SplitString(temp, ",");

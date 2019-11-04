@@ -46,10 +46,10 @@
 
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 
+#include "custom_map.hpp"                 // for _Rb_tree_const_iterator
 #include <boost/lexical_cast.hpp>         // for lexical_cast
 #include <boost/smart_ptr/shared_ptr.hpp> // for shared_ptr
 #include <list>                           // for list
-#include <map>                            // for _Rb_tree_const_iterator
 #include <string>                         // for string, operator<<
 #include <utility>                        // for pair
 #if HAVE_HLS_BUILT
@@ -80,7 +80,7 @@
 #include "typed_node_info.hpp" // for GET_TYPE, GET_NAME
 #include "var_pp_functor.hpp"  // for std_var_pp_functor
 
-BBWriter::BBWriter(const BBGraph* _g, std::unordered_set<vertex> _annotated)
+BBWriter::BBWriter(const BBGraph* _g, CustomUnorderedSet<vertex> _annotated)
     : VertexWriter(_g, 0),
       function_behavior(_g->CGetBBGraphInfo()->AppM->CGetFunctionBehavior(_g->CGetBBGraphInfo()->function_index)),
       helper(function_behavior->CGetBehavioralHelper()),

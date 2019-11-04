@@ -550,7 +550,7 @@ void ASLAP::compute_ALAP_worst_case()
 
 ControlStep ASLAP::GetCycleLatency(const vertex operation, Allocation_MinMax minmax) const
 {
-   const std::set<unsigned int>& fu_set = allocation_information->can_implement_set(operation);
+   const CustomOrderedSet<unsigned int>& fu_set = allocation_information->can_implement_set(operation);
    double execution_time = allocation_information->get_attribute_of_fu_per_op(operation, beh_graph, minmax, AllocationInformation::execution_time);
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, GET_NAME(beh_graph, operation) + " - ex=" + STR(execution_time));
    if(execution_time > 0.0)

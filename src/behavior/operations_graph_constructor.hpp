@@ -46,8 +46,8 @@
 
 /// Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
-#include <map>    // for map
-#include <string> // for string
+#include "custom_map.hpp" // for map
+#include <string>         // for string
 
 #include "graph.hpp"
 #include "refcount.hpp"
@@ -118,6 +118,11 @@ class operations_graph_constructor
     * @param selector is the selector to be removed
     */
    void RemoveSelector(const EdgeDescriptor edge, const int selector);
+
+   /**
+    * Remove all redundant edges
+    */
+   void CompressEdges();
 
    /**
     * Remove all vertices and edges

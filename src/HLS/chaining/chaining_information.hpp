@@ -67,7 +67,7 @@ class ChainingInformation
    ChainingSetRef chaining_relation;
 
    /// set of vertices chained with something
-   std::set<vertex> is_chained_with;
+   CustomOrderedSet<vertex> is_chained_with;
 
    /// The HLS manager
    const Wrefcount<const HLS_manager> HLS_mgr;

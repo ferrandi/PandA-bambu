@@ -60,13 +60,12 @@
 #include "hls_function_step.hpp"
 #include "hls_manager.hpp"
 
-/// STL includes
-#include <tuple>
-#include <unordered_set>
-
 /// . utility includes
 #include "custom_set.hpp"
 #include "utility.hpp"
+
+/// STL includes
+#include <tuple>
 
 HLSBitValue::HLSBitValue(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::HLS_BIT_VALUE, HLSFlowStepSpecializationConstRef())
@@ -103,8 +102,8 @@ void HLSBitValue::ComputeRelationships(DesignFlowStepSet& relationship, const De
             vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE_IPA));
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
             const DesignFlowStepRef design_flow_step = frontend_step != NULL_VERTEX ?
-               design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step :
-               GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateApplicationFrontendFlowStep(FrontendFlowStepType::BIT_VALUE_IPA);
+                                                           design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step :
+                                                           GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateApplicationFrontendFlowStep(FrontendFlowStepType::BIT_VALUE_IPA);
             relationship.insert(design_flow_step);
          }
       }
@@ -115,8 +114,8 @@ void HLSBitValue::ComputeRelationships(DesignFlowStepSet& relationship, const De
             vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE_OPT, changed_function));
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
             const DesignFlowStepRef design_flow_step = frontend_step != NULL_VERTEX ?
-               design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step :
-               GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE_OPT, changed_function);
+                                                           design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step :
+                                                           GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE_OPT, changed_function);
             relationship.insert(design_flow_step);
          }
       }
@@ -124,9 +123,9 @@ void HLSBitValue::ComputeRelationships(DesignFlowStepSet& relationship, const De
    HLS_step::ComputeRelationships(relationship, relationship_type);
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> HLSBitValue::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> HLSBitValue::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:

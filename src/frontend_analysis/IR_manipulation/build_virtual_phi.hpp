@@ -67,16 +67,16 @@ class BuildVirtualPhi : public FunctionFrontendFlowStep
    BBGraphRef basic_block_graph;
 
    /// Cache of created phi - first key is the used ssa - second key is the basic block where is created
-   TreeNodeMap<CustomMap<vertex, tree_nodeRef>> added_phis;
+   TreeNodeMap<CustomUnorderedMapStable<vertex, tree_nodeRef>> added_phis;
 
    /// Cache of reaching defs - first key is the used ssa - second key is the basic block to be considered
-   TreeNodeMap<CustomMap<vertex, tree_nodeRef>> reaching_defs;
+   TreeNodeMap<CustomUnorderedMapStable<vertex, tree_nodeRef>> reaching_defs;
 
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**

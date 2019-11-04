@@ -64,6 +64,9 @@
 /// bitcode LLVM temporary file
 #define STR_CST_llvm_obj_file "run-%%%%-%%%%-%%%%-%%%%.bc"
 
+/// concatenated C temporary file
+#define STR_CST_concat_c_file ".concat-%%%%-%%%%-%%%%-%%%%.c"
+
 /// The file where output messages of gcc are saved
 #define STR_CST_gcc_output "__gcc_output"
 

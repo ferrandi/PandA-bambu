@@ -1,7 +1,6 @@
-#this file is src/Makefile.am
 METASOURCES = AUTO
-
-AM_CPPFLAGS = $(all_includes) -I$(BOOST_DIR)
+AUTOMAKE_OPTIONS = subdir-objects
+AM_CPPFLAGS = $(all_includes) -I$(BOOST_DIR) -I$(ABSEIL_DIR)
 AM_LDFLAGS += $(BOOST_LDFLAGS)
 
 # main list of binary produced
@@ -29,14 +28,15 @@ revision_hash.hpp :
 
 endif
 
-SUBDIRS = constants
-DIST_SUBDIRS = constants
-
+SUBDIRS = 
+DIST_SUBDIRS =
+EXTRA_DIST =
 PRJ_DOC = src.doc
 
+include $(top_srcdir)/src/constants/constants.am
+
 if BUILD_LIB_ALGORITHMS
-  SUBDIRS += algorithms
-  DIST_SUBDIRS += algorithms
+include $(top_srcdir)/src/algorithms/algorithms.am
 endif
 
 if BUILD_LIB_BDD
@@ -45,13 +45,11 @@ if BUILD_LIB_BDD
 endif
 
 if BUILD_LIB_BEHAVIOR
-  SUBDIRS += behavior
-  DIST_SUBDIRS += behavior
+include $(top_srcdir)/src/behavior/behavior.am
 endif
 
 if BUILD_LIB_CIRCUIT
-  SUBDIRS += circuit
-  DIST_SUBDIRS += circuit
+include $(top_srcdir)/src/circuit/circuit.am
 endif
 
 if BUILD_LIB_DESIGN_ANALYSIS
@@ -60,18 +58,15 @@ if BUILD_LIB_DESIGN_ANALYSIS
 endif
 
 if BUILD_LIB_DESIGN_FLOWS
-  SUBDIRS += design_flows
-  DIST_SUBDIRS += design_flows
+include $(top_srcdir)/src/design_flows/design_flows.am
 endif
 
 if BUILD_LIB_FRONTEND_ANALYSIS
-  SUBDIRS += frontend_analysis
-  DIST_SUBDIRS += frontend_analysis
+include $(top_srcdir)/src/frontend_analysis/frontend_analysis.am
 endif
 
 if BUILD_LIB_GRAPH
-  SUBDIRS += graph
-  DIST_SUBDIRS += graph
+include $(top_srcdir)/src/graph/graph.am
   AM_CPPFLAGS += -I$(top_srcdir)/src/graph
 endif
 
@@ -81,8 +76,7 @@ if BUILD_LIB_HLS
 endif
 
 if BUILD_LIB_INTERMEDIATE_REPRESENTATIONS
-  SUBDIRS += intermediate_representations
-  DIST_SUBDIRS += intermediate_representations
+include $(top_srcdir)/src/intermediate_representations/intermediate_representations.am
 endif
 
 if BUILD_LIB_FROM_IPXACT
@@ -91,8 +85,7 @@ if BUILD_LIB_FROM_IPXACT
 endif
 
 if BUILD_LIB_ILP
-  SUBDIRS += ilp
-  DIST_SUBDIRS += ilp
+include $(top_srcdir)/src/ilp/ilp.am
 endif
 
 if BUILD_LIB_LOGIC_SYNTHESIS
@@ -115,25 +108,21 @@ endif
 endif
 
 if BUILD_LIB_POLIXML
-  SUBDIRS += polixml
-  DIST_SUBDIRS += polixml
-  AM_CPPFLAGS += -I$(top_srcdir)/src/polixml \
+include $(top_srcdir)/src/polixml/polixml.am
+AM_CPPFLAGS += -I$(top_srcdir)/src/polixml \
                  -I$(top_srcdir)/src/parser/polixml
 endif
 
 if BUILD_LIB_PRAGMA
-  SUBDIRS += pragma
-  DIST_SUBDIRS += pragma
+include $(top_srcdir)/src/pragma/pragma.am
 endif
 
 if BUILD_LIB_TREE
-  SUBDIRS += tree
-  DIST_SUBDIRS += tree
+include $(top_srcdir)/src/tree/tree.am
 endif
 
 if BUILD_LIB_WRAPPER
-  SUBDIRS += wrapper
-  DIST_SUBDIRS += wrapper
+include $(top_srcdir)/src/wrapper/wrapper.am
 endif
 
 if BUILD_LIB_2LEV
@@ -147,14 +136,12 @@ if BUILD_LIB_RTL
 endif
 
 if BUILD_LIB_TECHNOLOGY
-  SUBDIRS += technology
-  DIST_SUBDIRS += technology
+include $(top_srcdir)/src/technology/technology.am
 endif
 
 if BUILD_LIB_UTILITY
-  SUBDIRS += utility
-  DIST_SUBDIRS += utility
-  AM_CPPFLAGS += -I$(top_srcdir)/src/utility
+include $(top_srcdir)/src/utility/utility.am
+AM_CPPFLAGS += -I$(top_srcdir)/src/utility
 endif
 
 #################################### Spider ####################################
@@ -178,9 +165,9 @@ include $(top_srcdir)/src/bambu.am
 endif
 
 ########################### DOC SECTION ###########################	
-DOX_TAGFILES = src/tree src/graph src/behavior src/technology src/utility src/parser src/edif src/algorithms src/circuit src/ilp src/regularity src/backend src/codesign src/HLS src/HLS/module_allocation src/HLS/binding src/HLS/controller src/HLS/datapath src/HLS/estimation src/HLS/hls_flow src/HLS/target src/HLS/scheduling
+DOX_TAGFILES = src/tree src/graph src/behavior src/technology src/utility src/parser src/edif src/algorithms src/circuit src/ilp src/regularity src/backend src/design_flows/backend/ToHDL src/codesign src/HLS src/HLS/module_allocation src/HLS/binding src/HLS/controller src/HLS/datapath src/HLS/estimation src/HLS/hls_flow src/HLS/target src/HLS/scheduling
 
-EXTRA_DIST = $(PRJ_DOC) bambu.am
+EXTRA_DIST += $(PRJ_DOC)
 
 #do not touch the following line
 

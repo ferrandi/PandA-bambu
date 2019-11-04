@@ -77,7 +77,7 @@ class port_swapping : public HLSFunctionStep
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -114,14 +114,14 @@ class port_swapping : public HLSFunctionStep
     * @param dSet structure with all the vertices and relative degrees
     * @return Vertex which has the max degree
     */
-   PSVertex find_max_degree(std::set<std::pair<PSVertex, unsigned int>>& dSet);
+   PSVertex find_max_degree(CustomOrderedSet<std::pair<PSVertex, unsigned int>>& dSet);
 
    /**
     * This function updates the degree of all the vertices
     * @param g2 graph on which the degree of the vertices must be calculated
     * @param dSet set to be updated with all the vertices and relative degree
     */
-   void update_degree(PSGraph g2, std::set<std::pair<PSVertex, unsigned int>>& dSet);
+   void update_degree(PSGraph g2, CustomOrderedSet<std::pair<PSVertex, unsigned int>>& dSet);
 
    /**
     * This function selects the right vertex from the co_tree_edges vector

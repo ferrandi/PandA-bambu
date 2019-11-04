@@ -408,3 +408,5 @@ ext/mockturtle/lib/ez/ez
 ext/mockturtle/lib/abcsat
 ext/mockturtle/lib/fmt/fmt
 ext/mockturtle/lib/abcsat/abc
+ext/abseil-cpp
+/usr/include

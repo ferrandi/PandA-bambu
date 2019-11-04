@@ -45,9 +45,9 @@
 #include "vcd_parser.hpp"
 
 // STL include
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <list>
-#include <map>
-#include <set>
 #include <string>
 
 #include "refcount.hpp"
@@ -136,7 +136,7 @@ class vcd_utility : public HLS_step
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    bool detect_mismatch(const vcd_trace_head& t, const uint64_t c_context, const std::string& c_val);
 

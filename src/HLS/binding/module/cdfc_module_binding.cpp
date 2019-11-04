@@ -117,11 +117,11 @@
 #include <string>
 
 /// STL includes
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <algorithm>
 #include <deque>
 #include <list>
-#include <map>
-#include <set>
 #include <utility>
 #include <vector>
 
@@ -270,9 +270,9 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation& co
          if(tree_var != 0)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(TreeM->CGetTreeNode(tree_var)));
-            std::set<std::pair<conn_code, std::pair<unsigned int, vertex>>>& con_rel_per_vertex_per_port_index = con_rel[current_v][port_index];
-            const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(current_v);
-            const std::set<vertex>::const_iterator rs_it_end = running_states.end();
+            CustomOrderedSet<std::pair<conn_code, std::pair<unsigned int, vertex>>>& con_rel_per_vertex_per_port_index = con_rel[current_v][port_index];
+            const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(current_v);
+            const CustomOrderedSet<vertex>::const_iterator rs_it_end = running_states.end();
             for(auto rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
             {
                vertex state = *rs_it;
@@ -284,7 +284,7 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation& co
                {
                   vertex def_op = HLS->Rliv->get_op_where_defined(tree_var);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variable is defined in " + GET_NAME(data, def_op));
-                  const std::set<vertex>& def_op_ending_states = HLS->Rliv->get_state_where_end(def_op);
+                  const CustomOrderedSet<vertex>& def_op_ending_states = HLS->Rliv->get_state_where_end(def_op);
                   if((GET_TYPE(data, def_op) & TYPE_PHI) == 0)
                   {
                      if(def_op_ending_states.find(state) != def_op_ending_states.end())
@@ -327,13 +327,13 @@ void estimate_muxes(const connection_relation& con_rel, unsigned int mux_prec, d
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
    const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::FDFG);
    bool has_register_done = HLS->Rreg && HLS->Rreg->size() != 0;
-   std::vector<std::set<unsigned int>> regs_in;
-   std::vector<std::set<unsigned int>> chained_in;
-   std::vector<std::set<std::pair<unsigned int, unsigned int>>> module_in;
-   std::vector<std::set<std::pair<unsigned int, unsigned int>>> module_in_reg;
-   std::set<unsigned int> regs_out;
-   std::set<vertex> chained_out;
-   std::set<std::pair<unsigned int, unsigned int>> module_out;
+   std::vector<CustomOrderedSet<unsigned int>> regs_in;
+   std::vector<CustomOrderedSet<unsigned int>> chained_in;
+   std::vector<CustomOrderedSet<std::pair<unsigned int, unsigned int>>> module_in;
+   std::vector<CustomOrderedSet<std::pair<unsigned int, unsigned int>>> module_in_reg;
+   CustomOrderedSet<unsigned int> regs_out;
+   CustomOrderedSet<vertex> chained_out;
+   CustomOrderedSet<std::pair<unsigned int, unsigned int>> module_out;
    unsigned int n_tot_outgoing_edges = 0, n_tot_outgoing_unbound_operations = 0, n_tot_shared = 0;
    unsigned int max_port_index = 0;
    for(auto cv : cluster)
@@ -361,7 +361,7 @@ void estimate_muxes(const connection_relation& con_rel, unsigned int mux_prec, d
       for(unsigned int port_index_actual = 0; port_index_actual < con_rel.find(current_v)->second.size(); ++port_index_actual)
       {
          unsigned int port_index = port_index_actual;
-         const std::set<std::pair<conn_code, std::pair<unsigned int, vertex>>>& con_rel_per_vertex_per_port_index = con_rel.find(current_v)->second[port_index];
+         const CustomOrderedSet<std::pair<conn_code, std::pair<unsigned int, vertex>>>& con_rel_per_vertex_per_port_index = con_rel.find(current_v)->second[port_index];
          if(fu->get_ports_are_swapped(current_v))
          {
             if(port_index_actual == 0)
@@ -426,8 +426,8 @@ void estimate_muxes(const connection_relation& con_rel, unsigned int mux_prec, d
          unsigned int var_written = HLSMgr->get_produced_value(HLS->functionId, current_v);
          if(var_written)
          {
-            const std::set<vertex>& end = HLS->Rliv->get_state_where_end(current_v);
-            const std::set<vertex>::const_iterator e_it_end = end.end();
+            const CustomOrderedSet<vertex>& end = HLS->Rliv->get_state_where_end(current_v);
+            const CustomOrderedSet<vertex>::const_iterator e_it_end = end.end();
             for(auto e_it = end.begin(); e_it != e_it_end; ++e_it)
             {
                vertex state = *e_it;
@@ -506,7 +506,7 @@ void estimate_muxes(const connection_relation& con_rel, unsigned int mux_prec, d
 
 struct slack_based_filtering : public filter_clique<vertex>
 {
-   slack_based_filtering(const std::unordered_map<vertex, double>& _slack_time, const std::unordered_map<vertex, double>& _starting_time, double _controller_delay, unsigned int _mux_prec, const hlsRef _HLS, const HLS_managerRef _HLSMgr,
+   slack_based_filtering(const CustomUnorderedMap<vertex, double>& _slack_time, const CustomUnorderedMap<vertex, double>& _starting_time, double _controller_delay, unsigned int _mux_prec, const hlsRef _HLS, const HLS_managerRef _HLSMgr,
                          const double _area_resource, const connection_relation& _con_rel)
        : slack_time(_slack_time),
          starting_time(_starting_time),
@@ -520,7 +520,7 @@ struct slack_based_filtering : public filter_clique<vertex>
    {
    }
 
-   bool select_candidate_to_remove(const std::set<C_vertex>& candidate_clique, C_vertex& v, const std::map<C_vertex, vertex>& converter, const cc_compatibility_graph& cg) const override
+   bool select_candidate_to_remove(const CustomOrderedSet<C_vertex>& candidate_clique, C_vertex& v, const std::map<C_vertex, vertex>& converter, const cc_compatibility_graph& cg) const override
    {
       THROW_ASSERT(!candidate_clique.empty(), "candidate clique cannot be empty");
       double min_slack = std::numeric_limits<double>::max();
@@ -601,7 +601,7 @@ struct slack_based_filtering : public filter_clique<vertex>
       }
    }
 
-   size_t clique_cost(const std::set<C_vertex>& candidate_clique, const std::map<C_vertex, vertex>& converter) const
+   size_t clique_cost(const CustomOrderedSet<C_vertex>& candidate_clique, const std::map<C_vertex, vertex>& converter) const
    {
       unsigned int total_muxes;
       unsigned int n_shared;
@@ -611,8 +611,8 @@ struct slack_based_filtering : public filter_clique<vertex>
    }
 
  private:
-   const std::unordered_map<vertex, double>& slack_time;
-   const std::unordered_map<vertex, double>& starting_time;
+   const CustomUnorderedMap<vertex, double>& slack_time;
+   const CustomUnorderedMap<vertex, double>& starting_time;
    double controller_delay;
    const unsigned int mux_prec;
    const hlsRef HLS;
@@ -699,7 +699,7 @@ CdfcGraph::CdfcGraph(const CdfcGraphsCollectionRef cdfc_graphs_collection, const
 {
 }
 
-CdfcGraph::CdfcGraph(const CdfcGraphsCollectionRef cdfc_graphs_collection, const int _selector, const std::unordered_set<vertex>& vertices) : graph(cdfc_graphs_collection.get(), _selector, vertices)
+CdfcGraph::CdfcGraph(const CdfcGraphsCollectionRef cdfc_graphs_collection, const int _selector, const CustomUnorderedSet<vertex>& vertices) : graph(cdfc_graphs_collection.get(), _selector, vertices)
 {
 }
 
@@ -728,7 +728,7 @@ cdfc_module_binding::cdfc_module_binding(const ParameterConstRef _parameters, co
 
 cdfc_module_binding::~cdfc_module_binding() = default;
 
-void cdfc_module_binding::update_slack_starting_time(const OpGraphConstRef fdfg, OpVertexSet& sorted_vertices, std::unordered_map<vertex, double>& slack_time, std::unordered_map<vertex, double>& starting_time, bool update_starting_time, bool only_backward,
+void cdfc_module_binding::update_slack_starting_time(const OpGraphConstRef fdfg, OpVertexSet& sorted_vertices, CustomUnorderedMap<vertex, double>& slack_time, CustomUnorderedMap<vertex, double>& starting_time, bool update_starting_time, bool only_backward,
                                                      bool only_forward)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Updating slack starting time");
@@ -871,7 +871,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
    /// check easy binding and compute the list of vertices for which a sharing is possible
    std::map<unsigned int, OpVertexSet, cdfc_resource_ordering_functor> candidate_vertices(r_functor);
    OpVertexSet all_candidate_vertices(fdfg);
-   std::unordered_map<unsigned int, std::set<vertex>> easy_bound_vertices;
+   CustomUnorderedMap<unsigned int, CustomOrderedSet<vertex>> easy_bound_vertices;
    for(const auto operation : fdfg->CGetOperations())
    {
       fu_unit = fu->get_assign(operation);
@@ -939,12 +939,12 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       initialize_connection_relation(con_rel, all_candidate_vertices);
       boost_cdfc_graphRef cdfc_bulk_graph = boost_cdfc_graphRef(new boost_cdfc_graph());
       START_TIME(slack_cputime);
-      // std::map<size_t,std::set<vertex> >chained_relation;
+      // std::map<size_t,CustomOrderedSet<vertex> >chained_relation;
       std::list<vertex> sorted_vertices;
       sdg->TopologicalSort(sorted_vertices);
-      std::unordered_map<vertex, double> starting_time;
-      std::unordered_map<vertex, double> ending_time;
-      std::unordered_map<vertex, double> slack_time;
+      CustomUnorderedMap<vertex, double> starting_time;
+      CustomUnorderedMap<vertex, double> ending_time;
+      CustomUnorderedMap<vertex, double> slack_time;
       double clock_period_resource_fraction = HLS->HLS_C->get_clock_period_resource_fraction();
       double actual_scheduling_clock_budget = HLS->HLS_C->get_clock_period() * clock_period_resource_fraction;
       const double clock_budget = CLOCK_MARGIN * actual_scheduling_clock_budget;
@@ -1163,12 +1163,12 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       /// add tabu for each pair of vertices in conflict: vertices concurrently running
       for(const auto& fu_cv : candidate_vertices)
       {
-         const std::set<vertex>::const_iterator cv_it_end = fu_cv.second.end();
-         for(std::set<vertex>::const_iterator cv_it = fu_cv.second.begin(); cv_it != cv_it_end;)
+         const CustomOrderedSet<vertex>::const_iterator cv_it_end = fu_cv.second.end();
+         for(CustomOrderedSet<vertex>::const_iterator cv_it = fu_cv.second.begin(); cv_it != cv_it_end;)
          {
-            std::set<vertex>::const_iterator cv1_it = cv_it;
+            CustomOrderedSet<vertex>::const_iterator cv1_it = cv_it;
             ++cv_it;
-            for(std::set<vertex>::const_iterator cv2_it = cv_it; cv2_it != cv_it_end; ++cv2_it)
+            for(CustomOrderedSet<vertex>::const_iterator cv2_it = cv_it; cv2_it != cv_it_end; ++cv2_it)
             {
                if(!can_be_clustered(*cv1_it, fsdg, fu, slack_time, 0))
                   continue;
@@ -1374,7 +1374,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
 
       unsigned int k = 2;
       std::deque<cdfc_edge> candidate_edges;
-      std::unordered_set<vertex> no_cycles;
+      CustomUnorderedSet<vertex> no_cycles;
       bool restart;
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Looking for loops in compatibility graphs");
@@ -1522,8 +1522,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       double total_DSPs_prev = total_DSPs;
       const double total_area_muxes_initial = total_area_muxes;
       double total_area_muxes_prev = total_area_muxes;
-      const std::unordered_map<vertex, double> slack_time_initial = slack_time;
-      const std::unordered_map<vertex, double> starting_time_initial = starting_time;
+      const CustomUnorderedMap<vertex, double> slack_time_initial = slack_time;
+      const CustomUnorderedMap<vertex, double> starting_time_initial = starting_time;
 
       fu_bindingRef fu_best;
       if(parameters->getOption<int>(OPT_memory_banks_number) > 1 && !parameters->isOption(OPT_context_switch))
@@ -1612,8 +1612,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                size_t max_id = 0, curr_id;
                for(auto vert_it = partition.second.begin(); vert_it != vert_it_end; ++vert_it)
                {
-                  const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(c2s[boost::get(boost::vertex_index, *CG, *vert_it)]);
-                  const std::set<vertex>::const_iterator rs_it_end = running_states.end();
+                  const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(c2s[boost::get(boost::vertex_index, *CG, *vert_it)]);
+                  const CustomOrderedSet<vertex>::const_iterator rs_it_end = running_states.end();
                   for(auto rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
                   {
                      if(v2id.find(*rs_it) == v2id.end())
@@ -1714,8 +1714,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                   size_t max_id = 0, curr_id;
                   for(auto vert_it = partition.second.begin(); vert_it != vert_it_end; ++vert_it)
                   {
-                     const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(c2s[boost::get(boost::vertex_index, *CG, *vert_it)]);
-                     const std::set<vertex>::const_iterator rs_it_end = running_states.end();
+                     const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(c2s[boost::get(boost::vertex_index, *CG, *vert_it)]);
+                     const CustomOrderedSet<vertex>::const_iterator rs_it_end = running_states.end();
                      for(auto rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
                      {
                         if(v2id.find(*rs_it) == v2id.end())
@@ -2050,7 +2050,7 @@ bool cdfc_module_binding::false_loop_search_cdfc_more(cdfc_vertex src, unsigned 
    return false;
 }
 
-bool cdfc_module_binding::can_be_clustered(vertex v, OpGraphConstRef fsdg, fu_bindingConstRef fu, const std::unordered_map<vertex, double>& slack_time, const double mux_time)
+bool cdfc_module_binding::can_be_clustered(vertex v, OpGraphConstRef fsdg, fu_bindingConstRef fu, const CustomUnorderedMap<vertex, double>& slack_time, const double mux_time)
 {
    const AllocationInformationConstRef allocation_information = HLS->allocation_information;
    if(can_be_clustered_table.find(v) != can_be_clustered_table.end())
@@ -2139,7 +2139,7 @@ int cdfc_module_binding::weight_computation(bool cond1, bool cond2, vertex v1, v
                                                 fu
 #endif
                                             ,
-                                            const std::unordered_map<vertex, double>& slack_time, std::unordered_map<vertex, double>& starting_time,
+                                            const CustomUnorderedMap<vertex, double>& slack_time, CustomUnorderedMap<vertex, double>& starting_time,
 #ifdef HC_APPROACH
                                             spec_hierarchical_clustering& hc,
 #endif

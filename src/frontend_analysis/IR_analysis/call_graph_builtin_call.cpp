@@ -31,7 +31,7 @@
 
 #include "call_graph_builtin_call.hpp"
 
-#include <map>
+#include "custom_map.hpp"
 #include <string>
 
 #include "Parameter.hpp"
@@ -244,9 +244,9 @@ void CallGraphBuiltinCall::ExtendCallGraph(unsigned int callerIdx, tree_nodeRef 
    }
 }
 
-const std::unordered_set<std::pair<FrontendFlowStepType, CallGraphBuiltinCall::FunctionRelationship>> CallGraphBuiltinCall::ComputeFrontendRelationships(DesignFlowStep::RelationshipType RT) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, CallGraphBuiltinCall::FunctionRelationship>> CallGraphBuiltinCall::ComputeFrontendRelationships(DesignFlowStep::RelationshipType RT) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(RT)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -299,14 +299,14 @@ DesignFlowStep_Status CallGraphBuiltinCall::InternalExec()
    // Build the typeToDeclarationMap
    const CallGraphManagerRef CGM = AppM->GetCallGraphManager();
    const auto root_functions = CGM->GetRootFunctions();
-   std::unordered_set<unsigned int> allFunctions;
+   CustomUnorderedSet<unsigned int> allFunctions;
    function_decl_refs fdr_visitor(allFunctions);
    for(const auto root_function : root_functions)
    {
       tree_nodeRef rf = TM->get_tree_node_const(root_function);
       rf->visit(&fdr_visitor);
    }
-   for(std::unordered_set<unsigned int>::const_iterator Itr = allFunctions.begin(), End = allFunctions.end(); Itr != End; ++Itr)
+   for(CustomUnorderedSet<unsigned int>::const_iterator Itr = allFunctions.begin(), End = allFunctions.end(); Itr != End; ++Itr)
    {
       std::string functionName = tree_helper::name_function(TM, *Itr);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing function " + STR(*Itr) + " " + functionName);
