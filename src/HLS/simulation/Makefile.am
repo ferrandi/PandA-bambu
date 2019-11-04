@@ -27,6 +27,7 @@ lib_simulation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS/vcd \
    -I$(top_srcdir)/src/HLS/virtual_components \
    -I$(top_srcdir)/src/parser/discrepancy \
+   -I$(top_srcdir)/src/parser/vcd \
    -I$(top_srcdir)/src/parser/polixml \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/technology \

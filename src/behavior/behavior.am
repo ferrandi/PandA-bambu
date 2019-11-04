@@ -34,7 +34,8 @@ if BUILD_BAMBU
       -I$(top_srcdir)/src/HLS/vcd \
       -I$(top_srcdir)/src/intermediate_representations \
       -I$(top_srcdir)/src/intermediate_representations/hls \
-      -I$(top_srcdir)/src/parser/discrepancy
+      -I$(top_srcdir)/src/parser/discrepancy \
+      -I$(top_srcdir)/src/parser/vcd
 endif
 
 if BUILD_LIB_CODE_ESTIMATION

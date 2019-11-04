@@ -402,15 +402,15 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
             vendor = tgt_device->get_parameter<std::string>("vendor");
             boost::algorithm::to_lower(vendor);
          }
+         unsigned int n_states = HLSMgr->get_HLS(f_id)->STG->get_number_of_states();
          bool one_hot_encoding = false;
          if(parameters->getOption<std::string>(OPT_fsm_encoding) == "one-hot")
             one_hot_encoding = true;
-         else if(parameters->getOption<std::string>(OPT_fsm_encoding) == "auto" && vendor == "xilinx")
+         else if(parameters->getOption<std::string>(OPT_fsm_encoding) == "auto" && vendor == "xilinx" && n_states < 256)
             one_hot_encoding = true;
 
-         unsigned int n_states = HLSMgr->get_HLS(f_id)->STG->get_number_of_states();
          unsigned int bitsnumber = language_writer::bitnumber(n_states - 1);
-         /// adjust in case states are not consecutives
+         /// adjust in case states are not consecutive
          unsigned max_value = 0;
          for(const auto& s : stg_info->state_id_to_vertex)
             max_value = std::max(max_value, s.first);

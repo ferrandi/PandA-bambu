@@ -100,6 +100,7 @@ lib_IR_analysis_la_CPPFLAGS = \
    -I$(top_srcdir)/src/frontend_analysis \
    -I$(top_srcdir)/src/frontend_analysis/behavior_analysis \
    -I$(top_srcdir)/src/parser/discrepancy \
+   -I$(top_srcdir)/src/parser/vcd \
    -I$(top_srcdir)/src/parser/polixml \
    -I$(top_srcdir)/src/parser/treegcc \
    -I$(top_srcdir)/src/graph \
