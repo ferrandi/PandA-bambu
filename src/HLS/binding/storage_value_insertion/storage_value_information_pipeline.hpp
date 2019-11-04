@@ -44,12 +44,9 @@
 
 class StorageValueInformationPipeline : public StorageValueInformation
 {
- protected:
-   friend class values_scheme;
-   friend class values_scheme_pipeline;
-
+ private:
    /// put into relation variables/values with storage values
-   std::map<std::pair<vertex, unsigned int>, unsigned int> storage_index_map;
+   std::map<std::pair<vertex, unsigned int>, unsigned int> storage_index_double_map;
 
  public:
    /**
@@ -77,30 +74,11 @@ class StorageValueInformationPipeline : public StorageValueInformation
    unsigned int get_storage_value_index(vertex curr_vertex, unsigned int var_index) const;
 
    /**
-    * Returns the index of the variable associated with the storage value in a given vertex
-    */
-   unsigned int get_variable_index(unsigned int storage_value_index) const;
-
-   /**
-    * return a weight that estimate how much two storage values are compatible.
-    * An high value returned means an high compatibility between the two storage values.
-    */
-   int get_compatibility_weight(unsigned int storage_value_index1, unsigned int storage_value_index2) const;
-
-   /**
     * assign a strage value to a couple state-variable
     * @param curr_state is the current state
     * @param variable is the assigned variable
     * @param sv is the assigned storage value*/
    void set_storage_value_index(vertex curr_state, unsigned int variable, unsigned int sv);
-
-
-   /**
-    * return the in case the storage values have compatible size
-    * @param storage_value_index1 is the first storage value
-    * @param storage_value_index2 is the second storage value
-    */
-   bool are_value_bitsize_compatible(unsigned int storage_value_index1, unsigned int storage_value_index2) const;
 };
 typedef refcount<StorageValueInformationPipeline> StorageValueInformationPipelineRef;
 #endif

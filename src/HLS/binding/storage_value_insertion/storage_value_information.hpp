@@ -56,8 +56,8 @@ CONSTREF_FORWARD_DECL(OpGraph);
 class StorageValueInformation
 {
  protected:
+
    friend class values_scheme;
-   friend class values_scheme_pipeline;
 
    /// current number of storage values
    unsigned int number_of_storage_values;
