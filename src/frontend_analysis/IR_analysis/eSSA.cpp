@@ -469,7 +469,7 @@ namespace eSSAInfo
          || c_type == unlt_expr_K || c_type == ungt_expr_K || c_type == unle_expr_K || c_type == unge_expr_K;
    }
 
-   Operand branchOpRecurse(tree_nodeRef op, tree_nodeRef stmt)
+   tree_nodeRef branchOpRecurse(tree_nodeRef op, tree_nodeRef stmt = nullptr)
    {
       const auto Op = GET_NODE(op);
       if(auto* nop = GetPointer<nop_expr>(Op))
@@ -482,7 +482,7 @@ namespace eSSAInfo
          auto* def = GetPointer<gimple_assign>(GET_NODE(ga));
          return branchOpRecurse(def->op1, ga);
       }
-      return Operand(op, stmt);
+      return stmt;
    }
 
    void processBranch(tree_nodeRef bi, blocRef BranchBB, 
@@ -496,8 +496,11 @@ namespace eSSAInfo
       const std::vector<blocRef> SuccsToProcess = {TrueBB, FalseBB};
 
       THROW_ASSERT(GET_NODE(BI->op0)->get_kind() == ssa_name_K, "Non SSA variable found in branch");
-      const auto condOp = branchOpRecurse(BI->op0, bi);
-      const auto cond = condOp.getOperand();
+      const auto condStmt = branchOpRecurse(BI->op0);
+      THROW_ASSERT(GET_NODE(condStmt)->get_kind() == gimple_assign_K, "");
+      auto* cond_assign = GetPointer<gimple_assign>(GET_NODE(condStmt));
+      const auto cond_ssa = cond_assign->op0;
+      const auto cond_op = cond_assign->op1;
 
       auto InsertHelper = [&](tree_nodeRef Op, tree_nodeRef Cond)
       {
@@ -511,7 +514,7 @@ namespace eSSAInfo
             bool TakenEdge = (Succ == TrueBB);
 
             PredicateBase* PB = new PredicateBranch(Op, BranchBB, Succ, Cond, TakenEdge);
-            addInfoFor(OperandRef(new Operand(Op, condOp.getUser())), PB, OpsToRename, ValueInfoNums, ValueInfos);
+            addInfoFor(OperandRef(new Operand(Op, condStmt)), PB, OpsToRename, ValueInfoNums, ValueInfos);
             if(Succ->list_of_pred.size() > 1)
             {
                EdgeUsesOnly.insert({BranchBB, Succ});
@@ -520,9 +523,9 @@ namespace eSSAInfo
       };
 
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-         " <-- eSSA process branch: branch condition is " << GET_NODE(cond)->get_kind_text());
+         " <-- eSSA process branch: branch condition is " << GET_NODE(cond_op)->get_kind_text());
 
-      if(auto* bin = GetPointer<binary_expr>(GET_NODE(cond)))
+      if(auto* bin = GetPointer<binary_expr>(GET_NODE(cond_op)))
       {
          if(isCompare(bin))
          {
@@ -534,24 +537,22 @@ namespace eSSAInfo
 
             if(lhs != rhs)
             {
-               // TODO: why is it needed?
-               //    InsertHelper(cond, cond);
+               InsertHelper(cond_ssa, cond_op);
 
-               // TODO: check that lhs and rhs are used more than once
-               if(!GetPointer<cst_node>(lhs))
+               if(!GetPointer<cst_node>(lhs) && GetPointer<ssa_name>(lhs)->CGetUseStmts().size() > 1)
                {
-                  InsertHelper(bin->op0, cond);
+                  InsertHelper(bin->op0, cond_op);
                }
 
-               if(!GetPointer<cst_node>(rhs))
+               if(!GetPointer<cst_node>(rhs) && GetPointer<ssa_name>(rhs)->CGetUseStmts().size() > 1)
                {
-                  InsertHelper(bin->op1, cond);
+                  InsertHelper(bin->op1, cond_op);
                }
             }
          }
-         else if(bin->get_kind() == truth_and_expr_K || bin->get_kind() == truth_or_expr_K)
+         else if(bin->get_kind() == bit_and_expr_K || bin->get_kind() == bit_ior_expr_K)
          {
-            InsertHelper(cond, cond);
+            InsertHelper(cond_ssa, cond_op);
          }
          else
          {
@@ -563,7 +564,7 @@ namespace eSSAInfo
       else
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-            " <-- eSSA process branch: unhandled condition type (" << GET_NODE(cond)->get_kind_text() << ")");
+            " <-- eSSA process branch: unhandled condition type (" << GET_NODE(cond_op)->get_kind_text() << ")");
       }
    }
 
@@ -1080,10 +1081,8 @@ namespace eSSAInfo
 
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
                " <-- eSSA rename: found replacement " << GET_NODE(Result.Def) << " for " << GET_NODE(VD.U->getOperand()) << " in " << GET_NODE(VD.U->getUser()));
-            //    THROW_ASSERT(DT->dominates(llvm::cast<llvm::Instruction>(Result.Def), *VD.U), "Predicateinfo def should have dominated this use");
-            //    VD.U->set(Result.Def);
             // TODO: fix phi ordering in OrderedBasicBlock
-            //    THROW_ASSERT(valueComesBefore(OI, Result.Def, VD.U->getUser()), "Predicateinfo def should have dominated this use");
+            THROW_ASSERT(valueComesBefore(OI, Result.Def, VD.U->getUser()), "Predicateinfo def should have dominated this use");
             auto* phi = GetPointer<gimple_phi>(GET_NODE(Result.Def));
             VD.U->set(phi->res, TM);
          }
