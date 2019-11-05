@@ -47,8 +47,8 @@
 #include "hls_manager.hpp"
 
 /// HLS/binding/storage_value_information includes
-#include "storage_value_information.hpp"
 #include "storage_value_information_pipeline.hpp"
+#include "storage_value_information_fsm.hpp"
 
 /// HLS/liveness include
 #include "liveness.hpp"
@@ -71,9 +71,9 @@ void values_scheme::Initialize()
 {
    HLSFunctionStep::Initialize();
    if(true)
-      HLS->storage_value_information = StorageValueInformationPipelineRef(new StorageValueInformationPipeline(HLSMgr, funId));
+      HLS->storage_value_information = boost::static_pointer_cast<StorageValueInformationPipeline>(StorageValueInformationPipelineRef(new StorageValueInformationPipeline(HLSMgr, funId)));
    else
-      HLS->storage_value_information = StorageValueInformationRef(new StorageValueInformation(HLSMgr, funId));
+      HLS->storage_value_information = boost::static_pointer_cast<StorageValueInformationFsm>(StorageValueInformationFsmRef(new StorageValueInformationFsm(HLSMgr, funId)));
    HLS->storage_value_information->Initialize();
 }
 

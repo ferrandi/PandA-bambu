@@ -119,17 +119,6 @@ unsigned int StorageValueInformation::get_number_of_storage_values() const
    return number_of_storage_values;
 }
 
-bool StorageValueInformation::is_a_storage_value(vertex, unsigned int var_index) const
-{
-   return storage_index_map.find(var_index) != storage_index_map.end();
-}
-
-unsigned int StorageValueInformation::get_storage_value_index(vertex, unsigned int var_index) const
-{
-   THROW_ASSERT(storage_index_map.find(var_index) != storage_index_map.end(), "the storage value is missing -- ORIGINAL getsvindex");
-   return storage_index_map.find(var_index)->second;
-}
-
 unsigned int StorageValueInformation::get_variable_index(unsigned int storage_value_index) const
 {
    THROW_ASSERT(variable_index_vect.size() > storage_value_index, "the storage value is missing");
@@ -313,11 +302,6 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
       }
    }
    return 1;
-}
-
-void StorageValueInformation::set_storage_value_index(vertex, unsigned int variable, unsigned int sv)
-{
-   storage_index_map[variable] = sv;
 }
 
 bool StorageValueInformation::are_value_bitsize_compatible(unsigned int storage_value_index1, unsigned int storage_value_index2) const

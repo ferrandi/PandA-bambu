@@ -66,13 +66,13 @@ StorageValueInformationPipeline::StorageValueInformationPipeline(const HLS_manag
 
 StorageValueInformationPipeline::~StorageValueInformationPipeline() = default;
 
-bool StorageValueInformationPipeline::is_a_storage_value(vertex state, unsigned int var_index) const
+bool StorageValueInformationPipeline::is_a_storage_value(vertex state, unsigned int var_index)
 {
    std::cout << "is a storage value PIPE";
    return storage_index_double_map.find(std::make_pair(state, var_index)) != storage_index_double_map.end();
 }
 
-unsigned int StorageValueInformationPipeline::get_storage_value_index(vertex state, unsigned int var_index) const
+unsigned int StorageValueInformationPipeline::get_storage_value_index(vertex state, unsigned int var_index)
 {
    std::cout << "get sv index PIPE";
    THROW_ASSERT(storage_index_double_map.find(std::make_pair(state, var_index)) != storage_index_double_map.end(), "the storage value is missing -- PIPE getsvindex");

@@ -62,9 +62,6 @@ class StorageValueInformation
    /// current number of storage values
    unsigned int number_of_storage_values;
 
-   /// put into relation variables/values with storage values
-   std::unordered_map<unsigned int, unsigned int> storage_index_map;
-
    /// put into relation storage value index with variables
    std::vector<unsigned int> variable_index_vect;
 
@@ -92,7 +89,7 @@ class StorageValueInformation
    /**
     * Destructor
     */
-   ~StorageValueInformation();
+   virtual ~StorageValueInformation();
 
    /**
     * Initialize the step (i.e., like a constructor)
@@ -109,14 +106,14 @@ class StorageValueInformation
     * @param curr_vertex is the vertex
     * @param var_index is the variable
     */
-   bool is_a_storage_value(vertex curr_vertex, unsigned int var_index) const;
+   virtual bool is_a_storage_value(vertex curr_vertex, unsigned int var_index);
 
    /**
     * Returns the index of the storage value associated with the variable in a given vertex
     * @param curr_vertex is the vertex
     * @param var_index is the variable
     */
-   unsigned int get_storage_value_index(vertex curr_vertex, unsigned int var_index) const;
+   virtual unsigned int get_storage_value_index(vertex curr_vertex, unsigned int var_index);
 
    /**
     * Returns the index of the variable associated with the storage value in a given vertex
@@ -134,7 +131,7 @@ class StorageValueInformation
     * @param curr_state is the current state
     * @param variable is the assigned variable
     * @param sv is the assigned storage value*/
-   void set_storage_value_index(vertex curr_state, unsigned int variable, unsigned int sv);
+   virtual void set_storage_value_index(vertex curr_state, unsigned int variable, unsigned int sv);
 
    /**
     * return the in case the storage values have compatible size
