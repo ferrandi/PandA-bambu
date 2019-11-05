@@ -43,6 +43,8 @@
 
 #include "eSSA.hpp"
 
+#include "custom_map.hpp"
+
 ///. include
 #include "Parameter.hpp"
 
@@ -1098,10 +1100,9 @@ eSSA::eSSA(const ParameterConstRef params, const application_managerRef AM, unsi
 
 eSSA::~eSSA() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> 
-eSSA::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> eSSA::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(PRECEDENCE_RELATIONSHIP):
@@ -1133,7 +1134,7 @@ DesignFlowStep_Status eSSA::InternalExec()
    /// store the GCC BB graph ala boost::graph
    BBGraphsCollectionRef GCC_bb_graphs_collection(new BBGraphsCollection(BBGraphInfoRef(new BBGraphInfo(AppM, function_id)), parameters));
    BBGraphRef GCC_bb_graph(new BBGraph(GCC_bb_graphs_collection, CFG_SELECTOR));
-   std::unordered_map<unsigned int, vertex> inverse_vertex_map;
+   CustomUnorderedMap<unsigned int, vertex> inverse_vertex_map;
    /// add vertices
    for(auto block : sl->list_of_bloc)
    {
@@ -1164,7 +1165,7 @@ DesignFlowStep_Status eSSA::InternalExec()
    refcount<dominance<BBGraph>> bb_dominators;
    bb_dominators = refcount<dominance<BBGraph>>(new dominance<BBGraph>(*GCC_bb_graph, inverse_vertex_map[bloc::ENTRY_BLOCK_ID], inverse_vertex_map[bloc::EXIT_BLOCK_ID], parameters));
    bb_dominators->calculate_dominance_info(dominance<BBGraph>::CDI_DOMINATORS);
-   const std::unordered_map<vertex, vertex>& bb_dominator_map = bb_dominators->get_dominator_map();
+   const CustomUnorderedMapStable<vertex, vertex>& bb_dominator_map = bb_dominators->get_dominator_map();
 
    BBGraphRef DT(new BBGraph(GCC_bb_graphs_collection, D_SELECTOR));
    for(auto it : bb_dominator_map)
@@ -1231,7 +1232,7 @@ DesignFlowStep_Status eSSA::InternalExec()
    std::unordered_map<unsigned int, eSSAInfo::DFSInfo> DFSInfos;
 
    std::stack<std::pair<vertex, boost::iterator_range<BBGraph::adjacency_iterator>>> workStack; 
-   workStack.push({inverse_vertex_map[bloc::ENTRY_BLOCK_ID], boost::make_iterator_range(boost::adjacent_vertices(inverse_vertex_map[bloc::ENTRY_BLOCK_ID], *DT))});
+   workStack.push({inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID), boost::make_iterator_range(boost::adjacent_vertices(inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID), *DT))});
 
    unsigned int DFSNum = 0;
    const auto& BBentry = DT->CGetBBNodeInfo(workStack.top().first)->block;

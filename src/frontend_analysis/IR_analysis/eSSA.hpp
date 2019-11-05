@@ -46,19 +46,11 @@
 
 #include "function_frontend_flow_step.hpp"
 
-#include "refcount.hpp"
-/**
- * @name forward declarations
- */
-//@{
-REF_FORWARD_DECL(eSSA);
-//@}
-
 class eSSA : public FunctionFrontendFlowStep
 {
 private:
 
-    const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
 public:
      /**
